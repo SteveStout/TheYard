@@ -122,9 +122,9 @@ Where the two overlays are composed (`api/TheYard.Application/Auction.cs`):
 ```live path=api/TheYard.Application/Auction.cs region=overlays
 ```
 
-The endpoints (`api/TheYard.Api/Endpoints/BidEndpoints.cs`):
+The endpoints (`api/TheYard.Api/Features/Bids/BidEndpoints.cs`):
 
-```live path=api/TheYard.Api/Endpoints/BidEndpoints.cs region=market-endpoints
+```live path=api/TheYard.Api/Features/Bids/BidEndpoints.cs region=market-endpoints
 ```
 
 The answer the badge needs, derived server-side
@@ -227,7 +227,7 @@ The room is Application code: MarketService holds the competing bids and runs a 
 - [`api/TheYard.Application/MarketService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MarketService.cs): the room, its overlay and its three limits.
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the overlay order, the room's round and whether the buyer is still ahead, decided server-side.
 - [`api/TheYard.Domain/StandingRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/StandingRules.cs): the one rule both overlays raise a price with.
-- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the tick endpoint, and the bid endpoints that ask `Auction` to bid against the room's price.
+- [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the tick endpoint, and the bid endpoints that ask `Auction` to bid against the room's price.
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the buyer's side, now stamped with when each bid was placed.
 - [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the round the page asks for.
 - [`src/components/vehicle/BidPanel/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/vehicle/BidPanel/BidPanel.tsx) and [`VehicleCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/inventory/VehicleCard/VehicleCard.tsx): the sentence and the chip.

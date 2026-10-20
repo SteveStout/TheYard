@@ -109,7 +109,7 @@ The gate itself sits in the Api host, where `POST /api/market/tick` in `Endpoint
 
 ## Files
 
-- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the tick, which requires a signed-in caller.
+- [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the tick, which requires a signed-in caller.
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the room's round and the candidates it bids on.
 - [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts): the loop that no longer runs signed out.
 - [`docs/decisions/ADR-027-competing-bidders.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-027-competing-bidders.md): why the page drives the round at all.
@@ -117,4 +117,4 @@ The gate itself sits in the Api host, where `POST /api/market/tick` in `Endpoint
 
 ## Addendum, 2026-10-03: the round moved into Application
 
-The quoted `bids.StandingAsBids()` line and the candidate selection around it moved out of the tick endpoint into `Auction.RoomRound` (`api/TheYard.Application/Auction.cs`). The endpoint (`api/TheYard.Api/Endpoints/BidEndpoints.cs`) requires a signed-in caller exactly as this record decided and calls one method. The room still answers everybody's standing.
+The quoted `bids.StandingAsBids()` line and the candidate selection around it moved out of the tick endpoint into `Auction.RoomRound` (`api/TheYard.Application/Auction.cs`). The endpoint (`api/TheYard.Api/Features/Bids/BidEndpoints.cs`) requires a signed-in caller exactly as this record decided and calls one method. The room still answers everybody's standing.

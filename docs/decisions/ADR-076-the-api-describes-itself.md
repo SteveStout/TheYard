@@ -154,8 +154,8 @@ The work sits in the host Api: ApiDocument.cs configures the framework's generat
 - [`api/TheYard.Api/ApiDocument.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ApiDocument.cs): the document's name, title and routes, the public-surface filter, and the two transformers.
 - [`api/TheYard.Api/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Replies.cs): the named shapes the endpoints answer with.
 - [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): `VehicleView`, the vehicle as the wire carries it.
-- [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs) and [`api/TheYard.Api/Endpoints/ReferenceEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ReferenceEndpoints.cs): the generator and the reference page wired.
-- [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): every public endpoint named, summarised and typed.
+- [`api/TheYard.Api/Shared/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs) and [`api/TheYard.Api/Features/Docs/ReferenceEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/ReferenceEndpoints.cs): the generator and the reference page wired.
+- [`api/TheYard.Api/Features`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features): every public endpoint named, summarised and typed.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the two packages, pinned.
 - [`api/TheYard.Tests/ApiDocumentTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ApiDocumentTests.cs): the four rules, held.
 - [`docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md): the rules table, with this record's row.

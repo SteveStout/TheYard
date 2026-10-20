@@ -387,8 +387,8 @@ The store is Infrastructure code (EfSources.cs, YardDbContext.cs and the row typ
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the mapping, and the seed.
 - [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the schema's history. It lived beside the context when there was one provider, and moved to a project of its own when there were two, because a migrations assembly holds one model snapshot (ADR: The SQL Server backend). This link pointed at the old folder from that day until a test started checking.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the third port, and the null store.
-- [`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs): the registration, and the migrate and seed block.
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the health check.
+- [`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs): the registration, and the migrate and seed block.
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health check.
 - [`api/TheYard.Tests/PersistenceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PersistenceTests.cs): the restart, the seeding, the migration history, and the file on disk.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the writable directory and the connection string.
 - [`docs/decisions/ADR-034-entity-framework-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-034-entity-framework-explained.md): the same setup, walked at a new developer's level.

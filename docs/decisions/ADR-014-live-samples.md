@@ -76,10 +76,10 @@ only sample that cannot possibly be stale:
 
 The one endpoint every document goes through, since ADR: The staff review
 folded the per-document routes into a catalog
-([`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs),
+([`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs),
 [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs)):
 
-```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=docs-endpoint
+```live path=api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs region=docs-endpoint
 ```
 
 The rejection cases the tests hold the whitelist to, read from this build
@@ -127,7 +127,7 @@ Live samples are a host concern and sit in the Api: LiveSamples.cs holds the whi
 ## Files
 
 - [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the whitelist and the expander.
-- [`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs) and
+- [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs) and
   [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the one endpoint and the slugs
   it serves through the expander.
 - [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the rejection cases and

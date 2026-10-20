@@ -32,8 +32,10 @@ codebase holds them):
 - `api/TheYard.Infrastructure.Cosmos` - the second adapter in the same ring: the same ports and an
   Identity user store over Azure Cosmos DB on the SDK, referencing Infrastructure only for the shared
   user entity.
-- `api/TheYard.Api` - host and endpoints. Handlers in `Endpoints/`, the composition root in
-  `Composition/`, and `Program.cs` a table of contents for both. NO business logic in endpoints.
+- `api/TheYard.Api` - host and endpoints. One folder per slice under `Features/`, each with a `Module.cs`
+  that registers and maps it; what every slice shares in `Shared/`; `Program.cs` registers the shared
+  parts by name and loops over the modules (ADR: The onion cut into vertical slices). NO business logic in
+  endpoints.
 
 Beside the six: `api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
 `api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool

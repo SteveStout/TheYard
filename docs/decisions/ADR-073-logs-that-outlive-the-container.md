@@ -146,8 +146,8 @@ The kept log copies the activity layout: LogEvent, LogText and the ILogStore por
 
 - [`api/TheYard.Application/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Logs.cs): the event, the cleaning rule, the query and the port.
 - [`api/TheYard.Api/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Logs.cs): how a request or a log line becomes an event, the collector, the logging provider and the report.
-- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the wiring beside the rings and the hook beside the request ring (regions kept-logs-wiring and kept-logs-hook).
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the keyed endpoint (region kept-logs-endpoints).
+- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the wiring beside the rings and the hook beside the request ring (regions kept-logs-wiring and kept-logs-hook).
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the keyed endpoint (region kept-logs-endpoints).
 - [`api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs) and [`infra/cosmos/logs.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/logs.json): the adapter and the container it needs.
 - [`src/lib/logs.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/logs.ts) and [`src/components/admin/KeptLogsCard/KeptLogsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/KeptLogsCard/KeptLogsCard.tsx): the card.
 - [`api/TheYard.Tests/LogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LogTests.cs) and [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the cleaning, the collector, the provider, the endpoint, and the at sign that is never there.
@@ -155,7 +155,7 @@ The kept log copies the activity layout: LogEvent, LogText and the ILogStore por
 ```live path=api/TheYard.Api/Logs.cs region=collector
 ```
 
-```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=kept-logs-endpoints
+```live path=api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs region=kept-logs-endpoints
 ```
 
 ## Addendum, 2026-09-13: three years

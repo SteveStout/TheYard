@@ -5,7 +5,7 @@
 //   Backend.cs                        one store and what stands on it (Backend, StoreAttachment)
 //   StorePrepare.cs                   the five asks a store gets at startup
 //   StoreSecondChance.cs              the store tried again after startup
-//   Composition/StoreRegistration.cs  where the stores are brought up and registered
+//   Shared/StoreRegistration.cs       where the stores are brought up and registered
 using TheYard.Application;
 
 namespace TheYard.Api;

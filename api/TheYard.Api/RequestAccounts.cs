@@ -1,6 +1,6 @@
 // The accounts of the store a request chose, as the account handlers need them: Identity's
 // UserManager over that store, or nothing when the store keeps no accounts. Built in
-// Composition/AuthRegistration.cs, so a handler takes this as a parameter and never reaches
+// Features/Accounts/Module.cs, so a handler takes this as a parameter and never reaches
 // into the service container itself.
 using Microsoft.AspNetCore.Identity;
 using TheYard.Infrastructure;

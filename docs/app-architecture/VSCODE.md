@@ -68,7 +68,7 @@ Open **Run and Debug** (Ctrl+Shift+D). The configurations come from `.vscode/lau
 ```live path=.vscode/launch.json region=*
 ```
 
-Put a breakpoint on the first line of `List` in `api/TheYard.Api/Endpoints/VehicleEndpoints.cs` (click in the gutter left of the line number), then press Load more on the page. The debugger stops in the API with the request's query in the Variables pane; F5 lets it go. A breakpoint in a `.tsx` file under `src/` stops Chrome the same way, through Vite's source maps.
+Put a breakpoint on the first line of `List` in `api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs` (click in the gutter left of the line number), then press Load more on the page. The debugger stops in the API with the request's query in the Variables pane; F5 lets it go. A breakpoint in a `.tsx` file under `src/` stops Chrome the same way, through Vite's source maps.
 
 ![Run and Debug with Yard: API + web (F5) running: the API stopped on line 64 of HealthEndpoints.cs, Version, with build in Locals, the call stack holding both sessions with the Chrome one running, and the debug toolbar at the top](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vscode-debug-breakpoint.jpg)
 

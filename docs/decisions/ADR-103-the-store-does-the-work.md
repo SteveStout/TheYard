@@ -123,7 +123,7 @@ What would change it: a catalogue too big for one physical partition or for the 
 - [`api/TheYard.Database/Tables/Catalogue.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Catalogue.sql) - the table and one index per order
 - [`api/TheYard.Infrastructure.Cosmos/CosmosVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosVehicleCatalogue.cs) and [`Documents.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Documents.Catalogue.cs) - the document adapter
 - [`infra/cosmos/catalogue.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/catalogue.json) - the indexed paths and the composite indexes
-- [`api/TheYard.Api/Composition/Catalogues.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/Catalogues.cs) - one catalogue per store, and who fills
+- [`api/TheYard.Api/Shared/Catalogues.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Catalogues.cs) - one catalogue per store, and who fills
 - [`api/TheYard.Api/OutboundHttp.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/OutboundHttp.cs) - the one outbound pool
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep) - `Catalogue__Keep` and the heap limit
 - [`api/TheYard.Tests/StoreCatalogueTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreCatalogueTests.cs) - the slot against the hash, and the relational adapter against the list

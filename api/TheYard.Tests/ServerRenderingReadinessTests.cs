@@ -47,7 +47,7 @@ public class ServerRenderingReadinessTests
         Assert.True(draws.Count == 0, "the API host draws pages: " + string.Join(", ", draws));
 
         // The page every app route answers with is the built index.html, as a file.
-        string spa = File.ReadAllText(Path.Combine(ApiFolder, "Composition", "SpaRegistration.cs"));
+        string spa = File.ReadAllText(Path.Combine(ApiFolder, "Shared", "SpaRegistration.cs"));
         Assert.Contains("MapFallbackToFile(", spa, StringComparison.Ordinal);
     }
     // #endregion host-draws-no-react

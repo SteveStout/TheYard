@@ -71,10 +71,10 @@ for reading either.
 The registration, and the reader it hands the Admin tab
 (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheYard.Api/Composition/TelemetryRegistration.cs region=telemetry
+```live path=api/TheYard.Api/Shared/TelemetryRegistration.cs region=telemetry
 ```
 
-```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=telemetry-endpoint
+```live path=api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs region=telemetry-endpoint
 ```
 
 One query answers the whole card, because three questions in three round
@@ -143,9 +143,9 @@ Telemetry is a host concern and stays in the host Api, where Composition/Telemet
 ## Files
 
 - [`api/TheYard.Api/Telemetry.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Telemetry.cs): the reader, its query and its shaping.
-- [`api/TheYard.Api/Composition/TelemetryRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/TelemetryRegistration.cs): the registration.
-- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs): the browser-error log.
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the Admin endpoint (region telemetry-endpoint).
+- [`api/TheYard.Api/Shared/TelemetryRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/TelemetryRegistration.cs): the registration.
+- [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs): the browser-error log.
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the Admin endpoint (region telemetry-endpoint).
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the one package this added.
 - [`src/components/admin/TelemetryCard/TelemetryCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TelemetryCard/TelemetryCard.tsx): the card and its three states.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml) and [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the placeholder and the roll-time substitution.

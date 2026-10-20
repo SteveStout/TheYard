@@ -45,7 +45,7 @@ What that is worth: a developer can predict what a file is called and where it g
 - Domain code is pure: no `DateTime.Now`, no filesystem, no HTTP. Time
   arrives as an `AuctionClock` the caller built, which is why the tests
   can anchor it.
-- The host binds and delegates. A handler in `api/TheYard.Api/Endpoints/`
+- The host binds and delegates. A handler in its slice under `api/TheYard.Api/Features/`
   reads the request and asks Application for the answer; a rule in a
   handler or in `Composition/` is a bug in layering.
 - The browser holds no business rules. If a calculation decides money or

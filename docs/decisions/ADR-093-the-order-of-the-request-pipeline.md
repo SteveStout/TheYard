@@ -38,12 +38,12 @@ The order, top to bottom, in `Composition/RequestPipeline.cs`:
 | 10 | Session renewal | Needs the user, and must set its cookie before the response starts. | Above authentication, it never sees a user. |
 | 11 | Store warmth | Only API reads wait for the catalogue. | Above the files, the photos wait for a hundred thousand vehicles after a roll. |
 
-```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=static-files
+```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=static-files
 ```
 
 **The forwarded headers trust two hops, by count (Steve's A, 7 October).** A visitor reaches the container through the edge and App Service's front end, and neither has an address the app can list. So the app clears the known proxies and trusts the two rightmost entries of X-Forwarded-For and X-Forwarded-Proto. A value a visitor wrote is to the left of those and never read. X-Forwarded-Host is never read: a link's host is configuration (`Site:Url`), which every web app the template writes carries. A caller that skips the edge can still write the second entry; the address feeds counts, never a permission. The count is a setting, `Edge:ForwardLimit`, and `/api/admin/arrival`, behind the operator's key, shows X-Forwarded-For as it arrived beside what the app resolved (since 1.0.3.93; at 1.0.3.92 it showed only what was left after the middleware took its entries). Until a live reading of it is recorded in this record, the count of two is what both proxies are documented to do, not a measurement.
 
-```live path=api/TheYard.Api/Composition/ApiRegistration.cs region=forwarded-headers
+```live path=api/TheYard.Api/Shared/ApiRegistration.cs region=forwarded-headers
 ```
 
 **The HTTP logger is removed, not moved.** It never wrote a line (trouble area 3). Turning it on would send a line per request to Application Insights through OpenTelemetry, whose daily cap is already reached every afternoon, and every request is recorded twice already: by the timing ring and by the request telemetry.
@@ -99,8 +99,8 @@ The API ring's host only: the composition root's pipeline, its registration and 
 
 ## Files
 
-- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the order, one comment per placement.
-- [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs): the forwarded headers' options, and why there is no HTTP logger.
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the short-circuited probes, and readiness on every store.
+- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the order, one comment per placement.
+- [`api/TheYard.Api/Shared/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs): the forwarded headers' options, and why there is no HTTP logger.
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the short-circuited probes, and readiness on every store.
 - [`api/TheYard.Tests/RequestPipelineTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RequestPipelineTests.cs): files before the session, probes at routing, the visitor from the right, the cookie's Secure flag.
 - [`samples/theshed/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Composition/RequestPipeline.cs): The Shed's pipeline and what it leaves out.

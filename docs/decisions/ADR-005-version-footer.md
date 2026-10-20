@@ -61,7 +61,7 @@ The version line touches two places: the host Api, where HealthEndpoints.cs maps
   from the changelog's top line and passes both arguments (region
   compute-version in ADR: The deploy pipeline, and ADR: The version comes from
   the changelog for why it is no longer a run counter).
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the endpoint that reports them (region version-endpoint).
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the endpoint that reports them (region version-endpoint).
 - [`src/app/Footer.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/Footer.tsx): the footer that renders them, linking the commit to
   GitHub.
 - [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the check that the footer reports
@@ -70,7 +70,7 @@ The version line touches two places: the host Api, where HealthEndpoints.cs maps
 ```live path=Dockerfile region=build-args
 ```
 
-```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=version-endpoint
+```live path=api/TheYard.Api/Features/Health/HealthEndpoints.cs region=version-endpoint
 ```
 
 ```live path=src/app/Footer.tsx region=footer-version

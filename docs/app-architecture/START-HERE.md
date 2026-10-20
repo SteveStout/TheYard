@@ -44,7 +44,7 @@ Beside the two, `render/` is the rendering service: a small Node program that dr
 ## Where a change goes
 
 - A rule about bidding goes in `TheYard.Domain/BidRules.cs` and nowhere else.
-- An endpoint is a route in `api/TheYard.Api/Endpoints/`, a call into `TheYard.Application` (`Auction` for anything about the auction), and a result. No business logic in `TheYard.Api`.
+- An endpoint is a route in its slice under `api/TheYard.Api/Features/` (ADR: The onion cut into vertical slices), a call into `TheYard.Application` (`Auction` for anything about the auction), and a result. No business logic in `TheYard.Api`.
 - Presentation arithmetic goes in `src/lib` with a test beside it; a component reads it.
 - Anything a page needs read before it is drawn on the server goes in `render/loaders.ts`, and nothing the server draws may differ from the browser's first draw; `src/app/drawServer.test.ts` draws every view with no browser, and `tests/e2e/drawn.spec.ts` takes each one over in Chrome and fails on a hydration error.
 - A colour goes in `src/styles/colors.css`, a space or a size in `sizes.css`, a font size or weight in `typography.css`, a shadow, blur or opacity in `effects.css`. A raw hex in a component fails the style test.

@@ -91,9 +91,9 @@ decide anything and does not put services together itself. Two of the ten archit
 
 The code in the order the bid meets it: three files whole, and the one method between them. The
 endpoint,
-[`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs):
+[`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs):
 
-```live path=api/TheYard.Api/Endpoints/BidEndpoints.cs region=*
+```live path=api/TheYard.Api/Features/Bids/BidEndpoints.cs region=*
 ```
 
 The use cases an endpoint asks,
@@ -160,15 +160,15 @@ The document store adapters, whole: the Cosmos DB SDK,
 ```
 
 And the one place that names an adapter: the composition root,
-[`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs),
+[`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs),
 building the relational store's backend and then the document store's. Look for
 `new BidService(new EfBidStore(contexts))` in the first and `new BidService(new CosmosBidStore(store))`
 in the second:
 
-```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=sql-backend
+```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=sql-backend
 ```
 
-```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=cosmos-backend
+```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=cosmos-backend
 ```
 
 ## The rules take the clock as a value

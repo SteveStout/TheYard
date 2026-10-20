@@ -75,7 +75,7 @@ of the project).
 exactly what a wrong password says, so the endpoint is not a list of which
 addresses are registered here (ADR: A password guess should cost something).
 
-```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=lockout
+```live path=api/TheYard.Api/Features/Accounts/Module.cs region=lockout
 ```
 
 **Public surfaces publish shapes, not values.** The Admin tab shows every SQL

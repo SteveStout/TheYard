@@ -52,7 +52,7 @@ The rule in `TheYard.Application`, pure arithmetic over points with no clock and
 ## Files
 
 - [`api/TheYard.Application/MemoryTraffic.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MemoryTraffic.cs) - the rule
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.Follows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.Follows.cs) - the route and its wire
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.Follows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.Follows.cs) - the route and its wire
 - [`src/components/admin/FollowsCard/FollowsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/FollowsCard/FollowsCard.tsx) - the card
 - [`src/lib/follows.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/follows.ts) - the dots and the trend line
 - [`api/TheYard.Tests/MemoryTrafficTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MemoryTrafficTests.cs) - the rule held to the kept readings

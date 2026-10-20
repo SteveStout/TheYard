@@ -94,8 +94,10 @@ All five rings, and the test project. The rings' dependency rule is untouched; w
 ## Files
 
 - [`docs/images/vertical-slices.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/vertical-slices.mjs) - the drawing at the top, and on the App Architecture page
-- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs) - each step handed what it needs by name, and what the platform says read once (1.0.3.188); the loop over `IModule` from 1.0.3.189
-- [`api/TheYard.Api/Hosted/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Hosted) - what ran at startup, one hosted service per concern, and the one that stops The Shed after the drain
+- [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs) - the shared steps by name, what the platform says read once, and the loop over `IModule`
+- [`api/TheYard.Api/Shared/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared) - what every slice shares: the pipeline, the stores, the registrations, `IModule` and the loop's `Modules`
+- [`api/TheYard.Api/Features/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features) - one folder per slice, each with its `Module.cs`
+- [`api/TheYard.Api/Shared/Hosted/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared/Hosted) - what ran at startup, one hosted service per concern, and the one that stops The Shed after the drain
 - [`api/TheYard.Api/HostIdentity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/HostIdentity.cs) - the platform's three settings, read once
 - [`api/TheYard.Api/RefuseSession.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/RefuseSession.cs) - the session refused on the other store
 - [`api/TheYard.Tests/ShedMountTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ShedMountTests.cs) - The Shed at its edges: the 503, the 500 problem, its own upload limit and the stop order

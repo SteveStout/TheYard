@@ -2,8 +2,8 @@
 namespace TheYard.Api;
 
 /// <summary>
-/// The started Shed, or nothing: filled when The Shed is mounted (Composition/ShedMount.cs) and
-/// emptied when the host stops (Hosted/ShedStopper.cs), which disposes it.
+/// The started Shed, or nothing: filled when The Shed is mounted (Shared/ShedMount.cs) and
+/// emptied when the host stops (Shared/Hosted/ShedStopper.cs), which disposes it.
 /// </summary>
 public sealed class ShedSlot
 {

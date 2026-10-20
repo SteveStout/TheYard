@@ -293,9 +293,9 @@ Accounts reach most of the onion: Tokens.cs and the account endpoints in the hos
 
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.
 - [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): what a register or login answers with.
-- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): the composition.
-- [`api/TheYard.Api/Endpoints/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.cs): the endpoints.
-- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the three that refuse.
+- [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the composition.
+- [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the endpoints.
+- [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the three that refuse.
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the two indexes.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the store port, now keyed on the pair.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the one field Identity does not already have.

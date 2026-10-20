@@ -63,7 +63,7 @@ the same treatment one level down: `UserManager` is registered once, and the
 store behind it is chosen per request, Identity's own tables on the
 relational backend and one document per account on the document one.
 
-```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=user-store-per-request
+```live path=api/TheYard.Api/Features/Accounts/Module.cs region=user-store-per-request
 ```
 
 **The toggle is a cookie and a reload.** `POST /api/stores/select` sets the
@@ -361,11 +361,11 @@ Most of this lives in the Api host, where `Backend.cs` holds one store's catalog
 
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the backends, the request's choice, and the warm before a read.
 - [`api/TheYard.Infrastructure/ContextFactory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ContextFactory.cs): the relational context factory.
-- [`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs): two stores brought up.
-- [`api/TheYard.Api/Endpoints/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/VehicleEndpoints.cs) and [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the endpoints on the request's store.
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the health check per store.
+- [`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs): two stores brought up.
+- [`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs) and [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the endpoints on the request's store.
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health check per store.
 - [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the metrics per store.
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the toggle's endpoints (region stores-endpoints).
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the toggle's endpoints (region stores-endpoints).
 - [`api/TheYard.Tests/StoreToggleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreToggleTests.cs): the rule, the endpoints, the ring.
 - [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts) and [`src/components/layout/StoreBar/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/StoreBar/StoreBar.tsx): the toggle.
 - [`tests/e2e/store-toggle.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/store-toggle.spec.ts): the toggle in a browser, on one store and on two.

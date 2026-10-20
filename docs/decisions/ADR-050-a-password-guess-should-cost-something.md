@@ -120,7 +120,7 @@ needed. Lockout does not depend on knowing who is asking.
 
 The policy, read from this build, with the reason it is five and five written above it:
 
-```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=lockout
+```live path=api/TheYard.Api/Features/Accounts/Module.cs region=lockout
 ```
 
 ## Where it sits
@@ -129,8 +129,8 @@ This lives in the Api host: the lockout options are set in `Composition/AuthRegi
 
 ## Files
 
-- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): the options (region lockout).
-- [`api/TheYard.Api/Endpoints/AccountEndpoints.SignIn.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.SignIn.cs): the login path that now counts.
+- [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the options (region lockout).
+- [`api/TheYard.Api/Features/Accounts/AccountEndpoints.SignIn.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.SignIn.cs): the login path that now counts.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the right password, refused.
 - [`api/TheYard.Database/Tables/Identity/AspNetUsers.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Identity/AspNetUsers.sql): the three columns this was always going to use.
 - [`docs/decisions/ADR-037-accounts.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-037-accounts.md): the accounts themselves.

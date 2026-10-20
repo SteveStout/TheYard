@@ -37,7 +37,7 @@ const READ = [
     "Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a, api/TheYard.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while keeping the seed's make, model and trim mix."]],
   ['InventoryService', 'api/TheYard.Application/InventoryService.cs', [
     "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and fills the store's catalogue, which every page then queries; the process holds none of them (ADR: The store does the work). The warm runs beside the server and /readyz waits for it."]],
-  ['GET /api/vehicles', 'api/TheYard.Api/Endpoints/VehicleEndpoints.cs', [
+  ['GET /api/vehicles', 'api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs', [
     "api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter and a sort. The clock is the server's (api/TheYard.Api/Clocks.cs): now, and the UTC midnight that began the day, the same for every visitor."]],
   ['Search, through Auction.Search', 'api/TheYard.Application/Auction.cs', [
     "1. Everybody's bids, then the room's, are laid over each vehicle (Auction.Overlay, raising a price through api/TheYard.Domain/StandingRules.cs), so price bounds see the figures the page shows.",
@@ -60,7 +60,7 @@ const READ_LABELS = { 0: 'once, at startup', 3: 'then, for every request', 6: '{
 const WRITE = [
   ['BidPanel', 'src/components/vehicle/BidPanel/BidPanel.tsx', [
     'Posts { amount } to POST /api/vehicles/{id}/bids through src/lib/data.ts; buy now posts to /buy-now. Only a signed-in buyer can.']],
-  ['HandleBid', 'api/TheYard.Api/Endpoints/BidEndpoints.cs', [
+  ['HandleBid', 'api/TheYard.Api/Features/Bids/BidEndpoints.cs', [
     'Three questions in order: is this session on this store (401 if not), does the vehicle exist (404 if not), does the domain accept the action (400 with the reason if not).']],
   ['Auction.PlaceBidAsync', 'api/TheYard.Application/Auction.cs', [
     "Measures the bid against the room's standing price as well as everybody's bids, so nobody retakes a lead below the going rate."]],

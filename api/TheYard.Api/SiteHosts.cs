@@ -1,6 +1,6 @@
 // The public names this one process answers to, and which of them a request came in on
 // (ADR: One web app for every .NET process). Read by Stores.cs for the store a request gets
-// when it names none, and by Composition/ShedMount.cs for the requests that belong to the Shed.
+// when it names none, and by Shared/ShedMount.cs for the requests that belong to the Shed.
 namespace TheYard.Api;
 
 // #region site-hosts

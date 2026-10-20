@@ -1,5 +1,5 @@
 // The Shed's application inside this process, and the server with no socket it runs on, which
-// Composition/ShedMount.cs starts and hands The Shed's requests to (ADR: One web app for every
+// Shared/ShedMount.cs starts and hands The Shed's requests to (ADR: One web app for every
 // .NET process).
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http.Features;
@@ -43,7 +43,7 @@ public sealed class ShedApplication : IAsyncDisposable
         });
         var server = new InProcessServer();
         builder.WebHost.UseServer(server);
-        // What the host that owns the process adds to The Shed's services (Composition/ShedMount.cs).
+        // What the host that owns the process adds to The Shed's services (Shared/ShedMount.cs).
         hosted(builder);
         builder.AddTheShedFiles();                    // samples/theshed/Composition/FilesRegistration.cs
         builder.AddTheShedDocumentationAndVersion();  // samples/theshed/Composition/DocumentationAndVersionRegistration.cs

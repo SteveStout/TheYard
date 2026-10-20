@@ -162,6 +162,6 @@ The accounts code sits in Infrastructure.Cosmos, where `CosmosUserStore` and the
 - [`api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs): the five interfaces, the claim, the etag.
 - [`api/TheYard.Infrastructure.Cosmos/Documents.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Documents.cs): the two document shapes.
 - [`infra/cosmos/users.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/users.json): the container, partitioned on the id, indexing nothing.
-- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): where Identity is given this store instead of the Entity Framework one (region user-store-per-request).
+- [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): where Identity is given this store instead of the Entity Framework one (region user-store-per-request).
 - [`api/TheYard.Tests/CosmosStoreTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CosmosStoreTests.cs): the proof, against the real account.
 - [`docs/decisions/ADR-037-accounts.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-037-accounts.md): the relational side, and the endpoints both sides serve.

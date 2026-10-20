@@ -52,9 +52,9 @@ name is the same idea, done by the build, for every file, every time.
 ## In the code
 
 The rules, read from this build
-([`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs)):
+([`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs)):
 
-```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=cache-headers
+```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=cache-headers
 ```
 
 The proof is
@@ -81,9 +81,9 @@ The cache rules live in the host Api, in one inline middleware in Composition/Re
 
 ## Files
 
-- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the middleware (region
+- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the middleware (region
   cache-headers above) and the photo set's own rule (region static-files).
-- [`api/TheYard.Api/Composition/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/SpaRegistration.cs): the SPA fallback that answers only app routes.
+- [`api/TheYard.Api/Shared/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/SpaRegistration.cs): the SPA fallback that answers only app routes.
 - [`api/TheYard.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CacheHeaderTests.cs): the proof, header by
   header.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts) and [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the build that names
@@ -93,9 +93,9 @@ The cache rules live in the host Api, in one inline middleware in Composition/Re
 ## More of the code
 
 The static file middleware, the photo set's own rule, and the fallback that
-answers only app routes ([`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs)):
+answers only app routes ([`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs)):
 
-```live path=api/TheYard.Api/Composition/RequestPipeline.cs region=static-files
+```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=static-files
 ```
 
 ## Addendum, 2026-09-28 (1.0.3.35): the edge is warmed after every deploy

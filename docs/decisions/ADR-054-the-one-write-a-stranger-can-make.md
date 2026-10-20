@@ -147,8 +147,8 @@ Until 1.0.3.187 the stamp check passed a token whose store was not the request's
 ## Files
 
 - [`api/TheYard.Api/RegistrationLimit.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/RegistrationLimit.cs): the window, and why it slides.
-- [`api/TheYard.Api/Endpoints/AccountEndpoints.SignIn.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.SignIn.cs): where it is taken, between reading the request and hashing the password.
-- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): where it is registered with its hourly allowance.
+- [`api/TheYard.Api/Features/Accounts/AccountEndpoints.SignIn.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.SignIn.cs): where it is taken, between reading the request and hashing the password.
+- [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): where it is registered with its hourly allowance.
 - [`api/TheYard.Tests/RegistrationLimitTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RegistrationLimitTests.cs): the window, the refusal, and the site that keeps working behind it.
 - [`docs/best-practices/SECURITY.md`](https://github.com/SteveStout/TheYard/blob/main/docs/best-practices/SECURITY.md): what is protected, what is not, and what this changes.
 - [`docs/decisions/ADR-050-a-password-guess-should-cost-something.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-050-a-password-guess-should-cost-something.md): the other half of making an endpoint cost something.

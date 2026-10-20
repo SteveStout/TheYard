@@ -16,7 +16,7 @@ Until this record the resume was reachable at `/api/docs/resume`, which reads li
 
 **The address is an API route, not an edge redirect.** `GET /resume` answers 200 with the PDF, so the address bar keeps `/resume` and one open counts once. A Netlify redirect to `/api/docs/resume` would cost an edge deploy and count every open twice. The handler serves the same file as `/api/docs/resume` with `Content-Disposition: inline` and the filename `StevenStoutResume_2026-09-29.pdf`, his own naming for the file he sends, and the pipeline's no-cache header, so a new lock is what the next open gets.
 
-```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=resume-address
+```live path=api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs region=resume-address
 ```
 
 **The door is one word from a short list, recorded as a path.** `src` may be linkedin, application, email, signature or post; anything else is other. The handler leaves `/resume/<door>` on the request and the activity hook records that instead of the path, so the row stays a path with nothing about the visitor in it and the query string is never recorded at all (ADR-071). No schema changes on either store, and the funnel's resume step counts everything under `/resume/`.
@@ -47,8 +47,8 @@ The API layer only: one route in `Endpoints/`, one small static class beside it,
 ## Files
 
 - [`api/TheYard.Api/ResumeDoor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ResumeDoor.cs): the doors, the path a door is recorded as, and the filename.
-- [`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs): the route and its handler.
-- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the activity hook reads the door's path when the handler left one.
+- [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): the route and its handler.
+- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the activity hook reads the door's path when the handler left one.
 - [`api/TheYard.Api/ActivityWho.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ActivityWho.cs): the resume step counts everything under `/resume/`.
 - [`api/TheYard.Tests/ResumeAddressTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ResumeAddressTests.cs) and [`tests/e2e/resume.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/resume.spec.ts): the address, the bytes, the doors and the query that never lands.
 

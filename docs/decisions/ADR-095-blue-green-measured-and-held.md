@@ -30,7 +30,7 @@ Three things that reading settled. Writing the app settings did not restart the 
 
 **Listen first, load after (1.0.3.89, $0).** The host answers at once and loads the catalogue beside the server; every API read waits for the load without holding a thread, and `/readyz` says not ready until the catalogue is in (ADR: The ports learn to wait).
 
-```live path=api/TheYard.Api/Hosted/CatalogueWarm.cs region=listen-first
+```live path=api/TheYard.Api/Shared/Hosted/CatalogueWarm.cs region=listen-first
 ```
 
 **Readiness on every store, for whatever swaps next.** `/readyz?stores=all` answers 200 only once every store the host runs has its catalogue in (ADR: The order of the request pipeline). It is the read a roll waits on before it moves a visitor, whether that roll is a second copy, a slot, or a second instance.
@@ -83,7 +83,7 @@ From 1.0.3.188 the listen-first warm is `Hosted/CatalogueWarm.cs` rather than a 
 
 ## Files
 
-- [`api/TheYard.Api/Hosted/CatalogueWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Hosted/CatalogueWarm.cs): listening first, in the region `listen-first`.
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): `/readyz` and readiness on every store.
+- [`api/TheYard.Api/Shared/Hosted/CatalogueWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Hosted/CatalogueWarm.cs): listening first, in the region `listen-first`.
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): `/readyz` and readiness on every store.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the one plan and the two sites on it.
 - [`scripts/probe-roll.py`](https://github.com/SteveStout/TheYard/blob/main/scripts/probe-roll.py): the probe every roll above was read with.

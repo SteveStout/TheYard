@@ -18,7 +18,7 @@ Reading them the way the Admin tab reads them would have put `/api/admin/machine
 
 **One route, public, and small.** `GET /api/pulse` answers ten fields and nothing else. It is public because the readings it carries are already public: the cost cards are public on the owner's own ruling, and the machines card is public beside them. It carries no visitor, no address and nothing per person.
 
-```live path=api/TheYard.Api/Endpoints/PulseEndpoints.cs region=pulse-route
+```live path=api/TheYard.Api/Features/Health/PulseEndpoints.cs region=pulse-route
 ```
 
 **Fifteen seconds, held once.** The answer is built at most once every fifteen seconds and handed to every caller in that window, under one gate, so a burst of arrivals costs one query rather than one each. Fifteen because the page reads again at the same interval: a reader watching the band sees it change within a quarter of a minute of the site changing, and a page left open all day costs four reads a minute whoever is looking at it. The page stops reading while the tab is hidden, so a phone in a pocket costs nothing.
@@ -51,7 +51,7 @@ The API layer and the landing page, nothing between. `PulseReader` is one class 
 ## Files
 
 - [`api/TheYard.Api/Pulse.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Pulse.cs) - the shape, the cache and the weighted median
-- [`api/TheYard.Api/Endpoints/PulseEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/PulseEndpoints.cs) - the route
+- [`api/TheYard.Api/Features/Health/PulseEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/PulseEndpoints.cs) - the route
 - [`api/TheYard.Tests/PulseTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PulseTests.cs) - what the figure is, and what an empty day answers
 - [`src/lib/pulse.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/pulse.ts) - the shape on the page, and the words each figure is printed in
 - [`src/components/landing/PulseBand/PulseBand.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/landing/PulseBand/PulseBand.tsx) - the band

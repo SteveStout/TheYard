@@ -35,7 +35,7 @@ The separate web apps were the design for load and separation: one process per s
 
 **The Shed is its own application, started inside this process.** The Shed's Program.cs stays the way a reader starts it on their own machine. `ShedMount` starts the same application in this process: The Shed's own builder, its own four registrations, its own pipeline and controllers, in a service container of its own, with a server that has no socket where Kestrel would be. A request on The Shed's name is handed to that application before anything of TheYard's pipeline sees it. Starting it whole, rather than registering its services on TheYard's builder, removes every collision between the two service containers by construction: its Kestrel body limit configures a server that never listens, and its upload limit is set on each of its own requests instead; its rate limiter, exception handler and snake_case JSON stay in its container; its `/healthz` is reached only on its name; its documents, sample home and live sources are read from its own published folder, `/app/shed`, which `Shed__ContentRoot` names. What the two still share is the process: one memory limit, one set of environment variables (each reads only its own settings), and the framework's process-wide telemetry sources, so Application Insights may see a Shed request at both layers. Its lifetime is TheYard's: it answers no signal of its own and is stopped when TheYard stops. A Shed that cannot start answers its name with a 503 and leaves the Yard names running; a failure past The Shed's own error handler is logged in TheYard's log.
 
-```live path=api/TheYard.Api/Composition/ShedMount.cs region=shed-mount
+```live path=api/TheYard.Api/Shared/ShedMount.cs region=shed-mount
 ```
 
 **The peer card is retired with a sentence.** It read the other web app's metrics; the other site is now this process, and the comparison card already sets the two stores side by side. With no `Peer__Url`, the card says exactly that (an addendum on ADR: Backends, side by side).
@@ -97,7 +97,7 @@ The host ring only, and the deploy around it. Domain, Application and Infrastruc
 - [`docs/images/request-path.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/request-path.mjs) - the drawing of every way a request reaches code, on the Hosting page
 - [`api/TheYard.Api/SiteHosts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/SiteHosts.cs) - the three names and which one a request arrived on
 - [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs) - the store a request gets
-- [`api/TheYard.Api/Composition/ShedMount.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ShedMount.cs) - The Shed's name to The Shed
+- [`api/TheYard.Api/Shared/ShedMount.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ShedMount.cs) - The Shed's name to The Shed
 - [`api/TheYard.Api/ShedApplication.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ShedApplication.cs) - The Shed's application in this process, and the server with no socket
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep) - the plan and the one web app
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects) - the edge

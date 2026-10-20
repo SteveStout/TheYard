@@ -76,9 +76,9 @@ From 1.0.3.188 the loop is wired by `Hosted/KeepWarmAtRoll.cs`, registered only 
 ## Files
 
 - [`api/TheYard.Api/KeepWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/KeepWarm.cs): the loop, the reads and the pass.
-- [`api/TheYard.Api/Hosted/KeepWarmAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Hosted/KeepWarmAtRoll.cs): the wiring (region keep-warm-wiring).
-- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the request hook that leaves its reads out of the ring and the kept log.
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the health report that carries its last pass.
+- [`api/TheYard.Api/Shared/Hosted/KeepWarmAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Hosted/KeepWarmAtRoll.cs): the wiring (region keep-warm-wiring).
+- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the request hook that leaves its reads out of the ring and the kept log.
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health report that carries its last pass.
 - [`api/TheYard.Tests/KeepWarmTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeepWarmTests.cs): the schedule, the overlap and the failures, on a clock the test moves.
 - [`src/lib/keepWarm.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/keepWarm.ts) and [`src/components/admin/HealthCard/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard/HealthCard.tsx): the health card's line.
 

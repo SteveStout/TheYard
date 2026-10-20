@@ -225,7 +225,7 @@ The comparison is a host and front end job: `Peer.cs` in the Api reads the other
 
 - [`api/TheYard.Api/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Peer.cs): the peer reader and the route grouping.
 - [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the startup timings and the store window.
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the endpoint (region peer-endpoint).
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the endpoint (region peer-endpoint).
 - [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the metrics it relays.
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/TimingCard/TimingCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TimingCard/TimingCard.tsx): the card, and the Timing card's two store lines.
 - [`src/lib/metrics.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.ts): the Timing card's words, with [`src/lib/metrics.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.test.ts) beside it.

@@ -1,6 +1,6 @@
 // One request, filed once: in the timing ring, as a hit on the activity card, and as a kept
 // event in the log that outlives the container. The request pipeline's outermost step hands every
-// request here when it has finished, with the time it took (Composition/RequestPipeline.cs).
+// request here when it has finished, with the time it took (Shared/RequestPipeline.cs).
 
 namespace TheYard.Api;
 

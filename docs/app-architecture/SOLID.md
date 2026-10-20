@@ -105,10 +105,10 @@ cases did not change
 composition root grew a second branch, which is where a new case is supposed to land. The relational
 backend, then the document backend, as the build wires them:
 
-```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=sql-backend
+```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=sql-backend
 ```
 
-```live path=api/TheYard.Api/Composition/StoreRegistration.cs region=cosmos-backend
+```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=cosmos-backend
 ```
 
 The same shape holds the documents you are reading. A new page is one row in the server's

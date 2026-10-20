@@ -364,7 +364,7 @@ The words now live in one file, `data/recommendations.json`, beside the dataset 
 ```live path=api/TheYard.Api/Recommendations.cs region=recommendation-shape
 ```
 
-```live path=api/TheYard.Api/Endpoints/RecommendationEndpoints.cs region=recommendations-route
+```live path=api/TheYard.Api/Features/Docs/RecommendationEndpoints.cs region=recommendations-route
 ```
 
 On the landing page the column stands to the right from 900 px of the page's own box (about 1,220 px of screen with the rail open) and runs as far down the page as there are quotations, so a reader scrolling the left side passes every one of them. The left column lays itself out by its own width, which is 320 px and a gap narrower than the page: the featured tiles go two across from 640 px of column, the figures four across from 720 and the groups from 760, so a desk at 1440 with the rail open reads four across beside the quotes and a desk at 1280 reads the figures two by two and the groups three across, the trade the column is worth. Narrower than two columns it follows the featured tiles as one block that scrolls inside itself. The column reads the endpoint when the page opens, hinted from the head with the landing page's other reads (ADR: The landing page rendered at build time, server rendering as the goal), and draws ten blank places until the answer arrives, so nothing on the page moves when it does; an answer that does not come is said in words. The TypeScript copy of the words is gone with this version; `AuthorPageTests` held About Steven to the file until that page read the endpoint too, which the next version is.

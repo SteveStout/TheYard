@@ -196,9 +196,9 @@ The proof sits in the host Api (ProofRunner and ProofResult) because it drives t
 ## Files
 
 - [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs), [`api/TheYard.Api/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Rounds.cs), [`api/TheYard.Api/ProofRunner.Requests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Requests.cs) and [`api/TheYard.Api/ProofResult.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofResult.cs): the runner, the samples, the verdict.
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the two endpoints (region proof-endpoints).
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region proof-endpoints).
 - [`api/TheYard.Api/SelfAddress.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/SelfAddress.cs): the loopback address.
-- [`api/TheYard.Api/Composition/AdminRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AdminRegistration.cs): the client the proof uses (region proof-clients).
+- [`api/TheYard.Api/Shared/AdminRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/AdminRegistration.cs): the client the proof uses (region proof-clients).
 - [`api/TheYard.Tests/ProofTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProofTests.cs): the arithmetic without a store, and the endpoints with whichever stores the run has.
 - [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the card.
 - [`docs/decisions/ADR-064-measuring-both-stores.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-064-measuring-both-stores.md): the measurement from the visitor's side, which this one completes.

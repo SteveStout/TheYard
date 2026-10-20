@@ -124,11 +124,11 @@ pass gets its own dated addendum here.
 ## In the code
 
 The endpoint and the catalog, read from this build
-([`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs)
+([`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs)
 and
 [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs)):
 
-```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=docs-endpoint
+```live path=api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs region=docs-endpoint
 ```
 
 ```live path=api/TheYard.Api/DocumentationCatalog.cs region=docs-catalog
@@ -187,7 +187,7 @@ The review's fixes land in the host Api and the front end: one documents endpoin
 
 ## Files
 
-- [`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs): one endpoint serving every document instead of twenty routes.
+- [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): one endpoint serving every document instead of twenty routes.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the slug-to-file catalog that endpoint reads.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs) and [`api/TheYard.Api/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Replies.cs): the health and build types this review moved out of the host file.
 - [`api/TheYard.Tests/DocumentationCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocumentationCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.

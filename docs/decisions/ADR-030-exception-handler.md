@@ -144,8 +144,8 @@ ProblemHandler is an IExceptionHandler in the host Api, registered in Compositio
 ## Files
 
 - [`api/TheYard.Api/ProblemHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProblemHandler.cs): the handler.
-- [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs): the registration and `ThrowOnBadRequest`.
-- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs): the self-test endpoint.
+- [`api/TheYard.Api/Shared/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs): the registration and `ThrowOnBadRequest`.
+- [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs): the self-test endpoint.
 - [`api/TheYard.Tests/ExceptionHandlerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ExceptionHandlerTests.cs): the five tests, and the Production factory.
 - [`api/TheYard.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs): the deliberate failures, unchanged.
 - [`docs/decisions/ADR-023-error-handling.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-023-error-handling.md): the shape this fills in.

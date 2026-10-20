@@ -53,7 +53,7 @@ own tab away from the app.
 The endpoint, in `api/TheYard.Api/Program.cs`, and the catalog beside the
 documents in `api/TheYard.Api/DocumentationCatalog.cs`:
 
-```live path=api/TheYard.Api/Endpoints/DocumentationEndpoints.cs region=diagram-page
+```live path=api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs region=diagram-page
 ```
 
 ```live path=api/TheYard.Api/DocumentationCatalog.cs region=diagrams
@@ -100,7 +100,7 @@ Diagram pages are served by the host Api, where DiagramPage.cs builds the HTML a
 
 ## Files
 
-- [`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs): the `/api/docs/diagrams/{name}` endpoint.
+- [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): the `/api/docs/diagrams/{name}` endpoint.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the diagram catalog beside the documents.
 - [`api/TheYard.Api/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DiagramPage.cs): the HTML page around an SVG.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the page tests.

@@ -145,7 +145,7 @@ The listen-first warm, which the paragraph above places in `Composition/Startup.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the relational adapters, asynchronous.
 - [`api/TheYard.Infrastructure/JsonFileSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/JsonFileSources.cs): the file readers, the same.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the two awaits before the pipeline.
-- [`api/TheYard.Api/Endpoints/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/BidEndpoints.cs): the bid endpoints.
+- [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the bid endpoints.
 - [`api/TheYard.Tests/PortsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PortsTests.cs): the shape and the gate.
 
 ## Addendum, 2026-09-09: a failed warm is tried again
@@ -190,7 +190,7 @@ The host no longer loads the default store's catalogue before it listens. Measur
 
 So the warm runs beside the server. The page's own files and the platform's probes, `/healthz` and `/readyz`, answer within seconds of the container starting; every API read waits for the load, and waits without holding a thread, because the pipeline already awaits the request's store before any `/api` endpoint runs (the addendum above). The bids replay before the catalogue loads, not after: they are a few rows and done in well under the catalogue's time, so a read let through by the warm finds them in place, and nobody sees a sold vehicle offered or their own bids missing after a roll. Readiness now includes the catalogue, so `/readyz` says 503 until it has loaded, and the deploy's Verify step polls it the way it polls the version. One promise of this record is kept in a different shape: a dataset that cannot be loaded still ends the process, but by logging the failure and stopping the host after it has started, rather than by never starting it.
 
-```live path=api/TheYard.Api/Hosted/CatalogueWarm.cs region=listen-first
+```live path=api/TheYard.Api/Shared/Hosted/CatalogueWarm.cs region=listen-first
 ```
 
 

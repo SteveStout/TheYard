@@ -429,7 +429,7 @@ Two numbers that change by the day were not collected anywhere: when the certifi
 
 The hourly storage reading took the relational store's quiet context once, when the services were registered. A store that refuses at startup has no context then; the second chance attaches it a few minutes later, but the reading kept the empty one and said "not read" until the next restart. The reading now asks for the context each hour, the same way the machine recorder already did, so a late store shows its size at the next hourly read.
 
-```live path=api/TheYard.Api/Composition/AdminRegistration.cs region=hourly-readings-wiring
+```live path=api/TheYard.Api/Shared/AdminRegistration.cs region=hourly-readings-wiring
 ```
 
 ## Addendum, 2026-10-15 (1.0.3.138): the date in front

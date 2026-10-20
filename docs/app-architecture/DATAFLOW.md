@@ -12,9 +12,9 @@ The source is [`docs/images/dataflow.svg`](https://github.com/SteveStout/TheYard
 
 Every box in the diagram is a file; each step below names its path.
 
-**Every HTTP endpoint lives in `api/TheYard.Api/Endpoints/`, one file per area.**
+**Every HTTP endpoint lives in its slice under `api/TheYard.Api/Features/`, one folder per feature with a `Module.cs` that maps it.**
 `api/TheYard.Api/Program.cs` is the table of contents: it calls the registrations in
-`api/TheYard.Api/Composition/` (sources, then services), then maps each endpoint file. A
+`api/TheYard.Api/Shared/` (sources, then services) and each slice's module, then maps each module. A
 handler binds the request and hands straight off to the Application layer; the auction's
 handlers ask `Auction` (`api/TheYard.Application/Auction.cs`), which composes the
 catalogue, everybody's bids and the simulated room in the one order the rules need. ADR:
@@ -73,7 +73,7 @@ What that is worth: a developer can trace any request to the file that handles i
 5. **Wire.** `api/TheYard.Api/VehicleWire.cs` stamps the server-derived auction facts
    onto each vehicle (`auction_starts_at`, `auction_ends_at`, `auction_status`,
    `min_next_bid`, and `sold`, from everybody's standing), and the endpoint
-   (`api/TheYard.Api/Endpoints/VehicleEndpoints.cs`) responds with a snake_case envelope
+   (`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`) responds with a snake_case envelope
    `{ total, vehicles }`.
 6. **Fetch.** `src/lib/data.ts` is the browser's single seam: it debounces filter
    changes (500 ms), caches responses per query string (5-minute TTL; hits skip the
@@ -100,7 +100,7 @@ Step 6's seam, the one function every list view goes through:
 
 1. `src/components/vehicle/BidPanel/BidPanel.tsx` posts `{ amount }` to
    `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`; the clock is the server's.
-   `api/TheYard.Api/Endpoints/BidEndpoints.cs` hands it to `Auction.PlaceBidAsync`, which
+   `api/TheYard.Api/Features/Bids/BidEndpoints.cs` hands it to `Auction.PlaceBidAsync`, which
    measures it against the room's standing price as well as everybody's bids.
 2. `api/TheYard.Domain/BidRules.cs` is the sole authority: sold first (a vehicle anybody
    has bought takes no bid and no second purchase, a fact `BidService` supplies from

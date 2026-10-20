@@ -316,7 +316,7 @@ only on the rings inside it, Domain never reaches the disk, the network or the
 clock, Application never reaches the disk or the network, the document store's adapter borrows only the
 shared user from the relational one, an endpoint never reaches a store or the service container and reaches the
 auction only through Application, the host never queries a database itself,
-and services are registered only in `Composition/`. A break fails the gate
+and services are registered only in `Shared/` and the slices' modules. A break fails the gate
 and names the type that broke it. The rings, the ten rules and where each
 SOLID principle shows are in
 [ADR-088, Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid),
@@ -326,6 +326,15 @@ What the rings mean, and the principles under them, are two pages of their own:
 pattern beside this codebase ring by ring, and
 [SOLID Principles](https://theyard.stevenstout.biz/?doc=solid) takes the five one at a time, with
 the code each one shows in and the place it stops.
+
+The rings have a second axis. Every feature is one folder with the same name in each ring, and in
+the host that folder holds the feature's endpoints and a `Module.cs` that registers and maps it:
+`Features/Bids`, `Features/Vehicles`, `Features/Accounts`, `Features/Docs`, `Features/Health` and
+the Admin tab's `Features/Admin/Operations`, `Features/Admin/Plan` and `Features/Admin/Cloud`. What
+every feature shares is in `Shared/`. `Program.cs` registers the shared parts by name and loops over
+the modules, and `SliceTests` fails the gate when a slice reaches into another. The shape is drawn on
+[its own page](https://theyard.stevenstout.biz/api/docs/diagrams/vertical-slices) and argued in
+[ADR-107, The onion cut into vertical slices](https://theyard.stevenstout.biz/?doc=adr-the-onion-cut-into-vertical-slices).
 
 | Project | Owns | Depends on |
 | --- | --- | --- |
@@ -369,9 +378,9 @@ only formats them.
 wire, snake_case in the browser: nothing is renamed in transit. The
 envelope is `{ total, vehicles }`; a failure is a ProblemDetails body
 (ADR: Error handling). The settings that hold that contract are in
-`api/TheYard.Api/Composition/ApiRegistration.cs` (ADR: Program.cs, explained).
+`api/TheYard.Api/Shared/ApiRegistration.cs` (ADR: Program.cs, explained).
 
-**Endpoints bind and delegate.** A `MapGet` in `api/TheYard.Api/Endpoints/`
+**Endpoints bind and delegate.** A `MapGet` in a slice under `api/TheYard.Api/Features/`
 validates its parameters and asks Application, the auction's handlers through
 `Auction`. If a rule appears in the host, it is in the wrong place, and
 `OnionTests` fails a handler that composes the bid services itself or reaches
@@ -401,8 +410,8 @@ deploy without them (ADR: The tests, explained).
 | The change | Where it goes |
 | --- | --- |
 | A new auction or bidding rule | `api/TheYard.Domain`, with a unit test first |
-| A new endpoint | one `MapGet`/`MapPost` in the matching file under `api/TheYard.Api/Endpoints/`, plus an integration test |
-| A new data source | a port in Application, an adapter in Infrastructure, its registration in `api/TheYard.Api/Composition/` |
+| A new endpoint | one `MapGet`/`MapPost` in its slice under `api/TheYard.Api/Features/`, mapped by that slice's `Module.cs`, plus an integration test |
+| A new data source | a port in Application, an adapter in Infrastructure, its registration in the slice's `Module.cs` or, when every slice shares it, `api/TheYard.Api/Shared/` |
 | A new derived fact for the browser | `StandingVehicle` in `api/TheYard.Application/BidView.cs`, then one copied field in `api/TheYard.Api/VehicleWire.cs` |
 | A new API call from the browser | one function in `src/lib/data.ts` |
 | A new view state | the URL, through `filtersToSearchParams` |
@@ -435,7 +444,7 @@ side of the same question.
 - [`docs/app-architecture/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/STYLE.md): the naming, layering and commenting rules this page's principles turn into, and the `.editorconfig` that enforces the mechanical half.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's ports the layers meet at.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents for the composition root, walked line by line in ADR: Program.cs, explained.
-- [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition) and [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): the registrations and middleware, and the handlers.
+- [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared) and [`api/TheYard.Api/Features`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features): the registrations and middleware, and the handlers.
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
 - [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules that hold the rings.
 - [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the wire shape, copying the derived facts `StandingVehicle` carries so the browser's job is formatting.

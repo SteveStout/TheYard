@@ -160,7 +160,7 @@ No ring: this is a process decision about the test gate and the test assembly be
 - [`tests/e2e/axe.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/axe.spec.ts): the scans, declared parallel.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the account tests, three classes over one base.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts): the prebuilt server on the gate.
-- [`api/TheYard.Api/Composition/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/StoreRegistration.cs): where `Inventory:TargetCount` is read.
+- [`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs): where `Inventory:TargetCount` is read.
 - [`tests/e2e/coverage.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/coverage.spec.ts): every listed page at three widths, read on the page's own signals (the addendum of 10 October).
 
 ## Addendum, 2026-09-09: the gate on a loaded machine, and the scans declared slow

@@ -1,6 +1,5 @@
 using Mono.Cecil;
 using NetArchTest.Rules;
-using TheYard.Api;
 using TheYard.Application;
 using TheYard.Data;
 using TheYard.Domain;
@@ -112,7 +111,7 @@ public sealed class OnionTests
         // An endpoint reads the request, asks the Application ring, and writes the answer. A
         // database context, a Cosmos DB client or a service looked up by hand would make it a
         // second place where the rules and the wiring live.
-        var result = Types.InAssembly(typeof(BidEndpoints).Assembly)
+        var result = Types.InAssembly(typeof(Program).Assembly)
             .That().MeetCustomRule(IsPartOfAnEndpointClass)
             .ShouldNot().HaveDependencyOnAny(
                 "Microsoft.EntityFrameworkCore",
@@ -133,7 +132,7 @@ public sealed class OnionTests
         // The order bids are composed in (the buyer's first, the room's second) and the price a
         // bid is measured against are Application's, in Auction. An endpoint that held the
         // services itself could compose them in another order.
-        var result = Types.InAssembly(typeof(BidEndpoints).Assembly)
+        var result = Types.InAssembly(typeof(Program).Assembly)
             .That().MeetCustomRule(IsPartOfAnEndpointClass)
             .ShouldNot().HaveDependencyOnAny(
                 "TheYard.Application.BidService",
@@ -149,7 +148,7 @@ public sealed class OnionTests
         // A statement against a store belongs to the adapter for that store; the host asks the
         // adapter. Entity Framework's design-time factory and the composition root may name the
         // context type, and neither runs a query.
-        var result = Types.InAssembly(typeof(BidEndpoints).Assembly)
+        var result = Types.InAssembly(typeof(Program).Assembly)
             .ShouldNot().HaveDependencyOnAny(
                 "Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions",
                 "Microsoft.EntityFrameworkCore.RelationalQueryableExtensions",
@@ -165,9 +164,9 @@ public sealed class OnionTests
     [Fact]
     public void Services_are_registered_only_in_the_composition_root()
     {
-        // Registration classes in Composition/ and Program.cs are where the container is filled.
+        // Registration classes in Shared/, the slices' modules and Program.cs are where the container is filled.
         // Anywhere else, a registration would be wiring hidden inside behaviour.
-        var result = Types.InAssembly(typeof(BidEndpoints).Assembly)
+        var result = Types.InAssembly(typeof(Program).Assembly)
             .That().MeetCustomRule(type => !IsCompositionRoot(type))
             .ShouldNot().HaveDependencyOnAny(
                 "Microsoft.Extensions.DependencyInjection.IServiceCollection",
@@ -184,7 +183,7 @@ public sealed class OnionTests
         // Reading the environment, the request's service container or the built app's
         // configuration from inside behaviour is wiring hidden where a test cannot hand it a
         // value; Program.cs and the registration and module classes are where those are read.
-        Assert.Empty(RuntimeLookups(typeof(BidEndpoints).Assembly.Location));
+        Assert.Empty(RuntimeLookups(typeof(Program).Assembly.Location));
     }
     // #endregion host
 
@@ -242,7 +241,7 @@ public sealed class OnionTests
     /// <summary>True for an endpoint class and for the types the compiler writes inside one (its async state machines and lambdas).</summary>
     private static bool IsPartOfAnEndpointClass(TypeDefinition type) => Outermost(type).Name.EndsWith("Endpoints", StringComparison.Ordinal);
 
-    /// <summary>True for Program, for a registration class in Composition/ and a slice's Module, and for the types the compiler writes inside them.</summary>
+    /// <summary>True for Program, for a registration class in Shared/ and a slice's Module, and for the types the compiler writes inside them.</summary>
     private static bool IsCompositionRoot(TypeDefinition type)
     {
         string name = Outermost(type).Name;

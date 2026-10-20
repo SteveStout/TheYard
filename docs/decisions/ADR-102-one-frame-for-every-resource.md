@@ -76,7 +76,7 @@ What would change it: a resource whose two scarce numbers are not a pair of perc
 - [`api/TheYard.Api/CloudRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudRecorder.cs) - the recorder shape
 - [`api/TheYard.Api/CloudReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudReader.cs) and [`api/TheYard.Api/ResourceView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ResourceView.cs) - the windows and the markers, once
 - [`api/TheYard.Api/CloudThresholds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudThresholds.cs) - every card's numbers
-- [`api/TheYard.Api/Composition/CloudRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/CloudRegistration.cs) - the six definitions, registered beside the plan's
+- [`api/TheYard.Api/Features/Admin/Cloud/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/Module.cs) - the six definitions, registered beside the plan's
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos) - `sqldb.json`, `cosmosdb.json`, `registry.json`, `insights.json`, `mail.json`, `edge.json` beside `plan.json`, each named for the card's address
 - [`api/TheYard.Tests/CloudThresholdTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CloudThresholdTests.cs) - the numbers above, held
 - [`api/TheYard.Tests/CloudViewTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CloudViewTests.cs) - fixed minutes in, fixed report out, per resource

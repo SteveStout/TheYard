@@ -67,7 +67,7 @@ The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The two entries in the documents catalog
 ([`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs),
 served by the one endpoint in
-[`api/TheYard.Api/Endpoints/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/DocumentationEndpoints.cs)):
+[`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs)):
 
 ```live path=api/TheYard.Api/DocumentationCatalog.cs region=docs-changelog
 ```

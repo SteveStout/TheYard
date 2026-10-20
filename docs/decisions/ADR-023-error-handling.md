@@ -74,17 +74,17 @@ Recent errors card now shows both sides of the app.
 
 The handler and the logging, in `api/TheYard.Api/Program.cs`:
 
-```live path=api/TheYard.Api/Composition/ApiRegistration.cs region=problem-details
+```live path=api/TheYard.Api/Shared/ApiRegistration.cs region=problem-details
 ```
 
 The endpoint browser errors report to:
 
-```live path=api/TheYard.Api/Endpoints/ErrorEndpoints.cs region=client-errors
+```live path=api/TheYard.Api/Features/Health/ErrorEndpoints.cs region=client-errors
 ```
 
 A deliberate 400, in the same shape:
 
-```live path=api/TheYard.Api/Endpoints/VehicleEndpoints.cs region=inventory-endpoint
+```live path=api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs region=inventory-endpoint
 ```
 
 The boundary, and the reporter every path uses:
@@ -157,9 +157,9 @@ The server half sits in the host Api: the problem-details registration in Compos
 
 ## Files
 
-- [`api/TheYard.Api/Composition/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ApiRegistration.cs): the handler and the logging.
-- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs): the client-error endpoint.
-- [`api/TheYard.Api/Endpoints/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/VehicleEndpoints.cs) and [`api/TheYard.Api/Endpoints/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.cs): the 400s.
+- [`api/TheYard.Api/Shared/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs): the handler and the logging.
+- [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs): the client-error endpoint.
+- [`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs) and [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the 400s.
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the ring buffer both sides record into.
 - [`src/components/shared/ErrorBoundary/ErrorBoundary.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.tsx) and [`ErrorBoundary.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.module.css): the boundary and the reporter.
 - [`src/app/mount.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/mount.tsx): the boundary around the app.

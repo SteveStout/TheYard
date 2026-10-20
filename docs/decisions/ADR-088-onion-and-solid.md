@@ -113,7 +113,7 @@ Every ring: this record is the map of all of them and of the tests that hold the
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
 - [`api/TheYard.Domain/StandingRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/StandingRules.cs): the one rule for raising a price.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's ports.
-- [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition): the composition root.
+- [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared): the composition root.
 - [`docs/images/rings.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/rings.mjs): the drawing.
 - [`docs/images/solid.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/solid.mjs): the SOLID letters, one at a time.
 

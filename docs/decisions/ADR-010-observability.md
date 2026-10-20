@@ -77,9 +77,9 @@ saying it louder.
 
 The samples below are read from this build's source each time the page is
 served (ADR: Live code samples). The timed checks
-([`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs)):
+([`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs)):
 
-```live path=api/TheYard.Api/Endpoints/HealthEndpoints.cs region=health-checks
+```live path=api/TheYard.Api/Features/Health/HealthEndpoints.cs region=health-checks
 ```
 
 The events, read from the same management response (the observability
@@ -105,11 +105,11 @@ Everything this record built lives in the host Api and the front end: the probes
 
 ## Files
 
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the probes (region health-checks),
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the probes (region health-checks),
   `/healthz`, `/readyz` and `/api/health`.
-- [`api/TheYard.Api/Endpoints/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/ErrorEndpoints.cs) and [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): `/api/errors` and
+- [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs) and [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): `/api/errors` and
   `/api/admin/azure`.
-- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the middleware that records server errors (region error-log).
+- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the middleware that records server errors (region error-log).
 - [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health record, the error
   ring buffer and the Azure reader (region azure-events).
 - [`src/components/admin/HealthCard/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard/HealthCard.tsx), [`src/components/admin/ErrorsCard/ErrorsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ErrorsCard/ErrorsCard.tsx) and

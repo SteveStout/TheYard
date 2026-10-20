@@ -214,9 +214,9 @@ The request hook, a local function inside `ObservabilityRegistration` until 1.0.
 - [`api/TheYard.Application/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Activity.cs): the port, the hit, and the folding of a batch into deltas.
 - [`api/TheYard.Api/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Activity.cs): the token, the bot guess, the collector and the report.
 - [`api/TheYard.Api/AdminKey.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminKey.cs): the key, read from the query or the header in one place and compared in constant time.
-- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the hook beside the request ring (region activity-hook).
-- [`api/TheYard.Api/Composition/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ActivityRegistration.cs): the wiring.
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the two endpoints (region activity-endpoints).
+- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the hook beside the request ring (region activity-hook).
+- [`api/TheYard.Api/Shared/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ActivityRegistration.cs): the wiring.
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region activity-endpoints).
 - [`api/TheYard.Infrastructure/EfActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfActivityStore.cs) and [`ActivityRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ActivityRows.cs): the relational adapter and its two rows.
 - [`api/TheYard.Database/Tables/ActivityHours.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityHours.sql) and [`ActivityVisitors.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityVisitors.sql): the schema, which is the authority.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosActivityStore.cs) and [`infra/cosmos/activity.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/activity.json): the document adapter and the container it needs.
@@ -226,7 +226,7 @@ The request hook, a local function inside `ObservabilityRegistration` until 1.0.
 ```live path=api/TheYard.Api/RequestRecorder.cs region=activity-hook
 ```
 
-```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=activity-endpoints
+```live path=api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs region=activity-endpoints
 ```
 
 ## Addendum, 2026-09-13: the measurement, read off both live containers on 1.0.0.114

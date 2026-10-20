@@ -39,7 +39,7 @@ Nothing here is new code: this page is the index of monitors that already exist,
 
 ## Files
 
-- [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs) - `/healthz`, `/readyz` and `/api/health`
+- [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs) - `/healthz`, `/readyz` and `/api/health`
 - [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs) - the sampler, every 15 seconds
 - [`api/TheYard.Api/PlanRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PlanRecorder.cs) and [`api/TheYard.Api/CloudRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudRecorder.cs) - the plan and the resources, every minute
 - [`api/TheYard.Api/CostRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CostRecorder.cs) - the bill, hourly

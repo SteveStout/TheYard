@@ -80,7 +80,7 @@ install a second, competing one, and the symptom would be a 302 redirect to a
 login page that does not exist where a 401 was expected. `AddIdentityCore` is
 the one line that avoids all of that.
 
-```live path=api/TheYard.Api/Composition/AuthRegistration.cs region=auth
+```live path=api/TheYard.Api/Features/Accounts/Module.cs region=auth
 ```
 
 ### Why a scoped DbContext sits beside the factory
@@ -233,7 +233,7 @@ Four endpoints carry it: placing a bid, buying now, clearing your bids, and the
 bid history. Reading stays open, so an anonymous visitor still watches the
 auction and cannot bid in it.
 
-```live path=api/TheYard.Api/Endpoints/AccountEndpoints.cs region=auth-endpoints
+```live path=api/TheYard.Api/Features/Accounts/AccountEndpoints.cs region=auth-endpoints
 ```
 
 Inside an endpoint that requires it, `http.UserId()` reads the account id from
@@ -273,9 +273,9 @@ This walkthrough covers host Api code, AddIdentityCore in Composition/AuthRegist
 
 ## Files
 
-- [`api/TheYard.Api/Composition/AuthRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/AuthRegistration.cs): the composition root's part, Identity and the token registered.
-- [`api/TheYard.Api/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/RequestPipeline.cs): the pipeline.
-- [`api/TheYard.Api/Endpoints/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AccountEndpoints.cs): the four auth endpoints.
+- [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the composition root's part, Identity and the token registered.
+- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the pipeline.
+- [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the four auth endpoints.
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): issuing, validating, the cookie attributes, and reading the caller back out.
 - [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): the request and response shapes, and the translation of Identity's error codes into a sentence.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the user row and its one extra column.

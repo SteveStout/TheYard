@@ -113,9 +113,9 @@ From 1.0.3.188 the two sweeps at the roll are arranged by `Hosted/PageSweepAtRol
 ## Files
 
 - [`api/TheYard.Api/PageStatus.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PageStatus.cs): the derived list, the sweep, and what it reports.
-- [`api/TheYard.Api/Hosted/PageSweepAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Hosted/PageSweepAtRoll.cs): the sweep at startup (region page-status-wiring).
-- [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the two endpoints (region page-status-endpoints).
-- [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the request hook that drops its header.
+- [`api/TheYard.Api/Shared/Hosted/PageSweepAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Hosted/PageSweepAtRoll.cs): the sweep at startup (region page-status-wiring).
+- [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region page-status-endpoints).
+- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the request hook that drops its header.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the dictionary the list is built from.
 - [`src/components/admin/PagesCard/PagesCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/PagesCard/PagesCard.tsx): the card, failures first.
 - [`api/TheYard.Tests/PageStatusTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PageStatusTests.cs): the list against the catalogue, every address answering, the types, and the header that keeps a sweep out of the ring.
