@@ -21,7 +21,7 @@ public static class CloudRegistration
         var edge = new NetlifyEdge(builder.Configuration["Netlify:Token"], "theyard-edge", new Uri(builder.Configuration["Netlify:PublicSite"] ?? "https://theyard.stevenstout.biz/"));
         // Which public name gets the SQL database and which web app answers it, from this process's own settings.
         string? sqlName = SiteHosts.From(builder.Configuration).Sql;
-        string? siteName = Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME");
+        string? siteName = builder.Configuration["WEBSITE_SITE_NAME"];
         string? sqlSite = sqlName is null ? null : siteName is { Length: > 0 } ? $"{sqlName}, on {siteName}" : sqlName;
         var cards = ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), sqlSite);
         IResourceHistory KeepOf(ResourceCard card) => host.Cosmos is not null

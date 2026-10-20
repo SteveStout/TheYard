@@ -129,8 +129,8 @@ public static class RequestPipeline
         #region site-header
         // Every answer names the web app that gave it, App Service's own WEBSITE_SITE_NAME, so the
         // edge card's hourly sample reads who answered a page and who answered the API instead of
-        // saying so from memory. Off where App Service is not, as in the tests.
-        if (Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME") is { Length: > 0 } siteName)
+        // saying so from memory. App Service sets it as an environment setting; off where none is set.
+        if (app.Configuration["WEBSITE_SITE_NAME"] is { Length: > 0 } siteName)
         {
             app.Use(async (context, next) =>
             {

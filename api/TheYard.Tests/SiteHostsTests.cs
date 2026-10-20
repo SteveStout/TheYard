@@ -146,4 +146,15 @@ public class SiteHostsTests
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/version")).StatusCode);
     }
     // #endregion shed-mounted
+
+    [Fact]
+    public async Task Every_answer_names_the_web_app_that_gave_it_only_where_App_Service_says_which()
+    {
+        await using var named = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder.UseSetting("WEBSITE_SITE_NAME", "APP-THEYARD-ONE-SS"));
+        var answer = await named.CreateClient().GetAsync("/api/version");
+        Assert.Equal("APP-THEYARD-ONE-SS", answer.Headers.GetValues(NetlifyEdge.SiteHeader).Single());
+
+        await using var plain = new WebApplicationFactory<Program>();
+        Assert.False((await plain.CreateClient().GetAsync("/api/version")).Headers.Contains(NetlifyEdge.SiteHeader));
+    }
 }

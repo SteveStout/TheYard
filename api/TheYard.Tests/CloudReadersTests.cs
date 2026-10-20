@@ -102,11 +102,15 @@ internal sealed class RecordedCloud : HttpMessageHandler
                     new { id = "", name = "no id", type = "nothing" },
                 },
             }),
-            Site or CosmosSite => Json(new { properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
+            // The SQL site's record carries its kind, its image and its names; the Cosmos DB site's leaves them out.
+            Site => Json(new { kind = "app,linux,container", properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true, linuxFxVersion = "DOCKER|crtheyard.azurecr.io/theyard:v1.0.3.186" }, hostNames = new[] { "theshed.example", "app-theyard-ss.azurewebsites.net" }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
+            CosmosSite => Json(new { properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
             Plan + "/sites" => Json(new { value = new[] { new { id = Site }, new { id = CosmosSite } } }),
             Plan => Json(new { sku = new { name = "B2", capacity = 1 }, location = "West US 3", kind = "linux" }),
             Sql => Json(new { sku = new { name = "Basic", tier = "Basic", capacity = 5 }, properties = new { maxSizeBytes = 2_147_483_648L }, location = "westus3" }),
+            Group + "/providers/Microsoft.Sql/servers/sql-theyard/databases/sqldb-theyard-ss" => Json(new { sku = new { name = "GP_S_Gen5_1", tier = "GeneralPurpose" }, properties = new { status = "Paused", useFreeLimit = true } }),
             Cosmos => Json(new { properties = new { enableFreeTier = true }, location = "West US 3" }),
+            Cosmos + "/sqlDatabases/theyard/throughputSettings/default" => Json(new { properties = new { resource = new { throughput = 1000 } } }),
             Cosmos + "/sqlDatabases" => Json(new { value = new[] { new { name = "theyard" } } }),
             Cosmos + "/sqlDatabases/theyard/containers" => Json(new
             {
@@ -223,6 +227,11 @@ internal sealed class RecordedCloud : HttpMessageHandler
         }
         var answer = new HttpResponseMessage(HttpStatusCode.OK);
         answer.Headers.TryAddWithoutValidation("Cache-Status", uri.AbsolutePath == "/" ? "\"Netlify Edge\"; hit" : "\"Netlify Edge\"; fwd=miss");
+        // The page names the web app that drew it; the API's answer here names none.
+        if (uri.AbsolutePath == "/")
+        {
+            answer.Headers.TryAddWithoutValidation(NetlifyEdge.SiteHeader, "APP-THEYARD-RENDER-SS");
+        }
         return answer;
     }
 }
@@ -270,6 +279,12 @@ public sealed class CloudReadersTests
         Assert.Equal("tenant-1", read.TenantId);
         Assert.Equal(2, read.Apps.Count);
         Assert.All(read.Apps, app => Assert.True(app.AlwaysOn));
+        // What each app is, runs and answers to is read off its record, and left null where the record has none.
+        var sql = read.Apps.Single(app => app.ResourceId == RecordedCloud.Site);
+        Assert.Equal(("app,linux,container", "DOCKER|crtheyard.azurecr.io/theyard:v1.0.3.186"), (sql.Kind, sql.Image));
+        Assert.Equal(["theshed.example", "app-theyard-ss.azurewebsites.net"], sql.Hosts);
+        var cosmos = read.Apps.Single(app => app.ResourceId == RecordedCloud.CosmosSite);
+        Assert.Equal((null, null, null), (cosmos.Kind, cosmos.Image, cosmos.Hosts));
         Assert.Contains(read.Events, e => e.Kind == "restart" && !e.Planned);
         Assert.Contains(read.Events, e => e.Kind == "config" && e.Planned);
         Assert.DoesNotContain(read.Events, e => e.Title.Contains("Health", StringComparison.Ordinal));
@@ -303,6 +318,22 @@ public sealed class CloudReadersTests
             .ToList();
         var recorder = new CloudRecorder(cards, Build, TimeProvider.System, NullLogger<CloudRecorder>.Instance);
         return (new CloudReader(cards, recorder, (_, _) => Task.FromResult<double?>(1.5), TimeProvider.System), recorder, cards);
+    }
+
+    [Fact]
+    public async Task The_cards_read_what_they_say_from_the_resources_themselves()
+    {
+        using var route = OutboundHttp.RouteTo(new RecordedCloud());
+        var (reader, _, _) = Cards();
+
+        // The server's other database, as its own record says.
+        Assert.Contains("GeneralPurpose free offer, Paused", Text(await reader.ReadAsync("sqldb", "24h", CancellationToken.None)), StringComparison.Ordinal);
+        // The database's shared throughput as Azure has it.
+        Assert.Contains("1,000 RU/S SHARED", Text(await reader.ReadAsync("cosmosdb", "24h", CancellationToken.None)), StringComparison.Ordinal);
+        // Who answered the page and the API, off the sampled answers' own header.
+        string edge = Text(await reader.ReadAsync("edge", "24h", CancellationToken.None));
+        Assert.Contains("the page answered by APP-THEYARD-RENDER-SS", edge, StringComparison.Ordinal);
+        Assert.Contains("/api answered without naming its app", edge, StringComparison.Ordinal);
     }
 
     [Theory]

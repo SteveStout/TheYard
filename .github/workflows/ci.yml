@@ -148,13 +148,20 @@ jobs:
       # them, and they were a third of every branch counted. Counted, they held
       # the number down; dropped, the floor measures the code people write
       # (ADR: Counting what the tests cover, the addendum on generated code).
+      # And The Shed's assembly is its own suite's to count. TheYard's host has
+      # referenced it since the three .NET web apps became one, which put it in
+      # this run's number at 15 per cent of its lines: only the mount reaches
+      # it from here. Its 153 tests run on the ship gate (gate.yml), so it is
+      # left out of the number this job holds to its floor, as the document
+      # store's adapters are (ADR: Counting what the tests cover, the addendum
+      # on The Shed).
       - name: Run the .NET suites
         run: |
           set -o pipefail
           dotnet test api --collect:"XPlat Code Coverage" --results-directory TestResults \
             --filter "Store!=cosmos" \
             --logger 'console;verbosity=normal' \
-            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[TheYard.Infrastructure.Cosmos]*" \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude="[TheYard.Infrastructure.Cosmos]*,[TestProject]*" \
                DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.ExcludeByAttribute="GeneratedCodeAttribute" \
             2>&1 | tee "$RUNNER_TEMP/dotnet-output.txt"
       - name: Say which test failed, on the run page
