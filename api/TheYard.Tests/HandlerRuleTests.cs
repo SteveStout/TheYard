@@ -19,7 +19,7 @@ namespace TheYard.Tests;
 public sealed class HandlerRuleTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
 {
     /// <summary>The slices whose routes have their handlers, by the namespace of their folder.</summary>
-    private static readonly string[] Ruled = ["TheYard.Api.Features.Bids", "TheYard.Api.Features.Vehicles"];
+    private static readonly string[] Ruled = ["TheYard.Api.Features.Bids", "TheYard.Api.Features.Vehicles", "TheYard.Api.Features.Accounts"];
 
     /// <summary>The handlers' home in the Application ring.</summary>
     private const string Handlers = "TheYard.Application.Features";

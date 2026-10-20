@@ -289,6 +289,10 @@ and belong to the record that takes that on.
 
 Accounts reach most of the onion: Tokens.cs and the account endpoints in the host Api, YardUser in Infrastructure, BidService's two indexes and the IBidStore port in Application, and the sold check in Domain's BidRules, with src/lib/auth.ts and BidPanel in the front end. The handlers receive RequestAccounts as a parameter instead of reaching into the service container, which OnionTests holds. The cost is a signing key to keep secret and a sign-in with no roles (Identity's lockout, five tries then five minutes, arrived later in ADR: A password guess should cost something), and a container on the file fallback cannot sign anyone in. A real deployment would hand authentication to the organization's SSO and keep none of this code.
 
+## Addendum, 2026-10-20 (1.0.3.193): the accounts are a slice, behind a port
+
+From 1.0.3.193 each account route asks one handler in the Application ring's `Features/Accounts`: register, sign in, sign out, who am I, the operator's reset link, the emailed one, and the reset itself. The handlers ask the accounts through `IAccountStore`, which `IdentityAccountStore` implements over Identity's `UserManager` in the Infrastructure ring, built per request over the request's store; a request on a store that keeps no accounts has no store at all, and every handler answers that as unavailable. The lockout's bookkeeping (locked first, a wrong password counted, a right one clearing the count) is the adapter's, the reset's checks and their order are `ResetPasswordHandler`'s, and `PasswordReset` in the host is gone. The cookie is still the host's: the routes set it from the account a handler answers. `AccountHandlerTests` holds every handler with fakes at its ports, and `AccountEndpointStatusTests` one case per status each route declares (ADR: The onion cut into vertical slices, rule 7).
+
 ## Files
 
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.

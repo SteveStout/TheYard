@@ -3,6 +3,7 @@ using Azure;
 using Azure.Communication.Email;
 using Azure.Core;
 using TheYard.Application;
+using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api;
 
@@ -63,7 +64,7 @@ public sealed class AcsEmailSender(string endpoint, string from, TokenCredential
 /// night. This process's memory, like the registration allowance: two
 /// containers means two allowances, which is still a ceiling.
 /// </summary>
-public sealed class ForgotLimit(TimeSpan spacing, Func<DateTimeOffset> clock)
+public sealed class ForgotLimit(TimeSpan spacing, Func<DateTimeOffset> clock) : IPerAddressAllowance
 {
     public static readonly TimeSpan DefaultSpacing = TimeSpan.FromMinutes(5);
 

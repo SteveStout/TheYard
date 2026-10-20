@@ -107,6 +107,10 @@ browser test that opens the page holds the drawing's link and the five lines.
 
 Every ring: this record is the map of all of them and of the tests that hold them, and it serves all five SOLID principles by naming where each one shows and where it stops. It cost a new test package (NetArchTest), ten tests and a pass over every record. A codebase with one store and no rules worth testing alone would be built flat instead, as the section above says.
 
+## Addendum, 2026-10-20 (1.0.3.193): PasswordReset became handlers
+
+The single-responsibility line above names `PasswordReset` as the class that holds the reset's steps. From 1.0.3.193 those steps are `ResetPasswordHandler` and `ResetLinkMaker` in the Application ring, behind the accounts port (ADR: The onion cut into vertical slices, rule 7); the principle is unchanged and now holds one ring further in.
+
 ## Files
 
 - [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules.

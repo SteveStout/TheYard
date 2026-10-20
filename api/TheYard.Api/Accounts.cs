@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Identity;
-using TheYard.Infrastructure;
+using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api;
 
@@ -54,18 +53,21 @@ public static class Accounts
         title: "Accounts are unavailable");
 
     /// <summary>
-    /// One sentence for every way a registration can fail, rather than
-    /// Identity's list of codes. The list is useful to a developer and is in
-    /// the log; a person filling in a form needs to know what to change.
+    /// One sentence for every way a registration or a new password can fail, rather than
+    /// Identity's list of codes. The list is useful to a developer and is in the log; a person
+    /// filling in a form needs to know what to change.
     /// </summary>
-    public static string Explain(IdentityResult result) =>
-        result.Errors.Any(e => e.Code.Contains("Password", StringComparison.Ordinal))
-            ? "That password is too short. Eight characters or more."
-            : result.Errors.Any(e => e.Code.Contains("Duplicate", StringComparison.Ordinal))
-                ? "There is already an account with that email address."
-                : "That email address does not look right.";
+    /// <param name="problem">What the store said.</param>
+    public static string Explain(AccountProblem problem) => problem switch
+    {
+        AccountProblem.PasswordTooShort => "That password is too short. Eight characters or more.",
+        AccountProblem.DuplicateEmail => "There is already an account with that email address.",
+        _ => "That email address does not look right.",
+    };
 
-    public static AccountView Describe(YardUser user) =>
-        new(true, user.Email, user.CreatedAtMs);
+    /// <summary>The signed-in view of an account.</summary>
+    /// <param name="account">The account.</param>
+    public static AccountView Describe(Account account) =>
+        new(true, account.Email, account.CreatedAtMs);
     // #endregion accounts
 }

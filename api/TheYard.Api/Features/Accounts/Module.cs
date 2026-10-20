@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using TheYard.Application;
+using TheYard.Application.Features.Accounts;
 using TheYard.Infrastructure;
 using TheYard.Infrastructure.Cosmos;
+using TheYard.Infrastructure.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;
 
@@ -83,7 +85,23 @@ public sealed class Module : IModule
                 ? services.GetRequiredService<UserManager<YardUser>>()
                 : null));
         // #endregion user-store-per-request
-        services.AddSingleton<PasswordReset>();
+        // #region account-handlers
+        // One handler per route (ADR: The onion cut into vertical slices, rule 7), each handed the
+        // request's accounts through the Identity adapter, or none where the request's store keeps
+        // no accounts, which every handler answers as unavailable.
+        services.AddScoped(provider => provider.GetRequiredService<RequestAccounts>().Users is { } users
+            ? new AccountsOnThisStore(new IdentityAccountStore(users))
+            : new AccountsOnThisStore(null));
+        services.AddSingleton<IResetTokens>(provider => new TokenResets(provider.GetRequiredService<TokenIssuer>()));
+        services.AddSingleton(provider => new ResetLinkMaker(provider.GetRequiredService<IResetTokens>(), provider.GetRequiredService<IResetLinks>()));
+        services.AddScoped(provider => new RegisterHandler(Store(provider), provider.GetRequiredService<RegistrationLimit>(), () => Clocks.UtcNow().ToUnixTimeMilliseconds()));
+        services.AddScoped(provider => new SignInHandler(Store(provider)));
+        services.AddScoped(provider => new SignOutHandler(Store(provider)));
+        services.AddScoped(provider => new WhoAmIHandler(Store(provider)));
+        services.AddScoped(provider => new OperatorResetLinkHandler(Store(provider), provider.GetRequiredService<ResetLinkMaker>()));
+        services.AddScoped(provider => new ForgotHandler(Store(provider), provider.GetRequiredService<IEmailSender>(), provider.GetRequiredService<ForgotLimit>(), provider.GetRequiredService<ResetLinkMaker>()));
+        services.AddScoped(provider => new ResetPasswordHandler(Store(provider), provider.GetRequiredService<IResetTokens>(), provider.GetRequiredService<IResetLinks>()));
+        // #endregion account-handlers
         // What the JWT reader does with a token, per request and with its dependencies handed in
         // (RefuseSession.cs): read it from the cookie, then refuse a session that has ended.
         services.AddScoped<RefuseSession>();
@@ -117,6 +135,13 @@ public sealed class Module : IModule
         services.AddSingleton(new ForgotLimit(ForgotLimit.DefaultSpacing, () => DateTimeOffset.UtcNow));
         // #endregion email-wiring
     }
+
+    /// <summary>The request's accounts, or none.</summary>
+    private static IAccountStore? Store(IServiceProvider provider) => provider.GetRequiredService<AccountsOnThisStore>().Store;
+
+    /// <summary>The request's accounts, or none where its store keeps no accounts; one per request.</summary>
+    /// <param name="Store">The accounts, or null.</param>
+    private sealed record AccountsOnThisStore(IAccountStore? Store);
 
     /// <summary>Maps /api/auth/* and the operator's reset link.</summary>
     /// <param name="app">The built host's routes.</param>

@@ -1,3 +1,5 @@
+using TheYard.Application.Features.Accounts;
+
 namespace TheYard.Api;
 
 // #region registration-limit
@@ -29,7 +31,7 @@ namespace TheYard.Api;
 /// is set far above what this site has ever seen in a day, so the only person
 /// who meets it is somebody trying to.</para>
 /// </summary>
-public sealed class RegistrationLimit(int perHour, Func<DateTimeOffset> now)
+public sealed class RegistrationLimit(int perHour, Func<DateTimeOffset> now) : IAllowance
 {
     /// <summary>
     /// Two an hour would be safer and would be a different product. This site

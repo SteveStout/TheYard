@@ -1,151 +1,78 @@
 // The account handlers that open, close and read a session: register, sign in, sign out and
 // who am I. Its own file because these four share the session cookie and nothing else here
-// does; the routes are mapped in AccountEndpoints.cs.
+// does; the routes are mapped in AccountEndpoints.cs. Each asks one handler in the Application
+// ring's Features/Accounts and writes its answer, the cookie included.
 
 using Microsoft.AspNetCore.Http.HttpResults;
-using TheYard.Infrastructure;
+using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;
 
 /// <summary>The sign-in handlers of AccountEndpoints; the type and what it is for are described in AccountEndpoints.cs.</summary>
 public static partial class AccountEndpoints
 {
-    /// <summary>
-    /// Creates an account on this request's store and signs it in, within the hour's registration allowance.
-    /// </summary>
-    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Register(RequestAccounts accounts, CurrentBackend current, TokenIssuer issuer, RegistrationLimit limit, HttpContext http, Credentials request)
+    /// <summary>Creates an account on this request's store and signs it in, within the hour's registration allowance.</summary>
+    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Register(RegisterHandler handler, CurrentBackend current, TokenIssuer issuer, HttpContext http, Credentials request, CancellationToken cancellation)
     {
-        // No users means the store this request is on keeps no accounts: the relational
-        // fallback, or a document store that did not come up.
-        if (accounts.Users is not { } users)
+        var answer = await handler.HandleAsync(request.Email, request.Password, cancellation);
+        // The reply says what happened and how long it lasts, and says nothing about how many
+        // accounts exist or how much of the allowance is left.
+        return answer.Kind switch
         {
-            return TheYard.Api.Accounts.Unavailable();
-        }
-        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-        {
-            return TypedResults.Problem(
+            AccountAnswerKind.Unavailable => TheYard.Api.Accounts.Unavailable(),
+            AccountAnswerKind.Unreadable => TypedResults.Problem(
                 detail: "An email address and a password, please.",
-                statusCode: 400, title: "The registration could not be read");
-        }
-
-        // Checked after the request is read and before the password is hashed, so a
-        // request that was never going to work does not spend the hour's allowance
-        // and a request that is refused does not spend the CPU. The reply says what
-        // happened and how long it lasts, and says nothing about how many accounts
-        // exist or how much of the allowance is left.
-        if (!limit.TryTake())
-        {
-            return TypedResults.Problem(
+                statusCode: 400, title: "The registration could not be read"),
+            AccountAnswerKind.TooMany => TypedResults.Problem(
                 detail: "This demo is not taking new accounts at the moment. Try again in an hour.",
-                statusCode: 429, title: "Too many registrations");
-        }
-
-        var user = new YardUser
-        {
-            UserName = request.Email,
-            Email = request.Email,
-            CreatedAtMs = Clocks.UtcNow().ToUnixTimeMilliseconds(),
+                statusCode: 429, title: "Too many registrations"),
+            AccountAnswerKind.Refused => TypedResults.Problem(
+                detail: TheYard.Api.Accounts.Explain(answer.Problem),
+                statusCode: 400, title: "The account was not created"),
+            _ => SignedIn(answer.Account!, current, issuer, http),
         };
-        var created = await users.CreateAsync(user, request.Password);
-        if (!created.Succeeded)
-        {
-            // Nothing was made, so nothing was spent: the slot goes back, or a
-            // password Identity refuses would count against strangers who never
-            // registered (ADR: The one write a stranger can make, addendum).
-            limit.GiveBack();
-            return TypedResults.Problem(
-                detail: TheYard.Api.Accounts.Explain(created),
-                statusCode: 400, title: "The account was not created");
-        }
-
-        http.Response.Cookies.Append(
-            TokenIssuer.CookieName,
-            issuer.Issue(user.Id, user.Email!, current.Key, user.SecurityStamp),
-            TokenIssuer.CookieFor(http, issuer.Lifetime));
-        return TypedResults.Ok(TheYard.Api.Accounts.Describe(user));
     }
 
-    /// <summary>
-    /// Signs in with an email address and a password, answering one sentence for every way that can fail.
-    /// </summary>
-    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Login(RequestAccounts accounts, CurrentBackend current, TokenIssuer issuer, HttpContext http, Credentials request)
+    /// <summary>Signs in with an email address and a password, answering one sentence for every way that can fail.</summary>
+    private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Login(SignInHandler handler, CurrentBackend current, TokenIssuer issuer, HttpContext http, Credentials request, CancellationToken cancellation)
     {
-        if (accounts.Users is not { } users)
+        var answer = await handler.HandleAsync(request.Email, request.Password, cancellation);
+        return answer.Kind switch
         {
-            return TheYard.Api.Accounts.Unavailable();
-        }
-
-        var user = request.Email is null ? null : await users.FindByEmailAsync(request.Email);
-        // One sentence for every way this can fail: no such account, a wrong password, or a
-        // locked account. A reply that told them apart would tell a stranger which email
-        // addresses are registered here.
-        var refused = TypedResults.Problem(
-            detail: "That email address and password do not match an account.",
-            statusCode: 401, title: "Not signed in");
-
-        if (user is null || request.Password is null)
-        {
-            return refused;
-        }
-
-        // Asked before the password is checked, so a locked account does not keep
-        // answering guesses, and asked through UserManager rather than by reading
-        // the column, because that is what knows the window has expired.
-        if (await users.IsLockedOutAsync(user))
-        {
-            return refused;
-        }
-
-        if (!await users.CheckPasswordAsync(user, request.Password))
-        {
-            // The count is the whole lockout mechanism. CheckPasswordAsync on its own
-            // does not touch it, so without this call the lockout policy would be on paper
-            // only.
-            await users.AccessFailedAsync(user);
-            return refused;
-        }
-
-        // A success clears the count, or five wrong guesses spread over a week would
-        // eventually lock somebody out of their own account.
-        await users.ResetAccessFailedCountAsync(user);
-
-        http.Response.Cookies.Append(
-            TokenIssuer.CookieName,
-            issuer.Issue(user.Id, user.Email!, current.Key, user.SecurityStamp),
-            TokenIssuer.CookieFor(http, issuer.Lifetime));
-        return TypedResults.Ok(TheYard.Api.Accounts.Describe(user));
+            AccountAnswerKind.Unavailable => TheYard.Api.Accounts.Unavailable(),
+            // One sentence for every way this can fail: no such account, a wrong password, or a
+            // locked account. A reply that told them apart would tell a stranger which email
+            // addresses are registered here.
+            AccountAnswerKind.Refused => TypedResults.Problem(
+                detail: "That email address and password do not match an account.",
+                statusCode: 401, title: "Not signed in"),
+            _ => SignedIn(answer.Account!, current, issuer, http),
+        };
     }
 
-    /// <summary>
-    /// Signs out: moves the account's security stamp, so every session it had open is refused on
-    /// its next request, then deletes the cookie and answers the anonymous account.
-    /// </summary>
-    private static async Task<Ok<AccountView>> Logout(TokenIssuer issuer, RequestAccounts accounts, HttpContext http)
+    /// <summary>Signs out: every session the account had open is refused on its next request, the cookie is deleted, and the anonymous account answers.</summary>
+    private static async Task<Ok<AccountView>> Logout(SignOutHandler handler, TokenIssuer issuer, HttpContext http, CancellationToken cancellation)
     {
-        // A copied cookie outlives a deleted one; moving the stamp is what ends it.
-        if (http.UserIdOrNull() is { } id && accounts.Users is { } users && await users.FindByIdAsync(id) is { } user)
-        {
-            await users.UpdateSecurityStampAsync(user);
-        }
+        await handler.HandleAsync(http.UserIdOrNull(), cancellation);
         // Deleted with the same attributes it was set with, or the browser keeps a
         // second cookie of the same name on a different path and stays signed in.
         http.Response.Cookies.Delete(TokenIssuer.CookieName, TokenIssuer.CookieFor(http, issuer.Lifetime));
         return TypedResults.Ok(TheYard.Api.Accounts.Anonymous);
     }
 
-    /// <summary>
-    /// Answers the account the session belongs to on this store, or the anonymous account when there is none here.
-    /// </summary>
-    private static async Task<Ok<AccountView>> WhoAmI(RequestAccounts accounts, HttpContext http)
+    /// <summary>The account the session belongs to on this store, or the anonymous account when there is none here.</summary>
+    private static async Task<Ok<AccountView>> WhoAmI(WhoAmIHandler handler, HttpContext http, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(http.UserIdOrNull(), cancellation) is { } account
+            ? TheYard.Api.Accounts.Describe(account)
+            : TheYard.Api.Accounts.Anonymous);
+
+    /// <summary>Sets the session cookie for the account on this request's store and answers the account.</summary>
+    private static Ok<AccountView> SignedIn(Account account, CurrentBackend current, TokenIssuer issuer, HttpContext http)
     {
-        // An account is a row or a document in one store, so a session opened on the
-        // other store reads as signed out here and as signed in on that store's site.
-        if (http.UserIdOrNull() is not { } id
-            || accounts.Users is not { } users
-            || await users.FindByIdAsync(id) is not { } user)
-        {
-            return TypedResults.Ok(TheYard.Api.Accounts.Anonymous);
-        }
-        return TypedResults.Ok(TheYard.Api.Accounts.Describe(user));
+        http.Response.Cookies.Append(
+            TokenIssuer.CookieName,
+            issuer.Issue(account.Id, account.Email, current.Key, account.SecurityStamp),
+            TokenIssuer.CookieFor(http, issuer.Lifetime));
+        return TypedResults.Ok(TheYard.Api.Accounts.Describe(account));
     }
 }
