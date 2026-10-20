@@ -61,6 +61,9 @@ jobs:
           SHEETS_SERVICE_ACCOUNT: ${{ secrets.SHEETS_SERVICE_ACCOUNT }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The workflow's own token, so the Claude GitHub App is not needed: the lane reads
+          # and writes the share, never this repository.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Read /mnt/jobhunt/nightly/NIGHTLY-LANE.md and follow it start to finish for the night of ${{ steps.day.outputs.date }}.
           claude_args: |
