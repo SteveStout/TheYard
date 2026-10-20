@@ -1,0 +1,87 @@
+# Nightly: the job hunt's 4:00 AM lane, run as Claude Code on a GitHub runner
+# (mentor\PROMPT-JOBHUNT-CLOUD-NATIVE.md in Steve's job-hunt folder, step 3).
+# Not part of TheYard's site and it rolls nothing.
+#
+# Started by the Function in infra/jobhunt.bicep with repository_dispatch
+# "nightly" after it has snapshotted the share and opened the bookend, or by
+# hand with workflow_dispatch. The share is mounted over SMB at /mnt/jobhunt;
+# the lane reads its prompt from nightly/NIGHTLY-LANE.md on the share and
+# writes only under nightly/<date>/ and the merger inboxes.
+#
+# The model is billed to Steve's Claude plan through CLAUDE_CODE_OAUTH_TOKEN
+# (code.claude.com/docs/en/github-actions, read 2026-10-20: "an OAuth token
+# that authenticates with your Claude subscription, available on Pro, Max,
+# Team, and Enterprise plans"). Tokens and wall time land in usage.json beside
+# the night's DONE note.
+name: Nightly
+
+on:
+  repository_dispatch:
+    types: [nightly]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: jobhunt-nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SHARE: //stjobhuntss.file.core.windows.net/jobhunt
+    steps:
+      - name: Date in Central
+        id: day
+        run: echo "date=$(TZ=America/Chicago date +%F)" >> "$GITHUB_OUTPUT"
+
+      - name: Mount the share
+        env:
+          KEY: ${{ secrets.JOBHUNT_STORAGE_KEY }}
+        run: |
+          sudo apt-get install -y -qq cifs-utils > /dev/null
+          sudo mkdir -p /mnt/jobhunt
+          sudo mount -t cifs "$SHARE" /mnt/jobhunt -o "vers=3.1.1,username=stjobhuntss,password=$KEY,uid=$(id -u),gid=$(id -g),dir_mode=0775,file_mode=0664,serverino,nosharesock,actimeo=30"
+          test -f /mnt/jobhunt/nightly/NIGHTLY-LANE.md
+          mkdir -p "/mnt/jobhunt/nightly/${{ steps.day.outputs.date }}"
+
+      - name: The lane
+        id: lane
+        uses: anthropics/claude-code-action@v1
+        env:
+          JOBHUNT: /mnt/jobhunt
+          NIGHT: ${{ steps.day.outputs.date }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          SHEETS_SERVICE_ACCOUNT: ${{ secrets.SHEETS_SERVICE_ACCOUNT }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Read /mnt/jobhunt/nightly/NIGHTLY-LANE.md and follow it start to finish for the night of ${{ steps.day.outputs.date }}.
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns 200
+            --add-dir /mnt/jobhunt
+            --allowedTools "Bash,Read,Write,Edit,Glob,Grep"
+
+      - name: Tokens and wall time
+        if: always()
+        env:
+          EXEC: ${{ steps.lane.outputs.execution_file }}
+        run: |
+          out="/mnt/jobhunt/nightly/${{ steps.day.outputs.date }}/usage.json"
+          if [ -f "$EXEC" ]; then
+            jq '[.[] | select(.type == "result")] | last | {duration_ms, num_turns, usage, total_cost_usd}' "$EXEC" | tee "$out"
+            jq -r '[.[] | select(.type == "result")] | last | "tokens in \(.usage.input_tokens) + cache read \(.usage.cache_read_input_tokens) + cache write \(.usage.cache_creation_input_tokens), out \(.usage.output_tokens), wall \(.duration_ms / 1000) s"' "$EXEC" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no execution file" | tee "$out"
+          fi
+
+      - name: Unmount
+        if: always()
+        run: sudo umount /mnt/jobhunt || true
