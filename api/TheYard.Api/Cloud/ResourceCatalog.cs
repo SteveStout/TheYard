@@ -109,7 +109,16 @@ public static class ResourceCatalog
                     {
                         // The card says the catalogue could not be read and what the identity needs.
                     }
-                    return AcrCard.Facts(record, holdings);
+                    // The registry's size limit as Azure states it, rather than the Basic figure written down.
+                    try
+                    {
+                        using var usages = await azure.GetJsonAsync($"{resource.Id}/listUsages?api-version=2023-07-01", cancellation);
+                        return AcrCard.Facts(record, holdings, usages.RootElement.Clone());
+                    }
+                    catch (HttpRequestException)
+                    {
+                        return AcrCard.Facts(record, holdings);
+                    }
                 }),
                 AcrCard.View),
             new("insights", "insights", "log-theyard-ss", InsightsCard.Readings,

@@ -9,12 +9,12 @@ namespace TheYard.Api;
 /// <summary>The registry's card.</summary>
 public static class AcrCard
 {
-    /// <summary>Basic's included storage, and the pulls a minute it allows, which the dials are read against.</summary>
-    public const double BasicGb = 10;
+    /// <summary>
+    /// The pulls a minute Basic allows, which the pulls dial is read against. Typed, because the
+    /// registry's usages name its size and its webhooks but not its read rate; the storage the
+    /// other dial is read against is the registry's own Size limit, read each hour from listUsages.
+    /// </summary>
     public const double BasicReadsPerMinute = 1_000;
-
-    /// <summary>What Standard costs a month, for the last row.</summary>
-    public const double StandardPerMonth = 20.00;
 
     public static readonly IReadOnlyList<AzureMetric> Metrics =
     [
@@ -30,13 +30,15 @@ public static class AcrCard
 
     public static CloudReport View(ResourceCardInputs inputs)
     {
+        double? storageGb = double.TryParse(ResourceView.Fact(inputs, "size_limit_gb", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out double limit) ? limit : null;
+        string storageWords = storageGb is { } l ? $"{l.ToString("0.##", CultureInfo.InvariantCulture)} GB" : "the size limit, not read yet";
         var dials = new[]
         {
-            ResourceView.Dial(inputs, "storage_gb", "Storage", BasicGb, Storage, v => v is { } g ? $"{g.ToString("0.00", CultureInfo.InvariantCulture)} of {BasicGb} GB" : "not read"),
+            ResourceView.Dial(inputs, "storage_gb", "Storage", storageGb, Storage, v => v is { } g ? $"{g.ToString("0.00", CultureInfo.InvariantCulture)} of {storageWords}" : "not read"),
             ResourceView.Dial(inputs, "pulls", "Pulls, this minute", BasicReadsPerMinute, Pulls, v => v is { } p ? $"{p.ToString("0", CultureInfo.InvariantCulture)} of {BasicReadsPerMinute:N0} a minute" : "not read"),
         };
         double? pulls = ResourceView.WindowSum(inputs, "pulls"), ok = ResourceView.WindowSum(inputs, "pulls_ok"), pushes = ResourceView.WindowSum(inputs, "pushes");
-        var storageTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "storage_gb").Select(v => ResourceView.Share(v, BasicGb)).ToList(), Storage);
+        var storageTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "storage_gb").Select(v => ResourceView.Share(v, storageGb)).ToList(), Storage);
         var events = inputs.Hours.SelectMany(h => h.Events).ToList();
         var rows = new List<CloudRow>
         {
@@ -44,12 +46,12 @@ public static class AcrCard
                 ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows") is null ? [new(ResourceView.Fact(inputs, "repository_list"), null)] : [], "good")
             { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows"), "Image", "Type", "Tags") },
             new("pulled", "Who pulled?", pulls is null ? "not read yet" : $"{pulls.Value.ToString("N0", CultureInfo.InvariantCulture)} pulls",
-                [new($"{ResourceView.Number(ok)} succeeded · {ResourceView.Number(pushes)} pushes in the window · the three apps pull with the site's identity", null)],
+                [new($"{ResourceView.Number(ok)} succeeded · {ResourceView.Number(pushes)} pushes in the window · pulled with the site's identity", null)],
                 pulls is > 0 && ok is { } good && good < pulls ? "warning" : "good"),
             new("stale", "What is stale?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "untagged")} untagged manifests",
                 [new($"{ResourceView.Fact(inputs, "untagged_gb")} GB no tag points at · a purge would free it; this card names it and does not run it", null)], "info"),
-            new("tier", "Is Basic still right?", inputs.Month.Count == 0 ? "not enough kept yet" : storageTone == PlanTone.Alarm ? "no, storage is past its line" : "yes, storage first",
-                [new($"Standard ${StandardPerMonth.ToString("0.00", CultureInfo.InvariantCulture)}/mo with 100 GB · {events.Count} events in the window", null)],
+            new("tier", $"Is {ResourceView.Fact(inputs, "tier", "the tier")} still right?", inputs.Month.Count == 0 ? "not enough kept yet" : storageTone == PlanTone.Alarm ? "no, storage is past its line" : "yes, storage first",
+                [new($"storage p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "storage_gb").P95, "0.00")} of {storageWords} over 30 d · {events.Count} events in the window", null)],
                 storageTone == PlanTone.Alarm ? "alarm" : "good"),
         };
         var readout = new CloudReadout(
@@ -57,7 +59,7 @@ public static class AcrCard
             ResourceView.Uptime(inputs),
             $"up, {CloudTones.WindowWords(inputs.Window)}",
             [
-                new("Storage", $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} / {BasicGb} GB", CloudTones.Of(storageTone)),
+                new("Storage", $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB of {storageWords}", CloudTones.Of(storageTone)),
                 new("Storage p95, 30 d", $"{ResourceView.Number(ResourceFolding.Spread(inputs.Month, "storage_gb").P95, "0.00")} GB", "info"),
                 new("Images", ResourceView.Fact(inputs, "repositories"), "info"),
                 new("Tags", ResourceView.Fact(inputs, "tags"), "info"),
@@ -79,20 +81,24 @@ public static class AcrCard
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),
             ResourceView.Resource(inputs),
             dials,
-            [ResourceView.Spark(inputs, "storage_gb", "Storage, 60 min", BasicGb), ResourceView.Spark(inputs, "pulls", "Pulls, 60 min", 50)],
-            $"Normal: storage amber {Storage.Amber} %, red {Storage.Red} % of 10 GB; pulls amber {Pulls.Amber} %, red {Pulls.Red} % of 1,000 a minute; held 15 min.",
-            ResourceView.Chart(inputs, "Storage and pulls", ("storage_gb", "Storage", BasicGb, false), ("pulls", "Pulls", BasicReadsPerMinute, false), Storage.Red, "teal storage · green pulls · gold deploys · red event · dashed 90 %"),
+            [ResourceView.Spark(inputs, "storage_gb", "Storage, 60 min", storageGb), ResourceView.Spark(inputs, "pulls", "Pulls, 60 min", BasicReadsPerMinute)],
+            $"Normal: storage amber {Storage.Amber} %, red {Storage.Red} % of {storageWords}; pulls amber {Pulls.Amber} %, red {Pulls.Red} % of {BasicReadsPerMinute:N0} a minute; held {PlanThresholds.Sustained} min.",
+            ResourceView.Chart(inputs, "Storage and pulls", ("storage_gb", "Storage", storageGb, false), ("pulls", "Pulls", BasicReadsPerMinute, false), Storage.Red, $"teal storage · green pulls · gold deploys · red event · dashed {Storage.Red} %"),
             rows,
             readout);
     }
 
     /// <summary>The hour's facts from the registry's record and its catalogue.</summary>
-    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement record, AcrHoldings? holdings)
+    /// <param name="record">The registry's record.</param>
+    /// <param name="holdings">The catalogue, or null when it could not be read.</param>
+    /// <param name="usages">The registry's listUsages answer, or null when it could not be read.</param>
+    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement record, AcrHoldings? holdings, System.Text.Json.JsonElement? usages = null)
     {
         string? tier = AzureMetrics.Text(record, "sku.name");
         return new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             ["tier"] = tier,
+            ["size_limit_gb"] = SizeLimitGb(usages)?.ToString("0.##", CultureInfo.InvariantCulture),
             ["login_server"] = AzureMetrics.Text(record, "properties.loginServer"),
             ["repositories"] = holdings?.Repositories.Count.ToString(CultureInfo.InvariantCulture),
             ["tags"] = holdings?.Repositories.Sum(r => r.Tags).ToString(CultureInfo.InvariantCulture),
@@ -103,4 +109,14 @@ public static class AcrCard
             ["spec"] = string.Join(' ', new[] { tier, AzureMetrics.Text(record, "location") }.Where(p => p is not null)).ToUpperInvariant(),
         };
     }
+
+    /// <summary>The registry's Size limit in gigabytes, from its listUsages answer; null when the answer has none.</summary>
+    /// <param name="usages">The listUsages answer.</param>
+    public static double? SizeLimitGb(System.Text.Json.JsonElement? usages) =>
+        usages is { } answer && answer.TryGetProperty("value", out var list) && list.ValueKind == System.Text.Json.JsonValueKind.Array
+            ? list.EnumerateArray()
+                .Where(usage => string.Equals(AzureMetrics.Text(usage, "name"), "Size", StringComparison.OrdinalIgnoreCase))
+                .Select(usage => usage.TryGetProperty("limit", out var bytes) && bytes.TryGetDouble(out double b) ? b / 1024 / 1024 / 1024 : (double?)null)
+                .FirstOrDefault()
+            : null;
 }

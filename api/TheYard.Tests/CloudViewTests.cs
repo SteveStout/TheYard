@@ -148,5 +148,19 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         Assert.Equal("the page answered by APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2", NetlifyEdge.AnsweredBy("the page", "APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2"));
         Assert.Equal("/api answered without naming its app", NetlifyEdge.AnsweredBy("/api", null));
     }
+
+    [Fact]
+    public void The_registry_storage_dial_is_read_against_the_size_limit_its_usages_state()
+    {
+        using var usages = JsonDocument.Parse("""{"value":[{"name":"Webhooks","limit":2,"currentValue":0,"unit":"Count"},{"name":"Size","limit":10737418240,"currentValue":536870912,"unit":"Bytes"}]}""");
+        Assert.Equal(10, AcrCard.SizeLimitGb(usages.RootElement));
+        using var none = JsonDocument.Parse("{}");
+        Assert.Null(AcrCard.SizeLimitGb(none.RootElement));
+        Assert.Null(AcrCard.SizeLimitGb(null));
+
+        // Unread, the dial says so rather than reading against a typed size.
+        var report = AcrCard.View(Held("storage_gb", 1));
+        Assert.Contains("not read yet", report.Normal, StringComparison.Ordinal);
+    }
     // #endregion cloud-view-tests
 }

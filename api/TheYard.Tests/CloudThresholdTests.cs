@@ -81,7 +81,7 @@ public class CloudThresholdTests
     [Fact]
     public void The_registry_card_names_the_untagged_layers_and_never_purges_them()
     {
-        var view = AcrCard.View(Held("storage_gb", 9.5, new Dictionary<string, string?> { ["untagged"] = "12", ["untagged_gb"] = "3.10" }));
+        var view = AcrCard.View(Held("storage_gb", 9.5, new Dictionary<string, string?> { ["untagged"] = "12", ["untagged_gb"] = "3.10", ["size_limit_gb"] = "10" }));
         Assert.Equal("alarm", view.Dials[0].Tone);
         var stale = view.Rows.Single(r => r.Key == "stale");
         Assert.Equal("12 untagged manifests", stale.Answer);
