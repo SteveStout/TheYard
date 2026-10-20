@@ -50,7 +50,10 @@ public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
         // 1.0.3.183 on Cosmos DB was refused a bid at the cached figures this way).
         string id = "";
         int min = 0, bidCount = 0;
-        foreach (var candidate in live.RootElement.GetProperty("vehicles").EnumerateArray().Where(vehicle => !vehicle.GetProperty("sold").GetBoolean()))
+        // Past the first five, which the account tests take (AuthTests.ALiveVehicle takes the first
+        // unsold one): two classes bidding on one vehicle at once refuse each other's minimum on the
+        // shared document store, as 1.0.3.192's first gate on Cosmos DB found.
+        foreach (var candidate in live.RootElement.GetProperty("vehicles").EnumerateArray().Skip(5).Where(vehicle => !vehicle.GetProperty("sold").GetBoolean()))
         {
             id = candidate.GetProperty("id").GetString()!;
             using var fresh = await GetAsync($"/api/vehicles/{id}");

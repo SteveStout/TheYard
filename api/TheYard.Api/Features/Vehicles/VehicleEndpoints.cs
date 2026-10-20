@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
+using TheYard.Application.Features.Vehicles;
 
 namespace TheYard.Api.Features.Vehicles;
 
@@ -46,8 +47,9 @@ public static class VehicleEndpoints
     // with each vehicle carrying the server-derived auction facts.
     // e.g. /api/vehicles?make=Ford&status=live&sort=price-asc&limit=100&offset=100
     private static async Task<Results<Ok<VehiclePage>, ProblemHttpResult>> List(
-        CurrentBackend current,
-        [AsParameters] VehicleQueryParams query)
+        SearchVehiclesHandler handler,
+        [AsParameters] VehicleQueryParams query,
+        CancellationToken cancellation)
     {
         if (!query.TryBuildFilter(out var filter, out var clock, out var sort, out var error))
         {
@@ -55,20 +57,21 @@ public static class VehicleEndpoints
             // `detail`, never in a key only this endpoint uses.
             return TypedResults.Problem(detail: error, statusCode: 400, title: "The query could not be read");
         }
-        // The auction hands back each vehicle at its standing price with its sold flag, so a
-        // listing never composes the bids, the room or the sale itself.
-        var result = await current.Auction.SearchAsync(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset);
+        // One handler answers the page (ADR: The onion cut into vertical slices, rule 7); this
+        // file reads the query and writes the wire.
+        var result = await handler.HandleAsync(new VehicleSearch(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset), cancellation);
         return TypedResults.Ok(new VehiclePage(result.Total, [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock))]));
     }
     #endregion inventory-endpoint
 
-    private static async Task<Ok<InventoryFacets>> Facets(CurrentBackend current) =>
-        TypedResults.Ok(await current.Auction.FacetsAsync());
+    private static async Task<Ok<InventoryFacets>> Facets(FacetsHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(cancellation));
 
-    private static async Task<Results<Ok<VehicleView>, ProblemHttpResult>> One(CurrentBackend current, string id)
+    private static async Task<Results<Ok<VehicleView>, ProblemHttpResult>> One(FindVehicleHandler handler, string id, CancellationToken cancellation)
     {
-        return await current.Auction.FindAsync(id) is { } vehicle
-            ? TypedResults.Ok(VehicleWire.ToWire(vehicle, Clocks.Now()))
+        var found = await handler.HandleAsync(id, cancellation);
+        return found.Vehicle is { } vehicle
+            ? TypedResults.Ok(VehicleWire.ToWire(vehicle, found.Clock))
             : TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
     }
 }
