@@ -52,16 +52,18 @@ public static class PlanRows
         };
 
         double? used = Sum(newest?.Apps.Select(app => app.FileSystemMb) ?? []);
+        int? socketLimit = PlanThresholds.SocketLimitFor(hour?.Sku);
+        string sockets = socketLimit is { } limit ? $"{Count(newest?.Sockets)} of {limit:N0}" : $"{Count(newest?.Sockets)}, no limit known for this size";
         var queueTone = CloudTones.Worse(
             PlanThresholds.ToneOf(lastHour.Select(m => m.HttpQueue).ToList(), PlanThresholds.HttpQueue),
-            PlanThresholds.SocketsTone(lastHour.Select(m => m.Sockets).ToList()));
+            PlanThresholds.SocketsTone(lastHour.Select(m => m.Sockets).ToList(), socketLimit));
         var queue = new CloudRow(
             "queue",
             "Is anything queueing?",
             newest?.HttpQueue is { } waiting ? $"{waiting.ToString("0", CultureInfo.InvariantCulture)} waiting" : "not read yet",
             [new CloudLink(string.Join(" · ", new[]
             {
-                $"sockets {Count(newest?.Sockets)} of {PlanThresholds.SocketLimit:N0}",
+                $"sockets {sockets}",
                 used is { } mb ? $"disk {(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} GB used" : "disk not read",
                 $"data out {Bytes(Sum(lastHour.Select(m => m.BytesSent)))} this hour",
             }), null)],
@@ -119,6 +121,7 @@ public static class PlanRows
         int restarts = hours.SelectMany(h => h.Events).Count(e => e.Kind == "restart");
         bool unplanned = hours.SelectMany(h => h.Events).Any(e => e.Kind == "restart" && !e.Planned);
         string tone(PlanTone t) => CloudTones.Of(t);
+        int? socketLimit = PlanThresholds.SocketLimitFor(hour?.Sku);
         return new CloudReadout(
             "The plan",
             uptime,
@@ -129,7 +132,7 @@ public static class PlanRows
                 new("Memory now", newest?.MemoryPercent is { } m && hour?.MemoryGb is { } g ? $"{(m / 100 * g).ToString("0.00", CultureInfo.InvariantCulture)} GB" : "not read", tone(PlanThresholds.ToneOf(lastHour.Select(x => x.MemoryPercent).ToList(), PlanThresholds.Memory))),
                 new("Memory p95, 30 d", PlanView.Percent(month.MemoryP95), "info") { Source = "kept minutes" },
                 new("HTTP queue", Count(newest?.HttpQueue), tone(PlanThresholds.ToneOf(lastHour.Select(x => x.HttpQueue).ToList(), PlanThresholds.HttpQueue))),
-                new("Sockets", $"{Count(newest?.Sockets)} / {PlanThresholds.SocketLimit:N0}", tone(PlanThresholds.SocketsTone(lastHour.Select(x => x.Sockets).ToList()))) { Source = "Azure Monitor / the plan's socket limit" },
+                new("Sockets", socketLimit is { } allowed ? $"{Count(newest?.Sockets)} / {allowed:N0}" : Count(newest?.Sockets), tone(PlanThresholds.SocketsTone(lastHour.Select(x => x.Sockets).ToList(), socketLimit))) { Source = socketLimit is null ? "Azure Monitor" : "Azure Monitor / the limit for the plan's size, from Microsoft's limits page" },
                 new("Disk", used is { } mb ? $"{(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} GB used" : "not read", "info") { Source = "Azure Monitor" },
                 new("Instances", hour?.Instances is { } n ? (hour.MaxWorkers is { } most ? $"{n} of {most}" : $"{n}") : "not read", "info") { Source = "ARM maximumNumberOfWorkers" },
                 new("Always on", hour is null ? "not read" : $"{hour.Apps.Count(app => app.AlwaysOn is true)} apps", "info") { Source = "ARM siteConfig" },

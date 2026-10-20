@@ -71,10 +71,12 @@ public sealed class Module : IModule
         // #region user-store-per-request
         // The store behind UserManager, chosen by the request: Identity's own tables
         // on the relational backend, one document per account on the document one
-        // (ADR: Accounts on a document store). One of the four scoped registrations
-        // in the application, and the reason the per-request context exists.
+        // (ADR: Accounts on a document store), each registered under its store's key by the
+        // store's own registration, so the backend itself names no adapter (ADR: The onion cut
+        // into vertical slices, rule 4). One of the four scoped registrations in the
+        // application, and the reason the per-request context exists.
         services.AddScoped<IUserStore<YardUser>>(services =>
-            services.GetRequiredService<CurrentBackend>().Backend.UserStore(services)
+            services.GetKeyedService<IUserStore<YardUser>>(services.GetRequiredService<CurrentBackend>().Key)
                 ?? throw new InvalidOperationException("this request's store keeps no accounts; RequestAccounts answers null before this is reached"));
 
         // The handlers take RequestAccounts rather than UserManager, because UserManager is built

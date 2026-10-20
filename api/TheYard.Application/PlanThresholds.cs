@@ -22,7 +22,7 @@ public enum PlanTone
 /// minute). A level counts only when every one of the last fifteen kept minutes is over it, so a
 /// deploy's one busy minute is not an alarm and a quarter of an hour at 85 per cent is.
 /// </summary>
-public static class PlanThresholds
+public static partial class PlanThresholds
 {
     /// <summary>How many consecutive minutes a level has to hold.</summary>
     public const int Sustained = 15;
@@ -36,8 +36,34 @@ public static class PlanThresholds
     /// <summary>The HTTP queue, in requests waiting: amber from 5, red from 20.</summary>
     public static readonly (double Amber, double Red) HttpQueue = (5, 20);
 
-    /// <summary>Outbound sockets one B1 instance allows, which the sockets row is measured against.</summary>
-    public const int SocketLimit = 1_920;
+    /// <summary>
+    /// Outbound sockets one instance allows, by the plan's size as Azure names it. Azure Monitor
+    /// counts the sockets and no record the plan returns states the limit, so this is the one rule
+    /// the card keeps, read off Microsoft's App Service limits page (learn.microsoft.com, "App
+    /// Service limits", 20 October 2026): the Basic and Standard sizes 1 to 3 allow 1,920, 3,968
+    /// and 8,064, and Premium v3's sizes 0 to 3 allow 1,920, 3,968, 8,064 and 16,128, which is
+    /// 128 short of a power of two at every step. A size outside those is measured against no
+    /// limit, and the row says so.
+    /// </summary>
+    public static int? SocketLimitFor(string? sku)
+    {
+        var size = SizeName().Match(sku?.Trim() ?? "");
+        if (!size.Success)
+        {
+            return null;
+        }
+        bool premium = size.Groups[1].Value.Equals("P", StringComparison.OrdinalIgnoreCase);
+        if (premium != size.Groups[3].Success)
+        {
+            return null;
+        }
+        int step = (size.Groups[2].Value[0] - '0') + (premium ? 1 : 0);
+        return step is >= 1 and <= 4 ? (1 << (10 + step)) - 128 : null;
+    }
+
+    /// <summary>A size's name: the tier letter, the size digit, and v3 on the Premium tier.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex("^([BSP])(\\d)(V3)?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex SizeName();
 
     /// <summary>Sockets, as a share of the limit: amber from 60 per cent; there is no red short of running out.</summary>
     public const double SocketsAmberShare = 0.60;
@@ -59,9 +85,9 @@ public static class PlanThresholds
             : PlanTone.Good;
     }
 
-    /// <summary>The sockets row's tone: amber when every one of the last fifteen minutes held 60 per cent of the limit or more.</summary>
-    public static PlanTone SocketsTone(IReadOnlyList<double?> minutes) =>
-        ToneOf(minutes, (SocketLimit * SocketsAmberShare, double.PositiveInfinity));
+    /// <summary>The sockets row's tone: amber when every one of the last fifteen minutes held 60 per cent of the limit or more; informational where the size names no limit.</summary>
+    public static PlanTone SocketsTone(IReadOnlyList<double?> minutes, int? limit) =>
+        limit is { } sockets ? ToneOf(minutes, (sockets * SocketsAmberShare, double.PositiveInfinity)) : PlanTone.Info;
 
     /// <summary>The apps row's tone: red when any app is not running, good when all are, information before the first hour is read.</summary>
     public static PlanTone AppsTone(IReadOnlyList<PlanAppState> apps) =>

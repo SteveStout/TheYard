@@ -36,10 +36,14 @@ public static class CosmosCard
     {
         double? provisioned = double.TryParse(ResourceView.Fact(inputs, "throughput", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out double ru) ? ru : null;
         string limitWords = provisioned is { } p ? $"{p.ToString("N0", CultureInfo.InvariantCulture)} RU/s" : "the provisioned RU/s, not read yet";
+        // The free tier's storage allowance applies only while the account's record says the free
+        // tier is on; off it, storage has no ceiling this card knows, and the dial says so.
+        double? storageLimit = ResourceView.Fact(inputs, "free_tier", "") == "on" ? FreeGb : null;
+        string storageWords = storageLimit is { } s ? $"{s} GB" : "GB, no free-tier allowance on this account";
         var dials = new[]
         {
             ResourceView.Dial(inputs, "ru_per_s", "RU/s, right now", provisioned, Throughput, v => v is { } r ? $"{r.ToString("0", CultureInfo.InvariantCulture)} of {limitWords}" : "not read"),
-            ResourceView.Dial(inputs, "storage_gb", "Storage", FreeGb, Storage, v => v is { } g ? $"{g.ToString("0.00", CultureInfo.InvariantCulture)} of {FreeGb} GB" : "not read"),
+            ResourceView.Dial(inputs, "storage_gb", "Storage", storageLimit, Storage, v => v is { } g ? $"{g.ToString("0.00", CultureInfo.InvariantCulture)} of {storageWords}" : "not read"),
         };
         double? throttled = ResourceView.WindowSum(inputs, "throttled");
         var throttles = inputs.Buckets.Where(b => b.Sums.GetValueOrDefault("throttled") is > 0)
@@ -67,7 +71,7 @@ public static class CosmosCard
                 new("RU/s now", ResourceView.Number(ResourceView.Now(inputs, "ru_per_s"), "0"), CloudTones.Of(ruTone)),
                 new("RU/s p95, 30 d", ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ru_per_s").P95, "0"), "info"),
                 new("Normalized peak", PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak), "info"),
-                new("Storage", $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} / {FreeGb} GB", "info"),
+                new("Storage", storageLimit is { } free ? $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} / {free} GB" : $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB", "info"),
                 new("Documents", ResourceView.Number(ResourceView.Now(inputs, "documents")), "info"),
                 new("Requests, hour", ResourceView.Number(ResourceView.HourSum(inputs, "requests")), "info"),
                 new("Throttled", ResourceView.Number(throttled), throttled is > 0 ? "warning" : "info"),
@@ -88,7 +92,7 @@ public static class CosmosCard
             dials,
             [ResourceView.Spark(inputs, "ru_per_s", "RU/s, 60 min", provisioned), ResourceView.Spark(inputs, "normalized", "Normalized RU, 60 min", 100, percentReading: true)],
             $"Normal: RU/s amber {Throughput.Amber} %, red {Throughput.Red} % of {limitWords} held {PlanThresholds.Sustained} min; storage amber {Storage.Amber} %, red {Storage.Red} %; any 429 is amber.",
-            ResourceView.Chart(inputs, "RU/s and storage", ("ru_per_s", "RU/s", provisioned, false), ("storage_gb", "Storage", FreeGb, false), Throughput.Red, $"teal RU/s · green storage · gold deploys · red 429s · dashed {Throughput.Red} %", throttles),
+            ResourceView.Chart(inputs, "RU/s and storage", ("ru_per_s", "RU/s", provisioned, false), ("storage_gb", "Storage", storageLimit, false), Throughput.Red, $"teal RU/s · green storage · gold deploys · red 429s · dashed {Throughput.Red} %", throttles),
             rows,
             readout);
     }

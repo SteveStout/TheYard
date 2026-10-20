@@ -50,7 +50,12 @@ public static partial class AccountEndpoints
         // new password, and is signed in. The same second half will serve an emailed
         // link when there is a sender to send it; only who hands the link over
         // changes.
-        app.MapPost("/api/admin/reset-links", OperatorResetLink);
+        app.MapPost("/api/admin/reset-links", OperatorResetLink)
+            .WithName("OperatorResetLink")
+            .WithTags("Accounts")
+            .Produces(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         // "Forgot password": the same link, sent by the site instead of handed over
         // by the operator. Public, so it answers one sentence whether or not the

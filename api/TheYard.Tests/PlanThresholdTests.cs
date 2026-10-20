@@ -33,8 +33,13 @@ public class PlanThresholdTests
         Assert.Equal(PlanTone.Good, PlanThresholds.ToneOf(spike, PlanThresholds.Cpu));
         Assert.Equal(PlanTone.Info, PlanThresholds.ToneOf(Held(95, 14), PlanThresholds.Cpu));
         Assert.Equal(PlanTone.Alarm, PlanThresholds.ToneOf(Held(20, 15), PlanThresholds.HttpQueue));
-        Assert.Equal(PlanTone.Warning, PlanThresholds.SocketsTone(Held(1_152)));
-        Assert.Equal(PlanTone.Good, PlanThresholds.SocketsTone(Held(1_151)));
+        Assert.Equal(PlanTone.Warning, PlanThresholds.SocketsTone(Held(1_152), PlanThresholds.SocketLimitFor("B1")));
+        Assert.Equal(PlanTone.Good, PlanThresholds.SocketsTone(Held(1_151), PlanThresholds.SocketLimitFor("B1")));
+        // The plan is B2, whose limit is 3,968 (1.0.4.0 measured every size against B1's 1,920).
+        Assert.Equal(PlanTone.Good, PlanThresholds.SocketsTone(Held(1_152), PlanThresholds.SocketLimitFor("B2")));
+        Assert.Equal(PlanTone.Warning, PlanThresholds.SocketsTone(Held(2_381), PlanThresholds.SocketLimitFor("b2")));
+        Assert.Equal(PlanTone.Info, PlanThresholds.SocketsTone(Held(9_999), PlanThresholds.SocketLimitFor("EP1")));
+        Assert.Null(PlanThresholds.SocketLimitFor(null));
     }
 
     [Fact]

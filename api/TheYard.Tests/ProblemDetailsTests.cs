@@ -43,7 +43,8 @@ public class ProblemDetailsTests(WebApplicationFactory<Program> factory)
         // in the same shape as a rejected query (ADR: Accounts and per-user
         // bids). One dollar can never clear the minimum increment, so this is
         // always rejected for the reason the test is about rather than for
-        // being anonymous.
+        // being anonymous; this class writes nothing the store keeps, so it
+        // stays out of the shared bid store's collection (SharedStoreTests).
         var buyer = await Buyers.SignedIn(factory);
         var response = await buyer.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = 1 });
 

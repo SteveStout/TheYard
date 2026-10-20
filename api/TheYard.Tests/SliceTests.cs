@@ -1,3 +1,4 @@
+using System.Reflection;
 using NetArchTest.Rules;
 using TheYard.Api;
 
@@ -98,12 +99,22 @@ public sealed class SliceTests
     [Fact]
     public void Rule_4_a_backend_names_no_adapter_and_both_stores_answer_one_diagnostics_port()
     {
-        var adapterTypes = new[] { "TheYard.Infrastructure", "TheYard.Infrastructure.Cosmos", "Microsoft.EntityFrameworkCore" };
-        var members = typeof(Backend).GetProperties()
-            .Where(property => adapterTypes.Any(ns => property.PropertyType.Namespace?.StartsWith(ns, StringComparison.Ordinal) == true
-                || property.PropertyType.GenericTypeArguments.Any(argument => argument.Namespace?.StartsWith(ns, StringComparison.Ordinal) == true)))
-            .Select(property => $"{property.Name} : {property.PropertyType.Name}")
-            .ToList();
+        var adapterTypes = new[] { "TheYard.Infrastructure", "TheYard.Infrastructure.Cosmos", "Microsoft.EntityFrameworkCore", "Microsoft.AspNetCore.Identity" };
+        // Every type a member names, however deep: a Func<IServiceProvider, IUserStore<YardUser>?> names
+        // Infrastructure's user entity two generic levels down, and 1.0.4.0's one-level walk let it through
+        // (the review of 1.0.4.0, finding 5).
+        static IEnumerable<Type> Named(Type type) =>
+            type.IsGenericType ? type.GetGenericArguments().SelectMany(Named).Prepend(type) : [type];
+        bool Adapter(Type type) => Named(type).Any(named => adapterTypes.Any(ns => named.Namespace?.StartsWith(ns, StringComparison.Ordinal) == true));
+        var members = new List<string>();
+        foreach (var holder in new[] { typeof(Backend), typeof(StoreAttachment) })
+        {
+            const BindingFlags all = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+            members.AddRange(holder.GetProperties(all).Where(property => Adapter(property.PropertyType)).Select(property => $"{holder.Name}.{property.Name} : {property.PropertyType.Name}"));
+            members.AddRange(holder.GetFields(all).Where(field => !field.Name.Contains('<', StringComparison.Ordinal) && Adapter(field.FieldType)).Select(field => $"{holder.Name}.{field.Name} : {field.FieldType.Name}"));
+            members.AddRange(holder.GetConstructors(all).SelectMany(ctor => ctor.GetParameters()).Where(parameter => Adapter(parameter.ParameterType)).Select(parameter => $"{holder.Name}({parameter.Name} : {parameter.ParameterType.Name})"));
+            members.AddRange(holder.GetMethods(all).Where(method => !method.IsSpecialName).SelectMany(method => method.GetParameters().Select(parameter => parameter.ParameterType).Append(method.ReturnType).Where(Adapter).Select(type => $"{holder.Name}.{method.Name} : {type.Name}")));
+        }
         Assert.True(members.Count == 0, "Backend names an adapter: " + string.Join(", ", members));
         Assert.True(typeof(TheYard.Application.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.RelationalDiagnostics)));
         Assert.True(typeof(TheYard.Application.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.Cosmos.DocumentDiagnostics)));

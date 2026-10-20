@@ -32,8 +32,10 @@ public sealed partial class CosmosBidStore
     /// <summary>
     /// The compare-and-set: a create when the caller expected no standing,
     /// which a second creator loses with 409, and a replace carrying the etag
-    /// the caller read otherwise, which a stale etag loses with 412. Either
-    /// loss answers false.
+    /// the caller read otherwise, which a stale etag loses with 412. A replace
+    /// of a standing another process has since reset loses with 404, the same
+    /// loss by another route (the relational store updates no row and answers
+    /// false). Every loss answers false, and the service reads again.
     /// </summary>
     private async Task<bool> TryWriteStandingAsync(string vehicleId, VehicleStanding standing, string? expectedVersion)
     {
@@ -58,7 +60,7 @@ public sealed partial class CosmosBidStore
             }
             return true;
         }
-        catch (CosmosException ex) when (ex.StatusCode is HttpStatusCode.PreconditionFailed or HttpStatusCode.Conflict)
+        catch (CosmosException ex) when (ex.StatusCode is HttpStatusCode.PreconditionFailed or HttpStatusCode.Conflict or HttpStatusCode.NotFound)
         {
             return false;
         }

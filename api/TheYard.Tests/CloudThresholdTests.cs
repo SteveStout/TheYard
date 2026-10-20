@@ -76,6 +76,26 @@ public class CloudThresholdTests
 
 
     [Fact]
+    public void The_free_tier_allowance_and_the_basic_read_rate_apply_only_while_the_record_says_so()
+    {
+        // The free tier's 25 GB and Basic's 1,000 reads a minute are the two ceilings no record
+        // states; 1.0.4.0 measured every account and every registry against them (the review of
+        // 1.0.4.0, finding 7). On: the dial reads against the ceiling. Off, or another tier: no
+        // ceiling, the dial says so, and nothing is amber on a figure that does not apply.
+        var free = CosmosCard.View(Held("storage_gb", 20, new Dictionary<string, string?> { ["free_tier"] = "on", ["throughput"] = "1000" }));
+        Assert.Equal(80, free.Dials[1].Percent);
+        Assert.Contains("of 25 GB", free.Dials[1].Absolute, StringComparison.Ordinal);
+        var paid = CosmosCard.View(Held("storage_gb", 20, new Dictionary<string, string?> { ["free_tier"] = "off", ["throughput"] = "1000" }));
+        Assert.Null(paid.Dials[1].Percent);
+        Assert.Contains("no free-tier allowance", paid.Dials[1].Absolute, StringComparison.Ordinal);
+        var basic = AcrCard.View(Held("pulls", 900, new Dictionary<string, string?> { ["tier"] = "Basic", ["size_limit_gb"] = "10" }));
+        Assert.Equal(90, basic.Dials[1].Percent);
+        var standard = AcrCard.View(Held("pulls", 900, new Dictionary<string, string?> { ["tier"] = "Standard", ["size_limit_gb"] = "100" }));
+        Assert.Null(standard.Dials[1].Percent);
+        Assert.Contains("not read", standard.Dials[1].Absolute, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_registry_card_names_the_untagged_layers_and_never_purges_them()
     {
         var view = AcrCard.View(Held("storage_gb", 9.5, new Dictionary<string, string?> { ["untagged"] = "12", ["untagged_gb"] = "3.10", ["size_limit_gb"] = "10" }));

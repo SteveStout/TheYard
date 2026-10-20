@@ -122,8 +122,17 @@ public static class StoreRegistration
             Bids = new BidService(new MemoryBidStore()),
             Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
             Probe = () => Task.FromResult(false),
-            UserStore = _ => null,
         };
+        // Identity's store over the accounts tables, keyed by the store, given a context from the
+        // request's scope. The type is the one AddEntityFrameworkStores would have registered for a
+        // user type with no roles; naming it here is what lets the other backend register a
+        // different one under the same interface. Registered whether or not the store came up: the
+        // Accounts slice asks the backend whether it is ready before it asks for the store
+        // (ADR: The onion cut into vertical slices, rule 4: the backend names no adapter).
+        builder.Services.AddKeyedScoped<IUserStore<YardUser>>(sqlBackend.Key, (services, _) =>
+            new Microsoft.AspNetCore.Identity.EntityFrameworkCore.UserOnlyStore<YardUser, YardDbContext, string>(
+                services.GetRequiredService<YardDbContext>(),
+                services.GetService<IdentityErrorDescriber>()));
         // Everything that stands on the relational store, built from a state that
         // says it came up. The loggers are attached the moment the host exists (the
         // factory is read at call time, so an attach after startup gets them too).
@@ -151,14 +160,7 @@ public static class StoreRegistration
                 Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "sql", servesBothSites)),
                 new BidService(new EfBidStore(contexts)),
                 new EfActivityStore(quietContexts),
-                () => YardDatabase.HasSeedAsync(contexts),
-                // Identity's own store over the accounts tables, given a context from the
-                // request's scope. The type is the one AddEntityFrameworkStores would have
-                // registered for a user type with no roles; naming it here is what lets
-                // the other backend register a different one under the same interface.
-                services => new Microsoft.AspNetCore.Identity.EntityFrameworkCore.UserOnlyStore<YardUser, YardDbContext, string>(
-                    services.GetRequiredService<YardDbContext>(),
-                    services.GetService<IdentityErrorDescriber>()));
+                () => YardDatabase.HasSeedAsync(contexts));
         }
         if (sqlState.Ready)
         {
@@ -204,8 +206,10 @@ public static class StoreRegistration
                 Bids = new BidService(new MemoryBidStore()),
                 Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
                 Probe = () => Task.FromResult(false),
-                UserStore = _ => null,
             };
+            // One document per account and one per address, and none of Identity's seven tables
+            // (ADR: Accounts on a document store), keyed by the store the way the relational one is.
+            builder.Services.AddKeyedScoped<IUserStore<YardUser>>(cosmosBackend.Key, (_, _) => new CosmosUserStore(store));
             StoreAttachment CosmosAttachment(DatabaseState state) => new(
                 state,
                 new DocumentDiagnostics(store),
@@ -213,10 +217,7 @@ public static class StoreRegistration
                 Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "cosmos", servesBothSites)),
                 new BidService(new CosmosBidStore(store)),
                 new CosmosActivityStore(store),
-                store.ProbeAsync,
-                // One document per account and one per address, and none of Identity's
-                // seven tables (ADR: Accounts on a document store).
-                _ => new CosmosUserStore(store));
+                store.ProbeAsync);
             if (cosmosState.Ready)
             {
                 cosmosBackend.Attach(CosmosAttachment(cosmosState));

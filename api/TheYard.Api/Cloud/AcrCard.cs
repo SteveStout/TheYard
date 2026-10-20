@@ -32,10 +32,14 @@ public static class AcrCard
     {
         double? storageGb = double.TryParse(ResourceView.Fact(inputs, "size_limit_gb", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out double limit) ? limit : null;
         string storageWords = storageGb is { } l ? $"{l.ToString("0.##", CultureInfo.InvariantCulture)} GB" : "the size limit, not read yet";
+        // The read rate is the Basic tier's, and applies only while the record says Basic; another
+        // tier's rate is not read, and the dial says so instead of measuring against Basic's.
+        double? readsPerMinute = string.Equals(ResourceView.Fact(inputs, "tier", ""), "Basic", StringComparison.OrdinalIgnoreCase) ? BasicReadsPerMinute : null;
+        string readsWords = readsPerMinute is { } r ? $"{r:N0} a minute" : "a minute; the rate for this tier is not read";
         var dials = new[]
         {
             ResourceView.Dial(inputs, "storage_gb", "Storage", storageGb, Storage, v => v is { } g ? $"{g.ToString("0.00", CultureInfo.InvariantCulture)} of {storageWords}" : "not read"),
-            ResourceView.Dial(inputs, "pulls", "Pulls, this minute", BasicReadsPerMinute, Pulls, v => v is { } p ? $"{p.ToString("0", CultureInfo.InvariantCulture)} of {BasicReadsPerMinute:N0} a minute" : "not read"),
+            ResourceView.Dial(inputs, "pulls", "Pulls, this minute", readsPerMinute, Pulls, v => v is { } p ? $"{p.ToString("0", CultureInfo.InvariantCulture)} of {readsWords}" : "not read"),
         };
         double? pulls = ResourceView.WindowSum(inputs, "pulls"), ok = ResourceView.WindowSum(inputs, "pulls_ok"), pushes = ResourceView.WindowSum(inputs, "pushes");
         var storageTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "storage_gb").Select(v => ResourceView.Share(v, storageGb)).ToList(), Storage);
@@ -81,9 +85,9 @@ public static class AcrCard
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),
             ResourceView.Resource(inputs),
             dials,
-            [ResourceView.Spark(inputs, "storage_gb", "Storage, 60 min", storageGb), ResourceView.Spark(inputs, "pulls", "Pulls, 60 min", BasicReadsPerMinute)],
-            $"Normal: storage amber {Storage.Amber} %, red {Storage.Red} % of {storageWords}; pulls amber {Pulls.Amber} %, red {Pulls.Red} % of {BasicReadsPerMinute:N0} a minute; held {PlanThresholds.Sustained} min.",
-            ResourceView.Chart(inputs, "Storage and pulls", ("storage_gb", "Storage", storageGb, false), ("pulls", "Pulls", BasicReadsPerMinute, false), Storage.Red, $"teal storage · green pulls · gold deploys · red event · dashed {Storage.Red} %"),
+            [ResourceView.Spark(inputs, "storage_gb", "Storage, 60 min", storageGb), ResourceView.Spark(inputs, "pulls", "Pulls, 60 min", readsPerMinute)],
+            $"Normal: storage amber {Storage.Amber} %, red {Storage.Red} % of {storageWords}; pulls amber {Pulls.Amber} %, red {Pulls.Red} % of {readsWords}; held {PlanThresholds.Sustained} min.",
+            ResourceView.Chart(inputs, "Storage and pulls", ("storage_gb", "Storage", storageGb, false), ("pulls", "Pulls", readsPerMinute, false), Storage.Red, $"teal storage · green pulls · gold deploys · red event · dashed {Storage.Red} %"),
             rows,
             readout);
     }

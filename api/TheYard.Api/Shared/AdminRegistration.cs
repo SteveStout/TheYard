@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting.Server;
 using TheYard.Infrastructure;
 
 namespace TheYard.Api;
@@ -24,7 +25,7 @@ public static class AdminRegistration
         // this registration with a client to its own in-memory server.
         builder.Services.AddSingleton(services => new ProofClients(() => new HttpClient(new HttpClientHandler { UseCookies = false })
         {
-            BaseAddress = new Uri(SelfAddress.Of(services) ?? "http://127.0.0.1:8080"),
+            BaseAddress = new Uri(SelfAddress.Of(services.GetService<IServer>()) ?? "http://127.0.0.1:8080"),
             Timeout = TimeSpan.FromSeconds(60),
         }));
         // #endregion proof-clients
@@ -68,7 +69,7 @@ public static class AdminRegistration
         // The sweep over every address this container serves (ADR: Every page, checked at every roll):
         // it dials the loopback once the server is listening, and is started at the roll further down.
         builder.Services.AddSingleton(services => new PageStatusRunner(
-            () => SelfAddress.Of(services) is { } dialable
+            () => SelfAddress.Of(services.GetService<IServer>()) is { } dialable
                 ? new HttpClient(new HttpClientHandler { UseCookies = false })
                 {
                     BaseAddress = new Uri(dialable),

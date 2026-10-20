@@ -1,9 +1,7 @@
 // One store and everything that stands on it, and the bundle that attaches a store to it.
 // Its own file because the rest of the API reads a backend through this one shape, so a
 // reader looking for what a backend holds finds it here and nothing else.
-using Microsoft.AspNetCore.Identity;
 using TheYard.Application;
-using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
@@ -60,13 +58,6 @@ public sealed class Backend
 
     /// <summary>Is the seed catalogue in the store right now. Two reads, timed by the health check.</summary>
     public required Func<Task<bool>> Probe { get; set; }
-
-    /// <summary>
-    /// Identity's store over this backend's accounts, built per request from
-    /// the request's scope, or null when the store did not come up and there
-    /// are no accounts to keep.
-    /// </summary>
-    public required Func<IServiceProvider, IUserStore<YardUser>?> UserStore { get; set; }
 
     /// <summary>
     /// The relational store's own reading of itself for the Machines card, read by the adapter
@@ -127,7 +118,6 @@ public sealed class Backend
         Bids = attachment.Bids;
         Activity = attachment.Activity;
         Probe = attachment.Probe;
-        UserStore = attachment.UserStore;
     }
     // #endregion attach
 }
@@ -139,13 +129,11 @@ public sealed class Backend
 /// <param name="Bids">The bid service writing through to this store.</param>
 /// <param name="Activity">Where this store keeps the requests it served.</param>
 /// <param name="Probe">Checks whether the seed catalogue is in the store right now.</param>
-/// <param name="UserStore">Builds Identity's account store for a request's scope, or returns null when there are no accounts to keep.</param>
 public sealed record StoreAttachment(
     DatabaseState Database,
     IStoreDiagnostics Diagnostics,
     InventoryService Inventory,
     BidService Bids,
     IActivityStore Activity,
-    Func<Task<bool>> Probe,
-    Func<IServiceProvider, IUserStore<YardUser>?> UserStore);
+    Func<Task<bool>> Probe);
 // #endregion backend

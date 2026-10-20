@@ -28,9 +28,6 @@ namespace TheYard.Api;
 /// </summary>
 public static class SelfAddress
 {
-    /// <summary>The first address the running server is bound to that a client can dial, or null when there is none (as under the test host).</summary>
-    public static string? Of(IServiceProvider services) => Of(services.GetService<IServer>());
-
     /// <summary>The first address <paramref name="server"/> is bound to that a client can dial, or null when there is none.</summary>
     public static string? Of(IServer? server)
     {

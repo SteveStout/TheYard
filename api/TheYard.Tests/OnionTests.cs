@@ -210,17 +210,27 @@ public sealed class OnionTests
     public void The_host_finds_nothing_at_runtime_outside_its_composition_root()
     {
         // A dependency arrives by constructor (ADR: The onion cut into vertical slices, rule 6).
-        // Reading the environment, the request's service container or the built app's
-        // configuration from inside behaviour is wiring hidden where a test cannot hand it a
-        // value; Program.cs and the registration and module classes are where those are read.
+        // Reading the environment, a service container or the built app's configuration from
+        // inside behaviour is wiring hidden where a test cannot hand it a value; the types in
+        // CompositionRoot are where those are read, each for the reason beside it.
         Assert.Empty(RuntimeLookups(typeof(Program).Assembly.Location));
+    }
+
+    [Fact]
+    public void The_application_ring_finds_nothing_at_runtime_at_all()
+    {
+        // The handlers and services take their ports by constructor; a handler that took an
+        // IServiceProvider and asked it for a port would pass the ring rule (System is allowed)
+        // and hide its dependency from every fake-port test (the review of 1.0.4.0, finding 5).
+        Assert.Empty(RuntimeLookups(typeof(TheYard.Application.Auction).Assembly.Location));
     }
     // #endregion host
 
     /// <summary>
-    /// Every place the host's method bodies, outside its composition root, read the environment
-    /// (Environment.GetEnvironmentVariable), a request's service container
-    /// (HttpContext.RequestServices) or the built app's configuration (WebApplication.Configuration).
+    /// Every place an assembly's method bodies, outside the composition root, read the environment
+    /// (Environment.GetEnvironmentVariable), a service container (IServiceProvider.GetService and
+    /// the GetService, GetRequiredService and GetServices extensions over it, ActivatorUtilities,
+    /// HttpContext.RequestServices) or the built app's configuration (WebApplication.Configuration).
     /// </summary>
     private static List<string> RuntimeLookups(string assemblyPath)
     {
@@ -236,6 +246,10 @@ public sealed class OnionTests
                 .OfType<MethodReference>()
                 .Where(called => (called.DeclaringType.FullName, called.Name) is
                     ("System.Environment", "GetEnvironmentVariable")
+                    or ("System.IServiceProvider", "GetService")
+                    or ("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions", _)
+                    or ("Microsoft.Extensions.DependencyInjection.ServiceProviderKeyedServiceExtensions", _)
+                    or ("Microsoft.Extensions.DependencyInjection.ActivatorUtilities", _)
                     or ("Microsoft.AspNetCore.Http.HttpContext", "get_RequestServices")
                     or ("Microsoft.AspNetCore.Builder.WebApplication", "get_Configuration"))
                 .Select(called => $"{method.DeclaringType.FullName}.{method.Name} calls {called.DeclaringType.Name}.{called.Name}"))];
@@ -274,11 +288,28 @@ public sealed class OnionTests
     /// <summary>True for an endpoint class and for the types the compiler writes inside one (its async state machines and lambdas).</summary>
     private static bool IsPartOfAnEndpointClass(TypeDefinition type) => Outermost(type).Name.EndsWith("Endpoints", StringComparison.Ordinal);
 
-    /// <summary>True for Program, for a registration class in Shared/ and a slice's Module, and for the types the compiler writes inside them.</summary>
+    /// <summary>
+    /// The types where the container is filled and read, by name, each with its reason: Program and
+    /// the registration classes in Shared/ fill it; a slice's Module fills its part; the two pipeline
+    /// steps read the built container once, when Program builds the pipeline; The Shed's application
+    /// composes a guest site's own container; IModule is the shape every slice's Module has. A type is on this list or it is behaviour, so a new
+    /// FooModule or BarRegistration elsewhere is not exempt by its name (the review of 1.0.4.0, finding 5).
+    /// </summary>
+    private static readonly HashSet<string> CompositionRoot =
+    [
+        "Program", "<Program>$",
+        "ActivityRegistration", "AdminRegistration", "ApiRegistration", "AuthRegistration", "CostRegistration", "HostedSiteRegistration",
+        "ObservabilityRegistration", "SpaRegistration", "StartupRegistration", "StoreRegistration", "TelemetryRegistration",
+        "Modules", "IModule",
+        "RequestPipeline", "HostedSiteMount", "ShedApplication",
+    ];
+
+    /// <summary>True for a type on the composition root's list, for a slice's Module (TheYard.Api.Features.*.Module), and for the types the compiler writes inside them.</summary>
     private static bool IsCompositionRoot(TypeDefinition type)
     {
-        string name = Outermost(type).Name;
-        return name is "Program" or "<Program>$" || name.EndsWith("Registration", StringComparison.Ordinal) || name.EndsWith("Module", StringComparison.Ordinal);
+        var outer = Outermost(type);
+        return CompositionRoot.Contains(outer.Name)
+            || (outer.Name == "Module" && (outer.Namespace ?? "").StartsWith("TheYard.Api.Features.", StringComparison.Ordinal));
     }
 
     /// <summary>The type a nested or compiler-written type sits inside, all the way out.</summary>

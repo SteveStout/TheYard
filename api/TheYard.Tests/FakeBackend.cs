@@ -17,7 +17,6 @@ internal static class FakeBackend
         Bids = new BidService(),
         Market = new MarketService(),
         Probe = () => Task.FromResult(ready),
-        UserStore = _ => null,
     };
 
     private sealed class EmptyVehicles : IVehicleSource

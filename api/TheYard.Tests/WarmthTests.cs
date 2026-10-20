@@ -60,7 +60,6 @@ public class WarmthTests
         Bids = new BidService(),
         Market = new MarketService(),
         Probe = () => Task.FromResult(true),
-        UserStore = _ => null,
     };
 
     /// <summary>A catalogue that loads when the test says so, and counts how often it was asked.</summary>

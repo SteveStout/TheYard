@@ -46,6 +46,8 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
     [Covers("POST", "/api/auth/forgot", 400)]
     [Covers("POST", "/api/auth/reset", 200)]
     [Covers("POST", "/api/auth/reset", 400)]
+    [Covers("POST", "/api/admin/reset-links", 200)]
+    [Covers("POST", "/api/admin/reset-links", 404)]
     public async Task The_reset_link_is_mailed_and_used_and_a_bad_one_is_refused()
     {
         var client = host.CreateClient();
@@ -55,9 +57,18 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/forgot", new { email = "" })).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/forgot", new { email })).StatusCode);
 
+        // The operator's link: 404 without the key (the route is not there for anyone else) and
+        // for an address with no account; 200 with the key for an address that has one.
+        using var unkeyed = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email }) };
+        Assert.Equal(HttpStatusCode.NotFound, (await client.SendAsync(unkeyed)).StatusCode);
+        using var nobody = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email = Address() }) };
+        nobody.Headers.Add("X-Admin-Key", PasswordResetTests.KeyedHost.Key);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.SendAsync(nobody)).StatusCode);
         using var mint = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email }) };
         mint.Headers.Add("X-Admin-Key", PasswordResetTests.KeyedHost.Key);
-        using var link = JsonDocument.Parse(await (await client.SendAsync(mint)).Content.ReadAsStringAsync());
+        using var minted = await client.SendAsync(mint);
+        Assert.Equal(HttpStatusCode.OK, minted.StatusCode);
+        using var link = JsonDocument.Parse(await minted.Content.ReadAsStringAsync());
         string id = new Uri(link.RootElement.GetProperty("url").GetString()!).Query.Split("reset=")[1];
 
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/reset", new { token = "not-a-link", password = "another horse" })).StatusCode);
@@ -79,6 +90,7 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
     [Covers("POST", "/api/auth/login", 503)]
     [Covers("POST", "/api/auth/forgot", 503)]
     [Covers("POST", "/api/auth/reset", 503)]
+    [Covers("POST", "/api/admin/reset-links", 503)]
     public async Task Every_account_route_is_503_where_the_store_did_not_come_up()
     {
         // A file standing where the database's folder would need to be: the store refuses, and the
@@ -92,6 +104,7 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
                 builder.UseSetting("ConnectionStrings:Yard", $"Data Source={Path.Combine(blocker, "yard.db")}");
                 builder.UseSetting("Cosmos:AccountEndpoint", "");
                 builder.UseSetting(StorePrepare.FirstWaitSetting, "0");
+                builder.UseSetting("Admin:Key", PasswordResetTests.KeyedHost.Key);
             });
             var client = down.CreateClient();
             var credentials = new { email = Address(), password = "correct horse" };
@@ -99,6 +112,9 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
             Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.PostAsJsonAsync("/api/auth/login", credentials)).StatusCode);
             Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.PostAsJsonAsync("/api/auth/forgot", new { email = credentials.email })).StatusCode);
             Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.PostAsJsonAsync("/api/auth/reset", new { token = "x", password = "another horse" })).StatusCode);
+            using var mint = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email = credentials.email }) };
+            mint.Headers.Add("X-Admin-Key", PasswordResetTests.KeyedHost.Key);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.SendAsync(mint)).StatusCode);
         }
         finally
         {

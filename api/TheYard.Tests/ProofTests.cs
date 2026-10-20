@@ -10,8 +10,11 @@ namespace TheYard.Tests;
 /// <summary>
 /// The performance proof (ADR: Same performance, proven): the arithmetic that
 /// turns samples into a verdict, held without a store; and the endpoints,
-/// held against whichever stores this run's container has.
+/// held against whichever stores this run's container has. In the shared bid store's collection:
+/// a proof's round bids on a live vehicle and then resets every bid, which on the shared Cosmos DB
+/// test database moves what the other bidding classes read.
 /// </summary>
+[Collection(SharedBidStore.Name)]
 public class ProofTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {

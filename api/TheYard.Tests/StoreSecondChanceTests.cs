@@ -21,8 +21,7 @@ public class StoreSecondChanceTests
         backend.Inventory,
         backend.Bids,
         backend.Activity,
-        () => Task.FromResult(true),
-        _ => null);
+        () => Task.FromResult(true));
 
     [Fact]
     public async Task A_store_that_answers_on_the_third_ask_is_attached_once_and_the_asking_stops()
