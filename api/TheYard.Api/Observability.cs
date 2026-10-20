@@ -117,7 +117,7 @@ public sealed class ErrorRingBuffer(int capacity)
 /// and that is what the card shows for it, saying so rather than drawing a
 /// zero for a restart count it does not have.</para>
 /// </summary>
-public sealed class AzureSelf(string clientId, string resourceId)
+public sealed class AzureSelf(string clientId, string resourceId, HostIdentity? identity = null)
 {
     private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(4));
 
@@ -143,7 +143,7 @@ public sealed class AzureSelf(string clientId, string resourceId)
         }
         try
         {
-            string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId);
+            string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
             object result;
             if (IsSite(resourceId))
             {

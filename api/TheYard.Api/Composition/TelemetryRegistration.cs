@@ -9,7 +9,9 @@ namespace TheYard.Api;
 public static class TelemetryRegistration
 {
     /// <summary>Turns telemetry on when configured and registers its reader.</summary>
-    public static void AddTheYardTelemetry(this WebApplicationBuilder builder)
+    /// <param name="builder">The host being built.</param>
+    /// <param name="identity">Where this process runs: its web app's name is the role the reader counts, its door the one it asks for a token.</param>
+    public static void AddTheYardTelemetry(this WebApplicationBuilder builder, HostIdentity identity)
     {
         #region telemetry
         // Application Insights. The connection string is an ingestion key, so it is
@@ -31,10 +33,11 @@ public static class TelemetryRegistration
         // tab queries with the container's managed identity.
         var telemetry = new TelemetryReader(
             builder.Configuration["Azure:AppInsightsAppId"] ?? "6ff89351-7fcc-4a41-8238-db65c5903c36",
-            YardComposition.AzureClientId(builder.Configuration),
+            AzureIds.ClientId(builder.Configuration),
             // Wired only where the connection string is: the app id has a default and
             // is therefore no evidence at all that this build can read anything.
-            enabled: telemetryOn);
+            enabled: telemetryOn,
+            identity: identity);
         builder.Services.AddSingleton(telemetry);
         #endregion telemetry
     }

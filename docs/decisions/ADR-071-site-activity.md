@@ -205,6 +205,10 @@ and a guess that is right often enough does not need it.
 
 Site activity crosses the back end from Application outward, and the front end: ActivityHit and the IActivityStore port sit in Application, EfActivityStore in Infrastructure and CosmosActivityStore in Infrastructure.Cosmos implement that port, the collector and visitor token live in the host Api, and the chart geometry is React-free code in src/lib. Application owns the port and both adapters fill it in (dependency inversion), which is why one keeper can take every row without the collector changing. It cost a second schema to publish by hand and a top-paths field that can lose a batch when both containers write in the same five seconds. Application Insights would be the better home if the serving store could travel as a custom dimension and the gate had no need to exercise the card.
 
+## Addendum, 2026-10-20 (1.0.3.188): the request hook is a class
+
+The request hook, a local function inside `ObservabilityRegistration` until 1.0.3.187 that read the activity collector and the visitor tokens off the composition record when a request arrived, is `RequestRecorder` from 1.0.3.188: a class handed the ring, the stores, the kept log, the visitor tokens and the activity collector by constructor, which the pipeline's outermost step calls (ADR: The onion cut into vertical slices, rules 2 and 6). What it files, and what it leaves out, is unchanged.
+
 ## Files
 
 - [`api/TheYard.Application/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Activity.cs): the port, the hit, and the folding of a batch into deltas.
@@ -219,7 +223,7 @@ Site activity crosses the back end from Application outward, and the front end: 
 - [`src/lib/activity.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/activity.ts) and [`src/components/admin/ActivityCard/ActivityCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ActivityCard/ActivityCard.tsx): the geometry and the card.
 - [`api/TheYard.Tests/ActivityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ActivityTests.cs) and [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the folding, the token, the endpoints, and the at sign that is never there.
 
-```live path=api/TheYard.Api/Composition/ObservabilityRegistration.cs region=activity-hook
+```live path=api/TheYard.Api/RequestRecorder.cs region=activity-hook
 ```
 
 ```live path=api/TheYard.Api/Endpoints/AdminEndpoints.cs region=activity-endpoints

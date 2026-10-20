@@ -15,11 +15,17 @@ namespace TheYard.Api;
 public static class RequestPipeline
 {
     /// <summary>Adds TheYard's middleware in its required order.</summary>
-    public static WebApplication UseTheYardRequestPipeline(this WebApplication app, YardComposition host)
+    /// <param name="app">The built host.</param>
+    /// <param name="paths">Where the photographs are.</param>
+    /// <param name="identity">Where this process runs: the web app's name goes on every answer.</param>
+    public static WebApplication UseTheYardRequestPipeline(this WebApplication app, HostPaths paths, HostIdentity identity)
     {
-        var tokens = host.Tokens;
-        var errorLog = host.ErrorRings.Server;
-        string imagesRoot = host.Paths.ImagesRoot;
+        // What the steps below use, made at registration and the same for every request.
+        var tokens = app.Services.GetRequiredService<TokenIssuer>();
+        var errorLog = app.Services.GetRequiredService<ErrorRings>().Server;
+        var recorder = app.Services.GetRequiredService<RequestRecorder>();
+        var backends = app.Services.GetRequiredService<Backends>();
+        string imagesRoot = paths.ImagesRoot;
 
         #region request-timing
         // Timing, and it has to be the outermost thing here.
@@ -42,7 +48,7 @@ public static class RequestPipeline
             }
             finally
             {
-                host.RecordRequest(context, Stopwatch.GetElapsedTime(start));
+                recorder.Record(context, Stopwatch.GetElapsedTime(start));
             }
         });
         #endregion request-timing
@@ -130,7 +136,7 @@ public static class RequestPipeline
         // Every answer names the web app that gave it, App Service's own WEBSITE_SITE_NAME, so the
         // edge card's hourly sample reads who answered a page and who answered the API instead of
         // saying so from memory. App Service sets it as an environment setting; off where none is set.
-        if (app.Configuration["WEBSITE_SITE_NAME"] is { Length: > 0 } siteName)
+        if (identity.SiteName is { } siteName)
         {
             app.Use(async (context, next) =>
             {
@@ -282,7 +288,7 @@ public static class RequestPipeline
         {
             if (context.Request.Path.StartsWithSegments("/api"))
             {
-                await Warmth.EnsureAsync(context.RequestServices.GetRequiredService<CurrentBackend>().Backend);
+                await Warmth.EnsureAsync(backends.For(context));
             }
             await next();
         });

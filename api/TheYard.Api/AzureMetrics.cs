@@ -19,7 +19,7 @@ namespace TheYard.Api;
 public sealed record AzureMetric(string Azure, string Aggregation, string Reading, double Scale = 1, string? Filter = null, string Interval = "PT1M");
 
 /// <summary>Reads Azure Monitor and Resource Manager with the site's own identity, for any resource.</summary>
-public sealed class AzureMetrics(string clientId, bool configured)
+public sealed class AzureMetrics(string clientId, bool configured, HostIdentity? identity = null)
 {
     private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
@@ -212,7 +212,7 @@ public sealed class AzureMetrics(string clientId, bool configured)
     /// <summary>A Resource Manager token for the site's identity, which the registry exchanges for one of its own.</summary>
     public Task<string> ArmTokenAsync() => Token();
 
-    private Task<string> Token() => IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId);
+    private Task<string> Token() => IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
 
     private static async Task<JsonDocument> GetAsync(string token, string pathAndQuery, CancellationToken cancellation)
     {

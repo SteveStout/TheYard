@@ -69,10 +69,14 @@ meets a cold read. The cost is the second catalogue's memory on each site, worki
 
 KeepWarm and KeepWarmState live in the host Api, with one line on the health card in the front end, since sending reads to the app's own pipeline is a hosting concern that no inner ring should know about. Single responsibility, one reason to change, separates the schedule in KeepWarm from the reads in KeepWarmReads, and the loop takes its clock as a TimeProvider through the constructor, the dependency inversion habit that lets KeepWarmTests move time by hand. It cost a pass of reads every four minutes per container, inside capacity the plans already pay for. A plan billed per request or able to scale to zero would make the loop cost money and reopen the choice.
 
+## Addendum, 2026-10-20 (1.0.3.188): the loop is a hosted service, and stops after the drain
+
+From 1.0.3.188 the loop is wired by `Hosted/KeepWarmAtRoll.cs`, registered only where it is on. Whether it is on by default is read from the web app's name in `HostIdentity`, which Program.cs reads once, rather than from the environment inside the wiring (ADR: The onion cut into vertical slices, rule 6). It still starts once the server listens; it now stops, awaited, with the hosted services after the server has drained, where before it stopped on the stopping signal with a blocking wait.
+
 ## Files
 
 - [`api/TheYard.Api/KeepWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/KeepWarm.cs): the loop, the reads and the pass.
-- [`api/TheYard.Api/Composition/Startup.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/Startup.cs): the wiring (region keep-warm-wiring).
+- [`api/TheYard.Api/Hosted/KeepWarmAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Hosted/KeepWarmAtRoll.cs): the wiring (region keep-warm-wiring).
 - [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the request hook that leaves its reads out of the ring and the kept log.
 - [`api/TheYard.Api/Endpoints/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/HealthEndpoints.cs): the health report that carries its last pass.
 - [`api/TheYard.Tests/KeepWarmTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeepWarmTests.cs): the schedule, the overlap and the failures, on a clock the test moves.

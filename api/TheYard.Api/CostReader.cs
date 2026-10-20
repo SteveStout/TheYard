@@ -41,7 +41,7 @@ public sealed record CostRead(CostOutcome Outcome, string? Note, IReadOnlyList<C
 /// this host has, for the management endpoint, and no key anywhere. The
 /// identity needs Cost Management Reader on the subscription and nothing more.
 /// </summary>
-public sealed class CostReader(string subscriptionId, string clientId, bool configured)
+public sealed class CostReader(string subscriptionId, string clientId, bool configured, HostIdentity? identity = null)
 {
     /// <summary>
     /// The one client every read goes out on. Its limit is a minute, not the usual few
@@ -67,7 +67,7 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
             return new CostRead(CostOutcome.Failed, NotConfigured, [], []);
         }
 
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId);
+        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
         var actuals = await PostAsync(token, "query", CostQuery.Actuals(from, to), cancellation);
         if (actuals.Outcome != CostOutcome.Read)
         {

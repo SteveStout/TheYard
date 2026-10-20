@@ -106,6 +106,10 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A typed word of three characters or more matches the start of a word and a shorter one matches anywhere, on every store and every in-memory filter; on SQL a word page seeks the words table's word index and never reads every row's text; on Cosmos DB a page deep in the whole catalogue's order, the live segment by end, the upcoming by start or the ended by end is read from a kept place, the same rows as OFFSET for under 100 RU | ADR: The store does the work | VehicleSearchIndexTests, StoreCatalogueTests, CosmosKeysetTests |
 | Memory that climbs while traffic is flat reads red on the Admin tab, and the week the catalogue moved into each process reads red on the readings the site kept | ADR: Memory follows traffic | MemoryTrafficTests |
 | Every reader behind the plan card and the six resource cards runs against Azure's and Netlify's recorded answers through the one outbound pool: what it asks for, what it makes of the answer, and a refused metric, a refused query or an unseen site read as less and never as a failed card | ADR: One frame for every resource | CloudReadersTests |
+| Rule 2 of the slices: no composition record that every registration takes whole; each registration is handed what it needs by name, and what runs at startup is one hosted service per concern | ADR: The onion cut into vertical slices | SliceTests |
+| Rule 6 of the slices: outside Program.cs and the registration and module classes, the host never reads the environment, a request's service container or the built app's configuration; the platform's settings are read once into BuildInfo and HostIdentity | ADR: The onion cut into vertical slices | OnionTests |
+| A session is refused on any store but the one that opened it, and a session ended on its own store opens neither | ADR: The onion cut into vertical slices | RefuseSessionTests, AuthTests |
+| A Shed that will not start answers 503 and leaves the Yard up; a Shed request that fails past its handler is a 500 problem in TheYard's error record; The Shed's upload limit is The Shed's alone; The Shed is stopped by the last hosted service, after the drain | ADR: The onion cut into vertical slices | ShedMountTests |
 
 ## How the table is read
 
@@ -197,3 +201,7 @@ The plan moved to B2 on 8 October and five pages went on describing B1 (ADR: A r
 ## Addendum, 2026-10-13 (1.0.3.123): the gate on GitHub Actions
 
 The gate moved to a GitHub runner (ADR: The gate runs where the memory is). `GateWorkflowTests` holds the workflow to every check the laptop's gate ran, so the table has its row.
+
+## Addendum, 2026-10-20 (1.0.3.188): the first rows of the slices
+
+Four rows from the record that cuts the onion into vertical slices, for the rules that landed in 1.0.3.188: the composition record retired (rule 2), dependencies found by constructor and the platform's settings read once (rule 6), the session refused on the other store, and The Shed held at its edges. The record names seven rules; each gets its row in the commit that makes it hold.

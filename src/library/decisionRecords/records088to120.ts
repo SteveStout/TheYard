@@ -143,4 +143,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '106',
   },
+  adrTheOnionCutIntoVerticalSlices: {
+    title: 'ADR: The onion cut into vertical slices',
+    menuLabel: 'ADR: The onion cut into vertical slices',
+    url: '/api/docs/adr-the-onion-cut-into-vertical-slices',
+    kind: 'adr',
+    number: '107',
+  },
 } as const satisfies Record<string, RecordEntry>;

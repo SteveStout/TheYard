@@ -238,6 +238,40 @@ public class AuthTests : AuthTestBase
         Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
     }
 
+    /// <summary>
+    /// A session ended on its own store stays ended when the request names the other store. One
+    /// process serves both stores and its own address is one origin for both, so the dead cookie
+    /// is sent again with the header that picks the other store, and it opens nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_session_signed_out_on_one_store_does_not_open_the_other()
+    {
+        await using var api = Api();
+        var browser = api.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        var registered = await Register(browser, _first);
+        string cookie = registered.Headers.GetValues("Set-Cookie")
+            .First(header => header.StartsWith(TokenIssuer.CookieName + "=", StringComparison.Ordinal))
+            .Split(';')[0];
+
+        using (var signOut = new HttpRequestMessage(HttpMethod.Post, "/api/auth/logout"))
+        {
+            signOut.Headers.Add("Cookie", cookie);
+            Assert.Equal(HttpStatusCode.OK, (await browser.SendAsync(signOut)).StatusCode);
+        }
+
+        foreach (string store in new[] { "sql", "cosmos" })
+        {
+            using var me = new HttpRequestMessage(HttpMethod.Get, "/api/auth/me");
+            me.Headers.Add("Cookie", cookie);
+            me.Headers.Add(Backends.HeaderName, store);
+            Assert.Contains("\"signed_in\":false", await (await browser.SendAsync(me)).Content.ReadAsStringAsync(), StringComparison.Ordinal);
+            using var reset = new HttpRequestMessage(HttpMethod.Delete, "/api/bids");
+            reset.Headers.Add("Cookie", cookie);
+            reset.Headers.Add(Backends.HeaderName, store);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await browser.SendAsync(reset)).StatusCode);
+        }
+    }
+
     [Fact]
     public async Task A_short_password_is_refused_with_something_a_person_can_act_on()
     {
@@ -494,12 +528,11 @@ public class AuthBidTests : AuthTestBase
         var refusedPurchase = await elsewhere.PostAsJsonAsync(
             $"/api/vehicles/{id}/buy-now", new { });
 
-        foreach (var answer in new[] { refused, refusedPurchase })
-        {
-            Assert.Equal(HttpStatusCode.Unauthorized, answer.StatusCode);
-            using var problem = JsonDocument.Parse(await answer.Content.ReadAsStringAsync());
-            Assert.Contains("opened on another store", problem.RootElement.GetProperty("detail").GetString());
-        }
+        // Refused before any endpoint runs: the session belongs to the other store, so this
+        // request carries no user at all (RefuseSession.cs).
+        Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, refusedPurchase.StatusCode);
+        Assert.Contains("\"signed_in\":false", await elsewhere.GetStringAsync("/api/auth/me"), StringComparison.Ordinal);
         Assert.Equal("{}", (await elsewhere.GetStringAsync("/api/bids")).Trim());
         // And the account's own session, on this store, bids as it always did.
         await Bid(client, id, amount);

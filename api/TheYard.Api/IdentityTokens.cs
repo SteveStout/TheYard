@@ -13,8 +13,8 @@ namespace TheYard.Api;
 ///
 /// <para>App Service names its door in two environment variables: an endpoint
 /// on the loopback, and a header value that proves the caller is inside the
-/// sandbox. When both are present they are used; otherwise the instance metadata
-/// address is used. The request is built by a pure function so a
+/// sandbox. Program.cs reads both once into HostIdentity; when both are present
+/// they are used, otherwise the instance metadata address is used. The request is built by a pure function so a
 /// test can hold both shapes without either host existing.</para>
 /// </summary>
 public static class IdentityTokens
@@ -40,19 +40,14 @@ public static class IdentityTokens
         return metadata;
     }
 
-    /// <summary>True when the platform has named an identity endpoint, which is how this process knows it is on App Service.</summary>
-    public static bool OnAppService =>
-        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("IDENTITY_ENDPOINT"))
-        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("IDENTITY_HEADER"));
-
-    /// <summary>Asks this host's door for a token. Throws what the HTTP call throws; both callers already answer a failure with a shape rather than an exception.</summary>
-    public static async Task<string> AcquireAsync(HttpClient http, string resource, string clientId)
+    /// <summary>
+    /// Asks this host's door for a token, the door <paramref name="identity"/> names: read once at
+    /// startup into HostIdentity, never from the environment here (ADR-107, rule 6). Throws what the
+    /// HTTP call throws; every caller already answers a failure with a shape rather than an exception.
+    /// </summary>
+    public static async Task<string> AcquireAsync(HttpClient http, string resource, string clientId, HostIdentity identity)
     {
-        using var request = RequestFor(
-            resource,
-            clientId,
-            Environment.GetEnvironmentVariable("IDENTITY_ENDPOINT"),
-            Environment.GetEnvironmentVariable("IDENTITY_HEADER"));
+        using var request = RequestFor(resource, clientId, identity.IdentityEndpoint, identity.IdentityHeader);
         using var response = await http.SendAsync(request);
         response.EnsureSuccessStatusCode();
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());

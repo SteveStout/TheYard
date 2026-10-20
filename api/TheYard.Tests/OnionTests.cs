@@ -176,7 +176,38 @@ public sealed class OnionTests
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
     }
+
+    [Fact]
+    public void The_host_finds_nothing_at_runtime_outside_its_composition_root()
+    {
+        // A dependency arrives by constructor (ADR: The onion cut into vertical slices, rule 6).
+        // Reading the environment, the request's service container or the built app's
+        // configuration from inside behaviour is wiring hidden where a test cannot hand it a
+        // value; Program.cs and the registration and module classes are where those are read.
+        Assert.Empty(RuntimeLookups(typeof(BidEndpoints).Assembly.Location));
+    }
     // #endregion host
+
+    /// <summary>
+    /// Every place the host's method bodies, outside its composition root, read the environment
+    /// (Environment.GetEnvironmentVariable), a request's service container
+    /// (HttpContext.RequestServices) or the built app's configuration (WebApplication.Configuration).
+    /// </summary>
+    private static List<string> RuntimeLookups(string assemblyPath)
+    {
+        using var module = ModuleDefinition.ReadModule(assemblyPath);
+        return [.. module.GetTypes()
+            .Where(type => !IsCompositionRoot(type))
+            .SelectMany(type => type.Methods.Where(method => method.HasBody))
+            .SelectMany(method => method.Body.Instructions
+                .Select(instruction => instruction.Operand)
+                .OfType<MethodReference>()
+                .Where(called => (called.DeclaringType.FullName, called.Name) is
+                    ("System.Environment", "GetEnvironmentVariable")
+                    or ("Microsoft.AspNetCore.Http.HttpContext", "get_RequestServices")
+                    or ("Microsoft.AspNetCore.Builder.WebApplication", "get_Configuration"))
+                .Select(called => $"{method.DeclaringType.FullName}.{method.Name} calls {called.DeclaringType.Name}.{called.Name}"))];
+    }
 
     /// <summary>
     /// Every type in one ring's assembly and namespace, including the types the compiler writes
@@ -211,11 +242,11 @@ public sealed class OnionTests
     /// <summary>True for an endpoint class and for the types the compiler writes inside one (its async state machines and lambdas).</summary>
     private static bool IsPartOfAnEndpointClass(TypeDefinition type) => Outermost(type).Name.EndsWith("Endpoints", StringComparison.Ordinal);
 
-    /// <summary>True for Program and for a registration class in Composition/, and for the types the compiler writes inside them.</summary>
+    /// <summary>True for Program, for a registration class in Composition/ and a slice's Module, and for the types the compiler writes inside them.</summary>
     private static bool IsCompositionRoot(TypeDefinition type)
     {
         string name = Outermost(type).Name;
-        return name is "Program" or "<Program>$" || name.EndsWith("Registration", StringComparison.Ordinal);
+        return name is "Program" or "<Program>$" || name.EndsWith("Registration", StringComparison.Ordinal) || name.EndsWith("Module", StringComparison.Ordinal);
     }
 
     /// <summary>The type a nested or compiler-written type sits inside, all the way out.</summary>

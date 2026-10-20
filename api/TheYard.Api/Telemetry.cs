@@ -14,7 +14,7 @@ namespace TheYard.Api;
 /// the same identity that already reads the container group's state, so no key
 /// is stored anywhere for reading.
 /// </summary>
-public sealed partial class TelemetryReader(string appId, string clientId, bool enabled, string? siteName = null)
+public sealed partial class TelemetryReader(string appId, string clientId, bool enabled, string? siteName = null, HostIdentity? identity = null)
 {
     /// <summary>The one client every read shares, with a short timeout so a slow service cannot hold the Admin card.</summary>
     private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(8));
@@ -28,7 +28,7 @@ public sealed partial class TelemetryReader(string appId, string clientId, bool 
     /// Service the variable is absent, the role name is not this site's own,
     /// and the reader counts everything and says so.
     /// </summary>
-    private readonly string? _siteName = SiteNameOrNull(siteName ?? Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME"));
+    private readonly string? _siteName = SiteNameOrNull(siteName ?? identity?.SiteName);
 
     /// <summary>The lock that guards the cached answer, since several requests can read and fill it at once.</summary>
     private readonly object _gate = new();
@@ -80,7 +80,7 @@ public sealed partial class TelemetryReader(string appId, string clientId, bool 
         {
             // Whichever door this host has: the metadata address on Container
             // Instances, the named endpoint on App Service (ADR: One plan, two sites).
-            string token = await IdentityTokens.AcquireAsync(Http, "https://api.applicationinsights.io", clientId);
+            string token = await IdentityTokens.AcquireAsync(Http, "https://api.applicationinsights.io", clientId, identity ?? HostIdentity.None);
 
             using var req = new HttpRequestMessage(HttpMethod.Post,
                 $"https://api.applicationinsights.io/v1/apps/{appId}/query")

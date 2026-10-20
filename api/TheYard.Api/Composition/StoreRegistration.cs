@@ -10,15 +10,19 @@ namespace TheYard.Api;
 /// Brings both stores up before anything is registered, because the answer decides
 /// what gets registered: the relational store on SQL Server or SQLite, the document
 /// store when there is an account, each behind the same ports, and the second chance
-/// for a store that refused at startup (ADR: One container, both stores).
+/// for a store that refused at startup (ADR: One container, both stores). What it made
+/// is registered here and handed back, so Program.cs passes each later step only the
+/// parts it needs.
 /// </summary>
 public static class StoreRegistration
 {
-    /// <summary>Prepares and registers both stores, their backends and the second chance.</summary>
-    public static async Task AddTheYardStoresAsync(this WebApplicationBuilder builder, YardComposition host)
+    /// <summary>Prepares and registers both stores, their backends and the second chance, and answers what it made.</summary>
+    /// <param name="builder">The host being built.</param>
+    /// <param name="paths">Where the dataset and the photo manifest are.</param>
+    public static async Task<PreparedStores> AddTheYardStoresAsync(this WebApplicationBuilder builder, HostPaths paths)
     {
-        string dataPath = host.Paths.DataPath;
-        string manifestPath = host.Paths.ManifestPath;
+        string dataPath = paths.DataPath;
+        string manifestPath = paths.ManifestPath;
         // The 200-record seed dataset is deterministically expanded to TargetCount
         // synthetic records (default 100,000): scale testing without a giant file.
         int targetCount = builder.Configuration.GetValue("Inventory:TargetCount", 100_000);
@@ -61,20 +65,17 @@ public static class StoreRegistration
         // gave one, SQLite otherwise, and "yard" keeps its name because most of this
         // file only ever needs the relational side's answer.
         var yard = YardConnection.Choose(configuredSqlServer, databaseConnection);
-        // The document store's operations, for the Admin tab, created before the store
-        // is so the container checks and the seed are the first lines in it: the cold
-        // start is the operation the comparison card most wants to show
-        // (ADR: What the store is actually doing).
+        // The two stores' rings for the Admin tab, made before either store so the cold start's
+        // checks, seed and statements are the first lines in them (ADR: What the store is
+        // actually doing) and (ADR: What the database is actually doing).
         var storeLog = new StoreRingBuffer(200);
-        // The SQL ring, its sibling, created here for the same reason: the seed's
-        // statements are the first lines in it (ADR: What the database is actually doing).
         var sqlLog = new SqlRingBuffer(200);
-        // The request describer, built by hand rather than resolved, because the
-        // interceptor that feeds the SQL ring exists before the container does and
-        // both stores need it. Registered below so the rest of the application shares
-        // this one instance.
+        // The request describer, built by hand because the interceptor that feeds the SQL ring
+        // exists before the container does; registered later so everything shares this one.
         var httpContextAccessor = new HttpContextAccessor();
         var currentRequest = new HttpCurrentRequest(httpContextAccessor);
+        // The host's loggers, attached to a context factory made after startup too (StoreAnnouncement).
+        var loggers = new StoreLoggers();
         #endregion persistence
 
         #region migrate-and-seed
@@ -139,9 +140,9 @@ public static class StoreRegistration
             var quietOptions = new DbContextOptionsBuilder<YardDbContext>();
             yard.Configure(quietOptions);
             var quietContexts = new ContextFactory(quietOptions.Options);
-            if (host.HostLoggers is not null)
+            if (loggers.Factory is not null)
             {
-                contexts.Attach(host.HostLoggers);
+                contexts.Attach(loggers.Factory);
             }
             return new StoreAttachment(
                 state,
@@ -183,18 +184,15 @@ public static class StoreRegistration
                 // is what a developer's machine and the test runner have, means the
                 // signed-in Azure CLI session.
                 builder.Configuration["Cosmos:Credential"] ?? "azure-cli",
-                YardComposition.AzureClientId(builder.Configuration),
+                AzureIds.ClientId(builder.Configuration),
                 storeLog);
-            // Filed under the request that caused it from the first operation on: the
-            // describer exists before the store does now, so no operation is
-            // attributed to nobody (ADR: What the store is actually doing).
+            // Every operation is filed under the request that caused it, the first one included.
             cosmos.CurrentRequest = currentRequest;
             var cosmosStartup = new StartupTimings();
             var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.PrepareAsync(seedVehicles, seedPhotos), firstWait));
             var store = cosmos;
-            // The same shape as the relational backend: the files until the store is
-            // attached, at once when it came up, by the second chance when it did not
-            // (ADR: A second store on Cosmos DB, and what it costs).
+            // The relational backend's shape: the files until the store is attached (ADR: A
+            // second store on Cosmos DB, and what it costs).
             var cosmosBackend = new Backend
             {
                 Key = "cosmos",
@@ -248,12 +246,9 @@ public static class StoreRegistration
         builder.Services.AddSingleton(siteHosts);
         builder.Services.AddSingleton(backends);
         builder.Services.AddScoped<CurrentBackend>();
-        // Identity's stores want a context per request, and the factory hands out
-        // contexts rather than registering one. This is the adapter between the two
-        // and one of the four scoped registrations in the application. The factory is
-        // the backend's at call time, so a store attached after startup serves the
-        // accounts too; nothing asks for a context while the store is on the files,
-        // because the user store is null until then.
+        // Identity's stores want a context per request and the factory hands out contexts, so this
+        // adapts one to the other (one of the four scoped registrations). The factory is read at
+        // call time, so a store attached after startup serves the accounts too.
         builder.Services.AddScoped(_ =>
             (sqlBackend.Contexts ?? throw new InvalidOperationException("the relational store is not attached"))
                 .CreateDbContext());
@@ -285,15 +280,20 @@ public static class StoreRegistration
         builder.Services.AddSingleton<IStoreExperiment>(
             cosmos is not null ? new PartitionExperiment(cosmos, TimeProvider.System) : NoStoreExperiment.Instance);
         #endregion migrate-and-seed
-        host.ConfiguredDatabase = configuredDatabase;
-        host.ScratchDatabase = scratchDatabase;
-        host.Relational = yard;
-        host.StoreLog = storeLog;
-        host.SqlLog = sqlLog;
-        host.HttpContextAccessor = httpContextAccessor;
-        host.CurrentRequest = currentRequest;
-        host.SqlBackend = sqlBackend;
-        host.Cosmos = cosmos;
-        host.Backends = backends;
+        var prepared = new PreparedStores(
+            backends,
+            sqlBackend,
+            cosmos,
+            new ScratchDatabase(configuredDatabase is null && yard.Provider == YardProvider.Sqlite ? scratchDatabase : null),
+            sqlLog,
+            storeLog,
+            httpContextAccessor,
+            currentRequest,
+            loggers);
+        builder.Services.AddSingleton(prepared.Scratch);
+        builder.Services.AddSingleton(new DocumentStore(cosmos));
+        builder.Services.AddSingleton(new RelationalStore(sqlBackend));
+        builder.Services.AddSingleton(loggers);
+        return prepared;
     }
 }

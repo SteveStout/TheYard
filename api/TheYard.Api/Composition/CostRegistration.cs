@@ -10,7 +10,9 @@ namespace TheYard.Api;
 public static class CostRegistration
 {
     /// <summary>Registers the cost reader, the hourly recorder, the port it holds the last read in and the cached reader the endpoint answers from.</summary>
-    public static void AddTheYardCosts(this WebApplicationBuilder builder)
+    /// <param name="builder">The host being built.</param>
+    /// <param name="identity">Where this process runs: the reader asks only on App Service, through its door.</param>
+    public static void AddTheYardCosts(this WebApplicationBuilder builder, HostIdentity identity)
     {
         // #region cost-wiring
         // The subscription and the identity are identifiers, not secrets: the id is
@@ -20,9 +22,10 @@ public static class CostRegistration
         // nothing and say so. The last read is held in memory: Azure keeps the bill,
         // so a copy in a database here would be a second truth that could drift.
         var reader = new CostReader(
-            YardComposition.AzureSubscriptionId(builder.Configuration),
-            YardComposition.AzureClientId(builder.Configuration),
-            configured: IdentityTokens.OnAppService);
+            AzureIds.SubscriptionId(builder.Configuration),
+            AzureIds.ClientId(builder.Configuration),
+            configured: identity.OnAppService,
+            identity: identity);
         ICostHistory history = new CostsInMemory();
         // The kept days are also what the plan card reads its own line of the bill from, so the
         // two cards cannot disagree about what the plan costs.

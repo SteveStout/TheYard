@@ -106,10 +106,14 @@ The second look, read from this build:
 
 The sweep lives in the host Api, with the Pages card on the front end, because checking what the site serves is a host concern and touches no auction rule. Single responsibility, one reason to change, divides it cleanly: ServedAddresses builds the list from DocumentationCatalog, SelfAddress asks the server where it is listening, and PageStatusRunner makes the requests and judges each answer. It cost a header the request hook must honour (X-Yard-Page-Check) and a reading taken at the origin that cannot see what the edge has cached. A site with paying users would justify an outside uptime service with alerts, since a container cannot report its own outage.
 
+## Addendum, 2026-10-20 (1.0.3.188): the sweep's wiring has a file of its own
+
+From 1.0.3.188 the two sweeps at the roll are arranged by `Hosted/PageSweepAtRoll.cs`, a hosted service handed the runner and the host's lifetime by constructor, instead of a region of `Composition/Startup.cs` (ADR: The onion cut into vertical slices, rule 2). When they run is unchanged.
+
 ## Files
 
 - [`api/TheYard.Api/PageStatus.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PageStatus.cs): the derived list, the sweep, and what it reports.
-- [`api/TheYard.Api/Composition/Startup.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/Startup.cs): the sweep at startup (region page-status-wiring).
+- [`api/TheYard.Api/Hosted/PageSweepAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Hosted/PageSweepAtRoll.cs): the sweep at startup (region page-status-wiring).
 - [`api/TheYard.Api/Endpoints/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Endpoints/AdminEndpoints.cs): the two endpoints (region page-status-endpoints).
 - [`api/TheYard.Api/Composition/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/ObservabilityRegistration.cs): the request hook that drops its header.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the dictionary the list is built from.

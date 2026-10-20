@@ -245,7 +245,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
     /// </summary>
     private static readonly Dictionary<string, string> OwnClients = new(StringComparer.Ordinal)
     {
-        ["Composition/Startup.cs"] = "the keep-warm loop's loopback client, cookies off, one for the life of the process",
+        ["Hosted/KeepWarmAtRoll.cs"] = "the keep-warm loop's loopback client, cookies off, one for the life of the process",
         ["Composition/AdminRegistration.cs"] = "the proof's and the page sweep's loopback clients, cookies off, one per run",
         ["HourlyReadings.cs"] = "a handler of its own to read the certificate the site answers with, once an hour",
         ["OutboundHttp.cs"] = "the pool itself",

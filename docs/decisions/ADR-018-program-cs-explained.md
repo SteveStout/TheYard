@@ -38,9 +38,9 @@ What the file is today:
 
 ```
 59 total
-  7 comment
+  9 comment
   6 blank
-  46 code, across 0 endpoints
+  44 code, across 0 endpoints
 ```
 
 No route is mapped in Program.cs itself. Until 1.0.3.39 it was one file of 2,667 lines holding 48
@@ -252,12 +252,16 @@ read (slug to file, plus the diagrams) is `DocumentationCatalog.cs` for the same
 
 This record is about the host Api alone: Program.cs is a table of contents, and Composition/ is the composition root, the one place where the outer rings' classes are bound to the ports the inner rings define. That binding is dependency inversion, with Application owning the interfaces while Infrastructure and Infrastructure.Cosmos supply them through constructors, and each registration file under Composition/ has one job, which is single responsibility. The cost is more files to open than a single Program.cs, so a newcomer follows a line to its file before reading any code. A service with a handful of endpoints and one store would read better as one short Program.cs.
 
+## Addendum, 2026-10-20 (1.0.3.188): no bag, and no startup method
+
+The paragraphs above on `YardComposition` and on `app.StartTheYardAsync` (Composition/Startup.cs) describe the file until 1.0.3.187. From 1.0.3.188 Program.cs reads the build's version and commit and the platform's three settings (the web app's name and the managed identity's door) once, into `BuildInfo` and `HostIdentity`, and hands each registration only the values it needs. The work Startup.cs did when the host was built runs as hosted services when the host starts, one per concern, registered by `AddTheYardStartup`, with The Shed's stopper registered last (ADR: The onion cut into vertical slices, rules 2 and 6).
+
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents this record walks.
 - [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition): one file per registration step, the startup, the pipeline and the single-page fallback.
 - [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): one static class per feature.
-- [`api/TheYard.Api/YardComposition.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/YardComposition.cs): what the steps hand one another.
+- [`api/TheYard.Api/Composition/PreparedStores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/PreparedStores.cs): what bringing the stores up hands back, from 1.0.3.188.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): `net10.0`, nullable reference types on, implicit usings on (which is why the file has so few `using` lines).
 - [`api/TheYard.Api/VehicleQueryParams.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleQueryParams.cs), [`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs), [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): binding, the clock anchor, and the outgoing shape.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the load held once and shared, which is what makes the singleton registration matter.

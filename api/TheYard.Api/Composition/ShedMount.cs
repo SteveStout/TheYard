@@ -27,20 +27,24 @@ public static class ShedMount
     /// Starts The Shed in this process when the deploy names its host (Hosts:Shed) and where its
     /// published files are (Shed:ContentRoot), and adds the one middleware that hands it its
     /// requests. No host named, which is a developer's machine and every test host that does not
-    /// set one, adds nothing.
+    /// set one, adds nothing. The started Shed is kept in the ShedSlot, and stopped from there
+    /// after the server has drained (Hosted/ShedStopper.cs).
     /// </summary>
+    /// <param name="app">The built host.</param>
     public static async Task MountTheShedAsync(this WebApplication app)
     {
         var hosts = app.Services.GetRequiredService<SiteHosts>();
-        string? contentRoot = app.Configuration["Shed:ContentRoot"];
+        string? contentRoot = app.Services.GetRequiredService<ShedSettings>().ContentRoot;
         if (hosts.Shed is null)
         {
             return;
         }
+        var slot = app.Services.GetRequiredService<ShedSlot>();
+        var errorLog = app.Services.GetRequiredService<ErrorRings>().Server;
+        var additions = app.Services.GetServices<ShedBuilderAddition>().ToList();
 
         // A Shed that cannot start must not take the two Yard sites down with it: its name answers
         // 503 with a sentence, the reason goes to the log, and the Yard names carry on.
-        ShedApplication? shed = null;
         string? failure = null;
         if (string.IsNullOrWhiteSpace(contentRoot) || !Directory.Exists(contentRoot))
         {
@@ -50,13 +54,11 @@ public static class ShedMount
         {
             try
             {
-                var started = await ShedApplication.StartAsync(
+                slot.Hold(await ShedApplication.StartAsync(
                     contentRoot,
                     app.Environment.EnvironmentName,
-                    ShedRegistration.AddTheShedHostedByTheYard,   // Composition/ShedRegistration.cs
-                    app.Lifetime.ApplicationStopping);
-                app.Lifetime.ApplicationStopping.Register(() => started.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(10)));
-                shed = started;
+                    shed => additions.ForEach(addition => addition.Apply(shed)),   // Composition/ShedRegistration.cs
+                    app.Lifetime.ApplicationStopping));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -76,7 +78,7 @@ public static class ShedMount
                 await next();
                 return;
             }
-            if (shed is null)
+            if (slot.Shed is not { } shed)
             {
                 context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
                 await context.Response.WriteAsync("The Shed is not running in this process; the log says why.", context.RequestAborted);
@@ -89,8 +91,11 @@ public static class ShedMount
             catch (Exception ex) when (!context.RequestAborted.IsCancellationRequested)
             {
                 // The Shed's own handler answers its errors; anything past it is logged here, in
-                // TheYard's log, and answered as a problem rather than a bare 500.
+                // TheYard's log and TheYard's error record, and answered as a problem rather than
+                // a bare 500. The record takes the type and the frames, never the message, as the
+                // error record does for TheYard's own requests.
                 app.Logger.LogError(ex, "The Shed failed a request to {Path}", context.Request.Path);
+                errorLog.Record(context.Request.Path, StatusCodes.Status500InternalServerError, ex.GetType().Name, StackFrames.Of(ex));
                 if (!context.Response.HasStarted)
                 {
                     context.Response.StatusCode = StatusCodes.Status500InternalServerError;
@@ -98,7 +103,7 @@ public static class ShedMount
                 }
             }
         });
-        if (shed is not null)
+        if (slot.Shed is not null)
         {
             app.Logger.LogInformation("The Shed is mounted on {Host} from {Root}", hosts.Shed, contentRoot);
         }

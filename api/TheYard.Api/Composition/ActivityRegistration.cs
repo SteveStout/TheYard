@@ -12,18 +12,16 @@ namespace TheYard.Api;
 public static class ActivityRegistration
 {
     /// <summary>Registers the activity collector, the machine sampler and recorder and the operator's settings.</summary>
-    public static void AddTheYardActivity(this WebApplicationBuilder builder, YardComposition host)
+    /// <param name="builder">The host being built.</param>
+    /// <param name="backends">Every store: each keeps its own activity rows unless the document store keeps them all.</param>
+    /// <param name="cosmos">The document store the machine minutes are kept in, or null.</param>
+    /// <param name="relational">The relational backend, whose quiet context the machine recorder reads.</param>
+    public static void AddTheYardActivity(this WebApplicationBuilder builder, Backends backends, CosmosStore? cosmos, Backend relational)
     {
-        var backends = host.Backends;
-        var cosmos = host.Cosmos;
-        var sqlBackend = host.SqlBackend;
-        var storeLog = host.StoreLog;
-        var requestLog = host.RequestLog;
-        string signingKey = host.SigningKey;
         // #region activity-wiring
         // Site activity (ADR: Site activity, and the line an address does not cross).
-        // The visitor token is keyed with the signing key, so both containers turn one
-        // address into one token within a day and nobody outside can turn it back.
+        // The visitor token is keyed with the signing key (AuthRegistration), so one
+        // address is one token within a day and nobody outside can turn it back.
         // The collector is a hosted service that writes off the request path, one
         // batch every five seconds, to one keeper: Azure Cosmos DB wherever it came
         // up, whichever store served the request, because it keeps the rows without
@@ -32,7 +30,6 @@ public static class ActivityRegistration
         // Site activity, and the line an address does not cross, addendum). Without Cosmos DB the default store keeps its own rows. The
         // admin key guards the visitor rows; unset, that endpoint is a 404, which is
         // the default and the safe one.
-        host.VisitorTokens = new VisitorTokens(signingKey);
         var activityStores = backends.All.ToDictionary(backend => backend.Key, backend => backend.Activity, StringComparer.Ordinal);
         var activityKeeper = backends.All.FirstOrDefault(backend => backend.Key == "cosmos" && backend.Activity is not NullActivityStore)?.Key ?? backends.Default.Key;
         builder.Services.AddSingleton(services => new ActivityCollector(activityStores, activityKeeper, services.GetRequiredService<ILogger<ActivityCollector>>()));
@@ -68,9 +65,9 @@ public static class ActivityRegistration
             services.GetRequiredService<MachineSampler>(),
             machineHistory,
             backends.Default.Key,
-            cancellation => ResourceStats.ReadAsync(sqlBackend.QuietContexts, "the relational store", 8, cancellation),
-            () => storeLog.Snapshot(),
-            () => requestLog.Snapshot(),
+            cancellation => ResourceStats.ReadAsync(relational.QuietContexts, "the relational store", 8, cancellation),
+            services.GetRequiredService<StoreRingBuffer>().Snapshot,
+            services.GetRequiredService<RequestRingBuffer>().Snapshot,
             services.GetRequiredService<ILogger<MachineRecorder>>()));
         builder.Services.AddHostedService(services => services.GetRequiredService<MachineRecorder>());
         // #endregion machine-history-wiring

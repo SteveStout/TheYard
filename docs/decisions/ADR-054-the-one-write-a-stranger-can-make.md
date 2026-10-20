@@ -140,6 +140,10 @@ The window, read from this build:
 
 The limit lives in the Api host: `RegistrationLimit` holds the sliding hour, and the register endpoint in `Endpoints/AccountEndpoints.SignIn.cs` calls `TryTake` after reading the request and `GiveBack` when Identity refuses the account. Single responsibility, one reason to change per class, fits here because the window logic sits in its own class and the endpoint only asks it for a slot. The cost is that a real visitor cannot register while somebody else spends the hour's 120 slots. The window also lives in one process's memory, so running a second instance, or adding the origin lock that a durable counter would need, is when this should move into a shared store.
 
+## Addendum, 2026-10-20 (1.0.3.188): the other store is refused, not skipped
+
+Until 1.0.3.187 the stamp check passed a token whose store was not the request's store, on the argument that the endpoints refuse it. After 19 October one process serves both stores, and its own address is one origin for both, so a cookie issued on one store reaches the other with the header that picks it; a session ended on its own store still opened the other one with its old claims. From 1.0.3.188 the check is `RefuseSession`, handed the request's store and accounts by constructor, and it refuses a token from the other store before any endpoint runs. `RefuseSessionTests` holds the refusal with fake ports, and `AuthTests` signs out on one store and sends the dead cookie to both.
+
 ## Files
 
 - [`api/TheYard.Api/RegistrationLimit.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/RegistrationLimit.cs): the window, and why it slides.
@@ -176,6 +180,6 @@ From 1.0.3.169 both routes need a signed-in session, like the proof's start, and
 
 What a stranger can cause is the list above again: reads, the browser's error ring, and an account.
 
-```live path=api/TheYard.Api/SessionStamp.cs region=session-stamp
+```live path=api/TheYard.Api/RefuseSession.cs region=session-stamp
 ```
 

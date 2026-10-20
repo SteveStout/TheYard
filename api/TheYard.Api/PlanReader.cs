@@ -16,7 +16,7 @@ namespace TheYard.Api;
 /// each app (ADR: The App Service plan, read every minute). No key anywhere. The plan's id is not
 /// configured: it is read off this site, so the reader follows the site if it ever moves plans.
 /// </summary>
-public sealed class PlanReader(string clientId, string selfResourceId, bool configured)
+public sealed class PlanReader(string clientId, string selfResourceId, bool configured, HostIdentity? identity = null)
 {
     private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
@@ -55,7 +55,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// </summary>
     public async Task<IReadOnlyList<PlanMinute>> ReadMinutesAsync(DateTimeOffset from, DateTimeOffset to, string version, CancellationToken cancellation)
     {
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId);
+        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
         var (planId, apps) = await LayoutAsync(token, cancellation);
         var plan = await MetricsAsync(token, planId, PlanMetrics, from, to, cancellation);
         var perApp = new List<(string Name, Dictionary<string, Dictionary<DateTimeOffset, double>> Series)>();
@@ -92,7 +92,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// <summary>The hour's slower read: the plan's size, each app's state and configuration, and the Activity Log since <paramref name="since"/>.</summary>
     public async Task<PlanHour> ReadHourAsync(DateTimeOffset hour, DateTimeOffset since, CancellationToken cancellation)
     {
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId);
+        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
         var (planId, apps) = await LayoutAsync(token, cancellation, fresh: true);
         using var plan = await GetAsync(token, planId + "?api-version=2023-12-01", cancellation);
         var sku = plan.RootElement.TryGetProperty("sku", out var s) && s.ValueKind == JsonValueKind.Object ? s : default;

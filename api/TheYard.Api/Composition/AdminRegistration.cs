@@ -9,23 +9,22 @@ namespace TheYard.Api;
 public static class AdminRegistration
 {
     /// <summary>Registers the proof, the Azure and peer readers, the page sweep, the error rings and the start time.</summary>
-    public static void AddTheYardAdmin(this WebApplicationBuilder builder, YardComposition host)
+    /// <param name="builder">The host being built.</param>
+    /// <param name="relational">The relational backend, whose size the hourly reading reads.</param>
+    /// <param name="build">The build, which the page sweep stamps its reading with.</param>
+    /// <param name="identity">Where this process runs, for the Azure card's own reading.</param>
+    public static void AddTheYardAdmin(this WebApplicationBuilder builder, Backend relational, BuildInfo build, HostIdentity identity)
     {
-        var backends = host.Backends;
-        var sqlLog = host.SqlLog;
-        var storeLog = host.StoreLog;
-        string buildVersion = host.Build.Version;
-        string buildCommit = host.Build.Commit;
         // #region proof-clients
         // Where the performance proof sends its requests: this container's own
         // address, with cookies handled by hand because the proof holds one session
         // per store and a cookie jar would merge them (ADR: Same performance,
         // proven). The address is known only once the server is listening, so the
-        // factory reads it when a run starts; a test replaces this registration with
-        // a client to its own in-memory server.
-        builder.Services.AddSingleton(new ProofClients(() => new HttpClient(new HttpClientHandler { UseCookies = false })
+        // factory asks the server when a run starts (SelfAddress.cs); a test replaces
+        // this registration with a client to its own in-memory server.
+        builder.Services.AddSingleton(services => new ProofClients(() => new HttpClient(new HttpClientHandler { UseCookies = false })
         {
-            BaseAddress = new Uri(host.SelfUrl ?? "http://127.0.0.1:8080"),
+            BaseAddress = new Uri(SelfAddress.Of(services) ?? "http://127.0.0.1:8080"),
             Timeout = TimeSpan.FromSeconds(60),
         }));
         // #endregion proof-clients
@@ -33,9 +32,10 @@ public static class AdminRegistration
         // Identifiers, not secrets: the identity's client id and this web app's ARM path. The
         // template sets the path; the default is the one web app's.
         var azureSelf = new AzureSelf(
-            YardComposition.AzureClientId(builder.Configuration),
+            AzureIds.ClientId(builder.Configuration),
             builder.Configuration["Azure:SelfResourceId"]
-                ?? $"/subscriptions/{YardComposition.AzureSubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-ONE-SS-ZMNETJ67BN5H2");
+                ?? $"/subscriptions/{AzureIds.SubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-ONE-SS-ZMNETJ67BN5H2",
+            identity);
         builder.Services.AddSingleton(azureSelf);
         // The other container's metrics, read server side with a short patience (ADR: Backends, side by
         // side). Since 19 October no deploy sets Peer:Url: both sites are this process, and the card
@@ -55,13 +55,16 @@ public static class AdminRegistration
         // The reading is a delegate, which is the port for a one-call reading (ADR-080, the addendum
         // on the delegate). The quiet context is looked up at each reading, not here: a relational store that
         // refused at startup gets one only when the second chance attaches it later.
-        var sqlBackend = host.SqlBackend;
-        builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(sqlBackend?.QuietContexts, cancellation), TimeProvider.System));
+        builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(relational.QuietContexts, cancellation), TimeProvider.System));
         // #endregion hourly-readings-wiring
         builder.Services.AddHostedService(services => services.GetRequiredService<HourlyReadings>());
         // The performance proof (ADR: Same performance, proven), built on first use so a test's own
         // ProofClients registration is the one it gets.
-        builder.Services.AddSingleton(services => new ProofRunner(backends, services.GetRequiredService<ProofClients>(), sqlLog, storeLog));
+        builder.Services.AddSingleton(services => new ProofRunner(
+            services.GetRequiredService<Backends>(),
+            services.GetRequiredService<ProofClients>(),
+            services.GetRequiredService<SqlRingBuffer>(),
+            services.GetRequiredService<StoreRingBuffer>()));
         // The sweep over every address this container serves (ADR: Every page, checked at every roll):
         // it dials the loopback once the server is listening, and is started at the roll further down.
         builder.Services.AddSingleton(services => new PageStatusRunner(
@@ -77,18 +80,14 @@ public static class AdminRegistration
             () => services.GetRequiredService<IWebHostEnvironment>() is { } environment
                 && !string.IsNullOrEmpty(environment.WebRootPath)
                 && File.Exists(Path.Combine(environment.WebRootPath, "index.html")),
-            buildVersion,
-            buildCommit));
+            build.Version,
+            build.Commit));
 
         // The two error rings and the moment the process started, registered before the
         // host exists so the endpoints can ask for them; the rings are wired to the kept
-        // log and the start is marked once the host is up (Composition/Startup.cs).
-        var errorRings = new ErrorRings();
-        builder.Services.AddSingleton(errorRings);
+        // log and the start is marked when the host starts (Hosted/ErrorRingKeeping.cs).
+        builder.Services.AddSingleton(new ErrorRings());
         builder.Services.AddSingleton(new SelfTestCooldown(TimeProvider.System));
-        var hostStart = new HostStart();
-        builder.Services.AddSingleton(hostStart);
-        host.ErrorRings = errorRings;
-        host.Start = hostStart;
+        builder.Services.AddSingleton(new HostStart());
     }
 }

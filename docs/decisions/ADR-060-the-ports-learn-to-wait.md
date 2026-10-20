@@ -133,6 +133,10 @@ the bidding tests await their bids. 325 tests, all green, after the change.
 
 This decision starts in Application, where every member of `IVehicleSource`, `IPhotoManifestSource` and `IBidStore` in `Ports.cs` now returns a `Task` and `BidService` guards its writes with a `SemaphoreSlim`, then spreads outward to the async adapters in Infrastructure and to the host, which awaits `WarmAsync` and `LoadAsync` from `Composition/Startup.cs` before serving. The ports had been shaped by the first store, a file read that never waits; a network store behind them would have blocked the only thread on a one-vCPU container. The change cost every adapter, fake and test a mechanical rewrite, and the shared warm-up task later needed fixing so a failed load could be retried. A store that only ever read local files on a many-core host would not have needed this, though any network store makes it the right shape.
 
+## Addendum, 2026-10-20 (1.0.3.188): the warm starts from a hosted service
+
+The listen-first warm, which the paragraph above places in `Composition/Startup.cs`, runs from `Hosted/CatalogueWarm.cs` from 1.0.3.188: a hosted service that starts the load when the host starts and returns at once, so the server still listens before the catalogue is in. The rule is unchanged; only its file moved (ADR: The onion cut into vertical slices, rule 2).
+
 ## Files
 
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the three seams, awaitable.
@@ -186,7 +190,7 @@ The host no longer loads the default store's catalogue before it listens. Measur
 
 So the warm runs beside the server. The page's own files and the platform's probes, `/healthz` and `/readyz`, answer within seconds of the container starting; every API read waits for the load, and waits without holding a thread, because the pipeline already awaits the request's store before any `/api` endpoint runs (the addendum above). The bids replay before the catalogue loads, not after: they are a few rows and done in well under the catalogue's time, so a read let through by the warm finds them in place, and nobody sees a sold vehicle offered or their own bids missing after a roll. Readiness now includes the catalogue, so `/readyz` says 503 until it has loaded, and the deploy's Verify step polls it the way it polls the version. One promise of this record is kept in a different shape: a dataset that cannot be loaded still ends the process, but by logging the failure and stopping the host after it has started, rather than by never starting it.
 
-```live path=api/TheYard.Api/Composition/Startup.cs region=listen-first
+```live path=api/TheYard.Api/Hosted/CatalogueWarm.cs region=listen-first
 ```
 
 

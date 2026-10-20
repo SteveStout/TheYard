@@ -14,11 +14,12 @@ namespace TheYard.Api;
 public static class ApiRegistration
 {
     /// <summary>Registers the JSON options, the forwarded headers, the problem shape, compression and the OpenAPI document.</summary>
-    public static void AddTheYardApi(this WebApplicationBuilder builder, YardComposition host)
+    /// <param name="builder">The host being built.</param>
+    /// <param name="build">The build, whose version the API document carries.</param>
+    public static void AddTheYardApi(this WebApplicationBuilder builder, BuildInfo build)
     {
-        string buildVersion = host.Build.Version;
-        string buildCommit = host.Build.Commit;
-        string? siteUrl = host.SiteUrl;
+        // This site as a visitor reaches it, for the API document's server line; unset, none.
+        string? siteUrl = builder.Configuration["Site:Url"];
         // No InventoryService, BidService or MarketService in the container. Each
         // backend owns its own three (the room too: one room per store, held in
         // memory for the life of the container, ADR-027), and an endpoint reaches
@@ -128,7 +129,7 @@ public static class ApiRegistration
         // document built from the endpoints below as they are mapped, the operator
         // surface filtered out of it, and the two schemes a session travels by
         // declared. The version is the build's, because that is the honest number.
-        builder.Services.AddOpenApi(ApiDocument.Name, options => ApiDocument.Configure(options, buildVersion, buildCommit, siteUrl));
+        builder.Services.AddOpenApi(ApiDocument.Name, options => ApiDocument.Configure(options, build.Version, build.Commit, siteUrl));
         #endregion api-document
     }
 }

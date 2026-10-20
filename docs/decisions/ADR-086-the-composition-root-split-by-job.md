@@ -74,11 +74,16 @@ What that is worth: a reader opens the entry file and sees the whole start-up on
 
 This is a host Api decision: Program.cs became a table of contents, with one static class per registration step in Composition/ and one per feature in Endpoints/, and no inner ring moved. Each file has one job, so changing how bids are mapped means opening BidEndpoints.cs and nothing that wires the stores (single responsibility). It cost YardComposition, a small stateful object that hands the signing key and the stores from one step to the next, and twenty-nine files across Composition/ and Endpoints/ where there was one. A host small enough to read on one screen would be clearer as one file again.
 
+## Addendum, 2026-10-20 (1.0.3.188): the steps take what they need by name
+
+From 1.0.3.188 `YardComposition` is gone. It was a record every registration took whole and wrote into, and `Composition/Startup.cs` read eleven fields off it: a service locator in a record's clothes, and the first thing the review of 20 October named (ADR: The onion cut into vertical slices, rule 2). Each registration now takes what it needs as parameters, and Program.cs passes them by name. Bringing the stores up answers a `PreparedStores` that nobody writes into after it is made. What `Startup.cs` did is now one hosted service per concern in `Hosted/`, each handed its dependencies by constructor: the stores said out loud, the scratch database cleaned up, the error rings kept, the catalogue warmed beside the server, the page sweep at the roll, the keep-warm loop, and The Shed stopped after the drain. `SliceTests` fails if the record comes back.
+
 ## Files
 
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents.
 - [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the front end's table of contents.
 - [`api/TheYard.Api/Composition`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Composition): the registration steps, the startup, the pipeline and the fallback.
 - [`api/TheYard.Api/Endpoints`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Endpoints): one static class per feature.
-- [`api/TheYard.Api/YardComposition.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/YardComposition.cs): what the steps hand one another.
+- [`api/TheYard.Api/Composition/PreparedStores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Composition/PreparedStores.cs): what bringing the stores up hands back, from 1.0.3.188.
+- [`api/TheYard.Api/Hosted`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Hosted): what ran at startup, one hosted service per concern, from 1.0.3.188.
 - [`api/TheYard.Tests/CompositionRootTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CompositionRootTests.cs) and [`api/TheYard.Tests/XmlSummaryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/XmlSummaryTests.cs): the two rules above.

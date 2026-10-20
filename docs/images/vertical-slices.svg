@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1010" viewBox="0 0 1400 1010" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>The onion cut into vertical slices: the five rings as bands with references pointing inward, four slices cut through every ring with the same folder name in each, the Shared column beside them, the rules the gate holds, and one bid followed through one slice</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <style>
+      .ring0 { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .ring1 { fill: #ece9ea; stroke: #7b7f8a; stroke-width: 1.5; rx: 14; }
+      .ring2 { fill: #f7f5f6; stroke: #7b7f8a; stroke-width: 1.5; rx: 14; }
+      .ring3 { fill: #efeeea; stroke: #7b7f8a; stroke-width: 1.5; rx: 14; }
+      .ring4 { fill: #e6e4df; stroke: #7b7f8a; stroke-width: 1.5; rx: 14; }
+      .slice { fill: none; stroke: #9a8459; stroke-width: 2; stroke-dasharray: 8 5; rx: 12; }
+      .shared { fill: none; stroke: #7b7f8a; stroke-width: 1.5; stroke-dasharray: 3 4; rx: 12; }
+      .shared-title { fill: #62666f; font-size: 13px; font-weight: 700; }
+      .rules { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 12; }
+      .lane { fill: #f4f2f3; stroke: #d8d3d4; stroke-width: 1; rx: 14; }
+      .box { fill: #ffffff; stroke: #7b7f8a; stroke-width: 1.5; rx: 10; }
+      .slicebox { fill: #fbf7ee; stroke: #9a8459; }
+      .app { fill: #f7f5f6; stroke: #7b7f8a; }
+      .domain { fill: #efeeea; stroke: #7b7f8a; }
+      .band-title { fill: #3f3a37; font-size: 16px; font-weight: 700; }
+      .band-sub { fill: #62666f; font-size: 12.5px; }
+      .slice-title { fill: #7a6535; font-size: 13px; font-weight: 700; }
+      .lane-title { fill: #3f3a37; font-size: 17px; font-weight: 700; }
+      .lane-sub { fill: #62666f; font-size: 13px; }
+      .title { fill: #3f3a37; font-size: 15px; font-weight: 600; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .small { fill: #5e5653; font-size: 11.5px; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 10.5px; }
+      .label { fill: #4a6c96; font-size: 12px; font-weight: 600; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+  <rect width="1400" height="1010" fill="#e9e6e7"/>
+  <text x="30" y="44" class="heading">The onion cut into vertical slices: five rings, one folder name per feature in every ring</text>
+  <text x="30" y="68" class="caption">Read top to bottom for the rings, which point inward as they always did; read a dashed column for one feature, which now lives in one place in each ring and nowhere else.</text>
+  <rect x="30" y="100" width="1100" height="122" class="ring0"/>
+  <text x="46" y="124" class="band-title">TheYard.Api, the host</text>
+  <text x="46" y="142" class="band-sub">a Module per slice: Register and Map; the wire; the pipeline in Shared</text>
+  <rect x="30" y="232" width="1100" height="110" class="ring1"/>
+  <text x="46" y="256" class="band-title">TheYard.Infrastructure, the adapters</text>
+  <text x="46" y="274" class="band-sub">relational, document and cloud; the only ring that opens a socket</text>
+  <rect x="30" y="352" width="1100" height="110" class="ring2"/>
+  <text x="46" y="376" class="band-title">TheYard.Application, the use cases</text>
+  <text x="46" y="394" class="band-sub">one handler per request, one HandleAsync, the ports it asks</text>
+  <rect x="30" y="472" width="1100" height="92" class="ring3"/>
+  <text x="46" y="496" class="band-title">TheYard.Domain, the rules</text>
+  <text x="46" y="514" class="band-sub">pure functions and records; no clock, no disk, no network</text>
+  <rect x="30" y="574" width="1100" height="60" class="ring4"/>
+  <text x="46" y="598" class="band-title">TheYard.Data, the records</text>
+  <text x="46" y="616" class="band-sub">zero dependencies, zero behaviour</text>
+  <rect x="40" y="96" width="246" height="538" class="shared"/>
+  <text x="163" y="88" class="shared-title" text-anchor="middle">Shared/, the same in every ring</text>
+  <text x="52" y="160" class="small">Program.cs: a loop over IModule</text>
+  <text x="52" y="176" class="small">RequestPipeline, SiteHosts, Sites</text>
+  <text x="52" y="192" class="small">IHostedSite, The Shed as one</text>
+  <text x="52" y="208" class="small">Problems, the wire conventions</text>
+  <text x="52" y="292" class="small">ContextFactory, the Cosmos client</text>
+  <text x="52" y="308" class="small">AzureMetrics, IdentityTokens</text>
+  <text x="52" y="324" class="small">OutboundHttp, one pool</text>
+  <text x="52" y="412" class="small">the auction composition</text>
+  <text x="52" y="428" class="small">IStoreDiagnostics, IHostIdentity</text>
+  <text x="52" y="444" class="small">the clock port</text>
+  <text x="52" y="532" class="small">FNV-1a, CatalogueSlot</text>
+  <text x="52" y="548" class="small">the one tone rule</text>
+  <rect x="300" y="96" width="190" height="538" class="slice"/>
+  <text x="395" y="88" class="slice-title" text-anchor="middle">Features/Bids</text>
+  <text x="312" y="160" class="body">Module.cs</text>
+  <text x="312" y="176" class="body">PlaceBidEndpoint.cs</text>
+  <text x="312" y="192" class="body">BidWire.cs</text>
+  <text x="312" y="292" class="body">SqlBidStore.cs</text>
+  <text x="312" y="308" class="body">CosmosBidStore.cs</text>
+  <text x="312" y="412" class="body">PlaceBid.cs, the handler</text>
+  <text x="312" y="428" class="body">IBidStore.cs, the port</text>
+  <text x="312" y="532" class="body">BidRules.cs</text>
+  <text x="312" y="548" class="body">StandingRules.cs</text>
+  <rect x="506" y="96" width="190" height="538" class="slice"/>
+  <text x="601" y="88" class="slice-title" text-anchor="middle">Features/Vehicles</text>
+  <text x="518" y="160" class="body">Module.cs</text>
+  <text x="518" y="176" class="body">SearchEndpoint.cs</text>
+  <text x="518" y="192" class="body">VehicleWire.cs</text>
+  <text x="518" y="292" class="body">SqlCatalogue.cs</text>
+  <text x="518" y="308" class="body">CosmosCatalogue.cs</text>
+  <text x="518" y="412" class="body">SearchVehicles.cs</text>
+  <text x="518" y="428" class="body">IVehicleCatalogue.cs</text>
+  <text x="518" y="532" class="body">Filter.cs, Ordering.cs</text>
+  <text x="518" y="548" class="body">AuctionClock.cs</text>
+  <rect x="712" y="96" width="190" height="538" class="slice"/>
+  <text x="807" y="88" class="slice-title" text-anchor="middle">Features/Accounts</text>
+  <text x="724" y="160" class="body">Module.cs</text>
+  <text x="724" y="176" class="body">SignInEndpoint.cs</text>
+  <text x="724" y="192" class="body">ResetEndpoints.cs</text>
+  <text x="724" y="292" class="body">IdentityUserStore.cs</text>
+  <text x="724" y="308" class="body">CosmosUserStore.cs</text>
+  <text x="724" y="412" class="body">SignIn.cs, RefuseSession.cs</text>
+  <text x="724" y="428" class="body">IAccounts.cs, IResetLinks.cs</text>
+  <text x="724" y="532" class="body">SessionRules.cs</text>
+  <rect x="918" y="96" width="196" height="538" class="slice"/>
+  <text x="1016" y="88" class="slice-title" text-anchor="middle">Features/Admin/Cloud/Sql</text>
+  <text x="930" y="160" class="body">Module.cs</text>
+  <text x="930" y="176" class="body">SqlCardEndpoint.cs</text>
+  <text x="930" y="192" class="body">SqlCardView.cs, pure</text>
+  <text x="930" y="292" class="body">ArmResourceReader.cs</text>
+  <text x="930" y="308" class="body">MonitorMinutes.cs</text>
+  <text x="930" y="412" class="body">ReadSqlCard.cs, the handler</text>
+  <text x="930" y="428" class="body">IResourceReader.cs, the port</text>
+  <text x="930" y="532" class="body">CardTone.cs, Dial.cs</text>
+  <text x="930" y="548" class="body">CardView.cs</text>
+  <text x="1016" y="652" class="label" text-anchor="middle">and Plan, Cosmos, Acr, Edge, Insights, Mail, Docs, Health, each a column like these</text>
+  <path d="M1148 160 V282" class="flow"/>
+  <path d="M1148 292 V402" class="flow"/>
+  <path d="M1148 412 V512" class="flow"/>
+  <path d="M1148 522 V604" class="flow"/>
+  <text x="1160" y="330" class="label">inward</text>
+  <text x="1160" y="346" class="label">only</text>
+  <rect x="1200" y="100" width="170" height="534" class="rules"/>
+  <text x="1214" y="124" class="title">Held by the gate</text>
+  <text x="1214" y="148" class="small">the ten ring rules</text>
+  <text x="1214" y="164" class="small"></text>
+  <text x="1214" y="180" class="small">a slice depends on its</text>
+  <text x="1214" y="196" class="small">own folders and Shared/</text>
+  <text x="1214" y="212" class="small"></text>
+  <text x="1214" y="228" class="small">every slice has a Module;</text>
+  <text x="1214" y="244" class="small">Program.cs maps nothing</text>
+  <text x="1214" y="260" class="small"></text>
+  <text x="1214" y="276" class="small">one handler, one</text>
+  <text x="1214" y="292" class="small">HandleAsync, ports by</text>
+  <text x="1214" y="308" class="small">constructor</text>
+  <text x="1214" y="324" class="small"></text>
+  <text x="1214" y="340" class="small">no RequestServices,</text>
+  <text x="1214" y="356" class="small">Environment or</text>
+  <text x="1214" y="372" class="small">Configuration outside</text>
+  <text x="1214" y="388" class="small">Program and *Module</text>
+  <text x="1214" y="404" class="small"></text>
+  <text x="1214" y="420" class="small">sites and stores are</text>
+  <text x="1214" y="436" class="small">lists; no host or store</text>
+  <text x="1214" y="452" class="small">literal in the host</text>
+  <text x="1214" y="468" class="small"></text>
+  <text x="1214" y="484" class="small">only Infrastructure</text>
+  <text x="1214" y="500" class="small">opens a socket</text>
+  <text x="1214" y="516" class="small"></text>
+  <text x="1214" y="532" class="small">no typed resource name,</text>
+  <text x="1214" y="548" class="small">SKU, price or date</text>
+  <rect x="30" y="680" width="1340" height="290" class="lane"/>
+  <text x="46" y="708" class="lane-title">One request, through one slice</text>
+  <text x="46" y="727" class="lane-sub">POST /api/vehicles/{id}/bids. Nothing on this path reads RequestServices, Environment or configuration; the store was chosen once, in Shared, and handed in.</text>
+  <rect x="46" y="748" width="196" height="92" class="box"/>
+  <text x="60" y="773" class="title">The edge, the host</text>
+  <text x="60" y="793" class="mono">X-Yard-Host, X-Yard-Store</text>
+  <text x="60" y="814" class="body">The name and the store</text>
+  <text x="60" y="831" class="body">the request carries.</text>
+  <rect x="262" y="748" width="196" height="92" class="box"/>
+  <text x="276" y="773" class="title">Shared pipeline</text>
+  <text x="276" y="793" class="mono">Shared/RequestPipeline.cs</text>
+  <text x="276" y="814" class="body">Timing, forwarded headers,</text>
+  <text x="276" y="831" class="body">problems, the warm store.</text>
+  <rect x="478" y="748" width="196" height="92" class="box slicebox"/>
+  <text x="492" y="773" class="title">Bids/Module.Map</text>
+  <text x="492" y="793" class="mono">Features/Bids/Module.cs</text>
+  <text x="492" y="814" class="body">The one place this route</text>
+  <text x="492" y="831" class="body">is mapped.</text>
+  <rect x="694" y="748" width="196" height="92" class="box slicebox"/>
+  <text x="708" y="773" class="title">PlaceBidEndpoint</text>
+  <text x="708" y="793" class="mono">Bids/PlaceBidEndpoint.cs</text>
+  <text x="708" y="814" class="body">Binds the wire, calls the</text>
+  <text x="708" y="831" class="body">handler, writes the answer.</text>
+  <rect x="910" y="748" width="206" height="92" class="box app"/>
+  <text x="924" y="773" class="title">PlaceBid.HandleAsync</text>
+  <text x="924" y="793" class="mono">Application/Bids/PlaceBid.cs</text>
+  <text x="924" y="814" class="body">Ports by constructor: the</text>
+  <text x="924" y="831" class="body">store, the clock. One method.</text>
+  <rect x="1136" y="748" width="216" height="92" class="box domain"/>
+  <text x="1150" y="773" class="title">BidRules, then IBidStore</text>
+  <text x="1150" y="793" class="mono">Domain/Bids, Infrastructure/Bids</text>
+  <text x="1150" y="814" class="body">The rule decides, pure; the</text>
+  <text x="1150" y="831" class="body">adapter writes, Sql or Cosmos.</text>
+  <path d="M242 794 L262 794" class="flow"/>
+  <path d="M458 794 L478 794" class="flow"/>
+  <path d="M674 794 L694 794" class="flow"/>
+  <path d="M890 794 L910 794" class="flow"/>
+  <path d="M1116 794 L1136 794" class="flow"/>
+  <text x="46" y="900" class="body">The slice's tests: PlaceBidTests gives the handler a fake IBidStore and a fixed clock and asserts every outcome BidRules can reach; the endpoint test is one integration case per status code.</text>
+  <text x="46" y="920" class="body">Adding a slice is one folder in each ring and one Module; nothing in Program.cs changes. Removing one is deleting those folders; the gate says what else referred to it, which is nothing.</text>
+  <text x="46" y="940" class="body">Until 1.0.4.0 the host was sliced by kind instead: Endpoints/, Composition/, Cloud/ and ninety files at the root. The rings were held; the slices were not, and a feature was spread across all four folders.</text>
+  <text x="30" y="988" class="caption">Source: docs/images/vertical-slices.svg, drawn by docs/images/vertical-slices.mjs from the Features/ folders, OnionTests.cs and SliceTests.cs. The gate holds every claim on it.</text>
+</svg>
