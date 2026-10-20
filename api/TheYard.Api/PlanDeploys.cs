@@ -60,14 +60,21 @@ public static class PlanDeploys
             string when = DateTimeOffset.FromUnixTimeMilliseconds(band.StartMs).UtcDateTime.ToString("MMM d HH:mm", CultureInfo.InvariantCulture);
             if (cpu >= PlanThresholds.Cpu.Amber)
             {
-                said.Add($"CPU reached {cpu.Value.ToString("0", CultureInfo.InvariantCulture)} % in the roll at {when} UTC, a blip: the two containers overlap for a minute or two");
+                said.Add($"CPU reached {cpu.Value.ToString("0", CultureInfo.InvariantCulture)} % in the roll at {when} UTC, a blip: the two containers overlapped for {Overlap(band)}");
             }
             else if (memory >= PlanThresholds.Memory.Amber)
             {
-                said.Add($"memory reached {memory.Value.ToString("0", CultureInfo.InvariantCulture)} % in the roll at {when} UTC, a blip: the two containers overlap for a minute or two");
+                said.Add($"memory reached {memory.Value.ToString("0", CultureInfo.InvariantCulture)} % in the roll at {when} UTC, a blip: the two containers overlapped for {Overlap(band)}");
             }
         }
         return said;
+    }
+
+    /// <summary>How long a roll's two containers ran side by side, as measured by the roll's own band.</summary>
+    public static string Overlap(CloudBand band)
+    {
+        int minutes = Math.Max(1, (int)Math.Round((band.EndMs - band.StartMs) / 60_000.0));
+        return minutes == 1 ? "1 minute" : $"{minutes} minutes";
     }
 
     /// <summary>The legend's note when the keep is younger than the window: where the lines begin.</summary>

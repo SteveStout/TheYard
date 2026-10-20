@@ -2,6 +2,7 @@
 // live read of Azure only when the newest kept minute is more than a minute old. Its own file
 // because the cache and the freshness rule are what keep the card fast and Azure unbothered.
 using TheYard.Application;
+using TheYard.Application.Features.Admin.Plan;
 
 namespace TheYard.Api;
 
@@ -12,7 +13,7 @@ namespace TheYard.Api;
 /// sixty seconds this asks the recorder for one read before answering, on the SQL site where the
 /// recorder runs, so an open card never shows a stale dial while Azure has a fresher one.
 /// </summary>
-public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? recorder, Func<CancellationToken, Task<double?>> planCost, TimeProvider clock)
+public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? recorder, Func<CancellationToken, Task<double?>> planCost, TimeProvider clock, string recordingSite = "the recording site") : IPlanCard
 {
     /// <summary>How old the newest kept minute may be before the card asks Azure itself.</summary>
     public static readonly TimeSpan Fresh = TimeSpan.FromSeconds(60);
@@ -64,7 +65,8 @@ public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? record
             await history.BucketsAsync(now - length, grain, cancellation),
             await MonthAsync(now, cancellation),
             await history.HoursAsync(now - length, cancellation),
-            await planCost(cancellation));
+            await planCost(cancellation),
+            recordingSite);
         lock (_gate)
         {
             _cached[name] = (now, view);

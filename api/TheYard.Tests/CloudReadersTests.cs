@@ -106,7 +106,7 @@ internal sealed class RecordedCloud : HttpMessageHandler
             Site => Json(new { kind = "app,linux,container", properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true, linuxFxVersion = "DOCKER|crtheyard.azurecr.io/theyard:v1.0.3.186" }, hostNames = new[] { "theshed.example", "app-theyard-ss.azurewebsites.net" }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
             CosmosSite => Json(new { properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
             Plan + "/sites" => Json(new { value = new[] { new { id = Site }, new { id = CosmosSite } } }),
-            Plan => Json(new { sku = new { name = "B2", capacity = 1 }, location = "West US 3", kind = "linux" }),
+            Plan => Json(new { sku = new { name = "B2", capacity = 1 }, location = "West US 3", kind = "linux", properties = new { maximumNumberOfWorkers = 3 } }),
             Sql => Json(new { sku = new { name = "Basic", tier = "Basic", capacity = 5 }, properties = new { maxSizeBytes = 2_147_483_648L }, location = "westus3" }),
             Group + "/providers/Microsoft.Sql/servers/sql-theyard/databases/sqldb-theyard-ss" => Json(new { sku = new { name = "GP_S_Gen5_1", tier = "GeneralPurpose" }, properties = new { status = "Paused", useFreeLimit = true } }),
             Cosmos => Json(new { properties = new { enableFreeTier = true }, location = "West US 3" }),
@@ -270,12 +270,13 @@ public sealed class CloudReadersTests
     public async Task The_plan_reader_reads_the_hour_the_size_the_apps_and_what_Azure_did()
     {
         using var route = OutboundHttp.RouteTo(new RecordedCloud());
-        var reader = new PlanReader("client-1", RecordedCloud.Site, configured: true);
+        var reader = new PlanReader("client-1", RecordedCloud.Site, configured: true, machine: new MachineSize(2, 3.5));
         var hour = new DateTimeOffset(2026, 10, 18, 20, 0, 0, TimeSpan.Zero);
 
         var read = await reader.ReadHourAsync(hour, hour.AddHours(-1), CancellationToken.None);
 
-        Assert.Equal(("B2", 1, 2.0, 3.5), (read.Sku, read.Instances, read.Cores, read.MemoryGb));
+        // The size and the instances are Azure's; the cores and memory are the recording process's own machine.
+        Assert.Equal(("B2", 1, 3, 2.0, 3.5), (read.Sku, read.Instances, read.MaxWorkers, read.Cores, read.MemoryGb));
         Assert.Equal("tenant-1", read.TenantId);
         Assert.Equal(2, read.Apps.Count);
         Assert.All(read.Apps, app => Assert.True(app.AlwaysOn));
@@ -498,27 +499,17 @@ public sealed class CloudReadersTests
         Assert.Equal([false, false, false, true, false], read.Select(e => e.Planned));
     }
 
-    [Theory]
-    [InlineData("B1", 1.0, 1.75, 3, 10.0)]
-    [InlineData("b2", 2.0, 3.5, 3, 10.0)]
-    [InlineData("B3", 4.0, 7.0, 3, 10.0)]
-    [InlineData("S1", 1.0, 1.75, 10, 50.0)]
-    [InlineData("S2", 2.0, 3.5, 10, 50.0)]
-    [InlineData("S3", 4.0, 7.0, 10, 50.0)]
-    [InlineData("P0V3", 1.0, 4.0, 30, 250.0)]
-    [InlineData("P1V3", 2.0, 8.0, 30, 250.0)]
-    public void Every_size_the_site_would_move_between_has_its_cores_memory_instances_and_storage(string sku, double cores, double memory, int instances, double storage)
+    [Fact]
+    public void This_process_reads_its_own_machine_rather_than_a_table_of_sizes()
     {
-        Assert.Equal(((double?)cores, (double?)memory, (int?)instances, (double?)storage), (PlanSizes.CoresOf(sku), PlanSizes.MemoryGbOf(sku), PlanSizes.MaxInstancesOf(sku), PlanSizes.StorageGbOf(sku)));
+        var machine = MachineSize.OfThisProcess();
+        Assert.Equal(Environment.ProcessorCount, machine.Cores);
+        Assert.True(machine.MemoryGb > 0);
     }
 
     [Fact]
-    public void A_size_this_table_does_not_know_is_unknown_rather_than_guessed()
+    public void A_token_that_is_not_a_token_has_no_tenant()
     {
-        Assert.Null(PlanSizes.CoresOf("Y1"));
-        Assert.Null(PlanSizes.MemoryGbOf(null));
-        Assert.Null(PlanSizes.MaxInstancesOf("F1"));
-        Assert.Null(PlanSizes.StorageGbOf(""));
         Assert.Null(PlanReader.TenantOf("not-a-token"));
         Assert.Null(PlanReader.TenantOf("a.!!!.c"));
         Assert.Null(PlanReader.TenantOf("a." + Convert.ToBase64String(Encoding.UTF8.GetBytes("not json")) + ".c"));

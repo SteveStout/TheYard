@@ -17,6 +17,7 @@ namespace TheYard.Tests;
 /// exception, and pins two application instances to the same file on purpose,
 /// because a claim about surviving a restart can only be tested by restarting.
 /// </summary>
+[Collection(SharedBidStore.Name)]
 public class PersistenceTests : IDisposable
 {
     private readonly string _file =

@@ -13,6 +13,7 @@ namespace TheYard.Tests;
 /// The bid lifecycle through the real host. Its own fixture class, so the
 /// mutable bid state can't leak into the read-only integration tests.
 /// </summary>
+[Collection(SharedBidStore.Name)]
 public class BidFlowIntegrationTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>, IAsyncLifetime
 {

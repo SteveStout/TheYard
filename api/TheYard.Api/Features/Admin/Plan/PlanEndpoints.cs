@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using TheYard.Application;
+using TheYard.Application.Features.Admin.Plan;
 
 namespace TheYard.Api.Features.Admin.Plan;
 
@@ -20,6 +22,6 @@ public static class PlanEndpoints
         return app;
     }
 
-    private static async Task<Ok<CloudReport>> Plan(string? window, PlanHistoryReader reader, CancellationToken cancellation) =>
-        TypedResults.Ok(await reader.ReadAsync(window, cancellation));
+    private static async Task<Ok<CloudReport>> Plan(string? window, ReadPlanHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(window, cancellation));
 }

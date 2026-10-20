@@ -79,13 +79,14 @@ public sealed record PlanEvent(DateTimeOffset At, string Kind, string Title, str
 /// <param name="TenantId">The tenant the subscription belongs to, for the portal links.</param>
 /// <param name="Sku">The plan's size, as Azure names it (B1).</param>
 /// <param name="Instances">How many instances the plan runs.</param>
-/// <param name="Cores">vCPUs per instance.</param>
-/// <param name="MemoryGb">Memory per instance, in gigabytes.</param>
+/// <param name="Cores">vCPUs per instance, as the recording process saw them.</param>
+/// <param name="MemoryGb">Memory per instance, in gigabytes, as the recording process saw it.</param>
 /// <param name="Apps">The apps on the plan.</param>
 /// <param name="Events">The Activity Log entries in the hour.</param>
 /// <param name="Location">The region, as Azure names it (West US 3).</param>
 /// <param name="Linux">True when the plan runs Linux.</param>
-public sealed record PlanHour(DateTimeOffset At, string PlanId, string? TenantId, string? Sku, int? Instances, double? Cores, double? MemoryGb, IReadOnlyList<PlanAppState> Apps, IReadOnlyList<PlanEvent> Events, string? Location = null, bool? Linux = null);
+/// <param name="MaxWorkers">The most instances the plan can scale out to, as the plan read says (maximumNumberOfWorkers).</param>
+public sealed record PlanHour(DateTimeOffset At, string PlanId, string? TenantId, string? Sku, int? Instances, double? Cores, double? MemoryGb, IReadOnlyList<PlanAppState> Apps, IReadOnlyList<PlanEvent> Events, string? Location = null, bool? Linux = null, int? MaxWorkers = null);
 
 /// <summary>A window's percentiles, read from the five-minute averages and the minutes' peaks.</summary>
 /// <param name="Minutes">How many minutes the window kept.</param>

@@ -3,7 +3,7 @@
 // holding seven copies of it.
 using System.ComponentModel;
 
-namespace TheYard.Api;
+namespace TheYard.Application;
 
 // #region cloud-wire
 /// <summary>One resource's card for one window, every figure read from the kept minutes.</summary>

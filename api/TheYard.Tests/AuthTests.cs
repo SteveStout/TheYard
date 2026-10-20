@@ -359,6 +359,7 @@ public class AuthLockoutTests : AuthTestBase
 }
 
 /// <summary>Bids that belong to accounts, two people in one room, and the restart.</summary>
+[Collection(SharedBidStore.Name)]
 public class AuthBidTests : AuthTestBase
 {
     [Fact]

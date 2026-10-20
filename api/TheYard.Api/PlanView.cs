@@ -14,18 +14,6 @@ public static class PlanView
     /// <summary>The windows the card offers, the tab's shared three.</summary>
     public static readonly IReadOnlyList<string> Windows = ["24h", "7d", "30d"];
 
-    /// <summary>
-    /// The next Basic size up and what it costs on top of this one, in dollars a month at the prices
-    /// ADR: One plan, two sites records (B1 $12.41, B2 $24.82), for the "Is it still right?" row: each
-    /// Basic size is twice the one below it. Null past B3.
-    /// </summary>
-    public static (string Size, double ExtraPerMonth)? NextSize(string? sku) => sku?.ToUpperInvariant() switch
-    {
-        "B1" => ("B2", 12.41),
-        "B2" => ("B3", 24.82),
-        _ => null,
-    };
-
     /// <summary>Builds the card. Absent is a sentence, never a zero: every figure not kept says "not read".</summary>
     public static CloudReport Build(
         string window,
@@ -36,13 +24,14 @@ public static class PlanView
         IReadOnlyList<PlanBucket> buckets,
         PlanSpread month,
         IReadOnlyList<PlanHour> hours,
-        double? planCostMonth)
+        double? planCostMonth,
+        string recordingSite = "the recording site")
     {
         var newest = lastHour.Count == 0 ? null : lastHour[^1];
         var hour = hours.Count == 0 ? null : hours[^1];
         long? age = newest is null ? null : (long)(now - newest.At).TotalSeconds;
         string? note = !availability.Available ? availability.Reason
-            : newest is null ? "no minute has been kept yet; the first is read a minute after the SQL site starts"
+            : newest is null ? $"no minute has been kept yet; the first is read a minute after {recordingSite} starts"
             : null;
 
         double? cores = hour?.Cores, memoryGb = hour?.MemoryGb;
@@ -75,7 +64,7 @@ public static class PlanView
             ],
             marks,
             PlanThresholds.Cpu.Red,
-            "teal CPU · green memory · gold deploys, shaded while the roll runs · red Azure restart · dashed 80 %" + (keptSince is null ? "" : $" · {keptSince}"),
+            $"teal CPU · green memory · gold deploys, shaded while the roll runs · red Azure restart · dashed {PlanThresholds.Cpu.Red:0} %" + (keptSince is null ? "" : $" · {keptSince}"),
             (now - length).ToUnixTimeMilliseconds())
         {
             Bands = rolls,
@@ -93,11 +82,15 @@ public static class PlanView
             hour is null ? null : new CloudLink(PlanReader.NameOf(hour.PlanId), Portal(hour.TenantId, hour.PlanId)),
             dials,
             [new("CPU, 60 min", lastHour.Select(m => m.CpuPercent).ToList()), new("Memory, 60 min", lastHour.Select(m => m.MemoryPercent).ToList())],
-            "Normal: CPU amber 60 %, red 80 %; memory amber 70 %, red 85 %; held 15 min.",
+            Normal,
             chart,
             PlanRows.Questions(lastHour, hour, hours, month, buckets),
             PlanRows.Readout(lastHour, hour, hours, month, planCostMonth, age, availability));
     }
+
+    /// <summary>The thresholds line, written from PlanThresholds so the card can never say a level the tones do not use.</summary>
+    public static string Normal =>
+        $"Normal: CPU amber {PlanThresholds.Cpu.Amber:0} %, red {PlanThresholds.Cpu.Red:0} %; memory amber {PlanThresholds.Memory.Amber:0} %, red {PlanThresholds.Memory.Red:0} %; held {PlanThresholds.Sustained} min.";
 
     /// <summary>The size line in the header's right side: "B1 LINUX 1 vCPU / 1.75 GB WEST US 3".</summary>
     public static string? Spec(PlanHour? hour) =>

@@ -36,10 +36,10 @@ public class PlanViewTests
 
         Assert.True(report.Available);
         Assert.Equal("B1 LINUX 1 VCPU / 1.75 GB WEST US 3", report.Spec);
-        // The size row names the next Basic size and what it adds, from the size Azure returned.
-        Assert.Equal(("B3", 24.82), PlanView.NextSize("B2"));
-        Assert.Equal(("B2", 12.41), PlanView.NextSize("b1"));
-        Assert.Null(PlanView.NextSize("B3"));
+        // The thresholds line is written from PlanThresholds, and the size row names no price and no
+        // size Azure did not return (ADR: The onion cut into vertical slices, the facts the tab reads).
+        Assert.Equal($"Normal: CPU amber {PlanThresholds.Cpu.Amber:0} %, red {PlanThresholds.Cpu.Red:0} %; memory amber {PlanThresholds.Memory.Amber:0} %, red {PlanThresholds.Memory.Red:0} %; held {PlanThresholds.Sustained} min.", report.Normal);
+        Assert.DoesNotContain("$", report.Rows.Single(row => row.Key == "size").Detail[0].Text, StringComparison.Ordinal);
         // Azure refuses a whole metrics read that names one metric the resource does not report, or
         // one it does not keep at a minute's grain, so the minute's names are held to what the Linux
         // plan and its apps report at PT1M (az monitor metrics list-definitions and a read at PT1M,

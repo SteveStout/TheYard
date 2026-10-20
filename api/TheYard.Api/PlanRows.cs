@@ -42,7 +42,7 @@ public static class PlanRows
                         // memory in use minus every app's own reading (PlanChildren.OutsideMb): the
                         // host, the platform agent, the image layers and one Kudu sidecar per app
                         // (ADR: The App Service plan, read every minute, the addendum of 19 October).
-                        new CloudLink(DerivedPlatform, null),
+                        new CloudLink(DerivedPlatform(hour!.Linux), null),
                         new CloudLink("App Service", null),
                         new CloudLink("every app on it", null),
                         new CloudLink(hour!.Linux == true ? "Linux" : "", null),
@@ -52,7 +52,6 @@ public static class PlanRows
         };
 
         double? used = Sum(newest?.Apps.Select(app => app.FileSystemMb) ?? []);
-        double? storage = PlanSizes.StorageGbOf(hour?.Sku);
         var queueTone = CloudTones.Worse(
             PlanThresholds.ToneOf(lastHour.Select(m => m.HttpQueue).ToList(), PlanThresholds.HttpQueue),
             PlanThresholds.SocketsTone(lastHour.Select(m => m.Sockets).ToList()));
@@ -63,7 +62,7 @@ public static class PlanRows
             [new CloudLink(string.Join(" · ", new[]
             {
                 $"sockets {Count(newest?.Sockets)} of {PlanThresholds.SocketLimit:N0}",
-                used is { } mb && storage is { } gb ? $"disk {(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} of {gb} GB" : "disk not read",
+                used is { } mb ? $"disk {(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} GB used" : "disk not read",
                 $"data out {Bytes(Sum(lastHour.Select(m => m.BytesSent)))} this hour",
             }), null)],
             CloudTones.Of(lastHour.Count == 0 ? PlanTone.Info : queueTone));
@@ -105,7 +104,7 @@ public static class PlanRows
             month.CpuP95 is null && month.MemoryP95 is null ? "not enough kept yet"
                 : worst == PlanTone.Alarm ? $"no, {(memoryFirst ? "memory" : "CPU")} is past its line"
                 : $"yes, {(memoryFirst ? "memory" : "CPU")} first",
-            [new CloudLink($"{(PlanView.NextSize(hour?.Sku) is { } next ? $"{next.Size} +${next.ExtraPerMonth.ToString("0.00", CultureInfo.InvariantCulture)}/mo" : "no Basic size above it")} · the renderer's 128 MB heap is the $0 lever · red at {(memoryFirst ? "85" : "80")} % p95", null)],
+            [new CloudLink($"{(memoryFirst ? "memory" : "CPU")} p95 {PlanView.Percent(memoryFirst ? month.MemoryP95 : month.CpuP95)} over 30 d · red at {(memoryFirst ? PlanThresholds.Memory.Red : PlanThresholds.Cpu.Red).ToString("0", CultureInfo.InvariantCulture)} % p95", null)],
             CloudTones.Of(worst == PlanTone.Info && month.Minutes > 0 ? PlanTone.Good : worst));
         return [power, queue, azure, size];
     }
@@ -117,7 +116,6 @@ public static class PlanRows
         int up = hours.Count(h => h.Apps.Count > 0 && h.Apps.All(app => string.Equals(app.State, "Running", StringComparison.OrdinalIgnoreCase)));
         double? uptime = hours.Count == 0 ? null : Math.Round(100.0 * up / hours.Count, 2);
         double? used = Sum(newest?.Apps.Select(app => app.FileSystemMb) ?? []);
-        double? storage = PlanSizes.StorageGbOf(hour?.Sku);
         int restarts = hours.SelectMany(h => h.Events).Count(e => e.Kind == "restart");
         bool unplanned = hours.SelectMany(h => h.Events).Any(e => e.Kind == "restart" && !e.Planned);
         string tone(PlanTone t) => CloudTones.Of(t);
@@ -132,8 +130,8 @@ public static class PlanRows
                 new("Memory p95, 30 d", PlanView.Percent(month.MemoryP95), "info"),
                 new("HTTP queue", Count(newest?.HttpQueue), tone(PlanThresholds.ToneOf(lastHour.Select(x => x.HttpQueue).ToList(), PlanThresholds.HttpQueue))),
                 new("Sockets", $"{Count(newest?.Sockets)} / {PlanThresholds.SocketLimit:N0}", tone(PlanThresholds.SocketsTone(lastHour.Select(x => x.Sockets).ToList()))),
-                new("Disk", used is { } mb && storage is { } gb ? $"{(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} / {gb} GB" : "not read", "info"),
-                new("Instances", hour?.Instances is { } n ? $"{n} of {PlanSizes.MaxInstancesOf(hour.Sku)?.ToString(CultureInfo.InvariantCulture) ?? "?"}" : "not read", "info"),
+                new("Disk", used is { } mb ? $"{(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} GB used" : "not read", "info"),
+                new("Instances", hour?.Instances is { } n ? (hour.MaxWorkers is { } most ? $"{n} of {most}" : $"{n}") : "not read", "info"),
                 new("Always on", hour is null ? "not read" : $"{hour.Apps.Count(app => app.AlwaysOn is true)} apps", "info"),
                 new("Restarts, 30 d", hours.Count == 0 ? "not read" : restarts.ToString(CultureInfo.InvariantCulture), unplanned ? "alarm" : "info"),
                 new("Plan cost", cost is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not read from the bill yet", "info"),
@@ -143,7 +141,9 @@ public static class PlanRows
     }
 
     /// <summary>What the plan card's last row is, said on the row: a difference, not a reading.</summary>
-    public const string DerivedPlatform = "Linux and the platform (derived: plan memory used minus the apps)";
+    /// <param name="linux">Whether the plan read said it is Linux; null when the read did not say.</param>
+    public static string DerivedPlatform(bool? linux) =>
+        $"{(linux switch { true => "Linux", false => "Windows", null => "The host" })} and the platform (derived: plan memory used minus the apps)";
 
     /// <summary>
     /// What Azure says a site is, in words: its kind, read each hour with the site

@@ -11,6 +11,7 @@ namespace TheYard.Tests;
 /// The onion cut into vertical slices, rule 7). The handlers' answers are held by BidHandlerTests;
 /// this holds that each answer reaches the wire as the status the browser relies on.
 /// </summary>
+[Collection(SharedBidStore.Name)]
 public sealed class BidEndpointStatusTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
 {
     private const string Unknown = "no-vehicle-has-this-id";

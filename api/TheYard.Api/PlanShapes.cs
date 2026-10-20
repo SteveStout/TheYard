@@ -92,45 +92,4 @@ public static class PlanShapes
     }
 }
 
-/// <summary>What each App Service plan size has, which Azure's plan read does not say.</summary>
-public static class PlanSizes
-{
-    /// <summary>vCPUs per instance by size name, for the sizes this site would ever move between.</summary>
-    public static double? CoresOf(string? sku) => sku?.ToUpperInvariant() switch
-    {
-        "B1" or "S1" or "P0V3" => 1,
-        "B2" or "S2" or "P1V3" => 2,
-        "B3" or "S3" => 4,
-        _ => null,
-    };
-
-    /// <summary>The most instances a size can scale out to, which the readout's instances line is read against.</summary>
-    public static int? MaxInstancesOf(string? sku) => sku?.ToUpperInvariant() switch
-    {
-        ['B', ..] => 3,
-        ['S', ..] => 10,
-        ['P', ..] => 30,
-        _ => null,
-    };
-
-    /// <summary>The plan storage each size comes with, in gigabytes.</summary>
-    public static double? StorageGbOf(string? sku) => sku?.ToUpperInvariant() switch
-    {
-        ['B', ..] => 10,
-        ['S', ..] => 50,
-        ['P', ..] => 250,
-        _ => null,
-    };
-
-    /// <summary>Memory per instance in gigabytes by size name.</summary>
-    public static double? MemoryGbOf(string? sku) => sku?.ToUpperInvariant() switch
-    {
-        "B1" or "S1" => 1.75,
-        "B2" or "S2" => 3.5,
-        "B3" or "S3" => 7,
-        "P0V3" => 4,
-        "P1V3" => 8,
-        _ => null,
-    };
-}
 // #endregion plan-shapes

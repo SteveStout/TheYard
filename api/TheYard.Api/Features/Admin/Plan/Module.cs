@@ -1,4 +1,5 @@
 using TheYard.Application;
+using TheYard.Application.Features.Admin.Plan;
 using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api.Features.Admin.Plan;
@@ -22,10 +23,11 @@ public sealed class Module : IModule
         string self = configuration["Azure:SelfResourceId"]
             ?? $"/subscriptions/{AzureIds.SubscriptionId(configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-ONE-SS-ZMNETJ67BN5H2";
         string clientId = AzureIds.ClientId(configuration);
+        services.AddSingleton(MachineSize.OfThisProcess());
         services.AddSingleton(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
-            return new PlanReader(clientId, self, configured: identity.OnAppService, identity: identity);
+            return new PlanReader(clientId, self, configured: identity.OnAppService, identity: identity, machine: provider.GetRequiredService<MachineSize>());
         });
         services.AddSingleton<IPlanHistory>(provider => provider.GetRequiredService<DocumentStore>().Store is { } cosmos
             ? new CosmosPlanHistory(cosmos)
@@ -34,6 +36,7 @@ public sealed class Module : IModule
         // One reading of a shared plan is the whole truth, so one process records it: the one
         // whose default store is SQL, which the one web app is, having no store default set. Were
         // the sites split again, the Cosmos DB site would read the same keep without recording.
+        string recordingSite = SiteSettings.From(configuration).HostFor("sql") ?? "the SQL site";
         bool records = string.Equals(StoreChoice.DefaultKey(configuration), "sql", StringComparison.Ordinal);
         if (records)
         {
@@ -50,7 +53,10 @@ public sealed class Module : IModule
             provider.GetRequiredService<IPlanHistory>(),
             records ? provider.GetRequiredService<PlanRecorder>() : null,
             cancellation => PlanCost.MonthToDateAsync(provider.GetRequiredService<ICostHistory>(), provider.GetRequiredService<PlanReader>(), TimeProvider.System, cancellation),
-            TimeProvider.System));
+            TimeProvider.System,
+            recordingSite));
+        services.AddSingleton<IPlanCard>(provider => provider.GetRequiredService<PlanHistoryReader>());
+        services.AddScoped<ReadPlanHandler>();
         // #endregion plan-wiring
     }
 

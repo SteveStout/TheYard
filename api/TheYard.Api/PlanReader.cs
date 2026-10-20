@@ -16,7 +16,7 @@ namespace TheYard.Api;
 /// each app (ADR: The App Service plan, read every minute). No key anywhere. The plan's id is not
 /// configured: it is read off this site, so the reader follows the site if it ever moves plans.
 /// </summary>
-public sealed class PlanReader(string clientId, string selfResourceId, bool configured, HostIdentity? identity = null)
+public sealed class PlanReader(string clientId, string selfResourceId, bool configured, HostIdentity? identity = null, MachineSize? machine = null)
 {
     private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
@@ -126,12 +126,13 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
             TenantOf(token),
             skuName,
             instances,
-            PlanSizes.CoresOf(skuName),
-            PlanSizes.MemoryGbOf(skuName),
+            machine?.Cores,
+            machine?.MemoryGb,
             states,
             events.OrderBy(e => e.At).ToList(),
             plan.RootElement.TryGetProperty("location", out var where) ? where.GetString() : null,
-            plan.RootElement.TryGetProperty("kind", out var kind) ? kind.GetString()?.Contains("linux", StringComparison.OrdinalIgnoreCase) : null);
+            plan.RootElement.TryGetProperty("kind", out var kind) ? kind.GetString()?.Contains("linux", StringComparison.OrdinalIgnoreCase) : null,
+            plan.RootElement.TryGetProperty("properties", out var planProps) && planProps.TryGetProperty("maximumNumberOfWorkers", out var most) && most.TryGetInt32(out int workers) ? workers : null);
     }
     // #endregion plan-reader
 
