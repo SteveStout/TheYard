@@ -170,11 +170,12 @@ public static class RequestPipeline
                         && !(response.ContentType ?? "").StartsWith("text/html", StringComparison.OrdinalIgnoreCase);
                     response.Headers.CacheControl = hashedBundleFile
                         ? "public, max-age=31536000, immutable"
-                        : "no-cache";
+                        : EdgeKeeps.BrowserRuleFor(context) ?? "no-cache";
                 }
-                // The catalogue's two reads may be kept by the edge for a few seconds when the
-                // answer is one every visitor would get; the browser's rule above is unchanged.
+                // The catalogue's two reads may be kept by the edge for a few seconds, and what
+                // only a deploy changes for a day (EdgeKeeps); the browser's rule above is unchanged.
                 CatalogueReads.LetTheEdgeKeep(context);
+                EdgeKeeps.LetTheEdgeKeep(context);
                 return Task.CompletedTask;
             });
             await next();

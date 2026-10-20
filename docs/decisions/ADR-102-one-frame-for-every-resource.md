@@ -135,3 +135,11 @@ From 1.0.3.197 the Application Insights card's cost row names the gigabytes past
 
 `CloudCard` became `CardShell` (`src/components/admin/CardShell/`), the one component the CardShell record's slots describe (ADR: The onion cut into vertical slices). The frame's six parts are unchanged in kind; what the shell adds is a tone chip beside the title from the card's one tone, the spec's source as a chip, the line under each dial that names its marks, each sparkline in its dial's colour with its newest figure, the thresholds as chips where the "Normal:" sentence was, the chart's legend as chips, a source under every summary line and row, and a retry line that counts down from the tab's own tick. The live block above now shows the shell.
 
+
+## Addendum, 2026-10-20: the edge card scores what the edge is meant to keep
+
+Until today the Netlify edge card's "What is cached?" row scored four addresses: `/`, `/favicon.svg`, `/og.png` and `/api/version`. The app told the edge to keep none of them (three said `no-cache`, and `/favicon.svg` is not served at all), so the share could not read above zero, and the misses tone (amber 50, red 80) turned a correct cache red. Steve read it on his phone at 16:06: "0 % of the sampled pages, warning".
+
+From this change the hourly sample scores only addresses the app lets the edge keep: one hashed bundle file read from the built page at startup (`NetlifyEdge.BundleFileOf`; on a machine with no build it is skipped, and the card says so), `/og.png`, `/api/facets` and `/api/docs/readme` (ADR: Cache headers, the addendum of 20 October). Zero now means the edge is broken, and anything else is a real number. The page and `/api` are still asked once an hour, only to name the web app that answered each; neither is scored. The row's detail names the list the reader actually sampled and each address's `Cache-Status`, written by the reader into the hour's facts, never typed in the card. The tone stays on misses at the same levels, over the cacheable sample only. `EdgeKeepsTests` holds every sampled address to the edge's rule; `CloudReadersTests` holds the share and the per-address statuses.
+
+The "Is it still needed?" row is unchanged; its date already comes from `Edge:Retires`.

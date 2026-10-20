@@ -363,11 +363,22 @@ jobs:
       # addendum of 28 September). This asks the public address, not the origin,
       # for every file the build serves and for the Admin tab's public reads,
       # once each, as the site reading itself. A failure is a warning and never
-      # fails the deploy.
+      # fails the deploy. First it purges the edge's copies: the documents, the
+      # diagrams and the share picture may be kept for a day because only a deploy
+      # changes them, and this purge is what makes a day safe (ADR: Cache headers,
+      # addendum of 20 October). One request for the whole site, by the name
+      # configuration gives it, with the token the roll already hands the site.
       - name: Warm the edge
         continue-on-error: true
         timeout-minutes: 5
+        env:
+          NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
         run: |
+          EDGE_SITE=$(jq -r '.Azure.Resources.Edge' api/TheYard.Api/appsettings.json)
+          curl -sS --fail --max-time 30 -X POST https://api.netlify.com/api/v1/purge \
+            -H "Authorization: Bearer $NETLIFY_TOKEN" -H "Content-Type: application/json" \
+            --data "{\"site_slug\": \"$EDGE_SITE\"}" && echo "purged the edge's copies of $EDGE_SITE" \
+            || echo "::warning::the edge was not purged; a document may read a day old until it is"
           # Both Yard names, when the edge already serves this commit's rules and they send them here.
           if git diff --quiet FETCH_HEAD HEAD -- edge/ netlify.toml && grep -q "${ORIGIN#https://}" netlify.toml edge/_redirects; then
             node scripts/warm-edge.mjs "$SITE" deploy

@@ -31,7 +31,9 @@ public sealed class Module : IModule
             var identity = provider.GetRequiredService<HostIdentity>();
             var azure = new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity);
             var directory = new ResourceDirectory(azure, group, TimeProvider.System);
-            var edge = new NetlifyEdge(token, names.Edge, publicSite);
+            // One hashed bundle file from the built page, so the hourly sample scores a file the edge keeps.
+            string builtPage = Path.Combine(Path.GetDirectoryName(provider.GetRequiredService<HostPaths>().AssetsRoot)!, "index.html");
+            var edge = new NetlifyEdge(token, names.Edge, publicSite, NetlifyEdge.BundleFileOf(builtPage));
             string? sqlSite = sqlName is null ? null : identity.SiteName is { } siteName ? $"{sqlName}, on {siteName}" : sqlName;
             var cosmos = provider.GetRequiredService<DocumentStore>().Store;
             IResourceHistory KeepOf(ResourceCard card) => cosmos is not null

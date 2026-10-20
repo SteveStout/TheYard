@@ -210,13 +210,13 @@ Measured on this build:
 | shape | count |
 | --- | --- |
 | sealed | 185 |
-| static | 121 |
+| static | 122 |
 | abstract | 0 |
 | open | 0 |
 | records | 183 |
 | open records | 0 |
 
-185 of the 306 classes in those six projects are sealed, and the 121 that are not are static, which
+185 of the 307 classes in those six projects are sealed, and the 122 that are not are static, which
 cannot be inherited either. All 183 records are sealed or record structs, so value comparison means
 what it says on every one of them. Every number in that table is read back out of this page by the
 test above, so it cannot drift from the build the way a number typed once always does.

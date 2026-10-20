@@ -226,7 +226,8 @@ internal sealed class RecordedCloud : HttpMessageHandler
             throw new HttpRequestException("the edge did not answer");
         }
         var answer = new HttpResponseMessage(HttpStatusCode.OK);
-        answer.Headers.TryAddWithoutValidation("Cache-Status", uri.AbsolutePath == "/" ? "\"Netlify Edge\"; hit" : "\"Netlify Edge\"; fwd=miss");
+        // The page is asked only for who answered it; of the scored addresses, the document is a hit.
+        answer.Headers.TryAddWithoutValidation("Cache-Status", uri.AbsolutePath is "/" or "/api/docs/readme" ? "\"Netlify Edge\"; hit" : "\"Netlify Edge\"; fwd=miss");
         // The page names the web app that drew it; the API's answer here names none.
         if (uri.AbsolutePath == "/")
         {
@@ -467,7 +468,10 @@ public sealed class CloudReadersTests
         Assert.Equal(1, minute.Values["deploys"]);
         Assert.Equal(1.0, minute.Values["bandwidth_gb"]);
         Assert.Equal(35.0, minute.Values["credits"]);
-        Assert.Equal(33.3, minute.Values["cache_hit"]);
+        // Scored: /og.png did not answer and is left out, /api/facets missed, /api/docs/readme hit.
+        Assert.Equal(50.0, minute.Values["cache_hit"]);
+        Assert.Equal("/og.png, /api/facets, /api/docs/readme", hour.Facts["sampled"]);
+        Assert.Contains("/og.png did not answer", hour.Facts["cache_status"], StringComparison.Ordinal);
     }
     // #endregion refusals
 

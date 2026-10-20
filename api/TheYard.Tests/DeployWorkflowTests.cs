@@ -96,6 +96,11 @@ public class DeployWorkflowTests
         Assert.Contains("node scripts/warm-edge.mjs \"$COSMOS_SITE\" deploy", body, StringComparison.Ordinal);
         Assert.StartsWith("https://theyard", EnvOf(file)["SITE"], StringComparison.Ordinal);
         Assert.Contains("TheYard-SelfRead/1", File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "warm-edge.mjs")), StringComparison.Ordinal);
+        // The purge comes first, so the warm refills the edge with this build and never keeps yesterday's.
+        int purge = body.IndexOf("https://api.netlify.com/api/v1/purge", StringComparison.Ordinal);
+        int warm = body.IndexOf("node scripts/warm-edge.mjs", StringComparison.Ordinal);
+        Assert.True(purge > 0 && purge < warm, $"{file} should purge the edge before it warms it");
+        Assert.Contains("NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}", body, StringComparison.Ordinal);
     }
     // #endregion warm-edge
 

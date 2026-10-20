@@ -28,13 +28,16 @@ public static class EdgeCard
     public static CloudReport View(ResourceCardInputs inputs, bool configured, string project, DateOnly retires)
     {
         string? admin = ProjectUrl(inputs);
+        // What the last hour actually scored, as the reader wrote it, never a list typed here.
+        string? sampled = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("sampled");
+        int sampledCount = sampled is null ? 0 : sampled.Split(", ").Length;
         double? credits = ResourceView.Now(inputs, "credits"), hit = ResourceView.Now(inputs, "cache_hit");
         var creditTone = ResourceView.Tone(ResourceView.Hour(inputs, "credits").Select(v => ResourceView.Share(v, NetlifyEdge.FreeCredits)).ToList(), Credits, hourly: true);
         var missTone = ResourceView.Tone(ResourceView.Hour(inputs, "cache_hit").Select(v => v is { } h ? 100 - h : (double?)null).ToList(), Misses, hourly: true);
         var dials = new[]
         {
             ResourceView.Dial(inputs, "credits", "Credits, this cycle", NetlifyEdge.FreeCredits, Credits, v => v is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0}" : "not read", hourly: true),
-            ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {NetlifyEdge.Sampled.Length} sampled" : "not sampled yet", percentReading: true, hourly: true) with { Tone = CloudTones.Of(missTone) },
+            ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", percentReading: true, hourly: true) with { Tone = CloudTones.Of(missTone) },
         };
         int daysLeft = retires.DayNumber - DateOnly.FromDateTime(inputs.Now.UtcDateTime).DayNumber;
         string? cert = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cert_expires");
@@ -51,8 +54,10 @@ public static class EdgeCard
                     new("the deploy log on Netlify", admin is null ? null : admin + "/deploys")],
                 ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : CloudTones.Of(creditTone))
             { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("deploy_rows"), "When", "Type", "Came to") },
-            new("cached", "What is cached?", hit is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of the sampled pages" : "not sampled yet",
-                [new($"sampled hourly: {string.Join(", ", NetlifyEdge.Sampled)} · read from the Cache-Status header", null)],
+            new("cached", "What is cached?", hit is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of the addresses the edge may keep" : "not sampled yet",
+                [new(sampled is null ? "not sampled yet" : $"sampled hourly: {sampled} · read from the Cache-Status header", null),
+                    new(ResourceView.Fact(inputs, "sample_note", "") is { Length: > 0 } note ? note : ResourceView.Fact(inputs, "cache_status", "per-address status not read yet"), null),
+                    new("the page and /api are asked only to name who answered; neither may be kept, so neither is scored", null)],
                 CloudTones.Of(missTone)),
             new("needed", "Is it still needed?", daysLeft > 0 ? $"until {retires.ToString("MMM d", CultureInfo.InvariantCulture)}, {daysLeft} days" : "past its date; retire it",
                 [new("the registrar transfer moves the domain straight to Azure, and then this card retires with the edge", null)],

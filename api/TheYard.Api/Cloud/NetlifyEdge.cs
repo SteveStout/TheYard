@@ -5,26 +5,44 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using TheYard.Application;
 
 namespace TheYard.Api;
 
 // #region netlify-edge
 /// <summary>Reads the edge's own figures from Netlify's API, and samples its cache once an hour.</summary>
-public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
+/// <param name="bundleFile">One hashed bundle file this build serves, read from the built page at startup
+/// (<see cref="BundleFileOf"/>); null on a machine with no build, and the sample says it skipped it.</param>
+public sealed partial class NetlifyEdge(string? token, string siteName, Uri publicSite, string? bundleFile = null)
 {
     private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>What each meter costs in credits on the free plan, as Netlify publishes them.</summary>
     public const double CreditsPerDeploy = 15, CreditsPerGb = 20, FreeCredits = 300;
 
-    /// <summary>The pages the hourly sample asks the edge for: the files every visitor's first page pulls.</summary>
-    public static readonly string[] Sampled = ["/", "/favicon.svg", "/og.png", "/api/version"];
+    /// <summary>
+    /// The addresses the hourly sample scores beside a bundle file: each one the app tells the edge it
+    /// may keep (EdgeKeeps, CatalogueReads), so zero means the edge is broken and anything else is a
+    /// real number. Until 20 October it scored "/", "/favicon.svg", "/og.png" and "/api/version",
+    /// three marked no-cache and one that is not served, so it could not read above zero.
+    /// </summary>
+    public static readonly string[] Sampled = ["/og.png", "/api/facets", "/api/docs/readme"];
+
+    /// <summary>What this process scores each hour: its bundle file when it has one, then <see cref="Sampled"/>.</summary>
+    public IReadOnlyList<string> Sample => bundleFile is { } file ? [file, .. Sampled] : Sampled;
+
+    /// <summary>The first hashed script the built page names, or null when there is no built page.</summary>
+    public static string? BundleFileOf(string indexHtml) =>
+        File.Exists(indexHtml) && BundleScript().Match(File.ReadAllText(indexHtml)) is { Success: true } found ? found.Value : null;
+
+    [GeneratedRegex(@"/assets/[A-Za-z0-9._-]+\.js")]
+    private static partial Regex BundleScript();
 
     /// <summary>The header each of TheYard's web apps names itself in, read off the sampled answers.</summary>
     public const string SiteHeader = "X-Yard-Site";
 
-    /// <summary>The sampled addresses whose answerer the card names: a page and the API.</summary>
+    /// <summary>The addresses whose answerer the card names: a page and the API. Neither may be kept, so neither is scored.</summary>
     public static readonly (string Path, string Label)[] Answerers = [("/", "the page"), ("/api/version", "/api")];
 
     /// <summary>True when a token is configured.</summary>
@@ -107,8 +125,9 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
         using var ssl = await GetAsync($"/api/v1/sites/{id}/ssl", cancellation);
         using var deploys = await GetAsync($"/api/v1/sites/{id}/deploys?per_page=20", cancellation);
         var (log, live, skipped, failed) = DeployLog(deploys.RootElement);
-        string? answeredBy;
-        (_cacheHit, answeredBy) = await SampleAsync(cancellation);
+        string? answeredBy, statuses;
+        (_cacheHit, statuses) = await SampleAsync(cancellation);
+        answeredBy = await AnsweredAsync(cancellation);
         return new ResourceHour(hour, id, null, new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             ["token"] = "set",
@@ -123,6 +142,9 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
             ["deploys_skipped"] = skipped.ToString(CultureInfo.InvariantCulture),
             ["deploys_failed"] = failed.ToString(CultureInfo.InvariantCulture),
             ["answered_by"] = answeredBy,
+            ["sampled"] = string.Join(", ", Sample),
+            ["sample_note"] = bundleFile is null ? "no built page here, so no bundle file is sampled" : null,
+            ["cache_status"] = statuses,
         }, []);
     }
 
@@ -167,35 +189,49 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
         }));
 
     /// <summary>
-    /// Asks the edge for each sampled page, counts the answers its cache served, and reads which
-    /// web app answered the page and the API from the header each names itself in.
+    /// Asks the edge for each address it may keep and counts the answers its cache served; each
+    /// address's Cache-Status is kept beside the share, so a low number names where it came from.
     /// </summary>
-    private async Task<(double? Hit, string? AnsweredBy)> SampleAsync(CancellationToken cancellation)
+    private async Task<(double? Hit, string? Statuses)> SampleAsync(CancellationToken cancellation)
     {
         int asked = 0, hits = 0;
-        var answered = new List<string>();
-        foreach (string path in Sampled)
+        var statuses = new List<string>();
+        foreach (string path in Sample)
         {
             try
             {
                 using var response = await Http.GetAsync(new Uri(publicSite, path), HttpCompletionOption.ResponseHeadersRead, cancellation);
                 asked++;
                 string status = response.Headers.TryGetValues("Cache-Status", out var values) ? string.Join(';', values) : "";
-                if (status.Contains("hit", StringComparison.OrdinalIgnoreCase))
-                {
-                    hits++;
-                }
-                if (Answerers.FirstOrDefault(a => a.Path == path).Label is { } label)
-                {
-                    answered.Add(AnsweredBy(label, response.Headers.TryGetValues(SiteHeader, out var names) ? names.FirstOrDefault() : null));
-                }
+                hits += status.Contains("hit", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+                statuses.Add($"{path} {(status.Length == 0 ? "no Cache-Status" : status)}");
             }
             catch (HttpRequestException)
             {
-                // A page that did not answer is left out of the share rather than counted as a miss.
+                // An address that did not answer is left out of the share rather than counted as a miss.
+                statuses.Add($"{path} did not answer");
             }
         }
-        return (asked == 0 ? null : Math.Round(100.0 * hits / asked, 1), answered.Count == 0 ? null : string.Join(" · ", answered));
+        return (asked == 0 ? null : Math.Round(100.0 * hits / asked, 1), statuses.Count == 0 ? null : string.Join(" · ", statuses));
+    }
+
+    /// <summary>Reads which web app answered the page and the API from the header each names itself in; never scored.</summary>
+    private async Task<string?> AnsweredAsync(CancellationToken cancellation)
+    {
+        var answered = new List<string>();
+        foreach (var (path, label) in Answerers)
+        {
+            try
+            {
+                using var response = await Http.GetAsync(new Uri(publicSite, path), HttpCompletionOption.ResponseHeadersRead, cancellation);
+                answered.Add(AnsweredBy(label, response.Headers.TryGetValues(SiteHeader, out var names) ? names.FirstOrDefault() : null));
+            }
+            catch (HttpRequestException)
+            {
+                // Not answered: the row names who answered the rest.
+            }
+        }
+        return answered.Count == 0 ? null : string.Join(" · ", answered);
     }
 
     /// <summary>One sampled answer in words: who answered it, or that it named nobody.</summary>
