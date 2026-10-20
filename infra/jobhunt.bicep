@@ -134,8 +134,12 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'DEPLOYMENT_STORAGE_CONNECTION_STRING', value: storageConnection }
         { name: 'JOBHUNT_SHARE_CONNECTION', value: storageConnection }
         { name: 'JOBHUNT_SHARE_NAME', value: shareName }
-        // Off until step 0's hand run is measured; set to on with az functionapp config appsettings set.
-        { name: 'NIGHTLY_DISPATCH', value: 'off' }
+        // The 4:00 AM reply lane, measured 2026-10-20 and on. The four-hour records run stays off until
+        // its side-by-side model test passes. NIGHTLY_GITHUB_TOKEN is set out of band with
+        // az functionapp config appsettings set, never here; this list replaces the app's settings on a
+        // redeploy, so set the token again after one.
+        { name: 'NIGHTLY_DISPATCH', value: 'on' }
+        { name: 'BOOKKEEPING_DISPATCH', value: 'off' }
         { name: 'NIGHTLY_REPO', value: 'SteveStout/TheYard' }
       ]
     }

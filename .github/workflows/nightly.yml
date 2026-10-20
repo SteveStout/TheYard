@@ -1,12 +1,14 @@
-# Nightly: the job hunt's 4:00 AM lane, run as Claude Code on a GitHub runner
+# Nightly: the job hunt's runs as Claude Code on a GitHub runner: the 4:00 AM reply lane
+# (NIGHTLY-LANE.md) and, every four hours, the records run (BOOKKEEPING-LANE.md); each run
+# writes only in its own folder, nightly/<date>/<HHMM>-<mode>-<model>/
 # (mentor\PROMPT-JOBHUNT-CLOUD-NATIVE.md in Steve's job-hunt folder, step 3).
 # Not part of TheYard's site and it rolls nothing.
 #
 # Started by the Function in infra/jobhunt.bicep with repository_dispatch
 # "nightly" after it has snapshotted the share and opened the bookend, or by
 # hand with workflow_dispatch. The share is mounted over SMB at /mnt/jobhunt;
-# the lane reads its prompt from nightly/NIGHTLY-LANE.md on the share and
-# writes only under nightly/<date>/ and the merger inboxes.
+# the lane reads its prompt from nightly/ on the share and writes only in
+# its run folder and the merger inboxes.
 #
 # The model is billed to Steve's Claude plan through CLAUDE_CODE_OAUTH_TOKEN
 # (code.claude.com/docs/en/github-actions, read 2026-10-20: "an OAuth token
@@ -17,8 +19,23 @@ name: Nightly
 
 on:
   repository_dispatch:
-    types: [nightly]
+    # nightly: the 4:00 AM reply lane. bookkeeping: the four-hour records run (inbox, CSV, Sheet).
+    types: [nightly, bookkeeping]
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "reply (the 4:00 AM lane) or bookkeeping (the records run)"
+        type: choice
+        options: [reply, bookkeeping]
+        default: reply
+      model:
+        description: "Model id; empty takes the mode's default"
+        type: string
+        default: ""
+      dry_run:
+        description: "Read and report only: no archive, no tracker rows, no Sheet writes"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -35,9 +52,34 @@ jobs:
     env:
       SHARE: //stjobhuntss.file.core.windows.net/jobhunt
     steps:
-      - name: Date in Central
+      - name: Date, slot, mode and model
         id: day
-        run: echo "date=$(TZ=America/Chicago date +%F)" >> "$GITHUB_OUTPUT"
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          IN_MODE: ${{ inputs.mode }}
+          IN_MODEL: ${{ inputs.model }}
+          IN_DRY: ${{ inputs.dry_run }}
+          BOOKKEEPING_MODEL: ${{ vars.BOOKKEEPING_MODEL }}
+        run: |
+          if [ "$EVENT" = "repository_dispatch" ]; then
+            if [ "$ACTION" = "bookkeeping" ]; then mode=bookkeeping; else mode=reply; fi
+            dry=false
+          else
+            mode="$IN_MODE"; dry="${IN_DRY:-false}"
+          fi
+          if [ -n "$IN_MODEL" ]; then model="$IN_MODEL"
+          elif [ "$mode" = "bookkeeping" ]; then model="${BOOKKEEPING_MODEL:-claude-opus-5-5}"
+          else model=claude-opus-5-5; fi
+          if [ "$mode" = "bookkeeping" ]; then lane=BOOKKEEPING-LANE.md; else lane=NIGHTLY-LANE.md; fi
+          day=$(TZ=America/Chicago date +%F); slot=$(TZ=America/Chicago date +%H%M)
+          suffix=""; [ "$dry" = "true" ] && suffix="-dry"
+          short=$(echo "$model" | sed 's/^claude-//')
+          {
+            echo "date=$day"; echo "mode=$mode"; echo "model=$model"; echo "lane=$lane"; echo "dry=$dry"
+            echo "run_dir=nightly/$day/$slot-$mode-$short$suffix"
+          } >> "$GITHUB_OUTPUT"
+          echo "$mode on $model at $day $slot (dry run: $dry)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Mount the share
         env:
@@ -46,8 +88,8 @@ jobs:
           sudo apt-get install -y -qq cifs-utils > /dev/null
           sudo mkdir -p /mnt/jobhunt
           sudo mount -t cifs "$SHARE" /mnt/jobhunt -o "vers=3.1.1,username=stjobhuntss,password=$KEY,uid=$(id -u),gid=$(id -g),dir_mode=0775,file_mode=0664,serverino,nosharesock,actimeo=30"
-          test -f /mnt/jobhunt/nightly/NIGHTLY-LANE.md
-          mkdir -p "/mnt/jobhunt/nightly/${{ steps.day.outputs.date }}"
+          mkdir -p "/mnt/jobhunt/${{ steps.day.outputs.run_dir }}"
+          test -f "/mnt/jobhunt/nightly/${{ steps.day.outputs.lane }}"
 
       - name: The lane
         id: lane
@@ -55,6 +97,9 @@ jobs:
         env:
           JOBHUNT: /mnt/jobhunt
           NIGHT: ${{ steps.day.outputs.date }}
+          RUN_DIR: /mnt/jobhunt/${{ steps.day.outputs.run_dir }}
+          MODE: ${{ steps.day.outputs.mode }}
+          DRY_RUN: ${{ steps.day.outputs.dry }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
@@ -65,9 +110,9 @@ jobs:
           # and writes the share, never this repository.
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Read /mnt/jobhunt/nightly/NIGHTLY-LANE.md and follow it start to finish for the night of ${{ steps.day.outputs.date }}.
+            Read /mnt/jobhunt/nightly/${{ steps.day.outputs.lane }} and follow it start to finish. Date ${{ steps.day.outputs.date }}; this run's folder is /mnt/jobhunt/${{ steps.day.outputs.run_dir }} (RUN_DIR in the environment); dry run: ${{ steps.day.outputs.dry }}.
           claude_args: |
-            --model claude-opus-5-5
+            --model ${{ steps.day.outputs.model }}
             --max-turns 200
             --add-dir /mnt/jobhunt
             --allowedTools "Bash,Read,Write,Edit,Glob,Grep"
@@ -77,7 +122,7 @@ jobs:
         env:
           EXEC: ${{ steps.lane.outputs.execution_file }}
         run: |
-          out="/mnt/jobhunt/nightly/${{ steps.day.outputs.date }}/usage.json"
+          out="/mnt/jobhunt/${{ steps.day.outputs.run_dir }}/usage.json"
           if [ -f "$EXEC" ]; then
             jq '[.[] | select(.type == "result")] | last | {duration_ms, num_turns, usage, total_cost_usd}' "$EXEC" | tee "$out"
             jq -r '[.[] | select(.type == "result")] | last | "tokens in \(.usage.input_tokens) + cache read \(.usage.cache_read_input_tokens) + cache write \(.usage.cache_creation_input_tokens), out \(.usage.output_tokens), wall \(.duration_ms / 1000) s"' "$EXEC" >> "$GITHUB_STEP_SUMMARY"
