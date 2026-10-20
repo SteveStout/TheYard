@@ -111,6 +111,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Rule 3 of the slices: the sites and the stores are a configured list, and the types that pick a request's site and store carry no store key and no host name | ADR: The onion cut into vertical slices | SliceTests, SiteHostsTests |
 | Rule 4 of the slices: a backend names no adapter, both stores answer one diagnostics port, and an endpoint outside the Admin tab and the health report never sees a backend | ADR: The onion cut into vertical slices | SliceTests, OnionTests |
 | Rule 5 of the slices: a guest site stands behind IHostedSite, The Shed is its one implementation, and only ShedSite and ShedApplication use The Shed's assembly | ADR: The onion cut into vertical slices | SliceTests, OnionTests, ShedMountTests |
+| Rule 7 of the slices: in every slice that has its handlers, each route asks exactly one Application handler, every handler is tested with fakes at its ports and no host, and every status code a route declares has an integration case | ADR: The onion cut into vertical slices | HandlerRuleTests, BidHandlerTests, BidEndpointStatusTests |
 | Rule 6 of the slices: outside Program.cs and the registration and module classes, the host never reads the environment, a request's service container or the built app's configuration; the platform's settings are read once into BuildInfo and HostIdentity | ADR: The onion cut into vertical slices | OnionTests |
 | A session is refused on any store but the one that opened it, and a session ended on its own store opens neither | ADR: The onion cut into vertical slices | RefuseSessionTests, AuthTests |
 | A Shed that will not start answers 503 and leaves the Yard up; a Shed request that fails past its handler is a 500 problem in TheYard's error record; The Shed's upload limit is The Shed's alone; The Shed is stopped by the last hosted service, after the drain | ADR: The onion cut into vertical slices | ShedMountTests |
@@ -217,3 +218,7 @@ One row for rule 1 of the slices: the host's features are folders with a module 
 ## Addendum, 2026-10-20 (1.0.3.190): rules 3, 4 and 5
 
 Three rows for the sites as a list, the stores behind one diagnostics port, and the guest site behind one interface.
+
+## Addendum, 2026-10-20 (1.0.3.191): rule 7, starting with bidding
+
+The row for rule 7 names the test that holds it, `HandlerRuleTests`, and the two the Bids slice brought: its handlers with fakes, and one integration case per status code. Each slice that gets its handlers joins the rule in its own commit.

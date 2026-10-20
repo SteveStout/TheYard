@@ -47,6 +47,29 @@ public sealed class SliceTests
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
 
+    [Fact]
+    public void Rule_1_in_the_inner_rings_too_a_slice_uses_no_other_slice()
+    {
+        // The same folder name in every ring: Application's and Infrastructure's slices are the
+        // namespaces under their Features, and none reaches another's.
+        foreach (var ring in new[] { typeof(TheYard.Application.Auction).Assembly, typeof(TheYard.Infrastructure.YardDbContext).Assembly })
+        {
+            string root = ring.GetName().Name + ".Features";
+            string[] slices = [.. ring.GetTypes().Select(type => type.Namespace).OfType<string>()
+                .Where(ns => ns.StartsWith(root + ".", StringComparison.Ordinal)).Distinct(StringComparer.Ordinal)];
+            foreach (string slice in slices)
+            {
+                string[] others = [.. slices.Where(other => other != slice)];
+                if (others.Length == 0)
+                {
+                    continue;
+                }
+                var result = Types.InAssembly(ring).That().ResideInNamespace(slice).ShouldNot().HaveDependencyOnAny(others).GetResult();
+                Assert.True(result.IsSuccessful, string.Join(", ", (result.FailingTypes ?? []).Select(type => $"{type.FullName} reaches another slice")));
+            }
+        }
+    }
+
     /// <summary>The namespace every slice sits under.</summary>
     private const string FeaturesNamespace = "TheYard.Api.Features";
 

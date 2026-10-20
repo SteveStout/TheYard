@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
-using TheYard.Domain;
+using TheYard.Application.Features.Bids;
 
 namespace TheYard.Api.Features.Bids;
 
@@ -94,85 +94,49 @@ public static class BidEndpoints
         return app;
     }
 
-    private static Task<Results<Ok<BidResult>, ProblemHttpResult>> PlaceBid(CurrentBackend current, HttpContext http, string id, BidRequest request) =>
-        HandleBid(current, http, id,
-            (auction, vehicle, clock) => auction.PlaceBidAsync(vehicle, request.Amount, clock, http.UserId()));
+    // #region bid-handling
+    // Each route binds its wire and asks one handler (ADR: The onion cut into vertical slices,
+    // rule 7); the handler answers in the Application ring's words and this file turns them into
+    // the status codes the browser relies on: 401, 404, then 400.
+    private static async Task<Results<Ok<BidResult>, ProblemHttpResult>> PlaceBid(PlaceBidHandler handler, CurrentBackend current, HttpContext http, string id, BidRequest request, CancellationToken cancellation) =>
+        Answer(await handler.HandleAsync(new PlaceBid(id, http.UserId(), http.SessionIsOn(current), request.Amount), cancellation), current, id);
 
-    private static Task<Results<Ok<BidResult>, ProblemHttpResult>> BuyNow(CurrentBackend current, HttpContext http, string id) =>
-        HandleBid(current, http, id,
-            (auction, vehicle, clock) => auction.BuyNowAsync(vehicle, clock, http.UserId()));
+    private static async Task<Results<Ok<BidResult>, ProblemHttpResult>> BuyNow(PlaceBidHandler handler, CurrentBackend current, HttpContext http, string id, CancellationToken cancellation) =>
+        Answer(await handler.HandleAsync(new PlaceBid(id, http.UserId(), http.SessionIsOn(current), null), cancellation), current, id);
 
-    private static Ok<IReadOnlyDictionary<string, BidView>> MyBids(CurrentBackend current, HttpContext http) =>
-        TypedResults.Ok(BidsOf(current.Auction, http));
+    private static async Task<Ok<IReadOnlyDictionary<string, BidView>>> MyBids(MyBidsHandler handler, HttpContext http, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(http.UserIdOrNull(), cancellation));
 
-    private static async Task<Ok<BidHistory>> History(CurrentBackend current, HttpContext http) =>
-        TypedResults.Ok(await current.Auction.HistoryOfAsync(http.UserId()));
+    private static async Task<Ok<BidHistory>> History(BidHistoryHandler handler, HttpContext http, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(http.UserId(), cancellation));
 
     // The room's round, and the caller's own badges riding back with it, so a page does not need
     // a second request to find out it has been outbid.
-    private static async Task<Ok<TickResult>> Tick(CurrentBackend current, HttpContext http)
+    private static async Task<Ok<TickResult>> Tick(RoomRoundHandler handler, HttpContext http, CancellationToken cancellation)
     {
-        var auction = current.Auction;
-        var raised = await auction.RoomRoundAsync(Clocks.Now());
-        return TypedResults.Ok(new TickResult(raised.Count, BidsOf(auction, http)));
+        var round = await handler.HandleAsync(http.UserIdOrNull(), cancellation);
+        return TypedResults.Ok(new TickResult(round.Raised, round.Bids));
     }
 
-    private static async Task<Results<NoContent, ProblemHttpResult>> ResetMine(CurrentBackend current, HttpContext http)
-    {
-        if (http.UserIdOrNull() is not { } userId)
-        {
-            return TypedResults.Problem(detail: "Sign in to reset your bids.", statusCode: 401, title: "Not signed in");
-        }
-        await current.Auction.ResetAsync(userId);
-        return TypedResults.NoContent();
-    }
+    private static async Task<Results<NoContent, ProblemHttpResult>> ResetMine(ResetBidsHandler handler, HttpContext http, CancellationToken cancellation) =>
+        await handler.HandleAsync(http.UserIdOrNull(), cancellation)
+            ? TypedResults.NoContent()
+            : TypedResults.Problem(detail: "Sign in to reset your bids.", statusCode: 401, title: "Not signed in");
 
-    /// <summary>The caller's badges, or an empty map for a visitor with no session: no bids is the true answer for them.</summary>
-    private static IReadOnlyDictionary<string, BidView> BidsOf(Auction auction, HttpContext http) =>
-        http.UserIdOrNull() is { } me ? auction.BidsOf(me) : new Dictionary<string, BidView>(StringComparer.Ordinal);
-
-    #region bid-handling
-    // One handler behind both bid endpoints, answering three questions in order: is this session
-    // on this store, does the vehicle exist, does the domain accept the action on the server's
-    // clock. The status codes are the contract the browser relies on: 401, 404, then 400.
-    private static async Task<Results<Ok<BidResult>, ProblemHttpResult>> HandleBid(
-        CurrentBackend current, HttpContext http, string id, Func<Auction, StandingVehicle, AuctionClock, Task<BidOutcome>> action)
+    private static Results<Ok<BidResult>, ProblemHttpResult> Answer(BidAnswer answer, CurrentBackend current, string id) => answer.Kind switch
     {
-        string userId = http.UserId();
-        // #region session-per-store
-        // A session bids where its account is. The header can put one request on the other
-        // store, and a bid there would be a row under an id that store has no account for. The
-        // token names the store that opened it, so this check costs no lookup.
-        if (!http.SessionIsOn(current))
-        {
-            return TypedResults.Problem(
-                detail: $"This session was opened on another store. Sign in on {current.Name} to bid here.",
-                statusCode: 401, title: "The bid was rejected");
-        }
-        // #endregion session-per-store
-        var auction = current.Auction;
-        var clock = Clocks.Now();
-        if (await auction.FindAsync(id) is not { } vehicle)
-        {
-            return TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");
-        }
-        var outcome = await action(auction, vehicle, clock);
-        if (outcome.Kind == BidOutcomeKind.Rejected)
-        {
-            return TypedResults.Problem(detail: outcome.Reason, statusCode: 400, title: "The bid was rejected");
-        }
-        return TypedResults.Ok(
-            new BidResult(
-                outcome.Kind.ToString().ToLowerInvariant(),
-                outcome.Amount,
-                // The room's answer rides back with the bid, so the badge is right the moment the
-                // response lands. TryGetValue rather than the indexer, because a reset from the
-                // same account in a second tab can land between the bid and this read.
-                auction.BidsOf(userId).TryGetValue(id, out var view) ? view : null,
-                // Read again after the bid, so the price and the sold flag are the ones it left.
-                VehicleWire.ToWire(await auction.FindAsync(id) ?? vehicle, clock)));
-    }
-    #endregion bid-handling
+        BidAnswerKind.SessionElsewhere => TypedResults.Problem(
+            detail: $"This session was opened on another store. Sign in on {current.Name} to bid here.",
+            statusCode: 401, title: "The bid was rejected"),
+        BidAnswerKind.NoSuchVehicle => TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle"),
+        BidAnswerKind.Rejected => TypedResults.Problem(detail: answer.Reason, statusCode: 400, title: "The bid was rejected"),
+        _ => TypedResults.Ok(new BidResult(
+            answer.Outcome!.Value.Kind.ToString().ToLowerInvariant(),
+            answer.Outcome.Value.Amount,
+            answer.Standing,
+            VehicleWire.ToWire(answer.Vehicle!, answer.Clock!.Value))),
+    };
+    // #endregion bid-handling
 }
 
 /// <summary>
