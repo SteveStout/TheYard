@@ -922,8 +922,9 @@ test('the activity graph draws at the top of the tab and its response names nobo
   await expect(card.getByTestId('activity-left-out')).toContainText("the site's own reads");
   await card.getByTestId('activity-who-all').click();
   await expect(card.getByTestId('activity-who-all')).toHaveAttribute('aria-pressed', 'true');
+  // Counts past a thousand carry a comma ("1,048 scanners"), so the digits allow one.
   await expect(card.getByTestId('activity-totals')).toContainText(
-    /\d+ people, \d+ scanners and crawlers/
+    /[\d,]+ people, [\d,]+ scanners and crawlers/
   );
   await expect(card.getByTestId('activity-left-out')).toHaveCount(0);
   // What people asked for is named by page; the collector is one line with its numbers behind Details.

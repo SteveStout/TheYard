@@ -24,8 +24,7 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
     /// <summary>
     /// The addresses the hourly sample scores beside a bundle file: each one the app tells the edge it
     /// may keep (EdgeKeeps, CatalogueReads), so zero means the edge is broken and anything else is a
-    /// real number. Until 20 October it scored "/", "/favicon.svg", "/og.png" and "/api/version",
-    /// three marked no-cache and one that is not served, so it could not read above zero.
+    /// real number. The page and /api/version are never scored: the app tells the edge not to keep them.
     /// </summary>
     public static readonly string[] Sampled = ["/og.png", "/api/facets", "/api/docs/readme"];
 
@@ -189,8 +188,12 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
         }));
 
     /// <summary>
-    /// Asks the edge for each address it may keep and counts the answers its cache served; each
-    /// address's Cache-Status is kept beside the share, so a low number names where it came from.
+    /// Asks the edge for each address it may keep, twice, and counts the second answers its cache
+    /// served: the first ask fills the copy when the edge has none, and the second reads whether it
+    /// kept it. One ask scored a deploy's purge as a broken edge, because the first sample runs as the
+    /// container starts, before the warm-up has reached the edge (ADR: One frame for every resource,
+    /// the addendum on asking twice). Each address's second Cache-Status is kept beside the share, so
+    /// a low number names where it came from.
     /// </summary>
     private async Task<(double? Hit, string? Statuses)> SampleAsync(CancellationToken cancellation)
     {
@@ -200,6 +203,7 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
         {
             try
             {
+                (await Http.GetAsync(new Uri(publicSite, path), HttpCompletionOption.ResponseHeadersRead, cancellation)).Dispose();
                 using var response = await Http.GetAsync(new Uri(publicSite, path), HttpCompletionOption.ResponseHeadersRead, cancellation);
                 asked++;
                 string status = response.Headers.TryGetValues("Cache-Status", out var values) ? string.Join(';', values) : "";

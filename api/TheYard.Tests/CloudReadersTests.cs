@@ -38,6 +38,9 @@ internal sealed class RecordedCloud : HttpMessageHandler
     /// <summary>Whether Netlify's site list holds the edge's site.</summary>
     public bool EdgeListed { get; init; } = true;
 
+    /// <summary>Whether the edge was just purged: an address's first ask is a miss it stores, every later ask a hit.</summary>
+    public bool JustPurged { get; init; }
+
     /// <summary>Every address asked for, in order.</summary>
     public List<string> Asked { get; } = [];
 
@@ -52,7 +55,7 @@ internal sealed class RecordedCloud : HttpMessageHandler
             "management.azure.com" => request.Method == HttpMethod.Post ? Query(body) : Arm(uri),
             "crtheyard.azurecr.io" => Registry_(uri),
             "api.netlify.com" => Netlify(uri),
-            "stevenstout.biz" => Edge(uri),
+            "stevenstout.biz" => JustPurged ? Purged(uri, Asked.Count(a => a == uri.ToString())) : Edge(uri),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
     }
@@ -217,6 +220,13 @@ internal sealed class RecordedCloud : HttpMessageHandler
             "/api/v1/sites/site-1/ssl" => Json(new { domains = new[] { "stevenstout.biz", "theyard.stevenstout.biz" }, expires_at = "2026-12-08T00:00:00Z" }),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
+    }
+
+    private static HttpResponseMessage Purged(Uri uri, int asks)
+    {
+        var answer = new HttpResponseMessage(HttpStatusCode.OK);
+        answer.Headers.TryAddWithoutValidation("Cache-Status", asks == 1 ? "\"Netlify Edge\"; fwd=miss; fwd-status=200; stored" : "\"Netlify Edge\"; hit");
+        return answer;
     }
 
     private static HttpResponseMessage Edge(Uri uri)
@@ -472,6 +482,30 @@ public sealed class CloudReadersTests
         Assert.Equal(50.0, minute.Values["cache_hit"]);
         Assert.Equal("/og.png, /api/facets, /api/docs/readme", hour.Facts["sampled"]);
         Assert.Contains("/og.png did not answer", hour.Facts["cache_status"], StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Just after a deploy's purge every first ask is a miss the edge stores; the sample scores the
+    /// second ask, so it reads whether the edge kept each address, not the purge (ADR: One frame for
+    /// every resource, the addendum on asking twice).
+    /// </summary>
+    [Fact]
+    public async Task The_edge_sample_scores_the_second_ask_so_a_purge_does_not_read_as_a_broken_edge()
+    {
+        var cloud = new RecordedCloud { JustPurged = true };
+        using var route = OutboundHttp.RouteTo(cloud);
+        var edge = new NetlifyEdge("netlify-token", "theyard-edge", new Uri("https://stevenstout.biz"));
+        var now = new DateTimeOffset(2026, 10, 20, 22, 0, 0, TimeSpan.Zero);
+
+        var hour = await edge.HourAsync(now, CancellationToken.None);
+        var minute = Assert.Single(await edge.MinutesAsync(now, "1.0.4.2", CancellationToken.None));
+
+        Assert.Equal(100.0, minute.Values["cache_hit"]);
+        Assert.DoesNotContain("stored", hour.Facts["cache_status"], StringComparison.Ordinal);
+        foreach (string path in NetlifyEdge.Sampled)
+        {
+            Assert.Equal(2, cloud.Asked.Count(a => a == "https://stevenstout.biz" + path));
+        }
     }
     // #endregion refusals
 
