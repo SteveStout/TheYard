@@ -2,10 +2,8 @@
 // Its own file because the rest of the API reads a backend through this one shape, so a
 // reader looking for what a backend holds finds it here and nothing else.
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using TheYard.Application;
 using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api;
 
@@ -45,14 +43,12 @@ public sealed class Backend
     /// <summary>The simulated competing bidders on this backend's catalogue, the room the buyer bids in.</summary>
     public required MarketService Market { get; init; }
 
-    /// <summary>The document store, on the Cosmos DB backend only.</summary>
-    public CosmosStore? Cosmos { get; init; }
-
-    /// <summary>The relational contexts, on the SQL backend only, and only once it has come up.</summary>
-    public IDbContextFactory<YardDbContext>? Contexts { get; set; }
-
-    /// <summary>The same database without the statement interceptor, for the readings a minute that must not fill the SQL log with themselves.</summary>
-    public IDbContextFactory<YardDbContext>? QuietContexts { get; set; }
+    /// <summary>
+    /// What the store says about itself for the Admin tab, through the one port both stores
+    /// implement: never asked which store it is (ADR: The onion cut into vertical slices, rule 4).
+    /// No store attached is the null answer.
+    /// </summary>
+    public IStoreDiagnostics Diagnostics { get; set; } = NoStoreDiagnostics.Instance;
 
     /// <summary>
     /// Where this store keeps the requests it served, for the Admin tab's
@@ -76,8 +72,8 @@ public sealed class Backend
     /// The relational store's own reading of itself for the Machines card, read by the adapter
     /// that owns the database, or an absent reading with its reason on a store that keeps none.
     /// </summary>
-    public Task<StoreLoad> ReadLoadAsync(int rows, CancellationToken cancellation, ILogger? logger = null) =>
-        ResourceStats.ReadAsync(Contexts, Name, rows, cancellation, logger);
+    public Task<StoreLoad> ReadLoadAsync(int rows, CancellationToken cancellation) =>
+        Diagnostics.ReadLoadAsync(rows, cancellation);
 
     /// <summary>Whether this backend's catalogue is warm right now, for the Admin tab's memory reading.</summary>
     public bool CatalogueLoaded => Inventory.IsWarm;
@@ -100,10 +96,10 @@ public sealed class Backend
     }
 
     /// <summary>True on the document store, which logs each operation with its request charge.</summary>
-    public bool LogsOperations => Cosmos is not null;
+    public bool LogsOperations => Diagnostics.LogsOperations;
 
     /// <summary>True on an attached relational store, which logs each statement it runs.</summary>
-    public bool LogsStatements => Contexts is not null;
+    public bool LogsStatements => Diagnostics.LogsStatements;
 
     /// <summary>
     /// Whether this backend keeps accounts and bids across a restart. False is
@@ -126,8 +122,7 @@ public sealed class Backend
     public void Attach(StoreAttachment attachment)
     {
         Database = attachment.Database;
-        Contexts = attachment.Contexts;
-        QuietContexts = attachment.QuietContexts;
+        Diagnostics = attachment.Diagnostics;
         Inventory = attachment.Inventory;
         Bids = attachment.Bids;
         Activity = attachment.Activity;
@@ -139,8 +134,7 @@ public sealed class Backend
 
 /// <summary>What a store brings with it when it is attached to its backend: the state that says it came up, and the five things that stand on it.</summary>
 /// <param name="Database">The state that says whether the store came up, and why not if it did not.</param>
-/// <param name="Contexts">The relational contexts, on the SQL backend only; null otherwise.</param>
-/// <param name="QuietContexts">The same database without the statement interceptor, for readings that must not fill the SQL log; null otherwise.</param>
+/// <param name="Diagnostics">What the store says about itself for the Admin tab.</param>
 /// <param name="Inventory">The catalogue service reading from this store.</param>
 /// <param name="Bids">The bid service writing through to this store.</param>
 /// <param name="Activity">Where this store keeps the requests it served.</param>
@@ -148,8 +142,7 @@ public sealed class Backend
 /// <param name="UserStore">Builds Identity's account store for a request's scope, or returns null when there are no accounts to keep.</param>
 public sealed record StoreAttachment(
     DatabaseState Database,
-    IDbContextFactory<YardDbContext>? Contexts,
-    IDbContextFactory<YardDbContext>? QuietContexts,
+    IStoreDiagnostics Diagnostics,
     InventoryService Inventory,
     BidService Bids,
     IActivityStore Activity,

@@ -3,7 +3,6 @@
 // They are their own file because they are the only part of the Machines card that outlives a
 // roll of the container. The rest of the card starts in Machines.cs.
 using TheYard.Application;
-using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 

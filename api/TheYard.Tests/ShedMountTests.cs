@@ -55,7 +55,7 @@ public sealed class ShedMountTests
 
         var shedAnswer = await Send(client, HttpMethod.Get, "/healthz", Shed);
         Assert.Equal(HttpStatusCode.ServiceUnavailable, shedAnswer.StatusCode);
-        Assert.Contains("The Shed is not running", await shedAnswer.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Contains("is not running in this process", await shedAnswer.Content.ReadAsStringAsync(), StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.OK, (await Send(client, HttpMethod.Get, "/api/version", Yard)).StatusCode);
     }
 
@@ -67,7 +67,7 @@ public sealed class ShedMountTests
 
         var failed = await Send(client, HttpMethod.Get, "/boom", Shed);
         Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
-        Assert.Contains("The Shed could not answer", await failed.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Contains("could not answer", await failed.Content.ReadAsStringAsync(), StringComparison.Ordinal);
         var recorded = api.Services.GetRequiredService<ErrorRings>().Server.Snapshot();
         Assert.Contains(recorded, entry => entry.Path == "/boom" && entry.Status == 500 && entry.Message == nameof(InvalidOperationException));
         // The Yard's own names are untouched.
@@ -124,14 +124,14 @@ public sealed class ShedMountTests
         Client(api);
         var lifetime = api.Services.GetRequiredService<IHostApplicationLifetime>();
         lifetime.ApplicationStopping.Register(() => stoppedWhenTheYardBeganStopping = shedStop.Stopped);
-        Assert.NotNull(api.Services.GetRequiredService<ShedSlot>().Shed);
+        Assert.True(Assert.Single(api.Services.GetServices<IHostedSite>()).Running);
 
         // The last of the host's own hosted services is the one that stops The Shed, so it is the
         // first of them to stop, and every one of them stops after the server has drained.
         var ours = api.Services.GetServices<IHostedService>()
-            .Where(service => service.GetType().Assembly == typeof(ShedStopper).Assembly)
+            .Where(service => service.GetType().Assembly == typeof(HostedSiteStopper).Assembly)
             .ToList();
-        Assert.IsType<ShedStopper>(ours[^1]);
+        Assert.IsType<HostedSiteStopper>(ours[^1]);
 
         await api.DisposeAsync();
 

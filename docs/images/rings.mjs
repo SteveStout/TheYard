@@ -42,7 +42,7 @@ function ring(cls, x, y, w, h, name, project, lines) {
 }
 
 ring('ring0', 40, 100, 880, 660, 'Outside: the host and the adapters', 'api/TheYard.Api', [
-  'The host reads a request, asks Application and writes the answer (Endpoints/); Composition/ wires it all.',
+  'The host reads a request, asks Application and writes the answer (Features/, a folder per slice); Shared/ wires it all.',
   'The adapters implement the ports: EF Core over Azure SQL Database or SQLite, and the Cosmos DB SDK.',
 ]);
 // The two adapters share the outer ring with the host. The one sideways arrow: the Cosmos DB adapter

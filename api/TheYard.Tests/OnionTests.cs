@@ -143,6 +143,36 @@ public sealed class OnionTests
     }
 
     [Fact]
+    public void Endpoints_see_the_auction_and_the_request_s_store_never_a_backend()
+    {
+        // A backend is the shared wiring's: which adapter stands behind a store is said by its
+        // diagnostics, and an endpoint reads the request's store through CurrentBackend's key,
+        // name and auction (ADR: The onion cut into vertical slices, rule 4). The Admin tab's and
+        // the health report's endpoints read every backend on purpose until their slices have
+        // handlers of their own, which is rule 7's rung.
+        var result = Types.InAssembly(typeof(Program).Assembly)
+            .That().MeetCustomRule(type => IsPartOfAnEndpointClass(type)
+                && !InNamespace(Outermost(type).Namespace, "TheYard.Api.Features.Admin")
+                && !InNamespace(Outermost(type).Namespace, "TheYard.Api.Features.Health"))
+            .ShouldNot().HaveDependencyOnAny("TheYard.Api.Backend", "TheYard.Api.Backends", "TheYard.Infrastructure.Cosmos.CosmosStore")
+            .GetResult();
+        Assert.True(result.IsSuccessful, Explain(result));
+    }
+
+    [Fact]
+    public void The_host_uses_the_sheds_assembly_only_from_the_shed_s_own_site()
+    {
+        // The Shed is a whole application of its own, hosted in this process (ADR: The onion cut
+        // into vertical slices, rule 5). ShedSite and ShedApplication may use its types; anything
+        // else that did would fuse the two applications the merge kept apart by construction.
+        var result = Types.InAssembly(typeof(Program).Assembly)
+            .That().MeetCustomRule(type => Outermost(type).Name is not ("ShedSite" or "ShedApplication"))
+            .ShouldNot().HaveDependencyOnAny(["TestProject"])
+            .GetResult();
+        Assert.True(result.IsSuccessful, Explain(result));
+    }
+
+    [Fact]
     public void The_host_never_queries_a_database_itself()
     {
         // A statement against a store belongs to the adapter for that store; the host asks the

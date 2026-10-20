@@ -108,6 +108,9 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every reader behind the plan card and the six resource cards runs against Azure's and Netlify's recorded answers through the one outbound pool: what it asks for, what it makes of the answer, and a refused metric, a refused query or an unseen site read as less and never as a failed card | ADR: One frame for every resource | CloudReadersTests |
 | Rule 1 of the slices: every feature is a folder under the host's Features/ with a Module that registers and maps it, Program.cs is a loop over the modules under eighty lines that maps nothing, and a slice uses no other slice | ADR: The onion cut into vertical slices | SliceTests, CompositionRootTests |
 | Rule 2 of the slices: no composition record that every registration takes whole; each registration is handed what it needs by name, and what runs at startup is one hosted service per concern | ADR: The onion cut into vertical slices | SliceTests |
+| Rule 3 of the slices: the sites and the stores are a configured list, and the types that pick a request's site and store carry no store key and no host name | ADR: The onion cut into vertical slices | SliceTests, SiteHostsTests |
+| Rule 4 of the slices: a backend names no adapter, both stores answer one diagnostics port, and an endpoint outside the Admin tab and the health report never sees a backend | ADR: The onion cut into vertical slices | SliceTests, OnionTests |
+| Rule 5 of the slices: a guest site stands behind IHostedSite, The Shed is its one implementation, and only ShedSite and ShedApplication use The Shed's assembly | ADR: The onion cut into vertical slices | SliceTests, OnionTests, ShedMountTests |
 | Rule 6 of the slices: outside Program.cs and the registration and module classes, the host never reads the environment, a request's service container or the built app's configuration; the platform's settings are read once into BuildInfo and HostIdentity | ADR: The onion cut into vertical slices | OnionTests |
 | A session is refused on any store but the one that opened it, and a session ended on its own store opens neither | ADR: The onion cut into vertical slices | RefuseSessionTests, AuthTests |
 | A Shed that will not start answers 503 and leaves the Yard up; a Shed request that fails past its handler is a 500 problem in TheYard's error record; The Shed's upload limit is The Shed's alone; The Shed is stopped by the last hosted service, after the drain | ADR: The onion cut into vertical slices | ShedMountTests |
@@ -210,3 +213,7 @@ Four rows from the record that cuts the onion into vertical slices, for the rule
 ## Addendum, 2026-10-20 (1.0.3.189): rule 1
 
 One row for rule 1 of the slices: the host's features are folders with a module each, Program.cs loops over them, and `SliceTests` fails when a slice uses another or the shared part uses a slice. The row for the composition root's shape, decided in ADR: The composition root, split by job, still names `CompositionRootTests`; that test now holds the new shape.
+
+## Addendum, 2026-10-20 (1.0.3.190): rules 3, 4 and 5
+
+Three rows for the sites as a list, the stores behind one diagnostics port, and the guest site behind one interface.

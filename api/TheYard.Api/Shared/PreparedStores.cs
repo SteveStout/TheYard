@@ -9,7 +9,7 @@ namespace TheYard.Api;
 /// else is registered, and no request reads it; what a request needs is registered on its own.
 /// </summary>
 /// <param name="Backends">Every store this process runs, and which one a request gets.</param>
-/// <param name="Relational">The relational backend, which is always there, on SQL Server or SQLite.</param>
+/// <param name="Relational">The relational store's context factories, held once it is attached.</param>
 /// <param name="Document">The document store, or null where no account is configured.</param>
 /// <param name="Scratch">The scratch file to delete when no database was configured.</param>
 /// <param name="SqlLog">The relational store's statements, for the Admin tab.</param>
@@ -19,7 +19,7 @@ namespace TheYard.Api;
 /// <param name="Loggers">The host's loggers, once the host exists, for a context factory made later.</param>
 public sealed record PreparedStores(
     Backends Backends,
-    Backend Relational,
+    RelationalContexts Relational,
     CosmosStore? Document,
     ScratchDatabase Scratch,
     SqlRingBuffer SqlLog,
@@ -36,7 +36,3 @@ public sealed record ScratchDatabase(string? ScratchPath);
 /// <summary>The document store, registered as a value because there may be none: null where no account is configured.</summary>
 /// <param name="Store">The store, or null.</param>
 public sealed record DocumentStore(CosmosStore? Store);
-
-/// <summary>The relational backend, which every process has, for the readings that ask the relational store itself.</summary>
-/// <param name="Backend">The relational backend.</param>
-public sealed record RelationalStore(Backend Backend);

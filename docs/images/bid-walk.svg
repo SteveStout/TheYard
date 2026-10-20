@@ -46,7 +46,7 @@
   <text x="1020" y="158" class="mono">api/TheYard.Domain</text>
   <rect x="60" y="190" width="360" height="250" rx="14" class="part"/>
   <text x="76" y="214" class="name">BidEndpoints.HandleBid</text>
-  <text x="76" y="232" class="mono">Endpoints/BidEndpoints.cs</text>
+  <text x="76" y="232" class="mono">Features/Bids/BidEndpoints.cs</text>
   <text x="76" y="252" class="body">POST /api/vehicles/{id}/bids, signed in.</text>
   <text x="76" y="269" class="body">Is this session on this store? If not, 401.</text>
   <text x="76" y="286" class="body">Does the vehicle exist (Auction.Find)? If not, 404.</text>
@@ -62,7 +62,7 @@
   <text x="76" y="649" class="body">EF Core: one row per buyer per vehicle, in</text>
   <text x="76" y="666" class="body">Azure SQL Database or SQLite.</text>
   <text x="76" y="683" class="body">Cosmos DB SDK: one document in the buyer's partition.</text>
-  <text x="76" y="700" class="body">Composition/StoreRegistration.cs picks which.</text>
+  <text x="76" y="700" class="body">Shared/StoreRegistration.cs picks which.</text>
   <rect x="540" y="190" width="360" height="100" rx="14" class="part"/>
   <text x="556" y="214" class="name">Auction.PlaceBidAsync</text>
   <text x="556" y="232" class="mono">Auction.cs</text>

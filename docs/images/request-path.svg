@@ -77,8 +77,8 @@
   <text x="694" y="266" class="body">else X-Yard-Host, only if it names one.</text>
   <text x="694" y="283" class="body">Anything else: no name.</text>
   <rect x="1040" y="166" width="310" height="126" class="box shed"/>
-  <text x="1054" y="191" class="title">The Shed's name: ShedMount</text>
-  <text x="1054" y="211" class="mono">Composition/ShedMount.cs, ShedApplication.cs</text>
+  <text x="1054" y="191" class="title">The Shed's name: HostedSiteMount</text>
+  <text x="1054" y="211" class="mono">Shared/Sites/HostedSiteMount.cs, ShedSite.cs</text>
   <text x="1054" y="232" class="body">Handed over before TheYard's pipeline:</text>
   <text x="1054" y="249" class="body">The Shed's own app from /app/shed,</text>
   <text x="1054" y="266" class="body">its pipeline and controllers, no socket.</text>

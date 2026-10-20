@@ -15,8 +15,8 @@ public static class ActivityRegistration
     /// <param name="builder">The host being built.</param>
     /// <param name="backends">Every store: each keeps its own activity rows unless the document store keeps them all.</param>
     /// <param name="cosmos">The document store the machine minutes are kept in, or null.</param>
-    /// <param name="relational">The relational backend, whose quiet context the machine recorder reads.</param>
-    public static void AddTheYardActivity(this WebApplicationBuilder builder, Backends backends, CosmosStore? cosmos, Backend relational)
+    /// <param name="relational">The relational store's contexts, whose quiet one the machine recorder reads.</param>
+    public static void AddTheYardActivity(this WebApplicationBuilder builder, Backends backends, CosmosStore? cosmos, RelationalContexts relational)
     {
         // #region activity-wiring
         // Site activity (ADR: Site activity, and the line an address does not cross).
@@ -65,7 +65,7 @@ public static class ActivityRegistration
             services.GetRequiredService<MachineSampler>(),
             machineHistory,
             backends.Default.Key,
-            cancellation => ResourceStats.ReadAsync(relational.QuietContexts, "the relational store", 8, cancellation),
+            cancellation => ResourceStats.ReadAsync(relational.Quiet, "the relational store", 8, cancellation),
             services.GetRequiredService<StoreRingBuffer>().Snapshot,
             services.GetRequiredService<RequestRingBuffer>().Snapshot,
             services.GetRequiredService<ILogger<MachineRecorder>>()));

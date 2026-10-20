@@ -75,7 +75,7 @@ ring('ring1', 520, 400, 'Application: the use cases and the port', 'api/TheYard.
 ring('ring2', 1000, 360, 'Domain: the rules', 'api/TheYard.Domain');
 
 // The host: where the request arrives and the answer leaves.
-part('part', 60, 190, 360, 250, 'BidEndpoints.HandleBid', 'Endpoints/BidEndpoints.cs', [
+part('part', 60, 190, 360, 250, 'BidEndpoints.HandleBid', 'Features/Bids/BidEndpoints.cs', [
   'POST /api/vehicles/{id}/bids, signed in.',
   'Is this session on this store? If not, 401.',
   'Does the vehicle exist (Auction.Find)? If not, 404.',
@@ -92,7 +92,7 @@ part('part', 60, 570, 360, 180, 'EfBidStore or CosmosBidStore', 'EfSources.cs an
   'EF Core: one row per buyer per vehicle, in',
   'Azure SQL Database or SQLite.',
   "Cosmos DB SDK: one document in the buyer's partition.",
-  'Composition/StoreRegistration.cs picks which.',
+  'Shared/StoreRegistration.cs picks which.',
 ]);
 
 // Application: the use case, then the service that holds everybody's bids, then the port.

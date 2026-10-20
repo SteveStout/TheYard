@@ -97,7 +97,7 @@ const RIGHT = [
     h: 760,
     name: 'Host, front end, tests',
     project: 'api/TheYard.Api, src/, render/, api/TheYard.Tests',
-    lines: ['Endpoints read a request and ask Auction;', 'Composition/ wires every service.'],
+    lines: ['Endpoints read a request and ask Auction;', 'Shared/ and each slice\'s Module wire it.'],
   },
   {
     cls: 'ring1',

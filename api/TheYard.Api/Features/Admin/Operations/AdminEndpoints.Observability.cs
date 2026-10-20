@@ -5,7 +5,6 @@
 
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
-using TheYard.Infrastructure;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
@@ -99,13 +98,13 @@ public static partial class AdminEndpoints
     /// Answers what the container and the two stores are doing, each as that machine reports itself, over the last
     /// hour or a kept window of 24h, 7d or 30d.
     /// </summary>
-    private static async Task<IResult> Machines(string? window, MachineSampler sampler, MachineHistoryReader kept, Backends backends, StoreRingBuffer storeLog, RequestRingBuffer requestLog, HostStart start, ILoggerFactory loggers, IWebHostEnvironment environment, CancellationToken cancellation)
+    private static async Task<IResult> Machines(string? window, MachineSampler sampler, MachineHistoryReader kept, Backends backends, StoreRingBuffer storeLog, RequestRingBuffer requestLog, HostStart start, CancellationToken cancellation)
     {
         var startedAt = start.At;
         var relational = backends.Named("sql");
         var load = relational is null
             ? StoreLoad.Absent("this container has no relational store, or it did not come up")
-            : await relational.ReadLoadAsync(RingSizes.MachineSamples, cancellation, loggers.CreateLogger(environment.ApplicationName));
+            : await relational.ReadLoadAsync(RingSizes.MachineSamples, cancellation);
         var now = Clocks.UtcNow();
         var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB", now);
         return Results.Json(new

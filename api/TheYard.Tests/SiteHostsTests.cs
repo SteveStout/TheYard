@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using TheYard.Api;
 
 namespace TheYard.Tests;
@@ -15,7 +16,7 @@ namespace TheYard.Tests;
 /// </summary>
 public class SiteHostsTests
 {
-    private static readonly SiteHosts Three = new("theyard.example", "theyard-cosmos.example", "theshed.example");
+    private static readonly SiteHosts Three = new([new Site("theyard.example", "sql"), new Site("theyard-cosmos.example", "cosmos"), new Site("theshed.example", null)]);
 
     private static DefaultHttpContext Arriving(string? host = null, string? edgeSaid = null, string? store = null)
     {
@@ -64,16 +65,17 @@ public class SiteHostsTests
         Assert.Equal("theyard.example", Three.Of(Arriving("theyard.example", edgeSaid: "evil.example")));
         // A name App Service routed by wins over the header: The Shed's domain cannot be told it is a Yard site.
         Assert.Equal("theshed.example", Three.Of(Arriving("theshed.example", edgeSaid: "theyard.example")));
-        Assert.True(Three.IsShed(Arriving("theshed.example", edgeSaid: "theyard-cosmos.example")));
+        Assert.Equal("theshed.example", Three.GuestOf(Arriving("theshed.example", edgeSaid: "theyard-cosmos.example")));
         Assert.Null(Three.SiteOrigin(Arriving(edgeSaid: "theshed.example")));
         Assert.Equal("https://theyard-cosmos.example", Three.SiteOrigin(Arriving(edgeSaid: "theyard-cosmos.example")));
-        Assert.True(Three.IsShed(Arriving("theshed.example")));
-        Assert.False(Three.IsShed(Arriving("theyard.example")));
+        Assert.Equal("theshed.example", Three.GuestOf(Arriving("theshed.example")));
+        Assert.Null(Three.GuestOf(Arriving("theyard.example")));
         // A deploy's unreplaced placeholder and an empty setting are no name.
-        var none = new SiteHosts("__HOSTS_SQL__", "", null);
-        Assert.Null(none.Sql);
-        Assert.Null(none.Cosmos);
-        Assert.False(SiteHosts.None.IsShed(Arriving("theshed.example")));
+        var none = new SiteHosts([new Site("__HOSTS_SQL__", "sql"), new Site("", "cosmos"), new Site("theshed.example", null)]);
+        Assert.Null(none.HostFor("sql"));
+        Assert.Null(none.HostFor("cosmos"));
+        Assert.Single(none.All);
+        Assert.Null(SiteHosts.None.GuestOf(Arriving("theshed.example")));
     }
     // #endregion rule
 
@@ -142,10 +144,38 @@ public class SiteHostsTests
 
         var shed = await Get(client, "/", "theshed.example");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, shed.StatusCode);
-        Assert.Contains("The Shed is not running", await shed.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Contains("is not running in this process", await shed.Content.ReadAsStringAsync(), StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/version")).StatusCode);
     }
     // #endregion shed-mounted
+
+    [Fact]
+    public void The_sites_are_a_configured_list_and_the_settings_named_per_site_read_as_the_same_list()
+    {
+        // The list: any number of sites, each a name and the store it serves, a guest with none.
+        var listed = SiteSettings.From(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Sites:0:Host"] = "theyard.example",
+            ["Sites:0:Store"] = "sql",
+            ["Sites:1:Host"] = "THEYARD-COSMOS.example.",
+            ["Sites:1:Store"] = "cosmos",
+            ["Sites:2:Host"] = "theshed.example",
+        }).Build());
+        // A web app configured before the list carries one setting per site; it reads the same.
+        var named = SiteSettings.From(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Hosts:Sql"] = "theyard.example",
+            ["Hosts:Cosmos"] = "theyard-cosmos.example",
+            ["Hosts:Shed"] = "theshed.example",
+        }).Build());
+        foreach (var hosts in new[] { listed, named })
+        {
+            Assert.Equal(["theyard.example", "theyard-cosmos.example", "theshed.example"], hosts.All.Select(site => site.Host));
+            Assert.Equal("cosmos", hosts.StoreFor("theyard-cosmos.example"));
+            Assert.Equal("https://theyard.example", hosts.OriginOf("sql"));
+            Assert.Equal(["theshed.example"], hosts.Guests);
+        }
+    }
 
     [Fact]
     public async Task Every_answer_names_the_web_app_that_gave_it_only_where_App_Service_says_which()

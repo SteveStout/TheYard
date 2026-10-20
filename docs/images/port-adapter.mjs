@@ -86,7 +86,7 @@ part('part', 790, 330, 540, 110, 'CosmosBidStore', 'Infrastructure.Cosmos/Cosmos
   "The Cosmos DB SDK: one document per buyer per vehicle, in the buyer's",
   'partition, so every write stays inside one partition.',
 ], ['public sealed class CosmosBidStore(CosmosStore store) : IBidStore']);
-part('part', 790, 500, 540, 180, 'The composition root', 'Api/Composition/StoreRegistration.cs', [
+part('part', 790, 500, 540, 180, 'The composition root', 'Api/Shared/StoreRegistration.cs', [
   'The one place that names an adapter. It builds one backend per',
   'store at startup and hands each BidService its adapter:',
 ], [

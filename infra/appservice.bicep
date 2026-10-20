@@ -172,11 +172,15 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
           { name: 'Cosmos__AccountEndpoint', value: 'https://cosmos-theyard-ss.documents.azure.com:443/' }
           { name: 'Cosmos__Database', value: 'theyard' }
           { name: 'Cosmos__Credential', value: 'managed-identity' }
-          // The three names, each read by SiteHosts.cs. No store default is set: a request
-          // that names no store and arrives on neither Yard name gets the relational store.
-          { name: 'Hosts__Sql', value: s.hostSql }
-          { name: 'Hosts__Cosmos', value: s.hostCosmos }
-          { name: 'Hosts__Shed', value: s.hostShed }
+          // The sites, a list read by SiteSettings.cs: each a name and the store it serves,
+          // and a guest application with none (ADR: The onion cut into vertical slices, rule 3).
+          // No store default is set: a request that names no store and arrives on neither Yard
+          // name gets the relational store.
+          { name: 'Sites__0__Host', value: s.hostSql }
+          { name: 'Sites__0__Store', value: 'sql' }
+          { name: 'Sites__1__Host', value: s.hostCosmos }
+          { name: 'Sites__1__Store', value: 'cosmos' }
+          { name: 'Sites__2__Host', value: s.hostShed }
           // Off. The process warms the relational store at startup, so a roll is ready
           // on the first site's store first; the keep-warm loop then loads the other within
           // four minutes and keeps both loaded (ADR: Kept awake).

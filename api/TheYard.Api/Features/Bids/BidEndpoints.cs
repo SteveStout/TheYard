@@ -143,10 +143,10 @@ public static class BidEndpoints
         // A session bids where its account is. The header can put one request on the other
         // store, and a bid there would be a row under an id that store has no account for. The
         // token names the store that opened it, so this check costs no lookup.
-        if (!http.SessionIsOn(current.Backend))
+        if (!http.SessionIsOn(current))
         {
             return TypedResults.Problem(
-                detail: $"This session was opened on another store. Sign in on {current.Backend.Name} to bid here.",
+                detail: $"This session was opened on another store. Sign in on {current.Name} to bid here.",
                 statusCode: 401, title: "The bid was rejected");
         }
         // #endregion session-per-store

@@ -33,11 +33,11 @@ public static partial class AccountEndpoints
                 statusCode: 404, title: "No such account");
         }
 
-        string url = await reset.LinkForAsync(user, current.Backend.Key, SiteOrigin(http, configuration, hosts), cancellation);
+        string url = await reset.LinkForAsync(user, current.Key, SiteOrigin(http, configuration, hosts), cancellation);
         return Results.Json(new
         {
             email = user.Email,
-            store = current.Backend.Key,
+            store = current.Key,
             url,
             expires_at = Clocks.UtcNow() + TokenIssuer.ResetLifetime,
         });
@@ -73,7 +73,7 @@ public static partial class AccountEndpoints
         var user = await users.FindByEmailAsync(request.Email);
         if (user is not null && user.Email is not null)
         {
-            string url = await reset.LinkForAsync(user, current.Backend.Key, SiteOrigin(http, configuration, hosts), cancellation);
+            string url = await reset.LinkForAsync(user, current.Key, SiteOrigin(http, configuration, hosts), cancellation);
             await mail.SendAsync(
                 user.Email,
                 "Your TheYard password reset link",
@@ -97,7 +97,7 @@ public static partial class AccountEndpoints
             return TheYard.Api.Accounts.Unavailable();
         }
 
-        var result = await reset.ResetAsync(users, request.Token, request.Password, current.Backend.Key, cancellation);
+        var result = await reset.ResetAsync(users, request.Token, request.Password, current.Key, cancellation);
         if (result.User is not { } user)
         {
             return TypedResults.Problem(detail: result.Detail, statusCode: 400, title: result.Title);
@@ -105,7 +105,7 @@ public static partial class AccountEndpoints
 
         http.Response.Cookies.Append(
             TokenIssuer.CookieName,
-            issuer.Issue(user.Id, user.Email!, current.Backend.Key, user.SecurityStamp),
+            issuer.Issue(user.Id, user.Email!, current.Key, user.SecurityStamp),
             TokenIssuer.CookieFor(http, issuer.Lifetime));
         return TypedResults.Ok(TheYard.Api.Accounts.Describe(user));
     }

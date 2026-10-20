@@ -17,8 +17,7 @@ public class StoreSecondChanceTests
 
     private static StoreAttachment Attached(Backend backend, DatabaseState state) => new(
         state,
-        null,
-        null,
+        NoStoreDiagnostics.Instance,
         backend.Inventory,
         backend.Bids,
         backend.Activity,

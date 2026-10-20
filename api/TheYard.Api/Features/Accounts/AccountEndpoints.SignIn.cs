@@ -60,7 +60,7 @@ public static partial class AccountEndpoints
 
         http.Response.Cookies.Append(
             TokenIssuer.CookieName,
-            issuer.Issue(user.Id, user.Email!, current.Backend.Key, user.SecurityStamp),
+            issuer.Issue(user.Id, user.Email!, current.Key, user.SecurityStamp),
             TokenIssuer.CookieFor(http, issuer.Lifetime));
         return TypedResults.Ok(TheYard.Api.Accounts.Describe(user));
     }
@@ -111,7 +111,7 @@ public static partial class AccountEndpoints
 
         http.Response.Cookies.Append(
             TokenIssuer.CookieName,
-            issuer.Issue(user.Id, user.Email!, current.Backend.Key, user.SecurityStamp),
+            issuer.Issue(user.Id, user.Email!, current.Key, user.SecurityStamp),
             TokenIssuer.CookieFor(http, issuer.Lifetime));
         return TypedResults.Ok(TheYard.Api.Accounts.Describe(user));
     }

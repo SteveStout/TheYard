@@ -14,7 +14,7 @@ namespace TheYard.Api;
 /// </summary>
 public sealed class StoreAnnouncement(
     Backends backends,
-    RelationalStore relational,
+    RelationalContexts relational,
     DocumentStore document,
     StoreLoggers storeLoggers,
     SigningKeyOrigin signingKey,
@@ -26,7 +26,7 @@ public sealed class StoreAnnouncement(
     public Task StartAsync(CancellationToken cancellationToken)
     {
         storeLoggers.Factory = loggers;
-        (relational.Backend.Contexts as ContextFactory)?.Attach(loggers);
+        (relational.Contexts as ContextFactory)?.Attach(loggers);
         document.Store?.Logger = loggers.CreateLogger<CosmosStore>();
 
         // The promise the accounts record makes: an invented signing key is said out loud,

@@ -139,14 +139,14 @@ started inside the same process from its own published folder. The mount sits
 in `Program.cs` right after the app is built, so it runs ahead of TheYard's
 whole request pipeline:
 
-```live path=api/TheYard.Api/Shared/ShedMount.cs region=shed-mount
+```live path=api/TheYard.Api/Shared/Sites/HostedSiteMount.cs region=hosted-sites
 ```
 
 The application it hands the request to is The Shed's own: its builder, its
 registrations, then its request pipeline (`samples/theshed/Composition/RequestPipeline.cs`)
 and its controllers (`samples/theshed/Controllers`), on a server with no socket:
 
-```live path=api/TheYard.Api/ShedApplication.cs region=shed-application
+```live path=api/TheYard.Api/Shared/Sites/TheShed/ShedApplication.cs region=shed-application
 ```
 
 **A Yard name picks the store.** A request that names a store with
@@ -229,6 +229,6 @@ change in this one.
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions the second store is built from.
 - [`netlify.toml`](https://github.com/SteveStout/TheYard/blob/main/netlify.toml) and [`edge/_redirects`](https://github.com/SteveStout/TheYard/blob/main/edge/_redirects): the HTTPS edge.
 - [`.github/workflows/edge-branch.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/edge-branch.yml): moves the `edge` branch, which Netlify builds from, to main only when `edge/` or `netlify.toml` changes and only after Deploy has verified the origin the rules name, then reads both Yard names.
-- [`api/TheYard.Api/SiteHosts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/SiteHosts.cs) and [`api/TheYard.Api/Shared/ShedMount.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ShedMount.cs): which name a request arrived on, and The Shed's name to The Shed.
+- [`api/TheYard.Api/SiteHosts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/SiteHosts.cs) and [`api/TheYard.Api/Shared/Sites/HostedSiteMount.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Sites/HostedSiteMount.cs): which name a request arrived on, and The Shed's name to The Shed.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image the one web app runs, TheYard and The Shed.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml): how a merge becomes a roll of the sites, and of the service.

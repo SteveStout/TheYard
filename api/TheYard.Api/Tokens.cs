@@ -262,7 +262,7 @@ public static class Principals
 
     // #region session-per-store
     /// <summary>
-    /// Whether the session was opened on <paramref name="backend"/>. A token
+    /// Whether the session was opened on the store <paramref name="current"/> names. A token
     /// from one store used against the other, which the header allows in one
     /// request, would write a bid under an account the other store does not
     /// have: on the relational side the foreign key refused it as a 500, on
@@ -270,7 +270,7 @@ public static class Principals
     /// memory of the project). A token with no store claim, which every token
     /// minted here carries, is on no store.
     /// </summary>
-    public static bool SessionIsOn(this HttpContext context, Backend backend) =>
-        string.Equals(context.User.FindFirstValue(TokenIssuer.StoreClaim), backend.Key, StringComparison.Ordinal);
+    public static bool SessionIsOn(this HttpContext context, CurrentBackend current) =>
+        string.Equals(context.User.FindFirstValue(TokenIssuer.StoreClaim), current.Key, StringComparison.Ordinal);
     // #endregion session-per-store
 }

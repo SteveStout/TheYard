@@ -29,7 +29,7 @@
   <rect x="40" y="100" width="880" height="660" rx="18" class="ring0"/>
   <text x="60" y="128" class="title">Outside: the host and the adapters</text>
   <text x="60" y="148" class="mono">api/TheYard.Api</text>
-  <text x="60" y="168" class="body">The host reads a request, asks Application and writes the answer (Endpoints/); Composition/ wires it all.</text>
+  <text x="60" y="168" class="body">The host reads a request, asks Application and writes the answer (Features/, a folder per slice); Shared/ wires it all.</text>
   <text x="60" y="185" class="body">The adapters implement the ports: EF Core over Azure SQL Database or SQLite, and the Cosmos DB SDK.</text>
   <text x="190" y="148" class="mono">api/TheYard.Infrastructure</text>
   <text x="580" y="148" class="mono">api/TheYard.Infrastructure.Cosmos</text>

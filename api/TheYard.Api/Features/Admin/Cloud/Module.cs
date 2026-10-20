@@ -23,7 +23,7 @@ public sealed class Module : IModule
         string? token = configuration["Netlify:Token"];
         var publicSite = new Uri(configuration["Netlify:PublicSite"] ?? "https://theyard.stevenstout.biz/");
         // Which public name gets the SQL database, from this process's own settings.
-        string? sqlName = SiteHosts.From(configuration).Sql;
+        string? sqlName = SiteSettings.From(configuration).HostFor("sql");
         services.AddSingleton<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();

@@ -1,4 +1,5 @@
 using NetArchTest.Rules;
+using TheYard.Api;
 
 namespace TheYard.Tests;
 
@@ -57,6 +58,68 @@ public sealed class SliceTests
             : null;
 
     [Fact]
+    public void Rule_3_the_sites_and_the_stores_are_lookups_with_no_store_or_host_written_in()
+    {
+        // A third site or a third store is a setting (Shared/SiteSettings.cs), so the two types
+        // that decide which store and which site a request gets carry no store key and no name.
+        string[] types = ["TheYard.Api.SiteHosts", "TheYard.Api.Site", "TheYard.Api.Backends", "TheYard.Api.CurrentBackend"];
+        Assert.Empty(Literals(types, literal =>
+            literal.Equals("sql", StringComparison.OrdinalIgnoreCase)
+            || literal.Equals("cosmos", StringComparison.OrdinalIgnoreCase)
+            || literal.Contains("stevenstout", StringComparison.OrdinalIgnoreCase)
+            || literal.Contains("theyard", StringComparison.OrdinalIgnoreCase)
+            || literal.Contains("theshed", StringComparison.OrdinalIgnoreCase)
+            || literal.Contains(".example", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public void Rule_4_a_backend_names_no_adapter_and_both_stores_answer_one_diagnostics_port()
+    {
+        var adapterTypes = new[] { "TheYard.Infrastructure", "TheYard.Infrastructure.Cosmos", "Microsoft.EntityFrameworkCore" };
+        var members = typeof(Backend).GetProperties()
+            .Where(property => adapterTypes.Any(ns => property.PropertyType.Namespace?.StartsWith(ns, StringComparison.Ordinal) == true
+                || property.PropertyType.GenericTypeArguments.Any(argument => argument.Namespace?.StartsWith(ns, StringComparison.Ordinal) == true)))
+            .Select(property => $"{property.Name} : {property.PropertyType.Name}")
+            .ToList();
+        Assert.True(members.Count == 0, "Backend names an adapter: " + string.Join(", ", members));
+        Assert.True(typeof(TheYard.Application.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.RelationalDiagnostics)));
+        Assert.True(typeof(TheYard.Application.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.Cosmos.DocumentDiagnostics)));
+    }
+
+    [Fact]
+    public void Rule_5_a_guest_site_stands_behind_one_interface_and_the_shed_is_one_implementation()
+    {
+        var sites = Host.GetTypes().Where(type => type.IsClass && typeof(IHostedSite).IsAssignableFrom(type)).ToList();
+        Assert.Contains(sites, type => type.Name == "ShedSite");
+        Assert.All(sites, type => Assert.True(type.IsSealed, $"{type.Name} should be sealed"));
+        // Nothing else holds The Shed's application: the mount knows only the interface.
+        Assert.Null(Host.GetType("TheYard.Api.ShedSlot"));
+        Assert.Null(Host.GetType("TheYard.Api.ShedMount"));
+    }
+
+    /// <summary>Every string literal the named types' method bodies load that the test flags, with where it was found.</summary>
+    private static List<string> Literals(string[] typeNames, Func<string, bool> flagged)
+    {
+        using var module = Mono.Cecil.ModuleDefinition.ReadModule(Host.Location);
+        return [.. module.GetTypes()
+            .Where(type => typeNames.Contains(Outermost(type).FullName))
+            .SelectMany(type => type.Methods.Where(method => method.HasBody))
+            .SelectMany(method => method.Body.Instructions
+                .Where(instruction => instruction.OpCode == Mono.Cecil.Cil.OpCodes.Ldstr && instruction.Operand is string literal && flagged(literal))
+                .Select(instruction => $"{method.DeclaringType.FullName}.{method.Name} writes \"{instruction.Operand}\""))];
+    }
+
+    /// <summary>The type a nested or compiler-written type sits inside, all the way out.</summary>
+    private static Mono.Cecil.TypeDefinition Outermost(Mono.Cecil.TypeDefinition type)
+    {
+        while (type.DeclaringType is { } outer)
+        {
+            type = outer;
+        }
+        return type;
+    }
+
+    [Fact]
     public void Rule_2_the_composition_bag_is_retired_and_startup_is_one_hosted_service_per_concern()
     {
         // The record every registration took whole, and the one method that read eleven fields off
@@ -64,7 +127,7 @@ public sealed class SliceTests
         // is a hosted service per concern, each taking its dependencies by constructor.
         Assert.Null(Host.GetType("TheYard.Api.YardComposition"));
         Assert.Null(Host.GetType("TheYard.Api.Startup"));
-        string[] concerns = ["StoreAnnouncement", "ScratchDatabaseCleanup", "ErrorRingKeeping", "CatalogueWarm", "PageSweepAtRoll", "KeepWarmAtRoll", "ShedStopper"];
+        string[] concerns = ["StoreAnnouncement", "ScratchDatabaseCleanup", "ErrorRingKeeping", "CatalogueWarm", "PageSweepAtRoll", "KeepWarmAtRoll", "HostedSiteStopper"];
         foreach (string concern in concerns)
         {
             var type = Host.GetType("TheYard.Api." + concern);

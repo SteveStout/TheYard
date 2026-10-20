@@ -71,7 +71,7 @@
   <text x="806" y="430" class="mono">public sealed class CosmosBidStore(CosmosStore store) : IBidStore</text>
   <rect x="790" y="500" width="540" height="180" rx="14" class="part"/>
   <text x="806" y="524" class="name">The composition root</text>
-  <text x="806" y="542" class="mono">Api/Composition/StoreRegistration.cs</text>
+  <text x="806" y="542" class="mono">Api/Shared/StoreRegistration.cs</text>
   <text x="806" y="562" class="body">The one place that names an adapter. It builds one backend per</text>
   <text x="806" y="579" class="body">store at startup and hands each BidService its adapter:</text>
   <text x="806" y="600" class="mono">new BidService(new EfBidStore(contexts))</text>

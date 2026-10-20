@@ -50,8 +50,8 @@ public static class StoreRegistration
             && !configuredCosmos.StartsWith("__", StringComparison.Ordinal);
         // The names this process answers to (SiteHosts.cs) pick a request's store; with neither
         // name, the default store (StoreChoice.cs).
-        var siteHosts = SiteHosts.From(builder.Configuration);
-        bool servesBothSites = siteHosts.Sql is not null && siteHosts.Cosmos is not null;
+        var siteHosts = SiteSettings.From(builder.Configuration);
+        bool servesBothSites = siteHosts.StoreSites.Count() > 1;
         string defaultStore = StoreChoice.DefaultKey(builder.Configuration);
         bool keepCatalogues = builder.Configuration.GetValue("Catalogue:Keep", false);
         string scratchDatabase = Path.Combine(Path.GetTempPath(), $"theyard-scratch-{Guid.NewGuid():N}.db");
@@ -74,6 +74,8 @@ public static class StoreRegistration
         var currentRequest = new HttpCurrentRequest(httpContextAccessor);
         // The host's loggers, attached to a context factory made after startup too (StoreAnnouncement).
         var loggers = new StoreLoggers();
+        // The relational store's two context factories, held once it is attached (RelationalContexts.cs).
+        var relationalContexts = new RelationalContexts();
         #endregion persistence
 
         #region migrate-and-seed
@@ -142,10 +144,10 @@ public static class StoreRegistration
             {
                 contexts.Attach(loggers.Factory);
             }
+            relationalContexts.Hold(contexts, quietContexts);
             return new StoreAttachment(
                 state,
-                contexts,
-                quietContexts,
+                new RelationalDiagnostics(contexts, yard.Describe(), () => loggers.Factory?.CreateLogger<RelationalDiagnostics>()),
                 Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "sql", servesBothSites)),
                 new BidService(new EfBidStore(contexts)),
                 new EfActivityStore(quietContexts),
@@ -197,7 +199,7 @@ public static class StoreRegistration
                 Name = "Azure Cosmos DB",
                 Database = cosmosState,
                 Startup = cosmosStartup,
-                Cosmos = cosmos,
+                Diagnostics = new DocumentDiagnostics(cosmos),
                 Inventory = new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
                 Bids = new BidService(new MemoryBidStore()),
                 Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
@@ -206,8 +208,7 @@ public static class StoreRegistration
             };
             StoreAttachment CosmosAttachment(DatabaseState state) => new(
                 state,
-                null,
-                null,
+                new DocumentDiagnostics(store),
                 // The same three ports, answered out of the document store.
                 Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "cosmos", servesBothSites)),
                 new BidService(new CosmosBidStore(store)),
@@ -248,7 +249,7 @@ public static class StoreRegistration
         // adapts one to the other (one of the four scoped registrations). The factory is read at
         // call time, so a store attached after startup serves the accounts too.
         builder.Services.AddScoped(_ =>
-            (sqlBackend.Contexts ?? throw new InvalidOperationException("the relational store is not attached"))
+            (relationalContexts.Contexts ?? throw new InvalidOperationException("the relational store is not attached"))
                 .CreateDbContext());
         // #region second-chance-wiring
         // A store that refused at startup is asked again after it (ADR: The relational
@@ -280,7 +281,7 @@ public static class StoreRegistration
         #endregion migrate-and-seed
         var prepared = new PreparedStores(
             backends,
-            sqlBackend,
+            relationalContexts,
             cosmos,
             new ScratchDatabase(configuredDatabase is null && yard.Provider == YardProvider.Sqlite ? scratchDatabase : null),
             sqlLog,
@@ -290,7 +291,7 @@ public static class StoreRegistration
             loggers);
         builder.Services.AddSingleton(prepared.Scratch);
         builder.Services.AddSingleton(new DocumentStore(cosmos));
-        builder.Services.AddSingleton(new RelationalStore(sqlBackend));
+        builder.Services.AddSingleton(relationalContexts);
         builder.Services.AddSingleton(loggers);
         return prepared;
     }

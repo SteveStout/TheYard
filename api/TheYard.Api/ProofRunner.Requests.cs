@@ -4,7 +4,6 @@
 // rounds read as the visitor's path and this reads as how each step is measured.
 using System.Diagnostics;
 using System.Text.Json;
-using TheYard.Infrastructure;
 
 namespace TheYard.Api;
 
@@ -141,22 +140,12 @@ public sealed partial class ProofRunner
         var samples = new List<long>();
         for (int i = 0; i < 5; i++)
         {
-            long start = Stopwatch.GetTimestamp();
-            if (backend.Cosmos is { } cosmos)
-            {
-                // Two point reads, so half the time is one.
-                await cosmos.ProbeAsync();
-                samples.Add((long)(Stopwatch.GetElapsedTime(start).TotalMilliseconds / 2));
-            }
-            else if (backend.Contexts is { } contexts)
-            {
-                await YardDatabase.PingAsync(contexts);
-                samples.Add((long)Stopwatch.GetElapsedTime(start).TotalMilliseconds);
-            }
-            else
+            // Asked of the store through its diagnostics, which each adapter answers its own way.
+            if (await backend.Diagnostics.RoundTripMillisecondsAsync(CancellationToken.None) is not { } milliseconds)
             {
                 return null;
             }
+            samples.Add((long)milliseconds);
         }
         return Percentiles.Of(samples, 50);
     }

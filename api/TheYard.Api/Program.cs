@@ -30,10 +30,10 @@ foreach (var module in modules)
     module.Register(builder.Services, builder.Configuration);
 }
 builder.AddTheYardStartup(identity);                                               // Shared/StartupRegistration.cs
-builder.AddTheYardShed();                                                          // Shared/ShedRegistration.cs, last
+builder.AddTheYardHostedSites();                                                   // Shared/HostedSiteRegistration.cs, last
 
 var app = builder.Build();
-await app.MountTheShedAsync();                                                     // Shared/ShedMount.cs
+await app.MountTheHostedSitesAsync();                                              // Shared/Sites/HostedSiteMount.cs
 app.UseTheYardRequestPipeline(paths, identity);                                    // Shared/RequestPipeline.cs
 #endregion composition
 

@@ -48,7 +48,7 @@
   <text x="818" y="176" class="title">Host, front end, tests</text>
   <text x="818" y="194" class="mono">api/TheYard.Api, src/, render/, api/TheYard.Tests</text>
   <text x="818" y="212" class="body">Endpoints read a request and ask Auction;</text>
-  <text x="818" y="228" class="body">Composition/ wires every service.</text>
+  <text x="818" y="228" class="body">Shared/ and each slice's Module wire it.</text>
   <rect x="838" y="245" width="484" height="570" rx="18" class="ring1"/>
   <text x="856" y="271" class="title">The adapters, the same ports twice</text>
   <text x="856" y="289" class="mono">api/TheYard.Infrastructure[.Cosmos]</text>

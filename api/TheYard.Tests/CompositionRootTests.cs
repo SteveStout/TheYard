@@ -79,13 +79,14 @@ public class CompositionRootTests
     public void Every_class_that_registers_or_maps_is_static()
     {
         // A registration step in Shared/ and an endpoint class in a slice hold no state; a slice's
-        // Module is the one instance class beside them, and a hosted service under Shared/Hosted/ is
-        // a running thing with its dependencies in its constructor. Records are the wire shapes and
+        // Module is the one instance class beside them, and a hosted service under Shared/Hosted/ and
+        // a hosted site under Shared/Sites/ are running things with their dependencies in their
+        // constructors. Records are the wire shapes and
         // the settings a registration reads.
         var declaration = new Regex(@"^\s*public\s+((?:\w+\s+)*)class\s+(\w+)", RegexOptions.Multiline);
         var open = Sources()
             .Select(Relative)
-            .Where(path => (path.StartsWith("Shared/", StringComparison.Ordinal) && !path.StartsWith("Shared/Hosted/", StringComparison.Ordinal))
+            .Where(path => (path.StartsWith("Shared/", StringComparison.Ordinal) && !path.StartsWith("Shared/Hosted/", StringComparison.Ordinal) && !path.StartsWith("Shared/Sites/", StringComparison.Ordinal))
                 || (path.StartsWith("Features/", StringComparison.Ordinal) && !path.EndsWith("/Module.cs", StringComparison.Ordinal)))
             .SelectMany(path => declaration.Matches(File.ReadAllText(Path.Combine(Api(), path)))
                 .Where(match => !match.Groups[1].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("static"))

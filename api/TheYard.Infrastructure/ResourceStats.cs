@@ -7,6 +7,7 @@ using System.Globalization;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TheYard.Application;
 
 namespace TheYard.Infrastructure;
 
@@ -118,28 +119,6 @@ public static class ResourceStats
     }
 }
 
-/// <summary>One fifteen-second interval as the database reports it, every figure a percentage of what the tier allows.</summary>
-/// <param name="At">The end of the fifteen-second interval, UTC.</param>
-/// <param name="CpuPercent">Processor use, as a percentage of the tier's limit.</param>
-/// <param name="DataIoPercent">Data file reads and writes, as a percentage of the tier's limit.</param>
-/// <param name="LogWritePercent">Transaction log writes, as a percentage of the tier's limit.</param>
-/// <param name="MemoryPercent">Memory use, as a percentage of the tier's limit.</param>
-/// <param name="WorkerPercent">Concurrent workers, as a percentage of the tier's limit.</param>
-public sealed record ResourceStatRow(
-    DateTime At,
-    double CpuPercent,
-    double DataIoPercent,
-    double LogWritePercent,
-    double MemoryPercent,
-    double WorkerPercent);
 
-/// <summary>The relational store's own reading, or the reason there is not one.</summary>
-/// <param name="Available">True when the database answered with its reading.</param>
-/// <param name="Note">Why there is no reading, or null when there is one.</param>
-/// <param name="Rows">The intervals the database reported, empty when there is no reading.</param>
-public sealed record StoreLoad(bool Available, string? Note, IReadOnlyList<ResourceStatRow> Rows)
-{
-    /// <summary>A reading that did not happen, with the sentence the card shows in its place.</summary>
-    public static StoreLoad Absent(string note) => new(false, note, []);
-}
+
 // #endregion resource-stats

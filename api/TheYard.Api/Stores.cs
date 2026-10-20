@@ -152,8 +152,14 @@ public sealed class Backends
 /// </summary>
 public sealed class CurrentBackend(Backends backends, IHttpContextAccessor accessor)
 {
-    /// <summary>The store this request named, or the container's default.</summary>
+    /// <summary>The store this request named, or the container's default; for the shared wiring, never an endpoint.</summary>
     public Backend Backend { get; } = backends.For(accessor.HttpContext);
+
+    /// <summary>The key of the store this request is on, which a session's token names.</summary>
+    public string Key => Backend.Key;
+
+    /// <summary>The store as it describes itself, for a sentence a visitor reads.</summary>
+    public string Name => Backend.Name;
 
     /// <summary>
     /// The request's auction: the catalogue, the bids and the room composed by the Application

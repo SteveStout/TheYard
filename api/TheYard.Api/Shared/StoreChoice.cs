@@ -19,8 +19,7 @@ public static class StoreChoice
         {
             return configured;
         }
-        var hosts = SiteHosts.From(configuration);
-        bool servesBothSites = hosts.Sql is not null && hosts.Cosmos is not null;
+        bool servesBothSites = SiteSettings.From(configuration).StoreSites.Count() > 1;
         return servesBothSites || !DocumentStoreConfigured(configuration) ? "sql" : "cosmos";
     }
 

@@ -10,10 +10,10 @@ public static class AdminRegistration
 {
     /// <summary>Registers the proof, the Azure and peer readers, the page sweep, the error rings and the start time.</summary>
     /// <param name="builder">The host being built.</param>
-    /// <param name="relational">The relational backend, whose size the hourly reading reads.</param>
+    /// <param name="relational">The relational store's contexts, whose quiet one the hourly reading reads.</param>
     /// <param name="build">The build, which the page sweep stamps its reading with.</param>
     /// <param name="identity">Where this process runs, for the Azure card's own reading.</param>
-    public static void AddTheYardAdmin(this WebApplicationBuilder builder, Backend relational, BuildInfo build, HostIdentity identity)
+    public static void AddTheYardAdmin(this WebApplicationBuilder builder, RelationalContexts relational, BuildInfo build, HostIdentity identity)
     {
         // #region proof-clients
         // Where the performance proof sends its requests: this container's own
@@ -40,11 +40,11 @@ public static class AdminRegistration
         // The other container's metrics, read server side with a short patience (ADR: Backends, side by
         // side). Since 19 October no deploy sets Peer:Url: both sites are this process, and the card
         // says so in a sentence (ADR: One web app for every .NET process).
-        var siteHosts = SiteHosts.From(builder.Configuration);
+        var siteHosts = SiteSettings.From(builder.Configuration);
         var peer = new PeerReader(
             builder.Configuration["Peer:Url"],
             OutboundHttp.Client(PeerReader.Patience + TimeSpan.FromSeconds(1)),
-            bothStoresHere: siteHosts.Sql is not null && siteHosts.Cosmos is not null);
+            bothStoresHere: siteHosts.StoreSites.Count() > 1);
         builder.Services.AddSingleton(peer);
         // Once an hour, the certificate the site answers with and how full the relational store
         // is, for the Azure card (HourlyReadings.cs). Only a container with a public https address
@@ -55,7 +55,7 @@ public static class AdminRegistration
         // The reading is a delegate, which is the port for a one-call reading (ADR-080, the addendum
         // on the delegate). The quiet context is looked up at each reading, not here: a relational store that
         // refused at startup gets one only when the second chance attaches it later.
-        builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(relational.QuietContexts, cancellation), TimeProvider.System));
+        builder.Services.AddSingleton(new HourlyReadings(site, cancellation => StorageStats.ReadAsync(relational.Quiet, cancellation), TimeProvider.System));
         // #endregion hourly-readings-wiring
         builder.Services.AddHostedService(services => services.GetRequiredService<HourlyReadings>());
         // The performance proof (ADR: Same performance, proven), built on first use so a test's own

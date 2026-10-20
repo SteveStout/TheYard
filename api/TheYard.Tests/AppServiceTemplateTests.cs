@@ -17,7 +17,7 @@ public class AppServiceTemplateTests
     // #region settings-carried
     /// <summary>
     /// The names the process answers to and The Shed's folder are settings the code reads
-    /// (SiteHosts.cs, ShedMount.cs), so a template without them is a web app that serves one
+    /// (Shared/SiteSettings.cs, Shared/Sites/HostedSiteMount.cs), so a template without them is a web app that serves one
     /// store on every name and no Shed at all, with nothing red anywhere. The per-site settings
     /// of the four-app shape are gone: a Store__Default left behind would pin every name to one
     /// store, and a Peer__Url would read a web app that no longer exists.
@@ -26,7 +26,7 @@ public class AppServiceTemplateTests
     public void The_web_app_carries_the_names_and_the_sheds_folder_and_none_of_the_per_site_settings()
     {
         string template = Read("infra", "appservice.bicep");
-        foreach (string setting in new[] { "Hosts__Sql", "Hosts__Cosmos", "Hosts__Shed", "Shed__ContentRoot", "Files__Home", "Files__AllowWrites", "Files__MaxUploadBytes", "Site__Url", "Catalogue__Keep" })
+        foreach (string setting in new[] { "Sites__0__Host", "Sites__0__Store", "Sites__1__Host", "Sites__1__Store", "Sites__2__Host", "Shed__ContentRoot", "Files__Home", "Files__AllowWrites", "Files__MaxUploadBytes", "Site__Url", "Catalogue__Keep" })
         {
             Assert.Contains($"{{ name: '{setting}', value: ", template, StringComparison.Ordinal);
         }
