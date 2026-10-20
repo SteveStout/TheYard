@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import type { CloudReport } from '../../../lib/cloud';
 import type { MachineWindow } from '../../../lib/machineChart';
 import { useRead } from '../shared/common';
-import { CloudCard } from '../CloudCard';
+import { CardShell } from '../CardShell';
 import { planWindow } from '../PlanCard/PlanCard';
 
 export default function CloudResourceCard({
@@ -27,5 +27,5 @@ export default function CloudResourceCard({
     `/api/admin/cloud/${resource}?window=${planWindow(window)}`,
     tick
   );
-  return <CloudCard report={report} title={title} testId={`${resource}-card`} toolbar={toolbar} />;
+  return <CardShell report={report} title={title} testId={`${resource}-card`} toolbar={toolbar} />;
 }

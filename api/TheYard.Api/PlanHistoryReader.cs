@@ -56,7 +56,7 @@ public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? record
             }
         }
 
-        var view = PlanView.Build(
+        var view = CardFrame.Complete(PlanView.Build(
             name,
             length,
             now,
@@ -66,7 +66,7 @@ public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? record
             await MonthAsync(now, cancellation),
             await history.HoursAsync(now - length, cancellation),
             await planCost(cancellation),
-            recordingSite);
+            recordingSite), PlanRows.Source, PlanRows.SpecSource);
         lock (_gate)
         {
             _cached[name] = (now, view);

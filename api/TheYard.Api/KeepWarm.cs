@@ -15,7 +15,7 @@ namespace TheYard.Api;
 /// <para>In process on purpose: a scheduled workflow starts when a runner is
 /// free, not when it was asked, and a loop that lives in the container runs
 /// exactly as long as there is something to keep warm. The first pass waits a
-/// random part of a minute, so the two containers never fire together; a pass
+/// random part of a minute, so a roll's old and new containers never fire together; a pass
 /// that runs long delays the next rather than overlapping it; and a read that
 /// fails is a warning, never an exception, so the next pass always comes.</para>
 /// </summary>

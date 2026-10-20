@@ -95,3 +95,20 @@
   font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
+
+/* The legend as chips, one a series or a mark, in place of one sentence. */
+.legendChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendChip {
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+}

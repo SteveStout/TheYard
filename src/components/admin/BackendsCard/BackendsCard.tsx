@@ -107,14 +107,9 @@ function columns(
     };
   }
   const theirs = peer !== null && peer.reachable ? peer.metrics : null;
-  const peerTitle =
-    peer === null
-      ? 'The peer could not be read'
-      : !peer.configured
-        ? 'No peer is configured on this container'
-        : peer.reachable
-          ? `The other site (${peer.metrics?.store.store ?? 'store unknown'})`
-          : `The other site is not answering`;
+  // The column's title is the API's sentence (ADR: Backends, side by side); only a read that
+  // failed outright is said here, because then there is no answer to print.
+  const peerTitle = peer === null ? 'The peer could not be read' : peer.title;
   const peerNote = peer !== null && peer.configured && !peer.reachable ? peer.reason : null;
   const empty: StoreColumn = {
     title: peerTitle,
@@ -237,12 +232,10 @@ export default function BackendsCard({ tick }: { tick: number }) {
         <About>
           The two stores on the same rows: how long each took to come up, what the seed cost, and
           how long the things a visitor does take on each, with the request charge beside every
-          number the document store can put one on. A container that runs both stores compares them
-          with each other, in one process, the one serving this visit first; a container that runs
-          one compares itself with its peer, read through its own API with two and a half seconds of
-          patience, so a peer that is down is a sentence here and not a hang. Cold start and seed
-          are measured on each store at its own start; the rest is the last few hundred requests
-          each has served.
+          number the document store can put one on. The one web app runs both stores, so the two
+          columns share a process, a region and a request ring, the one serving this visit first.
+          Cold start and seed are measured on each store at its own start; the rest is the last few
+          hundred requests each has served.
         </About>
         {metrics === null || peer === null ? (
           <CardState state="loading" />

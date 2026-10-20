@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   angleOf,
   arcPath,
+  cardToneWord,
   dayMarks,
+  legendChips,
   linePath,
+  newestValue,
+  railGlance,
   ticks,
   toneWord,
   valueLines,
@@ -55,5 +59,30 @@ describe('the Cloud infrastructure frame', () => {
       valueLines('stevenstout.biz, theyard-cosmos.stevenstout.biz, www.stevenstout.biz')
     ).toEqual(['stevenstout.biz', 'theyard-cosmos.stevenstout.biz', 'www.stevenstout.biz']);
     expect(valueLines('2,152')).toEqual(['2,152']);
+  });
+});
+
+describe('the CardShell slots', () => {
+  it('splits a legend into one chip a series or mark', () => {
+    expect(legendChips('teal CPU \u00b7 green memory \u00b7 dashed 80 %')).toEqual([
+      'teal CPU',
+      'green memory',
+      'dashed 80 %',
+    ]);
+    expect(legendChips('')).toEqual([]);
+  });
+
+  it('prints a sparkline with its newest reading and none when nothing was read', () => {
+    expect(newestValue([4, 5, null])).toBe(5);
+    expect(newestValue([null, null])).toBeNull();
+  });
+
+  it('gives the rail the tone and headline the card answered', () => {
+    expect(railGlance({ tone: 'amber', headline: '62 %' })).toEqual({
+      tone: 'amber',
+      headline: '62 %',
+    });
+    expect(cardToneWord('unread')).toBe('not read');
+    expect(cardToneWord('fine')).toBe('fine');
   });
 });

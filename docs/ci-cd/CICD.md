@@ -154,7 +154,7 @@ URL, and every deploy so far has been gated on it.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Deploy workflow, step by step.
 - [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml): the second site's roll, from the same image, retired on 19 October with the web app it rolled (ADR: One web app for every .NET process).
 - [`.github/workflows/deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml): the rendering service's build and roll, on the same push.
-- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites Deploy rolls (the roll sets the image and four settings).
+- [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the one web app Deploy rolls (the roll sets the image and four settings).
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image Deploy builds.
 - [`render/Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/render/Dockerfile): the image Deploy Render builds: the service's build on Node, nothing else.
 - [`docs/CHANGELOG.md`](https://github.com/SteveStout/TheYard/blob/main/docs/CHANGELOG.md): the line every version writes for itself.

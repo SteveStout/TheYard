@@ -133,7 +133,8 @@ export type Metrics = {
 };
 
 /**
- * The other container's metrics, read server side: whether it is set up and reachable, and its answer if it was.
+ * A configured peer container's metrics, read server side: whether it is set up and reachable, its answer if it
+ * was, and the title the comparison card prints for it. Since one process serves both sites, none is configured.
  * Sent by GET /api/admin/peer (ADR: Backends, side by side).
  */
 export type Peer = {
@@ -145,4 +146,6 @@ export type Peer = {
   metrics: Metrics | null;
   /** The peer's build from its /api/version; null when it could not be read, absent from an older build. */
   version?: string | null;
+  /** What the comparison card titles the peer's column, said by the API. */
+  title: string;
 };

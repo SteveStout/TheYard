@@ -41,7 +41,10 @@ export function CloudRows({ rows }: { rows: CloudReport['rows'] }) {
           data-testid={`cloud-row-${row.key}`}
           data-tone={row.tone}
         >
-          <span className={rowStyles.question}>{row.question}</span>
+          <span className={rowStyles.question}>
+            {row.question}
+            {row.source !== null && <span className={styles.source}>{row.source}</span>}
+          </span>
           <span className={rowStyles.value}>
             {row.answer} <span className={styles.word}>{toneWord(row.tone)}</span>
           </span>

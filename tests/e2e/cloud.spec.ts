@@ -31,6 +31,30 @@ test('the plan card opens Cloud infrastructure and draws its dials and questions
 });
 // #endregion cloud-plan
 
+// #region card-shell
+/**
+ * The CardShell's slots (ADR: The onion cut into vertical slices, the CardShell): the tone chip
+ * beside the title, the spec's source, the thresholds as chips, the rail's tone dot read before
+ * the card is opened, and up and down walking the rail.
+ */
+test('the shell draws the tone, the chips and the rail dot, and the arrows walk the rail', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=plan');
+  const card = page.getByTestId('plan-card');
+  await expect(card.getByTestId('card-tone')).toBeVisible({ timeout: 30_000 });
+  await expect(card.getByTestId('card-thresholds').locator('li').first()).toBeVisible();
+  const rail = page.getByTestId('bench-rail');
+  await expect(rail.getByTestId('bench-tone-sqldb')).toBeVisible({ timeout: 30_000 });
+  await rail.getByTestId('bench-link-plan').focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'sqldb');
+  await expect(rail.getByTestId('bench-link-sqldb')).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'plan');
+});
+// #endregion card-shell
+
 // #region cloud-resources
 /**
  * The six resource cards after the plan (ADR: One frame for every resource): each opens from its

@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 import type { CloudReport } from '../../../lib/cloud';
 import type { MachineWindow } from '../../../lib/machineChart';
 import { useRead } from '../shared/common';
-import { CloudCard } from '../CloudCard';
+import { CardShell } from '../CardShell';
 
 /** The tab's hour is read as the day here, because the plan keeps minutes, not seconds. */
 export function planWindow(window: MachineWindow): '24h' | '7d' | '30d' {
@@ -26,6 +26,6 @@ export default function PlanCard({
 }) {
   const report = useRead<CloudReport>(`/api/admin/plan?window=${planWindow(window)}`, tick);
   return (
-    <CloudCard report={report} title="The App Service plan" testId="plan-card" toolbar={toolbar} />
+    <CardShell report={report} title="The App Service plan" testId="plan-card" toolbar={toolbar} />
   );
 }

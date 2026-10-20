@@ -5,6 +5,7 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BENCH_QUESTIONS, benchCard, neighbours, type HourGlance } from '../../../lib/bench';
 import type { CardSlug } from '../../../lib/workbench';
+import type { RailGlance } from '../../../lib/cloud';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { PHONE, WIDE, WIDEST } from '../../../lib/breakpoints';
 import styles from '../AdminPanel/AdminPanel.module.css';
@@ -28,6 +29,7 @@ export function AdminWorkbench({
   onOpen,
   onPin,
   glance,
+  glances,
   render,
 }: {
   /** The card open now. */
@@ -40,6 +42,8 @@ export function AdminWorkbench({
   onPin: (slug: CardSlug | null) => void;
   /** The hour's summary for the "This hour" panel. */
   glance: HourGlance;
+  /** Each Cloud infrastructure card's tone and headline, for the rail. */
+  glances: Partial<Record<CardSlug, RailGlance>>;
   /** Draws one card by its slug. */
   render: (slug: CardSlug) => ReactNode;
 }) {
@@ -123,7 +127,12 @@ export function AdminWorkbench({
                   Close
                 </button>
               </p>
-              <AdminRailContent open={open} asked={null} onOpen={openFromDrawer} />
+              <AdminRailContent
+                open={open}
+                asked={null}
+                onOpen={openFromDrawer}
+                glances={glances}
+              />
             </nav>
           )}
         </dialog>
@@ -133,7 +142,7 @@ export function AdminWorkbench({
           aria-label="Admin cards"
           data-testid="bench-rail"
         >
-          <AdminRailContent open={open} asked={asked} onOpen={onOpen} />
+          <AdminRailContent open={open} asked={asked} onOpen={onOpen} glances={glances} />
         </nav>
       )}
       <div className={styles.benchMain}>

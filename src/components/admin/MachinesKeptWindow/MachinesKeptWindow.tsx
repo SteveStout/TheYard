@@ -1,6 +1,6 @@
 /**
- * The machines over a day, a week or a month, drawn from the minutes each site
- * keeps in the document store: a line of words and three charts slot by slot.
+ * The machines over a day, a week or a month, drawn from the minutes the
+ * recording site keeps in the document store: a line of words and three charts slot by slot.
  * Its own file because the kept windows come from a different source than the
  * live hour the rest of the card shows, and read their own way.
  */
@@ -20,8 +20,8 @@ import { formatNumber } from '../../../lib/format';
 
 // #region kept-window
 /**
- * A day, a week or a month of the machines, from the minutes each site keeps in
- * the document store (ADR: What the machines are doing, the addendum on the
+ * A day, a week or a month of the machines, from the minutes the recording site
+ * keeps in the document store (ADR: What the machines are doing, the addendum on the
  * windows). Three charts in the units the hour uses, drawn over the whole
  * window slot by slot, so a stretch the store holds nothing for is a gap in
  * the line and not a line drawn across it. A window the store cannot answer

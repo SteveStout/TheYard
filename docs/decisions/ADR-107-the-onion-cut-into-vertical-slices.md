@@ -1,6 +1,6 @@
 # ADR: The onion cut into vertical slices
 
-Status: proposed, 2026-10-20, for 1.0.4.0. The rings stay as they are and keep pointing inward. What changes is the second axis: every feature becomes one folder with the same name in each ring, with a `Module` in the host that registers and maps it, and the gate holds that shape the way it holds the rings. Seven rules go with it, each with the test that fails the build when it slips. The version ladder from 1.0.3.188 to 1.0.4.0 is in the Decision below; each rung is one commit.
+Status: accepted, 2026-10-20, at 1.0.4.0, with the measurements in the addendum at the end. Proposed the same morning, at 1.0.3.188. The rings stay as they are and keep pointing inward. What changes is the second axis: every feature becomes one folder with the same name in each ring, with a `Module` in the host that registers and maps it, and the gate holds that shape the way it holds the rings. Seven rules go with it, each with the test that fails the build when it slips. The version ladder from 1.0.3.188 to 1.0.4.0 is in the Decision below; each rung is one commit.
 
 [![The onion cut into vertical slices: five rings as bands, four slices cut through every ring, the Shared column, the rules the gate holds, and one bid through one slice](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vertical-slices.png)](https://theyard.stevenstout.biz/api/docs/diagrams/vertical-slices)
 
@@ -104,3 +104,24 @@ All five rings, and the test project. The rings' dependency rule is untouched; w
 - [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs) - the ten ring rules, plus the host's constructor rule and the `TestProject` rule
 - [`api/TheYard.Tests/SliceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SliceTests.cs) - the slice rule, the literal scans, the handler and endpoint coverage rules
 - [`docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md) - the table, seven rows longer
+
+## Addendum, 2026-10-20 (1.0.4.0): accepted, what landed and what it measured
+
+Every rung of the ladder above shipped, each through its own green gate: 1.0.3.188 to 1.0.3.197, then 1.0.4.0. The seven rules each have their test, listed in ADR: The rules a change has to pass. Three things landed differently from the Decision, each said here rather than left for a reader to find:
+
+- **The cloud readers stayed in the host.** The Decision moves `AzureMetrics`, `ResourceDirectory`, `AcrCatalog`, `NetlifyEdge`, `InsightsSource`, `CostReader` and `PlanReader` into Infrastructure behind five ports. They are still in `TheYard.Api/Cloud/` and beside it. What the move was for landed another way: every card's route asks one handler over a port the slice declares (`IPlanCard`, `ICloudCards`), no name of this deployment is written in the code (`LiteralScanTests`, with an empty allow list), and the cards read what they used to type. The move itself is a new project and about a dozen files with their tests, and it waits for a lane of its own.
+- **The names are configuration, not read off the directory.** `Azure:Resources` in appsettings.json names the group, the web app and the six resources, read once into `AzureResources`, and the group is App Service's own `WEBSITE_RESOURCE_GROUP` where the platform sets it. The directory still finds each resource by its type; the name is configuration because the bill's line is matched before any hour is read, and the insights card is billed under the workspace, not the component the directory finds.
+- **A card is unread after three of its own reads, not three of the tab's ticks.** The plan's newest Azure Monitor minute is one to three minutes old by design, so three thirty-second ticks would call a healthy card unread. A card read every minute is unread past three minutes, a card read hourly past three hours (`CardTones`, `CardFrameTests`).
+
+Some figures stay typed, each with its reason on its constant, because no record the service returns states them: the Cosmos DB free tier's 25 GB, Container Registry Basic's 1,000 reads a minute, Communication Services' 100 and 1,800 sends an hour, Application Insights' free 5 GB a month, Netlify's credits a deploy and a gigabyte and its 300 a cycle, and the plan's 1,920 sockets.
+
+**The two measurements**, read the same way before and after:
+
+| Read | Before, 1.0.3.187 | During, 1.0.3.189 | During, 1.0.3.190 | After, 1.0.3.197 |
+| --- | ---: | ---: | ---: | ---: |
+| Plan memory in use, the plan card's own read a few minutes after the roll | 2.17 GB, 62 % | 2.14 GB, 61 % | 2.21 GB, 63 % | 2.15 GB, 57 % |
+| The roll's first 200, Deploy's Verify step: "origin serves the version after" | 35 s | 31 s | 37 s | 46 s |
+| The roll, push to both sites live, the ship's own read | not read | 222 s | 191 s | 193 s |
+
+What they say: the slices cost the running site nothing it can measure. The percentage is Azure Monitor's own reading of the plan's memory and the gigabytes are the card's arithmetic on it; the percentage stayed inside its minute-to-minute range, 57 to 63 %, with the plan's 30-day 95th at 83 % throughout, and the first 200 after a roll stayed between half a minute and three quarters of one, the spread one reading a version gives. The gigabytes in the last column are worked against 3.78 GB, the machine's memory as Linux states it, which the card reads from 1.0.3.197; the earlier columns are worked against the 3.5 GB a size table said. Each figure is one read; the reads are in `staging\lane1040\measure-*.txt` and `plan-*.json` on the build machine.
+

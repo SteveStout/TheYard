@@ -11,7 +11,7 @@ namespace TheYard.Api;
 /// Azure Monitor OpenTelemetry distro; this type is the other direction, so the
 /// Admin tab can show what the running app has been reporting about itself.
 /// It queries the component's own data with the container's managed identity,
-/// the same identity that already reads the container group's state, so no key
+/// the same identity that already reads the web app's own record, so no key
 /// is stored anywhere for reading.
 /// </summary>
 public sealed partial class TelemetryReader(string appId, string clientId, bool enabled, string? siteName = null, HostIdentity? identity = null)

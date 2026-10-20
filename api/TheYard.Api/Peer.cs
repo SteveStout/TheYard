@@ -104,7 +104,22 @@ public sealed class PeerReader(string? configuredUrl, HttpClient client, bool bo
 /// <param name="FetchedAt">When the read was attempted, UTC.</param>
 /// <param name="Metrics">The peer's metrics as it reported them, or null when it could not be read.</param>
 /// <param name="Version">The peer's build from its /api/version, or null when it could not be read.</param>
-public sealed record PeerView(bool Configured, bool Reachable, string? Reason, string? Host, DateTimeOffset FetchedAt, JsonElement? Metrics, string? Version);
+public sealed record PeerView(bool Configured, bool Reachable, string? Reason, string? Host, DateTimeOffset FetchedAt, JsonElement? Metrics, string? Version)
+{
+    /// <summary>
+    /// What the comparison card titles the peer's column, said here so the card prints it rather
+    /// than composing it (ADR: Backends, side by side, the addendum on the peer's sentence).
+    /// </summary>
+    public string Title => !Configured ? "No peer is configured on this container"
+        : !Reachable ? "The other site is not answering"
+        : $"The other site ({StoreOf(Metrics) ?? "store unknown"})";
+
+    private static string? StoreOf(JsonElement? metrics) =>
+        metrics is { ValueKind: JsonValueKind.Object } m && m.TryGetProperty("store", out var store) && store.ValueKind == JsonValueKind.Object
+            && store.TryGetProperty("store", out var name) && name.ValueKind == JsonValueKind.String
+            ? name.GetString()
+            : null;
+}
 // #endregion peer
 
 // #region routes

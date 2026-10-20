@@ -1,5 +1,5 @@
 /**
- * Does:      Styles the rows' tone word and detail line, and the portal links in teal, underlined, with the mark
+ * Does:      Styles the rows' tone word, the source under each question, the detail line, and the portal links in teal, underlined, with the mark
  *            that says they open a new tab.
  * Does not:  Lay out the rows themselves (OverviewCard.module.css does, shared with the Overview).
  * Used by:   CloudRows.tsx.
@@ -8,6 +8,14 @@
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   color: var(--color-success);
+}
+
+/* Where the row's answer comes from, under its question. */
+.source {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
 }
 
 .detail {

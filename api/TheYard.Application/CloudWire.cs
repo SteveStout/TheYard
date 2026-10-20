@@ -37,7 +37,29 @@ public sealed record CloudReport(
     string Normal,
     CloudChart Chart,
     IReadOnlyList<CloudRow> Rows,
-    CloudReadout Readout);
+    CloudReadout Readout)
+{
+    /// <summary>The card's one tone (Domain's CardTones): fine, amber, red or unread. The rail's dot and the header's chip.</summary>
+    [Description("fine, amber, red or unread")]
+    public string Tone { get; init; } = "unread";
+
+    /// <summary>Where the spec line was read: "ARM sku · this process".</summary>
+    public string? SpecSource { get; init; }
+
+    /// <summary>The first dial's figure, which the rail prints beside the card's name.</summary>
+    public string? Headline { get; init; }
+
+    /// <summary>The thresholds as chips, one a level, in place of the sentence under the dials.</summary>
+    public IReadOnlyList<CloudChip> Thresholds { get; init; } = [];
+
+    /// <summary>How often the tab reads the card, in seconds; the retry line counts down from it.</summary>
+    public int RefreshSeconds { get; init; } = CardFrame.RefreshSeconds;
+}
+
+/// <summary>One threshold as a chip: "CPU amber 60 %".</summary>
+/// <param name="Label">What the chip says.</param>
+/// <param name="Tone">amber, red or held.</param>
+public sealed record CloudChip(string Label, [property: Description("amber, red or held")] string Tone);
 
 /// <summary>A piece of text that may link to a resource's portal blade.</summary>
 /// <param name="Text">What is printed.</param>
@@ -112,6 +134,9 @@ public sealed record CloudRow(string Key, string Question, string Answer, IReadO
     /// containers, a registry's images. Empty, never null, when the row has no list.
     /// </summary>
     public CloudTable Table { get; init; } = CloudTable.None;
+
+    /// <summary>Where the row's answer comes from.</summary>
+    public string? Source { get; init; }
 }
 
 /// <summary>A row's list as a table: its column names, and its rows as cells any of which may link to a portal blade.</summary>
@@ -149,5 +174,9 @@ public sealed record CloudReadout(string Title, double? UptimePercent, string Up
 /// <param name="Label">"CPU now".</param>
 /// <param name="Value">"23 %".</param>
 /// <param name="Tone">good, info, warning or alarm.</param>
-public sealed record CloudLine(string Label, string Value, [property: Description("good, info, warning or alarm")] string Tone);
+public sealed record CloudLine(string Label, string Value, [property: Description("good, info, warning or alarm")] string Tone)
+{
+    /// <summary>Where the reading comes from, printed under its label: "Azure Monitor", "the bill, Cost Management", "this process".</summary>
+    public string? Source { get; init; }
+}
 // #endregion cloud-wire

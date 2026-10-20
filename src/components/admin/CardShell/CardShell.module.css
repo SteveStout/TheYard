@@ -1,0 +1,191 @@
+/**
+ * Does:      Lays out the shell every Cloud infrastructure card shares: the card and its summary side by side, the
+ *            header with its tone chip and the spec's source chip, the sub line, the dials with the sparklines
+ *            between them, the line under each dial naming its marks, and the threshold chips.
+ * Does not:  Draw a dial, the chart, the rows or the readout (each has its own sheet), or the panels' glass.
+ * Used by:   CardShell.tsx.
+ */
+.frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.spec {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--readout-tracking);
+  color: var(--color-heading);
+}
+
+.resource {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.quiet {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--color-text);
+}
+
+.dials {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 120px) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.between {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.spark {
+  display: grid;
+  gap: 2px;
+}
+
+.sparkName {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--chart-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-heading);
+}
+
+.sparkNow {
+  font-weight: var(--weight-semibold);
+}
+
+.spark svg {
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.spark path {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.25;
+  vector-effect: non-scaling-stroke;
+}
+
+/* A spark is drawn in its dial's colour: teal reads, green good, amber to watch, red a warning. */
+.spark[data-tone='good'] path {
+  stroke: var(--color-success);
+}
+
+.spark[data-tone='warning'] path {
+  stroke: var(--color-warning);
+}
+
+.spark[data-tone='alarm'] path {
+  stroke: var(--color-danger);
+}
+
+.title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The card's one tone, beside its title: the same tone as the rail's dot. */
+.toneChip,
+.sourceChip,
+.chip {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.toneChip[data-tone='fine'],
+.chip[data-tone='held'] {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.toneChip[data-tone='amber'],
+.chip[data-tone='amber'] {
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.toneChip[data-tone='red'],
+.chip[data-tone='red'] {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.sourceChip {
+  margin-left: var(--space-2);
+  text-transform: none;
+  font-weight: var(--weight-regular);
+}
+
+.dialBox {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+/* The line under a dial naming its marks, so the ticks are read without a key. */
+.marks {
+  margin: 0;
+  font-size: var(--chart-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  text-transform: none;
+}
+
+@media (max-width: 1023.98px) {
+  .frame {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dials {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+}

@@ -18,7 +18,7 @@ The owner's ruling, 2026-10-18: every Azure resource gets a dashboard like the p
 
 **One frame, parameterised by the resource.** `CloudCard` is one component in six parts: the identity line with its portal link, two dials, the chart, the question rows, the readout, and the absent state. A resource supplies a data shape, `CloudReport`, and the frame draws it. There are no seven copies of the layout, and a change to the frame changes every card.
 
-```live path=src/components/admin/CloudCard/CloudCard.tsx region=cloud-frame
+```live path=src/components/admin/CardShell/CardShell.tsx region=card-shell
 ```
 
 **One recorder shape, one container each.** `CloudRecorder` is one recorder that walks every resource's definition: a minute read, an hourly read (once in its hour for a source that moves no faster), the once-per-process rule from the machines recorder, and a container named for the resource from `infra/cosmos/<resource>.json`, each partitioned on the day with a thirty-one day time to live. A resource is a definition in `Cloud/ResourceCatalog.cs` (which resource, which metrics, which view), not a recorder of its own, so one card's failure is a gap on that card and the others keep reading. Seven containers rather than one, because each resource's documents have their own shape and their own index, and a window query over one resource should never scan another's minutes.
@@ -69,7 +69,7 @@ What would change it: a resource whose two scarce numbers are not a pair of perc
 
 ## Files
 
-- [`src/components/admin/CloudCard/`](https://github.com/SteveStout/TheYard/tree/main/src/components/admin/CloudCard) - the frame; its parts in `CloudDial`, `CloudChart`, `CloudRows` and `CloudReadout` beside it, and [`CloudResourceCard`](https://github.com/SteveStout/TheYard/tree/main/src/components/admin/CloudResourceCard) for the six
+- [`src/components/admin/CardShell/`](https://github.com/SteveStout/TheYard/tree/main/src/components/admin/CardShell) - the frame; its parts in `CloudDial`, `CloudChart`, `CloudRows` and `CloudReadout` beside it, and [`CloudResourceCard`](https://github.com/SteveStout/TheYard/tree/main/src/components/admin/CloudResourceCard) for the six
 - [`src/lib/cloud.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/cloud.ts) - the frame's geometry and the words a tone prints in
 - [`api/TheYard.Api/Cloud/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Cloud) - the six data shapes: each resource's reads and its view
 - [`api/TheYard.Api/CloudCards.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudCards.cs) - what a resource card is
@@ -130,4 +130,8 @@ From 1.0.3.196 the Container Registry card's storage dial is read against the re
 ## Addendum, 2026-10-20: the insights and mail cards, and the names
 
 From 1.0.3.197 the Application Insights card's cost row names the gigabytes past the free allowance and the month's figure from the bill, where it multiplied by a typed price a gigabyte; the allowance itself stays typed, with its reason on the constant, because no record the workspace returns states it. The Communication Services card reads its sends dial against the limit of the sender its domain record names, the Azure-managed one or a custom domain, where it always read against the first; both limits stay typed, with the reason on the constant, because no record the service returns states its sending limit, and the sparklines are scaled to the same limit a minute. Every resource the cards read is found by its type and a name from configuration (`Azure:Resources` in appsettings.json, `Shared/AzureResources.cs`), and `LiteralScanTests` fails the build on a name of this deployment written in the code. The resource group is App Service's own `WEBSITE_RESOURCE_GROUP` where the platform sets it. The edge card's link is the Netlify site record's own `admin_url`, and its retirement date is `Edge:Retires` in configuration. The SQL card no longer lists the server's paused sibling database: it was a second resource on a card about one, and nothing reads it.
+
+## Addendum, 2026-10-20 (1.0.4.0): the frame is the CardShell
+
+`CloudCard` became `CardShell` (`src/components/admin/CardShell/`), the one component the CardShell record's slots describe (ADR: The onion cut into vertical slices). The frame's six parts are unchanged in kind; what the shell adds is a tone chip beside the title from the card's one tone, the spec's source as a chip, the line under each dial that names its marks, each sparkline in its dial's colour with its newest figure, the thresholds as chips where the "Normal:" sentence was, the chart's legend as chips, a source under every summary line and row, and a retry line that counts down from the tab's own tick. The live block above now shows the shell.
 

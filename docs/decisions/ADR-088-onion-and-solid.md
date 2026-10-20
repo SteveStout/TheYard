@@ -121,3 +121,6 @@ The single-responsibility line above names `PasswordReset` as the class that hol
 - [`docs/images/rings.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/rings.mjs): the drawing.
 - [`docs/images/solid.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/solid.mjs): the SOLID letters, one at a time.
 
+## Addendum, 2026-10-20 (1.0.4.0): the onion cut into vertical slices
+
+The rings are unchanged, and each now carries the same feature folders: a slice is `Features/<Slice>` in the host with a `Module` that registers and maps it, and, where it has use cases, `Features/<Slice>` in the Application ring with its handlers and ports (ADR: The onion cut into vertical slices). What the letters gain from it: single responsibility now holds per request, because each route asks one handler with one `HandleAsync`; dependency inversion holds per slice, because a handler reaches its store, its cards or its accounts through a port the slice declares and an adapter implements; and open and closed holds for the host, because a new slice is a folder and a `Module`, with no line added to Program.cs. `SliceTests`, `HandlerRuleTests`, `CompositionRootTests` and `OnionTests` hold the shape.

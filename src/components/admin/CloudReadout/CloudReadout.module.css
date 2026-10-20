@@ -108,3 +108,13 @@
   font-size: var(--text-xs);
   color: var(--color-text);
 }
+
+/* Where a line's reading comes from, under its label. */
+.source {
+  display: block;
+  font-size: var(--chart-text-xs);
+  font-weight: var(--weight-regular);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-muted);
+}

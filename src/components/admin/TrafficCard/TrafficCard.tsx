@@ -79,8 +79,8 @@ function TrafficCard({
         window chosen here, which the machines card below follows. The last hour is the request ring
         this process keeps, {machines.traffic?.ring ?? 500} requests deep, a minute at a time; on a
         busy hour that is fewer minutes than sixty, and the numbers say how many. The wider windows
-        are the minutes each site keeps in Azure Cosmos DB, counted on the server. This tab&rsquo;s
-        own reads and the page sweep are not counted in either.
+        are the minutes the recording site keeps in Azure Cosmos DB, counted on the server. This
+        tab&rsquo;s own reads and the page sweep are not counted in either.
       </About>
       {toolbar}
       {slots === null || totals === null || failed === null ? (

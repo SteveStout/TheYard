@@ -41,8 +41,8 @@ export function collectorSummary(collector: ActivityReport['collector']): string
 
 /**
  * What keeping activity has cost, in a sentence. The count is this container's
- * own since it started: the other container writes to the same keeper and
- * counts its own, so the sentence says whose it is.
+ * own since it started, so the sentence says whose it is: a roll's new container
+ * starts its count again.
  */
 export function costSentence(cost: NonNullable<ActivityReport['cost']>): string {
   const failed = cost.failures > 0 ? `, ${cost.failures.toLocaleString()} of them failed` : '';

@@ -78,8 +78,8 @@ function MachinesBody({
         Cosmos DB has no memory or processor reading to give, because it is sold by request unit, so
         what it shows is what the operations cost against the free allowance. The last hour is this
         container&rsquo;s own, kept in its memory, and empties on every roll. The wider windows are
-        a minute at a time, kept in Azure Cosmos DB by each site for thirty-one days, so they
-        survive a roll and show one.
+        a minute at a time, kept in Azure Cosmos DB by the recording site for thirty-one days, so
+        they survive a roll and show one.
       </About>
       {toolbar}
       <p className={styles.muted} data-testid="machines-window-line">

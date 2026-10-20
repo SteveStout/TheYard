@@ -89,7 +89,7 @@ public static partial class AdminEndpoints
     }
 
     /// <summary>
-    /// Answers the other container's metrics, read server side, so the comparison card can show both backends.
+    /// Answers a configured peer container's metrics, read server side, and the title the comparison card prints for it.
     /// </summary>
     private static async Task<IResult> Peer(PeerReader peer) =>
         Results.Json(await peer.ReadAsync());

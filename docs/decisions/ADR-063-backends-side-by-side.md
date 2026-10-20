@@ -231,3 +231,7 @@ The comparison is a host and front end job: `Peer.cs` in the Api reads the other
 - [`src/lib/metrics.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.ts): the Timing card's words, with [`src/lib/metrics.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/metrics.test.ts) beside it.
 - [`api/TheYard.Tests/PeerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PeerTests.cs): down first, up last.
 - [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml): the second container group, with its peer setting.
+
+## Addendum, 2026-10-20 (1.0.4.0): the peer's sentence lives on the API
+
+The comparison card no longer composes the peer column's title. `GET /api/admin/peer` answers it as `title`, the sentence the card prints ("No peer is configured on this container", "The other site is not answering", or the other site and its store), and the card says only what it must when the read itself failed. The card's own description no longer describes the retired peer compare: one web app runs both stores, so the two columns share a process. `PeerTests` holds the sentences.

@@ -75,7 +75,7 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // The Cloud infrastructure frame (ADR: The App Service plan, read every minute): the sparkline,
   // the chart's grid, red line, events, deploys and two series, the dial's ticks, track, arc and
   // its amber and red marks, and the readout's uptime ring. Drawings, not icons.
-  'CloudCard.module.css': ['.spark path'],
+  'CardShell.module.css': ['.spark path'],
   'CloudChart.module.css': ['.grid', '.redLine', '.event', '.deploy line', '.first', '.second'],
   'CloudDial.module.css': ['.tick', '.track', '.arc', '.amberMark', '.redMark'],
   'CloudReadout.module.css': ['.track', '.fill'],

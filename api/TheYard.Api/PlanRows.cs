@@ -125,20 +125,26 @@ public static class PlanRows
             $"up, {(hours.Count == 0 ? "not read yet" : $"{Math.Max(1, (int)Math.Round(hours.Count / 24.0))} days")}",
             [
                 new("CPU now", PlanView.Percent(newest?.CpuPercent), tone(PlanThresholds.ToneOf(lastHour.Select(m => m.CpuPercent).ToList(), PlanThresholds.Cpu))),
-                new("CPU p95, 30 d", PlanView.Percent(month.CpuP95), "info"),
+                new("CPU p95, 30 d", PlanView.Percent(month.CpuP95), "info") { Source = "kept minutes" },
                 new("Memory now", newest?.MemoryPercent is { } m && hour?.MemoryGb is { } g ? $"{(m / 100 * g).ToString("0.00", CultureInfo.InvariantCulture)} GB" : "not read", tone(PlanThresholds.ToneOf(lastHour.Select(x => x.MemoryPercent).ToList(), PlanThresholds.Memory))),
-                new("Memory p95, 30 d", PlanView.Percent(month.MemoryP95), "info"),
+                new("Memory p95, 30 d", PlanView.Percent(month.MemoryP95), "info") { Source = "kept minutes" },
                 new("HTTP queue", Count(newest?.HttpQueue), tone(PlanThresholds.ToneOf(lastHour.Select(x => x.HttpQueue).ToList(), PlanThresholds.HttpQueue))),
-                new("Sockets", $"{Count(newest?.Sockets)} / {PlanThresholds.SocketLimit:N0}", tone(PlanThresholds.SocketsTone(lastHour.Select(x => x.Sockets).ToList()))),
-                new("Disk", used is { } mb ? $"{(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} GB used" : "not read", "info"),
-                new("Instances", hour?.Instances is { } n ? (hour.MaxWorkers is { } most ? $"{n} of {most}" : $"{n}") : "not read", "info"),
-                new("Always on", hour is null ? "not read" : $"{hour.Apps.Count(app => app.AlwaysOn is true)} apps", "info"),
-                new("Restarts, 30 d", hours.Count == 0 ? "not read" : restarts.ToString(CultureInfo.InvariantCulture), unplanned ? "alarm" : "info"),
+                new("Sockets", $"{Count(newest?.Sockets)} / {PlanThresholds.SocketLimit:N0}", tone(PlanThresholds.SocketsTone(lastHour.Select(x => x.Sockets).ToList()))) { Source = "Azure Monitor / the plan's socket limit" },
+                new("Disk", used is { } mb ? $"{(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} GB used" : "not read", "info") { Source = "Azure Monitor" },
+                new("Instances", hour?.Instances is { } n ? (hour.MaxWorkers is { } most ? $"{n} of {most}" : $"{n}") : "not read", "info") { Source = "ARM maximumNumberOfWorkers" },
+                new("Always on", hour is null ? "not read" : $"{hour.Apps.Count(app => app.AlwaysOn is true)} apps", "info") { Source = "ARM siteConfig" },
+                new("Restarts, 30 d", hours.Count == 0 ? "not read" : restarts.ToString(CultureInfo.InvariantCulture), unplanned ? "alarm" : "info") { Source = "Activity Log" },
                 new("Plan cost", cost is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not read from the bill yet", "info"),
                 new("Live read", age is { } seconds ? $"{seconds} s ago" : "not read yet", age is > 300 ? "warning" : "info"),
             ],
             $"{availability.Reason}, one minute each; live every 60 s from Azure Monitor");
     }
+
+    /// <summary>Where the plan card's readings come from, which every line names unless it names its own.</summary>
+    public const string Source = "Azure Monitor";
+
+    /// <summary>Where the plan card's spec line is read: the size and region from the plan's ARM record, the cores and memory from this process.</summary>
+    public const string SpecSource = "ARM sku · this process";
 
     /// <summary>What the plan card's last row is, said on the row: a difference, not a reading.</summary>
     /// <param name="linux">Whether the plan read said it is Linux; null when the read did not say.</param>

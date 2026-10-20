@@ -16,7 +16,7 @@ A visit is handed to the counter as a record with six fields, and a record with 
 ```
 
 - **When**, to the hour.
-- **The visitor token**, a keyed hash of the day and the address. Within a day the same address is the same token on both sites, so one person's requests group together; the next day it is a different token, so nothing joins one day to the next. The key is the signing key the containers share and nobody outside has, which is what stops anybody turning a token back into an address by hashing every IPv4 address there is.
+- **The visitor token**, a keyed hash of the day and the address. Within a day the same address is the same token on both sites, so one person's requests group together; the next day it is a different token, so nothing joins one day to the next. The key is the signing key the one web app holds and nobody outside has, which is what stops anybody turning a token back into an address by hashing every IPv4 address there is.
 - **The network**, the address cut to its first three octets (`203.0.113.x`): enough to see a network, a country or an obvious scanner range, and not enough to name a machine. A full address is never stored, on either store.
 - **The path**, with any at sign percent-encoded so an address pasted into a URL cannot travel. The query string is never recorded.
 - **The store** that served the request (Azure SQL Database or Azure Cosmos DB), so the graph keeps a line for each site.

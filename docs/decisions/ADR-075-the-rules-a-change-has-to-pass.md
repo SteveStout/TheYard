@@ -115,7 +115,8 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Rule 6 of the slices: outside Program.cs and the registration and module classes, the host never reads the environment, a request's service container or the built app's configuration; the platform's settings are read once into BuildInfo and HostIdentity | ADR: The onion cut into vertical slices | OnionTests |
 | A session is refused on any store but the one that opened it, and a session ended on its own store opens neither | ADR: The onion cut into vertical slices | RefuseSessionTests, AuthTests |
 | A Shed that will not start answers 503 and leaves the Yard up; a Shed request that fails past its handler is a 500 problem in TheYard's error record; The Shed's upload limit is The Shed's alone; The Shed is stopped by the last hosted service, after the drain | ADR: The onion cut into vertical slices | ShedMountTests |
-| No name of this deployment, its resources, its edge, its public domain or its identity's ids, is written in the six projects' code; every string constant they compile is read back, and the allow list is empty | ADR: The onion cut into vertical slices | LiteralScanTests |
+| No name of this deployment, its resources, its edge, its public domain or its identity's ids, and no price, plan size or date other than a Resource Manager api-version, is written in the six projects' code; every string constant they compile is read back, and the allow list is empty | ADR: The onion cut into vertical slices | LiteralScanTests |
+| Every card under Cloud infrastructure answers the same slots (title, link, tone, spec and its source, headline, dials, sparks, threshold chips, chart, rows, summary, read-at, refresh), every summary line and row names its source, one tone rule in Domain gives the card its tone, and the page reads every card as often as that rule assumes | ADR: The onion cut into vertical slices | CardFrameTests |
 
 ## How the table is read
 

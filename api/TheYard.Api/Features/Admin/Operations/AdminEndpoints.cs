@@ -111,10 +111,11 @@ public static partial class AdminEndpoints
         app.MapGet("/api/admin/azure", Azure);
 
         // #region peer-endpoint
-        // The other container's metrics, read server side with a short patience, so
-        // the comparison card can put both backends on the same rows whichever tab
-        // is open. The peer's address is configuration on this container and never
-        // reaches the browser (ADR: Backends, side by side).
+        // A peer container's metrics, read server side with a short patience, where one is
+        // configured; since one process serves both sites the answer says there is no peer
+        // and the comparison card sets the two stores of this process side by side. The
+        // peer's address, when set, is configuration and never reaches the browser, and the
+        // column's title is the answer's own sentence (ADR: Backends, side by side).
         app.MapGet("/api/admin/peer", Peer);
         // #endregion peer-endpoint
 

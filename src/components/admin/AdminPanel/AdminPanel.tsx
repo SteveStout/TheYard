@@ -23,6 +23,7 @@ import { AdminBenchCard, CARD_CHUNKS } from '../AdminBenchCard';
 import { AdminStatStrip } from '../AdminStatStrip';
 import { AdminWorkbench } from '../AdminWorkbench';
 import { useAdminReads } from './useAdminReads';
+import { useCloudGlances } from './useCloudGlances';
 import { useMachines } from './useMachines';
 import { stripTiles } from './stripTiles';
 
@@ -84,6 +85,7 @@ export function AdminPanel({
 
   const reads = useAdminReads(); // ./useAdminReads.ts: tick, health, errors, pages, visitors
   const machines = useMachines(); // ./useMachines.tsx: machine stats and the chart window
+  const glances = useCloudGlances(reads.tick); // ./useCloudGlances.ts: the rail's tone and headline per cloud card
   const { tiles, glance, caption } = stripTiles({
     seen: machines.latest,
     window: machines.window,
@@ -163,6 +165,7 @@ export function AdminPanel({
           onOpen={onOpenCard}
           onPin={onPin}
           glance={glance}
+          glances={glances}
           render={renderCard}
         />
       </div>

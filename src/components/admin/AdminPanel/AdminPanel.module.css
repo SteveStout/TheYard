@@ -206,6 +206,43 @@
   text-decoration: none;
 }
 
+/* A Cloud infrastructure card's tone dot and headline in the rail, from the card's own read. */
+.railLink:has(.railDot) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.railDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+}
+
+.railDot[data-tone='fine'] {
+  background: var(--color-success);
+}
+
+.railDot[data-tone='amber'] {
+  background: var(--color-warning);
+}
+
+.railDot[data-tone='red'] {
+  background: var(--color-danger);
+}
+
+.railName {
+  min-width: 0;
+}
+
+.railHeadline {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
 .railLink:hover {
   background: var(--color-accent-soft);
   color: var(--color-accent);

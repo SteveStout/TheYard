@@ -10,7 +10,7 @@ What that is worth: a developer can see how to keep a traffic history that outli
 
 ## The activity counters
 
-One document per store per hour, and one per visitor per store per day, each holding counts plus the top twenty paths. Both sites write to one keeper, Azure Cosmos DB, whichever store served the request. Each row carries the serving store's key so the graph keeps its line per site. The counters add rather than overwrite: two containers write the same documents, and the database applies each increment itself.
+One document per store per hour, and one per visitor per store per day, each holding counts plus the top twenty paths. Both sites write to one keeper, Azure Cosmos DB, whichever store served the request. Each row carries the serving store's key so the graph keeps its line per site. The counters add rather than overwrite: every write is an increment the database applies itself, so a roll's two containers overlapping for a minute never lose a count.
 
 **Nothing waits on the store.** A request hands its visit to a bounded queue and leaves. A background service drains the queue every five seconds, or sooner when five hundred are waiting. It folds the batch into one change per store and hour and one per store, day and visitor, and writes it. A full queue drops the oldest visit rather than slow a request down, and the card says so.
 

@@ -174,6 +174,12 @@ Shed's folder:
 ```live path=infra/appservice.bicep region=sites-list
 ```
 
+## Inside the web app: the onion cut into slices
+
+The one web app is one process, and the code it runs is built in rings cut into slices: every feature is one folder of the same name in each ring, each with a `Module` that registers and maps it, and Program.cs loops over the modules (ADR: The onion cut into vertical slices). A request that reaches the process lands in exactly one slice and asks exactly one handler.
+
+[![The onion cut into vertical slices: five rings as bands, four slices cut through every ring, the Shared column, the rules the gate holds, and one bid through one slice](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/vertical-slices.png)](https://theyard.stevenstout.biz/api/docs/diagrams/vertical-slices)
+
 ## The certificate
 
 Let's Encrypt at the edge, issued and renewed automatically, one certificate

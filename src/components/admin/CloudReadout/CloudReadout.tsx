@@ -1,7 +1,8 @@
 /**
  * A Cloud infrastructure card's readout, beside the card (ADR: The App Service plan, read every minute): the
  * resource's name in capitals, a ring for how much of the window it was up, then one line a
- * reading with its tone on the left edge, and where the readings come from.
+ * reading with its tone on the left edge and its source under its label, and where the readings
+ * come from.
  */
 import { arcPath, pointAt, angleOf, ticks, type CloudReport, valueLines } from '../../../lib/cloud';
 import styles from './CloudReadout.module.css';
@@ -46,7 +47,10 @@ export function CloudReadout({ readout }: { readout: CloudReport['readout'] }) {
             className={`${styles.line} ${styles[line.tone]}`}
             data-testid="cloud-readout-line"
           >
-            <dt>{line.label}</dt>
+            <dt>
+              {line.label}
+              {line.source !== null && <span className={styles.source}>{line.source}</span>}
+            </dt>
             <dd>
               {valueLines(line.value).map((part, index) => (
                 <span key={index} className={styles.part}>

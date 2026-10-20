@@ -236,4 +236,15 @@ public class ExperimentEndpointTests(WebApplicationFactory<Program> factory)
         Assert.Equal(0, answer.GetProperty("rows").GetArrayLength());
     }
     // #endregion experiment-empty
+
+    [Fact]
+    public void The_peer_column_s_title_is_the_api_s_sentence()
+    {
+        using var metrics = JsonDocument.Parse("""{"store":{"store":"Azure Cosmos DB"}}""");
+        var at = DateTimeOffset.UnixEpoch;
+        Assert.Equal("No peer is configured on this container", new PeerView(false, false, null, null, at, null, null).Title);
+        Assert.Equal("The other site is not answering", new PeerView(true, false, "the peer answered 503", "x", at, null, null).Title);
+        Assert.Equal("The other site (Azure Cosmos DB)", new PeerView(true, true, null, "x", at, metrics.RootElement.Clone(), null).Title);
+        Assert.Equal("The other site (store unknown)", new PeerView(true, true, null, "x", at, null, null).Title);
+    }
 }

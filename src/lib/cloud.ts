@@ -7,6 +7,12 @@
 // #region cloud-wire
 export type CloudTone = 'good' | 'info' | 'warning' | 'alarm';
 
+/** A card's one tone, from the tone rule in Domain (CardTones): the rail's dot and the header's chip. */
+export type CardTone = 'fine' | 'amber' | 'red' | 'unread';
+
+/** One threshold as a chip: "CPU amber 60 %". */
+export type CloudChip = { label: string; tone: 'amber' | 'red' | 'held' };
+
 /** A piece of text that may link to a resource's portal blade. */
 export type CloudLink = { text: string; href: string | null };
 
@@ -35,6 +41,16 @@ export type CloudReport = {
   dials: CloudDial[];
   sparks: { name: string; values: (number | null)[] }[];
   normal: string;
+  /** The card's one tone. */
+  tone: CardTone;
+  /** Where the spec line was read: "ARM sku · this process". */
+  spec_source: string | null;
+  /** The first dial's figure, which the rail prints beside the card's name. */
+  headline: string | null;
+  /** The thresholds as chips, in place of the sentence under the dials. */
+  thresholds: CloudChip[];
+  /** How often the tab reads the card, in seconds. */
+  refresh_seconds: number;
   chart: {
     title: string;
     series: { name: string; points: { at_ms: number; value: number | null }[] }[];
@@ -53,12 +69,14 @@ export type CloudReport = {
     tone: CloudTone;
     /** The row's list as a table; no columns and no rows when the row has none. */
     table: { columns: string[]; rows: CloudLink[][] };
+    /** Where the row's answer comes from. */
+    source: string | null;
   }[];
   readout: {
     title: string;
     uptime_percent: number | null;
     uptime_label: string;
-    lines: { label: string; value: string; tone: CloudTone }[];
+    lines: { label: string; value: string; tone: CloudTone; source: string | null }[];
     footnote: string;
   };
 };
@@ -75,6 +93,35 @@ export function toneWord(tone: CloudTone): string {
     default:
       return 'for information';
   }
+}
+/** What the rail prints beside a card's name: its tone dot and its headline figure. */
+export type RailGlance = { tone: CardTone; headline: string | null };
+
+/** A card's rail glance, from its report. */
+export function railGlance(report: Pick<CloudReport, 'tone' | 'headline'>): RailGlance {
+  return { tone: report.tone, headline: report.headline };
+}
+
+/** The chip a card's header prints for its tone. */
+export function cardToneWord(tone: CardTone): string {
+  return tone === 'unread' ? 'not read' : tone;
+}
+
+/** A chart's legend as chips: the server's sentence split at its middle dots. */
+export function legendChips(legend: string): string[] {
+  return legend
+    .split(' \u00b7 ')
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+}
+
+/** A sparkline's newest reading, the figure its title line prints, or null when none was read. */
+export function newestValue(values: (number | null)[]): number | null {
+  for (let i = values.length - 1; i >= 0; i -= 1) {
+    const value = values[i];
+    if (value !== null && value !== undefined) return value;
+  }
+  return null;
 }
 // #endregion cloud-wire
 

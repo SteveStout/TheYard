@@ -101,7 +101,7 @@ public static class ResourceCatalog
                 async (hour, since, cancellation) => azure.Configured
                     ? await (await InsightsAsync(azure, directory, cancellation)).HourAsync(hour, since, cancellation)
                     : new ResourceHour(hour, "", null, new Dictionary<string, string?>(), []),
-                InsightsCard.View, Hourly: true),
+                InsightsCard.View, Hourly: true, Source: "Log Analytics", SpecSource: "ARM record of the component"),
             new("mail", "mail", names.Mail, MailCard.Readings, Monitor(MailType, null, MailCard.Metrics),
                 Hourly(MailType, null, "2023-04-01", async (_, record, cancellation) =>
                 {
@@ -117,7 +117,7 @@ public static class ResourceCatalog
             new("edge", "edge", names.Edge, EdgeCard.Readings,
                 async (_, to, version, cancellation) => await edge.MinutesAsync(to, version, cancellation),
                 async (hour, _, cancellation) => await edge.HourAsync(hour, cancellation),
-                inputs => EdgeCard.View(inputs, edge.Configured, names.Edge, names.EdgeRetires), Hourly: true),
+                inputs => EdgeCard.View(inputs, edge.Configured, names.Edge, names.EdgeRetires), Hourly: true, Source: "Netlify API", SpecSource: "Netlify site record"),
         ];
     }
 

@@ -53,7 +53,7 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
                 // The card answers from what is kept; the readout's live-read line says how old it is.
             }
         }
-        var view = card.View(new ResourceCardInputs(
+        var view = CardFrame.Complete(card.View(new ResourceCardInputs(
             name,
             length,
             now,
@@ -63,7 +63,7 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             await MonthAsync(key, history, card.Readings, now, cancellation),
             await history.HoursAsync(now - length, cancellation),
             await cost(card.ResourceName, cancellation),
-            recordingSite));
+            recordingSite)), card.Source, card.SpecSource, card.Hourly);
         lock (_gate)
         {
             _cached[slot] = (now, view);

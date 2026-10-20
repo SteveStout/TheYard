@@ -127,8 +127,8 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
         // #region second-look
         // An address that did not answer gets a second look, alone, once the
         // first pass is over. The roll's sweep runs in the busiest second a
-        // process has, four addresses at once while both containers warm their
-        // catalogues on the one core they share, and in that second a slow
+        // process has, four addresses at once while the roll's old and new containers warm their
+        // catalogues on the cores they share, and in that second a slow
         // address such as /api/health can take past the thirty seconds and be
         // reported down on a tile that keeps saying so until the next roll. An
         // address that answers on its own a moment later was never down.

@@ -5,7 +5,7 @@
  * Fridays. A missing bucket breaks the line rather than drawing a zero nobody measured.
  */
 import type { ReactNode } from 'react';
-import { dayMarks, linePath, xOf, yOf, type CloudReport } from '../../../lib/cloud';
+import { dayMarks, legendChips, linePath, xOf, yOf, type CloudReport } from '../../../lib/cloud';
 import styles from './CloudChart.module.css';
 
 const W = 560;
@@ -117,7 +117,15 @@ export function CloudChart({
             </text>
           ))}
       </svg>
-      <figcaption className={styles.legend}>{chart.legend}</figcaption>
+      <figcaption className={styles.legend}>
+        <ul className={styles.legendChips} aria-label="Legend">
+          {legendChips(chart.legend).map((chip) => (
+            <li key={chip} className={styles.legendChip}>
+              {chip}
+            </li>
+          ))}
+        </ul>
+      </figcaption>
     </figure>
   );
 }

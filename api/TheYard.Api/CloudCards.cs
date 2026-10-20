@@ -39,6 +39,8 @@ public sealed record ResourceCardInputs(
 /// <param name="Hour">How it reads an hour's slower facts.</param>
 /// <param name="View">How it draws itself in the shared frame.</param>
 /// <param name="Hourly">True when the source moves no faster than an hour, so it is read once an hour and kept as one document.</param>
+/// <param name="Source">Where the card's readings come from, which every summary line names unless it names its own.</param>
+/// <param name="SpecSource">Where the card's spec line is read.</param>
 public sealed record ResourceCard(
     string Key,
     string Container,
@@ -47,7 +49,9 @@ public sealed record ResourceCard(
     Func<DateTimeOffset, DateTimeOffset, string, CancellationToken, Task<IReadOnlyList<ResourceMinute>>> Minutes,
     Func<DateTimeOffset, DateTimeOffset, CancellationToken, Task<ResourceHour>> Hour,
     Func<ResourceCardInputs, CloudReport> View,
-    bool Hourly = false)
+    bool Hourly = false,
+    string Source = "Azure Monitor",
+    string SpecSource = "ARM record")
 {
     /// <summary>How old the newest kept reading may be before a read asks the source again.</summary>
     public TimeSpan Stale => Hourly ? TimeSpan.FromMinutes(61) : PlanHistoryReader.Fresh + TimeSpan.FromMinutes(1);
