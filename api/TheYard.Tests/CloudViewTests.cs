@@ -47,7 +47,7 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
             ]}
             """);
         var all = ResourceDirectory.Parse(listed.RootElement);
-        Assert.EndsWith("/sqldb-theyard-ss-basic", ResourceDirectory.Find(all, ResourceCatalog.SqlType, "/" + ResourceCatalog.SqlDatabase)!.Id, StringComparison.Ordinal);
+        Assert.EndsWith("/sqldb-theyard-ss-basic", ResourceDirectory.Find(all, ResourceCatalog.SqlType, "/sqldb-theyard-ss-basic")!.Id, StringComparison.Ordinal);
         Assert.Equal("crtheyardsszmnetj67bn5h2", ResourceDirectory.Find(all, ResourceCatalog.AcrType, null)!.Name);
         Assert.Null(ResourceDirectory.Find(all, ResourceCatalog.MailType, null));
         using var empty = JsonDocument.Parse("{}");

@@ -134,7 +134,11 @@ public static class Hits
     /// referrer at all is kept as "(none)", typed or unknown; anything that is
     /// not a web address's host is kept as "other".
     /// </summary>
-    public static string? SourceOf(string? referer, string path, string requestHost)
+    /// <param name="referer">The Referer header, or null.</param>
+    /// <param name="path">The request's path.</param>
+    /// <param name="requestHost">The name the request arrived on.</param>
+    /// <param name="siteHosts">Every public name this process serves, from its configured list (SiteHosts.cs); none when not given.</param>
+    public static string? SourceOf(string? referer, string path, string requestHost, IReadOnlyCollection<string>? siteHosts = null)
     {
         if (path != "/" && path != "/index.html")
         {
@@ -154,7 +158,7 @@ public static class Hits
         string host = uri.Host.ToLowerInvariant();
         if (string.Equals(host, requestHost, StringComparison.OrdinalIgnoreCase)
             || host.EndsWith(".azurewebsites.net", StringComparison.Ordinal)
-            || (host.StartsWith("theyard", StringComparison.Ordinal) && host.EndsWith(".stevenstout.biz", StringComparison.Ordinal)))
+            || (siteHosts?.Contains(host, StringComparer.OrdinalIgnoreCase) ?? false))
         {
             return null;
         }

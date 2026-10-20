@@ -16,8 +16,11 @@ public sealed class RequestRecorder(
     Backends backends,
     LogCollector logCollector,
     VisitorTokens visitorTokens,
-    ActivityCollector activity)
+    ActivityCollector activity,
+    SiteHosts sites)
 {
+    private readonly string[] _siteHosts = [.. sites.All.Select(site => site.Host)];
+
     /// <summary>
     /// The endpoints that exist to be read by the Admin tab, which are left out of the Admin tab's
     /// own numbers. An open Admin tab polls them every thirty seconds; left in, they would push
@@ -104,7 +107,7 @@ public sealed class RequestRecorder(
         var at = DateTimeOffset.UtcNow;
         string token = visitorTokens.TokenFor(address, at);
         string network = VisitorTokens.NetworkOf(address);
-        activity.Offer(Hits.For(visitorTokens, address, at, token, network, path, store, context.Request.Headers.UserAgent.FirstOrDefault(), Hits.SourceOf(context.Request.Headers.Referer.FirstOrDefault(), path, context.Request.Host.Host)));
+        activity.Offer(Hits.For(visitorTokens, address, at, token, network, path, store, context.Request.Headers.UserAgent.FirstOrDefault(), Hits.SourceOf(context.Request.Headers.Referer.FirstOrDefault(), path, context.Request.Host.Host, _siteHosts)));
         // #endregion activity-hook
 
         // #region kept-logs-hook

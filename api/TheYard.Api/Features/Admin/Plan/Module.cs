@@ -21,7 +21,7 @@ public sealed class Module : IModule
         // read off it, never configured. The keep is the document store when there is one, and
         // this process's memory otherwise, which the card says.
         string self = configuration["Azure:SelfResourceId"]
-            ?? $"/subscriptions/{AzureIds.SubscriptionId(configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-ONE-SS-ZMNETJ67BN5H2";
+            ?? AzureResources.From(configuration).SitePath(AzureIds.SubscriptionId(configuration));
         string clientId = AzureIds.ClientId(configuration);
         services.AddSingleton(MachineSize.OfThisProcess());
         services.AddSingleton(provider =>

@@ -20,9 +20,10 @@ public sealed class Module : IModule
     {
         // #region resource-wiring
         string clientId = AzureIds.ClientId(configuration);
-        string group = $"/subscriptions/{AzureIds.SubscriptionId(configuration)}/resourceGroups/RG-THEYARD-SS";
+        var names = AzureResources.From(configuration);
+        string group = names.GroupPath(AzureIds.SubscriptionId(configuration));
         string? token = configuration["Netlify:Token"];
-        var publicSite = new Uri(configuration["Netlify:PublicSite"] ?? "https://theyard.stevenstout.biz/");
+        var publicSite = configuration["Netlify:PublicSite"] is { } site ? new Uri(site) : names.PublicSite;
         // Which public name gets the SQL database, from this process's own settings.
         string? sqlName = SiteSettings.From(configuration).HostFor("sql");
         services.AddSingleton<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>(provider =>
@@ -30,13 +31,13 @@ public sealed class Module : IModule
             var identity = provider.GetRequiredService<HostIdentity>();
             var azure = new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity);
             var directory = new ResourceDirectory(azure, group, TimeProvider.System);
-            var edge = new NetlifyEdge(token, "theyard-edge", publicSite);
+            var edge = new NetlifyEdge(token, names.Edge, publicSite);
             string? sqlSite = sqlName is null ? null : identity.SiteName is { } siteName ? $"{sqlName}, on {siteName}" : sqlName;
             var cosmos = provider.GetRequiredService<DocumentStore>().Store;
             IResourceHistory KeepOf(ResourceCard card) => cosmos is not null
                 ? new CosmosResourceHistory(cosmos, card.Container)
                 : new MemoryResourceHistory("kept in this process's memory, so the readings end with it; the document store is not configured here");
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), sqlSite).Select(card => (card, KeepOf(card)))];
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with

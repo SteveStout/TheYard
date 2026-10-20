@@ -14,12 +14,12 @@ public static class ResourceCatalog
         AcrType = "Microsoft.ContainerRegistry/registries", InsightsType = "Microsoft.Insights/components",
         WorkspaceType = "Microsoft.OperationalInsights/workspaces", MailType = "Microsoft.Communication/CommunicationServices";
 
-    /// <summary>The database the SQL card reads; any other user database on the server is listed from its own record.</summary>
-    public const string SqlDatabase = "sqldb-theyard-ss-basic";
 
     /// <param name="sqlSite">The public name whose requests get the SQL database and the web app that answers it, from this process's own settings; null where it serves none.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, string? sqlSite = null)
+    /// <param name="names">The deployment's resource names, from configuration; the SQL card reads the database named there, and any other user database on the server is listed from its own record.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null)
     {
+        string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
 
         Func<DateTimeOffset, DateTimeOffset, string, CancellationToken, Task<IReadOnlyList<ResourceMinute>>> Monitor(string type, string? name, IReadOnlyList<AzureMetric> metrics) =>
@@ -44,39 +44,14 @@ public static class ResourceCatalog
 
         return
         [
-            new("sqldb", "sqldb", SqlDatabase, ReadingsOf(SqlCard.Metrics), Monitor(SqlType, "/" + SqlDatabase, SqlCard.Metrics),
-                Hourly(SqlType, "/" + SqlDatabase, "2023-08-01", async (resource, record, cancellation) =>
-                {
-                    var all = await directory.AllAsync(cancellation);
-                    string server = resource.Name.Split('/')[0];
-                    var paused = all.FirstOrDefault(r => string.Equals(r.Type, SqlType, StringComparison.OrdinalIgnoreCase)
-                        && r.Name.StartsWith(server + "/", StringComparison.OrdinalIgnoreCase) && r.Id != resource.Id && !r.Name.EndsWith("/master", StringComparison.OrdinalIgnoreCase));
-                    var facts = new Dictionary<string, string?>(SqlCard.Facts(record, model.Tables, model.Migration))
+            new("sqldb", "sqldb", sqlDatabase, ReadingsOf(SqlCard.Metrics), Monitor(SqlType, "/" + sqlDatabase, SqlCard.Metrics),
+                Hourly(SqlType, "/" + sqlDatabase, "2023-08-01", (_, record, _) =>
+                    Task.FromResult<IReadOnlyDictionary<string, string?>>(new Dictionary<string, string?>(SqlCard.Facts(record, model.Tables, model.Migration))
                     {
-                        ["paused"] = paused?.Name.Split('/')[^1],
                         ["served_by"] = sqlSite,
-                    };
-                    if (paused is not null)
-                    {
-                        // The server's other database is read for what Azure says it is, never described from memory.
-                        try
-                        {
-                            var (other, _) = await azure.RecordAsync(paused.Id, "2023-08-01", cancellation);
-                            using (other)
-                            {
-                                facts["paused_status"] = AzureMetrics.Text(other.RootElement, "properties.status");
-                                facts["paused_spec"] = string.Join(' ', new[] { AzureMetrics.Text(other.RootElement, "sku.tier"), AzureMetrics.Text(other.RootElement, "properties.useFreeLimit") == "true" ? "free offer" : null }.Where(p => p is not null));
-                            }
-                        }
-                        catch (HttpRequestException)
-                        {
-                            // Left unread; the table says so.
-                        }
-                    }
-                    return facts;
-                }),
+                    })),
                 SqlCard.View),
-            new("cosmosdb", "cosmosdb", "cosmos-theyard-ss", ReadingsOf(CosmosCard.Metrics), Monitor(CosmosType, null, CosmosCard.Metrics),
+            new("cosmosdb", "cosmosdb", names.Cosmos, ReadingsOf(CosmosCard.Metrics), Monitor(CosmosType, null, CosmosCard.Metrics),
                 Hourly(CosmosType, null, "2024-05-15", async (resource, record, cancellation) =>
                 {
                     using var databases = await azure.GetJsonAsync($"{resource.Id}/sqlDatabases?api-version=2024-05-15", cancellation);
@@ -96,7 +71,7 @@ public static class ResourceCatalog
                     return CosmosCard.Facts(record, containers.RootElement, throughput);
                 }),
                 CosmosCard.View),
-            new("registry", "registry", "crtheyardsszmnetj67bn5h2", ReadingsOf(AcrCard.Metrics), Monitor(AcrType, null, AcrCard.Metrics),
+            new("registry", "registry", names.Registry, ReadingsOf(AcrCard.Metrics), Monitor(AcrType, null, AcrCard.Metrics),
                 Hourly(AcrType, null, "2023-07-01", async (resource, record, cancellation) =>
                 {
                     AcrHoldings? holdings = null;
@@ -121,13 +96,13 @@ public static class ResourceCatalog
                     }
                 }),
                 AcrCard.View),
-            new("insights", "insights", "log-theyard-ss", InsightsCard.Readings,
+            new("insights", "insights", names.Insights, InsightsCard.Readings,
                 async (_, to, version, cancellation) => azure.Configured ? await (await InsightsAsync(azure, directory, cancellation)).MinutesAsync(to, version, cancellation) : [],
                 async (hour, since, cancellation) => azure.Configured
                     ? await (await InsightsAsync(azure, directory, cancellation)).HourAsync(hour, since, cancellation)
                     : new ResourceHour(hour, "", null, new Dictionary<string, string?>(), []),
                 InsightsCard.View, Hourly: true),
-            new("mail", "mail", "acs-theyard-ss", MailCard.Readings, Monitor(MailType, null, MailCard.Metrics),
+            new("mail", "mail", names.Mail, MailCard.Readings, Monitor(MailType, null, MailCard.Metrics),
                 Hourly(MailType, null, "2023-04-01", async (_, record, cancellation) =>
                 {
                     string? domainId = record.TryGetProperty("properties", out var props) && props.TryGetProperty("linkedDomains", out var linked) && linked.GetArrayLength() > 0 ? linked[0].GetString() : null;
@@ -139,10 +114,10 @@ public static class ResourceCatalog
                     return MailCard.Facts(record, domain.RootElement.Clone());
                 }),
                 MailCard.View),
-            new("edge", "edge", "theyard-edge", EdgeCard.Readings,
+            new("edge", "edge", names.Edge, EdgeCard.Readings,
                 async (_, to, version, cancellation) => await edge.MinutesAsync(to, version, cancellation),
                 async (hour, _, cancellation) => await edge.HourAsync(hour, cancellation),
-                inputs => EdgeCard.View(inputs, edge.Configured), Hourly: true),
+                inputs => EdgeCard.View(inputs, edge.Configured, names.Edge, names.EdgeRetires), Hourly: true),
         ];
     }
 

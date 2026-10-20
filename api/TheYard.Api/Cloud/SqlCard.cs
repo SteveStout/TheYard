@@ -40,15 +40,11 @@ public static class SqlCard
         double? deadlocks = ResourceView.WindowSum(inputs, "deadlocks"), failed = ResourceView.WindowSum(inputs, "failed"), blocked = ResourceView.WindowSum(inputs, "blocked");
         var events = inputs.Hours.SelectMany(h => h.Events).ToList();
         var dtuTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "dtu"), Dtu);
-        // The database this card reads, then any other on the server as its own record says, only while there is one.
+        // The database this card reads, as its own record says.
         var databases = new List<IReadOnlyList<CloudLink>>
         {
-            new CloudLink[] { ResourceView.Resource(inputs) ?? new CloudLink(ResourceCatalog.SqlDatabase, null), new("SQL database", null), new(ResourceView.Fact(inputs, "spec"), null), new("yes, a minute", null) },
+            new CloudLink[] { ResourceView.Resource(inputs) ?? new CloudLink("the database, not read yet", null), new("SQL database", null), new(ResourceView.Fact(inputs, "spec"), null), new("yes, a minute", null) },
         };
-        if (ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("paused") is { } other)
-        {
-            databases.Add(new CloudLink[] { new(other, null), new("SQL database", null), new($"{ResourceView.Fact(inputs, "paused_spec")}, {ResourceView.Fact(inputs, "paused_status")}", null), new("its record, an hour", null) });
-        }
         var rows = new List<CloudRow>
         {
             new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : ResourceView.Fact(inputs, "served_by", "no site of this process names it"),

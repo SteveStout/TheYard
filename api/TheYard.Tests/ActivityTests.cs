@@ -217,7 +217,7 @@ public class ActivityTests
     [InlineData("android-app://com.linkedin.android/", "/", "other")]
     [InlineData("https://www.linkedin.com/feed", "/api/vehicles", null)]
     public void A_page_load_keeps_the_host_that_linked_here_and_nothing_else_of_it(string? referer, string path, string? expected) =>
-        Assert.Equal(expected, Hits.SourceOf(referer, path, "theyard.stevenstout.biz"));
+        Assert.Equal(expected, Hits.SourceOf(referer, path, "theyard.stevenstout.biz", ["theyard.stevenstout.biz", "theyard-cosmos.stevenstout.biz", "theshed.stevenstout.biz"]));
 
     [Fact]
     public void A_visitors_sources_are_folded_by_host_and_a_hit_with_none_adds_nothing()

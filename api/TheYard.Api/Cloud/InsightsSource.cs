@@ -11,11 +11,11 @@ namespace TheYard.Api;
 /// <summary>Reads the Application Insights component and its Log Analytics workspace.</summary>
 public sealed class InsightsSource(AzureMetrics azure, string componentId, string workspaceId)
 {
-    /// <summary>The month's free ingestion, which the cost row is read against.</summary>
+    /// <summary>
+    /// The month's free ingestion, which the cost row is read against. Typed, because no record the
+    /// workspace returns states its allowance; what the month costs is the bill's own line.
+    /// </summary>
     public const double FreeGbPerMonth = 5;
-
-    /// <summary>What Azure charges a GB past the free allowance, pay as you go.</summary>
-    public const double PerGb = 2.76;
 
     /// <summary>The queries, kept here so a test can hold their shape.</summary>
     public const string IngestedToday = "Usage | where TimeGenerated >= startofday(now()) and IsBillable | summarize gb = sum(Quantity) / 1024.0";

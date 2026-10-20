@@ -213,7 +213,7 @@ internal sealed class RecordedCloud : HttpMessageHandler
                 : new object[] { new { name = "someone-else", id = "x" } }),
             "/api/v1/accounts/stevestout/bandwidth" => Json(new { used = 1_073_741_824L, period_start_date = "2026-10-01T00:00:00Z" }),
             "/api/v1/sites/site-1/deploys" => Json(deploys),
-            "/api/v1/sites/site-1" => Json(new { custom_domain = "stevenstout.biz", plan = "nf_team_starter" }),
+            "/api/v1/sites/site-1" => Json(new { custom_domain = "stevenstout.biz", plan = "nf_team_starter", admin_url = "https://app.netlify.com/projects/theyard-edge" }),
             "/api/v1/sites/site-1/ssl" => Json(new { domains = new[] { "stevenstout.biz", "theyard.stevenstout.biz" }, expires_at = "2026-12-08T00:00:00Z" }),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
@@ -245,6 +245,9 @@ internal sealed class RecordedCloud : HttpMessageHandler
 public sealed class CloudReadersTests
 {
     private static readonly BuildInfo Build = new("1.0.3.177", "abc1234");
+
+    /// <summary>The deployment's names as appsettings.json gives them, for the cards built by hand.</summary>
+    private static readonly AzureResources Names = new("RG-THEYARD-SS", "app-theyard-ss", "sqldb-theyard-ss-basic", "cosmos-theyard-ss", "crtheyard", "log-theyard-ss", "acs-theyard-ss", "theyard-edge", new Uri("https://theyard.stevenstout.biz/"), new DateOnly(2026, 10, 30));
 
     private static string Text(object report) => JsonSerializer.Serialize(report);
 
@@ -314,7 +317,7 @@ public sealed class CloudReadersTests
     {
         var azure = new AzureMetrics("client-1", configured: true);
         var directory = new ResourceDirectory(azure, RecordedCloud.Group, TimeProvider.System);
-        var cards = ResourceCatalog.Cards(azure, directory, edge ?? new NetlifyEdge("netlify-token", "theyard-edge", new Uri("https://stevenstout.biz")), (7, "StandingPerVehicle"))
+        var cards = ResourceCatalog.Cards(azure, directory, edge ?? new NetlifyEdge("netlify-token", "theyard-edge", new Uri("https://stevenstout.biz")), (7, "StandingPerVehicle"), Names)
             .Select(card => (card, (IResourceHistory)new MemoryResourceHistory("no document store in the test")))
             .ToList();
         var recorder = new CloudRecorder(cards, Build, TimeProvider.System, NullLogger<CloudRecorder>.Instance);
@@ -327,14 +330,18 @@ public sealed class CloudReadersTests
         using var route = OutboundHttp.RouteTo(new RecordedCloud());
         var (reader, _, _) = Cards();
 
-        // The server's other database, as its own record says.
-        Assert.Contains("GeneralPurpose free offer, Paused", Text(await reader.ReadAsync("sqldb", "24h", CancellationToken.None)), StringComparison.Ordinal);
+        // The database's own record, and no other database on the server.
+        string sql = Text(await reader.ReadAsync("sqldb", "24h", CancellationToken.None));
+        Assert.Contains("BASIC 5 DTU 2 GB", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("Paused", sql, StringComparison.Ordinal);
         // The database's shared throughput as Azure has it.
         Assert.Contains("1,000 RU/S SHARED", Text(await reader.ReadAsync("cosmosdb", "24h", CancellationToken.None)), StringComparison.Ordinal);
         // Who answered the page and the API, off the sampled answers' own header.
         string edge = Text(await reader.ReadAsync("edge", "24h", CancellationToken.None));
         Assert.Contains("the page answered by APP-THEYARD-RENDER-SS", edge, StringComparison.Ordinal);
         Assert.Contains("/api answered without naming its app", edge, StringComparison.Ordinal);
+        // The project's page is the site record's own admin_url.
+        Assert.Equal("https://app.netlify.com/projects/theyard-edge", (await reader.ReadAsync("edge", "24h", CancellationToken.None)).Resource!.Href);
     }
 
     [Theory]
@@ -506,6 +513,14 @@ public sealed class CloudReadersTests
         Assert.Equal(Environment.ProcessorCount, machine.Cores);
         Assert.True(machine.MemoryGb > 0);
     }
+
+    [Theory]
+    [InlineData("4294967296\n", null, 4.0)]
+    [InlineData("max\n", "MemTotal:        3670016 kB\nMemFree:  1 kB\n", 3.5)]
+    [InlineData(null, "MemTotal:        7340032 kB\n", 7.0)]
+    [InlineData("max", null, null)]
+    public void The_machine_s_memory_is_the_cgroup_limit_or_the_machine_total_never_the_heap_cap(string? cgroupMax, string? meminfo, double? expected) =>
+        Assert.Equal(expected, MachineSize.MemoryGbOf(cgroupMax, meminfo));
 
     [Fact]
     public void A_token_that_is_not_a_token_has_no_tenant()

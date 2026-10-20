@@ -89,6 +89,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.VisitorTokens._key"] = "the visitor-token key's bytes, fixed at startup",
         ["TheYard.Api.Backends._all"] = "the two backends",
         ["TheYard.Api.SiteHosts._sites"] = "the configured sites, one per public name, read once at startup",
+        ["TheYard.Api.RequestRecorder._siteHosts"] = "the same configured sites' names, copied once at startup",
         ["TheYard.Api.CostHistoryReader._cached"] = "one per named window, four",
         ["TheYard.Api.MachineHistoryReader._cached"] = "one per named window, four",
         ["TheYard.Api.KeptRingReader._cache"] = "one per kept card and named window, each a known name",

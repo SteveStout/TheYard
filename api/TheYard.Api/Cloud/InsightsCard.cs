@@ -26,6 +26,7 @@ public static class InsightsCard
         var droppedTone = ResourceView.Tone(ResourceView.Hour(inputs, "sampling").Select(v => v is { } s ? 100 - s : (double?)null).ToList(), Dropped, hourly: true);
         double cappedHours = inputs.Buckets.Sum(b => b.Sums.GetValueOrDefault("capped") is > 0 ? 1 : 0);
         double? billable = month is { } m ? Math.Max(0, m - InsightsSource.FreeGbPerMonth) : null;
+        string free = $"the free {InsightsSource.FreeGbPerMonth:0} GB";
         var dials = new[]
         {
             ResourceView.Dial(inputs, "ingest_today_gb", "Ingested today", cap, Ingestion, v => v is { } g ? $"{g.ToString("0.000", CultureInfo.InvariantCulture)} of {(cap is { } c ? c.ToString("0.###", CultureInfo.InvariantCulture) + " GB cap" : "no cap")}" : "not read", hourly: true),
@@ -42,8 +43,8 @@ public static class InsightsCard
             new("dropped", "Is anything dropped?", refused ? "the workspace refused the query" : inputs.Buckets.Count == 0 ? "not read yet" : cappedHours > 0 ? $"yes, the cap stopped collection in {cappedHours:0} hours" : "no hour hit the cap",
                 [new(refused ? "the site's identity holds Reader, which cannot run a log query; Log Analytics Reader on the workspace is what it needs" : $"sampling keeps {ResourceView.Number(sampling, "0")} % of requests · the component's own setting is {ResourceView.Fact(inputs, "sampling_setting")} %", null)],
                 refused ? "warning" : cappedHours > 0 ? "alarm" : "good"),
-            new("cost", "What is it costing?", month is null ? "not read yet" : billable is > 0 ? $"${(billable.Value * InsightsSource.PerGb).ToString("0.00", CultureInfo.InvariantCulture)} past the free 5 GB" : $"nothing; {month.Value.ToString("0.00", CultureInfo.InvariantCulture)} of the free 5 GB",
-                [new($"{InsightsSource.PerGb.ToString("0.00", CultureInfo.InvariantCulture)} $/GB past the allowance · retention {ResourceView.Fact(inputs, "retention_days")} days", null)],
+            new("cost", "What is it costing?", month is null ? "not read yet" : billable is > 0 ? $"{billable.Value.ToString("0.00", CultureInfo.InvariantCulture)} GB past {free}" : $"nothing; {month.Value.ToString("0.00", CultureInfo.InvariantCulture)} of {free}",
+                [new($"{(inputs.CostMonth is { } bill ? $"${bill.ToString("0.00", CultureInfo.InvariantCulture)} this month on the bill" : "not on the bill yet")} · retention {ResourceView.Fact(inputs, "retention_days")} days", null)],
                 billable is > 0 ? "warning" : "good"),
             new("cap", "Is the cap still right?", cap is null ? "no daily cap is set" : ingestTone == PlanTone.Alarm ? "no, today is close to it" : "yes",
                 [new($"cap {(cap is { } c2 ? c2.ToString("0.###", CultureInfo.InvariantCulture) + " GB a day" : "none")} from {ResourceView.Fact(inputs, "cap_from", "neither")} · 30-day p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ingest_today_gb").P95, "0.000")} GB", null)],

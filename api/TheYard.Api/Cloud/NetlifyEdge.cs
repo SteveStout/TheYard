@@ -116,6 +116,7 @@ public sealed class NetlifyEdge(string? token, string siteName, Uri publicSite)
             ["cert_names"] = ssl.RootElement.ValueKind == JsonValueKind.Object && ssl.RootElement.TryGetProperty("domains", out var domains) && domains.ValueKind == JsonValueKind.Array ? string.Join(", ", domains.EnumerateArray().Select(d => d.ValueKind == JsonValueKind.String ? d.GetString() : d.GetRawText())) : null,
             ["cert_expires"] = AzureMetrics.Text(ssl.RootElement, "expires_at"),
             ["plan"] = AzureMetrics.Text(site.RootElement, "plan"),
+            ["admin_url"] = AzureMetrics.Text(site.RootElement, "admin_url"),
             ["deploy_log"] = log,
             ["deploy_rows"] = DeployRows(deploys.RootElement),
             ["deploys_live"] = live.ToString(CultureInfo.InvariantCulture),

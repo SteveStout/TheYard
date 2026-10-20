@@ -51,19 +51,16 @@ public class CloudThresholdTests
 
 
     [Fact]
-    public void The_sql_card_names_the_paused_free_database_and_reads_its_size_from_the_record()
+    public void The_sql_card_lists_the_database_it_reads_and_reads_its_size_from_the_record()
     {
-        var view = SqlCard.View(Held("storage_gb", 1.8, new Dictionary<string, string?> { ["dtu"] = "5", ["max_gb"] = "2", ["paused"] = "sqldb-theyard-ss", ["paused_status"] = "Paused", ["paused_spec"] = "GeneralPurpose free offer", ["served_by"] = "theyard.stevenstout.biz, on APP-THEYARD-ONE-SS" }));
+        var view = SqlCard.View(Held("storage_gb", 1.8, new Dictionary<string, string?> { ["dtu"] = "5", ["max_gb"] = "2", ["served_by"] = "theyard.stevenstout.biz, on APP-THEYARD-ONE-SS" }));
         Assert.Equal(90, view.Dials[1].Percent);
         Assert.Equal("alarm", view.Dials[1].Tone);
         var databases = view.Rows[0].Table;
         Assert.Equal(["Database", "Type", "Size", "Read by this card"], databases.Columns);
-        Assert.Equal(["sqldb-theyard-ss", "SQL database", "GeneralPurpose free offer, Paused", "its record, an hour"], databases.Rows[1].Select(cell => cell.Text));
+        Assert.Single(databases.Rows);
         // What runs on it is this process's own settings, never a name written down.
         Assert.Equal("theyard.stevenstout.biz, on APP-THEYARD-ONE-SS", view.Rows.Single(r => r.Key == "runs").Answer);
-        // With no other database on the server the table lists the one it reads, and nothing more.
-        var alone = SqlCard.View(Held("storage_gb", 1.8, new Dictionary<string, string?> { ["dtu"] = "5", ["max_gb"] = "2" }));
-        Assert.Single(alone.Rows[0].Table.Rows);
     }
 
 
@@ -121,14 +118,14 @@ public class CloudThresholdTests
     [Fact]
     public void The_edge_card_says_in_a_sentence_when_there_is_no_token_and_names_its_own_retirement()
     {
-        var view = EdgeCard.View(Held("credits", 270), configured: false);
+        var view = EdgeCard.View(Held("credits", 270), configured: false, "theyard-edge", new DateOnly(2026, 10, 30));
         Assert.False(view.Available);
         Assert.Equal("NETLIFY_TOKEN is not set, so the edge is not read.", view.Note);
-        Assert.Equal(EdgeCard.ProjectUrl, view.Resource!.Href);
-        Assert.Equal("alarm", EdgeCard.View(Held("credits", 270), configured: true).Dials[0].Tone);
+        Assert.Null(view.Resource!.Href);
+        Assert.Equal("alarm", EdgeCard.View(Held("credits", 270), configured: true, "theyard-edge", new DateOnly(2026, 10, 30)).Dials[0].Tone);
         Assert.StartsWith("until Oct 30", view.Rows.Single(r => r.Key == "needed").Answer, StringComparison.Ordinal);
         // A token that answers but cannot see the site is a sentence too, as the first live roll found.
-        var unseen = EdgeCard.View(Held("credits", 0, new Dictionary<string, string?> { ["token"] = "set", ["site"] = "the token sees 0 sites and none is theyard-edge" }), configured: true);
+        var unseen = EdgeCard.View(Held("credits", 0, new Dictionary<string, string?> { ["token"] = "set", ["site"] = "the token sees 0 sites and none is theyard-edge" }), configured: true, "theyard-edge", new DateOnly(2026, 10, 30));
         Assert.Equal("NETLIFY_TOKEN is set, but the token sees 0 sites and none is theyard-edge, so the edge is not read.", unseen.Note);
     }
     // #endregion cloud-threshold-tests

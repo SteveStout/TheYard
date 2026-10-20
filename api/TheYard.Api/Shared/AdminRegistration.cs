@@ -34,7 +34,7 @@ public static class AdminRegistration
         var azureSelf = new AzureSelf(
             AzureIds.ClientId(builder.Configuration),
             builder.Configuration["Azure:SelfResourceId"]
-                ?? $"/subscriptions/{AzureIds.SubscriptionId(builder.Configuration)}/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Web/sites/APP-THEYARD-ONE-SS-ZMNETJ67BN5H2",
+                ?? AzureResources.From(builder.Configuration).SitePath(AzureIds.SubscriptionId(builder.Configuration)),
             identity);
         builder.Services.AddSingleton(azureSelf);
         // The other container's metrics, read server side with a short patience (ADR: Backends, side by

@@ -9,11 +9,20 @@ namespace TheYard.Api;
 /// <summary>The mail card.</summary>
 public static class MailCard
 {
-    /// <summary>What the Azure-managed sender allows an hour, which the sends dial is read against.</summary>
+    /// <summary>
+    /// What the Azure-managed sender allows an hour. Typed, with <see cref="CustomDomainPerHour"/>,
+    /// because no record the service returns states its sending limit; which of the two the dial is
+    /// read against follows the domain's own domainManagement, read each hour.
+    /// </summary>
     public const double SendsPerHour = 100;
 
-    /// <summary>What a custom domain's sender allows an hour, for the last row.</summary>
+    /// <summary>What a custom domain's sender allows an hour.</summary>
     public const double CustomDomainPerHour = 1_800;
+
+    /// <summary>The hourly limit of the sender the domain record names: the Azure-managed one unless the record says custom.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static double LimitOf(ResourceCardInputs inputs) =>
+        ResourceView.Fact(inputs, "domain_kind", "") == "a custom domain" ? CustomDomainPerHour : SendsPerHour;
 
     /// <summary>Filled in from the resource's metric definitions; see <see cref="Metrics"/>.</summary>
     public static IReadOnlyList<AzureMetric> Metrics { get; } = MailMetrics.All;
@@ -28,16 +37,17 @@ public static class MailCard
     public static CloudReport View(ResourceCardInputs inputs)
     {
         double? sendsHour = ResourceView.HourSum(inputs, "sends");
+        double limit = LimitOf(inputs);
         double? delivered = ResourceView.WindowSum(inputs, "delivered"), bounced = ResourceView.WindowSum(inputs, "bounced"),
             suppressed = ResourceView.WindowSum(inputs, "suppressed"), quarantined = ResourceView.WindowSum(inputs, "quarantined"), failed = ResourceView.WindowSum(inputs, "failed");
         double outcomes = (delivered ?? 0) + (bounced ?? 0) + (suppressed ?? 0) + (quarantined ?? 0) + (failed ?? 0);
         double? bounceRate = outcomes > 0 ? Math.Round(100 * ((bounced ?? 0) + (failed ?? 0)) / outcomes, 2) : null;
-        var sendsTone = PlanThresholds.ToneOf([ResourceView.Share(sendsHour, SendsPerHour)], Sends);
+        var sendsTone = PlanThresholds.ToneOf([ResourceView.Share(sendsHour, limit)], Sends);
         var bounceTone = bounceRate is { } br ? (br >= Bounces.Red ? PlanTone.Alarm : br >= Bounces.Amber ? PlanTone.Warning : PlanTone.Good) : PlanTone.Info;
         var dials = new[]
         {
-            new CloudDial("Sends, this hour", ResourceView.Share(sendsHour, SendsPerHour), PlanView.Percent(ResourceView.Share(sendsHour, SendsPerHour)),
-                sendsHour is { } s ? $"{s.ToString("0", CultureInfo.InvariantCulture)} of {SendsPerHour:0} an hour" : "not read", Sends.Amber, Sends.Red, null, null, CloudTones.Of(sendsTone)),
+            new CloudDial("Sends, this hour", ResourceView.Share(sendsHour, limit), PlanView.Percent(ResourceView.Share(sendsHour, limit)),
+                sendsHour is { } s ? $"{s.ToString("0", CultureInfo.InvariantCulture)} of {limit:N0} an hour" : "not read", Sends.Amber, Sends.Red, null, null, CloudTones.Of(sendsTone)),
             new CloudDial("Bounce rate", bounceRate, bounceRate is null ? "none" : PlanView.Percent(bounceRate),
                 outcomes > 0 ? $"{ResourceView.Number((bounced ?? 0) + (failed ?? 0))} of {outcomes:0} outcomes" : "no mail in the window", Bounces.Amber, Bounces.Red, null, null, CloudTones.Of(bounceTone)),
         };
@@ -51,8 +61,8 @@ public static class MailCard
                 CloudTones.Of(bounceTone)),
             new("azure", "What did Azure do to it?", events.Count == 0 ? "nothing in the window" : $"{events.Count} events",
                 [.. events.Take(3).Select(e => new CloudLink($"{e.At:MMM d HH:mm} {e.Title}", null))], events.Any(e => !e.Planned) ? "warning" : "good"),
-            new("sender", "Is the free sender still right?", sendsTone == PlanTone.Alarm ? "no, sends are near its hourly limit" : "yes",
-                [new($"the Azure-managed sender allows {SendsPerHour:0} an hour; a custom domain allows {CustomDomainPerHour:N0} and costs nothing more", null)],
+            new("sender", $"Is {ResourceView.Fact(inputs, "domain_kind", "the sender")} still right?", sendsTone == PlanTone.Alarm ? "no, sends are near its hourly limit" : "yes",
+                [new($"{ResourceView.Number(sendsHour)} sends this hour of {limit:N0} · the Azure-managed sender allows {SendsPerHour:0} an hour, a custom domain {CustomDomainPerHour:N0}", null)],
                 sendsTone == PlanTone.Alarm ? "alarm" : "good"),
         };
         var readout = new CloudReadout(
@@ -82,8 +92,8 @@ public static class MailCard
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),
             ResourceView.Resource(inputs),
             dials,
-            [ResourceView.Spark(inputs, "sends", "Sends, 60 min", 10), ResourceView.Spark(inputs, "delivered", "Delivered, 60 min", 10)],
-            $"Normal: sends amber {Sends.Amber} %, red {Sends.Red} % of {SendsPerHour:0} an hour; bounces amber {Bounces.Amber} %, red {Bounces.Red} %.",
+            [ResourceView.Spark(inputs, "sends", "Sends, 60 min", limit / 60), ResourceView.Spark(inputs, "delivered", "Delivered, 60 min", limit / 60)],
+            $"Normal: sends amber {Sends.Amber} %, red {Sends.Red} % of {limit:N0} an hour; bounces amber {Bounces.Amber} %, red {Bounces.Red} %.",
             ResourceView.Chart(inputs, "Sends and deliveries", ("sends", "Sends", 10, false), ("delivered", "Delivered", 10, false), 100, "teal sends · green delivered, as a share of 10 a minute · gold deploys · red event"),
             rows,
             readout);
