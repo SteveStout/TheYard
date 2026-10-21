@@ -10,6 +10,10 @@ name: Deploy Render
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'functions/**'
+      - 'infra/jobhunt.bicep'
+      - '.github/workflows/nightly.yml'
     # Every push, as Deploy: a push that changes only The Shed still gives the API a new
     # version, and the renderer draws only for the version it was built as.
 

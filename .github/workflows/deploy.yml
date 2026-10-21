@@ -24,6 +24,14 @@ on:
     # Every push to main rolls, The Shed's folder included: The Shed is built into
     # the same image and served by the same process (ADR: One web app for every
     # .NET process), so a change under samples/theshed is a change to what runs.
+    # Not the job hunt's: its Function, its template and its nightly workflow share
+    # this repository and nothing in the image. A push that changes only those built
+    # the same source again, pushed it under the version's tag with the job hunt's
+    # commit in the footer, and failed its own commit check (the review of 1.0.4.0).
+    paths-ignore:
+      - 'functions/**'
+      - 'infra/jobhunt.bicep'
+      - '.github/workflows/nightly.yml'
 
 permissions:
   id-token: write

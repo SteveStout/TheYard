@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>Cloud infrastructure: seven resources read in the one web app by PlanRecorder and CloudRecorder, kept in seven Cosmos DB containers partitioned on the day for thirty-one days, served by GET /api/admin/plan and GET /api/admin/cloud/{key}, and drawn in one frame, CloudCard</title>
+  <title>Cloud infrastructure: seven resources read in the one web app by PlanRecorder and CloudRecorder, kept in seven Cosmos DB containers partitioned on the day for thirty-one days, served by GET /api/admin/plan and GET /api/admin/cloud/{key}, and drawn in one frame, CardShell</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
@@ -89,7 +89,7 @@
   <text x="536" y="406" class="body">and Netlify, with the identity</text>
   <rect x="1180" y="280" width="190" height="160" rx="8" class="box"/>
   <text x="1196" y="306" class="title">One frame</text>
-  <text x="1196" y="328" class="mono">CloudCard</text>
+  <text x="1196" y="328" class="mono">CardShell</text>
   <text x="1196" y="352" class="body">two dials, the month,</text>
   <text x="1196" y="370" class="body">four questions and a</text>
   <text x="1196" y="388" class="body">readout, from one</text>

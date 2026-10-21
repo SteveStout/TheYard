@@ -327,8 +327,10 @@ pattern beside this codebase ring by ring, and
 [SOLID Principles](https://theyard.stevenstout.biz/?doc=solid) takes the five one at a time, with
 the code each one shows in and the place it stops.
 
-The rings have a second axis. Every feature is one folder with the same name in each ring, and in
-the host that folder holds the feature's endpoints and a `Module.cs` that registers and maps it:
+The rings have a second axis. Every feature is one folder with the same name in the host and in
+Application (the adapters answer the slice's port from their ring's root, and Domain has no folders,
+only rules; ADR-107's addendum of 1.0.4.7 says why), and in the host that folder holds the feature's
+endpoints and a `Module.cs` that registers and maps it:
 `Features/Bids`, `Features/Vehicles`, `Features/Accounts`, `Features/Docs`, `Features/Health` and
 the Admin tab's `Features/Admin/Operations`, `Features/Admin/Plan` and `Features/Admin/Cloud`. What
 every feature shares is in `Shared/`. `Program.cs` registers the shared parts by name and loops over

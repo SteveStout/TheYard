@@ -168,5 +168,23 @@ public sealed class SliceTests
             Assert.True(type is not null && typeof(Microsoft.Extensions.Hosting.IHostedService).IsAssignableFrom(type), $"{concern} is not a hosted service");
         }
     }
+
+    [Fact]
+    public void The_slices_drawing_names_only_files_the_tree_has_and_the_rings_the_slices_reach()
+    {
+        // The drawing on the Hosting page is the record's picture. At 1.0.4.0 it drew the design
+        // as planned, twenty-eight file names the tree never had and folders in rings that have
+        // none (the review of 1.0.4.0, finding 4); the picture is a claim, and this holds it.
+        string drawing = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "images", "vertical-slices.mjs"));
+        var named = System.Text.RegularExpressions.Regex.Matches(drawing, @"[A-Za-z][A-Za-z0-9.]*\.cs").Select(match => match.Value).Distinct().ToList();
+        var have = Directory.EnumerateFiles(Path.Combine(Repo.Root(), "api"), "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Select(Path.GetFileName)
+            .ToHashSet(StringComparer.Ordinal);
+        var missing = named.Where(name => !have.Contains(name)).ToList();
+        Assert.True(missing.Count == 0, "the drawing names files the tree does not have: " + string.Join(", ", missing));
+        Assert.False(Directory.Exists(Path.Combine(Repo.Root(), "api", "TheYard.Domain", "Features")), "Domain grew a Features folder; redraw vertical-slices.mjs and amend ADR-107");
+        Assert.DoesNotContain("Features/Admin/Cloud/Sql", drawing, StringComparison.Ordinal);
+    }
 }
 // #endregion slice-tests

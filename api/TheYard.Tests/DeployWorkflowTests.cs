@@ -25,6 +25,36 @@ public class DeployWorkflowTests
         return values;
     }
 
+    // #region job-hunt-paths
+    /// <summary>
+    /// A push that changes only the job hunt's files (its Function, its template, its nightly
+    /// workflow) rolls nothing: the two deploys ignore those paths, so the version's image tag is
+    /// written once, by the gate's own push. On 20 October a job-hunt commit rebuilt 1.0.4.0's
+    /// image under the same tag with its own commit in the footer and failed Verify's commit check
+    /// (the review of 1.0.4.0, preflight).
+    /// </summary>
+    [Fact]
+    public void A_push_that_changes_only_the_job_hunt_rolls_nothing()
+    {
+        foreach (string name in new[] { "deploy.yml", "deploy-render.yml" })
+        {
+            string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", name));
+            var ignored = Regex.Match(workflow, @"paths-ignore:\s*((?:\s*- '[^']+'\s*)+)", RegexOptions.Multiline);
+            Assert.True(ignored.Success, $"{name} ignores no paths");
+            foreach (string path in new[] { "functions/**", "infra/jobhunt.bicep", ".github/workflows/nightly.yml" })
+            {
+                Assert.Contains($"- '{path}'", ignored.Groups[1].Value, StringComparison.Ordinal);
+            }
+            Assert.DoesNotContain("- 'samples/", ignored.Groups[1].Value, StringComparison.Ordinal);
+        }
+        // The folders the filter names are the job hunt's, and the job hunt has no file outside them.
+        foreach (string path in new[] { "functions", Path.Combine("infra", "jobhunt.bicep"), Path.Combine(".github", "workflows", "nightly.yml") })
+        {
+            Assert.True(Path.Exists(Path.Combine(Repo.Root(), path)), $"{path} is named by the filter and is not in the tree");
+        }
+    }
+    // #endregion job-hunt-paths
+
     // #region keep-ten
     /// <summary>
     /// The registry keeps the newest ten images (Steve, 25 September). The

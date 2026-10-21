@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace TheYard.Tests;
 
 /// <summary>
@@ -49,7 +51,12 @@ public class CiTriggerTests
         {
             Assert.DoesNotContain("samples/**", triggers, StringComparison.Ordinal);
             Assert.DoesNotContain("deploy-shed.yml", triggers, StringComparison.Ordinal);
-            Assert.DoesNotContain("paths-ignore", triggers, StringComparison.Ordinal);
+            // A path filter may leave out what the image never holds (the job hunt's Function and its
+            // template, DeployWorkflowTests); it may never leave out the sample.
+            foreach (Match ignored in Regex.Matches(triggers, @"^\s+- '([^']+)'\s*$", RegexOptions.Multiline))
+            {
+                Assert.DoesNotContain("samples", ignored.Groups[1].Value, StringComparison.Ordinal);
+            }
         }
         Assert.False(File.Exists(Path.Combine(Repo.Root(), ".github", "workflows", "deploy-shed.yml")));
     }

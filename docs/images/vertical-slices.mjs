@@ -50,45 +50,48 @@ function arrow(d, label, lx, ly) {
 }
 
 // The rings, as bands. Outside at the top, inside at the bottom; references point down and never up.
-const api = band(100, 122, 'ring0', 'TheYard.Api, the host', 'a Module per slice: Register and Map; the wire; the pipeline in Shared');
-const infra = band(232, 110, 'ring1', 'TheYard.Infrastructure, the adapters', 'relational, document and cloud; the only ring that opens a socket');
-const app = band(352, 110, 'ring2', 'TheYard.Application, the use cases', 'one handler per request, one HandleAsync, the ports it asks');
-const domain = band(472, 92, 'ring3', 'TheYard.Domain, the rules', 'pure functions and records; no clock, no disk, no network');
+const api = band(100, 122, 'ring0', 'TheYard.Api, the host', 'Features/<Slice>/Module.cs: Register and Map; the wire; the pipeline and the cloud readers in Shared and at the root');
+const infra = band(232, 110, 'ring1', 'TheYard.Infrastructure and .Cosmos, the adapters', 'the same ports answered twice, relational and document, at each project\'s root; the one Features/ folder is Accounts');
+const app = band(352, 110, 'ring2', 'TheYard.Application, the use cases', 'Features/<Slice>/: one handler per request, one HandleAsync; the ports in Ports.cs and beside the handler');
+const domain = band(472, 92, 'ring3', 'TheYard.Domain, the rules', 'pure functions and records at the root; no Features/, no clock, no disk, no network');
 band(574, 60, 'ring4', 'TheYard.Data, the records', 'zero dependencies, zero behaviour');
 
 // The Shared column: what every slice may use and no slice owns.
 out.push(`  <rect x="40" y="96" width="246" height="538" class="shared"/>`);
 out.push(`  <text x="163" y="88" class="shared-title" text-anchor="middle">Shared/, the same in every ring</text>`);
-files(52, 160, ['Program.cs: a loop over IModule', 'RequestPipeline, SiteHosts, Sites', 'IHostedSite, The Shed as one', 'Problems, the wire conventions'], 'small');
-files(52, 292, ['ContextFactory, the Cosmos client', 'AzureMetrics, IdentityTokens', 'OutboundHttp, one pool'], 'small');
-files(52, 412, ['the auction composition', 'IStoreDiagnostics, IHostIdentity', 'the clock port'], 'small');
-files(52, 532, ['FNV-1a, CatalogueSlot', 'the one tone rule'], 'small');
+files(52, 160, ['Program.cs: a loop over Modules', 'Shared/RequestPipeline.cs', 'Shared/SiteSettings.cs, SiteHosts.cs', 'Shared/Sites: IHostedSite, ShedSite'], 'small');
+files(52, 292, ['ContextFactory.cs, CosmosStore.cs', 'OutboundHttp.cs, one pool', 'AzureMetrics.cs, the host\'s'], 'small');
+files(52, 412, ['Auction.cs, the composition', 'Ports.cs, IStoreDiagnostics', 'CardFrame.cs, CloudWire.cs'], 'small');
+files(52, 532, ['Fnv1a.cs, AuctionSchedule.cs', 'CardTone.cs, the one tone rule'], 'small');
 
 // The slices: the same folder name in every ring, cut through all of them.
+// What each slice owns in each ring, by the real file names (vertical-slices-tests hold them to the tree):
+// the host and Application have the folder; the adapters sit at their ring's root, answering the slice's
+// port; Domain has no folders, only rules.
 const bids = slice(300, 190, 'Features/Bids');
-files(bids.x + 12, 160, ['Module.cs', 'PlaceBidEndpoint.cs', 'BidWire.cs']);
-files(bids.x + 12, 292, ['SqlBidStore.cs', 'CosmosBidStore.cs']);
-files(bids.x + 12, 412, ['PlaceBid.cs, the handler', 'IBidStore.cs, the port']);
+files(bids.x + 12, 160, ['Module.cs', 'BidEndpoints.cs, the wire too']);
+files(bids.x + 12, 292, ['EfBidStore.Standing.cs', 'CosmosBidStore.Standing.cs']);
+files(bids.x + 12, 412, ['PlaceBidHandler.cs', 'BidReadHandlers.cs', 'IBidStore in Ports.cs']);
 files(bids.x + 12, 532, ['BidRules.cs', 'StandingRules.cs']);
 
 const vehicles = slice(506, 190, 'Features/Vehicles');
-files(vehicles.x + 12, 160, ['Module.cs', 'SearchEndpoint.cs', 'VehicleWire.cs']);
-files(vehicles.x + 12, 292, ['SqlCatalogue.cs', 'CosmosCatalogue.cs']);
-files(vehicles.x + 12, 412, ['SearchVehicles.cs', 'IVehicleCatalogue.cs']);
-files(vehicles.x + 12, 532, ['Filter.cs, Ordering.cs', 'AuctionClock.cs']);
+files(vehicles.x + 12, 160, ['Module.cs', 'VehicleEndpoints.cs', 'VehicleWire.cs, at the root']);
+files(vehicles.x + 12, 292, ['EfVehicleCatalogue.cs', 'CosmosVehicleCatalogue.cs']);
+files(vehicles.x + 12, 412, ['VehicleHandlers.cs', 'IVehicleCatalogue in Ports.cs']);
+files(vehicles.x + 12, 532, ['VehicleFilter.cs', 'VehicleOrdering.cs', 'AuctionClock.cs']);
 
 const accounts = slice(712, 190, 'Features/Accounts');
-files(accounts.x + 12, 160, ['Module.cs', 'SignInEndpoint.cs', 'ResetEndpoints.cs']);
-files(accounts.x + 12, 292, ['IdentityUserStore.cs', 'CosmosUserStore.cs']);
-files(accounts.x + 12, 412, ['SignIn.cs, RefuseSession.cs', 'IAccounts.cs, IResetLinks.cs']);
-files(accounts.x + 12, 532, ['SessionRules.cs']);
+files(accounts.x + 12, 160, ['Module.cs', 'AccountEndpoints.cs', 'AccountEndpoints.SignIn.cs']);
+files(accounts.x + 12, 292, ['Features/Accounts/', 'IdentityAccountStore.cs', 'CosmosUserStore.cs']);
+files(accounts.x + 12, 412, ['SessionHandlers.cs', 'ResetHandlers.cs', 'AccountPorts.cs']);
+files(accounts.x + 12, 532, ['(no rule of its own;', 'the session is Application\'s)']);
 
-const sql = slice(918, 196, 'Features/Admin/Cloud/Sql');
-files(sql.x + 12, 160, ['Module.cs', 'SqlCardEndpoint.cs', 'SqlCardView.cs, pure']);
-files(sql.x + 12, 292, ['ArmResourceReader.cs', 'MonitorMinutes.cs']);
-files(sql.x + 12, 412, ['ReadSqlCard.cs, the handler', 'IResourceReader.cs, the port']);
-files(sql.x + 12, 532, ['CardTone.cs, Dial.cs', 'CardView.cs']);
-out.push(`  <text x="${sql.midX}" y="652" class="label" text-anchor="middle">and Plan, Cosmos, Acr, Edge, Insights, Mail, Docs, Health, each a column like these</text>`);
+const cloud = slice(918, 196, 'Features/Admin/Cloud');
+files(cloud.x + 12, 160, ['Module.cs', 'CloudEndpoints.cs', 'Cloud/SqlCard.cs, at the root']);
+files(cloud.x + 12, 292, ['(none: the readers stay', 'in the host, ADR-107\'s', 'addendum of 1.0.4.0)']);
+files(cloud.x + 12, 412, ['ReadCloudCardHandler.cs', 'ICloudCards, beside it']);
+files(cloud.x + 12, 532, ['CardTone.cs']);
+out.push(`  <text x="${cloud.midX}" y="652" class="label" text-anchor="middle">and Admin/Plan, Admin/Operations, Docs, Health, each a column like these</text>`);
 
 // The direction of every reference, drawn once beside the bands.
 arrow(`M1148 ${api.y + 60} V${infra.y + 50}`);
@@ -110,20 +113,20 @@ out.push(`  <text x="46" y="727" class="lane-sub">POST /api/vehicles/{id}/bids. 
 const edge = box(46, 748, 196, 'The edge, the host', 'X-Yard-Host, X-Yard-Store', ['The name and the store', 'the request carries.']);
 const pipe = box(262, 748, 196, 'Shared pipeline', 'Shared/RequestPipeline.cs', ['Timing, forwarded headers,', 'problems, the warm store.']);
 const mod = box(478, 748, 196, 'Bids/Module.Map', 'Features/Bids/Module.cs', ['The one place this route', 'is mapped.'], 'box slicebox');
-const ep = box(694, 748, 196, 'PlaceBidEndpoint', 'Bids/PlaceBidEndpoint.cs', ['Binds the wire, calls the', 'handler, writes the answer.'], 'box slicebox');
-const handler = box(910, 748, 206, 'PlaceBid.HandleAsync', 'Application/Bids/PlaceBid.cs', ['Ports by constructor: the', 'store, the clock. One method.'], 'box app');
-const rules = box(1136, 748, 216, 'BidRules, then IBidStore', 'Domain/Bids, Infrastructure/Bids', ['The rule decides, pure; the', 'adapter writes, Sql or Cosmos.'], 'box domain');
+const ep = box(694, 748, 196, 'BidEndpoints.PlaceBid', 'Features/Bids/BidEndpoints.cs', ['Binds the wire, calls the', 'handler, writes the answer.'], 'box slicebox');
+const handler = box(910, 748, 206, 'PlaceBidHandler.HandleAsync', 'Features/Bids/PlaceBidHandler.cs', ['Ports by constructor: the', 'store, the clock. One method.'], 'box app');
+const rules = box(1136, 748, 216, 'BidRules, then IBidStore', 'Domain/BidRules.cs, EfBidStore', ['The rule decides, pure; the', 'adapter writes, Ef or Cosmos.'], 'box domain');
 arrow(`M${edge.right} ${edge.midY} L${pipe.x} ${pipe.midY}`);
 arrow(`M${pipe.right} ${pipe.midY} L${mod.x} ${mod.midY}`);
 arrow(`M${mod.right} ${mod.midY} L${ep.x} ${ep.midY}`);
 arrow(`M${ep.right} ${ep.midY} L${handler.x} ${handler.midY}`);
 arrow(`M${handler.right} ${handler.midY} L${rules.x} ${rules.midY}`);
-out.push(`  <text x="46" y="900" class="body">The slice's tests: PlaceBidTests gives the handler a fake IBidStore and a fixed clock and asserts every outcome BidRules can reach; the endpoint test is one integration case per status code.</text>`);
-out.push(`  <text x="46" y="920" class="body">Adding a slice is one folder in each ring and one Module; nothing in Program.cs changes. Removing one is deleting those folders; the gate says what else referred to it, which is nothing.</text>`);
+out.push(`  <text x="46" y="900" class="body">The slice's tests: BidHandlerTests gives the handler a fake IBidStore and a fixed clock and asserts every outcome BidRules can reach; BidEndpointStatusTests is one integration case per status code.</text>`);
+out.push(`  <text x="46" y="920" class="body">Adding a slice is one folder in the host and one in Application, and one Module; nothing in Program.cs changes. Removing one is deleting those folders; the gate says what else referred to it.</text>`);
 out.push(`  <text x="46" y="940" class="body">Until 1.0.4.0 the host was sliced by kind instead: Endpoints/, Composition/, Cloud/ and ninety files at the root. The rings were held; the slices were not, and a feature was spread across all four folders.</text>`);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>The onion cut into vertical slices: the five rings as bands with references pointing inward, four slices cut through every ring with the same folder name in each, the Shared column beside them, the rules the gate holds, and one bid followed through one slice</title>
+  <title>The onion cut into vertical slices: the five rings as bands with references pointing inward, four slices cut through every ring, each a folder in the host and in Application and its adapters and rules at the inner rings' roots, the Shared column beside them, the rules the gate holds, and one bid followed through one slice</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>

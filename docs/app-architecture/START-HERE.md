@@ -21,7 +21,7 @@ Three more commands, one for each suite the ship's gate runs (the gate adds a st
 
 ```
 npm test           # Vitest, the presentation logic
-npm run test:api   # xUnit on SQLite; the seven live Cosmos DB tests run on the build machine
+npm run test:api   # xUnit on SQLite; the eight live Cosmos DB tests run on the build machine
 npx playwright test  # the browser suite, which starts both servers itself
 ```
 
