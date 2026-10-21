@@ -41,10 +41,10 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
         }
         var availability = await history.AvailabilityAsync(cancellation);
         var lastHour = await history.NewestAsync(60, cancellation);
-        // An hourly card with no keep yet is read live: the recorder holds its newest hour.
+        // A card with no keep yet is read live, minute card or hourly: the recorder holds its newest hour.
         bool stale = availability.Available
             ? lastHour.Count == 0 || now - lastHour[^1].At > card.Stale
-            : card.Hourly && (recorder?.LiveHour(key) is not { } held || now - held.At > card.Stale);
+            : recorder?.LiveHour(key) is not { } held || now - held.At > TimeSpan.FromMinutes(61);
         if (recorder is not null && stale)
         {
             try

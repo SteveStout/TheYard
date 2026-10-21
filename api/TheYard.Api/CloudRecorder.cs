@@ -1,8 +1,8 @@
 // The one recorder every resource card under Cloud infrastructure shares (ADR: One frame for every
 // resource): each card's minute once a minute and its hour once an hour, into its own keep, on the
 // SQL site alone. A card is a definition in Cloud/ResourceCatalog.cs, not a recorder of its own.
-// An hourly card whose keep is not there yet still has its hour read and held here, so the card
-// reads live until the keep exists; its minutes are not read, since nothing could keep them.
+// A card whose keep is not there yet still has its hour read once an hour and held here, so the
+// card reads live until the keep exists; its minutes are not read, since nothing could keep them.
 using TheYard.Application;
 
 namespace TheYard.Api;
@@ -34,10 +34,6 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
     {
         var (card, history) = cards.Single(entry => entry.Card.Key == key);
         bool kept = (await history.AvailabilityAsync(cancellation)).Available;
-        if (!kept && !card.Hourly)
-        {
-            return;
-        }
         var now = clock.GetUtcNow();
         var hour = MachineWindows.BucketOf(now, MachineGrain.Hour);
         DateTimeOffset? last;
@@ -45,7 +41,23 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
         {
             last = _hourRead.TryGetValue(key, out var asked) ? asked : null;
         }
-        // An hourly source is asked once in its hour: asking every minute would return the same figure.
+        // An hourly source is asked once in its hour, and its hour first: an hourly minute may carry
+        // what the hour just sampled (the edge's cache share), and asked after, it carried the sample
+        // before. A minute's source is asked for its minutes first, as it always was.
+        // A failed hour still lets the minutes be kept, as it did when the minutes came first; the
+        // failure is thrown after them, for the loop to log.
+        Exception? failed = null;
+        if (card.Hourly)
+        {
+            try
+            {
+                await HourOnceAsync(key, card, history, kept, hour, last, cancellation);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                failed = ex;
+            }
+        }
         if (kept && (!card.Hourly || last != hour))
         {
             foreach (var minute in await card.Minutes(now - PlanRecorder.Lookback, now, build.Version, cancellation))
@@ -53,18 +65,32 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
                 await history.AppendMinuteAsync(minute, cancellation);
             }
         }
-        if (last != hour)
+        if (failed is not null)
         {
-            var read = await card.Hour(hour, last ?? hour.AddHours(-1), cancellation);
-            if (kept)
-            {
-                await history.AppendHourAsync(read, cancellation);
-            }
-            lock (_gate)
-            {
-                _liveHour[key] = read;
-                _hourRead[key] = hour;
-            }
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(failed);
+        }
+        if (!card.Hourly)
+        {
+            await HourOnceAsync(key, card, history, kept, hour, last, cancellation);
+        }
+    }
+
+    /// <summary>Reads the card's hour once in its hour, keeps it when there is a keep, and holds it for the reader either way.</summary>
+    private async Task HourOnceAsync(string key, ResourceCard card, IResourceHistory history, bool kept, DateTimeOffset hour, DateTimeOffset? last, CancellationToken cancellation)
+    {
+        if (last == hour)
+        {
+            return;
+        }
+        var read = await card.Hour(hour, last ?? hour.AddHours(-1), cancellation);
+        if (kept)
+        {
+            await history.AppendHourAsync(read, cancellation);
+        }
+        lock (_gate)
+        {
+            _liveHour[key] = read;
+            _hourRead[key] = hour;
         }
     }
 

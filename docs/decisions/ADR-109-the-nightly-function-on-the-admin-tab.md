@@ -71,3 +71,8 @@ From 1.0.4.10:
 - **Words.** The readout is "The nightly job", the slots are "the reply run" and "the records run", and the run table's column is "Run"; "lane" is no word of the site's.
 
 Before the two containers exist the card shows GitHub's runs and gates, the hour's role sentence, and "not read" with its reason on every Azure line; it keeps no history and its chart is empty. Creating them is still a person's `az` command from their definitions. `NightlyCardTests` holds all of it: a run log that is not there beside three listed runs, the gates on an empty list, the reasons, and the recorder with an hourly card and no keep.
+
+## Addendum, 2026-10-21 (1.0.4.12): the hour without a keep, for a minute card too
+
+1.0.4.10 shipped the rule above for an hourly card, and the nightly card is read by the minute, so on the live site the recorder still returned before its hour: read on both names at 14:41Z, about eight minutes after the roll, Gates said "not read yet: no hour kept yet" and the run log was empty. From 1.0.4.12 any card whose keep is missing has its hour read once an hour and held in memory, minute card or hourly, and the reader asks for it once the held hour is past the hour. `NightlyCardTests` runs the recorder case with both shapes. The lesson is in the job-hunt failure log: a test of a card's wiring builds the card the way the catalogue builds it.
+

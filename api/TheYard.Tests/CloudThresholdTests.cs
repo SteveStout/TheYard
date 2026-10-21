@@ -167,10 +167,39 @@ public class CloudThresholdTests
         Assert.Equal("good", dial.Tone);
         Assert.Equal("good", view.Rows.Single(r => r.Key == "cached").Tone);
         Assert.StartsWith("100 %", view.Rows.Single(r => r.Key == "cached").Answer, StringComparison.Ordinal);
+        // The sparkline's newest value and the chart's newest point are the dial's sample too.
+        Assert.Equal(dial.Percent, view.Sparks.Single(spark => spark.Name.StartsWith("Cache hits", StringComparison.Ordinal)).Values[^1]);
+        Assert.Equal(dial.Percent, view.Chart.Series.Single(series => series.Name == "Cache hits").Points[^1].Value);
+        // Before any sample, the kept minutes stand as they are.
+        var unsampled = EdgeCard.View(Held("cache_hit", 25), configured: true, "theyard-edge", new DateOnly(2026, 10, 30));
+        Assert.Equal(25.0, unsampled.Sparks.Single(spark => spark.Name.StartsWith("Cache hits", StringComparison.Ordinal)).Values[^1]);
 
         // An address that did not answer is left out; one with no Cache-Status is a miss.
         Assert.Equal(((double?)50.0, 2), NetlifyEdge.ShareOf("/a \"Netlify Edge\"; hit · /b no Cache-Status · /c did not answer"));
         Assert.Equal(((double?)null, 0), NetlifyEdge.ShareOf(null));
+    }
+    /// <summary>
+    /// An hourly card's hour is asked before its minute, so a minute that carries what the hour
+    /// sampled carries this hour's sample, not the one before (the edge's cache share).
+    /// </summary>
+    [Fact]
+    public async Task An_hourly_card_s_minute_carries_the_sample_its_own_hour_took()
+    {
+        double? sample = 0;
+        var card = new ResourceCard("edge", "edge", "theyard-edge", ["cache_hit"],
+            (_, now, version, _) => Task.FromResult<IReadOnlyList<ResourceMinute>>([new ResourceMinute(now, new Dictionary<string, double?> { ["cache_hit"] = sample }, version)]),
+            (hour, _, _) =>
+            {
+                sample = 100;
+                return Task.FromResult(new ResourceHour(hour, "", null, new Dictionary<string, string?>(), []));
+            },
+            inputs => EdgeCard.View(inputs, configured: true, "theyard-edge", new DateOnly(2026, 10, 30)), Hourly: true);
+        var keep = new MemoryResourceHistory("kept in the test");
+        var recorder = new CloudRecorder([(card, keep)], new BuildInfo("test", "test"), TimeProvider.System, Microsoft.Extensions.Logging.Abstractions.NullLogger<CloudRecorder>.Instance);
+
+        await recorder.RecordOnceAsync("edge", CancellationToken.None);
+
+        Assert.Equal(100.0, (await keep.NewestAsync(1, CancellationToken.None)).Single().Values["cache_hit"]);
     }
     // #endregion cloud-threshold-tests
 }

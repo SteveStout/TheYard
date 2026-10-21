@@ -33,8 +33,8 @@ public static class EdgeCard
         int sampledCount = sampled is null ? 0 : sampled.Split(", ").Length;
         double? credits = ResourceView.Now(inputs, "credits");
         // The share is read from the newest hour's per-address statuses, the same sample the row's
-        // detail prints, so the dial, the tone and the detail can never disagree. The kept minute
-        // carries the sample before it into the sparkline, an hour behind.
+        // detail prints, so the dial, the tone and the detail can never disagree. The sparkline's
+        // newest value and the chart's newest point are that same sample (SameSample below).
         var (hit, _) = NetlifyEdge.ShareOf(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cache_status"));
         var creditTone = ResourceView.Tone(ResourceView.Hour(inputs, "credits").Select(v => ResourceView.Share(v, NetlifyEdge.FreeCredits)).ToList(), Credits, hourly: true);
         var missTone = ResourceView.Tone([hit is { } sampleShare ? 100 - sampleShare : (double?)null], Misses, hourly: true);
@@ -96,9 +96,28 @@ public static class EdgeCard
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("plan") is { } plan ? $"{plan.ToUpperInvariant()} PLAN · {NetlifyEdge.FreeCredits:0} CREDITS" : $"PLAN NOT READ · {NetlifyEdge.FreeCredits:0} CREDITS",
             new CloudLink(project, admin),
             dials,
-            [ResourceView.Spark(inputs, "credits", "Credits, 60 h", NetlifyEdge.FreeCredits), ResourceView.Spark(inputs, "cache_hit", "Cache hits, 60 h", 100, percentReading: true)],
-            ResourceView.Chart(inputs, "Credits and cache hits", ("credits", "Credits", NetlifyEdge.FreeCredits, false), ("cache_hit", "Cache hits", 100, true), Credits.Red, $"teal credits · green cache hits · gold deploys · dashed {Credits.Red} %"),
+            [ResourceView.Spark(inputs, "credits", "Credits, 60 h", NetlifyEdge.FreeCredits), SameSample(ResourceView.Spark(inputs, "cache_hit", "Cache hits, 60 h", 100, percentReading: true), hit)],
+            SameSample(ResourceView.Chart(inputs, "Credits and cache hits", ("credits", "Credits", NetlifyEdge.FreeCredits, false), ("cache_hit", "Cache hits", 100, true), Credits.Red, $"teal credits · green cache hits · gold deploys · dashed {Credits.Red} %"), "Cache hits", hit),
             rows,
             readout);
     }
+    /// <summary>The cache sparkline with its newest value the dial's sample, so the two read one figure; unchanged before a sample.</summary>
+    /// <param name="spark">The sparkline as the kept minutes give it.</param>
+    /// <param name="hit">The newest hour's share, the dial's.</param>
+    public static CloudSpark SameSample(CloudSpark spark, double? hit)
+    {
+        int last = spark.Values.Count - 1;
+        return hit is null || last < 0 ? spark : spark with { Values = [.. spark.Values.Take(last), hit] };
+    }
+
+    /// <summary>The chart with the named series' newest point the dial's sample; unchanged before a sample or with no points.</summary>
+    /// <param name="chart">The chart as the kept buckets give it.</param>
+    /// <param name="series">The series that carries the cache share.</param>
+    /// <param name="hit">The newest hour's share, the dial's.</param>
+    public static CloudChart SameSample(CloudChart chart, string series, double? hit) =>
+        hit is null ? chart : chart with
+        {
+            Series = [.. chart.Series.Select(line => line.Name != series || line.Points.Count == 0 ? line
+                : line with { Points = [.. line.Points.Take(line.Points.Count - 1), line.Points[^1] with { Value = hit }] })],
+        };
 }

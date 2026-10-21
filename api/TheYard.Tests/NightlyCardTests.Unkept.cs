@@ -131,14 +131,16 @@ public sealed partial class NightlyCardTests
     /// The recorder with an hourly card whose keep is not there: the hour is read once in its hour
     /// and held for the reader, the minutes are never asked for, and nothing is appended.
     /// </summary>
-    [Fact]
-    public async Task The_recorder_reads_an_hourly_card_s_hour_with_no_keep_and_skips_its_minutes()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task The_recorder_reads_an_hourly_card_s_hour_with_no_keep_and_skips_its_minutes(bool hourly)
     {
         int minutes = 0, hours = 0;
         var card = new ResourceCard("nightly", "nightly", "func-test", ["executions"],
             (_, _, _, _) => { minutes++; return Task.FromResult<IReadOnlyList<ResourceMinute>>([]); },
             (hour, _, _) => { hours++; return Task.FromResult(new ResourceHour(hour, "", null, new Dictionary<string, string?> { ["github"] = "3 runs read" }, [])); },
-            inputs => NightlyCard.View(inputs, Names, FunctionPath, []), Hourly: true);
+            inputs => NightlyCard.View(inputs, Names, FunctionPath, []), Hourly: hourly);
         var keep = new NoKeepHistory();
         var recorder = new CloudRecorder([(card, keep)], new BuildInfo("1.0.4.10", "test"), new FixedClock(Now), NullLogger<CloudRecorder>.Instance);
 
