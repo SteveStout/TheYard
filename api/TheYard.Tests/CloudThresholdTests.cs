@@ -148,5 +148,29 @@ public class CloudThresholdTests
         var unseen = EdgeCard.View(Held("credits", 0, new Dictionary<string, string?> { ["token"] = "set", ["site"] = "the token sees 0 sites and none is theyard-edge" }), configured: true, "theyard-edge", new DateOnly(2026, 10, 30));
         Assert.Equal("NETLIFY_TOKEN is set, but the token sees 0 sites and none is theyard-edge, so the edge is not read.", unseen.Note);
     }
+
+    /// <summary>
+    /// The cache dial reads the newest hour's per-address statuses, the sample its own detail
+    /// prints, never a kept minute an hour behind it: a minute that still says 0 under a sample
+    /// of four hits reads 100 and green (ADR: One frame for every resource, the addendum on one
+    /// sample for the dial and the detail).
+    /// </summary>
+    [Fact]
+    public void The_edge_cache_dial_reads_the_sample_its_detail_prints()
+    {
+        const string fourHits = "/assets/index-x.js \"Netlify Edge\"; hit; ttl=31536000 · /og.png \"Netlify Edge\"; hit; ttl=86400 · /api/facets \"Netlify Edge\"; hit; ttl=15 · /api/docs/readme \"Netlify Edge\"; hit; ttl=86400";
+        var facts = new Dictionary<string, string?> { ["token"] = "set", ["sampled"] = "/assets/index-x.js, /og.png, /api/facets, /api/docs/readme", ["cache_status"] = fourHits };
+        var view = EdgeCard.View(Held("cache_hit", 0, facts), configured: true, "theyard-edge", new DateOnly(2026, 10, 30));
+
+        var dial = view.Dials.Single(d => d.Name == "Cache hits");
+        Assert.Equal(100.0, dial.Percent);
+        Assert.Equal("good", dial.Tone);
+        Assert.Equal("good", view.Rows.Single(r => r.Key == "cached").Tone);
+        Assert.StartsWith("100 %", view.Rows.Single(r => r.Key == "cached").Answer, StringComparison.Ordinal);
+
+        // An address that did not answer is left out; one with no Cache-Status is a miss.
+        Assert.Equal(((double?)50.0, 2), NetlifyEdge.ShareOf("/a \"Netlify Edge\"; hit · /b no Cache-Status · /c did not answer"));
+        Assert.Equal(((double?)null, 0), NetlifyEdge.ShareOf(null));
+    }
     // #endregion cloud-threshold-tests
 }

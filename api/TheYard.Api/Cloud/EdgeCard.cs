@@ -31,13 +31,17 @@ public static class EdgeCard
         // What the last hour actually scored, as the reader wrote it, never a list typed here.
         string? sampled = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("sampled");
         int sampledCount = sampled is null ? 0 : sampled.Split(", ").Length;
-        double? credits = ResourceView.Now(inputs, "credits"), hit = ResourceView.Now(inputs, "cache_hit");
+        double? credits = ResourceView.Now(inputs, "credits");
+        // The share is read from the newest hour's per-address statuses, the same sample the row's
+        // detail prints, so the dial, the tone and the detail can never disagree. The kept minute
+        // carries the sample before it into the sparkline, an hour behind.
+        var (hit, _) = NetlifyEdge.ShareOf(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cache_status"));
         var creditTone = ResourceView.Tone(ResourceView.Hour(inputs, "credits").Select(v => ResourceView.Share(v, NetlifyEdge.FreeCredits)).ToList(), Credits, hourly: true);
-        var missTone = ResourceView.Tone(ResourceView.Hour(inputs, "cache_hit").Select(v => v is { } h ? 100 - h : (double?)null).ToList(), Misses, hourly: true);
+        var missTone = ResourceView.Tone([hit is { } sampleShare ? 100 - sampleShare : (double?)null], Misses, hourly: true);
         var dials = new[]
         {
             ResourceView.Dial(inputs, "credits", "Credits, this cycle", NetlifyEdge.FreeCredits, Credits, v => v is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0}" : "not read", hourly: true),
-            ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", percentReading: true, hourly: true) with { Tone = CloudTones.Of(missTone) },
+            ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", percentReading: true, hourly: true) with { Percent = hit, Big = PlanView.Percent(hit), Absolute = hit is { } dialShare ? $"{dialShare.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", Tone = CloudTones.Of(missTone) },
         };
         int daysLeft = retires.DayNumber - DateOnly.FromDateTime(inputs.Now.UtcDateTime).DayNumber;
         string? cert = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cert_expires");

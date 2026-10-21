@@ -238,6 +238,24 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
         return answered.Count == 0 ? null : string.Join(" · ", answered);
     }
 
+    /// <summary>
+    /// The share of an hour's sample the edge served from its cache, read back from the per-address
+    /// statuses it wrote ("path status · path status"): an address that did not answer is left out,
+    /// one with no Cache-Status counts as a miss. Null when nothing was scored.
+    /// </summary>
+    public static (double? Share, int Scored) ShareOf(string? statuses)
+    {
+        if (string.IsNullOrWhiteSpace(statuses))
+        {
+            return (null, 0);
+        }
+        var scored = statuses.Split(" · ", StringSplitOptions.RemoveEmptyEntries)
+            .Where(entry => !entry.EndsWith(" did not answer", StringComparison.Ordinal))
+            .ToList();
+        int hits = scored.Count(entry => entry.Contains("hit", StringComparison.OrdinalIgnoreCase));
+        return (scored.Count == 0 ? null : Math.Round(100.0 * hits / scored.Count, 1), scored.Count);
+    }
+
     /// <summary>One sampled answer in words: who answered it, or that it named nobody.</summary>
     public static string AnsweredBy(string label, string? site) =>
         site is { Length: > 0 } ? $"{label} answered by {site}" : $"{label} answered without naming its app";
