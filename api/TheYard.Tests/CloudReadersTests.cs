@@ -553,12 +553,20 @@ public sealed class CloudReadersTests
     }
 
     [Theory]
-    [InlineData("4294967296\n", null, 4.0)]
-    [InlineData("max\n", "MemTotal:        3670016 kB\nMemFree:  1 kB\n", 3.5)]
-    [InlineData(null, "MemTotal:        7340032 kB\n", 7.0)]
-    [InlineData("max", null, null)]
-    public void The_machine_s_memory_is_the_cgroup_limit_or_the_machine_total_never_the_heap_cap(string? cgroupMax, string? meminfo, double? expected) =>
-        Assert.Equal(expected, MachineSize.MemoryGbOf(cgroupMax, meminfo));
+    [InlineData("4294967296\n", null, null, 4.0)]
+    [InlineData("max\n", null, "MemTotal:        3670016 kB\nMemFree:  1 kB\n", 3.5)]
+    [InlineData(null, null, "MemTotal:        7340032 kB\n", 7.0)]
+    [InlineData("max", null, null, null)]
+    // cgroup v1, which App Service's containers run under: the limit is memory.limit_in_bytes, and
+    // 1.0.4.0 never opened it, so the card said the VM's total where the container has less (the
+    // review of 1.0.4.0, finding 1). A v1 "no limit" is a number near 2^63, and a limit at or above
+    // the machine's total is no limit either.
+    [InlineData(null, "3447619584\n", "MemTotal:        3964928 kB\n", 3.21)]
+    [InlineData(null, "9223372036854771712\n", "MemTotal:        3964928 kB\n", 3.78)]
+    [InlineData(null, "9223372036854771712\n", null, null)]
+    [InlineData("4294967296\n", null, "MemTotal:        3670016 kB\n", 3.5)]
+    public void The_machine_s_memory_is_the_cgroup_limit_or_the_machine_total_never_the_heap_cap(string? cgroupMax, string? cgroupLimit, string? meminfo, double? expected) =>
+        Assert.Equal(expected, MachineSize.MemoryGbOf(cgroupMax, cgroupLimit, meminfo));
 
     [Fact]
     public void A_token_that_is_not_a_token_has_no_tenant()

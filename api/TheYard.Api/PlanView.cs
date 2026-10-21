@@ -82,15 +82,11 @@ public static class PlanView
             hour is null ? null : new CloudLink(PlanReader.NameOf(hour.PlanId), Portal(hour.TenantId, hour.PlanId)),
             dials,
             [new("CPU, 60 min", lastHour.Select(m => m.CpuPercent).ToList()), new("Memory, 60 min", lastHour.Select(m => m.MemoryPercent).ToList())],
-            Normal,
             chart,
             PlanRows.Questions(lastHour, hour, hours, month, buckets),
             PlanRows.Readout(lastHour, hour, hours, month, planCostMonth, age, availability));
     }
 
-    /// <summary>The thresholds line, written from PlanThresholds so the card can never say a level the tones do not use.</summary>
-    public static string Normal =>
-        $"Normal: CPU amber {PlanThresholds.Cpu.Amber:0} %, red {PlanThresholds.Cpu.Red:0} %; memory amber {PlanThresholds.Memory.Amber:0} %, red {PlanThresholds.Memory.Red:0} %; held {PlanThresholds.Sustained} min.";
 
     /// <summary>The size line in the header's right side: "B1 LINUX 1 vCPU / 1.75 GB WEST US 3".</summary>
     public static string? Spec(PlanHour? hour) =>

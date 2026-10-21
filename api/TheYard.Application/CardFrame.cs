@@ -19,14 +19,18 @@ public static class CardFrame
     /// <summary>The source a cost line names.</summary>
     public const string TheBill = "the bill, Cost Management";
 
-    /// <summary>The report with its tone, headline, threshold chips and sources filled in.</summary>
+    /// <summary>The report with its tone (the dials' and the rows'), headline, threshold chips and sources filled in.</summary>
     /// <param name="report">The card's own report.</param>
     /// <param name="source">Where the card's readings come from, for every line and row that does not name its own.</param>
     /// <param name="specSource">Where the spec line was read.</param>
     /// <param name="hourly">True when the card's source is read once an hour; its tones are then not held for minutes, and its reading may be an hour old before it is unread.</param>
     public static CloudReport Complete(CloudReport report, string source, string? specSource, bool hourly = false)
     {
-        var tone = CardTones.Of(report.Dials.Select(dial => Level(dial.Tone)), report.ReadAgeSeconds, hourly ? 3_600 : 60);
+        // The dials' held tones and the rows' own: a row that reads warning or alarm (a throttled
+        // request, a stopped app, a capped hour) lifts the card the way a dial over its line does,
+        // so the rail's dot shows what the card knows: a Cosmos DB card read "fine" beside its row
+        // of seven hundred throttled requests before the rows counted.
+        var tone = CardTones.Of(report.Dials.Select(dial => Level(dial.Tone)).Concat(report.Rows.Select(row => Level(row.Tone))), report.ReadAgeSeconds, hourly ? 3_600 : 60);
         bool held = !hourly;
         var first = report.Dials.Count > 0 ? report.Dials[0] : null;
         return report with

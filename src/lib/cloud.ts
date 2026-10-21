@@ -40,7 +40,6 @@ export type CloudReport = {
   resource: CloudLink | null;
   dials: CloudDial[];
   sparks: { name: string; values: (number | null)[] }[];
-  normal: string;
   /** The card's one tone. */
   tone: CardTone;
   /** Where the spec line was read: "ARM sku · this process". */
@@ -103,6 +102,24 @@ export function railGlance(report: Pick<CloudReport, 'tone' | 'headline'>): Rail
 }
 
 /** The chip a card's header prints for its tone. */
+/**
+ * What a resource link opens, said beside it: the Azure portal, Netlify, or nothing when there is
+ * no link or one to a place this page does not know. The sign-in is the reader's own, never the
+ * site's.
+ */
+export function portalSentence(href: string | null, long = false): string {
+  if (href === null) return '';
+  if (href.includes('portal.azure.com'))
+    return long
+      ? '(opens the Azure portal in a new tab, with your own Azure sign-in)'
+      : 'opens in the Azure portal; your sign-in, not the site’s';
+  if (href.includes('netlify.com'))
+    return long
+      ? '(opens Netlify in a new tab, with your own Netlify sign-in)'
+      : 'opens Netlify; your sign-in, not the site’s';
+  return '';
+}
+
 export function cardToneWord(tone: CardTone): string {
   return tone === 'unread' ? 'not read' : tone;
 }

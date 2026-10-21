@@ -2,7 +2,13 @@
  * A Cloud infrastructure card's four questions in the Overview card's row style (ADR: The App Service plan, read every minute): the question, the big answer with its tone word, and the detail line under
  * it, any piece of which links to a resource's portal blade. The colour sits on the border.
  */
-import { toneWord, type CloudLink, type CloudReport, type CloudTone } from '../../../lib/cloud';
+import {
+  portalSentence,
+  toneWord,
+  type CloudLink,
+  type CloudReport,
+  type CloudTone,
+} from '../../../lib/cloud';
 import { DataTable } from '../DataTable';
 import rowStyles from '../OverviewCard/OverviewCard.module.css';
 import styles from './CloudRows.module.css';
@@ -21,12 +27,7 @@ export function PortalLink({ link }: { link: CloudLink }) {
     <a className={styles.portal} href={link.href} target="_blank" rel="noreferrer noopener">
       {link.text}
       <span aria-hidden="true">↗</span>
-      <span className={styles.hidden}>
-        {' '}
-        {link.href.includes('portal.azure.com')
-          ? '(opens the Azure portal in a new tab, with your own Azure sign-in)'
-          : '(opens Netlify in a new tab, with your own Netlify sign-in)'}
-      </span>
+      <span className={styles.hidden}> {portalSentence(link.href, true)}</span>
     </a>
   );
 }

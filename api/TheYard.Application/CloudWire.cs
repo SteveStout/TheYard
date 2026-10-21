@@ -18,7 +18,6 @@ namespace TheYard.Application;
 /// <param name="Resource">The resource the card is about, with its portal link.</param>
 /// <param name="Dials">The two dials, left then right.</param>
 /// <param name="Sparks">The two sixty-minute sparklines between the dials.</param>
-/// <param name="Normal">The thresholds in one sentence, printed under the dials.</param>
 /// <param name="Chart">The window's chart.</param>
 /// <param name="Rows">The four question rows.</param>
 /// <param name="Readout">The readout beside the card.</param>
@@ -34,7 +33,6 @@ public sealed record CloudReport(
     CloudLink? Resource,
     IReadOnlyList<CloudDial> Dials,
     IReadOnlyList<CloudSpark> Sparks,
-    string Normal,
     CloudChart Chart,
     IReadOnlyList<CloudRow> Rows,
     CloudReadout Readout)

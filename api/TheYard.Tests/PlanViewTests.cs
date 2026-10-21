@@ -36,9 +36,8 @@ public class PlanViewTests
 
         Assert.True(report.Available);
         Assert.Equal("B1 LINUX 1 VCPU / 1.75 GB WEST US 3", report.Spec);
-        // The thresholds line is written from PlanThresholds, and the size row names no price and no
+        // The thresholds are chips written from PlanThresholds (CardFrame), and the size row names no price and no
         // size Azure did not return (ADR: The onion cut into vertical slices, the facts the tab reads).
-        Assert.Equal($"Normal: CPU amber {PlanThresholds.Cpu.Amber:0} %, red {PlanThresholds.Cpu.Red:0} %; memory amber {PlanThresholds.Memory.Amber:0} %, red {PlanThresholds.Memory.Red:0} %; held {PlanThresholds.Sustained} min.", report.Normal);
         Assert.DoesNotContain("$", report.Rows.Single(row => row.Key == "size").Detail[0].Text, StringComparison.Ordinal);
         // Azure refuses a whole metrics read that names one metric the resource does not report, or
         // one it does not keep at a minute's grain, so the minute's names are held to what the Linux
@@ -124,5 +123,20 @@ public class PlanViewTests
         var blip = Assert.Single(PlanDeploys.Blips(rolls, buckets));
         Assert.StartsWith("CPU reached 74 % in the roll at Oct 18 20:40 UTC, a blip", blip, StringComparison.Ordinal);
         Assert.Equal("kept since Oct 18 20:35 UTC", PlanDeploys.KeptSince(buckets, t.AddDays(-1), TimeSpan.FromMinutes(30)));
+
+        // On a window of minutes the old container records on for ten minutes after the write, so
+        // the first bucket after the write still says the old build; the band is named for the
+        // first build inside the half hour that differs (the review of 1.0.4.0, finding 11: every
+        // band on the 24-hour window read "a configuration change").
+        PlanBucket[] minutes =
+        [
+            new(t.AddMinutes(-1), 1, 10, 12, 60, 61, 0, "1.0.3.175"),
+            new(t, 1, 10, 12, 60, 61, 0, "1.0.3.175"),
+            new(t.AddMinutes(9), 1, 40, 74, 66, 68, 0, "1.0.3.175"),
+            new(t.AddMinutes(11), 1, 40, 74, 66, 68, 0, "1.0.3.176"),
+            new(t.AddMinutes(40), 1, 9, 10, 60, 61, 0, "1.0.3.176"),
+        ];
+        Assert.Equal("Deploy 1.0.3.176: a new container beside the old, then the swap", Assert.Single(PlanDeploys.Rolls(events, minutes)).Title);
+        Assert.Equal("A configuration change on the plan's apps", Assert.Single(PlanDeploys.Rolls(events, [minutes[0], minutes[1], minutes[2]])).Title);
     }
 }

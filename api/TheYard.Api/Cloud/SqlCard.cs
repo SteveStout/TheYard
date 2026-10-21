@@ -78,7 +78,7 @@ public static class SqlCard
                 new("Blocked", ResourceView.Number(blocked), blocked is > 0 ? "warning" : "info"),
                 new("Deadlocks", ResourceView.Number(deadlocks), deadlocks is > 0 ? "alarm" : "info"),
                 new("Failed connections", ResourceView.Number(failed), failed is > 0 ? "warning" : "info"),
-                new("Tier", ResourceView.Fact(inputs, "tier"), "info"),
+                new("Tier", ResourceView.Fact(inputs, "tier"), "info") { Source = "ARM record" },
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
             ],
@@ -92,7 +92,6 @@ public static class SqlCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, "dtu", "DTU, 60 min", 100, percentReading: true), ResourceView.Spark(inputs, "workers", "Workers, 60 min", 100, percentReading: true)],
-            $"Normal: DTU amber {Dtu.Amber} %, red {Dtu.Red} % held {PlanThresholds.Sustained} min; data space amber {Space.Amber} %, red {Space.Red} %; any deadlock is red.",
             ResourceView.Chart(inputs, "DTU and data space", ("dtu", "DTU", 100, true), ("storage_gb", "Data space", spaceLimit, false), Dtu.Red, $"teal DTU · green data space · gold deploys · red event · dashed {Dtu.Red} %"),
             rows,
             readout);

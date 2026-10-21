@@ -14,7 +14,7 @@ public sealed class PlanHandlerTests
         public Task<CloudReport> ReadAsync(string? window, CancellationToken cancellation)
         {
             Asked.Add(window);
-            return Task.FromResult(new CloudReport(window ?? "", ["24h", "7d", "30d"], false, "fake", 0, null, "The App Service plan", null, null, [], [], "", null!, [], null!));
+            return Task.FromResult(new CloudReport(window ?? "", ["24h", "7d", "30d"], false, "fake", 0, null, "The App Service plan", null, null, [], [], null!, [], null!));
         }
     }
 

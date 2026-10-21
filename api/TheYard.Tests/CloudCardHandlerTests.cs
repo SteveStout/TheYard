@@ -16,7 +16,7 @@ public sealed class CloudCardHandlerTests
         public Task<CloudReport> ReadAsync(string key, string? window, CancellationToken cancellation)
         {
             Asked.Add((key, window));
-            return Task.FromResult(new CloudReport(window ?? "", ["24h", "7d", "30d"], false, key, 0, null, key, null, null, [], [], "", null!, [], null!));
+            return Task.FromResult(new CloudReport(window ?? "", ["24h", "7d", "30d"], false, key, 0, null, key, null, null, [], [], null!, [], null!));
         }
     }
 

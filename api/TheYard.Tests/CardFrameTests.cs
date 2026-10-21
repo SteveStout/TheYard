@@ -37,6 +37,19 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
     }
 
     [Fact]
+    public void A_warning_or_alarm_row_lifts_the_card_s_tone_the_way_a_dial_over_its_line_does()
+    {
+        // The dials say fine; the throttling row says warning (any 429 is amber). The card is amber,
+        // and the rail's dot with it. 1.0.4.0 read the dials alone (the review of 1.0.4.0, finding 6).
+        var dial = new CloudDial("RU/s, right now", 1, "1 %", "4 of 1,000 RU/s", 70, 90, 5, 10, "good");
+        var row = new CloudRow("throttling", "Is anything throttled?", "731 throttled", [], "warning");
+        var report = new CloudReport("24h", ["1h", "24h"], true, null, 0, 30, "Cosmos DB", null, null, [dial], [], new CloudChart("", [], [], 90, "", 0), [row], new CloudReadout("The account", null, "", [], ""));
+        Assert.Equal("amber", CardFrame.Complete(report, "Azure Monitor", null).Tone);
+        Assert.Equal("red", CardFrame.Complete(report with { Rows = [row with { Tone = "alarm" }] }, "Azure Monitor", null).Tone);
+        Assert.Equal("fine", CardFrame.Complete(report with { Rows = [row with { Tone = "info" }] }, "Azure Monitor", null).Tone);
+    }
+
+    [Fact]
     public void The_page_reads_every_card_as_often_as_the_tone_rule_assumes()
     {
         string common = File.ReadAllText(Path.Combine(Repo.Root(), "src", "components", "admin", "shared", "common.tsx"));

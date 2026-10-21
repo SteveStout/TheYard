@@ -76,8 +76,8 @@ public static class CosmosCard
                 new("Requests, hour", ResourceView.Number(ResourceView.HourSum(inputs, "requests")), "info"),
                 new("Throttled", ResourceView.Number(throttled), throttled is > 0 ? "warning" : "info"),
                 new("Latency", $"{ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", "info"),
-                new("Containers", ResourceView.Fact(inputs, "container_count"), "info"),
-                new("Free tier", ResourceView.Fact(inputs, "free_tier"), "info"),
+                new("Containers", ResourceView.Fact(inputs, "container_count"), "info") { Source = "ARM record" },
+                new("Free tier", ResourceView.Fact(inputs, "free_tier"), "info") { Source = "ARM record" },
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
             ],
@@ -91,7 +91,6 @@ public static class CosmosCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, "ru_per_s", "RU/s, 60 min", provisioned), ResourceView.Spark(inputs, "normalized", "Normalized RU, 60 min", 100, percentReading: true)],
-            $"Normal: RU/s amber {Throughput.Amber} %, red {Throughput.Red} % of {limitWords} held {PlanThresholds.Sustained} min; storage amber {Storage.Amber} %, red {Storage.Red} %; any 429 is amber.",
             ResourceView.Chart(inputs, "RU/s and storage", ("ru_per_s", "RU/s", provisioned, false), ("storage_gb", "Storage", storageLimit, false), Throughput.Red, $"teal RU/s · green storage · gold deploys · red 429s · dashed {Throughput.Red} %", throttles),
             rows,
             readout);

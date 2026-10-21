@@ -78,8 +78,8 @@ public static class MailCard
                 new("Quarantined", ResourceView.Number(quarantined), quarantined is > 0 ? "warning" : "info"),
                 new("Failed", ResourceView.Number(failed), failed is > 0 ? "warning" : "info"),
                 new("Bounce rate", bounceRate is { } r ? $"{r.ToString("0.0", CultureInfo.InvariantCulture)} %" : "none", CloudTones.Of(bounceTone)),
-                new("Sender", ResourceView.Fact(inputs, "sender_domain"), "info"),
-                new("Data location", ResourceView.Fact(inputs, "data_location"), "info"),
+                new("Sender", ResourceView.Fact(inputs, "sender_domain"), "info") { Source = "ARM record" },
+                new("Data location", ResourceView.Fact(inputs, "data_location"), "info") { Source = "ARM record" },
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
             ],
@@ -93,7 +93,6 @@ public static class MailCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, "sends", "Sends, 60 min", limit / 60), ResourceView.Spark(inputs, "delivered", "Delivered, 60 min", limit / 60)],
-            $"Normal: sends amber {Sends.Amber} %, red {Sends.Red} % of {limit:N0} an hour; bounces amber {Bounces.Amber} %, red {Bounces.Red} %.",
             ResourceView.Chart(inputs, "Sends and deliveries", ("sends", "Sends", 10, false), ("delivered", "Delivered", 10, false), 100, "teal sends · green delivered, as a share of 10 a minute · gold deploys · red event"),
             rows,
             readout);

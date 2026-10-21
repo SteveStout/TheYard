@@ -7,6 +7,7 @@ import {
   legendChips,
   linePath,
   newestValue,
+  portalSentence,
   railGlance,
   ticks,
   toneWord,
@@ -84,5 +85,16 @@ describe('the CardShell slots', () => {
     });
     expect(cardToneWord('unread')).toBe('not read');
     expect(cardToneWord('fine')).toBe('fine');
+  });
+
+  it('says what a resource link opens, and nothing for no link', () => {
+    expect(portalSentence('https://portal.azure.com/#@t/resource/x')).toContain('Azure portal');
+    expect(portalSentence('https://app.netlify.com/projects/theyard-edge')).toContain('Netlify');
+    expect(portalSentence('https://app.netlify.com/projects/theyard-edge', true)).toContain(
+      'new tab'
+    );
+    // A missing link said "opens in the Azure portal" before (the review of 1.0.4.0, finding 14).
+    expect(portalSentence(null)).toBe('');
+    expect(portalSentence('https://example.test/elsewhere')).toBe('');
   });
 });

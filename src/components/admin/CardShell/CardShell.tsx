@@ -14,6 +14,7 @@ import {
   cardToneWord,
   linePath,
   newestValue,
+  portalSentence,
   type CloudDial as Dial,
   type CloudReport,
 } from '../../../lib/cloud';
@@ -144,11 +145,7 @@ export function CardShell({
           {report.resource !== null && (
             <>
               <PortalLink link={report.resource} />{' '}
-              <span className={styles.quiet}>
-                {report.resource.href?.includes('portal.azure.com') === false
-                  ? 'opens Netlify; your sign-in, not the site’s'
-                  : 'opens in the Azure portal; your sign-in, not the site’s'}
-              </span>
+              <span className={styles.quiet}>{portalSentence(report.resource.href)}</span>
             </>
           )}
           <span className={styles.quiet} data-testid="cloud-read-age">

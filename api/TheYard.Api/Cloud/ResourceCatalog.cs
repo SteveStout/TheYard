@@ -51,8 +51,8 @@ public static class ResourceCatalog
                         ["served_by"] = sqlSite,
                     })),
                 SqlCard.View),
-            new("cosmosdb", "cosmosdb", names.Cosmos, ReadingsOf(CosmosCard.Metrics), Monitor(CosmosType, null, CosmosCard.Metrics),
-                Hourly(CosmosType, null, "2024-05-15", async (resource, record, cancellation) =>
+            new("cosmosdb", "cosmosdb", names.Cosmos, ReadingsOf(CosmosCard.Metrics), Monitor(CosmosType, names.Cosmos, CosmosCard.Metrics),
+                Hourly(CosmosType, names.Cosmos, "2024-05-15", async (resource, record, cancellation) =>
                 {
                     using var databases = await azure.GetJsonAsync($"{resource.Id}/sqlDatabases?api-version=2024-05-15", cancellation);
                     string? database = databases.RootElement.TryGetProperty("value", out var list) && list.GetArrayLength() > 0 ? AzureMetrics.Text(list[0], "name") : null;
@@ -71,8 +71,8 @@ public static class ResourceCatalog
                     return CosmosCard.Facts(record, containers.RootElement, throughput);
                 }),
                 CosmosCard.View),
-            new("registry", "registry", names.Registry, ReadingsOf(AcrCard.Metrics), Monitor(AcrType, null, AcrCard.Metrics),
-                Hourly(AcrType, null, "2023-07-01", async (resource, record, cancellation) =>
+            new("registry", "registry", names.Registry, ReadingsOf(AcrCard.Metrics), Monitor(AcrType, names.Registry, AcrCard.Metrics),
+                Hourly(AcrType, names.Registry, "2023-07-01", async (resource, record, cancellation) =>
                 {
                     AcrHoldings? holdings = null;
                     try
@@ -97,13 +97,13 @@ public static class ResourceCatalog
                 }),
                 AcrCard.View),
             new("insights", "insights", names.Insights, InsightsCard.Readings,
-                async (_, to, version, cancellation) => azure.Configured ? await (await InsightsAsync(azure, directory, cancellation)).MinutesAsync(to, version, cancellation) : [],
+                async (_, to, version, cancellation) => azure.Configured ? await (await InsightsAsync(azure, directory, names.Insights, cancellation)).MinutesAsync(to, version, cancellation) : [],
                 async (hour, since, cancellation) => azure.Configured
-                    ? await (await InsightsAsync(azure, directory, cancellation)).HourAsync(hour, since, cancellation)
+                    ? await (await InsightsAsync(azure, directory, names.Insights, cancellation)).HourAsync(hour, since, cancellation)
                     : new ResourceHour(hour, "", null, new Dictionary<string, string?>(), []),
                 InsightsCard.View, Hourly: true, Source: "Log Analytics", SpecSource: "ARM record of the component"),
-            new("mail", "mail", names.Mail, MailCard.Readings, Monitor(MailType, null, MailCard.Metrics),
-                Hourly(MailType, null, "2023-04-01", async (_, record, cancellation) =>
+            new("mail", "mail", names.Mail, MailCard.Readings, Monitor(MailType, names.Mail, MailCard.Metrics),
+                Hourly(MailType, names.Mail, "2023-04-01", async (_, record, cancellation) =>
                 {
                     string? domainId = record.TryGetProperty("properties", out var props) && props.TryGetProperty("linkedDomains", out var linked) && linked.GetArrayLength() > 0 ? linked[0].GetString() : null;
                     if (domainId is null)
@@ -121,15 +121,19 @@ public static class ResourceCatalog
         ];
     }
 
-    /// <summary>The component and the workspace it sends to, which the component's own record names.</summary>
-    private static async Task<InsightsSource> InsightsAsync(AzureMetrics azure, ResourceDirectory directory, CancellationToken cancellation)
+    /// <summary>
+    /// The component and the workspace it sends to: the workspace configuration names, and the one
+    /// component in the group that sends to it (its record names the workspace), or the group's
+    /// one component where none says.
+    /// </summary>
+    private static async Task<InsightsSource> InsightsAsync(AzureMetrics azure, ResourceDirectory directory, string workspaceName, CancellationToken cancellation)
     {
         var component = await directory.FindAsync(InsightsType, null, cancellation);
         var (record, _) = await azure.RecordAsync(component.Id, "2020-02-02", cancellation);
         using (record)
         {
             string workspace = AzureMetrics.Text(record.RootElement, "properties.WorkspaceResourceId")
-                ?? (await directory.FindAsync(WorkspaceType, null, cancellation)).Id;
+                ?? (await directory.FindAsync(WorkspaceType, workspaceName, cancellation)).Id;
             return new InsightsSource(azure, component.Id, workspace);
         }
     }

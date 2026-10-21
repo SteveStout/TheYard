@@ -50,6 +50,22 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         Assert.EndsWith("/sqldb-theyard-ss-basic", ResourceDirectory.Find(all, ResourceCatalog.SqlType, "/sqldb-theyard-ss-basic")!.Id, StringComparison.Ordinal);
         Assert.Equal("crtheyardsszmnetj67bn5h2", ResourceDirectory.Find(all, ResourceCatalog.AcrType, null)!.Name);
         Assert.Null(ResourceDirectory.Find(all, ResourceCatalog.MailType, null));
+        // Two accounts of one type in the group: the configured name selects, not the alphabet
+        // (1.0.4.0 asked for the first of the type, the review of 1.0.4.0, finding 2).
+        using var two = JsonDocument.Parse("""
+            {"value":[
+              {"id":"/s/x/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-jobhunt-ss","name":"cosmos-jobhunt-ss","type":"Microsoft.DocumentDB/databaseAccounts"},
+              {"id":"/s/x/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-theyard-ss","name":"cosmos-theyard-ss","type":"Microsoft.DocumentDB/databaseAccounts"}
+            ]}
+            """);
+        var both = ResourceDirectory.Parse(two.RootElement);
+        Assert.Equal("cosmos-jobhunt-ss", ResourceDirectory.Find(both, ResourceCatalog.CosmosType, null)!.Name);
+        Assert.Equal("cosmos-theyard-ss", ResourceDirectory.Find(both, ResourceCatalog.CosmosType, "cosmos-theyard-ss")!.Name);
+        string catalog = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Api", "Cloud", "ResourceCatalog.cs"));
+        foreach (string call in new[] { "Monitor(CosmosType, names.Cosmos", "Monitor(AcrType, names.Registry", "Monitor(MailType, names.Mail", "FindAsync(WorkspaceType, workspaceName" })
+        {
+            Assert.True(catalog.Contains(call, StringComparison.Ordinal), $"the catalog no longer selects by the configured name: {call}");
+        }
         using var empty = JsonDocument.Parse("{}");
         Assert.Empty(ResourceDirectory.Parse(empty.RootElement));
     }
@@ -160,7 +176,7 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
 
         // Unread, the dial says so rather than reading against a typed size.
         var report = AcrCard.View(Held("storage_gb", 1));
-        Assert.Contains("not read yet", report.Normal, StringComparison.Ordinal);
+        Assert.Contains("not read yet", report.Dials[0].Absolute, StringComparison.Ordinal);
     }
     // #endregion cloud-view-tests
 }
