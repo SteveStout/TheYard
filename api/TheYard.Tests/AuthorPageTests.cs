@@ -386,7 +386,15 @@ public class AuthorPageTests
             string alt = image.Groups[1].Value.Trim();
             string address = image.Groups[2].Value;
             Match stem = Regex.Match(address, @"/images/author/([a-z0-9-]+?)-\d+\.jpg$");
-            if (!stem.Success || !names.Contains(stem.Groups[1].Value))
+            // One of the site's own drawings is not a photograph, and src/lib/author.ts serves it by its file name.
+            if (Drawing(address) is { } drawing)
+            {
+                if (!File.Exists(Path.Combine(Root, "public", drawing)) || !File.ReadAllText(Path.Combine(Root, "src", "lib", "author.ts")).Contains($"'{drawing}':", StringComparison.Ordinal))
+                {
+                    wrong.Add($"{address} names a drawing that public/ or AUTHOR_DRAWINGS in src/lib/author.ts does not hold");
+                }
+            }
+            else if (!stem.Success || !names.Contains(stem.Groups[1].Value))
             {
                 wrong.Add($"{address} is not one of the photographs in src/lib/authorPhotos.json, so the page would leave it out");
             }
@@ -479,6 +487,28 @@ public class AuthorPageTests
     /// one file they live in, so the document quotes nobody and cannot drift
     /// from the file.
     /// </summary>
+    /// <summary>The file name of one of the site's drawings an image address names, or null for a photograph.</summary>
+    private static string? Drawing(string address) => Regex.Match(address, @"/public/([a-z0-9-]+\.svg)$") is { Success: true } match ? match.Groups[1].Value : null;
+
+    /// <summary>
+    /// The workshop is on the About a recruiter reaches from the sidebar as well as on /about: the
+    /// approved words read from the one constant, not typed again, the birdhouse drawing beside them
+    /// with its alt text, in the Away from the keyboard panel, and nothing in it that dates him.
+    /// </summary>
+    [Fact]
+    public void About_Steven_carries_the_workshop_in_the_approved_words_with_the_birdhouse()
+    {
+        string words = Words();
+        int away = words.IndexOf("\n## Away from the keyboard\n", StringComparison.Ordinal);
+        int block = words.IndexOf("\n### The workshop\n", StringComparison.Ordinal);
+        Assert.True(away > 0 && block > away, "docs/author/AUTHOR.md should hold The workshop under Away from the keyboard");
+        int next = words.IndexOf("\n### ", block + 1, StringComparison.Ordinal);
+        string section = words[block..(next < 0 ? words.Length : next)];
+        Assert.Contains($"\n{AboutPage.Workshop}\n", section, StringComparison.Ordinal);
+        Assert.Contains($"![{AboutPage.WorkshopImageAlt}](https://raw.githubusercontent.com/SteveStout/TheYard/main/public{AboutPage.WorkshopImage})", section, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"(?i)\b(age \d|aged \d|\d+ years? old|since \d{4}|\d+ years of woodworking|\b(19|20)\d{2}\b)", section);
+    }
+
     [Fact]
     public void What_colleagues_say_is_one_heading_after_the_introduction_and_quotes_nobody()
     {

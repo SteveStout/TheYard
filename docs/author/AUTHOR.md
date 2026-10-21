@@ -82,6 +82,12 @@ My most ambitious home project so far was replacing every interior door in the h
 
 ![Steve in a navy suit and Katie in a white dress smiling at each other under a weeping willow, sunlight through the leaves](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/couple-under-willow-960.jpg)
 
+### The workshop
+
+![Wooden birdhouse with a teal roof](https://raw.githubusercontent.com/SteveStout/TheYard/main/public/about-birdhouse.svg)
+
+I have been building things since I was a kid. My grandpa and I built my first birdhouse together, and I have kept woodworking in my garage ever since. Software is the same habit for me: plan the cut, build it to last, and finish what I start.
+
 ### Freya and Vincent
 
 Katie and I have two rabbits, Freya and Vincent, our little white snowballs. Think vegetarian cats more than hamsters: they are litter box trained, they can live ten years or more, and they need room to run.

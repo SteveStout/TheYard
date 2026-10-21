@@ -15,8 +15,9 @@
  * from /api/recommendations, and its heading opens the page they were written
  * on, a list whose every item is one link
  * is a row of buttons, an image that names one of the page's photographs is
- * that photograph, a rule opens the closing panel, and a second rule opens the
- * small print under the panels.
+ * that photograph, an image that names one of the site's drawings is that
+ * drawing, small, beside its block's words, a rule opens the closing panel, and
+ * a second rule opens the small print under the panels.
  */
 import { AUTHOR_PHOTOS, photoFigure, photoNamed } from './authorPhotos';
 
@@ -35,6 +36,35 @@ function buttons(html: string): string {
 }
 // #endregion buttons
 
+// #region drawings
+/**
+ * The site's own drawings a document may show, by file name, each served from
+ * the site's root (public/) at the size it is drawn. Not a photograph: no cuts,
+ * no frame, so a block holding one is still a block of words.
+ */
+export const AUTHOR_DRAWINGS: Record<string, { width: number; height: number }> = {
+  'about-birdhouse.svg': { width: 600, height: 600 },
+};
+
+/** The drawing a document's image address names, by its file name, or null when it is none of them. */
+export function drawingNamed(address: string): string | null {
+  const file = address.match(/\/([a-z0-9-]+\.svg)$/)?.[1];
+  return file !== undefined && file in AUTHOR_DRAWINGS ? file : null;
+}
+
+const quote = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** A drawing as markup: the site's own file, its alt text the document's, its box reserved. */
+export function drawingFigure(file: string, alt: string): string {
+  const { width, height } = AUTHOR_DRAWINGS[file];
+  return (
+    `<figure class="author-drawing"><img src="/${file}" alt="${quote(alt)}" ` +
+    `width="${width}" height="${height}" loading="eager" decoding="async"></figure>`
+  );
+}
+// #endregion drawings
+
 // #region photographs
 /**
  * An image the document names becomes the photograph's responsive figure, its
@@ -50,7 +80,6 @@ function photographs(html: string): string {
     /(?:<p>)?<img src="([^"]*)" alt="([^"]*)"(?: title="([^"]*)")?[^>]*>(?:<\/p>)?/g,
     (_image, address: string, alt: string, title: string | undefined) => {
       const photo = photoNamed(address);
-      if (photo === null) return '<!-- a picture this page does not serve was left out -->';
       const unescape = (text: string) =>
         text
           .replace(/&quot;/g, '"')
@@ -58,6 +87,12 @@ function photographs(html: string): string {
           .replace(/&lt;/g, '<')
           .replace(/&gt;/g, '>')
           .replace(/&amp;/g, '&');
+      if (photo === null) {
+        const drawing = drawingNamed(address);
+        return drawing === null
+          ? '<!-- a picture this page does not serve was left out -->'
+          : drawingFigure(drawing, unescape(alt));
+      }
       // Every photograph on this page loads eagerly: on a phone, in Chrome and Safari,
       // the lazy ones flickered while the page scrolled, and the first, the only eager
       // one, never did; nor do the vehicle photographs, which scroll the page, not a scroller

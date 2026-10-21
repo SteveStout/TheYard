@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutAuthor } from './author';
+import { drawingNamed, layoutAuthor } from './author';
 import { AUTHOR_PHOTOS, photoFigure, photoNamed } from './authorPhotos';
 
 const photo = AUTHOR_PHOTOS[0];
@@ -123,6 +123,20 @@ describe('the Author page in its shape', () => {
     );
     expect(smuggled).not.toContain('<img');
     expect(smuggled).toContain('left out');
+  });
+
+  it('serves one of the site’s drawings small beside its words, from the site’s own file, and no other svg', () => {
+    const drawn = layoutAuthor(
+      '<h2>Away</h2><h3>The workshop</h3><p><img src="https://raw.githubusercontent.com/SteveStout/TheYard/main/public/about-birdhouse.svg" alt="Wooden birdhouse with a teal roof" loading="lazy" decoding="async"></p><p>Words.</p>'
+    );
+    expect(drawn).toContain(
+      '<figure class="author-drawing"><img src="/about-birdhouse.svg" alt="Wooden birdhouse with a teal roof" width="600" height="600"'
+    );
+    // A drawing is not a photograph: its block stays a block of words, not one that takes the row for a picture.
+    expect(drawn).not.toContain('author-photo');
+    expect(drawingNamed('https://example.com/about-birdhouse.svg.png')).toBeNull();
+    expect(drawingNamed('/somebody.svg')).toBeNull();
+    expect(drawingNamed('/about-birdhouse.svg')).toBe('about-birdhouse.svg');
   });
 });
 

@@ -6,11 +6,8 @@
  * Used by:   DocDialog.tsx.
  */
 /* #region author */
-/* The Author page (ADR: The sidebar, the addendum on the author's section).
-   The markup is written by src/lib/author.ts over a served document, so these
-   names are global. The dialog is wider for this one page, because it is a
-   page and not a letter; its words stand on the frosted reading panels every
-   document uses, inside the clear sheet. */
+/* The Author page (ADR: The sidebar, the addendum on the author's section). src/lib/author.ts writes the markup, so the
+   names are global; the dialog is wider for this one page, its words on the frosted reading panels inside the clear sheet. */
 .prose :global(.author-page) {
   display: grid;
   gap: var(--space-4);
@@ -114,9 +111,8 @@
 }
 
 /* #region author-alternation */
-/* Gold, then teal, then gold, by the block's place on the page and by nothing
-   else: no block carries a colour of its own, so an edit to the document can
-   never leave two neighbours the same. */
+/* Gold, then teal, then gold, by the block's place on the page and nothing else: no block carries a colour of its own,
+   so an edit to the document can never leave two neighbours the same. */
 .prose :global(.author-block) {
   padding: var(--space-4);
   min-width: 0;
@@ -148,9 +144,8 @@
   margin: 0;
 }
 
-/* Two blocks side by side: the grid stretches both to the row's height, and the shorter
-   one's photograph grows into what its words leave, so both end on one line with no
-   band; the credit stays under it. Stacked on a phone, nothing grows. */
+/* Two blocks side by side: the grid stretches both to the row's height, and the shorter one's photograph grows into what
+   its words leave, so both end on one line with no band; the credit stays under it. Stacked on a phone, nothing grows. */
 .prose :global(.author-block-half) {
   display: flex;
   flex-direction: column;
@@ -225,6 +220,13 @@
   object-fit: cover;
 }
 
+/* A drawing sits to the right of its block's words, small, and the words run round it. */
+.prose :global(.author-drawing) {
+  float: right;
+  width: min(40%, 14rem);
+  margin: 0 0 var(--space-2) var(--space-3);
+}
+
 /* #region author-frame */
 /* The one frame, from the one token. Height follows width, so the box the
    markup reserved is kept and a picture is never drawn wider than its column. */
@@ -284,8 +286,7 @@
     grid-template-columns: 1fr;
   }
 
-  /* A phone's width goes to the words: measured at 390 px, a block's text
-     started 61 px from the screen's edge; it starts at 41 now. */
+  /* A phone's width goes to the words: at 390 px a block's text started 61 px from the edge; it starts at 41 now. */
   .prose :global(.author-panel),
   .prose :global(.author-block) {
     padding: var(--space-3);
