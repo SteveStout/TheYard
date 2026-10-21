@@ -62,6 +62,8 @@ public static class ServedAddresses
             new("/api/admin/pages", "This check itself", "api"),
             // What Azure charges is read from the kept days, so a store that has gone away is a card that is down.
             new("/api/admin/costs?window=30d", "What Azure charges, the last 30 days", "api"),
+            // The tagged links' card reads the store behind a public address the same way.
+            new("/api/admin/links?window=7d", "Who opened what, the last 7 days", "api"),
             new("/api/docs/resume", "Steven's resume (PDF)", "file"),
             new("/api/docs/bicep", "Infrastructure (Bicep)", "document"),
         };

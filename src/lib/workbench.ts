@@ -41,6 +41,7 @@ export const CARD_SLUGS = [
   'log',
   'kept',
   'activity',
+  'links',
   'operator',
   'reset',
 ] as const;

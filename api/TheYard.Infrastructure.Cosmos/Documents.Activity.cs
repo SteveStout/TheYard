@@ -94,4 +94,45 @@ public sealed class ActivityVisitorDocument
     public static string IdFor(string store, string visitor) => $"visitor:{store}:{visitor}";
 }
 // #endregion activity-documents
+
+// #region link-open-document
+/// <summary>
+/// The third shape in the activity container: one tagged link's opens on one UTC day, partitioned
+/// on the day like the other two (ADR: Tagged links, who opened what). The code is six opaque
+/// characters the operator's own lookup resolves off the site; the document holds no name, no
+/// address and no agent, so it is as public as the rest of the tab.
+/// </summary>
+public sealed class LinkOpenDocument
+{
+    /// <summary>The value of <see cref="Kind"/> on every link document, which is how a query tells links from hours and visitors.</summary>
+    public const string KindName = "link";
+
+    /// <summary>link:{code}. Unique within the day partition.</summary>
+    public string Id { get; set; } = "";
+
+    /// <summary>Always <see cref="KindName"/> (<c>kind</c>).</summary>
+    public string Kind { get; set; } = KindName;
+
+    /// <summary>The UTC day, and the partition key (<c>day</c>).</summary>
+    public string Day { get; set; } = "";
+
+    /// <summary>The code the link carried (<c>code</c>).</summary>
+    public string Code { get; set; } = "";
+
+    /// <summary>The first open that day (<c>first_seen</c>).</summary>
+    public DateTimeOffset FirstSeen { get; set; }
+
+    /// <summary>The last open that day (<c>last_seen</c>).</summary>
+    public DateTimeOffset LastSeen { get; set; }
+
+    /// <summary>How many opens that day (<c>opens</c>).</summary>
+    public int Opens { get; set; }
+
+    /// <summary>The paths opened, with a count each (<c>paths</c>).</summary>
+    public Dictionary<string, int> Paths { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>The id for a code.</summary>
+    public static string IdFor(string code) => "link:" + code;
+}
+// #endregion link-open-document
 // #endregion documents

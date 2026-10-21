@@ -137,6 +137,7 @@ public static class DocumentationCatalog
         ["adr-one-web-app-for-every-net-process"] = "docs/decisions/ADR-105-one-web-app-for-every-net-process.md",
         ["adr-unused-resources-are-deleted"] = "docs/decisions/ADR-106-unused-resources-are-deleted.md",
         ["adr-the-onion-cut-into-vertical-slices"] = "docs/decisions/ADR-107-the-onion-cut-into-vertical-slices.md",
+        ["adr-tagged-links-who-opened-what"] = "docs/decisions/ADR-108-tagged-links-who-opened-what.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

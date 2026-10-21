@@ -150,4 +150,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '107',
   },
+  adrTaggedLinksWhoOpenedWhat: {
+    title: 'ADR: Tagged links, who opened what',
+    menuLabel: 'ADR: Tagged links, who opened what',
+    url: '/api/docs/adr-tagged-links-who-opened-what',
+    kind: 'adr',
+    number: '108',
+  },
 } as const satisfies Record<string, RecordEntry>;

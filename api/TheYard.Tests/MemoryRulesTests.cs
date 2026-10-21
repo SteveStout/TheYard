@@ -97,6 +97,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.MemoryBidStore._bids"] = "the bid store of a site whose store is down: one row per buyer's bid, gone with the process",
         ["TheYard.Application.MemoryBidStore._standings"] = "the same store's standings, one per vehicle bid on",
         ["TheYard.Application.MemoryResetLinks._kept"] = "reset links, each expiring in an hour and swept on every mint",
+        ["TheYard.Application.Features.Links.MemoryLinkOpens._days"] = "one per tagged code per day it was opened; the operator sends a few dozen codes a week, and the site keeps none of this without a document store",
+        ["TheYard.Api.ConfiguredLinkTargets._targets"] = "the pass-through addresses configuration names, two, read once at startup",
         ["TheYard.Infrastructure.Cosmos.CosmosVehicleCatalogue._makeBySeedId"] = "the seed's two hundred ids and their makes",
         ["TheYard.Infrastructure.Cosmos.CosmosStore._physicalPartitions"] = "one per container, read at startup",
         ["TheYard.Infrastructure.Cosmos.CosmosVehicleCatalogue._keysets"] = "one per order, seven, each the key of every 250th row: 400 places",

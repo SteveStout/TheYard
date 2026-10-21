@@ -3,9 +3,10 @@
  * Does not:  Hold state or rules of its own: what the app knows is in hooks/, one file per thing, named for what it gives back.
  * Used by:   TheYard.tsx.
  */
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useFirstLoad, useInTheBrowser } from '../hooks/useFirstLoad';
 import { useNow } from '../hooks/useNow';
+import { pageOpenReport } from '../lib/links';
 import { prefetchWhenIdle } from '../lib/prefetch';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { Landing } from '../components/landing/Landing';
@@ -53,6 +54,20 @@ export default function App() {
   // to save data, or is on 2G, gets none of it (src/lib/prefetch.ts).
   useEffect(() => prefetchWhenIdle([() => import('../lib/markdown'), loadAdminPanel]), []);
   // #endregion fetch-ahead
+
+  // #region tagged-open
+  // A link the operator sent carries ?r= and a code; the page is served by the rendering
+  // service, so the API hears of the open only from this one report, sent once, on load
+  // (ADR: Tagged links, who opened what). The code is all it carries.
+  // The address is read during the first render, because the address-bar mirror above rewrites
+  // it in its own effect, before this one would run, and the code goes with the rewrite.
+  const [openReport] = useState(() =>
+    typeof window === 'undefined' ? null : pageOpenReport(window.location.search)
+  );
+  useEffect(() => {
+    if (openReport !== null) void fetch(openReport).catch(() => {});
+  }, [openReport]);
+  // #endregion tagged-open
 
   // One view at a time, in this order: Admin, Account, the landing page, then
   // the inventory (loading, unreachable, a vehicle, or the list).

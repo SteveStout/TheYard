@@ -171,6 +171,13 @@ public class ApiDocumentTests(WebApplicationFactory<Program> factory)
                     continue;
                 }
 
+                // A pass-through's one good answer is a redirect (the tagged links' /api/go), so a 3xx counts as
+                // its success; a 2xx must say what it carries, a redirect carries nothing.
+                if (response.Name[0] == '3')
+                {
+                    success = true;
+                    continue;
+                }
                 if (response.Name[0] != '2')
                 {
                     continue;

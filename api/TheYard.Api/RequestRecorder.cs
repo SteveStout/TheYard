@@ -2,6 +2,8 @@
 // event in the log that outlives the container. The request pipeline's outermost step hands every
 // request here when it has finished, with the time it took (Shared/RequestPipeline.cs).
 
+using TheYard.Application.Features.Links;
+
 namespace TheYard.Api;
 
 // #region request-recorder
@@ -17,6 +19,7 @@ public sealed class RequestRecorder(
     LogCollector logCollector,
     VisitorTokens visitorTokens,
     ActivityCollector activity,
+    LinkOpenCollector links,
     SiteHosts sites)
 {
     private readonly string[] _siteHosts = [.. sites.All.Select(site => site.Host)];
@@ -38,6 +41,7 @@ public sealed class RequestRecorder(
         "/api/admin/experiment",
         "/api/admin/proof",
         "/api/admin/azure",
+        "/api/admin/links",
         "/api/admin/telemetry",
         "/api/admin/activity",
         "/api/admin/activity/visitors",
@@ -105,6 +109,24 @@ public sealed class RequestRecorder(
 
         string address = VisitorTokens.AddressOf(context);
         var at = DateTimeOffset.UtcNow;
+        // #region link-open-hook
+        // A tagged link's open, by its code and this path, when the request is one (the rule is
+        // TaggedRequests, in Application): the resume's door, the pass-through to GitHub or
+        // LinkedIn, or the page's own report of the view it opened on. The code is six opaque
+        // characters; who it was sent to is the operator's lookup, off the site (ADR: Tagged
+        // links, who opened what).
+        if (TaggedRequests.OpenOf(
+                context.Request.Method,
+                path,
+                context.Request.Query[LinkCodes.QueryKey].FirstOrDefault(),
+                context.Request.Query["path"].FirstOrDefault(),
+                context.Request.Headers.UserAgent.FirstOrDefault(),
+                at,
+                store) is { } open)
+        {
+            links.Offer(open);
+        }
+        // #endregion link-open-hook
         string token = visitorTokens.TokenFor(address, at);
         string network = VisitorTokens.NetworkOf(address);
         activity.Offer(Hits.For(visitorTokens, address, at, token, network, path, store, context.Request.Headers.UserAgent.FirstOrDefault(), Hits.SourceOf(context.Request.Headers.Referer.FirstOrDefault(), path, context.Request.Host.Host, _siteHosts)));
