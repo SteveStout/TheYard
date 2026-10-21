@@ -1,15 +1,22 @@
 /**
  * Does:      Turns the Style section's three fences into markup: `tiles` (a sub-page each, in the landing tile's
  *            look), `readouts` (the numbers the build holds) and `glossary` (a term, its CSS, what it means, where
- *            it is used), plus the `ribbon-strip` placeholder the live ribbons are drawn into.
+ *            it is used), plus the `ribbon-strip` and `working-lock` placeholders the live ribbons and the working
+ *            lock's look are drawn into.
  * Does not:  Count anything (the API writes every number into the fence before it arrives, LiveCounts.cs), draw
- *            the ribbons or a tile's icon (useLiveBlocks.tsx mounts them), or hold a colour of its own.
+ *            the ribbons, the lock or a tile's icon (useLiveBlocks.tsx mounts them), or hold a colour of its own.
  * Used by:   markdown.ts, styleBlocks.test.ts.
  */
 
 // #region style-blocks
 /** The fences this file draws, by the name on the fence. */
-export const STYLE_FENCES = ['tiles', 'readouts', 'glossary', 'ribbon-strip'] as const;
+export const STYLE_FENCES = [
+  'tiles',
+  'readouts',
+  'glossary',
+  'ribbon-strip',
+  'working-lock',
+] as const;
 export type StyleFence = (typeof STYLE_FENCES)[number];
 
 const escape = (text: string) =>
@@ -67,6 +74,12 @@ export function ribbonStrip(fence: string): string {
   return `<figure class="style-ribbon-strip"><div class="style-ribbon-box" data-ribbon-strip data-testid="ribbon-strip"></div>${caption ? `<figcaption>${escape(caption)}</figcaption>` : ''}</figure>\n`;
 }
 
+/** The fence's lines are its caption; the lock's look is mounted by useLiveBlocks.tsx. */
+export function workingLockSample(fence: string): string {
+  const caption = fence.trim();
+  return `<figure class="style-working-lock"><div data-working-lock data-testid="working-lock-sample"></div>${caption ? `<figcaption>${escape(caption)}</figcaption>` : ''}</figure>\n`;
+}
+
 /** The markup for one of the fences above. */
 export function styleBlock(name: StyleFence, fence: string): string {
   switch (name) {
@@ -78,6 +91,8 @@ export function styleBlock(name: StyleFence, fence: string): string {
       return glossarySheet(fence);
     case 'ribbon-strip':
       return ribbonStrip(fence);
+    case 'working-lock':
+      return workingLockSample(fence);
   }
 }
 // #endregion style-blocks

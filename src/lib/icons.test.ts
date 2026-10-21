@@ -78,6 +78,9 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   'CardShell.module.css': ['.spark path'],
   'CloudChart.module.css': ['.grid', '.redLine', '.event', '.deploy line', '.first', '.second'],
   'CloudDial.module.css': ['.tick', '.track', '.arc', '.amberMark', '.redMark'],
+  // The working lock (ADR: One working lock for the whole site): the ring's glass, track and
+  // graduations, the gold sweep and the teal arc. A drawing, not an icon.
+  'WorkingLock.module.css': ['.glass', '.track', '.ticks', '.sweep', '.inner'],
   'CloudReadout.module.css': ['.track', '.fill'],
   // The first screen's latency scale (ADR: One reading for the first screen): the axis, its
   // graduations every five milliseconds, the teal fill to the reading and the marker on it.

@@ -64,6 +64,7 @@ A fence's name decides what it becomes. Most names are a language, and the block
 | `readouts` | Stat tiles, with numbers the server counted |
 | `glossary` | Terms, their CSS, and a link to where each is used |
 | `ribbon-strip` | The live ribbons from the page's background |
+| `working-lock` | The working lock's panel, drawn by the lock's own component |
 
 This is a `swatches` fence of three design tokens. The colours and the figures come from the design token sheet when the page is drawn, so the fence holds only names:
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { glossarySheet, readoutSheet, ribbonStrip, tileSheet } from './styleBlocks';
+import {
+  glossarySheet,
+  readoutSheet,
+  ribbonStrip,
+  tileSheet,
+  workingLockSample,
+} from './styleBlocks';
 import { withHeadingIds } from '../lib/markdown';
 
 describe('the Style section blocks', () => {
@@ -34,6 +40,12 @@ describe('the Style section blocks', () => {
     const html = ribbonStrip('A live strip.');
     expect(html).toContain('data-ribbon-strip');
     expect(html).toContain('<figcaption>A live strip.</figcaption>');
+  });
+
+  it("leaves a box for the working lock's look, with its caption", () => {
+    const html = workingLockSample('The lock, still.');
+    expect(html).toContain('data-working-lock');
+    expect(html).toContain('<figcaption>The lock, still.</figcaption>');
   });
 
   it('gives every second-level heading an id from its words, told apart by a number when two match', () => {

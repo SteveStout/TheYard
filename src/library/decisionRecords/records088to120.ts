@@ -164,4 +164,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '109',
   },
+  adrOneWorkingLockForTheWholeSiteAfterHalfASecond: {
+    title: 'ADR: One working lock for the whole site, after half a second',
+    menuLabel: 'ADR: One working lock for the whole site, after half a second',
+    url: '/api/docs/adr-one-working-lock-for-the-whole-site-after-half-a-second',
+    kind: 'adr',
+    number: '110',
+  },
 } as const satisfies Record<string, RecordEntry>;

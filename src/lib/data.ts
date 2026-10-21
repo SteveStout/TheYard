@@ -1,5 +1,6 @@
 import type { Vehicle } from './types';
 import { filtersToSearchParams, type InventoryFilters, type SortKey } from './inventory';
+import { counted, type WorkingOptions } from './working';
 
 /**
  * The single seam for API access. The .NET API (api/) owns the data AND the
@@ -161,12 +162,11 @@ export async function fetchVehicles(
 
   if (!forceRefresh) {
     const hit = cachedPage(key);
-    if (hit) {
-      return hit;
-    }
+    if (hit) return hit;
   }
 
-  const response = await fetch(`/api/vehicles${query ? `?${query}` : ''}`, { signal });
+  const url = query ? `/api/vehicles?${query}` : '/api/vehicles';
+  const response = await counted(() => fetch(url, { signal }));
   if (!response.ok) {
     throw new Error(
       await problemDetail(response, `The inventory API responded with ${response.status}`)
@@ -187,7 +187,8 @@ export async function fetchVehicles(
 
 /** One vehicle by id, or null when it doesn't exist. Backs detail deep links. */
 export async function fetchVehicleById(id: string, signal?: AbortSignal): Promise<Vehicle | null> {
-  const response = await fetch(`/api/vehicles/${encodeURIComponent(id)}`, { signal });
+  const url = `/api/vehicles/${encodeURIComponent(id)}`;
+  const response = await counted(() => fetch(url, { signal }));
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`The inventory API responded with ${response.status}`);
@@ -197,7 +198,7 @@ export async function fetchVehicleById(id: string, signal?: AbortSignal): Promis
 
 /** Dropdown values, computed by the API over the full dataset. */
 export async function fetchFacets(signal?: AbortSignal): Promise<InventoryFacets> {
-  const response = await fetch('/api/facets', { signal });
+  const response = await counted(() => fetch('/api/facets', { signal }), { background: true });
   if (!response.ok) {
     throw new Error(`The inventory API responded with ${response.status}`);
   }
@@ -209,21 +210,23 @@ export async function fetchFacets(signal?: AbortSignal): Promise<InventoryFacets
 // ---------------------------------------------------------------------------
 
 export async function fetchBids(signal?: AbortSignal): Promise<BidMap> {
-  const response = await fetch('/api/bids', { signal });
+  const response = await counted(() => fetch('/api/bids', { signal }), { background: true });
   if (!response.ok) {
     throw new Error(`The inventory API responded with ${response.status}`);
   }
   return (await response.json()) as BidMap;
 }
 
+/** A JSON POST through the working store (src/lib/working.ts); a background one never locks. */
+function postJson(url: string, body: unknown, options?: WorkingOptions): Promise<Response> {
+  const init = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
+  return counted(() => fetch(url, { ...init, body: JSON.stringify(body) }), options);
+}
+
 async function postBidAction(url: string, body: Record<string, unknown>): Promise<BidResult> {
   let response: Response;
   try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    response = await postJson(url, body);
   } catch {
     return { outcome: { kind: 'rejected', reason: 'Could not reach the auction API.' } };
   }
@@ -263,11 +266,7 @@ async function postBidAction(url: string, body: Record<string, unknown>): Promis
  */
 export async function tickMarket(): Promise<{ raised: number; bids: BidMap } | null> {
   try {
-    const response = await fetch('/api/market/tick', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
+    const response = await postJson('/api/market/tick', {}, { background: true });
     if (!response.ok) {
       return null;
     }
@@ -292,7 +291,7 @@ export function buyNowRequest(vehicleId: string): Promise<BidResult> {
 }
 
 export async function resetBidsRequest(): Promise<void> {
-  const response = await fetch('/api/bids', { method: 'DELETE' });
+  const response = await counted(() => fetch('/api/bids', { method: 'DELETE' }));
   if (!response.ok) {
     throw new Error(`The inventory API responded with ${response.status}`);
   }

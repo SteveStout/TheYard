@@ -1,11 +1,13 @@
 /**
- * Does:      Holds the whole site as one element: the development checks, the safety net for a render crash, and the app.
+ * Does:      Holds the whole site as one element: the development checks, the safety net for a render crash, the app and
+ *            its one working lock.
  * Does not:  Put it on a page; mount.tsx does that in the browser, drawLanding.tsx draws it to HTML for the build, and
  *            entry-server.tsx draws it for the rendering service.
  * Used by:   mount.tsx, drawLanding.tsx, entry-server.tsx.
  */
 import { StrictMode } from 'react';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
+import { WorkingLock } from '../components/shared/WorkingLock';
 import { FirstLoadContext, type FirstLoad } from '../hooks/useFirstLoad';
 import App from './App';
 
@@ -32,6 +34,8 @@ export function TheYard({ firstLoad = null }: { firstLoad?: FirstLoad | null }) 
         <FirstLoadContext.Provider value={firstLoad}>
           {/* The whole site: routing, header, pages. */}
           <App />
+          {/* The one working lock, over everything once a request somebody started runs past half a second. */}
+          <WorkingLock />
         </FirstLoadContext.Provider>
       </ErrorBoundary>
     </StrictMode>

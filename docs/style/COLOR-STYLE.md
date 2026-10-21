@@ -173,6 +173,14 @@ sits on is the ground, on [Background and ribbon](https://theyard.stevenstout.bi
 - **A ring gauge is honest or absent.** A ring shows a share of a known whole: 5 of 5 checks, memory
   against its limit. A reading with no whole, such as milliseconds, gets no ring.
 
+## The working lock
+
+When a request somebody started has run half a second, one lock covers the whole page: frosted glass with the page showing through, one glass panel with corner brackets, a graduated ring with the gold-bar sweep and a thin teal arc turning the other way, and the fixed words "Working" over "the yard is answering". It names no action. It takes every click and key until the last such request settles, then fades in 180 ms (ADR: One working lock for the whole site, after half a second).
+
+```working-lock
+The lock's panel as the site draws it, from the same component, still.
+```
+
 ## Side rail and code theme
 
 The rail is white on the ground's darker end. Code takes six ink colours, each deepened until it

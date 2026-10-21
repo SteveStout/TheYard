@@ -1,0 +1,177 @@
+/**
+ * Does:      Styles the working lock: the frosted cover over the whole page, the ring with its gold sweep and
+ *            teal arc, and the fixed words; and the same panel standing still in the Style section.
+ * Does not:  Decide when the screen locks (src/lib/working.ts does) or draw the panel's ground, rule and
+ *            brackets (panels.css does, as .op-glass).
+ * Used by:   WorkingLock.tsx.
+ */
+.lock {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--layer-skip) + 1);
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--palette-white) 35%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  cursor: progress;
+  outline: none;
+  transition:
+    opacity 180ms ease-in,
+    display 180ms allow-discrete;
+}
+
+.on {
+  animation: fade-in 180ms ease-out;
+}
+
+/* Nothing slow: out of the page's layout, so nothing in it is drawn, faded or turning. The display
+   change waits out the fade where the browser can transition it, and is at once where it cannot. */
+.off {
+  display: none;
+  opacity: 0;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sample {
+  display: grid;
+  place-items: center;
+  padding: var(--space-4) 0;
+}
+
+.panel {
+  display: grid;
+  justify-items: center;
+  padding: 26px 44px 22px;
+  font-family: var(--font-sans);
+}
+
+.hud {
+  position: relative;
+  width: 240px;
+  height: 240px;
+  display: grid;
+  place-items: center;
+}
+
+.hud svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.words {
+  position: relative;
+  text-align: center;
+}
+
+.words b {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-teal-header);
+}
+
+.words b::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: dots 1.2s steps(4) infinite;
+}
+
+.words span {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-teal-deep);
+}
+
+@keyframes dots {
+  0% {
+    content: '';
+  }
+  25% {
+    content: '.';
+  }
+  50% {
+    content: '..';
+  }
+  75% {
+    content: '...';
+  }
+}
+
+.goldDark {
+  stop-color: var(--color-gold-bar-dark);
+}
+
+.goldLight {
+  stop-color: var(--color-gold-light);
+}
+
+.glass {
+  fill: color-mix(in srgb, var(--palette-white) 35%, transparent);
+  stroke: color-mix(in srgb, var(--color-teal-header) 25%, transparent);
+  stroke-width: 1;
+}
+
+.track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-teal-header) 14%, transparent);
+  stroke-width: 3;
+}
+
+.ticks {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-teal-header) 35%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 2 8.47;
+}
+
+.sweep {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 90 400;
+  transform-origin: 50% 50%;
+  animation: spin 1.4s cubic-bezier(0.6, 0.1, 0.4, 0.9) infinite;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-gold-light) 70%, transparent));
+}
+
+.inner {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-teal-header) 70%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 40 260;
+  stroke-linecap: round;
+  transform-origin: 50% 50%;
+  animation: spin 2.6s linear infinite reverse;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep,
+  .inner {
+    animation-duration: 4s;
+  }
+}

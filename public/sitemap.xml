@@ -740,6 +740,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-one-working-lock-for-the-whole-site-after-half-a-second</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-the-resume-has-an-address</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

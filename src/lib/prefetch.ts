@@ -5,6 +5,7 @@
  * do, so the click that needs one finds it already here. React-free, like the
  * rest of lib: the component names what to fetch and this decides when.
  */
+import { counted } from './working';
 
 /** What the browser says about the connection (`navigator.connection`), where it says anything. */
 export type ConnectionHint = { saveData?: boolean; effectiveType?: string };
@@ -71,6 +72,7 @@ export function prefetchWhenIdle(
 ): () => void {
   if (!shouldPrefetch(connection) || loaders.length === 0) return () => {};
   return schedule(() => {
-    for (const load of loaders) void load().catch(() => undefined);
+    // A prefetch is nobody's click: background, so it never locks the screen.
+    for (const load of loaders) void counted(load, { background: true }).catch(() => undefined);
   });
 }

@@ -402,6 +402,7 @@ public class StyleRulesTests
         ["src/components/landing/Landing/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
         ["src/components/admin/CloudChart/CloudChart.module.css"] = "a deploy's line on a Cloud card's chart, in the bar's dark tone, about 6 to 1 on white, as the approved mockups draw it",
         ["src/components/admin/CloudDial/CloudDial.module.css"] = "the dot at a dial's 30-day 95th, in the bar's dark tone, as the approved mockups draw it",
+        ["src/components/shared/WorkingLock/WorkingLock.module.css"] = "the sweep round the working lock's ring and its glow, never its words, as look D of the approved mock draws it",
     };
 
     [Fact]

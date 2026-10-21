@@ -160,4 +160,16 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+/* The working lock's panel, drawn in place on a ground like the page's, so the glass reads as it does over a page. */
+.prose :global(.style-working-lock) {
+  margin: var(--space-3) 0;
+  border-radius: var(--radius-md);
+  background-image: var(--gradient-ground);
+}
+
+.prose :global(.style-working-lock) figcaption {
+  padding: 0 var(--space-3) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
 /* #endregion style-blocks */

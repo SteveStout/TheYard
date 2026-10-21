@@ -1,6 +1,6 @@
 /**
- * Does:      Brings a rendered document's live blocks to life: draws the ribbons into a ribbon strip and a site-map
- *            icon into each tile's badge, opens an in-library link ([data-doc]) in the same window, and scrolls to
+ * Does:      Brings a rendered document's live blocks to life: draws the ribbons into a ribbon strip, the working
+ *            lock's look into its sample and a site-map icon into each tile's badge, opens an in-library link ([data-doc]) in the same window, and scrolls to
  *            the section a link or the first address named.
  * Does not:  Render the markdown (markdown.ts and styleBlocks.ts do), fetch a document, or decide which one is open.
  * Used by:   DocDialog.tsx.
@@ -9,6 +9,7 @@ import { useEffect, useRef, type RefObject } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Ribbons } from '../components/layout/Background/Ribbons';
 import { NavGlyph } from '../components/shared/SheetIcons';
+import { WorkingLockLook } from '../components/shared/WorkingLock';
 import type { NavIcon } from '../lib/siteMap';
 import { DOCS, type DocKey } from './documents';
 
@@ -37,6 +38,13 @@ function mountBlocks(root: HTMLElement) {
     const strip = createRoot(box);
     strip.render(<Ribbons />);
     mounted.set(box, strip);
+  }
+  // The working lock's look, the same panel the lock draws, still and in place.
+  for (const box of root.querySelectorAll<HTMLElement>('[data-working-lock]')) {
+    if (mounted.has(box)) continue;
+    const sample = createRoot(box);
+    sample.render(<WorkingLockLook />);
+    mounted.set(box, sample);
   }
   for (const badge of root.querySelectorAll<HTMLElement>('[data-glyph]')) {
     if (mounted.has(badge)) continue;
