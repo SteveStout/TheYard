@@ -176,5 +176,8 @@ public sealed record CloudLine(string Label, string Value, [property: Descriptio
 {
     /// <summary>Where the reading comes from, printed under its label: "Azure Monitor", "the bill, Cost Management", "this process".</summary>
     public string? Source { get; init; }
+
+    /// <summary>A name the page finds the line by, so a reworded label never loses it ("instances"); null for a line the page only prints.</summary>
+    public string? Key { get; init; }
 }
 // #endregion cloud-wire

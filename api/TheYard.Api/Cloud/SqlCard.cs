@@ -9,6 +9,24 @@ namespace TheYard.Api;
 /// <summary>The relational store's card.</summary>
 public static class SqlCard
 {
+    /// <summary>Where each row and readout line of this card is read, by row key or line label (CardFrame.Sourced).</summary>
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["runs"] = "ARM record, and this process's model",
+        ["waiting"] = "Azure Monitor",
+        ["azure"] = "Activity Log",
+        ["tier"] = "kept minutes, Azure Monitor",
+        ["DTU now"] = "Azure Monitor",
+        ["DTU p95, 30 d"] = CardFrame.KeptMinutes,
+        ["Data space"] = "Azure Monitor",
+        ["Log space"] = "Azure Monitor",
+        ["Sessions"] = "Azure Monitor",
+        ["Workers"] = "Azure Monitor",
+        ["Blocked"] = "Azure Monitor",
+        ["Deadlocks"] = "Azure Monitor",
+        ["Failed connections"] = "Azure Monitor",
+    };
+
     /// <summary>The metrics the card keeps, by Azure's name and the card's.</summary>
     public static readonly IReadOnlyList<AzureMetric> Metrics =
     [
@@ -83,7 +101,7 @@ public static class SqlCard
                 ResourceView.LiveRead(inputs),
             ],
             $"{inputs.Availability.Reason}, one minute each; live every 60 s from Azure Monitor");
-        return new CloudReport(
+        return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0,
             ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
@@ -94,7 +112,7 @@ public static class SqlCard
             [ResourceView.Spark(inputs, "dtu", "DTU, 60 min", 100, percentReading: true), ResourceView.Spark(inputs, "workers", "Workers, 60 min", 100, percentReading: true)],
             ResourceView.Chart(inputs, "DTU and data space", ("dtu", "DTU", 100, true), ("storage_gb", "Data space", spaceLimit, false), Dtu.Red, $"teal DTU · green data space · gold deploys · red event · dashed {Dtu.Red} %"),
             rows,
-            readout);
+            readout), Sources);
     }
 
     private static string? Latest(ResourceCardInputs inputs, string key) => ResourceView.Latest(inputs)?.Facts.GetValueOrDefault(key);

@@ -49,6 +49,21 @@ export const CARD_SLUGS = [
 
 export type CardSlug = (typeof CARD_SLUGS)[number];
 
+/**
+ * The resource cards under Cloud infrastructure after the plan, each answering on
+ * /api/admin/cloud/{slug}: the one list the rail's glances and anything else that walks the
+ * cloud cards read, so a new card is named once.
+ */
+export const CLOUD_RESOURCES = [
+  'sqldb',
+  'cosmosdb',
+  'registry',
+  'insights',
+  'mail',
+  'edge',
+  'nightly',
+] as const satisfies readonly CardSlug[];
+
 /** The card ?view=admin opens, and the one a wrong name falls back to: the Overview. */
 export const DEFAULT_CARD: CardSlug = 'overview';
 

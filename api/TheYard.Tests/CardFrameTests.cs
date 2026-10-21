@@ -44,9 +44,9 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
         var dial = new CloudDial("RU/s, right now", 1, "1 %", "4 of 1,000 RU/s", 70, 90, 5, 10, "good");
         var row = new CloudRow("throttling", "Is anything throttled?", "731 throttled", [], "warning");
         var report = new CloudReport("24h", ["1h", "24h"], true, null, 0, 30, "Cosmos DB", null, null, [dial], [], new CloudChart("", [], [], 90, "", 0), [row], new CloudReadout("The account", null, "", [], ""));
-        Assert.Equal("amber", CardFrame.Complete(report, "Azure Monitor", null).Tone);
-        Assert.Equal("red", CardFrame.Complete(report with { Rows = [row with { Tone = "alarm" }] }, "Azure Monitor", null).Tone);
-        Assert.Equal("fine", CardFrame.Complete(report with { Rows = [row with { Tone = "info" }] }, "Azure Monitor", null).Tone);
+        Assert.Equal("amber", CardFrame.Complete(report, null).Tone);
+        Assert.Equal("red", CardFrame.Complete(report with { Rows = [row with { Tone = "alarm" }] }, null).Tone);
+        Assert.Equal("fine", CardFrame.Complete(report with { Rows = [row with { Tone = "info" }] }, null).Tone);
     }
 
     [Fact]

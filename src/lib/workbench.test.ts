@@ -10,9 +10,16 @@ import {
   neighbours,
   TILE_CARD,
 } from './bench';
-import { CARD_SLUGS, cardFromAddress, pinFromAddress } from './workbench';
+import { CARD_SLUGS, CLOUD_RESOURCES, cardFromAddress, pinFromAddress } from './workbench';
 
 describe('the workbench (ADR: The Admin tab, as a product, the addendum on the workbench)', () => {
+  it('names the cloud resource cards once, each a card of the rail, in the rail order', () => {
+    const slugs: readonly string[] = CARD_SLUGS;
+    expect(CLOUD_RESOURCES.every((slug) => slugs.includes(slug))).toBe(true);
+    const order = CLOUD_RESOURCES.map((slug) => CARD_SLUGS.indexOf(slug));
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
   it('has every card once, under one of the six questions, in the order the slugs are listed', () => {
     expect(BENCH_CARDS.map((card) => card.slug)).toEqual([...CARD_SLUGS]);
     expect(new Set(CARD_SLUGS).size).toBe(31);

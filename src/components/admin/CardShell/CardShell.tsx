@@ -119,7 +119,7 @@ export function CardShell({
     );
   }
   const [left, right] = report.dials;
-  const instances = report.readout.lines.find((line) => line.label === 'Instances');
+  const instances = report.readout.lines.find((line) => line.key === 'instances');
   return (
     <div className={styles.frame} data-testid={testId} data-tone={report.tone}>
       <article className={`${styles.card} op-glass`}>
@@ -154,7 +154,7 @@ export function CardShell({
               ? 'not read yet'
               : `read ${report.read_age_seconds} s ago`}
           </span>
-          {instances !== undefined && instances.value !== 'not read' && (
+          {instances !== undefined && !instances.value.startsWith('not read') && (
             <span className={styles.quiet}>
               {' · '}
               {instances.value} instances

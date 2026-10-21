@@ -10,6 +10,26 @@ namespace TheYard.Api;
 /// <summary>The edge's card.</summary>
 public static class EdgeCard
 {
+    /// <summary>Where each row and readout line of this card is read, by row key or line label (CardFrame.Sourced).</summary>
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["through"] = "Netlify API",
+        ["credits"] = "Netlify API",
+        ["cached"] = "the edge's Cache-Status, sampled hourly",
+        ["needed"] = "configuration, Edge:Retires",
+        ["Credits"] = "Netlify API",
+        ["Credits p95, 30 d"] = CardFrame.KeptMinutes,
+        ["Deploys, cycle"] = "Netlify API",
+        ["Bandwidth, cycle"] = "Netlify API",
+        ["Cache hits"] = "the edge's Cache-Status, sampled hourly",
+        ["Domain"] = "Netlify API",
+        ["Certificate"] = "Netlify API",
+        ["Expires"] = "Netlify API",
+        ["Builds"] = "Netlify API",
+        ["Retires"] = "configuration, Edge:Retires",
+        ["Cost"] = "Netlify API",
+    };
+
     /// <summary>The project's page on Netlify, which the card's name links to: the site record's admin_url, else none until it is read.</summary>
     /// <param name="inputs">The card's inputs.</param>
     public static string? ProjectUrl(ResourceCardInputs inputs) => ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("admin_url");
@@ -64,7 +84,8 @@ public static class EdgeCard
                     new("the page and /api are asked only to name who answered; neither may be kept, so neither is scored", null)],
                 CloudTones.Of(missTone)),
             new("needed", "Is it still needed?", daysLeft > 0 ? $"until {retires.ToString("MMM d", CultureInfo.InvariantCulture)}, {daysLeft} days" : "past its date; retire it",
-                [new("the registrar transfer moves the domain straight to Azure, and then this card retires with the edge", null)],
+                [new(daysLeft > 0 ? "the registrar transfer moves the domain straight to Azure, and then this card retires with the edge"
+                    : $"the edge is past its date, {retires.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}: the registrar transfer should have moved the domain to Azure", null)],
                 daysLeft > 0 ? "info" : "warning"),
         };
         var readout = new CloudReadout(
@@ -83,10 +104,10 @@ public static class EdgeCard
                 new("Builds", $"{ResourceView.Fact(inputs, "deploys_live", "0")} live · {ResourceView.Fact(inputs, "deploys_skipped", "0")} skipped · {ResourceView.Fact(inputs, "deploys_failed", "0")} failed", ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : "info"),
                 new("Retires", retires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "info"),
                 new("Cost", "not on the Azure bill; Netlify bills in credits", "info"),
-                ResourceView.LiveRead(inputs, hourly: true),
+                ResourceView.LiveRead(inputs),
             ],
             configured ? $"{inputs.Availability.Reason}, one document an hour from Netlify" : "NETLIFY_TOKEN is not set, so nothing is read from Netlify");
-        return new CloudReport(
+        return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, configured && inputs.Availability.Available && inputs.LastHour.Count > 0,
             !configured ? "NETLIFY_TOKEN is not set, so the edge is not read."
                 : ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("site") is { } missing ? $"NETLIFY_TOKEN is set, but {missing}, so the edge is not read."
@@ -99,7 +120,7 @@ public static class EdgeCard
             [ResourceView.Spark(inputs, "credits", "Credits, 60 h", NetlifyEdge.FreeCredits), SameSample(ResourceView.Spark(inputs, "cache_hit", "Cache hits, 60 h", 100, percentReading: true), hit)],
             SameSample(ResourceView.Chart(inputs, "Credits and cache hits", ("credits", "Credits", NetlifyEdge.FreeCredits, false), ("cache_hit", "Cache hits", 100, true), Credits.Red, $"teal credits · green cache hits · gold deploys · dashed {Credits.Red} %"), "Cache hits", hit),
             rows,
-            readout);
+            readout), Sources);
     }
     /// <summary>The cache sparkline with its newest value the dial's sample, so the two read one figure; unchanged before a sample.</summary>
     /// <param name="spark">The sparkline as the kept minutes give it.</param>

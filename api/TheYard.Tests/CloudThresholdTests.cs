@@ -120,7 +120,8 @@ public class CloudThresholdTests
         var nearCap = InsightsCard.View(Held("ingest_today_gb", 0.098, new Dictionary<string, string?> { ["cap_gb"] = "0.1" }, minutes: 1));
         Assert.Equal("alarm", nearCap.Dials[0].Tone);
         Assert.Equal("alarm", nearCap.Rows.Single(r => r.Key == "cap").Tone);
-        Assert.Equal("warning", InsightsCard.View(Held("ingest_today_gb", 0.2, new Dictionary<string, string?>())).Rows.Single(r => r.Key == "cap").Tone);
+        // No cap set is information, not a fault: the dial says when ingestion is too much.
+        Assert.Equal("info", InsightsCard.View(Held("ingest_today_gb", 0.2, new Dictionary<string, string?>())).Rows.Single(r => r.Key == "cap").Tone);
     }
 
 

@@ -40,6 +40,13 @@ public class PlanThresholdTests
         Assert.Equal(PlanTone.Warning, PlanThresholds.SocketsTone(Held(2_381), PlanThresholds.SocketLimitFor("b2")));
         Assert.Equal(PlanTone.Info, PlanThresholds.SocketsTone(Held(9_999), PlanThresholds.SocketLimitFor("EP1")));
         Assert.Null(PlanThresholds.SocketLimitFor(null));
+        // Every size the limits page names, by its step: B3 and S3 at 8,064, Premium v3 from P0V3 to P3V3.
+        Assert.Equal(8_064, PlanThresholds.SocketLimitFor("B3"));
+        Assert.Equal(8_064, PlanThresholds.SocketLimitFor("S3"));
+        Assert.Equal(1_920, PlanThresholds.SocketLimitFor("P0V3"));
+        Assert.Equal(3_968, PlanThresholds.SocketLimitFor("P1V3"));
+        Assert.Equal(16_256, PlanThresholds.SocketLimitFor("P3V3"));
+        Assert.Null(PlanThresholds.SocketLimitFor("P1"));
     }
 
     [Fact]

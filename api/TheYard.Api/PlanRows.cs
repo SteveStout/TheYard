@@ -134,17 +134,32 @@ public static class PlanRows
                 new("HTTP queue", Count(newest?.HttpQueue), tone(PlanThresholds.ToneOf(lastHour.Select(x => x.HttpQueue).ToList(), PlanThresholds.HttpQueue))),
                 new("Sockets", socketLimit is { } allowed ? $"{Count(newest?.Sockets)} / {allowed:N0}" : Count(newest?.Sockets), tone(PlanThresholds.SocketsTone(lastHour.Select(x => x.Sockets).ToList(), socketLimit))) { Source = socketLimit is null ? "Azure Monitor" : "Azure Monitor / the limit for the plan's size, from Microsoft's limits page" },
                 new("Disk", used is { } mb ? $"{(mb / 1024).ToString("0.0", CultureInfo.InvariantCulture)} GB used" : "not read", "info") { Source = "Azure Monitor" },
-                new("Instances", hour?.Instances is { } n ? (hour.MaxWorkers is { } most ? $"{n} of {most}" : $"{n}") : "not read", "info") { Source = "ARM maximumNumberOfWorkers" },
+                new("Instances", hour?.Instances is { } n ? (hour.MaxWorkers is { } most ? $"{n} of {most}" : $"{n}") : "not read", "info") { Source = "ARM maximumNumberOfWorkers", Key = PlanRows.InstancesKey },
                 new("Always on", hour is null ? "not read" : $"{hour.Apps.Count(app => app.AlwaysOn is true)} apps", "info") { Source = "ARM siteConfig" },
                 new("Restarts, 30 d", hours.Count == 0 ? "not read" : restarts.ToString(CultureInfo.InvariantCulture), unplanned ? "alarm" : "info") { Source = "Activity Log" },
                 new("Plan cost", cost is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not read from the bill yet", "info"),
-                new("Live read", age is { } seconds ? $"{seconds} s ago" : "not read yet", age is > 300 ? "warning" : "info"),
+                // A stale read is the frame's unread rule (the card's tone goes unread), not a warning of its own.
+                new("Live read", age is { } seconds ? $"{seconds} s ago" : "not read yet", "info"),
             ],
             $"{availability.Reason}, one minute each; live every 60 s from Azure Monitor");
     }
 
-    /// <summary>Where the plan card's readings come from, which every line names unless it names its own.</summary>
-    public const string Source = "Azure Monitor";
+    /// <summary>The key the header finds the instances line by (CardShell.tsx).</summary>
+    public const string InstancesKey = "instances";
+
+    /// <summary>Where each row and readout line of the plan card is read, by row key or line label (CardFrame.Sourced).</summary>
+    public static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["power"] = "ARM record of each web app",
+        ["queue"] = "Azure Monitor",
+        ["azure"] = "Activity Log",
+        ["size"] = "kept minutes, Azure Monitor",
+        ["CPU now"] = "Azure Monitor",
+        ["Memory now"] = "Azure Monitor",
+        ["HTTP queue"] = "Azure Monitor",
+        ["Plan cost"] = CardFrame.TheBill,
+        ["Live read"] = CardFrame.ThisProcess,
+    };
 
     /// <summary>Where the plan card's spec line is read: the size and region from the plan's ARM record, the cores and memory from this process.</summary>
     public const string SpecSource = "ARM sku · this process";

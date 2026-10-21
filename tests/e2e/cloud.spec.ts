@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
+import { CLOUD_RESOURCES } from '../../src/lib/workbench';
 
 // #region cloud-plan
 /**
@@ -62,7 +63,7 @@ test('the shell draws the tone, the chips and the rail dot, and the arrows walk 
  * and a readout, and a local run with nothing kept says so in a sentence.
  */
 test('every resource under Cloud infrastructure draws in the one frame', async ({ page }) => {
-  for (const slug of ['sqldb', 'cosmosdb', 'registry', 'insights', 'mail', 'edge', 'nightly']) {
+  for (const slug of CLOUD_RESOURCES) {
     await openTheYard(page, `/?view=admin&card=${slug}`);
     await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', slug);
     await expect(page.getByTestId('bench-crumb')).toContainText('Cloud infrastructure');

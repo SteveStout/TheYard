@@ -66,7 +66,7 @@ public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? record
             await MonthAsync(now, cancellation),
             await history.HoursAsync(now - length, cancellation),
             await planCost(cancellation),
-            recordingSite), PlanRows.Source, PlanRows.SpecSource);
+            recordingSite), PlanRows.SpecSource);
         lock (_gate)
         {
             _cached[name] = (now, view);

@@ -74,7 +74,7 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             hours,
             await cost(card.ResourceName, cancellation),
             recordingSite,
-            await CostLinesAsync(card, cancellation))), card.Source, card.SpecSource, card.Hourly);
+            await CostLinesAsync(card, cancellation))), card.SpecSource, card.Hourly);
         lock (_gate)
         {
             _cached[slot] = (now, view);

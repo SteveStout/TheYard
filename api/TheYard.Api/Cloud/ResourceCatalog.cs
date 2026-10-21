@@ -23,9 +23,11 @@ public static class ResourceCatalog
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
 
+        // A resource the group does not hold reads no minutes, and its hour says so in a sentence
+        // the card prints as its note, rather than an exception only the log sees.
         Func<DateTimeOffset, DateTimeOffset, string, CancellationToken, Task<IReadOnlyList<ResourceMinute>>> Monitor(string type, string? name, IReadOnlyList<AzureMetric> metrics) =>
-            async (from, to, version, cancellation) => azure.Configured
-                ? await azure.MinutesAsync((await directory.FindAsync(type, name, cancellation)).Id, metrics, from, to, version, cancellation)
+            async (from, to, version, cancellation) => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), type, name) is { } resource
+                ? await azure.MinutesAsync(resource.Id, metrics, from, to, version, cancellation)
                 : [];
 
         Func<DateTimeOffset, DateTimeOffset, CancellationToken, Task<ResourceHour>> Hourly(string type, string? name, string apiVersion, Func<AzureResource, JsonElement, CancellationToken, Task<IReadOnlyDictionary<string, string?>>> facts) =>
@@ -35,7 +37,10 @@ public static class ResourceCatalog
                 {
                     return new ResourceHour(hour, "", null, new Dictionary<string, string?>(), []);
                 }
-                var resource = await directory.FindAsync(type, name, cancellation);
+                if (ResourceDirectory.Find(await directory.AllAsync(cancellation), type, name) is not { } resource)
+                {
+                    return new ResourceHour(hour, "", null, new Dictionary<string, string?> { [ResourceView.MissingFact] = ResourceDirectory.Missing(name) }, []);
+                }
                 var (record, tenant) = await azure.RecordAsync(resource.Id, apiVersion, cancellation);
                 using (record)
                 {
@@ -98,11 +103,13 @@ public static class ResourceCatalog
                 }),
                 AcrCard.View),
             new("insights", "insights", names.Insights, InsightsCard.Readings,
-                async (_, to, version, cancellation) => azure.Configured ? await (await InsightsAsync(azure, directory, names.Insights, cancellation)).MinutesAsync(to, version, cancellation) : [],
-                async (hour, since, cancellation) => azure.Configured
-                    ? await (await InsightsAsync(azure, directory, names.Insights, cancellation)).HourAsync(hour, since, cancellation)
-                    : new ResourceHour(hour, "", null, new Dictionary<string, string?>(), []),
-                InsightsCard.View, Hourly: true, Source: "Log Analytics", SpecSource: "ARM record of the component"),
+                async (_, to, version, cancellation) => azure.Configured && await InsightsAsync(azure, directory, names.Insights, cancellation) is { } source ? await source.MinutesAsync(to, version, cancellation) : [],
+                async (hour, since, cancellation) => !azure.Configured
+                    ? new ResourceHour(hour, "", null, new Dictionary<string, string?>(), [])
+                    : await InsightsAsync(azure, directory, names.Insights, cancellation) is { } source
+                        ? await source.HourAsync(hour, since, cancellation)
+                        : new ResourceHour(hour, "", null, new Dictionary<string, string?> { [ResourceView.MissingFact] = ResourceDirectory.Missing(names.Insights) }, []),
+                InsightsCard.View, Hourly: true, SpecSource: "ARM record of the component"),
             new("mail", "mail", names.Mail, MailCard.Readings, Monitor(MailType, names.Mail, MailCard.Metrics),
                 Hourly(MailType, names.Mail, "2023-04-01", async (_, record, cancellation) =>
                 {
@@ -118,7 +125,7 @@ public static class ResourceCatalog
             new("edge", "edge", names.Edge, EdgeCard.Readings,
                 async (_, to, version, cancellation) => await edge.MinutesAsync(to, version, cancellation),
                 async (hour, _, cancellation) => await edge.HourAsync(hour, cancellation),
-                inputs => EdgeCard.View(inputs, edge.Configured, names.Edge, names.EdgeRetires), Hourly: true, Source: "Netlify API", SpecSource: "Netlify site record"),
+                inputs => EdgeCard.View(inputs, edge.Configured, names.Edge, names.EdgeRetires), Hourly: true, SpecSource: "Netlify site record"),
         ];
         if (nightly is not null)
         {
@@ -133,19 +140,30 @@ public static class ResourceCatalog
     }
 
     /// <summary>
-    /// The component and the workspace it sends to: the workspace configuration names, and the one
-    /// component in the group that sends to it (its record names the workspace), or the group's
-    /// one component where none says.
+    /// The component and the workspace it sends to, both by the workspace configuration names: the
+    /// component whose record names that workspace, or the group's one component when there is one
+    /// and its record names none. Null when the group holds no such pair, which the card says.
     /// </summary>
-    private static async Task<InsightsSource> InsightsAsync(AzureMetrics azure, ResourceDirectory directory, string workspaceName, CancellationToken cancellation)
+    public static async Task<InsightsSource?> InsightsAsync(AzureMetrics azure, ResourceDirectory directory, string workspaceName, CancellationToken cancellation)
     {
-        var component = await directory.FindAsync(InsightsType, null, cancellation);
-        var (record, _) = await azure.RecordAsync(component.Id, "2020-02-02", cancellation);
-        using (record)
+        var all = await directory.AllAsync(cancellation);
+        var components = all.Where(r => string.Equals(r.Type, InsightsType, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (ResourceDirectory.Find(all, WorkspaceType, workspaceName) is not { } named)
         {
-            string workspace = AzureMetrics.Text(record.RootElement, "properties.WorkspaceResourceId")
-                ?? (await directory.FindAsync(WorkspaceType, workspaceName, cancellation)).Id;
-            return new InsightsSource(azure, component.Id, workspace);
+            return null;
         }
+        foreach (var component in components)
+        {
+            var (record, _) = await azure.RecordAsync(component.Id, "2020-02-02", cancellation);
+            using (record)
+            {
+                string? workspace = AzureMetrics.Text(record.RootElement, "properties.WorkspaceResourceId");
+                if (string.Equals(workspace, named.Id, StringComparison.OrdinalIgnoreCase) || (workspace is null && components.Count == 1))
+                {
+                    return new InsightsSource(azure, component.Id, named.Id);
+                }
+            }
+        }
+        return null;
     }
 }

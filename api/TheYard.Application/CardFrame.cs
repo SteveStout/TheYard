@@ -19,12 +19,18 @@ public static class CardFrame
     /// <summary>The source a cost line names.</summary>
     public const string TheBill = "the bill, Cost Management";
 
-    /// <summary>The report with its tone (the dials' and the rows'), headline, threshold chips and sources filled in.</summary>
+    /// <summary>The source of a figure read back from the minutes this site kept, a thirty-day 95th or the like.</summary>
+    public const string KeptMinutes = "kept minutes";
+
+    /// <summary>
+    /// The report with its tone (the dials' and the rows'), headline and threshold chips filled in.
+    /// Sources are the card's own: nothing here fills one in, so a line that names none reaches the
+    /// wire without one and CardFrameTests refuses it.
+    /// </summary>
     /// <param name="report">The card's own report.</param>
-    /// <param name="source">Where the card's readings come from, for every line and row that does not name its own.</param>
     /// <param name="specSource">Where the spec line was read.</param>
     /// <param name="hourly">True when the card's source is read once an hour; its tones are then not held for minutes, and its reading may be an hour old before it is unread.</param>
-    public static CloudReport Complete(CloudReport report, string source, string? specSource, bool hourly = false)
+    public static CloudReport Complete(CloudReport report, string? specSource, bool hourly = false)
     {
         // The dials' held tones and the rows' own: a row that reads warning or alarm (a throttled
         // request, a stopped app, a capped hour) lifts the card the way a dial over its line does,
@@ -39,10 +45,22 @@ public static class CardFrame
             SpecSource = specSource,
             Headline = first is null || first.Percent is null ? null : first.Big,
             Thresholds = Chips(report.Dials, held),
-            Rows = [.. report.Rows.Select(row => row.Source is null ? row with { Source = source } : row)],
-            Readout = report.Readout with { Lines = [.. report.Readout.Lines.Select(line => line.Source is null ? line with { Source = SourceOf(line.Label, source) } : line)] },
         };
     }
+
+    /// <summary>
+    /// Every row (by its key) and readout line (by its label) that names no source, given the one
+    /// the card's own list names for it. One list a card, written beside the card, so each line's
+    /// source is a decision someone wrote down; a line the list leaves out stays unsourced, and the
+    /// test that reads every card fails on it rather than a default saying the wrong thing.
+    /// </summary>
+    /// <param name="report">The card's report.</param>
+    /// <param name="sources">Where each row and line is read, by row key or line label.</param>
+    public static CloudReport Sourced(CloudReport report, IReadOnlyDictionary<string, string> sources) => report with
+    {
+        Rows = [.. report.Rows.Select(row => row.Source is null && sources.TryGetValue(row.Key, out var named) ? row with { Source = named } : row)],
+        Readout = report.Readout with { Lines = [.. report.Readout.Lines.Select(line => line.Source is null && sources.TryGetValue(line.Label, out var named) ? line with { Source = named } : line)] },
+    };
 
     /// <summary>The chips: each dial's amber and red line by the dial's short name, then the hold.</summary>
     /// <param name="dials">The card's dials.</param>
@@ -62,14 +80,6 @@ public static class CardFrame
         }
         return chips;
     }
-
-    /// <summary>A line's source: the bill for its cost, this process for its live read, the card's own otherwise.</summary>
-    /// <param name="label">The line's label.</param>
-    /// <param name="source">The card's source.</param>
-    public static string SourceOf(string label, string source) =>
-        label.Contains("cost", StringComparison.OrdinalIgnoreCase) ? TheBill
-            : label.Equals("Live read", StringComparison.Ordinal) ? ThisProcess
-            : source;
 
     /// <summary>A wire tone as a held level: 2 over red, 1 over amber, 0 inside.</summary>
     /// <param name="tone">good, info, warning or alarm.</param>

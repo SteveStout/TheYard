@@ -10,7 +10,7 @@ namespace TheYard.Tests;
 /// what Azure returned, the resource group's list each card finds its resource in, a Log Analytics
 /// answer read by column, and the one route that serves them, only for the keys the catalogue names.
 /// </summary>
-public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory)
+public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory)
     : IClassFixture<Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>>
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 18, 12, 0, 0, TimeSpan.Zero);
@@ -61,11 +61,7 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
         var both = ResourceDirectory.Parse(two.RootElement);
         Assert.Equal("cosmos-jobhunt-ss", ResourceDirectory.Find(both, ResourceCatalog.CosmosType, null)!.Name);
         Assert.Equal("cosmos-theyard-ss", ResourceDirectory.Find(both, ResourceCatalog.CosmosType, "cosmos-theyard-ss")!.Name);
-        string catalog = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Api", "Cloud", "ResourceCatalog.cs"));
-        foreach (string call in new[] { "Monitor(CosmosType, names.Cosmos", "Monitor(AcrType, names.Registry", "Monitor(MailType, names.Mail", "FindAsync(WorkspaceType, workspaceName" })
-        {
-            Assert.True(catalog.Contains(call, StringComparison.Ordinal), $"the catalog no longer selects by the configured name: {call}");
-        }
+        // Each card reading the configured one of two is held by a group of two of each type below.
         using var empty = JsonDocument.Parse("{}");
         Assert.Empty(ResourceDirectory.Parse(empty.RootElement));
     }

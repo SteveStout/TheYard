@@ -75,7 +75,14 @@ export type CloudReport = {
     title: string;
     uptime_percent: number | null;
     uptime_label: string;
-    lines: { label: string; value: string; tone: CloudTone; source: string | null }[];
+    lines: {
+      label: string;
+      value: string;
+      tone: CloudTone;
+      source: string | null;
+      /** The name the page finds a line by, so a reworded label never loses it. */
+      key?: string | null;
+    }[];
     footnote: string;
   };
 };

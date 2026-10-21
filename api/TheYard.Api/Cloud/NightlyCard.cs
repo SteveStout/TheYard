@@ -14,6 +14,13 @@ namespace TheYard.Api;
 /// <summary>The nightly Function's card.</summary>
 public static class NightlyCard
 {
+    /// <summary>Where each row and readout line of this card is read, by row key or line label (CardFrame.Sourced).</summary>
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["Last fired"] = "Azure Monitor, " + NightlyMetrics.Executions,
+        ["Cost, month to date"] = CardFrame.TheBill,
+    };
+
     /// <summary>
     /// How many share snapshots the Function keeps: ShareSnapshot.Keep in
     /// functions/jobhunt/ShareSnapshot.cs, which this project does not reference. A test reads that
@@ -118,7 +125,7 @@ public static class NightlyCard
             ],
             roleMissing ? $"{noRole}: Monitoring Reader and Reader there let the site's identity read the Function" : $"{inputs.Availability.Reason}, one minute each; the runs and the record hourly");
         var chart = ResourceView.Chart(inputs, "Firings and the free grant", ("executions", "Firings", 1, false), ("units_mbms", "Grant used", null, false), Grant.Red, $"teal firings, a bucket that counted one at full height · green the month's grant used · shaded Mondays and Fridays · dashed {Grant.Red} %");
-        return new CloudReport(
+        return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0 && !roleMissing,
             Note(inputs, names, roleMissing),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
@@ -129,7 +136,7 @@ public static class NightlyCard
             [ResourceView.Spark(inputs, "executions", "Firings, 60 min", 1), ResourceView.Spark(inputs, "units_mbms", "Units, 60 min", Limit(inputs))],
             chart with { Series = [FiringSeries(inputs), GrantSeries(inputs)], Bands = Bands(inputs) },
             NightlyRows.Rows(inputs, names, tally, missTone, runs, roleMissing),
-            readout);
+            readout), Sources);
     }
 
     /// <summary>The card's note: the missing role and the missing keep each in a sentence, so the reader sees what is read live and what is not kept.</summary>

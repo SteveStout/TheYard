@@ -174,7 +174,10 @@ public abstract class AuthTestBase : IDisposable
     }
 }
 
-/// <summary>Registering, signing in, signing out, and the password rule.</summary>
+/// <summary>
+/// Registering, signing in, signing out, and the password rule. Its one bid and its one reset are
+/// made signed out and refused with 401, so the class writes nothing the store keeps.
+/// </summary>
 public class AuthTests : AuthTestBase
 {
     [Fact]

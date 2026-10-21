@@ -41,7 +41,7 @@ public static partial class PlanThresholds
     /// counts the sockets and no record the plan returns states the limit, so this is the one rule
     /// the card keeps, read off Microsoft's App Service limits page (learn.microsoft.com, "App
     /// Service limits", 20 October 2026): the Basic and Standard sizes 1 to 3 allow 1,920, 3,968
-    /// and 8,064, and Premium v3's sizes 0 to 3 allow 1,920, 3,968, 8,064 and 16,128, which is
+    /// and 8,064, and Premium v3's sizes 0 to 3 allow 1,920, 3,968, 8,064 and 16,256, which is
     /// 128 short of a power of two at every step. A size outside those is measured against no
     /// limit, and the row says so.
     /// </summary>

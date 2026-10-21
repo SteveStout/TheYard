@@ -70,7 +70,7 @@ public static class PlanView
             Bands = rolls,
         };
 
-        return new CloudReport(
+        return CardFrame.Sourced(new CloudReport(
             window,
             Windows,
             availability.Available && newest is not null,
@@ -84,7 +84,7 @@ public static class PlanView
             [new("CPU, 60 min", lastHour.Select(m => m.CpuPercent).ToList()), new("Memory, 60 min", lastHour.Select(m => m.MemoryPercent).ToList())],
             chart,
             PlanRows.Questions(lastHour, hour, hours, month, buckets),
-            PlanRows.Readout(lastHour, hour, hours, month, planCostMonth, age, availability));
+            PlanRows.Readout(lastHour, hour, hours, month, planCostMonth, age, availability)), PlanRows.Sources);
     }
 
 

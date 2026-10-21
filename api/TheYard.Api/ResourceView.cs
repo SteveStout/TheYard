@@ -119,16 +119,15 @@ public static class ResourceView
 
     /// <summary>The cost line, read from the bill's kept days.</summary>
     public static CloudLine Cost(ResourceCardInputs inputs) =>
-        new("Cost", inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not on the bill yet", "info");
+        new("Cost", inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not on the bill yet", "info") { Source = CardFrame.TheBill };
 
     /// <summary>The live-read line: how old the newest kept minute is, or why none is kept.</summary>
-    public static CloudLine LiveRead(ResourceCardInputs inputs, bool hourly = false)
+    public static CloudLine LiveRead(ResourceCardInputs inputs)
     {
         long? age = inputs.LastHour.Count == 0 ? null : (long)(inputs.Now - inputs.LastHour[^1].At).TotalSeconds;
-        // An hourly source's document is stamped at its hour, so it is late only past two of them.
-        long late = hourly ? 7_200 : 300;
+        // A stale read is the frame's unread rule, not a warning of its own: the line says how old it is.
         string unread = inputs.Availability.Available ? "not read yet: no minute kept yet" : $"not read yet: {KeepReason(inputs)}";
-        return new("Live read", age is { } seconds ? $"{seconds} s ago" : unread, age > late ? "warning" : "info");
+        return new("Live read", age is { } seconds ? $"{seconds} s ago" : unread, "info") { Source = CardFrame.ThisProcess };
     }
 
     /// <summary>Why the keep cannot be read, in its own words up to the first semicolon: "the nightly container is not there yet".</summary>
@@ -142,9 +141,13 @@ public static class ResourceView
     /// <summary>How old the newest kept minute is, in seconds.</summary>
     public static long? Age(ResourceCardInputs inputs) => inputs.LastHour.Count == 0 ? null : (long)(inputs.Now - inputs.LastHour[^1].At).TotalSeconds;
 
-    /// <summary>The note a card prints when its keep is missing or empty; null when it has minutes.</summary>
+    /// <summary>The fact an hour writes when the group holds no resource by the configured name.</summary>
+    public const string MissingFact = "missing";
+
+    /// <summary>The note a card prints when its resource is not in the group, or its keep is missing or empty; null when it has minutes.</summary>
     public static string? Note(ResourceCardInputs inputs, string firstRead) =>
-        !inputs.Availability.Available ? inputs.Availability.Reason
+        Latest(inputs)?.Facts.GetValueOrDefault(MissingFact) is { } missing ? missing
+            : !inputs.Availability.Available ? inputs.Availability.Reason
             : inputs.LastHour.Count == 0 ? firstRead
             : null;
 

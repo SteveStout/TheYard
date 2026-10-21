@@ -9,6 +9,20 @@ namespace TheYard.Api;
 /// <summary>The registry's card.</summary>
 public static class AcrCard
 {
+    /// <summary>Where each row and readout line of this card is read, by row key or line label (CardFrame.Sourced).</summary>
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["holds"] = "the registry's catalogue",
+        ["pulled"] = "Azure Monitor",
+        ["stale"] = "the registry's catalogue",
+        ["tier"] = "kept minutes, Azure Monitor",
+        ["Storage"] = "Azure Monitor",
+        ["Storage p95, 30 d"] = CardFrame.KeptMinutes,
+        ["Pulls, window"] = "Azure Monitor",
+        ["Pulls failed"] = "Azure Monitor",
+        ["Pushes, window"] = "Azure Monitor",
+    };
+
     /// <summary>
     /// The pulls a minute Basic allows, which the pulls dial is read against. Typed, because the
     /// registry's usages name its size and its webhooks but not its read rate; the storage the
@@ -50,7 +64,7 @@ public static class AcrCard
                 ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows") is null ? [new(ResourceView.Fact(inputs, "repository_list"), null)] : [], "good")
             { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows"), "Image", "Type", "Tags") },
             new("pulled", "Who pulled?", pulls is null ? "not read yet" : $"{pulls.Value.ToString("N0", CultureInfo.InvariantCulture)} pulls",
-                [new($"{ResourceView.Number(ok)} succeeded · {ResourceView.Number(pushes)} pushes in the window · pulled with the site's identity", null)],
+                [new($"{ResourceView.Number(ok)} succeeded · {ResourceView.Number(pulls is { } all && ok is { } fine ? all - fine : null)} failed · {ResourceView.Number(pushes)} pushes in the window · pulled with the site's identity", null)],
                 pulls is > 0 && ok is { } good && good < pulls ? "warning" : "good"),
             new("stale", "What is stale?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "untagged")} untagged manifests",
                 [new($"{ResourceView.Fact(inputs, "untagged_gb")} GB no tag points at · a purge would free it; this card names it and does not run it", null)], "info"),
@@ -77,7 +91,7 @@ public static class AcrCard
                 ResourceView.LiveRead(inputs),
             ],
             $"{inputs.Availability.Reason}, one minute each; the catalogue hourly from the registry");
-        return new CloudReport(
+        return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0,
             ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
@@ -88,7 +102,7 @@ public static class AcrCard
             [ResourceView.Spark(inputs, "storage_gb", "Storage, 60 min", storageGb), ResourceView.Spark(inputs, "pulls", "Pulls, 60 min", readsPerMinute)],
             ResourceView.Chart(inputs, "Storage and pulls", ("storage_gb", "Storage", storageGb, false), ("pulls", "Pulls", readsPerMinute, false), Storage.Red, $"teal storage · green pulls · gold deploys · red event · dashed {Storage.Red} %"),
             rows,
-            readout);
+            readout), Sources);
     }
 
     /// <summary>The hour's facts from the registry's record and its catalogue.</summary>

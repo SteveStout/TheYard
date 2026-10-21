@@ -40,10 +40,9 @@ public sealed class ResourceDirectory(AzureMetrics azure, string resourceGroupId
         }
     }
 
-    /// <summary>The first resource of a type whose name ends with <paramref name="nameEnd"/>; throws when there is none, which the recorder logs.</summary>
-    public async Task<AzureResource> FindAsync(string type, string? nameEnd, CancellationToken cancellation) =>
-        Find(await AllAsync(cancellation), type, nameEnd)
-        ?? throw new InvalidOperationException($"no {type} named {nameEnd ?? "anything"} in the resource group");
+    /// <summary>The card's sentence for a configured name the group does not hold.</summary>
+    /// <param name="name">The configured name, or the end of one.</param>
+    public static string Missing(string? name) => $"no resource named {(name ?? "anything").TrimStart('/')} in the group";
 
     /// <summary>The first resource of a type, and of a name ending as given when one is; null when none matches.</summary>
     public static AzureResource? Find(IReadOnlyList<AzureResource> all, string type, string? nameEnd) =>

@@ -9,6 +9,23 @@ namespace TheYard.Api;
 /// <summary>The mail card.</summary>
 public static class MailCard
 {
+    /// <summary>Where each row and readout line of this card is read, by row key or line label (CardFrame.Sourced).</summary>
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["uses"] = "ARM record of the domain",
+        ["arriving"] = "Azure Monitor",
+        ["azure"] = "Activity Log",
+        ["sender"] = "Azure Monitor, and the ARM record of the domain",
+        ["Sends, hour"] = "Azure Monitor",
+        ["Sends, window"] = "Azure Monitor",
+        ["Delivered"] = "Azure Monitor",
+        ["Bounced"] = "Azure Monitor",
+        ["Suppressed"] = "Azure Monitor",
+        ["Quarantined"] = "Azure Monitor",
+        ["Failed"] = "Azure Monitor",
+        ["Bounce rate"] = "Azure Monitor",
+    };
+
     /// <summary>
     /// What the Azure-managed sender allows an hour. Typed, with <see cref="CustomDomainPerHour"/>,
     /// because no record the service returns states its sending limit; which of the two the dial is
@@ -60,7 +77,7 @@ public static class MailCard
                 [new($"{ResourceView.Number(bounced)} bounced · {ResourceView.Number(suppressed)} suppressed · {ResourceView.Number(quarantined)} quarantined · {ResourceView.Number(failed)} failed", null)],
                 CloudTones.Of(bounceTone)),
             new("azure", "What did Azure do to it?", events.Count == 0 ? "nothing in the window" : $"{events.Count} events",
-                [.. events.Take(3).Select(e => new CloudLink($"{e.At:MMM d HH:mm} {e.Title}", null))], events.Any(e => !e.Planned) ? "warning" : "good"),
+                [.. events.Take(3).Select(e => new CloudLink($"{e.At:MMM d HH:mm} {e.Title}", null))], events.Any(e => !e.Planned) ? "info" : "good"),
             new("sender", $"Is {ResourceView.Fact(inputs, "domain_kind", "the sender")} still right?", sendsTone == PlanTone.Alarm ? "no, sends are near its hourly limit" : "yes",
                 [new($"{ResourceView.Number(sendsHour)} sends this hour of {limit:N0} · the Azure-managed sender allows {SendsPerHour:0} an hour, a custom domain {CustomDomainPerHour:N0}", null)],
                 sendsTone == PlanTone.Alarm ? "alarm" : "good"),
@@ -84,7 +101,7 @@ public static class MailCard
                 ResourceView.LiveRead(inputs),
             ],
             $"{inputs.Availability.Reason}, one minute each; the domain hourly");
-        return new CloudReport(
+        return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0,
             ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
@@ -95,7 +112,7 @@ public static class MailCard
             [ResourceView.Spark(inputs, "sends", "Sends, 60 min", limit / 60), ResourceView.Spark(inputs, "delivered", "Delivered, 60 min", limit / 60)],
             ResourceView.Chart(inputs, "Sends and deliveries", ("sends", "Sends", 10, false), ("delivered", "Delivered", 10, false), 100, "teal sends · green delivered, as a share of 10 a minute · gold deploys · red event"),
             rows,
-            readout);
+            readout), Sources);
     }
 
     /// <summary>The hour's facts from the resource's record and its linked email domain.</summary>
@@ -108,7 +125,8 @@ public static class MailCard
             ["sender_domain"] = domain is { } d3 ? AzureMetrics.Text(d3, "properties.mailFromSenderDomain") ?? name : null,
             ["domain_kind"] = managed == "AzureManaged" ? "the free Azure-managed sender" : managed is null ? null : "a custom domain",
             ["data_location"] = AzureMetrics.Text(record, "properties.dataLocation"),
-            ["spec"] = string.Join(' ', new[] { "PAY PER MESSAGE", AzureMetrics.Text(record, "properties.dataLocation")?.ToUpperInvariant() }.Where(p => p is not null)),
+            // The tier as the record names it; Communication Services' record may name none, and then the line says so.
+            ["spec"] = string.Join(' ', new[] { (AzureMetrics.Text(record, "properties.sku.name") ?? AzureMetrics.Text(record, "sku.name") ?? "tier not read").ToUpperInvariant(), AzureMetrics.Text(record, "properties.dataLocation")?.ToUpperInvariant() }.Where(p => p is not null)),
         };
     }
 }

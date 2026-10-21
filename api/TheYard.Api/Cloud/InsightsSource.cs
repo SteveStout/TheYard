@@ -67,7 +67,8 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
         {
             ["cap_gb"] = cap?.ToString("0.###", CultureInfo.InvariantCulture),
             ["cap_from"] = workspaceCap is > 0 ? "the workspace" : componentCap is not null ? "the component" : null,
-            ["sampling_setting"] = AzureMetrics.Text(component.RootElement, "properties.SamplingPercentage") ?? "100",
+            // Absent is unread: the record not stating a share is not the record stating all of it.
+            ["sampling_setting"] = AzureMetrics.Text(component.RootElement, "properties.SamplingPercentage"),
             ["retention_days"] = AzureMetrics.Text(workspace.RootElement, "properties.retentionInDays"),
             ["reporters"] = reporters.Count == 0 ? "nothing reported in a day" : string.Join(" · ", reporters.Select(r => $"{r.GetValueOrDefault("AppRoleName") ?? "unnamed"} {r.GetValueOrDefault("items")}")),
             ["reporter_rows"] = CloudTable.ToFact(reporters.Select(r => new[] { r.GetValueOrDefault("AppRoleName") ?? "unnamed", "Web app", r.GetValueOrDefault("items") })),
@@ -75,7 +76,8 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
             ["workspace_name"] = PlanReader.NameOf(workspaceId),
             ["workspace_href"] = PlanView.Portal(tenant, workspaceId),
             ["query"] = _refused ? "refused" : "read",
-            ["spec"] = $"PAY AS YOU GO · {AzureMetrics.Text(component.RootElement, "location")?.ToUpperInvariant()}",
+            // The pricing tier as the workspace's record names it (PerGB2018 is pay as you go), never typed here.
+            ["spec"] = string.Join(" · ", new[] { (AzureMetrics.Text(workspace.RootElement, "properties.sku.name") ?? "tier not read").ToUpperInvariant(), AzureMetrics.Text(component.RootElement, "location")?.ToUpperInvariant() }.Where(part => part is not null)),
         }, events);
     }
 

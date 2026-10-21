@@ -9,6 +9,23 @@ namespace TheYard.Api;
 /// <summary>The document store's card.</summary>
 public static class CosmosCard
 {
+    /// <summary>Where each row and readout line of this card is read, by row key or line label (CardFrame.Sourced).</summary>
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["runs"] = "ARM record",
+        ["throttling"] = "Azure Monitor",
+        ["keeping"] = "Azure Monitor",
+        ["tier"] = "kept minutes, Azure Monitor",
+        ["RU/s now"] = "Azure Monitor",
+        ["RU/s p95, 30 d"] = CardFrame.KeptMinutes,
+        ["Normalized peak"] = "Azure Monitor",
+        ["Storage"] = "Azure Monitor",
+        ["Documents"] = "Azure Monitor",
+        ["Requests, hour"] = "Azure Monitor",
+        ["Throttled"] = "Azure Monitor",
+        ["Latency"] = "Azure Monitor",
+    };
+
     /// <summary>
     /// The free tier's storage, which the storage dial is read against. Typed, because no record
     /// Azure returns for the account states it; the throughput the RU dial is read against is the
@@ -82,7 +99,7 @@ public static class CosmosCard
                 ResourceView.LiveRead(inputs),
             ],
             $"{inputs.Availability.Reason}, one minute each; live every 60 s from Azure Monitor");
-        return new CloudReport(
+        return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0,
             ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
@@ -93,7 +110,7 @@ public static class CosmosCard
             [ResourceView.Spark(inputs, "ru_per_s", "RU/s, 60 min", provisioned), ResourceView.Spark(inputs, "normalized", "Normalized RU, 60 min", 100, percentReading: true)],
             ResourceView.Chart(inputs, "RU/s and storage", ("ru_per_s", "RU/s", provisioned, false), ("storage_gb", "Storage", storageLimit, false), Throughput.Red, $"teal RU/s · green storage · gold deploys · red 429s · dashed {Throughput.Red} %", throttles),
             rows,
-            readout);
+            readout), Sources);
     }
 
     /// <summary>A container's time to live in words: off, on with no default, or the default in days or hours.</summary>
