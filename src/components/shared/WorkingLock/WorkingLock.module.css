@@ -26,10 +26,12 @@
 }
 
 /* Nothing slow: out of the page's layout, so nothing in it is drawn, faded or turning. The display
-   change waits out the fade where the browser can transition it, and is at once where it cannot. */
+   change waits out the fade where the browser can transition it, and is at once where it cannot;
+   while it fades, and in a tab the browser is not drawing, clicks already pass through it. */
 .off {
   display: none;
   opacity: 0;
+  pointer-events: none;
 }
 
 @keyframes fade-in {

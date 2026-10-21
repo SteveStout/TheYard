@@ -38,6 +38,23 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     public string FunctionPath => functionPath;
 
     /// <summary>True when Azure answered that the identity may not read: 401 or 403.</summary>
+    /// <summary>
+    /// Why the Function was not found, with what the group did list, so the card says whether the name
+    /// is wrong or the group shows this identity nothing.
+    /// </summary>
+    /// <param name="all">What the group listed.</param>
+    /// <param name="names">The configured names.</param>
+    public static string Unfound(IReadOnlyList<AzureResource> all, NightlyResources names)
+    {
+        if (all.Count == 0)
+        {
+            return $"{names.Group} lists nothing to the site's identity: the group is empty, or it holds no role that reads it";
+        }
+        var sites = all.Where(r => string.Equals(r.Type, SiteType, StringComparison.OrdinalIgnoreCase)).Select(r => r.Name).ToList();
+        string held = sites.Count == 0 ? "no web or Function app" : string.Join(", ", sites);
+        return $"no {SiteType} named {names.Function} in {names.Group}, which lists {all.Count} resources and {held}";
+    }
+
     public static bool Refused(HttpRequestException ex) => ex.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized;
 
     /// <summary>The Function's executions and execution units a minute; nothing off Azure, while the role is missing, or before the Function exists.</summary>
@@ -70,10 +87,11 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
         }
         try
         {
-            var site = ResourceDirectory.Find(await directory.AllAsync(cancellation), SiteType, names.Function);
+            var listed = await directory.AllAsync(cancellation);
+            var site = ResourceDirectory.Find(listed, SiteType, names.Function);
             if (site is null)
             {
-                facts["site"] = $"no {SiteType} named {names.Function} in {names.Group}";
+                facts["site"] = Unfound(listed, names);
                 return new ResourceHour(hour, "", null, facts, []);
             }
             var (record, tenant) = await azure.RecordAsync(site.Id, "2024-04-01", cancellation);

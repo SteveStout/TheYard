@@ -37,6 +37,20 @@ public sealed partial class NightlyCardTests
 
     // #region nightly-run-reader-tests
     [Fact]
+    public void A_function_not_found_says_what_the_group_listed()
+    {
+        var names = new NightlyResources("RG-TEST-NIGHTLY", "func-test", "plan-test", "sttest", "owner/repo", "nightly.yml");
+        Assert.Equal(
+            "RG-TEST-NIGHTLY lists nothing to the site's identity: the group is empty, or it holds no role that reads it",
+            NightlySource.Unfound([], names));
+        AzureResource[] held = [new("/x/plan-test", "plan-test", "Microsoft.Web/serverfarms"), new("/x/func-test-2", "func-test-2", "Microsoft.Web/sites")];
+        Assert.Equal(
+            "no Microsoft.Web/sites named func-test in RG-TEST-NIGHTLY, which lists 2 resources and func-test-2",
+            NightlySource.Unfound(held, names));
+        Assert.EndsWith("which lists 1 resources and no web or Function app", NightlySource.Unfound([held[0]], names), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task The_reader_fills_the_card_from_github_with_no_log_and_sends_a_token_only_when_one_is_set()
     {
         var github = new GitHubOnly(HttpStatusCode.OK, TwoRuns);
