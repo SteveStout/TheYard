@@ -90,21 +90,30 @@ public sealed class NightlySlotsTests
     }
 
     /// <summary>
-    /// The Function compiles this exact file by a link in its project, and its clock asks the table
-    /// rather than keeping hours of its own, so the card's idea of a slot is the Function's.
+    /// The Function's own clock, compiled into this project, answers every hour of both
+    /// daylight-saving days exactly as the table does: the same slot, the same 4 AM, the same
+    /// Central hour. The Function compiles the table by a link in its project, held below too.
     /// </summary>
-    [Fact]
-    public void The_function_compiles_the_same_table_and_keeps_no_hours_of_its_own()
+    [Theory]
+    [InlineData("2026-03-08")]
+    [InlineData("2026-11-01")]
+    [InlineData("2026-10-21")]
+    public void The_function_s_clock_answers_every_hour_of_a_daylight_saving_day_as_the_table_does(string day)
     {
-        string folder = Path.Combine(Repo.Root(), "functions", "jobhunt");
-        string project = File.ReadAllText(Path.Combine(folder, "JobHunt.Functions.csproj"));
-        string clock = File.ReadAllText(Path.Combine(folder, "CentralClock.cs"));
+        var start = DateTimeOffset.Parse(day + "T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
+        int fourAms = 0;
+        for (var hour = start; hour < start.AddDays(1); hour = hour.AddHours(1))
+        {
+            Assert.Equal(NightlySlots.Slot(hour), JobHunt.Functions.CentralClock.Slot(hour));
+            Assert.Equal(NightlySlots.Local(hour), JobHunt.Functions.CentralClock.Local(hour));
+            Assert.Equal(NightlySlots.Slot(hour) == NightlySlots.Reply, JobHunt.Functions.CentralClock.IsFourAm(hour));
+            fourAms += JobHunt.Functions.CentralClock.IsFourAm(hour) ? 1 : 0;
+        }
+        // One 4 AM in each UTC day read: 09:00Z under daylight time, 10:00Z under standard time.
+        Assert.Equal(1, fourAms);
+        Assert.Equal((NightlySlots.Reply, NightlySlots.Bookkeeping), (JobHunt.Functions.CentralClock.Reply, JobHunt.Functions.CentralClock.Bookkeeping));
+        string project = File.ReadAllText(Path.Combine(Repo.Root(), "functions", "jobhunt", "JobHunt.Functions.csproj"));
         Assert.Contains("<Compile Include=\"..\\..\\api\\TheYard.Domain\\NightlySlots.cs\" Link=\"NightlySlots.cs\" />", project, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(Repo.Root(), "api", "TheYard.Domain", "NightlySlots.cs")));
-        Assert.Contains("NightlySlots.Slot(", clock, StringComparison.Ordinal);
-        Assert.DoesNotContain("switch", clock, StringComparison.Ordinal);
-        Assert.DoesNotContain(".Hour", clock, StringComparison.Ordinal);
-        Assert.DoesNotContain("FindSystemTimeZoneById", clock, StringComparison.Ordinal);
     }
     // #endregion nightly-slot-tests
 }

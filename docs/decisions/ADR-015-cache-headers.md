@@ -135,3 +135,8 @@ Until today every document said `no-cache` to the browser and nothing to the edg
 - **No `durable`.** The handoff asked for `durable` on the edge rule. Netlify reads that word on its own Functions' answers only (Netlify's caching overview, read again today, and the addendum of 28 September), and these come through its proxy from Azure, so the header leaves it off rather than claim a shared layer that is not there.
 - **Unchanged.** The bundle's scripts and stylesheets under `/assets` keep their year, immutable, by content hash. `/favicon.svg` is not served at all: the site's icon is written into the page as a data address, so no file rule applies to it. The Shed's own `css/` and `js/` keep their names and their ETag rule by their own record.
 - **What it costs.** A document read through the edge is no longer counted on the Site activity card's page counts, because the origin never sees it. The two steps the card follows a visitor through are kept out for that reason; the rest is the price of not drawing an unchanged document on every read.
+
+## Addendum, 2026-10-21 (1.0.4.15): no Vary on the cookie, and HEAD as GET
+
+What the edge keeps for a day (the documents, the diagrams, the share picture) is kept only from an anonymous request and sent with no `Vary: Cookie`. A Vary on the cookie would give every browser that holds any cookie at all a copy of its own, which is no shared cache; the rule it would protect is that a kept answer is the same for everyone, and that is held directly instead: `EdgeKeepsTests` reads a document and a diagram signed out and again signed in and asserts the same bytes. A HEAD is now read the way a GET is (kept when anonymous, never with a cookie or an Authorization header), where it was never marked.
+

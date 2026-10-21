@@ -76,3 +76,10 @@ Before the two containers exist the card shows GitHub's runs and gates, the hour
 
 1.0.4.10 shipped the rule above for an hourly card, and the nightly card is read by the minute, so on the live site the recorder still returned before its hour: read on both names at 14:41Z, about eight minutes after the roll, Gates said "not read yet: no hour kept yet" and the run log was empty. From 1.0.4.12 any card whose keep is missing has its hour read once an hour and held in memory, minute card or hourly, and the reader asks for it once the held hour is past the hour. `NightlyCardTests` runs the recorder case with both shapes. The lesson is in the job-hunt failure log: a test of a card's wiring builds the card the way the catalogue builds it.
 
+
+## Addendum, 2026-10-21 (1.0.4.15): the run reader, and the Function's clock held by running it
+
+`NightlySource` read Azure Monitor, Resource Manager, the Activity Log and GitHub, wrote the run log and filled the cache, which is why the GitHub path could not be tested apart from Azure and why 1.0.4.9 shipped it broken. From 1.0.4.15 the runs are `NightlyRunReader`'s alone (`Cloud/NightlyRunReader.cs`: GitHub's answer into the cache, the log as the durable copy, the log's older runs folded in, the log read back when GitHub refuses), and `NightlySource` keeps the Azure reads and asks the reader first each hour. `NightlyCardTests` exercises the reader with a GitHub answer and a log and nothing of Azure, the bearer token among it.
+
+The test that held `CentralClock` and the table together read the Function's two files as text. From 1.0.4.15 the test project compiles `functions/jobhunt/CentralClock.cs` by a link, the way the Function compiles `NightlySlots.cs`; the clock needs Domain and nothing of the Functions SDK, so no second test project was needed. `NightlySlotsTests` calls the Function's clock and the table for every hour of both daylight-saving days of 2026 and an ordinary day and asserts the same slot, the same 4 AM and the same Central hour, one 4 AM a UTC day. The Function's own project is unchanged, so nothing rolls to Azure for it.
+

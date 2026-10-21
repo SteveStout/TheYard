@@ -40,8 +40,9 @@ public sealed class Module : IModule
             var azure = new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity);
             var directory = new ResourceDirectory(azure, group, TimeProvider.System);
             var nightlyDirectory = new ResourceDirectory(azure, nightlyNames.GroupPath(subscription), TimeProvider.System);
-            var nightly = new NightlySource(azure, nightlyDirectory, nightlyNames, new GitHubRuns(nightlyNames.Repo, nightlyNames.Workflow, configuration["Nightly:GitHubToken"]),
-                provider.GetRequiredService<INightlyRunLog>(), provider.GetRequiredService<NightlyRunCache>(), TimeProvider.System, nightlyNames.FunctionPath(subscription));
+            var runLog = provider.GetRequiredService<INightlyRunLog>();
+            var runReader = new NightlyRunReader(new GitHubRuns(nightlyNames.Repo, nightlyNames.Workflow, configuration["Nightly:GitHubToken"]), runLog, provider.GetRequiredService<NightlyRunCache>(), TimeProvider.System);
+            var nightly = new NightlySource(azure, nightlyDirectory, nightlyNames, runReader, runLog, nightlyNames.FunctionPath(subscription));
             // One hashed bundle file from the built page, so the hourly sample scores a file the edge keeps.
             string builtPage = Path.Combine(Path.GetDirectoryName(provider.GetRequiredService<HostPaths>().AssetsRoot)!, "index.html");
             var edge = new NetlifyEdge(token, names.Edge, publicSite, NetlifyEdge.BundleFileOf(builtPage));

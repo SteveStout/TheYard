@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TheYard.Api;
@@ -57,6 +58,44 @@ public class EdgeKeepsTests(WebApplicationFactory<Program> factory)
         var response = await _client.SendAsync(request);
 
         Assert.Equal("", Header(response, "Netlify-CDN-Cache-Control"));
+    }
+
+    /// <summary>
+    /// What the edge keeps is the same bytes signed in and out, which is why no Vary on the cookie is
+    /// sent: a document read anonymously and read again by a signed-in caller answers identically, so
+    /// a copy the edge filled for one is right for the other.
+    /// </summary>
+    [Theory]
+    [InlineData("/api/docs/readme")]
+    [InlineData("/api/docs/diagrams/infrastructure")]
+    public async Task A_kept_document_is_the_same_bytes_signed_in_and_signed_out(string path)
+    {
+        byte[] anonymous = await factory.CreateClient().GetByteArrayAsync(path);
+        var signedIn = factory.CreateClient();
+        string email = $"edge-{Guid.NewGuid():N}@example.com";
+        var registered = await signedIn.PostAsJsonAsync("/api/auth/register", new { email, password = "correct horse" });
+        Assert.True(registered.IsSuccessStatusCode, await registered.Content.ReadAsStringAsync());
+        Assert.Contains(email, await signedIn.GetStringAsync("/api/auth/me"), StringComparison.Ordinal);
+        Assert.Equal(anonymous, await signedIn.GetByteArrayAsync(path));
+    }
+
+    /// <summary>A HEAD is read the way a GET is: kept for a day when anonymous, never with a cookie.</summary>
+    [Fact]
+    public void A_head_is_kept_the_way_a_get_is()
+    {
+        var head = Answered("/api/docs/readme");
+        head.Request.Method = HttpMethods.Head;
+        EdgeKeeps.LetTheEdgeKeep(head);
+        Assert.Equal(EdgeKeeps.EdgeRule, head.Response.Headers["Netlify-CDN-Cache-Control"].ToString());
+        var signed = Answered("/api/docs/readme");
+        signed.Request.Method = HttpMethods.Head;
+        signed.Request.Headers.Cookie = "theyard-session=x";
+        EdgeKeeps.LetTheEdgeKeep(signed);
+        Assert.Equal("", signed.Response.Headers["Netlify-CDN-Cache-Control"].ToString());
+        var post = Answered("/api/docs/readme");
+        post.Request.Method = HttpMethods.Post;
+        EdgeKeeps.LetTheEdgeKeep(post);
+        Assert.Equal("", post.Response.Headers["Netlify-CDN-Cache-Control"].ToString());
     }
 
     /// <summary>The share card's picture keeps its name across deploys: a day for the browser and the edge.</summary>

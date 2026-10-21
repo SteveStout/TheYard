@@ -21,6 +21,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The nightly Function's clock, compiled here by the same kind of link the Function uses for
+         the slot table, so a test calls the Function's own code (ADR: The Nightly Function on the
+         Admin tab, the addendum of 1.0.4.15). It needs Domain and nothing of the Functions SDK. -->
+    <Compile Include="..\..\functions\jobhunt\CentralClock.cs" Link="Functions\CentralClock.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\TheYard.Domain\TheYard.Domain.csproj" />
     <ProjectReference Include="..\TheYard.Application\TheYard.Application.csproj" />
     <ProjectReference Include="..\TheYard.Infrastructure\TheYard.Infrastructure.csproj" />

@@ -79,7 +79,7 @@ public sealed partial class NightlyCardTests
         var log = new UnkeptRunLog();
         var cache = new NightlyRunCache();
         var source = new NightlySource(azure, new ResourceDirectory(azure, "/subscriptions/sub-1/resourceGroups/RG-TEST-NIGHTLY", TimeProvider.System), Names,
-            new GitHubRuns("owner/repo", "nightly.yml"), log, cache, new FixedClock(Now), FunctionPath);
+            new NightlyRunReader(new GitHubRuns("owner/repo", "nightly.yml"), log, cache, new FixedClock(Now)), log, FunctionPath);
 
         var hour = await source.HourAsync(Now, Now.AddHours(-1), CancellationToken.None);
         var view = NightlyCard.View(Unkept(hour), Names, FunctionPath, cache.Runs);

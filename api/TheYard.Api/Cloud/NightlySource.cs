@@ -1,8 +1,7 @@
-// What the nightly card reads, and from where (ADR: The Nightly Function on the Admin tab): the
+// What the nightly card reads from Azure (ADR: The Nightly Function on the Admin tab): the
 // Function's two Azure Monitor metrics every minute through a list of its own resource group, and
-// once an hour its ARM record, a day of five-minute firing counts judged against the slot table,
-// and the workflow's runs from GitHub, which fill the card's cache straight from GitHub's answer
-// and are kept in the run log as the durable copy whenever its container is there.
+// once an hour its ARM record, the Activity Log and a day of five-minute firing counts judged
+// against the slot table. The workflow's runs are NightlyRunReader's, which the hour asks first.
 // The site's identity holds no role on that group until Steve grants one, so a 401 or 403 from
 // Resource Manager or Monitor is an answer, not a failure: the hour says the role is missing and
 // the card says "not read" on every line that needs it.
@@ -14,16 +13,14 @@ using TheYard.Domain;
 
 namespace TheYard.Api;
 
-/// <summary>Reads the Function's minutes and hours, and the workflow's runs, for the nightly card.</summary>
+/// <summary>Reads the Function's minutes and hours for the nightly card, the workflow's runs through its run reader.</summary>
 /// <param name="azure">Azure Monitor and Resource Manager, as the site's identity.</param>
 /// <param name="directory">The Function's resource group, listed once an hour.</param>
 /// <param name="names">The Function's names, from configuration.</param>
-/// <param name="runs">The workflow's runs on GitHub.</param>
-/// <param name="log">Where the runs and the judged slots are kept.</param>
-/// <param name="cache">The card's copy of the last thirty days of runs.</param>
-/// <param name="clock">The clock the run log is read back against.</param>
+/// <param name="runs">The workflow's runs: read from GitHub, kept, and held for the card.</param>
+/// <param name="log">Where the judged slots are kept.</param>
 /// <param name="functionPath">The Function app's resource id as configuration names it, for the portal link before Azure has been read.</param>
-public sealed class NightlySource(AzureMetrics azure, ResourceDirectory directory, NightlyResources names, GitHubRuns runs, INightlyRunLog log, NightlyRunCache cache, TimeProvider clock, string functionPath)
+public sealed class NightlySource(AzureMetrics azure, ResourceDirectory directory, NightlyResources names, NightlyRunReader runs, INightlyRunLog log, string functionPath)
 {
     /// <summary>The Function app's Resource Manager type.</summary>
     public const string SiteType = "Microsoft.Web/sites";
@@ -32,7 +29,7 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     public const string RoleFact = "role", RoleMissing = "missing";
 
     /// <summary>The card's copy of the run log.</summary>
-    public NightlyRunCache Cache => cache;
+    public NightlyRunCache Cache => runs.Cache;
 
     /// <summary>The Function's names, from configuration.</summary>
     public NightlyResources Names => names;
@@ -65,7 +62,7 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     /// <summary>The hour's facts: the runs from GitHub first, then the Function's record and its judged slots, or that the role is missing.</summary>
     public async Task<ResourceHour> HourAsync(DateTimeOffset hour, DateTimeOffset since, CancellationToken cancellation)
     {
-        var facts = new Dictionary<string, string?>(StringComparer.Ordinal) { ["github"] = await RunsAsync(cancellation) };
+        var facts = new Dictionary<string, string?>(StringComparer.Ordinal) { ["github"] = await runs.ReadAsync(cancellation) };
         if (!azure.Configured)
         {
             facts["azure"] = "no identity here";
@@ -113,39 +110,6 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
         {
             return [];
         }
-    }
-
-    /// <summary>
-    /// Reads the workflow's runs and fills the cache from GitHub's answer; keeps them in the run log
-    /// when it is there and folds in the older runs it holds. Says in a few words how the read went.
-    /// </summary>
-    private async Task<string> RunsAsync(CancellationToken cancellation)
-    {
-        var now = clock.GetUtcNow();
-        bool kept = (await log.AvailabilityAsync(cancellation)).Available;
-        IReadOnlyList<NightlyRun> listed;
-        try
-        {
-            listed = await runs.ReadAsync(now, cancellation);
-        }
-        catch (HttpRequestException ex)
-        {
-            if (kept)
-            {
-                cache.Replace(await log.SinceAsync(now - GitHubRuns.Window, cancellation), now);
-            }
-            return ex.StatusCode is { } code ? $"not read: GitHub answered {(int)code}" : "not read: GitHub did not answer";
-        }
-        if (!kept)
-        {
-            cache.Replace(listed, now);
-            return $"{listed.Count} runs read";
-        }
-        await log.UpsertAsync(listed, cancellation);
-        var fresh = listed.Select(run => run.Id).ToHashSet(StringComparer.Ordinal);
-        var older = (await log.SinceAsync(now - GitHubRuns.Window, cancellation)).Where(run => !fresh.Contains(run.Id));
-        cache.Replace([.. listed, .. older], now);
-        return $"{listed.Count} runs read";
     }
 
     /// <summary>The day before <paramref name="hour"/> at five minutes, each due slot judged on time, late or missed.</summary>

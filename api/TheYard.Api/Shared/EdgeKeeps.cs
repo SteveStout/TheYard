@@ -42,15 +42,18 @@ public static class EdgeKeeps
 
     /// <summary>
     /// Lets the edge keep this answer for <see cref="EdgeRule"/>, on the catalogue reads' terms: a
-    /// 200 to a GET from a caller with no cookie and no Authorization header, setting no cookie of
-    /// its own, so a session renewed on the way out can never sit in a shared copy.
+    /// 200 to a GET or a HEAD from a caller with no cookie and no Authorization header, setting no
+    /// cookie of its own, so a session renewed on the way out can never sit in a shared copy. No
+    /// Vary on the cookie: these answers are the same bytes signed in and out, which EdgeKeepsTests
+    /// holds, and a Vary on Cookie would give every browser holding any cookie a copy of its own,
+    /// which is no edge cache at all.
     /// </summary>
     public static void LetTheEdgeKeep(HttpContext context)
     {
         var request = context.Request;
         var response = context.Response;
         bool anonymous = !request.Headers.ContainsKey("Cookie") && !request.Headers.ContainsKey("Authorization");
-        if (!HttpMethods.IsGet(request.Method) || !Keeps(request.Path) || !anonymous
+        if (!(HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method)) || !Keeps(request.Path) || !anonymous
             || response.StatusCode != StatusCodes.Status200OK || response.Headers.ContainsKey("Set-Cookie"))
         {
             return;
