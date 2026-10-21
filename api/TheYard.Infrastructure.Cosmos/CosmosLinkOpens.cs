@@ -1,5 +1,6 @@
 using System.Net;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Logging;
 using TheYard.Application.Features.Links;
 
 namespace TheYard.Infrastructure.Cosmos;
@@ -10,12 +11,17 @@ namespace TheYard.Infrastructure.Cosmos;
 /// in place by partial updates the way the visitors are, so two containers opening the same code
 /// add rather than overwrite. The activity container is used because it already exists on the
 /// account with no expiry and a partition on the day, so a link is kept as long as the site's
-/// activity is and nothing new has to be applied to the account.
+/// activity is and nothing new has to be applied to the account. Every count moves by an atomic
+/// increment, the opens and each path's alike, so two writers in the same second both land.
 /// </summary>
 public sealed class CosmosLinkOpens(CosmosStore store) : ILinkOpens
 {
+    /// <summary>The most operations Cosmos DB takes in one partial update.</summary>
+    public const int OperationsPerPatch = 10;
+
     private readonly Container _container = store.ContainerNamed(Containers.Activity);
     private LinkOpensAvailability? _availability;
+    private long _notKept;
 
     public async Task<LinkOpensAvailability> AvailabilityAsync(CancellationToken cancellation)
     {
@@ -84,34 +90,66 @@ public sealed class CosmosLinkOpens(CosmosStore store) : ILinkOpens
                             cancellationToken: cancellation);
                         break;
                     }
-                    var operations = new List<PatchOperation>
+                    foreach (var patch in PatchesFor(stored, delta))
                     {
-                        PatchOperation.Increment("/opens", delta.Opens),
-                        PatchOperation.Set("/paths", LinkOpenFolding.Merge(stored.Paths, delta.Paths)),
-                    };
-                    if (delta.Last > stored.LastSeen)
-                    {
-                        operations.Add(PatchOperation.Set("/last_seen", delta.Last));
+                        await _container.PatchItemAsync<LinkOpenDocument>(id, partition, patch, cancellationToken: cancellation);
                     }
-                    if (delta.First < stored.FirstSeen)
-                    {
-                        operations.Add(PatchOperation.Set("/first_seen", delta.First));
-                    }
-                    await _container.PatchItemAsync<LinkOpenDocument>(id, partition, operations, cancellationToken: cancellation);
                     break;
                 }
                 catch (CosmosException ex) when (attempt == 1 && ex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.NotFound)
                 {
                     // Try once more.
                 }
-                catch (CosmosException)
+                catch (CosmosException ex)
                 {
-                    // A count of opens is not worth a request thread, and this is never on one; the batch is dropped.
+                    // A count of opens is not worth a retry loop, and this is never on a request
+                    // thread: this row is dropped, said by its type and status, never its message.
+                    long notKept = Interlocked.Increment(ref _notKept);
+                    store.Logger.LogWarning("A link-open row was not kept: {Type} {Status}, {NotKept} since start", ex.GetType().Name, (int)ex.StatusCode, notKept);
                     break;
                 }
             }
         }
     }
+
+    /// <summary>
+    /// The partial updates one day's delta makes to a stored row, ten operations at most each: the
+    /// opens and every path by increment, a path Cosmos DB does not hold yet created by the same
+    /// increment, a new path only while the row holds fewer than the kept number, and the first and
+    /// last seen moved only outward.
+    /// </summary>
+    /// <param name="stored">The row as it was read.</param>
+    /// <param name="delta">What the batch adds to it.</param>
+    public static IReadOnlyList<IReadOnlyList<PatchOperation>> PatchesFor(LinkOpenDocument stored, LinkOpenDay delta)
+    {
+        var operations = new List<PatchOperation> { PatchOperation.Increment("/opens", delta.Opens) };
+        int room = LinkOpenFolding.PathsKept - stored.Paths.Count;
+        foreach (var (path, count) in delta.Paths.OrderByDescending(pair => pair.Value).ThenBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            if (!stored.Paths.ContainsKey(path))
+            {
+                if (room <= 0)
+                {
+                    continue;
+                }
+                room--;
+            }
+            operations.Add(PatchOperation.Increment("/paths/" + Pointer(path), count));
+        }
+        if (delta.Last > stored.LastSeen)
+        {
+            operations.Add(PatchOperation.Set("/last_seen", delta.Last));
+        }
+        if (delta.First < stored.FirstSeen)
+        {
+            operations.Add(PatchOperation.Set("/first_seen", delta.First));
+        }
+        return [.. operations.Chunk(OperationsPerPatch).Select(chunk => (IReadOnlyList<PatchOperation>)chunk)];
+    }
+
+    /// <summary>A key as one step of a JSON pointer: "~" as "~0" and "/" as "~1", so "/api/go/github" is one property.</summary>
+    /// <param name="key">The dictionary key.</param>
+    public static string Pointer(string key) => key.Replace("~", "~0", StringComparison.Ordinal).Replace("/", "~1", StringComparison.Ordinal);
 
     public async Task<IReadOnlyList<LinkOpenDay>> DaysAsync(DateTimeOffset since, CancellationToken cancellation)
     {

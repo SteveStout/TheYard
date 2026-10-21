@@ -35,15 +35,19 @@ public static partial class LinkCodes
 /// </summary>
 public static partial class LinkPreviews
 {
-    /// <summary>True when the agent names a preview fetcher or a link scanner, or there is no agent at all.</summary>
+    /// <summary>
+    /// True when the agent names a preview fetcher or a link scanner, or there is no agent at all:
+    /// a request with no agent is a tool, never a person's browser. "bot" counts only at the end of
+    /// a word (Googlebot/, Slackbot-), so a phone named CUBOT_X30 is a person.
+    /// </summary>
     /// <param name="userAgent">The request's User-Agent header, or null.</param>
     public static bool IsOne(string? userAgent) => string.IsNullOrWhiteSpace(userAgent) || Fetcher().IsMatch(userAgent);
 
     [GeneratedRegex(
         "LinkedInBot|Slackbot|Slack-ImgProxy|facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Discordbot|Google-PageRenderer|GoogleImageProxy|Google-Safety|"
-        + "SkypeUriPreview|Iframely|Embedly|Bitly|Zoom|Microsoft Office|OfficeProtocolDiscovery|SafeLinks|Outlook-iOS|BingPreview|Yahoo Link Preview|"
+        + "SkypeUriPreview|Iframely|Embedly|Bitly|Zoombot|ms-office|MSOffice|Microsoft Office|OfficeProtocolDiscovery|SafeLinks|Outlook-iOS|BingPreview|Yahoo Link Preview|"
         + "Mimecast|Proofpoint|Barracuda|ClamAV|Symantec|Mailchimp|HubSpot|Apple-PubSub|AppleMail|Applebot|"
-        + "bot|crawl|spider|slurp|curl|wget|python|httpclient|go-http|java/|libwww|scan|headless|phantom|TheYard-SelfRead",
+        + @"bot\b|crawl|spider|slurp|curl|wget|python|httpclient|go-http|java/|libwww|scan|headless|phantom|TheYard-SelfRead",
         RegexOptions.IgnoreCase)]
     private static partial Regex Fetcher();
 }
@@ -52,7 +56,8 @@ public static partial class LinkPreviews
 // #region tagged-requests
 /// <summary>
 /// Which requests count as an open, decided once for the pipeline and the page's own report:
-/// a GET whose query carries a code, not from a preview fetcher or a scanner. The page's report
+/// a GET whose query carries a code, not from a preview fetcher or a scanner, that the site
+/// answered: a 404 on /api/go/nope is a guess, not a link anyone sent. The page's report
 /// (/api/links/open) counts under the view the page opened on, because the page itself is served
 /// elsewhere; every other tagged request counts under its own path with the query cut off.
 /// </summary>
@@ -80,9 +85,10 @@ public static class TaggedRequests
     /// <param name="userAgent">The User-Agent header, or null.</param>
     /// <param name="at">When the request arrived.</param>
     /// <param name="store">The store serving it.</param>
-    public static LinkOpen? OpenOf(string method, string path, string? code, string? pagePath, string? userAgent, DateTimeOffset at, string store)
+    /// <param name="status">The status the site answered with; 400 and above is never an open.</param>
+    public static LinkOpen? OpenOf(string method, string path, string? code, string? pagePath, string? userAgent, DateTimeOffset at, string store, int status = 200)
     {
-        if (!string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) || !LinkCodes.IsOne(code) || LinkPreviews.IsOne(userAgent))
+        if (status >= 400 || !string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase) || !LinkCodes.IsOne(code) || LinkPreviews.IsOne(userAgent))
         {
             return null;
         }
@@ -116,6 +122,14 @@ public sealed record LinkOpenDay(string Day, string Code, DateTimeOffset First, 
 /// <param name="Available">True when the store keeps opens.</param>
 /// <param name="Reason">Why not, in one sentence, when it does not.</param>
 public sealed record LinkOpensAvailability(bool Available, string Reason);
+
+/// <summary>Port: where the request recorder hands an open, at once and without waiting; the Links slice's collector is behind it.</summary>
+public interface ILinkOpenOffers
+{
+    /// <summary>Takes one open and returns at once.</summary>
+    /// <param name="open">The open.</param>
+    void Offer(LinkOpen open);
+}
 
 /// <summary>Port: where opens are kept. Writes arrive in batches, never from a request thread.</summary>
 public interface ILinkOpens

@@ -59,6 +59,8 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync($"/api/links/open?r={code}&path=/")).StatusCode);
         Assert.Equal(HttpStatusCode.Found, (await client.GetAsync($"/api/go/github?r={code}")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/resume?src=email&r={code}")).StatusCode);
+        // A pass-through the site refuses leaves the row as it was: a guess at a key is not an open.
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/go/nope?r={code}")).StatusCode);
         var unfurler = factory.CreateClient();
         unfurler.DefaultRequestHeaders.UserAgent.ParseAdd("LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)");
         Assert.Equal(HttpStatusCode.NoContent, (await unfurler.GetAsync($"/api/links/open?r={code}&path=/")).StatusCode);
@@ -78,6 +80,7 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         Assert.Equal(1, paths.GetProperty("/").GetInt32());
         Assert.Equal(1, paths.GetProperty("/api/go/github").GetInt32());
         Assert.Equal(1, paths.GetProperty("/resume/email").GetInt32());
+        Assert.False(paths.TryGetProperty("/api/go/nope", out _));
         // Codes and paths only: nothing in the card's wire names a person, an address or an agent.
         string wire = root.GetRawText();
         Assert.DoesNotContain("Chrome", wire, StringComparison.Ordinal);

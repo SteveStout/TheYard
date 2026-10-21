@@ -19,7 +19,7 @@ public sealed class RequestRecorder(
     LogCollector logCollector,
     VisitorTokens visitorTokens,
     ActivityCollector activity,
-    LinkOpenCollector links,
+    ILinkOpenOffers links,
     SiteHosts sites)
 {
     private readonly string[] _siteHosts = [.. sites.All.Select(site => site.Host)];
@@ -122,7 +122,8 @@ public sealed class RequestRecorder(
                 context.Request.Query["path"].FirstOrDefault(),
                 context.Request.Headers.UserAgent.FirstOrDefault(),
                 at,
-                store) is { } open)
+                store,
+                context.Response.StatusCode) is { } open)
         {
             links.Offer(open);
         }

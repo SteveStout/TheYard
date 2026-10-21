@@ -1,8 +1,9 @@
 // Opens of tagged links, offered on the request path and written in batches off it, the way the
 // activity hits are (ActivityCollector.cs): a bounded channel, a drain every few seconds or when
 // the channel fills, and one keeper. Smaller than the activity collector because an open is rare:
-// the operator sends a few dozen links a week. At the host's root beside the activity collector,
-// because the request recorder, which is shared, offers to it, and a shared type reaches no slice.
+// the operator sends a few dozen links a week. At the host's root beside the activity collector, a
+// running thing with its dependencies in its constructor; the request recorder, which is shared,
+// offers to it through the Application port ILinkOpenOffers, so the shared code names no class here.
 using System.Threading.Channels;
 using TheYard.Application.Features.Links;
 
@@ -10,7 +11,7 @@ namespace TheYard.Api;
 
 // #region link-open-collector
 /// <summary>Takes opens from the request path and writes them to the keeper in batches, never from a request thread.</summary>
-public sealed class LinkOpenCollector : BackgroundService
+public sealed class LinkOpenCollector : BackgroundService, ILinkOpenOffers
 {
     /// <summary>The most opens the channel holds before it drops the oldest.</summary>
     public const int Capacity = 2_000;
@@ -25,9 +26,6 @@ public sealed class LinkOpenCollector : BackgroundService
     private readonly ILinkOpens _keeper;
     private readonly ILogger<LinkOpenCollector> _logger;
     private int _pending;
-    private long _offered;
-    private long _written;
-    private long _failedBatches;
     private long _dropped;
     private volatile TaskCompletionSource _wake = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -43,20 +41,12 @@ public sealed class LinkOpenCollector : BackgroundService
             _ => Interlocked.Increment(ref _dropped));
     }
 
-    /// <summary>The keeper, for the card's handler.</summary>
-    public ILinkOpens Keeper => _keeper;
-
-    /// <summary>What has passed through: offered, written, batches that failed, opens a full channel dropped.</summary>
-    public (long Offered, long Written, long FailedBatches, long Dropped) Counters =>
-        (Interlocked.Read(ref _offered), Interlocked.Read(ref _written), Interlocked.Read(ref _failedBatches), Interlocked.Read(ref _dropped));
-
     /// <summary>Called on the request thread and returns at once.</summary>
     /// <param name="open">The open.</param>
     public void Offer(LinkOpen open)
     {
         if (_channel.Writer.TryWrite(open))
         {
-            Interlocked.Increment(ref _offered);
             if (Interlocked.Increment(ref _pending) >= DrainAt)
             {
                 _wake.TrySetResult();
@@ -92,6 +82,11 @@ public sealed class LinkOpenCollector : BackgroundService
             batch.Add(open);
         }
         Interlocked.Exchange(ref _pending, 0);
+        // A full channel drops its oldest; said once a drain, by count, so a flood is one line.
+        if (Interlocked.Exchange(ref _dropped, 0) is var dropped and > 0)
+        {
+            _logger.LogWarning("{Count} link opens were dropped by a full channel", dropped);
+        }
         if (batch.Count == 0)
         {
             return;
@@ -99,11 +94,9 @@ public sealed class LinkOpenCollector : BackgroundService
         try
         {
             await _keeper.RecordAsync(batch, cancellation);
-            Interlocked.Add(ref _written, batch.Count);
         }
         catch (Exception ex)
         {
-            Interlocked.Increment(ref _failedBatches);
             // The type, never the message: a store's message can name a server.
             _logger.LogWarning("A batch of {Count} link opens was dropped: {Type}", batch.Count, ex.GetType().Name);
         }

@@ -50,6 +50,10 @@ public sealed class LinkHandlerTests
     [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64) SkypeUriPreview Preview/0.5 skype-url-preview@microsoft.com", true)]
     [InlineData("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko) BingPreview/1.0b", true)]
     [InlineData("Microsoft Office Word 2014", true)]
+    [InlineData("Mozilla/4.0 (compatible; ms-office; MSOffice 16)", true)]
+    [InlineData("Mozilla/5.0 (Linux; Android 13; CUBOT_X30) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36", false)]
+    [InlineData("Mozilla/5.0 (Linux; Android 12; Zoomer Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36", false)]
+    [InlineData("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", true)]
     [InlineData("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15 Mimecast", true)]
     [InlineData("TheYard-SelfRead/1 (deploy)", true)]
     [InlineData("curl/8.4.0", true)]
@@ -79,6 +83,42 @@ public sealed class LinkHandlerTests
         Assert.Null(TaggedRequests.OpenOf("GET", "/api/admin/plan", "k7f2qa", null, chrome, Noon, "sql"));
         Assert.NotNull(TaggedRequests.OpenOf("GET", "/api/go/github", "k7f2qa", null, chrome, Noon, "sql"));
         Assert.NotNull(TaggedRequests.OpenOf("GET", "/about", "k7f2qa", null, chrome, Noon, "sql"));
+        // A pass-through the site refused is a guess, not a link anyone sent: a 404 never counts, a 302 does.
+        Assert.Null(TaggedRequests.OpenOf("GET", "/api/go/nope", "k7f2qa", null, chrome, Noon, "sql", 404));
+        Assert.NotNull(TaggedRequests.OpenOf("GET", "/api/go/github", "k7f2qa", null, chrome, Noon, "sql", 302));
+    }
+
+    /// <summary>
+    /// The document store's partial updates for one day's delta: every count by increment, a path
+    /// as one JSON pointer step, a new path only while the row has room, and ten operations a patch.
+    /// The live account runs them only on the site; the activity container has no test copy.
+    /// </summary>
+    [Fact]
+    public void A_stored_row_is_moved_by_increments_ten_operations_a_patch_with_paths_as_one_pointer_step()
+    {
+        var stored = new TheYard.Infrastructure.Cosmos.LinkOpenDocument
+        {
+            Opens = 11,
+            FirstSeen = Noon,
+            LastSeen = Noon,
+            Paths = Enumerable.Range(0, 11).ToDictionary(i => $"/p{i}", _ => 1, StringComparer.Ordinal),
+        };
+        var delta = new LinkOpenDay("2026-10-20", "k7f2qa", Noon.AddMinutes(-1), Noon.AddMinutes(1), 4,
+            new Dictionary<string, int>(StringComparer.Ordinal) { ["/api/go/github"] = 2, ["/p3"] = 1, ["/a~b"] = 1 });
+
+        var patches = TheYard.Infrastructure.Cosmos.CosmosLinkOpens.PatchesFor(stored, delta);
+        var paths = patches.SelectMany(patch => patch.Select(operation => operation.Path)).ToList();
+
+        Assert.All(patches, patch => Assert.InRange(patch.Count, 1, TheYard.Infrastructure.Cosmos.CosmosLinkOpens.OperationsPerPatch));
+        Assert.Equal(["/opens", "/paths/~1api~1go~1github", "/paths/~1p3", "/last_seen", "/first_seen"], paths);
+        Assert.All(patches.SelectMany(patch => patch).Where(operation => operation.Path.StartsWith("/paths/", StringComparison.Ordinal) || operation.Path == "/opens"),
+            operation => Assert.Equal(Microsoft.Azure.Cosmos.PatchOperationType.Increment, operation.OperationType));
+        Assert.Equal("~1a~0b", TheYard.Infrastructure.Cosmos.CosmosLinkOpens.Pointer("/a~b"));
+
+        // Twelve new paths on an empty row make two patches: the opens and nine paths, then the rest.
+        var wide = new LinkOpenDay("2026-10-20", "k7f2qa", Noon, Noon, 12, Enumerable.Range(0, 12).ToDictionary(i => $"/q{i:00}", _ => 1, StringComparer.Ordinal));
+        var empty = new TheYard.Infrastructure.Cosmos.LinkOpenDocument { FirstSeen = Noon, LastSeen = Noon };
+        Assert.Equal([10, 3], TheYard.Infrastructure.Cosmos.CosmosLinkOpens.PatchesFor(empty, wide).Select(patch => patch.Count));
     }
 
     [Fact]

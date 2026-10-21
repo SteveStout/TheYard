@@ -23,6 +23,8 @@ public sealed class Module : IModule
             : new MemoryLinkOpens());
         services.AddSingleton(provider => new LinkOpenCollector(provider.GetRequiredService<ILinkOpens>(), provider.GetRequiredService<ILogger<LinkOpenCollector>>()));
         services.AddHostedService(provider => provider.GetRequiredService<LinkOpenCollector>());
+        // The shared request recorder offers through the Application port, so it names no slice.
+        services.AddSingleton<ILinkOpenOffers>(provider => provider.GetRequiredService<LinkOpenCollector>());
         services.AddSingleton<ILinkTargets>(new ConfiguredLinkTargets(configuration));
         services.AddScoped<GoHandler>();
         services.AddScoped<ReportPageOpenHandler>();
