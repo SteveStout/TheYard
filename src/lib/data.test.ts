@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearVehicleCache, fetchVehicles, peekVehicles, utcDay, vehicleQueryParams } from './data';
+import {
+  clearVehicleCache,
+  fetchVehicleById,
+  fetchVehicles,
+  peekVehicles,
+  utcDay,
+  vehicleQueryParams,
+} from './data';
 import { EMPTY_FILTERS } from './inventory';
+import { working } from './working';
 
 describe('vehicleQueryParams', () => {
   it('produces nothing at all for empty filters and the default sort', () => {
@@ -187,3 +195,60 @@ describe('fetchVehicles caching', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+// #region quiet-refresh
+// A refresh nobody clicked for (the listing's timer, the room's round, a room price move on the open
+// vehicle) says background and never locks the page, however long it runs; the same request a
+// person asked for does (ADR: One working lock for the whole site, the addendum of 1.0.4.19).
+describe('a background request and the working lock', () => {
+  const slowAnswer = (body: unknown) =>
+    vi.fn(
+      () =>
+        new Promise<Response>((resolve) =>
+          setTimeout(
+            () => resolve({ ok: true, status: 200, json: async () => body } as unknown as Response),
+            900
+          )
+        )
+    );
+
+  beforeEach(() => {
+    clearVehicleCache();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('never locks for a background forceRefresh of the list', async () => {
+    vi.stubGlobal('fetch', slowAnswer({ total: 0, vehicles: [] }));
+    const asked = fetchVehicles(EMPTY_FILTERS, { forceRefresh: true, background: true });
+    await vi.advanceTimersByTimeAsync(600);
+    expect(working.locked()).toBe(false);
+    await vi.advanceTimersByTimeAsync(400);
+    await asked;
+    expect(working.locked()).toBe(false);
+  });
+
+  it('locks for the same refresh a person asked for, and lets go when it answers', async () => {
+    vi.stubGlobal('fetch', slowAnswer({ total: 0, vehicles: [] }));
+    const asked = fetchVehicles(EMPTY_FILTERS, { forceRefresh: true });
+    await vi.advanceTimersByTimeAsync(600);
+    expect(working.locked()).toBe(true);
+    await vi.advanceTimersByTimeAsync(400);
+    await asked;
+    expect(working.locked()).toBe(false);
+  });
+
+  it('never locks for a background read of one vehicle', async () => {
+    vi.stubGlobal('fetch', slowAnswer({ id: 'v1' }));
+    const asked = fetchVehicleById('v1', { background: true });
+    await vi.advanceTimersByTimeAsync(600);
+    expect(working.locked()).toBe(false);
+    await vi.advanceTimersByTimeAsync(400);
+    await asked;
+  });
+});
+// #endregion quiet-refresh

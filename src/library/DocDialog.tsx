@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Recommendations } from '../components/shared/Recommendations';
 import { useFirstLoad } from '../hooks/useFirstLoad';
+import { counted } from '../lib/working';
 import styles from './DocDialog.module.css';
 import prose from './DocProse.module.css';
 import swatches from './DocSwatches.module.css';
@@ -119,7 +120,7 @@ export function DocDialog({
     // The browser keeps each chunk for a year like every other hashed file, and
     // the page fetches the renderer ahead when it is idle (src/lib/prefetch.ts).
     Promise.all([
-      fetch(DOCS[key].url).then(async (response) => {
+      counted(() => fetch(DOCS[key].url)).then(async (response) => {
         if (!response.ok) throw new Error(String(response.status));
         return response.text();
       }),

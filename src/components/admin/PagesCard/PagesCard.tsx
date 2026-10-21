@@ -9,6 +9,7 @@ import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
 import { formatDateTime } from '../../../lib/format';
 import { durationWords } from '../../../lib/duration';
+import { counted } from '../../../lib/working';
 
 /** An address: what it is, what kind, what it answered, and how much and how fast. */
 const PAGE_COLUMNS: Column<PageEntry>[] = [
@@ -114,7 +115,7 @@ export default function PagesCard({
               className={styles.back}
               onClick={() => {
                 setNote(null);
-                void fetch('/api/admin/pages', { method: 'POST' })
+                void counted(() => fetch('/api/admin/pages', { method: 'POST' }))
                   .then((r) => {
                     // A sweep dials every served address, so a stranger cannot start one.
                     if (r.status === 401) {

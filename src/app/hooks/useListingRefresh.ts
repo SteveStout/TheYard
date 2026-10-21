@@ -26,14 +26,14 @@ const BOUNDARY_GRACE_MS = 750;
 /**
  * page is the list on screen, status the status filter (a filter on it keeps
  * the list drifting), listShowing whether a reader can see the list, and
- * refresh what asks the API again. refresh is the same function on every
- * render, so naming it in the effects below never re-runs them.
+ * refresh what asks the API again, quietly: nobody clicked, so it never locks the page. refresh is
+ * the same function on every render, so naming it in the effects below never re-runs them.
  */
 export function useListingRefresh(
   page: VehiclePage,
   status: InventoryFilters['status'],
   listShowing: boolean,
-  refresh: () => void
+  refresh: (quiet?: boolean) => void
 ) {
   // #region listing-goes-stale
   // A listing stays on screen for minutes, and auctions start and end while it
@@ -52,14 +52,14 @@ export function useListingRefresh(
   useEffect(() => {
     if (listShowing && missedRefresh.current) {
       missedRefresh.current = false;
-      refresh();
+      refresh(true);
     }
   }, [listShowing, refresh]);
   useEffect(() => {
     const onVisible = () => {
       if (!document.hidden && missedRefresh.current) {
         missedRefresh.current = false;
-        refresh();
+        refresh(true);
       }
     };
     document.addEventListener('visibilitychange', onVisible);
@@ -82,7 +82,7 @@ export function useListingRefresh(
         missedRefresh.current = true;
         return;
       }
-      refresh();
+      refresh(true);
     }, delay);
     return () => window.clearTimeout(id);
   }, [page, status, listShowing, refresh]);

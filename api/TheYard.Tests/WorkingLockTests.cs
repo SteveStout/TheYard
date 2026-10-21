@@ -39,5 +39,45 @@ public sealed class WorkingLockTests
             Assert.True(file == "prefetch.ts" || fetches == wrapped, $"{file}: {fetches} fetches, {wrapped} inside counted");
         }
     }
+    /// <summary>
+    /// The fetches that stay outside the store, each a read nobody clicked for, by file and line. A new
+    /// raw fetch anywhere under src fails here until it goes through counted or is named below with its
+    /// reason; a named line that moves fails too, so the list never names a line that is not a fetch.
+    /// </summary>
+    private static readonly (string File, int Line, string Why)[] Background =
+    [
+        ("src/app/App.tsx", 68, "the tagged-open report, sent once on load"),
+        ("src/components/admin/AdminPanel/useAdminReads.ts", 105, "the strip's activity read on the tab's clock"),
+        ("src/components/admin/PagesCard/PagesCard.tsx", 49, "the card's own read of the last sweep"),
+        ("src/components/admin/ProofCard/ProofCard.tsx", 214, "the three second poll of a running proof"),
+        ("src/components/landing/Landing/Landing.tsx", 73, "the landing page's health read on load"),
+        ("src/components/landing/Landing/Landing.tsx", 81, "the landing page's test summary on load"),
+        ("src/components/landing/PulseBand/PulseBand.tsx", 46, "the pulse band's read on its own clock"),
+        ("src/components/shared/ErrorBoundary/ErrorBoundary.tsx", 101, "the error report, which must never lock"),
+        ("src/components/shared/Recommendations/Recommendations.tsx", 39, "the column's read on load"),
+    ];
+
+    [Fact]
+    public void Every_fetch_in_src_goes_through_the_store_or_is_a_named_background_read()
+    {
+        string root = Repo.Root();
+        var raw = new List<string>();
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(root, "src"), "*.*", SearchOption.AllDirectories)
+            .Where(path => Regex.IsMatch(path, @"\.tsx?$") && !Regex.IsMatch(path, @"\.test\.tsx?$")))
+        {
+            string text = File.ReadAllText(path);
+            foreach (Match fetch in Regex.Matches(text, @"\bfetch\("))
+            {
+                string before = Regex.Replace(text[Math.Max(0, fetch.Index - 60)..fetch.Index], @"\s+", "");
+                if (before.EndsWith("counted(()=>", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                int line = text[..fetch.Index].Count(c => c == '\n') + 1;
+                raw.Add($"{Path.GetRelativePath(root, path).Replace('\\', '/')}:{line}");
+            }
+        }
+        Assert.Equal(Background.Select(b => $"{b.File}:{b.Line}").Order(StringComparer.Ordinal), raw.Order(StringComparer.Ordinal));
+    }
 }
 // #endregion working-lock-tests

@@ -40,11 +40,12 @@ export function applyBidRecord(vehicle: Vehicle, record: BidRecord | undefined):
 /**
  * The buyer's bids, owned by the API (validation and state live server-side;
  * this hook relays actions and mirrors the bid map for card badges).
- * `onMutate` fires after any successful change so the caller can refetch.
+ * `onMutate` fires after any successful change so the caller can refetch; the room's round says
+ * quiet, so its refetch never locks the page.
  * `accountKey` identifies whose bids these are: change it and the map is
  * re-asked for (ADR: Accounts and per-user bids).
  */
-export function useBids(onMutate?: () => void, accountKey?: string | null) {
+export function useBids(onMutate?: (quiet?: boolean) => void, accountKey?: string | null) {
   const [bids, setBids] = useState<BidMap>({});
   // #region tick-ordering
   // Everything the buyer does bumps this. A tick response carries the number
@@ -102,7 +103,7 @@ export function useBids(onMutate?: () => void, accountKey?: string | null) {
         // than this answer, so this answer is discarded.
         if (mutations.current !== sentAt) return;
         setBids(result.bids);
-        if (result.raised > 0) onMutate?.();
+        if (result.raised > 0) onMutate?.(true);
       });
     }, MARKET_TICK_MS);
     return () => {

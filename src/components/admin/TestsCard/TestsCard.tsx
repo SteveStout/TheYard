@@ -22,6 +22,7 @@ import type { Fetched } from '../shared/types';
 import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
 import { formatDateTime } from '../../../lib/format';
+import { counted } from '../../../lib/working';
 
 /** A suite: its name and mark, then what passed, failed and was skipped, and how long it took. */
 const SUITE_COLUMNS: Column<TestSuite>[] = [
@@ -79,7 +80,7 @@ export default function TestsCard() {
   useEffect(() => {
     let live = true;
     const read = async (): Promise<TestResults | 'none'> => {
-      const r = await fetch('/api/admin/tests');
+      const r = await counted(() => fetch('/api/admin/tests'));
       if (r.status === 404) return 'none';
       if (!r.ok) throw new Error(String(r.status));
       return (await r.json()) as TestResults;

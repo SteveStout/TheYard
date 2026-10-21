@@ -58,9 +58,8 @@ export interface BidResult {
  * so a browser holding an old bundle still shows a real message during a roll.
  */
 async function problemDetail(response: Response, fallback: string): Promise<string> {
-  // A failure can arrive without a JSON body at all: an edge or proxy error
-  // page, or an empty 502. Anything unreadable falls back to the sentence the
-  // caller supplied rather than throwing a second error over the first.
+  // A failure can arrive with no JSON body (an edge error page, an empty 502): anything
+  // unreadable falls back to the caller's sentence rather than throwing over the first error.
   let body: { detail?: string; reason?: string; error?: string } | null = null;
   try {
     body = await response.json();
@@ -88,15 +87,11 @@ export function clearVehicleCache(): void {
 
 // #region one-clock
 /**
- * The UTC day the request is made on, for the cache key only. The auction
- * clock is the server's: every window derives from the UTC midnight that
- * began the day, the same instant for every visitor, and nothing about it is
- * sent from here (ADR: Three readers with no memory of the project, the
- * addendum on the clock). A request that carried the browser's own local
- * midnight as `anchor_ms` put two visitors in different zones in different
- * auctions, so none does. The day still belongs
- * in the cache key, because the server re-seeds the windows at UTC midnight
- * and a page cached just before it must not be served just after.
+ * The UTC day the request is made on, for the cache key only. The auction clock is the server's
+ * (the UTC midnight that began the day, one instant for every visitor) and nothing about it is sent
+ * from here (ADR: Three readers with no memory of the project, the addendum on the clock): a request
+ * that carried the browser's own midnight put two zones in two auctions. The day stays in the key
+ * because the server re-seeds the windows at UTC midnight.
  */
 export function utcDay(now: number = Date.now()): number {
   return Math.floor(now / 86_400_000);
@@ -151,11 +146,13 @@ export interface FetchVehiclesOptions {
   signal?: AbortSignal;
   /** Skip the cache and overwrite it with a fresh response. */
   forceRefresh?: boolean;
+  /** Nobody clicked for it (a timer, the room's round): it never locks the page. */
+  background?: boolean;
 }
 
 export async function fetchVehicles(
   filters?: InventoryFilters,
-  { sort, offset = 0, signal, forceRefresh = false }: FetchVehiclesOptions = {}
+  { sort, offset = 0, signal, forceRefresh = false, background }: FetchVehiclesOptions = {}
 ): Promise<VehiclePage> {
   const query = queryString(filters, sort, offset);
   const key = cacheKey(query);
@@ -166,7 +163,7 @@ export async function fetchVehicles(
   }
 
   const url = query ? `/api/vehicles?${query}` : '/api/vehicles';
-  const response = await counted(() => fetch(url, { signal }));
+  const response = await counted(() => fetch(url, { signal }), { background });
   if (!response.ok) {
     throw new Error(
       await problemDetail(response, `The inventory API responded with ${response.status}`)
@@ -185,10 +182,13 @@ export async function fetchVehicles(
 }
 // #endregion fetch-vehicles
 
-/** One vehicle by id, or null when it doesn't exist. Backs detail deep links. */
-export async function fetchVehicleById(id: string, signal?: AbortSignal): Promise<Vehicle | null> {
+/** One vehicle by id, or null when it doesn't exist. Backs detail deep links; a room price move asks it in the background. */
+export async function fetchVehicleById(
+  id: string,
+  { signal, background }: Pick<FetchVehiclesOptions, 'signal' | 'background'> = {}
+): Promise<Vehicle | null> {
   const url = `/api/vehicles/${encodeURIComponent(id)}`;
-  const response = await counted(() => fetch(url, { signal }));
+  const response = await counted(() => fetch(url, { signal }), { background });
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`The inventory API responded with ${response.status}`);

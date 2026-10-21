@@ -19,7 +19,7 @@ export function useOpenVehicle(address: Address, inventory: Inventory) {
   // The page can overlay current_bid, but not min_next_bid: the bid increment
   // rules live only on the server. So when another bidder moves the price on
   // the open vehicle, it is refetched rather than patched. Otherwise the panel
-  // could show a minimum bid that the server would reject.
+  // could show a minimum bid that the server would reject. Nobody clicked for it: background.
   const openMarketAmount = selectedVehicle
     ? (bids[selectedVehicle.id]?.market_amount ?? null)
     : null;
@@ -27,7 +27,7 @@ export function useOpenVehicle(address: Address, inventory: Inventory) {
     const id = selectedIdRef.current;
     if (!id || openMarketAmount === null) return;
     let cancelled = false;
-    void fetchVehicleById(id)
+    void fetchVehicleById(id, { background: true })
       .then((fresh) => {
         if (!cancelled && fresh && selectedIdRef.current === fresh.id) setSelectedVehicle(fresh);
       })

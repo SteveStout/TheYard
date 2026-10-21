@@ -4,7 +4,7 @@
  * list is over, and the small pieces every card draws with.
  */
 import { CardState } from './CardState';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { hourOfTraffic, type TrafficSlot } from '../../../lib/machineChart';
 import { durationWords } from '../../../lib/duration';
 import {
@@ -18,6 +18,7 @@ import {
   type KeptMeta,
   metaOf,
 } from '../../../lib/keptCards';
+import { counted } from '../../../lib/working';
 import styles from './card.module.css';
 import type { Machines, SqlParameterShape, Fetched } from './types';
 
@@ -28,15 +29,19 @@ export const REFRESH_MS = 30_000;
 /**
  * One read for one open card: when it opens, and again on the tab's clock
  * while it stays open. A closed card is not on the page, so it asks for
- * nothing (ADR: The Admin tab, as a product, the addendum on the workbench).
+ * nothing (ADR: The Admin tab, as a product, the addendum on the workbench). The open is a
+ * person's read and counts toward the working lock; the tab's clock asking again is background.
  */
 export function useRead<T>(url: string | null, tick: number): Fetched<T> {
   const [value, setValue] = useState<Fetched<T>>(null);
+  const asked = useRef<string | null>(null);
   useEffect(() => {
     if (url === null) return;
     let live = true;
+    const background = asked.current === url;
+    asked.current = url;
     // A failed or non-200 answer marks the card failed instead of leaving it loading forever.
-    void fetch(url)
+    void counted(() => fetch(url), { background })
       .then((r) => (r.ok ? (r.json() as Promise<T>) : Promise.reject(new Error(String(r.status)))))
       .then((v) => {
         if (live) setValue(v);
@@ -65,7 +70,7 @@ export function useKeptWindow<T>(card: KeptCard, tick: number) {
   useEffect(() => {
     if (window_ === 'now') return;
     let live = true;
-    void fetch(cardUrl(card, window_, ''))
+    void counted(() => fetch(cardUrl(card, window_, '')))
       .then((r) =>
         r.ok ? (r.json() as Promise<KeptAnswer<T>>) : Promise.reject(new Error(String(r.status)))
       )

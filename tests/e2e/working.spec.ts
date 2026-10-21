@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { openTheYard } from './app';
 
 // #region working-lock
@@ -67,5 +67,65 @@ test('a fast answer never shows the lock', async ({ page }) => {
   await answered;
   await page.waitForTimeout(800);
   expect(seen).toBe(false);
+});
+/** Watches the page for the lock and says so through workingSeen; true once it has been seen. */
+async function watchForTheLock(page: Page): Promise<() => boolean> {
+  let seen = false;
+  await page.exposeFunction('workingSeen', () => {
+    seen = true;
+  });
+  await page.evaluate(() => {
+    new MutationObserver(() => {
+      if (document.querySelector('[data-testid="working-lock"][data-locked="true"]')) {
+        (window as unknown as { workingSeen: () => void }).workingSeen();
+      }
+    }).observe(document.body, { childList: true, subtree: true, attributes: true });
+  });
+  return () => seen;
+}
+
+const LIST = /\/api\/vehicles(\?|$)/;
+
+test('a page nobody touches never locks when its listing refreshes itself', async ({ page }) => {
+  // The page's own clock, so the listing's next refresh comes now and not in a minute.
+  await page.clock.install();
+  await openTheYard(page);
+  await expect(page.locator('article').first()).toBeVisible();
+  const seen = await watchForTheLock(page);
+  await page.route(LIST, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.continue();
+  });
+  const asked = page.waitForRequest(LIST);
+  const answered = page.waitForResponse(LIST, { timeout: 30_000 });
+  await page.clock.fastForward('15:00');
+  await asked;
+  await answered;
+  await page.waitForTimeout(800);
+  expect(seen()).toBe(false);
+});
+
+test('a Retry click is a person asking, and it still locks while the answer is slow', async ({
+  page,
+}) => {
+  await openTheYard(page);
+  await expect(page.locator('article').first()).toBeVisible();
+  await page.route(KIA, (route) =>
+    route.fulfill({ status: 500, contentType: 'application/json', body: '{"detail":"down"}' })
+  );
+  await page.locator('select').nth(1).selectOption('Kia');
+  const retry = page.getByRole('button', { name: 'Retry' });
+  await expect(retry).toBeVisible();
+  await page.unroute(KIA);
+  await page.route(KIA, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await route.continue();
+  });
+  const answered = page.waitForResponse(KIA, { timeout: 30_000 });
+  await retry.click();
+  const lock = page.getByTestId('working-lock');
+  await expect(lock).toHaveAttribute('data-locked', 'true', { timeout: 1_200 });
+  await answered;
+  await expect(lock).toHaveAttribute('data-locked', 'false', { timeout: 2_000 });
 });
 // #endregion working-lock

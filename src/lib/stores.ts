@@ -8,6 +8,7 @@
  * cached across a store. There is no in-place switch: a page whose every
  * number came from one store does not pretend to be the other.
  */
+import { counted } from './working';
 
 export interface Store {
   /** The short name the server uses: "sql" or "cosmos". */
@@ -31,7 +32,9 @@ export interface Stores {
 // #region stores-seam
 export async function fetchStores(signal?: AbortSignal): Promise<Stores | null> {
   try {
-    const response = await fetch('/api/stores', { signal, credentials: 'same-origin' });
+    const init: RequestInit = { signal, credentials: 'same-origin' };
+    // The bar's own read when the page opens: nobody clicked for it, so it never locks the page.
+    const response = await counted(() => fetch('/api/stores', init), { background: true });
     if (!response.ok) return null;
     return (await response.json()) as Stores;
   } catch {

@@ -22,9 +22,8 @@ import { useListingRefresh } from './useListingRefresh';
 export type LoadState = 'loading' | 'ready' | 'error';
 
 /**
- * The time the browser first received each page of results. The grid is
- * ranked on this time, not the ticking clock, so a bid layered on later does
- * not re-rank the page (ADR-056). A WeakMap lets old pages be garbage collected.
+ * The time the browser first received each page of results. The grid is ranked on this time, not the
+ * ticking clock, so a bid layered on later does not re-rank the page (ADR-056); a WeakMap frees old pages.
  */
 const answeredAt = new WeakMap<readonly Vehicle[], number>();
 function timeOfAnswer(vehicles: readonly Vehicle[], answered = Date.now()): number {
@@ -39,8 +38,7 @@ function timeOfAnswer(vehicles: readonly Vehicle[], answered = Date.now()): numb
 /** How long to let the user keep typing/clicking before asking the API to filter. */
 const FILTER_DEBOUNCE_MS = 500;
 
-/** `npm start` opens the browser before the API finishes booting, so keep
- *  retrying the first load quietly for a while before declaring an error. */
+/** `npm start` opens the browser before the API boots: retry the first load quietly before an error. */
 const INITIAL_RETRY_MS = 2_000;
 const MAX_INITIAL_RETRIES = 15;
 
@@ -77,16 +75,19 @@ export function useInventory(address: Address, accountEmail: string | null) {
   const [reloadNonce, setReloadNonce] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   // #region listing-when-shown
-  // The vehicle list belongs to the inventory, not the landing page. It is a
-  // slow request, and the landing page shows no vehicle. So it is fetched only
-  // when a view that needs it opens: the list, a vehicle, or a ?vehicle= link.
+  // The vehicle list belongs to the inventory, not the landing page: a slow request the landing
+  // page has no use for, fetched only when the list, a vehicle or a ?vehicle= link opens.
   const needsListing = inventoryOpen || selectedVehicle !== null || address.startedOnVehicleLink;
   // #endregion listing-when-shown
 
-  // Bid state lives in the API; refetch the list whenever it changes.
-  const refreshList = useCallback(() => setReloadNonce((n) => n + 1), []);
-  // Keyed on the signed-in email: bids belong to an account, so signing in or
-  // out fetches that account's bids instead of showing the old badges.
+  // Bid state lives in the API; refetch the list whenever it changes. A quiet refresh (a timer, the
+  // room's round) never locks the page; a loud one asked before the fetch runs wins.
+  const quietNext = useRef<boolean | null>(null);
+  const refreshList = useCallback((quiet?: boolean) => {
+    quietNext.current = (quietNext.current ?? true) && quiet === true;
+    setReloadNonce((n) => n + 1);
+  }, []);
+  // Keyed on the signed-in email: signing in or out fetches that account's bids, not the old badges.
   const { bids, placeBid, buyNow, resetBids } = useBids(refreshList, accountEmail);
 
   // #region visible-order
@@ -94,12 +95,10 @@ export function useInventory(address: Address, accountEmail: string | null) {
    * The page on display, with the buyer's bids layered on for instant feedback.
    * Under the ending-soonest sort it is also re-ranked here, in the browser.
    *
-   * Why: with this many auctions the soonest one is always about to end, so
-   * any page the server sends is already slightly out of date as it paints.
-   * The browser applies the server's own ranking again, which moves an ended
-   * auction to where the server would have put it. Which vehicles are on the
-   * page, the count and the paging stay the server's. Other sorts are left
-   * exactly as they arrived.
+   * Why: with this many auctions the soonest one is always about to end, so any page the server
+   * sends is slightly out of date as it paints. The browser applies the server's own ranking again,
+   * moving an ended auction where the server would have put it; which vehicles, the count and the
+   * paging stay the server's. Other sorts are left exactly as they arrived.
    *
    * It ranks on the time the page arrived (timeOfAnswer), not the ticking
    * clock, because re-ranking every second made cards jump. A card that ends
@@ -114,14 +113,12 @@ export function useInventory(address: Address, accountEmail: string | null) {
   // #endregion visible-order
 
   // #region facets-once
-  // The filter dropdowns' options (facets) come from the API, because the page
-  // only holds a slice of the data. If the request fails, the dropdowns are
-  // empty rather than broken.
+  // The filter dropdowns' options (facets) come from the API, because the page only holds a
+  // slice of the data. If the request fails, the dropdowns are empty rather than broken.
   //
-  // Asked until answered, then never again: the server builds the options once
-  // and they cannot change while the page is open (ADR-025). reloadNonce stays
-  // in the dependencies so a failed first try (the API still booting under
-  // `npm start`, say) is retried along with the listing.
+  // Asked until answered, then never again: the server builds the options once and they cannot
+  // change while the page is open (ADR-025). reloadNonce stays in the dependencies so a failed
+  // first try (the API still booting under `npm start`, say) is retried along with the listing.
   useEffect(() => {
     // The dropdowns belong to the inventory too, so the landing page skips them.
     if (!needsListing || facets !== EMPTY_FACETS) return;
@@ -133,13 +130,11 @@ export function useInventory(address: Address, accountEmail: string | null) {
   }, [reloadNonce, facets, needsListing]);
   // #endregion facets-once
 
-  // Filtering, sorting, and paging happen on the server: every change becomes a
-  // GET request. Requests are debounced (held until the user pauses for
-  // FILTER_DEBOUNCE_MS) so typing doesn't spam the API, and cached per query
-  // string in data.ts. A cache hit skips the debounce, since no request is
-  // made. A reloadNonce bump is a refresh (a retry button, a timer): it runs
-  // at once and skips the cache.
+  // Filtering, sorting and paging happen on the server: every change is a GET, debounced by
+  // FILTER_DEBOUNCE_MS and cached per query string in data.ts (a hit skips the debounce). A
+  // reloadNonce bump is a refresh (a retry button, a timer): it runs at once and skips the cache.
   const lastNonce = useRef(reloadNonce);
+  const filtersAsked = useRef(filters);
   const initialAttempts = useRef(0);
   useEffect(() => {
     if (!needsListing) return;
@@ -150,7 +145,11 @@ export function useInventory(address: Address, accountEmail: string | null) {
     const controller = new AbortController();
     let retryTimer: number | undefined;
     const isRefresh = reloadNonce !== lastNonce.current;
+    // Quiet only when the person asked for nothing in the meantime: a filter change is loud.
+    const background = isRefresh && quietNext.current === true && filtersAsked.current === filters;
     lastNonce.current = reloadNonce;
+    quietNext.current = null;
+    filtersAsked.current = filters;
     const firstLoad = loadState !== 'ready';
     if (firstLoad) setLoadState('loading');
 
@@ -165,7 +164,12 @@ export function useInventory(address: Address, accountEmail: string | null) {
 
     const timer = window.setTimeout(
       () => {
-        fetchVehicles(filters, { sort, signal: controller.signal, forceRefresh: isRefresh })
+        fetchVehicles(filters, {
+          sort,
+          signal: controller.signal,
+          forceRefresh: isRefresh,
+          background,
+        })
           .then((data) => {
             initialAttempts.current = 0;
             setPage(data);
@@ -198,9 +202,7 @@ export function useInventory(address: Address, accountEmail: string | null) {
       window.clearTimeout(retryTimer);
       controller.abort();
     };
-    // loadState is read above but deliberately left out of the dependencies.
-    // This effect sets it to 'ready' itself, so listing it would rerun the
-    // effect the moment its own load finished.
+    // loadState is left out of the dependencies: this effect sets it to 'ready' itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, sort, reloadNonce, needsListing]);
 
@@ -288,7 +290,7 @@ export function useInventory(address: Address, accountEmail: string | null) {
     confirmResetBids,
     loadMore,
     /** Ask again at once, skipping the cache: the stale banner's Retry. */
-    refresh: refreshList,
+    refresh: () => refreshList(),
     /** The error notice's Try again: the quiet first-load retries start over too. */
     retryFirstLoad: () => {
       initialAttempts.current = 0;
