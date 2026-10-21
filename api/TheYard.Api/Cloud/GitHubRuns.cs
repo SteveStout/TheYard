@@ -1,8 +1,10 @@
 // The nightly workflow's runs, read from GitHub's public API once an hour for the Admin tab's
 // nightly card (ADR: The Nightly Function on the Admin tab): the last thirty days of runs of the
 // one workflow file the Function dispatches, each turned into who started it, which lane it ran,
-// how long it took and what it came to. The repository is public, so no token is sent; sixty
-// unsigned reads an hour is GitHub's allowance and this reads one.
+// how long it took and what it came to. The repository is public, so a token is optional: sixty
+// unsigned reads an hour is GitHub's allowance per address, and App Service shares its outbound
+// addresses with other sites, so a token set as Nightly:GitHubToken moves the read onto its own
+// allowance. None is kept in the repository.
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -15,7 +17,8 @@ namespace TheYard.Api;
 /// <summary>Reads one workflow's runs from GitHub's public API, and turns each into a <see cref="NightlyRun"/>.</summary>
 /// <param name="repo">The repository, owner/name, from configuration (Nightly:Repo).</param>
 /// <param name="workflow">The workflow file, from configuration (Nightly:Workflow).</param>
-public sealed class GitHubRuns(string repo, string workflow)
+/// <param name="token">A read token, from configuration (Nightly:GitHubToken); null or empty sends none.</param>
+public sealed class GitHubRuns(string repo, string workflow, string? token = null)
 {
     private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
@@ -27,6 +30,9 @@ public sealed class GitHubRuns(string repo, string workflow)
 
     /// <summary>The words a by-hand run's name ends with when it was a dry run.</summary>
     public const string DrySuffix = " (dry run)";
+
+    /// <summary>True when a token is configured, the same test the edge's token passes.</summary>
+    public bool Signed => !string.IsNullOrWhiteSpace(token) && !token.StartsWith("__", StringComparison.Ordinal);
 
     /// <summary>How far back a read asks.</summary>
     public static readonly TimeSpan Window = TimeSpan.FromDays(30);
@@ -44,6 +50,11 @@ public sealed class GitHubRuns(string repo, string workflow)
         using var request = new HttpRequestMessage(HttpMethod.Get, AddressAt(now));
         request.Headers.UserAgent.ParseAdd("TheYard-SelfRead/1 (nightly card)");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        if (Signed)
+        {
+            // Unsigned reads share sixty an hour with every site on the same outbound address.
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        }
         using var response = await Http.SendAsync(request, cancellation);
         response.EnsureSuccessStatusCode();
         using var answer = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));

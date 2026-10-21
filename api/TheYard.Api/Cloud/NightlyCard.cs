@@ -1,7 +1,7 @@
 // The nightly Function's card (ADR: The Nightly Function on the Admin tab): the share of its
 // slots that fired on time over thirty days and the month's share of the free grant on the dials,
 // a chart of its firings with every Monday and Friday shaded, four questions, and a readout of the
-// lane. Its readings are Azure Monitor's and GitHub's; nothing from the file share it works on is
+// job. Its readings are Azure Monitor's and GitHub's; nothing from the file share it works on is
 // read, and until the site's identity holds a role on the Function's group, every line that needs
 // Azure says so in words.
 using System.Globalization;
@@ -90,27 +90,29 @@ public static class NightlyCard
             new CloudDial("Runs on time, 30 days", onTime, PlanView.Percent(onTime),
                 roleMissing ? noRole : tally.Due == 0 ? "no slot kept yet" : $"{tally.OnTime} of {tally.Due} slots", 100 - Misses.Amber, 100 - Misses.Red, null, null, CloudTones.Of(missTone)),
             new CloudDial("Free grant used, this month", grantShare, PlanView.Percent(grantShare),
-                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s" : "not read", Grant.Amber, Grant.Red, null, null, CloudTones.Of(grantTone)),
+                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s" : NightlyRows.NoMinutes(inputs), Grant.Amber, Grant.Red, null, null, CloudTones.Of(grantTone)),
         };
         var next = NightlySlots.Next(inputs.Now);
         string? lastFired = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("last_fired");
         string lastFiredWords = roleMissing ? noRole
             : DateTimeOffset.TryParse(lastFired, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var fired) ? NightlySlots.Local(fired).ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " Central"
-            : "not read";
+            : ResourceView.Latest(inputs)?.Facts.ContainsKey("state") is true ? "none in the day read"
+            : NightlyRows.NoHour(inputs);
         var newest = runs.Count > 0 ? runs[0] : null;
         bool nightlyOn = runs.Any(r => r.StartedBy == GitHubRuns.ByFunction && r.Lane == "reply");
         bool bookkeepingOn = runs.Any(r => r.StartedBy == GitHubRuns.ByFunction && r.Lane == "bookkeeping");
         double? cost = NightlyRows.CostTotal(inputs);
         var readout = new CloudReadout(
-            "The nightly lane",
+            "The nightly job",
             onTime,
             $"slots on time, {CloudTones.WindowWords("30d")}",
             [
-                new("Next slot", $"{NightlySlots.Local(next.At).ToString("ddd HH:mm", CultureInfo.InvariantCulture)} Central, {(next.Slot == NightlySlots.Reply ? "the reply lane" : "the records run")}", "info") { Source = CardFrame.ThisProcess },
+                new("Next slot", $"{NightlySlots.Local(next.At).ToString("ddd HH:mm", CultureInfo.InvariantCulture)} Central, {(next.Slot == NightlySlots.Reply ? "the reply run" : "the records run")}", "info") { Source = CardFrame.ThisProcess },
                 new("Last fired", lastFiredWords, "info"),
                 new("Last run on GitHub", newest is null ? "none read" : $"#{newest.Number}, {newest.Lane}, {NightlyRows.Took(newest.TookSeconds)}, {NightlyRows.CameTo(newest)}", NightlyRows.RunsTone(runs)) { Source = "GitHub Actions" },
-                new("Gates", $"nightly {(nightlyOn ? "on" : "off")} · bookkeeping {(bookkeepingOn ? "on" : "off")}, inferred from the runs it dispatched in 30 days", "info") { Source = "GitHub Actions" },
-                new("Snapshots kept", $"up to {SnapshotsKept}, not read", "info") { Source = "the Function's code" },
+                // An empty run log is unread, not off: "off" is said only of a list that was read.
+                new("Gates", runs.Count == 0 ? $"not read yet: {NightlyRows.NoRuns(inputs)}" : $"nightly {(nightlyOn ? "on" : "off")} · bookkeeping {(bookkeepingOn ? "on" : "off")}, inferred from the runs it dispatched in 30 days", "info") { Source = "GitHub Actions" },
+                new("Snapshots kept", $"up to {SnapshotsKept}; how many are kept now is not read: it needs a data role on the storage account", "info") { Source = "the Function's code" },
                 new("Cost, month to date", NightlyRows.Dollars(cost), "info"),
                 ResourceView.LiveRead(inputs),
             ],
@@ -118,16 +120,25 @@ public static class NightlyCard
         var chart = ResourceView.Chart(inputs, "Firings and the free grant", ("executions", "Firings", 1, false), ("units_mbms", "Grant used", null, false), Grant.Red, $"teal firings, a bucket that counted one at full height · green the month's grant used · shaded Mondays and Fridays · dashed {Grant.Red} %");
         return new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0 && !roleMissing,
-            roleMissing ? $"The site's identity holds no role on {names.Group}, so the Function's metrics and record are not read; the run log is GitHub's and is read." : ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
+            Note(inputs, names, roleMissing),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
             "The Nightly Function",
-            ResourceView.Fact(inputs, "spec", "FLEX CONSUMPTION · NOT READ"),
+            ResourceView.Fact(inputs, "spec", "FLEX CONSUMPTION · " + (roleMissing ? noRole : NightlyRows.NoHour(inputs)).ToUpperInvariant()),
             ResourceView.Resource(inputs) is { Href: not null } read ? read : new CloudLink(names.Function, "https://portal.azure.com/#resource" + functionPath),
             dials,
             [ResourceView.Spark(inputs, "executions", "Firings, 60 min", 1), ResourceView.Spark(inputs, "units_mbms", "Units, 60 min", Limit(inputs))],
             chart with { Series = [FiringSeries(inputs), GrantSeries(inputs)], Bands = Bands(inputs) },
             NightlyRows.Rows(inputs, names, tally, missTone, runs, roleMissing),
             readout);
+    }
+
+    /// <summary>The card's note: the missing role and the missing keep each in a sentence, so the reader sees what is read live and what is not kept.</summary>
+    private static string? Note(ResourceCardInputs inputs, NightlyResources names, bool roleMissing)
+    {
+        string? role = roleMissing ? $"The site's identity holds no role on {names.Group}, so the Function's metrics and record are not read; the run log is GitHub's and is read." : null;
+        string? keep = inputs.Availability.Available ? null : $"{ResourceView.KeepReason(inputs)}; the card reads live until it is.";
+        return role is null && keep is null ? ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute"))
+            : string.Join(' ', new[] { role, keep is null ? null : char.ToUpperInvariant(keep[0]) + keep[1..] }.Where(part => part is not null));
     }
 
     /// <summary>A minute's execution units at the instance size the record names, which the sparkline is scaled to; null before the record is read.</summary>

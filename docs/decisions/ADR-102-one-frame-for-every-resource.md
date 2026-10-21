@@ -155,3 +155,7 @@ At 19:52 Steve read the edge card on his phone as RED, "0 % of 4 cacheable", whi
 ## Addendum, 2026-10-20: a seventh card, The Nightly Function
 
 From this change the section holds seven resource cards after the plan: the nightly Function, the one resource the site watches that lives outside its own resource group, joins as one more definition in `ResourceCatalog.Cards`, with a second `ResourceDirectory` over the Function's group, its own `nightly` container like every card, and a year-long run log beside it. A card can now name more than one line of the bill (`ResourceCard.CostNames`, filled into `ResourceCardInputs.CostLines`). The record of the card is its own (ADR: The Nightly Function on the Admin tab).
+
+## Addendum, 2026-10-21 (1.0.4.10): an hourly card reads with no keep
+
+The recorder skipped a card whose keep was missing, minutes and hour alike. From 1.0.4.10 an hourly card's hour is still read once in its hour and held in the recorder's memory, and the reader draws the card from it until the keep exists; a minute card is skipped as before, and no card's minutes are read without a keep. The live-read line on every card now says why it has no minute ("not read yet: no minute kept yet", or the keep's own reason). The nightly card is the first to need it (ADR: The Nightly Function on the Admin tab, the addendum of 1.0.4.10).

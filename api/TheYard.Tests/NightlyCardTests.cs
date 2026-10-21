@@ -12,7 +12,7 @@ namespace TheYard.Tests;
 /// runs, the three cost lines, the Monday and Friday bands, and the snapshot count held to the
 /// Function's own file.
 /// </summary>
-public sealed class NightlyCardTests
+public sealed partial class NightlyCardTests
 {
     private static readonly DateTimeOffset Now = new(2026, 10, 20, 18, 0, 0, TimeSpan.Zero);
 
@@ -99,7 +99,7 @@ public sealed class NightlyCardTests
         Assert.Equal("info", NightlyRows.RunsTone([]));
         var row = NightlyCard.View(Month(0), Names, FunctionPath, [Run("3", 1, "failure"), Run("2", 5, "failure")]).Rows.Single(r => r.Key == "runs");
         Assert.Equal("alarm", row.Tone);
-        Assert.Equal(["When (Central)", "Slot", "Started by", "Lane", "Took", "Came to"], row.Table.Columns);
+        Assert.Equal(["When (Central)", "Slot", "Started by", "Run", "Took", "Came to"], row.Table.Columns);
         Assert.Equal("GitHub Actions, nightly.yml runs", row.Source);
     }
 
@@ -161,11 +161,12 @@ public sealed class NightlyCardTests
         Assert.Contains("Storage File Data SMB Share Contributor", view.Rows.Single(r => r.Key == "allowed").Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal(["firing", "runs", "cost", "allowed"], view.Rows.Select(r => r.Key));
         Assert.Equal(2, view.Dials.Count);
-        Assert.Equal("The nightly lane", view.Readout.Title);
+        Assert.Equal("The nightly job", view.Readout.Title);
         Assert.Contains("Central", view.Readout.Lines.Single(l => l.Label == "Next slot").Value, StringComparison.Ordinal);
         Assert.Equal("#1, reply, 5 min 0 s, success", view.Readout.Lines.Single(l => l.Label == "Last run on GitHub").Value);
         Assert.StartsWith("nightly on · bookkeeping off", view.Readout.Lines.Single(l => l.Label == "Gates").Value, StringComparison.Ordinal);
         Assert.DoesNotContain("job hunt", JsonSerializer.Serialize(view), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("lane", JsonSerializer.Serialize(view), StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

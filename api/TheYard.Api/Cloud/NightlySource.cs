@@ -1,7 +1,8 @@
 // What the nightly card reads, and from where (ADR: The Nightly Function on the Admin tab): the
 // Function's two Azure Monitor metrics every minute through a list of its own resource group, and
 // once an hour its ARM record, a day of five-minute firing counts judged against the slot table,
-// and the workflow's runs from GitHub, kept in the run log and read back into the card's cache.
+// and the workflow's runs from GitHub, which fill the card's cache straight from GitHub's answer
+// and are kept in the run log as the durable copy whenever its container is there.
 // The site's identity holds no role on that group until Steve grants one, so a 401 or 403 from
 // Resource Manager or Monitor is an answer, not a failure: the hour says the role is missing and
 // the card says "not read" on every line that needs it.
@@ -87,7 +88,10 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
                 }
             }
             var firings = await FiringsAsync(site.Id, hour, cancellation);
-            await log.UpsertFiringsAsync(firings, cancellation);
+            if ((await log.AvailabilityAsync(cancellation)).Available)
+            {
+                await log.UpsertFiringsAsync(firings, cancellation);
+            }
             facts["last_fired"] = firings.Where(f => f.FiredAt is not null).Select(f => f.FiredAt).Max()?.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
             return new ResourceHour(hour, site.Id, tenant, facts, await EventsAsync(site.Id, since, hour, cancellation));
         }
@@ -111,29 +115,37 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
         }
     }
 
-    /// <summary>Reads the workflow's runs, keeps them, and reads the month back into the cache; says in a few words how the read went.</summary>
+    /// <summary>
+    /// Reads the workflow's runs and fills the cache from GitHub's answer; keeps them in the run log
+    /// when it is there and folds in the older runs it holds. Says in a few words how the read went.
+    /// </summary>
     private async Task<string> RunsAsync(CancellationToken cancellation)
     {
         var now = clock.GetUtcNow();
-        string read;
+        bool kept = (await log.AvailabilityAsync(cancellation)).Available;
+        IReadOnlyList<NightlyRun> listed;
         try
         {
-            var listed = await runs.ReadAsync(now, cancellation);
-            if ((await log.AvailabilityAsync(cancellation)).Available)
-            {
-                await log.UpsertAsync(listed, cancellation);
-            }
-            read = $"{listed.Count} runs read";
+            listed = await runs.ReadAsync(now, cancellation);
         }
         catch (HttpRequestException ex)
         {
-            read = $"not read: GitHub answered {(int?)ex.StatusCode}";
+            if (kept)
+            {
+                cache.Replace(await log.SinceAsync(now - GitHubRuns.Window, cancellation), now);
+            }
+            return ex.StatusCode is { } code ? $"not read: GitHub answered {(int)code}" : "not read: GitHub did not answer";
         }
-        if ((await log.AvailabilityAsync(cancellation)).Available)
+        if (!kept)
         {
-            cache.Replace(await log.SinceAsync(now - GitHubRuns.Window, cancellation), now);
+            cache.Replace(listed, now);
+            return $"{listed.Count} runs read";
         }
-        return read;
+        await log.UpsertAsync(listed, cancellation);
+        var fresh = listed.Select(run => run.Id).ToHashSet(StringComparer.Ordinal);
+        var older = (await log.SinceAsync(now - GitHubRuns.Window, cancellation)).Where(run => !fresh.Contains(run.Id));
+        cache.Replace([.. listed, .. older], now);
+        return $"{listed.Count} runs read";
     }
 
     /// <summary>The day before <paramref name="hour"/> at five minutes, each due slot judged on time, late or missed.</summary>

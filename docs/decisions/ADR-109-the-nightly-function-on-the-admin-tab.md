@@ -38,7 +38,7 @@ Three sources answer the card's questions. Azure Monitor counts the Function's o
 - The rail's Cloud infrastructure group ends with The Nightly Function, after Memory against traffic, with its tone dot read before it is opened.
 - The card reads GitHub once an hour, one of the sixty unsigned reads GitHub allows an address an hour.
 - Two containers on the existing account, inside the free tier: `nightly` for the minutes and hours like every card, and `nightlyruns` for the year of runs. Both are a person's `az` command from their definitions, as every container is.
-- The chart shades every Monday and Friday in Central days, the days the job search keeps free, through the chart's existing bands.
+- The chart shades every Monday and Friday in Central days, the two days the schedule keeps free, through the chart's existing bands.
 - Until the role is granted, the dials read "not read" and the card's tone is unread; that is the truth, not a fault.
 
 ## Where it sits
@@ -56,3 +56,18 @@ Domain gains the slot table, its first rule shared with a project outside the si
 - [`infra/cosmos/nightly.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/nightly.json) and [`infra/cosmos/nightlyruns.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/nightlyruns.json) - the two containers
 - [`.github/workflows/nightly.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/nightly.yml) - the run name
 - [`api/TheYard.Tests/NightlySlotsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/NightlySlotsTests.cs) and [`api/TheYard.Tests/NightlyCardTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/NightlyCardTests.cs) - the table and the card, held
+
+## Addendum, 2026-10-21 (1.0.4.10): GitHub first, the log a durable copy
+
+1.0.4.9 shipped the card against a run log that was always there in its tests and never there on the live site. Neither container exists yet (`nightly`, `nightlyruns`), and two things followed. The one recorder returned before any card's hour when the card's own keep was missing, so the GitHub read never ran; and even when it ran, the card's cache was filled only by reading the log back, which needs `nightlyruns`. Read live on both names on the morning of 21 October, the card said "no runs read yet" and "nightly off · bookkeeping off" while `nightly.yml` listed ten runs, that morning's 04:00 reply run among them. The sentence above, "the run log is GitHub's and still reads", was not true in code.
+
+From 1.0.4.10:
+
+- **GitHub is the source of the card, the log its durable copy.** The hour fills the cache from GitHub's answer whatever the log says. When `nightlyruns` is there, the runs are also kept in it and the older runs it holds are folded in beside GitHub's, which is what lets the card show a run GitHub no longer lists. When GitHub refuses, the cache is read back from the log if there is one, and the hour says "not read: GitHub answered" and the status.
+- **An hourly card is read with no keep.** `CloudRecorder` still reads an hourly card's hour once in its hour when the card's keep is missing, holds it in memory (`LiveHour`), and appends nothing; the minutes are not read at all, since nothing could keep them. `CloudReader` draws such a card from that held hour and asks the recorder once the held hour is older than the card's staleness. The card's note says so: "the nightly container is not there yet; the card reads live until it is."
+- **Empty is unread, not off.** The Gates line says "on" or "off" only of a list that was read; with no runs it reads "not read yet" and why.
+- **Every "not read" says why**: no hour kept yet, the keep's own reason, no role on the group, or GitHub's answer. `ResourceView.LiveRead` says why no minute is kept on every card.
+- **An optional token.** `Nightly:GitHubToken`, when set as a web app setting, is sent as a bearer token, so the read draws on its own allowance rather than the sixty unsigned reads an hour App Service's shared outbound addresses split. None is kept in the repository, and with none set the read is unsigned as before.
+- **Words.** The readout is "The nightly job", the slots are "the reply run" and "the records run", and the run table's column is "Run"; "lane" is no word of the site's.
+
+Before the two containers exist the card shows GitHub's runs and gates, the hour's role sentence, and "not read" with its reason on every Azure line; it keeps no history and its chart is empty. Creating them is still a person's `az` command from their definitions. `NightlyCardTests` holds all of it: a run log that is not there beside three listed runs, the gates on an empty list, the reasons, and the recorder with an hourly card and no keep.

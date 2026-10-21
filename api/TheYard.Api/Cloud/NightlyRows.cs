@@ -15,11 +15,31 @@ public static class NightlyRows
     public static readonly IReadOnlyList<string> Failed = ["failure", "timed_out", "startup_failure"];
 
     /// <summary>The run log's columns.</summary>
-    public static readonly IReadOnlyList<string> Columns = ["When (Central)", "Slot", "Started by", "Lane", "Took", "Came to"];
+    public static readonly IReadOnlyList<string> Columns = ["When (Central)", "Slot", "Started by", "Run", "Took", "Came to"];
 
     /// <summary>The sentence a row prints in place of an answer it needs Azure for while the identity holds no role on the group.</summary>
     /// <param name="group">The Function's resource group, from configuration.</param>
     public static string NoRole(string group) => $"not read: no role on {group}";
+
+    /// <summary>Why a line that needs the hour has no answer: no hour kept yet, or what the hour itself said in place of the record.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static string NoHour(ResourceCardInputs inputs) =>
+        ResourceView.Latest(inputs) is not { } hour ? "not read: no hour kept yet"
+            : "not read: " + (hour.Facts.GetValueOrDefault("site") ?? hour.Facts.GetValueOrDefault("azure") ?? "the hour named nothing");
+
+    /// <summary>Why a line that needs the kept minutes has no answer: the keep's own reason, no hour yet, or no minute yet.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static string NoMinutes(ResourceCardInputs inputs) =>
+        !inputs.Availability.Available ? "not read: " + ResourceView.KeepReason(inputs)
+            : inputs.Hours.Count == 0 ? "not read: no hour kept yet"
+            : "not read: no minute kept yet";
+
+    /// <summary>Why the run log is empty: GitHub's answer as the hour wrote it, or that no hour has asked GitHub yet.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static string NoRuns(ResourceCardInputs inputs) =>
+        ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("github") is not { } read ? "no hour kept yet"
+            : read.StartsWith("not read: ", StringComparison.Ordinal) ? read["not read: ".Length..]
+            : "GitHub listed no runs in 30 days";
 
     /// <summary>The run log's tone: warning when the newest run failed, alarm when the two newest did, good otherwise, information with no runs.</summary>
     /// <param name="runs">The runs, newest first.</param>
@@ -81,11 +101,11 @@ public static class NightlyRows
             new("firing", "Is it firing?",
                 roleMissing ? noRole : tally.Due == 0 ? "no slot kept yet" : $"{tally.OnTime} of {tally.Due} slots on time",
                 [new(roleMissing ? noRole : $"{tally.OnTime} fired in their first five minutes · {tally.Late} late · {tally.Missed} missed, over the days kept", null),
-                    new("slots: 4:00 AM Central for the reply lane; midnight, 8 AM, noon, 4 PM and 8 PM for the records run", null)],
+                    new("slots: 4:00 AM Central for the reply run; midnight, 8 AM, noon, 4 PM and 8 PM for the records run", null)],
                 roleMissing ? "info" : CloudTones.Of(missTone))
             { Source = "Azure Monitor, " + NightlyMetrics.Executions },
             new("runs", "Run log",
-                runs.Count == 0 ? "no runs read yet" : $"{runs.Count} runs in 30 days, the newest {CameTo(runs[0])}",
+                runs.Count == 0 ? $"no runs read yet: {NoRuns(inputs)}" : $"{runs.Count} runs in 30 days, the newest {CameTo(runs[0])}",
                 [new($"each run kept a year under its GitHub id · the workflow {names.Workflow} in {names.Repo}", $"https://github.com/{names.Repo}/actions/workflows/{names.Workflow}")],
                 RunsTone(runs))
             { Table = RunTable(runs), Source = $"GitHub Actions, {names.Workflow} runs" },

@@ -1,6 +1,7 @@
 // The one reader the resource cards' route answers from (ADR: One frame for every resource): a
 // card's window from its keep, the month for the dials cached ten minutes, and a live read first
-// only when the newest kept reading is stale and this is the recording site.
+// only when the newest kept reading is stale and this is the recording site. An hourly card whose
+// keep is not there yet draws from the hour the recorder holds.
 using TheYard.Application;
 using TheYard.Application.Features.Admin.Cloud;
 
@@ -40,7 +41,11 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
         }
         var availability = await history.AvailabilityAsync(cancellation);
         var lastHour = await history.NewestAsync(60, cancellation);
-        if (recorder is not null && availability.Available && (lastHour.Count == 0 || now - lastHour[^1].At > card.Stale))
+        // An hourly card with no keep yet is read live: the recorder holds its newest hour.
+        bool stale = availability.Available
+            ? lastHour.Count == 0 || now - lastHour[^1].At > card.Stale
+            : card.Hourly && (recorder?.LiveHour(key) is not { } held || now - held.At > card.Stale);
+        if (recorder is not null && stale)
         {
             try
             {
@@ -53,6 +58,11 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
                 // The card answers from what is kept; the readout's live-read line says how old it is.
             }
         }
+        var hours = await history.HoursAsync(now - length, cancellation);
+        if (!availability.Available && hours.Count == 0 && recorder?.LiveHour(key) is { } live)
+        {
+            hours = [live];
+        }
         var view = CardFrame.Complete(card.View(new ResourceCardInputs(
             name,
             length,
@@ -61,7 +71,7 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             lastHour,
             await history.BucketsAsync(now - length, grain, card.Readings, cancellation),
             await MonthAsync(key, history, card.Readings, now, cancellation),
-            await history.HoursAsync(now - length, cancellation),
+            hours,
             await cost(card.ResourceName, cancellation),
             recordingSite,
             await CostLinesAsync(card, cancellation))), card.Source, card.SpecSource, card.Hourly);
