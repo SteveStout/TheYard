@@ -18,7 +18,7 @@ public static class CloudEndpoints
         app.MapGet("/api/admin/cloud/{key}", Card)
             .WithName("GetResourceCard")
             .WithTags("Admin")
-            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, mail or edge, for 24h, 7d or 30d");
+            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, mail, edge or nightly, for 24h, 7d or 30d");
         // #endregion resource-endpoint
         return app;
     }

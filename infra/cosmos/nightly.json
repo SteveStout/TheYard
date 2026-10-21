@@ -1,0 +1,35 @@
+{
+  "container": "nightly",
+  "partitionKeyPath": "/day",
+  "defaultTtlSeconds": 2678400,
+  "why": "The nightly Function card's keep: one document a minute with the Function's on-demand executions and execution units from Azure Monitor, and one document an hour with the Function app's record, the workflow runs read and whether the site's identity may read the group yet. Partitioned on the UTC day and written by the SQL site alone, so a reading is never written twice. The kind, the day, the moment and the three bucket keys are indexed and nothing else, so a window is a grouped query over the index. Documents expire thirty-one days after they are written, one more than the longest window; the runs themselves are kept a year in nightlyruns (ADR: One frame for every resource; ADR: The Nightly Function on the Admin tab).",
+  "indexingPolicy": {
+    "indexingMode": "consistent",
+    "automatic": true,
+    "includedPaths": [
+      {
+        "path": "/kind/?"
+      },
+      {
+        "path": "/day/?"
+      },
+      {
+        "path": "/at/?"
+      },
+      {
+        "path": "/b5/?"
+      },
+      {
+        "path": "/h1/?"
+      },
+      {
+        "path": "/h4/?"
+      }
+    ],
+    "excludedPaths": [
+      {
+        "path": "/*"
+      }
+    ]
+  }
+}

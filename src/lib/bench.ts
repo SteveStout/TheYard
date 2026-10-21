@@ -68,6 +68,7 @@ export const BENCH_CARDS: BenchCard[] = [
   card('azure', "Azure's view of the container", 'cloud'),
   card('machines', 'What the machines are doing', 'cloud'),
   card('follows', 'Memory against traffic', 'cloud'),
+  card('nightly', 'The Nightly Function', 'cloud'),
   card('errors', 'Recent errors', 'broke'),
   card('log', 'The log, as the console got it', 'broke'),
   card('kept', 'Kept log', 'broke', 'kept-logs-card'),

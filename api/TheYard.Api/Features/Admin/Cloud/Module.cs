@@ -6,9 +6,10 @@ using TheYard.Infrastructure.Cosmos;
 namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>
-/// The six resource cards under Cloud infrastructure (ADR: One frame for every resource): one
-/// reader of Azure Monitor and one of Netlify, the resource group's list each card finds its
-/// resource in, a keep per card, the one recorder, the one cached reader the endpoint answers from,
+/// The seven resource cards under Cloud infrastructure (ADR: One frame for every resource): one
+/// reader of Azure Monitor, one of Netlify and one of GitHub, the resource groups' lists each card
+/// finds its resource in (the nightly Function's group is its own, ADR: The Nightly Function on the
+/// Admin tab), a keep per card, the nightly run log and its cache, the one recorder, the one cached reader the endpoint answers from,
 /// and the endpoint. Each card's own file says what it reads and how it draws.
 /// </summary>
 public sealed class Module : IModule
@@ -26,11 +27,21 @@ public sealed class Module : IModule
         var publicSite = configuration["Netlify:PublicSite"] is { } site ? new Uri(site) : names.PublicSite;
         // Which public name gets the SQL database, from this process's own settings.
         string? sqlName = SiteSettings.From(configuration).HostFor("sql");
+        // The nightly Function lives in a resource group of its own, listed by a directory of its own.
+        var nightlyNames = NightlyResources.From(configuration);
+        string subscription = AzureIds.SubscriptionId(configuration);
+        services.AddSingleton<NightlyRunCache>();
+        services.AddSingleton<INightlyRunLog>(provider => provider.GetRequiredService<DocumentStore>().Store is { } store
+            ? (INightlyRunLog)new CosmosNightlyRunLog(store)
+            : new MemoryNightlyRunLog("kept in this process's memory, so the run log ends with it; the document store is not configured here"));
         services.AddSingleton<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
             var azure = new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity);
             var directory = new ResourceDirectory(azure, group, TimeProvider.System);
+            var nightlyDirectory = new ResourceDirectory(azure, nightlyNames.GroupPath(subscription), TimeProvider.System);
+            var nightly = new NightlySource(azure, nightlyDirectory, nightlyNames, new GitHubRuns(nightlyNames.Repo, nightlyNames.Workflow),
+                provider.GetRequiredService<INightlyRunLog>(), provider.GetRequiredService<NightlyRunCache>(), TimeProvider.System, nightlyNames.FunctionPath(subscription));
             // One hashed bundle file from the built page, so the hourly sample scores a file the edge keeps.
             string builtPage = Path.Combine(Path.GetDirectoryName(provider.GetRequiredService<HostPaths>().AssetsRoot)!, "index.html");
             var edge = new NetlifyEdge(token, names.Edge, publicSite, NetlifyEdge.BundleFileOf(builtPage));
@@ -39,7 +50,7 @@ public sealed class Module : IModule
             IResourceHistory KeepOf(ResourceCard card) => cosmos is not null
                 ? new CosmosResourceHistory(cosmos, card.Container)
                 : new MemoryResourceHistory("kept in this process's memory, so the readings end with it; the document store is not configured here");
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite).Select(card => (card, KeepOf(card)))];
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with

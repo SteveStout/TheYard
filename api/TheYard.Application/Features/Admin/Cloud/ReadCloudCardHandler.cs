@@ -8,7 +8,7 @@ namespace TheYard.Application.Features.Admin.Cloud;
 public interface ICloudCards
 {
     /// <summary>Whether a card by this key exists.</summary>
-    /// <param name="key">sqldb, cosmosdb, registry, insights, mail or edge.</param>
+    /// <param name="key">sqldb, cosmosdb, registry, insights, mail, edge or nightly.</param>
     bool Knows(string key);
 
     /// <summary>The card's report for the window.</summary>

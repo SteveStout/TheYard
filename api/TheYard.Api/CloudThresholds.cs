@@ -43,5 +43,29 @@ public static class CloudThresholds
 
     /// <summary>The Netlify edge: cache misses of the sampled pages, amber at 50 and red at 80.</summary>
     public static readonly (double Amber, double Red) EdgeMisses = (50, 80);
+
+    /// <summary>
+    /// The nightly Function: slots that did not fire on time over thirty days, amber at 5 per cent and
+    /// red at 10. The dial shows the share on time, a floor (amber under 95, red under 90), so its tone
+    /// is read on the misses the way the edge's cache dial is. Source: the levels Steve set for the card
+    /// (PROMPT-THEYARD-NIGHTLY-FUNCTION-CARD): one late or missed slot in twenty is worth a look, one in ten is broken.
+    /// </summary>
+    public static readonly (double Amber, double Red) NightlyMisses = (5, 10);
+
+    /// <summary>
+    /// The nightly Function: the month's execution units against the Flex Consumption free grant,
+    /// amber at 80 per cent and red at 95. Source: the levels Steve set for the card
+    /// (PROMPT-THEYARD-NIGHTLY-FUNCTION-CARD); the grant is per subscription and resets on the first of the month.
+    /// </summary>
+    public static readonly (double Amber, double Red) NightlyGrant = (80, 95);
+
+    /// <summary>
+    /// Azure Functions pricing page, Flex Consumption on-demand free grant, per subscription: gigabyte-seconds a month.
+    /// Typed, because no record Azure returns for the app or the plan states the grant.
+    /// </summary>
+    public const double FreeGrantGbSeconds = 100_000;
+
+    /// <summary>Azure Functions pricing page, Flex Consumption on-demand free grant, per subscription: executions a month.</summary>
+    public const double FreeGrantExecutions = 250_000;
 }
 // #endregion cloud-thresholds

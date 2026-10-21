@@ -16,6 +16,10 @@
 # Team, and Enterprise plans"). Tokens and wall time land in usage.json beside
 # the night's DONE note.
 name: Nightly
+# Every run names its lane, so the Admin tab's nightly card can read it off GitHub's list of runs:
+# a dispatch is named by its type (nightly or bookkeeping), a run by hand by its mode, with
+# " (dry run)" after it when it was one.
+run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action || format('{0}{1}', inputs.mode, inputs.dry_run && ' (dry run)' || '') }}
 
 on:
   repository_dispatch:

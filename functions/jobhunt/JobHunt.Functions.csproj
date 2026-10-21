@@ -15,6 +15,11 @@
     <PackageReference Include="Azure.Storage.Files.Shares" Version="12.21.0" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The slot table the Admin tab's nightly card reads too, compiled here from its one file so the
+         Function and the card cannot keep two tables (ADR: The Nightly Function on the Admin tab). -->
+    <Compile Include="..\..\api\TheYard.Domain\NightlySlots.cs" Link="NightlySlots.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <None Update="host.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

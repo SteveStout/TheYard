@@ -157,4 +157,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '108',
   },
+  adrTheNightlyFunctionOnTheAdminTab: {
+    title: 'ADR: The Nightly Function on the Admin tab',
+    menuLabel: 'ADR: The Nightly Function on the Admin tab',
+    url: '/api/docs/adr-the-nightly-function-on-the-admin-tab',
+    kind: 'adr',
+    number: '109',
+  },
 } as const satisfies Record<string, RecordEntry>;

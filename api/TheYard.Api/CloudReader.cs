@@ -63,12 +63,28 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             await MonthAsync(key, history, card.Readings, now, cancellation),
             await history.HoursAsync(now - length, cancellation),
             await cost(card.ResourceName, cancellation),
-            recordingSite)), card.Source, card.SpecSource, card.Hourly);
+            recordingSite,
+            await CostLinesAsync(card, cancellation))), card.Source, card.SpecSource, card.Hourly);
         lock (_gate)
         {
             _cached[slot] = (now, view);
         }
         return view;
+    }
+
+    /// <summary>Each of a card's bill names with its month to date, read through the same cost function; null for a card with one line.</summary>
+    private async Task<IReadOnlyDictionary<string, double?>?> CostLinesAsync(ResourceCard card, CancellationToken cancellation)
+    {
+        if (card.CostNames is not { } names)
+        {
+            return null;
+        }
+        var lines = new Dictionary<string, double?>(StringComparer.Ordinal);
+        foreach (string name in names)
+        {
+            lines[name] = await cost(name, cancellation);
+        }
+        return lines;
     }
 
     private async Task<IReadOnlyList<ResourceBucket>> MonthAsync(string key, IResourceHistory history, IReadOnlyList<string> readings, DateTimeOffset now, CancellationToken cancellation)

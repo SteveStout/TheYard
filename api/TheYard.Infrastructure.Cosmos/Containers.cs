@@ -65,6 +65,12 @@ public static class Containers
     /// <summary>The Netlify edge theyard-edge, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
     public const string ResourceEdge = "edge";
 
+    /// <summary>The nightly Function func-jobhunt-ss, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    public const string ResourceNightly = "nightly";
+
+    /// <summary>The nightly Function's run log, kept for its card under Cloud infrastructure: one document per GitHub run under its id and one per judged slot, partitioned on the UTC day, expiring after a year by the container's time-to-live (ADR: The Nightly Function on the Admin tab).</summary>
+    public const string NightlyRuns = "nightlyruns";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -85,6 +91,8 @@ public static class Containers
         [ResourceInsights] = "/day",
         [ResourceMail] = "/day",
         [ResourceEdge] = "/day",
+        [ResourceNightly] = "/day",
+        [NightlyRuns] = "/day",
     };
 
     /// <summary>

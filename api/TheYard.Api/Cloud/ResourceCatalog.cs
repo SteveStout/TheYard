@@ -1,4 +1,4 @@
-// The six cards' definitions in one list: which resource each finds in the group, which metrics
+// The resource cards' definitions in one list: which resource each finds in the group, which metrics
 // it reads a minute, what it reads an hour, and which view draws it. Off Azure every card reads
 // nothing and says so, because there is no identity to ask with.
 using System.Text.Json;
@@ -6,7 +6,7 @@ using TheYard.Application;
 
 namespace TheYard.Api;
 
-/// <summary>The six resource cards, in the rail's order.</summary>
+/// <summary>The resource cards after the plan, in the rail's order.</summary>
 public static class ResourceCatalog
 {
     /// <summary>Resource Manager types and api versions the cards read.</summary>
@@ -17,7 +17,8 @@ public static class ResourceCatalog
 
     /// <param name="sqlSite">The public name whose requests get the SQL database and the web app that answers it, from this process's own settings; null where it serves none.</param>
     /// <param name="names">The deployment's resource names, from configuration; the SQL card reads the database named there, and any other user database on the server is listed from its own record.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null)
+    /// <param name="nightly">The nightly Function's reader, over a list of its own resource group; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -42,7 +43,7 @@ public static class ResourceCatalog
                 }
             };
 
-        return
+        List<ResourceCard> cards =
         [
             new("sqldb", "sqldb", sqlDatabase, ReadingsOf(SqlCard.Metrics), Monitor(SqlType, "/" + sqlDatabase, SqlCard.Metrics),
                 Hourly(SqlType, "/" + sqlDatabase, "2023-08-01", (_, record, _) =>
@@ -119,6 +120,16 @@ public static class ResourceCatalog
                 async (hour, _, cancellation) => await edge.HourAsync(hour, cancellation),
                 inputs => EdgeCard.View(inputs, edge.Configured, names.Edge, names.EdgeRetires), Hourly: true, Source: "Netlify API", SpecSource: "Netlify site record"),
         ];
+        if (nightly is not null)
+        {
+            // Read every minute like the other Azure cards; its hour also reads the workflow's runs
+            // from GitHub, and its three lines of the bill are the Function, its plan and its storage.
+            NightlySource source = nightly;
+            cards.Add(new("nightly", "nightly", source.Names.Function, NightlyMetrics.Readings, source.MinutesAsync, source.HourAsync,
+                inputs => NightlyCard.View(inputs, source.Names, source.FunctionPath, source.Cache.Runs),
+                SpecSource: "ARM record of the Function app", CostNames: source.Names.CostNames));
+        }
+        return cards;
     }
 
     /// <summary>

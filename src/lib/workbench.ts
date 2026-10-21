@@ -37,6 +37,7 @@ export const CARD_SLUGS = [
   'azure',
   'machines',
   'follows',
+  'nightly',
   'errors',
   'log',
   'kept',

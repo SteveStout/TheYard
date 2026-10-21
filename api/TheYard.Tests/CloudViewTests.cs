@@ -90,10 +90,10 @@ public class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFacto
     [Fact]
     [Covers("GET", "/api/admin/cloud/{key}", 200)]
     [Covers("GET", "/api/admin/cloud/{key}", 404)]
-    public async Task The_route_answers_for_the_six_keys_and_404s_for_any_other()
+    public async Task The_route_answers_for_the_seven_keys_and_404s_for_any_other()
     {
         using var client = factory.CreateClient();
-        foreach (string key in new[] { "sqldb", "cosmosdb", "registry", "insights", "mail", "edge" })
+        foreach (string key in new[] { "sqldb", "cosmosdb", "registry", "insights", "mail", "edge", "nightly" })
         {
             var response = await client.GetAsync($"/api/admin/cloud/{key}?window=24h");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);

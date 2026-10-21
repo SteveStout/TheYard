@@ -19,7 +19,7 @@ public sealed class LiteralScanTests
 
     /// <summary>The pieces of this deployment's names, each of which only configuration may carry.</summary>
     private static readonly string[] DeploymentNames =
-        ["theyard-ss", "zmnetj67bn5h2", "theyard-edge", "stevenstout.biz", "2888a6ca-be1c-46a5-a1de-c666b1d193e5", "df3b718c-6d99-4904-8102-6f865941f640"];
+        ["theyard-ss", "jobhunt-ss", "zmnetj67bn5h2", "theyard-edge", "stevenstout.biz", "2888a6ca-be1c-46a5-a1de-c666b1d193e5", "df3b718c-6d99-4904-8102-6f865941f640"];
 
     /// <summary>The literals allowed to carry one anyway. Empty, and a test below keeps it so.</summary>
     private static readonly HashSet<string> Allowed = new(StringComparer.Ordinal);
