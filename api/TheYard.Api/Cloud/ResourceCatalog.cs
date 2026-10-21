@@ -18,7 +18,8 @@ public static class ResourceCatalog
     /// <param name="sqlSite">The public name whose requests get the SQL database and the web app that answers it, from this process's own settings; null where it serves none.</param>
     /// <param name="names">The deployment's resource names, from configuration; the SQL card reads the database named there, and any other user database on the server is listed from its own record.</param>
     /// <param name="nightly">The nightly Function's reader, over a list of its own resource group; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null)
+    /// <param name="planHour">The plan card's newest kept hour, whose apps name the image each runs; the registry card reads it rather than asking Azure a second time. Null reads none.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -94,11 +95,11 @@ public static class ResourceCatalog
                     try
                     {
                         using var usages = await azure.GetJsonAsync($"{resource.Id}/listUsages?api-version=2023-07-01", cancellation);
-                        return AcrCard.Facts(record, holdings, usages.RootElement.Clone());
+                        return AcrCard.Facts(record, holdings, usages.RootElement.Clone(), planHour is null ? null : await planHour(cancellation));
                     }
                     catch (HttpRequestException)
                     {
-                        return AcrCard.Facts(record, holdings);
+                        return AcrCard.Facts(record, holdings, plan: planHour is null ? null : await planHour(cancellation));
                     }
                 }),
                 AcrCard.View),

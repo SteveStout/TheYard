@@ -51,7 +51,12 @@ public sealed class Module : IModule
             IResourceHistory KeepOf(ResourceCard card) => cosmos is not null
                 ? new CosmosResourceHistory(cosmos, card.Container)
                 : new MemoryResourceHistory("kept in this process's memory, so the readings end with it; the document store is not configured here");
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly).Select(card => (card, KeepOf(card)))];
+            // The registry card names which web app runs each image from the plan card's own hour, the
+            // one read of every app's linuxFxVersion, rather than reading the apps a second time.
+            var planHistory = provider.GetRequiredService<IPlanHistory>();
+            async Task<PlanHour?> NewestPlanHour(CancellationToken cancellation) =>
+                (await planHistory.HoursAsync(TimeProvider.System.GetUtcNow().AddHours(-2), cancellation)) is { Count: > 0 } kept ? kept[^1] : null;
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with

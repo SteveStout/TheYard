@@ -30,6 +30,28 @@ public static class AcrCard
     /// </summary>
     public const double BasicReadsPerMinute = 1_000;
 
+    /// <summary>
+    /// What each image is, in a sentence, by repository name: no record states it, so it is typed
+    /// here and only here, read against deploy.yml (the API's image, built by Dockerfile with The Shed
+    /// published inside it, serving both sites from one web app) and deploy-render.yml (the
+    /// renderer's image, built by render/Dockerfile, a Node process running render/server.mjs). An
+    /// image this map does not name shows "no description", and the row warns.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> Descriptions = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["theyard"] = ".NET API serving TheYard, TheYard on Cosmos and The Shed from one web app",
+        ["theyard-render"] = "Node.js server that renders the React pages before they reach the browser",
+    };
+
+    /// <summary>
+    /// The two images that ship one build: the renderer draws the pages of the API's build, and
+    /// deploy-render.yml can land after deploy.yml, so the row warns while their live tags differ.
+    /// </summary>
+    public static readonly (string Api, string Renderer) SameBuild = ("theyard", "theyard-render");
+
+    /// <summary>The image table's columns.</summary>
+    public static readonly IReadOnlyList<string> ImageColumns = ["Image", "What it is", "Runs on", "Live tag", "Tags · untagged", "Size", "Last push"];
+
     public static readonly IReadOnlyList<AzureMetric> Metrics =
     [
         new("StorageUsed", "average", "storage_gb", 1.0 / 1024 / 1024 / 1024, Interval: "PT1H"),
@@ -60,9 +82,7 @@ public static class AcrCard
         var events = inputs.Hours.SelectMany(h => h.Events).ToList();
         var rows = new List<CloudRow>
         {
-            new("holds", "What does it hold?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "repositories")} images, {ResourceView.Fact(inputs, "tags")} tags",
-                ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows") is null ? [new(ResourceView.Fact(inputs, "repository_list"), null)] : [], "good")
-            { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("repository_rows"), "Image", "Type", "Tags") },
+            Holds(inputs),
             new("pulled", "Who pulled?", pulls is null ? "not read yet" : $"{pulls.Value.ToString("N0", CultureInfo.InvariantCulture)} pulls",
                 [new($"{ResourceView.Number(ok)} succeeded · {ResourceView.Number(pulls is { } all && ok is { } fine ? all - fine : null)} failed · {ResourceView.Number(pushes)} pushes in the window · pulled with the site's identity", null)],
                 pulls is > 0 && ok is { } good && good < pulls ? "warning" : "good"),
@@ -109,18 +129,21 @@ public static class AcrCard
     /// <param name="record">The registry's record.</param>
     /// <param name="holdings">The catalogue, or null when it could not be read.</param>
     /// <param name="usages">The registry's listUsages answer, or null when it could not be read.</param>
-    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement record, AcrHoldings? holdings, System.Text.Json.JsonElement? usages = null)
+    /// <param name="plan">The plan card's newest kept hour, the one read of each web app's image; null when none is kept.</param>
+    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement record, AcrHoldings? holdings, System.Text.Json.JsonElement? usages = null, PlanHour? plan = null)
     {
         string? tier = AzureMetrics.Text(record, "sku.name");
+        string? loginServer = AzureMetrics.Text(record, "properties.loginServer");
         return new Dictionary<string, string?>(StringComparer.Ordinal)
         {
             ["tier"] = tier,
             ["size_limit_gb"] = SizeLimitGb(usages)?.ToString("0.##", CultureInfo.InvariantCulture),
             ["login_server"] = AzureMetrics.Text(record, "properties.loginServer"),
-            ["repositories"] = holdings?.Repositories.Count.ToString(CultureInfo.InvariantCulture),
-            ["tags"] = holdings?.Repositories.Sum(r => r.Tags).ToString(CultureInfo.InvariantCulture),
-            ["repository_rows"] = holdings is null ? null : CloudTable.ToFact(holdings.Repositories.Select(r => new[] { r.Name, "Image repository", r.Tags.ToString(CultureInfo.InvariantCulture) })),
-            ["repository_list"] = holdings is null ? "the catalogue could not be read; AcrPull on the registry is what it needs" : string.Join(" · ", holdings.Repositories.Select(r => $"{r.Name} {r.Tags} tags")),
+            ["repositories"] = holdings?.Images.Count.ToString(CultureInfo.InvariantCulture),
+            ["tags"] = holdings?.Images.Sum(r => r.Tags).ToString(CultureInfo.InvariantCulture),
+            ["image_rows"] = holdings is null ? null : ImageRows(holdings, loginServer, plan),
+            ["apps_read"] = plan is null ? null : plan.Apps.Count.ToString(CultureInfo.InvariantCulture),
+            ["repository_list"] = holdings is null ? "the catalogue could not be read; AcrPull on the registry is what it needs" : string.Join(" · ", holdings.Images.Select(r => $"{r.Name} {r.Tags} tags")),
             ["untagged"] = holdings?.UntaggedManifests.ToString(CultureInfo.InvariantCulture),
             ["untagged_gb"] = holdings is null ? null : (holdings.UntaggedBytes / 1024.0 / 1024 / 1024).ToString("0.00", CultureInfo.InvariantCulture),
             ["spec"] = string.Join(' ', new[] { tier, AzureMetrics.Text(record, "location") }.Where(p => p is not null)).ToUpperInvariant(),
@@ -136,4 +159,104 @@ public static class AcrCard
                 .Select(usage => usage.TryGetProperty("limit", out var bytes) && bytes.TryGetDouble(out double b) ? b / 1024 / 1024 / 1024 : (double?)null)
                 .FirstOrDefault()
             : null;
+
+    // #region image-table
+    /// <summary>
+    /// The holds row: one table row an image, what it is from the typed map, which web apps run it
+    /// and at which tag from the plan card's own hour, its tags, its bytes and its newest push. Warns
+    /// when an image has no description or the two images of one build run different tags.
+    /// </summary>
+    public static CloudRow Holds(ResourceCardInputs inputs)
+    {
+        if (inputs.Hours.Count == 0)
+        {
+            return new CloudRow("holds", "What does it hold?", "not read yet", [], "info");
+        }
+        string answer = $"{ResourceView.Fact(inputs, "repositories")} images, {ResourceView.Fact(inputs, "tags")} tags";
+        string? fact = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("image_rows");
+        if (fact is null)
+        {
+            return new CloudRow("holds", "What does it hold?", answer, [new(ResourceView.Fact(inputs, "repository_list"), null)], "info");
+        }
+        var images = fact.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.Split('\t')).Where(cells => cells.Length >= 7).ToList();
+        var faults = new List<CloudLink>();
+        var rows = new List<IReadOnlyList<CloudLink>>();
+        var live = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var cells in images)
+        {
+            string name = cells[0];
+            var apps = cells[6].Split('\u001E', StringSplitOptions.RemoveEmptyEntries).Select(app => app.Split('\u001F')).Where(app => app.Length == 3).ToList();
+            string tags = string.Join(", ", apps.Select(app => app[2]).Where(tag => tag.Length > 0).Distinct(StringComparer.Ordinal));
+            live[name] = tags;
+            bool described = Descriptions.TryGetValue(name, out var what);
+            if (!described)
+            {
+                faults.Add(new($"{name} has no description: say what it is in AcrCard.Descriptions", null));
+            }
+            CloudLink runsOn = apps.Count == 0 ? new("no web app runs it", null)
+                : new(string.Join(", ", apps.Select(app => app[0])), apps[0][1].Length > 0 ? apps[0][1] : null);
+            rows.Add(
+            [
+                new(name, null),
+                new(described ? what! : "no description", null),
+                runsOn,
+                new(tags.Length > 0 ? tags : "none", null),
+                new($"{cells[1]} · {cells[2]} untagged", null),
+                new($"{Gb(cells[3])} GB, {Gb(cells[4])} GB untagged", null),
+                new(DateTimeOffset.TryParse(cells[5], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var pushed)
+                    ? TheYard.Domain.NightlySlots.Local(pushed).ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " Central" : "not read", null),
+            ]);
+        }
+        if (live.TryGetValue(SameBuild.Api, out var apiTag) && live.TryGetValue(SameBuild.Renderer, out var renderTag)
+            && apiTag.Length > 0 && renderTag.Length > 0 && apiTag != renderTag)
+        {
+            faults.Add(new($"{SameBuild.Api} runs {apiTag} and {SameBuild.Renderer} runs {renderTag}: until they match, pages are drawn in the browser", null));
+        }
+        IReadOnlyList<CloudLink> detail = faults.Count > 0 ? faults
+            : ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("apps_read") is null ? [new CloudLink("which web app runs each image is read from the plan card's hour; none is kept yet", null)]
+            : [];
+        return new CloudRow("holds", "What does it hold?", answer, detail, faults.Count > 0 ? "warning" : "good") { Table = new CloudTable(ImageColumns, rows) };
+    }
+
+    /// <summary>Bytes as gigabytes to two places.</summary>
+    private static string Gb(string bytes) =>
+        long.TryParse(bytes, NumberStyles.Integer, CultureInfo.InvariantCulture, out long b) ? (b / 1024.0 / 1024 / 1024).ToString("0.00", CultureInfo.InvariantCulture) : "not read";
+
+    /// <summary>The image rows as a fact, one line an image, with each web app that runs it as name, portal link and live tag.</summary>
+    /// <param name="holdings">The registry's catalogue.</param>
+    /// <param name="loginServer">The registry's login server, which a web app's image must name to be this registry's.</param>
+    /// <param name="plan">The plan card's newest hour, whose apps carry their linuxFxVersion; null when none is kept.</param>
+    public static string ImageRows(AcrHoldings holdings, string? loginServer, PlanHour? plan) =>
+        CloudTable.ToFact(holdings.Images.Select(image => new[]
+        {
+            image.Name,
+            image.Tags.ToString(CultureInfo.InvariantCulture),
+            image.Untagged.ToString(CultureInfo.InvariantCulture),
+            image.Bytes.ToString(CultureInfo.InvariantCulture),
+            image.UntaggedBytes.ToString(CultureInfo.InvariantCulture),
+            image.LastPush?.ToString("O", CultureInfo.InvariantCulture),
+            string.Join('\u001E', (plan?.Apps ?? Array.Empty<PlanAppState>()).Select(app => (app, image: ImageOf(app.Image)))
+                .Where(pair => pair.image is { } named && named.Repository == image.Name && (loginServer is null || string.Equals(named.Host, loginServer, StringComparison.OrdinalIgnoreCase)))
+                .Select(pair => $"{pair.app.Name}\u001F{PlanView.Portal(plan!.TenantId, pair.app.ResourceId)}\u001F{pair.image!.Value.Tag}")),
+        }));
+
+    /// <summary>A web app's linuxFxVersion as host, repository and tag: "DOCKER|cr.azurecr.io/theyard:v1" is (cr.azurecr.io, theyard, v1); null when it names no image.</summary>
+    /// <param name="linuxFxVersion">The app's setting, as the plan card's hour kept it.</param>
+    public static (string Host, string Repository, string Tag)? ImageOf(string? linuxFxVersion)
+    {
+        if (string.IsNullOrWhiteSpace(linuxFxVersion))
+        {
+            return null;
+        }
+        string reference = linuxFxVersion[(linuxFxVersion.IndexOf('|', StringComparison.Ordinal) + 1)..].Trim();
+        int slash = reference.IndexOf('/', StringComparison.Ordinal);
+        if (slash <= 0)
+        {
+            return null;
+        }
+        string path = reference[(slash + 1)..];
+        int colon = path.LastIndexOf(':');
+        return (reference[..slash], colon < 0 ? path : path[..colon], colon < 0 ? "" : path[(colon + 1)..]);
+    }
+    // #endregion image-table
 }

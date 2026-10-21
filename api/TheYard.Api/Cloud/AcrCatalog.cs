@@ -7,11 +7,25 @@ using System.Text.Json;
 
 namespace TheYard.Api;
 
-/// <summary>One read of the registry's catalogue.</summary>
-/// <param name="Repositories">Each repository with its tag count.</param>
-/// <param name="UntaggedManifests">How many manifests no tag points at.</param>
-/// <param name="UntaggedBytes">The bytes those manifests hold.</param>
-public sealed record AcrHoldings(IReadOnlyList<(string Name, int Tags)> Repositories, int UntaggedManifests, long UntaggedBytes);
+/// <summary>One image repository as its manifest list states it.</summary>
+/// <param name="Name">The repository's name.</param>
+/// <param name="Tags">How many tags its manifests carry.</param>
+/// <param name="Untagged">How many of its manifests no tag points at.</param>
+/// <param name="Bytes">The sum of imageSize over every manifest.</param>
+/// <param name="UntaggedBytes">The sum of imageSize over the untagged ones.</param>
+/// <param name="LastPush">The newest lastUpdateTime over its manifests; null when none states one.</param>
+public sealed record AcrImage(string Name, int Tags, int Untagged, long Bytes, long UntaggedBytes, DateTimeOffset? LastPush);
+
+/// <summary>One read of the registry's catalogue: each image, and the untagged totals over them.</summary>
+/// <param name="Images">Each repository, as its manifest list states it.</param>
+public sealed record AcrHoldings(IReadOnlyList<AcrImage> Images)
+{
+    /// <summary>How many manifests no tag points at, over every image.</summary>
+    public int UntaggedManifests => Images.Sum(image => image.Untagged);
+
+    /// <summary>The bytes those manifests hold.</summary>
+    public long UntaggedBytes => Images.Sum(image => image.UntaggedBytes);
+}
 
 /// <summary>Reads a registry's repositories, tags and untagged manifests.</summary>
 public static class AcrCatalog
@@ -29,28 +43,44 @@ public static class AcrCatalog
         string catalogToken = await TokenAsync(loginServer, refresh, "registry:catalog:*", cancellation);
         using var catalog = await GetAsync($"https://{loginServer}/v2/_catalog", catalogToken, cancellation);
         var names = catalog.RootElement.TryGetProperty("repositories", out var repos) ? repos.EnumerateArray().Select(r => r.GetString()!).ToList() : [];
-        var repositories = new List<(string, int)>();
-        int untagged = 0;
-        long bytes = 0;
+        var images = new List<AcrImage>();
         foreach (string name in names)
         {
             string token = await TokenAsync(loginServer, refresh, $"repository:{name}:metadata_read", cancellation);
             using var manifests = await GetAsync($"https://{loginServer}/acr/v1/{name}/_manifests", token, cancellation);
-            int tags = 0;
-            var listed = manifests.RootElement.TryGetProperty("manifests", out var list) && list.ValueKind == JsonValueKind.Array ? list.EnumerateArray().ToList() : [];
-            foreach (var manifest in listed)
-            {
-                int count = manifest.TryGetProperty("tags", out var t) && t.ValueKind == JsonValueKind.Array ? t.GetArrayLength() : 0;
-                tags += count;
-                if (count == 0)
-                {
-                    untagged++;
-                    bytes += manifest.TryGetProperty("imageSize", out var size) && size.TryGetInt64(out long b) ? b : 0;
-                }
-            }
-            repositories.Add((name, tags));
+            images.Add(Image(name, manifests.RootElement));
         }
-        return new AcrHoldings(repositories, untagged, bytes);
+        return new AcrHoldings(images);
+    }
+
+    /// <summary>One repository's figures from its manifest list: tags, untagged manifests, the bytes of each, and the newest push.</summary>
+    /// <param name="name">The repository's name.</param>
+    /// <param name="answer">The registry's /acr/v1/{name}/_manifests answer.</param>
+    public static AcrImage Image(string name, JsonElement answer)
+    {
+        var listed = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("manifests", out var list) && list.ValueKind == JsonValueKind.Array ? list.EnumerateArray().ToList() : [];
+        int tags = 0, untagged = 0;
+        long bytes = 0, untaggedBytes = 0;
+        DateTimeOffset? last = null;
+        foreach (var manifest in listed)
+        {
+            int count = manifest.TryGetProperty("tags", out var t) && t.ValueKind == JsonValueKind.Array ? t.GetArrayLength() : 0;
+            long size = manifest.TryGetProperty("imageSize", out var s) && s.TryGetInt64(out long b) ? b : 0;
+            tags += count;
+            bytes += size;
+            if (count == 0)
+            {
+                untagged++;
+                untaggedBytes += size;
+            }
+            if (manifest.TryGetProperty("lastUpdateTime", out var at) && at.ValueKind == JsonValueKind.String
+                && DateTimeOffset.TryParse(at.GetString(), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var pushed)
+                && (last is null || pushed > last))
+            {
+                last = pushed;
+            }
+        }
+        return new AcrImage(name, tags, untagged, bytes, untaggedBytes, last);
     }
 
     private static async Task<string> ExchangeAsync(string loginServer, string armToken, string tenant, CancellationToken cancellation)
