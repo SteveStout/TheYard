@@ -1,6 +1,6 @@
 import type { Vehicle } from './types';
 import { filtersToSearchParams, type InventoryFilters, type SortKey } from './inventory';
-import { counted, type WorkingOptions } from './working';
+import { counted, giveUp, type WorkingOptions } from './working';
 
 /**
  * The single seam for API access. The .NET API (api/) owns the data AND the
@@ -217,10 +217,11 @@ export async function fetchBids(signal?: AbortSignal): Promise<BidMap> {
   return (await response.json()) as BidMap;
 }
 
-/** A JSON POST through the working store (src/lib/working.ts); a background one never locks. */
+/** A JSON POST through the working store (src/lib/working.ts), given up after twenty seconds; a background one never locks. */
 function postJson(url: string, body: unknown, options?: WorkingOptions): Promise<Response> {
   const init = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
-  return counted(() => fetch(url, { ...init, body: JSON.stringify(body) }), options);
+  const signal = giveUp();
+  return counted(() => fetch(url, { ...init, body: JSON.stringify(body), signal }), options);
 }
 
 async function postBidAction(url: string, body: Record<string, unknown>): Promise<BidResult> {

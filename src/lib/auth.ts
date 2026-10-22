@@ -6,7 +6,7 @@
  * page cannot read, so `credentials: 'same-origin'` is the whole of the client
  * side of authentication and there is nothing to store, refresh, or leak.
  */
-import { counted } from './working';
+import { counted, giveUp } from './working';
 
 export interface Account {
   signedIn: boolean;
@@ -112,6 +112,7 @@ async function submit(url: string, email: string, password: string): Promise<Aut
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ email, password }),
+        signal: giveUp(),
       })
     );
   } catch {

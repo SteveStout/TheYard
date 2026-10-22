@@ -17,12 +17,22 @@
   cursor: progress;
   outline: none;
   transition:
-    opacity 180ms ease-in,
-    display 180ms allow-discrete;
+    opacity var(--working-fade) ease-in,
+    display var(--working-fade) allow-discrete;
 }
 
 .on {
-  animation: fade-in 180ms ease-out;
+  animation: fade-in var(--working-fade) ease-out;
+}
+
+/* The line a screen reader hears, always in the page and never seen. */
+.said {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* Nothing slow: out of the page's layout, so nothing in it is drawn, faded or turning. The display
@@ -86,7 +96,7 @@
   color: var(--color-teal-header);
 }
 
-.words b::after {
+.dots::after {
   content: '';
   display: inline-block;
   width: 1.2em;
@@ -94,7 +104,7 @@
   animation: dots 1.2s steps(4) infinite;
 }
 
-.words span {
+.words > span {
   display: block;
   margin-top: 6px;
   font-size: var(--text-xs);

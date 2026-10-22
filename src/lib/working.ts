@@ -19,8 +19,27 @@
  */
 export const LOCK_AFTER_MS = 500;
 
-/** How long the lock takes to fade once the last counted request settles. */
+/** How long the lock takes to fade once the last counted request settles; the lock's CSS reads it. */
 export const FADE_MS = 180;
+
+/**
+ * Once the lock has shown it stays at least this long, so it is either absent or plainly there: a
+ * lock that showed for 2 ms and faded over 180 was a ghost of the panel, not a lock.
+ */
+export const HOLD_MS = 350;
+
+/** How long a person's request may hang before it is given up, its caller shows the error and the lock lets go. */
+export const GIVE_UP_MS = 20_000;
+
+/** A signal that aborts after GIVE_UP_MS on the page's own timer: hand it to a fetch a person started. */
+export function giveUp(ms: number = GIVE_UP_MS): AbortSignal {
+  const controller = new AbortController();
+  setTimeout(
+    () => controller.abort(new DOMException('The request took too long.', 'TimeoutError')),
+    ms
+  );
+  return controller.signal;
+}
 
 /** What a request says about itself when it begins. */
 export type WorkingOptions = {
@@ -42,6 +61,7 @@ export function createWorking(clock: WorkingClock = browserClock) {
   const listeners = new Set<() => void>();
   let next = 1;
   let slow = 0;
+  let holding = false;
 
   const notify = () => {
     for (const listener of listeners) listener();
@@ -56,12 +76,18 @@ export function createWorking(clock: WorkingClock = browserClock) {
       entry.handle = clock.set(() => {
         entry.slow = true;
         slow++;
-        if (slow === 1) notify();
+        if (slow !== 1 || holding) return;
+        holding = true;
+        clock.set(() => {
+          holding = false;
+          if (slow === 0) notify();
+        }, HOLD_MS);
+        notify();
       }, LOCK_AFTER_MS);
       pending.set(token, entry);
       return token;
     },
-    /** A request settled, answered or failed; the lock clears when the last slow one does. */
+    /** A request settled, answered or failed; the lock clears when the last slow one does and the hold has passed. */
     end(token: number): void {
       const entry = pending.get(token);
       if (entry === undefined) return;
@@ -69,12 +95,12 @@ export function createWorking(clock: WorkingClock = browserClock) {
       clock.clear(entry.handle);
       if (entry.slow) {
         slow--;
-        if (slow === 0) notify();
+        if (slow === 0 && !holding) notify();
       }
     },
-    /** Whether a counted request has run past LOCK_AFTER_MS and not yet settled. */
+    /** Whether a counted request has run past LOCK_AFTER_MS and not yet settled, or the lock is in its hold. */
     locked(): boolean {
-      return slow > 0;
+      return slow > 0 || holding;
     },
     /** Hears every change of locked; returns the way to stop hearing it. */
     subscribe(listener: () => void): () => void {
