@@ -28,6 +28,14 @@ public sealed partial class TemplateTests
     }
 
     [Fact]
+    public void The_template_keeps_the_appends_on_as_they_run_in_azure()
+    {
+        var settings = Settings();
+        Assert.True(settings.ContainsKey("APPENDS"), "infra/jobhunt.bicep has no APPENDS setting: a redeploy would stop the .md appends, and no lane's note would reach state.md");
+        Assert.Equal("on", settings["APPENDS"]);
+    }
+
+    [Fact]
     public void The_template_keeps_both_dispatches_on_as_they_run_in_azure()
     {
         var settings = Settings();

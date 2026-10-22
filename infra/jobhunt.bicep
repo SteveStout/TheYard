@@ -148,9 +148,9 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The tracker merger: the only writer of Job_Hunt_Tracker.csv and its moved-out file on the
         // share. 'off' hands the tracker back to the laptop's merger (the roll back in the record).
         { name: 'MERGER', value: 'on' }
-        // The shared .md files' appends: 'on' makes the same Merger their one writer, 'off' leaves them
-        // with the laptop's merger (-AppendsOnly). The roll back is this switch back to 'off'.
-        { name: 'APPENDS', value: 'off' }
+        // The shared .md files' appends, on since the cutover: the same Merger is their one writer. 'off'
+        // hands them back to the laptop's merger (-AppendsOnly), with the two switches in its scripts.
+        { name: 'APPENDS', value: 'on' }
       ]
     }
     // #endregion jobhunt-settings
