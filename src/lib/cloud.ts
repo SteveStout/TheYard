@@ -238,3 +238,12 @@ export function dayMarks(startMs: number, endMs: number): { atMs: number; label:
 export function valueLines(value: string): string[] {
   return value.split(', ').filter((part) => part.length > 0);
 }
+
+/**
+ * What goes between two pieces of a row's detail line: nothing when the pieces already meet as one
+ * sentence (the first ends in a space, or the second opens with a space or a stop), else a middle
+ * dot, so two separate facts never run together as one word.
+ */
+export function detailJoint(before: string, after: string): string {
+  return /\s$/.test(before) || /^[\s,.;:)]/.test(after) ? '' : ' · ';
+}

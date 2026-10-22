@@ -75,3 +75,14 @@ The record and its rules are in Domain (`UsageRecord`). The port and the memory 
 - [`api/TheYard.Api/Cloud/ClaudeCard.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Cloud/ClaudeCard.cs), [`ClaudeRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Cloud/ClaudeRows.cs) and [`ClaudeSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Cloud/ClaudeSource.cs) - the card
 - [`.github/workflows/nightly.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/nightly.yml) - the nightly lane's post
 - [`api/TheYard.Tests/ClaudeUsageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ClaudeUsageTests.cs) and [`api/TheYard.Tests/ClaudeCardTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ClaudeCardTests.cs) - the rules, the route and the card
+
+## Addendum, 2026-10-22 (1.0.4.30): the card read live, and two faults it found
+
+The card was opened at `/?view=admin&card=claude` on both names, theyard.stevenstout.biz and theyard-cosmos.stevenstout.biz, at 1440 and 390 wide, with Playwright in a real Chromium against 1.0.4.29. All four passes opened the card on the rail, drew both dials, four questions and the readout, answered every API call under 400, and held the page to its width (no horizontal scroll at 390). The card was empty, as it should be: no lane has posted a document yet, because the nightly lane posts only once its key is set, and the four rows said so in words.
+
+The screenshots found two faults that every card under Cloud infrastructure shared, not only this one:
+
+- **Separate facts ran together.** A row's detail is a list of pieces, and the frame drew them with nothing between, so two facts read as one word ("left out of the averagescost is the API-equivalent price", "no usage reportedrun #18"). The frame now puts a middle dot between two pieces unless they already meet as one sentence: the first ends in a space, or the second opens with a space or a stop (`detailJoint` in `src/lib/cloud.ts`, held by `cloud.test.ts`). The cards that built their own " · " keep it; nothing on the server changed.
+- **The value broke inside words.** A readout label never shrank, so a long source under it ("the usage documents the lanes post") took the line and left the value a few letters wide ("report / ed"). The label now gives way and wraps, the value keeps up to 55 % of the line, and a value breaks between words.
+
+The card's screenshot goes into `docs/images` from a live read of the version that carries these fixes.

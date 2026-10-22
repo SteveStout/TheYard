@@ -78,9 +78,6 @@ public sealed partial class NightlyCardTests
         IReadOnlyList<ResourceMinute> minutes;
         using (OutboundHttp.RouteTo(group))
         {
-            // Before an hour has read the record, no host is known and the route is not asked.
-            Assert.DoesNotContain(MergerReading.Waiting, (await nightly.Minutes(Now.AddMinutes(-10), Now, "1.0.4.27", CancellationToken.None)).SelectMany(m => m.Values.Keys));
-            Assert.DoesNotContain(group.Asked, asked => asked.StartsWith(FunctionHost, StringComparison.Ordinal));
             await nightly.Hour(Now, Now.AddHours(-1), CancellationToken.None);
             minutes = await nightly.Minutes(Now.AddMinutes(-10), Now, "1.0.4.27", CancellationToken.None);
         }
@@ -98,6 +95,61 @@ public sealed partial class NightlyCardTests
         foreach (string share in new[] { "lane-a", ".csv", "Job_Hunt", "MERGED", "Ann" })
         {
             Assert.DoesNotContain(share, wire, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public async Task The_first_minute_after_a_roll_reads_the_host_itself_and_reads_the_record_once()
+    {
+        // A roll starts a new process with no hour read yet: the merger row must not wait for the hour.
+        var nightly = CatalogueNightly();
+        var group = new FunctionGroup("""{"log_age_s":12,"waiting":0,"waiting_over_5":0,"waiting_over_10":0,"oldest_wait_s":null}""");
+        IReadOnlyList<ResourceMinute> first, second;
+        using (OutboundHttp.RouteTo(group))
+        {
+            first = await nightly.Minutes(Now.AddMinutes(-2), Now.AddMinutes(-1), "1.0.4.30", CancellationToken.None);
+            second = await nightly.Minutes(Now.AddMinutes(-1), Now, "1.0.4.30", CancellationToken.None);
+        }
+        Assert.Equal(0d, MergerReading.Newest(first)?.Values[MergerReading.Waiting]);
+        Assert.Equal(0d, MergerReading.Newest(second)?.Values[MergerReading.Waiting]);
+        Assert.Equal(2, group.Asked.Count(asked => asked == FunctionHost + "/api/merger/health"));
+        Assert.Equal(1, group.Asked.Count(asked => asked.EndsWith(FunctionPath, StringComparison.OrdinalIgnoreCase)));
+        Assert.Equal(("keeping up", "good"), (NightlyRows.MergerRow(WithMinutes(first)).Answer, NightlyRows.MergerRow(WithMinutes(first)).Tone));
+    }
+
+    [Fact]
+    public async Task A_record_that_refuses_the_minute_costs_the_merger_reading_and_nothing_else()
+    {
+        var nightly = CatalogueNightly();
+        var group = new RefusedRecord();
+        IReadOnlyList<ResourceMinute> minutes;
+        using (OutboundHttp.RouteTo(group))
+        {
+            minutes = await nightly.Minutes(Now.AddMinutes(-2), Now, "1.0.4.30", CancellationToken.None);
+        }
+        Assert.Null(MergerReading.Newest(minutes));
+        Assert.Contains(group.Asked, asked => asked.EndsWith("/metrics", StringComparison.Ordinal));
+        Assert.DoesNotContain(group.Asked, asked => asked.StartsWith(FunctionHost, StringComparison.Ordinal));
+        Assert.Equal(NightlyRows.MergerUnread, NightlyRows.MergerRow(WithMinutes(minutes)).Answer);
+    }
+
+    /// <summary>The same group, with the Function's own record answering 403 and Monitor answering an empty series.</summary>
+    private sealed class RefusedRecord : HttpMessageHandler
+    {
+        public List<string> Asked { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var uri = request.RequestUri!;
+            Asked.Add(uri.Host + uri.AbsolutePath);
+            if (string.Equals(uri.AbsolutePath, FunctionPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{}") });
+            }
+            string body = uri.Host == "169.254.169.254" ? """{"access_token":"e30.e30.sig"}"""
+                : uri.AbsolutePath.EndsWith("/resources", StringComparison.Ordinal) ? $$"""{"value":[{"id":"{{FunctionPath}}","name":"func-test","type":"Microsoft.Web/sites"}]}"""
+                : """{"value":[]}""";
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json") });
         }
     }
 

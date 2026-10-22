@@ -151,6 +151,13 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The shared .md files' appends, on since the cutover: the same Merger is their one writer. 'off'
         // hands them back to the laptop's merger (-AppendsOnly), with the two switches in its scripts.
         { name: 'APPENDS', value: 'on' }
+        // The Sheet mirror (functions/jobhunt/Sheet): 'shadow' writes its plan to the share beside the records
+        // run's and adds nothing; 'on' appends the master's missing rows to the Sheet and checks the read-back;
+        // anything else is off. The Google client, its refresh token and the Sheet's id are set out of band.
+        { name: 'SHEET_MIRROR', value: 'shadow' }
+        // The ATS sweep (functions/jobhunt/Ats): 'shadow' writes its plan ten minutes before each records run and
+        // archives nothing; 'on' drops the rows in the spool, archives and reads the labels back; anything else is off.
+        { name: 'ATS_SWEEP', value: 'shadow' }
       ]
     }
     // #endregion jobhunt-settings

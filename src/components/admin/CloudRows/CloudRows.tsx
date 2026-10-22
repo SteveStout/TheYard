@@ -1,8 +1,11 @@
 /**
  * A Cloud infrastructure card's four questions in the Overview card's row style (ADR: The App Service plan, read every minute): the question, the big answer with its tone word, and the detail line under
- * it, any piece of which links to a resource's portal blade. The colour sits on the border.
+ * it, any piece of which links to a resource's portal blade, with a middle dot between two pieces that are
+ * separate facts. The colour sits on the border.
  */
+import { Fragment } from 'react';
 import {
+  detailJoint,
   portalSentence,
   toneWord,
   type CloudLink,
@@ -52,7 +55,10 @@ export function CloudRows({ rows }: { rows: CloudReport['rows'] }) {
           {row.detail.length > 0 && (
             <span className={styles.detail}>
               {row.detail.map((piece, index) => (
-                <PortalLink key={index} link={piece} />
+                <Fragment key={index}>
+                  {index > 0 && detailJoint(row.detail[index - 1]?.text ?? '', piece.text)}
+                  <PortalLink link={piece} />
+                </Fragment>
               ))}
             </span>
           )}

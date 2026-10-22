@@ -4,6 +4,7 @@ import {
   arcPath,
   cardToneWord,
   dayMarks,
+  detailJoint,
   legendChips,
   linePath,
   newestValue,
@@ -96,5 +97,22 @@ describe('the CardShell slots', () => {
     // A missing link said "opens in the Azure portal" before (the review of 1.0.4.0, finding 14).
     expect(portalSentence(null)).toBe('');
     expect(portalSentence('https://example.test/elsewhere')).toBe('');
+  });
+});
+
+describe("a row's detail line", () => {
+  it('puts a middle dot between two separate facts and nothing inside one sentence', () => {
+    expect(
+      detailJoint('dry runs are left out of the averages', 'cost is the API-equivalent price')
+    ).toBe(' · ');
+    expect(
+      detailJoint(
+        'run #19 (12:00, bookkeeping): no usage reported',
+        'run #18 (12:00, bookkeeping): no usage reported'
+      )
+    ).toBe(' · ');
+    expect(detailJoint('kept in ', 'Cosmos DB')).toBe('');
+    expect(detailJoint('no restart · 3 deploys in the window', ' · a blip at 12:01')).toBe('');
+    expect(detailJoint('the plan', ', read every minute')).toBe('');
   });
 });
