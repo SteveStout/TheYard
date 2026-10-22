@@ -37,7 +37,6 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     /// <summary>The Function app's resource id as configuration names it.</summary>
     public string FunctionPath => functionPath;
 
-    /// <summary>True when Azure answered that the identity may not read: 401 or 403.</summary>
     /// <summary>
     /// Why the Function was not found, with what the group did list, so the card says whether the name
     /// is wrong or the group shows this identity nothing.
@@ -55,7 +54,15 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
         return $"no {SiteType} named {names.Function} in {names.Group}, which lists {all.Count} resources and {held}";
     }
 
-    public static bool Refused(HttpRequestException ex) => ex.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized;
+    /// <summary>The sentence for an empty listing once the Function's own path has been asked: 403 no role, 404 no such name.</summary>
+    /// <param name="status">What Resource Manager answered for the Function's path.</param>
+    /// <param name="names">The configured names.</param>
+    public static string Unlisted(HttpStatusCode status, NightlyResources names) => status is HttpStatusCode.NotFound
+        ? $"no Function app named {names.Function} in {names.Group}"
+        : $"the site's identity holds no role on {names.Group}";
+
+    /// <summary>True when Azure answered that the identity may not read (401 or 403), or that the group is not there to read (404).</summary>
+    public static bool Refused(HttpRequestException ex) => ex.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized or HttpStatusCode.NotFound;
 
     /// <summary>The Function's executions and execution units a minute; nothing off Azure, while the role is missing, or before the Function exists.</summary>
     public async Task<IReadOnlyList<ResourceMinute>> MinutesAsync(DateTimeOffset from, DateTimeOffset to, string version, CancellationToken cancellation)
@@ -79,7 +86,16 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     /// <summary>The hour's facts: the runs from GitHub first, then the Function's record and its judged slots, or that the role is missing.</summary>
     public async Task<ResourceHour> HourAsync(DateTimeOffset hour, DateTimeOffset since, CancellationToken cancellation)
     {
-        var facts = new Dictionary<string, string?>(StringComparer.Ordinal) { ["github"] = await runs.ReadAsync(cancellation) };
+        var facts = new Dictionary<string, string?>(StringComparer.Ordinal);
+        try
+        {
+            facts["github"] = await runs.ReadAsync(cancellation);
+        }
+        catch (Exception ex) when (!cancellation.IsCancellationRequested)
+        {
+            // The run log's own store failed under the reader: the Azure facts are still this hour's.
+            facts["github"] = $"not read: the run log failed ({ex.GetType().Name})";
+        }
         if (!azure.Configured)
         {
             facts["azure"] = "no identity here";
@@ -88,13 +104,30 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
         try
         {
             var listed = await directory.AllAsync(cancellation);
-            var site = ResourceDirectory.Find(listed, SiteType, names.Function);
-            if (site is null)
+            string? siteId = ResourceDirectory.Find(listed, SiteType, names.Function)?.Id;
+            if (siteId is null && listed.Count > 0)
             {
                 facts["site"] = Unfound(listed, names);
                 return new ResourceHour(hour, "", null, facts, []);
             }
-            var (record, tenant) = await azure.RecordAsync(site.Id, "2024-04-01", cancellation);
+            JsonDocument record;
+            string? tenant;
+            try
+            {
+                // An empty listing cannot tell a missing role from a missing name; one read of the
+                // Function's own path can: 403 the role, 404 the name, 200 it is there.
+                (record, tenant) = await azure.RecordAsync(siteId ?? functionPath, "2024-04-01", cancellation);
+                siteId ??= functionPath;
+            }
+            catch (HttpRequestException ex) when (siteId is null && ex.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized or HttpStatusCode.NotFound)
+            {
+                facts["site"] = Unlisted(ex.StatusCode!.Value, names);
+                if (ex.StatusCode is not HttpStatusCode.NotFound)
+                {
+                    facts[RoleFact] = RoleMissing;
+                }
+                return new ResourceHour(hour, "", null, facts, []);
+            }
             using (record)
             {
                 foreach (var (key, value) in Facts(record.RootElement))
@@ -102,13 +135,13 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
                     facts[key] = value;
                 }
             }
-            var firings = await FiringsAsync(site.Id, hour, cancellation);
+            var firings = await FiringsAsync(siteId, hour, cancellation);
             if ((await log.AvailabilityAsync(cancellation)).Available)
             {
                 await log.UpsertFiringsAsync(firings, cancellation);
             }
             facts["last_fired"] = firings.Where(f => f.FiredAt is not null).Select(f => f.FiredAt).Max()?.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
-            return new ResourceHour(hour, site.Id, tenant, facts, await EventsAsync(site.Id, since, hour, cancellation));
+            return new ResourceHour(hour, siteId, tenant, facts, await EventsAsync(siteId, since, hour, cancellation));
         }
         catch (HttpRequestException ex) when (Refused(ex))
         {

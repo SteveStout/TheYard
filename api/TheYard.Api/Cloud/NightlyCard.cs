@@ -121,6 +121,8 @@ public static class NightlyCard
                 new("Gates", runs.Count == 0 ? $"not read yet: {NightlyRows.NoRuns(inputs)}" : $"nightly {(nightlyOn ? "on" : "off")} · bookkeeping {(bookkeepingOn ? "on" : "off")}, inferred from the runs it dispatched in 30 days", "info") { Source = "GitHub Actions" },
                 new("Snapshots kept", $"up to {SnapshotsKept}; how many are kept now is not read: it needs a data role on the storage account", "info") { Source = "the Function's code" },
                 new("Cost, month to date", NightlyRows.Dollars(cost), "info"),
+                // The spec line says only that the record is not read; why goes here, in a sentence.
+                .. (ResourceView.Latest(inputs)?.Facts.ContainsKey("spec") is true ? Array.Empty<CloudLine>() : [new CloudLine("Spec", roleMissing ? noRole : NightlyRows.NoHour(inputs), "info") { Source = CardFrame.ThisProcess }]),
                 ResourceView.LiveRead(inputs),
             ],
             roleMissing ? $"{noRole}: Monitoring Reader and Reader there let the site's identity read the Function" : $"{inputs.Availability.Reason}, one minute each; the runs and the record hourly");
@@ -130,7 +132,7 @@ public static class NightlyCard
             Note(inputs, names, roleMissing),
             inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
             "The Nightly Function",
-            ResourceView.Fact(inputs, "spec", "FLEX CONSUMPTION · " + (roleMissing ? noRole : NightlyRows.NoHour(inputs)).ToUpperInvariant()),
+            ResourceView.Fact(inputs, "spec", "FLEX CONSUMPTION · NOT READ"),
             ResourceView.Resource(inputs) is { Href: not null } read ? read : new CloudLink(names.Function, "https://portal.azure.com/#resource" + functionPath),
             dials,
             [ResourceView.Spark(inputs, "executions", "Firings, 60 min", 1), ResourceView.Spark(inputs, "units_mbms", "Units, 60 min", Limit(inputs))],

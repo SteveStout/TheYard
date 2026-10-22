@@ -113,12 +113,15 @@ public sealed partial class NightlyCardTests
         {
             null,
             new(Now.AddHours(-1), "", null, new Dictionary<string, string?> { [NightlySource.RoleFact] = NightlySource.RoleMissing, ["github"] = "not read: GitHub answered 403" }, []),
-            new(Now.AddHours(-1), "", null, new Dictionary<string, string?> { ["site"] = "no Microsoft.Web/sites named func-test in RG-TEST-NIGHTLY", ["github"] = "0 runs read" }, []),
+            new(Now.AddHours(-1), "", null, new Dictionary<string, string?> { ["site"] = NightlySource.Unfound([new("/x/plan-test", "plan-test", "Microsoft.Web/serverfarms")], Names), ["github"] = "0 runs read" }, []),
         };
         foreach (var hour in hours)
         {
             var view = NightlyCard.View(Unkept(hour), Names, FunctionPath, []);
-            var said = new List<string> { view.Spec ?? "" };
+            // The spec line is short by design and its reason is the Spec line of the readout.
+            Assert.Equal("FLEX CONSUMPTION · NOT READ", view.Spec);
+            Assert.Contains(view.Readout.Lines, l => l.Label == "Spec");
+            var said = new List<string>();
             said.AddRange(view.Dials.Select(d => d.Absolute));
             said.AddRange(view.Rows.SelectMany(r => r.Detail.Select(d => d.Text).Append(r.Answer)));
             said.AddRange(view.Readout.Lines.Select(l => l.Value));

@@ -84,5 +84,62 @@ public sealed partial class NightlyCardTests
         }
         Assert.Equal(3, fallback.Runs.Count);
     }
+    /// <summary>
+    /// The token, a group that lists nothing, the Function's own path answering the status given, and
+    /// GitHub timing out: what an hour meets when GitHub hiccups and the group shows the site nothing.
+    /// </summary>
+    private sealed class EmptyGroup(HttpStatusCode function) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var uri = request.RequestUri!;
+            if (uri.Host == "api.github.com")
+            {
+                throw new TaskCanceledException("the client's timeout", new TimeoutException());
+            }
+            string body = uri.Host == "169.254.169.254" ? """{"access_token":"e30.e30.sig"}"""
+                : uri.AbsolutePath.EndsWith("/resources", StringComparison.Ordinal) || uri.AbsolutePath.Contains("/providers/microsoft.insights", StringComparison.OrdinalIgnoreCase) ? """{"value":[]}"""
+                : """{"location":"centralus","properties":{"state":"Running"}}""";
+            var status = uri.Host == "169.254.169.254" || uri.AbsolutePath.EndsWith("/resources", StringComparison.Ordinal) || uri.AbsolutePath.Contains("/providers/microsoft.insights", StringComparison.OrdinalIgnoreCase)
+                ? HttpStatusCode.OK : function;
+            return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json") });
+        }
+    }
+
+    private static async Task<ResourceHour> HourWith(HttpStatusCode function)
+    {
+        using var route = OutboundHttp.RouteTo(new EmptyGroup(function));
+        var azure = new AzureMetrics("client-1", configured: true);
+        var log = new UnkeptRunLog();
+        var source = new NightlySource(azure, new ResourceDirectory(azure, "/subscriptions/sub-1/resourceGroups/RG-TEST-NIGHTLY", TimeProvider.System), Names,
+            new NightlyRunReader(new GitHubRuns("owner/repo", "nightly.yml"), log, new NightlyRunCache(), new FixedClock(Now)), log, FunctionPath);
+        return await source.HourAsync(Now, Now.AddHours(-1), CancellationToken.None);
+    }
+
+    /// <summary>GitHub timing out is the run log's failure alone: the hour still holds what Azure said.</summary>
+    [Fact]
+    public async Task A_github_timeout_leaves_the_azure_facts_in_the_hour()
+    {
+        var hour = await HourWith(HttpStatusCode.NotFound);
+        Assert.Equal("not read: GitHub did not answer (TaskCanceledException)", hour.Facts["github"]);
+        Assert.Equal("no Function app named func-test in RG-TEST-NIGHTLY", hour.Facts["site"]);
+    }
+
+    /// <summary>An empty listing is resolved by one read of the Function's path: 403 the role, 404 the name, 200 found.</summary>
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden, "the site's identity holds no role on RG-TEST-NIGHTLY")]
+    [InlineData(HttpStatusCode.NotFound, "no Function app named func-test in RG-TEST-NIGHTLY")]
+    [InlineData(HttpStatusCode.OK, null)]
+    public async Task An_empty_listing_says_which_by_one_read_of_the_function_s_path(HttpStatusCode function, string? said)
+    {
+        var hour = await HourWith(function);
+        Assert.Equal(said, hour.Facts.GetValueOrDefault("site"));
+        Assert.Equal(function == HttpStatusCode.Forbidden ? NightlySource.RoleMissing : null, hour.Facts.GetValueOrDefault(NightlySource.RoleFact));
+        Assert.Equal(function == HttpStatusCode.OK ? FunctionPath : "", hour.ResourceId);
+        if (function == HttpStatusCode.OK)
+        {
+            Assert.Equal("Running", hour.Facts["state"]);
+        }
+    }
     // #endregion nightly-run-reader-tests
 }

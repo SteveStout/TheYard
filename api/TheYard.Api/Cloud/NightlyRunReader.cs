@@ -31,13 +31,17 @@ public sealed class NightlyRunReader(GitHubRuns runs, INightlyRunLog log, Nightl
         {
             listed = await runs.ReadAsync(now, cancellation);
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (!cancellation.IsCancellationRequested)
         {
+            // Any failure but the host stopping: a refusal, the client's own timeout, a body that is
+            // not the shape asked for. The card falls back to the log and says which.
             if (kept)
             {
                 cache.Replace(await log.SinceAsync(now - GitHubRuns.Window, cancellation), now);
             }
-            return ex.StatusCode is { } code ? $"not read: GitHub answered {(int)code}" : "not read: GitHub did not answer";
+            return ex is HttpRequestException { StatusCode: { } code } ? $"not read: GitHub answered {(int)code}"
+                : ex is HttpRequestException ? "not read: GitHub did not answer"
+                : $"not read: GitHub did not answer ({ex.GetType().Name})";
         }
         if (!kept)
         {
