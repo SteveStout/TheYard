@@ -17,6 +17,9 @@ namespace TheYard.Api;
 /// </summary>
 public sealed class TokenIssuer
 {
+    /// <summary>The one handler that writes and reads tokens; it holds no per-call state.</summary>
+    private static readonly JsonWebTokenHandler Handler = new();
+
     public const string CookieName = "theyard_session";
     private const string Issuer = "theyard";
     private const string Audience = "theyard";
@@ -143,8 +146,7 @@ public sealed class TokenIssuer
     /// </summary>
     public string IssueWithFingerprint(string userId, string email, string store, string stampFingerprint, TimeSpan lifetime)
     {
-        var handler = new JsonWebTokenHandler();
-        return handler.CreateToken(new SecurityTokenDescriptor
+        return Handler.CreateToken(new SecurityTokenDescriptor
         {
             Issuer = Issuer,
             Audience = Audience,
@@ -174,8 +176,7 @@ public sealed class TokenIssuer
 
     public string IssueReset(string userId, string store, string? passwordHash)
     {
-        var handler = new JsonWebTokenHandler();
-        return handler.CreateToken(new SecurityTokenDescriptor
+        return Handler.CreateToken(new SecurityTokenDescriptor
         {
             Issuer = Issuer,
             Audience = ResetAudience,
@@ -198,10 +199,9 @@ public sealed class TokenIssuer
             return null;
         }
 
-        var handler = new JsonWebTokenHandler();
         var parameters = Validation.Clone();
         parameters.ValidAudience = ResetAudience;
-        var result = await handler.ValidateTokenAsync(token, parameters);
+        var result = await Handler.ValidateTokenAsync(token, parameters);
         if (!result.IsValid)
         {
             return null;

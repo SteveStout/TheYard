@@ -21,7 +21,7 @@ public sealed record MarketBid(int Amount, int BidCount, long AtMs);
 /// shared and immutable and both of them have to compose without either one
 /// owning the vehicle.
 /// </summary>
-public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceSeconds)
+public sealed class MarketService(Random random, int graceSeconds = MarketService.DefaultGraceSeconds)
 {
     private readonly ConcurrentDictionary<string, MarketBid> _bids = new();
 
@@ -115,7 +115,7 @@ public sealed class MarketService(int graceSeconds = MarketService.DefaultGraceS
         // would rise every round and the rest never.
         var rest = candidates
             .Where(v => !buyerBids.ContainsKey(v.Id))
-            .OrderBy(_ => Random.Shared.Next());
+            .OrderBy(_ => random.Next());
         return contested.Concat(rest);
     }
 

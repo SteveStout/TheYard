@@ -5,7 +5,7 @@
 using TheYard.Application;
 using TheYard.Application.Features.Admin.Cloud;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Cloud;
 
 // #region cloud-reader
 /// <summary>

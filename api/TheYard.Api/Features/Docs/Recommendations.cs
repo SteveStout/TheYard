@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Docs;
 
 // #region recommendation-shape
 /// <summary>
@@ -14,7 +14,7 @@ namespace TheYard.Api;
 /// <param name="Name">The writer's name, as LinkedIn shows it.</param>
 /// <param name="Title">The writer's title when they wrote it, as LinkedIn shows it.</param>
 /// <param name="Profile">The address of the writer's own LinkedIn page, so their name opens it.</param>
-/// <param name="Relationship">How the writer worked with Steve, in LinkedIn's words.</param>
+/// <param name="Relationship">How the writer worked with the author, in LinkedIn's words.</param>
 /// <param name="When">The month and year LinkedIn dates it, as words.</param>
 /// <param name="Paragraphs">The recommendation word for word, one string per paragraph.</param>
 /// <param name="Pull">One sentence of it, as written, for a place with room for one line per person.</param>

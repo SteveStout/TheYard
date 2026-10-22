@@ -66,9 +66,22 @@ public static class ApiRegistration
         // rejected query, a rejected bid and an unhandled exception alike, so a caller
         // reads one field, `detail`, for the message. The trace identifier ties the
         // response to the request's log line.
+        // A failure nothing planned (the sign-in challenge, an address that maps to nothing) arrives
+        // here with a title and no sentence; it gets the sentence its status means, so every
+        // failure carries a `detail` a person can read.
         builder.Services.AddProblemDetails(options =>
             options.CustomizeProblemDetails = context =>
-                context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
+            {
+                context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+                context.ProblemDetails.Detail ??= context.ProblemDetails.Status switch
+                {
+                    StatusCodes.Status401Unauthorized => "Sign in to do that: this needs an account.",
+                    StatusCodes.Status403Forbidden => "This account may not do that.",
+                    StatusCodes.Status404NotFound => "Nothing answers at that address.",
+                    StatusCodes.Status405MethodNotAllowed => "That address does not answer that method.",
+                    _ => "The request was not answered.",
+                };
+            });
         // What goes in that shape when nothing planned the failure: which exceptions
         // are the caller's fault and may say so, what a 500 is allowed to reveal, and
         // the log line that makes the returned trace id worth having (ADR-030).

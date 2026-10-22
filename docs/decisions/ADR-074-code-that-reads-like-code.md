@@ -115,7 +115,7 @@ This sits almost entirely in the front end: src/lib/highlight.ts and src/lib/mar
 - [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the renderer, loaded with the first document.
 - [`src/lib/markdown.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.test.ts): the rendered shape of a fence and a link.
 - [`src/library/DocDialog.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/library/DocDialog.tsx): the dialog, and the import that fetches the renderer on demand.
-- [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the language a file name implies.
+- [`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs): the language a file name implies.
 - [`api/TheYard.Tests/LiveSamplesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LiveSamplesTests.cs): the theory that holds those answers.
 - [`tests/e2e/practices.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/practices.spec.ts): the browser check that a keyword and a comment are their own elements on the live page.
 

@@ -199,6 +199,51 @@ public class FileHeaderTests
     }
     // #endregion reading a header
 
+    // #region the-layers
+    /// <summary>
+    /// The front end's three layers, held by the import graph (CLAUDE.md: components, then hooks, then
+    /// lib): src/lib imports nothing from React, a hook imports no component, and a request is written
+    /// in src/lib alone. And the one piece of auction arithmetic the browser keeps, the ordering bands
+    /// it re-ranks a page by, is the Domain's own figure (ADR: Three readers with no memory of the
+    /// project, the addendum of the rings and slices).
+    /// </summary>
+    [Fact]
+    public void Lib_imports_no_react_hooks_import_no_component_and_only_lib_fetches()
+    {
+        string src = Path.Combine(Repo.Root(), "src");
+        string Relative(string path) => Path.GetRelativePath(Repo.Root(), path).Replace('\\', '/');
+        var production = Directory.EnumerateFiles(src, "*.*", SearchOption.AllDirectories)
+            .Where(path => Regex.IsMatch(path, @"\.tsx?$") && !Regex.IsMatch(path, @"\.test\.tsx?$"))
+            .ToList();
+        var wrong = new List<string>();
+        wrong.AddRange(production.Where(path => Relative(path).StartsWith("src/lib/", StringComparison.Ordinal)
+                && Regex.IsMatch(File.ReadAllText(path), @"from\s+'react(-dom)?(/[^']*)?'"))
+            .Select(path => $"{Relative(path)} imports React"));
+        foreach (var (imported, users) in ImportersOf())
+        {
+            if (!Relative(imported).StartsWith("src/components/", StringComparison.Ordinal))
+            {
+                continue;
+            }
+            wrong.AddRange(users.Select(Relative)
+                .Where(user => user.StartsWith("src/hooks/", StringComparison.Ordinal) || user.StartsWith("src/app/hooks/", StringComparison.Ordinal))
+                .Select(user => $"{user} imports the component file {Relative(imported)}"));
+        }
+        wrong.AddRange(production.Where(path => !Relative(path).StartsWith("src/lib/", StringComparison.Ordinal) && Regex.IsMatch(File.ReadAllText(path), @"\bfetch\("))
+            .Select(path => $"{Relative(path)} calls fetch outside src/lib"));
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+
+        string auction = File.ReadAllText(Path.Combine(src, "lib", "auction.ts"));
+        string ordering = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Domain", "VehicleOrdering.cs"));
+        foreach (var (browser, server) in new[] { ("upcomingBand", "UpcomingBand"), ("endedBand", "EndedBand") })
+        {
+            string inBrowser = Regex.Match(auction, $@"const {browser} = ([\d_]+);").Groups[1].Value.Replace("_", "", StringComparison.Ordinal);
+            string onServer = Regex.Match(ordering, $@"const long {server} = ([\d_]+);").Groups[1].Value.Replace("_", "", StringComparison.Ordinal);
+            Assert.True(inBrowser.Length > 0 && inBrowser == onServer, $"src/lib/auction.ts {browser} is {inBrowser}, VehicleOrdering.{server} is {onServer}");
+        }
+    }
+    // #endregion the-layers
+
     // #region who imports what
     /// <summary>
     /// For every file under src, the files that import it by a relative path:

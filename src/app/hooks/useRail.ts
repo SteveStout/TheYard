@@ -5,8 +5,8 @@
  * Used by:   App.tsx, Shell.tsx.
  */
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { readRailCollapsed, storeRailCollapsed } from '../../components/layout/SideNav';
 import { DESK } from '../../lib/breakpoints';
+import { readRailCollapsed, storeRailCollapsed } from '../../lib/railStorage';
 
 export type Rail = ReturnType<typeof useRail>;
 

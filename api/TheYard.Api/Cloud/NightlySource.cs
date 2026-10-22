@@ -2,7 +2,7 @@
 // Function's two Azure Monitor metrics every minute through a list of its own resource group, and
 // once an hour its ARM record, the Activity Log and a day of five-minute firing counts judged
 // against the slot table. The workflow's runs are NightlyRunReader's, which the hour asks first.
-// The site's identity holds no role on that group until Steve grants one, so a 401 or 403 from
+// The site's identity holds no role on that group until the owner grants one, so a 401 or 403 from
 // Resource Manager or Monitor is an answer, not a failure: the hour says the role is missing and
 // the card says "not read" on every line that needs it.
 using System.Net;

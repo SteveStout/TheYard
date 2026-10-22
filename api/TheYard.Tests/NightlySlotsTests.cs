@@ -116,4 +116,14 @@ public sealed class NightlySlotsTests
         Assert.Contains("<Compile Include=\"..\\..\\api\\TheYard.Domain\\NightlySlots.cs\" Link=\"NightlySlots.cs\" />", project, StringComparison.Ordinal);
     }
     // #endregion nightly-slot-tests
+
+    /// <summary>The grace's edge, by the second: a firing at 4:59 past the slot is on time, at 5:00 it is late.</summary>
+    [Theory]
+    [InlineData("2026-10-20T09:04:59Z", "on time")]
+    [InlineData("2026-10-20T09:05:00Z", "late")]
+    public void The_grace_ends_at_five_minutes_exactly(string fired, string outcome)
+    {
+        var judged = NightlySlots.Judge(At("2026-10-20T09:00:00Z"), [(At(fired), 1)]);
+        Assert.Equal(outcome == "on time" ? NightlySlots.OnTime : NightlySlots.Late, judged.Outcome);
+    }
 }

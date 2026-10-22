@@ -41,7 +41,7 @@ public static class PlanRows
                         // Derived, not read: no Azure metric names this share. It is the plan's
                         // memory in use minus every app's own reading (PlanChildren.OutsideMb): the
                         // host, the platform agent, the image layers and one Kudu sidecar per app
-                        // (ADR: The App Service plan, read every minute, the addendum of 19 October).
+                        // (ADR: The App Service plan, read every minute, the addendum on what each app holds and burns).
                         new CloudLink(DerivedPlatform(hour!.Linux), null),
                         new CloudLink("App Service", null),
                         new CloudLink("every app on it", null),

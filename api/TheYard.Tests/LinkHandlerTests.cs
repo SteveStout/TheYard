@@ -194,6 +194,8 @@ public sealed class LinkHandlerTests
         var many = Enumerable.Range(0, 40).ToDictionary(i => $"/p{i}", i => i + 1, StringComparer.Ordinal);
         var merged = LinkOpenFolding.Merge(new Dictionary<string, int>(StringComparer.Ordinal) { ["/"] = 100 }, many);
         Assert.Equal(LinkOpenFolding.PathsKept, merged.Count);
+        // The figure itself, not only the constant: a change to twelve is a change this test names.
+        Assert.Equal(12, LinkOpenFolding.PathsKept);
         Assert.Equal(100, merged["/"]);
         Assert.Equal(40, merged["/p39"]);
     }

@@ -9,7 +9,7 @@ import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
 import { formatDateTime } from '../../../lib/format';
 import { durationWords } from '../../../lib/duration';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 
 /** An address: what it is, what kind, what it answered, and how much and how fast. */
 const PAGE_COLUMNS: Column<PageEntry>[] = [
@@ -46,7 +46,7 @@ export default function PagesCard({
   useEffect(() => {
     let live = true;
     const read = () =>
-      fetch('/api/admin/pages')
+      request('/api/admin/pages', undefined, { background: true })
         .then((r) =>
           r.ok ? (r.json() as Promise<PageStatus>) : Promise.reject(new Error(String(r.status)))
         )
@@ -115,7 +115,7 @@ export default function PagesCard({
               className={styles.back}
               onClick={() => {
                 setNote(null);
-                void counted(() => fetch('/api/admin/pages', { method: 'POST' }))
+                void request('/api/admin/pages', { method: 'POST' })
                   .then((r) => {
                     // A sweep dials every served address, so a stranger cannot start one.
                     if (r.status === 401) {

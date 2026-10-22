@@ -4,7 +4,7 @@
 using System.Text.Json;
 using TheYard.Application;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>The resource cards after the plan, in the rail's order.</summary>
 public static class ResourceCatalog

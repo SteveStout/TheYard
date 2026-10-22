@@ -151,7 +151,7 @@ The search index trails the inspection tool. At 09:41 a `site:` search still sho
 
 Structured data is how the site tells a search engine who the author is, in schema.org's vocabulary rather than in prose. `/about` builds its `Person` in C#:
 
-```live path=api/TheYard.Api/AboutPage.cs region=person-json-ld
+```live path=api/TheYard.Api/Features/Docs/AboutPage.cs region=person-json-ld
 ```
 
 The home page carries the same `Person`, with the same `@id`, beside the code as `SoftwareSourceCode`:

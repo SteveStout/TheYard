@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { isStaleChunk, reloadOnce, tabStorage } from '../../../lib/staleChunk';
 import styles from './ErrorBoundary.module.css';
+import { request } from '../../../lib/request';
 
 // #region boundary
 /**
@@ -98,17 +99,21 @@ export function reportClientError(error: unknown, componentStack?: string): void
   const message = error instanceof Error ? error.message : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
   try {
-    void fetch('/api/errors/client', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // keepalive lets the report survive a navigation away from the page.
-      keepalive: true,
-      body: JSON.stringify({
-        message,
-        stack: (componentStack ?? stack ?? '').slice(0, 2000),
-        path: window.location.pathname + window.location.search,
-      }),
-    }).catch(() => {});
+    void request(
+      '/api/errors/client',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // keepalive lets the report survive a navigation away from the page.
+        keepalive: true,
+        body: JSON.stringify({
+          message,
+          stack: (componentStack ?? stack ?? '').slice(0, 2000),
+          path: window.location.pathname + window.location.search,
+        }),
+      },
+      { background: true }
+    ).catch(() => {});
   } catch {
     // A browser that refuses the request tells us nothing useful; stay quiet.
   }

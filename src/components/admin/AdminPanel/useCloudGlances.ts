@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import { railGlance, type CloudReport, type RailGlance } from '../../../lib/cloud';
 import { CLOUD_RESOURCES, type CardSlug } from '../../../lib/workbench';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 
 /** The cards the rail reads a glance for, and the route each answers on. */
 export const GLANCED: readonly { slug: CardSlug; route: string }[] = [
@@ -23,7 +23,7 @@ export function useCloudGlances(tick: number): Partial<Record<CardSlug, RailGlan
     let live = true;
     for (const { slug, route } of GLANCED) {
       // The rail's glances are nobody's click: background, never the working lock.
-      void counted(() => fetch(route), { background: true })
+      void request(route, undefined, { background: true })
         .then((r) =>
           r.ok ? (r.json() as Promise<CloudReport>) : Promise.reject(new Error(String(r.status)))
         )

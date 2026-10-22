@@ -154,3 +154,7 @@ Outside the rings. The service is a client of the API, like a browser, and the A
 - [`src/app/drawServer.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/drawServer.test.ts) and [`render/render.test.ts`](https://github.com/SteveStout/TheYard/blob/main/render/render.test.ts): every view drawn with no browser, and the service's own rules.
 - [`tests/e2e/drawn.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/drawn.spec.ts): every drawn page taken over in Chrome with no hydration error.
 - [`docs/images/server-page.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/server-page.mjs): the drawing of the whole trip on its own page: the first load, then the takeover.
+
+## Addendum, 2026-10-21 (1.0.4.24): the heap
+
+The Node heap is held at 128 MB (`NODE_OPTIONS=--max-old-space-size=128`, `infra/render.bicep`), not the 192 MB this record states, since 1.0.3.181.

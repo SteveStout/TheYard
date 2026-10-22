@@ -87,3 +87,7 @@ From 1.0.3.188 the listen-first warm is `Hosted/CatalogueWarm.cs` rather than a 
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): `/readyz` and readiness on every store.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the one plan and the two sites on it.
 - [`scripts/probe-roll.py`](https://github.com/SteveStout/TheYard/blob/main/scripts/probe-roll.py): the probe every roll above was read with.
+
+## Addendum, 2026-10-21 (1.0.4.24): the plan and the copy, now
+
+The record's plan is a B1 and a second plan for the copy is weighed above. Since 8 October the plan is a B2, which the rendering service runs on beside the API (ADR: A rendering service beside the API); no second copy runs during rolls; and since 19 October one web app serves both sites and The Shed (ADR: One web app for every .NET process), so the thirty-second freeze this record measured is one app's swap.

@@ -3,7 +3,7 @@ namespace TheYard.Api;
 // #region resume-door
 /// <summary>
 /// The resume at its own address, /resume, and the door a visitor came through
-/// (ADR: The resume has an address). A link Steve hands out carries
+/// (ADR: The resume has an address). A link the owner hands out carries
 /// <c>?src=linkedin</c>, <c>?src=email</c> and so on, so the activity card can
 /// say which door recruiters open the resume from. The query string is never
 /// recorded (ADR-071): the handler turns it into one word from a short allow

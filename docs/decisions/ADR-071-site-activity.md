@@ -139,7 +139,7 @@ rows behind a key only he holds, or aggregate only and no rows. He was away;
 the key-protected shape is the default because it exposes nothing and keeps
 the view he asked for, and he can rule the other way by deleting one endpoint.
 
-```live path=api/TheYard.Api/ActivityReport.cs region=report
+```live path=api/TheYard.Api/Features/Admin/Operations/ActivityReport.cs region=report
 ```
 
 ### The graph

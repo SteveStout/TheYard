@@ -39,7 +39,7 @@ public static class AdminRegistration
             identity);
         builder.Services.AddSingleton(azureSelf);
         // The other container's metrics, read server side with a short patience (ADR: Backends, side by
-        // side). Since 19 October no deploy sets Peer:Url: both sites are this process, and the card
+        // side). Since one web app serves both, no deploy sets Peer:Url: both sites are this process, and the card
         // says so in a sentence (ADR: One web app for every .NET process).
         var siteHosts = SiteSettings.From(builder.Configuration);
         var peer = new PeerReader(

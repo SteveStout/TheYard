@@ -149,3 +149,7 @@ ProblemHandler is an IExceptionHandler in the host Api, registered in Compositio
 - [`api/TheYard.Tests/ExceptionHandlerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ExceptionHandlerTests.cs): the five tests, and the Production factory.
 - [`api/TheYard.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs): the deliberate failures, unchanged.
 - [`docs/decisions/ADR-023-error-handling.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-023-error-handling.md): the shape this fills in.
+
+## Addendum, 2026-10-21 (1.0.4.24): a sentence for the failures nothing planned
+
+A 401 from the sign-in challenge and a 404 from an address that maps to nothing arrived as ProblemDetails with a title and no `detail`, so the one field a caller reads was empty on exactly the failures nobody wrote. From 1.0.4.24 `CustomizeProblemDetails` fills an empty `detail` with the sentence its status means (401 "Sign in to do that: this needs an account.", 403, 404 "Nothing answers at that address.", 405, and a general one), and every 400, 401 and 404 the status tests assert goes through `Problem.Is`: the problem content type, a title, a sentence in detail, and no public cache header.

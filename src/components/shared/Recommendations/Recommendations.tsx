@@ -1,5 +1,5 @@
 /**
- * What colleagues say, as a column: the recommendations on Steve's LinkedIn
+ * What colleagues say, as a column: the recommendations on the author's LinkedIn
  * profile, word for word and whole, each under the name of the person who
  * wrote it, which opens their own page, read from /api/recommendations when
  * the component opens. The words
@@ -20,6 +20,7 @@ import {
   type Recommendation,
 } from '../../../lib/recommendations';
 import styles from './Recommendations.module.css';
+import { request } from '../../../lib/request';
 
 /** The blank places, named so each has a key of its own. */
 const PLACES = Array.from({ length: RECOMMENDATION_PLACES }, (_, index) => `place ${index + 1}`);
@@ -36,7 +37,7 @@ export function Recommendations() {
   const [reading, setReading] = useState<Reading>({ state: 'reading' });
   useEffect(() => {
     let live = true;
-    fetch(RECOMMENDATIONS_URL)
+    request(RECOMMENDATIONS_URL, undefined, { background: true })
       .then((response) => (response.ok ? (response.json() as Promise<unknown>) : null))
       .catch(() => null)
       .then((answer) => {

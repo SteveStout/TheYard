@@ -2,7 +2,6 @@
  * The one navigation surface (ADR: The sidebar): its two shapes, the document
  * dialog it owns, and the rows it lists. Each piece it draws sits in a folder
  * beside it, and this file names them and puts them in order:
- *   railStorage.ts      the docked rail's collapsed state, kept per browser
  *   RailBrandBar        the site's name, home, and the collapse or close button
  *   RailSectionShell    one section, a disclosure that starts closed
  *   RailDocRow          a row that opens a document
@@ -22,8 +21,6 @@ import { RailDocRow } from '../RailDocRow';
 import { RailLinkRow } from '../RailLinkRow';
 import { RailPinnedRows } from '../RailPinnedRows';
 import styles from './SideNav.module.css';
-
-export { readRailCollapsed, storeRailCollapsed } from './railStorage';
 
 /** Everything the shell hands the sidebar: its shape, which view is showing, and what each row does. */
 export type SideNavProps = {

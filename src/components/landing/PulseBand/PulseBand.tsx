@@ -30,6 +30,7 @@ import {
   type Pulse,
 } from '../../../lib/pulse';
 import styles from './PulseBand.module.css';
+import { request } from '../../../lib/request';
 
 /** The two documents an instrument opens: how it performs, and how it rolls. */
 export type PulseDoc = 'performance' | 'adrBlueGreenMeasuredAndHeld';
@@ -43,7 +44,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
     let live = true;
     const read = () => {
       if (document.hidden) return;
-      fetch(PULSE_URL)
+      request(PULSE_URL, undefined, { background: true })
         .then((response) => (response.ok ? (response.json() as Promise<unknown>) : null))
         .catch(() => null)
         .then((answer) => {

@@ -36,8 +36,8 @@ public sealed class Module : IModule
         // One reading of a shared plan is the whole truth, so one process records it: the one
         // whose default store is SQL, which the one web app is, having no store default set. Were
         // the sites split again, the Cosmos DB site would read the same keep without recording.
-        string recordingSite = SiteSettings.From(configuration).HostFor("sql") ?? "the SQL site";
-        bool records = string.Equals(StoreChoice.DefaultKey(configuration), "sql", StringComparison.Ordinal);
+        string recordingSite = SiteSettings.From(configuration).HostFor(StoreKeys.Relational) ?? "the SQL site";
+        bool records = string.Equals(StoreChoice.DefaultKey(configuration), StoreKeys.Relational, StringComparison.Ordinal);
         if (records)
         {
             services.AddSingleton(provider => new PlanRecorder(

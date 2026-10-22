@@ -68,9 +68,9 @@ public sealed class BidEndpointStatusTests(WebApplicationFactory<Program> factor
         var client = await Buyers.SignedIn(factory);
         var (id, min, _) = await LiveVehiclesAsync(client);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = min })).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync($"/api/vehicles/{Unknown}/bids", new { amount = min })).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = 1 })).StatusCode);
+        await Problem.Is(await anonymous.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = min }), HttpStatusCode.Unauthorized);
+        await Problem.Is(await client.PostAsJsonAsync($"/api/vehicles/{Unknown}/bids", new { amount = min }), HttpStatusCode.NotFound);
+        await Problem.Is(await client.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = 1 }), HttpStatusCode.BadRequest);
         try
         {
             Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/vehicles/{id}/bids", new { amount = min })).StatusCode);
@@ -96,13 +96,13 @@ public sealed class BidEndpointStatusTests(WebApplicationFactory<Program> factor
         var (id, _, buyNowId) = await LiveVehiclesAsync(client);
         Assert.NotNull(buyNowId);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.PostAsJsonAsync($"/api/vehicles/{buyNowId}/buy-now", new { })).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync($"/api/vehicles/{Unknown}/buy-now", new { })).StatusCode);
+        await Problem.Is(await anonymous.PostAsJsonAsync($"/api/vehicles/{buyNowId}/buy-now", new { }), HttpStatusCode.Unauthorized);
+        await Problem.Is(await client.PostAsJsonAsync($"/api/vehicles/{Unknown}/buy-now", new { }), HttpStatusCode.NotFound);
         try
         {
             Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync($"/api/vehicles/{buyNowId}/buy-now", new { })).StatusCode);
             // Bought, so a second purchase is refused by the rules.
-            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync($"/api/vehicles/{buyNowId}/buy-now", new { })).StatusCode);
+            await Problem.Is(await client.PostAsJsonAsync($"/api/vehicles/{buyNowId}/buy-now", new { }), HttpStatusCode.BadRequest);
         }
         finally
         {
@@ -123,9 +123,9 @@ public sealed class BidEndpointStatusTests(WebApplicationFactory<Program> factor
         var anonymous = factory.CreateClient();
         var client = await Buyers.SignedIn(factory);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync("/api/bids/history")).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.PostAsJsonAsync("/api/market/tick", new { })).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.DeleteAsync("/api/bids")).StatusCode);
+        await Problem.Is(await anonymous.GetAsync("/api/bids/history"), HttpStatusCode.Unauthorized);
+        await Problem.Is(await anonymous.PostAsJsonAsync("/api/market/tick", new { }), HttpStatusCode.Unauthorized);
+        await Problem.Is(await anonymous.DeleteAsync("/api/bids"), HttpStatusCode.Unauthorized);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/bids/history")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/market/tick", new { })).StatusCode);
     }

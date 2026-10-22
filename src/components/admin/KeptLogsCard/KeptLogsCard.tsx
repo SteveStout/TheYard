@@ -3,7 +3,7 @@
  */
 import { CardState } from '../shared/CardState';
 import { useEffect, useState } from 'react';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 import { ACTIVITY_WINDOWS, labelFor, type ActivityWindow } from '../../../lib/activity';
 import {
   LOG_KINDS,
@@ -56,7 +56,7 @@ export default function KeptLogsCard({ adminKey }: { adminKey: string | null }) 
     if (key === null) return;
     let live = true;
     const url = `/api/admin/logs/kept?${queryFor(window_, applied)}`;
-    void counted(() => fetch(url, { headers: { 'X-Admin-Key': key } }))
+    void request(url, { headers: { 'X-Admin-Key': key } })
       .then((r) =>
         r.ok ? (r.json() as Promise<KeptLogs>) : Promise.reject(new Error(String(r.status)))
       )

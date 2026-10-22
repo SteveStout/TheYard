@@ -69,10 +69,12 @@ A console tool: seeds the 100,000-document catalogue and runs the partition key'
 
 ## TheYard.Api
 
-The host and the composition root: `Program.cs` is a table of contents, one line per
-step with the file that holds it beside it; `Composition/` registers every service and builds
-the request pipeline; `Endpoints/` declares every API route, one file per area, and each
-handler asks Application; `VehicleQueryParams` binds and validates GET parameters,
+The host and the composition root, cut into vertical slices (ADR: The onion cut into vertical
+slices): `Features/<Slice>/` holds one feature's routes and its own services, with a `Module.cs` that
+registers and maps it; `Shared/` holds what every slice shares, the registration steps and the request
+pipeline (`Shared/RequestPipeline.cs`), the hosted services (`Shared/Hosted/`) and the guest sites
+(`Shared/Sites/`); `Program.cs` registers the shared parts by name and loops over the modules, and each
+route asks one Application handler; `Features/Vehicles/VehicleQueryParams` binds and validates GET parameters,
 `Clocks` builds the request's clock (now, and the UTC midnight that began the day, the same for every caller), and `VehicleWire` stamps server-derived
 auction facts onto each outgoing vehicle. Endpoints contain no logic, only binding and
 delegation.
@@ -156,7 +158,7 @@ that one file.
 `samples/theshed` is The Shed, a sample that is not one of the eleven pieces: its own
 solution (`TestProject.sln`, net10.0, controllers, a page in TypeScript compiled by tsc alone), its own tests,
 its own twelve records served from its own running app; since 19 October it is built into TheYard's
-image and served by the one web app on its own name (Composition/ShedMount.cs, ADR-105). It was built as a developer test project in
+image and served by the one web app on its own name (Shared/Sites/HostedSiteMount.cs, ADR-105). It was built as a developer test project in
 September 2026 on the starter that came with it, in this project's working method: dependencies
 inward in four folders instead of five projects, sealed records on the wire, a problem document
 on every failure, a rules table beside the tests that hold it, and the palette carried over.

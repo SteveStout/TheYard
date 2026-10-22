@@ -1,6 +1,6 @@
 using TheYard.Application.Features.Accounts;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Accounts;
 
 // #region registration-limit
 /// <summary>

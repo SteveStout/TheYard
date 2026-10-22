@@ -92,7 +92,7 @@ public static class KeptRings
     {
         ["errors"] = Errors,
         ["logs"] = Log,
-        ["sql"] = Sql,
+        [StoreKeys.Relational] = Sql,
         ["store"] = Store,
     };
 

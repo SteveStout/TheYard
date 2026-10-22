@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Docs;
 
 /// <summary>
 /// A diagram on its own page (ADR-020): the SVG from the repository inlined in

@@ -87,3 +87,7 @@ Outside the rings: this is the frontend's own page and its build. The API's ring
 - [`src/components/landing/Landing/Landing.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/landing/Landing/Landing.tsx): the landing page and its two reads.
 - [`src/app/mount.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/mount.tsx): where the site is drawn into the page.
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep): the plan both sites share.
+
+## Addendum, 2026-10-21 (1.0.4.24): server rendering is built
+
+"Full server rendering is the goal, and is not built" stopped being true at 1.0.3.104, when the rendering service went in front of visitors (ADR: A rendering service beside the API, which records how, and the plan it needed: B2 since 8 October, where this record reads one B1). The landing page is still drawn at build time as this record describes; the service draws the other pages on request.

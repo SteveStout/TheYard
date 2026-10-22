@@ -77,12 +77,6 @@ public sealed class ActivityCollector : BackgroundService
             _ => Interlocked.Increment(ref _dropped));
     }
 
-    /// <summary>A collector whose keeper is the first store given, or none when there are no stores.</summary>
-    public ActivityCollector(IReadOnlyDictionary<string, IActivityStore> stores, ILogger<ActivityCollector> logger)
-        : this(stores, stores.Keys.FirstOrDefault() ?? "none", logger)
-    {
-    }
-
     /// <summary>The stores by key, for the report.</summary>
     public IReadOnlyDictionary<string, IActivityStore> Stores => _stores;
 

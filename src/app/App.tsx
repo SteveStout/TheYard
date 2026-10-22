@@ -21,6 +21,7 @@ import { useRunningBuild } from './hooks/useRunningBuild';
 import { InventoryLoading, InventoryUnreachable, InventoryView } from './InventoryView';
 import { Shell } from './Shell';
 import styles from './App.module.css';
+import { request } from '../lib/request';
 
 // #region admin-on-demand
 // The Admin tab is the biggest view in the app, and few visitors open it.
@@ -65,7 +66,8 @@ export default function App() {
     typeof window === 'undefined' ? null : pageOpenReport(window.location.search)
   );
   useEffect(() => {
-    if (openReport !== null) void fetch(openReport).catch(() => {});
+    if (openReport !== null)
+      void request(openReport, undefined, { background: true }).catch(() => {});
   }, [openReport]);
   // #endregion tagged-open
 

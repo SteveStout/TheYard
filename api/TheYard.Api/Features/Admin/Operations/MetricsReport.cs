@@ -4,7 +4,7 @@
 // be read in one place.
 using TheYard.Application;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Operations;
 
 /// <summary>Builds the timing card's answer from the request, SQL and store rings.</summary>
 public static class MetricsReport

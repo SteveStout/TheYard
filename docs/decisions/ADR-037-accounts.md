@@ -296,7 +296,7 @@ From 1.0.3.193 each account route asks one handler in the Application ring's `Fe
 ## Files
 
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.
-- [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): what a register or login answers with.
+- [`api/TheYard.Api/Features/Accounts/AccountView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountView.cs): what a register or login answers with.
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the composition.
 - [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the endpoints.
 - [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the three that refuse.
@@ -467,7 +467,7 @@ the control is gone. Shipped as 1.0.0.139.
 
 ## Addendum, 2026-10-03: where the account code sits now
 
-The badge's answer moved from `BidViews.cs` in the host to `Auction.BidsOf` in the Application ring, and the live block above follows it. The account handlers no longer look `UserManager` up from the service container: they take `RequestAccounts` (`api/TheYard.Api/RequestAccounts.cs`), which answers null when the request's store keeps no accounts. The password reset's steps moved out of the handler into `PasswordReset` (`api/TheYard.Api/PasswordReset.cs`), in the same order this record describes, so the handler only reads the request and writes the answer. The behaviour is unchanged and the tests that hold it are the same ones.
+The badge's answer moved from `BidViews.cs` in the host to `Auction.BidsOf` in the Application ring, and the live block above follows it. The account handlers no longer look `UserManager` up from the service container: they take `RequestAccounts` (`api/TheYard.Api/Features/Accounts/RequestAccounts.cs`), which answers null when the request's store keeps no accounts. The password reset's steps moved out of the handler into `PasswordReset` (`api/TheYard.Api/PasswordReset.cs`), in the same order this record describes, so the handler only reads the request and writes the answer. The behaviour is unchanged and the tests that hold it are the same ones.
 
 ## Addendum, 2026-10-09 (1.0.3.111): the account spec bids where the room is not
 

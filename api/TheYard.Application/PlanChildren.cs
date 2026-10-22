@@ -1,5 +1,5 @@
 // The plan's children: what each app on the plan holds and burns now, and what the plan holds
-// outside all of them. Steve asked on 19 October for the four apps' RAM and CPU beside the plan's
+// outside all of them. The owner asked for the four apps' RAM and CPU beside the plan's
 // dial; the readings were already in the kept minutes (ADR: The App Service plan, read every
 // minute), so this is arithmetic over them and nothing new is read.
 

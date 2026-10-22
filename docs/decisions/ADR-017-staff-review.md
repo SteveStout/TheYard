@@ -105,7 +105,7 @@ pass gets its own dated addendum here.
 - **The Admin endpoints stay public**, as ADR: Observability decided.
 - **The live-sample whitelist is a string check first**, then a resolved
   path check, then the read, in that order, with tests for each rejection
-  ([`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs)).
+  ([`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs)).
   The review looked for a way around it and found none.
 
 ### Deferred

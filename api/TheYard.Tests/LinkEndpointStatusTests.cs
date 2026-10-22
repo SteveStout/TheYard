@@ -2,7 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using TheYard.Api;
+using TheYard.Api.Features.Links;
 
 namespace TheYard.Tests;
 
@@ -34,7 +34,7 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         Assert.Equal(HttpStatusCode.Found, github.StatusCode);
         Assert.Equal("https://github.com/SteveStout/TheYard", github.Headers.Location!.ToString());
         Assert.Equal(HttpStatusCode.Found, (await client.GetAsync("/api/go/linkedin")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/go/elsewhere?r=k7f2qa")).StatusCode);
+        await Problem.Is(await client.GetAsync("/api/go/elsewhere?r=k7f2qa"), HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -44,9 +44,9 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
     {
         var client = Browser();
         Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/links/open?r=k7f2qa&path=/about")).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/links/open?r=k7f2qa&path=/admin")).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/links/open?r=Steve&path=/")).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/links/open")).StatusCode);
+        await Problem.Is(await client.GetAsync("/api/links/open?r=k7f2qa&path=/admin"), HttpStatusCode.BadRequest);
+        await Problem.Is(await client.GetAsync("/api/links/open?r=Steve&path=/"), HttpStatusCode.BadRequest);
+        await Problem.Is(await client.GetAsync("/api/links/open"), HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         Assert.Equal(HttpStatusCode.Found, (await client.GetAsync($"/api/go/github?r={code}")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/resume?src=email&r={code}")).StatusCode);
         // A pass-through the site refuses leaves the row as it was: a guess at a key is not an open.
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/go/nope?r={code}")).StatusCode);
+        await Problem.Is(await client.GetAsync($"/api/go/nope?r={code}"), HttpStatusCode.NotFound);
         var unfurler = factory.CreateClient();
         unfurler.DefaultRequestHeaders.UserAgent.ParseAdd("LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)");
         Assert.Equal(HttpStatusCode.NoContent, (await unfurler.GetAsync($"/api/links/open?r={code}&path=/")).StatusCode);

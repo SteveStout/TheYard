@@ -277,7 +277,7 @@ This walkthrough covers host Api code, AddIdentityCore in Composition/AuthRegist
 - [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the pipeline.
 - [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the four auth endpoints.
 - [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): issuing, validating, the cookie attributes, and reading the caller back out.
-- [`api/TheYard.Api/Accounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Accounts.cs): the request and response shapes, and the translation of Identity's error codes into a sentence.
+- [`api/TheYard.Api/Features/Accounts/AccountView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountView.cs): the request and response shapes, and the translation of Identity's error codes into a sentence.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the user row and its one extra column.
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): now an `IdentityDbContext`, which is what puts the seven tables in the model.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the suite that holds all of this to its claims, including that the token never appears in a response body.
@@ -286,4 +286,4 @@ This walkthrough covers host Api code, AddIdentityCore in Composition/AuthRegist
 
 ## Addendum, 2026-10-03: a second scoped registration
 
-This registration is no longer the only scoped one. `RequestAccounts` (`api/TheYard.Api/RequestAccounts.cs`) is registered per request beside it in `Composition/AuthRegistration.cs`, so the account handlers take it as a parameter instead of reaching into the service container. It asks whether the request's store came up before it opens `UserManager`, which means no handler ever meets the throw in the user store factory.
+This registration is no longer the only scoped one. `RequestAccounts` (`api/TheYard.Api/Features/Accounts/RequestAccounts.cs`) is registered per request beside it in `Composition/AuthRegistration.cs`, so the account handlers take it as a parameter instead of reaching into the service container. It asks whether the request's store came up before it opens `UserManager`, which means no handler ever meets the throw in the user store factory.

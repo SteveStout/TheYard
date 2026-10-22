@@ -112,7 +112,7 @@ Outside the rings: the build and the runtime's configuration. No code changes; t
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the restore and the publish, in the region `api-publish`.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the compilation and collection settings.
 - [`api/TheYard.Tests/CompilationTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CompilationTests.cs): the live reading, the Dockerfile's publish, and the runtime configuration the build writes, held to this record.
-- [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the runtime reading, in the region `runtime-metrics`.
+- [`api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs): the runtime reading, in the region `runtime-metrics`.
 
 ## Addendum, 2026-10-18: a heap limit beside the mode
 

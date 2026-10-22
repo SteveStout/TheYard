@@ -7,7 +7,7 @@
 using System.Threading.Channels;
 using TheYard.Application.Features.Links;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Links;
 
 // #region link-open-collector
 /// <summary>Takes opens from the request path and writes them to the keeper in batches, never from a request thread.</summary>

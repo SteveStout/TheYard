@@ -2,7 +2,7 @@
 // order key and place, never by a count of rows to skip, because the store's OFFSET reads every
 // document it skips (1,658 request units and 9.4 seconds at an offset of 40,000). A file of its own
 // because the places it keeps, and when it may use them, are one subject
-// (ADR: The store does the work, the addendum of 19 October).
+// (ADR: The store does the work, the addendum on a typed word as a seek).
 using System.Collections.Concurrent;
 using Microsoft.Azure.Cosmos;
 using TheYard.Application;

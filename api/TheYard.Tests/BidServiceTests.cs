@@ -26,8 +26,8 @@ public class BidServiceTests
         // under the room and be accepted every time (ADR-027, self review).
         var clock = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
         var vehicle = LiveVehicleFor(clock, currentBid: 22_800);
-        var bids = new BidService();
-        var market = new MarketService();
+        var bids = new BidService(new MemoryBidStore());
+        var market = new MarketService(new Random(7));
 
         // The buyer takes the lead at the minimum, 22,800 + 500.
         Assert.Equal(BidOutcomeKind.Accepted, (await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer)).Kind);
@@ -56,8 +56,8 @@ public class BidServiceTests
         // the room's, so a vehicle went from seven bids to six on being bid on.
         var clock = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
         var vehicle = LiveVehicleFor(clock, currentBid: 22_800);
-        var bids = new BidService();
-        var market = new MarketService();
+        var bids = new BidService(new MemoryBidStore());
+        var market = new MarketService(new Random(7));
 
         await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer);
         int afterMine = market.Apply(bids.Apply(vehicle)).BidCount;
@@ -107,7 +107,7 @@ public class BidServiceTests
     [Fact]
     public async Task An_accepted_bid_updates_the_overlay_and_the_next_minimum()
     {
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800); // bid_count 16
 
         var outcome = await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
@@ -124,7 +124,7 @@ public class BidServiceTests
     [Fact]
     public async Task Buy_now_marks_the_vehicle_won_without_adding_a_bid()
     {
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId()) with { BuyNowPrice = 28_000 };
 
         var outcome = await service.BuyNowAsync(vehicle, Now, Buyer);
@@ -147,7 +147,7 @@ public class BidServiceTests
     [Fact]
     public async Task Buy_now_ends_the_auction_for_everybody_else()
     {
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800) with { BuyNowPrice = 28_000 };
         const string Stranger = "second-account";
 
@@ -181,7 +181,7 @@ public class BidServiceTests
     [Fact]
     public async Task A_bid_at_the_buy_now_price_sells_it_the_same_way()
     {
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 27_900) with { BuyNowPrice = 28_000 };
 
         Assert.Equal(BidOutcomeKind.Won, (await service.PlaceBidAsync(vehicle, 30_000, Now, Buyer)).Kind);
@@ -216,7 +216,7 @@ public class BidServiceTests
     [Fact]
     public async Task Reset_clears_the_callers_bids_and_names_the_vehicles_it_touched()
     {
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
         await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
 
@@ -235,7 +235,7 @@ public class BidServiceTests
         // no user at all, so either of two visitors could delete the other's
         // bids, on a site whose changelog says they can outbid each other and
         // both be told the truth.
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
         await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
         await service.PlaceBidAsync(vehicle, 24_000, Now, "somebody-else");
@@ -304,7 +304,7 @@ public class BidServiceTests
     [Fact]
     public async Task Reset_by_somebody_who_has_not_bid_touches_nothing()
     {
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
         await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
 
@@ -317,7 +317,7 @@ public class BidServiceTests
     [Fact]
     public async Task Rejected_bids_leave_no_state_behind()
     {
-        var service = new BidService();
+        var service = new BidService(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
 
         Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 100, Now, Buyer)).Kind);

@@ -103,7 +103,7 @@ function fastRow({ tiles }: OverviewReadings): OverviewRow {
   };
 }
 
-/** Cost: the month so far against Steve's budget, and what Azure forecasts. */
+/** Cost: the month so far against the owner's budget, and what Azure forecasts. */
 function costRow({ cost }: OverviewReadings): OverviewRow {
   const question = 'Is it costing anything?';
   const range = `the month against the $${MONTHLY_BUDGET_DOLLARS} budget: ${rangeWords('cost')}`;

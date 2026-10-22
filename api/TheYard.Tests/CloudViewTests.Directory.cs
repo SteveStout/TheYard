@@ -1,5 +1,6 @@
 using System.Net;
 using TheYard.Api;
+using TheYard.Api.Features.Admin.Cloud;
 using TheYard.Application;
 
 namespace TheYard.Tests;

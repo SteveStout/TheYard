@@ -2,7 +2,7 @@ namespace TheYard.Api;
 
 /// <summary>
 /// What the edge may keep for a day because it can only change on a deploy, and the deploy
-/// purges it (ADR-015, the addendum of 20 October): the share card's picture, every document and
+/// purges it (ADR-015, the addendum on what only a deploy changes): the share card's picture, every document and
 /// every diagram. The browser's rule is set beside it in the cache-headers region of
 /// RequestPipeline; the hashed bundle files keep their year there and are not repeated here.
 /// The resume and About Steven stay out, because the Site activity card counts a visitor by the

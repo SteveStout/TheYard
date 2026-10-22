@@ -31,7 +31,7 @@ public static class ActivityRegistration
         // admin key guards the visitor rows; unset, that endpoint is a 404, which is
         // the default and the safe one.
         var activityStores = backends.All.ToDictionary(backend => backend.Key, backend => backend.Activity, StringComparer.Ordinal);
-        var activityKeeper = backends.All.FirstOrDefault(backend => backend.Key == "cosmos" && backend.Activity is not NullActivityStore)?.Key ?? backends.Default.Key;
+        var activityKeeper = backends.All.FirstOrDefault(backend => backend.Key == StoreKeys.Document && backend.Activity is not NullActivityStore)?.Key ?? backends.Default.Key;
         builder.Services.AddSingleton(services => new ActivityCollector(activityStores, activityKeeper, services.GetRequiredService<ILogger<ActivityCollector>>()));
         builder.Services.AddHostedService(services => services.GetRequiredService<ActivityCollector>());
 

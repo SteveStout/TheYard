@@ -26,9 +26,9 @@ public sealed class AuctionTests
 
     private static (Auction Auction, MarketService Market) Build(params Vehicle[] vehicles)
     {
-        var market = new MarketService();
+        var market = new MarketService(new Random(7));
         var inventory = new InventoryService(new Vehicles(vehicles), new NoPhotos());
-        return (new Auction(inventory, new BidService(), market), market);
+        return (new Auction(inventory, new BidService(new MemoryBidStore()), market), market);
     }
 
     // #region overlays

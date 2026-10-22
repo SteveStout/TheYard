@@ -275,3 +275,7 @@ What this changes for the rule against a second writer: the sold rule and the mi
 ```live path=api/TheYard.Infrastructure/EfBidStore.Standing.cs region=standing-store
 ```
 
+## Addendum, 2026-10-21 (1.0.4.24): what the browser still derives, and what holds it
+
+CLAUDE.md says never to re-implement auction math in TypeScript. Two pieces of it stand in `src/lib/auction.ts`, on purpose: the status of a window the server sent, recomputed at the browser's tick so a countdown that reaches zero reads "Ended" without a refetch, and the two ordering bands the browser re-ranks a page by under the ending-soonest sort (ADR-056). Neither picks a window or an anchor; both read the server's window. From 1.0.4.24 `FileHeaderTests.Lib_imports_no_react_hooks_import_no_component_and_only_lib_fetches` holds the two bands equal to `VehicleOrdering.UpcomingBand` and `EndedBand`, so the copy cannot drift from the Domain's figure.
+

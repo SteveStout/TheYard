@@ -71,6 +71,181 @@ public sealed class SliceTests
         }
     }
 
+    [Fact]
+    public void Rule_1_by_folder_a_file_under_a_slice_declares_that_slice_s_namespace()
+    {
+        // Rule 1 is held by namespace, so a file is in a slice by what it declares. A file under
+        // Features/Links/ that declared the host's root namespace would be shared by its words and a
+        // slice's by its place; the folder and the namespace say the same thing or this is red.
+        string features = Path.Combine(Repo.Root(), "api", "TheYard.Api", "Features");
+        var wrong = Directory.EnumerateFiles(features, "*.cs", SearchOption.AllDirectories)
+            .Select(path => (path, expected: "TheYard.Api.Features." + Path.GetRelativePath(features, Path.GetDirectoryName(path)!).Replace(Path.DirectorySeparatorChar, '.'),
+                declared: System.Text.RegularExpressions.Regex.Match(File.ReadAllText(path), @"(?m)^namespace\s+([\w.]+)").Groups[1].Value))
+            .Where(file => file.declared != file.expected)
+            .Select(file => $"{Path.GetRelativePath(Repo.Root(), file.path)} declares {file.declared}, its folder says {file.expected}")
+            .ToList();
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+
+    [Fact]
+    public void Rule_1_a_host_root_type_one_slice_alone_uses_lives_in_that_slice()
+    {
+        // The shared part of the host is what more than one place uses. A root type whose every user
+        // sits in one slice is that slice's code standing outside its folder, reachable by every
+        // other slice; it moves in. Its users are read from the compiled host: fields, signatures,
+        // base types and every type a method body names.
+        using var module = Mono.Cecil.ModuleDefinition.ReadModule(Host.Location);
+        var users = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        foreach (var type in module.GetTypes())
+        {
+            string user = Outermost(type).FullName;
+            foreach (string used in Named(type))
+            {
+                if (used != user)
+                {
+                    (users.TryGetValue(used, out var set) ? set : users[used] = new HashSet<string>(StringComparer.Ordinal)).Add(user);
+                }
+            }
+        }
+        var lonely = module.Types
+            .Where(type => type.Namespace == "TheYard.Api" && !type.Name.StartsWith('<'))
+            .Select(type => (type.FullName, slices: users.TryGetValue(type.FullName, out var set) ? set.Select(user => SliceOf(module.GetType(user)?.Namespace) ?? "shared").Distinct(StringComparer.Ordinal).ToList() : []))
+            .Where(type => type.slices.Count == 1 && type.slices[0] != "shared" && !StaysShared.ContainsKey(type.FullName))
+            .Select(type => $"{type.FullName} is used only by {type.slices[0]}")
+            .ToList();
+        Assert.True(lonely.Count == 0, string.Join(Environment.NewLine, lonely));
+    }
+
+    /// <summary>
+    /// Root types one slice alone uses that stay where they are, each with why: a record decided
+    /// where they live, or they share a documented region with what the shared part builds.
+    /// </summary>
+    private static readonly Dictionary<string, string> StaysShared = new(StringComparer.Ordinal)
+    {
+        ["TheYard.Api.VehiclePage"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.BidResult"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.TickResult"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.HealthReport"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.ForgotReply"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.AcrCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.AcrCatalog"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.CosmosCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.EdgeCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.InsightsCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.MailCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.NightlyCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.NightlySource"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.SqlCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.CloudRecorder"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
+        ["TheYard.Api.StoreMetrics"] = "the store-ring region of AdminObservability.cs, beside the ring it sums, which the shared registration builds",
+        ["TheYard.Api.Routes"] = "the routes region of Peer.cs, beside the peer reader the shared registration builds",
+    };
+
+    /// <summary>Every type of this module a type names: its base, its interfaces, its fields, its signatures and every operand of its bodies, the outermost type of each.</summary>
+    private static IEnumerable<string> Named(Mono.Cecil.TypeDefinition type)
+    {
+        IEnumerable<Mono.Cecil.TypeReference> Expand(Mono.Cecil.TypeReference? reference) => reference switch
+        {
+            null => [],
+            Mono.Cecil.GenericInstanceType generic => generic.GenericArguments.SelectMany(Expand).Prepend(generic.ElementType),
+            Mono.Cecil.TypeSpecification spec => Expand(spec.ElementType),
+            _ => [reference],
+        };
+        var references = new List<Mono.Cecil.TypeReference?> { type.BaseType };
+        references.AddRange(type.Interfaces.Select(contract => contract.InterfaceType));
+        references.AddRange(type.Fields.Select(field => field.FieldType));
+        references.AddRange(type.Properties.Select(property => property.PropertyType));
+        foreach (var method in type.Methods)
+        {
+            references.Add(method.ReturnType);
+            references.AddRange(method.Parameters.Select(parameter => parameter.ParameterType));
+            if (!method.HasBody)
+            {
+                continue;
+            }
+            references.AddRange(method.Body.Variables.Select(variable => variable.VariableType));
+            foreach (var operand in method.Body.Instructions.Select(instruction => instruction.Operand))
+            {
+                references.Add(operand switch
+                {
+                    Mono.Cecil.TypeReference reference => reference,
+                    Mono.Cecil.MemberReference member => member.DeclaringType,
+                    _ => null,
+                });
+                if (operand is Mono.Cecil.MethodReference called)
+                {
+                    references.Add(called.ReturnType);
+                    references.AddRange(called.Parameters.Select(parameter => parameter.ParameterType));
+                }
+            }
+        }
+        return references.SelectMany(Expand)
+            .Where(reference => reference is Mono.Cecil.TypeDefinition definition && definition.Module == type.Module)
+            .Select(reference =>
+            {
+                var outer = reference;
+                while (outer.DeclaringType is { } declaring)
+                {
+                    outer = declaring;
+                }
+                return outer.FullName;
+            })
+            .Distinct(StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public void Rule_2_every_hosted_service_is_a_named_concern_with_one_constructor_and_no_container()
+    {
+        // A hosted service runs beside the requests for the life of the process; each is one concern,
+        // named here with what it does, and takes what it needs by one constructor. A new one fails
+        // here until it is named, and one that asks a container for its dependencies fails always.
+        var services = Host.GetTypes()
+            .Where(type => type.IsClass && !type.IsAbstract && typeof(Microsoft.Extensions.Hosting.IHostedService).IsAssignableFrom(type))
+            .ToList();
+        var wrong = new List<string>();
+        foreach (var service in services)
+        {
+            if (!HostedConcerns.ContainsKey(service.Name))
+            {
+                wrong.Add($"{service.FullName} is a hosted service not named in HostedConcerns");
+            }
+            var constructors = service.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+            if (constructors.Length != 1)
+            {
+                wrong.Add($"{service.FullName} has {constructors.Length} public constructors");
+            }
+            if (constructors.SelectMany(ctor => ctor.GetParameters()).Any(parameter => parameter.ParameterType == typeof(IServiceProvider)))
+            {
+                wrong.Add($"{service.FullName} takes the service container");
+            }
+        }
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong) + $"{Environment.NewLine}hosted services found: {string.Join(", ", services.Select(type => type.Name).Order(StringComparer.Ordinal))}");
+        Assert.DoesNotContain(HostedConcerns.Keys, name => services.All(type => type.Name != name));
+    }
+
+    /// <summary>Every hosted service the host runs, by name, with the one concern it carries.</summary>
+    private static readonly Dictionary<string, string> HostedConcerns = new(StringComparer.Ordinal)
+    {
+        ["ActivityCollector"] = "keeps the visitor counts off the request path",
+        ["CatalogueWarm"] = "warms each store's catalogue once at start",
+        ["CloudRecorder"] = "reads and keeps the resource cards' minutes and hours",
+        ["CostRecorder"] = "reads Cost Management once an hour and keeps the answer",
+        ["ErrorRingKeeping"] = "keeps the error rings across a restart",
+        ["HostedSiteStopper"] = "stops the guest sites with the host",
+        ["HourlyReadings"] = "keeps the hourly readings",
+        ["KeepWarm"] = "keeps the sites warm between visits",
+        ["KeepWarmAtRoll"] = "warms both names after a roll",
+        ["LinkOpenCollector"] = "keeps tagged-link opens off the request path",
+        ["LogCollector"] = "keeps the log off the request path",
+        ["MachineRecorder"] = "keeps each finished minute of the machine's samples",
+        ["MachineSampler"] = "samples the container's machine",
+        ["PageSweepAtRoll"] = "sweeps the served pages after a roll",
+        ["PlanRecorder"] = "reads and keeps the plan card's minutes and hours",
+        ["ScratchDatabaseCleanup"] = "deletes the scratch database at stop",
+        ["StoreAnnouncement"] = "says which store each site serves at start",
+        ["StoreSecondChance"] = "asks a store that did not come up again, for a window, and attaches it",
+    };
+
     /// <summary>The namespace every slice sits under.</summary>
     private const string FeaturesNamespace = "TheYard.Api.Features";
 
@@ -94,6 +269,25 @@ public sealed class SliceTests
             || literal.Contains("theyard", StringComparison.OrdinalIgnoreCase)
             || literal.Contains("theshed", StringComparison.OrdinalIgnoreCase)
             || literal.Contains(".example", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
+    public void Rule_3_a_store_key_is_written_once_in_StoreKeys()
+    {
+        // A third store is a line in StoreKeys and its registration, not an edit in every file that
+        // asked for a store by name. The source is read, not the IL, because a constant is copied
+        // into every place that uses it. LiveSamples' "sql" is a code block's language, not a store.
+        string root = Repo.Root();
+        string[] allowed = ["StoreKeys.cs", "LiveSamples.cs"];
+        var written = new[] { Path.Combine(root, "api", "TheYard.Api"), Path.Combine(root, "api", "TheYard.Application") }
+            .SelectMany(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) && !allowed.Contains(Path.GetFileName(path)))
+            .SelectMany(path => File.ReadAllLines(path).Select((line, index) => (path, line, index)))
+            .Where(entry => !entry.line.TrimStart().StartsWith("//", StringComparison.Ordinal)
+                && System.Text.RegularExpressions.Regex.IsMatch(entry.line, "\"(sql|cosmos)\""))
+            .Select(entry => $"{Path.GetRelativePath(root, entry.path).Replace('\\', '/')}:{entry.index + 1} writes a store key: {entry.line.Trim()}")
+            .ToList();
+        Assert.True(written.Count == 0, string.Join(Environment.NewLine, written));
     }
 
     [Fact]

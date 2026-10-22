@@ -1,7 +1,7 @@
 // The catalogue port's typed words: a word of three characters or more is a range on the
 // CatalogueWords table's word index, and the table is filled beside the Catalogue table. A file of
 // its own because EfVehicleCatalogue.cs holds the other queries, and whether the words are there
-// yet is a question of its own (ADR: The store does the work, the addendum of 19 October).
+// yet is a question of its own (ADR: The store does the work, the addendum on a typed word as a seek).
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application;

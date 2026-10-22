@@ -2,7 +2,7 @@
  * Reset a password: a link minted behind the operator's key (ADR: Reset is one person's).
  */
 import { useState } from 'react';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 import styles from '../shared/card.module.css';
 import { About, Absent } from '../shared/common';
 
@@ -47,7 +47,7 @@ export default function ResetLinkCard({ adminKey }: { adminKey: string | null })
           setMade(null);
           const headers = { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey };
           const body = JSON.stringify({ email });
-          void counted(() => fetch('/api/admin/reset-links', { method: 'POST', headers, body }))
+          void request('/api/admin/reset-links', { method: 'POST', headers, body })
             .then(async (r) => {
               if (r.ok) {
                 setMade((await r.json()) as { email: string; url: string; expires_at: string });

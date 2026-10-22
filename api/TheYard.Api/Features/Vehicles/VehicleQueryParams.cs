@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Microsoft.AspNetCore.Mvc;
 using TheYard.Domain;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Vehicles;
 
 /// <summary>
 /// GET-parameter binding for /api/vehicles. The wire names mirror the

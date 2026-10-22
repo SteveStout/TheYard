@@ -26,12 +26,19 @@ public sealed class SiteHosts
 
     private readonly Site[] _sites;
 
+    /// <summary>The configured address for links when a request arrived on no Yard name (Site:Url), without its trailing slash; null when none is set.</summary>
+    private readonly string? _siteUrl;
+
     /// <summary>The sites, each name cleaned to lower case; a site whose name is empty or a placeholder is left out.</summary>
     /// <param name="sites">The configured sites, in order.</param>
-    public SiteHosts(IEnumerable<Site> sites) =>
+    /// <param name="siteUrl">Site:Url, the address a link falls back to; a placeholder or an empty value is none.</param>
+    public SiteHosts(IEnumerable<Site> sites, string? siteUrl = null)
+    {
+        _siteUrl = string.IsNullOrWhiteSpace(siteUrl) || siteUrl.StartsWith("__", StringComparison.Ordinal) ? null : siteUrl.Trim().TrimEnd('/');
         _sites = [.. sites
             .Select(site => site with { Host = Clean(site.Host) ?? "", Store = string.IsNullOrWhiteSpace(site.Store) ? null : site.Store.Trim() })
             .Where(site => site.Host.Length > 0)];
+    }
 
     /// <summary>No names at all: a developer's machine or the test host, where the store comes from Store:Default.</summary>
     public static SiteHosts None { get; } = new([]);
@@ -86,6 +93,15 @@ public sealed class SiteHosts
     /// <param name="context">The request, or null outside one.</param>
     public string? SiteOrigin(HttpContext? context) =>
         Of(context) is { } host && StoreFor(host) is not null ? $"https://{host}" : null;
+
+    /// <summary>
+    /// The origin a link sent from this request carries (a reset email, the About page): the Yard
+    /// site the request arrived on, then the configured Site:Url, then the request's own scheme and
+    /// host on a machine with neither. Never X-Forwarded-Host: a link must not be one a sender chose.
+    /// </summary>
+    /// <param name="context">The request.</param>
+    public string LinkOrigin(HttpContext context) =>
+        SiteOrigin(context) ?? _siteUrl ?? $"{context.Request.Scheme}://{context.Request.Host.Value}";
 
     /// <summary>The guest site this request arrived on, or null when it arrived on a Yard name or none.</summary>
     /// <param name="context">The request.</param>

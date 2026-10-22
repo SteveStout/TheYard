@@ -5,7 +5,7 @@
 import { CardState } from '../shared/CardState';
 import { useState } from 'react';
 import { pairedBars } from '../../../lib/machineChart';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 import styles from './ProofCard.module.css';
 import chartStyles from '../charts/charts.module.css';
 import cardStyles from '../shared/card.module.css';
@@ -199,9 +199,7 @@ export default function ProofCard({
   // running, because the thirty-second refresh above would leave the button
   // saying "Running" long after the result had landed.
   const runProof = async () => {
-    const started = await counted(() => fetch('/api/admin/proof', { method: 'POST' })).catch(
-      () => null
-    );
+    const started = await request('/api/admin/proof', { method: 'POST' }).catch(() => null);
     if (started === null || (!started.ok && started.status !== 409)) {
       setRunning('failed');
       return;
@@ -211,7 +209,7 @@ export default function ProofCard({
       result: proof !== null && proof !== 'failed' ? proof.result : null,
     });
     const poll = window.setInterval(() => {
-      void fetch('/api/admin/proof')
+      void request('/api/admin/proof', undefined, { background: true })
         .then((r) =>
           r.ok ? (r.json() as Promise<Proof>) : Promise.reject(new Error(String(r.status)))
         )

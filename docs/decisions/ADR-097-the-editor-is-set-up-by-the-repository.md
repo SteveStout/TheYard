@@ -40,5 +40,5 @@ Outside the rings: the editor's configuration, beside the code and read by nothi
 - [`samples/theshed/.vscode/`](https://github.com/SteveStout/TheYard/tree/main/samples/theshed/.vscode): The Shed's, for the folder opened on its own.
 - [`api/TheYard.Tests/WorkspaceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WorkspaceTests.cs): the configuration held to the tree and to the page, in the regions `tasks`, `launch`, `settings-and-extensions` and `the-page`.
 - [`docs/app-architecture/VSCODE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/VSCODE.md): Working in VS Code, the page.
-- [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): `.vscode/` on the whitelist, in the region `whitelist`.
+- [`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs): `.vscode/` on the whitelist, in the region `whitelist`.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile) and [`.dockerignore`](https://github.com/SteveStout/TheYard/blob/main/.dockerignore): the folder copied into the runtime image.

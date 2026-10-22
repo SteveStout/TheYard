@@ -4,7 +4,7 @@
 // report, the days and the card all count by; Activity.cs lists the other parts.
 using TheYard.Application;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Operations;
 
 // #region report
 /// <summary>
@@ -136,7 +136,7 @@ public static class ActivityWho
     /// serves is the one document, kept as /index.html), the inventory's
     /// listing, About Steven, and the resume, which the page links as
     /// /api/docs/resume, the repository serves as /docs/resume.pdf, and a
-    /// link Steve hands out opens at /resume, recorded by its door.
+    /// link the owner hands out opens at /resume, recorded by its door.
     /// </summary>
     public static readonly (string Step, string[] Paths)[] Steps =
     [

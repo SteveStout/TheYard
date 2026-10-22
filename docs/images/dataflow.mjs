@@ -38,7 +38,7 @@ const READ = [
   ['InventoryService', 'api/TheYard.Application/InventoryService.cs', [
     "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and fills the store's catalogue, which every page then queries; the process holds none of them (ADR: The store does the work). The warm runs beside the server and /readyz waits for it."]],
   ['GET /api/vehicles', 'api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs', [
-    "api/TheYard.Api/VehicleQueryParams.cs binds and validates every parameter into a filter and a sort. The clock is the server's (api/TheYard.Api/Clocks.cs): now, and the UTC midnight that began the day, the same for every visitor."]],
+    "api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs binds and validates every parameter into a filter and a sort. The clock is the server's (api/TheYard.Api/Clocks.cs): now, and the UTC midnight that began the day, the same for every visitor."]],
   ['Search, through Auction.Search', 'api/TheYard.Application/Auction.cs', [
     "1. Everybody's bids, then the room's, are laid over each vehicle (Auction.Overlay, raising a price through api/TheYard.Domain/StandingRules.cs), so price bounds see the figures the page shows.",
     '2. Where: api/TheYard.Domain/VehicleFilter.cs',

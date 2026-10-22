@@ -93,6 +93,11 @@ public class TestResultsTests(WebApplicationFactory<Program> factory)
             }
             foreach (JsonElement row in rows)
             {
+                if (row.GetArrayLength() == 4 && row[2].GetString() == "r")
+                {
+                    wrong.Add($"{id}: {row[1].GetString()} passed only on its retry; the record shows it and the gate refuses it");
+                    continue;
+                }
                 if (row.GetArrayLength() != 4 || row[2].GetString() is not ("p" or "f" or "s") || row[3].GetInt32() < 0)
                 {
                     wrong.Add($"{id}: a row should be [group, name, p f or s, milliseconds]: {row}");

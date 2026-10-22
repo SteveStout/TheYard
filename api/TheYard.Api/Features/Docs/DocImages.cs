@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Docs;
 
 // #region docs-images
 /// <summary>

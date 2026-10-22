@@ -361,7 +361,7 @@ Steve looked at the row and asked for two things. The recommendations should sta
 
 The words now live in one file, `data/recommendations.json`, beside the dataset and the gate's results: one entry per person in the order they are shown, every entry the same six fields (name, title, relationship, when, paragraphs, pull), and nothing reworded. Adding a recommendation is adding one entry and moving the count the site states (ten, which `RecommendationsTests` and the About Steven document hold); the shape, the reader and the pages do not change. `GET /api/recommendations` answers the file as it is, snake_case on the wire like every other answer, and is in the API document with the rest. The shape is written once, in `Recommendations.cs`, beside the check that says what an entry has to get right; the endpoint answers a failure that names the slip when an entry is out of shape, and `RecommendationsTests` reads the same check in the gate, so a shipped build never gets that far.
 
-```live path=api/TheYard.Api/Recommendations.cs region=recommendation-shape
+```live path=api/TheYard.Api/Features/Docs/Recommendations.cs region=recommendation-shape
 ```
 
 ```live path=api/TheYard.Api/Features/Docs/RecommendationEndpoints.cs region=recommendations-route

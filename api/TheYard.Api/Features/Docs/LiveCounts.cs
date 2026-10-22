@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Docs;
 
 /// <summary>
 /// Live numbers for the served docs (ADR: The palette, the addendum on the Style

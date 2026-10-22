@@ -59,12 +59,12 @@ documents in `api/TheYard.Api/DocumentationCatalog.cs`:
 ```live path=api/TheYard.Api/DocumentationCatalog.cs region=diagrams
 ```
 
-The page itself, `api/TheYard.Api/DiagramPage.cs`. The palette is repeated
+The page itself, `api/TheYard.Api/Features/Docs/DiagramPage.cs`. The palette is repeated
 here and in each SVG on purpose: the page carries no bundle, so the tokens
 file is not loaded, and a palette change touches the drawings anyway (ADR:
 The palette):
 
-```live path=api/TheYard.Api/DiagramPage.cs region=page
+```live path=api/TheYard.Api/Features/Docs/DiagramPage.cs region=page
 ```
 
 The hook that makes links leave the dialog without leaving the app, in
@@ -102,7 +102,7 @@ Diagram pages are served by the host Api, where DiagramPage.cs builds the HTML a
 
 - [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): the `/api/docs/diagrams/{name}` endpoint.
 - [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the diagram catalog beside the documents.
-- [`api/TheYard.Api/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DiagramPage.cs): the HTML page around an SVG.
+- [`api/TheYard.Api/Features/Docs/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DiagramPage.cs): the HTML page around an SVG.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the page tests.
 - [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the link hook, beside the renderer it belongs to.
 - [`docs/images/dataflow.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.svg) and [`docs/images/dataflow.png`](https://github.com/SteveStout/TheYard/blob/main/docs/images/dataflow.png): the new drawing and its preview; [`docs/images/infrastructure.svg`](https://github.com/SteveStout/TheYard/blob/main/docs/images/infrastructure.svg) the first one.
@@ -152,7 +152,7 @@ The rendering service (ADR: A rendering service beside the API) gives the site a
 
 ## Addendum, 2026-09-29 (1.0.3.47): a page about him, on the same pattern
 
-A search for his name with ".NET" or "Azure" found his LinkedIn and not this site. The site had a head that described the auction and a structured-data block naming him only as the author of the code, and no page whose subject was him. `/about` is that page, served by the API the way a diagram is: one small HTML document, `api/TheYard.Api/AboutPage.cs`, with the palette inline, a viewport line, selectable text, and nothing fetched from another host, the font included (the diagram pages still ask Google for theirs; this one uses the reader's own copy of the face or the system's). Outside `/api` because it is a page a search engine lists; a literal route wins over the app's fallback, and the dev server proxies it to the API like `/api`.
+A search for his name with ".NET" or "Azure" found his LinkedIn and not this site. The site had a head that described the auction and a structured-data block naming him only as the author of the code, and no page whose subject was him. `/about` is that page, served by the API the way a diagram is: one small HTML document, `api/TheYard.Api/Features/Docs/AboutPage.cs`, with the palette inline, a viewport line, selectable text, and nothing fetched from another host, the font included (the diagram pages still ask Google for theirs; this one uses the reader's own copy of the face or the system's). Outside `/api` because it is a page a search engine lists; a literal route wins over the app's fallback, and the dev server proxies it to the API like `/api`.
 
 What it says comes from the served resume and the README and nothing else: his name as the heading, the resume's title line under it, the resume's summary tightened to one paragraph, one paragraph on what TheYard is with links to the Performance page, the decision records, the API reference and the gate's test record, and three links out: LinkedIn, the repository and the resume. Its head is its own: a title and description written for a search result, a canonical, Open Graph and Twitter tags, and a schema.org Person. Each container names itself from `Site:Url`, so the Cosmos DB site's page says its own address; with none set (a developer's machine, the test host) the request's address is used.
 
@@ -164,5 +164,5 @@ Held by `DiagramPageTests` (the page, its head, what the Person may and may not 
 
 The About page opened in Segoe UI on Windows and in whatever the system had elsewhere, a different face from every other page of the site, because it asked no host for the font and the reader's own copy of IBM Plex Sans was the exception, not the rule. The diagram pages wore the face, but asked Google for it, the one third host left on the site after 1.0.0.140. Both now declare the face from the file the build already ships: `SiteFace` finds the hashed `ibm-plex-sans-latin-*.woff2` under `wwwroot/assets` once and hands the pages a `@font-face` line that points at it, the same declaration src/styles/fonts.css carries, so the page and the app share one cached file. Where no built site sits beside the process (the test host, `dotnet run` against the dev server) the line is empty and the fallback face in the page's own rule stands, as it did. The drawing beside How I lead lost the gradient ground it carried, which met the panel's glass at a visible seam; it sits on the panel now.
 
-```live path=api/TheYard.Api/SiteFace.cs region=find
+```live path=api/TheYard.Api/Features/Docs/SiteFace.cs region=find
 ```

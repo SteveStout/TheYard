@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api;
+using TheYard.Api.Features.Accounts;
 using TheYard.Application;
 using TheYard.Infrastructure.Cosmos;
 

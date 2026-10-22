@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Operations;
 
 // #region test-summary
 /// <summary>

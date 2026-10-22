@@ -22,7 +22,7 @@ import type { Fetched } from '../shared/types';
 import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
 import { formatDateTime } from '../../../lib/format';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 
 /** A suite: its name and mark, then what passed, failed and was skipped, and how long it took. */
 const SUITE_COLUMNS: Column<TestSuite>[] = [
@@ -80,7 +80,7 @@ export default function TestsCard() {
   useEffect(() => {
     let live = true;
     const read = async (): Promise<TestResults | 'none'> => {
-      const r = await counted(() => fetch('/api/admin/tests'));
+      const r = await request('/api/admin/tests');
       if (r.status === 404) return 'none';
       if (!r.ok) throw new Error(String(r.status));
       return (await r.json()) as TestResults;
@@ -102,12 +102,12 @@ export default function TestsCard() {
       <h2 className={cardStyles.cardTitle}>Every test, for this build</h2>
       <Range of="gateSeconds" />
       <About>
-        The ship&rsquo;s gate runs every suite once, on the machine that ships: xUnit on SQLite and
-        again booted on Cosmos DB, the live Cosmos DB tests, Vitest, and the browser suite on both
-        stores, with prettier, lint, TypeScript, dotnet format and the SQL project beside them.
-        Nothing is committed unless all of it passes, so nothing reaches this site untested, and
-        what every test did ships with the version and is read here. Open a suite for its tests,
-        failures first and then the slowest.
+        The ship&rsquo;s gate runs every suite once, on a GitHub runner from the version&rsquo;s
+        gate branch: xUnit on SQLite and again booted on Cosmos DB, the live Cosmos DB tests,
+        Vitest, and the browser suite on both stores, with prettier, lint, TypeScript, dotnet format
+        and the SQL project beside them. Main moves only when all of it passes, so nothing reaches
+        this site untested, and what every test did ships with the version and is read here. Open a
+        suite for its tests, failures first and then the slowest.
       </About>
       {results === null ? (
         <CardState state="loading" />

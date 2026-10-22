@@ -122,7 +122,7 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       blurb: 'Lead / Staff .NET engineer, twelve years full stack, seven fully remote.',
       featured: true,
       featuredRank: 2,
-      // The vineyard photograph cropped to Steve alone, so a reader knows which one is the author.
+      // The vineyard photograph cropped to the author alone, so a reader knows which one is the author.
       badgePhoto: {
         src: '/api/images/badges/steve-176.jpg',
         srcSet: '/api/images/badges/steve-176.webp 176w, /api/images/badges/steve-264.webp 264w',

@@ -22,12 +22,12 @@ export type Range = {
   red: number;
   /** True when a smaller number is the worse one (days left on a certificate). */
   lowIsBad?: boolean;
-  /** Where the lines come from: a record, a measurement or Steve's own number. */
+  /** Where the lines come from: a record, a measurement or the owner's own number. */
   source: string;
 };
 
 // #region ranges
-/** Steve's monthly budget for the whole subscription: over it the cost reads red ("Red at this is over 50$", in his words). */
+/** The owner's monthly budget for the whole subscription: over it the cost reads red ("Red at this is over 50$", in his words). */
 export const MONTHLY_BUDGET_DOLLARS = 50;
 
 /** Every judged number, by key. A share is written from 0 to 1 and said as a percentage. */

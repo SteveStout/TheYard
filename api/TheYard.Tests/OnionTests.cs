@@ -35,7 +35,14 @@ public sealed class OnionTests
     /// rules above allow the whole library, so these are held out of the inner rings by name.
     /// </summary>
     private static readonly string[] TheDiskAndTheNetwork =
-        ["System.IO.File", "System.IO.Directory", "System.IO.FileStream", "System.IO.StreamReader", "System.IO.StreamWriter", "System.Net", "System.Data"];
+    [
+        "System.IO.File", "System.IO.Directory", "System.IO.FileStream", "System.IO.StreamReader", "System.IO.StreamWriter",
+        "System.IO.FileInfo", "System.IO.DirectoryInfo", "System.IO.FileSystemInfo", "System.IO.Compression", "System.IO.MemoryMappedFiles", "System.IO.Pipes",
+        "System.Net", "System.Data",
+    ];
+
+    /// <summary>What a rule that takes everything it needs as a value never reads for itself: a clock, a process, a type found by its name.</summary>
+    private static readonly string[] TheMachine = ["System.Random", "System.TimeProvider", "System.Environment", "System.Diagnostics.Stopwatch", "System.Diagnostics.Process"];
 
     [Fact]
     public void Data_depends_on_nothing_outside_the_BCL()
@@ -44,6 +51,18 @@ public sealed class OnionTests
             .ShouldNot().HaveDependencyOtherThan(BaseClassLibrary, CoverageTracker, "TheYard.Data")
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
+        // System is allowed whole, so the disk, the network and the machine are held out by name.
+        var reaches = InRing(typeof(Vehicle), "TheYard.Data").ShouldNot().HaveDependencyOnAny([.. TheDiskAndTheNetwork, .. TheMachine]).GetResult();
+        Assert.True(reaches.IsSuccessful, Explain(reaches));
+        Assert.Empty(TypeLookups(typeof(Vehicle).Assembly.Location, "TheYard.Data"));
+    }
+
+    [Fact]
+    public void Data_has_no_behaviour()
+    {
+        // Pure records (CLAUDE.md): a property, a constructor, what the compiler writes for a record,
+        // and nothing else. A computed rule in Data is a second Domain nobody tests as one.
+        Assert.Empty(Behaviour(typeof(Vehicle).Assembly.Location));
     }
 
     [Fact]
@@ -70,10 +89,11 @@ public sealed class OnionTests
         // A rule is a function of what it is handed: the vehicle, the bids and the clock. Reading
         // the time, a random number or a file itself would make it untestable with a fixed clock.
         var result = InRing(typeof(BidRules), "TheYard.Domain")
-            .ShouldNot().HaveDependencyOnAny([.. TheDiskAndTheNetwork, "System.Random", "System.TimeProvider", "System.Environment"])
+            .ShouldNot().HaveDependencyOnAny([.. TheDiskAndTheNetwork, .. TheMachine])
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
         Assert.Empty(ClockReads(typeof(BidRules).Assembly.Location, "TheYard.Domain"));
+        Assert.Empty(TypeLookups(typeof(BidRules).Assembly.Location, "TheYard.Domain"));
     }
 
     [Fact]
@@ -96,11 +116,31 @@ public sealed class OnionTests
             .Where(type => type.IsPublic && type != typeof(YardUser))
             .Select(type => type.FullName!)
             .Append("Microsoft.EntityFrameworkCore")
+            .Append("Microsoft.AspNetCore.Identity.EntityFrameworkCore")
+            .Append("Microsoft.Data")
             .ToArray();
         var result = Types.InAssembly(typeof(CosmosStore).Assembly)
             .ShouldNot().HaveDependencyOnAny(relational)
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
+    }
+    [Fact]
+    public void Infrastructure_adapts_and_decides_nothing()
+    {
+        // An adapter turns a port's call into a store's and back. The web (beyond Identity's user
+        // store) is the host's, and a rule about money is the Domain's: an adapter method that takes a
+        // price or a bid by name and compares it, or reads a vehicle's price and compares it, is a
+        // second copy of BidRules that no Domain test sees.
+        var found = new List<string>();
+        foreach (var adapter in new[] { typeof(YardDbContext).Assembly, typeof(CosmosStore).Assembly })
+        {
+            using var module = ModuleDefinition.ReadModule(adapter.Location);
+            found.AddRange(module.GetTypeReferences()
+                .Where(reference => reference.Namespace.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal) && !reference.Namespace.StartsWith("Microsoft.AspNetCore.Identity", StringComparison.Ordinal))
+                .Select(reference => $"{adapter.GetName().Name} uses {reference.FullName}"));
+            found.AddRange(MoneyDecisions(module));
+        }
+        Assert.True(found.Count == 0, string.Join(Environment.NewLine, found.Distinct()));
     }
     // #endregion rings
 
@@ -117,6 +157,8 @@ public sealed class OnionTests
                 "Microsoft.EntityFrameworkCore",
                 "Microsoft.Azure.Cosmos",
                 "Microsoft.Data.SqlClient",
+                "Microsoft.Data.Sqlite",
+                "System.Data.Common",
                 "TheYard.Infrastructure.Cosmos",
                 "TheYard.Infrastructure.YardDbContext",
                 "TheYard.Infrastructure.ContextFactory",
@@ -185,6 +227,9 @@ public sealed class OnionTests
                 "Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions",
                 "Microsoft.EntityFrameworkCore.DbSet",
                 "Microsoft.Data.SqlClient",
+                "Microsoft.Data.Sqlite",
+                "System.Data.Common.DbCommand",
+                "System.Data.Common.DbConnection",
                 "Microsoft.Azure.Cosmos.QueryDefinition",
                 "Microsoft.Azure.Cosmos.Container")
             .GetResult();
@@ -214,6 +259,22 @@ public sealed class OnionTests
         // inside behaviour is wiring hidden where a test cannot hand it a value; the types in
         // CompositionRoot are where those are read, each for the reason beside it.
         Assert.Empty(RuntimeLookups(typeof(Program).Assembly.Location));
+    }
+
+    [Fact]
+    public void A_route_or_a_handler_is_handed_its_settings_never_the_configuration()
+    {
+        // Rule 6 by its other door: IConfiguration injected into a route delegate is the built app's
+        // configuration read per request. A setting is bound once, at composition, into a type the
+        // route takes (SiteHosts carries Site:Url), so a test hands the route its value.
+        using var module = ModuleDefinition.ReadModule(typeof(Program).Assembly.Location);
+        var taking = module.GetTypes()
+            .Where(type => !IsCompositionRoot(type) && (IsPartOfAnEndpointClass(type) || Outermost(type).Name.EndsWith("Handler", StringComparison.Ordinal)))
+            .SelectMany(type => type.Methods)
+            .Where(method => method.Parameters.Any(parameter => parameter.ParameterType.FullName == "Microsoft.Extensions.Configuration.IConfiguration"))
+            .Select(method => $"{method.DeclaringType.FullName}.{method.Name} takes IConfiguration")
+            .ToList();
+        Assert.True(taking.Count == 0, string.Join(Environment.NewLine, taking));
     }
 
     [Fact]
@@ -281,12 +342,91 @@ public sealed class OnionTests
                 .Select(called => $"{method.DeclaringType.FullName}.{method.Name} reads {called.DeclaringType.Name}.{called.Name[4..]}"))];
     }
 
+    /// <summary>
+    /// Every place a ring finds a type or loads an assembly by its name (Type.GetType, Assembly.Load
+    /// and its kin): a reference the compiler never sees, so no ring rule can.
+    /// </summary>
+    private static List<string> TypeLookups(string assemblyPath, string ring)
+    {
+        using var module = ModuleDefinition.ReadModule(assemblyPath);
+        return [.. module.GetTypes()
+            .Where(type => InNamespace(Outermost(type).Namespace, ring))
+            .SelectMany(type => type.Methods.Where(method => method.HasBody))
+            .SelectMany(method => method.Body.Instructions
+                .Select(instruction => instruction.Operand)
+                .OfType<MethodReference>()
+                .Where(called => (called.DeclaringType.FullName == "System.Type" && called.Name == "GetType" && called.Parameters.Count > 0)
+                    || (called.DeclaringType.FullName == "System.Reflection.Assembly" && called.Name.StartsWith("Load", StringComparison.Ordinal))
+                    || called.DeclaringType.FullName == "System.Activator")
+                .Select(called => $"{method.DeclaringType.FullName}.{method.Name} calls {called.DeclaringType.Name}.{called.Name}"))];
+    }
+
+    /// <summary>What the compiler writes for a record, and the only methods besides accessors and constructors a Data type may carry.</summary>
+    private static readonly HashSet<string> RecordMembers = ["ToString", "PrintMembers", "Equals", "GetHashCode", "<Clone>$", "Deconstruct", "op_Equality", "op_Inequality", "get_EqualityContract"];
+
+    /// <summary>Every Data method with a body that is not an accessor, a constructor or a member the compiler writes for a record.</summary>
+    private static List<string> Behaviour(string assemblyPath)
+    {
+        using var module = ModuleDefinition.ReadModule(assemblyPath);
+        return [.. module.GetTypes()
+            .Where(type => InNamespace(Outermost(type).Namespace, "TheYard.Data") && !type.CustomAttributes.Any(IsCompilerGenerated))
+            .SelectMany(type => type.Methods.Where(method => method.HasBody))
+            .Where(method => !method.IsGetter && !method.IsSetter && !method.IsConstructor && !RecordMembers.Contains(method.Name) && !method.CustomAttributes.Any(IsCompilerGenerated))
+            .Select(method => $"{method.DeclaringType.FullName}.{method.Name} is behaviour in Data")];
+    }
+
+    private static bool IsCompilerGenerated(CustomAttribute attribute) =>
+        attribute.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
+
+    /// <summary>A parameter named for money: a price, a bid, an amount, a reserve or an increment.</summary>
+    private static readonly System.Text.RegularExpressions.Regex Money = new("^(amount|bid|buyNow|price|reserve|increment|minNextBid|currentBid|startingBid)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    /// <summary>The comparisons in IL: what turns a value into a decision.</summary>
+    private static readonly HashSet<Mono.Cecil.Cil.Code> Comparisons =
+    [
+        Mono.Cecil.Cil.Code.Clt, Mono.Cecil.Cil.Code.Clt_Un, Mono.Cecil.Cil.Code.Cgt, Mono.Cecil.Cil.Code.Cgt_Un,
+        Mono.Cecil.Cil.Code.Blt, Mono.Cecil.Cil.Code.Blt_S, Mono.Cecil.Cil.Code.Blt_Un, Mono.Cecil.Cil.Code.Blt_Un_S,
+        Mono.Cecil.Cil.Code.Bgt, Mono.Cecil.Cil.Code.Bgt_S, Mono.Cecil.Cil.Code.Bgt_Un, Mono.Cecil.Cil.Code.Bgt_Un_S,
+        Mono.Cecil.Cil.Code.Ble, Mono.Cecil.Cil.Code.Ble_S, Mono.Cecil.Cil.Code.Ble_Un, Mono.Cecil.Cil.Code.Ble_Un_S,
+        Mono.Cecil.Cil.Code.Bge, Mono.Cecil.Cil.Code.Bge_S, Mono.Cecil.Cil.Code.Bge_Un, Mono.Cecil.Cil.Code.Bge_Un_S,
+    ];
+
+    /// <summary>Adapter methods that compare money: a money parameter by name, or a vehicle's price read, beside a comparison.</summary>
+    private static IEnumerable<string> MoneyDecisions(ModuleDefinition module) =>
+        module.GetTypes()
+            .SelectMany(type => type.Methods.Where(method => method.HasBody))
+            .Where(method => method.Body.Instructions.Any(instruction => Comparisons.Contains(instruction.OpCode.Code)))
+            .Where(method => method.Parameters.Any(parameter => Money.IsMatch(parameter.Name))
+                || method.Body.Instructions.Select(instruction => instruction.Operand).OfType<MethodReference>()
+                    .Any(called => called.DeclaringType.FullName == "TheYard.Data.Vehicle" && called.Name is "get_CurrentBid" or "get_BuyNowPrice" or "get_ReservePrice" or "get_StartingBid"))
+            .Select(method => $"{method.DeclaringType.FullName}.{method.Name} decides on money in an adapter");
+
     /// <summary>True for the ring's namespace and every namespace under it.</summary>
     private static bool InNamespace(string name, string ring) =>
         name == ring || name.StartsWith(ring + ".", StringComparison.Ordinal);
 
-    /// <summary>True for an endpoint class and for the types the compiler writes inside one (its async state machines and lambdas).</summary>
-    private static bool IsPartOfAnEndpointClass(TypeDefinition type) => Outermost(type).Name.EndsWith("Endpoints", StringComparison.Ordinal);
+    /// <summary>
+    /// True for an endpoint class and for the types the compiler writes inside one (its async state
+    /// machines and lambdas): a type named *Endpoints, or any type outside the composition root whose
+    /// code maps a route (calls a Map method of the route builder), whatever it is named.
+    /// </summary>
+    private static bool IsPartOfAnEndpointClass(TypeDefinition type)
+    {
+        var outer = Outermost(type);
+        return !IsCompositionRoot(outer) && (outer.Name.EndsWith("Endpoints", StringComparison.Ordinal) || RouteMappers.Value.Contains(outer.FullName));
+    }
+
+    /// <summary>The host's types whose method bodies, or the bodies the compiler wrote inside them, map a route.</summary>
+    private static readonly Lazy<HashSet<string>> RouteMappers = new(() =>
+    {
+        using var module = ModuleDefinition.ReadModule(typeof(Program).Assembly.Location);
+        return module.GetTypes()
+            .Where(type => type.Methods.Any(method => method.HasBody && method.Body.Instructions
+                .Select(instruction => instruction.Operand).OfType<MethodReference>()
+                .Any(called => called.DeclaringType.Name.EndsWith("EndpointRouteBuilderExtensions", StringComparison.Ordinal) && called.Name.StartsWith("Map", StringComparison.Ordinal))))
+            .Select(type => Outermost(type).FullName)
+            .ToHashSet(StringComparer.Ordinal);
+    });
 
     /// <summary>
     /// The types where the container is filled and read, by name, each with its reason: Program and

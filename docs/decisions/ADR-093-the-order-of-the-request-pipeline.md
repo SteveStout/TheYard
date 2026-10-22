@@ -90,7 +90,7 @@ An independent review of 1.0.3.92 (a QA engineer's, a staff engineer's and a hir
 
 The same version adds a reading for the next one: `/api/admin/metrics` now says how many methods the runtime compiled itself since the process started and how long that took, beside the garbage collector's mode, so compiling ahead of time can be measured rather than assumed.
 
-```live path=api/TheYard.Api/MetricsReport.cs region=runtime-metrics
+```live path=api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs region=runtime-metrics
 ```
 
 ## Where it sits

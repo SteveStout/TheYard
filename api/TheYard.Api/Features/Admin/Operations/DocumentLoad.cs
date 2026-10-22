@@ -4,7 +4,7 @@
 // of the card starts in Machines.cs.
 using TheYard.Application;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Operations;
 
 // #region document-load
 /// <summary>

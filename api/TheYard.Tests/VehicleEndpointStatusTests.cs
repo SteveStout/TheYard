@@ -23,10 +23,10 @@ public sealed class VehicleEndpointStatusTests(WebApplicationFactory<Program> fa
         using var body = JsonDocument.Parse(await page.Content.ReadAsStringAsync());
         string id = body.RootElement.GetProperty("vehicles")[0].GetProperty("id").GetString()!;
 
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/vehicles?status=sideways")).StatusCode);
+        await Problem.Is(await client.GetAsync("/api/vehicles?status=sideways"), HttpStatusCode.BadRequest);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/facets")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/vehicles/{id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/vehicles/no-vehicle-has-this-id")).StatusCode);
+        await Problem.Is(await client.GetAsync("/api/vehicles/no-vehicle-has-this-id"), HttpStatusCode.NotFound);
     }
 }
 // #endregion vehicle-endpoint-status-tests

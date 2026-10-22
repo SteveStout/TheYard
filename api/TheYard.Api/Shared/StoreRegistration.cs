@@ -114,13 +114,13 @@ public static class StoreRegistration
         // the second chance).
         var sqlBackend = new Backend
         {
-            Key = "sql",
+            Key = StoreKeys.Relational,
             Name = yard.Describe(),
             Database = sqlState,
             Startup = sqlStartup,
             Inventory = new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
             Bids = new BidService(new MemoryBidStore()),
-            Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
+            Market = new MarketService(new Random(), builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
             Probe = () => Task.FromResult(false),
         };
         // Identity's store over the accounts tables, keyed by the store, given a context from the
@@ -157,7 +157,7 @@ public static class StoreRegistration
             return new StoreAttachment(
                 state,
                 new RelationalDiagnostics(contexts, yard.Describe(), () => loggers.Factory?.CreateLogger<RelationalDiagnostics>()),
-                Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "sql", servesBothSites)),
+                Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, StoreKeys.Relational, servesBothSites)),
                 new BidService(new EfBidStore(contexts)),
                 new EfActivityStore(quietContexts),
                 () => YardDatabase.HasSeedAsync(contexts));
@@ -197,14 +197,14 @@ public static class StoreRegistration
             // second store on Cosmos DB, and what it costs).
             var cosmosBackend = new Backend
             {
-                Key = "cosmos",
+                Key = StoreKeys.Document,
                 Name = "Azure Cosmos DB",
                 Database = cosmosState,
                 Startup = cosmosStartup,
                 Diagnostics = new DocumentDiagnostics(cosmos),
                 Inventory = new InventoryService(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
                 Bids = new BidService(new MemoryBidStore()),
-                Market = new MarketService(builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
+                Market = new MarketService(new Random(), builder.Configuration.GetValue("Market:GraceSeconds", MarketService.DefaultGraceSeconds)),
                 Probe = () => Task.FromResult(false),
             };
             // One document per account and one per address, and none of Identity's seven tables
@@ -214,7 +214,7 @@ public static class StoreRegistration
                 state,
                 new DocumentDiagnostics(store),
                 // The same three ports, answered out of the document store.
-                Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, "cosmos", servesBothSites)),
+                Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, StoreKeys.Document, servesBothSites)),
                 new BidService(new CosmosBidStore(store)),
                 new CosmosActivityStore(store),
                 store.ProbeAsync);

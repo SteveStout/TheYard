@@ -133,7 +133,7 @@ paid subscription, and those two are one piece of work.
 
 The window, read from this build:
 
-```live path=api/TheYard.Api/RegistrationLimit.cs region=registration-limit
+```live path=api/TheYard.Api/Features/Accounts/RegistrationLimit.cs region=registration-limit
 ```
 
 ## Where it sits
@@ -146,7 +146,7 @@ Until 1.0.3.187 the stamp check passed a token whose store was not the request's
 
 ## Files
 
-- [`api/TheYard.Api/RegistrationLimit.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/RegistrationLimit.cs): the window, and why it slides.
+- [`api/TheYard.Api/Features/Accounts/RegistrationLimit.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/RegistrationLimit.cs): the window, and why it slides.
 - [`api/TheYard.Api/Features/Accounts/AccountEndpoints.SignIn.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.SignIn.cs): where it is taken, between reading the request and hashing the password.
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): where it is registered with its hourly allowance.
 - [`api/TheYard.Tests/RegistrationLimitTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RegistrationLimitTests.cs): the window, the refusal, and the site that keeps working behind it.
@@ -180,6 +180,6 @@ From 1.0.3.169 both routes need a signed-in session, like the proof's start, and
 
 What a stranger can cause is the list above again: reads, the browser's error ring, and an account.
 
-```live path=api/TheYard.Api/RefuseSession.cs region=session-stamp
+```live path=api/TheYard.Api/Features/Accounts/RefuseSession.cs region=session-stamp
 ```
 

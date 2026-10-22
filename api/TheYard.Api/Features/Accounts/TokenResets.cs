@@ -2,7 +2,7 @@
 // fingerprint of the password they replace.
 using TheYard.Application.Features.Accounts;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Accounts;
 
 /// <summary>The signed reset tokens a reset link carries (Tokens.cs), as the Accounts slice's port asks for them.</summary>
 /// <param name="issuer">The session issuer.</param>

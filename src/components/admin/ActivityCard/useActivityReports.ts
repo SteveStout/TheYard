@@ -4,7 +4,7 @@
  * serves them. It is its own file so the card reads as layout and this file as fetching.
  */
 import { useEffect, useState } from 'react';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 import type { ActivityReport, ActivityVisitors, ActivityWindow } from '../../../lib/activity';
 import type { Fetched } from '../shared/types';
 
@@ -36,7 +36,7 @@ export function useActivityReports(
 
   useEffect(() => {
     let live = true;
-    void counted(() => fetch(`/api/admin/activity?window=${window_}`))
+    void request(`/api/admin/activity?window=${window_}`)
       .then((r) =>
         r.ok ? (r.json() as Promise<ActivityReport>) : Promise.reject(new Error(String(r.status)))
       )
@@ -51,7 +51,7 @@ export function useActivityReports(
       });
     if (adminKey !== null && rowsServed === true) {
       const headers = { 'X-Admin-Key': adminKey };
-      void counted(() => fetch(`/api/admin/activity/visitors?window=${window_}`, { headers }))
+      void request(`/api/admin/activity/visitors?window=${window_}`, { headers })
         .then((r) =>
           r.ok
             ? (r.json() as Promise<ActivityVisitors>)

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api;
+using TheYard.Api.Features.Admin.Operations;
 using TheYard.Application;
 
 namespace TheYard.Tests;
@@ -642,7 +643,11 @@ public class ActivityEndpointTests : IClassFixture<ActivityEndpointTests.KeyedHo
         var days = root.GetProperty("days").EnumerateArray().ToList();
         Assert.Equal(2, days.Count);
         var today = days[^1];
-        Assert.Equal(DateTime.UtcNow.ToString("yyyy-MM-dd"), today.GetProperty("day").GetString());
+        // The two days are the answer's own, read from it, never from this machine's clock: a run
+        // that crosses UTC midnight between the request and this line still reads one answer.
+        Assert.Equal(
+            DateOnly.Parse(days[0].GetProperty("day").GetString()!, System.Globalization.CultureInfo.InvariantCulture).AddDays(1),
+            DateOnly.Parse(today.GetProperty("day").GetString()!, System.Globalization.CultureInfo.InvariantCulture));
         Assert.True(today.GetProperty("visitors").GetInt32() >= 1);
         Assert.Equal(stores.Count, today.GetProperty("by_store").GetArrayLength());
         Assert.Equal(today.GetProperty("visitors").GetInt32(), today.GetProperty("humans").GetInt32() + today.GetProperty("bots").GetInt32());

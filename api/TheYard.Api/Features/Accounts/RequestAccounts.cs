@@ -5,7 +5,7 @@
 using Microsoft.AspNetCore.Identity;
 using TheYard.Infrastructure;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Accounts;
 
 /// <summary>
 /// The request's accounts. Opened on first use and not before, so a request that never touches

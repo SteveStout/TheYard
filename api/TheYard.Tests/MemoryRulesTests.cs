@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TheYard.Api;
+using TheYard.Api.Features.Accounts;
 using TheYard.Application;
 
 namespace TheYard.Tests;
@@ -76,17 +77,17 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.ErrorRingBuffer._entries"] = "a ring of RingSizes.ErrorRing",
         ["TheYard.Api.MachineSampler._samples"] = "a ring of an hour of samples",
         ["TheYard.Api.StartupTimings._steps"] = "the startup's named steps, a handful",
-        ["TheYard.Api.RegistrationLimit._taken"] = "the registrations inside the allowance's window, at most the allowance",
-        ["TheYard.Api.ForgotLimit._last"] = "at most ForgotLimit.MaxAddresses, the stale ones forgotten first",
+        ["TheYard.Api.Features.Accounts.RegistrationLimit._taken"] = "the registrations inside the allowance's window, at most the allowance",
+        ["TheYard.Api.Features.Accounts.ForgotLimit._last"] = "at most ForgotLimit.MaxAddresses, the stale ones forgotten first",
         ["TheYard.Api.SelfTestCooldown._last"] = "the accounts that ran the self-test in the last minute",
         ["TheYard.Api.ProofRunner._accounts"] = "the proof's own accounts, one per store, two",
         ["TheYard.Api.ActivityReportCache._entries"] = "one per named window, three",
         ["TheYard.Api.ActivityReportCache._building"] = "one per named window, three",
         ["TheYard.Api.CloudRecorder._hourRead"] = "one per resource card, seven",
         ["TheYard.Api.CloudRecorder._liveHour"] = "one hour per resource card, seven, each replaced by the next",
-        ["TheYard.Api.CloudReader._cached"] = "one per card and window, seven cards by four windows",
-        ["TheYard.Api.CloudReader._asked"] = "one per card, the cards in the catalogue",
-        ["TheYard.Api.CloudReader._month"] = "one per card, seven",
+        ["TheYard.Api.Features.Admin.Cloud.CloudReader._cached"] = "one per card and window, seven cards by four windows",
+        ["TheYard.Api.Features.Admin.Cloud.CloudReader._asked"] = "one per card, the cards in the catalogue",
+        ["TheYard.Api.Features.Admin.Cloud.CloudReader._month"] = "one per card, seven",
         ["TheYard.Api.PlanHistoryReader._cached"] = "one per window, four",
         ["TheYard.Api.ActivityCollector._stores"] = "one per store, two",
         ["TheYard.Api.AdminKey._key"] = "the operator key's bytes, fixed at startup",
@@ -102,7 +103,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.MemoryBidStore._standings"] = "the same store's standings, one per vehicle bid on",
         ["TheYard.Application.MemoryResetLinks._kept"] = "reset links, each expiring in an hour and swept on every mint",
         ["TheYard.Application.Features.Links.MemoryLinkOpens._days"] = "one per tagged code per day it was opened; the operator sends a few dozen codes a week, and the site keeps none of this without a document store",
-        ["TheYard.Api.ConfiguredLinkTargets._targets"] = "the pass-through addresses configuration names, two, read once at startup",
+        ["TheYard.Api.Features.Links.ConfiguredLinkTargets._targets"] = "the pass-through addresses configuration names, two, read once at startup",
         ["TheYard.Infrastructure.Cosmos.CosmosVehicleCatalogue._makeBySeedId"] = "the seed's two hundred ids and their makes",
         ["TheYard.Infrastructure.Cosmos.CosmosStore._physicalPartitions"] = "one per container, read at startup",
         ["TheYard.Infrastructure.Cosmos.CosmosVehicleCatalogue._keysets"] = "one per order, seven, each the key of every 250th row: 400 places",

@@ -93,7 +93,7 @@ with its peer, so the second container and its card keep working unchanged.
 The request ring records which store served each request, which is what lets
 one ring be split two ways.
 
-```live path=api/TheYard.Api/MetricsReport.cs region=backends-metrics
+```live path=api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs region=backends-metrics
 ```
 
 **The health check names every store.** One check per store, the default's
@@ -364,7 +364,7 @@ Most of this lives in the Api host, where `Backend.cs` holds one store's catalog
 - [`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs): two stores brought up.
 - [`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs) and [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the endpoints on the request's store.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health check per store.
-- [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the metrics per store.
+- [`api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs): the metrics per store.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the toggle's endpoints (region stores-endpoints).
 - [`api/TheYard.Tests/StoreToggleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreToggleTests.cs): the rule, the endpoints, the ring.
 - [`src/lib/stores.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/stores.ts) and [`src/components/layout/StoreBar/StoreBar.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/StoreBar/StoreBar.tsx): the toggle.
@@ -373,7 +373,7 @@ Most of this lives in the Api host, where `Backend.cs` holds one store's catalog
 
 ## Addendum, 2026-10-03: endpoints ask the auction
 
-An endpoint still takes `CurrentBackend`, as this record decided, and now reads the store through `CurrentBackend.Auction`, the Application type that composes the catalogue, the bids and the room for that store. The timing card's shape moved from the endpoint into `MetricsReport` (`api/TheYard.Api/MetricsReport.cs`), and the live block above follows it. The context factory moved to the relational adapter.
+An endpoint still takes `CurrentBackend`, as this record decided, and now reads the store through `CurrentBackend.Auction`, the Application type that composes the catalogue, the bids and the room for that store. The timing card's shape moved from the endpoint into `MetricsReport` (`api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs`), and the live block above follows it. The context factory moved to the relational adapter.
 
 ## Addendum, 2026-10-18: sold holds across the two
 

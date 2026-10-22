@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using TheYard.Api;
+using TheYard.Api.Features.Docs;
 
 namespace TheYard.Tests;
 

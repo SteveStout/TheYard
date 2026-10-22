@@ -7,7 +7,7 @@ import type { ActivityReport } from '../../../lib/activity';
 import { visitorsOn } from '../../../lib/statTiles';
 import type { ErrorEntry, Fetched, Health, PageStatus } from '../shared/types';
 import { REFRESH_MS } from '../shared/common';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 
 /** The page check's two numbers: how many pages were checked and how many answered. */
 export type PagesSeen = { checked: number; up: number };
@@ -71,7 +71,7 @@ export function useAdminReads(): AdminReads {
     // A network error or non-200 answer becomes 'failed', not endless loading.
     // The strip's reads tick every thirty seconds: background, never the working lock.
     const grab = <T>(url: string, set: (v: Fetched<T>) => void) =>
-      counted(() => fetch(url), { background: true })
+      request(url, undefined, { background: true })
         .then((r) =>
           r.ok ? (r.json() as Promise<T>) : Promise.reject(new Error(String(r.status)))
         )
@@ -102,7 +102,7 @@ export function useAdminReads(): AdminReads {
   // back through onActivity.
   useEffect(() => {
     let live = true;
-    void fetch('/api/admin/activity?window=7d')
+    void request('/api/admin/activity?window=7d', undefined, { background: true })
       .then((r) =>
         r.ok ? (r.json() as Promise<ActivityReport>) : Promise.reject(new Error(String(r.status)))
       )

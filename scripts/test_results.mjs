@@ -88,7 +88,16 @@ function playwright(report) {
     const here = suite.file ?? file;
     for (const spec of suite.specs ?? []) {
       for (const test of spec.tests ?? []) {
-        const outcome = test.status === 'skipped' ? 's' : test.status === 'unexpected' ? 'f' : 'p';
+        // A test that failed and then passed on Playwright's one retry is 'r', never a pass: the record
+        // shows the retry, and a file holding one is refused (TestResultsTests).
+        const outcome =
+          test.status === 'skipped'
+            ? 's'
+            : test.status === 'unexpected'
+              ? 'f'
+              : test.status === 'flaky'
+                ? 'r'
+                : 'p';
         const ms = (test.results ?? []).reduce((sum, result) => sum + (result.duration ?? 0), 0);
         tests.push([base(here), [...titles, spec.title].join(' > '), outcome, ms]);
       }

@@ -18,7 +18,7 @@ import {
   type KeptMeta,
   metaOf,
 } from '../../../lib/keptCards';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 import styles from './card.module.css';
 import type { Machines, SqlParameterShape, Fetched } from './types';
 
@@ -41,7 +41,7 @@ export function useRead<T>(url: string | null, tick: number): Fetched<T> {
     const background = asked.current === url;
     asked.current = url;
     // A failed or non-200 answer marks the card failed instead of leaving it loading forever.
-    void counted(() => fetch(url), { background })
+    void request(url, undefined, { background })
       .then((r) => (r.ok ? (r.json() as Promise<T>) : Promise.reject(new Error(String(r.status)))))
       .then((v) => {
         if (live) setValue(v);
@@ -70,7 +70,7 @@ export function useKeptWindow<T>(card: KeptCard, tick: number) {
   useEffect(() => {
     if (window_ === 'now') return;
     let live = true;
-    void counted(() => fetch(cardUrl(card, window_, '')))
+    void request(cardUrl(card, window_, ''))
       .then((r) =>
         r.ok ? (r.json() as Promise<KeptAnswer<T>>) : Promise.reject(new Error(String(r.status)))
       )

@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.RegularExpressions;
 using TheYard.Api;
 
@@ -88,48 +87,31 @@ public class PublicFaceTests
     // #endregion counts
 
     /// <summary>
-    /// The README states how many xUnit tests there are, and until now that was
-    /// a number somebody typed. It said 236 while there were 312, which is the
-    /// same failure the record count had and was found the same way: by reading
-    /// the document rather than by any check.
-    ///
-    /// <para>It is countable, so it is counted. Every test method here is a
-    /// Fact or a Theory whose rows are InlineData, and nothing uses MemberData
-    /// or ClassData, so the runner's total is the number of Facts plus the
-    /// number of InlineData rows. If that stops being true this test will drift
-    /// from the runner and say so by failing.</para>
+    /// The README states how many xUnit tests there are, and every place it says so is one number:
+    /// the xunit-sqlite suite of the gate's own results file for the version it names (as
+    /// ReadmeResultsTests holds the rest of the figures). It used to be the Facts and InlineData rows
+    /// counted here, which missed every MemberData row and said 1209 eight lines above a run of 1291
+    /// (ADR: The rules a change has to pass). The ship writes it after the gate, from the file it
+    /// folds into the same commit.
     /// </summary>
     [Fact]
-    public void The_test_count_in_the_readme_is_the_test_count()
+    public void The_test_count_in_the_readme_is_the_gate_s_count()
     {
-        int counted = typeof(PublicFaceTests).Assembly
-            .GetTypes()
-            .SelectMany(type => type.GetMethods(
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
-            .Sum(method =>
-            {
-                int rows = method.GetCustomAttributes<InlineDataAttribute>().Count();
-                if (rows > 0)
-                {
-                    return rows;
-                }
+        string results = Repo.DataFile("test-results.json");
+        if (!File.Exists(results))
+        {
+            return;
+        }
+        using var file = System.Text.Json.JsonDocument.Parse(File.ReadAllText(results));
+        var sqlite = file.RootElement.GetProperty("suites").EnumerateArray().Single(suite => suite.GetProperty("id").GetString() == "xunit-sqlite");
+        int ran = sqlite.GetProperty("passed").GetInt32() + sqlite.GetProperty("failed").GetInt32();
 
-                return method.GetCustomAttribute<FactAttribute>() is null ? 0 : 1;
-            });
-
-        // The README states it in its testing section, and the Built with AI
-        // page states it again on the way to saying what governed the build.
-        // Two copies of a number are two places it can go stale, so both are
-        // held here rather than one being trusted to follow the other.
         foreach (string document in new[] { "README.md", Path.Combine("docs", "built-with-ai", "BUILT-WITH-AI.md") })
         {
             string text = File.ReadAllText(Path.Combine(Repo.Root(), document));
-            var claim = Regex.Match(text, @"(\d+) xUnit tests");
-
-            Assert.True(claim.Success, $"{document} should say how many xUnit tests there are");
-            Assert.True(
-                int.Parse(claim.Groups[1].Value) == counted,
-                $"{document} says {claim.Groups[1].Value} xUnit tests and there are {counted}");
+            var claims = Regex.Matches(text, @"(\d+) xUnit tests|\| API \| xUnit \| (\d+)").Select(match => match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value).ToList();
+            Assert.True(claims.Count > 0, $"{document} should say how many xUnit tests there are");
+            Assert.All(claims, claim => Assert.True(int.Parse(claim, System.Globalization.CultureInfo.InvariantCulture) == ran, $"{document} says {claim} xUnit tests and the gate's results file ran {ran}"));
         }
     }
 

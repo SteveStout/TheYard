@@ -347,7 +347,7 @@ The Style section was one page, Colour and style. It is four now, in the sidebar
 
 **Every number on the pages is counted by the build.** A page writes a live placeholder, two braces around `live:` and the name of a measure, and the API replaces it at request time (`LiveCounts.cs`): the design tokens, the facts in a test class, the lines in a file, the files that carry the three-line header, the entries in the ribbons' arrays. The count is made on the server because the browser cannot read a C# file or list a folder. The design token count is the number of distinct names across the four files, since a name declared again inside a media query is still one design token; the mock's 221 counted declarations.
 
-```live path=api/TheYard.Api/LiveCounts.cs region=live-counts
+```live path=api/TheYard.Api/Features/Docs/LiveCounts.cs region=live-counts
 ```
 
 The tiles, the readouts, the glossary and the ribbon strip are fences, the way the swatches are (`src/library/styleBlocks.ts`), and `src/library/useLiveBlocks.tsx` mounts the ribbons and the tile icons into them after the document is drawn. Every second-level heading now carries an id from its words, so the glossary's "See" links land on the section a term is used in.

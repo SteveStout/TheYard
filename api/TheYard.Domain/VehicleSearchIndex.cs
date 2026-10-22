@@ -46,7 +46,7 @@ public sealed class VehicleSearchIndex
     /// token, "4x" or "ex", is looked for anywhere in the text.
     /// The stores answer a word from a table of words, one row per word of the text, which an
     /// index can seek; a token shorter than this is a scan on either store (ADR: The store does
-    /// the work, the addendum of 19 October).
+    /// the work, the addendum on a typed word as a seek).
     /// </summary>
     public const int WordLength = 3;
 

@@ -1,6 +1,6 @@
 using TheYard.Application.Features.Links;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Links;
 
 // #region configured-link-targets
 /// <summary>

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Testing;
-using TheYard.Api;
+using TheYard.Api.Features.Docs;
 
 namespace TheYard.Tests;
 
@@ -164,7 +164,7 @@ public class LiveSamplesTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotContain("```live", live);
         Assert.Contains("```csharp\n", live);
         Assert.Contains("public static string Expand(", live);
-        Assert.Contains("*Live from [`api/TheYard.Api/LiveSamples.cs`]", live);
+        Assert.Contains("*Live from [`api/TheYard.Api/Features/Docs/LiveSamples.cs`]", live);
     }
 
     // #region the language a name implies

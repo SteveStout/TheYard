@@ -177,7 +177,7 @@ Three rings share this one: Application owns the `IStoreLog` port and the `Store
 - [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): the wrapper every operation goes through.
 - [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the ring and the window's numbers.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the endpoint (region store-endpoint).
-- [`api/TheYard.Api/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/MetricsReport.cs): the request charge in the metrics.
+- [`api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs): the request charge in the metrics.
 - [`src/components/admin/StoreCard/StoreCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/StoreCard/StoreCard.tsx): the card.
 - [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs): the canary, on both stores.
 - [`docs/decisions/ADR-043-what-the-database-is-doing.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-043-what-the-database-is-doing.md): the SQL card this one is the sibling of.

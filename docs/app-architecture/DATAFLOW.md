@@ -58,7 +58,7 @@ What that is worth: a developer can trace any request to the file that handles i
    and fills the store's catalogue with them, which a page is then a query against: the
    process holds none of the hundred thousand in memory (ADR: The store does the work).
 4. **Query.** A request like `GET /api/vehicles?make=Ford&status=live&sort=price-asc`
-   binds through `api/TheYard.Api/VehicleQueryParams.cs`, which validates and produces
+   binds through `api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs`, which validates and produces
    a filter, a sort, and a clock (`api/TheYard.Api/Clocks.cs`): now, and the UTC
    midnight that began the day, the same for every caller, so schedule math
    (`api/TheYard.Domain/AuctionSchedule.cs`, `AuctionClock.cs`) puts every visitor in

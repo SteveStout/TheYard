@@ -1,6 +1,8 @@
 // How long requests take, for the Admin tab: one request's timing, the ring of recent ones, and the
 // percentiles worked out from it on read. Its own file because timing requests is a separate job
 // from keeping SQL statements or log lines, and the store ring reads these percentiles too.
+using TheYard.Application;
+
 namespace TheYard.Api;
 
 // #region admin-observability
@@ -11,7 +13,7 @@ namespace TheYard.Api;
 /// <param name="Status">The HTTP status code the request answered with.</param>
 /// <param name="DurationMs">How long the request took, in milliseconds.</param>
 /// <param name="Store">The key of the store that served the request; sql unless set.</param>
-public sealed record RequestEntry(DateTimeOffset At, string Method, string Path, int Status, long DurationMs, string Store = "sql");
+public sealed record RequestEntry(DateTimeOffset At, string Method, string Path, int Status, long DurationMs, string Store = StoreKeys.Relational);
 
 /// <summary>Fixed-size, thread-safe ring of recent requests and their timings.</summary>
 public sealed class RequestRingBuffer(int capacity)

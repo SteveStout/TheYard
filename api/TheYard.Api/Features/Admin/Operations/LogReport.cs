@@ -3,7 +3,7 @@
 // what an operator sees, and none of that runs on the request path the collector protects.
 using TheYard.Application;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Operations;
 
 // #region report
 /// <summary>The keyed endpoint's answer: whether the store keeps anything, what the window holds by kind, the events, and what reading and writing them has cost.</summary>

@@ -27,7 +27,7 @@ internal static class TestAuctions
 
     /// <summary>An auction over these vehicles and nothing else.</summary>
     internal static Auction Over(params Vehicle[] vehicles) =>
-        new(new InventoryService(new FakeVehicles(vehicles), new FakePhotos()), new BidService(), new MarketService());
+        new(new InventoryService(new FakeVehicles(vehicles), new FakePhotos()), new BidService(new MemoryBidStore()), new MarketService(new Random(7)));
 
     private sealed class FakeVehicles(Vehicle[] vehicles) : IVehicleSource
     {

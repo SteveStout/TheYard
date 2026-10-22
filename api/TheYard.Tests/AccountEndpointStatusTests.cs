@@ -32,12 +32,12 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
         var client = host.CreateClient();
         string email = Address();
 
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/register", new { email, password = "short" })).StatusCode);
+        await Problem.Is(await client.PostAsJsonAsync("/api/auth/register", new { email, password = "short" }), HttpStatusCode.BadRequest);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/register", new { email, password = "correct horse" })).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/auth/me")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/api/auth/logout", content: null)).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/auth/login", new { email, password = "not the password" })).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/api/auth/login", NotJson())).StatusCode);
+        await Problem.Is(await client.PostAsJsonAsync("/api/auth/login", new { email, password = "not the password" }), HttpStatusCode.Unauthorized);
+        await Problem.Is(await client.PostAsync("/api/auth/login", NotJson()), HttpStatusCode.BadRequest);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/login", new { email, password = "correct horse" })).StatusCode);
     }
 
@@ -54,16 +54,16 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
         string email = Address();
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/register", new { email, password = "correct horse" })).StatusCode);
 
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/forgot", new { email = "" })).StatusCode);
+        await Problem.Is(await client.PostAsJsonAsync("/api/auth/forgot", new { email = "" }), HttpStatusCode.BadRequest);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/forgot", new { email })).StatusCode);
 
         // The operator's link: 404 without the key (the route is not there for anyone else) and
         // for an address with no account; 200 with the key for an address that has one.
         using var unkeyed = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email }) };
-        Assert.Equal(HttpStatusCode.NotFound, (await client.SendAsync(unkeyed)).StatusCode);
+        await Problem.Is(await client.SendAsync(unkeyed), HttpStatusCode.NotFound);
         using var nobody = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email = Address() }) };
         nobody.Headers.Add("X-Admin-Key", PasswordResetTests.KeyedHost.Key);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.SendAsync(nobody)).StatusCode);
+        await Problem.Is(await client.SendAsync(nobody), HttpStatusCode.NotFound);
         using var mint = new HttpRequestMessage(HttpMethod.Post, "/api/admin/reset-links") { Content = JsonContent.Create(new { email }) };
         mint.Headers.Add("X-Admin-Key", PasswordResetTests.KeyedHost.Key);
         using var minted = await client.SendAsync(mint);
@@ -71,7 +71,7 @@ public sealed class AccountEndpointStatusTests(PasswordResetTests.KeyedHost host
         using var link = JsonDocument.Parse(await minted.Content.ReadAsStringAsync());
         string id = new Uri(link.RootElement.GetProperty("url").GetString()!).Query.Split("reset=")[1];
 
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/auth/reset", new { token = "not-a-link", password = "another horse" })).StatusCode);
+        await Problem.Is(await client.PostAsJsonAsync("/api/auth/reset", new { token = "not-a-link", password = "another horse" }), HttpStatusCode.BadRequest);
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/auth/reset", new { token = id, password = "another horse" })).StatusCode);
     }
 

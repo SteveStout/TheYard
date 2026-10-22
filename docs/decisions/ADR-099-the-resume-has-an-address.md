@@ -37,7 +37,7 @@ A Door column on the activity row is just as correct and costs a day across both
 
 The door is only worth recording if somebody reads it. The activity report now carries `doors`, one entry per door and one for the site itself (the resume opened from the page's own links, with no door), each with the visitor-days and the requests that opened it, people only so a scanner walking the links does not count as interest. The Site activity card draws them as bars beside the path to the resume, which answers the question the address was made for: which of Steve's channels recruiters actually open the resume from.
 
-```live path=api/TheYard.Api/ActivityWho.cs region=doors
+```live path=api/TheYard.Api/Features/Admin/Operations/ActivityWho.cs region=doors
 ```
 
 ## Where it sits
@@ -49,7 +49,7 @@ The API layer only: one route in `Endpoints/`, one small static class beside it,
 - [`api/TheYard.Api/ResumeDoor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ResumeDoor.cs): the doors, the path a door is recorded as, and the filename.
 - [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): the route and its handler.
 - [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the activity hook reads the door's path when the handler left one.
-- [`api/TheYard.Api/ActivityWho.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ActivityWho.cs): the resume step counts everything under `/resume/`.
+- [`api/TheYard.Api/Features/Admin/Operations/ActivityWho.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/ActivityWho.cs): the resume step counts everything under `/resume/`.
 - [`api/TheYard.Tests/ResumeAddressTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ResumeAddressTests.cs) and [`tests/e2e/resume.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/resume.spec.ts): the address, the bytes, the doors and the query that never lands.
 
 ## Addendum, 2026-10-16 (1.0.3.142): in the API document

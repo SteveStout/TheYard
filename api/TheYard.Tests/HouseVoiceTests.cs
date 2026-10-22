@@ -172,9 +172,14 @@ public class HouseVoiceTests
             ("costWords.ts", "\"30 September\""),
             ("Recommendations.cs", "September|October|November|December"),
             ("docLayout.ts", "shipped as 1.0.0.21."),
+            ("dayMarks.ts", "\"Mon 5 Oct, Fri 9,"),
+            ("dayMarks.ts", "Mon 12, Fri 16\""),
         ];
         var history = new Regex(@"1\.0\.\d+\.\d+|September|2026-09|the staff review|the tweaks pass|the self-review");
         var found = new List<string>();
+        // The same rule over what a comment says, widened: every month, every written date, a review by
+        // name and a person's first name. A format example in backticks or quotes is not history.
+        var dated = HistoryInAComment;
 
         foreach (string path in Repo.FilesWith(".cs", ".ts", ".tsx", ".css"))
         {
@@ -191,7 +196,7 @@ public class HouseVoiceTests
             {
                 bool example = formatExamples.Any(allowed =>
                     Path.GetFileName(path) == allowed.File && lines[i].Contains(allowed.Fragment, StringComparison.Ordinal));
-                if (!example && history.IsMatch(lines[i]))
+                if (!example && (history.IsMatch(lines[i]) || dated.IsMatch(Unquoted(CommentOf(lines[i])))))
                 {
                     found.Add($"{relative}:{i + 1}: {lines[i].Trim()}");
                 }
@@ -202,6 +207,47 @@ public class HouseVoiceTests
             found.Count == 0,
             $"{found.Count} production lines lean on a version, a date or a review:{Environment.NewLine}"
             + string.Join(Environment.NewLine, found.Take(20)));
+    }
+    /// <summary>History in a comment: a month (May only beside a day), a written date, a review by its name, the owner's first name.</summary>
+    private static readonly Regex HistoryInAComment = new(
+        @"\b(January|February|March|April|June|July|August|September|October|November|December)\b|\bMay \d|\d May\b"
+        + @"|\b20\d\d-\d\d(-\d\d)?\b|\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b|the review of|\bSteve\b");
+
+    /// <summary>The part of a line that is a comment: the whole line when it opens with one, else what follows a trailing one.</summary>
+    private static string CommentOf(string line)
+    {
+        string trimmed = line.TrimStart();
+        if (trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith('*') || trimmed.StartsWith("/*", StringComparison.Ordinal) || trimmed.StartsWith("{/*", StringComparison.Ordinal))
+        {
+            return line;
+        }
+        int trailing = line.IndexOf(" // ", StringComparison.Ordinal);
+        return trailing >= 0 ? line[trailing..] : "";
+    }
+
+    /// <summary>A comment with its quoted and backticked examples taken out.</summary>
+    private static string Unquoted(string comment) => Regex.Replace(comment, "`[^`]*`|\"[^\"]*\"", "");
+
+    [Theory]
+    [InlineData("    // the addendum of 19 October")]
+    [InlineData("    /// read live on 18 October 2026")]
+    [InlineData("    // shipped on 2026-10-21")]
+    [InlineData("    // Steve asked for it")]
+    [InlineData("    * the review of 1.0.4.11 found it")]
+    [InlineData("    // in December, the cap")]
+    public void The_widened_rule_catches_history_in_a_comment(string line)
+    {
+        Assert.Matches(HistoryInAComment, Unquoted(CommentOf(line)));
+    }
+
+    [Theory]
+    [InlineData("    /** May be empty for vehicles with no reported damage. */")]
+    [InlineData("    /** A day as a person reads it: \"30 September\". */")]
+    [InlineData("    // a UTC day, `2026-09-13`, read as that day")]
+    [InlineData("    const label = 'October';")]
+    public void The_widened_rule_leaves_a_format_example_and_code_alone(string line)
+    {
+        Assert.DoesNotMatch(HistoryInAComment, Unquoted(CommentOf(line)));
     }
     // #endregion the rule
 }

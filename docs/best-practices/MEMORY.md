@@ -65,7 +65,7 @@ Why: an object of 85,000 bytes or more goes on the large object heap, which is c
 
 Here: reading a picture's size used to load the whole file, up to 941 KB, on every page that asked. It reads the header now: 24 bytes for a PNG, a seek to the frame marker for a JPEG, the first 32,768 characters of an SVG.
 
-```live path=api/TheYard.Api/DocImages.cs region=header-only
+```live path=api/TheYard.Api/Features/Docs/DocImages.cs region=header-only
 ```
 
 ### e. Workstation GC, concurrent, and a heap limit

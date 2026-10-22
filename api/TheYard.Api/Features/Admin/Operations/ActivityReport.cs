@@ -4,7 +4,7 @@
 // was is decided in ActivityWho.cs, and Activity.cs lists the other parts.
 using TheYard.Application;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Admin.Operations;
 
 // #region report
 /// <summary>

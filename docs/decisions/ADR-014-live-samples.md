@@ -62,16 +62,16 @@ that file, read from inside the running image.
 ## In the code
 
 The whitelist, read from this build
-([`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs)):
+([`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs)):
 
-```live path=api/TheYard.Api/LiveSamples.cs region=whitelist
+```live path=api/TheYard.Api/Features/Docs/LiveSamples.cs region=whitelist
 ```
 
 The expander, showing itself. This is the most self-referential sample in
 the building, and it is shown here with a straight face because it is the
 only sample that cannot possibly be stale:
 
-```live path=api/TheYard.Api/LiveSamples.cs region=expander
+```live path=api/TheYard.Api/Features/Docs/LiveSamples.cs region=expander
 ```
 
 The one endpoint every document goes through, since ADR: The staff review
@@ -126,7 +126,7 @@ Live samples are a host concern and sit in the Api: LiveSamples.cs holds the whi
 
 ## Files
 
-- [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the whitelist and the expander.
+- [`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs): the whitelist and the expander.
 - [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs) and
   [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the one endpoint and the slugs
   it serves through the expander.
@@ -167,7 +167,7 @@ files now, beside the six roots. The test itself is not shown here on
 purpose: its source spells out a live fence, and a record that showed it
 would fail the check that no fence is left in a served document.
 
-```live path=api/TheYard.Api/LiveSamples.cs region=whole-file
+```live path=api/TheYard.Api/Features/Docs/LiveSamples.cs region=whole-file
 ```
 
 ## The look, from the live site

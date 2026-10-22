@@ -74,7 +74,7 @@ public static class ObservabilityRegistration
         sqlLog.Kept = statement => keptRings.Keep(KeptRings.Sql, statement.At, statement);
         storeLog.Kept = operation => keptRings.Keep(KeptRings.Store, operation.At, operation);
         logLog.Kept = line => keptRings.Keep(KeptRings.Log, line.At, line);
-        builder.Services.AddSingleton(new KeptRingReader(logCollector, backends.Default.Key, backends.Named("cosmos")?.Name ?? backends.Default.Name));
+        builder.Services.AddSingleton(new KeptRingReader(logCollector, backends.Default.Key, backends.Named(StoreKeys.Document)?.Name ?? backends.Default.Name));
         // #endregion kept-rings-wiring
         builder.Logging.AddProvider(new CollectorLoggerProvider(logCollector, () =>
         {

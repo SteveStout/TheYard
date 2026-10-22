@@ -140,11 +140,10 @@ public static class DocumentationEndpoints
                 "text/html; charset=utf-8")
             : TypedResults.Problem(detail: "No diagram has that name.", statusCode: 404, title: "No such diagram");
 
-    private static ContentHttpResult About(HttpContext http, IConfiguration configuration, SiteHosts hosts, HostPaths paths)
+    private static ContentHttpResult About(HttpContext http, SiteHosts hosts, HostPaths paths)
     {
         // The Yard name the request arrived on, then Site:Url, then the request's own address.
-        string? configured = hosts.SiteOrigin(http) ?? configuration["Site:Url"];
-        string site = string.IsNullOrWhiteSpace(configured) ? $"{http.Request.Scheme}://{http.Request.Host}" : configured;
+        string site = hosts.LinkOrigin(http);
         return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot)), "text/html; charset=utf-8");
     }
 

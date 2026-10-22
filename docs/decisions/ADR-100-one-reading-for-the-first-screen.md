@@ -38,7 +38,7 @@ The route is forty lines of handler and a reader of about a hundred, and it dupl
 
 ## Alternatives
 
-**Read the two Admin routes from the landing page.** Rejected: the two heaviest reads on the site, on the page most people open, several times a minute.
+**Read the two Admin routes from the landing page.** Rejected: the two heaviest reads on the site, on the landing page, which every visitor opens first, several times a minute.
 
 **Push the figures with a stream.** Rejected for the reason the auction room already polls rather than streaming: the edge in front of this site buffers streamed responses (ADR: The room bids back). A fifteen-second read is simpler and survives the edge.
 

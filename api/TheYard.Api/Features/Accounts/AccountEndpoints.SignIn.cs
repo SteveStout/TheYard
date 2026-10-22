@@ -19,7 +19,7 @@ public static partial class AccountEndpoints
         // accounts exist or how much of the allowance is left.
         return answer.Kind switch
         {
-            AccountAnswerKind.Unavailable => TheYard.Api.Accounts.Unavailable(),
+            AccountAnswerKind.Unavailable => Accounts.Unavailable(),
             AccountAnswerKind.Unreadable => TypedResults.Problem(
                 detail: "An email address and a password, please.",
                 statusCode: 400, title: "The registration could not be read"),
@@ -27,7 +27,7 @@ public static partial class AccountEndpoints
                 detail: "This demo is not taking new accounts at the moment. Try again in an hour.",
                 statusCode: 429, title: "Too many registrations"),
             AccountAnswerKind.Refused => TypedResults.Problem(
-                detail: TheYard.Api.Accounts.Explain(answer.Problem),
+                detail: Accounts.Explain(answer.Problem),
                 statusCode: 400, title: "The account was not created"),
             _ => SignedIn(answer.Account!, current, issuer, http),
         };
@@ -39,7 +39,7 @@ public static partial class AccountEndpoints
         var answer = await handler.HandleAsync(request.Email, request.Password, cancellation);
         return answer.Kind switch
         {
-            AccountAnswerKind.Unavailable => TheYard.Api.Accounts.Unavailable(),
+            AccountAnswerKind.Unavailable => Accounts.Unavailable(),
             // One sentence for every way this can fail: no such account, a wrong password, or a
             // locked account. A reply that told them apart would tell a stranger which email
             // addresses are registered here.
@@ -57,14 +57,14 @@ public static partial class AccountEndpoints
         // Deleted with the same attributes it was set with, or the browser keeps a
         // second cookie of the same name on a different path and stays signed in.
         http.Response.Cookies.Delete(TokenIssuer.CookieName, TokenIssuer.CookieFor(http, issuer.Lifetime));
-        return TypedResults.Ok(TheYard.Api.Accounts.Anonymous);
+        return TypedResults.Ok(Accounts.Anonymous);
     }
 
     /// <summary>The account the session belongs to on this store, or the anonymous account when there is none here.</summary>
     private static async Task<Ok<AccountView>> WhoAmI(WhoAmIHandler handler, HttpContext http, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(http.UserIdOrNull(), cancellation) is { } account
-            ? TheYard.Api.Accounts.Describe(account)
-            : TheYard.Api.Accounts.Anonymous);
+            ? Accounts.Describe(account)
+            : Accounts.Anonymous);
 
     /// <summary>Sets the session cookie for the account on this request's store and answers the account.</summary>
     private static Ok<AccountView> SignedIn(Account account, CurrentBackend current, TokenIssuer issuer, HttpContext http)
@@ -73,6 +73,6 @@ public static partial class AccountEndpoints
             TokenIssuer.CookieName,
             issuer.Issue(account.Id, account.Email, current.Key, account.SecurityStamp),
             TokenIssuer.CookieFor(http, issuer.Lifetime));
-        return TypedResults.Ok(TheYard.Api.Accounts.Describe(account));
+        return TypedResults.Ok(Accounts.Describe(account));
     }
 }

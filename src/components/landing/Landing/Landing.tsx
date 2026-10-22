@@ -22,6 +22,7 @@ import { PulseBand } from '../PulseBand';
 import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
 import { Recommendations } from '../../shared/Recommendations';
 import styles from './Landing.module.css';
+import { request } from '../../../lib/request';
 
 /**
  * The landing page: what the address opens with no query. A tile per
@@ -70,7 +71,7 @@ export function Landing({
   const [summary, setSummary] = useState<TestSummary | null>(null);
   useEffect(() => {
     let live = true;
-    fetch('/api/health')
+    request('/api/health', undefined, { background: true })
       .then((r) => (r.ok ? (r.json() as Promise<{ status?: unknown; checks?: unknown }>) : null))
       .catch(() => null)
       .then((answer) => {
@@ -78,7 +79,7 @@ export function Landing({
         setHealth(landingHealth(answer));
         setStores(storesUp(answer));
       });
-    fetch('/api/tests/summary')
+    request('/api/tests/summary', undefined, { background: true })
       .then((r) => (r.ok ? (r.json() as Promise<TestSummary>) : null))
       .catch(() => null)
       .then((answer) => {

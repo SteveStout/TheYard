@@ -82,12 +82,15 @@ public class CompositionRootTests
         // Module is the one instance class beside them, and a hosted service under Shared/Hosted/ and
         // a hosted site under Shared/Sites/ are running things with their dependencies in their
         // constructors. Records are the wire shapes and
-        // the settings a registration reads.
+        // the settings a registration reads. Under Features/ the rule is held for a file that maps or
+        // registers (it names the route builder or the service collection): a slice's own services,
+        // which rule 1 moves into its folder, are instances with their dependencies in their constructors.
         var declaration = new Regex(@"^\s*public\s+((?:\w+\s+)*)class\s+(\w+)", RegexOptions.Multiline);
         var open = Sources()
             .Select(Relative)
             .Where(path => (path.StartsWith("Shared/", StringComparison.Ordinal) && !path.StartsWith("Shared/Hosted/", StringComparison.Ordinal) && !path.StartsWith("Shared/Sites/", StringComparison.Ordinal))
-                || (path.StartsWith("Features/", StringComparison.Ordinal) && !path.EndsWith("/Module.cs", StringComparison.Ordinal)))
+                || (path.StartsWith("Features/", StringComparison.Ordinal) && !path.EndsWith("/Module.cs", StringComparison.Ordinal)
+                    && Regex.IsMatch(File.ReadAllText(Path.Combine(Api(), path)), @"\bIEndpointRouteBuilder\b|\bIServiceCollection\b|\.Map(Get|Post|Put|Delete|Patch|Group)\(")))
             .SelectMany(path => declaration.Matches(File.ReadAllText(Path.Combine(Api(), path)))
                 .Where(match => !match.Groups[1].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("static"))
                 .Select(match => $"{path}: {match.Groups[2].Value}"))

@@ -61,7 +61,7 @@ public sealed class CostRecorder(
     /// serves both sites sets no default store and waits the shorter time.
     /// </summary>
     public static TimeSpan FirstReadAfter(string? defaultStore) =>
-        string.Equals(defaultStore, "cosmos", StringComparison.OrdinalIgnoreCase)
+        string.Equals(defaultStore, StoreKeys.Document, StringComparison.OrdinalIgnoreCase)
             ? TimeSpan.FromSeconds(90)
             : TimeSpan.FromSeconds(30);
 

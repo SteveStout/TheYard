@@ -12,10 +12,11 @@ What that is worth: a developer can merge knowing a failing test stops the chang
 ## What runs today
 
 **Continuous integration.** Every test runs once per version, in the ship's
-gate on the machine that ships: the API suite on both stores, the frontend
-suite, and a browser suite that clicks through the running app the way a
-person would. A change that fails any of them is not committed, so it never
-reaches GitHub. Every result, test by test, ships with the version and is on
+gate: the ship pushes the version to a `gate/<version>` branch, `gate.yml` runs
+the API suite on both stores, the frontend suite, and a browser suite that
+clicks through the running app the way a person would, on a GitHub runner, and
+`main` moves only when all of it is green (ADR-098). A change that fails any of
+them never reaches `main`. Every result, test by test, ships with the version and is on
 the Admin tab. The same suites then run again on GitHub's runners for every
 push to main, where anybody can read the result without a login, and for a
 pull request from anybody else, which has had no gate.
@@ -150,9 +151,11 @@ URL, and every deploy so far has been gated on it.
 
 ## Files
 
-- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the three suites and the SQL project build as four jobs behind it, on every push to main and on a pull request.
+- [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `gate/<version>` branch the ship pushes; `main` moves only on its green.
+- [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the suites as three jobs behind it, on every push to main and on a pull request.
+- [`.github/workflows/edge-branch.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/edge-branch.yml): moves the edge's branch to main after Deploy, only when what the edge serves (edge/ or netlify.toml) changed.
+- [`.github/workflows/nightly.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/nightly.yml): the nightly job the Function dispatches (ADR: The Nightly Function on the Admin tab).
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Deploy workflow, step by step.
-- [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml): the second site's roll, from the same image, retired on 19 October with the web app it rolled (ADR: One web app for every .NET process).
 - [`.github/workflows/deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml): the rendering service's build and roll, on the same push.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the one web app Deploy rolls (the roll sets the image and four settings).
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the image Deploy builds.

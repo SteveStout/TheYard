@@ -84,3 +84,7 @@ From 1.0.3.188 the loop is wired by `Hosted/KeepWarmAtRoll.cs`, registered only 
 
 ```live path=api/TheYard.Api/KeepWarm.cs region=keep-warm
 ```
+
+## Addendum, 2026-10-21 (1.0.4.24): what stopped being true
+
+Two facts above stopped being true without a line here. The plan is Basic B2 since 8 October, not B1 (`infra/appservice.bicep`, ADR: A rendering service beside the API), and the two container groups the sites ran on before the plan, `aci-theyard-ss` and `aci-theyard-cosmos-ss`, were deleted on 19 October, when one web app came to serve both sites (ADR: One web app for every .NET process). Nothing in the resource group can go to sleep that this record does not now name.

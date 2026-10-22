@@ -5,7 +5,7 @@ using Azure.Core;
 using TheYard.Application;
 using TheYard.Application.Features.Accounts;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Accounts;
 
 // #region acs-sender
 /// <summary>

@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Docs;
 
 /// <summary>
 /// Live code samples for the served docs (ADR-014). A markdown doc may hold an

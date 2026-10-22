@@ -4,7 +4,7 @@
 // It is its own file because it is a read with its own timer, apart from how the tab is drawn.
 import { type ReactNode, useEffect, useState } from 'react';
 import { MACHINE_WINDOWS, type MachineWindow, windowName } from '../../../lib/machineChart';
-import { counted } from '../../../lib/working';
+import { request } from '../../../lib/request';
 import cardStyles from '../shared/card.module.css';
 import type { Fetched, Machines } from '../shared/types';
 
@@ -39,7 +39,7 @@ export function useMachines(): MachinesRead {
     // The first read and a change of window are a person's; the 30 second timer is background.
     const url = window_ === '1h' ? '/api/admin/machines' : `/api/admin/machines?window=${window_}`;
     const read = (background: boolean) =>
-      counted(() => fetch(url), { background })
+      request(url, undefined, { background })
         .then((r) =>
           r.ok ? (r.json() as Promise<Machines>) : Promise.reject(new Error(String(r.status)))
         )

@@ -163,7 +163,7 @@ This page shipped with the editor configuration it describes. Every file, and wh
 | `docs/app-architecture/VSCODE.md` | This page, served under App Architecture after Start here. |
 | `docs/images/vscode-*.jpg` | The seven screenshots on this page, taken in VS Code on the laptop it was rehearsed on. |
 | `api/TheYard.Tests/WorkspaceTests.cs` | Holds the configuration to the code: every task runs a script `package.json` has or a project that exists, every launch configuration's program is a project in the tree on the port its `launchSettings.json` names, every task is on this page, and the extensions file names the C# and test extensions. |
-| `api/TheYard.Api/LiveSamples.cs` | `.vscode/` added to the roots a live block may read from, so this page shows the real files. |
+| `api/TheYard.Api/Features/Docs/LiveSamples.cs` | `.vscode/` added to the roots a live block may read from, so this page shows the real files. |
 | `Dockerfile`, `.dockerignore` | The runtime image copies `.vscode/` beside the other sources the records read, and the ignore file stopped excluding it. |
 | `README.md`, `samples/theshed/README.md`, `CLAUDE.md` | Each gained the line that points here. |
 | `docs/decisions/ADR-097-the-editor-is-set-up-by-the-repository.md` | The record: why the configuration is in the repository, what it holds, and what was left out. |

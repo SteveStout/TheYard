@@ -63,7 +63,7 @@ The first draft of this spelled a property wrong, and MSBuild ignored it without
 
 The Admin metrics report how much of the process's code the runtime compiled itself since it started, and how long that took, beside the collector's mode and the processor count. It is the one reading that says whether code arrived compiled.
 
-```live path=api/TheYard.Api/MetricsReport.cs region=runtime-metrics
+```live path=api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs region=runtime-metrics
 ```
 
 `JitInfo.GetCompiledMethodCount` counts every method the JIT compiled in this process, and `GetCompilationTime` is the time it spent doing so, summed over every thread. Code that arrived compiled ahead of time is not in the count until the runtime chooses to compile it again at a higher tier.

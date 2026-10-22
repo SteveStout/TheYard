@@ -19,7 +19,7 @@ public static partial class AdminEndpoints
     private static IResult Store(Backends backends, StoreRingBuffer storeLog) =>
         Results.Json(new
         {
-            store = backends.Named("cosmos")?.Name ?? backends.Default.Name,
+            store = backends.Named(StoreKeys.Document)?.Name ?? backends.Default.Name,
             operations = storeLog.Snapshot(),
         });
 
@@ -101,12 +101,12 @@ public static partial class AdminEndpoints
     private static async Task<IResult> Machines(string? window, MachineSampler sampler, MachineHistoryReader kept, Backends backends, StoreRingBuffer storeLog, RequestRingBuffer requestLog, HostStart start, CancellationToken cancellation)
     {
         var startedAt = start.At;
-        var relational = backends.Named("sql");
+        var relational = backends.Named(StoreKeys.Relational);
         var load = relational is null
             ? StoreLoad.Absent("this container has no relational store, or it did not come up")
             : await relational.ReadLoadAsync(RingSizes.MachineSamples, cancellation);
         var now = Clocks.UtcNow();
-        var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named("cosmos")?.Name ?? "Azure Cosmos DB", now);
+        var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named(StoreKeys.Document)?.Name ?? "Azure Cosmos DB", now);
         return Results.Json(new
         {
             // The hour below is this process's own memory and is always here. A

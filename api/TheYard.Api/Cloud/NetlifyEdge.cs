@@ -267,7 +267,7 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
             return known;
         }
         // Every site the token can see, matched here: the API's name filter answered nothing for a
-        // site that exists (read live on 18 October), so the list is read whole.
+        // site that exists (read live when the card was built), so the list is read whole.
         using var sites = await GetAsync("/api/v1/sites?filter=all&per_page=100", cancellation);
         var listed = sites.RootElement.ValueKind == JsonValueKind.Array ? sites.RootElement.EnumerateArray().ToList() : [];
         // Matched by its name or its default subdomain; a token that cannot see it gets the

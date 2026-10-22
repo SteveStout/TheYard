@@ -1,3 +1,5 @@
+using TheYard.Application;
+
 namespace TheYard.Api;
 
 /// <summary>
@@ -9,7 +11,7 @@ namespace TheYard.Api;
 /// </summary>
 public static class SiteSettings
 {
-    /// <summary>The configured sites, from the list when there is one, else from the settings named per site.</summary>
+    /// <summary>The configured sites, from the list when there is one, else from the settings named per site, with Site:Url for links.</summary>
     /// <param name="configuration">The host's configuration.</param>
     public static SiteHosts From(IConfiguration configuration)
     {
@@ -18,13 +20,13 @@ public static class SiteSettings
             .ToList();
         if (listed.Count > 0)
         {
-            return new SiteHosts(listed);
+            return new SiteHosts(listed, configuration["Site:Url"]);
         }
         return new SiteHosts(
         [
-            new Site(configuration["Hosts:Sql"] ?? "", "sql"),
-            new Site(configuration["Hosts:Cosmos"] ?? "", "cosmos"),
+            new Site(configuration["Hosts:Sql"] ?? "", StoreKeys.Relational),
+            new Site(configuration["Hosts:Cosmos"] ?? "", StoreKeys.Document),
             new Site(configuration["Hosts:Shed"] ?? "", null),
-        ]);
+        ], configuration["Site:Url"]);
     }
 }

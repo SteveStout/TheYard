@@ -1,4 +1,4 @@
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Docs;
 
 /// <summary>
 /// The site's one face for the pages the API draws itself (the About page and the diagram

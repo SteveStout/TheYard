@@ -14,8 +14,8 @@ internal static class FakeBackend
         Database = new DatabaseState(ready, name),
         Startup = new StartupTimings(),
         Inventory = new InventoryService(new EmptyVehicles(), new EmptyPhotos()),
-        Bids = new BidService(),
-        Market = new MarketService(),
+        Bids = new BidService(new MemoryBidStore()),
+        Market = new MarketService(new Random(7)),
         Probe = () => Task.FromResult(ready),
     };
 

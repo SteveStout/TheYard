@@ -14,16 +14,16 @@ public static partial class AccountEndpoints
     /// Mints a reset link for an address on this site's store, behind the operator's key, and answers it for the
     /// operator to hand over.
     /// </summary>
-    private static async Task<IResult> OperatorResetLink(ResetLinkRequest request, HttpContext http, OperatorResetLinkHandler handler, CurrentBackend current, AdminKey adminKey, IConfiguration configuration, SiteHosts hosts, CancellationToken cancellation)
+    private static async Task<IResult> OperatorResetLink(ResetLinkRequest request, HttpContext http, OperatorResetLinkHandler handler, CurrentBackend current, AdminKey adminKey, SiteHosts hosts, CancellationToken cancellation)
     {
         if (!adminKey.IsPresentedBy(http.Request))
         {
             return Results.NotFound();
         }
-        var answer = await handler.HandleAsync(request.Email, current.Key, SiteOrigin(http, configuration, hosts), cancellation);
+        var answer = await handler.HandleAsync(request.Email, current.Key, hosts.LinkOrigin(http), cancellation);
         return answer.Kind switch
         {
-            AccountAnswerKind.Unavailable => TheYard.Api.Accounts.Unavailable(),
+            AccountAnswerKind.Unavailable => Accounts.Unavailable(),
             AccountAnswerKind.Refused => Results.Problem(
                 detail: "No account with that email address on this site's store.",
                 statusCode: 404, title: "No such account"),
@@ -41,15 +41,15 @@ public static partial class AccountEndpoints
     /// Emails a reset link to an address, answering the same sentence whether or not the address has an account
     /// here.
     /// </summary>
-    private static async Task<Results<Ok<ForgotReply>, ProblemHttpResult>> Forgot(ResetLinkRequest request, HttpContext http, ForgotHandler handler, CurrentBackend current, IConfiguration configuration, SiteHosts hosts, CancellationToken cancellation)
+    private static async Task<Results<Ok<ForgotReply>, ProblemHttpResult>> Forgot(ResetLinkRequest request, HttpContext http, ForgotHandler handler, CurrentBackend current, SiteHosts hosts, CancellationToken cancellation)
     {
-        var answer = await handler.HandleAsync(request.Email, current.Key, SiteOrigin(http, configuration, hosts), cancellation);
+        var answer = await handler.HandleAsync(request.Email, current.Key, hosts.LinkOrigin(http), cancellation);
         return answer.Kind switch
         {
             ForgotAnswerKind.NoMail => TypedResults.Problem(
                 detail: "This site cannot send email: " + answer.Reason + ".",
                 statusCode: StatusCodes.Status503ServiceUnavailable, title: "No email from here"),
-            ForgotAnswerKind.Unavailable => TheYard.Api.Accounts.Unavailable(),
+            ForgotAnswerKind.Unavailable => Accounts.Unavailable(),
             ForgotAnswerKind.NoAddress => TypedResults.Problem(detail: "An email address is needed.", statusCode: 400, title: "Nothing to send to"),
             _ => TypedResults.Ok(new ForgotReply(true, "If that address has an account here, a reset link is on its way. It works once, for an hour.")),
         };
@@ -64,35 +64,12 @@ public static partial class AccountEndpoints
         var answer = await handler.HandleAsync(request.Token, request.Password, current.Key, cancellation);
         return answer.Kind switch
         {
-            ResetAnswerKind.Unavailable => TheYard.Api.Accounts.Unavailable(),
+            ResetAnswerKind.Unavailable => Accounts.Unavailable(),
             ResetAnswerKind.LinkRefused => TypedResults.Problem(detail: answer.Detail, statusCode: 400, title: "The link did not work"),
             ResetAnswerKind.PasswordRefused => TypedResults.Problem(
-                detail: answer.Detail ?? TheYard.Api.Accounts.Explain(answer.Problem),
+                detail: answer.Detail ?? Accounts.Explain(answer.Problem),
                 statusCode: 400, title: "The password was not changed"),
             _ => SignedIn(answer.Account!, current, issuer, http),
         };
-    }
-
-    /// <summary>
-    /// This site as a visitor reaches it, for a link: the Yard name the request arrived on when one
-    /// web app serves both sites (SiteHosts, which takes only a name configured here, so a sender can
-    /// choose between the two sites and nothing else), then the configured address (Site:Url, the
-    /// domain behind the edge, because the request's own host there is the origin server), or on a
-    /// machine with neither, the request's own scheme and host. Never X-Forwarded-Host: a header is
-    /// what the sender says it is, and a link in a reset email must not be one a sender chose (ADR: The
-    /// order of the request pipeline). Every web app the template writes carries Site:Url.
-    /// </summary>
-    private static string SiteOrigin(HttpContext http, IConfiguration configuration, SiteHosts hosts)
-    {
-        if (hosts.SiteOrigin(http) is { } arrivedOn)
-        {
-            return arrivedOn;
-        }
-        string? siteUrl = configuration["Site:Url"];
-        if (!string.IsNullOrWhiteSpace(siteUrl))
-        {
-            return siteUrl.TrimEnd('/');
-        }
-        return $"{http.Request.Scheme}://{http.Request.Host.Value}";
     }
 }

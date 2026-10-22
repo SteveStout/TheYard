@@ -26,7 +26,7 @@ public sealed class Module : IModule
         string? token = configuration["Netlify:Token"];
         var publicSite = configuration["Netlify:PublicSite"] is { } site ? new Uri(site) : names.PublicSite;
         // Which public name gets the SQL database, from this process's own settings.
-        string? sqlName = SiteSettings.From(configuration).HostFor("sql");
+        string? sqlName = SiteSettings.From(configuration).HostFor(StoreKeys.Relational);
         // The nightly Function lives in a resource group of its own, listed by a directory of its own.
         var nightlyNames = NightlyResources.From(configuration);
         string subscription = AzureIds.SubscriptionId(configuration);
@@ -61,7 +61,7 @@ public sealed class Module : IModule
 
         // One reading of a shared resource is the whole truth, so one process records it, as with
         // the plan: the one whose default store is SQL, which the one web app is, on App Service.
-        bool records = string.Equals(StoreChoice.DefaultKey(configuration), "sql", StringComparison.Ordinal)
+        bool records = string.Equals(StoreChoice.DefaultKey(configuration), StoreKeys.Relational, StringComparison.Ordinal)
             && HostIdentity.From(configuration).OnAppService;
         if (records)
         {

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using TheYard.Api;
+using TheYard.Api.Features.Accounts;
 
 namespace TheYard.Tests;
 

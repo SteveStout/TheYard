@@ -17,8 +17,8 @@ namespace TheYard.Api;
 /// <para>The choice is a header, which is how a measurement asks for a store
 /// without a browser; a request that names none gets the store of the site it
 /// arrived on (SiteHosts, ADR: One web app for every .NET process), and a request
-/// that arrived on no site's name gets the container's default. Until 19 October
-/// each site was a container of its own and the default alone made it one
+/// that arrived on no site's name gets the container's default. Before one web app
+/// served both, each site was a container of its own and the default alone made it one
 /// store's site (ADR: One container, both stores, the addendum on the toggle
 /// moving to the sites). A header naming a store this container does not have
 /// is ignored, never an error.</para>

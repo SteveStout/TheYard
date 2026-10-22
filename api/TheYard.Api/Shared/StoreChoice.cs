@@ -1,3 +1,5 @@
+using TheYard.Application;
+
 namespace TheYard.Api;
 
 /// <summary>
@@ -20,7 +22,7 @@ public static class StoreChoice
             return configured;
         }
         bool servesBothSites = SiteSettings.From(configuration).StoreSites.Count() > 1;
-        return servesBothSites || !DocumentStoreConfigured(configuration) ? "sql" : "cosmos";
+        return servesBothSites || !DocumentStoreConfigured(configuration) ? StoreKeys.Relational : StoreKeys.Document;
     }
 
     /// <summary>

@@ -39,7 +39,7 @@ Each second-level heading gets an id made from its words, the way GitHub makes o
 
 A code sample in these documents is never pasted. The writer marks a region in the source with a pair of `#region` and `#endregion` comments, and the document asks for that region by file and name with an empty fence whose opening line names it, such as `live path=src/lib/markdown.ts region=heading-ids` after the three backticks. When the page is requested, the server replaces the fence with the lines between the two markers as they are in the build that is serving the page, and adds a caption naming the file, the region and the commit. The sample above is one of them, and so is this one, the code that does the replacing:
 
-```live path=api/TheYard.Api/LiveSamples.cs region=expander
+```live path=api/TheYard.Api/Features/Docs/LiveSamples.cs region=expander
 ```
 
 A fence whose file or region is missing would render a note in place of the code, so the gate fails on it: `LiveSampleCoverageTests` expands every document the catalogue serves and fails if any block comes back as a note, and checks the Dockerfile copies every file a sample reads (ADR: Live code samples).

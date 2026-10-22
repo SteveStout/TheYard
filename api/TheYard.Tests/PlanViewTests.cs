@@ -139,4 +139,39 @@ public class PlanViewTests
         Assert.Equal("Deploy 1.0.3.176: a new container beside the old, then the swap", Assert.Single(PlanDeploys.Rolls(events, minutes)).Title);
         Assert.Equal("A configuration change on the plan's apps", Assert.Single(PlanDeploys.Rolls(events, [minutes[0], minutes[1], minutes[2]])).Title);
     }
+
+    /// <summary>The edges, a minute either side: writes ten minutes apart are one roll and eleven are two; a build thirty minutes after the first write names the roll and one at thirty-one does not; a spike at the amber line is a blip and one under it is not.</summary>
+    [Theory]
+    [InlineData(10, 1)]
+    [InlineData(11, 2)]
+    public void Writes_ten_minutes_apart_are_one_roll_and_eleven_are_two(int apart, int rolls)
+    {
+        var t = new DateTimeOffset(2026, 10, 18, 20, 40, 0, TimeSpan.Zero);
+        PlanEvent[] events = [new(t, "config", "Write web app config", "a", Planned: true), new(t.AddMinutes(apart), "config", "Write web app config", "a", Planned: true)];
+        Assert.Equal(rolls, PlanDeploys.Rolls(events, []).Count);
+    }
+
+    [Theory]
+    [InlineData(30, true)]
+    [InlineData(31, false)]
+    public void The_new_build_names_the_roll_within_thirty_minutes_of_its_first_write(int after, bool named)
+    {
+        var t = new DateTimeOffset(2026, 10, 18, 20, 40, 0, TimeSpan.Zero);
+        PlanEvent[] events = [new(t, "config", "Write web app config", "a", Planned: true)];
+        PlanBucket[] minutes = [new(t.AddMinutes(-1), 1, 10, 12, 60, 61, 0, "1.0.3.175"), new(t, 1, 10, 12, 60, 61, 0, "1.0.3.175"), new(t.AddMinutes(after), 1, 10, 12, 60, 61, 0, "1.0.3.176")];
+        string title = Assert.Single(PlanDeploys.Rolls(events, minutes)).Title;
+        Assert.Equal(named, title.StartsWith("Deploy 1.0.3.176", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-1, 0)]
+    public void A_spike_at_the_amber_line_is_a_blip_and_one_under_it_is_not(double fromAmber, int blips)
+    {
+        var t = new DateTimeOffset(2026, 10, 18, 20, 40, 0, TimeSpan.Zero);
+        var band = new CloudBand(t.ToUnixTimeMilliseconds(), t.AddMinutes(4).ToUnixTimeMilliseconds(), "a roll");
+        double cpu = PlanThresholds.Cpu.Amber + fromAmber;
+        PlanBucket[] buckets = [new(t, 5, cpu, cpu, 10, 10, 0, "1.0.3.176")];
+        Assert.Equal(blips, PlanDeploys.Blips([band], buckets).Count);
+    }
 }

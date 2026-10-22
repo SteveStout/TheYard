@@ -32,12 +32,6 @@ public sealed partial class BidService
     /// <summary>Where bids are kept between restarts: read once at load, written on every accepted bid.</summary>
     private readonly IBidStore _store;
 
-    /// <summary>Bids that live exactly as long as this process does, in a store of their own.</summary>
-    public BidService()
-        : this(new MemoryBidStore())
-    {
-    }
-
     // #region store
     /// <summary>
     /// Read once, through <see cref="LoadAsync"/>. Every read after that one is

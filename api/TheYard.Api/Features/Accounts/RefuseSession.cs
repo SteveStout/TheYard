@@ -5,7 +5,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Accounts;
 
 // #region session-stamp
 /// <summary>

@@ -2,7 +2,7 @@
  * Remembers whether the docked rail was collapsed, per browser, in local
  * storage. A missing or blocked store reads as open and a failed write is
  * dropped, so the rail never fails over a preference. Its own file because it
- * is storage, not drawing: useRail reads and writes it through SideNav's index.
+ * is storage, not drawing, and storage is src/lib's: useRail reads and writes it here.
  */
 
 /** The local storage key the rail's collapsed state is kept under. */

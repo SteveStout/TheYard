@@ -1,7 +1,7 @@
 // Whether memory follows traffic: the processor should rise and fall with the requests, and memory
 // should stay roughly where it is whatever they do. Memory that keeps climbing while the traffic is
-// flat is a leak or a cache with no bound, the shape the catalogue held in each process made in
-// October (ADR: Memory follows traffic). Pure arithmetic over points, so a test can hold the rule
+// flat is a leak or a cache with no bound, the shape the catalogue held in each process once made
+// (ADR: Memory follows traffic). Pure arithmetic over points, so a test can hold the rule
 // to the minutes the sites really kept.
 
 namespace TheYard.Application;

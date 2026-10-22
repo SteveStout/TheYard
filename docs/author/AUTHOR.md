@@ -22,7 +22,7 @@ I have spent twelve years building full stack software in C#, SQL Server, React 
 
 ### Decisions written down
 
-Every architectural choice in TheYard has [a decision record](https://github.com/SteveStout/TheYard/tree/main/docs), served from inside the running app. A new engineer reads why, not just what.
+Every architectural choice in TheYard has [a decision record](https://github.com/SteveStout/TheYard/tree/main/docs), served from inside the running app. A new engineer reads the reason beside the code.
 
 ### Tests that guard the business
 

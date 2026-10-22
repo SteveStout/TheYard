@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Features.Docs;
 
 /// <summary>
 /// Who built this, on a page of its own at /about, for the reader who searched
@@ -166,7 +166,7 @@ public static class AboutPage
             {{figure}}
             <p class="lede">I build the systems that make delivery boring in the best way, then coach people inside them.</p>
             <ul class="tenets">
-              <li><strong>Decisions written down.</strong> Every architectural choice in TheYard has <a href="https://github.com/SteveStout/TheYard/tree/main/docs">a decision record</a>, served from inside the running app. A new engineer reads why, not just what.</li>
+              <li><strong>Decisions written down.</strong> Every architectural choice in TheYard has <a href="https://github.com/SteveStout/TheYard/tree/main/docs">a decision record</a>, served from inside the running app. A new engineer reads the reason beside the code.</li>
               <li><strong>Tests that guard the business.</strong> Every version passes one gate before it ships: the .NET tests on both databases and the front end's unit and browser suites. <a href="https://github.com/SteveStout/TheYard/blob/main/data/test-results.json">The test record</a> shows the last run.</li>
               <li><strong>Tradeoffs in the open.</strong> When the roadmap is bigger than the team, I put scope and date on the table, with the cost of each, and leadership chooses. <a href="https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md">Adding a second database</a> was one of those calls, priced in writing before it shipped.</li>
               <li><strong>Coaching inside the system.</strong> Good systems give engineers a safe place to learn fast. My favorite part of leading is helping each person on the team become the best version of themselves.</li>

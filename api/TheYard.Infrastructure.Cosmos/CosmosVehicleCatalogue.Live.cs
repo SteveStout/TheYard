@@ -1,7 +1,7 @@
 // The keyset read's live segment: the live set moves as the day goes on, so its kept places are
 // walked at one moment and corrected by the rows that ended or started since. A file of its own
 // because CosmosVehicleCatalogue.Keyset.cs holds the places that never move, and these do
-// (ADR: The store does the work, the addendum of 19 October).
+// (ADR: The store does the work, the addendum on a typed word as a seek).
 using Microsoft.Azure.Cosmos;
 using TheYard.Application;
 

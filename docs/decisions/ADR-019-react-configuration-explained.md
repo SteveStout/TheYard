@@ -397,7 +397,7 @@ The React configuration is the front end, layered: components render, hooks hold
 - [`src/hooks/useNow.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useNow.ts), [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts), [`src/hooks/useMediaQuery.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useMediaQuery.ts): the shared state.
 - [`playwright.config.ts`](https://github.com/SteveStout/TheYard/blob/main/playwright.config.ts) and [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the two runners and the jobs that run them.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the build stage that repeats `npm run build` in the image.
-- [`api/TheYard.Api/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LiveSamples.cs): the whole-file samples this record uses for the files that cannot carry a region marker (ADR: Live code samples, second addendum).
+- [`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs): the whole-file samples this record uses for the files that cannot carry a region marker (ADR: Live code samples, second addendum).
 
 ## Addendum, 2026-09-29 (1.0.3.42): the stylesheets follow
 

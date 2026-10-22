@@ -1,7 +1,7 @@
 // The CatalogueWords table: one row per word of each vehicle's searchable text, so a typed word is
 // an index seek instead of a scan of every row's text. Its own file because the table, its fill and
 // the SQL that fills it from the Catalogue table on Azure SQL Database are one subject
-// (ADR: The store does the work, the addendum of 19 October).
+// (ADR: The store does the work, the addendum on a typed word as a seek).
 using TheYard.Domain;
 
 namespace TheYard.Infrastructure;
