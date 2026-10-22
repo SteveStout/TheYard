@@ -147,6 +147,16 @@ public sealed class CosmosLinkOpens(CosmosStore store) : ILinkOpens
         return [.. operations.Chunk(OperationsPerPatch).Select(chunk => (IReadOnlyList<PatchOperation>)chunk)];
     }
 
+    /// <summary>
+    /// A stored row as a day, never holding more than the kept number of paths. Two containers that
+    /// each read eleven paths can both add a twelfth, so the row can hold thirteen: the patches carry
+    /// no precondition (one batch spans chunks a single ETag cannot cover), and the cap is held here,
+    /// where every reader meets it.
+    /// </summary>
+    /// <param name="document">The row as stored.</param>
+    public static LinkOpenDay Kept(LinkOpenDocument document) =>
+        new(document.Day, document.Code, document.FirstSeen, document.LastSeen, document.Opens, LinkOpenFolding.Top(document.Paths));
+
     /// <summary>A key as one step of a JSON pointer: "~" as "~0" and "/" as "~1", so "/api/go/github" is one property.</summary>
     /// <param name="key">The dictionary key.</param>
     public static string Pointer(string key) => key.Replace("~", "~0", StringComparison.Ordinal).Replace("/", "~1", StringComparison.Ordinal);
@@ -166,7 +176,7 @@ public sealed class CosmosLinkOpens(CosmosStore store) : ILinkOpens
         {
             foreach (var document in await feed.ReadNextAsync(cancellation))
             {
-                days.Add(new LinkOpenDay(document.Day, document.Code, document.FirstSeen, document.LastSeen, document.Opens, document.Paths));
+                days.Add(Kept(document));
             }
         }
         return [.. days.OrderBy(day => day.Day, StringComparer.Ordinal).ThenBy(day => day.Code, StringComparer.Ordinal)];

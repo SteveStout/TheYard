@@ -76,3 +76,9 @@ A cold check of 1.0.4.8 on 21 October found the record and the live site apart i
 
 `LinkHandlerTests` holds the agents, the refused status and the partial updates; `LinkEndpointStatusTests` holds a 404 pass-through leaving the card's row unchanged.
 
+
+## Addendum, 2026-10-21 (1.0.4.21): the twelve-path cap holds where it is read, and six more fetchers
+
+The review of 1.0.4.11 to 1.0.4.18 found that two containers reading the same day's row at eleven paths could each add a twelfth, so the row held thirteen: `CosmosLinkOpens.PatchesFor` judges the room against the row as it was read, and the patches carry no precondition. An `IfMatchEtag` on the patch was weighed and not taken: one batch can span two or more patch chunks, and a single ETag covers only the first, so a 412 halfway through would leave half a batch applied. From 1.0.4.21 the cap is held where every reader meets it: `CosmosLinkOpens.Kept` turns a stored row into a day through `LinkOpenFolding.Top` (now public), so `DaysAsync` never hands out more than `PathsKept` paths, the busiest first. The overshoot on disk stays bounded (writers minus one per round) and is never seen. `LinkHandlerTests.Two_writers_at_eleven_paths_leave_thirteen_and_twelve_are_read_back` holds it.
+
+The fetcher list in `LinkOpens.IsOne` counted six more machines as people: Mastodon's preview fetcher (`http.rb ... (Mastodon/...)`), Bluesky's `Cardyb`, `axios`, `okhttp`, `node-fetch` and Android's bare `Dalvik` client. They are on the list now, each with an `InlineData` row in `LinkHandlerTests`.

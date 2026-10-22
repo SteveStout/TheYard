@@ -47,6 +47,7 @@ public static partial class LinkPreviews
         "LinkedInBot|Slackbot|Slack-ImgProxy|facebookexternalhit|Facebot|Twitterbot|WhatsApp|TelegramBot|Discordbot|Google-PageRenderer|GoogleImageProxy|Google-Safety|"
         + "SkypeUriPreview|Iframely|Embedly|Bitly|Zoombot|ms-office|MSOffice|Microsoft Office|OfficeProtocolDiscovery|SafeLinks|Outlook-iOS|BingPreview|Yahoo Link Preview|"
         + "Mimecast|Proofpoint|Barracuda|ClamAV|Symantec|Mailchimp|HubSpot|Apple-PubSub|AppleMail|Applebot|"
+        + "Mastodon|Cardyb|axios|okhttp|node-fetch|Dalvik|"
         + @"bot\b|crawl|spider|slurp|curl|wget|python|httpclient|go-http|java/|libwww|scan|headless|phantom|TheYard-SelfRead",
         RegexOptions.IgnoreCase)]
     private static partial Regex Fetcher();
@@ -175,7 +176,9 @@ public static class LinkOpenFolding
         return Top(merged);
     }
 
-    private static IReadOnlyDictionary<string, int> Top(IDictionary<string, int> paths) =>
+    /// <summary>The busiest paths up to the limit, the floor every reader of a stored row applies.</summary>
+    /// <param name="paths">The paths with a count each.</param>
+    public static IReadOnlyDictionary<string, int> Top(IEnumerable<KeyValuePair<string, int>> paths) =>
         paths.OrderByDescending(pair => pair.Value).ThenBy(pair => pair.Key, StringComparer.Ordinal).Take(PathsKept)
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
 }

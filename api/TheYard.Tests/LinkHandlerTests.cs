@@ -57,6 +57,12 @@ public sealed class LinkHandlerTests
     [InlineData("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15 Mimecast", true)]
     [InlineData("TheYard-SelfRead/1 (deploy)", true)]
     [InlineData("curl/8.4.0", true)]
+    [InlineData("http.rb/5.1.1 (Mastodon/4.2.0; +https://mastodon.social/)", true)]
+    [InlineData("Mozilla/5.0 (compatible; Cardyb/1.1; +mailto:support@bsky.app)", true)]
+    [InlineData("axios/1.7.2", true)]
+    [InlineData("okhttp/4.12.0", true)]
+    [InlineData("node-fetch/1.0 (+https://github.com/bitinn/node-fetch)", true)]
+    [InlineData("Dalvik/2.1.0 (Linux; U; Android 13; Pixel 7 Build/TQ3A.230805.001)", true)]
     [InlineData("", true)]
     [InlineData(null, true)]
     public void A_preview_fetcher_or_a_scanner_is_told_from_a_person_by_its_agent(string? agent, bool preview) =>
@@ -119,6 +125,50 @@ public sealed class LinkHandlerTests
         var wide = new LinkOpenDay("2026-10-20", "k7f2qa", Noon, Noon, 12, Enumerable.Range(0, 12).ToDictionary(i => $"/q{i:00}", _ => 1, StringComparer.Ordinal));
         var empty = new TheYard.Infrastructure.Cosmos.LinkOpenDocument { FirstSeen = Noon, LastSeen = Noon };
         Assert.Equal([10, 3], TheYard.Infrastructure.Cosmos.CosmosLinkOpens.PatchesFor(empty, wide).Select(patch => patch.Count));
+    }
+
+    /// <summary>
+    /// Two containers read the same row at eleven paths and each adds a new one: the patches carry no
+    /// precondition, so the row ends at thirteen. What is read back from it is twelve, the busiest,
+    /// so the cap holds where it is seen.
+    /// </summary>
+    [Fact]
+    public void Two_writers_at_eleven_paths_leave_thirteen_and_twelve_are_read_back()
+    {
+        var stored = new TheYard.Infrastructure.Cosmos.LinkOpenDocument
+        {
+            Day = "2026-10-20",
+            Code = "k7f2qa",
+            Opens = 11,
+            FirstSeen = Noon,
+            LastSeen = Noon,
+            Paths = Enumerable.Range(0, 11).ToDictionary(i => $"/p{i:00}", i => 20 - i, StringComparer.Ordinal),
+        };
+        var row = new Dictionary<string, int>(stored.Paths, StringComparer.Ordinal);
+        foreach (string added in new[] { "/w1", "/w2" })
+        {
+            var delta = new LinkOpenDay("2026-10-20", "k7f2qa", Noon, Noon, 1, new Dictionary<string, int>(StringComparer.Ordinal) { [added] = 1 });
+            var paths = TheYard.Infrastructure.Cosmos.CosmosLinkOpens.PatchesFor(stored, delta)
+                .SelectMany(patch => patch).Where(operation => operation.Path.StartsWith("/paths/", StringComparison.Ordinal)).ToList();
+            Assert.Single(paths);
+            row[added] = 1;
+        }
+        Assert.Equal(13, row.Count);
+
+        var read = TheYard.Infrastructure.Cosmos.CosmosLinkOpens.Kept(new TheYard.Infrastructure.Cosmos.LinkOpenDocument
+        {
+            Day = stored.Day,
+            Code = stored.Code,
+            Opens = 13,
+            FirstSeen = Noon,
+            LastSeen = Noon,
+            Paths = row,
+        });
+
+        Assert.Equal(LinkOpenFolding.PathsKept, read.Paths.Count);
+        Assert.Contains("/w1", read.Paths.Keys);
+        Assert.DoesNotContain("/w2", read.Paths.Keys);
+        Assert.Equal(13, read.Opens);
     }
 
     [Fact]
