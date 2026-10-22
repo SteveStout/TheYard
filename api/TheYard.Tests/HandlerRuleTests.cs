@@ -78,6 +78,7 @@ public sealed class HandlerRuleTests(WebApplicationFactory<Program> factory) : I
         ["CurrentBackend"] = "names the request's store to the handler, the request's own fact",
         ["SiteHosts"] = "the names this process answers to, for a link's origin",
         ["AdminKey"] = "the operator's key, checked before the handler runs",
+        ["VisitorTokens"] = "the day's keyed hash a blog read and its events are kept under, the request's own fact",
         ["Credentials"] = "the register and login forms' body",
         ["VehicleQueryParams"] = "the list's query string, bound as parameters",
     };

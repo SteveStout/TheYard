@@ -32,10 +32,21 @@ export function readFirstAddress(search: string) {
     inventory: opensInventory(params),
     admin: params.get('view') === 'admin',
     account: params.get('view') === 'account',
+    /** The blog, ?view=blog, and one post on it, ?view=blog&post=solid-in-five-real-files. */
+    blog: params.get('view') === 'blog',
+    blogPost: blogPostFrom(params),
     /** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
     card,
     pin: pinFromAddress(params.get('pin')),
   };
+}
+
+/** The post an address names on the blog: a slug, or null for the list and for anything that is not one. */
+export function blogPostFrom(params: URLSearchParams): string | null {
+  const post = params.get('post');
+  return params.get('view') === 'blog' && post !== null && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(post)
+    ? post
+    : null;
 }
 
 /** The query the page opened on: the address bar in a browser, nothing where there is no window. */

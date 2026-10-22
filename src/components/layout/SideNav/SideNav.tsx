@@ -38,6 +38,12 @@ export type SideNavProps = {
   onHome: () => void;
   /** The landing page is what shows: the Home row reads as current. */
   homeOpen: boolean;
+  /** The blog is the view: the Blog row reads as current. */
+  blogOpen: boolean;
+  /** Opens the blog. */
+  onOpenBlog: () => void;
+  /** NEW POST while the newest post is under a week old, else null. */
+  blogBadge: string | null;
   /** The inventory list is the view: the Inventory row reads as current. */
   inventoryOpen: boolean;
   /** Opens the inventory list. */
@@ -177,6 +183,9 @@ function NavContent({
   onToggleCollapsed,
   onHome,
   homeOpen,
+  blogOpen,
+  onOpenBlog,
+  blogBadge,
   inventoryOpen,
   onOpenInventory,
   adminOpen,
@@ -244,6 +253,7 @@ function NavContent({
           iconsOnly={iconsOnly}
           views={{
             home: { current: homeOpen, open: onHome },
+            blog: { current: blogOpen, open: onOpenBlog },
             inventory: { current: inventoryOpen, open: onOpenInventory },
             account: { current: accountOpen, open: onOpenAccount },
             admin: { current: adminOpen, open: onOpenAdmin },
@@ -253,6 +263,7 @@ function NavContent({
           bidCount={bidCount}
           onResetBids={onResetBids}
           onCloseDrawer={onCloseDrawer}
+          blogBadge={blogBadge}
         />
       </nav>
     </>

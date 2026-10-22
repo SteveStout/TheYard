@@ -1,0 +1,187 @@
+/**
+ * Does:      Styles one post in full: the author line, the text clamped until "see more", the slides strip, the reads
+ *            line and the three actions, readable on a phone with no sideways scroll but the strip's own.
+ * Does not:  Lay out the blog page around it (BlogPage.module.css does).
+ * Used by:   BlogPostCard.tsx.
+ */
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.who {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-2);
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(160deg, var(--color-accent), var(--color-green-dark));
+  box-shadow:
+    0 0 0 3px var(--palette-white),
+    0 0 0 4px var(--color-gold-light);
+  color: var(--palette-white);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+}
+
+.name,
+.headline,
+.when {
+  margin: 0;
+}
+
+.name {
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+}
+
+.headline {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.when {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.body {
+  padding: var(--space-1) var(--space-5);
+  line-height: 1.55;
+  color: var(--color-text);
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+.clamped {
+  max-height: 13.5em;
+  overflow: hidden;
+  mask-image: linear-gradient(var(--palette-white) 70%, transparent);
+}
+
+.title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+  white-space: normal;
+}
+
+.hash {
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+}
+
+.more {
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-5) var(--space-3);
+  border: 0;
+  background: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.slides {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+
+.slidesHead {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-teal-deep);
+}
+
+.strip {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0 0 var(--space-1);
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x mandatory;
+}
+
+.slide {
+  flex: none;
+  width: 160px;
+  scroll-snap-align: start;
+}
+
+.slide img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.stats strong {
+  color: var(--color-teal-deep);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  border-top: 1px solid var(--color-border);
+}
+
+.actions a,
+.actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--pill-height);
+  padding: var(--space-3) var(--space-2);
+  border: 0;
+  background: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actions a:hover,
+.actions button:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+@media (max-width: 639.98px) {
+  .who,
+  .body,
+  .more,
+  .stats,
+  .slides {
+    padding-inline: var(--space-4);
+  }
+}

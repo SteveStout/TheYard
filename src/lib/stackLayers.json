@@ -145,15 +145,16 @@
         ]
       },
       {
-        "tech": "Front Door",
-        "where": "Azure edge, in front of everything",
+        "tech": "Front Door (written, switched off)",
+        "where": "Off: the subscription refuses Front Door, so the Netlify edge stands in front today",
         "version": {
-          "text": "live resource"
+          "text": "off"
         },
         "proof": "infra/main.bicep",
         "needs": [
           "infra/main.bicep",
-          "Microsoft.Cdn/profiles@"
+          "Microsoft.Cdn/profiles@",
+          "param enableFrontDoor bool = false"
         ]
       },
       {

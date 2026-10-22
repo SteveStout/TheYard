@@ -138,6 +138,15 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       inRail: true,
       onLanding: false,
     },
+    // Directly under Home: every LinkedIn post kept in full. The home page's Latest posts band is its tile.
+    {
+      key: 'blog',
+      label: 'Blog',
+      icon: 'blog',
+      blurb: 'Every LinkedIn post, kept here in full with the code it talks about.',
+      inRail: true,
+      onLanding: false,
+    },
     {
       key: 'inventory',
       label: 'Inventory',

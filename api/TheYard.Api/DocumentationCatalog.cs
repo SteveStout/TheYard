@@ -142,6 +142,7 @@ public static class DocumentationCatalog
         ["adr-one-working-lock-for-the-whole-site-after-half-a-second"] = "docs/decisions/ADR-110-one-working-lock-for-the-whole-site.md",
         ["adr-the-tracker-merger-runs-in-azure"] = "docs/decisions/ADR-111-the-tracker-merger-runs-in-azure.md",
         ["adr-every-claude-lane-reports-its-usage"] = "docs/decisions/ADR-112-every-claude-lane-reports-its-usage.md",
+        ["adr-every-linkedin-post-is-also-a-blog-post"] = "docs/decisions/ADR-113-every-linkedin-post-is-also-a-blog-post.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

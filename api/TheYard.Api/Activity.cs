@@ -45,6 +45,14 @@ public sealed class VisitorTokens(string key)
         return Convert.ToHexStringLower(hash.AsSpan(0, 16));
     }
 
+    /// <summary>
+    /// The 32-byte keyed hash a blog read and its events are kept under (ADR: Every LinkedIn post is also a
+    /// blog post): the same key and the same day as the visitor token, with the blog's own label in the hash,
+    /// so the two cannot be matched to each other and neither outlives the day.
+    /// </summary>
+    public byte[] BlogSessionFor(string address, DateTimeOffset at) =>
+        HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes("blog|" + at.UtcDay + "|" + address));
+
     /// <summary>203.0.113.7 becomes 203.0.113.x; an IPv6 address keeps its first three groups and ends in x; anything unreadable is x.</summary>
     public static string NetworkOf(string? address)
     {

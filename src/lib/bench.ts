@@ -75,6 +75,7 @@ export const BENCH_CARDS: BenchCard[] = [
   card('kept', 'Kept log', 'broke', 'kept-logs-card'),
   card('activity', 'Site activity', 'desk'),
   card('links', 'Who opened what', 'desk'),
+  card('blog', 'Blog analytics', 'desk'),
   card('operator', 'Operator', 'desk'),
   card('reset', 'Reset a password', 'desk', 'reset-link-card'),
 ];

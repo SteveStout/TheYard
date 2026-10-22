@@ -334,6 +334,19 @@
   overflow-wrap: break-word;
 }
 
+/* The Blog row's NEW POST, while the newest post is under a week old: the gold trim the preview draws. */
+.newBadge {
+  flex: none;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-gold-light);
+  border-radius: var(--radius-full);
+  background: var(--color-warning-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-gold-bar-dark);
+  white-space: nowrap;
+}
+
 /* The account, Admin, Reset bids, the resume, and the repository stay pinned
    below the scroll. */
 .pinned {

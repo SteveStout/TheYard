@@ -17,6 +17,7 @@ export async function siteList(request: APIRequestContext): Promise<SitePage[]> 
     { key: 'landing', address: '/' },
     { key: 'inventory', address: '/?view=inventory' },
     { key: 'account', address: '/?view=account' },
+    { key: 'blog', address: '/?view=blog' },
     ...CARD_SLUGS.map((slug) => ({ key: `admin-${slug}`, address: `/?view=admin&card=${slug}` })),
   ];
   const listing = (await (

@@ -33,6 +33,7 @@ export function RailPinnedRows({
   bidCount,
   onResetBids,
   onCloseDrawer,
+  blogBadge,
 }: {
   iconsOnly: boolean;
   views: Record<RailViewKey, { current: boolean; open: () => void }>;
@@ -41,6 +42,8 @@ export function RailPinnedRows({
   bidCount: number;
   onResetBids: () => void;
   onCloseDrawer: () => void;
+  /** NEW POST while the newest post is under a week old, else null. */
+  blogBadge: string | null;
 }) {
   return (
     <div className={styles.pinned}>
@@ -63,6 +66,7 @@ export function RailPinnedRows({
               current={isLinkOut(key) ? false : views[key].current}
               label={key === 'account' ? (accountEmail ?? action.label) : action.label}
               href={isLinkOut(key) ? links[key] : undefined}
+              badge={key === 'blog' ? blogBadge : null}
               onOpen={() => {
                 onCloseDrawer();
                 if (!isLinkOut(key)) views[key].open();

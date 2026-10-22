@@ -27,6 +27,7 @@ export type MenuVariant =
 /** The tile and row icons, drawn in SheetIcons.tsx on the same 20 by 20 grid as the row icons. */
 export type NavIcon =
   | 'home'
+  | 'blog'
   | 'inventory'
   | 'architecture'
   | 'api'
@@ -79,7 +80,7 @@ export type SiteSection = {
  * is opened by useNavigation (useAddressBar owns the address bar); a link is one of LINKS.
  */
 export type SiteAction = {
-  key: 'home' | 'inventory' | 'account' | 'admin' | 'resume' | 'repo';
+  key: 'home' | 'blog' | 'inventory' | 'account' | 'admin' | 'resume' | 'repo';
   /** The label when nobody is signed in; the account row shows the address instead. */
   label: string;
   icon: NavIcon;

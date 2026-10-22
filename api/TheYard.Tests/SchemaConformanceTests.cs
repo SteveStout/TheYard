@@ -308,11 +308,11 @@ internal sealed class Ddl
     public static string Normalize(string type) => type.Replace(" ", string.Empty, StringComparison.Ordinal).ToLowerInvariant();
 
     private static readonly Regex TablePattern = new(
-        @"CREATE\s+TABLE\s+\[dbo\]\.\[(?<name>[^\]]+)\]\s*\((?<body>.*?)\)\s*;",
+        @"CREATE\s+TABLE\s+\[(?:dbo|blog)\]\.\[(?<name>[^\]]+)\]\s*\((?<body>.*?)\)\s*;",
         RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
     private static readonly Regex IndexPattern = new(
-        @"CREATE\s+(?<unique>UNIQUE\s+)?(?<clustered>CLUSTERED\s+)?INDEX\s+\[[^\]]+\]\s+ON\s+\[dbo\]\.\[(?<table>[^\]]+)\]\s*\((?<columns>[^)]*)\)",
+        @"CREATE\s+(?<unique>UNIQUE\s+)?(?<clustered>CLUSTERED\s+)?INDEX\s+\[[^\]]+\]\s+ON\s+\[(?:dbo|blog)\]\.\[(?<table>[^\]]+)\]\s*\((?<columns>[^)]*)\)",
         RegexOptions.IgnoreCase);
 
     private static readonly Regex ColumnPattern = new(
@@ -324,7 +324,7 @@ internal sealed class Ddl
         RegexOptions.IgnoreCase);
 
     private static readonly Regex ForeignKeyPattern = new(
-        @"CONSTRAINT\s+\[[^\]]+\]\s+FOREIGN\s+KEY\s*\((?<columns>[^)]*)\)\s+REFERENCES\s+\[dbo\]\.\[(?<principal>[^\]]+)\]",
+        @"CONSTRAINT\s+\[[^\]]+\]\s+FOREIGN\s+KEY\s*\((?<columns>[^)]*)\)\s+REFERENCES\s+\[(?:dbo|blog)\]\.\[(?<principal>[^\]]+)\]",
         RegexOptions.IgnoreCase);
 
     private static DeclaredTable ReadTable(string body)

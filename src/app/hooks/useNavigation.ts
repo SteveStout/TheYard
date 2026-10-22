@@ -1,5 +1,5 @@
 /**
- * Does:      Opens and closes each view (home, the inventory, a vehicle, Admin, Account, a document), moves focus to what opened, and says it to screen readers.
+ * Does:      Opens and closes each view (home, the blog, the inventory, a vehicle, Admin, Account, a document), moves focus to what opened, and says it to screen readers.
  * Does not:  Write the address bar itself (it asks useAddressBar.ts), fetch the list, or draw anything.
  * Used by:   App.tsx, Shell.tsx.
  */
@@ -11,6 +11,7 @@ import { type CardSlug, DEFAULT_CARD } from '../../lib/workbench';
 import { docSlug } from '../../library/addresses';
 import type { DocKey } from '../../library/documents';
 import type { Address, BackTo } from './useAddressBar';
+import { useBlogNavigation } from './useBlogNavigation';
 import type { LoadState } from './useInventory';
 
 export type Navigation = ReturnType<typeof useNavigation>;
@@ -38,6 +39,8 @@ export function useNavigation(address: Address, loadState: LoadState) {
     setInventoryOpen,
     openDocKey,
     setOpenDocKey,
+    blogOpen,
+    setBlogOpen,
   } = address;
 
   // #region focus
@@ -50,11 +53,13 @@ export function useNavigation(address: Address, loadState: LoadState) {
   // its id (MAIN_ID, which Shell.tsx gives it), the same id the skip link names.
   const viewKey = adminOpen
     ? 'admin'
-    : accountOpen
-      ? 'account'
-      : selectedVehicle
-        ? `vehicle:${selectedVehicle.id}`
-        : 'list';
+    : blogOpen
+      ? `blog:${address.blogPost ?? ''}`
+      : accountOpen
+        ? 'account'
+        : selectedVehicle
+          ? `vehicle:${selectedVehicle.id}`
+          : 'list';
   const lastView = useRef(viewKey);
   useEffect(() => {
     if (lastView.current === viewKey) return;
@@ -79,6 +84,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     params.set('vehicle', vehicle.id);
     address.push({ viaTile: true }, params);
+    setBlogOpen(false);
     setInventoryOpen(true);
     setSelectedVehicle(vehicle);
   };
@@ -110,9 +116,11 @@ export function useNavigation(address: Address, loadState: LoadState) {
     // the reader left it. Admin counts as a view switch too.
     window.scrollTo(
       0,
-      selectedVehicle || adminOpen || accountOpen || !inventoryOpen ? 0 : listScrollY.current
+      selectedVehicle || adminOpen || accountOpen || blogOpen || !inventoryOpen
+        ? 0
+        : listScrollY.current
     );
-  }, [selectedVehicle, adminOpen, accountOpen, inventoryOpen]);
+  }, [selectedVehicle, adminOpen, accountOpen, inventoryOpen, blogOpen, address.blogPost]);
 
   // #region open-inventory
   // The same shape as Admin and Account: a view at its own address, pushed so
@@ -121,6 +129,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     if (!opensInventory(params)) params.set('view', 'inventory');
     address.push({ viaInventory: true }, params);
+    setBlogOpen(false);
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(false);
@@ -136,6 +145,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'admin');
     address.push({ viaAdmin: true, from: openedFrom() }, params);
+    setBlogOpen(false);
     setSelectedVehicle(null);
     setAccountOpen(false);
     setAdminCard(DEFAULT_CARD);
@@ -202,6 +212,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'account');
     address.push({ viaAccount: true, from: openedFrom() }, params);
+    setBlogOpen(false);
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(true);
@@ -234,6 +245,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
    */
   const goHome = () => {
     address.push({ viaHome: true }, null);
+    setBlogOpen(false);
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(false);
@@ -241,27 +253,33 @@ export function useNavigation(address: Address, loadState: LoadState) {
   };
 
   // #region announcement
-  // Focus says where you are; this says what you arrived at. Moving focus to a
-  // container is announced inconsistently across screen readers, so the view's
-  // name is stated outright. The match count is deliberately not repeated here:
-  // the filter bar's own status line already owns that sentence, and two live
-  // regions saying the same thing is worse than one saying it once.
+  // Focus says where you are; this says what you arrived at, since a focused container is announced
+  // unevenly. The match count is left to the filter bar's own status line: one live region says it once.
   const announcement = adminOpen
     ? 'Admin panel'
-    : accountOpen
-      ? 'Account'
-      : selectedVehicle
-        ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
-        : !inventoryOpen
-          ? 'The Yard, home'
-          : loadState === 'loading'
-            ? 'Loading inventory'
-            : loadState === 'error'
-              ? 'The inventory API could not be reached'
-              : 'Vehicle inventory';
+    : blogOpen
+      ? 'Blog'
+      : accountOpen
+        ? 'Account'
+        : selectedVehicle
+          ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
+          : !inventoryOpen
+            ? 'The Yard, home'
+            : loadState === 'loading'
+              ? 'Loading inventory'
+              : loadState === 'error'
+                ? 'The inventory API could not be reached'
+                : 'Vehicle inventory';
   // #endregion announcement
 
+  const blog = useBlogNavigation(address, () => {
+    setSelectedVehicle(null);
+    setAdminOpen(false);
+    setAccountOpen(false);
+  });
+
   return {
+    ...blog,
     announcement,
     backTo,
     goHome,

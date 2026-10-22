@@ -12,7 +12,7 @@ import styles from '../SideNav/SideNav.module.css';
 /**
  * One of the site map's actions as a pinned row: a view the app opens, or a link
  * out (the resume and the repository) in a new tab when `href` is given. Whatever
- * `after` holds is drawn straight under the row.
+ * `after` holds is drawn straight under the row; a `badge` (the Blog's NEW POST) sits at the row's end.
  */
 export function RailPinnedRow({
   action,
@@ -22,6 +22,7 @@ export function RailPinnedRow({
   href,
   onOpen,
   after,
+  badge,
 }: {
   action: SiteAction;
   iconsOnly: boolean;
@@ -30,11 +31,17 @@ export function RailPinnedRow({
   href?: string;
   onOpen: () => void;
   after: ReactNode;
+  badge?: string | null;
 }) {
   const inner = (
     <>
       <NavGlyph icon={action.icon} className={styles.icon} />
       <span className={iconsOnly ? styles.srOnly : styles.label}>{label}</span>
+      {badge && !iconsOnly ? (
+        <span className={styles.newBadge} data-testid="rail-new-post">
+          {badge}
+        </span>
+      ) : null}
     </>
   );
   const row =

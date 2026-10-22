@@ -392,9 +392,11 @@ public class StyleRulesTests
     {
         ["src/app/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings",
         ["src/app/InventoryView.module.css"] = "the inventory title's underline, the ring round Load more",
-        ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings",
+        ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings, the Blog row's NEW POST trim",
         ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
+        ["src/components/blog/BlogPage/BlogPage.module.css"] = "the Blog title's underline, the same trim as the Admin title's",
+        ["src/components/blog/BlogPostCard/BlogPostCard.module.css"] = "the ring round the author's initials, as the approved preview draws it",
         ["src/components/admin/shared/card.module.css"] = "the ring round the chosen window button",
         ["src/library/DocProse.module.css"] = "a document title's underline, the tick on a heading's rule",
         ["src/library/StyleBlocks.module.css"] = "the gold ring round each Style tile's badge, the landing tile's trim",

@@ -45,6 +45,7 @@ export const CARD_CHUNKS = {
   KeptLogsCard: () => import('../KeptLogsCard/KeptLogsCard'),
   ActivityCard: () => import('../ActivityCard/ActivityCard'),
   LinksCard: () => import('../LinksCard/LinksCard'),
+  BlogCard: () => import('../BlogCard/BlogCard'),
   OperatorCard: () => import('../OperatorCard/OperatorCard'),
   ResetLinkCard: () => import('../ResetLinkCard/ResetLinkCard'),
 };
@@ -92,6 +93,8 @@ const KeptLogsCard = lazy(CARD_CHUNKS.KeptLogsCard);
 const ActivityCard = lazy(CARD_CHUNKS.ActivityCard);
 /** The Who opened what card, its code fetched the first time it is drawn. */
 const LinksCard = lazy(CARD_CHUNKS.LinksCard);
+/** Blog analytics, its code fetched the first time it is drawn. */
+const BlogCard = lazy(CARD_CHUNKS.BlogCard);
 /** The Operator card, its code fetched the first time it is drawn. */
 const OperatorCard = lazy(CARD_CHUNKS.OperatorCard);
 /** The reset link card, its code fetched the first time it is drawn. */
@@ -244,6 +247,8 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
         );
       case 'links':
         return <LinksCard tick={tick} />;
+      case 'blog':
+        return <BlogCard tick={tick} />;
       case 'operator':
         return (
           <OperatorCard

@@ -1,0 +1,42 @@
+/**
+ * Does:      Lays out the home page's Latest posts band: its heading and the way to every post on one line, then the three
+ *            short cards three across where they fit and one under another where they do not.
+ * Does not:  Style a short card (BlogPage.module.css does).
+ * Used by:   LatestPosts.tsx.
+ */
+.band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  container-type: inline-size;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.all {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@container (min-width: 760px) {
+  .cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

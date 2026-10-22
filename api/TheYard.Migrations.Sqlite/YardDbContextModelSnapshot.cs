@@ -475,6 +475,219 @@ namespace TheYard.Migrations.Sqlite
                     b.ToTable("Photos", (string)null);
                 });
 
+            modelBuilder.Entity("TheYard.Infrastructure.PostEventRow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBot")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("SessionHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("BLOB")
+                        .IsFixedLength();
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId", "Type");
+
+                    b.ToTable("PostEvent", (string)null);
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostImageRow", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AltText")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("PostId", "Position");
+
+                    b.ToTable("PostImage", (string)null);
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostRow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CodeUrl")
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LinkedInUrl")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("PublishedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LinkedInUrl")
+                        .IsUnique();
+
+                    b.HasIndex("PublishedAt");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Post", (string)null);
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostTagRow", b =>
+                {
+                    b.Property<int>("PostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Tag")
+                        .HasMaxLength(60)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PostId", "Tag");
+
+                    b.ToTable("PostTag", (string)null);
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostViewRow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(2)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT")
+                        .IsFixedLength();
+
+                    b.Property<string>("Device")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBot")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RefCode")
+                        .HasMaxLength(6)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT")
+                        .IsFixedLength();
+
+                    b.Property<string>("ReferrerHost")
+                        .HasMaxLength(120)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("SessionHash")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("BLOB")
+                        .IsFixedLength();
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UtmCampaign")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UtmMedium")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UtmSource")
+                        .HasMaxLength(60)
+                        .IsUnicode(false)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("ViewedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId", "ViewedAt");
+
+                    b.ToTable("PostView", (string)null);
+                });
+
             modelBuilder.Entity("TheYard.Infrastructure.StandingRow", b =>
                 {
                     b.Property<string>("VehicleId")
@@ -770,6 +983,42 @@ namespace TheYard.Migrations.Sqlite
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostEventRow", b =>
+                {
+                    b.HasOne("TheYard.Infrastructure.PostRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostImageRow", b =>
+                {
+                    b.HasOne("TheYard.Infrastructure.PostRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostTagRow", b =>
+                {
+                    b.HasOne("TheYard.Infrastructure.PostRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TheYard.Infrastructure.PostViewRow", b =>
+                {
+                    b.HasOne("TheYard.Infrastructure.PostRow", null)
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

@@ -185,4 +185,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '112',
   },
+  adrEveryLinkedInPostIsAlsoABlogPost: {
+    title: 'ADR: Every LinkedIn post is also a blog post',
+    menuLabel: 'ADR: Every LinkedIn post is also a blog post',
+    url: '/api/docs/adr-every-linkedin-post-is-also-a-blog-post',
+    kind: 'adr',
+    number: '113',
+  },
 } as const satisfies Record<string, RecordEntry>;

@@ -8,6 +8,7 @@ import { SideNav } from '../components/layout/SideNav';
 import { StoreBar } from '../components/layout/StoreBar';
 import { Background } from '../components/layout/Background';
 import type { DocKey } from '../library/documents';
+import { newPost, useBlogPosts } from '../hooks/useBlogPosts';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { MAIN_ID, type Navigation } from './hooks/useNavigation';
@@ -44,6 +45,7 @@ export function Shell({
     listShowing: boolean;
     adminOpen: boolean;
     accountOpen: boolean;
+    blogOpen: boolean;
     openDocKey: DocKey | null;
   };
   accountEmail: string | null;
@@ -52,6 +54,8 @@ export function Shell({
   build: RunningBuild;
   children: ReactNode;
 }) {
+  // The Blog row's NEW POST while the newest post is under a week old (ADR: Every LinkedIn post is also a blog post).
+  const blogNew = newPost(useBlogPosts());
   return (
     <div className={styles.app} data-rail={railShape(rail)}>
       {/* #region skip-link */}
@@ -72,6 +76,9 @@ export function Shell({
         onDrawerClose={rail.closeDrawer}
         onHome={go.goHome}
         homeOpen={views.homeShowing}
+        blogOpen={views.blogOpen}
+        onOpenBlog={() => go.openBlog()}
+        blogBadge={blogNew ? 'NEW POST' : null}
         inventoryOpen={views.listShowing}
         onOpenInventory={go.openInventory}
         adminOpen={views.adminOpen}

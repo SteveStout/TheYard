@@ -170,10 +170,10 @@
           }
         },
         {
-          "tech": "Front Door",
+          "tech": "Front Door (written, switched off)",
           "note": null,
-          "where": "Azure edge, in front of everything",
-          "version": "live resource",
+          "where": "Off: the subscription refuses Front Door, so the Netlify edge stands in front today",
+          "version": "off",
           "style": "service",
           "proof": {
             "label": "main.bicep",

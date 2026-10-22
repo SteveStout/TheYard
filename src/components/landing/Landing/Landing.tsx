@@ -20,6 +20,7 @@ import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';
 import { PulseBand } from '../PulseBand';
 import { TechStack } from '../TechStack';
+import { LatestPosts } from '../LatestPosts';
 import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
 import { Recommendations } from '../../shared/Recommendations';
 import styles from './Landing.module.css';
@@ -30,12 +31,10 @@ import { request } from '../../../lib/request';
  * place the sidebar goes, drawn from the same site map the sidebar is drawn
  * from (src/lib/siteMap.ts), so the two cannot list different things. The
  * large tiles are the map's featured entries, Inventory, Author and the
- * resume, three across with the badge on top, the first two with a photograph in
- * the badge; under them the evidence strip reads the gate's own counts from
- * /api/tests/summary on the same three columns, then the Tech stack table the build
- * generated from the repository; below that every other section
- * under its group's heading, as the sidebar groups them, then Sign in, Admin and
- * GitHub. The Admin tile carries a health dot from /api/health, read once when the
+ * resume, three across with the badge on top; under them the evidence strip reads the gate's
+ * counts from /api/tests/summary, then the blog's Latest posts, then the Tech stack table the
+ * build generated from the repository; below that every other section under its group's
+ * heading, as the sidebar groups them, then Sign in, Admin and GitHub. The Admin tile carries a health dot from /api/health, read once when the
  * page opens, and the band under the title reads the running site from /api/pulse.
  * What colleagues say stands in a column of its own on the right, every
  * recommendation in full from /api/recommendations; too narrow for two, it follows.
@@ -60,12 +59,14 @@ export function Landing({
   onOpenAccount,
   onOpenAdmin,
   onOpenDoc,
+  onOpenBlog,
 }: {
   accountLabel: string;
   onOpenInventory: () => void;
   onOpenAccount: () => void;
   onOpenAdmin: () => void;
   onOpenDoc: (key: DocKey) => void;
+  onOpenBlog: (slug: string | null) => void;
 }) {
   const { featured, groups, rest } = landingTiles();
   const [health, setHealth] = useState<LandingHealth>('reading');
@@ -95,7 +96,6 @@ export function Landing({
   const proof = proofFigures(summary, MENUS.records.items.length);
 
   const tile = (entry: LandingTile, large: boolean) => {
-    // Every tile is the shared glass with the dark green rule and its brackets (the operator's look).
     const className = large ? `${styles.big} op-glass` : `${styles.tile} op-glass`;
     const badge = large ? `${styles.badge} ${styles.badgeBig}` : styles.badge;
     const name = entry.kind === 'section' ? entry.section.menu : entry.action.key;
@@ -215,7 +215,6 @@ export function Landing({
           data-testid="landing-recommendations"
         >
           <h2 id="landing-said" className={styles.groupHeading}>
-            {/* The heading is the way to where these were written, so nothing under it has to say so. */}
             <a
               className={styles.headingLink}
               href={RECOMMENDATIONS_SOURCE}
@@ -276,6 +275,7 @@ export function Landing({
               );
             })}
           </ul>
+          <LatestPosts headingClass={styles.groupHeading} onOpenBlog={onOpenBlog} />
           <TechStack headingClass={styles.groupHeading} />
           {groups.map((group) => (
             <section

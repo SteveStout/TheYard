@@ -10,6 +10,7 @@ import { pageOpenReport } from '../lib/links';
 import { prefetchWhenIdle } from '../lib/prefetch';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { Landing } from '../components/landing/Landing';
+import { BlogPage } from '../components/blog/BlogPage';
 import { VehicleDetail } from '../components/vehicle/VehicleDetail';
 import { useAccount } from './hooks/useAccount';
 import { useAddressBar } from './hooks/useAddressBar';
@@ -71,7 +72,7 @@ export default function App() {
   }, [openReport]);
   // #endregion tagged-open
 
-  // One view at a time, in this order: Admin, Account, the landing page, then
+  // One view at a time, in this order: Admin, Account, the blog, the landing page, then
   // the inventory (loading, unreachable, a vehicle, or the list).
   return (
     <Shell
@@ -110,6 +111,12 @@ export default function App() {
           backTo={go.backTo()}
           resetToken={address.resetToken}
         />
+      ) : address.blogOpen ? (
+        <BlogPage
+          slug={address.blogPost}
+          onOpenPost={(slug) => go.openBlog(slug)}
+          onAllPosts={go.closeBlogPost}
+        />
       ) : !address.inventoryOpen ? (
         <Landing
           accountLabel={account.email ?? 'Sign in'}
@@ -117,6 +124,7 @@ export default function App() {
           onOpenAccount={go.openAccount}
           onOpenAdmin={go.openAdmin}
           onOpenDoc={go.openDocument}
+          onOpenBlog={go.openBlog}
         />
       ) : inventory.loadState === 'loading' ? (
         <InventoryLoading />
