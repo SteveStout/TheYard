@@ -58,7 +58,8 @@ public static class InsightsCard
             { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("reporter_rows"), "App", "Type", "Items, last day") },
             new("dropped", "Is anything dropped?", refused ? "the workspace refused the query" : inputs.Buckets.Count == 0 ? "not read yet" : cappedHours > 0 ? $"yes, the cap stopped collection in {cappedHours:0} hours" : "no hour hit the cap",
                 [new(refused ? "the site's identity holds Reader, which cannot run a log query; Log Analytics Reader on the workspace is what it needs" : $"sampling keeps {ResourceView.Number(sampling, "0")} % of requests · the component's own setting is {Setting(inputs)}", null)],
-                refused ? "warning" : cappedHours > 0 ? "alarm" : "good"),
+                // The identity holding no role that runs a query is information here, as on the registry and nightly cards.
+                refused ? "info" : cappedHours > 0 ? "alarm" : "good"),
             new("cost", "What is it costing?", month is null ? "not read yet" : billable is > 0 ? $"{billable.Value.ToString("0.00", CultureInfo.InvariantCulture)} GB past {free}" : $"nothing; {month.Value.ToString("0.00", CultureInfo.InvariantCulture)} of {free}",
                 [new($"{(inputs.CostMonth is { } bill ? $"${bill.ToString("0.00", CultureInfo.InvariantCulture)} this month on the bill" : "not on the bill yet")} · retention {ResourceView.Fact(inputs, "retention_days")} days", null)],
                 // Paying past the free allowance is information on this card, not a fault: the cap row says whether it is too much.

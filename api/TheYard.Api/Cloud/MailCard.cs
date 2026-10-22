@@ -77,7 +77,7 @@ public static class MailCard
                 [new($"{ResourceView.Number(bounced)} bounced · {ResourceView.Number(suppressed)} suppressed · {ResourceView.Number(quarantined)} quarantined · {ResourceView.Number(failed)} failed", null)],
                 CloudTones.Of(bounceTone)),
             new("azure", "What did Azure do to it?", events.Count == 0 ? "nothing in the window" : $"{events.Count} events",
-                [.. events.Take(3).Select(e => new CloudLink($"{e.At:MMM d HH:mm} {e.Title}", null))], events.Any(e => !e.Planned) ? "info" : "good"),
+                [.. events.Take(3).Select(e => new CloudLink($"{e.At:MMM d HH:mm} {e.Title}", null))], CloudTones.Of(PlanThresholds.EventsTone(events))),
             new("sender", $"Is {ResourceView.Fact(inputs, "domain_kind", "the sender")} still right?", sendsTone == PlanTone.Alarm ? "no, sends are near its hourly limit" : "yes",
                 [new($"{ResourceView.Number(sendsHour)} sends this hour of {limit:N0} · the Azure-managed sender allows {SendsPerHour:0} an hour, a custom domain {CustomDomainPerHour:N0}", null)],
                 sendsTone == PlanTone.Alarm ? "alarm" : "good"),
@@ -97,6 +97,7 @@ public static class MailCard
                 new("Bounce rate", bounceRate is { } r ? $"{r.ToString("0.0", CultureInfo.InvariantCulture)} %" : "none", CloudTones.Of(bounceTone)),
                 new("Sender", ResourceView.Fact(inputs, "sender_domain"), "info") { Source = "ARM record" },
                 new("Data location", ResourceView.Fact(inputs, "data_location"), "info") { Source = "ARM record" },
+                new("Tier", ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("tier") ?? "tier not stated by the record", "info") { Source = "ARM record" },
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
             ],
@@ -125,8 +126,10 @@ public static class MailCard
             ["sender_domain"] = domain is { } d3 ? AzureMetrics.Text(d3, "properties.mailFromSenderDomain") ?? name : null,
             ["domain_kind"] = managed == "AzureManaged" ? "the free Azure-managed sender" : managed is null ? null : "a custom domain",
             ["data_location"] = AzureMetrics.Text(record, "properties.dataLocation"),
-            // The tier as the record names it; Communication Services' record may name none, and then the line says so.
-            ["spec"] = string.Join(' ', new[] { (AzureMetrics.Text(record, "properties.sku.name") ?? AzureMetrics.Text(record, "sku.name") ?? "tier not read").ToUpperInvariant(), AzureMetrics.Text(record, "properties.dataLocation")?.ToUpperInvariant() }.Where(p => p is not null)),
+            // The tier as the record names it; Communication Services' record may name none, and then the
+            // spec line leaves it out and the Tier line of the readout says so in a sentence.
+            ["tier"] = AzureMetrics.Text(record, "properties.sku.name") ?? AzureMetrics.Text(record, "sku.name"),
+            ["spec"] = string.Join(' ', new[] { (AzureMetrics.Text(record, "properties.sku.name") ?? AzureMetrics.Text(record, "sku.name"))?.ToUpperInvariant(), AzureMetrics.Text(record, "properties.dataLocation")?.ToUpperInvariant() }.Where(p => p is not null)),
         };
     }
 }

@@ -202,5 +202,42 @@ public class CloudThresholdTests
 
         Assert.Equal(100.0, (await keep.NewestAsync(1, CancellationToken.None)).Single().Values["cache_hit"]);
     }
+    /// <summary>
+    /// One tone rule for information (ADR: One frame for every resource, the addendum of 1.0.4.23): the
+    /// identity holding no role that runs a query is information on the Insights card as it is on the
+    /// registry and nightly cards; the mail card's Azure row alarms on an unplanned event the way SQL's
+    /// and the plan's do; and a tier the record does not state leaves the spec line and is said on a
+    /// readout line in a sentence.
+    /// </summary>
+    [Fact]
+    public void Information_never_lifts_a_card_and_an_unplanned_event_on_mail_does()
+    {
+        var refused = InsightsCard.View(Held("ingest_today_gb", 0.01, new Dictionary<string, string?> { ["query"] = "refused" }));
+        Assert.Equal("info", refused.Rows.Single(r => r.Key == "dropped").Tone);
+
+        var quiet = Held("sends", 1, new Dictionary<string, string?>());
+        var restarted = quiet with { Hours = [quiet.Hours[0] with { Events = [new PlanEvent(Now.AddMinutes(-30), "restart", "Restart", "acs-test", Planned: false)] }] };
+        Assert.Equal("alarm", MailCard.View(restarted).Rows.Single(r => r.Key == "azure").Tone);
+        Assert.Equal("good", MailCard.View(quiet).Rows.Single(r => r.Key == "azure").Tone);
+
+        Assert.Equal("tier not stated by the record", MailCard.View(quiet).Readout.Lines.Single(l => l.Label == "Tier").Value);
+        Assert.Equal("Standard", MailCard.View(Held("sends", 1, new Dictionary<string, string?> { ["tier"] = "Standard" })).Readout.Lines.Single(l => l.Label == "Tier").Value);
+    }
+
+    /// <summary>The recorder's log line says which read failed: the hour's when the hour threw, else the minute's.</summary>
+    [Fact]
+    public void A_failed_read_names_its_part_and_an_unkept_card_is_asked_once_a_minute()
+    {
+        var hour = new HttpRequestException("refused");
+        hour.Data[CloudRecorder.PartKey] = "hour";
+        Assert.Equal("hour", CloudRecorder.PartOf(hour));
+        Assert.Equal("minute", CloudRecorder.PartOf(new HttpRequestException("refused")));
+
+        var reader = new CloudReader([], null, (_, _) => Task.FromResult<double?>(null), TimeProvider.System);
+        Assert.True(reader.Due("nightly", Now));
+        Assert.False(reader.Due("nightly", Now.AddSeconds(30)));
+        Assert.True(reader.Due("nightly", Now.AddSeconds(61)));
+        Assert.True(reader.Due("insights", Now.AddSeconds(30)));
+    }
     // #endregion cloud-threshold-tests
 }

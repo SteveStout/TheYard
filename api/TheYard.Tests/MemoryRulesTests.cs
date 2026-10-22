@@ -85,6 +85,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.CloudRecorder._hourRead"] = "one per resource card, seven",
         ["TheYard.Api.CloudRecorder._liveHour"] = "one hour per resource card, seven, each replaced by the next",
         ["TheYard.Api.CloudReader._cached"] = "one per card and window, seven cards by four windows",
+        ["TheYard.Api.CloudReader._asked"] = "one per card, the cards in the catalogue",
         ["TheYard.Api.CloudReader._month"] = "one per card, seven",
         ["TheYard.Api.PlanHistoryReader._cached"] = "one per window, four",
         ["TheYard.Api.ActivityCollector._stores"] = "one per store, two",

@@ -180,6 +180,8 @@ public static class AcrCard
         }
         var images = fact.Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(line => line.Split('\t')).Where(cells => cells.Length >= 7).ToList();
         var faults = new List<CloudLink>();
+        // A missing description is a line for the developer, information, never a fault on the card.
+        var notes = new List<CloudLink>();
         var rows = new List<IReadOnlyList<CloudLink>>();
         var live = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var cells in images)
@@ -191,7 +193,7 @@ public static class AcrCard
             bool described = Descriptions.TryGetValue(name, out var what);
             if (!described)
             {
-                faults.Add(new($"{name} has no description: say what it is in AcrCard.Descriptions", null));
+                notes.Add(new($"{name} has no description: say what it is in AcrCard.Descriptions", null));
             }
             CloudLink runsOn = apps.Count == 0 ? new("no web app runs it", null)
                 : new(string.Join(", ", apps.Select(app => app[0])), apps[0][1].Length > 0 ? apps[0][1] : null);
@@ -212,10 +214,21 @@ public static class AcrCard
         {
             faults.Add(new($"{SameBuild.Api} runs {apiTag} and {SameBuild.Renderer} runs {renderTag}: until they match, pages are drawn in the browser", null));
         }
-        IReadOnlyList<CloudLink> detail = faults.Count > 0 ? faults
+        IReadOnlyList<CloudLink> detail = faults.Count + notes.Count > 0 ? [.. faults, .. notes]
             : ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("apps_read") is null ? [new CloudLink("which web app runs each image is read from the plan card's hour; none is kept yet", null)]
             : [];
-        return new CloudRow("holds", "What does it hold?", answer, detail, faults.Count > 0 ? "warning" : "good") { Table = new CloudTable(ImageColumns, rows) };
+        // The table is the hour's catalogue, so it says its own age beside the per-minute live read.
+        detail = [.. detail, new CloudLink(CatalogueAge(inputs), null)];
+        string tone = faults.Count > 0 ? "warning" : notes.Count > 0 ? "info" : "good";
+        return new CloudRow("holds", "What does it hold?", answer, detail, tone) { Table = new CloudTable(ImageColumns, rows) };
+    }
+
+    /// <summary>How old the hour's catalogue is, in whole minutes.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static string CatalogueAge(ResourceCardInputs inputs)
+    {
+        var at = ResourceView.Latest(inputs)?.At;
+        return at is { } read ? $"the table is the hourly catalogue, read {Math.Max(0, (int)(inputs.Now - read).TotalMinutes)} min ago" : "the table is the hourly catalogue, not read yet";
     }
 
     /// <summary>Bytes as gigabytes to two places.</summary>

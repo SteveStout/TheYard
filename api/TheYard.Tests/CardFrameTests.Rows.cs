@@ -86,7 +86,8 @@ public sealed partial class CardFrameTests
         var insights = InsightsCard.View(Inputs(new Dictionary<string, double?> { ["sampling"] = 100 }, new Dictionary<string, string?> { ["workspace_name"] = "log-test" }));
         Assert.StartsWith("not read", insights.Readout.Lines.Single(l => l.Label == "Sampling setting").Value, StringComparison.Ordinal);
         using var record = System.Text.Json.JsonDocument.Parse("""{"location":"global","properties":{"dataLocation":"United States"}}""");
-        Assert.Equal("TIER NOT READ UNITED STATES", MailCard.Facts(record.RootElement, null)["spec"]);
+        Assert.Equal("UNITED STATES", MailCard.Facts(record.RootElement, null)["spec"]);
+        Assert.Null(MailCard.Facts(record.RootElement, null)["tier"]);
         using var named = System.Text.Json.JsonDocument.Parse("""{"sku":{"name":"Standard"},"properties":{"dataLocation":"United States"}}""");
         Assert.Equal("STANDARD UNITED STATES", MailCard.Facts(named.RootElement, null)["spec"]);
     }

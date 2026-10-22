@@ -17,11 +17,30 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
     private readonly object _gate = new();
     private readonly Dictionary<string, (DateTimeOffset At, CloudReport View)> _cached = new(StringComparer.Ordinal);
 
+    /// <summary>When each unkept card's source was last asked live, so past its hour it is asked once a minute, not on every poll.</summary>
+    private readonly Dictionary<string, DateTimeOffset> _asked = new(StringComparer.Ordinal);
+
     /// <summary>
     /// The thirty days at five minutes, per card, kept ten minutes: it is the heaviest query a card
     /// asks, its 95th and peak move slowly, and every card shares one document store allowance.
     /// </summary>
     private readonly Dictionary<string, (DateTimeOffset At, IReadOnlyList<ResourceBucket> Month)> _month = new(StringComparer.Ordinal);
+
+    /// <summary>True, and the time noted, when an unkept card's source was last asked a minute or more ago.</summary>
+    /// <param name="key">The card.</param>
+    /// <param name="now">The reader's clock.</param>
+    public bool Due(string key, DateTimeOffset now)
+    {
+        lock (_gate)
+        {
+            if (_asked.TryGetValue(key, out var asked) && now - asked < TimeSpan.FromMinutes(1))
+            {
+                return false;
+            }
+            _asked[key] = now;
+            return true;
+        }
+    }
 
     /// <summary>Whether a card by this key exists.</summary>
     public bool Knows(string key) => cards.Any(entry => entry.Card.Key == key);
@@ -45,7 +64,7 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
         bool stale = availability.Available
             ? lastHour.Count == 0 || now - lastHour[^1].At > card.Stale
             : recorder?.LiveHour(key) is not { } held || now - held.At > TimeSpan.FromMinutes(61);
-        if (recorder is not null && stale)
+        if (recorder is not null && stale && (availability.Available || Due(key, now)))
         {
             try
             {

@@ -68,11 +68,12 @@ public partial class CloudViewTests
     }
 
     [Fact]
-    public void An_image_with_no_description_warns_and_says_where_one_goes()
+    public void An_image_with_no_description_is_information_and_says_where_one_goes()
     {
         var holdings = new AcrHoldings([.. Two().Images, new AcrImage("sidecar", 1, 0, 1024, 0, Now)]);
         var row = AcrCard.View(Registry(holdings, Plan())).Rows.Single(r => r.Key == "holds");
-        Assert.Equal("warning", row.Tone);
+        Assert.Equal("info", row.Tone);
+        Assert.Contains(row.Detail, d => d.Text.StartsWith("the table is the hourly catalogue, read ", StringComparison.Ordinal));
         Assert.Equal("no description", row.Table.Rows[2][1].Text);
         Assert.Contains(row.Detail, d => d.Text.StartsWith("sidecar has no description", StringComparison.Ordinal));
     }
@@ -105,6 +106,18 @@ public partial class CloudViewTests
         Assert.Empty(row.Table.Rows);
         Assert.Equal("the catalogue could not be read; AcrPull on the registry is what it needs", row.Detail.Single().Text);
         Assert.Equal("not read yet", AcrCard.View(Held("storage_gb", 1)).Rows.Single(r => r.Key == "holds").Answer);
+    }
+    /// <summary>The newest push in Central time, on both sides of each daylight-saving change: the hour itself, not only the suffix.</summary>
+    [Theory]
+    [InlineData("2026-03-08T07:30:00Z", "Mar 8 01:30 Central")]
+    [InlineData("2026-03-08T08:30:00Z", "Mar 8 03:30 Central")]
+    [InlineData("2026-11-01T06:30:00Z", "Nov 1 01:30 Central")]
+    [InlineData("2026-11-01T07:30:00Z", "Nov 1 01:30 Central")]
+    public void The_newest_push_is_the_central_hour_across_a_daylight_saving_change(string utc, string central)
+    {
+        var pushed = DateTimeOffset.Parse(utc, System.Globalization.CultureInfo.InvariantCulture);
+        var row = AcrCard.View(Registry(new AcrHoldings([new AcrImage("theyard", 1, 0, 1024, 0, pushed)]), Plan())).Rows.Single(r => r.Key == "holds");
+        Assert.Equal(central, row.Table.Rows[0][6].Text);
     }
     // #endregion registry-table-tests
 }

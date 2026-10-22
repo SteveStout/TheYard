@@ -67,13 +67,29 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
         }
         if (failed is not null)
         {
+            failed.Data[PartKey] = "hour";
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(failed);
         }
         if (!card.Hourly)
         {
-            await HourOnceAsync(key, card, history, kept, hour, last, cancellation);
+            try
+            {
+                await HourOnceAsync(key, card, history, kept, hour, last, cancellation);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                ex.Data[PartKey] = "hour";
+                throw;
+            }
         }
     }
+
+    /// <summary>Where a failure says which read it was, the minute's or the hour's, for the loop's log line.</summary>
+    public const string PartKey = "cloud.part";
+
+    /// <summary>"hour" when the hour's read failed, else "minute".</summary>
+    /// <param name="ex">The failure.</param>
+    public static string PartOf(Exception ex) => ex.Data[PartKey] as string ?? "minute";
 
     /// <summary>Reads the card's hour once in its hour, keeps it when there is a keep, and holds it for the reader either way.</summary>
     private async Task HourOnceAsync(string key, ResourceCard card, IResourceHistory history, bool kept, DateTimeOffset hour, DateTimeOffset? last, CancellationToken cancellation)
@@ -110,7 +126,7 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning("A minute of {Card} could not be kept ({Exception} {Status})", card.Key, ex.GetType().Name, (ex as HttpRequestException)?.StatusCode);
+                    logger.LogWarning("The {Part} of {Card} could not be kept ({Exception} {Status})", PartOf(ex), card.Key, ex.GetType().Name, (ex as HttpRequestException)?.StatusCode);
                 }
             }
             var now = clock.GetUtcNow();
