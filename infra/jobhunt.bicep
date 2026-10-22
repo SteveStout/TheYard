@@ -158,6 +158,10 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The ATS sweep (functions/jobhunt/Ats): 'shadow' writes its plan ten minutes before each records run and
         // archives nothing; 'on' drops the rows in the spool, archives and reads the labels back; anything else is off.
         { name: 'ATS_SWEEP', value: 'shadow' }
+        // The leads harvest (functions/jobhunt/Leads), run in the ATS sweep's slot: 'shadow' writes leads-shadow/ only.
+        { name: 'LEADS', value: 'shadow' }
+        // The daily card (functions/jobhunt/Card): 'on' keeps nightly/CARD.md current, the one page Steve reads.
+        { name: 'DAILY_CARD', value: 'on' }
       ]
     }
     // #endregion jobhunt-settings

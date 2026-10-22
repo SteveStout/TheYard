@@ -31,7 +31,13 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
             log.LogWarning("ats sweep blocked: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET or GMAIL_REFRESH_TOKEN is not set");
             return;
         }
-        string line = await new AtsSweep(store, new GmailInbox(http, google), time).RunAsync(mode == "on", ct);
+        var inbox = new GmailInbox(http, google);
+        string line = await new AtsSweep(store, inbox, time).RunAsync(mode == "on", ct);
         log.LogInformation("ats sweep: {Line}", line);
+        // The leads harvest reads the same inbox in the same slot, in shadow only until it matches the records run's.
+        if (string.Equals(Environment.GetEnvironmentVariable("LEADS"), "shadow", StringComparison.OrdinalIgnoreCase))
+        {
+            log.LogInformation("leads harvest: {Line}", await new Leads.LeadsHarvest(store, inbox, time).RunAsync(ct));
+        }
     }
 }

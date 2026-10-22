@@ -1,0 +1,353 @@
+{
+  "chips": [
+    {
+      "figure": ".NET 10",
+      "words": "9 projects"
+    },
+    {
+      "figure": "React 19.3",
+      "words": "TypeScript 7.0"
+    },
+    {
+      "figure": "Azure",
+      "words": "4 Bicep files"
+    },
+    {
+      "figure": "6",
+      "words": "GitHub Actions workflows"
+    }
+  ],
+  "layers": [
+    {
+      "key": "backend",
+      "label": "Backend",
+      "sub": "the API",
+      "tone": "teal",
+      "rows": [
+        {
+          "tech": ".NET and ASP.NET Core",
+          "note": null,
+          "where": "App Service, the API container",
+          "version": "10.0",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Api.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj"
+          }
+        },
+        {
+          "tech": "Entity Framework Core",
+          "note": "SQL Server",
+          "where": "App Service, talking to Azure SQL",
+          "version": "10.0.12",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Infrastructure.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/TheYard.Infrastructure.csproj"
+          }
+        },
+        {
+          "tech": "Identity with JWT bearer auth",
+          "note": null,
+          "where": "App Service, the API container",
+          "version": "10.0.12",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Api.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj"
+          }
+        },
+        {
+          "tech": "OpenAPI with Scalar API docs",
+          "note": null,
+          "where": "App Service, /api docs",
+          "version": "2.17.13",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Api.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj"
+          }
+        }
+      ]
+    },
+    {
+      "key": "frontend",
+      "label": "Frontend",
+      "sub": "the page",
+      "tone": "sky",
+      "rows": [
+        {
+          "tech": "React",
+          "note": null,
+          "where": "Your browser",
+          "version": "19.3",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
+        },
+        {
+          "tech": "TypeScript",
+          "note": null,
+          "where": "Your browser",
+          "version": "7.0",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
+        },
+        {
+          "tech": "Vite",
+          "note": null,
+          "where": "Build step, in the container image",
+          "version": "8.3",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
+        },
+        {
+          "tech": "Server-side rendering on Node",
+          "note": null,
+          "where": "App Service, the renderer container",
+          "version": "24",
+          "style": "version",
+          "proof": {
+            "label": "render/Dockerfile",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/render/Dockerfile"
+          }
+        }
+      ]
+    },
+    {
+      "key": "data",
+      "label": "Data",
+      "sub": "two stores, one port",
+      "tone": "slate",
+      "rows": [
+        {
+          "tech": "Azure SQL Database",
+          "note": null,
+          "where": "Azure, managed SQL",
+          "version": "EF Core 10.0.12",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Infrastructure.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/TheYard.Infrastructure.csproj"
+          }
+        },
+        {
+          "tech": "Azure Cosmos DB",
+          "note": null,
+          "where": "Azure, NoSQL",
+          "version": "SDK 3.63.2",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Infrastructure.Cosmos.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/TheYard.Infrastructure.Cosmos.csproj"
+          }
+        }
+      ]
+    },
+    {
+      "key": "azure",
+      "label": "Azure",
+      "sub": "infrastructure as code",
+      "tone": "green",
+      "rows": [
+        {
+          "tech": "App Service and Container Registry",
+          "note": "Linux container",
+          "where": "Azure App Service and ACR",
+          "version": "live resource",
+          "style": "service",
+          "proof": {
+            "label": "appservice.bicep",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep"
+          }
+        },
+        {
+          "tech": "Front Door",
+          "note": null,
+          "where": "Azure edge, in front of everything",
+          "version": "live resource",
+          "style": "service",
+          "proof": {
+            "label": "main.bicep",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep"
+          }
+        },
+        {
+          "tech": "Application Insights with OpenTelemetry",
+          "note": null,
+          "where": "Azure Monitor",
+          "version": "1.6.0",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Api.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj"
+          }
+        },
+        {
+          "tech": "Communication Services email",
+          "note": null,
+          "where": "Azure Communication Services",
+          "version": "1.1.0",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Api.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj"
+          }
+        },
+        {
+          "tech": "Azure Functions, Flex Consumption",
+          "note": "clock, snapshot, tracker merger, Sheet mirror, ATS sweep, daily card",
+          "where": "func-jobhunt-ss, Flex Consumption",
+          "version": ".NET 9 isolated",
+          "style": "flag",
+          "proof": {
+            "label": "JobHunt.Functions.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt/JobHunt.Functions.csproj"
+          }
+        },
+        {
+          "tech": "Bicep for every resource it deploys",
+          "note": null,
+          "where": "Deployed from the repository",
+          "version": "4 Bicep files",
+          "style": "service",
+          "proof": {
+            "label": "infra/",
+            "href": "https://github.com/SteveStout/TheYard/tree/main/infra"
+          }
+        }
+      ]
+    },
+    {
+      "key": "edge",
+      "label": "Edge",
+      "sub": "",
+      "tone": "mist",
+      "rows": [
+        {
+          "tech": "Netlify edge in front of the site",
+          "note": null,
+          "where": "Netlify edge network",
+          "version": "live resource",
+          "style": "service",
+          "proof": {
+            "label": "netlify.toml",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/netlify.toml"
+          }
+        }
+      ]
+    },
+    {
+      "key": "quality",
+      "label": "Quality gates",
+      "sub": "every push",
+      "tone": "success",
+      "rows": [
+        {
+          "tech": "xUnit",
+          "note": null,
+          "where": "GitHub Actions runners",
+          "version": "2.9.3",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Tests.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TheYard.Tests.csproj"
+          }
+        },
+        {
+          "tech": "NetArchTest architecture rules",
+          "note": null,
+          "where": "GitHub Actions runners",
+          "version": "1.4.5",
+          "style": "version",
+          "proof": {
+            "label": "TheYard.Tests.csproj",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TheYard.Tests.csproj"
+          }
+        },
+        {
+          "tech": "Vitest",
+          "note": null,
+          "where": "GitHub Actions runners",
+          "version": "5.0",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
+        },
+        {
+          "tech": "Playwright with axe accessibility checks",
+          "note": null,
+          "where": "GitHub Actions runners, against the built site",
+          "version": "1.63",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
+        },
+        {
+          "tech": "oxlint and Prettier",
+          "note": null,
+          "where": "GitHub Actions runners",
+          "version": "1.86 and 3.9",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
+        }
+      ]
+    },
+    {
+      "key": "delivery",
+      "label": "Delivery and AI",
+      "sub": "how it ships",
+      "tone": "gold",
+      "rows": [
+        {
+          "tech": "GitHub Actions",
+          "note": "ci, deploy-render, deploy, edge-branch, gate, nightly",
+          "where": "GitHub",
+          "version": "6 workflows",
+          "style": "version",
+          "proof": {
+            "label": "workflows/",
+            "href": "https://github.com/SteveStout/TheYard/tree/main/.github/workflows"
+          }
+        },
+        {
+          "tech": "Built with Claude Code under the test gate",
+          "note": null,
+          "where": "Developer machine, then the gate",
+          "version": "every push",
+          "style": "service",
+          "proof": {
+            "label": "gate.yml",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml"
+          }
+        },
+        {
+          "tech": "Claude Code on GitHub Actions runs the job hunt's nightly lanes",
+          "note": null,
+          "where": "GitHub Actions runners, on the Azure share",
+          "version": "4 AM and every 4 h",
+          "style": "service",
+          "proof": {
+            "label": "nightly.yml",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/.github/workflows/nightly.yml"
+          }
+        }
+      ]
+    }
+  ]
+}

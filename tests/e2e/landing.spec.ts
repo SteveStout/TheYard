@@ -37,9 +37,11 @@ for (const viewport of [
         );
       expect(names).toEqual(EXPECTED);
 
-      // The sections under their three group headings, in the sidebar's groups (1.0.1.4).
+      // The sections under their three group headings, in the sidebar's groups (1.0.1.4), after the
+      // Tech stack table under the proof strip (1.0.4.31).
       await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText([
         'What colleagues say',
+        'Tech stack',
         ...SITE_GROUPS.map((group) => group.label),
       ]);
 
@@ -430,3 +432,42 @@ test('asks for no catalogue until the inventory opens', async ({ page }) => {
   await expect.poll(() => asked.includes('/api/vehicles')).toBe(true);
 });
 // #endregion landing-asks-for-less
+
+// #region tech-stack
+/**
+ * The Tech stack table on the home page (ADR: Technology versions, the addendum on the home page's
+ * table): drawn from the generated table, every row with a version and a link to the file that proves
+ * it on GitHub, the .NET 9 Function flagged, and on a phone every row stacked with no sideways scroll.
+ */
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`the Tech stack table stands under the proof strip at ${viewport.width}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await openTheYard(page, '/');
+    const stack = page.getByTestId('landing-stack');
+    await expect(stack.getByRole('heading', { level: 2, name: 'Tech stack' })).toBeVisible();
+    const table = stack.getByTestId('landing-stack-table');
+    await expect(table.locator('tbody tr')).not.toHaveCount(0);
+    for (const version of await table.getByTestId('stack-version').allInnerTexts()) {
+      expect(version.trim()).not.toBe('');
+    }
+    for (const href of await table
+      .locator('a')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''))) {
+      expect(href).toMatch(/^https:\/\/github\.com\/SteveStout\/TheYard\/(blob|tree)\/main\//);
+    }
+    await expect(stack.getByTestId('stack-backend')).toContainText('.NET and ASP.NET Core');
+    const proof = await page.getByTestId('landing-proof').boundingBox();
+    const box = await stack.boundingBox();
+    expect(box!.y).toBeGreaterThan(proof!.y);
+    const sideways = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(sideways).toBeLessThanOrEqual(0);
+  });
+}
+// #endregion tech-stack

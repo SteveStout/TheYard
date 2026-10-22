@@ -1,0 +1,300 @@
+/**
+ * Does:      Draws the Tech stack panel: the band and chips, the five-column table with a rule per layer,
+ *            versions in pills, the .NET 9 piece flagged, and on a phone every row stacked, no sideways scroll.
+ * Does not:  Decide a row or a version (scripts/stack.mjs writes them) or lay out the home page.
+ * Used by:   TechStack.tsx.
+ */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  container-type: inline-size;
+}
+
+.band {
+  position: relative;
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  background: linear-gradient(180deg, var(--color-green-dark), var(--color-teal-header));
+  color: var(--palette-white);
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-gold-light);
+}
+
+.title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--palette-white);
+}
+
+.lede {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--palette-white);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 112px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-gold-light) 40%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--palette-white) 8%, transparent);
+}
+
+.chip strong {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--palette-white);
+}
+
+.chip span {
+  font-size: var(--text-xs);
+  color: var(--palette-white);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.table thead th {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 2px solid var(--color-gold);
+  background: var(--color-accent-soft);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--color-teal-deep);
+}
+
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.alt td {
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+}
+
+/* Each layer's label cell carries its colour on the left edge. */
+.layer {
+  width: 140px;
+  padding: var(--space-3) var(--space-4);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 5px solid var(--layer);
+  font-weight: var(--weight-bold);
+  text-align: left;
+  vertical-align: top;
+  color: var(--color-teal-deep);
+}
+
+.layer small {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+
+.teal {
+  --layer: var(--color-accent);
+}
+
+.sky {
+  --layer: var(--color-ribbon-teal);
+}
+
+.slate {
+  --layer: var(--color-store-sql);
+}
+
+.green {
+  --layer: var(--color-green-dark);
+}
+
+.mist {
+  --layer: var(--color-ribbon-teal-light);
+}
+
+.success {
+  --layer: var(--color-success);
+}
+
+.gold {
+  --layer: var(--color-gold);
+}
+
+.tech {
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.tech em {
+  font-style: normal;
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
+}
+
+.where {
+  color: var(--color-teal-deep);
+}
+
+.version,
+.flag {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.version {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+/* The one piece on an older runtime than the rest, marked so nobody reads it as the site's. */
+.flag {
+  border: 1px solid var(--color-warning-border);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.service {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.proof a {
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+}
+
+/* A file name has no words to break at, so it may break at any character (the mono rule). */
+.mono {
+  overflow-wrap: anywhere;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  font-size: var(--text-xs);
+  color: var(--color-text);
+}
+
+.foot b {
+  color: var(--color-teal-deep);
+}
+
+.dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px var(--color-success-soft);
+}
+
+/* The layer column shows only when the panel fits five; narrower, the bar over its rows carries it. */
+.layer,
+.layerHead {
+  display: none;
+}
+
+.layerBar th {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 5px solid var(--layer);
+  background: var(--color-accent-soft);
+  font-weight: var(--weight-bold);
+  text-align: left;
+  color: var(--color-teal-deep);
+}
+
+.layerBar small {
+  margin-left: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-muted);
+}
+
+@container (min-width: 900px) {
+  .layer,
+  .layerHead {
+    display: table-cell;
+  }
+
+  .layerBar {
+    display: none;
+  }
+}
+
+/* On a phone every row stacks under its layer's bar, the cells one under another. */
+@container (max-width: 560px) {
+  .band {
+    padding: var(--space-5) var(--space-4) var(--space-4);
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td,
+  .layerBar th {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .table .layerBar {
+    padding: 0;
+  }
+
+  .table td {
+    padding: var(--space-1) var(--space-4);
+    border-bottom: 0;
+  }
+
+  .alt td {
+    background: transparent;
+  }
+}

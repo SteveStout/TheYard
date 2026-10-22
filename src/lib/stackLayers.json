@@ -1,0 +1,336 @@
+[
+  {
+    "key": "backend",
+    "label": "Backend",
+    "sub": "the API",
+    "tone": "teal",
+    "rows": [
+      {
+        "tech": ".NET and ASP.NET Core",
+        "where": "App Service, the API container",
+        "version": {
+          "framework": "api/TheYard.Api/TheYard.Api.csproj"
+        },
+        "proof": "api/TheYard.Api/TheYard.Api.csproj"
+      },
+      {
+        "tech": "Entity Framework Core",
+        "note": "SQL Server",
+        "where": "App Service, talking to Azure SQL",
+        "version": {
+          "nuget": [
+            "api/TheYard.Infrastructure/TheYard.Infrastructure.csproj",
+            "Microsoft.EntityFrameworkCore.SqlServer"
+          ]
+        },
+        "proof": "api/TheYard.Infrastructure/TheYard.Infrastructure.csproj"
+      },
+      {
+        "tech": "Identity with JWT bearer auth",
+        "where": "App Service, the API container",
+        "version": {
+          "nuget": [
+            "api/TheYard.Api/TheYard.Api.csproj",
+            "Microsoft.AspNetCore.Authentication.JwtBearer"
+          ]
+        },
+        "proof": "api/TheYard.Api/TheYard.Api.csproj"
+      },
+      {
+        "tech": "OpenAPI with Scalar API docs",
+        "where": "App Service, /api docs",
+        "version": {
+          "nuget": [
+            "api/TheYard.Api/TheYard.Api.csproj",
+            "Scalar.AspNetCore"
+          ]
+        },
+        "proof": "api/TheYard.Api/TheYard.Api.csproj"
+      }
+    ]
+  },
+  {
+    "key": "frontend",
+    "label": "Frontend",
+    "sub": "the page",
+    "tone": "sky",
+    "rows": [
+      {
+        "tech": "React",
+        "where": "Your browser",
+        "version": {
+          "npm": "react"
+        },
+        "proof": "package.json"
+      },
+      {
+        "tech": "TypeScript",
+        "where": "Your browser",
+        "version": {
+          "npm": "typescript"
+        },
+        "proof": "package.json"
+      },
+      {
+        "tech": "Vite",
+        "where": "Build step, in the container image",
+        "version": {
+          "npm": "vite"
+        },
+        "proof": "package.json"
+      },
+      {
+        "tech": "Server-side rendering on Node",
+        "where": "App Service, the renderer container",
+        "version": {
+          "docker": [
+            "render/Dockerfile",
+            "node"
+          ]
+        },
+        "proof": "render/Dockerfile"
+      }
+    ]
+  },
+  {
+    "key": "data",
+    "label": "Data",
+    "sub": "two stores, one port",
+    "tone": "slate",
+    "rows": [
+      {
+        "tech": "Azure SQL Database",
+        "where": "Azure, managed SQL",
+        "version": {
+          "nuget": [
+            "api/TheYard.Infrastructure/TheYard.Infrastructure.csproj",
+            "Microsoft.EntityFrameworkCore.SqlServer"
+          ],
+          "prefix": "EF Core "
+        },
+        "proof": "api/TheYard.Infrastructure/TheYard.Infrastructure.csproj"
+      },
+      {
+        "tech": "Azure Cosmos DB",
+        "where": "Azure, NoSQL",
+        "version": {
+          "nuget": [
+            "api/TheYard.Infrastructure.Cosmos/TheYard.Infrastructure.Cosmos.csproj",
+            "Microsoft.Azure.Cosmos"
+          ],
+          "prefix": "SDK "
+        },
+        "proof": "api/TheYard.Infrastructure.Cosmos/TheYard.Infrastructure.Cosmos.csproj"
+      }
+    ]
+  },
+  {
+    "key": "azure",
+    "label": "Azure",
+    "sub": "infrastructure as code",
+    "tone": "green",
+    "rows": [
+      {
+        "tech": "App Service",
+        "note": "Linux container",
+        "also": "and Container Registry",
+        "where": "Azure App Service and ACR",
+        "version": {
+          "text": "live resource"
+        },
+        "proof": "infra/appservice.bicep",
+        "needs": [
+          "infra/appservice.bicep",
+          "Microsoft.Web/sites@"
+        ]
+      },
+      {
+        "tech": "Front Door",
+        "where": "Azure edge, in front of everything",
+        "version": {
+          "text": "live resource"
+        },
+        "proof": "infra/main.bicep",
+        "needs": [
+          "infra/main.bicep",
+          "Microsoft.Cdn/profiles@"
+        ]
+      },
+      {
+        "tech": "Application Insights with OpenTelemetry",
+        "where": "Azure Monitor",
+        "version": {
+          "nuget": [
+            "api/TheYard.Api/TheYard.Api.csproj",
+            "Azure.Monitor.OpenTelemetry.AspNetCore"
+          ]
+        },
+        "proof": "api/TheYard.Api/TheYard.Api.csproj"
+      },
+      {
+        "tech": "Communication Services email",
+        "where": "Azure Communication Services",
+        "version": {
+          "nuget": [
+            "api/TheYard.Api/TheYard.Api.csproj",
+            "Azure.Communication.Email"
+          ]
+        },
+        "proof": "api/TheYard.Api/TheYard.Api.csproj"
+      },
+      {
+        "tech": "Azure Functions, Flex Consumption",
+        "note": "clock, snapshot, tracker merger, Sheet mirror, ATS sweep, daily card",
+        "where": "func-jobhunt-ss, Flex Consumption",
+        "version": {
+          "framework": "functions/jobhunt/JobHunt.Functions.csproj",
+          "words": "isolated"
+        },
+        "proof": "functions/jobhunt/JobHunt.Functions.csproj",
+        "needs": [
+          "infra/jobhunt.bicep",
+          "FlexConsumption"
+        ]
+      },
+      {
+        "tech": "Bicep for every resource it deploys",
+        "where": "Deployed from the repository",
+        "version": {
+          "bicep": true
+        },
+        "proof": "infra/",
+        "tree": true
+      }
+    ]
+  },
+  {
+    "key": "edge",
+    "label": "Edge",
+    "sub": "",
+    "tone": "mist",
+    "rows": [
+      {
+        "tech": "Netlify edge in front of the site",
+        "where": "Netlify edge network",
+        "version": {
+          "text": "live resource"
+        },
+        "proof": "netlify.toml",
+        "needs": [
+          "netlify.toml",
+          "edge"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "quality",
+    "label": "Quality gates",
+    "sub": "every push",
+    "tone": "success",
+    "rows": [
+      {
+        "tech": "xUnit",
+        "where": "GitHub Actions runners",
+        "version": {
+          "nuget": [
+            "api/TheYard.Tests/TheYard.Tests.csproj",
+            "xunit"
+          ]
+        },
+        "proof": "api/TheYard.Tests/TheYard.Tests.csproj"
+      },
+      {
+        "tech": "NetArchTest architecture rules",
+        "where": "GitHub Actions runners",
+        "version": {
+          "nuget": [
+            "api/TheYard.Tests/TheYard.Tests.csproj",
+            "NetArchTest.eNhancedEdition"
+          ]
+        },
+        "proof": "api/TheYard.Tests/TheYard.Tests.csproj"
+      },
+      {
+        "tech": "Vitest",
+        "where": "GitHub Actions runners",
+        "version": {
+          "npm": "vitest"
+        },
+        "proof": "package.json"
+      },
+      {
+        "tech": "Playwright with axe accessibility checks",
+        "where": "GitHub Actions runners, against the built site",
+        "version": {
+          "npm": "@playwright/test"
+        },
+        "proof": "package.json"
+      },
+      {
+        "tech": "oxlint and Prettier",
+        "where": "GitHub Actions runners",
+        "version": {
+          "npmPair": [
+            "oxlint",
+            "prettier"
+          ]
+        },
+        "proof": "package.json"
+      },
+      {
+        "tech": "Stryker mutation testing",
+        "where": "GitHub Actions runners",
+        "version": {
+          "npm": "@stryker-mutator/core"
+        },
+        "proof": "package.json",
+        "needs": [
+          "package.json",
+          "@stryker-mutator/core"
+        ]
+      }
+    ]
+  },
+  {
+    "key": "delivery",
+    "label": "Delivery and AI",
+    "sub": "how it ships",
+    "tone": "gold",
+    "rows": [
+      {
+        "tech": "GitHub Actions",
+        "where": "GitHub",
+        "version": {
+          "workflows": true
+        },
+        "proof": ".github/workflows",
+        "tree": true
+      },
+      {
+        "tech": "Built with Claude Code under the test gate",
+        "where": "Developer machine, then the gate",
+        "version": {
+          "text": "every push"
+        },
+        "proof": ".github/workflows/gate.yml",
+        "needs": [
+          ".github/workflows/gate.yml",
+          ""
+        ]
+      },
+      {
+        "tech": "Claude Code on GitHub Actions runs the job hunt's nightly lanes",
+        "where": "GitHub Actions runners, on the Azure share",
+        "version": {
+          "text": "4 AM and every 4 h"
+        },
+        "proof": ".github/workflows/nightly.yml",
+        "needs": [
+          ".github/workflows/nightly.yml",
+          "claude"
+        ]
+      }
+    ]
+  }
+]

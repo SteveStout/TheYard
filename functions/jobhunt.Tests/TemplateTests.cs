@@ -61,6 +61,12 @@ public sealed partial class TemplateTests
     }
 
     [Fact]
+    public void The_template_keeps_the_daily_card_on() => Assert.Equal("on", Settings().GetValueOrDefault("DAILY_CARD"));
+
+    [Fact]
+    public void The_template_keeps_the_leads_harvest_in_shadow() => Assert.Equal("shadow", Settings().GetValueOrDefault("LEADS"));
+
+    [Fact]
     public void Every_setting_the_function_reads_is_in_the_template_or_named_as_set_out_of_band()
     {
         var settings = Settings();

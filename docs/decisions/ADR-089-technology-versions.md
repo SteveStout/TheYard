@@ -90,6 +90,15 @@ Outside the code: the project files, package.json and the Dockerfile, which Tech
 
 The example above names `Composition/Startup.cs`, which 1.0.3.188 retired; the same assignment is in `Hosted/StoreAnnouncement.cs` (ADR: The onion cut into vertical slices, rule 2).
 
+## Addendum, 2026-10-22 (1.0.4.31): the home page's table
+
+On Steve's word at 14:20 Central ("we need to add a tech stack section to the home page"), after a post had called the site .NET 9 when it runs .NET 10, the home page gained a Tech stack table under the proof strip: Layer, What we use, Where it runs, Version and Proof, one panel with the header band and the gold bar, as the preview he picked showed. No version in it is typed by hand.
+
+- **Generated, not typed.** `scripts/stack.mjs` reads the project files' TargetFramework and PackageReference, package-lock.json, the Dockerfiles' FROM lines, the Bicep files and the workflow folder, and writes `src/generated/stack.json` through `src/lib/stackDerive.ts`; the panel (`src/components/landing/TechStack/`) renders only that file. `src/lib/stackLayers.json` names each row, where it runs and which file holds its version; every version, count and flag comes from that file. A row whose proof is not in the repository is left out rather than claimed (Stryker appears the day it is in package.json).
+- **A test fails CI when the table drifts.** `src/lib/techStack.test.ts` reads the same files through the bundler, derives the table with the same function, and fails when the committed file differs, with a test per layer and one for the chips; another holds every Proof link to a file or folder in this repository. The fix is one command, `node scripts/stack.mjs`.
+- **The one piece behind is said, not hidden.** The job hunt's Function runs .NET 9 isolated while the site runs .NET 10; the row is flagged in the warning colour, worked out by comparing the two TargetFrameworks.
+- **Not a Vite step.** The site's image builds the page from `src/` without the project files, and this project carries no Node types for the config to read the disk with, so the table is written by the script and held by the test instead of regenerated inside the build.
+
 ## Files
 
 - [`api/TheYard.Tests/TechnologyVersionsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TechnologyVersionsTests.cs): the test that reads this table against the project files.

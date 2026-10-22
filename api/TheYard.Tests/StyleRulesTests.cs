@@ -400,6 +400,7 @@ public class StyleRulesTests
         ["src/library/StyleBlocks.module.css"] = "the gold ring round each Style tile's badge, the landing tile's trim",
         ["src/library/AuthorPage.module.css"] = "the Author page: the tick on a panel's rule, the title's underline, the ring round the first button, the top edge of every other headed block",
         ["src/components/landing/Landing/Landing.module.css"] = "the landing title's underline, the ring round each tile's icon",
+        ["src/components/landing/TechStack/TechStack.module.css"] = "the Tech stack panel: the rule under the table's head, the Delivery layer's edge, the chips' outline and the eyebrow on the dark band, as the approved preview draws them",
         ["src/components/admin/CloudChart/CloudChart.module.css"] = "a deploy's line on a Cloud card's chart, in the bar's dark tone, about 6 to 1 on white, as the approved mockups draw it",
         ["src/components/admin/CloudDial/CloudDial.module.css"] = "the dot at a dial's 30-day 95th, in the bar's dark tone, as the approved mockups draw it",
         ["src/components/shared/WorkingLock/WorkingLock.module.css"] = "the sweep round the working lock's ring and its glow, never its words, as look D of the approved mock draws it",

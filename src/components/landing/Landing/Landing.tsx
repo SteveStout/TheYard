@@ -19,6 +19,7 @@ import { CountUp } from '../../shared/CountUp';
 import { Ring } from '../../shared/Ring';
 import { NavGlyph } from '../../shared/SheetIcons';
 import { PulseBand } from '../PulseBand';
+import { TechStack } from '../TechStack';
 import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
 import { Recommendations } from '../../shared/Recommendations';
 import styles from './Landing.module.css';
@@ -31,7 +32,8 @@ import { request } from '../../../lib/request';
  * large tiles are the map's featured entries, Inventory, Author and the
  * resume, three across with the badge on top, the first two with a photograph in
  * the badge; under them the evidence strip reads the gate's own counts from
- * /api/tests/summary on the same three columns; below that every other section
+ * /api/tests/summary on the same three columns, then the Tech stack table the build
+ * generated from the repository; below that every other section
  * under its group's heading, as the sidebar groups them, then Sign in, Admin and
  * GitHub. The Admin tile carries a health dot from /api/health, read once when the
  * page opens, and the band under the title reads the running site from /api/pulse.
@@ -226,10 +228,8 @@ export function Landing({
           <Recommendations />
         </aside>
         <div className={styles.rest}>
-          {/* The strip stands at its full height from the first paint, three blank
-          figures until the gate's counts arrive: drawn only once they
-          had, it pushed every group below it down 124 px on a desk, the last
-          layout shift the landing page had. */}
+          {/* The strip stands at its full height from the first paint, three blank figures until the
+          gate's counts arrive: drawn only once they had, it pushed every group below it down 124 px. */}
           <ul
             className={styles.proof}
             aria-label="What this build's gate measured"
@@ -276,6 +276,7 @@ export function Landing({
               );
             })}
           </ul>
+          <TechStack headingClass={styles.groupHeading} />
           {groups.map((group) => (
             <section
               key={group.key}

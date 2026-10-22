@@ -85,4 +85,6 @@ The screenshots found two faults that every card under Cloud infrastructure shar
 - **Separate facts ran together.** A row's detail is a list of pieces, and the frame drew them with nothing between, so two facts read as one word ("left out of the averagescost is the API-equivalent price", "no usage reportedrun #18"). The frame now puts a middle dot between two pieces unless they already meet as one sentence: the first ends in a space, or the second opens with a space or a stop (`detailJoint` in `src/lib/cloud.ts`, held by `cloud.test.ts`). The cards that built their own " · " keep it; nothing on the server changed.
 - **The value broke inside words.** A readout label never shrank, so a long source under it ("the usage documents the lanes post") took the line and left the value a few letters wide ("report / ed"). The label now gives way and wraps, the value keeps up to 55 % of the line, and a value breaks between words.
 
-The card's screenshot goes into `docs/images` from a live read of the version that carries these fixes.
+The card as it reads live at 1.0.4.30, read again with the same Playwright pass at 15:36 Central with both faults gone (separate facts kept apart by a middle dot, the readout's values whole words):
+
+![The Claude usage card on theyard.stevenstout.biz at 1440 wide on 1.0.4.30: both dials not read with their reasons, the four questions, and the readout beside them, before any lane has posted a usage document](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/claude-usage-card.png)
