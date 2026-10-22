@@ -11,10 +11,18 @@ namespace TheYard.Infrastructure.Cosmos;
 /// One resource's keep in the document store (ADR: One frame for every resource): a container of
 /// its own, partitioned on the UTC day, a minute document a minute and an hour document an hour,
 /// expired by the container. The readings sit under one object so each window is one grouped query
-/// over the names the card asks for; the names come from code, never from a request.
+/// over the names the card asks for; the names come from code, never from a request. A card that
+/// shares another card's container names a kind prefix, and its documents' kinds and ids open with
+/// it, so the two never read each other's minutes.
 /// </summary>
-public sealed class CosmosResourceHistory(CosmosStore store, string containerName) : IResourceHistory
+/// <param name="store">The document store.</param>
+/// <param name="containerName">The container the minutes and hours are kept in.</param>
+/// <param name="kindPrefix">What this card's kinds and ids open with when it shares a container; empty for a container of its own.</param>
+public sealed class CosmosResourceHistory(CosmosStore store, string containerName, string kindPrefix = "") : IResourceHistory
 {
+    private readonly string _minute = kindPrefix + "minute";
+    private readonly string _hour = kindPrefix + "hour";
+
     private readonly Container _container = store.ContainerNamed(containerName);
     private PlanHistoryAvailability? _availability;
 
@@ -46,7 +54,7 @@ public sealed class CosmosResourceHistory(CosmosStore store, string containerNam
     {
         if ((await AvailabilityAsync(cancellation)).Available)
         {
-            var document = MinuteDocument.From(minute);
+            var document = MinuteDocument.From(minute, _minute);
             await _container.UpsertItemAsync(document, new PartitionKey(document.Day), cancellationToken: cancellation);
         }
     }
@@ -57,7 +65,8 @@ public sealed class CosmosResourceHistory(CosmosStore store, string containerNam
         {
             var document = new HourDocument
             {
-                Id = "hour:" + PlanFolding.HourKey(hour.At),
+                Id = _hour + ":" + PlanFolding.HourKey(hour.At),
+                Kind = _hour,
                 Day = PlanFolding.DayOf(hour.At),
                 At = hour.At.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
                 Hour = hour,
@@ -73,8 +82,9 @@ public sealed class CosmosResourceHistory(CosmosStore store, string containerNam
             return [];
         }
         var now = DateTimeOffset.UtcNow;
-        var definition = new QueryDefinition("SELECT TOP @count * FROM c WHERE c.kind = 'minute' AND (c.day = @today OR c.day = @yesterday) ORDER BY c.at DESC")
+        var definition = new QueryDefinition("SELECT TOP @count * FROM c WHERE c.kind = @kind AND (c.day = @today OR c.day = @yesterday) ORDER BY c.at DESC")
             .WithParameter("@count", count)
+            .WithParameter("@kind", _minute)
             .WithParameter("@today", PlanFolding.DayOf(now))
             .WithParameter("@yesterday", PlanFolding.DayOf(now.AddDays(-1)));
         var documents = await ReadAll<MinuteDocument>(definition, cancellation);
@@ -104,7 +114,8 @@ public sealed class CosmosResourceHistory(CosmosStore store, string containerNam
             }
         }
         string columns = string.Join(", ", readings.Select(name => $"AVG(c.v.{name}) AS m_{name}, MAX(c.v.{name}) AS x_{name}, SUM(c.v.{name}) AS s_{name}"));
-        var definition = new QueryDefinition($"SELECT c.{key} AS bucket, COUNT(1) AS minutes, MAX(c.version) AS version{(columns.Length > 0 ? ", " + columns : "")} FROM c WHERE c.kind = 'minute' AND c.day >= @day AND c.at >= @at GROUP BY c.{key}")
+        var definition = new QueryDefinition($"SELECT c.{key} AS bucket, COUNT(1) AS minutes, MAX(c.version) AS version{(columns.Length > 0 ? ", " + columns : "")} FROM c WHERE c.kind = @kind AND c.day >= @day AND c.at >= @at GROUP BY c.{key}")
+            .WithParameter("@kind", _minute)
             .WithParameter("@day", PlanFolding.DayOf(since))
             .WithParameter("@at", since.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
         var rows = await ReadAll<JsonElement>(definition, cancellation);
@@ -129,7 +140,8 @@ public sealed class CosmosResourceHistory(CosmosStore store, string containerNam
         {
             return [];
         }
-        var definition = new QueryDefinition("SELECT * FROM c WHERE c.kind = 'hour' AND c.day >= @day AND c.at >= @at")
+        var definition = new QueryDefinition("SELECT * FROM c WHERE c.kind = @kind AND c.day >= @day AND c.at >= @at")
+            .WithParameter("@kind", _hour)
             .WithParameter("@day", PlanFolding.DayOf(since))
             .WithParameter("@at", since.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
         var documents = await ReadAll<HourDocument>(definition, cancellation);
@@ -160,9 +172,10 @@ public sealed class CosmosResourceHistory(CosmosStore store, string containerNam
         [JsonPropertyName("version")] public string Version { get; set; } = "";
         [JsonPropertyName("v")] public Dictionary<string, double?> V { get; set; } = [];
 
-        public static MinuteDocument From(ResourceMinute minute) => new()
+        public static MinuteDocument From(ResourceMinute minute, string kind) => new()
         {
-            Id = "minute:" + minute.At.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture),
+            Id = kind + ":" + minute.At.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture),
+            Kind = kind,
             Day = PlanFolding.DayOf(minute.At),
             At = minute.At.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
             B5 = MachineWindows.KeyOf(minute.At, MachineGrain.FiveMinutes),

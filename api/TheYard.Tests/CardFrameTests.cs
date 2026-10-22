@@ -50,6 +50,22 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
     }
 
     [Fact]
+    public void A_line_that_is_not_read_says_so_and_never_colours_the_card()
+    {
+        // The owner's rule for every card under Cloud infrastructure (ADR: One frame for every
+        // resource, the addendum of 1.0.4.25): a resource nothing is wrong with is green, and a row
+        // that could not be read says "not read" with its reason without lifting the card. A dial
+        // keeps its held tone, which its sustained minutes earned.
+        var dial = new CloudDial("RU/s, right now", 0.4, "0 %", "4 of 1,000 RU/s", 70, 90, 5, 10, "good");
+        var unread = new CloudRow("throttling", "Is anything throttled?", "not read: Azure Monitor answered 403", [], "warning");
+        var report = new CloudReport("24h", ["1h", "24h"], true, null, 0, 30, "Cosmos DB", null, null, [dial], [], new CloudChart("", [], [], 90, "", 0), [unread], new CloudReadout("The account", null, "", [], ""));
+        Assert.Equal("fine", CardFrame.Complete(report, null).Tone);
+        var heldDial = dial with { Percent = null, Big = "not read", Tone = "alarm" };
+        Assert.Equal("red", CardFrame.Complete(report with { Dials = [dial, heldDial] }, null).Tone);
+        Assert.Equal("amber", CardFrame.Complete(report with { Rows = [unread with { Answer = "731 throttled" }] }, null).Tone);
+    }
+
+    [Fact]
     public void The_page_reads_every_card_as_often_as_the_tone_rule_assumes()
     {
         string common = File.ReadAllText(Path.Combine(Repo.Root(), "src", "components", "admin", "shared", "common.tsx"));

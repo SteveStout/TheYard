@@ -65,11 +65,17 @@ public static class Containers
     /// <summary>The Netlify edge theyard-edge, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
     public const string ResourceEdge = "edge";
 
-    /// <summary>The nightly Function func-jobhunt-ss, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
-    public const string ResourceNightly = "nightly";
+    /// <summary>
+    /// The nightly Function's keep and its run log have no container of their own: they live in the
+    /// plan container under kinds that open with this prefix, because the shared database holds at
+    /// most twenty-five containers and it already holds twenty-five (ADR: The Nightly Function on the
+    /// Admin tab, the addendum on the shared container). A run document carries its own time to live
+    /// of a year; the minutes and hours expire with the plan's month.
+    /// </summary>
+    public const string NightlyPrefix = "nightly-";
 
-    /// <summary>The nightly Function's run log, kept for its card under Cloud infrastructure: one document per GitHub run under its id and one per judged slot, partitioned on the UTC day, expiring after a year by the container's time-to-live (ADR: The Nightly Function on the Admin tab).</summary>
-    public const string NightlyRuns = "nightlyruns";
+    /// <summary>How long a nightly run document is kept, in seconds: a year, set on the document because the plan container keeps a month.</summary>
+    public const int NightlyRunSeconds = 31_536_000;
 
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -91,8 +97,6 @@ public static class Containers
         [ResourceInsights] = "/day",
         [ResourceMail] = "/day",
         [ResourceEdge] = "/day",
-        [ResourceNightly] = "/day",
-        [NightlyRuns] = "/day",
     };
 
     /// <summary>

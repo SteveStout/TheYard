@@ -141,6 +141,7 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
                 await log.UpsertFiringsAsync(firings, cancellation);
             }
             facts["last_fired"] = firings.Where(f => f.FiredAt is not null).Select(f => f.FiredAt).Max()?.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
+            facts[SnapshotFact] = await SnapshotsAsync(siteId, cancellation);
             return new ResourceHour(hour, siteId, tenant, facts, await EventsAsync(siteId, since, hour, cancellation));
         }
         catch (HttpRequestException ex) when (Refused(ex))
@@ -149,6 +150,50 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
             return new ResourceHour(hour, "", null, facts, []);
         }
     }
+
+    /// <summary>The fact an hour writes for how many share snapshots the storage account holds: a count, or "not read: " and why.</summary>
+    public const string SnapshotFact = "snapshots";
+
+    /// <summary>
+    /// How many share snapshots the Function's storage account holds, from Resource Manager's list of
+    /// its shares with their snapshots: Reader on the group reads it, so no data role and no account
+    /// key is needed, and nothing in a share is opened.
+    /// </summary>
+    private async Task<string> SnapshotsAsync(string siteId, CancellationToken cancellation)
+    {
+        int providers = siteId.IndexOf("/providers/", StringComparison.OrdinalIgnoreCase);
+        string group = providers < 0 ? siteId : siteId[..providers];
+        try
+        {
+            using var answer = await azure.GetJsonAsync($"{group}/providers/Microsoft.Storage/storageAccounts/{names.Storage}/fileServices/default/shares?api-version=2023-05-01&$expand=snapshots", cancellation);
+            return SnapshotCount(answer.RootElement).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (HttpRequestException ex)
+        {
+            return $"not read: Resource Manager answered {(ex.StatusCode is { } status ? ((int)status).ToString(System.Globalization.CultureInfo.InvariantCulture) : "nothing")} for the shares of {names.Storage}";
+        }
+        catch (Exception ex) when (!cancellation.IsCancellationRequested)
+        {
+            // A timeout or an answer of the wrong shape costs this one line, never the hour's other facts.
+            return $"not read: the shares of {names.Storage} did not answer ({ex.GetType().Name})";
+        }
+    }
+
+    /// <summary>
+    /// The snapshots of the share that holds the most, in a list of shares: the entries that carry a
+    /// snapshot time, counted by share name. The Function snapshots its one share; a second share
+    /// with snapshots of its own is not counted as the Function's.
+    /// </summary>
+    /// <param name="shares">Resource Manager's answer for fileServices/default/shares with $expand=snapshots.</param>
+    public static int SnapshotCount(JsonElement shares) =>
+        shares.TryGetProperty("value", out var value) && value.ValueKind == JsonValueKind.Array
+            ? value.EnumerateArray()
+                .Where(share => AzureMetrics.Text(share, "properties.snapshotTime") is { Length: > 0 })
+                .GroupBy(share => AzureMetrics.Text(share, "name") ?? "", StringComparer.Ordinal)
+                .Select(group => group.Count())
+                .DefaultIfEmpty(0)
+                .Max()
+            : 0;
 
     /// <summary>The Function's Activity Log for the hour; none when the identity may read the group but not the subscription's log.</summary>
     private async Task<IReadOnlyList<PlanEvent>> EventsAsync(string siteId, DateTimeOffset since, DateTimeOffset hour, CancellationToken cancellation)

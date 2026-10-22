@@ -132,10 +132,12 @@ public static class ResourceCatalog
         {
             // Read every minute like the other Azure cards; its hour also reads the workflow's runs
             // from GitHub, and its three lines of the bill are the Function, its plan and its storage.
+            // Its minutes and hours are kept in the plan container under kinds of its own, because the
+            // shared database is at its twenty-five containers.
             NightlySource source = nightly;
-            cards.Add(new("nightly", "nightly", source.Names.Function, NightlyMetrics.Readings, source.MinutesAsync, source.HourAsync,
+            cards.Add(new("nightly", "plan", source.Names.Function, NightlyMetrics.Readings, source.MinutesAsync, source.HourAsync,
                 inputs => NightlyCard.View(inputs, source.Names, source.FunctionPath, source.Cache.Runs),
-                SpecSource: "ARM record of the Function app", CostNames: source.Names.CostNames));
+                SpecSource: "ARM record of the Function app", CostNames: source.Names.CostNames, KindPrefix: "nightly-"));
         }
         return cards;
     }

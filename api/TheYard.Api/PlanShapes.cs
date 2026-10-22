@@ -11,6 +11,10 @@ namespace TheYard.Api;
 /// <summary>Azure Monitor's and the Activity Log's JSON, as series and events.</summary>
 public static class PlanShapes
 {
+    /// <summary>True for an aggregation whose split series add up: a count or a total.</summary>
+    /// <param name="aggregation">The aggregation's name as Azure Monitor writes it.</param>
+    public static bool Adds(string aggregation) => aggregation is "count" or "total";
+
     /// <summary>
     /// The metrics answer as metric name to minute to value, each metric read with the aggregation
     /// it was asked with. A point Azure answered with no value is left out, not read as zero.
@@ -38,7 +42,10 @@ public static class PlanShapes
                     if (point.TryGetProperty(aggregation, out var value) && value.ValueKind == JsonValueKind.Number
                         && DateTimeOffset.TryParse(point.GetProperty("timeStamp").GetString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at))
                     {
-                        points[at.ToUniversalTime()] = value.GetDouble();
+                        // A filter split into one series a dimension value: a count or a total is the
+                        // sum of the series; any other aggregation keeps one series' reading, as before.
+                        at = at.ToUniversalTime();
+                        points[at] = Adds(aggregation) && points.TryGetValue(at, out double before) ? before + value.GetDouble() : value.GetDouble();
                     }
                 }
             }

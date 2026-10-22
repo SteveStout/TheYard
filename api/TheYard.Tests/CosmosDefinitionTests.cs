@@ -37,6 +37,27 @@ public class CosmosDefinitionTests
         }
     }
 
+    /// <summary>
+    /// The live tests' copies of the store's containers, each under "tests-", as the account lists
+    /// them (az cosmosdb sql container list, read 22 October). They share the database's throughput
+    /// with the site's own, so they count against the same limit.
+    /// </summary>
+    private static readonly string[] LiveTestCopies = ["vehicles", "photos", "bids", "users", "activity", "logs", "resets", "machines"];
+
+    /// <summary>The most containers a database with shared throughput holds: Cosmos DB refuses the twenty-sixth ("collection count in database offer has exceeded 25").</summary>
+    private const int SharedDatabaseLimit = 25;
+
+    [Fact]
+    public void The_shared_database_never_needs_a_twenty_sixth_container()
+    {
+        // A database with shared throughput refuses its twenty-sixth container, and the nightly card's
+        // two waited two days on a create that could never succeed. A new keep shares a container under
+        // kinds of its own (Containers.NightlyPrefix) before it asks for one.
+        int needed = Definitions().Count + LiveTestCopies.Length;
+        Assert.True(needed <= SharedDatabaseLimit, $"infra/cosmos defines {Definitions().Count} containers and the live tests copy {LiveTestCopies.Length}: {needed}, over the database's {SharedDatabaseLimit}");
+        Assert.All(LiveTestCopies, name => Assert.True(Containers.PartitionKeyPaths.ContainsKey(name), $"tests-{name} copies no container the code defines"));
+    }
+
     [Fact]
     public void Every_definition_is_a_container_the_code_uses()
     {

@@ -43,6 +43,7 @@ public sealed record ResourceCardInputs(
 /// <param name="Hourly">True when the source moves no faster than an hour, so it is read once an hour and kept as one document.</param>
 /// <param name="SpecSource">Where the card's spec line is read.</param>
 /// <param name="CostNames">Every name the bill is matched on when the card's resource is more than one line of it (a Function, its plan and its storage); null for one line, <paramref name="ResourceName"/>.</param>
+/// <param name="KindPrefix">What the card's kept kinds open with when it shares another card's container; empty when the container is its own.</param>
 public sealed record ResourceCard(
     string Key,
     string Container,
@@ -53,7 +54,8 @@ public sealed record ResourceCard(
     Func<ResourceCardInputs, CloudReport> View,
     bool Hourly = false,
     string SpecSource = "ARM record",
-    IReadOnlyList<string>? CostNames = null)
+    IReadOnlyList<string>? CostNames = null,
+    string KindPrefix = "")
 {
     /// <summary>How old the newest kept reading may be before a read asks the source again.</summary>
     public TimeSpan Stale => Hourly ? TimeSpan.FromMinutes(61) : PlanHistoryReader.Fresh + TimeSpan.FromMinutes(1);

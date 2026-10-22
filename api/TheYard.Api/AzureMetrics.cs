@@ -92,7 +92,9 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
     private static async Task<Dictionary<string, Dictionary<DateTimeOffset, double>>> ReadGroupAsync(string token, string resourceId, IReadOnlyList<AzureMetric> group, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellation)
     {
         string span = $"{from.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}/{to.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}";
-        string filter = string.IsNullOrEmpty(group[0].Filter) ? "" : "&$filter=" + Uri.EscapeDataString(group[0].Filter!);
+        // A filter on a dimension may split the answer into one series a value (CollectionName sw
+        // 'tests-' answers one series a test container); top raises Azure's default of ten series.
+        string filter = string.IsNullOrEmpty(group[0].Filter) ? "" : "&$filter=" + Uri.EscapeDataString(group[0].Filter!) + "&top=100";
         string Path(IEnumerable<AzureMetric> metrics, string interval, string timespan) =>
             $"{resourceId}/providers/microsoft.insights/metrics?api-version=2023-10-01&metricnames={string.Join(',', metrics.Select(m => m.Azure).Distinct())}&interval={interval}&timespan={timespan}&aggregation={string.Join(',', metrics.Select(m => m.Aggregation).Distinct())}{filter}";
         try

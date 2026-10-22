@@ -636,7 +636,10 @@ test('the tab reads what the strip and the open card need, and a card is fetched
     )
     .toBe(true);
   // Before the workbench every card read on the tab's first paint, which is how
-  // the tab's own reads became most of the slow requests on the site.
+  // the tab's own reads became most of the slow requests on the site. Azure's view of
+  // the container is read on the first paint for the rail's status dot, as every card
+  // under Cloud infrastructure is (ADR: One frame for every resource), and its answer
+  // is kept a minute, so it is not in this list.
   for (const unread of [
     '/api/admin/sql',
     '/api/admin/logs',
@@ -644,7 +647,6 @@ test('the tab reads what the strip and the open card need, and a card is fetched
     '/api/admin/experiment',
     '/api/admin/proof',
     '/api/admin/telemetry',
-    '/api/admin/azure',
   ]) {
     expect(asked, `${unread} read with only health open`).not.toContain(unread);
   }

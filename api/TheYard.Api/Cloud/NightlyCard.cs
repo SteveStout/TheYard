@@ -28,6 +28,17 @@ public static class NightlyCard
     /// </summary>
     public const int SnapshotsKept = 14;
 
+    /// <summary>
+    /// The snapshots line: how many the account holds against the fourteen the Function keeps, or why
+    /// it is not read.
+    /// </summary>
+    /// <param name="fact">The hour's snapshot fact: a count, "not read: " and why, or null before an hour has read it.</param>
+    /// <param name="unread">What to say when no hour has read it.</param>
+    public static string SnapshotWords(string? fact, string unread) =>
+        int.TryParse(fact, NumberStyles.Integer, CultureInfo.InvariantCulture, out int count) ? $"{count} of the {SnapshotsKept} the Function keeps"
+        : fact is { Length: > 0 } ? fact
+        : unread;
+
     /// <summary>The firing dial runs the other way, so its tone is read on the misses.</summary>
     public static readonly (double Amber, double Red) Misses = CloudThresholds.NightlyMisses;
 
@@ -119,7 +130,7 @@ public static class NightlyCard
                 new("Last run on GitHub", newest is null ? "none read" : $"#{newest.Number}, {newest.Lane}, {NightlyRows.Took(newest.TookSeconds)}, {NightlyRows.CameTo(newest)}", NightlyRows.RunsTone(runs)) { Source = "GitHub Actions" },
                 // An empty run log is unread, not off: "off" is said only of a list that was read.
                 new("Gates", runs.Count == 0 ? $"not read yet: {NightlyRows.NoRuns(inputs)}" : $"nightly {(nightlyOn ? "on" : "off")} · bookkeeping {(bookkeepingOn ? "on" : "off")}, inferred from the runs it dispatched in 30 days", "info") { Source = "GitHub Actions" },
-                new("Snapshots kept", $"up to {SnapshotsKept}; how many are kept now is not read: it needs a data role on the storage account", "info") { Source = "the Function's code" },
+                new("Snapshots kept", SnapshotWords(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault(NightlySource.SnapshotFact), roleMissing ? noRole : NightlyRows.NoHour(inputs)), "info") { Source = "Resource Manager, the storage account's shares" },
                 new("Cost, month to date", NightlyRows.Dollars(cost), "info"),
                 // The spec line says only that the record is not read; why goes here, in a sentence.
                 .. (ResourceView.Latest(inputs)?.Facts.ContainsKey("spec") is true ? Array.Empty<CloudLine>() : [new CloudLine("Spec", roleMissing ? noRole : NightlyRows.NoHour(inputs), "info") { Source = CardFrame.ThisProcess }]),

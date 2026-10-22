@@ -23,7 +23,7 @@ public sealed partial class NightlyCardTests
         public int Writes { get; private set; }
 
         public Task<PlanHistoryAvailability> AvailabilityAsync(CancellationToken cancellation) =>
-            Task.FromResult(new PlanHistoryAvailability(false, "the nightlyruns container is not there yet; apply infra/cosmos/nightlyruns.json"));
+            Task.FromResult(new PlanHistoryAvailability(false, "the plan container is not there yet; apply infra/cosmos/plan.json"));
 
         public Task UpsertAsync(IReadOnlyList<NightlyRun> runs, CancellationToken cancellation)
         {
@@ -61,7 +61,7 @@ public sealed partial class NightlyCardTests
             new(System.Net.HttpStatusCode.OK) { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
     }
 
-    private static readonly PlanHistoryAvailability NoKeep = new(false, "the nightly container is not there yet; apply infra/cosmos/nightly.json");
+    private static readonly PlanHistoryAvailability NoKeep = new(false, "the nightly container is not there yet; apply infra/cosmos/plan.json");
 
     /// <summary>The card's inputs with no keep: no minutes, no buckets, and the one hour the recorder holds, or none.</summary>
     private static ResourceCardInputs Unkept(ResourceHour? hour) =>

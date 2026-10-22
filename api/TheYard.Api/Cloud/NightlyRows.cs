@@ -111,13 +111,14 @@ public static class NightlyRows
             { Table = RunTable(runs), Source = $"GitHub Actions, {names.Workflow} runs" },
             new("cost", "Is it costing anything?", Dollars(CostTotal(inputs)) + (CostTotal(inputs) is null ? "" : " this month"),
                 [.. names.CostNames.Select(name => new CloudLink($"{name}: {Dollars(lines.GetValueOrDefault(name))}", null)),
-                    new("share snapshots kept: not read: needs a data role on the storage account; the account key never goes in the site's settings", null)],
+                    new("share snapshots kept: " + NightlyCard.SnapshotWords(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault(NightlySource.SnapshotFact), roleMissing ? noRole : NoHour(inputs)) + "; read from Resource Manager, the account key never goes in the site's settings", null)],
                 "info")
             { Source = CardFrame.TheBill },
             new("allowed", "What is it allowed to do?", "one role on one file share, and one kind of dispatch",
                 [new($"its identity holds Storage File Data SMB Share Contributor on the one share in {names.Storage}, and nothing else, which the role check script beside the Function proves", null),
                     new($"its token may send repository_dispatch to {names.Repo}, nothing more", null),
-                    new("Nothing from the share is read here: the card sees the clock, the metrics, the public workflow runs and the bill.", null)],
+                    new($"this site's identity reads {names.Group} with Reader and Monitoring Reader and writes nothing there, which the same script proves", null),
+                    new("Nothing in the share is read here: the card sees the clock, the metrics, the share's snapshot list from Resource Manager, the public workflow runs and the bill.", null)],
                 "good")
             { Source = "the Function's template and role check, in this repository" },
         ];

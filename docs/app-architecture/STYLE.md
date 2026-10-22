@@ -108,6 +108,18 @@ that names a correction he made frames it as the rule it produced.
   honest about accessibility.
 - ADR: The tests, explained walks all three suites for a newcomer.
 
+## Status
+
+- Every card under Cloud infrastructure calculates a status: a tone dot and a
+  headline on the Admin rail, read from the route the card itself reads. The
+  list is `GLANCED` in `src/lib/railGlances.ts`, and its test holds it equal to
+  the rail's Cloud infrastructure section, so a card cannot ship without one.
+- A line that is not read says "not read" with its reason and never colours
+  its card (`CardFrame.Unread`). A resource with nothing wrong with it is
+  green.
+- A card judges the site's own traffic: what the live tests do to a shared
+  resource is counted apart and named, never charged to the site.
+
 ## Formatting
 
 - Four spaces in C#, two in TypeScript, CSS and JSON. UTF-8 everywhere;

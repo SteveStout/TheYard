@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="344" viewBox="0 0 1400 344" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>The role assignments on RG-JOBHUNT-SS, read back on 22 October 2026 after Reader and Monitoring Reader were assigned to the site's identity on the owner's word, and the two nightly containers Cosmos DB refused at its twenty-five</title>
+  <defs>
+    <style>
+      .heading { fill: #3f3a37; font-size: 20px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+      .mono { fill: #3f3a37; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 13px; }
+    </style>
+  </defs>
+  <rect width="1400" height="344" fill="#e9e6e7"/>
+  <text x="40" y="44" class="heading">RG-JOBHUNT-SS: the site's identity reads the nightly Function</text>
+  <text x="40" y="70" class="caption">A summary of az role assignment create and az role assignment list --scope &lt;RG-JOBHUNT-SS&gt;, through the runner on 2026-10-22 at 04:22 CDT on the owner's word; the container create beneath it, as Cosmos DB answered.</text>
+  <rect x="40" y="96" width="1320" height="184" rx="8" fill="#ffffff" stroke="#536786" stroke-width="1.5"/>
+  <text x="56" y="126" class="mono" xml:space="preserve">[</text>
+  <text x="56" y="148" class="mono" xml:space="preserve">  { &quot;role&quot;: &quot;Reader&quot;,            &quot;type&quot;: &quot;ServicePrincipal&quot;, &quot;principal&quot;: &quot;dd34b0a6-4df7-4381-b6af-d1262a98f9ef&quot;, &quot;name&quot;: &quot;id-theyard-ss&quot; },</text>
+  <text x="56" y="170" class="mono" xml:space="preserve">  { &quot;role&quot;: &quot;Monitoring Reader&quot;, &quot;type&quot;: &quot;ServicePrincipal&quot;, &quot;principal&quot;: &quot;dd34b0a6-4df7-4381-b6af-d1262a98f9ef&quot;, &quot;name&quot;: &quot;id-theyard-ss&quot; }</text>
+  <text x="56" y="192" class="mono" xml:space="preserve">]</text>
+  <text x="56" y="214" class="mono" xml:space="preserve"></text>
+  <text x="56" y="236" class="mono" xml:space="preserve">az cosmosdb sql container create -n nightly (and nightlyruns) in theyard:</text>
+  <text x="56" y="258" class="mono" xml:space="preserve">  (BadRequest) Collection create forbidden as collection count in database offer has exceeded 25.</text>
+</svg>

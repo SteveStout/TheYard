@@ -36,7 +36,10 @@ public static class CardFrame
         // request, a stopped app, a capped hour) lifts the card the way a dial over its line does,
         // so the rail's dot shows what the card knows: a Cosmos DB card read "fine" beside its row
         // of seven hundred throttled requests before the rows counted.
-        var tone = CardTones.Of(report.Dials.Select(dial => Level(dial.Tone)).Concat(report.Rows.Select(row => Level(row.Tone))), report.ReadAgeSeconds, hourly ? 3_600 : 60);
+        // A row that is not read says so and never colours the card: only what was read lifts it. A
+        // dial keeps its tone, because a dial whose newest minute is missing still holds the tone its
+        // sustained minutes earned (CloudTones.Dial), and that is a reading, not a gap.
+        var tone = CardTones.Of(report.Dials.Select(dial => Level(dial.Tone)).Concat(report.Rows.Select(row => Level(Unread(row.Answer) ? "info" : row.Tone))), report.ReadAgeSeconds, hourly ? 3_600 : 60);
         bool held = !hourly;
         var first = report.Dials.Count > 0 ? report.Dials[0] : null;
         return report with
@@ -80,6 +83,10 @@ public static class CardFrame
         }
         return chips;
     }
+
+    /// <summary>True when a line's answer says it was not read: "not read", "not read yet", "not read: " and why.</summary>
+    /// <param name="answer">The row's answer or the dial's big figure.</param>
+    public static bool Unread(string? answer) => answer is not null && answer.StartsWith("not read", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>A wire tone as a held level: 2 over red, 1 over amber, 0 inside.</summary>
     /// <param name="tone">good, info, warning or alarm.</param>

@@ -157,7 +157,7 @@ public sealed partial class NightlyCardTests
     public void The_allowed_row_says_nothing_from_the_share_is_read_and_the_card_draws_in_the_frame()
     {
         var view = NightlyCard.View(Month(DueInMonth()), Names, FunctionPath, [Run("1", 2, "success")]);
-        Assert.Contains(view.Rows.Single(r => r.Key == "allowed").Detail, d => d.Text == "Nothing from the share is read here: the card sees the clock, the metrics, the public workflow runs and the bill.");
+        Assert.Contains(view.Rows.Single(r => r.Key == "allowed").Detail, d => d.Text == "Nothing in the share is read here: the card sees the clock, the metrics, the share's snapshot list from Resource Manager, the public workflow runs and the bill.");
         Assert.Contains("Storage File Data SMB Share Contributor", view.Rows.Single(r => r.Key == "allowed").Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal(["firing", "runs", "cost", "allowed"], view.Rows.Select(r => r.Key));
         Assert.Equal(2, view.Dials.Count);

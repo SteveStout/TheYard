@@ -43,7 +43,39 @@ public static class CosmosCard
         new("ServerSideLatency", "average", "latency_ms"),
         new("TotalRequests", "count", "requests"),
         new("TotalRequests", "count", "throttled", Filter: "StatusCode eq '429'"),
+        // The live tests' copies (tests-*) share the database's throughput: the gate's own suites
+        // made nearly nine in ten of the throttles the card used to count as the site's, so the card
+        // reads them apart and judges the site by its own (the ADR has the measurement).
+        new("TotalRequests", "count", "requests_tests", Filter: "CollectionName sw 'tests-'"),
+        new("TotalRequests", "count", "throttled_tests", Filter: "StatusCode eq '429' and CollectionName sw 'tests-'"),
     ];
+
+    /// <summary>
+    /// The share of the site's own requests throttled at which the card turns amber: Azure's guidance
+    /// reads one to five per cent of requests answered 429 and retried by the SDK as healthy, so the
+    /// line sits at the bottom of that band.
+    /// </summary>
+    public const double ThrottledAmberShare = 0.01;
+
+    /// <summary>The site's own throttles and requests over the window: every container's less the live tests' copies.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static (double? Throttled, double? Requests, double? TestsThrottled) SiteThrottling(ResourceCardInputs inputs)
+    {
+        double? all = ResourceView.WindowSum(inputs, "throttled");
+        double? tests = ResourceView.WindowSum(inputs, "throttled_tests");
+        double? requests = ResourceView.WindowSum(inputs, "requests");
+        double testRequests = ResourceView.WindowSum(inputs, "requests_tests") ?? 0;
+        return (all is { } a ? Math.Max(0, a - (tests ?? 0)) : null, requests is { } r ? Math.Max(0, r - testRequests) : null, tests);
+    }
+
+    /// <summary>
+    /// The throttling row's tone: warning when the site's own throttles reach ThrottledAmberShare of
+    /// its requests, or when there are throttles and no requests read to weigh them against;
+    /// otherwise the throughput's own tone. No throttles read leaves the tone to the throughput.
+    /// </summary>
+    public static string ThrottleTone(double? throttled, double? requests, PlanTone ruTone) =>
+        throttled is > 0 && (requests is not > 0 || throttled.Value / requests.Value >= ThrottledAmberShare) ? "warning"
+        : CloudTones.Of(ruTone == PlanTone.Info ? PlanTone.Good : ruTone);
 
     /// <summary>RU/s amber at 70 per cent of the thousand and red at 90; storage amber at 70 and red at 90.</summary>
     public static readonly (double Amber, double Red) Throughput = CloudThresholds.CosmosThroughput;
@@ -62,18 +94,22 @@ public static class CosmosCard
             ResourceView.Dial(inputs, "ru_per_s", "RU/s, right now", provisioned, Throughput, v => v is { } r ? $"{r.ToString("0", CultureInfo.InvariantCulture)} of {limitWords}" : "not read"),
             ResourceView.Dial(inputs, "storage_gb", "Storage", storageLimit, Storage, v => v is { } g ? $"{g.ToString("0.00", CultureInfo.InvariantCulture)} of {storageWords}" : "not read"),
         };
-        double? throttled = ResourceView.WindowSum(inputs, "throttled");
-        var throttles = inputs.Buckets.Where(b => b.Sums.GetValueOrDefault("throttled") is > 0)
-            .Select(b => new CloudMark(b.At.ToUnixTimeMilliseconds(), "event", $"{b.Sums["throttled"]:0} requests throttled (429)"));
+        var (throttled, siteRequests, testsThrottled) = SiteThrottling(inputs);
+        string throttleShare = throttled is { } t && siteRequests is > 0 ? $"{(t / siteRequests.Value * 100).ToString("0.00", CultureInfo.InvariantCulture)} % of the site's requests" : "no requests read";
+        static double SiteOf(ResourceBucket b) => Math.Max(0, (b.Sums.GetValueOrDefault("throttled") ?? 0) - (b.Sums.GetValueOrDefault("throttled_tests") ?? 0));
+        var throttles = inputs.Buckets.Where(b => SiteOf(b) > 0)
+            .Select(b => new CloudMark(b.At.ToUnixTimeMilliseconds(), "event", $"{SiteOf(b):0} of the site's requests throttled (429)"));
         var events = inputs.Hours.SelectMany(h => h.Events).ToList();
         var ruTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "ru_per_s").Select(v => ResourceView.Share(v, provisioned)).ToList(), Throughput);
+        string throttleTone = ThrottleTone(throttled, siteRequests, ruTone);
         var rows = new List<CloudRow>
         {
             new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "container_count")} containers",
                 [], "good") { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("container_rows"), "Container", "Type", "Kept for") },
             new("throttling", "Is it throttling?", throttled is null ? "not read yet" : $"{throttled.Value.ToString("N0", CultureInfo.InvariantCulture)} throttled",
-                [new($"429s in the window · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null)],
-                throttled is > 0 ? "warning" : CloudTones.Of(ruTone == PlanTone.Info ? PlanTone.Good : ruTone)),
+                [new($"the site's 429s in the window, {throttleShare}, retried by the SDK · amber at {ThrottledAmberShare * 100:0} % · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null),
+                    new(testsThrottled is { } tt ? $"the live tests' copies (tests-*) were throttled {ResourceView.Number(tt)} more times on the same shared throughput, counted apart" : "the live tests' copies (tests-*): not read yet, so every throttle above is counted as the site's", null)],
+                throttleTone),
             new("keeping", "What is it keeping?", ResourceView.Now(inputs, "documents") is { } docs ? $"{docs.ToString("N0", CultureInfo.InvariantCulture)} documents" : "not read yet",
                 [new($"storage {ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB · every kept container expires its own documents", null)], "info"),
             new("tier", "Is the free tier still right?", inputs.Month.Count == 0 ? "not enough kept yet" : ruTone == PlanTone.Alarm ? "no, throughput is past its line" : "yes, throughput first",
@@ -90,8 +126,8 @@ public static class CosmosCard
                 new("Normalized peak", PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak), "info"),
                 new("Storage", storageLimit is { } free ? $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} / {free} GB" : $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB", "info"),
                 new("Documents", ResourceView.Number(ResourceView.Now(inputs, "documents")), "info"),
-                new("Requests, hour", ResourceView.Number(ResourceView.HourSum(inputs, "requests")), "info"),
-                new("Throttled", ResourceView.Number(throttled), throttled is > 0 ? "warning" : "info"),
+                new("Requests, hour", ResourceView.Number(ResourceView.HourSum(inputs, "requests") is { } hourAll ? (double?)Math.Max(0, hourAll - (ResourceView.HourSum(inputs, "requests_tests") ?? 0)) : null), "info"),
+                new("Throttled", ResourceView.Number(throttled), throttleTone == "warning" ? "warning" : "info"),
                 new("Latency", $"{ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", "info"),
                 new("Containers", ResourceView.Fact(inputs, "container_count"), "info") { Source = "ARM record" },
                 new("Free tier", ResourceView.Fact(inputs, "free_tier"), "info") { Source = "ARM record" },

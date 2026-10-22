@@ -9,13 +9,15 @@ namespace TheYard.Infrastructure.Cosmos;
 
 /// <summary>
 /// The nightly card's run log in the document store (ADR: The Nightly Function on the Admin tab):
-/// one container partitioned on the UTC day, a document per GitHub run under the run's own id and
-/// a document per judged slot under its hour, each upserted so a second read of the same run or
-/// slot replaces the first; the container's time to live keeps a year.
+/// in the plan container, partitioned on the UTC day, a document per GitHub run under the run's own
+/// id and a document per judged slot under its hour, each upserted so a second read of the same run
+/// or slot replaces the first. Its kinds and ids open with Containers.NightlyPrefix, so the plan's
+/// own minutes never meet them, and each document keeps itself a year, longer than the plan's month.
 /// </summary>
 public sealed class CosmosNightlyRunLog(CosmosStore store) : INightlyRunLog
 {
-    private readonly Container _container = store.ContainerNamed(Containers.NightlyRuns);
+    private const string RunKind = Containers.NightlyPrefix + "run", FiringKind = Containers.NightlyPrefix + "firing";
+    private readonly Container _container = store.ContainerNamed(Containers.Plan);
     private PlanHistoryAvailability? _availability;
 
     public async Task<PlanHistoryAvailability> AvailabilityAsync(CancellationToken cancellation)
@@ -29,11 +31,11 @@ public sealed class CosmosNightlyRunLog(CosmosStore store) : INightlyRunLog
             var response = await _container.ReadContainerAsync(cancellationToken: cancellation);
             return _availability = response.Resource.PartitionKeyPath == "/day"
                 ? new PlanHistoryAvailability(true, "kept in Cosmos DB")
-                : new PlanHistoryAvailability(false, $"the {Containers.NightlyRuns} container is partitioned on {response.Resource.PartitionKeyPath} and the code was written for /day");
+                : new PlanHistoryAvailability(false, $"the {Containers.Plan} container is partitioned on {response.Resource.PartitionKeyPath} and the code was written for /day");
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            return _availability = new PlanHistoryAvailability(false, $"the {Containers.NightlyRuns} container is not there yet; apply infra/cosmos/{Containers.NightlyRuns}.json");
+            return _availability = new PlanHistoryAvailability(false, $"the {Containers.Plan} container is not there yet; apply infra/cosmos/{Containers.Plan}.json");
         }
         catch (Exception ex)
         {
@@ -51,7 +53,7 @@ public sealed class CosmosNightlyRunLog(CosmosStore store) : INightlyRunLog
         {
             var document = new RunDocument
             {
-                Id = run.Id,
+                Id = RunKind + ":" + run.Id,
                 Day = PlanFolding.DayOf(run.At),
                 At = run.At.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
                 Run = run,
@@ -70,7 +72,7 @@ public sealed class CosmosNightlyRunLog(CosmosStore store) : INightlyRunLog
         {
             var document = new FiringDocument
             {
-                Id = "firing:" + PlanFolding.HourKey(firing.Slot),
+                Id = FiringKind + ":" + PlanFolding.HourKey(firing.Slot),
                 Day = PlanFolding.DayOf(firing.Slot),
                 At = firing.Slot.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture),
                 Firing = firing,
@@ -85,7 +87,8 @@ public sealed class CosmosNightlyRunLog(CosmosStore store) : INightlyRunLog
         {
             return [];
         }
-        var definition = new QueryDefinition("SELECT * FROM c WHERE c.kind = 'run' AND c.day >= @day AND c.at >= @at")
+        var definition = new QueryDefinition("SELECT * FROM c WHERE c.kind = @kind AND c.day >= @day AND c.at >= @at")
+            .WithParameter("@kind", RunKind)
             .WithParameter("@day", PlanFolding.DayOf(since))
             .WithParameter("@at", since.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
         var runs = new List<NightlyRun>();
@@ -101,7 +104,8 @@ public sealed class CosmosNightlyRunLog(CosmosStore store) : INightlyRunLog
     private sealed class RunDocument
     {
         [JsonPropertyName("id")] public string Id { get; set; } = "";
-        [JsonPropertyName("kind")] public string Kind { get; set; } = "run";
+        [JsonPropertyName("kind")] public string Kind { get; set; } = RunKind;
+        [JsonPropertyName("ttl")] public int Ttl { get; set; } = Containers.NightlyRunSeconds;
         [JsonPropertyName("day")] public string Day { get; set; } = "";
         [JsonPropertyName("at")] public string At { get; set; } = "";
         [JsonPropertyName("run")] public NightlyRun Run { get; set; } = null!;
@@ -111,7 +115,8 @@ public sealed class CosmosNightlyRunLog(CosmosStore store) : INightlyRunLog
     private sealed class FiringDocument
     {
         [JsonPropertyName("id")] public string Id { get; set; } = "";
-        [JsonPropertyName("kind")] public string Kind { get; set; } = "firing";
+        [JsonPropertyName("kind")] public string Kind { get; set; } = FiringKind;
+        [JsonPropertyName("ttl")] public int Ttl { get; set; } = Containers.NightlyRunSeconds;
         [JsonPropertyName("day")] public string Day { get; set; } = "";
         [JsonPropertyName("at")] public string At { get; set; } = "";
         [JsonPropertyName("firing")] public NightlyFiring Firing { get; set; } = null!;

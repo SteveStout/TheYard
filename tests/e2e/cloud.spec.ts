@@ -47,6 +47,10 @@ test('the shell draws the tone, the chips and the rail dot, and the arrows walk 
   await expect(card.getByTestId('card-thresholds').locator('li').first()).toBeVisible();
   const rail = page.getByTestId('bench-rail');
   await expect(rail.getByTestId('bench-tone-sqldb')).toBeVisible({ timeout: 30_000 });
+  // Every card under Cloud infrastructure calculates a status, the three that draw their own body too.
+  for (const slug of ['azure', 'machines', 'follows']) {
+    await expect(rail.getByTestId(`bench-tone-${slug}`)).toBeVisible({ timeout: 30_000 });
+  }
   await rail.getByTestId('bench-link-plan').focus();
   await page.keyboard.press('ArrowDown');
   await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'sqldb');

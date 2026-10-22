@@ -68,13 +68,38 @@ public class CloudThresholdTests
     [Fact]
     public void The_cosmos_card_reads_against_the_throughput_the_account_provisions_and_marks_every_throttled_bucket()
     {
-        var view = CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["container_count"] = "17", ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 4 }));
+        var view = CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["container_count"] = "17", ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 4, ["requests"] = 100 }));
         Assert.Equal(90, view.Dials[0].Percent);
         Assert.Equal("alarm", view.Dials[0].Tone);
         Assert.Equal("warning", view.Rows.Single(r => r.Key == "throttling").Tone);
         Assert.Contains(view.Chart.Marks, mark => mark.Kind == "event" && mark.Title.Contains("429", StringComparison.Ordinal));
     }
 
+
+    [Fact]
+    public void The_cosmos_card_judges_the_site_s_own_throttles_and_counts_the_live_tests_apart()
+    {
+        // 22 October, read live: the split by container counted 943 throttles in 24 hours, 825 of
+        // them on the live tests' copies (tests-*), on an account at 0 % of its thousand RU/s. The
+        // card read amber on them.
+        var sums = new Dictionary<string, double?> { ["throttled"] = 943, ["throttled_tests"] = 825, ["requests"] = 280_000, ["requests_tests"] = 140_000 };
+        var view = CardFrame.Complete(CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["container_count"] = "25", ["throughput"] = "1000" }, sums)), "ARM record");
+        var row = view.Rows.Single(r => r.Key == "throttling");
+        Assert.Equal("118 throttled", row.Answer);
+        Assert.Equal("good", row.Tone);
+        Assert.Contains("0.08 % of the site's requests", row.Detail[0].Text, StringComparison.Ordinal);
+        Assert.Contains("throttled 825 more times", row.Detail[1].Text, StringComparison.Ordinal);
+        Assert.Equal("fine", view.Tone);
+
+        // At one in a hundred of the site's own requests it is amber, whatever the tests did.
+        var busy = new Dictionary<string, double?> { ["throttled"] = 1_400, ["throttled_tests"] = 0, ["requests"] = 140_000 };
+        Assert.Equal("warning", CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, busy)).Rows.Single(r => r.Key == "throttling").Tone);
+
+        // Throttles with no requests read to weigh them against warn, as any 429 did before; tests not read yet say so.
+        var unweighed = CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 3 })).Rows.Single(r => r.Key == "throttling");
+        Assert.Equal("warning", unweighed.Tone);
+        Assert.Contains("not read yet", unweighed.Detail[1].Text, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void The_free_tier_allowance_and_the_basic_read_rate_apply_only_while_the_record_says_so()
