@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Merger",
+    "scriptFile": "JobHunt.Functions.dll",
+    "entryPoint": "JobHunt.Functions.Merger.RunAsync",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "timer",
+        "direction": "In",
+        "type": "timerTrigger",
+        "schedule": "0 * * * * *",
+        "properties": {}
+      }
+    ]
+  },
+  {
+    "name": "Nightly",
+    "scriptFile": "JobHunt.Functions.dll",
+    "entryPoint": "JobHunt.Functions.Nightly.RunAsync",
+    "language": "dotnet-isolated",
+    "properties": {
+      "IsCodeless": false
+    },
+    "bindings": [
+      {
+        "name": "timer",
+        "direction": "In",
+        "type": "timerTrigger",
+        "schedule": "0 0 * * * *",
+        "properties": {}
+      }
+    ]
+  }
+]
