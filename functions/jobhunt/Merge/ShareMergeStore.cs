@@ -44,6 +44,23 @@ public sealed class ShareMergeStore(ShareClient share, string root) : IMergeStor
         return entries;
     }
 
+    public async Task<IReadOnlyList<string>> ListFoldersAsync(string folder, CancellationToken ct)
+    {
+        var names = new List<string>();
+        try
+        {
+            await foreach (ShareFileItem item in Folder(folder).GetFilesAndDirectoriesAsync(cancellationToken: ct))
+            {
+                if (item.IsDirectory) { names.Add(item.Name); }
+            }
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return [];
+        }
+        return names;
+    }
+
     public async Task EnsureFolderAsync(string folder, CancellationToken ct)
     {
         string path = string.Empty;

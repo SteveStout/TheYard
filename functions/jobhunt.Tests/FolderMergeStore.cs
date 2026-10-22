@@ -20,6 +20,13 @@ public sealed class FolderMergeStore(string root) : IMergeStore
         return Task.FromResult(entries);
     }
 
+    public Task<IReadOnlyList<string>> ListFoldersAsync(string folder, CancellationToken ct)
+    {
+        string full = Full(folder);
+        IReadOnlyList<string> names = Directory.Exists(full) ? Directory.GetDirectories(full).Select(Path.GetFileName).Select(n => n!).ToList() : [];
+        return Task.FromResult(names);
+    }
+
     public Task EnsureFolderAsync(string folder, CancellationToken ct)
     {
         Directory.CreateDirectory(Full(folder));

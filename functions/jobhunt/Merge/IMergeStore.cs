@@ -14,6 +14,9 @@ public interface IMergeStore
     /// <summary>The files directly in a folder; an absent folder lists as empty.</summary>
     Task<IReadOnlyList<MergeEntry>> ListFilesAsync(string folder, CancellationToken ct);
 
+    /// <summary>The names of the folders directly in a folder; an absent folder lists as empty.</summary>
+    Task<IReadOnlyList<string>> ListFoldersAsync(string folder, CancellationToken ct);
+
     Task EnsureFolderAsync(string folder, CancellationToken ct);
 
     /// <summary>Creates the file, or replaces its whole content.</summary>
