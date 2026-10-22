@@ -1,6 +1,7 @@
-// The nightly card's four questions (ADR: The Nightly Function on the Admin tab): is it firing,
-// what the runs came to, what it costs line by line, and what it is allowed to do. Its own file so
-// the card's file holds the dials, the chart and the readout, and each stays short.
+// The nightly card's questions (ADR: The Nightly Function on the Admin tab): is it firing, is the
+// tracker merger keeping up (ADR: The tracker merger runs in Azure), what the runs came to, what it
+// costs line by line, and what it is allowed to do. Its own file so the card's file holds the dials,
+// the chart and the readout, and each stays short.
 using System.Globalization;
 using TheYard.Application;
 using TheYard.Data;
@@ -85,7 +86,46 @@ public static class NightlyRows
         return known.Count == 0 ? null : Math.Round(known.Sum(), 2);
     }
 
-    /// <summary>The four rows.</summary>
+    /// <summary>The words the merger row says when no kept minute in the last hour carries its reading.</summary>
+    public const string MergerUnread = "not read: no merger reading kept in the last hour";
+
+    /// <summary>
+    /// Is the tracker merger keeping up: the newest kept minute's five numbers from the Function's
+    /// health route (MergerReading). Good when nothing has waited past five minutes; information while
+    /// a file is past five; a warning once any file has waited past ten (CloudThresholds.MergerWait).
+    /// </summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static CloudRow MergerRow(ResourceCardInputs inputs)
+    {
+        const string question = "Is the tracker merger keeping up?";
+        string source = "the Function's health route, counts and ages only";
+        if (MergerReading.Newest(inputs.LastHour) is not { } minute)
+        {
+            return new CloudRow("merger", question, MergerUnread,
+                [new("read once a minute from the Function, which lists its two spool folders and reads no file", null)], "info")
+            { Source = source };
+        }
+        var values = minute.Values;
+        int waiting = MergerReading.Count(values.GetValueOrDefault(MergerReading.Waiting));
+        int over5 = MergerReading.Count(values.GetValueOrDefault(MergerReading.Over5));
+        int over10 = MergerReading.Count(values.GetValueOrDefault(MergerReading.Over10));
+        string tone = over10 > 0 ? "warning" : over5 > 0 ? "info" : "good";
+        string value = over10 > 0 ? $"{MergerReading.Files(over10)} waiting over {CloudThresholds.MergerWait.Red} minutes"
+            : over5 > 0 ? $"{MergerReading.Files(over5)} waiting over {CloudThresholds.MergerWait.Amber} minutes"
+            : "keeping up";
+        string log = values.GetValueOrDefault(MergerReading.LogAge) is { } age ? $"newest merge.log line {MergerReading.Age(age)} ago" : "no merge.log on the share";
+        string oldest = values.GetValueOrDefault(MergerReading.Oldest) is { } wait ? $", the oldest {MergerReading.Age(wait)}" : "";
+        return new CloudRow("merger", question, value,
+            [
+                new(log, null),
+                new($"{MergerReading.Files(waiting)} waiting in tracker-inbox/ and inbox/tracker-inbox/{oldest}; {over5} past {CloudThresholds.MergerWait.Amber} minutes, {over10} past {CloudThresholds.MergerWait.Red}", null),
+                new($"read {NightlySlots.Local(minute.At).ToString("HH:mm", CultureInfo.InvariantCulture)} Central, from the Function, which lists the two folders and reads no file", null),
+            ],
+            tone)
+        { Source = source };
+    }
+
+    /// <summary>The card's rows.</summary>
     /// <param name="inputs">The card's inputs.</param>
     /// <param name="names">The Function's names, from configuration.</param>
     /// <param name="tally">The thirty days' slots, judged.</param>
@@ -104,6 +144,7 @@ public static class NightlyRows
                     new("slots: 4:00 AM Central for the reply run; midnight, 8 AM, noon, 4 PM and 8 PM for the records run", null)],
                 roleMissing ? "info" : CloudTones.Of(missTone))
             { Source = "Azure Monitor, " + NightlyMetrics.Executions },
+            MergerRow(inputs),
             new("runs", "Run log",
                 runs.Count == 0 ? $"no runs read yet: {NoRuns(inputs)}" : $"{runs.Count} runs in 30 days, the newest {CameTo(runs[0])}",
                 [new($"each run kept a year under its GitHub id · the workflow {names.Workflow} in {names.Repo}", $"https://github.com/{names.Repo}/actions/workflows/{names.Workflow}")],
@@ -118,7 +159,7 @@ public static class NightlyRows
                 [new($"its identity holds Storage File Data SMB Share Contributor on the one share in {names.Storage}, and nothing else, which the role check script beside the Function proves", null),
                     new($"its token may send repository_dispatch to {names.Repo}, nothing more", null),
                     new($"this site's identity reads {names.Group} with Reader and Monitoring Reader and writes nothing there, which the same script proves", null),
-                    new("Nothing in the share is read here: the card sees the clock, the metrics, the share's snapshot list from Resource Manager, the public workflow runs and the bill.", null)],
+                    new("No file in the share is opened here: the card sees the clock, the metrics, the share's snapshot list from Resource Manager, the merger's counts and ages from the Function, the public workflow runs and the bill.", null)],
                 "good")
             { Source = "the Function's template and role check, in this repository" },
         ];

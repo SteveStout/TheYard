@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">
+  <title>A row file's path through the tracker merger in Azure</title>
+  <desc>A laptop lane's row file goes up by the share sync, a cloud lane's is written to the share directly; the Function's Merger appends it to the tracker through a temp file it reads back and renames over, files it under merged, logs it, and the sync brings the tracker down to the laptop. The health route counts what waits for the Admin tab.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#14524a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="600" fill="#ffffff"/>
+
+  <!-- the two places a row starts -->
+  <rect x="20" y="30" width="270" height="210" rx="10" fill="#f3f7f6" stroke="#9db8b2"/>
+  <text x="36" y="56" font-weight="700" fill="#14524a">The laptop</text>
+  <rect x="36" y="72" width="238" height="54" rx="6" fill="#ffffff" stroke="#14524a"/>
+  <text x="48" y="94" fill="#1d2b29">A daytime lane writes</text>
+  <text x="48" y="114" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">tracker-inbox\&lt;TID&gt;.csv</text>
+  <rect x="36" y="150" width="238" height="70" rx="6" fill="#ffffff" stroke="#14524a"/>
+  <text x="48" y="172" fill="#1d2b29">'JobHunt Share Sync', every</text>
+  <text x="48" y="190" fill="#1d2b29">minute: sends it up, then moves</text>
+  <text x="48" y="208" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">it to tracker-inbox\sent\</text>
+  <line x1="155" y1="126" x2="155" y2="148" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="20" y="270" width="270" height="110" rx="10" fill="#f3f7f6" stroke="#9db8b2"/>
+  <text x="36" y="296" font-weight="700" fill="#14524a">GitHub Actions</text>
+  <rect x="36" y="310" width="238" height="54" rx="6" fill="#ffffff" stroke="#14524a"/>
+  <text x="48" y="332" fill="#1d2b29">A nightly lane writes, on the share</text>
+  <text x="48" y="352" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">inbox/tracker-inbox/&lt;TID&gt;.csv</text>
+
+  <!-- the share -->
+  <rect x="330" y="30" width="300" height="350" rx="10" fill="#fbf7ea" stroke="#c9a94a"/>
+  <text x="346" y="56" font-weight="700" fill="#7a5c0c">The share (jobhunt)</text>
+  <rect x="346" y="72" width="268" height="44" rx="6" fill="#ffffff" stroke="#c9a94a"/>
+  <text x="358" y="99" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">tracker-inbox/          (spool 1)</text>
+  <rect x="346" y="124" width="268" height="44" rx="6" fill="#ffffff" stroke="#c9a94a"/>
+  <text x="358" y="151" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">inbox/tracker-inbox/    (spool 2)</text>
+  <rect x="346" y="196" width="268" height="44" rx="6" fill="#ffffff" stroke="#c9a94a"/>
+  <text x="358" y="223" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">Job_Hunt_Tracker.csv</text>
+  <rect x="346" y="248" width="268" height="44" rx="6" fill="#ffffff" stroke="#c9a94a"/>
+  <text x="358" y="275" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">&lt;spool&gt;/merged/ or /rejected/</text>
+  <rect x="346" y="300" width="268" height="44" rx="6" fill="#ffffff" stroke="#c9a94a"/>
+  <text x="358" y="327" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">tracker-inbox/merge.log</text>
+  <line x1="274" y1="185" x2="344" y2="100" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="274" y1="337" x2="344" y2="150" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- the Function -->
+  <rect x="670" y="30" width="270" height="350" rx="10" fill="#eef4fb" stroke="#5b86b8"/>
+  <text x="686" y="56" font-weight="700" fill="#264a73">func-jobhunt-ss</text>
+  <rect x="686" y="72" width="238" height="96" rx="6" fill="#ffffff" stroke="#5b86b8"/>
+  <text x="698" y="94" fill="#1d2b29" font-weight="600">Merger, every minute</text>
+  <text x="698" y="114" fill="#1d2b29">MERGER=on; lists both spools,</text>
+  <text x="698" y="134" fill="#1d2b29">rows, then fixes, then moveouts,</text>
+  <text x="698" y="154" fill="#1d2b29">through IMergeStore</text>
+  <rect x="686" y="180" width="238" height="96" rx="6" fill="#ffffff" stroke="#5b86b8"/>
+  <text x="698" y="202" fill="#1d2b29" font-weight="600">One write, never half a file</text>
+  <text x="698" y="222" fill="#1d2b29">writes the whole tracker to</text>
+  <text x="698" y="242" fill="#1d2b29" font-family="Consolas, monospace" font-size="12">.merger-tmp, reads it back,</text>
+  <text x="698" y="262" fill="#1d2b29">renames it over the tracker</text>
+  <rect x="686" y="288" width="238" height="76" rx="6" fill="#ffffff" stroke="#5b86b8"/>
+  <text x="698" y="310" fill="#1d2b29" font-weight="600">GET /api/merger/health</text>
+  <text x="698" y="330" fill="#1d2b29">five numbers: log age, waiting,</text>
+  <text x="698" y="350" fill="#1d2b29">past 5 min, past 10, oldest</text>
+  <line x1="616" y1="120" x2="684" y2="120" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="684" y1="228" x2="616" y2="218" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="684" y1="250" x2="616" y2="270" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="684" y1="262" x2="616" y2="322" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- the way back, and the card -->
+  <rect x="20" y="420" width="450" height="150" rx="10" fill="#f3f7f6" stroke="#9db8b2"/>
+  <text x="36" y="446" font-weight="700" fill="#14524a">Back on the laptop</text>
+  <text x="36" y="472" fill="#1d2b29">The sync's down pass brings the tracker, the moved-out file</text>
+  <text x="36" y="492" fill="#1d2b29">and merge.log down, and never sends them up. The laptop's</text>
+  <text x="36" y="512" fill="#1d2b29">'Tracker Merger' runs -AppendsOnly: the .md appends, which</text>
+  <text x="36" y="532" fill="#1d2b29">laptop lanes still edit, stay one writer on the laptop.</text>
+  <text x="36" y="556" fill="#5a6b68" font-size="12">A laptop row shows in the laptop's CSV about three minutes after it is written.</text>
+  <path d="M480,218 C470,380 420,400 300,418" fill="none" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="500" y="420" width="440" height="150" rx="10" fill="#eef4fb" stroke="#5b86b8"/>
+  <text x="516" y="446" font-weight="700" fill="#264a73">The Admin tab, nightly card</text>
+  <text x="516" y="472" fill="#1d2b29">"Is the tracker merger keeping up?" read once a minute</text>
+  <text x="516" y="492" fill="#1d2b29">from the health route and kept on the minute. Good while</text>
+  <text x="516" y="512" fill="#1d2b29">nothing waits past 5 minutes, a warning once a file has</text>
+  <text x="516" y="532" fill="#1d2b29">waited past 10. Counts and ages only: no file is opened</text>
+  <text x="516" y="552" fill="#1d2b29">for it and no name, row or log line reaches the site.</text>
+  <line x1="805" y1="366" x2="760" y2="418" stroke="#14524a" stroke-width="2" marker-end="url(#arrow)"/>
+</svg>

@@ -140,6 +140,7 @@ public static class DocumentationCatalog
         ["adr-tagged-links-who-opened-what"] = "docs/decisions/ADR-108-tagged-links-who-opened-what.md",
         ["adr-the-nightly-function-on-the-admin-tab"] = "docs/decisions/ADR-109-the-nightly-function-on-the-admin-tab.md",
         ["adr-one-working-lock-for-the-whole-site-after-half-a-second"] = "docs/decisions/ADR-110-one-working-lock-for-the-whole-site.md",
+        ["adr-the-tracker-merger-runs-in-azure"] = "docs/decisions/ADR-111-the-tracker-merger-runs-in-azure.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

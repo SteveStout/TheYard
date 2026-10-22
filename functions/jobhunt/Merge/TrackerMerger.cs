@@ -26,7 +26,8 @@ public sealed class TrackerMerger(IMergeStore store, TimeProvider time)
         return waiting;
     }
 
-    private static bool IsSpoolFile(string name) =>
+    /// <summary>A file a lane left for the merger: a row or fix file (.csv) or a moveout list; the merger's own files are not.</summary>
+    public static bool IsSpoolFile(string name) =>
         name.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
         || (name.StartsWith("moveout-", StringComparison.OrdinalIgnoreCase) && name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase));
 }

@@ -28,6 +28,16 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     /// <summary>The fact an hour writes when Resource Manager or Monitor refused the site's identity.</summary>
     public const string RoleFact = "role", RoleMissing = "missing";
 
+    /// <summary>
+    /// The Function's default host name as its ARM record gave it, which the merger's health is read
+    /// from each minute; null until an hour has read the record. Volatile because the hour's read and
+    /// the minute's run on the recorder's loop one after the other, and a reader may ask between.
+    /// </summary>
+    private volatile string? _host;
+
+    /// <summary>The Function's default host name, once an hour has read it.</summary>
+    public string? Host => _host;
+
     /// <summary>The card's copy of the run log.</summary>
     public NightlyRunCache Cache => runs.Cache;
 
@@ -64,23 +74,30 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     /// <summary>True when Azure answered that the identity may not read (401 or 403), or that the group is not there to read (404).</summary>
     public static bool Refused(HttpRequestException ex) => ex.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized or HttpStatusCode.NotFound;
 
-    /// <summary>The Function's executions and execution units a minute; nothing off Azure, while the role is missing, or before the Function exists.</summary>
+    /// <summary>
+    /// The Function's executions and execution units a minute, with the tracker merger's health on the
+    /// newest (MergerReading); no metrics off Azure, while the role is missing, or before the Function
+    /// exists, and no merger reading before an hour has read the Function's host name.
+    /// </summary>
     public async Task<IReadOnlyList<ResourceMinute>> MinutesAsync(DateTimeOffset from, DateTimeOffset to, string version, CancellationToken cancellation)
     {
         if (!azure.Configured)
         {
             return [];
         }
+        IReadOnlyList<ResourceMinute> minutes;
         try
         {
             var site = ResourceDirectory.Find(await directory.AllAsync(cancellation), SiteType, names.Function);
-            return site is null ? [] : await azure.MinutesAsync(site.Id, NightlyMetrics.All, from, to, version, cancellation);
+            minutes = site is null ? [] : await azure.MinutesAsync(site.Id, NightlyMetrics.All, from, to, version, cancellation);
         }
         catch (HttpRequestException ex) when (Refused(ex))
         {
             // No role on the group yet: the hour records it, and the card says so.
-            return [];
+            minutes = [];
         }
+        var merger = _host is { Length: > 0 } host ? await MergerReading.ReadAsync(host, cancellation) : null;
+        return MergerReading.Fold(minutes, merger, to, version);
     }
 
     /// <summary>The hour's facts: the runs from GitHub first, then the Function's record and its judged slots, or that the role is missing.</summary>
@@ -134,6 +151,7 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
                 {
                     facts[key] = value;
                 }
+                _host = AzureMetrics.Text(record.RootElement, "properties.defaultHostName") ?? _host;
             }
             var firings = await FiringsAsync(siteId, hour, cancellation);
             if ((await log.AvailabilityAsync(cancellation)).Available)

@@ -171,4 +171,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '110',
   },
+  adrTheTrackerMergerRunsInAzure: {
+    title: 'ADR: The tracker merger runs in Azure',
+    menuLabel: 'ADR: The tracker merger runs in Azure',
+    url: '/api/docs/adr-the-tracker-merger-runs-in-azure',
+    kind: 'adr',
+    number: '111',
+  },
 } as const satisfies Record<string, RecordEntry>;

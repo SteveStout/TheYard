@@ -1,9 +1,9 @@
 // The nightly Function's card (ADR: The Nightly Function on the Admin tab): the share of its
 // slots that fired on time over thirty days and the month's share of the free grant on the dials,
-// a chart of its firings with every Monday and Friday shaded, four questions, and a readout of the
-// job. Its readings are Azure Monitor's and GitHub's; nothing from the file share it works on is
-// read, and until the site's identity holds a role on the Function's group, every line that needs
-// Azure says so in words.
+// a chart of its firings with every Monday and Friday shaded, five questions, and a readout of the
+// job. Its readings are Azure Monitor's and GitHub's, and the tracker merger's counts and ages from
+// the Function's own health route; no file in the share it works on is opened, and until the site's
+// identity holds a role on the Function's group, every line that needs Azure says so in words.
 using System.Globalization;
 using TheYard.Application;
 using TheYard.Data;

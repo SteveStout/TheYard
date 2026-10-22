@@ -128,21 +128,29 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
       scaleAndConcurrency: { maximumInstanceCount: 40, instanceMemoryMB: 512 }
       runtime: { name: 'dotnet-isolated', version: '9.0' }
     }
+    // #region jobhunt-settings
+    // This list REPLACES the app's settings on every deploy of this template: a setting that is on
+    // in Azure and missing here is off after the next deploy. functions/jobhunt.Tests holds the
+    // list to every name the Function reads, and MERGER and both dispatches to 'on' as they run
+    // (ADR: The tracker merger runs in Azure).
     siteConfig: {
       appSettings: [
         { name: 'AzureWebJobsStorage', value: storageConnection }
         { name: 'DEPLOYMENT_STORAGE_CONNECTION_STRING', value: storageConnection }
         { name: 'JOBHUNT_SHARE_CONNECTION', value: storageConnection }
         { name: 'JOBHUNT_SHARE_NAME', value: shareName }
-        // The 4:00 AM reply lane, measured 2026-10-20 and on. The four-hour records run stays off until
-        // its side-by-side model test passes. NIGHTLY_GITHUB_TOKEN is set out of band with
-        // az functionapp config appsettings set, never here; this list replaces the app's settings on a
-        // redeploy, so set the token again after one.
+        // The 4:00 AM reply lane and the four-hour records run, both on in Azure. NIGHTLY_GITHUB_TOKEN
+        // is set out of band with az functionapp config appsettings set, never here; this list
+        // replaces the app's settings on a redeploy, so set the token again after one.
         { name: 'NIGHTLY_DISPATCH', value: 'on' }
-        { name: 'BOOKKEEPING_DISPATCH', value: 'off' }
+        { name: 'BOOKKEEPING_DISPATCH', value: 'on' }
         { name: 'NIGHTLY_REPO', value: 'SteveStout/TheYard' }
+        // The tracker merger: the only writer of Job_Hunt_Tracker.csv and its moved-out file on the
+        // share. 'off' hands the tracker back to the laptop's merger (the roll back in the record).
+        { name: 'MERGER', value: 'on' }
       ]
     }
+    // #endregion jobhunt-settings
   }
 }
 

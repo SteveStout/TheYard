@@ -60,6 +60,14 @@ public static class CloudThresholds
     public static readonly (double Amber, double Red) NightlyGrant = (80, 95);
 
     /// <summary>
+    /// The tracker merger: minutes a lane's row file may wait in a spool folder. Past 5 it is counted
+    /// and the row says so; past 10 the row is a warning, because the merger runs every minute and a
+    /// file that has sat through ten passes is stuck, not queued. Source: the levels the owner set for
+    /// the row (PROMPT-JOBHUNT-MERGER-CODE, step 4).
+    /// </summary>
+    public static readonly (double Amber, double Red) MergerWait = (5, 10);
+
+    /// <summary>
     /// Azure Functions pricing page, Flex Consumption on-demand free grant, per subscription: gigabyte-seconds a month.
     /// Typed, because no record Azure returns for the app or the plan states the grant.
     /// </summary>

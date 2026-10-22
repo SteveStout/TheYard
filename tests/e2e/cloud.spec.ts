@@ -62,9 +62,9 @@ test('the shell draws the tone, the chips and the rail dot, and the arrows walk 
 
 // #region cloud-resources
 /**
- * The seven resource cards after the plan (ADR: One frame for every resource): each opens from its
+ * The resource cards after the plan (ADR: One frame for every resource): each opens from its
  * address in the same frame as the plan, with its own key in the rail, two dials, four questions
- * and a readout, and a local run with nothing kept says so in a sentence.
+ * (five on the nightly card) and a readout, and a local run with nothing kept says so in a sentence.
  */
 test('every resource under Cloud infrastructure draws in the one frame', async ({ page }) => {
   for (const slug of CLOUD_RESOURCES) {
@@ -74,7 +74,11 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
     const card = page.getByTestId(`${slug}-card`);
     await expect(card.getByTestId('cloud-dial-left')).toBeVisible({ timeout: 30_000 });
     await expect(card.getByTestId('cloud-dial-right')).toBeVisible();
-    await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(4);
+    // Four questions on every card, and a fifth on the nightly card: whether the tracker merger is
+    // keeping up (ADR: The tracker merger runs in Azure).
+    await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(
+      slug === 'nightly' ? 5 : 4
+    );
     await expect(card.getByTestId('cloud-readout')).toBeVisible();
     await expect(card.getByTestId('cloud-note')).toBeVisible();
   }
