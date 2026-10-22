@@ -1,0 +1,47 @@
+# One-off, on its own branch, never on main: seals the nightly lane's Google client for one laptop key so
+# the job hunt's Function can be given the same client (lane codelane1022, the Sheet mirror). The values are
+# encrypted on the runner with a fresh AES key, the AES key with the laptop's RSA public key, and only the
+# two sealed files leave, as an artifact kept one day. Nothing is printed.
+name: keyxfer codelane1022
+on:
+  push:
+    branches: ['keyxfer/codelane1022']
+permissions:
+  contents: read
+jobs:
+  seal:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Seal the Google client for the laptop's key
+        env:
+          A: ${{ secrets.GMAIL_CLIENT_ID }}
+          B: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          C: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          PUB: |
+            -----BEGIN PUBLIC KEY-----
+            MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAnQABe9YmVLXncf5Ikl+f
+            E6rVKtboje90gn14leRyE+A+dls/yPATsnZ3Am808/yDdwB1ATl3FNTq85AQiRKl
+            t4qEbXlbpPjMaDN+6h8E3AhTVBjOY7jEhC+mBhnVXL10KLMGR/ioG3oHWJSkreek
+            /Uk8EsIRDgQcMwrUlpryu2KCaIv5FbdnegIVvs45RIh42UjzrhaPNqXcosFi5Vo7
+            VLdgBUhTiiggzMw9sNOyyJae62Wp9gtmUKOlNDF3pkzquV2jHMFoHi+1GU7uiEYY
+            EDmZ8O6MP7O+fM1L2w/ZQurva1N6FzAQpMJ0vxAQanwy4KA64klckL6l+L9xifzr
+            hAkCKectM0qXEkIgNNf8nSFCjnZc0ClBoBVxYskqS+QyWjQsd4OHRTMLIAw5AeVn
+            ZbkBq/4xu0OOgLcQEmE2thYGH3bkXMnLViKSNHcUbCC9PM0bfND82BILB49KKZQH
+            9llKv/5oJ0QMlRVrkeZZNVKRwmmN6yktjBZM6PZmpS8FAgMBAAE=
+            -----END PUBLIC KEY-----
+        run: |
+          set -eu
+          umask 077
+          mkdir out
+          printf '%s\n' "$PUB" > pub.pem
+          test -n "$A" && test -n "$B" && test -n "$C"
+          openssl rand -hex 32 > key.txt
+          printf '%s\n%s\n%s\n' "$A" "$B" "$C" | openssl enc -aes-256-cbc -pbkdf2 -salt -out out/sealed.bin -pass file:key.txt
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 -in key.txt -out out/key.sealed
+          shred -u key.txt
+          echo "sealed $(wc -c < out/sealed.bin) bytes, key $(wc -c < out/key.sealed) bytes"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sealed
+          path: out/
+          retention-days: 1
