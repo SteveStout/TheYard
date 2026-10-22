@@ -68,6 +68,27 @@ public static class CloudThresholds
     public static readonly (double Amber, double Red) MergerWait = (5, 10);
 
     /// <summary>
+    /// Claude usage: today's tokens out against the trailing seven days' daily average, in per cent.
+    /// Amber at twice the average and red at four times. Source: the level the owner set for the card
+    /// (PROMPT-THEYARD-FOLLOWON, step 12a: "a day over twice the seven-day average is warning"); red at
+    /// four times is this card's own, a day that would spend a week's plan in two.
+    /// </summary>
+    public static readonly (double Amber, double Red) ClaudeDay = (200, 400);
+
+    /// <summary>
+    /// Claude usage: the plan's weekly limit used, amber at 80 per cent and red at 95. Source: the levels
+    /// the owner set for the card (PROMPT-THEYARD-FOLLOWON, step 12c). Read only once the plan's usage
+    /// endpoint is set; until then the dial says it is not read.
+    /// </summary>
+    public static readonly (double Amber, double Red) ClaudePlanWeek = (80, 95);
+
+    /// <summary>
+    /// Claude usage: a run's wall time past which its row is a warning, in seconds. Source: the step's
+    /// own measurement, a backlog run of 1,405 s against runs of 150 to 860 s (PROMPT-THEYARD-FOLLOWON, step 12a).
+    /// </summary>
+    public const double ClaudeRunSeconds = 1_200;
+
+    /// <summary>
     /// Azure Functions pricing page, Flex Consumption on-demand free grant, per subscription: gigabyte-seconds a month.
     /// Typed, because no record Azure returns for the app or the plan states the grant.
     /// </summary>

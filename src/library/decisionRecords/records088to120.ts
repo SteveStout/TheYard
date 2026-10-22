@@ -178,4 +178,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '111',
   },
+  adrEveryClaudeLaneReportsItsUsage: {
+    title: 'ADR: Every Claude lane reports its usage',
+    menuLabel: 'ADR: Every Claude lane reports its usage',
+    url: '/api/docs/adr-every-claude-lane-reports-its-usage',
+    kind: 'adr',
+    number: '112',
+  },
 } as const satisfies Record<string, RecordEntry>;

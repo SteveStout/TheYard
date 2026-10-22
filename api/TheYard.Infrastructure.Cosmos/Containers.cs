@@ -77,6 +77,16 @@ public static class Containers
     /// <summary>How long a nightly run document is kept, in seconds: a year, set on the document because the plan container keeps a month.</summary>
     public const int NightlyRunSeconds = 31_536_000;
 
+    /// <summary>
+    /// The usage documents every Claude lane posts live in the plan container too, under a kind of
+    /// their own, for the same reason as the nightly card's (ADR: Every Claude lane reports its usage):
+    /// the shared database cannot hold a twenty-sixth container. Each carries its own time to live of a year.
+    /// </summary>
+    public const string UsageKind = "usage-run";
+
+    /// <summary>The Claude usage card's own minutes and hours in the plan container open with this.</summary>
+    public const string ClaudePrefix = "claude-";
+
     /// <summary>Container name to partition key path, exactly as the definition files declare them.</summary>
     public static readonly IReadOnlyDictionary<string, string> PartitionKeyPaths = new Dictionary<string, string>(StringComparer.Ordinal)
     {

@@ -69,6 +69,7 @@ export const BENCH_CARDS: BenchCard[] = [
   card('machines', 'What the machines are doing', 'cloud'),
   card('follows', 'Memory against traffic', 'cloud'),
   card('nightly', 'The Nightly Function', 'cloud'),
+  card('claude', 'Claude usage', 'cloud'),
   card('errors', 'Recent errors', 'broke'),
   card('log', 'The log, as the console got it', 'broke'),
   card('kept', 'Kept log', 'broke', 'kept-logs-card'),

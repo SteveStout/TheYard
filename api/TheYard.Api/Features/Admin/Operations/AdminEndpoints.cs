@@ -6,6 +6,7 @@
 //   AdminEndpoints.Activity.cs           site activity, the visitor rows and the kept log
 //   AdminEndpoints.ProofAndPages.cs      the page sweep, the tests, the proof and the experiment
 //   AdminEndpoints.CostsAndTelemetry.cs  what Azure charges, and the last hour from Application Insights
+//   AdminEndpoints.Usage.cs              a Claude lane's usage document, posted with the operator's key
 
 using System.Text.Json;
 
@@ -238,6 +239,17 @@ public static partial class AdminEndpoints
         // the page it reports from.
         app.MapGet("/api/admin/telemetry", Telemetry);
         #endregion telemetry-endpoint
+
+        // #region usage-endpoint
+        // One run of Claude, posted by the lane that ran it (ADR: Every Claude lane reports its
+        // usage): the nightly workflow after each run, the laptop's script once an hour. Behind the
+        // operator's key in its header; a document posted twice under the same lane and run is
+        // kept once, so a lane may post again after a failure without counting a run twice.
+        app.MapPost("/api/admin/usage", UsagePost)
+            .WithName("PostUsage")
+            .WithTags("Admin")
+            .WithSummary("Keep one Claude run's usage document, under its lane and run id, behind the operator's key");
+        // #endregion usage-endpoint
 
         return app;
     }

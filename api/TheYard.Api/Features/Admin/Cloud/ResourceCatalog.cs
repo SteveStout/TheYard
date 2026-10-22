@@ -19,7 +19,8 @@ public static class ResourceCatalog
     /// <param name="names">The deployment's resource names, from configuration; the SQL card reads the database named there, and any other user database on the server is listed from its own record.</param>
     /// <param name="nightly">The nightly Function's reader, over a list of its own resource group; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
     /// <param name="planHour">The plan card's newest kept hour, whose apps name the image each runs; the registry card reads it rather than asking Azure a second time. Null reads none.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null)
+    /// <param name="claude">The usage documents' reader for the Claude usage card; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -138,6 +139,16 @@ public static class ResourceCatalog
             cards.Add(new("nightly", "plan", source.Names.Function, NightlyMetrics.Readings, source.MinutesAsync, source.HourAsync,
                 inputs => NightlyCard.View(inputs, source.Names, source.FunctionPath, source.Cache.Runs),
                 SpecSource: "ARM record of the Function app", CostNames: source.Names.CostNames, KindPrefix: "nightly-"));
+        }
+        if (claude is not null)
+        {
+            // After the nightly card, whose run log its slot row joins on. Its readings are the usage
+            // documents the lanes post, read back each minute; its own minute keeps two counts in the
+            // plan container under kinds of its own, like the nightly card's.
+            ClaudeSource usage = claude;
+            cards.Add(new("claude", "plan", "Claude", [ClaudeSource.RunsToday, ClaudeSource.TokensOutToday], usage.MinutesAsync, usage.HourAsync,
+                inputs => ClaudeCard.View(inputs, usage, nightly?.Cache.Runs ?? [], nightly?.Names.Repo),
+                SpecSource: ClaudeCard.Documents, KindPrefix: "claude-"));
         }
         return cards;
     }

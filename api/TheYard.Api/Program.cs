@@ -23,6 +23,7 @@ builder.AddTheYardApi(build);                                                   
 builder.AddTheYardTelemetry(identity);                                             // Shared/TelemetryRegistration.cs
 builder.AddTheYardAdmin(stores.Relational, build, identity);                       // Shared/AdminRegistration.cs
 builder.AddTheYardCosts(identity);                                                 // Shared/CostRegistration.cs
+builder.AddTheYardUsage();                                                         // Shared/UsageRegistration.cs
 
 var modules = Modules.InThisHost();                                                // Shared/Modules.cs, every Features/*/Module.cs
 foreach (var module in modules)

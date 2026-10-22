@@ -82,6 +82,7 @@ jobs:
           {
             echo "date=$day"; echo "mode=$mode"; echo "model=$model"; echo "lane=$lane"; echo "dry=$dry"
             echo "run_dir=nightly/$day/$slot-$mode-$short$suffix"
+            echo "slot=${slot:0:2}:${slot:2:2}"; echo "started=$(date -u +%FT%TZ)"
           } >> "$GITHUB_OUTPUT"
           echo "$mode on $model at $day $slot (dry run: $dry)" >> "$GITHUB_STEP_SUMMARY"
 
@@ -133,6 +134,38 @@ jobs:
           else
             echo "no execution file" | tee "$out"
           fi
+
+      # #region usage-report
+      # The run's usage.json, posted to the site as one usage document (ADR: Every Claude lane
+      # reports its usage): the lane, the model, the mode, the slot, the four token counts, the
+      # wall time, the API-equivalent cost and this run's id, and nothing else from the share. A
+      # missing key, a missing usage.json or a refused post writes one line to the summary and
+      # never fails the run: the night's work matters more than its report.
+      - name: Report the usage to the site
+        if: always()
+        env:
+          KEY: ${{ secrets.THEYARD_ADMIN_KEY }}
+          SITE: ${{ vars.THEYARD_SITE || 'https://theyard.stevenstout.biz' }}
+          MODEL: ${{ steps.day.outputs.model }}
+          MODE: ${{ steps.day.outputs.mode }}
+          DRY: ${{ steps.day.outputs.dry }}
+          SLOT: ${{ steps.day.outputs.slot }}
+          STARTED: ${{ steps.day.outputs.started }}
+          RUN: ${{ github.run_id }}
+        run: |
+          usage="/mnt/jobhunt/${{ steps.day.outputs.run_dir }}/usage.json"
+          if [ -z "$KEY" ]; then echo "usage not reported: THEYARD_ADMIN_KEY is not set" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          if ! jq -e '.usage' "$usage" > /dev/null 2>&1; then echo "usage not reported: no usage in usage.json" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          [ "$DRY" = "true" ] && MODE="$MODE-dry"
+          doc=$(jq -c --arg model "$MODEL" --arg mode "$MODE" --arg slot "$SLOT" --arg at "$STARTED" --arg run "$RUN" \
+            '{lane: "Azure Functions, nightly lane", kind: "plan", model: $model,
+              tokens_in: (.usage.input_tokens // 0), cache_write: (.usage.cache_creation_input_tokens // 0),
+              cache_read: (.usage.cache_read_input_tokens // 0), tokens_out: (.usage.output_tokens // 0),
+              wall_ms: (.duration_ms // 0), cost_usd: .total_cost_usd, run: $run, slot: $slot, mode: $mode, at: $at}' "$usage")
+          if ! curl --fail-with-body -sS -X POST "$SITE/api/admin/usage" -H "X-Admin-Key: $KEY" -H 'content-type: application/json' --data "$doc"; then
+            echo "usage not reported: the site refused the post" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      # #endregion usage-report
 
       - name: Unmount
         if: always()

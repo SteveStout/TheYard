@@ -79,7 +79,7 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
     {
         using var client = factory.CreateClient();
         string[] slots = ["title", "resource", "tone", "spec", "spec_source", "headline", "dials", "sparks", "thresholds", "chart", "rows", "readout", "as_of_ms", "read_age_seconds", "refresh_seconds"];
-        foreach (string route in new[] { "/api/admin/plan", "/api/admin/cloud/sqldb", "/api/admin/cloud/cosmosdb", "/api/admin/cloud/registry", "/api/admin/cloud/insights", "/api/admin/cloud/mail", "/api/admin/cloud/edge", "/api/admin/cloud/nightly" })
+        foreach (string route in new[] { "/api/admin/plan", "/api/admin/cloud/sqldb", "/api/admin/cloud/cosmosdb", "/api/admin/cloud/registry", "/api/admin/cloud/insights", "/api/admin/cloud/mail", "/api/admin/cloud/edge", "/api/admin/cloud/nightly", "/api/admin/cloud/claude" })
         {
             using var card = JsonDocument.Parse(await client.GetStringAsync(route));
             var root = card.RootElement;

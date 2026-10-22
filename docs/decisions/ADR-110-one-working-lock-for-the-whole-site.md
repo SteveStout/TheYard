@@ -78,3 +78,7 @@ From 1.0.4.20, three changes. **A hold:** once the lock has shown it stays at le
 
 The list of fetches outside the store that 1.0.4.19 named is gone. Every component that read the network now asks `request(url, init, options)` in `src/lib/request.ts`, which is `fetch` inside `counted`, so a raw `fetch(` anywhere outside `src/lib` is refused by `WorkingLockTests` and by `FileHeaderTests`, and the reads nobody clicked for (the landing page's two, the pulse band, the recommendations column, the error report, the tagged-open report, the Admin strip's activity, the pages card's own read, a running proof's poll) say `background` where they are asked.
 
+
+## Addendum, 2026-10-22 (1.0.4.28): the cover reads over white
+
+Measured with the lock forced on, the cover was a 35 per cent white tint with a 14 px blur: frost over the content, and nothing visible over the sidebar and the store bar, which are white, so the lock looked as if it stopped at the content's edge although it covered and took clicks across the whole page. From 1.0.4.28 the cover mixes 6 per cent of the header's teal into a 38 per cent white tint, and keeps the blur, so it reads over white surfaces too.

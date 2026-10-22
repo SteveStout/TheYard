@@ -285,6 +285,36 @@ public sealed class OnionTests
         // and hide its dependency from every fake-port test (the review of 1.0.4.0, finding 5).
         Assert.Empty(RuntimeLookups(typeof(TheYard.Application.Auction).Assembly.Location));
     }
+
+    /// <summary>
+    /// Every call this site makes to Claude goes through IClaudeClient, whose one adapter writes a
+    /// usage document from every answer (ADR: Every Claude lane reports its usage). So the Anthropic
+    /// API's address and an Anthropic SDK namespace appear in that adapter's file and in no other
+    /// source file of the six projects or the page; a feature that called the API itself would be a
+    /// lane that reports no usage, which the record calls a defect.
+    /// </summary>
+    [Fact]
+    public void Claude_is_asked_only_through_the_one_client_that_reports_its_usage()
+    {
+        string root = Repo.Root();
+        string adapter = Path.Combine("api", "TheYard.Api", "Cloud", "AnthropicClaudeClient.cs");
+        var sources = new[] { "TheYard.Data", "TheYard.Domain", "TheYard.Application", "TheYard.Infrastructure", "TheYard.Infrastructure.Cosmos", "TheYard.Api" }
+            .SelectMany(project => Directory.EnumerateFiles(Path.Combine(root, "api", project), "*.cs", SearchOption.AllDirectories))
+            .Concat(Directory.EnumerateFiles(Path.Combine(root, "src"), "*.ts*", SearchOption.AllDirectories))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                           && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .ToList();
+        Assert.Contains(sources, path => path.EndsWith(adapter, StringComparison.Ordinal));
+        var calling = sources
+            .Where(path => !path.EndsWith(adapter, StringComparison.Ordinal))
+            .Where(path => File.ReadAllText(path) is var text
+                && (text.Contains("api.anthropic.com", StringComparison.OrdinalIgnoreCase) || text.Contains("using Anthropic", StringComparison.Ordinal) || text.Contains("@anthropic-ai/", StringComparison.Ordinal)))
+            .Select(path => Path.GetRelativePath(root, path))
+            .ToList();
+        Assert.True(calling.Count == 0, "these files reach the Anthropic API around IClaudeClient: " + string.Join(", ", calling));
+        Assert.Contains(typeof(TheYard.Application.IUsageLog), typeof(TheYard.Api.AnthropicClaudeClient).GetConstructors().Single().GetParameters().Select(p => p.ParameterType));
+        Assert.True(typeof(TheYard.Application.IClaudeClient).IsAssignableFrom(typeof(TheYard.Api.AnthropicClaudeClient)));
+    }
     // #endregion host
 
     /// <summary>
@@ -439,7 +469,7 @@ public sealed class OnionTests
     [
         "Program", "<Program>$",
         "ActivityRegistration", "AdminRegistration", "ApiRegistration", "AuthRegistration", "CostRegistration", "HostedSiteRegistration",
-        "ObservabilityRegistration", "SpaRegistration", "StartupRegistration", "StoreRegistration", "TelemetryRegistration",
+        "ObservabilityRegistration", "SpaRegistration", "StartupRegistration", "StoreRegistration", "TelemetryRegistration", "UsageRegistration",
         "Modules", "IModule",
         "RequestPipeline", "HostedSiteMount", "ShedApplication",
     ];

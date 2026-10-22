@@ -1,3 +1,6 @@
+using TheYard.Application;
+using TheYard.Application.Features.Usage;
+
 namespace TheYard.Api.Features.Admin.Operations;
 
 /// <summary>
@@ -5,11 +8,12 @@ namespace TheYard.Api.Features.Admin.Operations;
 /// </summary>
 public sealed class Module : IModule
 {
-    /// <summary>Nothing of its own to register yet: what its endpoints ask for is shared.</summary>
+    /// <summary>Registers the usage route's handler; what its other endpoints ask for is shared.</summary>
     /// <param name="services">The host's services.</param>
     /// <param name="configuration">The host's configuration.</param>
     public void Register(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped(provider => new KeepUsageHandler(provider.GetRequiredService<IUsageLog>(), TimeProvider.System));
     }
 
     /// <summary>Maps /api/admin/* that is not the plan or a cloud card, /api/stores and /api/tests/summary.</summary>

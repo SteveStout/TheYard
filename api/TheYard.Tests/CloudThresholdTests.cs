@@ -40,6 +40,10 @@ public class CloudThresholdTests
         Assert.Equal((5d, 10d), CloudThresholds.MailBounces);
         Assert.Equal((60d, 85d), CloudThresholds.EdgeCredits);
         Assert.Equal((50d, 80d), CloudThresholds.EdgeMisses);
+        Assert.Equal((200d, 400d), CloudThresholds.ClaudeDay);
+        Assert.Equal((80d, 95d), CloudThresholds.ClaudePlanWeek);
+        Assert.Equal(1_200d, CloudThresholds.ClaudeRunSeconds);
+        Assert.Equal((5d, 10d), CloudThresholds.MergerWait);
     }
 
     [Theory]

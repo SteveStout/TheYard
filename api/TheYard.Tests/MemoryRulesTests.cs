@@ -63,6 +63,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.MemoryResourceHistory._hours"] = "a month of hours, trimmed on every append",
         ["TheYard.Application.MemoryNightlyRunLog._runs"] = "the nightly workflow's runs, one per GitHub run, a year of them, trimmed on every upsert",
         ["TheYard.Application.MemoryNightlyRunLog._firings"] = "the Function's judged slots, six a day, a year of them, trimmed on every upsert",
+        ["TheYard.Api.ClaudeSource._records"] = "the usage documents of the last thirty days, replaced whole on every read",
+        ["TheYard.Application.MemoryUsageLog._records"] = "every Claude lane's runs, one per lane and run, a year of them, trimmed on every upsert",
         ["TheYard.Application.MemoryPlanHistory._minutes"] = "a month of minutes, trimmed on every append",
         ["TheYard.Application.MemoryPlanHistory._hours"] = "a month of hours, trimmed on every append",
         ["TheYard.Domain.VehicleSearchIndex._byId"] = "one per vehicle of the catalogue it was built over; the site builds none",

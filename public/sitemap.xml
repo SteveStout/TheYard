@@ -750,6 +750,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-every-claude-lane-reports-its-usage</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-the-resume-has-an-address</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

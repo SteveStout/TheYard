@@ -11,7 +11,13 @@
   z-index: calc(var(--layer-skip) + 1);
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--palette-white) 35%, transparent);
+  /* A trace of the header's teal under the frost, so the cover reads over the white sidebar and
+     store bar as well as over the content: a white tint alone changes nothing on white. */
+  background: color-mix(
+    in srgb,
+    var(--color-teal-header) 6%,
+    color-mix(in srgb, var(--palette-white) 38%, transparent)
+  );
   backdrop-filter: blur(14px) saturate(1.1);
   -webkit-backdrop-filter: blur(14px) saturate(1.1);
   cursor: progress;
