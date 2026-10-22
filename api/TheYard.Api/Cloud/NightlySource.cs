@@ -142,6 +142,7 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
             }
             facts["last_fired"] = firings.Where(f => f.FiredAt is not null).Select(f => f.FiredAt).Max()?.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
             facts[SnapshotFact] = await SnapshotsAsync(siteId, cancellation);
+            facts[SlotsFact] = SlotsWords(firings);
             return new ResourceHour(hour, siteId, tenant, facts, await EventsAsync(siteId, since, hour, cancellation));
         }
         catch (HttpRequestException ex) when (Refused(ex))
@@ -150,6 +151,17 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
             return new ResourceHour(hour, "", null, facts, []);
         }
     }
+
+    /// <summary>The fact an hour writes for the day of slots it judged from Azure Monitor's five-minute counts: due, on time, late, missed.</summary>
+    public const string SlotsFact = "slots";
+
+    /// <summary>The judged slots of the day read, as the slots fact writes them: "due on-time late missed".</summary>
+    /// <param name="firings">The day's slots, judged.</param>
+    public static string SlotsWords(IReadOnlyList<NightlyFiring> firings) => string.Join(' ',
+        firings.Count,
+        firings.Count(f => f.Outcome == NightlySlots.OnTime),
+        firings.Count(f => f.Outcome == NightlySlots.Late),
+        firings.Count(f => f.Outcome != NightlySlots.OnTime && f.Outcome != NightlySlots.Late));
 
     /// <summary>The fact an hour writes for how many share snapshots the storage account holds: a count, or "not read: " and why.</summary>
     public const string SnapshotFact = "snapshots";

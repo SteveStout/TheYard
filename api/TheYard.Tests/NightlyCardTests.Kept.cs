@@ -1,6 +1,7 @@
 using System.Text.Json;
 using TheYard.Api;
 using TheYard.Api.Features.Admin.Cloud;
+using TheYard.Application;
 using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
@@ -52,6 +53,28 @@ public sealed partial class NightlyCardTests
         Assert.Equal("3 of the 14 the Function keeps", NightlyCard.SnapshotWords("3", "not read yet"));
         Assert.Equal("not read: Resource Manager answered 403 for the shares of sttest", NightlyCard.SnapshotWords("not read: Resource Manager answered 403 for the shares of sttest", "not read yet"));
         Assert.Equal("not read yet", NightlyCard.SnapshotWords(null, "not read yet"));
+    }
+    [Fact]
+    public void Until_the_kept_minutes_hold_a_slot_the_hour_s_own_day_of_slots_fills_the_dial()
+    {
+        // 22 October, live after 1.0.4.25 rolled: the keep had minutes from 10:5x UTC, no slot had
+        // come due inside them, and the dial read "no slot kept yet" beside a Last fired the hour had read.
+        var fired = new DateTimeOffset(2026, 10, 22, 9, 0, 40, TimeSpan.Zero);
+        var firings = new List<TheYard.Data.NightlyFiring>
+        {
+            new(new DateTimeOffset(2026, 10, 22, 9, 0, 0, TimeSpan.Zero), "reply", TheYard.Domain.NightlySlots.OnTime, fired),
+            new(new DateTimeOffset(2026, 10, 22, 5, 0, 0, TimeSpan.Zero), "records", TheYard.Domain.NightlySlots.Late, fired.AddHours(-3.9)),
+            new(new DateTimeOffset(2026, 10, 22, 1, 0, 0, TimeSpan.Zero), "records", TheYard.Domain.NightlySlots.Missed, null),
+        };
+        Assert.Equal("3 1 1 1", NightlySource.SlotsWords(firings));
+        Assert.Equal(new TheYard.Domain.SlotTally(3, 1, 1, 1), NightlyCard.HourTally("3 1 1 1"));
+        Assert.Null(NightlyCard.HourTally("0 0 0 0"));
+        Assert.Null(NightlyCard.HourTally(null));
+
+        var hour = new ResourceHour(Now.AddMinutes(-10), "", null, new Dictionary<string, string?> { [NightlySource.SlotsFact] = "3 1 1 1" }, []);
+        var fresh = new ResourceCardInputs("24h", TimeSpan.FromDays(1), Now, new PlanHistoryAvailability(true, "kept in Cosmos DB, 31 days"), [], [], [], [hour], null, "the test site");
+        Assert.Equal(new TheYard.Domain.SlotTally(3, 1, 1, 1), NightlyCard.Tally(fresh));
+        Assert.Equal("1 of 3 slots", NightlyCard.View(fresh, Names, FunctionPath, []).Dials[0].Absolute);
     }
     // #endregion nightly-kept-tests
 }

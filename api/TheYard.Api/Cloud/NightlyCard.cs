@@ -44,18 +44,30 @@ public static class NightlyCard
 
     public static readonly (double Amber, double Red) Grant = CloudThresholds.NightlyGrant;
 
-    /// <summary>The thirty days' slots judged against the kept five-minute firing counts, from the first kept bucket so a card read on its first day is not scored on days nobody read.</summary>
+    /// <summary>
+    /// The thirty days' slots judged against the kept five-minute firing counts, from the first kept
+    /// bucket so a card read on its first day is not scored on days nobody read. Until the kept
+    /// minutes hold a whole slot, the newest hour's own judgement of the day before stands in: the
+    /// hour reads that day's five-minute counts from Azure Monitor, which keeps them whether or not
+    /// this site did.
+    /// </summary>
     /// <param name="inputs">The card's inputs.</param>
     public static SlotTally Tally(ResourceCardInputs inputs)
     {
         (DateTimeOffset At, double Count)[] buckets = [.. inputs.Month.Select(b => (b.At, b.Sums.GetValueOrDefault("executions") ?? 0))];
-        if (buckets.Length == 0)
-        {
-            return new SlotTally(0, 0, 0, 0);
-        }
-        var start = new[] { inputs.Now - TimeSpan.FromDays(30), buckets.Min(b => b.At) }.Max();
-        // A slot whose hour is still under way is judged once it is over.
-        return NightlySlots.Tally(NightlySlots.Due(start, inputs.Now - TimeSpan.FromHours(1)), buckets);
+        var kept = buckets.Length == 0 ? new SlotTally(0, 0, 0, 0)
+            // A slot whose hour is still under way is judged once it is over.
+            : NightlySlots.Tally(NightlySlots.Due(new[] { inputs.Now - TimeSpan.FromDays(30), buckets.Min(b => b.At) }.Max(), inputs.Now - TimeSpan.FromHours(1)), buckets);
+        return kept.Due > 0 ? kept : HourTally(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault(NightlySource.SlotsFact)) ?? kept;
+    }
+
+    /// <summary>The slots fact an hour wrote, as a tally; null when there is none or it does not read.</summary>
+    /// <param name="fact">"due on-time late missed".</param>
+    public static SlotTally? HourTally(string? fact)
+    {
+        var parts = (fact ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        int[] counts = [.. parts.Select(p => int.TryParse(p, NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) ? n : -1)];
+        return counts.Length == 4 && counts.All(n => n >= 0) && counts[0] > 0 ? new SlotTally(counts[0], counts[1], counts[2], counts[3]) : null;
     }
 
     /// <summary>The month's execution units in gigabyte-seconds, from the first of the UTC month; null when none is kept.</summary>
