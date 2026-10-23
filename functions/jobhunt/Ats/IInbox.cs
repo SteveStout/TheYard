@@ -36,6 +36,9 @@ public sealed record InboxMessage(string Id, string ThreadId, string From, strin
     /// </summary>
     public string Lines { get; init; } = "";
 
+    /// <summary>The HTML parts as sent, for a reader that needs a link's address (a SuccessFactors agent has no plain part).</summary>
+    public string Html { get; init; } = "";
+
     /// <summary>The address in the From header, lower case.</summary>
     public string Address => Mail.Address(From);
 

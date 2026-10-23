@@ -26,6 +26,10 @@ public static partial class LeadsFilter
         {
             return "not remote: " + lead.Location;
         }
+        if (BoardAlerts.TopOfBand(lead.Band) is { } top && top < Floor)
+        {
+            return $"under the floor: the band tops at ${top}K";
+        }
         var applied = applications.FirstOrDefault(row => ApplicationCap.Same(row[2], lead.Company) && row[6].Contains(lead.Title, StringComparison.OrdinalIgnoreCase));
         if (applied is not null)
         {
@@ -34,6 +38,9 @@ public static partial class LeadsFilter
         var cap = ApplicationCap.Check(lead.Company, master, list, today);
         return cap.Allowed ? null : "RULE 50: " + cap.Why;
     }
+
+    /// <summary>The base floor in thousands (targeting-criteria.md: $155K base for a permanent role); a band printed under it fails.</summary>
+    public const int Floor = 155;
 
     [GeneratedRegex(@"\bremote\b", RegexOptions.IgnoreCase)]
     private static partial Regex Remote();

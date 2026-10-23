@@ -13,7 +13,8 @@ namespace JobHunt.Functions;
 /// account mail stays. ATS_SWEEP and LEADS each pick their mode: "shadow" plans and writes the plan only,
 /// "on" acts (rows, harvest, archive, read back), anything else is off. TRIAGE "on" fires the triage run in
 /// nightly.yml when the inbox holds mail from the last two days that no triage run has judged; the model
-/// runs there, never here. Each part's failure is logged and the next part still runs. One line a pass goes
+/// runs there, never here. LEADS_LIST "on" fires the leads list run when a pass harvested a lead the list has
+/// not scored, and "shadow" logs what it would fire. Each part's failure is logged and the next part still runs. One line a pass goes
 /// to inbox-pass/pass.log on the share with its wall time. Without the Google settings it logs why and does nothing.
 /// </summary>
 public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, TimeProvider time, Dispatch dispatch, ILogger<AtsSweepTimer> log)
@@ -43,9 +44,15 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         string atsLine = ats is "shadow" or "on"
             ? await PartAsync("ats sweep", () => new AtsSweep(store, inbox, time).RunAsync(ats == "on", ct))
             : "off";
+        var harvest = new Leads.LeadsHarvest(store, inbox, time);
         string leadsLine = leads is "shadow" or "on"
-            ? await PartAsync("leads harvest", () => new Leads.LeadsHarvest(store, inbox, time).RunAsync(leads == "on", ct))
+            ? await PartAsync("leads harvest", () => harvest.RunAsync(leads == "on", ct))
             : "off";
+        string list = (Environment.GetEnvironmentVariable(Dispatch.Gate(Leads.LeadsHarvest.ListEvent)) ?? "").Trim().ToLowerInvariant();
+        if (list is "shadow" or "on")
+        {
+            leadsLine += " | list: " + await PartAsync("leads list", () => ListAsync(harvest, list == "on", ct));
+        }
         string triageLine = triage == "on"
             ? await PartAsync("triage", () => TriageAsync(inbox, ct))
             : "off";
@@ -54,6 +61,22 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         await store.EnsureFolderAsync("inbox-pass", ct);
         await store.AppendAsync(PassLog, TrackerCsvText.Encode(line + "\r\n"), ct);
         log.LogInformation("inbox pass: {Line}", line);
+    }
+
+    /// <summary>
+    /// Fires the leads list run (LEADS-LANE.md, Sonnet at low effort) when the pass harvested a lead that passed
+    /// the filter and that the list run has not scored. In shadow it says what it would fire and fires nothing.
+    /// </summary>
+    private async Task<string> ListAsync(Leads.LeadsHarvest harvest, bool on, CancellationToken ct)
+    {
+        int count = harvest.Unscored.Count;
+        if (count == 0)
+        {
+            return "0 new, nothing to score";
+        }
+        return on
+            ? $"{count} new, {await dispatch.RunAsync(Leads.LeadsHarvest.ListEvent, CentralClock.Local(time.GetUtcNow()), ct)}"
+            : $"{count} new, shadow: would fire {Leads.LeadsHarvest.ListEvent}";
     }
 
     /// <summary>Fires the triage run when the inbox holds mail no triage run has judged.</summary>

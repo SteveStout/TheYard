@@ -180,8 +180,12 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The leads harvest (functions/jobhunt/Leads): 'on' appends each whole alert's jobs to nightly/leads-<date>.md,
         // then archives it; 'shadow' writes leads-shadow/ only.
         { name: 'LEADS', value: 'on' }
-        // The model's step: 'on' fires nightly.yml's triage run (Sonnet, low effort) when the inbox holds mail from
-        // the last two days that no triage run has judged; anything else never starts it.
+        // The leads list (PROMPT-JOBHUNT-OFF-THE-LAPTOP rung 2): 'on' fires nightly.yml's leads run (Sonnet, low effort,
+        // LEADS-LANE.md) when a pass harvested a lead that passed the filter and that leads/scored.tsv does not hold;
+        // 'shadow' writes what it would fire to the pass's line; anything else never starts it.
+        { name: 'LEADS_LIST', value: 'shadow' }
+        // The model's step: 'on' fires nightly.yml's triage run (Sonnet, low effort) when the inbox holds mail
+        // that no triage run has judged; anything else never starts it.
         { name: 'TRIAGE', value: 'on' }
         // The daily card (functions/jobhunt/Card): 'on' keeps nightly/CARD.md current, the one page Steve reads.
         { name: 'DAILY_CARD', value: 'on' }

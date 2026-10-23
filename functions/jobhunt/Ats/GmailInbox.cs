@@ -43,7 +43,7 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
         var payload = root.GetProperty("payload");
         long ms = long.Parse(root.GetProperty("internalDate").GetString()!, System.Globalization.CultureInfo.InvariantCulture);
         return new InboxMessage(id, root.GetProperty("threadId").GetString()!, Header(payload, "From"), Header(payload, "Subject"),
-            DateTimeOffset.FromUnixTimeMilliseconds(ms), Text(payload)) { Lines = Lines(payload) };
+            DateTimeOffset.FromUnixTimeMilliseconds(ms), Text(payload)) { Lines = Lines(payload), Html = Html(payload) };
     }
 
     public async Task<IReadOnlyList<string>> ThreadSendersAsync(string threadId, CancellationToken ct)
@@ -69,6 +69,14 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
         Walk(payload, plain, html);
         string text = plain.Length > 0 ? plain.ToString() : Tags().Replace(html.ToString(), " ");
         return Space().Replace(WebUtility.HtmlDecode(text), " ").Trim();
+    }
+
+    /// <summary>The HTML parts as sent, markup and links kept.</summary>
+    public static string Html(JsonElement payload)
+    {
+        var html = new StringBuilder();
+        Walk(payload, new StringBuilder(), html);
+        return html.ToString();
     }
 
     /// <summary>The plain part with its line breaks kept: CRLF read as one break, spaces inside a line collapsed.</summary>

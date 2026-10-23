@@ -67,6 +67,16 @@ public sealed partial class TemplateTests
     public void The_template_keeps_the_leads_harvest_in_a_mode_it_runs_in() => Assert.Contains(Settings().GetValueOrDefault("LEADS") ?? "", new[] { "shadow", "on" });
 
     [Fact]
+    public void The_template_carries_the_leads_list_in_shadow_until_it_is_switched_on()
+    {
+        // The shadow runs first (one setting a rung, rollback is the setting): the pass logs what it would fire.
+        var settings = Settings();
+        Assert.True(settings.ContainsKey("LEADS_LIST"), "infra/jobhunt.bicep has no LEADS_LIST setting: a redeploy would drop the leads list's mode");
+        Assert.Contains(settings["LEADS_LIST"], new[] { "shadow", "on" });
+        Assert.Equal("LEADS_LIST", Dispatch.Gate(Leads.LeadsHarvest.ListEvent));
+    }
+
+    [Fact]
     public void The_template_keeps_the_inbox_pass_acting_and_the_triage_run_on()
     {
         var settings = Settings();

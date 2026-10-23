@@ -27,13 +27,14 @@ on:
   repository_dispatch:
     # nightly: the 4:00 AM reply lane. bookkeeping: the four-hour records run (inbox, CSV, Sheet).
     # triage: the inbox pass's model step, the mail the Function's code could not judge.
-    types: [nightly, bookkeeping, triage]
+    # leads: the leads list, LEADS.md ranked best first, when a pass harvested a lead nobody has scored.
+    types: [nightly, bookkeeping, triage, leads]
   workflow_dispatch:
     inputs:
       mode:
-        description: "reply (the 4:00 AM lane), bookkeeping (the records run) or triage (the inbox pass's model step)"
+        description: "reply (the 4:00 AM lane), bookkeeping (the records run), triage (the inbox pass's model step) or leads (the leads list)"
         type: choice
-        options: [reply, bookkeeping, triage]
+        options: [reply, bookkeeping, triage, leads]
         default: reply
       model:
         description: "Model id; empty takes the mode's default"
@@ -69,9 +70,10 @@ jobs:
           IN_DRY: ${{ inputs.dry_run }}
           BOOKKEEPING_MODEL: ${{ vars.BOOKKEEPING_MODEL }}
           TRIAGE_MODEL: ${{ vars.TRIAGE_MODEL }}
+          LEADS_MODEL: ${{ vars.LEADS_MODEL }}
         run: |
           if [ "$EVENT" = "repository_dispatch" ]; then
-            case "$ACTION" in bookkeeping) mode=bookkeeping ;; triage) mode=triage ;; *) mode=reply ;; esac
+            case "$ACTION" in bookkeeping) mode=bookkeeping ;; triage) mode=triage ;; leads) mode=leads ;; *) mode=reply ;; esac
             dry=false
           else
             mode="$IN_MODE"; dry="${IN_DRY:-false}"
@@ -79,11 +81,12 @@ jobs:
           if [ -n "$IN_MODEL" ]; then model="$IN_MODEL"
           elif [ "$mode" = "bookkeeping" ]; then model="${BOOKKEEPING_MODEL:-claude-opus-5-5}"
           elif [ "$mode" = "triage" ]; then model="${TRIAGE_MODEL:-claude-sonnet-5-5}"
+          elif [ "$mode" = "leads" ]; then model="${LEADS_MODEL:-claude-sonnet-5-5}"
           else model=claude-opus-5-5; fi
-          case "$mode" in bookkeeping) lane=BOOKKEEPING-LANE.md ;; triage) lane=TRIAGE-LANE.md ;; *) lane=NIGHTLY-LANE.md ;; esac
-          # The triage step is the light one: low effort, a few turns, minutes not an hour (Steve 2026-10-23).
-          # The other modes keep Claude Code's default effort, so no flag is passed for them.
-          if [ "$mode" = "triage" ]; then effort="--effort low"; turns=40; minutes=10; else effort=""; turns=200; minutes=55; fi
+          case "$mode" in bookkeeping) lane=BOOKKEEPING-LANE.md ;; triage) lane=TRIAGE-LANE.md ;; leads) lane=LEADS-LANE.md ;; *) lane=NIGHTLY-LANE.md ;; esac
+          # The triage step and the leads list are the light ones: low effort, a few turns, minutes not an hour
+          # (Steve 2026-10-23). The other modes keep Claude Code's default effort, so no flag is passed for them.
+          if [ "$mode" = "triage" ] || [ "$mode" = "leads" ]; then effort="--effort low"; turns=40; minutes=10; else effort=""; turns=200; minutes=55; fi
           day=$(TZ=America/Chicago date +%F); slot=$(TZ=America/Chicago date +%H%M)
           suffix=""; [ "$dry" = "true" ] && suffix="-dry"
           short=$(echo "$model" | sed 's/^claude-//')

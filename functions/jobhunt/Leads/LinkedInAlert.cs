@@ -55,4 +55,8 @@ public static partial class LinkedInAlert
 /// <param name="Location">The location or remote line, as written.</param>
 /// <param name="Link">The job's link, without tracking.</param>
 /// <param name="MessageId">The alert's Gmail id.</param>
-public sealed record Lead(string Company, string Title, string Location, string Link, string MessageId);
+public sealed record Lead(string Company, string Title, string Location, string Link, string MessageId)
+{
+    /// <summary>The pay band as the alert printed it ("$160K - $210K"), or null when it printed none.</summary>
+    public string? Band { get; init; }
+}

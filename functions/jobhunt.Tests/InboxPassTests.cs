@@ -35,7 +35,7 @@ public sealed class InboxPassTests
         string line = await new LeadsHarvest(scratch.Store, inbox, new FixedTime(Morning)).RunAsync(true, CancellationToken.None);
         Assert.Equal(["a1"], inbox.Archived);
         string leads = File.ReadAllText(Path.Combine(scratch.Root, "nightly", "leads-2026-10-23.md"));
-        Assert.Contains("## a1 | jobalerts-noreply@linkedin.com", leads, StringComparison.Ordinal);
+        Assert.Contains("## a1 | LinkedIn digest, jobalerts-noreply@linkedin.com", leads, StringComparison.Ordinal);
         Assert.Contains("| Acme | Lead Engineer | United States (Remote) | https://www.linkedin.com/jobs/view/111/ | a1 | pass |", leads, StringComparison.Ordinal);
         Assert.Contains("| Globex | Staff Engineer | Berkeley | https://www.linkedin.com/jobs/view/222/ | a1 | no: not remote: Berkeley |", leads, StringComparison.Ordinal);
         Assert.DoesNotContain("## a2", leads, StringComparison.Ordinal);
@@ -171,8 +171,11 @@ public sealed class InboxPassTests
         public Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct)
         {
             Queries.Add(query);
-            var found = query.Contains(LinkedInAlert.Sender, StringComparison.Ordinal)
-                ? messages.Where(m => m.Address == LinkedInAlert.Sender)
+            // A board's search names one sender or one domain; the ATS search's list in brackets and the triage
+            // search's bare "in:inbox" take the whole inbox, as before.
+            var from = System.Text.RegularExpressions.Regex.Match(query, @"from:([^\s(]+)");
+            var found = from.Success
+                ? messages.Where(m => m.Address == from.Groups[1].Value || Mail.Domain(m.Address) == from.Groups[1].Value)
                 : messages;
             return Task.FromResult<IReadOnlyList<string>>([.. found.Select(m => m.Id).Take(max)]);
         }

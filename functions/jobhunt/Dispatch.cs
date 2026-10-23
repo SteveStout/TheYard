@@ -43,6 +43,7 @@ public sealed class Dispatch(IHttpClientFactory http, ILogger<Dispatch> log)
     {
         CentralClock.Bookkeeping => "BOOKKEEPING_DISPATCH",
         InboxTriage.Event => "TRIAGE",
+        Leads.LeadsHarvest.ListEvent => "LEADS_LIST",
         _ => "NIGHTLY_DISPATCH",
     };
 }
