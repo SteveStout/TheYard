@@ -7,6 +7,7 @@
 //   - the storage account and the jobhunt share (the job-hunt folder, in Azure),
 //     soft delete kept 14 days; the daily snapshot is taken by the Function;
 //   - the Function app on Flex Consumption and its plan;
+//   - Application Insights (appi-jobhunt-ss) on TheYard's Log Analytics workspace;
 //   - one user-assigned identity with ONE role: Storage File Data SMB Share
 //     Contributor on the share. functions/jobhunt/role-check.ps1 reads its
 //     assignments and fails on any other.
@@ -30,6 +31,9 @@ param functionAppName string = 'func-jobhunt-ss'
 
 @description('The share holding the job-hunt folder')
 param shareName string = 'jobhunt'
+
+@description('The Log Analytics workspace the job hunt\'s Application Insights writes to: TheYard\'s, so one workspace holds both.')
+param logWorkspaceId string = '/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.OperationalInsights/workspaces/log-theyard-ss'
 
 var smbShareContributor = '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb'
 var deployContainer = 'deploy'
@@ -91,6 +95,18 @@ resource shareRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
+// The Function's telemetry: every function's invocations, failures and logs, in TheYard's workspace.
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: 'appi-jobhunt-ss'
+  location: location
+  tags: tags
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logWorkspaceId
+  }
+}
+
 resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
   name: 'plan-jobhunt-ss'
   location: location
@@ -139,6 +155,8 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'DEPLOYMENT_STORAGE_CONNECTION_STRING', value: storageConnection }
         { name: 'JOBHUNT_SHARE_CONNECTION', value: storageConnection }
         { name: 'JOBHUNT_SHARE_NAME', value: shareName }
+        // Application Insights for every function in the app (the host reads it; no code does).
+        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
         // The 4:00 AM reply lane and the four-hour records run, both on in Azure. NIGHTLY_GITHUB_TOKEN
         // is set out of band with az functionapp config appsettings set, never here; this list
         // replaces the app's settings on a redeploy, so set the token again after one.
@@ -155,11 +173,16 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // run's and adds nothing; 'on' appends the master's missing rows to the Sheet and checks the read-back;
         // anything else is off. The Google client, its refresh token and the Sheet's id are set out of band.
         { name: 'SHEET_MIRROR', value: 'shadow' }
-        // The ATS sweep (functions/jobhunt/Ats): 'shadow' writes its plan ten minutes before each records run and
-        // archives nothing; 'on' drops the rows in the spool, archives and reads the labels back; anything else is off.
-        { name: 'ATS_SWEEP', value: 'shadow' }
-        // The leads harvest (functions/jobhunt/Leads), run in the ATS sweep's slot: 'shadow' writes leads-shadow/ only.
-        { name: 'LEADS', value: 'shadow' }
+        // The 30-minute inbox pass (functions/jobhunt/AtsSweepTimer.cs, at 20 and 50 past each hour), three parts.
+        // The ATS sweep (functions/jobhunt/Ats): 'on' drops the rows in the spool, archives and reads the labels back;
+        // 'shadow' writes its plan and archives nothing; anything else is off.
+        { name: 'ATS_SWEEP', value: 'on' }
+        // The leads harvest (functions/jobhunt/Leads): 'on' appends each whole alert's jobs to nightly/leads-<date>.md,
+        // then archives it; 'shadow' writes leads-shadow/ only.
+        { name: 'LEADS', value: 'on' }
+        // The model's step: 'on' fires nightly.yml's triage run (Sonnet, low effort) when the inbox holds mail from
+        // the last two days that no triage run has judged; anything else never starts it.
+        { name: 'TRIAGE', value: 'on' }
         // The daily card (functions/jobhunt/Card): 'on' keeps nightly/CARD.md current, the one page Steve reads.
         { name: 'DAILY_CARD', value: 'on' }
       ]

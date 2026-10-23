@@ -64,7 +64,28 @@ public sealed partial class TemplateTests
     public void The_template_keeps_the_daily_card_on() => Assert.Equal("on", Settings().GetValueOrDefault("DAILY_CARD"));
 
     [Fact]
-    public void The_template_keeps_the_leads_harvest_in_shadow() => Assert.Equal("shadow", Settings().GetValueOrDefault("LEADS"));
+    public void The_template_keeps_the_leads_harvest_in_a_mode_it_runs_in() => Assert.Contains(Settings().GetValueOrDefault("LEADS") ?? "", new[] { "shadow", "on" });
+
+    [Fact]
+    public void The_template_keeps_the_inbox_pass_acting_and_the_triage_run_on()
+    {
+        var settings = Settings();
+        Assert.Equal("on", settings.GetValueOrDefault("ATS_SWEEP"));
+        Assert.Equal("on", settings.GetValueOrDefault("LEADS"));
+        Assert.True(settings.ContainsKey("TRIAGE"), "infra/jobhunt.bicep has no TRIAGE setting: a redeploy would stop the inbox pass's model step");
+        Assert.Equal("on", settings["TRIAGE"]);
+    }
+
+    [Fact]
+    public void The_template_sends_every_function_s_telemetry_to_application_insights()
+    {
+        var settings = Settings();
+        Assert.True(settings.ContainsKey("APPLICATIONINSIGHTS_CONNECTION_STRING"), "infra/jobhunt.bicep has no APPLICATIONINSIGHTS_CONNECTION_STRING: a redeploy would cut every function off from Application Insights");
+        Assert.Equal("appInsights.properties.ConnectionString", settings["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
+        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt.bicep"));
+        Assert.Contains("'Microsoft.Insights/components@", bicep, StringComparison.Ordinal);
+        Assert.Contains("WorkspaceResourceId: logWorkspaceId", bicep, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void Every_setting_the_function_reads_is_in_the_template_or_named_as_set_out_of_band()

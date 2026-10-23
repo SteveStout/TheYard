@@ -6,14 +6,15 @@ namespace JobHunt.Functions;
 
 /// <summary>
 /// Fires repository_dispatch at the repository that holds nightly.yml: "nightly" for the 4:00 AM
-/// reply lane (on when NIGHTLY_DISPATCH is "on") and "bookkeeping" for the four-hour records run
-/// (on when BOOKKEEPING_DISPATCH is "on", which waits for the side-by-side model test).
+/// reply lane (on when NIGHTLY_DISPATCH is "on"), "bookkeeping" for the four-hour records run
+/// (on when BOOKKEEPING_DISPATCH is "on") and "triage" for the inbox pass's model step (on when
+/// TRIAGE is "on").
 /// </summary>
 public sealed class Dispatch(IHttpClientFactory http, ILogger<Dispatch> log)
 {
     public async Task<string> RunAsync(string eventType, DateTime local, CancellationToken ct)
     {
-        string gate = eventType == CentralClock.Bookkeeping ? "BOOKKEEPING_DISPATCH" : "NIGHTLY_DISPATCH";
+        string gate = Gate(eventType);
         if (!string.Equals(Environment.GetEnvironmentVariable(gate), "on", StringComparison.OrdinalIgnoreCase))
         {
             log.LogInformation("{Event} not dispatched: {Gate} is not on", eventType, gate);
@@ -36,4 +37,12 @@ public sealed class Dispatch(IHttpClientFactory http, ILogger<Dispatch> log)
         log.LogInformation("{Line}", line);
         return line;
     }
+
+    /// <summary>The setting that must be "on" for an event to be fired.</summary>
+    public static string Gate(string eventType) => eventType switch
+    {
+        CentralClock.Bookkeeping => "BOOKKEEPING_DISPATCH",
+        InboxTriage.Event => "TRIAGE",
+        _ => "NIGHTLY_DISPATCH",
+    };
 }
