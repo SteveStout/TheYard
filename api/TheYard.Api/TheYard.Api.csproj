@@ -47,6 +47,32 @@
     <ProjectReference Include="..\..\samples\theshed\TestProject.csproj" />
   </ItemGroup>
 
+  <!-- #region shared-concerns -->
+  <!-- The host's shared code, one namespace per concern under Shared/ (ADR-114: The host root holds one file). Every
+       file in the host may use a shared concern, so each is imported once here rather than in every file that names
+       one; a slice is never imported, because a slice reaching another is what SliceTests rule 1 forbids. -->
+  <ItemGroup>
+    <Using Include="TheYard.Api.Shared.Activity" />
+    <Using Include="TheYard.Api.Shared.Auth" />
+    <Using Include="TheYard.Api.Shared.CostReadings" />
+    <Using Include="TheYard.Api.Shared.Documentation" />
+    <Using Include="TheYard.Api.Shared.Edge" />
+    <Using Include="TheYard.Api.Shared.Grades" />
+    <Using Include="TheYard.Api.Shared.Hosted" />
+    <Using Include="TheYard.Api.Shared.Instance" />
+    <Using Include="TheYard.Api.Shared.MachineReadings" />
+    <Using Include="TheYard.Api.Shared.Observability" />
+    <Using Include="TheYard.Api.Shared.PlanReadings" />
+    <Using Include="TheYard.Api.Shared.Proof" />
+    <Using Include="TheYard.Api.Shared.Resources" />
+    <Using Include="TheYard.Api.Shared.Sites" />
+    <Using Include="TheYard.Api.Shared.Stores" />
+    <Using Include="TheYard.Api.Shared.Usage" />
+    <Using Include="TheYard.Api.Shared.Wire" />
+    <Using Include="TheYard.Api.Shared.Wiring" />
+  </ItemGroup>
+  <!-- #endregion shared-concerns -->
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>

@@ -31,7 +31,7 @@ export type CostKind = {
   monthly: number;
 };
 
-/** GET /api/admin/costs, as the server writes it (api/TheYard.Api/CostReport.cs). */
+/** GET /api/admin/costs, as the server writes it (api/TheYard.Api/Shared/CostReadings/CostReport.cs). */
 export type CostReport = {
   window: CostWindow;
   windows: CostWindow[];

@@ -22,7 +22,7 @@ The chunks are the edge's (ADR: Cache headers, the addendum of the same day). Th
 
 ## Decision
 
-**The container keeps its own reads warm.** `KeepWarm` in `api/TheYard.Api/KeepWarm.cs` is a loop inside the process that, every four minutes for as long as the container runs, sends every public read a visitor can open through the app's own HTTP pipeline, once for each store (the `X-Yard-Store` header): the listing, the filter values, one vehicle from that listing, the health report, the stores, the version, the tests summary, the recommendations, the activity report for each of its three windows, the machines, the page sweep, the metrics, the SQL and store logs, the log, Azure's view of the container, the peer, the tests, the proof, the experiment, the telemetry and the errors. Each read carries the site's own mark on its agent, `TheYard-SelfRead/1 (keep-warm)`, so the activity card counts it as the site reading itself and never as a person. It also carries a header of its own, which keeps it out of the request ring and the kept log: two hundred slots of the container reading itself every four minutes would be the speed tile timing the loop, not a visitor.
+**The container keeps its own reads warm.** `KeepWarm` in `api/TheYard.Api/Shared/Instance/KeepWarm.cs` is a loop inside the process that, every four minutes for as long as the container runs, sends every public read a visitor can open through the app's own HTTP pipeline, once for each store (the `X-Yard-Store` header): the listing, the filter values, one vehicle from that listing, the health report, the stores, the version, the tests summary, the recommendations, the activity report for each of its three windows, the machines, the page sweep, the metrics, the SQL and store logs, the log, Azure's view of the container, the peer, the tests, the proof, the experiment, the telemetry and the errors. Each read carries the site's own mark on its agent, `TheYard-SelfRead/1 (keep-warm)`, so the activity card counts it as the site reading itself and never as a person. It also carries a header of its own, which keeps it out of the request ring and the kept log: two hundred slots of the container reading itself every four minutes would be the speed tile timing the loop, not a visitor.
 
 - **In the process, not on a schedule outside it.** A scheduled workflow starts when a runner is free, not when it was asked (Steve's experience is that scheduled runners start late and are not dependable). A loop inside the container runs exactly as long as there is something to keep warm, including the minutes after a roll.
 - **Staggered.** The first pass waits a random part of a minute, so the two sites' containers do not fire together on the one plan.
@@ -75,14 +75,14 @@ From 1.0.3.188 the loop is wired by `Hosted/KeepWarmAtRoll.cs`, registered only 
 
 ## Files
 
-- [`api/TheYard.Api/KeepWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/KeepWarm.cs): the loop, the reads and the pass.
+- [`api/TheYard.Api/Shared/Instance/KeepWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/KeepWarm.cs): the loop, the reads and the pass.
 - [`api/TheYard.Api/Shared/Hosted/KeepWarmAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Hosted/KeepWarmAtRoll.cs): the wiring (region keep-warm-wiring).
-- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the request hook that leaves its reads out of the ring and the kept log.
+- [`api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs): the request hook that leaves its reads out of the ring and the kept log.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health report that carries its last pass.
 - [`api/TheYard.Tests/KeepWarmTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeepWarmTests.cs): the schedule, the overlap and the failures, on a clock the test moves.
 - [`src/lib/keepWarm.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/keepWarm.ts) and [`src/components/admin/HealthCard/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard/HealthCard.tsx): the health card's line.
 
-```live path=api/TheYard.Api/KeepWarm.cs region=keep-warm
+```live path=api/TheYard.Api/Shared/Instance/KeepWarm.cs region=keep-warm
 ```
 
 ## Addendum, 2026-10-21 (1.0.4.24): what stopped being true

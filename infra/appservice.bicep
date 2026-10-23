@@ -91,7 +91,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
 // The names the one web app answers to. The store a request gets when it names
 // none follows the name it arrived on: the SQL site's name gets Azure SQL
 // Database, the Cosmos DB site's gets Azure Cosmos DB, and The Shed's name gets
-// The Shed (api/TheYard.Api/SiteHosts.cs). siteUrl is where links in an email
+// The Shed (api/TheYard.Api/Shared/Instance/SiteHosts.cs). siteUrl is where links in an email
 // point when a request arrived on no Yard name. One entry; a second entry here
 // is how a site gets a web app of its own again.
 var sites = [

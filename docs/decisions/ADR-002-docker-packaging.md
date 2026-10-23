@@ -68,7 +68,7 @@ No ring applies here: the record is a packaging decision about how the Dockerfil
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the three stages, each shown live below.
 - [`.dockerignore`](https://github.com/SteveStout/TheYard/blob/main/.dockerignore): what never enters the build context.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the one process the image runs.
-- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs) and [`api/TheYard.Api/Shared/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/SpaRegistration.cs): serving the
+- [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs) and [`api/TheYard.Api/Shared/Wiring/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/SpaRegistration.cs): serving the
   built SPA from wwwroot, and the fallback route.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the build that passes the two
   provenance arguments and pushes the image (ADR: The deploy pipeline).

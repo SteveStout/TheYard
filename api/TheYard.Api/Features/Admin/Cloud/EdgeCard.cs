@@ -1,0 +1,144 @@
+// The Netlify edge card (ADR: One frame for every resource): credits spent of the free plan's 300
+// this cycle and the share of sampled pages the edge served from its cache on the dials, the
+// certificate it answers with, what it is costing, and the date it is meant to go. Netlify's
+// figures move hourly, so the card keeps one document an hour; without a token it says so.
+using System.Globalization;
+using TheYard.Application;
+
+namespace TheYard.Api.Features.Admin.Cloud;
+
+/// <summary>The edge's card.</summary>
+public static class EdgeCard
+{
+    /// <summary>Where each row and readout line of this card is read, by row key or line label (CardFrame.Sourced).</summary>
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["through"] = "Netlify API",
+        ["credits"] = "Netlify API",
+        ["cached"] = "the edge's Cache-Status, sampled hourly",
+        ["needed"] = "configuration, Edge:Retires",
+        ["Credits"] = "Netlify API",
+        ["Credits p95, 30 d"] = CardFrame.KeptMinutes,
+        ["Deploys, cycle"] = "Netlify API",
+        ["Bandwidth, cycle"] = "Netlify API",
+        ["Cache hits"] = "the edge's Cache-Status, sampled hourly",
+        ["Domain"] = "Netlify API",
+        ["Certificate"] = "Netlify API",
+        ["Expires"] = "Netlify API",
+        ["Builds"] = "Netlify API",
+        ["Retires"] = "configuration, Edge:Retires",
+        ["Cost"] = "Netlify API",
+    };
+
+    /// <summary>The project's page on Netlify, which the card's name links to: the site record's admin_url, else none until it is read.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static string? ProjectUrl(ResourceCardInputs inputs) => ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("admin_url");
+
+    public static readonly (double Amber, double Red) Credits = CloudThresholds.EdgeCredits;
+
+    /// <summary>The cache dial runs the other way, so its tone is read on the misses.</summary>
+    public static readonly (double Amber, double Red) Misses = CloudThresholds.EdgeMisses;
+
+    public static readonly IReadOnlyList<string> Readings = ["credits", "bandwidth_gb", "deploys", "cache_hit"];
+
+    /// <param name="inputs">The card's inputs.</param>
+    /// <param name="configured">Whether the Netlify token is set.</param>
+    /// <param name="project">The Netlify project's name, from configuration (Azure:Resources:Edge).</param>
+    /// <param name="retires">When the edge is meant to retire, from configuration (Edge:Retires): the registrar transfer that moves the domain off it.</param>
+    public static CloudReport View(ResourceCardInputs inputs, bool configured, string project, DateOnly retires)
+    {
+        string? admin = ProjectUrl(inputs);
+        // What the last hour actually scored, as the reader wrote it, never a list typed here.
+        string? sampled = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("sampled");
+        int sampledCount = sampled is null ? 0 : sampled.Split(", ").Length;
+        double? credits = ResourceView.Now(inputs, "credits");
+        // The share is read from the newest hour's per-address statuses, the same sample the row's
+        // detail prints, so the dial, the tone and the detail can never disagree. The sparkline's
+        // newest value and the chart's newest point are that same sample (SameSample below).
+        var (hit, _) = NetlifyEdge.ShareOf(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cache_status"));
+        var creditTone = ResourceView.Tone(ResourceView.Hour(inputs, "credits").Select(v => ResourceView.Share(v, NetlifyEdge.FreeCredits)).ToList(), Credits, hourly: true);
+        var missTone = ResourceView.Tone([hit is { } sampleShare ? 100 - sampleShare : (double?)null], Misses, hourly: true);
+        var dials = new[]
+        {
+            ResourceView.Dial(inputs, "credits", "Credits, this cycle", NetlifyEdge.FreeCredits, Credits, v => v is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0}" : "not read", hourly: true),
+            ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", percentReading: true, hourly: true) with { Percent = hit, Big = PlanView.Percent(hit), Absolute = hit is { } dialShare ? $"{dialShare.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", Tone = CloudTones.Of(missTone) },
+        };
+        int daysLeft = retires.DayNumber - DateOnly.FromDateTime(inputs.Now.UtcDateTime).DayNumber;
+        string? cert = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cert_expires");
+        bool certSoon = DateTimeOffset.TryParse(cert, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expires) && expires - inputs.Now < TimeSpan.FromDays(14);
+        // The date a reader reads, not the timestamp Netlify sends.
+        string expiresOn = cert is not null && DateTimeOffset.TryParse(cert, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var on) ? on.UtcDateTime.ToString("MMM d, yyyy", CultureInfo.InvariantCulture) : "not read";
+        var rows = new List<CloudRow>
+        {
+            new("through", "What goes through it?", inputs.Hours.Count == 0 ? (configured ? "not read yet" : "no token set") : ResourceView.Fact(inputs, "domain"),
+                [new($"certificate for {ResourceView.Fact(inputs, "cert_names")} · expires {expiresOn} · {ResourceView.Fact(inputs, "answered_by", "who answers not sampled yet")}", null)],
+                certSoon ? "warning" : "good"),
+            new("credits", "Is it costing credits?", credits is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0} this cycle" : configured ? "not read yet" : "no token set",
+                [new($"{ResourceView.Number(ResourceView.Now(inputs, "deploys"))} deploys at {NetlifyEdge.CreditsPerDeploy:0} · {ResourceView.Number(ResourceView.Now(inputs, "bandwidth_gb"), "0.000")} GB at {NetlifyEdge.CreditsPerGb:0} a GB", null),
+                    new("the deploy log on Netlify", admin is null ? null : admin + "/deploys")],
+                ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : CloudTones.Of(creditTone))
+            { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("deploy_rows"), "When", "Type", "Came to") },
+            new("cached", "What is cached?", hit is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of the addresses the edge may keep" : "not sampled yet",
+                [new(sampled is null ? "not sampled yet" : $"sampled hourly: {sampled} · read from the Cache-Status header", null),
+                    new(ResourceView.Fact(inputs, "sample_note", "") is { Length: > 0 } note ? note : ResourceView.Fact(inputs, "cache_status", "per-address status not read yet"), null),
+                    new("the page and /api are asked only to name who answered; neither may be kept, so neither is scored", null)],
+                CloudTones.Of(missTone)),
+            new("needed", "Is it still needed?", daysLeft > 0 ? $"until {retires.ToString("MMM d", CultureInfo.InvariantCulture)}, {daysLeft} days" : "past its date; retire it",
+                [new(daysLeft > 0 ? "the registrar transfer moves the domain straight to Azure, and then this card retires with the edge"
+                    : $"the edge is past its date, {retires.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}: the registrar transfer should have moved the domain to Azure", null)],
+                daysLeft > 0 ? "info" : "warning"),
+        };
+        var readout = new CloudReadout(
+            "The edge",
+            ResourceView.Uptime(inputs, 60),
+            $"answered, {CloudTones.WindowWords(inputs.Window)}",
+            [
+                new("Credits", $"{ResourceView.Number(credits, "0")} / {NetlifyEdge.FreeCredits:0}", CloudTones.Of(creditTone)),
+                new("Credits p95, 30 d", ResourceView.Number(ResourceFolding.Spread(inputs.Month, "credits").P95, "0"), "info"),
+                new("Deploys, cycle", ResourceView.Number(ResourceView.Now(inputs, "deploys")), "info"),
+                new("Bandwidth, cycle", $"{ResourceView.Number(ResourceView.Now(inputs, "bandwidth_gb"), "0.000")} GB", "info"),
+                new("Cache hits", hit is { } ch ? $"{ch.ToString("0", CultureInfo.InvariantCulture)} %" : "not sampled", CloudTones.Of(missTone)),
+                new("Domain", ResourceView.Fact(inputs, "domain"), "info"),
+                new("Certificate", ResourceView.Fact(inputs, "cert_names"), "info"),
+                new("Expires", expiresOn, certSoon ? "warning" : "info"),
+                new("Builds", $"{ResourceView.Fact(inputs, "deploys_live", "0")} live · {ResourceView.Fact(inputs, "deploys_skipped", "0")} skipped · {ResourceView.Fact(inputs, "deploys_failed", "0")} failed", ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : "info"),
+                new("Retires", retires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "info"),
+                new("Cost", "not on the Azure bill; Netlify bills in credits", "info"),
+                ResourceView.LiveRead(inputs),
+            ],
+            configured ? $"{inputs.Availability.Reason}, one document an hour from Netlify" : "NETLIFY_TOKEN is not set, so nothing is read from Netlify");
+        return CardFrame.Sourced(new CloudReport(
+            inputs.Window, PlanView.Windows, configured && inputs.Availability.Available && inputs.LastHour.Count > 0,
+            !configured ? "NETLIFY_TOKEN is not set, so the edge is not read."
+                : ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("site") is { } missing ? $"NETLIFY_TOKEN is set, but {missing}, so the edge is not read."
+                : ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "hour")),
+            inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
+            "Netlify edge",
+            ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("plan") is { } plan ? $"{plan.ToUpperInvariant()} PLAN · {NetlifyEdge.FreeCredits:0} CREDITS" : $"PLAN NOT READ · {NetlifyEdge.FreeCredits:0} CREDITS",
+            new CloudLink(project, admin),
+            dials,
+            [ResourceView.Spark(inputs, "credits", "Credits, 60 h", NetlifyEdge.FreeCredits), SameSample(ResourceView.Spark(inputs, "cache_hit", "Cache hits, 60 h", 100, percentReading: true), hit)],
+            SameSample(ResourceView.Chart(inputs, "Credits and cache hits", ("credits", "Credits", NetlifyEdge.FreeCredits, false), ("cache_hit", "Cache hits", 100, true), Credits.Red, $"teal credits · green cache hits · gold deploys · dashed {Credits.Red} %"), "Cache hits", hit),
+            rows,
+            readout), Sources);
+    }
+    /// <summary>The cache sparkline with its newest value the dial's sample, so the two read one figure; unchanged before a sample.</summary>
+    /// <param name="spark">The sparkline as the kept minutes give it.</param>
+    /// <param name="hit">The newest hour's share, the dial's.</param>
+    public static CloudSpark SameSample(CloudSpark spark, double? hit)
+    {
+        int last = spark.Values.Count - 1;
+        return hit is null || last < 0 ? spark : spark with { Values = [.. spark.Values.Take(last), hit] };
+    }
+
+    /// <summary>The chart with the named series' newest point the dial's sample; unchanged before a sample or with no points.</summary>
+    /// <param name="chart">The chart as the kept buckets give it.</param>
+    /// <param name="series">The series that carries the cache share.</param>
+    /// <param name="hit">The newest hour's share, the dial's.</param>
+    public static CloudChart SameSample(CloudChart chart, string series, double? hit) =>
+        hit is null ? chart : chart with
+        {
+            Series = [.. chart.Series.Select(line => line.Name != series || line.Points.Count == 0 ? line
+                : line with { Points = [.. line.Points.Take(line.Points.Count - 1), line.Points[^1] with { Value = hit }] })],
+        };
+}

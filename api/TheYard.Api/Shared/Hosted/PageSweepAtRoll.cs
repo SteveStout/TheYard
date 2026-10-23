@@ -1,6 +1,6 @@
 // The sweep over every address this container serves, run once the server listens and once more
 // when the process has settled.
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Hosted;
 
 /// <summary>
 /// Every roll carries a check of the thing that was just rolled (ADR: Every page, checked at every

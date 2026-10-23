@@ -27,7 +27,7 @@ out of the client bundle: one configuration value per container, `Peer:Url`,
 holds the peer's public origin, which is a URL and not a credential, and the
 browser only ever learns the peer's host name.
 
-```live path=api/TheYard.Api/Peer.cs region=peer
+```live path=api/TheYard.Api/Shared/Instance/Peer.cs region=peer
 ```
 
 **The peer is a thing that can be down.** ADR: The relational store established
@@ -54,7 +54,7 @@ say nothing. Timing is grouped by route template, with the identifiers taken
 out, and the store log's operations are grouped the same way so the document
 column can say what a route costs in request units as well as milliseconds:
 
-```live path=api/TheYard.Api/Peer.cs region=routes
+```live path=api/TheYard.Api/Shared/Instance/Peer.cs region=routes
 ```
 
 The request-unit figure per route is exact per request: every operation the
@@ -70,7 +70,7 @@ when the container was ready to serve, all counted from the process's own
 start time and exposed in the metrics, so the two columns compare two real
 cold starts rather than one stopwatch and one memory:
 
-```live path=api/TheYard.Api/AdminObservability.cs region=startup-timings
+```live path=api/TheYard.Api/Shared/Observability/AdminObservability.cs region=startup-timings
 ```
 
 **The card.** Two columns, this container first, the peer second, on rows for
@@ -223,8 +223,8 @@ The comparison is a host and front end job: `Peer.cs` in the Api reads the other
 
 ## Files
 
-- [`api/TheYard.Api/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Peer.cs): the peer reader and the route grouping.
-- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the startup timings and the store window.
+- [`api/TheYard.Api/Shared/Instance/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/Peer.cs): the peer reader and the route grouping.
+- [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs): the startup timings and the store window.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the endpoint (region peer-endpoint).
 - [`api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs): the metrics it relays.
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/TimingCard/TimingCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TimingCard/TimingCard.tsx): the card, and the Timing card's two store lines.

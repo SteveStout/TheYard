@@ -52,9 +52,9 @@ name is the same idea, done by the build, for every file, every time.
 ## In the code
 
 The rules, read from this build
-([`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs)):
+([`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs)):
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=cache-headers
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=cache-headers
 ```
 
 The proof is
@@ -81,9 +81,9 @@ The cache rules live in the host Api, in one inline middleware in Composition/Re
 
 ## Files
 
-- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the middleware (region
+- [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the middleware (region
   cache-headers above) and the photo set's own rule (region static-files).
-- [`api/TheYard.Api/Shared/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/SpaRegistration.cs): the SPA fallback that answers only app routes.
+- [`api/TheYard.Api/Shared/Wiring/SpaRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/SpaRegistration.cs): the SPA fallback that answers only app routes.
 - [`api/TheYard.Tests/CacheHeaderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CacheHeaderTests.cs): the proof, header by
   header.
 - [`vite.config.ts`](https://github.com/SteveStout/TheYard/blob/main/vite.config.ts) and [`index.html`](https://github.com/SteveStout/TheYard/blob/main/index.html): the build that names
@@ -93,9 +93,9 @@ The cache rules live in the host Api, in one inline middleware in Composition/Re
 ## More of the code
 
 The static file middleware, the photo set's own rule, and the fallback that
-answers only app routes ([`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs)):
+answers only app routes ([`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs)):
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=static-files
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=static-files
 ```
 
 ## Addendum, 2026-09-28 (1.0.3.35): the edge is warmed after every deploy
@@ -129,7 +129,7 @@ The same rule, on the pages the rendering service draws. A page request that car
 
 Until today every document said `no-cache` to the browser and nothing to the edge, so each one was drawn by the origin on every read. The reason was sound: a document's live-source blocks and its version strip are read from the image, and a copy kept across a deploy could show yesterday's source under today's version. What makes a day safe is a purge on every deploy, and the deploy now sends one.
 
-- **The rule.** An answer that can only change on a deploy may be kept by the edge for a day, and the deploy purges it. Every document and diagram under `/api/docs` and the share card's picture `/og.png` now carry `Netlify-CDN-Cache-Control: public, max-age=86400` (`Shared/EdgeKeeps.cs`), on the catalogue reads' terms: a 200 to a GET from a caller with no cookie and no Authorization header, setting no cookie of its own, so a session renewed on the way out never sits in a shared copy. The browser's rule is unchanged for the documents (`no-cache`, it still asks); `/og.png` keeps its name across deploys, so the browser may keep it a day too, the photo set's rule.
+- **The rule.** An answer that can only change on a deploy may be kept by the edge for a day, and the deploy purges it. Every document and diagram under `/api/docs` and the share card's picture `/og.png` now carry `Netlify-CDN-Cache-Control: public, max-age=86400` (`Shared/Edge/EdgeKeeps.cs`), on the catalogue reads' terms: a 200 to a GET from a caller with no cookie and no Authorization header, setting no cookie of its own, so a session renewed on the way out never sits in a shared copy. The browser's rule is unchanged for the documents (`no-cache`, it still asks); `/og.png` keeps its name across deploys, so the browser may keep it a day too, the photo set's rule.
 - **What stays out.** The resume (`/api/docs/resume`) and About Steven (`/api/docs/author`): the Site activity card counts a visitor by the request that reaches the origin, and an edge copy would hide the two steps it watches. Also `/api/version` (the deploy proves the roll by it), everything under `/api/admin`, the sign-in, and the page itself, which keeps the rendering service's own ten-second rule. The listing keeps its fifteen seconds and nothing more. `EdgeKeepsTests` holds both lists.
 - **The purge.** "Warm the edge" in `deploy.yml` first asks Netlify's purge API to drop every copy the site holds (one request, by the site name configuration gives, `Azure:Resources:Edge`, with the token the roll already hands the site), then warms as it always has. Both Yard names are separate keys at the edge, so every document is kept twice and purged together. A failed purge is a warning, never a failed deploy; `DeployWorkflowTests` holds the purge before the warm.
 - **No `durable`.** The handoff asked for `durable` on the edge rule. Netlify reads that word on its own Functions' answers only (Netlify's caching overview, read again today, and the addendum of 28 September), and these come through its proxy from Azure, so the header leaves it off rather than claim a shared layer that is not there.

@@ -16,7 +16,7 @@
 #
 # The web app's own address is the same for both names, so each rule says which
 # name the visitor typed in X-Yard-Host, and the web app picks the site's store by
-# it (api/TheYard.Api/SiteHosts.cs). Only a rule written in this file can add a
+# it (api/TheYard.Api/Shared/Instance/SiteHosts.cs). Only a rule written in this file can add a
 # header to a proxied request; edge/_redirects cannot.
 [[redirects]]
   from = "https://theyard-cosmos.stevenstout.biz/*"

@@ -2,7 +2,7 @@
 // the host.
 using Microsoft.AspNetCore.Hosting.Server;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Hosted;
 
 /// <summary>
 /// Every public read, on every store, every four minutes for as long as the container runs (ADR:

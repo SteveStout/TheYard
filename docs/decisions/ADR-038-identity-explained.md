@@ -6,7 +6,7 @@ touches, and ADR: Accounts and per-user bids touched the composition root, the
 request pipeline and the database schema in one change. That record says what
 was decided. This one says what the words mean.
 
-Read it beside `api/TheYard.Api/Program.cs` and `api/TheYard.Api/Tokens.cs`.
+Read it beside `api/TheYard.Api/Program.cs` and `api/TheYard.Api/Shared/Auth/Tokens.cs`.
 The samples below are those files, read from this build.
 
 ## In plain words
@@ -126,7 +126,7 @@ knows the key, only the server can produce a signature that validates, so a
 token that validates is one this server issued. Forging one means guessing 32
 random bytes.
 
-```live path=api/TheYard.Api/Tokens.cs region=issue
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=issue
 ```
 
 `ClockSkew` deserves a note. The library defaults to five minutes of slack on
@@ -239,7 +239,7 @@ auction and cannot bid in it.
 Inside an endpoint that requires it, `http.UserId()` reads the account id from
 the validated claims:
 
-```live path=api/TheYard.Api/Tokens.cs region=who
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=who
 ```
 
 It throws rather than returning null. Reaching that line with no id would mean
@@ -274,9 +274,9 @@ This walkthrough covers host Api code, AddIdentityCore in Composition/AuthRegist
 ## Files
 
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the composition root's part, Identity and the token registered.
-- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the pipeline.
+- [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the pipeline.
 - [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the four auth endpoints.
-- [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): issuing, validating, the cookie attributes, and reading the caller back out.
+- [`api/TheYard.Api/Shared/Auth/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Auth/Tokens.cs): issuing, validating, the cookie attributes, and reading the caller back out.
 - [`api/TheYard.Api/Features/Accounts/AccountView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountView.cs): the request and response shapes, and the translation of Identity's error codes into a sentence.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the user row and its one extra column.
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): now an `IdentityDbContext`, which is what puts the seven tables in the model.

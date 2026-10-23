@@ -71,7 +71,7 @@ export function createRenderer(
 }
 
 // #region edge-copy
-/** The cookie a session travels in, as the API names it (api/TheYard.Api/Tokens.cs); CacheHeaderTests holds the two names together. */
+/** The cookie a session travels in, as the API names it (api/TheYard.Api/Shared/Auth/Tokens.cs); CacheHeaderTests holds the two names together. */
 export const SESSION_COOKIE = 'theyard_session';
 
 /**

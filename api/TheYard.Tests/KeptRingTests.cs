@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using TheYard.Api;
 using TheYard.Application;
 
 namespace TheYard.Tests;

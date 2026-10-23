@@ -1,7 +1,6 @@
 using System.Net;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc.Testing;
-using TheYard.Api;
 
 namespace TheYard.Tests;
 

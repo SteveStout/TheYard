@@ -61,7 +61,7 @@ served document and fails if any path in it starts with `/api/admin`, and it rea
 table's own description of the host to prove the filter is doing work rather than passing because
 there was nothing to filter.
 
-```live path=api/TheYard.Api/ApiDocument.cs region=public-surface
+```live path=api/TheYard.Api/Shared/Wire/ApiDocument.cs region=public-surface
 ```
 
 **2. Every public endpoint is in it, and nothing else is.** The same test compares the document's
@@ -94,7 +94,7 @@ shows a lock on exactly the operations that will answer 401 without a session. T
 routing table for the endpoints that carry authorization metadata and requires the set of
 operations with a security requirement to be exactly that set.
 
-```live path=api/TheYard.Api/ApiDocument.cs region=transformers
+```live path=api/TheYard.Api/Shared/Wire/ApiDocument.cs region=transformers
 ```
 
 The whole of the test class is the enforcement, and the rules table in ADR: The rules a change has
@@ -151,10 +151,10 @@ The work sits in the host Api: ApiDocument.cs configures the framework's generat
 
 ## Files
 
-- [`api/TheYard.Api/ApiDocument.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ApiDocument.cs): the document's name, title and routes, the public-surface filter, and the two transformers.
-- [`api/TheYard.Api/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Replies.cs): the named shapes the endpoints answer with.
-- [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): `VehicleView`, the vehicle as the wire carries it.
-- [`api/TheYard.Api/Shared/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs) and [`api/TheYard.Api/Features/Docs/ReferenceEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/ReferenceEndpoints.cs): the generator and the reference page wired.
+- [`api/TheYard.Api/Shared/Wire/ApiDocument.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/ApiDocument.cs): the document's name, title and routes, the public-surface filter, and the two transformers.
+- [`api/TheYard.Api/Shared/Wire/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/Replies.cs): the named shapes the endpoints answer with.
+- [`api/TheYard.Api/Shared/Wire/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/VehicleWire.cs): `VehicleView`, the vehicle as the wire carries it.
+- [`api/TheYard.Api/Shared/Wiring/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ApiRegistration.cs) and [`api/TheYard.Api/Features/Docs/ReferenceEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/ReferenceEndpoints.cs): the generator and the reference page wired.
 - [`api/TheYard.Api/Features`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features): every public endpoint named, summarised and typed.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the two packages, pinned.
 - [`api/TheYard.Tests/ApiDocumentTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ApiDocumentTests.cs): the four rules, held.

@@ -96,7 +96,7 @@ The pages that never touch a store are the same on both, to the millisecond.
 The rounds themselves, from the code that runs them: one account per store for the life of the process,
 the same paths in the same order, and the store that goes first alternating every round.
 
-```live path=api/TheYard.Api/ProofRunner.Rounds.cs region=rounds
+```live path=api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs region=rounds
 ```
 
 Source: [The same performance, proven](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-067-same-performance-proven.md),
@@ -166,7 +166,7 @@ The verdict is arithmetic, and here it is: the median of the paired differences,
 operation taken off each side, and the rule for how far apart two medians may sit and still be called
 the same.
 
-```live path=api/TheYard.Api/ProofResult.cs region=verdict
+```live path=api/TheYard.Api/Shared/Proof/ProofResult.cs region=verdict
 ```
 
 Read again on 13 September, off both containers' own cards from runs on 1.0.0.114 made within a quarter of
@@ -207,7 +207,7 @@ application's memory and turned a two-minute suite into a thirty-minute crawl th
 The other store warms on the first request that names it, and no request thread ever waits on a load
 already in progress:
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=warm-before-reading
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=warm-before-reading
 ```
 
 **The search is an index, and the page's files are cached for a year.** A text scan over the hundred
@@ -218,7 +218,7 @@ the same twenty milliseconds, since ordering and serialising a page is most of w
 every bundle file is named by a hash of its contents, so a browser keeps it for a year and a returning
 visitor fetches the small HTML page and the data, never the bundle again ([Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-015-cache-headers.md)):
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=cache-headers
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=cache-headers
 ```
 
 ## What the page costs on the wire, measured on 17 September
@@ -407,14 +407,14 @@ From 1.0.3.104 a rendering service beside the API draws every page a visitor can
 
 **The trip.** A visitor's browser asks the edge, Netlify, for the listing. The edge forwards the request to the container on Azure and passes the answer back. The edge has always compressed what it hands the browser, so the browser never saw the full size. The waste was on the hop between them: the edge asked Azure for the answer plainly, and a page of a hundred vehicles crossed as about 106 KB of JSON.
 
-**What changed.** The container now compresses two answers itself, the listing (`/api/vehicles`) and the filter values (`/api/facets`), as Brotli or gzip, whichever the caller asks for. The same page crosses as about 15 KB, 85 per cent less. ASP.NET Core's response compression does the work. It is registered once, in [`ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs), read here from the running build with its comments:
+**What changed.** The container now compresses two answers itself, the listing (`/api/vehicles`) and the filter values (`/api/facets`), as Brotli or gzip, whichever the caller asks for. The same page crosses as about 15 KB, 85 per cent less. ASP.NET Core's response compression does the work. It is registered once, in [`ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ApiRegistration.cs), read here from the running build with its comments:
 
-```live path=api/TheYard.Api/Shared/ApiRegistration.cs region=compression
+```live path=api/TheYard.Api/Shared/Wiring/ApiRegistration.cs region=compression
 ```
 
-It is switched on only for a GET of those two addresses, in [`RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs):
+It is switched on only for a GET of those two addresses, in [`RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs):
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=compression
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=compression
 ```
 
 **Why only those two.** Compressing an HTTPS response can leak a secret through its size. The attack is called BREACH. It needs a secret, such as a session token, and text the attacker chooses in the same compressed body. By sending many requests and watching the length shrink, the attacker guesses the secret a character at a time. That is why ASP.NET Core leaves HTTPS compression off unless it is asked for. The listing and the filter values are the same public data for every visitor and carry no secret in their bodies; a session travels in the Cookie header, which this compression never touches. Bids, accounts and the admin endpoints are sent as they are.
@@ -423,7 +423,7 @@ It is switched on only for a GET of those two addresses, in [`RequestPipeline.cs
 
 **What it did not do.** It cut the bytes and left the time alone. Most of a listing read was the server building the page, and on a warm container the rest is the trip from Missouri to the edge and on to Azure. The 3.9 s median read just after the roll was the container waking up, and the bench above rules out the compression. The changes a visitor can feel came next: the edge keeping its own copy for a few seconds, and the schedule order behind the default listing.
 
-[`CatalogueReads.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/CatalogueReads.cs) names the two addresses. The decision is recorded in [Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-015-cache-headers.md), the addendum on compression.
+[`CatalogueReads.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/CatalogueReads.cs) names the two addresses. The decision is recorded in [Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-015-cache-headers.md), the addendum on compression.
 
 ## What it cost to keep it honest
 
@@ -527,7 +527,7 @@ What this read was for: the list of fixes to make in order of what they cost a v
 
 ## Files
 
-- [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs) and [`api/TheYard.Api/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Rounds.cs): the runner, and its paired rounds, alternating which store goes first.
+- [`api/TheYard.Api/Shared/Proof/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/Proof.cs) and [`api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs): the runner, and its paired rounds, alternating which store goes first.
 - [`api/TheYard.Infrastructure/YardDatabase.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDatabase.cs): `PingAsync`, the round trip to the relational store the proof measures.
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the comparison card and the proof card the numbers above are read from.
 - [`infra/cosmos`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions, indexing policy and partition key included.

@@ -10,7 +10,7 @@ namespace TheYard.Tests;
 /// from the built assemblies, so a name in an interpolation, a const or a default counts the same,
 /// and none may carry the resource group's suffix, the web app's hash, the edge's project, the
 /// public domain or the identity's and subscription's ids: those are configuration
-/// (appsettings.json and the web app's settings, Shared/AzureResources.cs).
+/// (appsettings.json and the web app's settings, Shared/Resources/AzureResources.cs).
 /// </summary>
 public sealed class LiteralScanTests
 {

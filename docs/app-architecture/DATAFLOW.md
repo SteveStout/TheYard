@@ -59,7 +59,7 @@ What that is worth: a developer can trace any request to the file that handles i
    process holds none of the hundred thousand in memory (ADR: The store does the work).
 4. **Query.** A request like `GET /api/vehicles?make=Ford&status=live&sort=price-asc`
    binds through `api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs`, which validates and produces
-   a filter, a sort, and a clock (`api/TheYard.Api/Clocks.cs`): now, and the UTC
+   a filter, a sort, and a clock (`api/TheYard.Api/Shared/Instance/Clocks.cs`): now, and the UTC
    midnight that began the day, the same for every caller, so schedule math
    (`api/TheYard.Domain/AuctionSchedule.cs`, `AuctionClock.cs`) puts every visitor in
    the same auction. Everybody's bids, then the simulated room's, overlay **before**
@@ -70,7 +70,7 @@ What that is worth: a developer can trace any request to the file that handles i
    the page, and the store's adapter (`EfVehicleCatalogue.cs` over the Catalogue table,
    `CosmosVehicleCatalogue.cs` over the catalogue container) answers it off an index, so only
    the page comes back (ADR: The store does the work).
-5. **Wire.** `api/TheYard.Api/VehicleWire.cs` stamps the server-derived auction facts
+5. **Wire.** `api/TheYard.Api/Shared/Wire/VehicleWire.cs` stamps the server-derived auction facts
    onto each vehicle (`auction_starts_at`, `auction_ends_at`, `auction_status`,
    `min_next_bid`, and `sold`, from everybody's standing), and the endpoint
    (`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`) responds with a snake_case envelope

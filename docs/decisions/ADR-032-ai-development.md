@@ -85,6 +85,6 @@ No ring: this is a documentation decision about telling a reader how the project
 
 - [`docs/about/AI-DEVELOPMENT.md`](https://github.com/SteveStout/TheYard/blob/main/docs/about/AI-DEVELOPMENT.md): the document.
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the About menu entry.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the slug that serves it.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): the slug that serves it.
 - [`docs/decisions/ADR-014-live-samples.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-014-live-samples.md): why a document here cannot drift from the code it describes without a test failing.
 - [`docs/decisions/ADR-027-competing-bidders.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-027-competing-bidders.md): the eleven defects the document cites.

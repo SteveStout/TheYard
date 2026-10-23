@@ -74,7 +74,7 @@ Template and setting must agree after a roll back: a template deploy with `MERGE
 
 ## Where it sits
 
-The merger is not in the site's onion: it is the job hunt's Function, `functions/jobhunt`, a project of its own that shares this repository and nothing in the site's image. Its rules (`Merge/RowMerge`, `FixMerge`, `MoveOutMerge`, `MergeContext`, `MergerHealth`) talk only to the `IMergeStore` port; `ShareMergeStore` is the adapter over Azure Files; `Merger.cs` and `MergerWatch.cs` are the timer and the route. On the site's side the reading is the host's, beside the nightly card it feeds: `Cloud/MergerReading.cs` reads the route and keeps the five numbers, `Cloud/NightlySource.cs` reads it with the Function's metrics, and `Cloud/NightlyRows.cs` draws the row. Nothing in Domain or Application knows the merger exists.
+The merger is not in the site's onion: it is the job hunt's Function, `functions/jobhunt`, a project of its own that shares this repository and nothing in the site's image. Its rules (`Merge/RowMerge`, `FixMerge`, `MoveOutMerge`, `MergeContext`, `MergerHealth`) talk only to the `IMergeStore` port; `ShareMergeStore` is the adapter over Azure Files; `Merger.cs` and `MergerWatch.cs` are the timer and the route. On the site's side the reading is the host's, beside the nightly card it feeds: `Features/Admin/Cloud/MergerReading.cs` reads the route and keeps the five numbers, `Features/Admin/Cloud/NightlySource.cs` reads it with the Function's metrics, and `Features/Admin/Cloud/NightlyRows.cs` draws the row. Nothing in Domain or Application knows the merger exists.
 
 ## Files
 
@@ -84,8 +84,8 @@ The merger is not in the site's onion: it is the job hunt's Function, `functions
 - [`functions/jobhunt.Tests/`](https://github.com/SteveStout/TheYard/tree/main/functions/jobhunt.Tests) - the rules, the parity test, the health reading and the template's settings
 - [`infra/jobhunt.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/jobhunt.bicep) - the Function's settings, `MERGER` among them
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) - the functions job
-- [`api/TheYard.Api/Cloud/MergerReading.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Cloud/MergerReading.cs) - the card's read of the route and the five readings
-- [`api/TheYard.Api/Cloud/NightlyRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Cloud/NightlyRows.cs) - the merger row
+- [`api/TheYard.Api/Features/Admin/Cloud/MergerReading.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/MergerReading.cs) - the card's read of the route and the five readings
+- [`api/TheYard.Api/Features/Admin/Cloud/NightlyRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/NightlyRows.cs) - the merger row
 - [`api/TheYard.Tests/NightlyCardTests.Merger.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/NightlyCardTests.Merger.cs) - the row's tones and the wire check, through the catalogue
 
 ## Addendum, 2026-10-22 (1.0.4.29): the .md appends merge in Azure too

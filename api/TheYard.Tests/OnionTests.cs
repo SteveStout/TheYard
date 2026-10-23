@@ -196,7 +196,7 @@ public sealed class OnionTests
             .That().MeetCustomRule(type => IsPartOfAnEndpointClass(type)
                 && !InNamespace(Outermost(type).Namespace, "TheYard.Api.Features.Admin")
                 && !InNamespace(Outermost(type).Namespace, "TheYard.Api.Features.Health"))
-            .ShouldNot().HaveDependencyOnAny("TheYard.Api.Backend", "TheYard.Api.Backends", "TheYard.Infrastructure.Cosmos.CosmosStore")
+            .ShouldNot().HaveDependencyOnAny("TheYard.Api.Shared.Stores.Backend", "TheYard.Api.Shared.Stores.Backends", "TheYard.Infrastructure.Cosmos.CosmosStore")
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
     }
@@ -297,7 +297,7 @@ public sealed class OnionTests
     public void Claude_is_asked_only_through_the_one_client_that_reports_its_usage()
     {
         string root = Repo.Root();
-        string adapter = Path.Combine("api", "TheYard.Api", "Cloud", "AnthropicClaudeClient.cs");
+        string adapter = Path.Combine("api", "TheYard.Api", "Shared", "Usage", "AnthropicClaudeClient.cs");
         var sources = new[] { "TheYard.Data", "TheYard.Domain", "TheYard.Application", "TheYard.Infrastructure", "TheYard.Infrastructure.Cosmos", "TheYard.Api" }
             .SelectMany(project => Directory.EnumerateFiles(Path.Combine(root, "api", project), "*.cs", SearchOption.AllDirectories))
             .Concat(Directory.EnumerateFiles(Path.Combine(root, "src"), "*.ts*", SearchOption.AllDirectories))
@@ -312,8 +312,8 @@ public sealed class OnionTests
             .Select(path => Path.GetRelativePath(root, path))
             .ToList();
         Assert.True(calling.Count == 0, "these files reach the Anthropic API around IClaudeClient: " + string.Join(", ", calling));
-        Assert.Contains(typeof(TheYard.Application.IUsageLog), typeof(TheYard.Api.AnthropicClaudeClient).GetConstructors().Single().GetParameters().Select(p => p.ParameterType));
-        Assert.True(typeof(TheYard.Application.IClaudeClient).IsAssignableFrom(typeof(TheYard.Api.AnthropicClaudeClient)));
+        Assert.Contains(typeof(TheYard.Application.IUsageLog), typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient).GetConstructors().Single().GetParameters().Select(p => p.ParameterType));
+        Assert.True(typeof(TheYard.Application.IClaudeClient).IsAssignableFrom(typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient)));
     }
     // #endregion host
 

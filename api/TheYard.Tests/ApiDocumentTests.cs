@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using TheYard.Api;
 
 namespace TheYard.Tests;
 

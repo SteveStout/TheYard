@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
-using TheYard.Api;
+using TheYard.Api.Features.Admin.Cloud;
 
 namespace TheYard.Tests;
 

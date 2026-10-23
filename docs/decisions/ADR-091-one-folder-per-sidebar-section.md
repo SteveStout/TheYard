@@ -78,6 +78,6 @@ Outside the rings: this is how the repository's documents are kept, not code the
 ## Files
 
 - [`api/TheYard.Tests/DocsFolderTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocsFolderTests.cs): the test that holds the folders, with the section-to-folder map.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): every slug and the path it serves.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): every slug and the path it serves.
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the sidebar sections the folders follow.
 - [`docs/`](https://github.com/SteveStout/TheYard/tree/main/docs): the folders themselves.

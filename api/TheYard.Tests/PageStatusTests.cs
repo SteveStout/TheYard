@@ -1,6 +1,5 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
-using TheYard.Api;
 
 namespace TheYard.Tests;
 

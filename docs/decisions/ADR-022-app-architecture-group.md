@@ -102,7 +102,7 @@ No ring: regrouping the sidebar is a documentation decision whose only code is d
 
 - [`src/library/sections.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/sections.ts): the sections and their order.
 - [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the document record.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the two new slugs.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): the two new slugs.
 - [`docs/app-architecture/ARCHITECTURE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/ARCHITECTURE.md) and [`docs/app-architecture/STYLE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/STYLE.md): the two documents this section was made for.
 - [`.editorconfig`](https://github.com/SteveStout/TheYard/blob/main/.editorconfig): the mechanical rules.
 - [`tests/e2e/sidebar.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/sidebar.spec.ts), [`tests/e2e/mobile.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/mobile.spec.ts), [`tests/e2e/smoke.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/smoke.spec.ts): the section names and the two new pages, checked in a browser.

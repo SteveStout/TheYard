@@ -3,7 +3,7 @@
 using TheYard.Infrastructure;
 using TheYard.Infrastructure.Cosmos;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Hosted;
 
 /// <summary>
 /// Attaches the host's loggers to the stores and says what came up. Entity Framework's own command

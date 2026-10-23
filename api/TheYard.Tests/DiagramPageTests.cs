@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using TheYard.Api;
 using TheYard.Api.Features.Docs;
 
 namespace TheYard.Tests;

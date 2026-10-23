@@ -59,7 +59,7 @@ The key's rule, read from this build: nothing, a placeholder a failed deploy
 substitution left behind, or anything too short to sign with all count as no
 key, and no key means the host invents one and says so:
 
-```live path=api/TheYard.Api/Tokens.cs region=configured-key
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=configured-key
 ```
 
 **A session bids only where its account is.** The token names the store that
@@ -68,7 +68,7 @@ header allows in one request, is refused with a sentence rather than written
 under an account that store does not have (ADR: Three readers with no memory
 of the project).
 
-```live path=api/TheYard.Api/Tokens.cs region=session-per-store
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=session-per-store
 ```
 
 **Five wrong passwords buy five minutes off**, per account, and the refusal says

@@ -13,7 +13,7 @@ namespace TheYard.Api.Features.Accounts;
 /// store the request chose, the JWT the service reads back from its cookie and the refusal of a
 /// session that has ended, the one email the site sends, and the account routes. The session issuer
 /// itself is shared, because the pipeline renews sessions and the activity card keys its visitor
-/// tokens with the same key (Shared/AuthRegistration.cs).
+/// tokens with the same key (Shared/Wiring/AuthRegistration.cs).
 /// </summary>
 public sealed class Module : IModule
 {

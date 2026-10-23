@@ -108,7 +108,7 @@ not enough to name a machine. **A full address is never stored, on either
 store.** That is the default and it stands until the owner rules otherwise in
 writing; the record will say so here if he does.
 
-```live path=api/TheYard.Api/Activity.cs region=visitor-token
+```live path=api/TheYard.Api/Shared/Activity/Activity.cs region=visitor-token
 ```
 
 **A path with an at sign in it** is recorded with the sign percent-encoded,
@@ -212,10 +212,10 @@ The request hook, a local function inside `ObservabilityRegistration` until 1.0.
 ## Files
 
 - [`api/TheYard.Application/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Activity.cs): the port, the hit, and the folding of a batch into deltas.
-- [`api/TheYard.Api/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Activity.cs): the token, the bot guess, the collector and the report.
-- [`api/TheYard.Api/AdminKey.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminKey.cs): the key, read from the query or the header in one place and compared in constant time.
-- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the hook beside the request ring (region activity-hook).
-- [`api/TheYard.Api/Shared/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ActivityRegistration.cs): the wiring.
+- [`api/TheYard.Api/Shared/Activity/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Activity/Activity.cs): the token, the bot guess, the collector and the report.
+- [`api/TheYard.Api/Shared/Auth/AdminKey.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Auth/AdminKey.cs): the key, read from the query or the header in one place and compared in constant time.
+- [`api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs): the hook beside the request ring (region activity-hook).
+- [`api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs): the wiring.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region activity-endpoints).
 - [`api/TheYard.Infrastructure/EfActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfActivityStore.cs) and [`ActivityRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ActivityRows.cs): the relational adapter and its two rows.
 - [`api/TheYard.Database/Tables/ActivityHours.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityHours.sql) and [`ActivityVisitors.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityVisitors.sql): the schema, which is the authority.
@@ -223,7 +223,7 @@ The request hook, a local function inside `ObservabilityRegistration` until 1.0.
 - [`src/lib/activity.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/activity.ts) and [`src/components/admin/ActivityCard/ActivityCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ActivityCard/ActivityCard.tsx): the geometry and the card.
 - [`api/TheYard.Tests/ActivityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ActivityTests.cs) and [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the folding, the token, the endpoints, and the at sign that is never there.
 
-```live path=api/TheYard.Api/RequestRecorder.cs region=activity-hook
+```live path=api/TheYard.Api/Shared/Activity/RequestRecorder.cs region=activity-hook
 ```
 
 ```live path=api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs region=activity-endpoints
@@ -551,7 +551,7 @@ Where it goes, timed step by step with a stopwatch against the live activity con
 
 One read of each window cost 312 request units, nearly all of it the visitor rows. Two costs, then. A process's first use of the store pays for a token and for waking its connections, which nothing in the report can remove. And every report, first or not, reads every visitor row of its window to count the people, the scanners and the site's own reads: the largest cost of any read of the week or the month, and the one a reader was waiting on.
 
-**The fix: the report is kept, and rebuilt behind the reader** (`ActivityReportCache` in `api/TheYard.Api/Activity.cs`). A window's report younger than thirty seconds is served as it is. One older than that, up to ten minutes, is served at once while a new one is built behind it, so the next reader gets the new one. Only with no report, or one older than ten minutes, does a reader wait for the build, and however many ask at once, one build runs per window. The numbers on the card are at most thirty seconds behind the rows when anybody is reading it, and a reader after a quiet spell sees the last report while the new one is counted. The warm read is the time to serialise a report already built, under the 260 ms it was. Once the site is kept awake, a report is never ten minutes old, so no visitor waits on a build. `ActivityReportCacheTests` holds the thirty seconds, the ten minutes, the one build and a failed rebuild leaving the old report in place.
+**The fix: the report is kept, and rebuilt behind the reader** (`ActivityReportCache` in `api/TheYard.Api/Shared/Activity/Activity.cs`). A window's report younger than thirty seconds is served as it is. One older than that, up to ten minutes, is served at once while a new one is built behind it, so the next reader gets the new one. Only with no report, or one older than ten minutes, does a reader wait for the build, and however many ask at once, one build runs per window. The numbers on the card are at most thirty seconds behind the rows when anybody is reading it, and a reader after a quiet spell sees the last report while the new one is counted. The warm read is the time to serialise a report already built, under the 260 ms it was. Once the site is kept awake, a report is never ten minutes old, so no visitor waits on a build. `ActivityReportCacheTests` holds the thirty seconds, the ten minutes, the one build and a failed rebuild leaving the old report in place.
 
 **`/api/health`'s first read** (736 ms against about 190 warm) runs one probe per store (Azure SQL Database, and two point reads of Azure Cosmos DB) beside three file checks, each timed, and nothing it does is heavy. The difference is the connections: after a quiet spell both stores' connections have to be opened again, and the edge's to the origin with them. That is not a cost in this code, and the keep-warm loop is what answers it.
 

@@ -187,21 +187,21 @@ The readings span four rings: MachineSampler and MachineRecorder sit in the host
 
 ## Files
 
-- [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the sampler and the document reading.
+- [`api/TheYard.Api/Shared/MachineReadings/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/MachineReadings/Machines.cs): the sampler and the document reading.
 - [`api/TheYard.Infrastructure/ResourceStats.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ResourceStats.cs): the relational store's resource view, read by the adapter that owns the database.
 - [`api/TheYard.Application/MachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MachineHistory.cs): a kept minute, a bucket, the windows, the folding and the port.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs) and [`infra/cosmos/machines.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/machines.json): the minutes in the document store, the grouped query, and the container they live in.
 - [`api/TheYard.Tests/MachineHistoryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachineHistoryTests.cs): the folding, the document, the cache, the endpoint, and the grouped query against the real account.
-- [`api/TheYard.Api/Shared/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ActivityRegistration.cs): the sampler registered (region machine-sampler-wiring).
+- [`api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs): the sampler registered (region machine-sampler-wiring).
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the endpoint (region machines-endpoint).
-- [`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs): the quiet context factory that keeps the statement off the SQL card.
+- [`api/TheYard.Api/Shared/Wiring/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/StoreRegistration.cs): the quiet context factory that keeps the statement off the SQL card.
 - [`src/components/admin/MachinesCard/MachinesCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/MachinesCard/MachinesCard.tsx): the card, three readings with their three honesties, and the chart each one is drawn in.
 - [`src/lib/machineChart.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.ts): the chart arithmetic, React-free and tested on its own.
 - [`api/TheYard.Tests/MachinesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachinesTests.cs): the ring, the first sample, the folding, and the shape the endpoint answers with.
 - [`docs/decisions/ADR-077-every-page-checked.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-077-every-page-checked.md): the other card this morning added, and the sweep whose requests this one's numbers include.
 - [`docs/performance/PERFORMANCE.md`](https://github.com/SteveStout/TheYard/blob/main/docs/performance/PERFORMANCE.md): the claim about one small container that this card is the running proof of.
 
-```live path=api/TheYard.Api/MachineRecorder.cs region=machine-recorder
+```live path=api/TheYard.Api/Shared/MachineReadings/MachineRecorder.cs region=machine-recorder
 ```
 
 ```live path=api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs region=grouped-query

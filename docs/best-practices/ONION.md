@@ -160,15 +160,15 @@ The document store adapters, whole: the Cosmos DB SDK,
 ```
 
 And the one place that names an adapter: the composition root,
-[`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs),
+[`api/TheYard.Api/Shared/Wiring/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/StoreRegistration.cs),
 building the relational store's backend and then the document store's. Look for
 `new BidService(new EfBidStore(contexts))` in the first and `new BidService(new CosmosBidStore(store))`
 in the second:
 
-```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=sql-backend
+```live path=api/TheYard.Api/Shared/Wiring/StoreRegistration.cs region=sql-backend
 ```
 
-```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=cosmos-backend
+```live path=api/TheYard.Api/Shared/Wiring/StoreRegistration.cs region=cosmos-backend
 ```
 
 ## The rules take the clock as a value
@@ -179,11 +179,11 @@ the same inputs, so a test can pin any moment it likes: one millisecond before a
 millisecond it opens, the last millisecond before it ends.
 
 TheYard reads the clock at the edge, in the host. Its
-[`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs)
+[`api/TheYard.Api/Shared/Instance/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/Clocks.cs)
 turns the current moment into an `AuctionClock` (now, and the UTC midnight the day's auctions are
 scheduled from), and every endpoint that needs the time passes that value inward:
 
-```live path=api/TheYard.Api/Clocks.cs region=*
+```live path=api/TheYard.Api/Shared/Instance/Clocks.cs region=*
 ```
 
 The clock itself is a value in Domain,

@@ -160,5 +160,5 @@ The walkthrough centres on Infrastructure: SqlLogInterceptor subclasses EF Core'
 
 - [`api/TheYard.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SqlLogInterceptor.cs)
 - [`api/TheYard.Application/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/SqlLog.cs)
-- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs)
+- [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs)
 - [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs)

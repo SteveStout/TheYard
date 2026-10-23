@@ -1,0 +1,223 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using TheYard.Application;
+
+namespace TheYard.Api.Shared.Instance;
+
+// #region peer
+/// <summary>
+/// The other container, read through this one's API rather than from the
+/// browser (ADR: Backends, side by side). Two reasons. Keeping the read server
+/// side keeps CORS closed on both origins, and it keeps the peer's address out
+/// of the client bundle: one configuration value per container holds the
+/// peer's public FQDN, which is a URL and not a credential.
+///
+/// <para>The peer is a thing that can be down. No peer configured, no answer,
+/// a slow answer and a wrong answer are four different sentences on the card,
+/// and none of them is an exception: the rest of the Admin tab renders whatever
+/// this returns. Two and a half seconds, not a hang, because the card refreshes
+/// every thirty and a peer that takes longer than that is a peer that is
+/// down for the purposes of a comparison.</para>
+/// </summary>
+public sealed class PeerReader(string? configuredUrl, HttpClient client, bool bothStoresHere = false)
+{
+    /// <summary>
+    /// What the card says when this process serves both sites (ADR: One web app for every .NET
+    /// process): the other site is this process, and the comparison card already sets its two
+    /// stores side by side. The retirement is an addendum on ADR: Backends, side by side.
+    /// </summary>
+    public const string OneProcess =
+        "no peer to read: since 19 October both sites are this one process, so the comparison card above sets the two stores side by side";
+
+    public static readonly TimeSpan Patience = TimeSpan.FromSeconds(2.5);
+
+    /// <summary>The peer's origin, or null when none is configured or the deploy left its placeholder behind.</summary>
+    public Uri? Url { get; } =
+        string.IsNullOrWhiteSpace(configuredUrl) || configuredUrl.StartsWith("__", StringComparison.Ordinal)
+            ? null
+            : Uri.TryCreate(configuredUrl.TrimEnd('/'), UriKind.Absolute, out var url) ? url : null;
+
+    public async Task<PeerView> ReadAsync()
+    {
+        if (Url is null)
+        {
+            return new PeerView(false, false, bothStoresHere ? OneProcess : "no peer is configured on this container", null, DateTimeOffset.UtcNow, null, null);
+        }
+
+        string host = Url.Host;
+        try
+        {
+            using var timeout = new CancellationTokenSource(Patience);
+            using var response = await client.GetAsync(new Uri(Url, "/api/admin/metrics"), timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                return new PeerView(true, false, $"the peer answered {(int)response.StatusCode}", host, DateTimeOffset.UtcNow, null, null);
+            }
+            var metrics = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: timeout.Token);
+            string? version = await VersionAsync(timeout.Token);
+            return new PeerView(true, true, null, host, DateTimeOffset.UtcNow, metrics, version);
+        }
+        catch (OperationCanceledException)
+        {
+            return new PeerView(true, false, $"the peer did not answer within {Patience.TotalSeconds:0.#} seconds", host, DateTimeOffset.UtcNow, null, null);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException)
+        {
+            // The type, never the message: a message here carries a host name
+            // and a port, and this is a public page.
+            return new PeerView(true, false, $"the peer could not be read ({ex.GetType().Name})", host, DateTimeOffset.UtcNow, null, null);
+        }
+    }
+
+    /// <summary>
+    /// The peer's build, from its public /api/version, inside the same patience as its metrics.
+    /// The metrics answer carries no version, and two sites on different builds explain most
+    /// differences between them, so the card asks. A version it cannot read is null, never a
+    /// failure: the comparison stands without it.
+    /// </summary>
+    private async Task<string?> VersionAsync(CancellationToken token)
+    {
+        try
+        {
+            using var response = await client.GetAsync(new Uri(Url!, "/api/version"), token);
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: token);
+            return body.TryGetProperty("version", out var version) && version.ValueKind == JsonValueKind.String
+                ? version.GetString()
+                : null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or OperationCanceledException)
+        {
+            return null;
+        }
+    }
+}
+
+/// <summary>What the comparison card learns about the peer: whether there is one, whether it answered, and if so its metrics as it reported them.</summary>
+/// <param name="Configured">True when this container has a peer to compare with.</param>
+/// <param name="Reachable">True when the peer answered with its metrics.</param>
+/// <param name="Reason">Why the peer could not be read, or null when it was.</param>
+/// <param name="Host">The peer's host name, or null when none is configured.</param>
+/// <param name="FetchedAt">When the read was attempted, UTC.</param>
+/// <param name="Metrics">The peer's metrics as it reported them, or null when it could not be read.</param>
+/// <param name="Version">The peer's build from its /api/version, or null when it could not be read.</param>
+public sealed record PeerView(bool Configured, bool Reachable, string? Reason, string? Host, DateTimeOffset FetchedAt, JsonElement? Metrics, string? Version)
+{
+    /// <summary>
+    /// What the comparison card titles the peer's column, said here so the card prints it rather
+    /// than composing it (ADR: Backends, side by side, the addendum on the peer's sentence).
+    /// </summary>
+    public string Title => !Configured ? "No peer is configured on this container"
+        : !Reachable ? "The other site is not answering"
+        : $"The other site ({StoreOf(Metrics) ?? "store unknown"})";
+
+    private static string? StoreOf(JsonElement? metrics) =>
+        metrics is { ValueKind: JsonValueKind.Object } m && m.TryGetProperty("store", out var store) && store.ValueKind == JsonValueKind.Object
+            && store.TryGetProperty("store", out var name) && name.ValueKind == JsonValueKind.String
+            ? name.GetString()
+            : null;
+}
+// #endregion peer
+
+// #region routes
+/// <summary>
+/// Timing by route rather than by path, for the rows the comparison card puts
+/// side by side: a bid on one vehicle and a bid on another are the same
+/// operation, and a card that listed a hundred thousand paths would say
+/// nothing (ADR: Backends, side by side).
+/// </summary>
+public static partial class Routes
+{
+    [GeneratedRegex("^/api/vehicles/[^/]+")]
+    private static partial Regex VehicleId();
+
+    [GeneratedRegex("^/api/docs/diagrams/[^/]+")]
+    private static partial Regex DiagramName();
+
+    [GeneratedRegex("^/api/docs/[^/]+")]
+    private static partial Regex DocSlug();
+
+    [GeneratedRegex("^/api/images/.+")]
+    private static partial Regex ImageFile();
+
+    public static string TemplateOf(string path)
+    {
+        string template = VehicleId().Replace(path, "/api/vehicles/{id}");
+        template = DiagramName().Replace(template, "/api/docs/diagrams/{name}");
+        if (!template.StartsWith("/api/docs/diagrams/", StringComparison.Ordinal))
+        {
+            template = DocSlug().Replace(template, "/api/docs/{slug}");
+        }
+        return ImageFile().Replace(template, "/api/images/{file}");
+    }
+
+    public static string Of(string method, string path) => $"{method} {TemplateOf(path)}";
+
+    /// <summary>Per-route timings, busiest first.</summary>
+    public static IReadOnlyList<RouteTiming> ByRoute(IReadOnlyList<RequestEntry> requests) =>
+        requests
+            .GroupBy(entry => Of(entry.Method, entry.Path), StringComparer.Ordinal)
+            .Select(group =>
+            {
+                long[] durations = group.Select(entry => entry.DurationMs).ToArray();
+                return new RouteTiming(group.Key, durations.Length, Percentiles.Of(durations, 50), Percentiles.Of(durations, 95), durations.Max());
+            })
+            .OrderByDescending(timing => timing.Count)
+            .ThenBy(timing => timing.Route, StringComparer.Ordinal)
+            .ToArray();
+
+    /// <summary>
+    /// What each route costs the document store, from the operations the store
+    /// log attributes to it: how many operations a request runs and the request
+    /// units they add up to, as the median over the requests seen. Requests are
+    /// told apart by their trace identifier, so twenty sign-ins are twenty
+    /// samples and not one sum. Grouping by the path string instead would
+    /// report twenty sign-ins as one request costing the sum of all twenty.
+    /// </summary>
+    public static IReadOnlyList<RouteCharge> ChargesByRoute(IReadOnlyList<StoreOperation> operations) =>
+        operations
+            .Where(operation => operation.Request is not null)
+            .GroupBy(operation => (operation.RequestId ?? operation.Request!, operation.Request!))
+            .Select(perRequest =>
+            {
+                var parts = perRequest.Key.Item2.Split(' ', 2);
+                string route = parts.Length == 2 ? Of(parts[0], parts[1]) : perRequest.Key.Item2;
+                return (Route: route, Operations: perRequest.Count(), Charge: perRequest.Sum(operation => operation.RequestCharge), CrossPartition: perRequest.Count(o => o.Partition.StartsWith("cross", StringComparison.Ordinal)));
+            })
+            .GroupBy(sample => sample.Route, StringComparer.Ordinal)
+            .Select(group =>
+            {
+                double[] charges = group.Select(sample => sample.Charge).OrderBy(charge => charge).ToArray();
+                return new RouteCharge(
+                    group.Key,
+                    group.Count(),
+                    Math.Round(group.Select(sample => (double)sample.Operations).Average(), 1),
+                    Math.Round(charges[(int)Math.Ceiling(charges.Length * 0.5) - 1], 2),
+                    Math.Round(charges[^1], 2),
+                    group.Sum(sample => sample.CrossPartition));
+            })
+            .OrderByDescending(charge => charge.Requests)
+            .ThenBy(charge => charge.Route, StringComparer.Ordinal)
+            .ToArray();
+}
+
+/// <summary>One route's request timings for the comparison card.</summary>
+/// <param name="Route">The method and route template, such as GET /api/vehicles/{id}.</param>
+/// <param name="Count">How many requests to the route are in the window.</param>
+/// <param name="P50Ms">The median duration, in milliseconds.</param>
+/// <param name="P95Ms">The 95th percentile duration, in milliseconds.</param>
+/// <param name="MaxMs">The slowest duration, in milliseconds.</param>
+public sealed record RouteTiming(string Route, int Count, long P50Ms, long P95Ms, long MaxMs);
+
+/// <summary>What one route costs the document store per request, for the comparison card.</summary>
+/// <param name="Route">The method and route template, such as GET /api/vehicles/{id}.</param>
+/// <param name="Requests">How many requests to the route were seen.</param>
+/// <param name="OperationsPerRequest">The average number of store operations per request, to one decimal place.</param>
+/// <param name="RuP50">The median request units per request.</param>
+/// <param name="RuMax">The most request units any one request spent.</param>
+/// <param name="CrossPartition">How many of the route's operations crossed partitions, across all its requests.</param>
+public sealed record RouteCharge(string Route, int Requests, double OperationsPerRequest, double RuP50, double RuMax, int CrossPartition);
+// #endregion routes

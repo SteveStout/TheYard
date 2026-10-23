@@ -34,7 +34,7 @@ pass gets its own dated addendum here.
   per document, each naming its file, and three of them bypassed the
   live-sample expander. They are one route over a catalog now: the slug in
   the address is looked up in
-  [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs),
+  [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs),
   the file is read from the repo root, and every document goes through
   the expander. A slug that is not in the catalog is a 404, never a file
   read. Adding a record is one line in the catalog and one in
@@ -60,7 +60,7 @@ pass gets its own dated addendum here.
 - **The observability types out of the host file.** The health record,
   the error buffer and the Azure reader lived at the bottom of Program.cs.
   They moved verbatim to
-  [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs),
+  [`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs),
   so Program.cs reads as a composition root: what is wired, not how each
   piece works. The live block in ADR: Observability follows them.
 - **Build provenance read once.** The version and commit environment
@@ -126,12 +126,12 @@ pass gets its own dated addendum here.
 The endpoint and the catalog, read from this build
 ([`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs)
 and
-[`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs)):
+[`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs)):
 
 ```live path=api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs region=docs-endpoint
 ```
 
-```live path=api/TheYard.Api/DocumentationCatalog.cs region=docs-catalog
+```live path=api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs region=docs-catalog
 ```
 
 ## Consequences
@@ -188,8 +188,8 @@ The review's fixes land in the host Api and the front end: one documents endpoin
 ## Files
 
 - [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): one endpoint serving every document instead of twenty routes.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the slug-to-file catalog that endpoint reads.
-- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs) and [`api/TheYard.Api/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Replies.cs): the health and build types this review moved out of the host file.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): the slug-to-file catalog that endpoint reads.
+- [`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs) and [`api/TheYard.Api/Shared/Wire/Replies.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/Replies.cs): the health and build types this review moved out of the host file.
 - [`api/TheYard.Tests/DocumentationCatalogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DocumentationCatalogTests.cs): the test that holds the catalog and the sidebar to the same list.
 - [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): the sidebar's copy of that list, and the one brand mark this review deduplicated.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the timeout and the readiness check this review added to the pipeline.

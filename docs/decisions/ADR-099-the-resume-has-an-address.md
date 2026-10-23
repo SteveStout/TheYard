@@ -21,7 +21,7 @@ Until this record the resume was reachable at `/api/docs/resume`, which reads li
 
 **The door is one word from a short list, recorded as a path.** `src` may be linkedin, application, email, signature or post; anything else is other. The handler leaves `/resume/<door>` on the request and the activity hook records that instead of the path, so the row stays a path with nothing about the visitor in it and the query string is never recorded at all (ADR-071). No schema changes on either store, and the funnel's resume step counts everything under `/resume/`.
 
-```live path=api/TheYard.Api/ResumeDoor.cs region=resume-door
+```live path=api/TheYard.Api/Shared/Instance/ResumeDoor.cs region=resume-door
 ```
 
 **The served file is held to the lock.** `wwwroot/docs/resume.sha256` carries the locked resume's hash, and `ResumeAddressTests` hashes what `/resume` serves against it, so a new resume that forgets the copy fails the gate. The same tests hold the inline header and the filename, the same bytes as `/api/docs/resume`, every door word, and a visit with an email address in its query that reaches the request ring as `/resume/linkedin` with no at sign anywhere.
@@ -46,9 +46,9 @@ The API layer only: one route in `Endpoints/`, one small static class beside it,
 
 ## Files
 
-- [`api/TheYard.Api/ResumeDoor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ResumeDoor.cs): the doors, the path a door is recorded as, and the filename.
+- [`api/TheYard.Api/Shared/Instance/ResumeDoor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/ResumeDoor.cs): the doors, the path a door is recorded as, and the filename.
 - [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): the route and its handler.
-- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the activity hook reads the door's path when the handler left one.
+- [`api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs): the activity hook reads the door's path when the handler left one.
 - [`api/TheYard.Api/Features/Admin/Operations/ActivityWho.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/ActivityWho.cs): the resume step counts everything under `/resume/`.
 - [`api/TheYard.Tests/ResumeAddressTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ResumeAddressTests.cs) and [`tests/e2e/resume.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/resume.spec.ts): the address, the bytes, the doors and the query that never lands.
 

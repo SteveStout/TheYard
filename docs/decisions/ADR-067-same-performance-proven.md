@@ -41,7 +41,7 @@ a raise, and a reset. Every request is timed around the whole exchange,
 body included, and the two rings are read for what it caused: how many
 statements or operations, and what the document store charged.
 
-```live path=api/TheYard.Api/ProofRunner.Rounds.cs region=rounds
+```live path=api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs region=rounds
 ```
 
 **The round trip to each store is measured on its own.** After the rounds,
@@ -50,7 +50,7 @@ five round trips to each store doing as little as a round trip can: a
 document side, the median kept. That number is what lets the card say
 whether a difference is the store or the distance to it.
 
-```live path=api/TheYard.Api/ProofRunner.Requests.cs region=timed
+```live path=api/TheYard.Api/Shared/Proof/ProofRunner.Requests.cs region=timed
 ```
 
 **The verdict is arithmetic, not adjectives.** Per path: the median of each
@@ -63,7 +63,7 @@ not the same, the card names the leader and by how much, and then takes one
 round trip per operation off each side: if what is left is within the
 tolerance, the card says the difference is all round trip.
 
-```live path=api/TheYard.Api/ProofResult.cs region=verdict
+```live path=api/TheYard.Api/Shared/Proof/ProofResult.cs region=verdict
 ```
 
 **The card says the whole thing in one sentence**, computed from the rows:
@@ -195,10 +195,10 @@ The proof sits in the host Api (ProofRunner and ProofResult) because it drives t
 
 ## Files
 
-- [`api/TheYard.Api/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Proof.cs), [`api/TheYard.Api/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Rounds.cs), [`api/TheYard.Api/ProofRunner.Requests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofRunner.Requests.cs) and [`api/TheYard.Api/ProofResult.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProofResult.cs): the runner, the samples, the verdict.
+- [`api/TheYard.Api/Shared/Proof/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/Proof.cs), [`api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs), [`api/TheYard.Api/Shared/Proof/ProofRunner.Requests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Requests.cs) and [`api/TheYard.Api/Shared/Proof/ProofResult.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofResult.cs): the runner, the samples, the verdict.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region proof-endpoints).
-- [`api/TheYard.Api/SelfAddress.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/SelfAddress.cs): the loopback address.
-- [`api/TheYard.Api/Shared/AdminRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/AdminRegistration.cs): the client the proof uses (region proof-clients).
+- [`api/TheYard.Api/Shared/Instance/SelfAddress.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/SelfAddress.cs): the loopback address.
+- [`api/TheYard.Api/Shared/Wiring/AdminRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/AdminRegistration.cs): the client the proof uses (region proof-clients).
 - [`api/TheYard.Tests/ProofTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProofTests.cs): the arithmetic without a store, and the endpoints with whichever stores the run has.
 - [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the card.
 - [`docs/decisions/ADR-064-measuring-both-stores.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-064-measuring-both-stores.md): the measurement from the visitor's side, which this one completes.

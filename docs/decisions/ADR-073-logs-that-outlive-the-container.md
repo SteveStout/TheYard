@@ -145,14 +145,14 @@ The kept log copies the activity layout: LogEvent, LogText and the ILogStore por
 ## Files
 
 - [`api/TheYard.Application/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Logs.cs): the event, the cleaning rule, the query and the port.
-- [`api/TheYard.Api/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Logs.cs): how a request or a log line becomes an event, the collector, the logging provider and the report.
-- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the wiring beside the rings and the hook beside the request ring (regions kept-logs-wiring and kept-logs-hook).
+- [`api/TheYard.Api/Shared/Observability/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Logs.cs): how a request or a log line becomes an event, the collector, the logging provider and the report.
+- [`api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs): the wiring beside the rings and the hook beside the request ring (regions kept-logs-wiring and kept-logs-hook).
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the keyed endpoint (region kept-logs-endpoints).
 - [`api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs) and [`infra/cosmos/logs.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/logs.json): the adapter and the container it needs.
 - [`src/lib/logs.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/logs.ts) and [`src/components/admin/KeptLogsCard/KeptLogsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/KeptLogsCard/KeptLogsCard.tsx): the card.
 - [`api/TheYard.Tests/LogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LogTests.cs) and [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the cleaning, the collector, the provider, the endpoint, and the at sign that is never there.
 
-```live path=api/TheYard.Api/Logs.cs region=collector
+```live path=api/TheYard.Api/Shared/Observability/Logs.cs region=collector
 ```
 
 ```live path=api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs region=kept-logs-endpoints
@@ -275,8 +275,8 @@ are doing).
 ### Files, this addendum
 
 - [`api/TheYard.Application/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Logs.cs): the four kinds, the retention, and the port's new read.
-- [`api/TheYard.Api/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Logs.cs): the writer the rings hand to, and the reader behind the endpoint.
-- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs) and [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): each ring hands on what it takes.
+- [`api/TheYard.Api/Shared/Observability/Logs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Logs.cs): the writer the rings hand to, and the reader behind the endpoint.
+- [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs) and [`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs): each ring hands on what it takes.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosLogStore.cs): the ring read, and the keyed query naming its own kinds.
 - [`src/lib/keptCards.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/keptCards.ts): the windows, the sentence, and the stamp, React-free.
 - [`api/TheYard.Tests/KeptRingTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeptRingTests.cs): the rings, the writer, the reader, the endpoint, and the store on the gate's Cosmos DB pass.

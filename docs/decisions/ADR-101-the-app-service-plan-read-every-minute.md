@@ -20,7 +20,7 @@ The site already keeps what its own machines are doing, one document a minute (A
 
 **One recorder, one document a minute, written by one site.** `PlanRecorder` asks Azure Monitor once a minute for the plan's metrics at one-minute grain, and for each of the three apps' own metrics, and writes one document to the `plan` container partitioned on the UTC day. Only the site whose default store is the relational one records, the rule the machines recorder already follows, so two sites never write the same minute twice. The Activity Log and the three apps' state, always-on setting and last deploy are read once an hour, because they change at most that often.
 
-```live path=api/TheYard.Api/PlanRecorder.cs region=plan-recorder
+```live path=api/TheYard.Api/Shared/PlanReadings/PlanRecorder.cs region=plan-recorder
 ```
 
 **Kept thirty-one days, served from the kept copy.** The container's own time to live is thirty-one days, one more than the longest window the tab offers, so the container is its own retention policy. `GET /api/admin/plan?window=24h|7d|30d` answers from Cosmos DB alone. A live read happens only when the newest kept minute ended more than sixty seconds ago, which is the case for the first minute after a cold start and never otherwise. Azure Monitor metric reads are free; the writes are about 43,000 a month at roughly 1.3 request units each, inside the free tier the account already runs on.
@@ -64,9 +64,9 @@ What would change it: a second resource read the same way, at which point the re
 
 ## Files
 
-- [`api/TheYard.Api/PlanRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PlanRecorder.cs) - the minute's read and the hourly read
-- [`api/TheYard.Api/PlanReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PlanReader.cs) - the reads from Azure Monitor and Resource Manager
-- [`api/TheYard.Api/PlanView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PlanView.cs) and [`api/TheYard.Api/PlanRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PlanRows.cs) - the windows, the percentiles, the markers, the rows
+- [`api/TheYard.Api/Shared/PlanReadings/PlanRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanRecorder.cs) - the minute's read and the hourly read
+- [`api/TheYard.Api/Shared/PlanReadings/PlanReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanReader.cs) - the reads from Azure Monitor and Resource Manager
+- [`api/TheYard.Api/Shared/PlanReadings/PlanView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanView.cs) and [`api/TheYard.Api/Shared/PlanReadings/PlanRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanRows.cs) - the windows, the percentiles, the markers, the rows
 - [`api/TheYard.Application/PlanThresholds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/PlanThresholds.cs) - every threshold and its hold time
 - [`api/TheYard.Application/CloudWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/CloudWire.cs) - the records the wire carries
 - [`api/TheYard.Application/PlanHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/PlanHistory.cs) - the port
@@ -92,7 +92,7 @@ The minute's path, Azure Monitor to recorder to Cosmos DB to card:
 
 The gold marker above says where the version changed; from 1.0.3.177 the chart also shades the whole roll. Every deploy writes each site's settings and then its image, and Azure's Activity Log, already read hourly, records both as configuration writes on the app; writes within ten minutes of each other are one roll, and the span runs from the first to three minutes after the last, while App Service starts the new container beside the old one and the plan runs both. The owner asked for it after the plan card's CPU sparkline showed two spikes: "I'd like to pull that data in so it's obvious it's just a blip." The "What did Azure do to it?" row now lists each roll in a table as a planned deploy with how long it took, and any spike over the amber line inside one is named in a sentence as the roll it was. Nothing about the fifteen-minute hold changes: a roll lasts about two minutes, so it could never turn a dial amber, and now the reason is on the chart.
 
-```live path=api/TheYard.Api/PlanDeploys.cs region=plan-deploys
+```live path=api/TheYard.Api/Shared/PlanReadings/PlanDeploys.cs region=plan-deploys
 ```
 
 ## Addendum, 2026-10-19: what each app holds and burns

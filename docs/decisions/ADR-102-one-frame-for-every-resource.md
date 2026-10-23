@@ -23,7 +23,7 @@ The owner's ruling, 2026-10-18: every Azure resource gets a dashboard like the p
 
 **One recorder shape, one container each.** `CloudRecorder` is one recorder that walks every resource's definition: a minute read, an hourly read (once in its hour for a source that moves no faster), the once-per-process rule from the machines recorder, and a container named for the resource from `infra/cosmos/<resource>.json`, each partitioned on the day with a thirty-one day time to live. A resource is a definition in `Cloud/ResourceCatalog.cs` (which resource, which metrics, which view), not a recorder of its own, so one card's failure is a gap on that card and the others keep reading. Seven containers rather than one, because each resource's documents have their own shape and their own index, and a window query over one resource should never scan another's minutes.
 
-```live path=api/TheYard.Api/CloudRecorder.cs region=cloud-recorder
+```live path=api/TheYard.Api/Features/Admin/Cloud/CloudRecorder.cs region=cloud-recorder
 ```
 
 **The two dials are the two numbers that run out.** Not the two most interesting numbers and not the portal's defaults: for each resource, the two readings that would stop the site first.
@@ -38,7 +38,7 @@ The owner's ruling, 2026-10-18: every Azure resource gets a dashboard like the p
 
 **Thresholds per resource, held by a test, sustained before they speak.** Each card's thresholds are its own numbers in `CloudThresholds`, held fifteen minutes by the plan's rule (`PlanThresholds.ToneOf`), and `CloudThresholdTests` holds all of them. A capped hour on the telemetry workspace is red at once rather than after a hold, because a capped hour is data already lost; the workspace's Usage table moves hourly, so the telemetry card and the edge keep one document an hour.
 
-```live path=api/TheYard.Api/CloudThresholds.cs region=cloud-thresholds
+```live path=api/TheYard.Api/Features/Admin/Cloud/CloudThresholds.cs region=cloud-thresholds
 ```
 
 **Cost on the readout comes from the cost card, never typed.** Each readout's cost line reads the kept cost days for that resource (ADR: What Azure charges). A figure typed into a card goes stale the next time the bill changes.
@@ -71,11 +71,11 @@ What would change it: a resource whose two scarce numbers are not a pair of perc
 
 - [`src/components/admin/CardShell/`](https://github.com/SteveStout/TheYard/tree/main/src/components/admin/CardShell) - the frame; its parts in `CloudDial`, `CloudChart`, `CloudRows` and `CloudReadout` beside it, and [`CloudResourceCard`](https://github.com/SteveStout/TheYard/tree/main/src/components/admin/CloudResourceCard) for the six
 - [`src/lib/cloud.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/cloud.ts) - the frame's geometry and the words a tone prints in
-- [`api/TheYard.Api/Cloud/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Cloud) - the six data shapes: each resource's reads and its view
-- [`api/TheYard.Api/CloudCards.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudCards.cs) - what a resource card is
-- [`api/TheYard.Api/CloudRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudRecorder.cs) - the recorder shape
-- [`api/TheYard.Api/Features/Admin/Cloud/CloudReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/CloudReader.cs) and [`api/TheYard.Api/ResourceView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ResourceView.cs) - the windows and the markers, once
-- [`api/TheYard.Api/CloudThresholds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudThresholds.cs) - every card's numbers
+- [`api/TheYard.Api/Features/Admin/Cloud/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features/Admin/Cloud) - the six data shapes: each resource's reads and its view
+- [`api/TheYard.Api/Features/Admin/Cloud/CloudCards.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/CloudCards.cs) - what a resource card is
+- [`api/TheYard.Api/Features/Admin/Cloud/CloudRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/CloudRecorder.cs) - the recorder shape
+- [`api/TheYard.Api/Features/Admin/Cloud/CloudReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/CloudReader.cs) and [`api/TheYard.Api/Features/Admin/Cloud/ResourceView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/ResourceView.cs) - the windows and the markers, once
+- [`api/TheYard.Api/Features/Admin/Cloud/CloudThresholds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/CloudThresholds.cs) - every card's numbers
 - [`api/TheYard.Api/Features/Admin/Cloud/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/Module.cs) - the six definitions, registered beside the plan's
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos) - `sqldb.json`, `cosmosdb.json`, `registry.json`, `insights.json`, `mail.json`, `edge.json` beside `plan.json`, each named for the card's address
 - [`api/TheYard.Tests/CloudThresholdTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CloudThresholdTests.cs) - the numbers above, held
@@ -96,7 +96,7 @@ The section: seven resources to seven containers to one frame.
 
 The fifteen-minute hold above stopped being true for two cards in 1.0.3.175. Application Insights and the Netlify edge keep one document an hour, because their sources move no faster, so fifteen minutes of readings over a line could never be kept and both cards could never turn amber or red. The first live hour showed the cost: the telemetry workspace had ingested 0.098 GB of its 0.1 GB daily cap, and the dial said information. An hourly card now takes its tone from its newest reading alone, which already stands for an hour; every minute-by-minute card keeps the hold. `CloudThresholdTests` holds the case as it was read.
 
-```live path=api/TheYard.Api/ResourceView.cs region=hourly-tone
+```live path=api/TheYard.Api/Features/Admin/Cloud/ResourceView.cs region=hourly-tone
 ```
 
 ## Addendum, 2026-10-18: the edge builds from its own branch
@@ -116,7 +116,7 @@ From 1.0.3.173 to 1.0.3.176 every push to main deployed green and ran CI red, an
 
 What changed instead. Seven readers each held a static `HttpClient` of their own, which is seven connection pools for the same few hosts. From 1.0.3.177 they share one, `OutboundHttp`: one `SocketsHttpHandler` that retires each connection after two minutes, so a changed DNS answer is picked up, and a cheap client per call that carries the caller's timeout. The same file is the suite's seam. A test routes its own flow's calls to recorded answers, which `CloudReadersTests` holds in the shapes each service gives. Every reader then runs its real request building, parsing and failure paths with no network: a metric Azure refuses at one grain, a Log Analytics query answered 403, and a Netlify token that cannot see the site.
 
-```live path=api/TheYard.Api/OutboundHttp.cs region=outbound-http
+```live path=api/TheYard.Api/Shared/Instance/OutboundHttp.cs region=outbound-http
 ```
 
 ## Addendum, 2026-10-20: the database cards read what they typed
@@ -129,7 +129,7 @@ From 1.0.3.196 the Container Registry card's storage dial is read against the re
 
 ## Addendum, 2026-10-20: the insights and mail cards, and the names
 
-From 1.0.3.197 the Application Insights card's cost row names the gigabytes past the free allowance and the month's figure from the bill, where it multiplied by a typed price a gigabyte; the allowance itself stays typed, with its reason on the constant, because no record the workspace returns states it. The Communication Services card reads its sends dial against the limit of the sender its domain record names, the Azure-managed one or a custom domain, where it always read against the first; both limits stay typed, with the reason on the constant, because no record the service returns states its sending limit, and the sparklines are scaled to the same limit a minute. Every resource the cards read is found by its type and a name from configuration (`Azure:Resources` in appsettings.json, `Shared/AzureResources.cs`), and `LiteralScanTests` fails the build on a name of this deployment written in the code. The resource group is App Service's own `WEBSITE_RESOURCE_GROUP` where the platform sets it. The edge card's link is the Netlify site record's own `admin_url`, and its retirement date is `Edge:Retires` in configuration. The SQL card no longer lists the server's paused sibling database: it was a second resource on a card about one, and nothing reads it.
+From 1.0.3.197 the Application Insights card's cost row names the gigabytes past the free allowance and the month's figure from the bill, where it multiplied by a typed price a gigabyte; the allowance itself stays typed, with its reason on the constant, because no record the workspace returns states it. The Communication Services card reads its sends dial against the limit of the sender its domain record names, the Azure-managed one or a custom domain, where it always read against the first; both limits stay typed, with the reason on the constant, because no record the service returns states its sending limit, and the sparklines are scaled to the same limit a minute. Every resource the cards read is found by its type and a name from configuration (`Azure:Resources` in appsettings.json, `Shared/Resources/AzureResources.cs`), and `LiteralScanTests` fails the build on a name of this deployment written in the code. The resource group is App Service's own `WEBSITE_RESOURCE_GROUP` where the platform sets it. The edge card's link is the Netlify site record's own `admin_url`, and its retirement date is `Edge:Retires` in configuration. The SQL card no longer lists the server's paused sibling database: it was a second resource on a card about one, and nothing reads it.
 
 ## Addendum, 2026-10-20 (1.0.4.0): the frame is the CardShell
 

@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
-using TheYard.Api;
 
 namespace TheYard.Tests;
 

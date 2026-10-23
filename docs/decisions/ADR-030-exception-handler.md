@@ -109,9 +109,9 @@ exception page's HTML.
 
 ## In the code
 
-The handler (`api/TheYard.Api/ProblemHandler.cs`):
+The handler (`api/TheYard.Api/Shared/Observability/ProblemHandler.cs`):
 
-```live path=api/TheYard.Api/ProblemHandler.cs region=exception-handler
+```live path=api/TheYard.Api/Shared/Observability/ProblemHandler.cs region=exception-handler
 ```
 
 The five tests (`api/TheYard.Tests/ExceptionHandlerTests.cs`):
@@ -143,8 +143,8 @@ ProblemHandler is an IExceptionHandler in the host Api, registered in Compositio
 
 ## Files
 
-- [`api/TheYard.Api/ProblemHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/ProblemHandler.cs): the handler.
-- [`api/TheYard.Api/Shared/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs): the registration and `ThrowOnBadRequest`.
+- [`api/TheYard.Api/Shared/Observability/ProblemHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/ProblemHandler.cs): the handler.
+- [`api/TheYard.Api/Shared/Wiring/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ApiRegistration.cs): the registration and `ThrowOnBadRequest`.
 - [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs): the self-test endpoint.
 - [`api/TheYard.Tests/ExceptionHandlerTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ExceptionHandlerTests.cs): the five tests, and the Production factory.
 - [`api/TheYard.Tests/ProblemDetailsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ProblemDetailsTests.cs): the deliberate failures, unchanged.

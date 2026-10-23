@@ -1,6 +1,6 @@
 // The hosted sites stopped after the server has drained, so a request of theirs in flight at a
 // roll finishes.
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Hosted;
 
 /// <summary>
 /// Stops every hosted site when the host stops. Hosted services stop after the server has drained

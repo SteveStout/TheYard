@@ -1,4 +1,3 @@
-using TheYard.Api;
 using TheYard.Application;
 using TheYard.Data;
 

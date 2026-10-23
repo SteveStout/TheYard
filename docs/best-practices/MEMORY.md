@@ -83,7 +83,7 @@ Why: a new `HttpClient` per call opens a new connection per call and can run a m
 
 Here: seven readers held seven static clients. They share one handler now, which retires each connection after two minutes so a changed DNS answer is picked up.
 
-```live path=api/TheYard.Api/OutboundHttp.cs region=outbound-http
+```live path=api/TheYard.Api/Shared/Instance/OutboundHttp.cs region=outbound-http
 ```
 
 ### g. No static collection that grows with traffic
@@ -98,7 +98,7 @@ Why: a rule nobody measures is a guess. The Node rendering service ran under `--
 
 Here: the rendering service's `/readyz` answers its heap used against its limit, and the .NET web app's `/api/admin/machines` answers the collector's own reading.
 
-```live path=api/TheYard.Api/Machines.cs region=gc-reading
+```live path=api/TheYard.Api/Shared/MachineReadings/Machines.cs region=gc-reading
 ```
 
 ## Reading the collector's own numbers

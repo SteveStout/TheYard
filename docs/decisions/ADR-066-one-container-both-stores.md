@@ -39,7 +39,7 @@ room and accounts. Nothing is shared between them, and that is the point: a
 listing served by the Cosmos DB backend was loaded from Cosmos DB, and the
 cold start beside it is that store's own.
 
-```live path=api/TheYard.Api/Backend.cs region=backend
+```live path=api/TheYard.Api/Shared/Stores/Backend.cs region=backend
 ```
 
 **Which store serves a request is decided per request.** As first shipped,
@@ -51,7 +51,7 @@ which the deploy names (`Store:Default`, `sql` on the live site and `cosmos`
 on the second container). A value that names a store this container does not
 have is the default and never an error.
 
-```live path=api/TheYard.Api/Stores.cs region=backends
+```live path=api/TheYard.Api/Shared/Stores/Stores.cs region=backends
 ```
 
 **Endpoints ask the request, not the container.** Every endpoint that used to
@@ -279,7 +279,7 @@ path, so the path exists and the method does not). The header stays, because the
 proven) and the measurements name a store for one request with it, which is
 a different thing from pretending the site changed.
 
-```live path=api/TheYard.Api/Stores.cs region=backends
+```live path=api/TheYard.Api/Shared/Stores/Stores.cs region=backends
 ```
 
 **What holds it.** `src/lib/stores.test.ts` holds the segment shape: the
@@ -359,9 +359,9 @@ Most of this lives in the Api host, where `Backend.cs` holds one store's catalog
 
 ## Files
 
-- [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the backends, the request's choice, and the warm before a read.
+- [`api/TheYard.Api/Shared/Stores/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/Stores.cs): the backends, the request's choice, and the warm before a read.
 - [`api/TheYard.Infrastructure/ContextFactory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ContextFactory.cs): the relational context factory.
-- [`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs): two stores brought up.
+- [`api/TheYard.Api/Shared/Wiring/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/StoreRegistration.cs): two stores brought up.
 - [`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs) and [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the endpoints on the request's store.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health check per store.
 - [`api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs): the metrics per store.

@@ -382,12 +382,12 @@ The store is Infrastructure code (EfSources.cs, YardDbContext.cs and the row typ
 ## Files
 
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the context and the model.
-- [`api/TheYard.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DesignTime.cs): the design-time factory.
+- [`api/TheYard.Api/Shared/Stores/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/DesignTime.cs): the design-time factory.
 - [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs): the three row types.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the mapping, and the seed.
 - [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the schema's history. It lived beside the context when there was one provider, and moved to a project of its own when there were two, because a migrations assembly holds one model snapshot (ADR: The SQL Server backend). This link pointed at the old folder from that day until a test started checking.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the third port, and the null store.
-- [`api/TheYard.Api/Shared/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/StoreRegistration.cs): the registration, and the migrate and seed block.
+- [`api/TheYard.Api/Shared/Wiring/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/StoreRegistration.cs): the registration, and the migrate and seed block.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health check.
 - [`api/TheYard.Tests/PersistenceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PersistenceTests.cs): the restart, the seeding, the migration history, and the file on disk.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the writable directory and the connection string.
@@ -397,5 +397,5 @@ The store is Infrastructure code (EfSources.cs, YardDbContext.cs and the row typ
 
 The five asks keep their waits, two seconds doubling to sixteen, about thirty in all. What changed is where the first wait comes from: `StorePrepare.FirstWaitFrom` reads `Store:FirstWaitMs` at startup and answers two seconds when the setting is absent or not a whole number of milliseconds. Nothing deployed sets it. The one caller that does is the test that proves the fallback (`PersistenceTests`, the database that will not open), which sets it to zero, because the five asks are the proof and the thirty seconds between them were not; with the waits in, that one test held every run of the suite on both stores to no less than half a minute (ADR: The five-minute gate, the addendum of 10 October on the first wait). `StoreSecondChanceTests` holds the setting in five shapes (absent, zero, a number, a negative, a word) with the four waits that follow from each.
 
-```live path=api/TheYard.Api/StorePrepare.cs region=five-tries
+```live path=api/TheYard.Api/Shared/Stores/StorePrepare.cs region=five-tries
 ```

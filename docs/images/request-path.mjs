@@ -51,7 +51,7 @@ const render = box(346, 596, 268, 'render/server.mjs', 'YARD_SITES: both names, 
 
 // Column 3: the one web app.
 lane(660, 100, 710, 660, 'The one web app: APP-THEYARD-ONE-SS', 'one .NET process on the B2 plan; every .NET request lands here');
-const hosts = box(680, 166, 330, 'Which name? SiteHosts.Of', 'api/TheYard.Api/SiteHosts.cs', ['The Host header first, when App Service', 'routed by one of the three names;', 'else X-Yard-Host, only if it names one.', 'Anything else: no name.']);
+const hosts = box(680, 166, 330, 'Which name? SiteHosts.Of', 'api/TheYard.Api/Shared/Instance/SiteHosts.cs', ['The Host header first, when App Service', 'routed by one of the three names;', 'else X-Yard-Host, only if it names one.', 'Anything else: no name.']);
 const shedApp = box(1040, 166, 310, 'The Shed\'s name: HostedSiteMount', 'Shared/Sites/HostedSiteMount.cs, ShedSite.cs', ['Handed over before TheYard\'s pipeline:', 'The Shed\'s own app from /app/shed,', 'its pipeline and controllers, no socket.', '503 if it could not start.'], 'box shed');
 const yardApp = box(680, 366, 330, 'A Yard name: TheYard\'s pipeline', 'Program.cs, then the endpoints', ['Auth, limits, then the API and the', 'pages; every endpoint asks', 'CurrentBackend once per request.']);
 const store = box(1040, 366, 310, 'Which store? Stores.cs', 'Backends, region backends', ['X-Yard-Store, when a request names one;', 'else the name\'s store;', 'no name (probes, first reads): SQL.']);

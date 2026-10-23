@@ -158,5 +158,5 @@ No ring: this is a measurement decision about how `scripts/measure_stores.py` co
 
 - [`scripts/measure_stores.py`](https://github.com/SteveStout/TheYard/blob/main/scripts/measure_stores.py): the method, runnable.
 - [`api/TheYard.Tests/SearchIndexBenchmarkTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SearchIndexBenchmarkTests.cs): where the paired-rounds method came from.
-- [`api/TheYard.Api/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Peer.cs): the route grouping the charges are read through.
+- [`api/TheYard.Api/Shared/Instance/Peer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/Peer.cs): the route grouping the charges are read through.
 - [`docs/decisions/ADR-058-the-partition-key.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-058-the-partition-key.md): the experiment's numbers.

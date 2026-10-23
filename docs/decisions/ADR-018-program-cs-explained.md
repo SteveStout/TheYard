@@ -29,7 +29,7 @@ from `/app`. `FindUpward` walks from the content root toward the disk root until
 and throws a clear `FileNotFoundException` if it never does. `HostPaths` is registered, so an endpoint that
 serves a file asks for it as a parameter.
 
-```live path=api/TheYard.Api/Shared/HostPaths.cs region=find-upward
+```live path=api/TheYard.Api/Shared/Wiring/HostPaths.cs region=find-upward
 ```
 
 ### The table of contents
@@ -37,10 +37,10 @@ serves a file asks for it as a parameter.
 What the file is today:
 
 ```
-54 total
+53 total
   9 comment
   7 blank
-  38 code, across 0 endpoints
+  37 code, across 0 endpoints
 ```
 
 No route is mapped in Program.cs itself. Until 1.0.3.39 it was one file of 2,667 lines holding 48
@@ -75,7 +75,7 @@ relational store is SQL Server when the deploy gave one and SQLite otherwise; th
 when an account is configured; each stands behind the same ports, on the JSON files until it comes up, and
 a store that refused at startup is asked again every thirty seconds for an hour (the second chance).
 
-```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=sql-backend
+```live path=api/TheYard.Api/Shared/Wiring/StoreRegistration.cs region=sql-backend
 ```
 
 Nearly every registration in the steps is `AddSingleton`, one instance for the life of the process,
@@ -117,10 +117,10 @@ session's renewal, the store's warmth, the error record, the cache rules, and th
 run at the end of the pipeline whichever line maps them, so the order that matters is the order in this
 one file.
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=request-timing
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=request-timing
 ```
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=error-log
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=error-log
 ```
 
 ### Endpoints: binding, then delegation
@@ -155,7 +155,7 @@ step asks it. `/api/health` returns every check with its timing for the Admin ta
 `app.MapTheYardSpa` (Composition/SpaRegistration.cs) answers any address that is not an API route or a
 real file with index.html, so a missing bundle file is a 404 and never a page dressed as a script.
 
-```live path=api/TheYard.Api/Shared/SpaRegistration.cs region=spa-fallback
+```live path=api/TheYard.Api/Shared/Wiring/SpaRegistration.cs region=spa-fallback
 ```
 
 ## What to change when
@@ -187,10 +187,10 @@ store over its accounts. The three services left the container entirely; an
 endpoint takes `CurrentBackend`, which is scoped to the request and resolved
 once from the request's header, cookie or the container's default.
 
-```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=sql-backend
+```live path=api/TheYard.Api/Shared/Wiring/StoreRegistration.cs region=sql-backend
 ```
 
-```live path=api/TheYard.Api/Shared/StoreRegistration.cs region=cosmos-backend
+```live path=api/TheYard.Api/Shared/Wiring/StoreRegistration.cs region=cosmos-backend
 ```
 
 Identity is registered once and unconditionally; its store is the one thing
@@ -265,11 +265,11 @@ From 1.0.3.189 the second half of Program.cs is no longer a list of `app.Map...`
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents this record walks.
 - [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared): one file per registration step, the startup, the pipeline and the single-page fallback.
 - [`api/TheYard.Api/Features`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features): one static class per feature.
-- [`api/TheYard.Api/Shared/PreparedStores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PreparedStores.cs): what bringing the stores up hands back, from 1.0.3.188.
+- [`api/TheYard.Api/Shared/Stores/PreparedStores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/PreparedStores.cs): what bringing the stores up hands back, from 1.0.3.188.
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): `net10.0`, nullable reference types on, implicit usings on (which is why the file has so few `using` lines).
-- [`api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs), [`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs), [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): binding, the clock anchor, and the outgoing shape.
+- [`api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs), [`api/TheYard.Api/Shared/Instance/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/Clocks.cs), [`api/TheYard.Api/Shared/Wire/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/VehicleWire.cs): binding, the clock anchor, and the outgoing shape.
 - [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the load held once and shared, which is what makes the singleton registration matter.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs), [`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs), [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the pieces the host wires.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs), [`api/TheYard.Api/Features/Docs/LiveSamples.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/LiveSamples.cs), [`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs): the pieces the host wires.
 - [`api/TheYard.Tests/AdminEndpointTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminEndpointTests.cs) and the tests beside it: every one boots this file through `WebApplicationFactory<Program>`.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the port, the provenance arguments, the HEALTHCHECK, and the files copied for the walk to find.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml): the Verify step that asks `/readyz`.
@@ -288,5 +288,5 @@ The section on endpoints says a handler calls the service that owns the rule. A 
 
 `Program.cs` did not change: `app.UseTheYardRequestPipeline(host)` is still one line, and the order still lives in `Composition/RequestPipeline.cs`. What that file holds did. The files now come straight after the problem shape and the error record, before routing, the user, the session and the store, where Microsoft's middleware order puts them; routing is called out loud instead of left to run at the top; the forwarded headers run before anything that reads the visitor's address or scheme; the health probes end at routing; and the HTTP logger, which never wrote a line, is gone. Every placement carries its reason beside its line (ADR: The order of the request pipeline).
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=routing
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=routing
 ```

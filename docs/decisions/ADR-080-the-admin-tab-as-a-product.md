@@ -422,14 +422,14 @@ The numbers are measured on the gate's runner, in a step of their own that write
 
 Two numbers that change by the day were not collected anywhere: when the certificate the site answers with runs out, and how full the relational store is. Both are read once an hour now, outside any request, and shown on the Azure card with their ranges. The certificate comes from one TLS handshake with the site's own public address, which only a container with an https address of its own makes; it is amber under 30 days, when the platform should already have renewed it, and red under a week. The storage is the data files' size from `sys.database_files` beside the tier's ceiling, which any user of the database may read; it is amber at 80% and red at 95%, because the tier refuses writes when it is full. A container without either says so in a sentence.
 
-```live path=api/TheYard.Api/HourlyReadings.cs region=hourly-readings
+```live path=api/TheYard.Api/Shared/MachineReadings/HourlyReadings.cs region=hourly-readings
 ```
 
 ## Addendum, 2026-10-15 (1.0.3.137): the late store
 
 The hourly storage reading took the relational store's quiet context once, when the services were registered. A store that refuses at startup has no context then; the second chance attaches it a few minutes later, but the reading kept the empty one and said "not read" until the next restart. The reading now asks for the context each hour, the same way the machine recorder already did, so a late store shows its size at the next hourly read.
 
-```live path=api/TheYard.Api/Shared/AdminRegistration.cs region=hourly-readings-wiring
+```live path=api/TheYard.Api/Shared/Wiring/AdminRegistration.cs region=hourly-readings-wiring
 ```
 
 ## Addendum, 2026-10-15 (1.0.3.138): the date in front
@@ -497,13 +497,13 @@ This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are Rea
 - [`src/lib/trafficCard.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/trafficCard.test.ts): the words, the one new number, and what makes a block good or bad.
 - [`src/components/admin/TrafficCard/TrafficCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/TrafficCard/TrafficCard.tsx) and [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the traffic card and the proof's bars; [`src/components/admin/AdminPanel/AdminPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/AdminPanel/AdminPanel.tsx): the window both cards share.
 - [`src/components/admin/AdminPanel/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/AdminPanel/AdminPanel.module.css): the workbench's styles, over the token sheet; [`src/components/admin/shared/card.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/shared/card.module.css), [`src/components/admin/shared/stat-strip.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/shared/stat-strip.module.css), [`src/components/admin/charts/charts.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/charts/charts.module.css) and [`src/components/admin/DataTable/DataTable.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/DataTable/DataTable.module.css): what the cards share, and each card's own sheet in its folder.
-- [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs): the request ring folded into minutes, once, for the hour on the card and for the minute that is kept.
+- [`api/TheYard.Api/Shared/MachineReadings/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/MachineReadings/Machines.cs): the request ring folded into minutes, once, for the hour on the card and for the minute that is kept.
 - [`docs/decisions/ADR-078-what-the-machines-are-doing.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-078-what-the-machines-are-doing.md): the first charts, and the windows these are drawn over.
 
 ```live path=src/lib/trafficSlots.ts region=traffic
 ```
 
-```live path=api/TheYard.Api/TrafficMinutes.cs region=traffic-minutes
+```live path=api/TheYard.Api/Shared/Activity/TrafficMinutes.cs region=traffic-minutes
 ```
 
 ```live path=src/lib/statTiles/tileRules.ts region=tile-rules

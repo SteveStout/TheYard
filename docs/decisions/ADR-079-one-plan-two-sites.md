@@ -343,9 +343,9 @@ Most of this is a hosting decision about the App Service plan that sits outside 
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): its module, the plan and the two sites, what differs between them, and every setting the container groups carried.
 - [`scripts/deploy-infra.ps1`](https://github.com/SteveStout/TheYard/blob/main/scripts/deploy-infra.ps1): describing the infrastructure to Azure again without changing what runs, in incremental mode.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml) and [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml): the two container groups, stopped and kept, which is the way back.
-- [`api/TheYard.Api/IdentityTokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/IdentityTokens.cs): a managed identity token from whichever door the host has.
-- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs) and [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the catalogues and the warm before a read; the keeper that let one go was retired on 4 October.
-- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the site asking Azure about itself, as a container group or as a web app on a shared plan.
+- [`api/TheYard.Api/Shared/Auth/IdentityTokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Auth/IdentityTokens.cs): a managed identity token from whichever door the host has.
+- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs) and [`api/TheYard.Api/Shared/Stores/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/Stores.cs): the catalogues and the warm before a read; the keeper that let one go was retired on 4 October.
+- [`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs): the site asking Azure about itself, as a container group or as a web app on a shared plan.
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml): a roll sets the image and the three values the repository does not hold.
 - [`api/TheYard.Tests/AzureSelfTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AzureSelfTests.cs) and [`api/TheYard.Tests/AppServiceTemplateTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AppServiceTemplateTests.cs): both doors, both shapes, and the template held to the files it took over from.
 - [`docs/decisions/ADR-004-deployment-pivots.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-004-deployment-pivots.md): the day-one wall this record measured again.
@@ -353,6 +353,6 @@ Most of this is a hosting decision about the App Service plan that sits outside 
 ```live path=infra/appservice.bicep region=sites-list
 ```
 
-```live path=api/TheYard.Api/IdentityTokens.cs region=identity-token
+```live path=api/TheYard.Api/Shared/Auth/IdentityTokens.cs region=identity-token
 ```
 

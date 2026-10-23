@@ -71,8 +71,8 @@
   <text x="75" y="800" class="mono">api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs</text>
   <text x="75" y="822" class="body">api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs binds and validates every</text>
   <text x="75" y="839" class="body">parameter into a filter and a sort. The clock is the server's</text>
-  <text x="75" y="856" class="body">(api/TheYard.Api/Clocks.cs): now, and the UTC midnight that began the day, the same for</text>
-  <text x="75" y="873" class="body">every visitor.</text>
+  <text x="75" y="856" class="body">(api/TheYard.Api/Shared/Instance/Clocks.cs): now, and the UTC midnight that began the</text>
+  <text x="75" y="873" class="body">day, the same for every visitor.</text>
   <path d="M120 887 L120 921" class="flow"/>
   <rect x="60" y="923" width="760" height="186" class="box"/>
   <text x="75" y="949" class="title">Search, through Auction.Search</text>
@@ -87,7 +87,7 @@
   <path d="M120 1109 L120 1143" class="flow"/>
   <rect x="60" y="1145" width="760" height="101" class="box"/>
   <text x="75" y="1171" class="title">VehicleWire</text>
-  <text x="75" y="1193" class="mono">api/TheYard.Api/VehicleWire.cs</text>
+  <text x="75" y="1193" class="mono">api/TheYard.Api/Shared/Wire/VehicleWire.cs</text>
   <text x="75" y="1215" class="body">Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at,</text>
   <text x="75" y="1232" class="body">auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.</text>
   <path d="M120 1246 L120 1280" class="flow"/>

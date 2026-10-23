@@ -1,6 +1,6 @@
 // The default store's bids and catalogue, loaded beside the server rather than before it, and
 // the other stores warmed after it where the configuration asks.
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Hosted;
 
 /// <summary>
 /// Starts the default store's load the moment the host starts and returns at once, so the server

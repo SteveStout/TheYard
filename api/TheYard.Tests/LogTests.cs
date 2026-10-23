@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TheYard.Api;
 using TheYard.Application;
 
 namespace TheYard.Tests;

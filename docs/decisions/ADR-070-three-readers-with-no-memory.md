@@ -95,7 +95,7 @@ which is every roll's behaviour until the secret exists. The only secret in
 the pipeline, masked by GitHub in every log, never read by anything but the
 roll.
 
-```live path=api/TheYard.Api/Tokens.cs region=configured-key
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=configured-key
 ```
 
 **5. The retry that overwrites.** Both bid stores catch a concurrency
@@ -148,7 +148,7 @@ did do for the seconds after a roll before the other store had warmed and
 for every request to the other store in a test application: fixed in
 1.0.0.111, the pipeline awaits the warm before any endpoint reads the store.
 
-```live path=api/TheYard.Api/Stores.cs region=warm-before-reading
+```live path=api/TheYard.Api/Shared/Stores/Stores.cs region=warm-before-reading
 ```
 
 A session opened on one store could bid on the other, because the header
@@ -158,7 +158,7 @@ document store with nothing. Fixed in 1.0.0.111: the token names the store
 that opened it, and the two bid writes refuse a session from another store
 with a sentence, at the cost of no lookup.
 
-```live path=api/TheYard.Api/Tokens.cs region=session-per-store
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=session-per-store
 ```
 
 A reset cleared memory before it asked the store, the opposite of the bid
@@ -251,15 +251,15 @@ This review reached four rings: Domain gained AuctionClock.Utc and the sold chec
 
 ## Files
 
-- [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the configured key's rule, the store claim, and the session-per-store check.
-- [`api/TheYard.Api/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Stores.cs): the warm before any read.
+- [`api/TheYard.Api/Shared/Auth/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Auth/Tokens.cs): the configured key's rule, the store claim, and the session-per-store check.
+- [`api/TheYard.Api/Shared/Stores/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/Stores.cs): the warm before any read.
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the key from configuration.
-- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the warming middleware (region warm-before-reading).
+- [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the warming middleware (region warm-before-reading).
 - [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the bid endpoints' refusal (region session-per-store).
 - [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the reset, store first.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml), [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml), [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml): the one secret, substituted at roll time.
 - [`api/TheYard.Tests/WarmthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WarmthTests.cs), [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs) and [`api/TheYard.Tests/BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidServiceTests.cs): the three holds.
-- [`api/TheYard.Domain/AuctionClock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/AuctionClock.cs), [`api/TheYard.Api/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Clocks.cs) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the clock, the server's, and the page that stopped sending one.
+- [`api/TheYard.Domain/AuctionClock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/AuctionClock.cs), [`api/TheYard.Api/Shared/Instance/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/Clocks.cs) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the clock, the server's, and the page that stopped sending one.
 
 ## Addendum, 2026-10-18: the standing the store owns, shipped
 

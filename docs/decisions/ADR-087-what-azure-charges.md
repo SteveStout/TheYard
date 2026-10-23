@@ -47,17 +47,17 @@ Money on this card is dollars and cents as a `double`, rounded to the cent. The 
 
 The shaping, the one method a subscription path passes through:
 
-```live path=api/TheYard.Api/Costs.cs region=cost-shape
+```live path=api/TheYard.Api/Shared/CostReadings/Costs.cs region=cost-shape
 ```
 
 The recorder, which is the only caller of Azure:
 
-```live path=api/TheYard.Api/CostRecorder.cs region=cost-recorder
+```live path=api/TheYard.Api/Shared/CostReadings/CostRecorder.cs region=cost-recorder
 ```
 
 The view the cards are drawn from, and the cache in front of it:
 
-```live path=api/TheYard.Api/CostReport.cs region=cost-view
+```live path=api/TheYard.Api/Shared/CostReadings/CostReport.cs region=cost-view
 ```
 
 The tests that hold the view:
@@ -71,7 +71,7 @@ Read live at 17:00 CDT, a minute after 1.0.3.55 rolled, uncached on both domains
 
 So from 1.0.3.56 the reader allows a minute, and a read that did not finish is tried again in five minutes. A read that went through, or one Azure refused, still waits the hour: a missing role does not appear in five minutes, and a request to slow down is a request to slow down.
 
-```live path=api/TheYard.Api/CostRecorder.cs region=cost-retry
+```live path=api/TheYard.Api/Shared/CostReadings/CostRecorder.cs region=cost-retry
 ```
 
 ## Addendum, 2026-09-30: the bars measure dollars
@@ -88,7 +88,7 @@ From 1.0.3.61 the server works out the month and the card only shows it. Each re
 
 Measured on 2 October: the one finished day in the last day window, 1 October, cost $0.74, which comes to $22.94 over October's 31 days. The last 30 days cost $45.74, and $32.82 of that was the two container instances, which the bill has not carried since 20 September.
 
-```live path=api/TheYard.Api/CostReport.cs region=cost-rate
+```live path=api/TheYard.Api/Shared/CostReadings/CostReport.cs region=cost-rate
 ```
 
 ## Where it sits
@@ -97,10 +97,10 @@ The bill card spans three rings: CostHistory.cs in Application holds the ICostHi
 
 ## Files
 
-- [`api/TheYard.Api/Costs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Costs.cs): the two questions, the shaping, the reader and the recorder.
-- [`api/TheYard.Api/CostReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CostReport.cs): the view the cards are drawn from and its cache.
+- [`api/TheYard.Api/Shared/CostReadings/Costs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/CostReadings/Costs.cs): the two questions, the shaping, the reader and the recorder.
+- [`api/TheYard.Api/Shared/CostReadings/CostReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/CostReadings/CostReport.cs): the view the cards are drawn from and its cache.
 - [`api/TheYard.Application/CostHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/CostHistory.cs): the day, the port and the read held in memory, and the windows.
-- [`api/TheYard.Api/Shared/CostRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/CostRegistration.cs): the wiring.
+- [`api/TheYard.Api/Shared/Wiring/CostRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/CostRegistration.cs): the wiring.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): `GET /api/admin/costs`.
 - [`src/components/admin/SpendCard/SpendCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/SpendCard/SpendCard.tsx) and [`src/lib/spend.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/spend.ts): the card and the layout it draws from.
 - [`api/TheYard.Tests/CostTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CostTests.cs) and [`src/lib/spend.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/spend.test.ts): the tests above.
@@ -117,6 +117,6 @@ Until this addendum, every refusal to read was waited for an hour. That held for
 
 From 1.0.3.166 a 429 is waited exactly as long as Cost Management names in its headers, the standard `Retry-After` or the three `x-ms-ratelimit-microsoft.costmanagement-*-retry-after` it adds, taking the longest, plus half a minute, never under a minute and never over the hour. A refusal that names no wait is still an hour. The card's sentence says the wait it will actually take. And the site whose default store is the document store makes its first read a minute after the other site's, at 90 seconds rather than 30, so a roll of both no longer spends both first reads at once.
 
-```live path=api/TheYard.Api/CostRecorder.cs region=cost-retry
+```live path=api/TheYard.Api/Shared/CostReadings/CostRecorder.cs region=cost-retry
 ```
 

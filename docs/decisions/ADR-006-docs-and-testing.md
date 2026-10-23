@@ -112,7 +112,7 @@ Documentation:
 
 - [`src/library/documents.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/documents.ts): every document the sidebar can
   open, its title, its menu and its kind, one record.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the same documents by slug on
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): the same documents by slug on
   the server, held to the sidebar's list by a test (ADR: The staff review).
 - [`docs/best-practices/BEST-PRACTICES.md`](https://github.com/SteveStout/TheYard/blob/main/docs/best-practices/BEST-PRACTICES.md), [`docs/hosting/HOSTING.md`](https://github.com/SteveStout/TheYard/blob/main/docs/hosting/HOSTING.md),
   [`docs/ci-cd/CICD.md`](https://github.com/SteveStout/TheYard/blob/main/docs/ci-cd/CICD.md): the three overviews the records hang under.

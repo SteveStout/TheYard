@@ -33,15 +33,16 @@ codebase holds them):
   Identity user store over Azure Cosmos DB on the SDK, referencing Infrastructure only for the shared
   user entity.
 - `api/TheYard.Api` - host and endpoints. One folder per slice under `Features/`, each with a `Module.cs`
-  that registers and maps it; what every slice shares in `Shared/`; `Program.cs` registers the shared
-  parts by name and loops over the modules (ADR: The onion cut into vertical slices). NO business logic in
-  endpoints.
+  that registers and maps it; what more than one place uses in `Shared/<Concern>/`, one folder per concern
+  named in ADR-114's table; `Program.cs` is the only file at the root, and it registers the shared parts by
+  name and loops over the modules. Read ADR-107 (The onion cut into vertical slices) and ADR-114 (The host
+  root holds one file) first. NO business logic in endpoints.
 
 Beside the six: `api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
 `api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool
 for the partition key experiment), and `api/TheYard.Tests`. One process runs BOTH stores side by side and
 picks one per request from the `X-Yard-Store` header, else by the name the request arrived on
-(`SiteHosts.cs`, ADR-105); one web app serves both sites and The Shed (ADR-066, ADR-105).
+(`Shared/Instance/SiteHosts.cs`, ADR-105); one web app serves both sites and The Shed (ADR-066, ADR-105).
 
 Frontend keeps the same discipline: `components` -> `hooks` -> `lib`. **`src/lib` imports nothing from
 React.** Every component has a folder of its own, `src/components/<section>/<Name>/`, holding its `.tsx`,

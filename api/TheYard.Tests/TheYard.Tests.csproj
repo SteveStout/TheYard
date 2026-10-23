@@ -18,6 +18,25 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- The host's shared concerns (ADR-114), one namespace each, as the host itself imports them. -->
+    <Using Include="TheYard.Api.Shared.Activity" />
+    <Using Include="TheYard.Api.Shared.Auth" />
+    <Using Include="TheYard.Api.Shared.CostReadings" />
+    <Using Include="TheYard.Api.Shared.Documentation" />
+    <Using Include="TheYard.Api.Shared.Edge" />
+    <Using Include="TheYard.Api.Shared.Grades" />
+    <Using Include="TheYard.Api.Shared.Hosted" />
+    <Using Include="TheYard.Api.Shared.Instance" />
+    <Using Include="TheYard.Api.Shared.MachineReadings" />
+    <Using Include="TheYard.Api.Shared.Observability" />
+    <Using Include="TheYard.Api.Shared.PlanReadings" />
+    <Using Include="TheYard.Api.Shared.Proof" />
+    <Using Include="TheYard.Api.Shared.Resources" />
+    <Using Include="TheYard.Api.Shared.Sites" />
+    <Using Include="TheYard.Api.Shared.Stores" />
+    <Using Include="TheYard.Api.Shared.Usage" />
+    <Using Include="TheYard.Api.Shared.Wire" />
+    <Using Include="TheYard.Api.Shared.Wiring" />
   </ItemGroup>
 
   <ItemGroup>

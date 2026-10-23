@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
-using TheYard.Api;
 using TheYard.Api.Features.Admin.Cloud;
 using TheYard.Application;
 
@@ -242,7 +241,7 @@ internal sealed class RecordedCloud : HttpMessageHandler
         // The page names the web app that drew it; the API's answer here names none.
         if (uri.AbsolutePath == "/")
         {
-            answer.Headers.TryAddWithoutValidation(NetlifyEdge.SiteHeader, "APP-THEYARD-RENDER-SS");
+            answer.Headers.TryAddWithoutValidation(EdgeKeeps.SiteHeader, "APP-THEYARD-RENDER-SS");
         }
         return answer;
     }

@@ -380,7 +380,7 @@ only formats them.
 wire, snake_case in the browser: nothing is renamed in transit. The
 envelope is `{ total, vehicles }`; a failure is a ProblemDetails body
 (ADR: Error handling). The settings that hold that contract are in
-`api/TheYard.Api/Shared/ApiRegistration.cs` (ADR: Program.cs, explained).
+`api/TheYard.Api/Shared/Wiring/ApiRegistration.cs` (ADR: Program.cs, explained).
 
 **Endpoints bind and delegate.** A `MapGet` in a slice under `api/TheYard.Api/Features/`
 validates its parameters and asks Application, the auction's handlers through
@@ -413,8 +413,8 @@ deploy without them (ADR: The tests, explained).
 | --- | --- |
 | A new auction or bidding rule | `api/TheYard.Domain`, with a unit test first |
 | A new endpoint | one `MapGet`/`MapPost` in its slice under `api/TheYard.Api/Features/`, mapped by that slice's `Module.cs`, plus an integration test |
-| A new data source | a port in Application, an adapter in Infrastructure, its registration in the slice's `Module.cs` or, when every slice shares it, `api/TheYard.Api/Shared/` |
-| A new derived fact for the browser | `StandingVehicle` in `api/TheYard.Application/BidView.cs`, then one copied field in `api/TheYard.Api/VehicleWire.cs` |
+| A new data source | a port in Application, an adapter in Infrastructure, its registration in the slice's `Module.cs` or, when more than one slice uses it, `api/TheYard.Api/Shared/Wiring/` |
+| A new derived fact for the browser | `StandingVehicle` in `api/TheYard.Application/BidView.cs`, then one copied field in `api/TheYard.Api/Shared/Wire/VehicleWire.cs` |
 | A new API call from the browser | one function in `src/lib/data.ts` |
 | A new view state | the URL, through `filtersToSearchParams` |
 | A visitor preference (not a view) | `localStorage`, like the collapsed rail |
@@ -422,6 +422,17 @@ deploy without them (ADR: The tests, explained).
 | A new sidebar section's contents | `src/library/sections.ts`; its order and icon in `src/lib/siteMap.ts` |
 | Something the whole app knows (a view, the list, the account) | a hook in `src/app/hooks/`, named for what it gives back, with its header |
 | A new colour or spacing value | `src/styles/colors.css` or `sizes.css`, never a literal |
+
+## Where a file lives
+
+The host's root holds `Program.cs` and nothing else (ADR: The host root holds one file).
+
+- A file one slice uses lives in that slice, under `api/TheYard.Api/Features/<Slice>/`, and declares that slice's namespace.
+- A file more than one place uses lives under `api/TheYard.Api/Shared/<Concern>/`, in the folder named for what it serves, and declares `TheYard.Api.Shared.<Concern>`.
+- The concerns are the rows of the table in ADR-114; a new concern is a new row there first.
+- The registrations, the request pipeline and the settings they read are `Shared/Wiring/`.
+- Neither `Features/` nor `Shared/` holds a loose file.
+- `HostLayoutTests` fails the build when any of this stops being true, and `SliceTests` rule 1 says which slice a lonely shared type belongs to.
 
 ## What is deliberately not here
 
@@ -449,7 +460,7 @@ side of the same question.
 - [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared) and [`api/TheYard.Api/Features`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features): the registrations and middleware, and the handlers.
 - [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
 - [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules that hold the rings.
-- [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): the wire shape, copying the derived facts `StandingVehicle` carries so the browser's job is formatting.
+- [`api/TheYard.Api/Shared/Wire/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/VehicleWire.cs): the wire shape, copying the derived facts `StandingVehicle` carries so the browser's job is formatting.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.
 - [`docs/app-architecture/DATAFLOW.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/DATAFLOW.md): the same shape as a walk, step by step.
 - [`docs/app-architecture/PROJECTS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/app-architecture/PROJECTS.md): every project and folder, one line each.

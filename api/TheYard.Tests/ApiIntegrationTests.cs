@@ -125,7 +125,7 @@ public class ApiIntegrationTests(FullCatalogue factory)
         int? reservePrice, int? currentBid, string expected)
     {
         var vehicle = TestData.Vehicle(currentBid: currentBid) with { ReservePrice = reservePrice };
-        Assert.Equal(expected, TheYard.Api.VehicleWire.ReserveState(vehicle.Reserve));
+        Assert.Equal(expected, TheYard.Api.Shared.Wire.VehicleWire.ReserveState(vehicle.Reserve));
     }
     // #endregion reserve-state
 

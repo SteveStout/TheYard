@@ -342,7 +342,7 @@ chain nobody applies is a second definition of the schema waiting to be believed
 One design-time factory still exists, in the host project, because SQLite still
 has migrations to write:
 
-```live path=api/TheYard.Api/DesignTime.cs region=design-time
+```live path=api/TheYard.Api/Shared/Stores/DesignTime.cs region=design-time
 ```
 
 ### What the first publish said, and what it cost to ignore
@@ -680,7 +680,7 @@ YardConnection in Infrastructure is the one class that knows which engine sits u
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the model, both providers, and the value converters.
 - [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs): the row types, and the concurrency token.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the seed, and the store that retries a conflict.
-- [`api/TheYard.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DesignTime.cs): the one design-time factory, and the two commands that use it.
+- [`api/TheYard.Api/Shared/Stores/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/DesignTime.cs): the one design-time factory, and the two commands that use it.
 - [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the SQL Server schema, hand written, and the authority for it.
 - [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the SQLite schema's history.
 - [`api/TheYard.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.

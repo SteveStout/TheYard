@@ -114,7 +114,7 @@ const L3 = { x: 960, w: 520 };
 const b3 = L3.x + 20;
 const w3 = L3.w - 40;
 const one = box(b3, 170, w3, 'APP-THEYARD-ONE-SS-ZMNETJ67BN5H2', 'https://app-theyard-one-ss-zmnetj67bn5h2.azurewebsites.net', [
-  'One process, three names (api/TheYard.Api/SiteHosts.cs). The name is the Host header, or X-Yard-Host from the edge, and only a configured name counts.',
+  'One process, three names (api/TheYard.Api/Shared/Instance/SiteHosts.cs). The name is the Host header, or X-Yard-Host from the edge, and only a configured name counts.',
   'theyard: Azure SQL Database. theyard-cosmos: Azure Cosmos DB. An X-Yard-Store header wins over both. theshed: The Shed\'s own application, started inside the process from /app/shed (Composition/ShedMount.cs).',
   'Rolled by Deploy. A web app for containers on PLAN-THEYARD-SS, one Linux B2, 2 vCPU and 3.5 GB shared with the rendering service.',
 ], 56);

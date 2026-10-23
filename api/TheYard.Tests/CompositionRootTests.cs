@@ -53,7 +53,7 @@ public class CompositionRootTests
     {
         var outside = Sources()
             .Select(Relative)
-            .Where(path => !path.StartsWith("Features/", StringComparison.Ordinal) && path != "Shared/SpaRegistration.cs")
+            .Where(path => !path.StartsWith("Features/", StringComparison.Ordinal) && path != "Shared/Wiring/SpaRegistration.cs")
             .Where(path => MapsARoute.IsMatch(File.ReadAllText(Path.Combine(Api(), path))))
             .ToList();
         Assert.True(outside.Count == 0, "these map routes outside Features/ and the fallback: " + string.Join(", ", outside));
@@ -70,7 +70,7 @@ public class CompositionRootTests
         Assert.NotEmpty(slices);
         var withoutAModule = slices.Where(slice => !File.Exists(Path.Combine(features, slice, "Module.cs"))).ToList();
         Assert.True(withoutAModule.Count == 0, "these slices have no Module.cs: " + string.Join(", ", withoutAModule));
-        var modules = typeof(Program).Assembly.GetTypes().Where(type => type.IsClass && typeof(TheYard.Api.IModule).IsAssignableFrom(type)).ToList();
+        var modules = typeof(Program).Assembly.GetTypes().Where(type => type.IsClass && typeof(TheYard.Api.Shared.Wiring.IModule).IsAssignableFrom(type)).ToList();
         Assert.Equal(slices.Count, modules.Count);
         Assert.All(modules, module => Assert.True(module.IsSealed && module.Name == "Module", $"{module.FullName} should be a sealed class named Module"));
     }
@@ -78,18 +78,18 @@ public class CompositionRootTests
     [Fact]
     public void Every_class_that_registers_or_maps_is_static()
     {
-        // A registration step in Shared/ and an endpoint class in a slice hold no state; a slice's
-        // Module is the one instance class beside them, and a hosted service under Shared/Hosted/ and
-        // a hosted site under Shared/Sites/ are running things with their dependencies in their
-        // constructors. Records are the wire shapes and
-        // the settings a registration reads. Under Features/ the rule is held for a file that maps or
-        // registers (it names the route builder or the service collection): a slice's own services,
-        // which rule 1 moves into its folder, are instances with their dependencies in their constructors.
+        // A registration step and an endpoint class hold no state; a slice's Module is the one instance
+        // class beside them. Every file under Shared/Wiring/ is a registration step or the settings one
+        // reads (ADR-114), so the rule holds there whole. Anywhere else under Shared/ or Features/ it is
+        // held for a file that maps or registers (it names the route builder or the service collection):
+        // the shared concerns' services, the hosted services under Shared/Hosted/ and the guest sites under
+        // Shared/Sites/ are running things with their dependencies in their constructors. Records are
+        // the wire shapes and the settings a registration reads.
         var declaration = new Regex(@"^\s*public\s+((?:\w+\s+)*)class\s+(\w+)", RegexOptions.Multiline);
         var open = Sources()
             .Select(Relative)
-            .Where(path => (path.StartsWith("Shared/", StringComparison.Ordinal) && !path.StartsWith("Shared/Hosted/", StringComparison.Ordinal) && !path.StartsWith("Shared/Sites/", StringComparison.Ordinal))
-                || (path.StartsWith("Features/", StringComparison.Ordinal) && !path.EndsWith("/Module.cs", StringComparison.Ordinal)
+            .Where(path => path.StartsWith("Shared/Wiring/", StringComparison.Ordinal)
+                || ((path.StartsWith("Features/", StringComparison.Ordinal) || path.StartsWith("Shared/", StringComparison.Ordinal)) && !path.EndsWith("/Module.cs", StringComparison.Ordinal)
                     && Regex.IsMatch(File.ReadAllText(Path.Combine(Api(), path)), @"\bIEndpointRouteBuilder\b|\bIServiceCollection\b|\.Map(Get|Post|Put|Delete|Patch|Group)\(")))
             .SelectMany(path => declaration.Matches(File.ReadAllText(Path.Combine(Api(), path)))
                 .Where(match => !match.Groups[1].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("static"))

@@ -2,7 +2,7 @@
 // startup and deleted when the process has stopped.
 using TheYard.Infrastructure;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Hosted;
 
 /// <summary>
 /// A scratch database belongs to one process, so it goes when the process does. Where a

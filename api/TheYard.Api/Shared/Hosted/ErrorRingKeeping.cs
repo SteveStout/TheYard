@@ -2,7 +2,7 @@
 // the host starts.
 using TheYard.Application;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Hosted;
 
 /// <summary>
 /// Wires the server's and the browser's error rings to the kept log, so an error outlives the

@@ -1,4 +1,3 @@
-using TheYard.Api;
 using TheYard.Data;
 
 namespace TheYard.Tests;

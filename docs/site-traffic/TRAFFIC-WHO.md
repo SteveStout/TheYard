@@ -22,7 +22,7 @@ A visit is handed to the counter as a record with six fields, and a record with 
 - **The store** that served the request (Azure SQL Database or Azure Cosmos DB), so the graph keeps a line for each site.
 - **Whether it looked like a bot**, read from the request's user agent and what it asked for. The agent itself is read and forgotten.
 
-```live path=api/TheYard.Api/Activity.cs region=visitor-token
+```live path=api/TheYard.Api/Shared/Activity/Activity.cs region=visitor-token
 ```
 
 A port after an address is dropped before the token is made, so one machine is one visitor whatever port it came from.

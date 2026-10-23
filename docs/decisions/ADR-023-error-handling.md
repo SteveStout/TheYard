@@ -74,7 +74,7 @@ Recent errors card now shows both sides of the app.
 
 The handler and the logging, in `api/TheYard.Api/Program.cs`:
 
-```live path=api/TheYard.Api/Shared/ApiRegistration.cs region=problem-details
+```live path=api/TheYard.Api/Shared/Wiring/ApiRegistration.cs region=problem-details
 ```
 
 The endpoint browser errors report to:
@@ -157,10 +157,10 @@ The server half sits in the host Api: the problem-details registration in Compos
 
 ## Files
 
-- [`api/TheYard.Api/Shared/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ApiRegistration.cs): the handler and the logging.
+- [`api/TheYard.Api/Shared/Wiring/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ApiRegistration.cs): the handler and the logging.
 - [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs): the client-error endpoint.
 - [`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs) and [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the 400s.
-- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the ring buffer both sides record into.
+- [`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs): the ring buffer both sides record into.
 - [`src/components/shared/ErrorBoundary/ErrorBoundary.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.tsx) and [`ErrorBoundary.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ErrorBoundary/ErrorBoundary.module.css): the boundary and the reporter.
 - [`src/app/mount.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/app/mount.tsx): the boundary around the app.
 - [`src/app/reportUncaughtErrors.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/reportUncaughtErrors.ts): the two window handlers, started from `src/main.tsx`.

@@ -1,6 +1,5 @@
 using System.Reflection;
 using NetArchTest.Rules;
-using TheYard.Api;
 
 namespace TheYard.Tests;
 
@@ -88,12 +87,23 @@ public sealed class SliceTests
     }
 
     [Fact]
-    public void Rule_1_a_host_root_type_one_slice_alone_uses_lives_in_that_slice()
+    public void Rule_1_a_shared_type_one_slice_alone_uses_lives_in_that_slice()
     {
-        // The shared part of the host is what more than one place uses. A root type whose every user
+        // The shared part of the host is what more than one place uses. A shared type whose every user
         // sits in one slice is that slice's code standing outside its folder, reachable by every
         // other slice; it moves in. Its users are read from the compiled host: fields, signatures,
-        // base types and every type a method body names.
+        // base types and every type a method body names. Since ADR-114 the shared part is Shared/,
+        // one namespace per concern, and the root namespace holds only Program.
+        var lonely = LonelySharedTypes();
+        Assert.True(lonely.Count == 0, string.Join(Environment.NewLine, lonely));
+    }
+
+    /// <summary>
+    /// Every shared type (the root namespace or a Shared concern) that exactly one slice uses and no
+    /// shared code does, with the slice named; HostLayoutTests reads the same list.
+    /// </summary>
+    internal static List<string> LonelySharedTypes()
+    {
         using var module = Mono.Cecil.ModuleDefinition.ReadModule(Host.Location);
         var users = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var type in module.GetTypes())
@@ -107,38 +117,26 @@ public sealed class SliceTests
                 }
             }
         }
-        var lonely = module.Types
-            .Where(type => type.Namespace == "TheYard.Api" && !type.Name.StartsWith('<'))
+        return [.. module.Types
+            .Where(type => (type.Namespace == "TheYard.Api" || type.Namespace.StartsWith("TheYard.Api.Shared", StringComparison.Ordinal)) && !type.Name.StartsWith('<'))
             .Select(type => (type.FullName, slices: users.TryGetValue(type.FullName, out var set) ? set.Select(user => SliceOf(module.GetType(user)?.Namespace) ?? "shared").Distinct(StringComparer.Ordinal).ToList() : []))
             .Where(type => type.slices.Count == 1 && type.slices[0] != "shared" && !StaysShared.ContainsKey(type.FullName))
-            .Select(type => $"{type.FullName} is used only by {type.slices[0]}")
-            .ToList();
-        Assert.True(lonely.Count == 0, string.Join(Environment.NewLine, lonely));
+            .Select(type => $"{type.FullName} is used only by {type.slices[0]}")];
     }
 
     /// <summary>
-    /// Root types one slice alone uses that stay where they are, each with why: a record decided
+    /// Shared types one slice alone uses that stay where they are, each with why: a record decided
     /// where they live, or they share a documented region with what the shared part builds.
     /// </summary>
     private static readonly Dictionary<string, string> StaysShared = new(StringComparer.Ordinal)
     {
-        ["TheYard.Api.VehiclePage"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
-        ["TheYard.Api.BidResult"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
-        ["TheYard.Api.TickResult"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
-        ["TheYard.Api.HealthReport"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
-        ["TheYard.Api.ForgotReply"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
-        ["TheYard.Api.AcrCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.AcrCatalog"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.CosmosCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.EdgeCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.InsightsCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.MailCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.NightlyCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.NightlySource"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.SqlCard"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.CloudRecorder"] = "ADR-107 keeps the cloud card readers in the host's Cloud/ folder until the lane that moves them behind ports",
-        ["TheYard.Api.StoreMetrics"] = "the store-ring region of AdminObservability.cs, beside the ring it sums, which the shared registration builds",
-        ["TheYard.Api.Routes"] = "the routes region of Peer.cs, beside the peer reader the shared registration builds",
+        ["TheYard.Api.Shared.Wire.VehiclePage"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.Shared.Wire.BidResult"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.Shared.Wire.TickResult"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.Shared.Wire.HealthReport"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.Shared.Wire.ForgotReply"] = "ADR-076 keeps every named reply the endpoints answer with in Replies.cs, one file the API's description is read from",
+        ["TheYard.Api.Shared.Observability.StoreMetrics"] = "the store-ring region of AdminObservability.cs, beside the ring it sums, which the shared registration builds",
+        ["TheYard.Api.Shared.Instance.Routes"] = "the routes region of Peer.cs, beside the peer reader the shared registration builds",
     };
 
     /// <summary>Every type of this module a type names: its base, its interfaces, its fields, its signatures and every operand of its bodies, the outermost type of each.</summary>
@@ -259,9 +257,9 @@ public sealed class SliceTests
     [Fact]
     public void Rule_3_the_sites_and_the_stores_are_lookups_with_no_store_or_host_written_in()
     {
-        // A third site or a third store is a setting (Shared/SiteSettings.cs), so the two types
+        // A third site or a third store is a setting (Shared/Wiring/SiteSettings.cs), so the two types
         // that decide which store and which site a request gets carry no store key and no name.
-        string[] types = ["TheYard.Api.SiteHosts", "TheYard.Api.Site", "TheYard.Api.Backends", "TheYard.Api.CurrentBackend"];
+        string[] types = ["TheYard.Api.Shared.Instance.SiteHosts", "TheYard.Api.Shared.Instance.Site", "TheYard.Api.Shared.Stores.Backends", "TheYard.Api.Shared.Stores.CurrentBackend"];
         Assert.Empty(Literals(types, literal =>
             literal.Equals("sql", StringComparison.OrdinalIgnoreCase)
             || literal.Equals("cosmos", StringComparison.OrdinalIgnoreCase)
@@ -358,7 +356,7 @@ public sealed class SliceTests
         string[] concerns = ["StoreAnnouncement", "ScratchDatabaseCleanup", "ErrorRingKeeping", "CatalogueWarm", "PageSweepAtRoll", "KeepWarmAtRoll", "HostedSiteStopper"];
         foreach (string concern in concerns)
         {
-            var type = Host.GetType("TheYard.Api." + concern);
+            var type = Host.GetType("TheYard.Api.Shared.Hosted." + concern);
             Assert.True(type is not null && typeof(Microsoft.Extensions.Hosting.IHostedService).IsAssignableFrom(type), $"{concern} is not a hosted service");
         }
     }

@@ -37,11 +37,11 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 1411 xUnit tests, 522 Vitest tests at 1.0.4.37 and 177 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 1418 xUnit tests, 522 Vitest tests at 1.0.4.38 and 177 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. A push that fails the gate does not roll.
 
-**The records.** One hundred and thirteen decision records, each carrying the decision, the trade-off and the number behind
+**The records.** One hundred and fourteen decision records, each carrying the decision, the trade-off and the number behind
 it, with a Files section pointing at the code it governs. Code shown in a record is read from the running build, so a
 record cannot drift from the code it describes.
 
@@ -100,6 +100,6 @@ default cost 16.07 request units a document on the bulk seed against 8.84 tuned,
 ```live path=.github/workflows/ci.yml region=ci-jobs
 ```
 
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): every document this page sits beside, served from the checkout by slug.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): every document this page sits beside, served from the checkout by slug.
 - [`api/TheYard.Tests/PublicFaceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PublicFaceTests.cs): the test that holds the record count in every living document, this page included, and the README's test counts to what the suites declare.
 - [`docs/decisions/ADR-068-the-five-minute-gate.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-068-the-five-minute-gate.md), [`docs/decisions/ADR-027-competing-bidders.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-027-competing-bidders.md), [`docs/decisions/ADR-070-three-readers-with-no-memory.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-070-three-readers-with-no-memory.md), [`docs/decisions/ADR-067-same-performance-proven.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-067-same-performance-proven.md), [`docs/decisions/ADR-059-a-second-store-priced.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md): the records the numbers above come from.

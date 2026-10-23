@@ -254,7 +254,7 @@ public class DeployWorkflowTests
         Assert.Contains("'\"current\":\"cosmos\"'", body, StringComparison.Ordinal);
         Assert.Contains("-H \"X-Yard-Host: ${SHED_SITE#https://}\" \"$ORIGIN/healthz\"", body, StringComparison.Ordinal);
         Assert.Contains("<title>The Shed</title>", body, StringComparison.Ordinal);
-        Assert.Equal("X-Yard-Host", TheYard.Api.SiteHosts.HeaderName);
+        Assert.Equal("X-Yard-Host", TheYard.Api.Shared.Instance.SiteHosts.HeaderName);
     }
 
     /// <summary>

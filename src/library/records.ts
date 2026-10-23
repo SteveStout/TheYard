@@ -21,7 +21,7 @@ export type RecordEntry = DocEntry & { kind: 'adr'; number: string };
 // #region records
 // Every decision record, in number order, joined from the runs in
 // src/library/decisionRecords, one line per run. Each record's URL ends in the
-// slug the API serves it under (api/TheYard.Api/DocumentationCatalog.cs), and
+// slug the API serves it under (api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs), and
 // DocumentationCatalogTests reads this file, every part and pages.ts to hold the
 // lists to each other (ADR-017). The keys are the documents' names in code:
 // DocKey is worked out from them in documents.ts, so adding a record to the last

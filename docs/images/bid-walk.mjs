@@ -92,7 +92,7 @@ part('part', 60, 570, 360, 180, 'EfBidStore or CosmosBidStore', 'EfSources.cs an
   'EF Core: one row per buyer per vehicle, in',
   'Azure SQL Database or SQLite.',
   "Cosmos DB SDK: one document in the buyer's partition.",
-  'Shared/StoreRegistration.cs picks which.',
+  'Shared/Wiring/StoreRegistration.cs picks which.',
 ]);
 
 // Application: the use case, then the service that holds everybody's bids, then the port.

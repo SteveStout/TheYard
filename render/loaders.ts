@@ -19,7 +19,7 @@ import { SELF_READ } from './page';
 /** One read of the API: its JSON, or null on anything but a 200. */
 type Read = <T>(path: string, signal: AbortSignal) => Promise<T | null>;
 
-/** The header that names the store a read is for, as the API names it (api/TheYard.Api/Stores.cs). */
+/** The header that names the store a read is for, as the API names it (api/TheYard.Api/Shared/Stores/Stores.cs). */
 export const STORE_HEADER = 'X-Yard-Store';
 
 /**

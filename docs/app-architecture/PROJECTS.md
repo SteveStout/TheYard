@@ -72,7 +72,7 @@ A console tool: seeds the 100,000-document catalogue and runs the partition key'
 The host and the composition root, cut into vertical slices (ADR: The onion cut into vertical
 slices): `Features/<Slice>/` holds one feature's routes and its own services, with a `Module.cs` that
 registers and maps it; `Shared/` holds what every slice shares, the registration steps and the request
-pipeline (`Shared/RequestPipeline.cs`), the hosted services (`Shared/Hosted/`) and the guest sites
+pipeline (`Shared/Wiring/RequestPipeline.cs`), the hosted services (`Shared/Hosted/`) and the guest sites
 (`Shared/Sites/`); `Program.cs` registers the shared parts by name and loops over the modules, and each
 route asks one Application handler; `Features/Vehicles/VehicleQueryParams` binds and validates GET parameters,
 `Clocks` builds the request's clock (now, and the UTC midnight that began the day, the same for every caller), and `VehicleWire` stamps server-derived

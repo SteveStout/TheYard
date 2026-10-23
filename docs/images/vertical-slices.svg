@@ -39,7 +39,7 @@
   <text x="30" y="68" class="caption">Read top to bottom for the rings, which point inward as they always did; read a dashed column for one feature, which now lives in one place in each ring and nowhere else.</text>
   <rect x="30" y="100" width="1100" height="122" class="ring0"/>
   <text x="46" y="124" class="band-title">TheYard.Api, the host</text>
-  <text x="46" y="142" class="band-sub">Features/&lt;Slice&gt;/Module.cs: Register and Map; the wire; the pipeline and the cloud readers in Shared and at the root</text>
+  <text x="46" y="142" class="band-sub">Features/&lt;Slice&gt;/Module.cs: Register and Map; Program.cs alone at the root; everything shared in Shared/&lt;Concern&gt;/</text>
   <rect x="30" y="232" width="1100" height="110" class="ring1"/>
   <text x="46" y="256" class="band-title">TheYard.Infrastructure and .Cosmos, the adapters</text>
   <text x="46" y="274" class="band-sub">the same ports answered twice, relational and document, at each project's root; the one Features/ folder is Accounts</text>
@@ -54,10 +54,12 @@
   <text x="46" y="616" class="band-sub">zero dependencies, zero behaviour</text>
   <rect x="40" y="96" width="246" height="538" class="shared"/>
   <text x="163" y="88" class="shared-title" text-anchor="middle">Shared/, the same in every ring</text>
-  <text x="52" y="160" class="small">Program.cs: a loop over Modules</text>
-  <text x="52" y="176" class="small">Shared/RequestPipeline.cs</text>
-  <text x="52" y="192" class="small">Shared/SiteSettings.cs, SiteHosts.cs</text>
-  <text x="52" y="208" class="small">Shared/Sites: IHostedSite, ShedSite</text>
+  <text x="52" y="152" class="small">Activity, Auth, CostReadings</text>
+  <text x="52" y="165" class="small">Documentation, Edge, Grades, Hosted</text>
+  <text x="52" y="178" class="small">Instance, MachineReadings</text>
+  <text x="52" y="191" class="small">Observability, PlanReadings, Proof</text>
+  <text x="52" y="204" class="small">Resources, Sites, Stores, Usage, Wire</text>
+  <text x="52" y="217" class="small">Wiring</text>
   <text x="52" y="292" class="small">ContextFactory.cs, CosmosStore.cs</text>
   <text x="52" y="308" class="small">OutboundHttp.cs, one pool</text>
   <text x="52" y="324" class="small">AzureMetrics.cs, the host's</text>
@@ -81,7 +83,7 @@
   <text x="601" y="88" class="slice-title" text-anchor="middle">Features/Vehicles</text>
   <text x="518" y="160" class="body">Module.cs</text>
   <text x="518" y="176" class="body">VehicleEndpoints.cs</text>
-  <text x="518" y="192" class="body">VehicleWire.cs, at the root</text>
+  <text x="518" y="192" class="body">VehicleWire.cs, in Shared/Wire</text>
   <text x="518" y="292" class="body">EfVehicleCatalogue.cs</text>
   <text x="518" y="308" class="body">CosmosVehicleCatalogue.cs</text>
   <text x="518" y="412" class="body">VehicleHandlers.cs</text>
@@ -106,10 +108,10 @@
   <text x="1016" y="88" class="slice-title" text-anchor="middle">Features/Admin/Cloud</text>
   <text x="930" y="160" class="body">Module.cs</text>
   <text x="930" y="176" class="body">CloudEndpoints.cs</text>
-  <text x="930" y="192" class="body">Cloud/SqlCard.cs, at the root</text>
-  <text x="930" y="292" class="body">(none: the readers stay</text>
-  <text x="930" y="308" class="body">in the host, ADR-107's</text>
-  <text x="930" y="324" class="body">addendum of 1.0.4.0)</text>
+  <text x="930" y="192" class="body">SqlCard.cs and every reader</text>
+  <text x="930" y="292" class="body">(none yet: the readers</text>
+  <text x="930" y="308" class="body">sit in the host's slice,</text>
+  <text x="930" y="324" class="body">ADR-114)</text>
   <text x="930" y="412" class="body">ReadCloudCardHandler.cs</text>
   <text x="930" y="428" class="body">ICloudCards, beside it</text>
   <text x="930" y="532" class="body">CardTone.cs</text>

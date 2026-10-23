@@ -1,4 +1,4 @@
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Sites;
 
 // #region hosted-sites
 /// <summary>

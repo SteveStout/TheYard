@@ -88,6 +88,6 @@ The split by job above put every endpoint in `Endpoints/` and every registration
 - [`src/main.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/main.tsx): the front end's table of contents.
 - [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared): the registration steps, the startup, the pipeline and the fallback.
 - [`api/TheYard.Api/Features`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features): one static class per feature.
-- [`api/TheYard.Api/Shared/PreparedStores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PreparedStores.cs): what bringing the stores up hands back, from 1.0.3.188.
+- [`api/TheYard.Api/Shared/Stores/PreparedStores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/PreparedStores.cs): what bringing the stores up hands back, from 1.0.3.188.
 - [`api/TheYard.Api/Shared/Hosted`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared/Hosted): what ran at startup, one hosted service per concern, from 1.0.3.188.
 - [`api/TheYard.Tests/CompositionRootTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CompositionRootTests.cs) and [`api/TheYard.Tests/XmlSummaryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/XmlSummaryTests.cs): the two rules above.

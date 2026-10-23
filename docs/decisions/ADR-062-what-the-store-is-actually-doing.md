@@ -175,7 +175,7 @@ Three rings share this one: Application owns the `IStoreLog` port and the `Store
 
 - [`api/TheYard.Application/StoreLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StoreLog.cs): the type with nowhere to put a value, and the port.
 - [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): the wrapper every operation goes through.
-- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs): the ring and the window's numbers.
+- [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs): the ring and the window's numbers.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the endpoint (region store-endpoint).
 - [`api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs): the request charge in the metrics.
 - [`src/components/admin/StoreCard/StoreCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/StoreCard/StoreCard.tsx): the card.

@@ -122,7 +122,7 @@ api/TheYard.Infrastructure/
   Rows.cs                         the storage row types, which are not the domain records
   EfSources.cs                    the adapters, the seed, and how a schema arrives per provider
 api/TheYard.Migrations.Sqlite/   the SQLite schema's history
-api/TheYard.Api/DesignTime.cs    what `dotnet ef` uses when it needs the model
+api/TheYard.Api/Shared/Stores/DesignTime.cs    what `dotnet ef` uses when it needs the model
 api/TheYard.Tests/
   SchemaConformanceTests.cs       holds the mapping to the SQL project
   SqlServerModelTests.cs          the mapping's own rules, asserted without a database
@@ -209,7 +209,7 @@ This is the newcomer's map of Infrastructure and the projects beside it: YardCon
 
 - [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs)
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs)
-- [`api/TheYard.Api/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DesignTime.cs)
+- [`api/TheYard.Api/Shared/Stores/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/DesignTime.cs)
 - [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database)
 - [`docs/decisions/ADR-039-sql-server-backend.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-039-sql-server-backend.md)
 - [`docs/decisions/ADR-040-database-source-control.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-040-database-source-control.md)

@@ -99,7 +99,7 @@ Two things, both mechanical. **A second look:** an address that did not answer o
 
 The second look, read from this build:
 
-```live path=api/TheYard.Api/PageStatus.cs region=second-look
+```live path=api/TheYard.Api/Shared/Instance/PageStatus.cs region=second-look
 ```
 
 ## Where it sits
@@ -112,11 +112,11 @@ From 1.0.3.188 the two sweeps at the roll are arranged by `Hosted/PageSweepAtRol
 
 ## Files
 
-- [`api/TheYard.Api/PageStatus.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PageStatus.cs): the derived list, the sweep, and what it reports.
+- [`api/TheYard.Api/Shared/Instance/PageStatus.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/PageStatus.cs): the derived list, the sweep, and what it reports.
 - [`api/TheYard.Api/Shared/Hosted/PageSweepAtRoll.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Hosted/PageSweepAtRoll.cs): the sweep at startup (region page-status-wiring).
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region page-status-endpoints).
-- [`api/TheYard.Api/Shared/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/ObservabilityRegistration.cs): the request hook that drops its header.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the dictionary the list is built from.
+- [`api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs): the request hook that drops its header.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): the dictionary the list is built from.
 - [`src/components/admin/PagesCard/PagesCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/PagesCard/PagesCard.tsx): the card, failures first.
 - [`api/TheYard.Tests/PageStatusTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PageStatusTests.cs): the list against the catalogue, every address answering, the types, and the header that keeps a sweep out of the ring.
 - [`api/TheYard.Tests/RecordLinksTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RecordLinksTests.cs): the rule that put the README's links right, shipped as 1.0.0.147.

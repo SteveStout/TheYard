@@ -71,26 +71,26 @@ for reading either.
 The registration, and the reader it hands the Admin tab
 (`api/TheYard.Api/Program.cs`):
 
-```live path=api/TheYard.Api/Shared/TelemetryRegistration.cs region=telemetry
+```live path=api/TheYard.Api/Shared/Wiring/TelemetryRegistration.cs region=telemetry
 ```
 
 ```live path=api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs region=telemetry-endpoint
 ```
 
 One query answers the whole card, because three questions in three round
-trips is three chances to time out (`api/TheYard.Api/Telemetry.cs`):
+trips is three chances to time out (`api/TheYard.Api/Shared/Observability/Telemetry.cs`):
 
-```live path=api/TheYard.Api/Telemetry.Kql.cs region=kql
+```live path=api/TheYard.Api/Shared/Observability/Telemetry.Kql.cs region=kql
 ```
 
-```live path=api/TheYard.Api/Telemetry.cs region=read
+```live path=api/TheYard.Api/Shared/Observability/Telemetry.cs region=read
 ```
 
 Kusto answers in columns and rows; the card wants objects. Reading each row
 by column name rather than position is what keeps a query edit from shifting
 every value silently:
 
-```live path=api/TheYard.Api/Telemetry.Shape.cs region=shape
+```live path=api/TheYard.Api/Shared/Observability/Telemetry.Shape.cs region=shape
 ```
 
 The card, which renders every state the reader can answer with
@@ -142,8 +142,8 @@ Telemetry is a host concern and stays in the host Api, where Composition/Telemet
 
 ## Files
 
-- [`api/TheYard.Api/Telemetry.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Telemetry.cs): the reader, its query and its shaping.
-- [`api/TheYard.Api/Shared/TelemetryRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/TelemetryRegistration.cs): the registration.
+- [`api/TheYard.Api/Shared/Observability/Telemetry.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Telemetry.cs): the reader, its query and its shaping.
+- [`api/TheYard.Api/Shared/Wiring/TelemetryRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/TelemetryRegistration.cs): the registration.
 - [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs): the browser-error log.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the Admin endpoint (region telemetry-endpoint).
 - [`api/TheYard.Api/TheYard.Api.csproj`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/TheYard.Api.csproj): the one package this added.

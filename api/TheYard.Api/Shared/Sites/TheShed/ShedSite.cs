@@ -1,6 +1,6 @@
 // The Shed, as a site this process hosts: its published folder, its own application built the
 // way its Program.cs builds it, and what this host adds to that application's builder.
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Sites;
 
 /// <summary>
 /// The Shed (ADR: One web app for every .NET process): the getting-started sample under
@@ -31,7 +31,7 @@ public sealed class ShedSite(string host, ShedSettings settings, IEnumerable<She
         Volatile.Write(ref _application, await ShedApplication.StartAsync(
             settings.ContentRoot,
             environment.EnvironmentName,
-            shed => steps.ForEach(addition => addition.Apply(shed)),   // Shared/HostedSiteRegistration.cs
+            shed => steps.ForEach(addition => addition.Apply(shed)),   // Shared/Wiring/HostedSiteRegistration.cs
             stopping));
     }
 

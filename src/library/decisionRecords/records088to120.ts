@@ -192,4 +192,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '113',
   },
+  adrTheHostRootHoldsOneFile: {
+    title: 'ADR: The host root holds one file',
+    menuLabel: 'ADR: The host root holds one file',
+    url: '/api/docs/adr-the-host-root-holds-one-file',
+    kind: 'adr',
+    number: '114',
+  },
 } as const satisfies Record<string, RecordEntry>;

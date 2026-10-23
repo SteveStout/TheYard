@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
-using TheYard.Api;
 
 namespace TheYard.Tests;
 
@@ -182,9 +181,9 @@ public class SiteHostsTests
     {
         await using var named = new WebApplicationFactory<Program>().WithWebHostBuilder(builder => builder.UseSetting("WEBSITE_SITE_NAME", "APP-THEYARD-ONE-SS"));
         var answer = await named.CreateClient().GetAsync("/api/version");
-        Assert.Equal("APP-THEYARD-ONE-SS", answer.Headers.GetValues(NetlifyEdge.SiteHeader).Single());
+        Assert.Equal("APP-THEYARD-ONE-SS", answer.Headers.GetValues(EdgeKeeps.SiteHeader).Single());
 
         await using var plain = new WebApplicationFactory<Program>();
-        Assert.False((await plain.CreateClient().GetAsync("/api/version")).Headers.Contains(NetlifyEdge.SiteHeader));
+        Assert.False((await plain.CreateClient().GetAsync("/api/version")).Headers.Contains(EdgeKeeps.SiteHeader));
     }
 }

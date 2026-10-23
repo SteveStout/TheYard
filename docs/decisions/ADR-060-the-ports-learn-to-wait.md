@@ -178,7 +178,7 @@ request's store's warm before any endpoint runs, which after the first time
 is an await on a task that finished at startup; the accessor is unchanged and
 is reached only warm (ADR: Three readers with no memory of the project).
 
-```live path=api/TheYard.Api/Stores.cs region=warm-before-reading
+```live path=api/TheYard.Api/Shared/Stores/Stores.cs region=warm-before-reading
 ```
 
 ```live path=api/TheYard.Tests/WarmthTests.cs region=warm-before-reading

@@ -42,8 +42,8 @@ Nothing here is new code: this page is the index of monitors that already exist,
 ## Files
 
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs) - `/healthz`, `/readyz` and `/api/health`
-- [`api/TheYard.Api/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Machines.cs) - the sampler, every 15 seconds
-- [`api/TheYard.Api/PlanRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/PlanRecorder.cs) and [`api/TheYard.Api/CloudRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CloudRecorder.cs) - the plan and the resources, every minute
-- [`api/TheYard.Api/CostRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/CostRecorder.cs) - the bill, hourly
-- [`api/TheYard.Api/KeepWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/KeepWarm.cs) - every public read, every four minutes
+- [`api/TheYard.Api/Shared/MachineReadings/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/MachineReadings/Machines.cs) - the sampler, every 15 seconds
+- [`api/TheYard.Api/Shared/PlanReadings/PlanRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanRecorder.cs) and [`api/TheYard.Api/Features/Admin/Cloud/CloudRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/CloudRecorder.cs) - the plan and the resources, every minute
+- [`api/TheYard.Api/Shared/CostReadings/CostRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/CostReadings/CostRecorder.cs) - the bill, hourly
+- [`api/TheYard.Api/Shared/Instance/KeepWarm.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/KeepWarm.cs) - every public read, every four minutes
 - [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/edge-branch.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/edge-branch.yml) - what every roll reads

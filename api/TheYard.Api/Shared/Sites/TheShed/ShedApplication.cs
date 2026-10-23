@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using TestProject.Composition;
 
-namespace TheYard.Api;
+namespace TheYard.Api.Shared.Sites;
 
 // #region shed-application
 /// <summary>

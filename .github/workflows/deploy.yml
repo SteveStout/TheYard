@@ -292,7 +292,7 @@ jobs:
           # #region verify-names
           # The other two names, at the origin, before any domain: the process picks the
           # store, and The Shed, by the name a request arrived on, which the edge writes
-          # as X-Yard-Host (api/TheYard.Api/SiteHosts.cs). The Cosmos DB site's name must
+          # as X-Yard-Host (api/TheYard.Api/Shared/Instance/SiteHosts.cs). The Cosmos DB site's name must
           # get Azure Cosmos DB with no store named, and The Shed's name must reach The
           # Shed's own health check and its own page.
           cosmos=$(curl -fsS -A "TheYard-SelfRead/1 (deploy)" --max-time 30 -H "X-Yard-Host: ${COSMOS_SITE#https://}" "$ORIGIN/api/stores")

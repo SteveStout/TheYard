@@ -86,14 +86,14 @@ this record has room for.
 
 ## In the code
 
-Issuing the session (`api/TheYard.Api/Tokens.cs`):
+Issuing the session (`api/TheYard.Api/Shared/Auth/Tokens.cs`):
 
-```live path=api/TheYard.Api/Tokens.cs region=issue
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=issue
 ```
 
-Reading it back, and who is asking (`api/TheYard.Api/Tokens.cs`):
+Reading it back, and who is asking (`api/TheYard.Api/Shared/Auth/Tokens.cs`):
 
-```live path=api/TheYard.Api/Tokens.cs region=who
+```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=who
 ```
 
 Two indexes, one fact (`api/TheYard.Application/BidService.cs`):
@@ -251,7 +251,7 @@ recomputes the status from the window as time passes and would overwrite a
 status that said otherwise. The parameter has no default, so a caller that
 forgets it does not compile:
 
-```live path=api/TheYard.Api/VehicleWire.cs region=sold
+```live path=api/TheYard.Api/Shared/Wire/VehicleWire.cs region=sold
 ```
 
 The browser treats `sold` the way it already treated the buyer's own purchase:
@@ -295,7 +295,7 @@ From 1.0.3.193 each account route asks one handler in the Application ring's `Fe
 
 ## Files
 
-- [`api/TheYard.Api/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Tokens.cs): the token, the cookie, and who is asking.
+- [`api/TheYard.Api/Shared/Auth/Tokens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Auth/Tokens.cs): the token, the cookie, and who is asking.
 - [`api/TheYard.Api/Features/Accounts/AccountView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountView.cs): what a register or login answers with.
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the composition.
 - [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the endpoints.
@@ -304,7 +304,7 @@ From 1.0.3.193 each account route asks one handler in the Application ring's `Fe
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the store port, now keyed on the pair.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the one field Identity does not already have.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the proof, and the second buyer refused.
-- [`api/TheYard.Domain/BidRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/BidRules.cs) and [`api/TheYard.Api/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/VehicleWire.cs): sold, asked first and said on every vehicle.
+- [`api/TheYard.Domain/BidRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/BidRules.cs) and [`api/TheYard.Api/Shared/Wire/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/VehicleWire.cs): sold, asked first and said on every vehicle.
 - [`docs/decisions/ADR-038-identity-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-038-identity-explained.md): the same setup, walked at a new developer's level.
 - [`docs/decisions/ADR-033-relational-store.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-033-relational-store.md): where bids got somewhere to live.
 - [`src/lib/auth.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auth.ts): the account seam in the browser, and the question that ignores a late answer.

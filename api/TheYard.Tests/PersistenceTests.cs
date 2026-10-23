@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using TheYard.Api;
 using TheYard.Infrastructure;
 
 namespace TheYard.Tests;

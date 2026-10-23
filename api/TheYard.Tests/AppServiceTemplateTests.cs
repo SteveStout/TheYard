@@ -17,7 +17,7 @@ public class AppServiceTemplateTests
     // #region settings-carried
     /// <summary>
     /// The names the process answers to and The Shed's folder are settings the code reads
-    /// (Shared/SiteSettings.cs, Shared/Sites/HostedSiteMount.cs), so a template without them is a web app that serves one
+    /// (Shared/Wiring/SiteSettings.cs, Shared/Sites/HostedSiteMount.cs), so a template without them is a web app that serves one
     /// store on every name and no Shed at all, with nothing red anywhere. The per-site settings
     /// of the four-app shape are gone: a Store__Default left behind would pin every name to one
     /// store, and a Peer__Url would read a web app that no longer exists.

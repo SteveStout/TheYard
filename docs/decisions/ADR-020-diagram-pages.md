@@ -51,12 +51,12 @@ own tab away from the app.
 ## In the code
 
 The endpoint, in `api/TheYard.Api/Program.cs`, and the catalog beside the
-documents in `api/TheYard.Api/DocumentationCatalog.cs`:
+documents in `api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`:
 
 ```live path=api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs region=diagram-page
 ```
 
-```live path=api/TheYard.Api/DocumentationCatalog.cs region=diagrams
+```live path=api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs region=diagrams
 ```
 
 The page itself, `api/TheYard.Api/Features/Docs/DiagramPage.cs`. The palette is repeated
@@ -101,7 +101,7 @@ Diagram pages are served by the host Api, where DiagramPage.cs builds the HTML a
 ## Files
 
 - [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs): the `/api/docs/diagrams/{name}` endpoint.
-- [`api/TheYard.Api/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/DocumentationCatalog.cs): the diagram catalog beside the documents.
+- [`api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Documentation/DocumentationCatalog.cs): the diagram catalog beside the documents.
 - [`api/TheYard.Api/Features/Docs/DiagramPage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DiagramPage.cs): the HTML page around an SVG.
 - [`api/TheYard.Tests/DiagramPageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DiagramPageTests.cs): the page tests.
 - [`src/lib/markdown.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/markdown.ts): the link hook, beside the renderer it belongs to.

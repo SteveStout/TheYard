@@ -3,7 +3,7 @@
 // Shared column beside the slices, and one request followed through one slice. Run from the repo root:
 //   node docs/images/vertical-slices.mjs     writes docs/images/vertical-slices.svg
 // Redraw it when a ring, a slice or a rule changes; the picture is a claim the tests hold.
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +12,18 @@ const W = 1400;
 const H = 1010;
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const out = [];
+
+// The host's Shared concerns, read from ADR-114's table rather than typed here, so a new concern is drawn
+// the day its row is written (ADR: The host root holds one file).
+const concerns = [...readFileSync(join(here, '..', 'decisions', 'ADR-114-the-host-root-holds-one-file.md'), 'utf8')
+  .matchAll(/^\|\s*`Shared\/(\w+)\/`\s*\|/gm)].map((match) => match[1]);
+/** The concern names wrapped at 38 characters, the width of the Shared column at the small size. */
+const concernLines = concerns.reduce((lines, name) => {
+  const last = lines.at(-1);
+  if (last !== undefined && `${last}, ${name}`.length <= 38) lines[lines.length - 1] = `${last}, ${name}`;
+  else lines.push(name);
+  return lines;
+}, []);
 
 /** A ring drawn as a band across the page: its title, its one-line job, and the band's box. */
 function band(y, h, cls, title, job) {
@@ -50,7 +62,7 @@ function arrow(d, label, lx, ly) {
 }
 
 // The rings, as bands. Outside at the top, inside at the bottom; references point down and never up.
-const api = band(100, 122, 'ring0', 'TheYard.Api, the host', 'Features/<Slice>/Module.cs: Register and Map; the wire; the pipeline and the cloud readers in Shared and at the root');
+const api = band(100, 122, 'ring0', 'TheYard.Api, the host', 'Features/<Slice>/Module.cs: Register and Map; Program.cs alone at the root; everything shared in Shared/<Concern>/');
 const infra = band(232, 110, 'ring1', 'TheYard.Infrastructure and .Cosmos, the adapters', 'the same ports answered twice, relational and document, at each project\'s root; the one Features/ folder is Accounts');
 const app = band(352, 110, 'ring2', 'TheYard.Application, the use cases', 'Features/<Slice>/: one handler per request, one HandleAsync; the ports in Ports.cs and beside the handler');
 const domain = band(472, 92, 'ring3', 'TheYard.Domain, the rules', 'pure functions and records at the root; no Features/, no clock, no disk, no network');
@@ -59,7 +71,8 @@ band(574, 60, 'ring4', 'TheYard.Data, the records', 'zero dependencies, zero beh
 // The Shared column: what every slice may use and no slice owns.
 out.push(`  <rect x="40" y="96" width="246" height="538" class="shared"/>`);
 out.push(`  <text x="163" y="88" class="shared-title" text-anchor="middle">Shared/, the same in every ring</text>`);
-files(52, 160, ['Program.cs: a loop over Modules', 'Shared/RequestPipeline.cs', 'Shared/SiteSettings.cs, SiteHosts.cs', 'Shared/Sites: IHostedSite, ShedSite'], 'small');
+// Thirteen pixels a line here, not sixteen, so every concern fits above the adapters' band.
+concernLines.forEach((line, i) => out.push(`  <text x="52" y="${152 + 13 * i}" class="small">${esc(line)}</text>`));
 files(52, 292, ['ContextFactory.cs, CosmosStore.cs', 'OutboundHttp.cs, one pool', 'AzureMetrics.cs, the host\'s'], 'small');
 files(52, 412, ['Auction.cs, the composition', 'Ports.cs, IStoreDiagnostics', 'CardFrame.cs, CloudWire.cs'], 'small');
 files(52, 532, ['Fnv1a.cs, AuctionSchedule.cs', 'CardTone.cs, the one tone rule'], 'small');
@@ -75,7 +88,7 @@ files(bids.x + 12, 412, ['PlaceBidHandler.cs', 'BidReadHandlers.cs', 'IBidStore 
 files(bids.x + 12, 532, ['BidRules.cs', 'StandingRules.cs']);
 
 const vehicles = slice(506, 190, 'Features/Vehicles');
-files(vehicles.x + 12, 160, ['Module.cs', 'VehicleEndpoints.cs', 'VehicleWire.cs, at the root']);
+files(vehicles.x + 12, 160, ['Module.cs', 'VehicleEndpoints.cs', 'VehicleWire.cs, in Shared/Wire']);
 files(vehicles.x + 12, 292, ['EfVehicleCatalogue.cs', 'CosmosVehicleCatalogue.cs']);
 files(vehicles.x + 12, 412, ['VehicleHandlers.cs', 'IVehicleCatalogue in Ports.cs']);
 files(vehicles.x + 12, 532, ['VehicleFilter.cs', 'VehicleOrdering.cs', 'AuctionClock.cs']);
@@ -87,8 +100,8 @@ files(accounts.x + 12, 412, ['SessionHandlers.cs', 'ResetHandlers.cs', 'AccountP
 files(accounts.x + 12, 532, ['(no rule of its own;', 'the session is Application\'s)']);
 
 const cloud = slice(918, 196, 'Features/Admin/Cloud');
-files(cloud.x + 12, 160, ['Module.cs', 'CloudEndpoints.cs', 'Cloud/SqlCard.cs, at the root']);
-files(cloud.x + 12, 292, ['(none: the readers stay', 'in the host, ADR-107\'s', 'addendum of 1.0.4.0)']);
+files(cloud.x + 12, 160, ['Module.cs', 'CloudEndpoints.cs', 'SqlCard.cs and every reader']);
+files(cloud.x + 12, 292, ['(none yet: the readers', 'sit in the host\'s slice,', 'ADR-114)']);
 files(cloud.x + 12, 412, ['ReadCloudCardHandler.cs', 'ICloudCards, beside it']);
 files(cloud.x + 12, 532, ['CardTone.cs']);
 out.push(`  <text x="${cloud.midX}" y="652" class="label" text-anchor="middle">and Admin/Plan, Admin/Operations, Docs, Health, each a column like these</text>`);

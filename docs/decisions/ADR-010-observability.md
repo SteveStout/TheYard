@@ -84,10 +84,10 @@ served (ADR: Live code samples). The timed checks
 
 The events, read from the same management response (the observability
 types moved to
-[`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs)
+[`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs)
 in ADR: The staff review):
 
-```live path=api/TheYard.Api/Observability.cs region=azure-events
+```live path=api/TheYard.Api/Shared/Observability/Observability.cs region=azure-events
 ```
 
 The proof is one API test that every check carries a non-negative
@@ -109,8 +109,8 @@ Everything this record built lives in the host Api and the front end: the probes
   `/healthz`, `/readyz` and `/api/health`.
 - [`api/TheYard.Api/Features/Health/ErrorEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/ErrorEndpoints.cs) and [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): `/api/errors` and
   `/api/admin/azure`.
-- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the middleware that records server errors (region error-log).
-- [`api/TheYard.Api/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Observability.cs): the health record, the error
+- [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the middleware that records server errors (region error-log).
+- [`api/TheYard.Api/Shared/Observability/Observability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/Observability.cs): the health record, the error
   ring buffer and the Azure reader (region azure-events).
 - [`src/components/admin/HealthCard/HealthCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/HealthCard/HealthCard.tsx), [`src/components/admin/ErrorsCard/ErrorsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ErrorsCard/ErrorsCard.tsx) and
   [`src/components/admin/AdminPanel/AdminPanel.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/AdminPanel/AdminPanel.module.css): the three cards.

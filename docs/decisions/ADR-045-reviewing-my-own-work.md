@@ -268,7 +268,7 @@ cannot fail is not a check, and the seed's own comment was the reminder.
 
 The exception slot, read from this build. The message travels in the slot and never in the template, which is the fix this review found:
 
-```live path=api/TheYard.Api/Shared/RequestPipeline.cs region=error-log
+```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=error-log
 ```
 
 ## Where it sits
@@ -278,8 +278,8 @@ The review reached two rings: the database failure now travels as an `Exception`
 ## Files
 
 - [`api/TheYard.Application/DatabaseState.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/DatabaseState.cs): `DatabaseState` carrying the failure as an exception rather than as text.
-- [`api/TheYard.Api/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/AdminObservability.cs) and [`api/TheYard.Api/LogRingBuffer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/LogRingBuffer.cs): the self-observation filter and the capacity guards, and the category allow-list in the log ring.
-- [`api/TheYard.Api/Shared/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/RequestPipeline.cs): the timing middleware where it belongs.
+- [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs) and [`api/TheYard.Api/Shared/Observability/LogRingBuffer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/LogRingBuffer.cs): the self-observation filter and the capacity guards, and the category allow-list in the log ring.
+- [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the timing middleware where it belongs.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): readiness that runs only what it needs.
 - [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the connect budget and the retry policy read together.
 - [`tests/e2e/app.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/app.ts): a wait for something that is there.
