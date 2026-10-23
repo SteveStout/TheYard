@@ -67,12 +67,13 @@ public class PulseTests(WebApplicationFactory<Program> factory)
         {
             "usual_p95_ms_24h", "requests_24h", "month_to_date", "forecast_month", "currency",
             "cost_read_at_ms", "uptime_seconds", "version", "commit", "read_at_ms",
+            "people_all_time", "people_new_by_day", "counted_from",
         })
         {
             Assert.True(root.TryGetProperty(field, out _), $"/api/pulse should answer {field}");
         }
 
-        Assert.Equal(10, root.EnumerateObject().Count());
+        Assert.Equal(13, root.EnumerateObject().Count());
         Assert.True(root.GetProperty("uptime_seconds").GetInt64() >= 0);
         Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("version").GetString()));
     }

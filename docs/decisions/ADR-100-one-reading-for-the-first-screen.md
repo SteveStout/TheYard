@@ -55,3 +55,7 @@ The API layer and the landing page, nothing between. `PulseReader` is one class 
 - [`api/TheYard.Tests/PulseTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PulseTests.cs) - what the figure is, and what an empty day answers
 - [`src/lib/pulse.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/pulse.ts) - the shape on the page, and the words each figure is printed in
 - [`src/components/landing/PulseBand/PulseBand.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/landing/PulseBand/PulseBand.tsx) - the band
+
+## Addendum, 2026-10-23 (1.0.4.41): the people who have visited
+
+The pulse carries three more fields: `people_all_time`, `people_new_by_day` (the last thirty UTC days, oldest first) and `counted_from`, read through the same query the Admin tab's readouts ask (`ReadPeopleCountHandler`), so the first screen and the Activity card say one number. They ride the pulse's fifteen-second keep, and the visitors' store reads its tally at most once a minute, so a stranger opening the page costs nothing new. Each is null until the count has read anything, and the band's fourth instrument says "counting from" that day (ADR: People who have visited, counted once).

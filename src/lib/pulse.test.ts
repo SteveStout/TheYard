@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  barHeights,
   buildWords,
+  dayWords,
   LATENCY_CEILING_MS,
   moneyWords,
   pulseFrom,
@@ -21,6 +23,9 @@ const answer = {
   version: '1.0.3.156',
   commit: '3b24c42',
   read_at_ms: 1_760_700_100_000,
+  people_all_time: 1284,
+  people_new_by_day: [3, 0, 7],
+  counted_from: '2026-10-24',
 };
 
 describe('an answer from /api/pulse', () => {
@@ -34,6 +39,27 @@ describe('an answer from /api/pulse', () => {
     expect(pulseFrom(unread)?.month_to_date).toBeNull();
   });
 
+  it('reads an answer from before the people count as a count not yet begun, not as the wrong shape', () => {
+    const {
+      people_all_time: _people,
+      people_new_by_day: _days,
+      counted_from: _from,
+      ...older
+    } = answer;
+    const read = pulseFrom(older);
+    expect(read?.version).toBe('1.0.3.156');
+    expect(read?.people_all_time).toBeNull();
+    expect(read?.people_new_by_day).toEqual([]);
+    expect(read?.counted_from).toBeNull();
+  });
+
+  it('keeps a people count of null as not counted yet, and drops a day list that is not numbers', () => {
+    const notYet = pulseFrom({ ...answer, people_all_time: null, people_new_by_day: ['a'] });
+    expect(notYet?.people_all_time).toBeNull();
+    expect(notYet?.people_new_by_day).toEqual([]);
+    expect(pulseFrom({ ...answer, counted_from: 'Oct 24' })?.counted_from).toBeNull();
+  });
+
   it('is null when it is not that shape, so the band says so instead of drawing a figure it does not have', () => {
     expect(pulseFrom(null)).toBeNull();
     expect(pulseFrom({ ...answer, uptime_seconds: 'a while' })).toBeNull();
@@ -44,6 +70,17 @@ describe('an answer from /api/pulse', () => {
 });
 
 describe('the words under each instrument', () => {
+  it('says the day a count began as the day and the month', () => {
+    expect(dayWords('2026-10-24')).toBe('24 Oct');
+    expect(dayWords(null)).toBe(UNREAD);
+  });
+
+  it('draws the thirty days against the tallest of them, and a run of zeros as empty bars', () => {
+    expect(barHeights([2, 4, 0])).toEqual([0.5, 1, 0]);
+    expect(barHeights([0, 0])).toEqual([0, 0]);
+    expect(barHeights([])).toEqual([]);
+  });
+
   it('says how long since the roll in the two units that carry it', () => {
     expect(uptimeWords(27_180)).toBe('7 h 33 m');
     expect(uptimeWords(2_460)).toBe('41 m');

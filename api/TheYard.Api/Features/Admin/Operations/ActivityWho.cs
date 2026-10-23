@@ -3,6 +3,8 @@
 // referring hosts, the top paths). Its own file because it is the one rule the
 // report, the days and the card all count by; Activity.cs lists the other parts.
 using TheYard.Application;
+using TheYard.Domain;
+using Kind = TheYard.Domain.VisitorKind;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
@@ -29,19 +31,6 @@ namespace TheYard.Api.Features.Admin.Operations;
 /// </summary>
 public static class ActivityWho
 {
-    /// <summary>The three kinds a visitor-day can be.</summary>
-    public enum Kind
-    {
-        /// <summary>A visitor with at least one request that did not look like a bot.</summary>
-        People,
-
-        /// <summary>A visitor whose every request looked like a bot.</summary>
-        Scanners,
-
-        /// <summary>The site reading itself: its own tools, App Service, or the loopback address.</summary>
-        Self,
-    }
-
     /// <summary>The name every loopback row on a day is counted under: one machine, one visitor-day.</summary>
     public const string Loopback = "loopback";
 
@@ -74,12 +63,10 @@ public static class ActivityWho
         row.Day + "|" + (Hits.IsLoopbackNetwork(row.Network) ? Loopback : row.Visitor);
 
     /// <summary>The kind one row alone says it is: the site's own by its network, a scanner if every request looked like a bot, a person otherwise.</summary>
-    public static Kind KindOf(ActivityVisitor row) =>
-        Hits.IsSelfNetwork(row.Network) ? Kind.Self : row.Bots >= row.Requests ? Kind.Scanners : Kind.People;
+    public static Kind KindOf(ActivityVisitor row) => VisitorKinds.Of(Hits.IsSelfNetwork(row.Network), row.Requests, row.Bots);
 
     /// <summary>Which of two kinds a visitor-day keeps when its rows disagree: the site's own over everything, then a person over a scanner.</summary>
-    private static Kind Stronger(Kind a, Kind b) =>
-        a == Kind.Self || b == Kind.Self ? Kind.Self : a == Kind.People || b == Kind.People ? Kind.People : Kind.Scanners;
+    private static Kind Stronger(Kind a, Kind b) => VisitorKinds.Stronger(a, b);
 
     /// <summary>
     /// The window, by kind and all together: visitor-days (summed over the

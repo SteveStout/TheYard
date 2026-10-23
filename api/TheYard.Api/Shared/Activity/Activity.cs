@@ -46,6 +46,18 @@ public sealed class VisitorTokens(string key)
     }
 
     /// <summary>
+    /// The visitor's hash that does not rotate (ADR-116: People who have visited, counted once): the same key,
+    /// the address and the user agent, with the count's own label in the hash and no day, so one browser on one
+    /// address is one visitor for good and the daily token cannot be matched to it. Neither the address nor the
+    /// agent is kept; a person who changes network or browser is counted again, which the record says.
+    /// </summary>
+    public string PersonFor(string address, string? userAgent)
+    {
+        byte[] hash = HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes("person|" + address + "|" + (userAgent ?? "")));
+        return Convert.ToHexStringLower(hash.AsSpan(0, 16));
+    }
+
+    /// <summary>
     /// The 32-byte keyed hash a blog read and its events are kept under (ADR: Every LinkedIn post is also a
     /// blog post): the same key and the same day as the visitor token, with the blog's own label in the hash,
     /// so the two cannot be matched to each other and neither outlives the day.

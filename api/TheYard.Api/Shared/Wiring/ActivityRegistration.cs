@@ -1,6 +1,8 @@
 using TheYard.Application;
+using TheYard.Application.Features.Visitors;
 using TheYard.Infrastructure;
 using TheYard.Infrastructure.Cosmos;
+using TheYard.Infrastructure.Cosmos.Features.Visitors;
 
 namespace TheYard.Api.Shared.Wiring;
 
@@ -32,7 +34,13 @@ public static class ActivityRegistration
         // the default and the safe one.
         var activityStores = backends.All.ToDictionary(backend => backend.Key, backend => backend.Activity, StringComparer.Ordinal);
         var activityKeeper = backends.All.FirstOrDefault(backend => backend.Key == StoreKeys.Document && backend.Activity is not NullActivityStore)?.Key ?? backends.Default.Key;
-        builder.Services.AddSingleton(services => new ActivityCollector(activityStores, activityKeeper, services.GetRequiredService<ILogger<ActivityCollector>>()));
+        // The people who have visited, all time (ADR-116): kept in the document store's activity container
+        // under a kind of their own, or in this process's memory where there is no document store, which the
+        // count says. The collector hands them on with the activity, one write a visitor a day at most.
+        IVisitorStore visitors = cosmos is not null ? new CosmosVisitorStore(cosmos, TimeProvider.System) : new MemoryVisitorStore();
+        builder.Services.AddSingleton(visitors);
+        builder.Services.AddSingleton<IVisitorReader>(visitors);
+        builder.Services.AddSingleton(services => new ActivityCollector(activityStores, activityKeeper, services.GetRequiredService<ILogger<ActivityCollector>>(), visitors));
         builder.Services.AddHostedService(services => services.GetRequiredService<ActivityCollector>());
 
         // #region machine-sampler-wiring
@@ -60,7 +68,8 @@ public static class ActivityRegistration
             services.GetRequiredService<CostHistoryReader>(),
             services.GetRequiredService<HostStart>(),
             services.GetRequiredService<BuildInfo>(),
-            TimeProvider.System));
+            TimeProvider.System,
+            cancellation => new ReadPeopleCountHandler(visitors, TimeProvider.System).HandleAsync(new ReadPeopleCountQuery(), cancellation)));
         builder.Services.AddSingleton(services => new MachineRecorder(
             services.GetRequiredService<MachineSampler>(),
             machineHistory,

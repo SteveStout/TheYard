@@ -112,6 +112,7 @@ export const TILE_CARD: Record<string, CardSlug> = {
   pages: 'pages',
   speed: 'timing',
   visitors: 'activity',
+  people: 'activity',
   memory: 'machines',
   charged: 'machines',
   errors: 'errors',

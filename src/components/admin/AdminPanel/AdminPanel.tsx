@@ -93,6 +93,7 @@ export function AdminPanel({
     errors: reads.errors,
     pagesSeen: reads.pagesSeen,
     visitorsToday: reads.visitorsToday,
+    people: reads.people,
   }); // ./stripTiles.ts: the tiles, the hour's summary and the caption
 
   // One card by its slug, for the open column and the pinned one (admin/AdminBenchCard).

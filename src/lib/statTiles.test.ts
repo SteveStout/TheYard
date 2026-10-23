@@ -48,6 +48,7 @@ const quietDay: TileReadings = {
   charged: { request_units: 24.49, free_per_second: 1000 },
   errors: 0,
   visitorsToday: 7,
+  people: { all_time: 1284, new_today: 23, by_day: [3, 0, 23] },
 };
 
 const tile = (readings: TileReadings, key: string) => {
@@ -69,6 +70,7 @@ describe('the stat tiles', () => {
       'charged',
       'errors',
       'visitors',
+      'people',
     ]);
     expect(tiles.every((each) => each.tone === 'waiting')).toBe(true);
     expect(tiles.every((each) => each.value === '…')).toBe(true);
@@ -86,6 +88,7 @@ describe('the stat tiles', () => {
       'cost',
       'broke',
       'fast',
+      'who',
     ]);
     expect(tile(quietDay, 'version')).toMatchObject({
       value: '1.0.0.161',
@@ -112,6 +115,13 @@ describe('the stat tiles', () => {
     expect(tile(quietDay, 'charged')).toMatchObject({ value: '24.5', tone: 'plain' });
     expect(tile(quietDay, 'errors')).toMatchObject({ value: '0', tone: 'good' });
     expect(tile(quietDay, 'visitors')).toMatchObject({ value: '7' });
+    expect(tile(quietDay, 'people')).toMatchObject({
+      label: 'People',
+      value: '1,284',
+      detail: 'all time, +23 today',
+      tone: 'plain',
+      spark: [3, 0, 23],
+    });
   });
 
   it('turns amber for worth a look and red for somebody should be looking', () => {

@@ -57,7 +57,7 @@ for (const viewport of [
       // The one live reading: the Admin tile's health dot, read from /api/health.
       await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
 
-      // The band over it reads the running site: three instruments, each with a figure or the
+      // The band over it reads the running site: four instruments, each with a figure or the
       // word for a figure the server could not read, and never a zero standing in for one
       // (ADR: One reading for the first screen).
       const band = page.getByTestId('pulse-band');
@@ -65,7 +65,7 @@ for (const viewport of [
       // The band's labels name their own instrument and are not sections of the page: a reader
       // moving by heading should find the page's sections and nothing else.
       await expect(band.getByRole('heading')).toHaveCount(0);
-      for (const instrument of ['pulse-latency', 'pulse-cost', 'pulse-roll']) {
+      for (const instrument of ['pulse-latency', 'pulse-cost', 'pulse-roll', 'pulse-people']) {
         await expect(page.getByTestId(instrument)).toBeVisible();
       }
       // The roll instrument always has a figure: the container knows its own uptime and build.
@@ -79,6 +79,9 @@ for (const viewport of [
       for (const [testId, pattern] of [
         ['pulse-latency', /^(\d[\d,]*ms|unread)$/],
         ['pulse-cost', /^(\$[\d,]+\.\d\d|[\d,]+\.\d\d [A-Z]{3}|unread)$/],
+        // People who have visited, all time: a count, or the day the count began while nothing is
+        // counted yet, or unread (ADR: People who have visited, counted once).
+        ['pulse-people', /^(\d[\d,]*people,alltime|countingfrom\d+[A-Z][a-z]{2}|unread)$/],
       ] as const) {
         // The label, the reading, then the line under it: the reading is the second.
         const reading = (await page.getByTestId(testId).locator('p').nth(1).innerText()).replace(

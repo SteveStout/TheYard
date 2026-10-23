@@ -206,4 +206,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '115',
   },
+  adrPeopleWhoHaveVisited: {
+    title: 'ADR: People who have visited, counted once',
+    menuLabel: 'ADR: People who have visited, counted once',
+    url: '/api/docs/adr-people-who-have-visited-counted-once',
+    kind: 'adr',
+    number: '116',
+  },
 } as const satisfies Record<string, RecordEntry>;

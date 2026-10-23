@@ -8,8 +8,8 @@
 /** How a tile is coloured: good, worth a look (warn), bad, plain, or still waiting for its reading. */
 export type TileTone = 'good' | 'warn' | 'bad' | 'plain' | 'waiting';
 
-/** The four questions. Each is also the section of the tab a tile links down to. */
-export type TileQuestion = 'up' | 'fast' | 'cost' | 'broke';
+/** The five questions. Each is also the section of the tab a tile links down to. */
+export type TileQuestion = 'up' | 'fast' | 'cost' | 'broke' | 'who';
 
 /** One tile: a number, a short line saying what it counts, and a tone. */
 export type StatTile = {
@@ -106,6 +106,12 @@ export type TileReadings = {
   /** Errors the server and the browser reported, over the ring. */
   errors: number | null;
   visitorsToday: number | null;
+  /**
+   * People who have visited, counted once, all time (ADR: People who have visited, counted once): the
+   * count, the people first seen today, and the thirty days of new people behind the tile's line.
+   * Optional so a reading built before the count still type-checks; absent reads as not read yet.
+   */
+  people?: { all_time: number | null; new_today: number | null; by_day: number[] } | null;
   /** The last hour behind four of the tiles, one minute or one sample per entry. */
   sparks?: {
     speed?: (number | null)[];

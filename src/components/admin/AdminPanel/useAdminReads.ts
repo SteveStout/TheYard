@@ -1,9 +1,11 @@
 // The reads the Admin tab's strip makes for itself: a refresh tick, the site's health, its
-// recent errors, the last page check and the activity report behind today's visitors. The
+// recent errors, the last page check, the activity report behind today's visitors and the
+// count of people who have visited, all time. The
 // open card is handed the same values, so a tile never disagrees with the card it links to.
 // It is its own file because it is the tab's data and timers, apart from how the tab is drawn.
 import { useCallback, useEffect, useState } from 'react';
 import type { ActivityReport } from '../../../lib/activity';
+import { PEOPLE_URL, peopleFrom } from '../../../lib/people';
 import { visitorsOn } from '../../../lib/statTiles';
 import type { ErrorEntry, Fetched, Health, PageStatus } from '../shared/types';
 import { REFRESH_MS } from '../shared/common';
@@ -26,6 +28,8 @@ export type AdminReads = {
   setPagesSeen: (seen: PagesSeen) => void;
   /** People who visited today, from the activity report; null until it answers. */
   visitorsToday: number | null;
+  /** People who have visited, all time, for the People tile; null until the count answers. */
+  people: { all_time: number | null; new_today: number | null; by_day: number[] } | null;
   /** Whether this site serves per-visitor rows (ADR-071); null until the activity report answers. */
   rowsServed: boolean | null;
   /** Takes an activity report, from the strip's read or the Activity card's, and keeps its two facts. */
@@ -46,6 +50,7 @@ export function useAdminReads(): AdminReads {
   // (from the activity report) and the last check of every page.
   const [visitorsToday, setVisitorsToday] = useState<number | null>(null);
   const [pagesSeen, setPagesSeen] = useState<PagesSeen | null>(null);
+  const [people, setPeople] = useState<AdminReads['people']>(null);
   const onActivity = useCallback((report: ActivityReport) => {
     setRowsServed(report.visitor_rows);
     setVisitorsToday(visitorsOn(report.days, new Date()));
@@ -90,6 +95,18 @@ export function useAdminReads(): AdminReads {
         setPagesSeen({ checked: answer.report.checked, up: answer.report.up });
       }
     });
+    // People who have visited, counted once (ADR: People who have visited, counted once): an answer
+    // that is not the shape leaves the tile waiting rather than drawing a figure it does not have.
+    void grab<unknown>(PEOPLE_URL, (answer) => {
+      const count = answer === 'failed' ? null : peopleFrom(answer);
+      if (count !== null) {
+        setPeople({
+          all_time: count.people_all_time,
+          new_today: count.people_new_today,
+          by_day: count.people_new_by_day.map((entry) => entry.people),
+        });
+      }
+    });
     return () => {
       live = false;
     };
@@ -122,6 +139,7 @@ export function useAdminReads(): AdminReads {
     pagesSeen,
     setPagesSeen,
     visitorsToday,
+    people,
     rowsServed,
     onActivity,
   };

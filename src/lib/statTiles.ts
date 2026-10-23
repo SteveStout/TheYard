@@ -1,7 +1,7 @@
 /**
- * The strip of stat tiles across the top of the Admin tab. The tiles answer four
+ * The strip of stat tiles across the top of the Admin tab. The tiles answer five
  * questions, in the order someone on call asks them: is it up, is it fast, is it
- * costing anything, what broke. Each tile is one number, a short line saying what
+ * costing anything, what broke, and who came. Each tile is one number, a short line saying what
  * the number counts, and a tone (good, warn, bad, plain or waiting)
  * (ADR: The Admin tab, as a product).
  *

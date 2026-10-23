@@ -13,8 +13,8 @@ import stripStyles from '../shared/stat-strip.module.css';
 import { followCardLink } from '../AdminPanel/followCardLink';
 
 // #region stat-strip
-/** The order the tiles go in: is it up, is it fast, what does it cost, what broke. */
-const QUESTION_ORDER: TileQuestion[] = ['up', 'fast', 'cost', 'broke'];
+/** The order the tiles go in: is it up, is it fast, what does it cost, what broke, who came. */
+const QUESTION_ORDER: TileQuestion[] = ['up', 'fast', 'cost', 'broke', 'who'];
 
 /** The word each tone shows under a tile; a plain tile shows none. */
 const TONE_WORD: Record<StatTile['tone'], string | null> = {

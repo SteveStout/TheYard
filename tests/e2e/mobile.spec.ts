@@ -179,11 +179,12 @@ test('the Admin tiles are two to a row on a phone and nothing on the tab is wide
   await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
     timeout: 45_000,
   });
-  // Four rows of two (the tweaks pass, A2; two rows of four until then, when a label took three
-  // lines in an 80 px tile): the first two side by side and the same size, the third under the
-  // first, in the strip's own order.
+  // Two to a row (the tweaks pass, A2; two rows of four until then, when a label took three
+  // lines in an 80 px tile), nine tiles since the people tile of 1.0.4.41, so the last row holds
+  // one: the first two side by side and the same size, the third under the first, in the strip's
+  // own order.
   const tiles = strip.locator('li > [data-testid^="tile-"]');
-  await expect(tiles).toHaveCount(8);
+  await expect(tiles).toHaveCount(9);
   const boxes = await Promise.all([0, 1, 2].map((index) => tiles.nth(index).boundingBox()));
   expect(boxes[1]?.y).toBe(boxes[0]?.y);
   expect(boxes[1]?.width).toBe(boxes[0]?.width);

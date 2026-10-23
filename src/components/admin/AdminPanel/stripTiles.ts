@@ -32,6 +32,8 @@ export type StripReadings = {
   errors: Fetched<ErrorEntry[]>;
   pagesSeen: { checked: number; up: number } | null;
   visitorsToday: number | null;
+  /** People who have visited, all time, from the strip's own read of the count; null until it answers. */
+  people: { all_time: number | null; new_today: number | null; by_day: number[] } | null;
 };
 
 /** What the strip draws: the tiles, the hour's summary and the sparklines' caption. */
@@ -54,6 +56,7 @@ export function stripTiles({
   errors,
   pagesSeen,
   visitorsToday,
+  people,
 }: StripReadings): StripView {
   // #region tiles
   // Build the tiles from data already read above, using the rules in
@@ -141,6 +144,7 @@ export function stripTiles({
           : 'none',
     errors: errors !== null && errors !== 'failed' ? errors.length : null,
     visitorsToday,
+    people,
     sparks:
       seen === null
         ? undefined

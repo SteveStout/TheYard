@@ -116,7 +116,7 @@ public static class Hits
     public static ActivityHit For(VisitorTokens tokens, string address, DateTimeOffset at, string token, string network, string path, string store, string? userAgent, string? source = null) =>
         IsSelf(userAgent)
             ? new ActivityHit(at, tokens.TokenFor(SelfNetwork + "|" + address, at), SelfNetwork, PathOf(path), store, true)
-            : new ActivityHit(at, token, network, PathOf(path), store, LooksLikeABot(userAgent, path), source);
+            : new ActivityHit(at, token, network, PathOf(path), store, LooksLikeABot(userAgent, path), source) { Person = tokens.PersonFor(address, userAgent) };
 
     /// <summary>What a page load with no referring page is kept under: typed, bookmarked, or sent by something that says nothing.</summary>
     public const string NoSource = "(none)";

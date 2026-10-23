@@ -263,6 +263,24 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
         }
   );
 
+  // People who have visited, all time: a count, never graded, so its tone is plain whatever it reads
+  // (ADR: People who have visited, counted once). Its line is the thirty days of new people.
+  const people = readings.people ?? null;
+  tiles.push(
+    people === null || people.all_time === null
+      ? waiting('people', 'who', 'People')
+      : {
+          key: 'people',
+          question: 'who',
+          label: 'People',
+          value: formatNumber(people.all_time),
+          detail: `all time, +${formatNumber(people.new_today ?? 0)} today`,
+          more: '; each counted once, scanners and the site itself left out',
+          tone: 'plain',
+          spark: people.by_day,
+        }
+  );
+
   return tiles.map((tile) => ({ ...tile, ringed: RINGED.has(tile.key) }));
 }
 // #endregion tile-rules

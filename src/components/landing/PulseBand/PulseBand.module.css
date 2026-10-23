@@ -1,5 +1,5 @@
 /**
- * Does:      Styles the first screen's band: three instruments across one glass panel, each with its label, its reading,
+ * Does:      Styles the first screen's band: four instruments across one glass panel, each with its label, its reading,
  *            its scale or gauge, and the line under it, and the hairlines between them.
  * Does not:  Decide what a figure means or what it says (PulseBand.tsx and src/lib/pulse.ts do), or draw the glass (panels.css does).
  * Used by:   PulseBand.tsx.
@@ -11,7 +11,7 @@
   gap: 0;
 }
 
-/* One under the next on a phone, separated by a hairline; three across once there is room. */
+/* One under the next on a phone, separated by a hairline; four across once there is room. */
 .instrument {
   display: flex;
   flex-direction: column;
@@ -26,7 +26,7 @@
 
 @container (min-width: 860px) {
   .band {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .instrument {
@@ -225,4 +225,34 @@
 .link:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
+}
+
+/* People who have visited: the label wears the swatch the Admin tab's activity card uses for people, so the two
+   surfaces agree on who a person is (ADR: People who have visited, counted once). */
+.people {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-who-people);
+}
+
+/* The thirty-day bar run, in the same box the other instruments give their scale. */
+.bars {
+  width: 100%;
+  height: var(--pulse-figure-height);
+}
+
+.bar {
+  fill: var(--color-who-people);
+  opacity: var(--pulse-bar-opacity);
+}
+
+.today {
+  fill: var(--color-who-people);
 }

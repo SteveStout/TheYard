@@ -1,6 +1,7 @@
 /**
  * Site activity (ADR: Site activity, and the line an address does not cross).
  * The card is the frame and the two choices; the parts live beside it:
+ *   PeopleReadouts/              people who have visited, all time, and new people each day (ADR-116)
  *   useActivityReports.ts        the report and the visitor rows, read per window
  *   activitySeriesLook.ts        the colour and the name of a store or a kind
  *   ActivityGraph/               the split toggle, legend, chart, totals, tiles and day table
@@ -11,7 +12,7 @@
  *   ActivityVisitorTable/        the per-visitor rows, behind the operator's key
  */
 import { CardState } from '../shared/CardState';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ACTIVITY_WHO,
   ACTIVITY_WINDOWS,
@@ -23,6 +24,9 @@ import { About } from '../shared/common';
 import { useActivityReports } from './useActivityReports';
 import { ActivityGraph } from '../ActivityGraph';
 import { ActivityVisitorTable } from '../ActivityVisitorTable';
+import { PeopleReadouts } from '../PeopleReadouts';
+import { PEOPLE_URL, peopleFrom, type PeopleCount } from '../../../lib/people';
+import { request } from '../../../lib/request';
 
 /**
  * Site activity (ADR: Site activity, and the line an address does not cross).
@@ -55,6 +59,21 @@ export default function ActivityCard({
   // site's own reads and the scanners are a click away. The report carries
   // both, so the toggle redraws and never fetches.
   const [who, setWho] = useState<ActivityWho>('people');
+  // People who have visited, all time: the card reads the count itself while it is open, as every
+  // card reads its own data; the strip's People tile reads the same route.
+  const [people, setPeople] = useState<PeopleCount | null | 'failed'>(null);
+  useEffect(() => {
+    let live = true;
+    void request(PEOPLE_URL, undefined, { background: true })
+      .then((answer) => (answer.ok ? (answer.json() as Promise<unknown>) : null))
+      .catch(() => null)
+      .then((answer) => {
+        if (live) setPeople(peopleFrom(answer) ?? 'failed');
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="activity-card">
@@ -75,6 +94,10 @@ export default function ActivityCard({
         per-visitor rows, still only hashes, are served to the operator's key alone, and only on a
         site that turns them on.
       </About>
+      <PeopleReadouts
+        count={people}
+        days={report !== null && report !== 'failed' ? report.days : []}
+      />
       <p className={`${cardStyles.statusRow} op-seg op-seg-wrap`} role="group" aria-label="Window">
         {ACTIVITY_WINDOWS.map((option) => (
           <button

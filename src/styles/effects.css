@@ -103,6 +103,7 @@
   --opacity-pulse: 0.35; /* the low point of a live dot's pulse */
   --ribbons-phone-opacity: 0.7;
   --ribbons-spark-opacity: 0.4;
+  --pulse-bar-opacity: 0.6; /* the thirty days behind today on the people instrument */
 
   /* Motion */
   --transition-fast: 150ms ease;

@@ -91,10 +91,21 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
 
   it('sends every tile to the card that answers it', () => {
     expect(Object.keys(TILE_CARD).sort()).toEqual(
-      ['charged', 'errors', 'health', 'memory', 'pages', 'speed', 'version', 'visitors'].sort()
+      [
+        'charged',
+        'errors',
+        'health',
+        'memory',
+        'pages',
+        'people',
+        'speed',
+        'version',
+        'visitors',
+      ].sort()
     );
     expect(cardForTile('speed')).toBe('timing');
     expect(cardForTile('visitors')).toBe('activity');
+    expect(cardForTile('people')).toBe('activity');
     expect(cardForTile('something new')).toBe('health');
   });
 });

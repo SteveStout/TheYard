@@ -37,7 +37,7 @@ codebase holds them):
   that registers and maps it; what more than one place uses in `Shared/<Concern>/`, one folder per concern
   named in ADR-114's table; `Program.cs` is the only file at the root, and it registers the shared parts by
   name and loops over the modules. Read ADR-107 (The onion cut into vertical slices), ADR-114 (The host
-  root holds one file) and ADR-115 (A request is a query or a command) first. NO business logic in endpoints.
+  root holds one file) and ADR-115 (A request is a query or a command) first; ADR-116 (People who have visited, counted once) for the visitor count. NO business logic in endpoints.
 
 Beside the six: `api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
 `api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool

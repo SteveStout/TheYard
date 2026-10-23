@@ -4,6 +4,8 @@
 // holds state; Activity.cs lists the other parts.
 using System.Threading.Channels;
 using TheYard.Application;
+using TheYard.Application.Features.Visitors;
+using TheYard.Domain;
 
 namespace TheYard.Api.Shared.Activity;
 
@@ -57,6 +59,12 @@ public sealed class ActivityCollector : BackgroundService
     /// <summary>When a batch last reached the keeper, or null if none has.</summary>
     private DateTimeOffset? _lastWrite;
 
+    /// <summary>The people who have visited, kept beside the activity (ADR-116), or null where nothing counts them.</summary>
+    private readonly IVisitorStore? _visitors;
+
+    /// <summary>The visitors handed to the store today, by hash and kind, so each is written once a day at most.</summary>
+    private readonly HashSet<(string Hash, string Day, VisitorKind Kind)> _keptToday = [];
+
     /// <summary>
     /// The keeper is the one store every batch goes to, whichever store served
     /// the request; the row keeps the serving store's key as data. Azure
@@ -67,8 +75,9 @@ public sealed class ActivityCollector : BackgroundService
     /// the free amount in fourteen days. With no Cosmos DB on the container,
     /// the default store keeps its own rows, which is what the tests run on.
     /// </summary>
-    public ActivityCollector(IReadOnlyDictionary<string, IActivityStore> stores, string keeperKey, ILogger<ActivityCollector> logger)
+    public ActivityCollector(IReadOnlyDictionary<string, IActivityStore> stores, string keeperKey, ILogger<ActivityCollector> logger, IVisitorStore? visitors = null)
     {
+        _visitors = visitors;
         _stores = stores;
         KeeperKey = keeperKey;
         _logger = logger;
@@ -155,6 +164,48 @@ public sealed class ActivityCollector : BackgroundService
             // The type, never the message: a store's message can name a server.
             _logger.LogWarning("An activity batch of {Count} hits was dropped by {Store}: {Type}", batch.Count, KeeperKey, ex.GetType().Name);
         }
+
+        await KeepVisitorsAsync(batch, cancellation);
     }
+
+    // #region keep-visitors
+    /// <summary>
+    /// The batch's visitors handed to the visitors' store, off the request path with the activity: one sighting a
+    /// hash a day, its kind read by the one Domain rule the Activity card counts by (VisitorKinds.Of), and none for
+    /// a read by the site's own tools, which carries no hash. A hash already handed on today with the same kind is
+    /// not handed on again, so a visitor costs one write a day at most.
+    /// </summary>
+    private async Task KeepVisitorsAsync(List<ActivityHit> batch, CancellationToken cancellation)
+    {
+        if (_visitors is null)
+        {
+            return;
+        }
+        var sightings = batch
+            .Where(hit => hit.Person is not null)
+            .GroupBy(hit => (Hash: hit.Person!, Day: hit.At.UtcDay))
+            .Select(group => new VisitorSighting(group.Key.Hash, group.Key.Day, VisitorKinds.Of(false, group.Count(), group.Count(hit => hit.Bot))))
+            .Where(seen => !_keptToday.Contains((seen.Hash, seen.Day, seen.Kind)))
+            .ToList();
+        if (sightings.Count == 0)
+        {
+            return;
+        }
+        string today = sightings.Max(seen => seen.Day)!;
+        _keptToday.RemoveWhere(kept => string.CompareOrdinal(kept.Day, today) < 0);
+        try
+        {
+            await _visitors.KeepAsync(sightings, cancellation);
+            foreach (var seen in sightings)
+            {
+                _keptToday.Add((seen.Hash, seen.Day, seen.Kind));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("{Count} visitor sightings were not kept: {Type}", sightings.Count, ex.GetType().Name);
+        }
+    }
+    // #endregion keep-visitors
 }
 // #endregion collector

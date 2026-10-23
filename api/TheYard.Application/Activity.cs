@@ -25,7 +25,14 @@ namespace TheYard.Application;
 /// <param name="Store">The store that served the request.</param>
 /// <param name="Bot">True when the request looked like a bot.</param>
 /// <param name="Source">On a page load, the host of the page that linked here; null otherwise.</param>
-public sealed record ActivityHit(DateTimeOffset At, string Visitor, string Network, string Path, string Store, bool Bot, string? Source = null);
+public sealed record ActivityHit(DateTimeOffset At, string Visitor, string Network, string Path, string Store, bool Bot, string? Source = null)
+{
+    /// <summary>
+    /// The visitor's hash that does not rotate, for the count of people who have visited (ADR-116), or null for a
+    /// read by the site's own tools. Handed to the visitors' store only; no activity adapter keeps it.
+    /// </summary>
+    public string? Person { get; init; }
+}
 
 /// <summary>One store's requests in one UTC hour, with the paths it served most, for the graph.</summary>
 /// <param name="Store">The store that served the requests.</param>
