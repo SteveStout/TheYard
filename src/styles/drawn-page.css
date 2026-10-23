@@ -25,12 +25,8 @@
     display: none;
   }
 
-  /* The ribbon ground starts at the window's edge and its drawing at the rail's, as
+  /* The ribbon ground is fixed to the window's edge; its drawing starts at the rail's, as
      Ribbons.module.css does for 'open'; that sheet is held to a byte budget (ribbons.test.ts). */
-  [data-rail='auto'] [data-testid='ribbons'] {
-    left: calc(-1 * var(--rail-width));
-  }
-
   [data-rail='auto'] [data-testid='ribbons'] > svg {
     left: var(--rail-width);
     width: calc(100% - var(--rail-width));

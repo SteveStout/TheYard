@@ -1,6 +1,7 @@
 /**
- * Does:      Styles the landing page: the hero and its title, the two columns under it, the featured tiles, the
- *            section tiles under their group headings, each tile's badge, and the place of the quotations column.
+ * Does:      Styles the landing page: the hero and its title, the two columns under it, the band the width of the
+ *            page under both, the featured tiles, the section tiles under their group headings, each tile's badge,
+ *            and the place of the quotations column.
  * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
  * Used by:   Landing.tsx.
  */
@@ -11,9 +12,11 @@
    tiles take the blur, as the intro strip does.
 
    The left column runs on one set of three columns, row after row: the featured
-   tiles, the evidence strip and the groups all share the same column count, gap
-   and edges, so the eye reads one grid down the page instead of three layouts
-   stacked. Phones keep one featured tile per row and the strip two across. */
+   tiles and the evidence strip share the same column count, gap and edges. The
+   groups stand under both columns in a band the width of the page, still three
+   across, so they read as one grid of their own rather than a narrow one beside
+   the quotations. Phones keep one featured tile per row and the
+   strip two across. */
 .landing {
   display: flex;
   flex-direction: column;
@@ -31,7 +34,8 @@
 }
 
 .lead,
-.rest {
+.rest,
+.wide {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
@@ -71,7 +75,8 @@
        rail open measures about 630 and 470. A fixed 320 left the quotations a ribbon beside a
        column two of them wide. */
     grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
+    /* The third row is the band of groups, under both columns. */
+    grid-template-rows: auto 1fr auto;
     column-gap: var(--space-5);
     row-gap: var(--space-5);
   }
@@ -86,11 +91,18 @@
     grid-row: 2;
   }
 
-  /* The column stands beside both rows and runs as far down the page as there are quotations, so
-     a reader scrolling the left side passes every one of them. */
+  /* The column stands beside the first two rows and runs as far down the page as there are
+     quotations, so a reader scrolling the left side passes every one of them; it ends above the
+     groups. */
   .side {
     grid-column: 2;
     grid-row: 1 / 3;
+  }
+
+  /* The groups and the last row, the page's full width under both columns. */
+  .wide {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 }
 
@@ -277,7 +289,8 @@
    on a 1280 desk and 630 px on a 1440 desk with the rail open, so the 640 px rule
    above would never fire there. While the two columns stand side by side, the
    same three columns start from 480 px of column. There is no four-column rule:
-   a fourth column would put the groups out of line with the featured row. */
+   the band of groups under both columns keeps three across, the featured row's
+   count, at any width. */
 @container page (min-width: 900px) {
   @container (min-width: 480px) {
     .featured,

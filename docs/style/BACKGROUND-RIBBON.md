@@ -54,12 +54,12 @@ Moving, the front page spent 6.9 s of main-thread work in every 20 s; still, 0.6
 ```live path=src/lib/ribbons.test.ts region=does-not-move
 ```
 
-The ground is part of the page, not the window. It scrolls with the words in front of it, like a printed sheet, so the page never slides over a still picture. The ribbons sit in the first screen of every page and the gradient ground carries on below them. [`Ribbons.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/Background/Ribbons.module.css) holds the layer, and [`ribbons.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ribbons.test.ts) and the browser suite hold that it is pinned to the page:
+The ground is fixed to the window (since 2026-10-23, [ADR-081](https://theyard.stevenstout.biz/?doc=adr-glass-look), the addendum of that day). The page scrolls over it, so the ribbons stand behind every screen of every page, not only the first, and a document opened halfway down still has them behind it. From 2026-09-29 until then the ground was pinned to the top of the page and scrolled away with the words. [`Ribbons.module.css`](https://github.com/SteveStout/TheYard/blob/main/src/components/layout/Background/Ribbons.module.css) holds the layer, and [`ribbons.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ribbons.test.ts) and the browser suite hold that it is fixed: the suite scrolls 1,500 px and reads the layer's top still at 0, and checks that no ancestor carries a transform, filter or containment that would turn fixed back into absolute:
 
 ```live path=src/components/layout/Background/Ribbons.module.css region=ground-layer
 ```
 
-```live path=src/lib/ribbons.test.ts region=part-of-the-page
+```live path=src/lib/ribbons.test.ts region=fixed-to-the-window
 ```
 
 ## Glass over the ribbons

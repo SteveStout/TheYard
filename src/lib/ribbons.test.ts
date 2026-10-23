@@ -54,14 +54,20 @@ describe('the ribbon ground', () => {
     expect(layer).toMatch(/contain:\s*strict/);
   });
 
-  // #region part-of-the-page
-  it('is part of the page, not the window: it scrolls away with the words (ADR-081, the ground is part of the page)', () => {
+  // #region fixed-to-the-window
+  it('is fixed to the window, the page scrolling over it, with no rail offset on the layer (ADR: The glass look, the ground is fixed to the window)', () => {
     const layer = rules(sheet).find(([selector]) => selector === '.layer')?.[1] ?? '';
-    expect(layer).toMatch(/position:\s*absolute/);
-    expect(layer).not.toMatch(/position:\s*fixed/);
-    expect(sheet).not.toMatch(/position:\s*(fixed|sticky)/);
+    expect(layer).toMatch(/position:\s*fixed/);
+    expect(layer).not.toMatch(/position:\s*absolute/);
+    expect(layer).toMatch(/left:\s*0/);
+    // The layer starts at the window's edge on its own; only the drawing inside it moves for the rail.
+    for (const [selector, body] of rules(sheet)) {
+      if (/\.layer\b/.test(selector) && selector !== '.layer') {
+        expect(body, selector).not.toMatch(/left:/);
+      }
+    }
   });
-  // #endregion part-of-the-page
+  // #endregion fixed-to-the-window
 
   it('fetches nothing: every url in it is one of its own gradients or filters', () => {
     for (const url of (component + sheet).matchAll(/url\(([^)]*)\)/g)) {

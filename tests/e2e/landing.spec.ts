@@ -194,10 +194,11 @@ for (const viewport of [
         expect(overflow).toBe(0);
       }).toPass();
 
-      // The left column runs on one set of columns: on a desk the featured row, the strip and
-      // the first group's first row share three, read off the boxes rather than the stylesheet,
-      // so the third of each ends on the same x. On a phone the featured tiles stack one per row
-      // and the strip stays two across.
+      // The left column runs on one set of columns: on a desk the featured row and the strip
+      // share three, read off the boxes rather than the stylesheet, so the third of each ends on
+      // the same x. The groups stand under both columns in a band the page's width (2026-10-23):
+      // three across, the third ending where the quotations column ends. On a phone the featured
+      // tiles stack one per row and the strip stays two across.
       const rights = async (selector: string) =>
         page
           .locator(selector)
@@ -209,11 +210,20 @@ for (const viewport of [
       );
       const stripRights = await rights('[data-testid="landing-proof"] > li');
       const groupRights = await rights('[data-testid="landing-group-built"] li');
+      const columnBox = (await page.getByTestId('landing-recommendations').boundingBox())!;
+      const pageRight = Math.round(columnBox.x + columnBox.width);
+      const wideBox = (await page.getByTestId('landing-wide').boundingBox())!;
+      const leadBox = (await page.locator('ul[aria-label="Start here"]').boundingBox())!;
       if (viewport.width >= 1024) {
         expect(new Set(featuredRights.slice(0, 3)).size).toBe(3);
-        for (const third of [stripRights[2], groupRights[2]]) {
-          expect(Math.abs(third - featuredRights[2])).toBeLessThanOrEqual(1);
-        }
+        expect(Math.abs(stripRights[2] - featuredRights[2])).toBeLessThanOrEqual(1);
+        expect(new Set(groupRights.slice(0, 3)).size).toBe(3);
+        expect(Math.abs(groupRights[2] - pageRight)).toBeLessThanOrEqual(1);
+        // The band starts under both columns: below the last quotation, from the left column's
+        // left edge to the quotations column's right.
+        expect(wideBox.y).toBeGreaterThanOrEqual(columnBox.y + columnBox.height - 1);
+        expect(Math.abs(wideBox.x - leadBox.x)).toBeLessThanOrEqual(1);
+        expect(Math.abs(wideBox.x + wideBox.width - pageRight)).toBeLessThanOrEqual(1);
         // No tile alone on a last row: the seventh tile of How it is built takes the row.
         const lefts = await page
           .locator('[data-testid="landing-group-built"] li')
@@ -222,7 +232,7 @@ for (const viewport of [
           );
         expect(groupRights).toHaveLength(7);
         expect(Math.abs(lefts[6] - lefts[0])).toBeLessThanOrEqual(1);
-        expect(Math.abs(groupRights[6] - featuredRights[2])).toBeLessThanOrEqual(1);
+        expect(Math.abs(groupRights[6] - pageRight)).toBeLessThanOrEqual(1);
       } else {
         expect(new Set(featuredRights).size).toBe(1);
         expect(new Set(stripRights.slice(0, 2)).size).toBe(2);

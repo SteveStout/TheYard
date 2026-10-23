@@ -33,11 +33,9 @@ import { request } from '../../../lib/request';
  * large tiles are the map's featured entries, Inventory, Author and the
  * resume, three across with the badge on top; under them the evidence strip reads the gate's
  * counts from /api/tests/summary, then the blog's Latest posts, then the Tech stack table the
- * build generated from the repository; below that every other section under its group's
- * heading, as the sidebar groups them, then Sign in, Admin and GitHub. The Admin tile carries a health dot from /api/health, read once when the
- * page opens, and the band under the title reads the running site from /api/pulse.
- * What colleagues say stands in a column of its own on the right, every
- * recommendation in full from /api/recommendations; too narrow for two, it follows.
+ * build generated from the repository; What colleagues say in a column of its own on the right, every recommendation in full from
+ * /api/recommendations (too narrow for two, it follows). Under both columns, the page's full width, every other section under its group's
+ * heading, as the sidebar groups them, then Sign in, Admin and GitHub. The Admin tile's health dot is read from /api/health, the band under the title from /api/pulse.
  *
  * A section's tile opens what its sidebar section opens first: its first document
  * in the dialog, or its first link in a new tab when it has none (API Reference, Diagrams).
@@ -277,6 +275,8 @@ export function Landing({
           </ul>
           <LatestPosts headingClass={styles.groupHeading} onOpenBlog={onOpenBlog} />
           <TechStack headingClass={styles.groupHeading} />
+        </div>
+        <div className={styles.wide} data-testid="landing-wide">
           {groups.map((group) => (
             <section
               key={group.key}

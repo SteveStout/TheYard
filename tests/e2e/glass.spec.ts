@@ -64,8 +64,8 @@ test('the watermark is one drawing behind the page, with no words in it and no r
   await expect(watermark).toHaveCount(1);
   expect(await watermark.evaluate((svg) => (svg.textContent ?? '').trim())).toBe('');
   expect(await watermark.evaluate((svg) => getComputedStyle(svg).pointerEvents)).toBe('none');
-  // Part of the page, not the window, since 1.0.3.42 (ADR: The glass look, the ground is part of the page).
-  expect(await watermark.evaluate((svg) => getComputedStyle(svg).position)).toBe('absolute');
+  // Fixed to the window again since 2026-10-23 (ADR: The glass look, the addendum of that day).
+  expect(await watermark.evaluate((svg) => getComputedStyle(svg).position)).toBe('fixed');
   // Lines only, no filled shape (Steve, 25 September: the lightning mark's fill read as
   // "a odd white box in the background" on every page through the thinner glass).
   expect(
@@ -120,7 +120,7 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
     expect(desk.ground).toContain('linear-gradient');
     expect(desk.hidden).toBe('true');
     expect(desk.pointer).toBe('none');
-    expect(desk.position).toBe('absolute');
+    expect(desk.position).toBe('fixed');
     expect(desk.words).toBe('');
     expect(desk.railRight).toBeGreaterThan(0);
     expect(Math.abs(desk.left - desk.railRight)).toBeLessThanOrEqual(40);
@@ -199,7 +199,7 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
   expect(pictures).toEqual([]);
 });
 
-test('the ground scrolls with the page: the ribbons and the watermark move exactly as far as the words (ADR: The glass look, the ground is part of the page)', async ({
+test('the ground is fixed to the window: scrolled 1,500 px, the ribbons and the watermark still stand at the top of the screen (ADR: The glass look, the addendum of 2026-10-23)', async ({
   page,
 }) => {
   // Every spec opens with the ribbons hidden (tests/e2e/app.ts); this one keeps them.
@@ -213,6 +213,33 @@ test('the ground scrolls with the page: the ribbons and the watermark move exact
     await page.setViewportSize(size);
     await openTheYard(page);
     await expect(page.getByTestId('ribbons')).toHaveCount(1);
+    // A transform, filter, perspective, will-change or containment on any ancestor makes that
+    // ancestor the box a fixed layer is placed in, and the ground would scroll away again.
+    const blockers = await page.evaluate(() =>
+      ['ribbons', 'watermark'].flatMap((id) => {
+        const found: string[] = [];
+        let node = document.querySelector(`[data-testid="${id}"]`)?.parentElement ?? null;
+        while (node) {
+          const style = getComputedStyle(node);
+          const traps = [
+            style.transform !== 'none' && `transform ${style.transform}`,
+            style.filter !== 'none' && `filter ${style.filter}`,
+            style.perspective !== 'none' && `perspective ${style.perspective}`,
+            /transform|filter|perspective/.test(style.willChange) &&
+              `will-change ${style.willChange}`,
+            /layout|paint|strict|content/.test(style.contain) && `contain ${style.contain}`,
+            style.containerType !== 'normal' && `container-type ${style.containerType}`,
+            !['', 'none'].includes(style.backdropFilter) &&
+              `backdrop-filter ${style.backdropFilter}`,
+          ].filter(Boolean);
+          if (traps.length)
+            found.push(`${id} under ${node.tagName}.${node.className}: ${traps.join(', ')}`);
+          node = node.parentElement;
+        }
+        return found;
+      })
+    );
+    expect(blockers, `${size.width} px wide: no ancestor turns fixed into absolute`).toEqual([]);
     const tops = () =>
       page.evaluate(() => ({
         scrolled: window.scrollY,
@@ -222,16 +249,13 @@ test('the ground scrolls with the page: the ribbons and the watermark move exact
       }));
     await page.evaluate(() => window.scrollTo(0, 0));
     const before = await tops();
-    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.evaluate(() => window.scrollTo(0, 1500));
     await expect.poll(async () => (await tops()).scrolled).toBeGreaterThan(0);
     const after = await tops();
     const moved = after.scrolled - before.scrolled;
-    expect(moved, `${size.width} px wide: the page scrolled`).toBeGreaterThan(100);
+    expect(moved, `${size.width} px wide: the page scrolled`).toBeGreaterThan(1000);
     expect(Math.abs(before.words - after.words - moved), 'the words').toBeLessThanOrEqual(1);
-    expect(Math.abs(before.ribbons - after.ribbons - moved), 'the ribbons').toBeLessThanOrEqual(1);
-    expect(
-      Math.abs(before.watermark - after.watermark - moved),
-      'the watermark'
-    ).toBeLessThanOrEqual(1);
+    expect(Math.round(after.ribbons), 'the ribbons').toBe(0);
+    expect(Math.round(after.watermark), 'the watermark').toBe(0);
   }
 });
