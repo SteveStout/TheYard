@@ -33,9 +33,24 @@ public sealed record GoogleCredentials(string ClientId, string ClientSecret, str
             ["refresh_token"] = RefreshToken,
             ["grant_type"] = "refresh_token",
         }), ct);
-        trade.EnsureSuccessStatusCode();
+        if (!trade.IsSuccessStatusCode)
+        {
+            // Google answers 400 invalid_grant when the refresh token was revoked, as Steve's password change of
+            // 2026-10-23 08:12 did: every Gmail call of the 09:20 and 09:50 passes failed on it. Named, so the pass
+            // says what is wrong and what restores it instead of three identical HTTP errors.
+            throw new GoogleTokenRefusedException((int)trade.StatusCode);
+        }
         using var token = JsonDocument.Parse(await trade.Content.ReadAsStringAsync(ct));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.RootElement.GetProperty("access_token").GetString());
         return client;
     }
+}
+
+/// <summary>Google refused to trade the refresh token for an access token: it was revoked or has expired, and one consent click restores it.</summary>
+/// <param name="status">The HTTP status Google answered the trade with.</param>
+public sealed class GoogleTokenRefusedException(int status)
+    : Exception($"Google refused the refresh token (HTTP {status}); run J:\\staging\\pickup1023\\get_google_token_j.py on the laptop and allow it")
+{
+    /// <summary>The HTTP status Google answered with.</summary>
+    public int Status { get; } = status;
 }

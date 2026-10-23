@@ -79,7 +79,7 @@ public sealed class InboxPassTests
             new InboxMessage("m2", "t2", "x@y.example", "s", Morning, ""),
             new InboxMessage("m3", "t3", "x@y.example", "s", Morning, ""));
         Assert.Equal(["m3"], await new InboxTriage(scratch.Store, inbox).UnjudgedAsync(CancellationToken.None));
-        Assert.Equal("in:inbox newer_than:2d", inbox.Queries.Single());
+        Assert.Equal("in:inbox", inbox.Queries.Single());
     }
 
     [Fact]
@@ -88,6 +88,32 @@ public sealed class InboxPassTests
         using var scratch = new Scratch();
         var inbox = new MemoryInbox(new InboxMessage("m1", "t1", "x@y.example", "s", Morning, ""));
         Assert.Equal(["m1"], await new InboxTriage(scratch.Store, inbox).UnjudgedAsync(CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Triage_reads_whatever_is_still_in_the_inbox_however_old()
+    {
+        // The 10/19 Ladders alert sat in the inbox past the old two-day window, so no run ever judged it
+        // (PROMPT-JOBHUNT-OFF-THE-LAPTOP section 1). The search names the inbox and no age.
+        using var scratch = new Scratch();
+        var old = new InboxMessage("o1", "t1", "jobs@my.theladders.com", "jobs for you", Morning.AddDays(-4), "");
+        var inbox = new MemoryInbox(old);
+        Assert.Equal(["o1"], await new InboxTriage(scratch.Store, inbox).UnjudgedAsync(CancellationToken.None));
+        Assert.DoesNotContain("newer_than", inbox.Queries.Single(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_refused_Google_token_is_named_and_says_how_to_restore_it()
+    {
+        // The 09:20 and 09:50 passes of 2026-10-23 each wrote three identical "400 (Bad Request)" lines after
+        // Steve's password change revoked the token; the pass now names the cause once.
+        var credentials = new GoogleCredentials("id", "secret", "revoked");
+        var refused = await Assert.ThrowsAsync<GoogleTokenRefusedException>(() => credentials.ClientAsync(new Answering(System.Net.HttpStatusCode.BadRequest), CancellationToken.None));
+        Assert.Equal(400, refused.Status);
+        string line = AtsSweepTimer.Describe(refused);
+        Assert.StartsWith("BLOCKED: Google refused the refresh token (HTTP 400)", line, StringComparison.Ordinal);
+        Assert.Contains("get_google_token_j.py", line, StringComparison.Ordinal);
+        Assert.StartsWith("FAILED: InvalidOperationException: x", AtsSweepTimer.Describe(new InvalidOperationException("x")), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -166,5 +192,17 @@ public sealed class InboxPassTests
     private sealed class FixedTime(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    /// <summary>A client factory whose every call is answered with one status, and no network.</summary>
+    private sealed class Answering(System.Net.HttpStatusCode status) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new(new Handler(status));
+
+        private sealed class Handler(System.Net.HttpStatusCode status) : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+                Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent("{\"error\":\"invalid_grant\"}") });
+        }
     }
 }

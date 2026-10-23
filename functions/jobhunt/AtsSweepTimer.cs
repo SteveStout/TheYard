@@ -39,6 +39,7 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         }
         var watch = Stopwatch.StartNew();
         var inbox = new GmailInbox(http, google);
+        _refused = false;
         string atsLine = ats is "shadow" or "on"
             ? await PartAsync("ats sweep", () => new AtsSweep(store, inbox, time).RunAsync(ats == "on", ct))
             : "off";
@@ -66,17 +67,33 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         return $"{fresh.Count} unjudged, {await dispatch.RunAsync(InboxTriage.Event, CentralClock.Local(time.GetUtcNow()), ct)}";
     }
 
+    /// <summary>True once Google has refused the token in this pass; the parts after it are skipped, since each would ask again.</summary>
+    private bool _refused;
+
     /// <summary>Runs one part; a failure is logged as an error and becomes the part's line, so the next part still runs.</summary>
     private async Task<string> PartAsync(string name, Func<Task<string>> part)
     {
+        if (_refused)
+        {
+            return "skipped: Google refused the token earlier in this pass";
+        }
         try
         {
             return await part();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
+            _refused |= ex is GoogleTokenRefusedException;
             log.LogError(ex, "inbox pass: the {Part} failed", name);
-            return $"FAILED: {ex.GetType().Name}: {ex.Message.Replace('\n', ' ').Replace('\r', ' ')}";
+            return Describe(ex);
         }
     }
+
+    /// <summary>
+    /// A part's failure as its line in pass.log. A refused token is BLOCKED with the click that restores it,
+    /// so the log and the card say what to do; anything else is the exception's type and message.
+    /// </summary>
+    public static string Describe(Exception ex) => ex is GoogleTokenRefusedException refused
+        ? $"BLOCKED: {refused.Message}"
+        : $"FAILED: {ex.GetType().Name}: {ex.Message.Replace('\n', ' ').Replace('\r', ' ')}";
 }

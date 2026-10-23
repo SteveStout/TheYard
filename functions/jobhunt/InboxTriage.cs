@@ -4,8 +4,9 @@ using JobHunt.Functions.Merge;
 namespace JobHunt.Functions;
 
 /// <summary>
-/// What the inbox pass's code leaves for the model: the inbox's mail from the last two days that no triage
-/// run has judged. The triage run (nightly.yml, mode triage, nightly/TRIAGE-LANE.md on the share) judges each
+/// What the inbox pass's code leaves for the model: whatever is still in the inbox that no triage run has
+/// judged, however old. Until 2026-10-23 the window was the last two days, so an alert older than that (the
+/// Ladders alert of 10/19) was never judged by any run; the floor is now the inbox itself. The triage run (nightly.yml, mode triage, nightly/TRIAGE-LANE.md on the share) judges each
 /// one, acts on the alerts and rejections, leaves the rest, and writes one line a message to triage/seen.tsv,
 /// the Gmail id first. So the model is started only when there is mail it has not seen, and a message it left
 /// for Steve is never judged twice. Reading only: nothing here archives, labels or writes to the inbox.
@@ -21,8 +22,8 @@ public sealed class InboxTriage(IMergeStore store, IInbox inbox)
     /// <summary>One line a judged message, written by the triage run: the Gmail id, then what it decided and why.</summary>
     public const string Seen = Folder + "/seen.tsv";
 
-    /// <summary>The window the triage run reads.</summary>
-    public const string Query = "in:inbox newer_than:2d";
+    /// <summary>The window the triage run reads: everything still in the inbox. seen.tsv keeps a message from being judged twice.</summary>
+    public const string Query = "in:inbox";
 
     /// <summary>At most this many ids a pass.</summary>
     public const int Cap = 100;
