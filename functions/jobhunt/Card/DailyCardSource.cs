@@ -40,7 +40,7 @@ public sealed class DailyCardSource(IMergeStore store, IHttpClientFactory http, 
         var capped = Leads.ApplicationCap.Held(master, Leads.ApplicationCap.DoNotApplyList(await TextAsync("systemRules.md", ct)), DateOnly.FromDateTime(local));
         if (capped.Count > 0)
         {
-            held.Add($"No application to {string.Join("; ", capped.Select(c => $"{c.Company} before {c.OpensOn:yyyy-MM-dd}"))} (RULE 50, 3 per company in 60 days and the do-not-apply list, read from the tracker and systemRules.md)");
+            held.Add(CapLine(capped));
         }
         var pipeline = new List<string>
         {
@@ -57,6 +57,16 @@ public sealed class DailyCardSource(IMergeStore store, IHttpClientFactory http, 
             yard.Add(await VersionAsync(host, ct));
         }
         return new CardFacts(local, blockers, held, week, pipeline, yard);
+    }
+
+    /// <summary>
+    /// The card's one line for RULE 50: how many companies are held and the five that open soonest. The
+    /// whole list runs to a page, and a line that long is a line nobody reads.
+    /// </summary>
+    public static string CapLine(IReadOnlyList<Leads.CapVerdict> capped)
+    {
+        var soonest = capped.OrderBy(c => c.OpensOn).ThenBy(c => c.Company, StringComparer.Ordinal).Take(5);
+        return $"{capped.Count} {(capped.Count == 1 ? "company is" : "companies are")} held by RULE 50 (3 per company in 60 days, and the do-not-apply list); the next to open: {string.Join("; ", soonest.Select(c => $"{c.Company} on {c.OpensOn:yyyy-MM-dd}"))} (the tracker and systemRules.md)";
     }
 
     /// <summary>A log line with how long ago it was written, from its leading Central time stamp.</summary>

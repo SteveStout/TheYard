@@ -21,6 +21,19 @@ public sealed class DailyCardTests
         Assert.Equal(["Acme, Senior Engineer: (Lever 1) (APPLY-BLOCKERS-2026-10-21.md)", "Globex, Lead: remote (APPLY-BLOCKERS-2026-10-21.md)"], blockers);
     }
 
+    [Fact]
+    public void Rule_50_is_one_line_with_the_count_and_the_five_that_open_soonest()
+    {
+        var held = Enumerable.Range(1, 7)
+            .Select(i => new JobHunt.Functions.Leads.CapVerdict($"Company {i}", false, new DateOnly(2026, 11, 10 - i), "held"))
+            .ToList();
+        string line = DailyCardSource.CapLine(held);
+        Assert.StartsWith("7 companies are held by RULE 50", line, StringComparison.Ordinal);
+        Assert.Contains("the next to open: Company 7 on 2026-11-03; Company 6 on 2026-11-04; Company 5 on 2026-11-05; Company 4 on 2026-11-06; Company 3 on 2026-11-07 (", line, StringComparison.Ordinal);
+        Assert.DoesNotContain("Company 2", line, StringComparison.Ordinal);
+        Assert.StartsWith("1 company is held", DailyCardSource.CapLine(held.Take(1).ToList()), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("2026-10-22", "APPLY-BLOCKERS-2026-10-21.md")]
     [InlineData("2026-10-26", null)]

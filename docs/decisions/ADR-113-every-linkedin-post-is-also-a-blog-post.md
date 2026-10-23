@@ -52,3 +52,7 @@ The rules (where a read came from, the device class, what an event may carry, wh
 - [`src/components/blog/BlogPage/BlogPage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/blog/BlogPage/BlogPage.tsx) and [`src/components/blog/BlogPostCard/BlogPostCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/blog/BlogPostCard/BlogPostCard.tsx) - the page and the post
 - [`src/components/admin/BlogCard/BlogCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BlogCard/BlogCard.tsx) - Blog analytics on the Admin tab
 - [`api/TheYard.Tests/BlogTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BlogTests.cs), [`BlogEndpointsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BlogEndpointsTests.cs) and [`tests/e2e/blog.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/blog.spec.ts) - the rules, the store, the routes and the page
+
+## Addendum, 2026-10-22 (1.0.4.33): a feed
+
+The blog has an RSS 2.0 feed at `/api/blog/rss.xml`, written from the same handler the page reads: every published post, newest first, with its address on the blog, its date, its two-line summary and its hashtags as categories. A reader can follow the posts without LinkedIn, and a feed reader is one more source the read log can name. It answers 503 with the store's reason while the blog cannot be read, like the list (`BlogFeed.cs`, held by `BlogEndpointsTests`).

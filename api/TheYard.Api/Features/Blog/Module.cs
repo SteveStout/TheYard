@@ -34,5 +34,5 @@ public sealed class Module : IModule
 
     /// <summary>Maps the blog's routes.</summary>
     /// <param name="app">The built host's routes.</param>
-    public void Map(IEndpointRouteBuilder app) => app.MapBlogEndpoints();
+    public void Map(IEndpointRouteBuilder app) => app.MapBlogEndpoints().MapBlogFeed();
 }

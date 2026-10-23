@@ -78,6 +78,7 @@ public sealed class BlogEndpointsTests(BlogEndpointsTests.KeyedHost host) : ICla
     [Covers("POST", "/api/blog/reads", 200)]
     [Covers("POST", "/api/blog/events", 204)]
     [Covers("GET", "/api/admin/blog", 200)]
+    [Covers("GET", "/api/blog/rss.xml", 200)]
     public async Task A_post_saved_with_the_key_is_listed_read_logged_and_counted()
     {
         string slug = "post-" + Guid.NewGuid().ToString("N")[..8];
@@ -90,6 +91,12 @@ public sealed class BlogEndpointsTests(BlogEndpointsTests.KeyedHost host) : ICla
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
         Assert.Contains("\"source\":\"linkedin\"", await read.Content.ReadAsStringAsync(), StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/api/blog/events", new { slug, type = "depth", value = "50" })).StatusCode);
+        var feed = await client.GetAsync("/api/blog/rss.xml");
+        Assert.Equal(HttpStatusCode.OK, feed.StatusCode);
+        Assert.Equal("application/rss+xml", feed.Content.Headers.ContentType?.MediaType);
+        string rss = await feed.Content.ReadAsStringAsync();
+        Assert.Contains($"/?view=blog&amp;post={slug}</link>", rss, StringComparison.Ordinal);
+        Assert.Contains("<category>dotnet</category>", rss, StringComparison.Ordinal);
         var statsAnswer = await client.GetAsync("/api/admin/blog");
         Assert.Equal(HttpStatusCode.OK, statsAnswer.StatusCode);
         using var stats = JsonDocument.Parse(await statsAnswer.Content.ReadAsStringAsync());
@@ -113,10 +120,12 @@ public sealed class BlogUnkeptTests(BlogUnkeptTests.UnkeptHost host) : IClassFix
     [Fact]
     [Covers("GET", "/api/blog/posts", 503)]
     [Covers("POST", "/api/admin/blog/posts", 503)]
+    [Covers("GET", "/api/blog/rss.xml", 503)]
     public async Task A_store_that_cannot_keep_answers_503_with_its_reason()
     {
         var client = host.CreateClient();
         await Problem.Is(await client.GetAsync("/api/blog/posts"), HttpStatusCode.ServiceUnavailable);
+        await Problem.Is(await client.GetAsync("/api/blog/rss.xml"), HttpStatusCode.ServiceUnavailable);
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/blog/posts")
         {
             Content = JsonContent.Create(new { slug = "a-post", title = "T", summary = "S", body = "B", published_at = "2026-10-19T14:00:00Z", linkedin_url = "https://www.linkedin.com/posts/a" }),
