@@ -30,6 +30,12 @@ public interface IInbox
 /// <param name="Text">The body as plain text, markup removed.</param>
 public sealed record InboxMessage(string Id, string ThreadId, string From, string Subject, DateTimeOffset At, string Text)
 {
+    /// <summary>
+    /// The body with its line breaks kept, for a reader that goes line by line (a job alert's blocks);
+    /// Text joins every line into one, which is what the ATS rules' phrases need.
+    /// </summary>
+    public string Lines { get; init; } = "";
+
     /// <summary>The address in the From header, lower case.</summary>
     public string Address => Mail.Address(From);
 

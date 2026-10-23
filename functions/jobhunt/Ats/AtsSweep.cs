@@ -97,7 +97,7 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
         AtsAction.Leave => "left",
         AtsAction.ArchiveOnly => "archive only",
         AtsAction.RowAndArchive => "row and archive",
-        _ => "row and left",
+        _ => "other",
     };
 
     private DateTime Now() => CentralClock.Local(time.GetUtcNow());

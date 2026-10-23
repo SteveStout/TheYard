@@ -66,10 +66,10 @@ public sealed class AtsSweepTests
     }
 
     [Fact]
-    public void A_rejection_with_a_reason_is_logged_and_left_for_steve()
+    public void A_rejection_with_a_reason_is_logged_and_archived_because_processed_means_archived()
     {
         var decision = AtsRules.Decide(Mail1(ReasonText), Machine, [Applied(10)]);
-        Assert.Equal(AtsAction.RowAndLeave, decision.Action);
+        Assert.Equal(AtsAction.RowAndArchive, decision.Action);
         Assert.StartsWith("REJECTION WITH A REASON", decision.Row![5], StringComparison.Ordinal);
     }
 
@@ -79,6 +79,15 @@ public sealed class AtsSweepTests
         string[] named = ["13", "NA", "Acme", "Email", "10/22/2026", "", "REJECTION, generic (Gmail msg m1, from no-reply)"];
         var decision = AtsRules.Decide(Mail1(RejectionText), Machine, [Applied(10), named]);
         Assert.Equal((AtsAction.ArchiveOnly, "13"), (decision.Action, decision.RestsOn));
+    }
+
+    [Fact]
+    public void Interview_mail_a_row_names_stays_in_the_inbox()
+    {
+        string[] named = ["14", "NA", "Acme", "Email", "10/22/2026", "", "INTERVIEW scheduled (Gmail msg m1)"];
+        var decision = AtsRules.Decide(Mail1("Hiring Manager Interview at Acme for Senior Software Engineer. Pick a time that works.", subject: "Hiring Manager Interview at Acme", id: "m1"), Machine, [Applied(10), named]);
+        Assert.Equal(AtsAction.Leave, decision.Action);
+        Assert.Contains("interview, scheduling and account mail stays", decision.Why, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -126,7 +135,7 @@ public sealed class AtsSweepTests
         string line = await new AtsSweep(scratch.Store, inbox, new FixedTime(Afternoon)).RunAsync(false, CancellationToken.None);
         Assert.Empty(inbox.Archived);
         Assert.False(Directory.Exists(Path.Combine(scratch.Root, "inbox", "tracker-inbox")));
-        Assert.StartsWith("SHADOW found 2: left 0, archive only 1, row and archive 1, row and left 0", line, StringComparison.Ordinal);
+        Assert.StartsWith("SHADOW found 2: left 0, archive only 1, row and archive 1", line, StringComparison.Ordinal);
         Assert.Contains("m1\t2026-10-22 14:30", File.ReadAllText(Path.Combine(scratch.Root, "ats-sweep", "last-plan.tsv")), StringComparison.Ordinal);
     }
 
@@ -137,11 +146,11 @@ public sealed class AtsSweepTests
         scratch.Master(TrackerCsvText.Line(Applied(10)) + "\r\n");
         var inbox = new MemoryInbox(Mail1(RejectionText, id: "m1"), Mail1(ReasonText, id: "m3"));
         string line = await new AtsSweep(scratch.Store, inbox, new FixedTime(Afternoon)).RunAsync(true, CancellationToken.None);
-        Assert.Equal(["m1"], inbox.Archived);
+        Assert.Equal(["m1", "m3"], inbox.Archived);
         var rows = Directory.GetFiles(Path.Combine(scratch.Root, "inbox", "tracker-inbox"));
         Assert.Equal(2, rows.Length);
         Assert.All(rows, row => Assert.Matches(@"\d{8}-\d{6}Z-atssweep-m\d\.csv$", row));
-        Assert.EndsWith("1 archived and read back, 0 failed", line, StringComparison.Ordinal);
+        Assert.EndsWith("2 archived and read back, 0 failed", line, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -171,6 +180,21 @@ public sealed class AtsSweepTests
         Assert.Equal("We have received your application", GmailInbox.Text(html.RootElement));
         using var both = JsonDocument.Parse($$$"""{"mimeType":"multipart/alternative","parts":[{"mimeType":"text/plain","body":{"data":"{{{B64("plain words")}}}"}},{"mimeType":"text/html","body":{"data":"{{{B64("<p>html</p>")}}}"}}]}""");
         Assert.Equal("plain words", GmailInbox.Text(both.RootElement));
+    }
+
+    [Fact]
+    public void A_job_alert_keeps_its_lines_so_its_blocks_can_be_read()
+    {
+        static string B64(string s) => Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
+        string alert = "Your job alert for engineering manager in United StatesManage your job alerts: https://www.linkedin.com/comm/jobs/alerts?x=1\r\n\r\nLead Engineer\r\nAcme   Corp\r\nRemote\r\nView job: https://www.linkedin.com/comm/jobs/view/123/?trk=x\r\n\r\n---------------------------------------------------------\r\n\r\nStaff Engineer\r\nGlobex\r\nUnited States\r\nView job: https://www.linkedin.com/comm/jobs/view/456/?trk=y\r\n";
+        using var mail = JsonDocument.Parse($$$"""{"mimeType":"multipart/related","parts":[{"mimeType":"multipart/alternative","parts":[{"mimeType":"text/plain","body":{"data":"{{{B64(alert)}}}"}}]}]}""");
+        string lines = GmailInbox.Lines(mail.RootElement);
+        Assert.Contains("Acme Corp\nRemote\n", lines, StringComparison.Ordinal);
+        var (leads, unread) = JobHunt.Functions.Leads.LinkedInAlert.Read(lines, "m9");
+        Assert.Equal(0, unread);
+        Assert.Equal(["Acme Corp", "Globex"], leads.Select(l => l.Company));
+        // The one-line text the ATS rules read cannot be split into blocks, which is how the first live pass read none.
+        Assert.Empty(JobHunt.Functions.Leads.LinkedInAlert.Read(GmailInbox.Text(mail.RootElement), "m9").Leads);
     }
 
     private static string Root()

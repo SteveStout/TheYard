@@ -29,11 +29,6 @@ public sealed class DailyCardSource(IMergeStore store, IHttpClientFactory http, 
         {
             held.Add("The Sheet waits: " + sheet[(sheet.IndexOf("STOPPED", StringComparison.Ordinal) + 8)..].Trim() + " (sheet-mirror/mirror.log)");
         }
-        int reasons = (await TextAsync("ats-sweep/last-plan.tsv", ct)).Split('\n').Count(line => line.Contains("\tRowAndLeave\t", StringComparison.Ordinal) || line.Contains("\tRejectionWithReason\t", StringComparison.Ordinal) && line.Contains("\tLeave\t", StringComparison.Ordinal));
-        if (reasons > 0)
-        {
-            held.Add($"{reasons} rejection(s) that give a reason, left in the inbox for you (ats-sweep/last-plan.tsv)");
-        }
         var week = await WeekAsync(now, ct);
         held.AddRange(week.Where(line => line.StartsWith("STOP", StringComparison.Ordinal)));
         var master = TrackerCsvText.Parse(await TextAsync(MergePaths.Master, ct)).Where(r => r.Length >= 7 && int.TryParse(r[0].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out _)).ToList();

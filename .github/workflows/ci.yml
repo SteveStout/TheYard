@@ -90,6 +90,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc -b
+      # The home page's Tech stack table is generated from the repository; a stale table fails here.
+      - run: npm run stack:check
       - run: npm test
       - run: npm run build
 

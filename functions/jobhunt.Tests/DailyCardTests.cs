@@ -7,7 +7,7 @@ namespace JobHunt.Functions.Tests;
 
 /// <summary>
 /// The daily card (functions/jobhunt/Card): the blockers read off the newest APPLY-BLOCKERS file, the
-/// Sheet's stop and the rejections left for Steve under "Waiting on you", a fact that could not be read
+/// Sheet's stop and the RULE 50 line under "Waiting on you", a fact that could not be read
 /// said in words, and the card rewritten only when what it says changed, or at 6 AM. Made-up rows.
 /// </summary>
 public sealed class DailyCardTests

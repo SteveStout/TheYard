@@ -11,6 +11,8 @@
     "docker:stop": "docker stop theyard",
     "test:api": "dotnet test api --filter Store!=cosmos",
     "build": "tsc -b && vite build",
+    "stack": "node scripts/stack.mjs",
+    "stack:check": "node scripts/stack.mjs --check",
     "build:render": "vite build --config render/vite.config.ts",
     "render": "node render/server.mjs",
     "preview": "vite preview",

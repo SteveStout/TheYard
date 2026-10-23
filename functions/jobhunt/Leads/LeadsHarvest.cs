@@ -32,7 +32,7 @@ public sealed class LeadsHarvest(IMergeStore store, IInbox inbox, TimeProvider t
         foreach (string id in await inbox.FindAsync($"in:inbox from:{LinkedInAlert.Sender}", Cap, ct))
         {
             var message = await inbox.ReadAsync(id, ct);
-            var (found, missed) = LinkedInAlert.Read(message.Text, id);
+            var (found, missed) = LinkedInAlert.Read(message.Lines.Length > 0 ? message.Lines : message.Text, id);
             leads.AddRange(found);
             unread += missed;
             alerts++;

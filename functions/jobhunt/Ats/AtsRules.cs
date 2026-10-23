@@ -62,11 +62,14 @@ public static partial class AtsRules
         var day = DateOnly.FromDateTime(CentralClock.Local(message.At));
         // A message a row already names by its Gmail id is logged: it rests there, whoever wrote the row.
         var named = master.FirstOrDefault(row => row.Length >= 7 && row[6].Contains(message.Id, StringComparison.Ordinal));
+        // An interview, scheduling or account mail a row names is still mail Steve acts on: it stays.
+        if (named is not null && kind == AtsKind.Unknown)
+        {
+            return AtsDecision.Leave(message, kind, named[2], $"a row names it (Count {named[0]}), but it is neither a receipt nor a rejection: interview, scheduling and account mail stays");
+        }
         if (named is not null)
         {
-            return kind == AtsKind.RejectionWithReason
-                ? AtsDecision.Leave(message, kind, named[2], $"a rejection with a reason, already on Count {named[0]}: left for Steve")
-                : new AtsDecision(message, kind, named[2], AtsAction.ArchiveOnly, named[0], null, $"already logged on Count {named[0]}");
+            return new AtsDecision(message, kind, named[2], AtsAction.ArchiveOnly, named[0], null, $"already logged on Count {named[0]}");
         }
         if (day < SearchBegan && kind is AtsKind.Receipt or AtsKind.Rejection)
         {
@@ -91,11 +94,13 @@ public static partial class AtsRules
                 : new AtsDecision(message, kind, company, AtsAction.RowAndArchive, null, Row(message, kind, company, day, mine), "a receipt with no application row within two days");
         }
         var logged = master.FirstOrDefault(row => row.Length >= 7 && Same(row[2], company) && Near(row[4], day) && row[6].TrimStart().StartsWith("REJECTION", StringComparison.OrdinalIgnoreCase));
+        // Processed means archived (CONVENTIONS, 10/22): a rejection that gives a reason is logged with the
+        // reason in its row and archived like any other; the row, not the inbox, is where Steve reads it.
         if (kind == AtsKind.RejectionWithReason)
         {
             return logged is not null
-                ? AtsDecision.Leave(message, kind, company, $"a rejection with a reason, already on Count {logged[0]}: left for Steve")
-                : new AtsDecision(message, kind, company, AtsAction.RowAndLeave, null, Row(message, kind, company, day, mine), "a rejection with a reason: logged and left for Steve");
+                ? new AtsDecision(message, kind, company, AtsAction.ArchiveOnly, logged[0], null, $"a rejection with a reason, rests on Count {logged[0]}")
+                : new AtsDecision(message, kind, company, AtsAction.RowAndArchive, null, Row(message, kind, company, day, mine), "a rejection with a reason: logged with the reason and archived");
         }
         return logged is not null
             ? new AtsDecision(message, kind, company, AtsAction.ArchiveOnly, logged[0], null, $"rests on rejection Count {logged[0]}")
@@ -179,9 +184,6 @@ public enum AtsAction
 
     /// <summary>A row dropped in the spool, then archived.</summary>
     RowAndArchive,
-
-    /// <summary>A row dropped in the spool, and left in the inbox for Steve.</summary>
-    RowAndLeave,
 }
 
 /// <summary>The sweep's decision on one message.</summary>

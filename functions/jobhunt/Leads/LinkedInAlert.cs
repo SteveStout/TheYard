@@ -27,7 +27,7 @@ public static partial class LinkedInAlert
             }
             var lines = block[..view.Index].Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
             // The alert's own header sits above the first job in the first block; the job is the last lines before View job.
-            int start = lines.FindLastIndex(l => l.StartsWith("http", StringComparison.Ordinal) || l.EndsWith(':')) + 1;
+            int start = lines.FindLastIndex(l => l.Contains("http", StringComparison.Ordinal) || l.EndsWith(':')) + 1;
             var job = lines.Skip(start).Where(l => !Tag().IsMatch(l)).ToList();
             if (job.Count < 3)
             {
