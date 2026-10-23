@@ -222,6 +222,7 @@ export const MENUS: Record<
       { key: 'sealed' },
       { key: 'memory' },
       { key: 'onion' },
+      { key: 'cqrs' },
       { key: 'security' },
       { key: 'reactServerRendering' },
       { key: 'aheadOfTimeCompilation' },

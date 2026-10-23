@@ -12,9 +12,9 @@ internal static class FakeBackend
         Name = name,
         Database = new DatabaseState(ready, name),
         Startup = new StartupTimings(),
-        Inventory = new InventoryService(new EmptyVehicles(), new EmptyPhotos()),
-        Bids = new BidService(new MemoryBidStore()),
-        Market = new MarketService(new Random(7)),
+        Inventory = new Stock(new EmptyVehicles(), new EmptyPhotos()),
+        Bids = new BidBook(new MemoryBidStore()),
+        Market = new Room(new Random(7)),
         Probe = () => Task.FromResult(ready),
     };
 

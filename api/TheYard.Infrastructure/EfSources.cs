@@ -54,7 +54,7 @@ public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> facto
 public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory) : IBidStore
 {
     // #region bid-store
-    /// <summary>Every stored bid, for BidService to replay into its indexes at startup.</summary>
+    /// <summary>Every stored bid, for BidBook to replay into its indexes at startup.</summary>
     public async Task<IReadOnlyList<StoredBid>> LoadAsync()
     {
         using var db = await factory.CreateDbContextAsync();
@@ -85,7 +85,7 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
     /// standing first with a compare-and-set on its version. An update that
     /// names a version no longer there changes no row, and an insert where
     /// another writer has just inserted breaks the key; either way the
-    /// transaction is rolled back and the answer is false, so BidService reads
+    /// transaction is rolled back and the answer is false, so BidBook reads
     /// again and runs the rules again. The buyer's row keeps its own token,
     /// which catches one account writing from two sites at once, and that too
     /// answers false rather than writing over what it never saw.

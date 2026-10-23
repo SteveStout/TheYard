@@ -199,4 +199,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '114',
   },
+  adrARequestIsAQueryOrACommand: {
+    title: 'ADR: A request is a query or a command',
+    menuLabel: 'ADR: A request is a query or a command',
+    url: '/api/docs/adr-a-request-is-a-query-or-a-command',
+    kind: 'adr',
+    number: '115',
+  },
 } as const satisfies Record<string, RecordEntry>;

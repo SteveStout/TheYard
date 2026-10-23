@@ -16,18 +16,19 @@ Every box in the diagram is a file; each step below names its path.
 `api/TheYard.Api/Program.cs` is the table of contents: it calls the registrations in
 `api/TheYard.Api/Shared/` (sources, then services) and each slice's module, then maps each module. A
 handler binds the request and hands straight off to the Application layer; the auction's
-handlers ask `Auction` (`api/TheYard.Application/Auction.cs`), which composes the
-catalogue, everybody's bids and the simulated room in the one order the rules need. ADR:
+handlers are queries and commands (ADR-115), and every query reads a vehicle through `StandingReader`
+(`api/TheYard.Application/StandingReader.cs`), which lays the catalogue, everybody's bids and the
+simulated room in the one order the rules need. ADR:
 Program.cs, explained walks the entry point top to bottom.
 
 | Route | Handled by |
 | --- | --- |
-| `GET /api/vehicles` (filter/sort/page params) | `Auction.SearchAsync` → `InventoryService.SearchAsync`, which plans the query and the store answers it (ADR: The store does the work) |
-| `GET /api/vehicles/{id}` | `Auction.FindAsync`, a point read in the store, which hands the vehicle back at its standing price with its sold flag |
-| `GET /api/facets` | `Auction.Facets` |
-| `POST /api/vehicles/{id}/bids` | `Auction.PlaceBidAsync` → `BidService` → `BidRules` |
-| `POST /api/vehicles/{id}/buy-now` | `Auction.BuyNowAsync` → `BidService` → `BidRules` |
-| `GET` / `DELETE /api/bids` | `Auction.BidsOf` / `Auction.ResetAsync` |
+| `GET /api/vehicles` (filter/sort/page params) | `SearchVehiclesHandler` → `StandingReader.SearchAsync` → `Stock.SearchAsync`, which plans the query and the store answers it (ADR: The store does the work) |
+| `GET /api/vehicles/{id}` | `FindVehicleHandler` → `StandingReader.FindAsync`, a point read in the store, which hands the vehicle back at its standing price with its sold flag |
+| `GET /api/facets` | `ReadFacetsHandler` → `Stock.FacetsAsync` |
+| `POST /api/vehicles/{id}/bids` | `PlaceBidHandler` → `BidBook.PlaceBidAsync` → `BidRules` |
+| `POST /api/vehicles/{id}/buy-now` | `PlaceBidHandler` → `BidBook.BuyNowAsync` → `BidRules` |
+| `GET` / `DELETE /api/bids` | `ReadMyBidsHandler` → `StandingReader.BidsOf` / `ResetBidsHandler` → `BidBook.ResetAsync` and `Room.Forget` |
 | `GET /api/docs/{slug}` · `/api/docs/diagrams/{name}` | the documents catalog and the diagram pages (ADR-017, ADR-020) |
 | `GET /api/docs/bicep` · `/api/docs/resume` | files on disk |
 | `GET /api/images/{file}` | static files (day-long `Cache-Control`) |
@@ -52,7 +53,7 @@ What that is worth: a developer can trace any request to the file that handles i
    expands it to 100,000 deterministic variants: each new id is hashed (FNV-1a,
    `api/TheYard.Domain/Fnv1a.cs`) to vary VIN, year, odometer, prices, and bid state
    while inheriting the seed's make/model/trim mix.
-3. **Enrich and cache.** `InventoryService` (`api/TheYard.Application/InventoryService.cs`)
+3. **Enrich and cache.** `Stock` (`api/TheYard.Application/Stock.cs`)
    applies each vehicle's photo gallery (hash-picked by `api/TheYard.Domain/PhotoGallery.cs`
    from `api/TheYard.Api/photo-manifest.json` pools, preferring the vehicle's own make)
    and fills the store's catalogue with them, which a page is then a query against: the
@@ -63,10 +64,10 @@ What that is worth: a developer can trace any request to the file that handles i
    midnight that began the day, the same for every caller, so schedule math
    (`api/TheYard.Domain/AuctionSchedule.cs`, `AuctionClock.cs`) puts every visitor in
    the same auction. Everybody's bids, then the simulated room's, overlay **before**
-   filtering (`Auction.Overlay` in `api/TheYard.Application/Auction.cs`, each raise made by
+   filtering (`StandingReader.Overlay` in `api/TheYard.Application/StandingReader.cs`, each raise made by
    `StandingRules.RaisedTo` in `api/TheYard.Domain/StandingRules.cs`), so price bounds see
    the same figures the UI shows. Then `Where` → `OrderBy` → `Skip/Take`, in the store:
-   `InventoryService.SearchAsync` resolves the filter to the store's own spelling and plans
+   `Stock.SearchAsync` resolves the filter to the store's own spelling and plans
    the page, and the store's adapter (`EfVehicleCatalogue.cs` over the Catalogue table,
    `CosmosVehicleCatalogue.cs` over the catalogue container) answers it off an index, so only
    the page comes back (ADR: The store does the work).
@@ -88,7 +89,7 @@ What that is worth: a developer can trace any request to the file that handles i
 Step 4's overlay, read from this build. It is chosen once per listing, so a cold catalogue
 with no bid and no room pays for neither:
 
-```live path=api/TheYard.Application/Auction.cs region=overlays
+```live path=api/TheYard.Application/StandingReader.cs region=overlays
 ```
 
 Step 6's seam, the one function every list view goes through:
@@ -100,15 +101,15 @@ Step 6's seam, the one function every list view goes through:
 
 1. `src/components/vehicle/BidPanel/BidPanel.tsx` posts `{ amount }` to
    `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`; the clock is the server's.
-   `api/TheYard.Api/Features/Bids/BidEndpoints.cs` hands it to `Auction.PlaceBidAsync`, which
+   `api/TheYard.Api/Features/Bids/BidEndpoints.cs` hands it to `PlaceBidHandler`, which
    measures it against the room's standing price as well as everybody's bids.
 2. `api/TheYard.Domain/BidRules.cs` is the sole authority: sold first (a vehicle anybody
-   has bought takes no bid and no second purchase, a fact `BidService` supplies from
+   has bought takes no bid and no second purchase, a fact `BidBook` supplies from
    everybody's standing), then the live-window check, the tiered minimum increment, and
    the buy-now override (a bid at or above `buy_now_price` wins outright at that price).
 3. Accepted or won bids are written to the store first, Azure SQL Database or Azure
    Cosmos DB through `IBidStore`, and then to the in-memory standing in
-   `api/TheYard.Application/BidService.cs`, under the signed-in account's id (ADR:
+   `api/TheYard.Application/BidBook.cs`, under the signed-in account's id (ADR:
    Accounts and per-user bids); rejections return 400 with a human-readable reason the
    panel shows.
 4. The response carries the updated vehicle (fresh `min_next_bid` included); `src/lib/data.ts`

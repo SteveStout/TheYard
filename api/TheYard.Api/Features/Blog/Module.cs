@@ -27,7 +27,7 @@ public sealed class Module : IModule
         services.AddScoped(provider => new ReadPostHandler(provider.GetRequiredService<IBlogStore>()));
         services.AddScoped(provider => new RecordReadHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         services.AddScoped(provider => new RecordEventHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
-        services.AddScoped(provider => new BlogStatsHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
+        services.AddScoped(provider => new ReadBlogStatsHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         services.AddScoped(provider => new SavePostHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         // #endregion blog-wiring
     }

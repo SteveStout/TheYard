@@ -55,9 +55,9 @@ public class WarmthTests
         Name = "SQLite",
         Database = new DatabaseState(true, "SQLite"),
         Startup = new StartupTimings(),
-        Inventory = new InventoryService(source, new NoPhotos()),
-        Bids = new BidService(new MemoryBidStore()),
-        Market = new MarketService(new Random(7)),
+        Inventory = new Stock(source, new NoPhotos()),
+        Bids = new BidBook(new MemoryBidStore()),
+        Market = new Room(new Random(7)),
         Probe = () => Task.FromResult(true),
     };
 

@@ -67,17 +67,17 @@ The rule is easiest to see by following one request. A signed-in buyer bids on a
 *A preview. [Open the bid's walk in a new page](https://theyard.stevenstout.biz/api/docs/diagrams/bid-walk) to zoom in and follow it.*
 
 1. **The host reads.** The endpoint checks that the session belongs to this store (401 if not) and
-   that the vehicle exists (404 if not), reads the server's clock once, and asks `Auction`, the one
-   class an endpoint asks about the auction.
-2. **Application composes.** `Auction` hands the bid to `BidService`, which keeps everybody's bids. It
-   lets one bid through at a time and folds everybody's bids into the vehicle, so the rules see the
-   price as it stands.
-3. **Application asks Domain.** `BidService` calls `BidRules.ResolveBid` with the vehicle, the amount,
+   that the vehicle exists (404 if not), reads the server's clock once, and asks `PlaceBidHandler`, the
+   one handler that request has (ADR-115).
+2. **Application composes.** `PlaceBidHandler` reads the vehicle as it stands through `StandingReader`
+   and hands the bid to `BidBook`, which keeps everybody's bids. It lets one bid through at a time and
+   folds everybody's bids into the vehicle, so the rules see the price as it stands.
+3. **Application asks Domain.** `BidBook` calls `BidRules.ResolveBid` with the vehicle, the amount,
    the clock and whether anybody has already bought it.
 4. **Domain decides.** The answer is a `BidOutcome`: refused because the vehicle is sold, the auction
    is not live or the bid is under the minimum; won at the buy-now price; or accepted. It is a pure
    function, so the same inputs give the same answer every time.
-5. **Application saves through the port.** On yes, `BidService` calls `IBidStore.SaveAsync` and only
+5. **Application saves through the port.** On yes, `BidBook` calls `IBidStore.SaveAsync` and only
    then records the bid in memory, so a failed write means the bid did not happen anywhere.
 6. **An adapter writes.** Whichever adapter the composition root wired in at startup, for SQL or for
    Cosmos DB, writes the row or the document.
@@ -96,17 +96,17 @@ endpoint,
 ```live path=api/TheYard.Api/Features/Bids/BidEndpoints.cs region=*
 ```
 
-The use cases an endpoint asks,
-[`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs):
+The use case the bid route asks, one command and its handler,
+[`api/TheYard.Application/Features/Bids/PlaceBidHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Bids/PlaceBidHandler.cs):
 
-```live path=api/TheYard.Application/Auction.cs region=*
+```live path=api/TheYard.Application/Features/Bids/PlaceBidHandler.cs region=place-bid
 ```
 
-The method that asks the rules and then calls the port, from the part of `BidService` that moves a
+The method that asks the rules and then calls the port, from the part of `BidBook` that moves a
 price,
-[`api/TheYard.Application/BidService.Bidding.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.Bidding.cs):
+[`api/TheYard.Application/BidBook.Bidding.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.Bidding.cs):
 
-```live path=api/TheYard.Application/BidService.Bidding.cs region=place
+```live path=api/TheYard.Application/BidBook.Bidding.cs region=place
 ```
 
 The rules,
@@ -162,7 +162,7 @@ The document store adapters, whole: the Cosmos DB SDK,
 And the one place that names an adapter: the composition root,
 [`api/TheYard.Api/Shared/Wiring/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/StoreRegistration.cs),
 building the relational store's backend and then the document store's. Look for
-`new BidService(new EfBidStore(contexts))` in the first and `new BidService(new CosmosBidStore(store))`
+`new BidBook(new EfBidStore(contexts))` in the first and `new BidBook(new CosmosBidStore(store))`
 in the second:
 
 ```live path=api/TheYard.Api/Shared/Wiring/StoreRegistration.cs region=sql-backend

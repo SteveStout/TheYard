@@ -28,7 +28,7 @@ public sealed class PlanHandlerTests
     public async Task A_window_the_card_offers_is_asked_for_and_anything_else_is_read_as_the_day(string? asked, string read)
     {
         var card = new FakeCard();
-        var report = await new ReadPlanHandler(card).HandleAsync(asked, CancellationToken.None);
+        var report = await new ReadPlanHandler(card).HandleAsync(new ReadPlanQuery(asked), CancellationToken.None);
 
         Assert.Equal([read], card.Asked);
         Assert.Equal(read, report.Window);

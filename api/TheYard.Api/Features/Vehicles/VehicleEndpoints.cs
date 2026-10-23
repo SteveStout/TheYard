@@ -59,17 +59,17 @@ public static class VehicleEndpoints
         }
         // One handler answers the page (ADR: The onion cut into vertical slices, rule 7); this
         // file reads the query and writes the wire.
-        var result = await handler.HandleAsync(new VehicleSearch(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset), cancellation);
+        var result = await handler.HandleAsync(new SearchVehiclesQuery(filter, clock, sort, query.EffectiveLimit, query.EffectiveOffset), cancellation);
         return TypedResults.Ok(new VehiclePage(result.Total, [.. result.Vehicles.Select(v => VehicleWire.ToWire(v, clock))]));
     }
     #endregion inventory-endpoint
 
-    private static async Task<Ok<InventoryFacets>> Facets(FacetsHandler handler, CancellationToken cancellation) =>
-        TypedResults.Ok(await handler.HandleAsync(cancellation));
+    private static async Task<Ok<InventoryFacets>> Facets(ReadFacetsHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadFacetsQuery(), cancellation));
 
     private static async Task<Results<Ok<VehicleView>, ProblemHttpResult>> One(FindVehicleHandler handler, string id, CancellationToken cancellation)
     {
-        var found = await handler.HandleAsync(id, cancellation);
+        var found = await handler.HandleAsync(new FindVehicleQuery(id), cancellation);
         return found.Vehicle is { } vehicle
             ? TypedResults.Ok(VehicleWire.ToWire(vehicle, found.Clock))
             : TypedResults.Problem(detail: "No vehicle has that id.", statusCode: 404, title: "No such vehicle");

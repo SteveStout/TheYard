@@ -57,7 +57,7 @@ section on purpose: the store is written first and memory second, so a store
 that throws leaves nothing behind (ADR: The relational store). Same guarantee,
 same shape, one bidder at a time:
 
-```live path=api/TheYard.Application/BidService.Bidding.cs region=place
+```live path=api/TheYard.Application/BidBook.Bidding.cs region=place
 ```
 
 **The constructor stopped reading the store.** A constructor cannot wait, and
@@ -66,7 +66,7 @@ asks first; the host asks at startup and the writing methods ask again, which
 costs nothing once the load is done and means a service nobody warmed loads
 itself on its first bid:
 
-```live path=api/TheYard.Application/BidService.cs region=store
+```live path=api/TheYard.Application/BidBook.cs region=store
 ```
 
 **`InventoryService` warms once and reads a finished task after that.** The
@@ -79,7 +79,7 @@ completed, a wait of no time. The only way to block a thread here for real is to
 skip the warm-up against a store that goes over the network, and the host does
 not:
 
-```live path=api/TheYard.Application/InventoryService.Warm.cs region=warm
+```live path=api/TheYard.Application/Stock.Warm.cs region=warm
 ```
 
 The host's side of that bargain is two lines, before the pipeline is built:
@@ -140,8 +140,8 @@ The listen-first warm, which the paragraph above places in `Composition/Startup.
 ## Files
 
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the three seams, awaitable.
-- [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the semaphore, and the load that moved out of the constructor.
-- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): the warm-up.
+- [`api/TheYard.Application/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.cs): the semaphore, and the load that moved out of the constructor.
+- [`api/TheYard.Application/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs): the warm-up.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the relational adapters, asynchronous.
 - [`api/TheYard.Infrastructure/JsonFileSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/JsonFileSources.cs): the file readers, the same.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the two awaits before the pipeline.

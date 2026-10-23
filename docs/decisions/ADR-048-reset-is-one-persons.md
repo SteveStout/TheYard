@@ -170,13 +170,13 @@ The reset now runs through Application, where `Auction.ResetAsync` asks `BidServ
 
 ## Files
 
-- [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the reset, and the recompute.
-- [`api/TheYard.Application/MarketService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MarketService.cs): `Forget`, which takes the vehicles rather than clearing the room.
+- [`api/TheYard.Application/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.cs): the reset, and the recompute.
+- [`api/TheYard.Application/Room.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Room.cs): `Forget`, which takes the vehicles rather than clearing the room.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the port that now needs a user.
 - [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): one person's rows.
-- [`api/TheYard.Tests/BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidServiceTests.cs): the stranger who keeps their bid.
+- [`api/TheYard.Tests/BidBookTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidBookTests.cs): the stranger who keeps their bid.
 - [`docs/decisions/ADR-037-accounts.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-037-accounts.md): the change that made this wrong.
 
 ## Addendum, 2026-10-03: who connects the reset to the room
 
-The Decision says the endpoint hands what the reset touched to the room and the composition root connects them. That connection now lives in the Application ring: `Auction.ResetAsync` (`api/TheYard.Application/Auction.cs`) asks `BidService` for the vehicles it touched and tells `MarketService` to forget its answers on those. The endpoint only checks the session and calls it. `BidService` still does not reach into `MarketService`.
+The Decision says the endpoint hands what the reset touched to the room and the composition root connects them. That connection now lives in the Application ring: `Auction.ResetAsync` (`api/TheYard.Application/StandingReader.cs`) asks `BidService` for the vehicles it touched and tells `MarketService` to forget its answers on those. The endpoint only checks the session and calls it. `BidService` still does not reach into `MarketService`.

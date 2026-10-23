@@ -20,7 +20,7 @@ public static partial class AccountEndpoints
         {
             return Results.NotFound();
         }
-        var answer = await handler.HandleAsync(request.Email, current.Key, hosts.LinkOrigin(http), cancellation);
+        var answer = await handler.HandleAsync(new OperatorResetLinkCommand(request.Email, current.Key, hosts.LinkOrigin(http)), cancellation);
         return answer.Kind switch
         {
             AccountAnswerKind.Unavailable => Accounts.Unavailable(),
@@ -43,7 +43,7 @@ public static partial class AccountEndpoints
     /// </summary>
     private static async Task<Results<Ok<ForgotReply>, ProblemHttpResult>> Forgot(ResetLinkRequest request, HttpContext http, ForgotHandler handler, CurrentBackend current, SiteHosts hosts, CancellationToken cancellation)
     {
-        var answer = await handler.HandleAsync(request.Email, current.Key, hosts.LinkOrigin(http), cancellation);
+        var answer = await handler.HandleAsync(new ForgotCommand(request.Email, current.Key, hosts.LinkOrigin(http)), cancellation);
         return answer.Kind switch
         {
             ForgotAnswerKind.NoMail => TypedResults.Problem(
@@ -61,7 +61,7 @@ public static partial class AccountEndpoints
     /// </summary>
     private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Reset(ResetRequest request, HttpContext http, ResetPasswordHandler handler, CurrentBackend current, TokenIssuer issuer, CancellationToken cancellation)
     {
-        var answer = await handler.HandleAsync(request.Token, request.Password, current.Key, cancellation);
+        var answer = await handler.HandleAsync(new ResetPasswordCommand(request.Token, request.Password, current.Key), cancellation);
         return answer.Kind switch
         {
             ResetAnswerKind.Unavailable => Accounts.Unavailable(),

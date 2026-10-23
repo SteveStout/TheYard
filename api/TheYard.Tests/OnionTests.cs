@@ -77,7 +77,7 @@ public sealed class OnionTests
     [Fact]
     public void Application_depends_only_on_Domain_Data_and_the_BCL()
     {
-        var result = InRing(typeof(Auction), "TheYard.Application")
+        var result = InRing(typeof(StandingReader), "TheYard.Application")
             .ShouldNot().HaveDependencyOtherThan(BaseClassLibrary, CoverageTracker, "TheYard.Data", "TheYard.Domain", "TheYard.Application")
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
@@ -101,7 +101,7 @@ public sealed class OnionTests
     {
         // A use case reaches a store or a service through a port; the disk and the network belong
         // to the adapters behind those ports.
-        var result = InRing(typeof(Auction), "TheYard.Application")
+        var result = InRing(typeof(StandingReader), "TheYard.Application")
             .ShouldNot().HaveDependencyOnAny(TheDiskAndTheNetwork)
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
@@ -172,14 +172,14 @@ public sealed class OnionTests
     public void Endpoints_reach_the_auction_only_through_the_Application_ring()
     {
         // The order bids are composed in (the buyer's first, the room's second) and the price a
-        // bid is measured against are Application's, in Auction. An endpoint that held the
-        // services itself could compose them in another order.
+        // bid is measured against are Application's, in StandingReader and the bid handlers. An endpoint
+        // that held the parts itself could compose them in another order.
         var result = Types.InAssembly(typeof(Program).Assembly)
             .That().MeetCustomRule(IsPartOfAnEndpointClass)
             .ShouldNot().HaveDependencyOnAny(
-                "TheYard.Application.BidService",
-                "TheYard.Application.MarketService",
-                "TheYard.Application.InventoryService")
+                "TheYard.Application.BidBook",
+                "TheYard.Application.Room",
+                "TheYard.Application.Stock")
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
     }
@@ -283,7 +283,7 @@ public sealed class OnionTests
         // The handlers and services take their ports by constructor; a handler that took an
         // IServiceProvider and asked it for a port would pass the ring rule (System is allowed)
         // and hide its dependency from every fake-port test (the review of 1.0.4.0, finding 5).
-        Assert.Empty(RuntimeLookups(typeof(TheYard.Application.Auction).Assembly.Location));
+        Assert.Empty(RuntimeLookups(typeof(TheYard.Application.StandingReader).Assembly.Location));
     }
 
     /// <summary>

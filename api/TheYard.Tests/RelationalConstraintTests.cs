@@ -62,7 +62,7 @@ public class RelationalConstraintTests : IDisposable
         var thrown = Assert.Throws<DbUpdateException>(() => db.SaveChanges());
 
         // Not a nicety. Before the foreign key existed, a bid whose account had
-        // been deleted stayed in this table forever, loaded into BidService at
+        // been deleted stayed in this table forever, loaded into BidBook at
         // every startup, and counted toward a vehicle's standing price on behalf
         // of nobody.
         Assert.Contains("FOREIGN KEY", thrown.InnerException?.Message ?? string.Empty, StringComparison.OrdinalIgnoreCase);

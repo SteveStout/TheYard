@@ -92,7 +92,7 @@ file sealed class CountingStore(IReadOnlyList<Vehicle> vehicles, int filled, Cat
 // #endregion fakes
 
 /// <summary>Holds the inventory service: image rewriting, retrying a failed warm-up, lookup by id, reading once, filtered and paged search, the overlay's merge, facets, and where the catalogue is held.</summary>
-public class InventoryServiceTests
+public class StockTests
 {
     private static readonly AuctionClock Noon = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
 
@@ -101,7 +101,7 @@ public class InventoryServiceTests
     [Fact]
     public async Task Rewrites_images_to_the_configured_prefix()
     {
-        var service = new InventoryService(
+        var service = new Stock(
             new FakeVehicles(TestData.Vehicle(bodyStyle: "SUV")),
             new FakeManifest(TestData.SuvPool),
             "/api/images");
@@ -119,7 +119,7 @@ public class InventoryServiceTests
     public async Task A_load_that_failed_is_tried_again_by_the_next_caller()
     {
         var source = new FlakyVehicles(TestData.Vehicle(id: "v-1"));
-        var service = new InventoryService(source, new FakeManifest(TestData.SuvPool));
+        var service = new Stock(source, new FakeManifest(TestData.SuvPool));
 
         await Assert.ThrowsAsync<IOException>(() => service.WarmAsync());
         Assert.False(service.IsWarm);
@@ -134,7 +134,7 @@ public class InventoryServiceTests
     public async Task Keeps_dataset_images_when_the_body_style_has_no_pool()
     {
         var original = TestData.Vehicle(bodyStyle: "van", images: ["https://placehold.co/keep-me"]);
-        var service = new InventoryService(new FakeVehicles(original), new FakeManifest(TestData.SuvPool));
+        var service = new Stock(new FakeVehicles(original), new FakeManifest(TestData.SuvPool));
 
         Assert.Equal(["https://placehold.co/keep-me"], (await service.FindAsync(original.Id))!.Images);
     }
@@ -142,7 +142,7 @@ public class InventoryServiceTests
     [Fact]
     public async Task Finds_vehicles_by_id_and_returns_null_for_unknown_ids()
     {
-        var service = new InventoryService(
+        var service = new Stock(
             new FakeVehicles(TestData.Vehicle(id: "v-1"), TestData.Vehicle(id: "v-2")),
             new FakeManifest(TestData.SuvPool));
 
@@ -154,7 +154,7 @@ public class InventoryServiceTests
     public async Task Loads_the_sources_once_across_calls()
     {
         var vehicles = new FakeVehicles(TestData.Vehicle());
-        var service = new InventoryService(vehicles, new FakeManifest(TestData.SuvPool));
+        var service = new Stock(vehicles, new FakeManifest(TestData.SuvPool));
 
         await service.SearchAsync(new VehicleFilter(), Noon);
         await service.FindAsync("test-id");
@@ -166,7 +166,7 @@ public class InventoryServiceTests
     [Fact]
     public async Task Search_applies_the_filter_and_an_empty_filter_returns_everything()
     {
-        var service = new InventoryService(
+        var service = new Stock(
             new FakeVehicles(
                 TestData.Vehicle(id: "ford", make: "Ford"),
                 TestData.Vehicle(id: "kia", make: "Kia")),
@@ -195,8 +195,8 @@ public class InventoryServiceTests
     public async Task The_default_listing_is_the_page_the_full_sort_gives(string? make, AuctionStatus? status, int offset, int limit)
     {
         var seeds = Enumerable.Range(0, 1_000).Select(i => TestData.Vehicle(id: $"v-{i}", make: i % 3 == 0 ? "Ford" : "Kia")).ToArray();
-        var memory = new InventoryService(new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool));
-        var store = new InventoryService(new CountingStore(seeds, seeds.Length, AllAtWarmUp), new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
+        var memory = new Stock(new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool));
+        var store = new Stock(new CountingStore(seeds, seeds.Length, AllAtWarmUp), new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
         var filter = new VehicleFilter { Make = make, Status = status };
 
         foreach (int hours in new[] { 0, 7, 30, 75, 140 })
@@ -221,7 +221,7 @@ public class InventoryServiceTests
         var seeds = Enumerable.Range(0, 40)
             .Select(i => TestData.Vehicle(id: $"v-{i}", currentBid: 10_000 + (i % 4 * 1_000)))
             .ToArray();
-        var service = new InventoryService(new CountingStore(seeds, seeds.Length, AllAtWarmUp), new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
+        var service = new Stock(new CountingStore(seeds, seeds.Length, AllAtWarmUp), new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
         (int Offset, int Limit)[] pages = [(0, 10), (10, 10), (35, 10), (0, 100), (40, 5), (0, int.MaxValue)];
 
         foreach (VehicleSort sort in Enum.GetValues<VehicleSort>())
@@ -262,7 +262,7 @@ public class InventoryServiceTests
         var overlay = new ListingOverlay(raisedTo.Keys.ToList(), Raise);
         var raised = seeds.Select(Raise).ToList();
         var store = new CountingStore(seeds, seeds.Length, AllAtWarmUp);
-        var service = new InventoryService(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
+        var service = new Stock(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
         VehicleFilter[] filters = [new(), new() { PriceMin = 12_000 }, new() { PriceMax = 12_500, PriceMin = 4_000 }];
         (int Offset, int Limit)[] pages = [(0, 10), (1, 3), (4, 20), (100, 50), (290, 20), (0, int.MaxValue)];
 
@@ -293,7 +293,7 @@ public class InventoryServiceTests
     [Fact]
     public async Task Facets_return_sorted_distinct_values()
     {
-        var service = new InventoryService(
+        var service = new Stock(
             new FakeVehicles(
                 TestData.Vehicle(id: "a", make: "Kia"),
                 TestData.Vehicle(id: "b", make: "Ford"),
@@ -311,7 +311,7 @@ public class InventoryServiceTests
     [Fact]
     public async Task Facets_are_built_once_with_the_catalogue()
     {
-        var service = new InventoryService(
+        var service = new Stock(
             new FakeVehicles(TestData.Vehicle(id: "a", make: "Kia"), TestData.Vehicle(id: "b", make: "Ford")),
             new FakeManifest(TestData.SuvPool));
 
@@ -322,7 +322,7 @@ public class InventoryServiceTests
     public async Task Leaves_non_image_fields_untouched()
     {
         var original = TestData.Vehicle(currentBid: null);
-        var service = new InventoryService(new FakeVehicles(original), new FakeManifest(TestData.SuvPool));
+        var service = new Stock(new FakeVehicles(original), new FakeManifest(TestData.SuvPool));
 
         var vehicle = (await service.FindAsync(original.Id))!;
         Assert.Equal(original with { Images = vehicle.Images }, vehicle);
@@ -340,7 +340,7 @@ public class InventoryServiceTests
         var seeds = Enumerable.Range(0, 500).Select(i => TestData.Vehicle(id: $"v-{i}")).ToArray();
         var store = new CountingStore(seeds, seeds.Length, AllAtWarmUp);
         var seeder = new FakeVehicles(seeds);
-        var service = new InventoryService(store, seeder, new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Fill);
+        var service = new Stock(store, seeder, new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Fill);
 
         await service.WarmAsync();
         var page = await service.SearchAsync(new VehicleFilter(), Noon, VehicleSort.EndingSoonest, 24, 0);
@@ -366,7 +366,7 @@ public class InventoryServiceTests
     {
         var seeds = Enumerable.Range(0, 300).Select(i => TestData.Vehicle(id: $"v-{i}")).ToArray();
         var store = new CountingStore(seeds, seeds.Length, AllAtWarmUp);
-        var service = new InventoryService(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
+        var service = new Stock(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
         var ending = seeds
             .Select(vehicle => (vehicle.Id, Slot: CatalogueSlot.For(vehicle.Id)))
             .First(pick => pick.Slot.EndOffsetMs > 0 && pick.Slot.EndOffsetMs % 5_000 is >= 1_500 and <= 4_500
@@ -389,7 +389,7 @@ public class InventoryServiceTests
     {
         var seeds = Enumerable.Range(0, 200).Select(i => TestData.Vehicle(id: $"v-{i}")).ToArray();
         var store = new CountingStore(seeds, seeds.Length, AllAtWarmUp);
-        var service = new InventoryService(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
+        var service = new Stock(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
 
         await service.SearchAsync(new VehicleFilter(), Noon, VehicleSort.PriceAsc, 24, 0);
         int pages = store.Pages, counts = store.Counts;
@@ -408,7 +408,7 @@ public class InventoryServiceTests
     {
         var seeds = Enumerable.Range(0, 450).Select(i => TestData.Vehicle(id: $"v-{i}")).ToArray();
         var store = new CountingStore(seeds, 120, new CatalogueFillPace(100, TimeSpan.Zero, 10));
-        var service = new InventoryService(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Fill);
+        var service = new Stock(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Fill);
 
         await service.WarmAsync();
         Assert.NotNull(service.Filling);
@@ -426,7 +426,7 @@ public class InventoryServiceTests
     {
         var seeds = Enumerable.Range(0, 300).Select(i => TestData.Vehicle(id: $"v-{i}")).ToArray();
         var store = new CountingStore(seeds, 0, new CatalogueFillPace(100, TimeSpan.Zero, 10));
-        var service = new InventoryService(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
+        var service = new Stock(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
 
         await service.WarmAsync();
 

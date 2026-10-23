@@ -6,8 +6,8 @@ using TheYard.Domain;
 
 namespace TheYard.Application;
 
-/// <summary>The listing without the moved vehicles; the class is described in InventoryService.cs.</summary>
-public sealed partial class InventoryService
+/// <summary>The listing without the moved vehicles; the class is described in Stock.cs.</summary>
+public sealed partial class Stock
 {
     /// <summary>
     /// The counts with the moved vehicles left out, as the store's count without them less the

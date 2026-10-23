@@ -43,12 +43,12 @@ public static class LinkEndpoints
         return app;
     }
 
-    private static Results<RedirectHttpResult, NotFound> Go(string key, GoHandler handler) =>
-        handler.Handle(key) is { } target ? TypedResults.Redirect(target.ToString(), permanent: false) : TypedResults.NotFound();
+    private static async Task<Results<RedirectHttpResult, NotFound>> Go(string key, GoHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new GoQuery(key), cancellation) is { } target ? TypedResults.Redirect(target.ToString(), permanent: false) : TypedResults.NotFound();
 
-    private static Results<NoContent, BadRequest> PageOpen(string? r, string? path, ReportPageOpenHandler handler) =>
-        handler.Handle(r, path) ? TypedResults.NoContent() : TypedResults.BadRequest();
+    private static async Task<Results<NoContent, BadRequest>> PageOpen(string? r, string? path, ReportPageOpenHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new ReportPageOpenCommand(r, path), cancellation) ? TypedResults.NoContent() : TypedResults.BadRequest();
 
     private static async Task<Ok<LinkOpensReport>> Opens(string? window, ReadLinkOpensHandler handler, CancellationToken cancellation) =>
-        TypedResults.Ok(await handler.HandleAsync(window, cancellation));
+        TypedResults.Ok(await handler.HandleAsync(new ReadLinkOpensQuery(window), cancellation));
 }

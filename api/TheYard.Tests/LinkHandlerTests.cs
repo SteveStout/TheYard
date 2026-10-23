@@ -215,25 +215,25 @@ public sealed class LinkHandlerTests
     }
 
     [Fact]
-    public void The_pass_through_handler_sends_a_known_key_on_and_an_unknown_one_nowhere()
+    public async Task The_pass_through_handler_sends_a_known_key_on_and_an_unknown_one_nowhere()
     {
         var handler = new GoHandler(new FakeTargets());
-        Assert.Equal(new Uri("https://github.example/steve"), handler.Handle("github"));
-        Assert.Equal(new Uri("https://github.example/steve"), handler.Handle(" GitHub "));
-        Assert.Null(handler.Handle("linkedin"));
-        Assert.Null(handler.Handle("../admin"));
+        Assert.Equal(new Uri("https://github.example/steve"), await handler.HandleAsync(new GoQuery("github"), CancellationToken.None));
+        Assert.Equal(new Uri("https://github.example/steve"), await handler.HandleAsync(new GoQuery(" GitHub "), CancellationToken.None));
+        Assert.Null(await handler.HandleAsync(new GoQuery("linkedin"), CancellationToken.None));
+        Assert.Null(await handler.HandleAsync(new GoQuery("../admin"), CancellationToken.None));
     }
 
     [Fact]
-    public void The_page_s_report_is_taken_for_a_code_on_a_view_the_page_has_and_refused_otherwise()
+    public async Task The_page_s_report_is_taken_for_a_code_on_a_view_the_page_has_and_refused_otherwise()
     {
         var handler = new ReportPageOpenHandler();
-        Assert.True(handler.Handle("k7f2qa", "/"));
-        Assert.True(handler.Handle("k7f2qa", "/about"));
-        Assert.False(handler.Handle("k7f2qa", "/admin"));
-        Assert.False(handler.Handle("k7f2qa", null));
-        Assert.False(handler.Handle("Steve", "/"));
-        Assert.False(handler.Handle(null, "/"));
+        Assert.True(await handler.HandleAsync(new ReportPageOpenCommand("k7f2qa", "/"), CancellationToken.None));
+        Assert.True(await handler.HandleAsync(new ReportPageOpenCommand("k7f2qa", "/about"), CancellationToken.None));
+        Assert.False(await handler.HandleAsync(new ReportPageOpenCommand("k7f2qa", "/admin"), CancellationToken.None));
+        Assert.False(await handler.HandleAsync(new ReportPageOpenCommand("k7f2qa", null), CancellationToken.None));
+        Assert.False(await handler.HandleAsync(new ReportPageOpenCommand("Steve", "/"), CancellationToken.None));
+        Assert.False(await handler.HandleAsync(new ReportPageOpenCommand(null, "/"), CancellationToken.None));
     }
 
     [Fact]
@@ -250,7 +250,7 @@ public sealed class LinkHandlerTests
             CancellationToken.None);
         var handler = new ReadLinkOpensHandler(keeper, new FakeTargets(), new FakeClock(Noon));
 
-        var month = await handler.HandleAsync("30d", CancellationToken.None);
+        var month = await handler.HandleAsync(new ReadLinkOpensQuery("30d"), CancellationToken.None);
         Assert.True(month.Available);
         Assert.Equal("30d", month.Window);
         Assert.Equal(["zz9zz9", "k7f2qa", "old1st"], month.Codes.Select(row => row.Code));
@@ -261,9 +261,9 @@ public sealed class LinkHandlerTests
         Assert.Equal(1, code.Paths["/resume/email"]);
         Assert.Equal(["github"], month.Keys);
 
-        var week = await handler.HandleAsync("7d", CancellationToken.None);
+        var week = await handler.HandleAsync(new ReadLinkOpensQuery("7d"), CancellationToken.None);
         Assert.DoesNotContain(week.Codes, row => row.Code == "old1st");
-        Assert.Equal("30d", (await handler.HandleAsync("sideways", CancellationToken.None)).Window);
+        Assert.Equal("30d", (await handler.HandleAsync(new ReadLinkOpensQuery("sideways"), CancellationToken.None)).Window);
     }
 }
 // #endregion link-handler-tests

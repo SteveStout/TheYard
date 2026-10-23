@@ -1,14 +1,14 @@
 // The two ways a buyer moves a price: placing a bid and buying now. Both take the gate, run the
 // rules from BidRules against the store's standing, and write it back with a compare-and-set. They have
 // a file of their own because this is where a bid is accepted or refused, and that decision
-// reads best without the indexes and the reads around it (the type itself is in BidService.cs).
+// reads best without the indexes and the reads around it (the type itself is in BidBook.cs).
 using TheYard.Data;
 using TheYard.Domain;
 
 namespace TheYard.Application;
 
 /// <summary>The writes that move a price: a bid, and a buy-now purchase, one bidder at a time.</summary>
-public sealed partial class BidService
+public sealed partial class BidBook
 {
     // #region place
     /// <summary>

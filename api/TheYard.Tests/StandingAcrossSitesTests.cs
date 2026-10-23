@@ -7,7 +7,7 @@ using TheYard.Infrastructure;
 namespace TheYard.Tests;
 
 /// <summary>
-/// Two sites run one image over one store, so two BidService instances over one
+/// Two sites run one image over one store, so two BidBook instances over one
 /// store are the shape production has. These hold the rule that each vehicle's
 /// standing belongs to the store: the second instance cannot sell a vehicle the
 /// first sold, and cannot accept a bid under the first's standing, although
@@ -29,7 +29,7 @@ public sealed class StandingAcrossSitesTests : IDisposable
     public static TheoryData<string> Stores => ["memory", "sqlite"];
 
     /// <summary>One store, and two services over it standing in for the two sites.</summary>
-    private (BidService First, BidService Second) TwoSites(string kind)
+    private (BidBook First, BidBook Second) TwoSites(string kind)
     {
         IBidStore store;
         if (kind == "memory")
@@ -55,7 +55,7 @@ public sealed class StandingAcrossSitesTests : IDisposable
             db.SaveChanges();
             store = new EfBidStore(new PlainFactory(Connection));
         }
-        return (new BidService(store), new BidService(store));
+        return (new BidBook(store), new BidBook(store));
     }
 
     private static Vehicle Live(int? currentBid = 22_800)

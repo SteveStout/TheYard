@@ -34,7 +34,7 @@
   <text x="60" y="140" class="lane-sub">The first four boxes run once at startup; the rest run for every request, and a page's first read runs on the rendering service.</text>
 
   <!-- ===================== Lane 2: the write path ===================== -->
-  <rect x="870" y="92" width="490" height="1063" class="lane"/>
+  <rect x="870" y="92" width="490" height="1097" class="lane"/>
   <text x="890" y="120" class="lane-title">The write path: a bid</text>
   <text x="890" y="140" class="lane-sub">A signed-in buyer, bids kept in the store; the domain decides.</text>
 
@@ -58,8 +58,8 @@
   <text x="75" y="531" class="body">keeping the seed's make, model and trim mix.</text>
   <path d="M120 545 L120 579" class="flow"/>
   <rect x="60" y="581" width="760" height="135" class="box"/>
-  <text x="75" y="607" class="title">InventoryService</text>
-  <text x="75" y="629" class="mono">api/TheYard.Application/InventoryService.cs</text>
+  <text x="75" y="607" class="title">Stock</text>
+  <text x="75" y="629" class="mono">api/TheYard.Application/Stock.cs</text>
   <text x="75" y="651" class="body">Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the</text>
   <text x="75" y="668" class="body">pools in api/TheYard.Api/photo-manifest.json) and fills the store's catalogue, which</text>
   <text x="75" y="685" class="body">every page then queries; the process holds none of them (ADR: The store does the work).</text>
@@ -75,11 +75,11 @@
   <text x="75" y="873" class="body">day, the same for every visitor.</text>
   <path d="M120 887 L120 921" class="flow"/>
   <rect x="60" y="923" width="760" height="186" class="box"/>
-  <text x="75" y="949" class="title">Search, through Auction.Search</text>
-  <text x="75" y="971" class="mono">api/TheYard.Application/Auction.cs</text>
-  <text x="75" y="993" class="body">1. Everybody's bids, then the room's, are laid over each vehicle (Auction.Overlay,</text>
-  <text x="75" y="1010" class="body">raising a price through api/TheYard.Domain/StandingRules.cs), so price bounds see the</text>
-  <text x="75" y="1027" class="body">figures the page shows.</text>
+  <text x="75" y="949" class="title">Search, through StandingReader.SearchAsync</text>
+  <text x="75" y="971" class="mono">api/TheYard.Application/StandingReader.cs</text>
+  <text x="75" y="993" class="body">1. Everybody's bids, then the room's, are laid over each vehicle</text>
+  <text x="75" y="1010" class="body">(StandingReader.Overlay, raising a price through api/TheYard.Domain/StandingRules.cs),</text>
+  <text x="75" y="1027" class="body">so price bounds see the figures the page shows.</text>
   <text x="75" y="1044" class="body">2. Where: api/TheYard.Domain/VehicleFilter.cs</text>
   <text x="75" y="1061" class="body">3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs</text>
   <text x="75" y="1078" class="body">4. The store filters, orders and pages; only the page comes back. Auction windows come</text>
@@ -141,40 +141,42 @@
   <text x="905" y="445" class="body">not).</text>
   <path d="M950 459 L950 493" class="flow"/>
   <text x="962" y="481" class="flow-label">the Application ring</text>
-  <rect x="890" y="495" width="450" height="118" class="box"/>
-  <text x="905" y="521" class="title">Auction.PlaceBidAsync</text>
-  <text x="905" y="543" class="mono">api/TheYard.Application/Auction.cs</text>
-  <text x="905" y="565" class="body">Measures the bid against the room's standing price as</text>
-  <text x="905" y="582" class="body">well as everybody's bids, so nobody retakes a lead below</text>
-  <text x="905" y="599" class="body">the going rate.</text>
-  <path d="M950 613 L950 647" class="flow"/>
-  <text x="962" y="635" class="flow-label">the domain decides</text>
-  <rect x="890" y="649" width="450" height="118" class="box"/>
-  <text x="905" y="675" class="title">BidRules</text>
-  <text x="905" y="697" class="mono">api/TheYard.Domain/BidRules.cs</text>
-  <text x="905" y="719" class="body">The sole authority: the live window, the tiered minimum</text>
-  <text x="905" y="736" class="body">increment, and the buy-now override (a bid at or above</text>
-  <text x="905" y="753" class="body">buy_now_price wins outright at that price).</text>
-  <path d="M950 767 L950 801" class="flow"/>
-  <text x="962" y="789" class="flow-label">accepted, won, or rejected</text>
-  <rect x="890" y="803" width="450" height="152" class="box"/>
-  <text x="905" y="829" class="title">BidService</text>
-  <text x="905" y="851" class="mono">api/TheYard.Application/BidService.cs</text>
-  <text x="905" y="873" class="body">Under one gate: an accepted or won bid is written to the</text>
-  <text x="905" y="890" class="body">store (Azure SQL Database or Cosmos DB, through the</text>
-  <text x="905" y="907" class="body">IBidStore port) and then to memory, under the buyer's</text>
-  <text x="905" y="924" class="body">account. The response carries the updated vehicle with a</text>
-  <text x="905" y="941" class="body">fresh min_next_bid.</text>
-  <path d="M950 955 L950 989" class="flow"/>
-  <text x="962" y="977" class="flow-label">the updated vehicle</text>
-  <rect x="890" y="991" width="450" height="118" class="box"/>
-  <text x="905" y="1017" class="title">useBids</text>
-  <text x="905" y="1039" class="mono">src/hooks/useBids.ts</text>
-  <text x="905" y="1061" class="body">Clears the query cache and refetches, so every list,</text>
-  <text x="905" y="1078" class="body">filter and total reflects the bid through the same read</text>
-  <text x="905" y="1095" class="body">path.</text>
-  <path d="M920 1109 L920 1129 L855 1129 L855 1571 L822 1571" class="loop"/>
-  <text x="930" y="1125" class="loop-label">refetch, through the same read path</text>
+  <rect x="890" y="495" width="450" height="152" class="box"/>
+  <text x="905" y="521" class="title">PlaceBidHandler</text>
+  <text x="905" y="543" class="mono">api/TheYard.Application/Features/Bids/PlaceBidHandler.cs</text>
+  <text x="905" y="565" class="body">The one handler of PlaceBidCommand (ADR-115). Reads the</text>
+  <text x="905" y="582" class="body">vehicle as it stands through StandingReader and measures</text>
+  <text x="905" y="599" class="body">the bid against the room's standing price as well as</text>
+  <text x="905" y="616" class="body">everybody's bids, so nobody retakes a lead below the</text>
+  <text x="905" y="633" class="body">going rate.</text>
+  <path d="M950 647 L950 681" class="flow"/>
+  <text x="962" y="669" class="flow-label">the domain decides</text>
+  <rect x="890" y="683" width="450" height="118" class="box"/>
+  <text x="905" y="709" class="title">BidRules</text>
+  <text x="905" y="731" class="mono">api/TheYard.Domain/BidRules.cs</text>
+  <text x="905" y="753" class="body">The sole authority: the live window, the tiered minimum</text>
+  <text x="905" y="770" class="body">increment, and the buy-now override (a bid at or above</text>
+  <text x="905" y="787" class="body">buy_now_price wins outright at that price).</text>
+  <path d="M950 801 L950 835" class="flow"/>
+  <text x="962" y="823" class="flow-label">accepted, won, or rejected</text>
+  <rect x="890" y="837" width="450" height="152" class="box"/>
+  <text x="905" y="863" class="title">BidBook</text>
+  <text x="905" y="885" class="mono">api/TheYard.Application/BidBook.cs</text>
+  <text x="905" y="907" class="body">Under one gate: an accepted or won bid is written to the</text>
+  <text x="905" y="924" class="body">store (Azure SQL Database or Cosmos DB, through the</text>
+  <text x="905" y="941" class="body">IBidStore port) and then to memory, under the buyer's</text>
+  <text x="905" y="958" class="body">account. The response carries the updated vehicle with a</text>
+  <text x="905" y="975" class="body">fresh min_next_bid.</text>
+  <path d="M950 989 L950 1023" class="flow"/>
+  <text x="962" y="1011" class="flow-label">the updated vehicle</text>
+  <rect x="890" y="1025" width="450" height="118" class="box"/>
+  <text x="905" y="1051" class="title">useBids</text>
+  <text x="905" y="1073" class="mono">src/hooks/useBids.ts</text>
+  <text x="905" y="1095" class="body">Clears the query cache and refetches, so every list,</text>
+  <text x="905" y="1112" class="body">filter and total reflects the bid through the same read</text>
+  <text x="905" y="1129" class="body">path.</text>
+  <path d="M920 1143 L920 1163 L855 1163 L855 1571 L822 1571" class="loop"/>
+  <text x="930" y="1159" class="loop-label">refetch, through the same read path</text>
 
   <text x="40" y="1976" class="caption">One rule shapes everything: derive, do not store. Windows, statuses, galleries and the 100,000 inventory are computed from stable ids, never persisted.</text>
   <text x="40" y="1996" class="caption">Source: docs/images/dataflow.svg in the repository, drawn by docs/images/dataflow.mjs and redrawn when a box moves.</text>

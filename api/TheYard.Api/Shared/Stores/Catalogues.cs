@@ -28,7 +28,7 @@ internal static class Catalogues
         : CatalogueUpkeep.Watch;
 
     /// <summary>The relational store's catalogue, over the Catalogue table, filled whole at warm-up on a local SQLite file.</summary>
-    public static InventoryService Sql(ContextFactory contexts, YardConnection yard, int targetCount, CatalogueUpkeep upkeep) =>
+    public static Stock Sql(ContextFactory contexts, YardConnection yard, int targetCount, CatalogueUpkeep upkeep) =>
         new(
             new EfVehicleCatalogue(contexts, targetCount, local: yard.Provider == YardProvider.Sqlite, fillsWords: upkeep == CatalogueUpkeep.Fill),
             new SyntheticVehicleSource(new EfVehicleSource(contexts), targetCount),
@@ -36,7 +36,7 @@ internal static class Catalogues
             upkeep);
 
     /// <summary>The document store's catalogue, over the catalogue container.</summary>
-    public static InventoryService Cosmos(CosmosStore store, int targetCount, CatalogueUpkeep upkeep) =>
+    public static Stock Cosmos(CosmosStore store, int targetCount, CatalogueUpkeep upkeep) =>
         new(
             new CosmosVehicleCatalogue(store, targetCount),
             new SyntheticVehicleSource(new CosmosVehicleSource(store), targetCount),

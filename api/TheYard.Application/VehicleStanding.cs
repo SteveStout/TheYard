@@ -1,6 +1,6 @@
 // One vehicle's bidding across everybody: the price, the count, and who holds it. It has a file
 // of its own because the listing overlay and the outbid badge both read it, and it is the answer
-// BidService's hot path hands back.
+// BidBook's hot path hands back.
 namespace TheYard.Application;
 
 /// <summary>

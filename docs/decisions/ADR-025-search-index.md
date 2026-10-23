@@ -131,9 +131,9 @@ The scan, and why the status is checked separately:
 ```live path=api/TheYard.Domain/VehicleFilter.cs region=query
 ```
 
-Where the two meet (`api/TheYard.Application/InventoryService.cs`):
+Where the two meet (`api/TheYard.Application/Stock.cs`):
 
-```live path=api/TheYard.Application/InventoryService.Search.cs region=search
+```live path=api/TheYard.Application/Stock.Search.cs region=search
 ```
 
 ## Consequences
@@ -164,10 +164,10 @@ The work is Domain code (VehicleSearchIndex.cs and VehicleFilter.Compile), built
 
 - [`api/TheYard.Domain/VehicleSearchIndex.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleSearchIndex.cs): the index, its text and its fallback.
 - [`api/TheYard.Domain/VehicleFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleFilter.cs): `Compile`, and the two-part token check.
-- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): built with the dataset, used by `Search`.
+- [`api/TheYard.Application/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs): built with the dataset, used by `Search`.
 - [`api/TheYard.Tests/VehicleSearchIndexTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/VehicleSearchIndexTests.cs): the indexed and unindexed paths must answer identically.
 - [`api/TheYard.Tests/SearchIndexBenchmarkTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SearchIndexBenchmarkTests.cs): the measurement above, and the coverage assertion.
-- [`api/TheYard.Tests/InventoryServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/InventoryServiceTests.cs): the facets are one instance, built with the catalogue (the addendum below).
+- [`api/TheYard.Tests/StockTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StockTests.cs): the facets are one instance, built with the catalogue (the addendum below).
 - [`src/app/hooks/useInventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useInventory.ts): the page asks for the facets until it has them, then keeps them.
 
 ## Addendum, 2026-09-17: the facets are built with the index
@@ -185,7 +185,7 @@ measurement on 1.0.0.139, `mentor\logs\lane0917-963-perflane-measure.log`).
 
 Two changes, shipped as 1.0.0.142. The facets are built in `BuildAsync`
 beside the dictionary and the index, for the reason those two are, and
-`Facets()` hands back that one instance; `InventoryServiceTests` holds it by
+`Facets()` hands back that one instance; `StockTests` holds it by
 reference equality, which is the fact worth holding, since a rebuild would
 return a new object with the same values and a value comparison would not
 notice. On the page the effect asks until the facets have landed and then
@@ -196,7 +196,7 @@ cache middleware and no memory cache: the catalogue is immutable for the
 life of the process and the facets are a field of it, which is the cheapest
 cache there is and the only one a reader has to trust.
 
-```live path=api/TheYard.Application/InventoryService.cs region=facets
+```live path=api/TheYard.Application/Stock.cs region=facets
 ```
 
 ```live path=src/app/hooks/useInventory.ts region=facets-once

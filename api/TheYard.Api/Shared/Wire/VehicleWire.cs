@@ -109,7 +109,7 @@ public static class VehicleWire
     // #region sold
     /// <summary>
     /// A vehicle as the auction hands it out, already at its standing price and with its sold
-    /// flag (Auction.FindAsync and Auction.SearchAsync), so a caller cannot show a price without the room
+    /// flag (StandingReader.FindAsync and StandingReader.SearchAsync), so a caller cannot show a price without the room
     /// or a bought vehicle as open to everybody but its buyer.
     /// </summary>
     public static VehicleView ToWire(StandingVehicle standing, AuctionClock clock)

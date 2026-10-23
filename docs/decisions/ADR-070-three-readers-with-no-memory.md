@@ -256,9 +256,9 @@ This review reached four rings: Domain gained AuctionClock.Utc and the sold chec
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the key from configuration.
 - [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the warming middleware (region warm-before-reading).
 - [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the bid endpoints' refusal (region session-per-store).
-- [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the reset, store first.
+- [`api/TheYard.Application/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.cs): the reset, store first.
 - [`infra/aci-theyard.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard.yaml), [`infra/aci-theyard-cosmos.yaml`](https://github.com/SteveStout/TheYard/blob/22b3015/infra/aci-theyard-cosmos.yaml), [`.github/workflows/deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) and [`.github/workflows/deploy-cosmos.yml`](https://github.com/SteveStout/TheYard/blob/22b3015/.github/workflows/deploy-cosmos.yml): the one secret, substituted at roll time.
-- [`api/TheYard.Tests/WarmthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WarmthTests.cs), [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs) and [`api/TheYard.Tests/BidServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidServiceTests.cs): the three holds.
+- [`api/TheYard.Tests/WarmthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/WarmthTests.cs), [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs) and [`api/TheYard.Tests/BidBookTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/BidBookTests.cs): the three holds.
 - [`api/TheYard.Domain/AuctionClock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/AuctionClock.cs), [`api/TheYard.Api/Shared/Instance/Clocks.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/Clocks.cs) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the clock, the server's, and the page that stopped sending one.
 
 ## Addendum, 2026-10-18: the standing the store owns, shipped
@@ -269,7 +269,7 @@ On the relational store the two writes are one transaction. On the document stor
 
 What this changes for the rule against a second writer: the sold rule and the minimum next bid hold across both sites from this version. What it does not change: a listing on one site shows the other site's bid on a vehicle from the next bid on that vehicle or the next start, because the listing reads the cache and the cache is not polled. That is a display lag and not a rule; the rule reads the store. The in-memory bid store is renamed from `NullBidStore` to `MemoryBidStore` because it now keeps the same compare-and-set rule the real stores keep, and the unit tests run two services over one of it.
 
-```live path=api/TheYard.Application/BidService.Bidding.cs region=place
+```live path=api/TheYard.Application/BidBook.Bidding.cs region=place
 ```
 
 ```live path=api/TheYard.Infrastructure/EfBidStore.Standing.cs region=standing-store

@@ -2,6 +2,7 @@
 // ADR: The onion cut into vertical slices: a lane's usage document is kept when the Domain's rules admit it, and
 // the one sentence that is wrong is given back when they do not. It takes its port and its clock by
 // constructor and is tested with a fake and no host.
+using TheYard.Application.Shared;
 using TheYard.Domain;
 
 namespace TheYard.Application.Features.Usage;
@@ -9,16 +10,17 @@ namespace TheYard.Application.Features.Usage;
 /// <summary>Keeps one run's usage document, or says what is wrong with it.</summary>
 /// <param name="log">Where the documents are kept.</param>
 /// <param name="clock">The clock the document's start is judged against.</param>
-public sealed class KeepUsageHandler(IUsageLog log, TimeProvider clock)
+public sealed class KeepUsageHandler(IUsageLog log, TimeProvider clock) : ICommandHandler<KeepUsageCommand, UsageKept>
 {
     /// <summary>
     /// Kept, or why not: the one sentence wrong with the document, or the log's own reason when it cannot
     /// keep anything now. A document is never reported kept when the log could not keep it.
     /// </summary>
-    /// <param name="record">The document.</param>
+    /// <param name="command">The document.</param>
     /// <param name="cancellation">Stops the write.</param>
-    public async Task<UsageKept> HandleAsync(UsageRecord record, CancellationToken cancellation)
+    public async Task<UsageKept> HandleAsync(KeepUsageCommand command, CancellationToken cancellation)
     {
+        var record = command.Record;
         if (record.Validate(clock.GetUtcNow()) is { } wrong)
         {
             return new UsageKept(wrong, null);
@@ -32,6 +34,10 @@ public sealed class KeepUsageHandler(IUsageLog log, TimeProvider clock)
         return new UsageKept(null, null);
     }
 }
+
+/// <summary>One run's usage document, to keep.</summary>
+/// <param name="Record">The document.</param>
+public sealed record KeepUsageCommand(UsageRecord Record);
 
 /// <summary>What became of a posted usage document.</summary>
 /// <param name="Wrong">The one sentence wrong with it; null when the rules admit it.</param>

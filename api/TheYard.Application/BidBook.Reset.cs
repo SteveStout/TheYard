@@ -1,11 +1,11 @@
 // One person's start-over: their bids go, and every vehicle they touched has its standing
 // recomputed from whoever is left. It has a file of its own because it is the one write that
 // removes facts rather than adding them, and the reasoning behind it is longer than the code
-// (the type itself is in BidService.cs).
+// (the type itself is in BidBook.cs).
 namespace TheYard.Application;
 
 /// <summary>The reset: one buyer's bids removed, and nobody else's touched.</summary>
-public sealed partial class BidService
+public sealed partial class BidBook
 {
     // #region reset
     /// <summary>

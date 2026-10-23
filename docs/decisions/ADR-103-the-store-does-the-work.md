@@ -62,17 +62,17 @@ On SQL Server each order is one index ending in `Seq` (`api/TheYard.Database/Tab
 
 **A bid moves a price the store does not hold.** Everybody's bids and the room's answers stay in memory, as they were (BidService, MarketService). When a move can change which vehicles match or where they sort (a price filter, a price sort, the bid-count sort), the store leaves those vehicles out, they are worked out in memory from their raised figures, and the two ordered lists are merged at the page. Otherwise the store's page is the page and the moves are laid on its rows. A test holds every page, at every offset tried, to the page the full sort over the raised catalogue gives.
 
-```live path=api/TheYard.Application/InventoryService.Search.cs region=overlay
+```live path=api/TheYard.Application/Stock.Search.cs region=overlay
 ```
 
 **The expansion is the seeder.** At warm-up the site counts what its store holds. Full, the store answers and nothing is loaded. Short by a few thousand, the warm-up fills it first. Short by more, the site answers from the expansion in memory while it fills its own store beside itself at the store's pace, then switches, lets the list go, and runs one compacting collection so the dial shows the memory the same minute. The other site watches and switches when the fill is done. `Catalogue__Keep` turns that on for the deploy and leaves every test host alone.
 
-```live path=api/TheYard.Application/InventoryService.Warm.cs region=choose
+```live path=api/TheYard.Application/Stock.Warm.cs region=choose
 ```
 
 **Every cache is bounded.** `BoundedCache` holds the listing's counts and pages for one five-second bucket of the clock and the vehicles read by id for ten minutes, each bounded by a count and by an estimate of its bytes.
 
-```live path=api/TheYard.Application/InventoryService.cs region=listing-cache
+```live path=api/TheYard.Application/Stock.cs region=listing-cache
 ```
 
 **A heap limit on each site.** `DOTNET_GCHeapHardLimitPercent` is `0x1E` on both .NET sites in `infra/appservice.bicep`. GC settings read from the environment are hexadecimal, so `30` would have been forty-eight per cent. With the limit, a regression is collected harder, and refused if it must be, inside its own share instead of taking memory from the other three apps on the plan.
@@ -116,7 +116,7 @@ What would change it: a catalogue too big for one physical partition or for the 
 
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs) - `IVehicleCatalogue`, the five primitives
 - [`api/TheYard.Application/CatalogueFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/CatalogueFilter.cs) - the filter in the store's terms, the orders, the segments and the slot
-- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs) and its parts `.Warm.cs`, `.Search.cs`, `.Moved.cs`, `.Find.cs` - the warm-up and the fill, the listing plan and the overlay's merge, the store's answer without the moved vehicles, the reads by id
+- [`api/TheYard.Application/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs) and its parts `.Warm.cs`, `.Search.cs`, `.Moved.cs`, `.Find.cs` - the warm-up and the fill, the listing plan and the overlay's merge, the store's answer without the moved vehicles, the reads by id
 - [`api/TheYard.Application/MemoryCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MemoryCatalogue.cs) - the list catalogue: the tests, the file fallback and a fill's bridge
 - [`api/TheYard.Application/BoundedCache.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BoundedCache.cs) - the one cache shape
 - [`api/TheYard.Infrastructure/EfVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfVehicleCatalogue.cs), [`CatalogueRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/CatalogueRows.cs) and [`YardDbContext.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.Catalogue.cs) - the relational adapter
@@ -127,7 +127,7 @@ What would change it: a catalogue too big for one physical partition or for the 
 - [`api/TheYard.Api/Shared/Instance/OutboundHttp.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/OutboundHttp.cs) - the one outbound pool
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep) - `Catalogue__Keep` and the heap limit
 - [`api/TheYard.Tests/StoreCatalogueTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreCatalogueTests.cs) - the slot against the hash, and the relational adapter against the list
-- [`api/TheYard.Tests/InventoryServiceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/InventoryServiceTests.cs) - the plan, the merge and the switch
+- [`api/TheYard.Tests/StockTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StockTests.cs) - the plan, the merge and the switch
 - [`api/TheYard.Tests/MemoryRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MemoryRulesTests.cs) - the memory rules a test can hold
 - [`docs/best-practices/MEMORY.md`](https://github.com/SteveStout/TheYard/blob/main/docs/best-practices/MEMORY.md) - the eight rules, for a reader new to them
 

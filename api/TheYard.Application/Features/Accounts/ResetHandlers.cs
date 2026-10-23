@@ -1,5 +1,7 @@
 // The reset link: minted for the operator or mailed to an address, and used once, within the hour,
 // on the site it was minted for, to choose a new password.
+using TheYard.Application.Shared;
+
 namespace TheYard.Application.Features.Accounts;
 
 // #region reset-handlers
@@ -30,15 +32,14 @@ public sealed class ResetLinkMaker(IResetTokens tokens, IResetLinks links)
 /// <summary>Mints a reset link for an address on the request's store, for the operator to hand over.</summary>
 /// <param name="store">The request's store's accounts, or null where it keeps none.</param>
 /// <param name="links">The link maker.</param>
-public sealed class OperatorResetLinkHandler(IAccountStore? store, ResetLinkMaker links)
+public sealed class OperatorResetLinkHandler(IAccountStore? store, ResetLinkMaker links) : ICommandHandler<OperatorResetLinkCommand, ResetLinkAnswer>
 {
     /// <summary>The account and its link, or why not.</summary>
-    /// <param name="email">The address.</param>
-    /// <param name="storeKey">The store the request is on.</param>
-    /// <param name="origin">The site as a visitor reaches it.</param>
+    /// <param name="command">The address, the store and the site.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<ResetLinkAnswer> HandleAsync(string? email, string storeKey, string origin, CancellationToken cancellation)
+    public async Task<ResetLinkAnswer> HandleAsync(OperatorResetLinkCommand command, CancellationToken cancellation)
     {
+        var (email, storeKey, origin) = command;
         if (store is null)
         {
             return new ResetLinkAnswer(AccountAnswerKind.Unavailable, null, null);
@@ -50,6 +51,12 @@ public sealed class OperatorResetLinkHandler(IAccountStore? store, ResetLinkMake
     }
 }
 
+/// <summary>A reset link minted for the operator to hand over; it keeps the link for the hour, so it is a command.</summary>
+/// <param name="Email">The address.</param>
+/// <param name="StoreKey">The store the request is on.</param>
+/// <param name="Origin">The site as a visitor reaches it.</param>
+public sealed record OperatorResetLinkCommand(string? Email, string StoreKey, string Origin);
+
 /// <summary>
 /// Mails a reset link to an address, answering the same way whether or not the address has an
 /// account here, one email per address per few minutes.
@@ -58,15 +65,14 @@ public sealed class OperatorResetLinkHandler(IAccountStore? store, ResetLinkMake
 /// <param name="mail">The site's one email.</param>
 /// <param name="spacing">The per-address spacing.</param>
 /// <param name="links">The link maker.</param>
-public sealed class ForgotHandler(IAccountStore? store, IEmailSender mail, IPerAddressAllowance spacing, ResetLinkMaker links)
+public sealed class ForgotHandler(IAccountStore? store, IEmailSender mail, IPerAddressAllowance spacing, ResetLinkMaker links) : ICommandHandler<ForgotCommand, ForgotAnswer>
 {
     /// <summary>What a forgot request came to; Done covers both an address with an account and one without.</summary>
-    /// <param name="email">The address.</param>
-    /// <param name="storeKey">The store the request is on.</param>
-    /// <param name="origin">The site as a visitor reaches it.</param>
+    /// <param name="command">The address, the store and the site.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<ForgotAnswer> HandleAsync(string? email, string storeKey, string origin, CancellationToken cancellation)
+    public async Task<ForgotAnswer> HandleAsync(ForgotCommand command, CancellationToken cancellation)
     {
+        var (email, storeKey, origin) = command;
         if (!mail.Configured)
         {
             return new ForgotAnswer(ForgotAnswerKind.NoMail, mail.Reason);
@@ -94,6 +100,12 @@ public sealed class ForgotHandler(IAccountStore? store, IEmailSender mail, IPerA
     }
 }
 
+/// <summary>A forgot request: it may keep a link and send an email.</summary>
+/// <param name="Email">The address.</param>
+/// <param name="StoreKey">The store the request is on.</param>
+/// <param name="Origin">The site as a visitor reaches it.</param>
+public sealed record ForgotCommand(string? Email, string StoreKey, string Origin);
+
 /// <summary>
 /// Uses a reset link to choose a new password: the link must be kept, valid, minted on this store
 /// and for the password the account has now; the new password must pass the rules; and the link is
@@ -102,18 +114,17 @@ public sealed class ForgotHandler(IAccountStore? store, IEmailSender mail, IPerA
 /// <param name="store">The request's store's accounts, or null where it keeps none.</param>
 /// <param name="tokens">The signed reset tokens.</param>
 /// <param name="links">Where a link's token is kept for the hour.</param>
-public sealed class ResetPasswordHandler(IAccountStore? store, IResetTokens tokens, IResetLinks links)
+public sealed class ResetPasswordHandler(IAccountStore? store, IResetTokens tokens, IResetLinks links) : ICommandHandler<ResetPasswordCommand, ResetAnswer>
 {
     /// <summary>The sentence a dead link answers with.</summary>
     public const string NotValid = "That reset link is not valid any more. Ask for a new one.";
 
     /// <summary>The account with its new password, or why not.</summary>
-    /// <param name="linkId">The id the link carries.</param>
-    /// <param name="password">The new password.</param>
-    /// <param name="storeKey">The store the request is on.</param>
+    /// <param name="command">The link, the new password and the store.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<ResetAnswer> HandleAsync(string? linkId, string? password, string storeKey, CancellationToken cancellation)
+    public async Task<ResetAnswer> HandleAsync(ResetPasswordCommand command, CancellationToken cancellation)
     {
+        var (linkId, password, storeKey) = command;
         if (store is null)
         {
             return new ResetAnswer(ResetAnswerKind.Unavailable, null, null, AccountProblem.None);
@@ -151,6 +162,12 @@ public sealed class ResetPasswordHandler(IAccountStore? store, IResetTokens toke
             : new ResetAnswer(ResetAnswerKind.PasswordRefused, null, null, changed.Problem);
     }
 }
+
+/// <summary>A reset link used to choose a new password.</summary>
+/// <param name="LinkId">The id the link carries.</param>
+/// <param name="Password">The new password.</param>
+/// <param name="StoreKey">The store the request is on.</param>
+public sealed record ResetPasswordCommand(string? LinkId, string? Password, string StoreKey);
 // #endregion reset-handlers
 
 /// <summary>An operator's reset link, or why not.</summary>

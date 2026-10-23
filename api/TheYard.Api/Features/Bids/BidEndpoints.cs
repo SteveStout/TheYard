@@ -99,27 +99,27 @@ public static class BidEndpoints
     // rule 7); the handler answers in the Application ring's words and this file turns them into
     // the status codes the browser relies on: 401, 404, then 400.
     private static async Task<Results<Ok<BidResult>, ProblemHttpResult>> PlaceBid(PlaceBidHandler handler, CurrentBackend current, HttpContext http, string id, BidRequest request, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new PlaceBid(id, http.UserId(), http.SessionIsOn(current), request.Amount), cancellation), current, id);
+        Answer(await handler.HandleAsync(new PlaceBidCommand(id, http.UserId(), http.SessionIsOn(current), request.Amount), cancellation), current, id);
 
     private static async Task<Results<Ok<BidResult>, ProblemHttpResult>> BuyNow(PlaceBidHandler handler, CurrentBackend current, HttpContext http, string id, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new PlaceBid(id, http.UserId(), http.SessionIsOn(current), null), cancellation), current, id);
+        Answer(await handler.HandleAsync(new PlaceBidCommand(id, http.UserId(), http.SessionIsOn(current), null), cancellation), current, id);
 
-    private static async Task<Ok<IReadOnlyDictionary<string, BidView>>> MyBids(MyBidsHandler handler, HttpContext http, CancellationToken cancellation) =>
-        TypedResults.Ok(await handler.HandleAsync(http.UserIdOrNull(), cancellation));
+    private static async Task<Ok<IReadOnlyDictionary<string, BidView>>> MyBids(ReadMyBidsHandler handler, HttpContext http, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadMyBidsQuery(http.UserIdOrNull()), cancellation));
 
-    private static async Task<Ok<BidHistory>> History(BidHistoryHandler handler, HttpContext http, CancellationToken cancellation) =>
-        TypedResults.Ok(await handler.HandleAsync(http.UserId(), cancellation));
+    private static async Task<Ok<BidHistory>> History(ReadBidHistoryHandler handler, HttpContext http, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadBidHistoryQuery(http.UserId()), cancellation));
 
     // The room's round, and the caller's own badges riding back with it, so a page does not need
     // a second request to find out it has been outbid.
     private static async Task<Ok<TickResult>> Tick(RoomRoundHandler handler, HttpContext http, CancellationToken cancellation)
     {
-        var round = await handler.HandleAsync(http.UserIdOrNull(), cancellation);
+        var round = await handler.HandleAsync(new RoomRoundCommand(http.UserIdOrNull()), cancellation);
         return TypedResults.Ok(new TickResult(round.Raised, round.Bids));
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> ResetMine(ResetBidsHandler handler, HttpContext http, CancellationToken cancellation) =>
-        await handler.HandleAsync(http.UserIdOrNull(), cancellation)
+        await handler.HandleAsync(new ResetBidsCommand(http.UserIdOrNull()), cancellation)
             ? TypedResults.NoContent()
             : TypedResults.Problem(detail: "Sign in to reset your bids.", statusCode: 401, title: "Not signed in");
 

@@ -20,7 +20,7 @@ public static class ApiRegistration
     {
         // This site as a visitor reaches it, for the API document's server line; unset, none.
         string? siteUrl = builder.Configuration["Site:Url"];
-        // No InventoryService, BidService or MarketService in the container. Each
+        // No Stock, BidBook or Room in the container. Each
         // backend owns its own three (the room too: one room per store, held in
         // memory for the life of the container, ADR-027), and an endpoint reaches
         // them through CurrentBackend, which is scoped to the request that chose the

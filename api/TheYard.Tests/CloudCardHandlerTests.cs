@@ -26,8 +26,8 @@ public sealed class CloudCardHandlerTests
         var cards = new FakeCards("sqldb", "edge");
         var handler = new ReadCloudCardHandler(cards);
 
-        Assert.Equal("7d", (await handler.HandleAsync("sqldb", "7d", CancellationToken.None))!.Window);
-        Assert.Equal("24h", (await handler.HandleAsync("edge", "sideways", CancellationToken.None))!.Window);
+        Assert.Equal("7d", (await handler.HandleAsync(new ReadCloudCardQuery("sqldb", "7d"), CancellationToken.None))!.Window);
+        Assert.Equal("24h", (await handler.HandleAsync(new ReadCloudCardQuery("edge", "sideways"), CancellationToken.None))!.Window);
         Assert.Equal([("sqldb", "7d"), ("edge", "24h")], cards.Asked);
     }
 
@@ -36,7 +36,7 @@ public sealed class CloudCardHandlerTests
     {
         var cards = new FakeCards("sqldb");
 
-        Assert.Null(await new ReadCloudCardHandler(cards).HandleAsync("vault", "24h", CancellationToken.None));
+        Assert.Null(await new ReadCloudCardHandler(cards).HandleAsync(new ReadCloudCardQuery("vault", "24h"), CancellationToken.None));
         Assert.Empty(cards.Asked);
     }
 }

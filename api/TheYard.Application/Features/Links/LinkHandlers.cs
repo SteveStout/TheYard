@@ -2,6 +2,8 @@
 // vertical slices, rule 7): where a pass-through link goes, what the Admin tab's card reads, and
 // the open the page reports for itself. Each takes its port by constructor and is tested with a
 // fake and no host.
+using TheYard.Application.Shared;
+
 namespace TheYard.Application.Features.Links;
 
 // #region link-targets
@@ -18,12 +20,18 @@ public interface ILinkTargets
 
 /// <summary>Where a pass-through link goes: the configured address for its key, or nowhere.</summary>
 /// <param name="targets">The configured addresses.</param>
-public sealed class GoHandler(ILinkTargets targets)
+public sealed class GoHandler(ILinkTargets targets) : IQueryHandler<GoQuery, Uri?>
 {
     /// <summary>The address to send the visitor on to, or null for a key the configuration does not name.</summary>
-    /// <param name="key">The key from the route.</param>
-    public Uri? Handle(string key) => targets.For(key.Trim().ToLowerInvariant());
+    /// <param name="query">The key from the route.</param>
+    /// <param name="cancellation">The request's cancellation.</param>
+    public Task<Uri?> HandleAsync(GoQuery query, CancellationToken cancellation) =>
+        Task.FromResult(targets.For(query.Key.Trim().ToLowerInvariant()));
 }
+
+/// <summary>Where a pass-through link leads. The open itself is recorded by the pipeline, so this only reads.</summary>
+/// <param name="Key">The key from the route.</param>
+public sealed record GoQuery(string Key);
 // #endregion link-targets
 
 // #region read-link-opens
@@ -48,7 +56,7 @@ public sealed record LinkOpensReport(bool Available, string? Note, string Window
 /// <param name="opens">Where opens are kept.</param>
 /// <param name="targets">The pass-through links, for the card's own line.</param>
 /// <param name="clock">The clock, so the window is measured from now.</param>
-public sealed class ReadLinkOpensHandler(ILinkOpens opens, ILinkTargets targets, TimeProvider clock)
+public sealed class ReadLinkOpensHandler(ILinkOpensReader opens, ILinkTargets targets, TimeProvider clock) : IQueryHandler<ReadLinkOpensQuery, LinkOpensReport>
 {
     /// <summary>The windows the card offers, by name, and the default.</summary>
     public static readonly IReadOnlyDictionary<string, TimeSpan> Windows = new Dictionary<string, TimeSpan>(StringComparer.Ordinal)
@@ -59,10 +67,11 @@ public sealed class ReadLinkOpensHandler(ILinkOpens opens, ILinkTargets targets,
     };
 
     /// <summary>The report; an unknown window is thirty days.</summary>
-    /// <param name="window">7d, 30d or 90d, or none.</param>
+    /// <param name="query">The window: 7d, 30d or 90d, or none.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<LinkOpensReport> HandleAsync(string? window, CancellationToken cancellation)
+    public async Task<LinkOpensReport> HandleAsync(ReadLinkOpensQuery query, CancellationToken cancellation)
     {
+        string? window = query.Window;
         string name = window is not null && Windows.ContainsKey(window) ? window : "30d";
         var availability = await opens.AvailabilityAsync(cancellation);
         if (!availability.Available)
@@ -84,6 +93,9 @@ public sealed class ReadLinkOpensHandler(ILinkOpens opens, ILinkTargets targets,
         return new LinkOpensReport(true, null, name, rows, targets.Keys);
     }
 }
+/// <summary>The card's opens for a window.</summary>
+/// <param name="Window">7d, 30d or 90d, or none.</param>
+public sealed record ReadLinkOpensQuery(string? Window);
 // #endregion read-link-opens
 
 // #region page-open
@@ -94,12 +106,17 @@ public sealed class ReadLinkOpensHandler(ILinkOpens opens, ILinkTargets targets,
 /// tagged request; the handler only says whether the code was one, so the page is answered 204
 /// or 400 and never learns anything else.
 /// </summary>
-public sealed class ReportPageOpenHandler
+public sealed class ReportPageOpenHandler : ICommandHandler<ReportPageOpenCommand, bool>
 {
     /// <summary>True when the code is a code and the path is a path the site has.</summary>
-    /// <param name="code">The code the page carried.</param>
-    /// <param name="path">The view the page opened on, as a path: / or /about.</param>
-    public bool Handle(string? code, string? path) =>
-        LinkCodes.IsOne(code) && path is not null && TaggedRequests.PageViews.Contains(path, StringComparer.Ordinal);
+    /// <param name="command">The code the page carried and the view it opened on.</param>
+    /// <param name="cancellation">The request's cancellation.</param>
+    public Task<bool> HandleAsync(ReportPageOpenCommand command, CancellationToken cancellation) =>
+        Task.FromResult(LinkCodes.IsOne(command.Code) && command.Path is not null && TaggedRequests.PageViews.Contains(command.Path, StringComparer.Ordinal));
 }
+
+/// <summary>The open the page reports for itself, recorded by the pipeline when this answers yes, so it is a command.</summary>
+/// <param name="Code">The code the page carried.</param>
+/// <param name="Path">The view the page opened on, as a path: / or /about.</param>
+public sealed record ReportPageOpenCommand(string? Code, string? Path);
 // #endregion page-open

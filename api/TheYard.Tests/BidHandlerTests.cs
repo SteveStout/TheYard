@@ -14,15 +14,16 @@ public sealed class BidHandlerTests
     public async Task A_bid_is_refused_in_order_session_then_vehicle_then_rules_and_a_good_one_is_placed()
     {
         var vehicle = TestAuctions.Live("bid");
-        var handler = new PlaceBidHandler(TestAuctions.Over(vehicle), TestAuctions.AtNoon);
+        var auction = TestAuctions.Over(vehicle);
+        var handler = new PlaceBidHandler(auction.Standings, auction.Bids, TestAuctions.AtNoon);
 
-        Assert.Equal(BidAnswerKind.SessionElsewhere, (await handler.HandleAsync(new PlaceBid("nobody-has-this-id", "u1", false, 1), CancellationToken.None)).Kind);
-        Assert.Equal(BidAnswerKind.NoSuchVehicle, (await handler.HandleAsync(new PlaceBid("nobody-has-this-id", "u1", true, 1), CancellationToken.None)).Kind);
-        var low = await handler.HandleAsync(new PlaceBid(vehicle.Id, "u1", true, 1), CancellationToken.None);
+        Assert.Equal(BidAnswerKind.SessionElsewhere, (await handler.HandleAsync(new PlaceBidCommand("nobody-has-this-id", "u1", false, 1), CancellationToken.None)).Kind);
+        Assert.Equal(BidAnswerKind.NoSuchVehicle, (await handler.HandleAsync(new PlaceBidCommand("nobody-has-this-id", "u1", true, 1), CancellationToken.None)).Kind);
+        var low = await handler.HandleAsync(new PlaceBidCommand(vehicle.Id, "u1", true, 1), CancellationToken.None);
         Assert.Equal(BidAnswerKind.Rejected, low.Kind);
         Assert.False(string.IsNullOrWhiteSpace(low.Reason));
 
-        var placed = await handler.HandleAsync(new PlaceBid(vehicle.Id, "u1", true, 30_000), CancellationToken.None);
+        var placed = await handler.HandleAsync(new PlaceBidCommand(vehicle.Id, "u1", true, 30_000), CancellationToken.None);
         Assert.Equal(BidAnswerKind.Placed, placed.Kind);
         Assert.Equal(30_000, placed.Vehicle!.Vehicle.CurrentBid);
         Assert.NotNull(placed.Standing);
@@ -34,12 +35,13 @@ public sealed class BidHandlerTests
     {
         var priced = TestAuctions.Live("buy", buyNow: 40_000);
         var unpriced = TestAuctions.Live("nobuy");
-        var handler = new PlaceBidHandler(TestAuctions.Over(priced, unpriced), TestAuctions.AtNoon);
+        var auction = TestAuctions.Over(priced, unpriced);
+        var handler = new PlaceBidHandler(auction.Standings, auction.Bids, TestAuctions.AtNoon);
 
-        var bought = await handler.HandleAsync(new PlaceBid(priced.Id, "u1", true, null), CancellationToken.None);
+        var bought = await handler.HandleAsync(new PlaceBidCommand(priced.Id, "u1", true, null), CancellationToken.None);
         Assert.Equal(BidAnswerKind.Placed, bought.Kind);
         Assert.True(bought.Vehicle!.Sold);
-        Assert.Equal(BidAnswerKind.Rejected, (await handler.HandleAsync(new PlaceBid(unpriced.Id, "u1", true, null), CancellationToken.None)).Kind);
+        Assert.Equal(BidAnswerKind.Rejected, (await handler.HandleAsync(new PlaceBidCommand(unpriced.Id, "u1", true, null), CancellationToken.None)).Kind);
     }
 
     [Fact]
@@ -47,20 +49,20 @@ public sealed class BidHandlerTests
     {
         var vehicle = TestAuctions.Live("mine");
         var auction = TestAuctions.Over(vehicle);
-        await new PlaceBidHandler(auction, TestAuctions.AtNoon).HandleAsync(new PlaceBid(vehicle.Id, "u1", true, 30_000), CancellationToken.None);
+        await new PlaceBidHandler(auction.Standings, auction.Bids, TestAuctions.AtNoon).HandleAsync(new PlaceBidCommand(vehicle.Id, "u1", true, 30_000), CancellationToken.None);
 
-        Assert.Single(await new MyBidsHandler(auction).HandleAsync("u1", CancellationToken.None));
-        Assert.Empty(await new MyBidsHandler(auction).HandleAsync("u2", CancellationToken.None));
-        Assert.Empty(await new MyBidsHandler(auction).HandleAsync(null, CancellationToken.None));
-        Assert.Equal(1, (await new BidHistoryHandler(auction).HandleAsync("u1", CancellationToken.None)).Count);
+        Assert.Single(await new ReadMyBidsHandler(auction.Standings).HandleAsync(new ReadMyBidsQuery("u1"), CancellationToken.None));
+        Assert.Empty(await new ReadMyBidsHandler(auction.Standings).HandleAsync(new ReadMyBidsQuery("u2"), CancellationToken.None));
+        Assert.Empty(await new ReadMyBidsHandler(auction.Standings).HandleAsync(new ReadMyBidsQuery(null), CancellationToken.None));
+        Assert.Equal(1, (await new ReadBidHistoryHandler(auction.Standings).HandleAsync(new ReadBidHistoryQuery("u1"), CancellationToken.None)).Count);
 
-        var round = await new RoomRoundHandler(auction, TestAuctions.AtNoon).HandleAsync("u1", CancellationToken.None);
+        var round = await new RoomRoundHandler(auction.Bids, auction.Inventory, auction.Room, auction.Standings, TestAuctions.AtNoon).HandleAsync(new RoomRoundCommand("u1"), CancellationToken.None);
         Assert.True(round.Raised >= 0);
         Assert.Single(round.Bids);
 
-        Assert.False(await new ResetBidsHandler(auction).HandleAsync(null, CancellationToken.None));
-        Assert.True(await new ResetBidsHandler(auction).HandleAsync("u1", CancellationToken.None));
-        Assert.Empty(await new MyBidsHandler(auction).HandleAsync("u1", CancellationToken.None));
+        Assert.False(await new ResetBidsHandler(auction.Bids, auction.Room).HandleAsync(new ResetBidsCommand(null), CancellationToken.None));
+        Assert.True(await new ResetBidsHandler(auction.Bids, auction.Room).HandleAsync(new ResetBidsCommand("u1"), CancellationToken.None));
+        Assert.Empty(await new ReadMyBidsHandler(auction.Standings).HandleAsync(new ReadMyBidsQuery("u1"), CancellationToken.None));
     }
 }
 // #endregion bid-handler-tests

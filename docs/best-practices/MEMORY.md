@@ -40,7 +40,7 @@ var pages = new BoundedCache<string, IReadOnlyList<CatalogueEntry>>(
     bytesOf: page => 64 + page.Count * 1_500);
 ```
 
-```live path=api/TheYard.Application/InventoryService.cs region=listing-cache
+```live path=api/TheYard.Application/Stock.cs region=listing-cache
 ```
 
 ### c. Page, never materialise

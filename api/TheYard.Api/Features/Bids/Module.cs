@@ -10,16 +10,20 @@ namespace TheYard.Api.Features.Bids;
 /// </summary>
 public sealed class Module : IModule
 {
-    /// <summary>Registers the slice's handlers, one per request, each over the request's auction.</summary>
+    /// <summary>
+    /// Registers the slice's handlers, one per request, over the request store's parts: the queries
+    /// get the vehicles as they stand, the commands get the writing side of what they move.
+    /// </summary>
     /// <param name="services">The host's services.</param>
     /// <param name="configuration">The host's configuration.</param>
     public void Register(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped(provider => new PlaceBidHandler(provider.GetRequiredService<CurrentBackend>().Auction, Clocks.Now));
-        services.AddScoped(provider => new MyBidsHandler(provider.GetRequiredService<CurrentBackend>().Auction));
-        services.AddScoped(provider => new BidHistoryHandler(provider.GetRequiredService<CurrentBackend>().Auction));
-        services.AddScoped(provider => new RoomRoundHandler(provider.GetRequiredService<CurrentBackend>().Auction, Clocks.Now));
-        services.AddScoped(provider => new ResetBidsHandler(provider.GetRequiredService<CurrentBackend>().Auction));
+        static CurrentBackend Current(IServiceProvider provider) => provider.GetRequiredService<CurrentBackend>();
+        services.AddScoped(provider => new PlaceBidHandler(Current(provider).Standings, Current(provider).Backend.Bids, Clocks.Now));
+        services.AddScoped(provider => new ReadMyBidsHandler(Current(provider).Standings));
+        services.AddScoped(provider => new ReadBidHistoryHandler(Current(provider).Standings));
+        services.AddScoped(provider => new RoomRoundHandler(Current(provider).Backend.Bids, Current(provider).Backend.Inventory, Current(provider).Backend.Market, Current(provider).Standings, Clocks.Now));
+        services.AddScoped(provider => new ResetBidsHandler(Current(provider).Backend.Bids, Current(provider).Backend.Market));
     }
 
     /// <summary>Maps /api/vehicles/{id}/bids, /api/vehicles/{id}/buy-now, /api/bids and /api/market/tick.</summary>

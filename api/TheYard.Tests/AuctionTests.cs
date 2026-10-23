@@ -5,8 +5,8 @@ using TheYard.Domain;
 namespace TheYard.Tests;
 
 /// <summary>
-/// The Application ring's Auction: the one place the catalogue, everybody's bids and the room
-/// are composed (ADR: Onion and SOLID, how this codebase holds them). Each test holds one rule an
+/// One store's auction as the bid and vehicle handlers compose it: the catalogue, everybody's bids
+/// and the room, read through StandingReader and written through the parts' writing sides (ADR: Onion and SOLID, how this codebase holds them). Each test holds one rule an
 /// endpoint must never decide for itself: the price a vehicle shows, the price a bid is measured
 /// against, what a reset takes with it, and what a buyer's badge says.
 /// </summary>
@@ -24,11 +24,10 @@ public sealed class AuctionTests
         return TestData.Vehicle(id: id, currentBid: currentBid);
     }
 
-    private static (Auction Auction, MarketService Market) Build(params Vehicle[] vehicles)
+    private static (TestAuction Auction, Room Market) Build(params Vehicle[] vehicles)
     {
-        var market = new MarketService(new Random(7));
-        var inventory = new InventoryService(new Vehicles(vehicles), new NoPhotos());
-        return (new Auction(inventory, new BidService(new MemoryBidStore()), market), market);
+        var auction = TestAuctions.Over(vehicles);
+        return (auction, auction.Room);
     }
 
     // #region overlays

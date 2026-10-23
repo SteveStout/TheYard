@@ -1,11 +1,11 @@
 // Where a bid is decided against: the standing the store holds for one vehicle, and the next
 // standing a bid would leave. It has a file of its own because these are the two pieces the bid
 // path and the reset share, and the reasoning about what the store is trusted with lives here
-// (the type itself is in BidService.cs).
+// (the type itself is in BidBook.cs).
 namespace TheYard.Application;
 
 /// <summary>The store's standing for one vehicle, and how a bid moves it.</summary>
-public sealed partial class BidService
+public sealed partial class BidBook
 {
     /// <summary>
     /// How many times a bid reads the store and runs the rules before it gives

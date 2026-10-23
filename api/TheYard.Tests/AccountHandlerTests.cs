@@ -20,15 +20,15 @@ public sealed class AccountHandlerTests
         var allowance = new FakeAllowance(1);
         var register = new RegisterHandler(accounts, allowance, () => 1_000);
 
-        Assert.Equal(AccountAnswerKind.Unavailable, (await new RegisterHandler(null, allowance, () => 0).HandleAsync("a@b.c", "correct horse", CancellationToken.None)).Kind);
-        Assert.Equal(AccountAnswerKind.Unreadable, (await register.HandleAsync("", "correct horse", CancellationToken.None)).Kind);
-        var refused = await register.HandleAsync("a@b.c", "short", CancellationToken.None);
+        Assert.Equal(AccountAnswerKind.Unavailable, (await new RegisterHandler(null, allowance, () => 0).HandleAsync(new RegisterCommand("a@b.c", "correct horse"), CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Unreadable, (await register.HandleAsync(new RegisterCommand("", "correct horse"), CancellationToken.None)).Kind);
+        var refused = await register.HandleAsync(new RegisterCommand("a@b.c", "short"), CancellationToken.None);
         Assert.Equal((AccountAnswerKind.Refused, AccountProblem.PasswordTooShort), (refused.Kind, refused.Problem));
         Assert.Equal(1, allowance.Left);
-        var made = await register.HandleAsync("a@b.c", "correct horse", CancellationToken.None);
+        var made = await register.HandleAsync(new RegisterCommand("a@b.c", "correct horse"), CancellationToken.None);
         Assert.Equal(AccountAnswerKind.Done, made.Kind);
         Assert.Equal(1_000, made.Account!.CreatedAtMs);
-        Assert.Equal(AccountAnswerKind.TooMany, (await register.HandleAsync("d@e.f", "correct horse", CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.TooMany, (await register.HandleAsync(new RegisterCommand("d@e.f", "correct horse"), CancellationToken.None)).Kind);
     }
 
     [Fact]
@@ -38,15 +38,15 @@ public sealed class AccountHandlerTests
         var account = (await accounts.CreateAsync("a@b.c", "correct horse", 1, CancellationToken.None)).Account!;
         var signIn = new SignInHandler(accounts);
 
-        Assert.Equal(AccountAnswerKind.Refused, (await signIn.HandleAsync("nobody@b.c", "correct horse", CancellationToken.None)).Kind);
-        Assert.Equal(AccountAnswerKind.Refused, (await signIn.HandleAsync("a@b.c", "wrong", CancellationToken.None)).Kind);
-        Assert.Equal(AccountAnswerKind.Refused, (await signIn.HandleAsync("a@b.c", null, CancellationToken.None)).Kind);
-        Assert.Equal(AccountAnswerKind.Done, (await signIn.HandleAsync("a@b.c", "correct horse", CancellationToken.None)).Kind);
-        Assert.Equal(AccountAnswerKind.Unavailable, (await new SignInHandler(null).HandleAsync("a@b.c", "correct horse", CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Refused, (await signIn.HandleAsync(new SignInCommand("nobody@b.c", "correct horse"), CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Refused, (await signIn.HandleAsync(new SignInCommand("a@b.c", "wrong"), CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Refused, (await signIn.HandleAsync(new SignInCommand("a@b.c", null), CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Done, (await signIn.HandleAsync(new SignInCommand("a@b.c", "correct horse"), CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Unavailable, (await new SignInHandler(null).HandleAsync(new SignInCommand("a@b.c", "correct horse"), CancellationToken.None)).Kind);
 
-        Assert.Equal(account.Id, (await new WhoAmIHandler(accounts).HandleAsync(account.Id, CancellationToken.None))!.Id);
-        Assert.Null(await new WhoAmIHandler(accounts).HandleAsync(null, CancellationToken.None));
-        await new SignOutHandler(accounts).HandleAsync(account.Id, CancellationToken.None);
+        Assert.Equal(account.Id, (await new WhoAmIHandler(accounts).HandleAsync(new WhoAmIQuery(account.Id), CancellationToken.None))!.Id);
+        Assert.Null(await new WhoAmIHandler(accounts).HandleAsync(new WhoAmIQuery(null), CancellationToken.None));
+        await new SignOutHandler(accounts).HandleAsync(new SignOutCommand(account.Id), CancellationToken.None);
         Assert.NotEqual(account.SecurityStamp, (await accounts.FindByIdAsync(account.Id, CancellationToken.None))!.SecurityStamp);
     }
 
@@ -60,24 +60,24 @@ public sealed class AccountHandlerTests
         var maker = new ResetLinkMaker(tokens, links);
         var mail = new FakeMail();
 
-        var minted = await new OperatorResetLinkHandler(accounts, maker).HandleAsync("a@b.c", Store, "https://yard.example", CancellationToken.None);
+        var minted = await new OperatorResetLinkHandler(accounts, maker).HandleAsync(new OperatorResetLinkCommand("a@b.c", Store, "https://yard.example"), CancellationToken.None);
         Assert.Equal(AccountAnswerKind.Done, minted.Kind);
-        Assert.Equal(AccountAnswerKind.Refused, (await new OperatorResetLinkHandler(accounts, maker).HandleAsync("nobody@b.c", Store, "https://yard.example", CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Refused, (await new OperatorResetLinkHandler(accounts, maker).HandleAsync(new OperatorResetLinkCommand("nobody@b.c", Store, "https://yard.example"), CancellationToken.None)).Kind);
 
         var forgot = new ForgotHandler(accounts, mail, new FakeSpacing(), maker);
-        Assert.Equal(ForgotAnswerKind.NoAddress, (await forgot.HandleAsync(" ", Store, "https://yard.example", CancellationToken.None)).Kind);
-        Assert.Equal(ForgotAnswerKind.Done, (await forgot.HandleAsync("a@b.c", Store, "https://yard.example", CancellationToken.None)).Kind);
-        Assert.Equal(ForgotAnswerKind.Done, (await forgot.HandleAsync("nobody@b.c", Store, "https://yard.example", CancellationToken.None)).Kind);
+        Assert.Equal(ForgotAnswerKind.NoAddress, (await forgot.HandleAsync(new ForgotCommand(" ", Store, "https://yard.example"), CancellationToken.None)).Kind);
+        Assert.Equal(ForgotAnswerKind.Done, (await forgot.HandleAsync(new ForgotCommand("a@b.c", Store, "https://yard.example"), CancellationToken.None)).Kind);
+        Assert.Equal(ForgotAnswerKind.Done, (await forgot.HandleAsync(new ForgotCommand("nobody@b.c", Store, "https://yard.example"), CancellationToken.None)).Kind);
         Assert.Single(mail.Sent);
-        Assert.Equal(ForgotAnswerKind.NoMail, (await new ForgotHandler(accounts, new FakeMail(configured: false), new FakeSpacing(), maker).HandleAsync("a@b.c", Store, "x", CancellationToken.None)).Kind);
+        Assert.Equal(ForgotAnswerKind.NoMail, (await new ForgotHandler(accounts, new FakeMail(configured: false), new FakeSpacing(), maker).HandleAsync(new ForgotCommand("a@b.c", Store, "x"), CancellationToken.None)).Kind);
 
         string id = minted.Url!.Split("reset=")[1];
         var reset = new ResetPasswordHandler(accounts, tokens, links);
-        Assert.Equal(ResetAnswerKind.LinkRefused, (await reset.HandleAsync(id, "another horse", "cosmos", CancellationToken.None)).Kind);
-        Assert.Equal(ResetAnswerKind.PasswordRefused, (await reset.HandleAsync(id, "short", Store, CancellationToken.None)).Kind);
-        Assert.Equal(ResetAnswerKind.Changed, (await reset.HandleAsync(id, "another horse", Store, CancellationToken.None)).Kind);
-        Assert.Equal(ResetAnswerKind.LinkRefused, (await reset.HandleAsync(id, "a third horse", Store, CancellationToken.None)).Kind);
-        Assert.Equal(AccountAnswerKind.Done, (await new SignInHandler(accounts).HandleAsync("a@b.c", "another horse", CancellationToken.None)).Kind);
+        Assert.Equal(ResetAnswerKind.LinkRefused, (await reset.HandleAsync(new ResetPasswordCommand(id, "another horse", "cosmos"), CancellationToken.None)).Kind);
+        Assert.Equal(ResetAnswerKind.PasswordRefused, (await reset.HandleAsync(new ResetPasswordCommand(id, "short", Store), CancellationToken.None)).Kind);
+        Assert.Equal(ResetAnswerKind.Changed, (await reset.HandleAsync(new ResetPasswordCommand(id, "another horse", Store), CancellationToken.None)).Kind);
+        Assert.Equal(ResetAnswerKind.LinkRefused, (await reset.HandleAsync(new ResetPasswordCommand(id, "a third horse", Store), CancellationToken.None)).Kind);
+        Assert.Equal(AccountAnswerKind.Done, (await new SignInHandler(accounts).HandleAsync(new SignInCommand("a@b.c", "another horse"), CancellationToken.None)).Kind);
     }
 
     /// <summary>Accounts in a list: eight characters or more, one per address, a stamp that moves.</summary>

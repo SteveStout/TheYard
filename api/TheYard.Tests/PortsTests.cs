@@ -55,7 +55,7 @@ public class PortsTests
         var clock = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.FromHours(-4)));
         var vehicle = LiveVehicleFor(clock);
         var store = new SlowStore();
-        var service = new BidService(store);
+        var service = new BidBook(store);
         int minimum = BidRules.MinNextBid(vehicle);
 
         var outcomes = await Task.WhenAll(Enumerable.Range(0, 50).Select(i =>

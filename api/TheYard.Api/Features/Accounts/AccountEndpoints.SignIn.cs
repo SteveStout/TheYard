@@ -14,7 +14,7 @@ public static partial class AccountEndpoints
     /// <summary>Creates an account on this request's store and signs it in, within the hour's registration allowance.</summary>
     private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Register(RegisterHandler handler, CurrentBackend current, TokenIssuer issuer, HttpContext http, Credentials request, CancellationToken cancellation)
     {
-        var answer = await handler.HandleAsync(request.Email, request.Password, cancellation);
+        var answer = await handler.HandleAsync(new RegisterCommand(request.Email, request.Password), cancellation);
         // The reply says what happened and how long it lasts, and says nothing about how many
         // accounts exist or how much of the allowance is left.
         return answer.Kind switch
@@ -36,7 +36,7 @@ public static partial class AccountEndpoints
     /// <summary>Signs in with an email address and a password, answering one sentence for every way that can fail.</summary>
     private static async Task<Results<Ok<AccountView>, ProblemHttpResult>> Login(SignInHandler handler, CurrentBackend current, TokenIssuer issuer, HttpContext http, Credentials request, CancellationToken cancellation)
     {
-        var answer = await handler.HandleAsync(request.Email, request.Password, cancellation);
+        var answer = await handler.HandleAsync(new SignInCommand(request.Email, request.Password), cancellation);
         return answer.Kind switch
         {
             AccountAnswerKind.Unavailable => Accounts.Unavailable(),
@@ -53,7 +53,7 @@ public static partial class AccountEndpoints
     /// <summary>Signs out: every session the account had open is refused on its next request, the cookie is deleted, and the anonymous account answers.</summary>
     private static async Task<Ok<AccountView>> Logout(SignOutHandler handler, TokenIssuer issuer, HttpContext http, CancellationToken cancellation)
     {
-        await handler.HandleAsync(http.UserIdOrNull(), cancellation);
+        await handler.HandleAsync(new SignOutCommand(http.UserIdOrNull()), cancellation);
         // Deleted with the same attributes it was set with, or the browser keeps a
         // second cookie of the same name on a different path and stays signed in.
         http.Response.Cookies.Delete(TokenIssuer.CookieName, TokenIssuer.CookieFor(http, issuer.Lifetime));
@@ -62,7 +62,7 @@ public static partial class AccountEndpoints
 
     /// <summary>The account the session belongs to on this store, or the anonymous account when there is none here.</summary>
     private static async Task<Ok<AccountView>> WhoAmI(WhoAmIHandler handler, HttpContext http, CancellationToken cancellation) =>
-        TypedResults.Ok(await handler.HandleAsync(http.UserIdOrNull(), cancellation) is { } account
+        TypedResults.Ok(await handler.HandleAsync(new WhoAmIQuery(http.UserIdOrNull()), cancellation) is { } account
             ? Accounts.Describe(account)
             : Accounts.Anonymous);
 

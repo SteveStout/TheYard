@@ -1,8 +1,8 @@
 // The catalogue as a visitor's request meets it. This file is the class's fields, its two
 // constructors and how a vehicle leaves; the work is in the files beside it:
-//   InventoryService.Warm.cs     the warm-up, the choice of store or list, and the fill (region warm)
-//   InventoryService.Search.cs   a listing planned out of the port's primitives (region search)
-//   InventoryService.Find.cs     a filter resolved to the store's spelling, and reads by id (regions resolve, find)
+//   Stock.Warm.cs     the warm-up, the choice of store or list, and the fill (region warm)
+//   Stock.Search.cs   a listing planned out of the port's primitives (region search)
+//   Stock.Find.cs     a filter resolved to the store's spelling, and reads by id (regions resolve, find)
 using TheYard.Data;
 using TheYard.Domain;
 
@@ -58,7 +58,7 @@ public sealed record CatalogueReport(string Mode, int HeldInMemory, int Target, 
 /// filled, answers from the expansion in memory until the store can, and says so on the Admin tab.
 /// Vehicles whose body style has no photo pool keep the images the dataset carries.
 /// </summary>
-public sealed partial class InventoryService
+public sealed partial class Stock : IStockReader
 {
     private const int ExpectedVehicleBytes = 1_500;
     private const long BucketMs = 5_000;
@@ -79,7 +79,7 @@ public sealed partial class InventoryService
     // #endregion listing-cache
 
     /// <summary>The catalogue out of a list in memory, filled from <paramref name="vehicleSource"/>: the tests' shape and the file fallback's.</summary>
-    public InventoryService(IVehicleSource vehicleSource, IPhotoManifestSource manifestSource, string imagePathPrefix = "/api/images")
+    public Stock(IVehicleSource vehicleSource, IPhotoManifestSource manifestSource, string imagePathPrefix = "/api/images")
         : this(null, vehicleSource, manifestSource, CatalogueUpkeep.Off, imagePathPrefix)
     {
     }
@@ -90,7 +90,7 @@ public sealed partial class InventoryService
     /// <param name="manifestSource">The photo manifest.</param>
     /// <param name="upkeep">What this site does about a store that holds less than it should, past what the warm-up fills.</param>
     /// <param name="imagePathPrefix">The path photos are served under.</param>
-    public InventoryService(IVehicleCatalogue? store, IVehicleSource seeder, IPhotoManifestSource manifestSource, CatalogueUpkeep upkeep, string imagePathPrefix = "/api/images")
+    public Stock(IVehicleCatalogue? store, IVehicleSource seeder, IPhotoManifestSource manifestSource, CatalogueUpkeep upkeep, string imagePathPrefix = "/api/images")
     {
         _store = store;
         _seeder = seeder;

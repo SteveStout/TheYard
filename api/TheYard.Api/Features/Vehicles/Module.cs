@@ -9,14 +9,14 @@ namespace TheYard.Api.Features.Vehicles;
 /// </summary>
 public sealed class Module : IModule
 {
-    /// <summary>Registers the slice's handlers, one per request, each over the request's auction.</summary>
+    /// <summary>Registers the slice's handlers, one per request, each over the request store's reading sides.</summary>
     /// <param name="services">The host's services.</param>
     /// <param name="configuration">The host's configuration.</param>
     public void Register(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddScoped(provider => new SearchVehiclesHandler(provider.GetRequiredService<CurrentBackend>().Auction));
-        services.AddScoped(provider => new FacetsHandler(provider.GetRequiredService<CurrentBackend>().Auction));
-        services.AddScoped(provider => new FindVehicleHandler(provider.GetRequiredService<CurrentBackend>().Auction, Clocks.Now));
+        services.AddScoped(provider => new SearchVehiclesHandler(provider.GetRequiredService<CurrentBackend>().Standings));
+        services.AddScoped(provider => new ReadFacetsHandler(provider.GetRequiredService<CurrentBackend>().Backend.Inventory));
+        services.AddScoped(provider => new FindVehicleHandler(provider.GetRequiredService<CurrentBackend>().Standings, Clocks.Now));
     }
 
     /// <summary>Maps /api/vehicles, /api/vehicles/{id} and /api/facets.</summary>

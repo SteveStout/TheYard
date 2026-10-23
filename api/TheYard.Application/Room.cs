@@ -14,14 +14,14 @@ public sealed record MarketBid(int Amount, int BidCount, long AtMs);
 /// The other bidders (ADR: Competing bidders). A demo where nothing bids back
 /// has no way to lose: every bid is the high bid forever, the reserve badge
 /// never changes hands, and "you have been outbid" is a state the code can
-/// describe but never reach. This service is the room the buyer is bidding in.
+/// describe but never reach. This class is the room the buyer is bidding in.
 ///
-/// It holds its own bids exactly the way <see cref="BidService"/> holds the
+/// It holds its own bids exactly the way <see cref="BidBook"/> holds the
 /// buyer's, as an overlay rather than a mutation, because the dataset is
 /// shared and immutable and both of them have to compose without either one
 /// owning the vehicle.
 /// </summary>
-public sealed class MarketService(Random random, int graceSeconds = MarketService.DefaultGraceSeconds)
+public sealed class Room(Random random, int graceSeconds = Room.DefaultGraceSeconds) : IRoomReader, IRoomWriter
 {
     private readonly ConcurrentDictionary<string, MarketBid> _bids = new();
 
@@ -58,8 +58,8 @@ public sealed class MarketService(Random random, int graceSeconds = MarketServic
     /// <summary>
     /// The room's bid layered over whatever the vehicle already shows, and only
     /// when it is higher, so a competitor who has gone higher than the buyer is
-    /// what the page displays. Auction lays everybody's bids on first and this
-    /// second.
+    /// what the page displays. StandingReader lays everybody's bids on first and
+    /// this second.
     /// </summary>
     public Vehicle Apply(Vehicle vehicle) =>
         _bids.TryGetValue(vehicle.Id, out var bid) ? vehicle.RaisedTo(bid.Amount, bid.BidCount) : vehicle;

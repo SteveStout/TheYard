@@ -253,9 +253,9 @@ The seam, unchanged above it (`api/TheYard.Infrastructure/EfSources.cs`):
 ```
 
 Bids, written through the lock that was already there
-(`api/TheYard.Application/BidService.cs`):
+(`api/TheYard.Application/BidBook.cs`):
 
-```live path=api/TheYard.Application/BidService.cs region=store
+```live path=api/TheYard.Application/BidBook.cs region=store
 ```
 
 The proof (`api/TheYard.Tests/PersistenceTests.cs`):

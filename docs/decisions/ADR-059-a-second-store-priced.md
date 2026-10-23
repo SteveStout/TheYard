@@ -573,7 +573,7 @@ The second store is a new outer project, Infrastructure.Cosmos, written on the C
 
 - The written pre-approval is in the lane's notes outside the repository, because it names principals.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the three seams the second store implements.
-- [`api/TheYard.Application/InventoryService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/InventoryService.cs): where the store stops being on the request path.
+- [`api/TheYard.Application/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs): where the store stops being on the request path.
 - [`api/TheYard.Infrastructure/SyntheticVehicleSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SyntheticVehicleSource.cs): 200 documents becoming 100,000 in memory.
 - [`docs/decisions/ADR-058-the-partition-key.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-058-the-partition-key.md): the one decision that cannot be changed later.
 - [`docs/decisions/ADR-039-sql-server-backend.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-039-sql-server-backend.md): the store this one sits beside, and the pricing method this record copies.

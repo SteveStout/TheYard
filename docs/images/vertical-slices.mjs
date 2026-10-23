@@ -74,7 +74,7 @@ out.push(`  <text x="163" y="88" class="shared-title" text-anchor="middle">Share
 // Thirteen pixels a line here, not sixteen, so every concern fits above the adapters' band.
 concernLines.forEach((line, i) => out.push(`  <text x="52" y="${152 + 13 * i}" class="small">${esc(line)}</text>`));
 files(52, 292, ['ContextFactory.cs, CosmosStore.cs', 'OutboundHttp.cs, one pool', 'AzureMetrics.cs, the host\'s'], 'small');
-files(52, 412, ['Auction.cs, the composition', 'Ports.cs, IStoreDiagnostics', 'CardFrame.cs, CloudWire.cs'], 'small');
+files(52, 412, ['StandingReader.cs, the reads', 'Ports.cs, IStoreDiagnostics', 'CardFrame.cs, CloudWire.cs'], 'small');
 files(52, 532, ['Fnv1a.cs, AuctionSchedule.cs', 'CardTone.cs, the one tone rule'], 'small');
 
 // The slices: the same folder name in every ring, cut through all of them.

@@ -23,7 +23,8 @@ codebase holds them):
 - `api/TheYard.Data` - pure records, ZERO dependencies, ZERO behavior. If it computes anything it does
   not belong here.
 - `api/TheYard.Domain` - the rules. Depends only on Data.
-- `api/TheYard.Application` - use cases and ports. `Auction` is what the endpoints ask about the auction; the
+- `api/TheYard.Application` - use cases and ports. Every request is a query or a command with one handler (ADR-115); the auction is
+  `Stock`, `BidBook` and `Room`, each behind a reading and a writing interface, and `StandingReader` is how a query reads a vehicle; the
   auction's ports are `IVehicleCatalogue` (the store's hundred thousand, queried a page at a time),
   `IVehicleSource` (the seed, which fills it), `IPhotoManifestSource` and `IBidStore`, beside the
   operator's ports (`IActivityStore`, `ILogStore`, `IStoreExperiment` and the rest). Depends on Domain.
@@ -35,8 +36,8 @@ codebase holds them):
 - `api/TheYard.Api` - host and endpoints. One folder per slice under `Features/`, each with a `Module.cs`
   that registers and maps it; what more than one place uses in `Shared/<Concern>/`, one folder per concern
   named in ADR-114's table; `Program.cs` is the only file at the root, and it registers the shared parts by
-  name and loops over the modules. Read ADR-107 (The onion cut into vertical slices) and ADR-114 (The host
-  root holds one file) first. NO business logic in endpoints.
+  name and loops over the modules. Read ADR-107 (The onion cut into vertical slices), ADR-114 (The host
+  root holds one file) and ADR-115 (A request is a query or a command) first. NO business logic in endpoints.
 
 Beside the six: `api/TheYard.Database` (the SQL Server schema as a DACPAC, the authority for the relational schema),
 `api/TheYard.Migrations.Sqlite` (the SQLite schema's history), `api/TheYard.Experiment` (a console tool
@@ -82,8 +83,8 @@ split).
 - Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
   price, and that check runs BEFORE the increment check. A vehicle anybody has bought is SOLD, to
   everybody, on both sites: that check runs before all the others, the standing the store owns supplies it
-  (read by `BidService` under its gate and written back with a compare-and-set; `BidService.IsSold` is the
-  listing's cached copy), `Auction.FindAsync` and `Auction.SearchAsync` hand every vehicle out with its
+  (read by `BidBook` under its gate and written back with a compare-and-set; `BidBook.IsSold` is the
+  listing's cached copy), `StandingReader.FindAsync` and `StandingReader.SearchAsync` hand every vehicle out with its
   sold flag beside it, and the wire says `sold` on every vehicle. A listing or a rule that forgets it recreates the second buyer (ADR: Accounts and per-user
   bids, addendum). Raising a vehicle's shown price over a bid, and whether the reserve is met, live only
   in `TheYard.Domain/StandingRules.cs` (`RaisedTo`, `Reserve`).

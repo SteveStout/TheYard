@@ -230,6 +230,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/cqrs</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-versioning</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -731,6 +736,11 @@
   </url>
   <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-the-host-root-holds-one-file</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-a-request-is-a-query-or-a-command</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

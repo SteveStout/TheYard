@@ -1,5 +1,7 @@
 // Register, sign in, sign out and who am I: the four handlers that open, close and read a session.
 // The cookie is the host's; these decide whether there is an account to put in it.
+using TheYard.Application.Shared;
+
 namespace TheYard.Application.Features.Accounts;
 
 // #region session-handlers
@@ -11,14 +13,14 @@ namespace TheYard.Application.Features.Accounts;
 /// <param name="store">The request's store's accounts, or null where it keeps none.</param>
 /// <param name="allowance">The hour's allowance of new accounts.</param>
 /// <param name="nowMs">The server's clock, in milliseconds since the epoch.</param>
-public sealed class RegisterHandler(IAccountStore? store, IAllowance allowance, Func<long> nowMs)
+public sealed class RegisterHandler(IAccountStore? store, IAllowance allowance, Func<long> nowMs) : ICommandHandler<RegisterCommand, AccountAnswer>
 {
     /// <summary>Answers one registration.</summary>
-    /// <param name="email">The address.</param>
-    /// <param name="password">The password.</param>
+    /// <param name="command">The address and the password.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<AccountAnswer> HandleAsync(string? email, string? password, CancellationToken cancellation)
+    public async Task<AccountAnswer> HandleAsync(RegisterCommand command, CancellationToken cancellation)
     {
+        var (email, password) = command;
         if (store is null)
         {
             return AccountAnswer.Of(AccountAnswerKind.Unavailable);
@@ -42,19 +44,24 @@ public sealed class RegisterHandler(IAccountStore? store, IAllowance allowance, 
     }
 }
 
+/// <summary>One registration: an address and a password.</summary>
+/// <param name="Email">The address.</param>
+/// <param name="Password">The password.</param>
+public sealed record RegisterCommand(string? Email, string? Password);
+
 /// <summary>
 /// Signs in with an address and a password. Every way that can fail is one answer, so a reply never
 /// tells a stranger which addresses are registered here.
 /// </summary>
 /// <param name="store">The request's store's accounts, or null where it keeps none.</param>
-public sealed class SignInHandler(IAccountStore? store)
+public sealed class SignInHandler(IAccountStore? store) : ICommandHandler<SignInCommand, AccountAnswer>
 {
     /// <summary>Answers one sign-in.</summary>
-    /// <param name="email">The address.</param>
-    /// <param name="password">The password.</param>
+    /// <param name="command">The address and the password.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<AccountAnswer> HandleAsync(string? email, string? password, CancellationToken cancellation)
+    public async Task<AccountAnswer> HandleAsync(SignInCommand command, CancellationToken cancellation)
     {
+        var (email, password) = command;
         if (store is null)
         {
             return AccountAnswer.Of(AccountAnswerKind.Unavailable);
@@ -68,32 +75,47 @@ public sealed class SignInHandler(IAccountStore? store)
     }
 }
 
+/// <summary>One sign-in: an address and a password. It opens a session, so it is a command.</summary>
+/// <param name="Email">The address.</param>
+/// <param name="Password">The password.</param>
+public sealed record SignInCommand(string? Email, string? Password);
+
 /// <summary>Signs out: moves the account's stamp, because a copied cookie outlives a deleted one.</summary>
 /// <param name="store">The request's store's accounts, or null where it keeps none.</param>
-public sealed class SignOutHandler(IAccountStore? store)
+public sealed class SignOutHandler(IAccountStore? store) : ICommandHandler<SignOutCommand, bool>
 {
-    /// <summary>Ends every session of the signed-in account, if there is one here.</summary>
-    /// <param name="userId">The session's account, or null.</param>
+    /// <summary>Ends every session of the signed-in account, if there is one here; true when there was one to end.</summary>
+    /// <param name="command">The session's account, or null.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task HandleAsync(string? userId, CancellationToken cancellation)
+    public async Task<bool> HandleAsync(SignOutCommand command, CancellationToken cancellation)
     {
-        if (userId is not null && store is not null && await store.FindByIdAsync(userId, cancellation) is { } account)
+        if (command.UserId is not null && store is not null && await store.FindByIdAsync(command.UserId, cancellation) is { } account)
         {
             await store.EndSessionsAsync(account, cancellation);
+            return true;
         }
+        return false;
     }
 }
 
+/// <summary>A sign-out.</summary>
+/// <param name="UserId">The session's account, or null.</param>
+public sealed record SignOutCommand(string? UserId);
+
 /// <summary>The account the session belongs to on this store, or none: a session opened on the other store reads as signed out here.</summary>
 /// <param name="store">The request's store's accounts, or null where it keeps none.</param>
-public sealed class WhoAmIHandler(IAccountStore? store)
+public sealed class WhoAmIHandler(IAccountReader? store) : IQueryHandler<WhoAmIQuery, Account?>
 {
     /// <summary>The account, or null.</summary>
-    /// <param name="userId">The session's account, or null.</param>
+    /// <param name="query">The session's account, or null.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<Account?> HandleAsync(string? userId, CancellationToken cancellation) =>
-        userId is null || store is null ? null : await store.FindByIdAsync(userId, cancellation);
+    public async Task<Account?> HandleAsync(WhoAmIQuery query, CancellationToken cancellation) =>
+        query.UserId is null || store is null ? null : await store.FindByIdAsync(query.UserId, cancellation);
 }
+
+/// <summary>Who the session belongs to on this store.</summary>
+/// <param name="UserId">The session's account, or null.</param>
+public sealed record WhoAmIQuery(string? UserId);
 // #endregion session-handlers
 
 /// <summary>What an account request came to.</summary>

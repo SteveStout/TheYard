@@ -5,8 +5,8 @@ using TheYard.Data;
 
 namespace TheYard.Application;
 
-/// <summary>The warm-up, the choice between the store and a list in memory, and the fill; the class is described in InventoryService.cs.</summary>
-public sealed partial class InventoryService
+/// <summary>The warm-up, the choice between the store and a list in memory, and the fill; the class is described in Stock.cs.</summary>
+public sealed partial class Stock
 {
     // #region warm
     // One warm-up, shared by every caller, started by whoever asks first; a warm-up that failed is

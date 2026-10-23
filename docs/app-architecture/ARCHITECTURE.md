@@ -342,7 +342,7 @@ the modules, and `SliceTests` fails the gate when a slice reaches into another. 
 | --- | --- | --- |
 | `api/TheYard.Data` | The plain records: `Vehicle`, `PhotoEntry`. No logic. | nothing |
 | `api/TheYard.Domain` | The rules: auction schedule and clock, filter, ordering, the search index, bid rules, standing rules (the one rule for raising a price, and reserve met or not), photo gallery, FNV-1a. Pure functions and records. | Data |
-| `api/TheYard.Application` | The use cases: `Auction`, what the endpoints ask about the auction, composing `InventoryService`, `BidService` and `MarketService`; the auction's ports (`IVehicleCatalogue`, the store's hundred thousand a page at a time; `IVehicleSource`, the seed that fills it; `IPhotoManifestSource`; `IBidStore`); and the operator's ports (`IActivityStore`, `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment` and the rest). | Domain, Data |
+| `api/TheYard.Application` | The use cases: one handler per request, each a query or a command (ADR-115), over the auction's three parts, `Stock`, `BidBook` and `Room`, each behind a reading and a writing interface, with `StandingReader` the one way a query reads a vehicle; the auction's ports (`IVehicleCatalogue`, the store's hundred thousand a page at a time; `IVehicleSource`, the seed that fills it; `IPhotoManifestSource`; `IBidStore`); and the operator's ports (`IActivityStore`, `ILogStore`, `IMachineHistory`, `ICostHistory`, `IResetLinks`, `IEmailSender`, `IStoreExperiment` and the rest). | Domain, Data |
 | `api/TheYard.Database` | The SQL Server schema, hand written, compiled to a DACPAC. The authority for what the database is. | nothing |
 | `api/TheYard.Infrastructure` | The adapters: EF Core over Azure SQL Database or SQLite, the JSON readers that seed it, the synthetic scale-up decorator, the Identity user, and the database readings the Admin tab shows (`ResourceStats`, `YardDatabase.PingAsync`). | Application, Domain, Data |
 | `api/TheYard.Infrastructure.Cosmos` | The auction's ports, the operator's stores and the account store over Azure Cosmos DB, plus the partition key experiment behind `IStoreExperiment`, on the SDK directly, with every operation's request charge written to the store log (ADR: A second store on Cosmos DB, and what it costs). | Application, Infrastructure |
@@ -383,10 +383,9 @@ envelope is `{ total, vehicles }`; a failure is a ProblemDetails body
 `api/TheYard.Api/Shared/Wiring/ApiRegistration.cs` (ADR: Program.cs, explained).
 
 **Endpoints bind and delegate.** A `MapGet` in a slice under `api/TheYard.Api/Features/`
-validates its parameters and asks Application, the auction's handlers through
-`Auction`. If a rule appears in the host, it is in the wrong place, and
-`OnionTests` fails a handler that composes the bid services itself or reaches
-a store.
+validates its parameters and asks Application, one handler per request (ADR-115). If a rule
+appears in the host, it is in the wrong place, and `OnionTests` fails an endpoint that reaches
+the auction's parts itself or reaches a store.
 
 **The address bar is the application state.** Filters, sort, the open
 vehicle and the Admin tab are all query parameters, mirrored by
@@ -458,7 +457,7 @@ side of the same question.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's ports the layers meet at.
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs): the table of contents for the composition root, walked line by line in ADR: Program.cs, explained.
 - [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared) and [`api/TheYard.Api/Features`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features): the registrations and middleware, and the handlers.
-- [`api/TheYard.Application/Auction.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Auction.cs): the use cases the endpoints ask.
+- [`api/TheYard.Application/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StandingReader.cs): a vehicle as every query reads it, and a buyer's badges.
 - [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules that hold the rings.
 - [`api/TheYard.Api/Shared/Wire/VehicleWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wire/VehicleWire.cs): the wire shape, copying the derived facts `StandingVehicle` carries so the browser's job is formatting.
 - [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts) and [`src/lib/inventory.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/inventory.ts): the one seam and the URL state.

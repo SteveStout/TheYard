@@ -10,7 +10,7 @@ namespace TheYard.Tests;
 /// auction with two implementations of its own rules, which is the thing the
 /// whole domain layer exists to prevent.
 /// </summary>
-public class MarketServiceTests
+public class RoomTests
 {
     /// <summary>A clock whose "now" can be pushed forward without moving the anchor.</summary>
     private static AuctionClock At(DateTimeOffset now) => TestData.ClockAt(now);
@@ -40,7 +40,7 @@ public class MarketServiceTests
     public void The_room_bids_the_minimum_next_bid_and_nothing_more()
     {
         var vehicle = LiveVehicle(currentBid: 22_800);
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
 
         var raised = market.Tick([vehicle], NoBuyer(), At(Noon));
 
@@ -56,7 +56,7 @@ public class MarketServiceTests
         string ended = Enumerable.Range(0, 500)
             .Select(i => $"ended-{i}")
             .First(id => AuctionSchedule.StatusFor(id, clock) != AuctionStatus.Live);
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
 
         var raised = market.Tick([TestData.Vehicle(id: ended)], NoBuyer(), clock);
 
@@ -68,8 +68,8 @@ public class MarketServiceTests
     public void The_room_stops_at_twice_the_opening_ask()
     {
         var vehicle = LiveVehicle(currentBid: null);
-        int ceiling = MarketService.CeilingFor(vehicle);
-        var market = new MarketService(new Random(7));
+        int ceiling = Room.CeilingFor(vehicle);
+        var market = new Room(new Random(7));
 
         // The clock advances past the grace period between rounds, because the
         // room now waits before raising the same vehicle again whether or not
@@ -98,7 +98,7 @@ public class MarketServiceTests
         // here to compete, not to end the auction, so it stops one step short.
         // At $1,000 the increment is $100, which lands exactly on buy-now.
         var vehicle = LiveVehicle(currentBid: 1_000) with { BuyNowPrice = 1_100 };
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
 
         Assert.Empty(market.Tick([vehicle], NoBuyer(), At(Noon)));
     }
@@ -114,7 +114,7 @@ public class MarketServiceTests
         {
             [vehicle.Id] = new BidState(23_300, 4, WonBuyNow: false, AtMs: clock.NowMs),
         };
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
 
         Assert.Empty(market.Tick([vehicle], buyer, clock));
 
@@ -134,7 +134,7 @@ public class MarketServiceTests
         {
             [vehicle.Id] = new BidState(30_000, 4, WonBuyNow: true, AtMs: At(Noon).NowMs),
         };
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
 
         Assert.Empty(market.Tick([vehicle], buyer, clock));
     }
@@ -151,7 +151,7 @@ public class MarketServiceTests
         {
             [contested.Id] = new BidState(23_300, 4, WonBuyNow: false, AtMs: At(Noon).NowMs),
         };
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
 
         // One bid allowed, and the visitor's vehicle is the one that gets it.
         var raised = market.Tick([.. others, contested], buyer, clock, maxBids: 1);
@@ -164,7 +164,7 @@ public class MarketServiceTests
     public void The_rooms_bid_only_shows_where_it_is_actually_higher()
     {
         var vehicle = LiveVehicle(currentBid: 22_800);
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
         market.Tick([vehicle], NoBuyer(), At(Noon));
 
         // The buyer has since gone above the room: the overlay must not pull
@@ -183,7 +183,7 @@ public class MarketServiceTests
         // tick. At eight seconds a round that doubled the top listing's price
         // in about two minutes while the rest of the grid never moved.
         var vehicle = LiveVehicle(currentBid: 22_800);
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
 
         Assert.Single(market.Tick([vehicle], NoBuyer(), At(Noon)));
         Assert.Empty(market.Tick([vehicle], NoBuyer(), At(Noon.AddSeconds(1))));
@@ -195,7 +195,7 @@ public class MarketServiceTests
     public void Resetting_clears_the_room_with_the_buyer()
     {
         var vehicle = LiveVehicle(currentBid: 22_800);
-        var market = new MarketService(new Random(7));
+        var market = new Room(new Random(7));
         market.Tick([vehicle], NoBuyer(), At(Noon));
         Assert.NotNull(market.For(vehicle.Id));
 

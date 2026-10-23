@@ -49,7 +49,11 @@ test('opening a document asks for the document and its renderer together, not on
     'nothing fetches the renderer ahead when the reader saves data'
   ).toBeUndefined();
   await openTheYard(page, '/?doc=readme');
-  await expect(page.getByRole('dialog')).toBeVisible();
+  // The document is held back half a second, which is when the working lock (itself a dialog) shows,
+  // so the document's dialog is named apart from it.
+  await expect(
+    page.getByRole('dialog').and(page.locator(':not([data-testid="working-lock"])'))
+  ).toBeVisible();
   await expect.poll(() => seen.document !== undefined && seen.renderer !== undefined).toBe(true);
   await seen.document!.response();
 

@@ -63,7 +63,7 @@
   <text x="52" y="292" class="small">ContextFactory.cs, CosmosStore.cs</text>
   <text x="52" y="308" class="small">OutboundHttp.cs, one pool</text>
   <text x="52" y="324" class="small">AzureMetrics.cs, the host's</text>
-  <text x="52" y="412" class="small">Auction.cs, the composition</text>
+  <text x="52" y="412" class="small">StandingReader.cs, the reads</text>
   <text x="52" y="428" class="small">Ports.cs, IStoreDiagnostics</text>
   <text x="52" y="444" class="small">CardFrame.cs, CloudWire.cs</text>
   <text x="52" y="532" class="small">Fnv1a.cs, AuctionSchedule.cs</text>

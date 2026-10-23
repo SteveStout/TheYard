@@ -1,11 +1,11 @@
-// The bid port held in this process's memory: the store a BidService gets when nothing durable is
+// The bid port held in this process's memory: the store a BidBook gets when nothing durable is
 // wired, which is the unit tests and a backend whose store has not come up yet. It keeps the same
 // compare-and-set rule the real stores keep, so a test that runs two services over one of these
 // is a test of the rule and not of a shortcut.
 namespace TheYard.Application;
 
 /// <summary>
-/// Bids and standings in a dictionary, gone when the process ends. One instance per BidService
+/// Bids and standings in a dictionary, gone when the process ends. One instance per BidBook
 /// unless a test shares one on purpose: a shared instance is what two sites over one store look
 /// like, in miniature.
 /// </summary>

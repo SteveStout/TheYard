@@ -1,6 +1,6 @@
-// One buyer's standing on one vehicle, as BidService keeps it and the store writes it. It has a
+// One buyer's standing on one vehicle, as BidBook keeps it and the store writes it. It has a
 // file of its own because the store, the simulated room and the endpoints all pass it around,
-// and none of them should have to open BidService to find its shape.
+// and none of them should have to open BidBook to find its shape.
 namespace TheYard.Application;
 
 /// <summary>

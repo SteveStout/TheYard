@@ -36,7 +36,9 @@ footer displays exactly that.
   the compiled code and fail the gate when a dependency points outward.
   Recorded in ADR: Onion and SOLID, how this codebase holds them, and
   taught a practice at a time, with one bid followed through the rings, in
-  [Onion architecture, the practices](https://theyard.stevenstout.biz/?doc=onion).
+  [Onion architecture, the practices](https://theyard.stevenstout.biz/?doc=onion). Every request is
+  a query or a command with one handler, and a query is never handed a write, in
+  [CQRS, the practices](https://theyard.stevenstout.biz/?doc=cqrs).
 - **Decisions get written down.** Ninety ADRs record why the architecture is
   what it is, including reversed decisions, the production design that is
   deliberately left undeployed, and the documentation and testing rules

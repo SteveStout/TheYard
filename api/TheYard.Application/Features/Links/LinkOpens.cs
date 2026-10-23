@@ -133,12 +133,18 @@ public interface ILinkOpenOffers
 }
 
 /// <summary>Port: where opens are kept. Writes arrive in batches, never from a request thread.</summary>
-public interface ILinkOpens
+public interface ILinkOpens : ILinkOpensReader
 {
+    Task RecordAsync(IReadOnlyList<LinkOpen> opens, CancellationToken cancellation);
+}
+
+/// <summary>The read side of the opens: whether they are kept, and the kept days; the card's query takes this (ADR-115).</summary>
+public interface ILinkOpensReader
+{
+    /// <summary>Whether opens are kept here, and why not when they are not.</summary>
     Task<LinkOpensAvailability> AvailabilityAsync(CancellationToken cancellation);
 
-    Task RecordAsync(IReadOnlyList<LinkOpen> opens, CancellationToken cancellation);
-
+    /// <summary>The kept days since an instant, a code a day.</summary>
     Task<IReadOnlyList<LinkOpenDay>> DaysAsync(DateTimeOffset since, CancellationToken cancellation);
 }
 

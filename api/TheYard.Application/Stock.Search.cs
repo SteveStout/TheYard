@@ -5,8 +5,8 @@ using TheYard.Domain;
 
 namespace TheYard.Application;
 
-/// <summary>A listing planned out of the catalogue port's primitives: the three schedule segments, the overlay of bids and the room, and the page; the class is described in InventoryService.cs.</summary>
-public sealed partial class InventoryService
+/// <summary>A listing planned out of the catalogue port's primitives: the three schedule segments, the overlay of bids and the room, and the page; the class is described in Stock.cs.</summary>
+public sealed partial class Stock
 {
     // #region search
     /// <summary>

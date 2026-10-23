@@ -24,5 +24,5 @@ public static class CloudEndpoints
     }
 
     private static async Task<Results<Ok<CloudReport>, NotFound>> Card(string key, string? window, ReadCloudCardHandler handler, CancellationToken cancellation) =>
-        await handler.HandleAsync(key, window, cancellation) is { } report ? TypedResults.Ok(report) : TypedResults.NotFound();
+        await handler.HandleAsync(new ReadCloudCardQuery(key, window), cancellation) is { } report ? TypedResults.Ok(report) : TypedResults.NotFound();
 }

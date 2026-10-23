@@ -33,13 +33,13 @@ public sealed class Backend
     public required StartupTimings Startup { get; init; }
 
     /// <summary>The catalogue this backend serves: the files until the store is attached, the store after.</summary>
-    public required InventoryService Inventory { get; set; }
+    public required Stock Inventory { get; set; }
 
     /// <summary>The bids on this backend's catalogue, written through to the store once it is attached.</summary>
-    public required BidService Bids { get; set; }
+    public required BidBook Bids { get; set; }
 
     /// <summary>The simulated competing bidders on this backend's catalogue, the room the buyer bids in.</summary>
-    public required MarketService Market { get; init; }
+    public required Room Market { get; init; }
 
     /// <summary>
     /// What the store says about itself for the Admin tab, through the one port both stores
@@ -132,8 +132,8 @@ public sealed class Backend
 public sealed record StoreAttachment(
     DatabaseState Database,
     IStoreDiagnostics Diagnostics,
-    InventoryService Inventory,
-    BidService Bids,
+    Stock Inventory,
+    BidBook Bids,
     IActivityStore Activity,
     Func<Task<bool>> Probe);
 // #endregion backend

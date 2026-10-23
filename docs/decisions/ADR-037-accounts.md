@@ -96,14 +96,14 @@ Reading it back, and who is asking (`api/TheYard.Api/Shared/Auth/Tokens.cs`):
 ```live path=api/TheYard.Api/Shared/Auth/Tokens.cs region=who
 ```
 
-Two indexes, one fact (`api/TheYard.Application/BidService.cs`):
+Two indexes, one fact (`api/TheYard.Application/BidBook.cs`):
 
-```live path=api/TheYard.Application/BidService.cs region=record
+```live path=api/TheYard.Application/BidBook.cs region=record
 ```
 
-What a badge is told (`api/TheYard.Application/Auction.cs`):
+What a badge is told (`api/TheYard.Application/StandingReader.cs`):
 
-```live path=api/TheYard.Application/Auction.cs region=views
+```live path=api/TheYard.Application/StandingReader.cs region=views
 ```
 
 The tests, including the two accounts and the restart
@@ -242,7 +242,7 @@ it as a parameter and check it before everything else, including the shortcut:
 The service supplies it from the standing it already kept, under the same gate
 as the write that makes it true, so two purchases cannot both find it false:
 
-```live path=api/TheYard.Application/BidService.cs region=sold
+```live path=api/TheYard.Application/BidBook.cs region=sold
 ```
 
 And the wire carries it on every vehicle, in every listing and every detail, as
@@ -300,7 +300,7 @@ From 1.0.3.193 each account route asks one handler in the Application ring's `Fe
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): the composition.
 - [`api/TheYard.Api/Features/Accounts/AccountEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/AccountEndpoints.cs): the endpoints.
 - [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the three that refuse.
-- [`api/TheYard.Application/BidService.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidService.cs): the two indexes.
+- [`api/TheYard.Application/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.cs): the two indexes.
 - [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the store port, now keyed on the pair.
 - [`api/TheYard.Infrastructure/YardUser.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardUser.cs): the one field Identity does not already have.
 - [`api/TheYard.Tests/AuthTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AuthTests.cs): the proof, and the second buyer refused.

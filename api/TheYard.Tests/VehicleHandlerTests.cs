@@ -14,17 +14,17 @@ public sealed class VehicleHandlerTests
         var second = TestAuctions.Live("two");
         var auction = TestAuctions.Over(first, second);
 
-        var page = await new SearchVehiclesHandler(auction).HandleAsync(new VehicleSearch(new VehicleFilter(), TestAuctions.AtNoon(), VehicleSort.EndingSoonest, 10, 0), CancellationToken.None);
+        var page = await new SearchVehiclesHandler(auction.Standings).HandleAsync(new SearchVehiclesQuery(new VehicleFilter(), TestAuctions.AtNoon(), VehicleSort.EndingSoonest, 10, 0), CancellationToken.None);
         Assert.Equal(2, page.Total);
         Assert.Equal(2, page.Vehicles.Count);
 
-        var facets = await new FacetsHandler(auction).HandleAsync(CancellationToken.None);
+        var facets = await new ReadFacetsHandler(auction.Inventory).HandleAsync(new ReadFacetsQuery(), CancellationToken.None);
         Assert.Contains("Ford", facets.Makes);
 
-        var found = await new FindVehicleHandler(auction, TestAuctions.AtNoon).HandleAsync(first.Id, CancellationToken.None);
+        var found = await new FindVehicleHandler(auction.Standings, TestAuctions.AtNoon).HandleAsync(new FindVehicleQuery(first.Id), CancellationToken.None);
         Assert.Equal(first.Id, found.Vehicle!.Vehicle.Id);
         Assert.Equal(TestAuctions.AtNoon(), found.Clock);
-        Assert.Null((await new FindVehicleHandler(auction, TestAuctions.AtNoon).HandleAsync("nobody-has-this-id", CancellationToken.None)).Vehicle);
+        Assert.Null((await new FindVehicleHandler(auction.Standings, TestAuctions.AtNoon).HandleAsync(new FindVehicleQuery("nobody-has-this-id"), CancellationToken.None)).Vehicle);
     }
 }
 // #endregion vehicle-handler-tests

@@ -6,8 +6,13 @@ using TheYard.Data;
 
 namespace TheYard.Application.Features.Blog;
 
-/// <summary>Where the blog's posts and its two logs are kept.</summary>
-public interface IBlogStore
+// #region blog-reader
+/// <summary>
+/// The read side of the blog's store: what a query may ask, and nothing that writes (ADR-115: A request is a
+/// query or a command, Interface Segregation). The query handlers take this; the command handlers take the
+/// whole store.
+/// </summary>
+public interface IBlogReader
 {
     /// <summary>Whether the store can keep posts and reads now, and why not when it cannot.</summary>
     Task<BlogAvailability> AvailabilityAsync(CancellationToken cancellation);
@@ -18,6 +23,18 @@ public interface IBlogStore
     /// <summary>One published post by its slug, or null.</summary>
     Task<BlogPost?> PostAsync(string slug, CancellationToken cancellation);
 
+    /// <summary>Each published post's numbers, bots left out, newest post first.</summary>
+    Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, CancellationToken cancellation);
+
+    /// <summary>Reads by source since an instant, bots left out.</summary>
+    Task<IReadOnlyList<BlogSourceCount>> SourcesAsync(DateTimeOffset since, CancellationToken cancellation);
+}
+// #endregion blog-reader
+
+// #region blog-store
+/// <summary>Where the blog's posts and its two logs are kept: the reader, and the three writes.</summary>
+public interface IBlogStore : IBlogReader
+{
     /// <summary>Adds a post, or replaces the one with the same slug; returns its id.</summary>
     Task<int> SaveAsync(BlogPost post, DateTimeOffset at, CancellationToken cancellation);
 
@@ -26,13 +43,8 @@ public interface IBlogStore
 
     /// <summary>Keeps one event.</summary>
     Task KeepEventAsync(BlogEvent blogEvent, CancellationToken cancellation);
-
-    /// <summary>Each published post's numbers, bots left out, newest post first.</summary>
-    Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, CancellationToken cancellation);
-
-    /// <summary>Reads by source since an instant, bots left out.</summary>
-    Task<IReadOnlyList<BlogSourceCount>> SourcesAsync(DateTimeOffset since, CancellationToken cancellation);
 }
+// #endregion blog-store
 
 /// <summary>Whether the blog's store can keep and read now.</summary>
 /// <param name="Available">True when it can.</param>

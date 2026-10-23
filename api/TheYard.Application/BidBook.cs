@@ -1,8 +1,8 @@
-// BidService is one class in four files. This one holds the two indexes, the load from the
+// BidBook is one class in four files. This one holds the two indexes, the load from the
 // store, the reads every listing makes, and Record, which every write ends in.
-//   BidService.Bidding.cs   placing a bid and buying now, under the gate
-//   BidService.Standing.cs  reading the store's standing and working out the next one
-//   BidService.Reset.cs     one person's start-over
+//   BidBook.Bidding.cs   placing a bid and buying now, under the gate
+//   BidBook.Standing.cs  reading the store's standing and working out the next one
+//   BidBook.Reset.cs     one person's start-over
 // The records it hands out have a file each beside it: BidState.cs, VehicleStanding.cs and
 // StoredBid.cs.
 using System.Collections.Concurrent;
@@ -21,7 +21,7 @@ namespace TheYard.Application;
 /// reads the store's standing under the gate and writes with a compare-and-set,
 /// so two sites over one store cannot both sell a vehicle.
 /// </summary>
-public sealed partial class BidService
+public sealed partial class BidBook : IBidReader, IBidWriter
 {
     /// <summary>By vehicle, a cache of the store's standing. The hot path: Apply does one lookup per vehicle.</summary>
     private readonly ConcurrentDictionary<string, VehicleStanding> _standing;
@@ -44,7 +44,7 @@ public sealed partial class BidService
     /// wait). The host calls LoadAsync once at startup; the writing methods
     /// call it too, so a service nobody warmed loads itself on its first bid.
     /// </summary>
-    public BidService(IBidStore store)
+    public BidBook(IBidStore store)
     {
         _store = store;
         _standing = new ConcurrentDictionary<string, VehicleStanding>(StringComparer.Ordinal);

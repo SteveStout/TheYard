@@ -5,8 +5,8 @@ using TheYard.Domain;
 
 namespace TheYard.Application;
 
-/// <summary>A visitor's filter resolved to the store's own spelling, and the reads by id with their bounded cache; the class is described in InventoryService.cs.</summary>
-public sealed partial class InventoryService
+/// <summary>A visitor's filter resolved to the store's own spelling, and the reads by id with their bounded cache; the class is described in Stock.cs.</summary>
+public sealed partial class Stock
 {
     // #region resolve
     /// <summary>

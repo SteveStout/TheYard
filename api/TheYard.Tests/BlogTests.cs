@@ -77,14 +77,14 @@ public sealed class BlogTests : IDisposable
         var store = new MemoryBlogStore("in memory, for the test");
         var clock = new FixedClock(Now);
         var save = new SavePostHandler(store, clock);
-        Assert.Equal((null, "the LinkedIn address starts https://www.linkedin.com/", null), await save.HandleAsync(Post("bad", Now) with { LinkedInUrl = "http://x" }, CancellationToken.None));
-        Assert.NotNull((await save.HandleAsync(Post("older-post", Now.AddDays(-9)), CancellationToken.None)).Id);
-        Assert.NotNull((await save.HandleAsync(Post("newer-post", Now.AddDays(-2)), CancellationToken.None)).Id);
-        var (posts, _, unavailable) = await new ListPostsHandler(store, clock).HandleAsync(CancellationToken.None);
+        Assert.Equal((null, "the LinkedIn address starts https://www.linkedin.com/", null), await save.HandleAsync(new SavePostCommand(Post("bad", Now) with { LinkedInUrl = "http://x" }), CancellationToken.None));
+        Assert.NotNull((await save.HandleAsync(new SavePostCommand(Post("older-post", Now.AddDays(-9))), CancellationToken.None)).Id);
+        Assert.NotNull((await save.HandleAsync(new SavePostCommand(Post("newer-post", Now.AddDays(-2))), CancellationToken.None)).Id);
+        var (posts, _, unavailable) = await new ListPostsHandler(store, clock).HandleAsync(new ListPostsQuery(), CancellationToken.None);
         Assert.Null(unavailable);
         Assert.Equal(["newer-post", "older-post"], posts.Select(p => p.Slug));
-        Assert.Equal("older-post", (await new ReadPostHandler(store).HandleAsync("older-post", CancellationToken.None))?.Slug);
-        Assert.Null(await new ReadPostHandler(store).HandleAsync("no-such-post", CancellationToken.None));
+        Assert.Equal("older-post", (await new ReadPostHandler(store).HandleAsync(new ReadPostQuery("older-post"), CancellationToken.None))?.Slug);
+        Assert.Null(await new ReadPostHandler(store).HandleAsync(new ReadPostQuery("no-such-post"), CancellationToken.None));
     }
 
     [Fact]
@@ -92,17 +92,17 @@ public sealed class BlogTests : IDisposable
     {
         var store = new MemoryBlogStore("in memory, for the test");
         var clock = new FixedClock(Now);
-        await new SavePostHandler(store, clock).HandleAsync(Post("a-post", Now.AddDays(-1)), CancellationToken.None);
+        await new SavePostHandler(store, clock).HandleAsync(new SavePostCommand(Post("a-post", Now.AddDays(-1))), CancellationToken.None);
         var read = new RecordReadHandler(store, clock);
-        Assert.Equal("linkedin", await read.HandleAsync(new BlogOpen("a-post", "www.linkedin.com", null, null, null, null, "phone", "US", Session(1), false), CancellationToken.None));
-        Assert.Equal("ref", await read.HandleAsync(new BlogOpen("a-post", null, "ab12cd", null, null, null, "desk", null, Session(2), false), CancellationToken.None));
-        Assert.Equal("direct", await read.HandleAsync(new BlogOpen("a-post", null, null, null, null, null, "bot", null, Session(3), true), CancellationToken.None));
-        Assert.Null(await read.HandleAsync(new BlogOpen("no-post", null, null, null, null, null, "desk", null, Session(1), false), CancellationToken.None));
+        Assert.Equal("linkedin", await read.HandleAsync(new RecordReadCommand("a-post", "www.linkedin.com", null, null, null, null, "phone", "US", Session(1), false), CancellationToken.None));
+        Assert.Equal("ref", await read.HandleAsync(new RecordReadCommand("a-post", null, "ab12cd", null, null, null, "desk", null, Session(2), false), CancellationToken.None));
+        Assert.Equal("direct", await read.HandleAsync(new RecordReadCommand("a-post", null, null, null, null, null, "bot", null, Session(3), true), CancellationToken.None));
+        Assert.Null(await read.HandleAsync(new RecordReadCommand("no-post", null, null, null, null, null, "desk", null, Session(1), false), CancellationToken.None));
         var events = new RecordEventHandler(store, clock);
-        Assert.Null(await events.HandleAsync("a-post", "depth", "100", Session(1), false, CancellationToken.None));
-        Assert.Null(await events.HandleAsync("a-post", "click", "linkedin", Session(1), false, CancellationToken.None));
-        Assert.Equal("a depth is 25, 50, 75 or 100", await events.HandleAsync("a-post", "depth", "10", Session(1), false, CancellationToken.None));
-        var (stats, sources, kept) = await new BlogStatsHandler(store, clock).HandleAsync(CancellationToken.None);
+        Assert.Null(await events.HandleAsync(new RecordEventCommand("a-post", "depth", "100", Session(1), false), CancellationToken.None));
+        Assert.Null(await events.HandleAsync(new RecordEventCommand("a-post", "click", "linkedin", Session(1), false), CancellationToken.None));
+        Assert.Equal("a depth is 25, 50, 75 or 100", await events.HandleAsync(new RecordEventCommand("a-post", "depth", "10", Session(1), false), CancellationToken.None));
+        var (stats, sources, kept) = await new ReadBlogStatsHandler(store, clock).HandleAsync(new ReadBlogStatsQuery(), CancellationToken.None);
         Assert.True(kept.Available);
         var stat = Assert.Single(stats);
         Assert.Equal((2, 2, 1, 1, 1), (stat.Reads, stat.Readers, stat.FromTaggedLinks, stat.ToLinkedIn, stat.Finished));

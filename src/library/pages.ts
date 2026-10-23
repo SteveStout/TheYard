@@ -74,6 +74,12 @@ export const PAGES = {
     url: '/api/docs/onion',
     kind: 'overview',
   },
+  cqrs: {
+    title: 'CQRS, the practices',
+    menuLabel: 'CQRS, the practices',
+    url: '/api/docs/cqrs',
+    kind: 'overview',
+  },
   security: {
     title: 'Security',
     menuLabel: 'Security',

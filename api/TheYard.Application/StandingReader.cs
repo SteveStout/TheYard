@@ -1,25 +1,22 @@
-// One store's auction as a visitor meets it: the catalogue, everybody's bids and the simulated
-// room, composed here and nowhere else. Endpoints ask this class and never compose the three
-// services themselves. A vehicle leaves it already standing (the highest of the dataset, the bids
-// and the room) with its sold flag beside it, so no handler can show a price without the room or
-// a bought vehicle as open, and the price a bid is measured against has one copy.
+// A vehicle as every query reads it: the dataset's figures, then everybody's bids, then the room's,
+// with its sold flag beside it, and one buyer's bids with everybody else's answer folded in. It is
+// the reading half of the auction's three parts (ADR-115: A request is a query or a command): it is
+// handed the three parts' reading sides only, so nothing that reads through it can
+// place a bid or move the room, and the price a bid is measured against still has one copy.
 using TheYard.Data;
 using TheYard.Domain;
 
 namespace TheYard.Application;
 
 /// <summary>
-/// The use cases a visitor drives on one store: list and read vehicles at the price they stand at,
-/// place a bid, buy now, start over, move the room, and read their own badges.
+/// One store's vehicles at the price they stand at, and one buyer's badges, read for the queries and
+/// for the commands that answer with what they left.
 /// </summary>
-/// <param name="inventory">The store's catalogue.</param>
-/// <param name="bids">Everybody's bids on that catalogue.</param>
-/// <param name="market">The simulated competing bidders on that catalogue.</param>
-public sealed class Auction(InventoryService inventory, BidService bids, MarketService market)
+/// <param name="inventory">The store's catalogue, read side.</param>
+/// <param name="bids">Everybody's bids on that catalogue, read side.</param>
+/// <param name="room">The simulated competing bidders on that catalogue, read side.</param>
+public sealed class StandingReader(IStockReader inventory, IBidReader bids, IRoomReader room)
 {
-    /// <summary>How many live auctions the room looks at in one round, beside the ones somebody is bidding on.</summary>
-    private const int RoomRoundLiveCount = 40;
-
     // #region overlays
     /// <summary>
     /// The overlay a listing applies to every row: everybody's bids, then the room's. Each one only
@@ -33,7 +30,7 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     /// </summary>
     private ListingOverlay? Overlay()
     {
-        if (bids.IsEmpty && market.IsEmpty)
+        if (bids.IsEmpty && room.IsEmpty)
         {
             return null;
         }
@@ -42,26 +39,20 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
         {
             moved.UnionWith(bids.Standing().Keys);
         }
-        if (!market.IsEmpty)
+        if (!room.IsEmpty)
         {
-            moved.UnionWith(market.Snapshot().Keys);
+            moved.UnionWith(room.Snapshot().Keys);
         }
         return new ListingOverlay(moved, AsItStands);
     }
 
     /// <summary>The vehicle at the price it stands at: the dataset, then everybody's bids, then the room's.</summary>
-    private Vehicle AsItStands(Vehicle vehicle) => market.Apply(bids.Apply(vehicle));
+    private Vehicle AsItStands(Vehicle vehicle) => room.Apply(bids.Apply(vehicle));
     // #endregion overlays
 
     /// <summary>One vehicle by id, standing at its price and with its sold flag, or null when the catalogue has no such id.</summary>
     public async Task<StandingVehicle?> FindAsync(string vehicleId) =>
         await inventory.FindAsync(vehicleId) is { } vehicle ? new StandingVehicle(AsItStands(vehicle), bids.IsSold(vehicleId)) : null;
-
-    /// <summary>Whether anybody has bought this vehicle outright, which closes it to everybody.</summary>
-    public bool IsSold(string vehicleId) => bids.IsSold(vehicleId);
-
-    /// <summary>The values behind the catalogue's filters: every make, body style, province and the rest.</summary>
-    public Task<InventoryFacets> FacetsAsync() => inventory.FacetsAsync();
 
     /// <summary>One page of the catalogue, filtered and sorted, each vehicle at the price it stands at and with its sold flag.</summary>
     public async Task<StandingPage> SearchAsync(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset)
@@ -69,48 +60,6 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
         var page = await inventory.SearchAsync(filter, clock, sort, limit, offset, Overlay());
         return new StandingPage(page.Total, [.. page.Vehicles.Select(vehicle => new StandingVehicle(vehicle, bids.IsSold(vehicle.Id)))]);
     }
-
-    // #region bidding
-    /// <summary>
-    /// One bid from one buyer, measured against the room's standing price as well as everybody's
-    /// bids. Measuring against the dataset's figure alone would let a buyer retake the lead with a
-    /// bid below the going rate.
-    /// </summary>
-    public Task<BidOutcome> PlaceBidAsync(StandingVehicle vehicle, int amount, AuctionClock clock, string userId) =>
-        bids.PlaceBidAsync(vehicle.Vehicle, amount, clock, userId);
-
-    /// <summary>A buy-now purchase from one buyer, at the vehicle's buy-now price, against the same standing.</summary>
-    public Task<BidOutcome> BuyNowAsync(StandingVehicle vehicle, AuctionClock clock, string userId) =>
-        bids.BuyNowAsync(vehicle.Vehicle, clock, userId);
-
-    /// <summary>
-    /// One buyer's start-over: their bids go, and so do the room's answers on the vehicles nobody
-    /// else is bidding on any more. Leaving the room's counter-bid standing would make the reset
-    /// clear one side of an auction and not the other.
-    /// </summary>
-    public async Task ResetAsync(string userId) => market.Forget(await bids.ResetAsync(userId));
-    // #endregion bidding
-
-    // #region room-round
-    /// <summary>
-    /// One round of bidding by the room. The room answers a price rather than a person, so it is
-    /// handed everybody's standing, not one account's. Its candidates are every vehicle somebody
-    /// is bidding on plus the first live auctions in the catalogue, so the grid moves even for a
-    /// visitor who has bid on nothing. The first ones rather than a search, because a search
-    /// counts every match to keep a handful of them; the store answers the first live ones off its
-    /// own order and stops at the fortieth.
-    /// </summary>
-    /// <returns>The ids the room raised.</returns>
-    public async Task<IReadOnlyList<string>> RoomRoundAsync(AuctionClock clock)
-    {
-        var standing = bids.StandingAsBids();
-        var found = (await inventory.FindManyAsync(standing.Keys.ToList())).ToDictionary(v => v.Id, StringComparer.Ordinal);
-        var contested = standing.Keys.Where(found.ContainsKey).Select(id => found[id]);
-        var live = await inventory.FirstLiveAsync(clock, RoomRoundLiveCount);
-        var candidates = contested.Concat(live).DistinctBy(v => v.Id).ToList();
-        return market.Tick(candidates, standing, clock);
-    }
-    // #endregion room-round
 
     // #region views
     /// <summary>
@@ -125,27 +74,27 @@ public sealed class Auction(InventoryService inventory, BidService bids, MarketS
     {
         var mine = bids.SnapshotFor(userId);
         var standing = bids.Standing();
-        var room = market.Snapshot();
+        var against = room.Snapshot();
         var views = new Dictionary<string, BidView>(StringComparer.Ordinal);
         foreach (var (id, bid) in mine)
         {
             standing.TryGetValue(id, out var held);
-            room.TryGetValue(id, out var against);
+            against.TryGetValue(id, out var answered);
 
-            int highest = Math.Max(held?.Amount ?? bid.Amount, against?.Amount ?? 0);
+            int highest = Math.Max(held?.Amount ?? bid.Amount, answered?.Amount ?? 0);
             bool someoneElseHolds = held is not null && held.Amount > bid.Amount;
-            bool roomHolds = against is not null && against.Amount > bid.Amount;
+            bool roomHolds = answered is not null && answered.Amount > bid.Amount;
             bool outbid = !bid.WonBuyNow && (someoneElseHolds || roomHolds);
 
             views[id] = new BidView(
                 bid.Amount,
                 // The count everybody has added to, not one buyer's, so the count never falls
                 // when a buyer retakes a lead somebody else raised.
-                Math.Max(Math.Max(bid.BidCount, held?.BidCount ?? 0), against?.BidCount ?? 0),
+                Math.Max(Math.Max(bid.BidCount, held?.BidCount ?? 0), answered?.BidCount ?? 0),
                 bid.WonBuyNow,
                 bid.AtMs,
                 outbid,
-                against?.Amount,
+                answered?.Amount,
                 highest);
         }
         return views;

@@ -27,7 +27,7 @@ public static class BlogFeed
 
     private static async Task<IResult> Feed(HttpContext http, SiteHosts hosts, ListPostsHandler handler, CancellationToken cancellation)
     {
-        var (posts, _, unavailable) = await handler.HandleAsync(cancellation);
+        var (posts, _, unavailable) = await handler.HandleAsync(new ListPostsQuery(), cancellation);
         return unavailable is { } reason
             ? Results.Problem(detail: reason, statusCode: 503, title: "The blog cannot be read now")
             : Results.Text(Write(posts, hosts.LinkOrigin(http)), "application/rss+xml; charset=utf-8");

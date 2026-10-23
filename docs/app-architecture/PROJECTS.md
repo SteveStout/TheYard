@@ -33,12 +33,13 @@ mocking.
 
 ## TheYard.Application
 
-The use cases, and the seams. `Auction` is what the endpoints ask about the auction: it composes one
-store's catalogue, everybody's bids and the simulated room (`MarketService`) in the one
-order the rules need, and `BidsOf` gives a buyer's bids as `BidView`s. `InventoryService` plans every listing, facet and by-id read
-as queries against the store's catalogue, and fills an empty store from the seed once (ADR: The store does the work); `BidService` holds the buyer's
+The use cases, and the seams. Every request is a query or a command with one handler under
+`Features/<Slice>/` (ADR-115: A request is a query or a command). One store's auction is three parts,
+each behind a reading and a writing interface: `Stock` plans every listing, facet and by-id read
+as queries against the store's catalogue, and fills an empty store from the seed once (ADR: The store does the work); `BidBook` holds the buyer's
 bid state, read from the database at startup and written through on every accepted
-bid. `Auction` hands the bid and room overlay to `InventoryService.SearchAsync`, which
+bid; `Room` is the simulated room. `StandingReader` reads a vehicle through all three in the one
+order the rules need, and `BidsOf` gives a buyer's bids as `BidView`s; it hands the bid and room overlay to `Stock.SearchAsync`, which
 applies it before filtering, so prices never disagree with the listing. Both consume data through the auction's ports (`IVehicleCatalogue`, `IVehicleSource`, `IPhotoManifestSource`, `IBidStore`): the
 interfaces that make Infrastructure swappable and the tests trivial to fake. Beside them sit the
 operator's ports, which the Admin tab and the account flows read through: `IActivityStore`,

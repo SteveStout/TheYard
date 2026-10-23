@@ -162,12 +162,13 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
     public string Name => Backend.Name;
 
     /// <summary>
-    /// The request's auction: the catalogue, the bids and the room composed by the Application
-    /// ring. A new one per read is three references and nothing more, and it always sees the
-    /// services the backend holds right now, including after the store is attached. The services
-    /// themselves are not offered here, so an endpoint can only reach them through the auction.
+    /// The request store's vehicles as every query reads them: the catalogue, the bids and the room,
+    /// their reading sides only (ADR-115: A request is a query or a command). A new one per read is
+    /// three references and nothing more, and it always sees what the backend holds right now,
+    /// including after the store is attached. The writing sides are handed to the command handlers
+    /// by their slice's Module and to nothing else.
     /// </summary>
-    public Auction Auction => new(Backend.Inventory, Backend.Bids, Backend.Market);
+    public StandingReader Standings => new(Backend.Inventory, Backend.Bids, Backend.Market);
 }
 
 // #region warm-before-reading
@@ -179,7 +180,7 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
 /// request that arrives before a store's load has finished, any request in the
 /// first minutes after a roll, a visitor following the toggle, or any request
 /// to the other store in a test application where the background warm is off,
-/// finds a catalogue still loading. <c>InventoryService</c>'s synchronous accessors then blocked the
+/// finds a catalogue still loading. <c>Stock</c>'s synchronous accessors then blocked the
 /// request thread on the load, on a container with one vCPU and therefore one
 /// thread pool worker to start with: the exact shape ADR: The ports learn to
 /// wait argued against (ADR: Three readers with no memory of the project).</para>

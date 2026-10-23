@@ -9,14 +9,8 @@ namespace TheYard.Application.Features.Accounts;
 /// ring; a request on a store that keeps no accounts has no store at all, and every handler answers
 /// that as unavailable.
 /// </summary>
-public interface IAccountStore
+public interface IAccountStore : IAccountReader
 {
-    /// <summary>The account with this id, or null.</summary>
-    Task<Account?> FindByIdAsync(string id, CancellationToken cancellation);
-
-    /// <summary>The account under this address, or null.</summary>
-    Task<Account?> FindByEmailAsync(string email, CancellationToken cancellation);
-
     /// <summary>Creates an account, or says what was wrong with the address or the password.</summary>
     Task<AccountCreated> CreateAsync(string email, string password, long createdAtMs, CancellationToken cancellation);
 
@@ -34,6 +28,19 @@ public interface IAccountStore
 
     /// <summary>Replaces the account's password and clears its failed count; the account as it is afterwards, or the problem.</summary>
     Task<AccountCreated> SetPasswordAsync(Account account, string password, CancellationToken cancellation);
+}
+
+/// <summary>
+/// The read side of the accounts: an account by id or by address, and nothing that writes or counts a
+/// failed password (ADR-115, Interface Segregation). The one query, who am I, takes this.
+/// </summary>
+public interface IAccountReader
+{
+    /// <summary>The account with this id, or null.</summary>
+    Task<Account?> FindByIdAsync(string id, CancellationToken cancellation);
+
+    /// <summary>The account under this address, or null.</summary>
+    Task<Account?> FindByEmailAsync(string email, CancellationToken cancellation);
 }
 
 /// <summary>An allowance that is taken and can be given back: the hour's new accounts, for the whole site.</summary>

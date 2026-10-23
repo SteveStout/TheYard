@@ -88,14 +88,14 @@ public static class BlogEndpoints
 
     private static async Task<IResult> Posts(ListPostsHandler handler, CancellationToken cancellation)
     {
-        var (posts, stats, unavailable) = await handler.HandleAsync(cancellation);
+        var (posts, stats, unavailable) = await handler.HandleAsync(new ListPostsQuery(), cancellation);
         return unavailable is { } reason
             ? Results.Problem(detail: reason, statusCode: 503, title: "The blog cannot be read now")
             : Results.Json(new PostsWire([.. posts.Select(p => Wire(p, stats.FirstOrDefault(s => s.PostId == p.Id)))]), WireFormat);
     }
 
     private static async Task<IResult> Post(string slug, ReadPostHandler handler, CancellationToken cancellation) =>
-        await handler.HandleAsync(slug, cancellation) is { } post
+        await handler.HandleAsync(new ReadPostQuery(slug), cancellation) is { } post
             ? Results.Json(Wire(post, null), WireFormat)
             : Results.Problem(detail: $"No published post has the slug {slug}.", statusCode: 404, title: "No such post");
 
@@ -123,7 +123,7 @@ public static class BlogEndpoints
         }
         string? code = wire.Ref is { Length: 6 } r && r.All(char.IsAsciiLetterOrDigit) ? r.ToLowerInvariant() : null;
         var (session, bot, device) = Reader(http, tokens);
-        string? source = await handler.HandleAsync(new BlogOpen(slug, Host(wire.Referrer), code, wire.UtmSource, wire.UtmMedium, wire.UtmCampaign, device, Country(http), session, bot), cancellation);
+        string? source = await handler.HandleAsync(new RecordReadCommand(slug, Host(wire.Referrer), code, wire.UtmSource, wire.UtmMedium, wire.UtmCampaign, device, Country(http), session, bot), cancellation);
         return source is null
             ? Results.Problem(detail: $"No published post has the slug {slug}.", statusCode: 404, title: "No such post")
             : Results.Json(new SourceWire(source), WireFormat);
@@ -137,14 +137,14 @@ public static class BlogEndpoints
             return Results.Problem(detail: "The body is the post's slug, the event's type and its value, as JSON.", statusCode: 400, title: "The event could not be kept");
         }
         var (session, bot, _) = Reader(http, tokens);
-        return await handler.HandleAsync(slug, type, wire.Value ?? "", session, bot, cancellation) is { } wrong
+        return await handler.HandleAsync(new RecordEventCommand(slug, type, wire.Value ?? "", session, bot), cancellation) is { } wrong
             ? Results.Problem(detail: wrong, statusCode: 400, title: "The event could not be kept")
             : Results.NoContent();
     }
 
-    private static async Task<IResult> Stats(BlogStatsHandler handler, CancellationToken cancellation)
+    private static async Task<IResult> Stats(ReadBlogStatsHandler handler, CancellationToken cancellation)
     {
-        var (stats, sources, kept) = await handler.HandleAsync(cancellation);
+        var (stats, sources, kept) = await handler.HandleAsync(new ReadBlogStatsQuery(), cancellation);
         return Results.Json(new { kept = kept.Reason, available = kept.Available, posts = stats, sources }, WireFormat);
     }
 
@@ -172,7 +172,7 @@ public static class BlogEndpoints
             return Results.Problem(detail: "The body is one post as JSON, with published_at an ISO 8601 instant.", statusCode: 400, title: "The post could not be read");
         }
         var post = new BlogPost(0, wire.Slug ?? "", wire.Title ?? "", wire.Summary ?? "", wire.Body ?? "", published, wire.LinkedinUrl ?? "", wire.CodeUrl, wire.Images ?? [], wire.Tags ?? []);
-        var (id, wrong, unavailable) = await handler.HandleAsync(post, cancellation);
+        var (id, wrong, unavailable) = await handler.HandleAsync(new SavePostCommand(post), cancellation);
         return id is { } kept ? Results.Json(new { id = kept, slug = post.Slug }, WireFormat)
             : unavailable is { } reason ? Results.Problem(detail: reason, statusCode: 503, title: "The blog cannot keep posts now")
             : Results.Problem(detail: wrong, statusCode: 400, title: "The post could not be kept");

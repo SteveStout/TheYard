@@ -23,5 +23,5 @@ public static class PlanEndpoints
     }
 
     private static async Task<Ok<CloudReport>> Plan(string? window, ReadPlanHandler handler, CancellationToken cancellation) =>
-        TypedResults.Ok(await handler.HandleAsync(window, cancellation));
+        TypedResults.Ok(await handler.HandleAsync(new ReadPlanQuery(window), cancellation));
 }

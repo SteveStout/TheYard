@@ -52,7 +52,7 @@ public sealed class SliceTests
     {
         // The same folder name in every ring: Application's and Infrastructure's slices are the
         // namespaces under their Features, and none reaches another's.
-        foreach (var ring in new[] { typeof(TheYard.Application.Auction).Assembly, typeof(TheYard.Infrastructure.YardDbContext).Assembly })
+        foreach (var ring in new[] { typeof(TheYard.Application.StandingReader).Assembly, typeof(TheYard.Infrastructure.YardDbContext).Assembly })
         {
             string root = ring.GetName().Name + ".Features";
             string[] slices = [.. ring.GetTypes().Select(type => type.Namespace).OfType<string>()

@@ -64,7 +64,7 @@ public static partial class AdminEndpoints
         {
             return Results.Problem(detail: wrong, statusCode: 400, title: "The usage document could not be kept");
         }
-        var kept = await keep.HandleAsync(record!, cancellation);
+        var kept = await keep.HandleAsync(new KeepUsageCommand(record!), cancellation);
         return kept.Wrong is { } sentence ? Results.Problem(detail: sentence, statusCode: 400, title: "The usage document could not be kept")
             : kept.Unavailable is { } reason ? Results.Problem(detail: reason, statusCode: 503, title: "The usage log cannot keep documents now")
             : Results.Json(new { key = MemoryUsageLog.KeyOf(record!) });
