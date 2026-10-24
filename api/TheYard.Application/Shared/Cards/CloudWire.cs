@@ -52,6 +52,12 @@ public sealed record CloudReport(
 
     /// <summary>How often the tab reads the card, in seconds; the retry line counts down from it.</summary>
     public int RefreshSeconds { get; init; } = CardFrame.RefreshSeconds;
+
+    /// <summary>What the resource is, in a paragraph read from its own code, with where it was read; null on every card but the nightly Function's.</summary>
+    public CloudDescription? Description { get; init; }
+
+    /// <summary>The resource's processes, one section each; empty on every card but the nightly Function's.</summary>
+    public IReadOnlyList<CloudProcess> Processes { get; init; } = [];
 }
 
 /// <summary>One threshold as a chip: "CPU amber 60 %".</summary>

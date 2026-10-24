@@ -4,12 +4,14 @@ using Microsoft.Extensions.Logging;
 
 namespace JobHunt.Functions;
 
+// #region summary
 /// <summary>
 /// Reads the inbox so Steve never sees a job-board alert or a rejection again, and every human message, interview
 /// and account mail stays: the ATS sweep logs receipts and rejections to the tracker and archives them; the leads
 /// harvest reads every board's alert into the leads list; what neither could read is handed to the triage run; and
 /// a person waiting with no draft fires the reply run (shadow: it says it would).
 /// </summary>
+// #endregion summary
 /// <remarks>
 /// The inbox pass, every 30 minutes (20 and 50 past each hour, UTC, which is 20 and 50 past in Central too):
 /// the ATS sweep, then the leads harvest, then what neither could read handed to the model. Steve's 2026-10-23

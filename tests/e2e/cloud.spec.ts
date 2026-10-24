@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
 import { CLOUD_RESOURCES } from '../../src/lib/workbench';
+import { PROCESS_STRIP_CELLS } from '../../src/lib/cloudProcesses';
 
 // #region cloud-plan
 /**
@@ -87,3 +88,82 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
   }
 });
 // #endregion cloud-resources
+
+// #region nightly-processes
+/**
+ * The nightly card's six processes (ADR-109, the addendum on the six processes): the description and six
+ * sections arrive with every run history closed and no runs asked for; opening one asks the runs route once
+ * and shows its runs with a trace link (or, where the workspace cannot be read, the sentence that says why);
+ * the pills change the window; and on a phone the sections are one column and the runs stack, so neither the
+ * table nor the page scrolls sideways (the operator's look: an Admin table fits or stacks). The strip's cell
+ * count is the one constant the page draws from.
+ */
+test('the nightly card draws six processes whose histories open on request', async ({ page }) => {
+  test.setTimeout(90_000);
+  const asked: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/api/admin/cloud/nightly/runs/')) asked.push(request.url());
+  });
+  await openTheYard(page, '/?view=admin&card=nightly');
+  const card = page.getByTestId('nightly-card');
+  await expect(card.getByTestId('cloud-processes')).toBeVisible({ timeout: 30_000 });
+  await expect(card.getByTestId('cloud-description')).toContainText('What it is.');
+  const sections = card.locator('[data-testid^="process-"][data-tone]');
+  await expect(sections).toHaveCount(6);
+  for (const key of ['AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'MergerHealth']) {
+    await expect(card.getByTestId(`process-history-${key}`)).not.toHaveAttribute('open', /.*/);
+    await expect(card.getByTestId(`process-strip-${key}`).locator('rect')).toHaveCount(
+      PROCESS_STRIP_CELLS
+    );
+  }
+  expect(asked).toHaveLength(0);
+
+  const history = card.getByTestId('process-history-AtsSweep');
+  await history.locator('summary').click();
+  await expect(card.getByTestId('process-totals-AtsSweep')).toBeVisible({ timeout: 30_000 });
+  expect(asked).toHaveLength(1);
+  expect(asked[0]).toContain('/runs/AtsSweep?window=7d&page=1');
+  const runs = history.getByTestId('process-run');
+  if ((await runs.count()) > 0) {
+    await expect(runs.first().getByTestId('process-trace')).toHaveAttribute(
+      'href',
+      /portal\.azure\.com/
+    );
+  } else {
+    await expect(history.getByTestId('process-note-AtsSweep')).not.toBeEmpty();
+  }
+  const weekCount = await card.getByTestId('process-count-AtsSweep').textContent();
+  await card.getByTestId('process-window-AtsSweep-24h').click();
+  await expect(card.getByTestId('process-count-AtsSweep')).toContainText('24 hours', {
+    timeout: 30_000,
+  });
+  expect(weekCount).toContain('7 days');
+  expect(asked).toHaveLength(2);
+});
+
+test('on a phone each process is one column and its runs stack, so nothing scrolls sideways', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=admin&card=nightly');
+  const card = page.getByTestId('nightly-card');
+  const section = card.getByTestId('process-AtsSweep');
+  await expect(section).toBeVisible({ timeout: 30_000 });
+  const columns = await section.evaluate(
+    (node) => getComputedStyle(node).gridTemplateColumns.split(' ').length
+  );
+  expect(columns).toBe(1);
+  await card.getByTestId('process-history-AtsSweep').locator('summary').click();
+  await expect(card.getByTestId('process-totals-AtsSweep')).toBeVisible({ timeout: 30_000 });
+  const table = card.getByTestId('process-table-AtsSweep');
+  if ((await table.count()) > 0) {
+    const sideways = await table.evaluate((node) => node.scrollWidth > node.clientWidth + 1);
+    expect(sideways).toBe(false);
+  }
+  const pageScrolls = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth + 1
+  );
+  expect(pageScrolls).toBe(false);
+});
+// #endregion nightly-processes

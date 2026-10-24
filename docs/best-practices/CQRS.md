@@ -116,9 +116,9 @@ Read back by `CqrsTests` on every build, so a number here cannot go stale.
 
 | shape | count |
 | --- | --- |
-| queries | 35 |
+| queries | 36 |
 | commands | 17 |
-| handlers | 52 |
+| handlers | 53 |
 | services | 0 |
 
 ## What this codebase does not do, and why

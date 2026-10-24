@@ -104,6 +104,8 @@
   --ribbons-phone-opacity: 0.7;
   --ribbons-spark-opacity: 0.4;
   --pulse-bar-opacity: 0.6; /* the thirty days behind today on the people instrument */
+  --strip-ok-opacity: 0.75; /* a day of the nightly card's process strip whose runs all came to success */
+  --strip-shadow-opacity: 0.45; /* a day of that strip whose runs only planned (shadow) */
 
   /* Motion */
   --transition-fast: 150ms ease;

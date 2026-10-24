@@ -4,6 +4,8 @@
  * plain function so a test can hold it without a page. No React in here.
  */
 
+import type { CloudDescription, CloudProcess } from './cloudProcesses';
+
 // #region cloud-wire
 export type CloudTone = 'good' | 'info' | 'warning' | 'alarm';
 
@@ -85,6 +87,10 @@ export type CloudReport = {
     }[];
     footnote: string;
   };
+  /** What the resource is, read from its own code; null on every card but the nightly Function's. */
+  description?: CloudDescription | null;
+  /** The resource's processes, one section each; empty on every card but the nightly Function's. */
+  processes?: CloudProcess[];
 };
 
 /** The word a row prints beside its answer: green is fine, black is for information, amber is to watch, red is a warning. */

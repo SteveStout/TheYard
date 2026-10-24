@@ -1,0 +1,251 @@
+/**
+ * Does:      Draws the nightly card's description and its process sections: the paragraph with its source,
+ *            the slot's head, each section's tone edge, name, chips, summary, schedule, figures and strip, in
+ *            in one, two or four columns by the card's own width.
+ * Does not:  Draw the run history inside a section (ProcessHistory.module.css) or the card around them (CardShell).
+ * Used by:   CloudProcesses.tsx.
+ */
+.what {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--color-green-dark);
+  background: color-mix(in srgb, var(--color-surface) 45%, transparent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.what b {
+  color: var(--color-heading);
+}
+
+.src {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--chart-text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.slot {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  border-top: 1px solid var(--color-mark-rule);
+  padding-top: var(--space-3);
+}
+
+.head h3 {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.head span {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.procs {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  /* The card's own width decides the columns, not the window's: beside the rail and the readout a laptop
+     leaves the card a phone's width, and a wide window with the sidebar closed leaves it the mockup's. */
+  container-type: inline-size;
+}
+
+.proc {
+  /* The panel's ground, top rule, corner brackets and radius are the site's own (.op-glass, the operator's look);
+     the left edge is the section's tone, as the mockup draws it. */
+  border-left: 3px solid var(--color-green-dark);
+  padding: var(--space-3) var(--space-4);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  align-items: start;
+  min-width: 0;
+}
+
+.proc[data-tone='info'] {
+  border-left-color: var(--color-accent);
+}
+
+.proc[data-tone='off'] {
+  border-left-color: var(--color-border-strong);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.name h4 {
+  margin: 0;
+  font-size: var(--text-base);
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-live);
+}
+
+.dot[data-tone='info'] {
+  background: var(--color-accent);
+}
+
+.dot[data-tone='off'] {
+  background: var(--color-border-strong);
+}
+
+.chip {
+  font-size: var(--chart-text-sm);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.chip[data-tone='fine'] {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+  background: var(--color-success-soft);
+}
+
+.chip[data-tone='info'] {
+  color: var(--color-accent);
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  background: var(--color-accent-soft);
+}
+
+.desc {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  line-height: 1.45;
+}
+
+.sched {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-muted);
+}
+
+.figures {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.figures dt {
+  font-size: var(--chart-text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.figures dd {
+  margin: 1px 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-heading);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.runs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lbl {
+  font-size: var(--chart-text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.runs svg {
+  width: 100%;
+  height: 34px;
+  display: block;
+}
+
+.ok {
+  fill: var(--color-success);
+  opacity: var(--strip-ok-opacity);
+}
+
+.late {
+  fill: var(--color-warning);
+}
+
+.fail {
+  fill: var(--color-danger);
+}
+
+.shadow {
+  fill: var(--color-accent);
+  opacity: var(--strip-shadow-opacity);
+}
+
+.skip {
+  fill: none;
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+
+.leg {
+  font-size: var(--chart-text-xs);
+  color: var(--color-text-muted);
+}
+
+.leg a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@container (min-width: 560px) {
+  .proc {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@container (min-width: 900px) {
+  .proc {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(170px, 1fr);
+  }
+}

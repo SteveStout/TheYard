@@ -172,8 +172,15 @@ internal sealed class RecordedCloud : HttpMessageHandler
         {
             return new HttpResponseMessage(HttpStatusCode.Forbidden);
         }
+        // The job hunt Function's runs (InsightsProcessRuns): its newest, its days, a page, a window's totals.
+        const string Line = "process:AtsSweep outcome=success took_ms=91000 started=2026-10-24T16:20:00Z archived=9 leads=6 leads_passed=2 read=42 waiting=0";
+        string[] tally = ["Runs", "Shown", "Acted", "Late", "Failed", "Blocked", "Planned", "P95"];
         (string[] Columns, object[][] Rows) table =
-            body.Contains("summarize gb", StringComparison.Ordinal) ? (["gb"], [[0.098]])
+            body.Contains("arg_max(At", StringComparison.Ordinal) ? (["Process", "At", "TookMs", "Ok", "Line", "OperationId"], [["AtsSweep", "2026-10-24T16:20:00.5Z", 91000.0, true, Line, "op-1"], ["Merger", "2026-10-24T16:43:00Z", 812.0, true, null!, "op-2"]])
+            : body.Contains("by Process, Day", StringComparison.Ordinal) ? (["Process", "Day", .. tally], [["AtsSweep", "2026-10-24", 22, 22, 20, 1, 0, 1, 0, 95000.5], ["AtsSweep", "not a day", 1, 1, 1, 0, 0, 0, 0, 1.0]])
+            : body.Contains("row_number()", StringComparison.Ordinal) ? (["At", "TookMs", "Ok", "Line", "OperationId"], [["2026-10-24T16:20:00.5Z", 91000.0, true, Line, "op-1"], ["2026-10-23T14:50:00Z", 400.0, false, "process:AtsSweep outcome=blocked took_ms=400 started=2026-10-23T14:50:00Z detail=google_token", "op-0"]])
+            : body.Contains("summarize Runs", StringComparison.Ordinal) ? (tally, [[188, 188, 180, 2, 0, 2, 0, 99000.0]])
+            : body.Contains("summarize gb", StringComparison.Ordinal) ? (["gb"], [[0.098]])
             : body.Contains("summarize kept", StringComparison.Ordinal) ? (["kept", "seen"], [[50, 100]])
             : body.Contains("_LogOperation", StringComparison.Ordinal) ? (["capped"], [[0]])
             : (["AppRoleName", "items"], [["app-theyard-ss", 1_200], [null!, 3]]);

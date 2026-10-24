@@ -11,7 +11,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// One card's window from its keep, cached a minute per card and window, with a live read first
 /// when the newest kept minute is more than a minute past its end and this is the recording site.
 /// </summary>
-public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHistory History)> cards, CloudRecorder? recorder, Func<string, CancellationToken, Task<double?>> cost, TimeProvider clock, string recordingSite = "the recording site") : ICloudCards
+public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHistory History)> cards, CloudRecorder? recorder, Func<string, CancellationToken, Task<double?>> cost, TimeProvider clock, string recordingSite = "the recording site", NightlyProcesses? processes = null) : ICloudCards
 {
     private readonly object _gate = new();
     private readonly Dictionary<string, (DateTimeOffset At, CloudReport View)> _cached = new(StringComparer.Ordinal);
@@ -93,6 +93,17 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             await cost(card.ResourceName, cancellation),
             recordingSite,
             await CostLinesAsync(card, cancellation))), card.SpecSource, card.Hourly);
+        if (processes is not null && key == "nightly")
+        {
+            try
+            {
+                view = await processes.EnrichAsync(view, cancellation);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // A workspace or a health route that fails costs the card its two added slots, never the card.
+            }
+        }
         lock (_gate)
         {
             _cached[slot] = (now, view);

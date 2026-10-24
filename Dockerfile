@@ -146,6 +146,8 @@ COPY --chown=app:app api/TheYard.Infrastructure.Cosmos/Features ./api/TheYard.In
 COPY --chown=app:app api/TheYard.Infrastructure.Cosmos/Shared ./api/TheYard.Infrastructure.Cosmos/Shared
 COPY --chown=app:app api/TheYard.Experiment/*.cs api/TheYard.Experiment/*.csproj ./api/TheYard.Experiment/
 COPY --chown=app:app api/TheYard.Migrations.Sqlite/*.cs api/TheYard.Migrations.Sqlite/*.csproj ./api/TheYard.Migrations.Sqlite/
+# The job hunt Function's sources, so the nightly card reads each process's summary from the code at this version (ADR-109).
+COPY --chown=app:app functions/jobhunt/*.cs ./functions/jobhunt/
 # The DDL, so the records can show the schema they describe (ADR-014).
 COPY --chown=app:app api/TheYard.Database ./api/TheYard.Database
 COPY --chown=app:app api/TheYard.Tests/*.cs api/TheYard.Tests/*.csproj ./api/TheYard.Tests/

@@ -3,11 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace JobHunt.Functions;
 
+// #region summary
 /// <summary>
 /// Merges whatever the lanes left in the spool folders into the tracker, row fragments and text appends alike, and
 /// logs each pass to tracker-inbox/merge.log. It runs only while its switch is on, so the laptop's merger could
 /// hand over at a chosen minute and take back the same way; the laptop's was unregistered on 23 Oct.
 /// </summary>
+// #endregion summary
 /// <remarks>
 /// The tracker merger, every minute (UTC clock, second 0). It runs only when the MERGER setting is
 /// "on", so the laptop's merger can hand over at a chosen minute and take back the same way.

@@ -15,6 +15,8 @@ public sealed class Module : IModule
         // The document query and its port (ADR-115's fourth rung).
         services.AddSingleton<IDocumentReadings>(provider => new DocumentReadings(provider.GetRequiredService<HostPaths>(), provider.GetRequiredService<BuildInfo>()));
         services.AddScoped<ReadDocumentHandler>();
+        // The repository's marked regions, for a slice that shows the code's own words (the nightly card's processes).
+        services.AddSingleton<ICodeRegions>(provider => new LiveCodeRegions(provider.GetRequiredService<HostPaths>().RepoRoot, provider.GetRequiredService<BuildInfo>().Commit));
     }
 
     /// <summary>Maps /api/docs/*, /about, /resume, /api/recommendations and the OpenAPI document.</summary>

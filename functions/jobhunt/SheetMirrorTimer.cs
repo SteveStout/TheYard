@@ -3,11 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace JobHunt.Functions;
 
+// #region summary
 /// <summary>
 /// Appends the tracker's new rows to the Google Sheet and checks they landed, so the records run stops paying a
 /// model to do it. In shadow it writes the plan and acts on nothing, and it does not move on a row the CSV and the
 /// Sheet disagree about.
 /// </summary>
+// #endregion summary
 /// <remarks>
 /// The Sheet mirror, every fifteen minutes at 7, 22, 37 and 52 past (UTC clock), clear of the
 /// merger's minute and the slot hour's dispatch. SHEET_MIRROR picks the mode: "shadow" plans and

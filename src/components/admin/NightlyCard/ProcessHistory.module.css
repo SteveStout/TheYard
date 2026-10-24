@@ -1,0 +1,207 @@
+/**
+ * Does:      Draws one process's run history: the disclosure's summary with its count, the window's pills, the
+ *            table of runs grouped by Central day (scrolling sideways inside the card on a phone, never the
+ *            page), each outcome in its tone, and the foot with "Show the next 20" and the totals.
+ * Does not:  Draw the process section around it (CloudProcesses.module.css) or the pill group's own look (.op-seg).
+ * Used by:   ProcessHistory.tsx.
+ */
+.history {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--color-mark-rule);
+  padding-top: var(--space-2);
+  margin-top: var(--space-1);
+  min-width: 0;
+}
+
+.history > summary {
+  cursor: pointer;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  font-weight: var(--weight-medium);
+  list-style: none;
+}
+
+.history > summary::-webkit-details-marker {
+  display: none;
+}
+
+.history > summary::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--color-accent);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.15s;
+}
+
+.history[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.count {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-regular);
+}
+
+.body {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  min-width: 0;
+}
+
+.seg {
+  justify-self: end;
+  margin: 0;
+}
+
+/* The table never scrolls sideways (the operator's look: an Admin table fits or stacks its rows). Where the
+   card is narrow, each run stacks, every value under its column's name. */
+.scroll {
+  max-width: 100%;
+  container-type: inline-size;
+}
+
+.hist {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.hist th {
+  text-align: left;
+  font-size: var(--chart-text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--color-mark-rule);
+}
+
+.hist td {
+  padding: 5px 8px 5px 0;
+  border-bottom: 1px solid var(--color-mark-rule);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  vertical-align: top;
+}
+
+.hist .n {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.hist a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.hist tr.day td {
+  background: color-mix(in srgb, var(--color-teal-deep) 5%, transparent);
+  font-size: var(--chart-text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 3px 8px 3px 0;
+}
+
+.good {
+  color: var(--color-success);
+}
+
+.warning {
+  color: var(--color-warning);
+}
+
+.alarm {
+  color: var(--color-danger);
+  font-weight: var(--weight-semibold);
+}
+
+.info {
+  color: var(--color-accent);
+}
+
+.quiet {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+
+.more {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@container (max-width: 559.98px) {
+  .hist thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .hist tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2px var(--space-3);
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid var(--color-mark-rule);
+  }
+
+  .hist td {
+    border-bottom: 0;
+    padding: 0;
+  }
+
+  .hist td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: var(--chart-text-xs);
+    letter-spacing: var(--readout-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .hist td.wide {
+    grid-column: 1 / -1;
+  }
+
+  .hist .n {
+    text-align: left;
+  }
+
+  .hist tr.day,
+  .hist tr.day td {
+    display: block;
+  }
+}

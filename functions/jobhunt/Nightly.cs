@@ -3,10 +3,12 @@ using Microsoft.Extensions.Logging;
 
 namespace JobHunt.Functions;
 
+// #region summary
 /// <summary>
 /// Dispatches the two GitHub runs. At 4:00 AM Central: the share snapshot, the night's opening bookend, then the
 /// reply lane. Every other four hours: the records run, which opens and closes its own bookend.
 /// </summary>
+// #endregion summary
 /// <remarks>
 /// The job hunt's clock, every hour on the hour (UTC). At 4:00 AM Central: the share snapshot,
 /// the night's opening bookend, then the reply lane. Every other four hours: the records run,

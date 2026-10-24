@@ -6,11 +6,13 @@ using Microsoft.Extensions.Logging;
 
 namespace JobHunt.Functions;
 
+// #region summary
 /// <summary>
 /// Answers whether the tracker merger is keeping up, in counts and ages only (how many lane files wait, how many
 /// past five and ten minutes, how old merge.log is) and the switches by name, for the Admin tab's card; it reads no
 /// file's contents.
 /// </summary>
+// #endregion summary
 /// <remarks>
 /// GET /api/merger/health: whether the tracker merger is keeping up, as five numbers (MergerHealth).
 /// The Admin tab's nightly card reads it once a minute. It is anonymous because the site holds no

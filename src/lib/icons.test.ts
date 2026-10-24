@@ -44,6 +44,8 @@ const DRAWINGS = ['VehicleImage.tsx', 'Ring.tsx'];
  * watermark. Anything else a sheet strokes is on --icon-stroke.
  */
 const DRAWN_IN_CSS: Record<string, string[]> = {
+  // The nightly card's strip of thirty days: a hollow cell is a day with no run. A drawing, not an icon.
+  'CloudProcesses.module.css': ['.skip'],
   // The Admin charts: an axis, its unit, the readout's rule and box, a line; and
   // the Mark VII grammar (the tweaks pass, B2): graduations, the plot's bracket
   // ticks, and the callout's leader, dot and halo. Drawings, not icons.

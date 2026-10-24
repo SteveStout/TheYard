@@ -34,6 +34,7 @@ Measured at 1.0.4.43: `functions/jobhunt` held 43 `.cs` files. There were six tr
 - **One Function App per host.** The prompt names the existing plan in RG-JOBHUNT-SS, which is a Flex Consumption plan (FC1) holding one app. The off-the-laptop prompt names TheYard's B2 App Service plan. Moving the job hunt's processes onto the B2 is a hosting plan change for those apps, which this lane may not make on its own (no SKU, tier or plan change), and the cutover runs two copies of the merger until the old app's switches are turned off. The call is mine, and the lane asked it once: run the five processes as five apps on the B2 plan TheYard runs on (shared CPU and memory with the site, timers every minute with no cold start), or stay on Flex Consumption with one plan per app.
 - **A query or command per process step, and CqrsTests for the Function.** These come with the hosts, because each host's trigger dispatches exactly one command.
 - **Five cards under Cloud infrastructure.** These come with the apps they read.
+- **The nightly card's process sections, at stage B.** Each section keeps its place and gains a "which app" line read from its request's cloud role, and the runs reader's role filter (`InsightsProcessRuns`, one role today) becomes the list of the five apps' roles.
 
 ## Consequences
 

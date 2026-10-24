@@ -72,14 +72,37 @@ public sealed class Module : IModule
                 provider.GetRequiredService<ILogger<CloudRecorder>>()));
             services.AddHostedService(provider => provider.GetRequiredService<CloudRecorder>());
         }
+        // The Function's runs, from the workspace both Application Insights components send to, by its app name
+        // as its cloud role; the six sections and the run histories read them (ADR-109, the six processes).
+        string workspace = $"{names.GroupPath(subscription)}/providers/Microsoft.OperationalInsights/workspaces/{names.Insights}";
+        services.AddSingleton<IProcessRunsReader>(provider =>
+        {
+            var identity = provider.GetRequiredService<HostIdentity>();
+            return new GuardedProcessRuns(new InsightsProcessRuns(new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity), workspace, nightlyNames.Function), TimeProvider.System);
+        });
+        services.AddSingleton(provider =>
+        {
+            var identity = provider.GetRequiredService<HostIdentity>();
+            var azure = new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity);
+            var build = provider.GetRequiredService<BuildInfo>();
+            string functionPath = nightlyNames.FunctionPath(subscription);
+            return new NightlyProcesses(
+                provider.GetRequiredService<IProcessRunsReader>(),
+                async cancellation => await NightlyProcesses.HostAsync(azure, functionPath, cancellation),
+                new ProcessDescriptions(provider.GetRequiredService<ICodeRegions>()),
+                build.Version,
+                TimeProvider.System);
+        });
         services.AddSingleton(provider => new CloudReader(
             provider.GetRequiredService<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>(),
             records ? provider.GetRequiredService<CloudRecorder>() : null,
             (name, cancellation) => PlanCost.ForResourceAsync(provider.GetRequiredService<ICostHistory>(), name, TimeProvider.System, cancellation),
             TimeProvider.System,
-            sqlName ?? "the SQL site"));
+            sqlName ?? "the SQL site",
+            provider.GetRequiredService<NightlyProcesses>()));
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
         services.AddScoped<ReadCloudCardHandler>();
+        services.AddScoped<ReadProcessRunsHandler>();
         // #endregion resource-wiring
     }
 

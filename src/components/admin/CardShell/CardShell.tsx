@@ -7,6 +7,7 @@
  *   CloudChart    the window's two series, one gold band per roll, the legend as chips
  *   CloudRows     the four questions, each naming its source
  *   CloudReadout  the summary column, each line with its source under its label
+ *   CloudProcesses the nightly card's description and its process sections, which no other card sends
  * Every figure, tone and source comes from the server; a slot the card has no data for is left out.
  */
 import { type ReactNode, useEffect, useState } from 'react';
@@ -26,6 +27,7 @@ import { CloudDial } from '../CloudDial';
 import { CloudChart } from '../CloudChart';
 import { CloudRows, PortalLink } from '../CloudRows';
 import { CloudReadout } from '../CloudReadout';
+import { CloudProcesses, CloudWhat } from '../CloudProcesses';
 import styles from './CardShell.module.css';
 
 /** One sixty-minute hairline in a bordered box, oldest on the left, in its dial's tone, with the newest figure on its title line. */
@@ -161,6 +163,7 @@ export function CardShell({
             </span>
           )}
         </p>
+        {report.description != null && <CloudWhat description={report.description} />}
         {report.note !== null && (
           <p className={cardStyles.muted} data-testid="cloud-note">
             {report.note}
@@ -188,6 +191,7 @@ export function CardShell({
           ))}
         </ul>
         <CloudChart chart={report.chart} endMs={report.as_of_ms} toolbar={toolbar} />
+        <CloudProcesses processes={report.processes ?? []} />
         <CloudRows rows={report.rows} />
       </article>
       <CloudReadout readout={report.readout} />

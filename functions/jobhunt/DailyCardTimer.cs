@@ -3,10 +3,12 @@ using Microsoft.Extensions.Logging;
 
 namespace JobHunt.Functions;
 
+// #region summary
 /// <summary>
 /// Writes the morning card, nightly/CARD.md, when what it says has changed, and at 6 AM Central whether or not it
 /// has, so the morning always has a fresh one.
 /// </summary>
+// #endregion summary
 /// <remarks>
 /// The daily card, at 5 past every hour (UTC clock). DAILY_CARD=on writes nightly/CARD.md when what it
 /// says has changed, and at 6 AM Central whether or not it has, so the morning always has a fresh one;

@@ -105,6 +105,15 @@ test.describe('WCAG 2.1 AA, on every view', () => {
     expect(await violations(page)).toEqual([]);
   });
 
+  test('the admin tab, on the nightly card with a run history open', async ({ page }) => {
+    await openTheYard(page, '/?view=admin&card=nightly');
+    const card = page.getByTestId('nightly-card');
+    await expect(card.getByTestId('cloud-processes')).toBeVisible({ timeout: 30_000 });
+    await card.getByTestId('process-history-AtsSweep').locator('summary').click();
+    await expect(card.getByTestId('process-totals-AtsSweep')).toBeVisible({ timeout: 30_000 });
+    expect(await violations(page)).toEqual([]);
+  });
+
   test('a document, open', async ({ page }) => {
     await openTheYard(page);
     const nav = page.getByRole('navigation', { name: 'Project documents' });
