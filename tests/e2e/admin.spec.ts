@@ -1600,7 +1600,7 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   const card = page.getByTestId('spend-card');
   await expect(card).toBeVisible({ timeout: 60_000 });
   await expect(card.getByTestId('spend-headline')).toContainText('September so far: $47.18.');
-  await expect(card.getByTestId('spend-headline')).toContainText('Azure forecasts $49.03');
+  await expect(card.getByTestId('spend-headline')).toContainText('Forecast: $49.03');
   await expect(card.getByTestId('spend-partial')).toBeAttached();
   await expect(card.getByTestId('spend-resource')).toHaveCount(5);
   await expect(card.getByTestId('spend-resource').last()).toContainText('Others (3 resources)');

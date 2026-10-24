@@ -95,6 +95,13 @@ for (const viewport of [
         );
         expect(reading, `${testId} reads a figure or says it is unread`).toMatch(pattern);
       }
+      // The bill's under-line: the forecast in whole currency, which is the month so far plus the days
+      // left and so never below it; "at least" the spend if a forecast ever reads under it; or nothing
+      // while Azure has not forecast (ADR: What Azure charges, the addendum of 2026-10-24).
+      const under = (await page.getByTestId('pulse-cost').locator('p').nth(2).innerText()).trim();
+      expect(under, 'the bill reads a forecast, at least the spend, or nothing').toMatch(
+        /^(forecast \$[\d,]+|at least \$[\d,]+\.\d\d|)$/
+      );
 
       // The evidence strip: three figures this build's own gate produced (1.0.2.0), the gate's own
       // seconds having moved to the Admin tab.

@@ -127,6 +127,60 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
     }
 
     [Fact]
+    public void The_month_forecast_is_the_month_to_date_plus_the_days_ahead_never_Azures_lagging_sum()
+    {
+        // 23 October as it read: $70.20 billed, Azure's answer adding up to $60.58 because its billed rows
+        // lag the actuals, and $14.74 forecast for the days after the newest reported.
+        var now = new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
+        var kept = new CostKept(
+            [new CostDay("2026-10-01", "stjobhuntss", "microsoft.storage/storageaccounts", 45.21, "USD"), new CostDay("2026-10-23", "stjobhuntss", "microsoft.storage/storageaccounts", 24.99, "USD")],
+            [new CostForecastDay("2026-10-01", 45.84, "USD", Billed: true), new CostForecastDay("2026-10-25", 7.00, "USD"), new CostForecastDay("2026-10-26", 7.74, "USD")]);
+
+        var report = CostView.Build("30d", kept, now, new CostHistoryAvailability(true, "kept"), (now, true, null));
+
+        Assert.Equal(70.20, report.MonthToDate);
+        Assert.Equal(60.58, report.AzureForecastMonth);
+        Assert.Equal(84.94, report.ForecastMonth);
+        Assert.True(report.ForecastMonth >= report.MonthToDate);
+    }
+
+    [Fact]
+    public void With_no_days_ahead_the_month_forecast_is_the_month_to_date()
+    {
+        var now = new DateTimeOffset(2026, 10, 31, 20, 0, 0, TimeSpan.Zero);
+        var kept = new CostKept(
+            [new CostDay("2026-10-30", "plan-theyard-ss", "microsoft.web/serverfarms", 3.10, "USD")],
+            [new CostForecastDay("2026-10-30", 2.00, "USD", Billed: true)]);
+
+        var report = CostView.Build("7d", kept, now, new CostHistoryAvailability(true, "kept"), (now, true, null));
+
+        Assert.Equal(3.10, report.MonthToDate);
+        Assert.Equal(3.10, report.ForecastMonth);
+        Assert.Equal(2.00, report.AzureForecastMonth);
+        Assert.Empty(report.Forecast);
+    }
+
+    [Fact]
+    public void The_month_at_yesterdays_rate_is_the_finished_days_plus_yesterday_for_every_day_left()
+    {
+        // 24 October at noon: the 23rd finished at $24.99, the 24th has $0.28 so far.
+        var days = new[]
+        {
+            new CostDay("2026-10-22", "stjobhuntss", "microsoft.storage/storageaccounts", 13.41, "USD"),
+            new CostDay("2026-10-23", "stjobhuntss", "microsoft.storage/storageaccounts", 24.99, "USD"),
+            new CostDay("2026-10-24", "stjobhuntss", "microsoft.storage/storageaccounts", 0.28, "USD"),
+        };
+
+        var at = YesterdayRate.For(days, "2026-10-24", partial: true, "2026-10", monthToDate: 38.68);
+
+        Assert.NotNull(at);
+        Assert.Equal("2026-10-23", at.Value.Day);
+        Assert.Equal(24.99, at.Value.Cost);
+        // 38.40 finished, then eight days (24th to 31st) at $24.99.
+        Assert.Equal(238.32, at.Value.Month);
+    }
+
+    [Fact]
     public void The_bars_put_the_costliest_type_first_and_a_type_billed_through_another_last()
     {
         var days = new[]

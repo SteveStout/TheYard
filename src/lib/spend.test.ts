@@ -7,6 +7,7 @@ import {
   donutArcs,
   headline,
   money,
+  monthReading,
   niceCeiling,
   rateWords,
   resourcesWords,
@@ -82,13 +83,33 @@ describe('what Azure charges (ADR: What Azure charges)', () => {
   it('says the month so far, the forecast, and which day Azure is still adding to', () => {
     expect(headline(report())).toEqual([
       'September so far: $47.18.',
-      'Azure forecasts $49.03 by the end of September.',
+      "Forecast: $49.03 by the end of September, the month so far and Azure's forecast for each day left.",
       '29 September is still being added to: Azure reports a day eight to twenty four hours late.',
     ]);
     expect(headline(report({ forecast_month: null, newest_partial: false }))[1]).toBe(
       'Azure has not forecast the rest of the month yet.'
     );
     expect(headline(report({ available: false, month: null }))).toEqual([]);
+  });
+
+  it("names Azure's own sum when it differs, and the month at yesterday's rate", () => {
+    const lines = headline(
+      report({
+        month_to_date: 70.2,
+        forecast_month: 84.94,
+        azure_forecast_month: 60.58,
+        month_at_yesterday: 238.32,
+        yesterday_day: '2026-09-28',
+        yesterday_cost: 24.99,
+      })
+    );
+    expect(lines).toContain(
+      "Azure's own sum reads $60.58: its billed days lag the bill, so it is below what is already spent."
+    );
+    expect(lines).toContain(
+      "The rest of the month at yesterday's rate: $238.32 (28 September cost $24.99)."
+    );
+    expect(headline(report({ azure_forecast_month: 49.03 }))).toHaveLength(3);
   });
 
   it('rounds the axis up to 1, 2 or 5 times a power of ten', () => {
@@ -135,6 +156,18 @@ describe('what Azure charges (ADR: What Azure charges)', () => {
     expect(typeBars([])).toEqual([]);
     expect(resourcesWords(1)).toBe('1 resource');
     expect(resourcesWords(3)).toBe('3 resources');
+  });
+
+  it('says which window a month is scaled from, and never scales the day window', () => {
+    const figure = { cost: 0.74, monthly: 22.94 };
+    expect(monthReading(report(), figure)).toBe("$22.94 a month at the last 30 days' rate");
+    expect(monthReading(report({ window: '7d' }), figure)).toBe(
+      "$22.94 a month at the last 7 days' rate"
+    );
+    expect(monthReading(report({ window: '24h' }), figure)).toBe(
+      '$0.74 yesterday and today so far'
+    );
+    expect(rateWords(report({ window: '24h' }))).toContain('never scaled to a month');
   });
 
   it('says every resource and type figure is a month at the rate of the finished days', () => {

@@ -14,6 +14,7 @@ import {
   donutArcs,
   headline,
   money,
+  monthReading,
   rateWords,
   resourcesWords,
   SPEND_BOX,
@@ -184,7 +185,7 @@ function SpendBody({ report }: { report: CostReport }) {
                   {slice.name === 'Others' ? `Others (${slice.count} resources)` : slice.name}
                 </span>
                 <span className={cardStyles.mono}>
-                  {money(slice.monthly, report.currency)} a month · {slice.share}%
+                  {monthReading(report, slice)} · {slice.share}%
                 </span>
               </li>
             ))}
@@ -195,9 +196,9 @@ function SpendBody({ report }: { report: CostReport }) {
         <section className={styles.part} data-testid="spend-types">
           <h3 className={cardStyles.cardTitle}>Cost by type</h3>
           <p className={cardStyles.muted}>
-            What each type of resource comes to in a month, the costliest first, and how many of
-            each are on the bill. A type at $0.00 is billed through another, as the apps are through
-            their plan.
+            What each type of resource comes to in a month at the window's rate (on the day window,
+            what it has cost so far), the costliest first, and how many of each are on the bill. A
+            type at $0.00 is billed through another, as the apps are through their plan.
           </p>
           {bars.map((bar, index) => (
             <BarGauge
@@ -207,7 +208,7 @@ function SpendBody({ report }: { report: CostReport }) {
               ceiling={resourcesWords(bar.resources)}
               value={bar.monthly}
               max={most}
-              reading={`${money(bar.monthly, report.currency)} a month`}
+              reading={monthReading(report, bar)}
             />
           ))}
         </section>

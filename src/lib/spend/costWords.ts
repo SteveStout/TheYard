@@ -62,10 +62,11 @@ export function monthWords(month: string): string {
 }
 
 /**
- * The card's two headline sentences: what the month has cost, and what Azure
- * says it will cost by its end. A month with no forecast says so, and a newest
- * day Azure is still adding to is named, because a total that is still moving
- * should look like one.
+ * The card's headline sentences: what the month has cost, what it will cost by its end (the month
+ * so far plus Azure's forecast for each day left, so never below what is spent), Azure's own sum
+ * when it reads differently, and the month at yesterday's rate, so a spike shows as a projection
+ * the day it starts. A month with no forecast says so, and a newest day Azure is still adding to
+ * is named, because a total that is still moving should look like one.
  */
 export function headline(report: CostReport): string[] {
   if (!report.available || report.month === null) return [];
@@ -75,8 +76,24 @@ export function headline(report: CostReport): string[] {
   lines.push(
     report.forecast_month === null
       ? 'Azure has not forecast the rest of the month yet.'
-      : `Azure forecasts ${money(report.forecast_month, report.currency)} by the end of ${monthWords(report.month)}.`
+      : `Forecast: ${money(report.forecast_month, report.currency)} by the end of ${monthWords(report.month)}, the month so far and Azure's forecast for each day left.`
   );
+  const azure = report.azure_forecast_month ?? null;
+  if (
+    azure !== null &&
+    report.forecast_month !== null &&
+    Math.abs(azure - report.forecast_month) >= 0.01
+  ) {
+    lines.push(
+      `Azure's own sum reads ${money(azure, report.currency)}: its billed days lag the bill${azure < report.month_to_date ? ', so it is below what is already spent' : ''}.`
+    );
+  }
+  const atYesterday = report.month_at_yesterday ?? null;
+  if (atYesterday !== null && report.yesterday_day && report.yesterday_cost != null) {
+    lines.push(
+      `The rest of the month at yesterday's rate: ${money(atYesterday, report.currency)} (${dayWords(report.yesterday_day)} cost ${money(report.yesterday_cost, report.currency)}).`
+    );
+  }
   if (report.newest_partial && report.newest_day !== null) {
     lines.push(
       `${dayWords(report.newest_day)} is still being added to: Azure reports a day eight to twenty four hours late.`

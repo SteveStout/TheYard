@@ -8,10 +8,14 @@ namespace JobHunt.Infrastructure.Features.Merge;
 /// The merger's files on the Azure Files share, read and written over HTTPS with the same
 /// connection the rest of this app uses. <paramref name="root"/> is a folder inside the share the
 /// merger treats as its job-hunt folder: empty for the real folder, a scratch folder for a test.
+/// A folder it has made sure of is remembered for an hour (<see cref="EnsuredFolders"/>), because the share
+/// bills every create, including one that finds the folder already there.
 /// </summary>
-public sealed class ShareMergeStore(ShareClient share, string root) : IMergeStore
+public sealed class ShareMergeStore(ShareClient share, string root, TimeProvider? clock = null) : IMergeStore
 {
     private const int MaxRange = 4 * 1024 * 1024;
+
+    private readonly EnsuredFolders _ensured = new(clock ?? TimeProvider.System);
 
     public async Task<bool> ExistsAsync(string path, CancellationToken ct) =>
         (await File(path).ExistsAsync(ct)).Value;
@@ -67,7 +71,20 @@ public sealed class ShareMergeStore(ShareClient share, string root) : IMergeStor
         foreach (string part in Full(folder).Split('/', StringSplitOptions.RemoveEmptyEntries))
         {
             path = path.Length == 0 ? part : $"{path}/{part}";
-            await share.GetDirectoryClient(path).CreateIfNotExistsAsync(cancellationToken: ct);
+            if (!_ensured.Needs(path))
+            {
+                continue;
+            }
+            try
+            {
+                await share.GetDirectoryClient(path).CreateIfNotExistsAsync(cancellationToken: ct);
+            }
+            catch
+            {
+                _ensured.Forget(path);
+                throw;
+            }
+            _ensured.Seen(path);
         }
     }
 

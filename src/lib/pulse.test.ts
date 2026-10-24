@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   barHeights,
   buildWords,
+  forecastWords,
   dayWords,
   LATENCY_CEILING_MS,
   moneyWords,
@@ -122,6 +123,17 @@ describe('the words under each instrument', () => {
     expect(moneyWords(1234.5, 'EUR')).toBe('€1,234.50');
     expect(moneyWords(12, 'SEK')).toBe('12.00 SEK');
     expect(moneyWords(null, 'USD')).toBe(UNREAD);
+  });
+});
+
+describe('the bill instrument (the cost lane, 24 Oct addendum)', () => {
+  it('reads the forecast in whole currency, at least the spend when a forecast is below it, and nothing unread', () => {
+    expect(forecastWords(70.2, 84.94, 'USD')).toBe('forecast $85');
+    expect(forecastWords(70.2, 60.58, 'USD')).toBe('at least $70.20');
+    expect(forecastWords(0, 0, 'USD')).toBe('forecast $0');
+    expect(forecastWords(1, 1, 'USD')).toBe('forecast $1');
+    expect(forecastWords(70.2, null, 'USD')).toBe('');
+    expect(forecastWords(null, 84.94, 'USD')).toBe('');
   });
 });
 

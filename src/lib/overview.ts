@@ -132,7 +132,7 @@ function costRow({ cost }: OverviewReadings): OverviewRow {
       `${monthWords(cost.month)} so far` +
       (cost.forecast_month === null
         ? '; no forecast yet'
-        : `; Azure forecasts ${money(cost.forecast_month, cost.currency)}`),
+        : `; forecast ${money(cost.forecast_month, cost.currency)}`),
     range,
     tone: costTone(cost.month_to_date, cost.forecast_month, day, days),
   };

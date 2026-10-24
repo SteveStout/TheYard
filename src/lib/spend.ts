@@ -20,4 +20,4 @@ export { niceCeiling, SPEND_BOX, spendLine } from './spend/spendLine';
 export type { DonutArc } from './spend/spendDonut';
 export { donutArcs } from './spend/spendDonut';
 // spend/spendBars.ts: the bars by type, and the sentences under the resource and type pictures
-export { rateWords, resourcesWords, typeBars } from './spend/spendBars';
+export { monthReading, rateWords, resourcesWords, typeBars } from './spend/spendBars';

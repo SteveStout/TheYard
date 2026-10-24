@@ -140,6 +140,25 @@ export function moneyWords(amount: number | null, currency: string, whole = fals
   return symbol === '' ? `${figure} ${currency}` : `${symbol}${figure}`;
 }
 
+/**
+ * The words under the bill instrument: "forecast $85" from the server's forecast, which is the month to
+ * date plus Azure's forecast for the days left; "at least $70.20" when a forecast reads below what is
+ * already spent, because a forecast under the spend is a figure nobody should read; nothing before the
+ * bill is read or while Azure has not forecast.
+ */
+export function forecastWords(
+  spend: number | null,
+  forecast: number | null,
+  currency: string
+): string {
+  if (spend === null || !Number.isFinite(spend)) return '';
+  if (forecast === null || !Number.isFinite(forecast)) return '';
+  if (forecast < spend) {
+    return `at least ${moneyWords(spend, currency)}`;
+  }
+  return `forecast ${moneyWords(forecast, currency, true)}`;
+}
+
 /** Where the marker sits on a scale from zero to its ceiling: never past the end, never before the start. */
 export function share(value: number | null, ceiling: number): number {
   if (value === null || !Number.isFinite(value) || !(ceiling > 0)) return 0;

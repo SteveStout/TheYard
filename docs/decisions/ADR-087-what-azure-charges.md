@@ -120,3 +120,10 @@ From 1.0.3.166 a 429 is waited exactly as long as Cost Management names in its h
 ```live path=api/TheYard.Api/Shared/CostReadings/CostRecorder.cs region=cost-retry
 ```
 
+## Addendum, 2026-10-24: the forecast is never below the spend
+
+On 23 October the first screen read "forecast $61" under $70.20 already billed. The month's forecast was Azure's forecast answer added up, billed rows and days to come, which is the portal's own figure; but the answer's billed rows lag the actuals by a day or more, so on a bill that rose from $3.07 on 20 October to $24.99 on the 23rd the billed part summed to less than the month to date, and the forecast came out $9.62 below what was spent.
+
+From 1.0.4.49 the month's forecast is the month to date plus Azure's forecast for each day after the newest day the bill has reported: $70.20 and $14.74 ahead, $84.94, never below the month to date, and the month to date itself when no day is ahead. Azure's own sum stays in the answer as `azure_forecast_month`, named for what it is, and the cost card says it beside the forecast only when it differs ("Azure's own sum reads $60.58: its billed days lag the bill, so it is below what is already spent"). The band's under-line reads "forecast $85", or "at least $70.20" if a forecast ever reads below the spend.
+
+The card adds one more line, the month at yesterday's rate: the finished days plus the last finished day's cost for every day left (on the 24th, $38.40 and eight days at $24.99, $238.32). A spike shows as a projection the day it starts, where the 30-day average takes a week to move. The resource and type figures say which window their month is scaled from ("a month at the last 7 days' rate"), and the day window is never scaled to a month: it reads what yesterday and today have cost so far.

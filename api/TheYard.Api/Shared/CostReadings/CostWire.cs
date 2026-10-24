@@ -15,7 +15,8 @@ namespace TheYard.Api.Shared.CostReadings;
 /// <param name="NewestPartial">True when the newest day is one Azure is still adding to.</param>
 /// <param name="Month">The UTC month the month-to-date figure covers, as yyyy-MM.</param>
 /// <param name="MonthToDate">What the month has cost so far.</param>
-/// <param name="ForecastMonth">What Azure forecasts the month will cost, or null when it has not said.</param>
+/// <param name="ForecastMonth">What the month will cost: the month to date plus Azure's forecast for each day after the newest
+/// reported, so never below the month to date; null when Azure has not forecast.</param>
 /// <param name="WindowTotal">What the window cost.</param>
 /// <param name="RateDays">How many finished days the month figures are scaled from.</param>
 /// <param name="MonthDays">How many days the month figures are scaled to.</param>
@@ -23,6 +24,11 @@ namespace TheYard.Api.Shared.CostReadings;
 /// <param name="Forecast">Each forecast day after the newest reported, to the month's end, with the running total carried on.</param>
 /// <param name="Resources">What each resource cost in the window and in a month at that rate: the top four, then Others.</param>
 /// <param name="Types">What each type of resource cost in the window and in a month at that rate, the costliest first, with how many of it are on the bill.</param>
+/// <param name="AzureForecastMonth">Azure's forecast answer added up as it gives it (the portal's figure), whose billed rows lag
+/// the actuals, so it can read below the month to date; shown only as Azure's, never as the forecast.</param>
+/// <param name="MonthAtYesterday">The month if every day left costs what the last finished day did, or null with no finished day.</param>
+/// <param name="YesterdayDay">The last finished day that rate is taken from, as yyyy-MM-dd.</param>
+/// <param name="YesterdayCost">What that day cost.</param>
 public sealed record CostReport(
     string Window,
     IReadOnlyList<string> Windows,
@@ -41,7 +47,11 @@ public sealed record CostReport(
     IReadOnlyList<CostPoint> Days,
     IReadOnlyList<CostPoint> Forecast,
     IReadOnlyList<CostSlice> Resources,
-    IReadOnlyList<CostKind> Types)
+    IReadOnlyList<CostKind> Types,
+    double? AzureForecastMonth = null,
+    double? MonthAtYesterday = null,
+    string? YesterdayDay = null,
+    double? YesterdayCost = null)
 {
     /// <summary>An answer with nothing to draw and the reason why.</summary>
     public static CostReport Absent(string window, string note, string currency, long? readAtMs) =>

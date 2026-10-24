@@ -43,7 +43,16 @@ export type CostReport = {
   newest_partial: boolean;
   month: string | null;
   month_to_date: number;
+  /** The month to date plus Azure's forecast for each day after the newest reported: never below the month to date. */
   forecast_month: number | null;
+  /** Azure's forecast answer added up as the portal shows it; its billed days lag the bill, so it can read below the month to date. */
+  azure_forecast_month?: number | null;
+  /** The month if every day left costs what the last finished day did. */
+  month_at_yesterday?: number | null;
+  /** The last finished day that rate is taken from, yyyy-MM-dd. */
+  yesterday_day?: string | null;
+  /** What that day cost. */
+  yesterday_cost?: number | null;
   window_total: number;
   rate_days: number;
   month_days: number;

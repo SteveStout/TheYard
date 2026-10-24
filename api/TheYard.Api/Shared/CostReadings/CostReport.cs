@@ -3,6 +3,7 @@
 // cache, and MonthRate turns a window's cost into a month's. The answer's own shape lives
 // beside it:
 //   CostWire.cs - CostReport, CostPoint, CostSlice, CostKind: the records the wire carries
+//   YesterdayRate.cs - the month if every day left costs what the last finished day did
 using System.Globalization;
 
 namespace TheYard.Api.Shared.CostReadings;
@@ -70,10 +71,12 @@ public static class CostView
             points.Add(new CostPoint(key, Money(cost), Money(running), partial && key == newest));
         }
 
-        double monthToDate = kept.Days.Where(day => CostWindows.MonthOf(day.Day) == month).Sum(day => day.Cost);
-        // The month's forecast is the forecast answer added up, billed days and
-        // days to come, which is the portal's own figure. The dashed line is
-        // only the days to come after the newest day the bill has reported.
+        var monthDays = kept.Days.Where(day => CostWindows.MonthOf(day.Day) == month).ToList();
+        double monthToDate = monthDays.Sum(day => day.Cost);
+        // The dashed line is the days to come after the newest day the bill has reported, from Azure's
+        // forecast answer. The month's forecast is the month to date plus those days (ADR: What Azure
+        // charges): the answer's own sum is kept beside it as Azure's figure, because its billed rows lag
+        // the actuals, so on a rising bill it reads below what is already spent.
         var answer = kept.Forecast.Where(day => CostWindows.MonthOf(day.Day) == month).ToList();
         var ahead = answer
             .Where(day => !day.Billed && string.CompareOrdinal(day.Day, newest) > 0)
@@ -87,7 +90,9 @@ public static class CostView
             forecast.Add(new CostPoint(day.Day, Money(day.Cost), Money(projected), false));
         }
 
-        double? forecastMonth = answer.Count > 0 ? Money(answer.Sum(day => day.Cost)) : null;
+        double? forecastMonth = answer.Count > 0 ? Money(monthToDate + ahead.Sum(day => day.Cost)) : null;
+        double? azureForecastMonth = answer.Count > 0 ? Money(answer.Sum(day => day.Cost)) : null;
+        var yesterday = YesterdayRate.For(kept.Days, newest, partial, month, monthToDate);
         var rate = MonthRate.For(points, today);
 
         return new CostReport(
@@ -108,7 +113,11 @@ public static class CostView
             points,
             forecast,
             Slices(inWindow, rate),
-            Kinds(inWindow, rate));
+            Kinds(inWindow, rate),
+            azureForecastMonth,
+            yesterday?.Month,
+            yesterday?.Day,
+            yesterday?.Cost);
     }
 
     /// <summary>

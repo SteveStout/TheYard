@@ -20,6 +20,7 @@ import { useEffect, useState } from 'react';
 import {
   buildWords,
   LATENCY_CEILING_MS,
+  forecastWords,
   moneyWords,
   PULSE_EVERY_MS,
   PULSE_URL,
@@ -172,9 +173,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
               <span className={styles.pip} style={{ left: `${(billed * 100).toFixed(1)}%` }} />
             )}
           </span>
-          <span className={styles.forecast}>
-            {forecast === null ? '' : `forecast ${moneyWords(forecast, currency, true)}`}
-          </span>
+          <span className={styles.forecast}>{forecastWords(spend, forecast, currency)}</span>
         </p>
         <p className={styles.detail}>
           the bill, by resource, read from Azure. The Admin tab shows every line.
