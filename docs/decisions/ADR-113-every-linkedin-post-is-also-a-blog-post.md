@@ -77,3 +77,7 @@ A kept picture goes in under the hash of its bytes, and its row on the post (`bl
 
 The Blog analytics card says how many pictures are kept and their bytes, read from the container's own listing at most once a minute, with its source named.
 
+## Addendum, 2026-10-24 (1.0.4.57): a strip of slides the keyboard can scroll
+
+With the two posts' fourteen real slides in, the strip is wider than its card on every screen, and axe named it: a region that scrolls must be reachable from the keyboard (scrollable-region-focusable). The strip takes focus (`tabIndex` 0), names itself ("The slides, 7 of them, scroll sideways") and shows the site's focus ring, so the arrow keys scroll it. Before the slides, no strip on the live site was wide enough for the rule to fire, which is why the gate's axe pages never saw it; blog.spec.ts now runs axe on a post with a strip whether the store holds real pictures or the test answers made-up ones.
+

@@ -120,6 +120,11 @@
   scroll-snap-type: x mandatory;
 }
 
+.strip:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .slide {
   flex: none;
   width: 160px;

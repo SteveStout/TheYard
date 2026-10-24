@@ -174,10 +174,17 @@ test('a post with slides draws them from the site and every picture answers with
   const post = posts.find((p) => p.images.length > 1);
   if (post === undefined) {
     // No post here has its slides yet (a local store): the picture route still answers a name it does not keep
-    // with a 404 problem, never the page.
+    // with a 404 problem, never the page, and a made-up post's strip is held to the same look and axe.
     const missing = await request.get('/blog/images/0123456789abcdef.webp');
     expect(missing.status()).toBe(404);
     expect(missing.headers()['content-type']).toContain('application/problem+json');
+    await answerPosts(page);
+    await openTheYard(page, '/?view=blog&post=a-made-up-newest-post');
+    await expect(page.getByTestId('blog-slides-strip')).toHaveAttribute('tabindex', '0');
+    const madeUp = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+    expect(madeUp.violations.map((v) => v.id)).toEqual([]);
     return;
   }
   for (const image of post.images) {

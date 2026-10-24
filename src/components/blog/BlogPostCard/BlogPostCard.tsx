@@ -112,7 +112,15 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
       {post.images.length > 0 && (
         <section className={styles.slides} aria-label={`The slides (${post.images.length})`}>
           <h3 className={styles.slidesHead}>The slides ({post.images.length})</h3>
-          <ol ref={strip} className={styles.strip}>
+          {/* A strip wider than the card scrolls sideways, so it takes the keyboard's focus and names itself:
+              a reader without a mouse can scroll it with the arrow keys (axe, scrollable-region-focusable). */}
+          <ol
+            ref={strip}
+            className={styles.strip}
+            tabIndex={0}
+            aria-label={`The slides, ${post.images.length} of them, scroll sideways`}
+            data-testid="blog-slides-strip"
+          >
             {post.images.map((image) => (
               <li key={image.position} data-position={image.position} className={styles.slide}>
                 <img
