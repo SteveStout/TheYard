@@ -78,7 +78,7 @@ public sealed partial class ProofRunner
     /// and reset. A round with no vehicle worth bidding on stops after the
     /// listing rather than bidding on one that would end or sell mid-run.
     /// </summary>
-    private async Task RoundAsync(HttpClient client, StoreRun store)
+    private async Task RoundAsync(Outbound client, StoreRun store)
     {
         using var signedIn = await Timed(client, store, "sign_in", HttpMethod.Post, "/api/auth/login",
             new { email = store.Email, password = _password });

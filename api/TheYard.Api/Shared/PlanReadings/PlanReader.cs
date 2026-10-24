@@ -18,7 +18,7 @@ namespace TheYard.Api.Shared.PlanReadings;
 /// </summary>
 public sealed class PlanReader(string clientId, string selfResourceId, bool configured, HostIdentity? identity = null, MachineSize? machine = null)
 {
-    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
+    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>The plan's metrics, with the aggregation each is read with.</summary>
     public static readonly (string Name, string Aggregation)[] PlanMetrics =

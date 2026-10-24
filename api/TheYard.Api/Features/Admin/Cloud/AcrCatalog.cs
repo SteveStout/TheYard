@@ -30,7 +30,7 @@ public sealed record AcrHoldings(IReadOnlyList<AcrImage> Images)
 /// <summary>Reads a registry's repositories, tags and untagged manifests.</summary>
 public static class AcrCatalog
 {
-    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
+    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>
     /// The registry's holdings. The identity's Resource Manager token is exchanged at the registry

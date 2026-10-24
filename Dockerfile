@@ -137,6 +137,7 @@ COPY --chown=app:app api/TheYard.Application/Shared ./api/TheYard.Application/Sh
 COPY --chown=app:app api/TheYard.Data/*.cs api/TheYard.Data/*.csproj ./api/TheYard.Data/
 COPY --chown=app:app api/TheYard.Domain/*.cs api/TheYard.Domain/*.csproj ./api/TheYard.Domain/
 COPY --chown=app:app api/TheYard.Infrastructure/*.cs api/TheYard.Infrastructure/*.csproj ./api/TheYard.Infrastructure/
+COPY --chown=app:app api/TheYard.Infrastructure/Shared ./api/TheYard.Infrastructure/Shared
 COPY --chown=app:app api/TheYard.Infrastructure.Cosmos/*.cs api/TheYard.Infrastructure.Cosmos/*.csproj ./api/TheYard.Infrastructure.Cosmos/
 COPY --chown=app:app api/TheYard.Experiment/*.cs api/TheYard.Experiment/*.csproj ./api/TheYard.Experiment/
 COPY --chown=app:app api/TheYard.Migrations.Sqlite/*.cs api/TheYard.Migrations.Sqlite/*.csproj ./api/TheYard.Migrations.Sqlite/

@@ -19,7 +19,7 @@ namespace TheYard.Api.Shared.Instance;
 /// every thirty and a peer that takes longer than that is a peer that is
 /// down for the purposes of a comparison.</para>
 /// </summary>
-public sealed class PeerReader(string? configuredUrl, HttpClient client, bool bothStoresHere = false)
+public sealed class PeerReader(string? configuredUrl, Outbound client, bool bothStoresHere = false)
 {
     /// <summary>
     /// What the card says when this process serves both sites (ADR: One web app for every .NET

@@ -45,7 +45,7 @@ public static class IdentityTokens
     /// startup into HostIdentity, never from the environment here (ADR-107, rule 6). Throws what the
     /// HTTP call throws; every caller already answers a failure with a shape rather than an exception.
     /// </summary>
-    public static async Task<string> AcquireAsync(HttpClient http, string resource, string clientId, HostIdentity identity)
+    public static async Task<string> AcquireAsync(Outbound http, string resource, string clientId, HostIdentity identity)
     {
         using var request = RequestFor(resource, clientId, identity.IdentityEndpoint, identity.IdentityHeader);
         using var response = await http.SendAsync(request);

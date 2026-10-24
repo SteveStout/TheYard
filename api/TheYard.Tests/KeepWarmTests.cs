@@ -121,7 +121,7 @@ public sealed class KeepWarmTests
         var handler = new Answers();
         using var client = new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:5210") };
 
-        var pass = await KeepWarmReads.RunAsync(client, ["sql", "cosmos"], new ManualClock(Start), NullLogger.Instance, CancellationToken.None);
+        var pass = await KeepWarmReads.RunAsync(Outbound.Over(client), ["sql", "cosmos"], new ManualClock(Start), NullLogger.Instance, CancellationToken.None);
 
         // Every path on both stores, and one vehicle from each store's listing.
         Assert.Equal((KeepWarmReads.Paths.Length + 1) * 2, pass.Reads);

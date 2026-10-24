@@ -16,7 +16,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// (<see cref="BundleFileOf"/>); null on a machine with no build, and the sample says it skipped it.</param>
 public sealed partial class NetlifyEdge(string? token, string siteName, Uri publicSite, string? bundleFile = null)
 {
-    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
+    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>What each meter costs in credits on the free plan, as Netlify publishes them.</summary>
     public const double CreditsPerDeploy = 15, CreditsPerGb = 20, FreeCredits = 300;

@@ -83,7 +83,7 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
         var runner = new PageStatusRunner(() => null, () => false, "test", "test");
         using var client = factory.CreateClient();
 
-        var report = await runner.RunAsync(client, "test", CancellationToken.None);
+        var report = await runner.RunAsync(Outbound.Over(client), "test", CancellationToken.None);
 
         var down = report.Entries
             .Where(entry => !entry.Ok)
@@ -106,7 +106,7 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
         var runner = new PageStatusRunner(() => null, () => false, "test", "test");
         using var client = factory.CreateClient();
 
-        var report = await runner.RunAsync(client, "test", CancellationToken.None);
+        var report = await runner.RunAsync(Outbound.Over(client), "test", CancellationToken.None);
 
         var wrong = report.Entries
             .Where(entry => entry.Kind == "document" && entry.ContentType != "text/markdown")
@@ -182,7 +182,7 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
         using var client = new HttpClient(handler) { BaseAddress = new Uri("http://sweep.test/") };
         var runner = new PageStatusRunner(() => null, () => false, "test", "test");
 
-        var report = await runner.RunAsync(client, "test", CancellationToken.None);
+        var report = await runner.RunAsync(Outbound.Over(client), "test", CancellationToken.None);
 
         var health = Assert.Single(report.Entries, entry => entry.Address == "/api/health");
         Assert.True(health.Ok);
@@ -200,7 +200,7 @@ public class PageStatusTests(WebApplicationFactory<Program> factory)
         using var client = new HttpClient(handler) { BaseAddress = new Uri("http://sweep.test/") };
         var runner = new PageStatusRunner(() => null, () => false, "test", "test");
 
-        var report = await runner.RunAsync(client, "test", CancellationToken.None);
+        var report = await runner.RunAsync(Outbound.Over(client), "test", CancellationToken.None);
 
         var health = Assert.Single(report.Entries, entry => entry.Address == "/api/health");
         Assert.False(health.Ok);

@@ -21,7 +21,7 @@ public sealed record AzureMetric(string Azure, string Aggregation, string Readin
 /// <summary>Reads Azure Monitor and Resource Manager with the site's own identity, for any resource.</summary>
 public sealed class AzureMetrics(string clientId, bool configured, HostIdentity? identity = null)
 {
-    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
+    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>True only on Azure, where there is an identity to ask with.</summary>
     public bool Configured => configured;

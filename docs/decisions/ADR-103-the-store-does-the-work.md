@@ -124,7 +124,7 @@ What would change it: a catalogue too big for one physical partition or for the 
 - [`api/TheYard.Infrastructure.Cosmos/CosmosVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosVehicleCatalogue.cs) and [`Documents.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Documents.Catalogue.cs) - the document adapter
 - [`infra/cosmos/catalogue.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/catalogue.json) - the indexed paths and the composite indexes
 - [`api/TheYard.Api/Shared/Stores/Catalogues.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/Catalogues.cs) - one catalogue per store, and who fills
-- [`api/TheYard.Api/Shared/Instance/OutboundHttp.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/OutboundHttp.cs) - the one outbound pool
+- [`api/TheYard.Infrastructure/Shared/Http/OutboundHttp.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Http/OutboundHttp.cs) - the one outbound pool
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep) - `Catalogue__Keep` and the heap limit
 - [`api/TheYard.Tests/StoreCatalogueTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreCatalogueTests.cs) - the slot against the hash, and the relational adapter against the list
 - [`api/TheYard.Tests/StockTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StockTests.cs) - the plan, the merge and the switch

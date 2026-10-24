@@ -8,8 +8,8 @@ namespace TheYard.Api.Shared.Proof;
 /// production, and whatever a test hands in. A factory rather than a client,
 /// because a run wants a fresh client and a test wants to choose it.
 /// </summary>
-public sealed class ProofClients(Func<HttpClient> create)
+public sealed class ProofClients(Func<Outbound> create)
 {
     /// <summary>A fresh client for one run, pointed at wherever the proof's requests go.</summary>
-    public HttpClient Create() => create();
+    public Outbound Create() => create();
 }

@@ -12,7 +12,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <summary>Reads the merger's health from the Function and turns it into the minute's readings.</summary>
 public static class MergerReading
 {
-    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(10));
+    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(10));
 
     /// <summary>The readings a minute keeps, by the Function's own names with a prefix of their own.</summary>
     public const string LogAge = "merger_log_age_s", Waiting = "merger_waiting", Over5 = "merger_waiting_over_5", Over10 = "merger_waiting_over_10", Oldest = "merger_oldest_wait_s";

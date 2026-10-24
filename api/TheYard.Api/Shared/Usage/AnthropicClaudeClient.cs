@@ -22,7 +22,7 @@ public sealed class AnthropicClaudeClient(string? key, IUsageLog usage, TimeProv
     /// <summary>The API version the request is written for.</summary>
     public const string Version = "2023-06-01";
 
-    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(120));
+    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(120));
 
     /// <summary>True when a key is configured.</summary>
     public bool Configured => !string.IsNullOrWhiteSpace(key) && !key.StartsWith("__", StringComparison.Ordinal);

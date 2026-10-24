@@ -139,7 +139,7 @@ public static class KeepWarmReads
     ];
 
     /// <summary>Every read in <see cref="Paths"/>, once per store, through the client given; a read that fails is counted and the pass goes on.</summary>
-    public static async Task<KeepWarmPass> RunAsync(HttpClient self, IReadOnlyList<string> stores, TimeProvider clock, ILogger logger, CancellationToken cancellation)
+    public static async Task<KeepWarmPass> RunAsync(Outbound self, IReadOnlyList<string> stores, TimeProvider clock, ILogger logger, CancellationToken cancellation)
     {
         DateTimeOffset at = clock.GetUtcNow();
         int reads = 0;
@@ -180,7 +180,7 @@ public static class KeepWarmReads
         return new KeepWarmPass(at, reads, failed, slowest, slowestPath);
     }
 
-    private static async Task<(int Status, long Ms, string? Body)> ReadAsync(HttpClient client, string path, string store, ILogger logger, CancellationToken cancellation)
+    private static async Task<(int Status, long Ms, string? Body)> ReadAsync(Outbound client, string path, string store, ILogger logger, CancellationToken cancellation)
     {
         var clock = Stopwatch.StartNew();
         try

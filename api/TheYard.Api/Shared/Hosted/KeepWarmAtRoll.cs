@@ -19,7 +19,7 @@ public sealed class KeepWarmAtRoll(
     // #region keep-warm-wiring
     // One loopback client for the life of the process, cookies off, made the first time the
     // server's address is known.
-    private HttpClient? _client;
+    private Outbound? _client;
 
     /// <summary>Builds the loop and starts it once the server is listening.</summary>
     /// <param name="cancellationToken">The host's start cancellation.</param>
@@ -30,11 +30,7 @@ public sealed class KeepWarmAtRoll(
             async cancellation =>
             {
                 _client ??= SelfAddress.Of(server) is { } dialable
-                    ? new HttpClient(new HttpClientHandler { UseCookies = false })
-                    {
-                        BaseAddress = new Uri(dialable),
-                        Timeout = TimeSpan.FromSeconds(30),
-                    }
+                    ? OutboundHttp.Loopback(new Uri(dialable), TimeSpan.FromSeconds(30))
                     : null;
                 return _client is null
                     ? new KeepWarmPass(DateTimeOffset.UtcNow, 0, 0, 0, null)

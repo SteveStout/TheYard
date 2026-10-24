@@ -315,6 +315,27 @@ public sealed class OnionTests
         Assert.Contains(typeof(TheYard.Application.IUsageLog), typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient).GetConstructors().Single().GetParameters().Select(p => p.ParameterType));
         Assert.True(typeof(TheYard.Application.IClaudeClient).IsAssignableFrom(typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient)));
     }
+    // #region host-opens-no-socket
+    [Fact]
+    public void The_host_opens_no_socket()
+    {
+        // Only Infrastructure opens a socket (ADR: The onion cut into vertical slices, rule 8). The host builds a
+        // request as data and hands it to an Outbound, which Infrastructure's OutboundHttp makes; a client, a
+        // handler or a client factory in any host type but Program and a slice's Module is a second door to the
+        // network that no adapter test sees. The allow list is empty.
+        var result = Types.InAssembly(typeof(Program).Assembly)
+            .That().DoNotHaveName("Program")
+            .And().DoNotHaveNameEndingWith("Module")
+            .ShouldNot().HaveDependencyOnAny(
+                "System.Net.Http.HttpClient",
+                "System.Net.Http.HttpMessageHandler",
+                "System.Net.Http.SocketsHttpHandler",
+                "System.Net.Http.DelegatingHandler",
+                "System.Net.Http.IHttpClientFactory")
+            .GetResult();
+        Assert.True(result.IsSuccessful, Explain(result));
+    }
+    // #endregion host-opens-no-socket
     // #endregion host
 
     /// <summary>

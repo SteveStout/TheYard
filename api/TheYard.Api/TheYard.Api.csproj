@@ -70,6 +70,7 @@
     <Using Include="TheYard.Api.Shared.Usage" />
     <Using Include="TheYard.Api.Shared.Wire" />
     <Using Include="TheYard.Api.Shared.Wiring" />
+    <Using Include="TheYard.Infrastructure.Shared.Http" />
   </ItemGroup>
   <!-- #endregion shared-concerns -->
 

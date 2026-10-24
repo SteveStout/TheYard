@@ -1,5 +1,3 @@
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using TheYard.Infrastructure;
 
 namespace TheYard.Api.Shared.MachineReadings;
@@ -47,7 +45,7 @@ public sealed class HourlyReadings(Uri? site, Func<CancellationToken, Task<Stora
     public async Task PassAsync(CancellationToken cancellation)
     {
         var now = clock.GetUtcNow();
-        DateTimeOffset? notAfter = site is null ? null : await NotAfterAsync(site, cancellation);
+        DateTimeOffset? notAfter = site is null ? null : await OutboundHttp.CertificateNotAfterAsync(site, cancellation);
         var stored = await storage(cancellation);
         Volatile.Write(ref _view, new
         {
@@ -59,37 +57,6 @@ public sealed class HourlyReadings(Uri? site, Func<CancellationToken, Task<Stora
                 ? new { used_mb = Math.Round(s.UsedMb, 1), max_mb = Math.Round(s.MaxMb, 1), share = Math.Round(s.UsedMb / s.MaxMb, 4) }
                 : null,
         });
-    }
-
-    /// <summary>The leaf certificate's last day, from one handshake with the site's own address; null when it cannot be read.</summary>
-    private static async Task<DateTimeOffset?> NotAfterAsync(Uri site, CancellationToken cancellation)
-    {
-        DateTimeOffset? notAfter = null;
-        using var handler = new SocketsHttpHandler
-        {
-            SslOptions = new SslClientAuthenticationOptions
-            {
-                // Read the leaf and keep the platform's own verdict: an invalid chain still fails.
-                RemoteCertificateValidationCallback = (_, certificate, _, errors) =>
-                {
-                    if (certificate is X509Certificate2 leaf)
-                    {
-                        notAfter = new DateTimeOffset(leaf.NotAfter.ToUniversalTime(), TimeSpan.Zero);
-                    }
-                    return errors == SslPolicyErrors.None;
-                },
-            },
-        };
-        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(10) };
-        try
-        {
-            using var response = await client.GetAsync(new Uri(site, "/healthz"), cancellation);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
-        {
-            // No answer is no reading; the card says it was not read.
-        }
-        return notAfter;
     }
 }
 // #endregion hourly-readings

@@ -255,22 +255,21 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
 
     // #region rule-f
     /// <summary>
-    /// Rule f. An outbound call goes through OutboundHttp's one pool. The four that build a client
-    /// of their own are named, each with its reason; a fifth fails here.
+    /// Rule f. An outbound call goes through OutboundHttp's one pool, which since rule 8 of the slices is in
+    /// Infrastructure, the one ring that opens a socket. The clients it builds beside the pool are named in it,
+    /// each with its reason; a client built anywhere else, in the host or in an adapter, fails here.
     /// </summary>
     private static readonly Dictionary<string, string> OwnClients = new(StringComparer.Ordinal)
     {
-        ["Shared/Hosted/KeepWarmAtRoll.cs"] = "the keep-warm loop's loopback client, cookies off, one for the life of the process",
-        ["Shared/Wiring/AdminRegistration.cs"] = "the proof's and the page sweep's loopback clients, cookies off, one per run",
-        ["Shared/MachineReadings/HourlyReadings.cs"] = "a handler of its own to read the certificate the site answers with, once an hour",
-        ["Shared/Instance/OutboundHttp.cs"] = "the pool itself",
+        ["TheYard.Infrastructure/Shared/Http/OutboundHttp.cs"] = "the pool itself; the loopback clients, cookies off, for the keep-warm loop, the proof and the page sweep; and a handler of its own to read the certificate the site answers with, once an hour",
     };
 
     [Fact]
     public void Every_outbound_call_shares_one_pool_and_the_exceptions_are_named()
     {
-        string api = Path.Combine(Repo.Root(), "api", "TheYard.Api");
-        var building = Directory.EnumerateFiles(api, "*.cs", SearchOption.AllDirectories)
+        string api = Path.Combine(Repo.Root(), "api");
+        var building = new[] { "TheYard.Api", "TheYard.Infrastructure", "TheYard.Infrastructure.Cosmos", "TheYard.Application", "TheYard.Domain" }
+            .SelectMany(project => Directory.EnumerateFiles(Path.Combine(api, project), "*.cs", SearchOption.AllDirectories))
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                 && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Where(path => Regex.IsMatch(File.ReadAllText(path), @"new HttpClient\s*[({]|disposeHandler:"))

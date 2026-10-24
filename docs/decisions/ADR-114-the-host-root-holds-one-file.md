@@ -43,7 +43,7 @@ The concerns under `Shared/`:
 | `Shared/Edge/` | `EdgeKeeps`: what the edge may keep and the header each web app names itself in | the request pipeline writes it, the edge card reads it |
 | `Shared/Grades/` | `CloudTones` | the cloud, plan and operations cards |
 | `Shared/Hosted/` | the hosted services that span slices | the host's start and stop |
-| `Shared/Instance/` | `Clocks`, `HostIdentity`, `HostStart`, `HttpCurrentRequest`, `KeepWarm`, `KeepWarmState`, `OutboundHttp`, `PageStatus`, `Peer`, `Pulse`, `ResumeDoor`, `SelfAddress`, `SelfTestCooldown`, `ServedAddresses`, `SiteHosts` | the running process, every slice |
+| `Shared/Instance/` | `Clocks`, `HostIdentity`, `HostStart`, `HttpCurrentRequest`, `KeepWarm`, `KeepWarmState`, `PageStatus`, `Peer`, `Pulse`, `ResumeDoor`, `SelfAddress`, `SelfTestCooldown`, `ServedAddresses`, `SiteHosts` | the running process, every slice |
 | `Shared/MachineReadings/` | `HourlyReadings`, `MachineRecorder`, `MachineSize`, `Machines` | the machines card and the plan card |
 | `Shared/Observability/` | `AdminObservability`, `CollectorLoggerProvider`, `ErrorRings`, `KeptRingWriterReader`, `LogRingBuffer`, `Logs`, `Observability`, `ProblemHandler`, `RingSizes`, `StoreLoggers`, `Telemetry` and its two parts | every request and every error |
 | `Shared/PlanReadings/` | `PlanDeploys`, `PlanHistoryReader`, `PlanReader`, `PlanRecorder`, `PlanRows`, `PlanShapes`, `PlanView` | the plan card and the cloud cards |

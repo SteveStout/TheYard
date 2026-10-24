@@ -20,7 +20,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <param name="token">A read token, from configuration (Nightly:GitHubToken); null or empty sends none.</param>
 public sealed class GitHubRuns(string repo, string workflow, string? token = null)
 {
-    private static HttpClient Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
+    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>How the card says who started a run.</summary>
     public const string ByFunction = "Function dispatch", ByHand = "by hand";

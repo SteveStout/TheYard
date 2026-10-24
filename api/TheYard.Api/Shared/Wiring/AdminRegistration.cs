@@ -23,11 +23,9 @@ public static class AdminRegistration
         // proven). The address is known only once the server is listening, so the
         // factory asks the server when a run starts (SelfAddress.cs); a test replaces
         // this registration with a client to its own in-memory server.
-        builder.Services.AddSingleton(services => new ProofClients(() => new HttpClient(new HttpClientHandler { UseCookies = false })
-        {
-            BaseAddress = new Uri(SelfAddress.Of(services.GetService<IServer>()) ?? "http://127.0.0.1:8080"),
-            Timeout = TimeSpan.FromSeconds(60),
-        }));
+        builder.Services.AddSingleton(services => new ProofClients(() => OutboundHttp.Loopback(
+            new Uri(SelfAddress.Of(services.GetService<IServer>()) ?? "http://127.0.0.1:8080"),
+            TimeSpan.FromSeconds(60))));
         // #endregion proof-clients
 
         // Identifiers, not secrets: the identity's client id and this web app's ARM path. The
@@ -70,11 +68,7 @@ public static class AdminRegistration
         // it dials the loopback once the server is listening, and is started at the roll further down.
         builder.Services.AddSingleton(services => new PageStatusRunner(
             () => SelfAddress.Of(services.GetService<IServer>()) is { } dialable
-                ? new HttpClient(new HttpClientHandler { UseCookies = false })
-                {
-                    BaseAddress = new Uri(dialable),
-                    Timeout = TimeSpan.FromSeconds(30),
-                }
+                ? OutboundHttp.Loopback(new Uri(dialable), TimeSpan.FromSeconds(30))
                 : null,
             // The frontend is in the image and not in a checkout, so the addresses it
             // serves are checked where they exist and named nowhere else.

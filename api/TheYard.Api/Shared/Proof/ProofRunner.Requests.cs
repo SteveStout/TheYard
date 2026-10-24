@@ -16,7 +16,7 @@ public sealed partial class ProofRunner
     /// whole exchange and the two rings read for what the request caused: how
     /// many statements or operations, and what the document store charged.
     /// </summary>
-    private async Task<HttpResponseMessage> Timed(HttpClient client, StoreRun store, string path, HttpMethod method, string url, object? body = null)
+    private async Task<HttpResponseMessage> Timed(Outbound client, StoreRun store, string path, HttpMethod method, string url, object? body = null)
     {
         using var request = new HttpRequestMessage(method, url);
         request.Headers.Add(Backends.HeaderName, store.Backend.Key);
@@ -49,7 +49,7 @@ public sealed partial class ProofRunner
     /// Not timed and not sampled: it is a check that the account survived,
     /// and the round's own sign-in is the measurement.
     /// </summary>
-    private async Task<bool> SignsInAsync(HttpClient client, StoreRun store, string email)
+    private async Task<bool> SignsInAsync(Outbound client, StoreRun store, string email)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
         request.Headers.Add(Backends.HeaderName, store.Backend.Key);

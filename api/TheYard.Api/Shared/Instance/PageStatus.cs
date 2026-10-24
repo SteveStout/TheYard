@@ -24,7 +24,7 @@ namespace TheYard.Api.Shared.Instance;
 /// push a morning of real traffic out of a five-hundred slot ring and add a
 /// visitor to the activity card who is this container.</para>
 /// </summary>
-public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> frontendServed, string version, string commit)
+public sealed class PageStatusRunner(Func<Outbound?> createClient, Func<bool> frontendServed, string version, string commit)
 {
     /// <summary>The header the request hook drops on. A sweep is not traffic.</summary>
     public const string CheckHeader = "X-Yard-Page-Check";
@@ -104,7 +104,7 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
     }
 
     /// <summary>Ask for every address once, four at a time, and report what each one answered.</summary>
-    public async Task<PageStatusReport> RunAsync(HttpClient client, string trigger, CancellationToken cancellation)
+    public async Task<PageStatusReport> RunAsync(Outbound client, string trigger, CancellationToken cancellation)
     {
         var addresses = ServedAddresses.All(frontendServed());
         var entries = new PageStatusEntry[addresses.Count];
@@ -159,7 +159,7 @@ public sealed class PageStatusRunner(Func<HttpClient?> createClient, Func<bool> 
     /// and record what it answered. A request that fails or times out is an
     /// entry that is down with the exception's type name, never a throw.
     /// </summary>
-    private static async Task<PageStatusEntry> CheckAsync(HttpClient client, ServedAddress address, CancellationToken cancellation)
+    private static async Task<PageStatusEntry> CheckAsync(Outbound client, ServedAddress address, CancellationToken cancellation)
     {
         var timer = Stopwatch.StartNew();
         using var request = new HttpRequestMessage(HttpMethod.Get, address.Address);

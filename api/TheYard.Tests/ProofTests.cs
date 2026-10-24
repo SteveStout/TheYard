@@ -162,7 +162,7 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var backends = new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql");
         var runner = new ProofRunner(
             backends,
-            new ProofClients(() => new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") }),
+            new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
             new SqlRingBuffer(10),
             new StoreRingBuffer(10));
 
@@ -210,7 +210,7 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var yard = new CannedYard();
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
-            new ProofClients(() => new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") }),
+            new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
             new SqlRingBuffer(10),
             new StoreRingBuffer(10));
 
@@ -251,7 +251,7 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var refusing = new RefusingYard();
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
-            new ProofClients(() => new HttpClient(refusing) { BaseAddress = new Uri("http://yard.test") }),
+            new ProofClients(() => Outbound.Over(new HttpClient(refusing) { BaseAddress = new Uri("http://yard.test") })),
             new SqlRingBuffer(10),
             new StoreRingBuffer(10));
 
@@ -280,9 +280,9 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var holder = new FactoryHolder();
         var derived = factory.WithWebHostBuilder(builder =>
             builder.ConfigureServices(services =>
-                services.AddSingleton(new ProofClients(() =>
+                services.AddSingleton(new ProofClients(() => Outbound.Over(
                     (holder.Factory ?? throw new InvalidOperationException("the test server is not there yet"))
-                        .CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false })))));
+                        .CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false }))))));
         holder.Factory = derived;
         return (derived, derived.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false }));
     }

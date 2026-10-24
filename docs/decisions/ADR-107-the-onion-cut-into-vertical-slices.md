@@ -178,3 +178,13 @@ Rule 1 moved a root type into a slice only when one slice alone used it, so a ty
 ## Addendum, 2026-10-23 (1.0.4.44): the job hunt's Function takes the same rings
 
 Until this version the rings and the slices held for `api/` alone. The job hunt's Function grew beside them as one project of 43 files, rules, use cases and adapters side by side in each slice folder. From 1.0.4.44 it has the three rings this record names, each its own project under `functions/` (`JobHunt.Domain`, `JobHunt.Application`, `JobHunt.Infrastructure`), with slices inside each ring, and the host over them holds the timers and `Program.cs` alone. `RingTests` in the Function's test project holds the direction, the network and the environment the way `OnionTests` and `SliceTests` hold them here. ADR: One host per process, the rings under them is the record, and says what is left: one host per process waits on the hosting plan.
+
+## Addendum, 2026-10-23 (1.0.4.45): rule 8, only Infrastructure opens a socket
+
+The rings held the stores out of the host and left the network in it: twenty-two host files held an `HttpClient`, a handler or the pool, from the cloud cards' readers (`AzureMetrics`, `AcrCatalog`, `NetlifyEdge`, `GitHubRuns`, `MergerReading`, `PlanReader`, `CostReader`, the telemetry and the log readers) to the keep-warm loop, the proof, the page sweep, the peer and the hourly certificate read. From 1.0.4.45 the socket is opened in one place, `api/TheYard.Infrastructure/Shared/Http/OutboundHttp.cs`: the one pool the readers share, the loopback clients with cookies off that read the site the way a visitor does, and the handler that reads the certificate. The host builds each request as data and hands it to an `Outbound`, the one type it holds, which carries the members the readers use and nothing that opens a connection. What each reader asks and how it reads the answer did not move and did not change.
+
+```live path=api/TheYard.Tests/OnionTests.cs region=host-opens-no-socket
+```
+
+`OnionTests.The_host_opens_no_socket` holds it: no host type but `Program` and a slice's `Module` names a client, a handler or a client factory, and the allow list is empty. Red on 1.0.4.44 with only its file applied (the twenty-two), green from 1.0.4.45. `MemoryRulesTests` rule f now reads every ring for a client built outside the pool, and finds the one file. What is left of the prompt's shape for this rung, a reader port per card in Application with its adapter beside the pool, is a cut of each reader's parsing from its request, which this version does not make: the readers' answers are already the Cloud slice's one port (`ICloudCards`), and the request each sends is now the only part of them that touches the network.
+

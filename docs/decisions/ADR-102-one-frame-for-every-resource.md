@@ -116,7 +116,7 @@ From 1.0.3.173 to 1.0.3.176 every push to main deployed green and ran CI red, an
 
 What changed instead. Seven readers each held a static `HttpClient` of their own, which is seven connection pools for the same few hosts. From 1.0.3.177 they share one, `OutboundHttp`: one `SocketsHttpHandler` that retires each connection after two minutes, so a changed DNS answer is picked up, and a cheap client per call that carries the caller's timeout. The same file is the suite's seam. A test routes its own flow's calls to recorded answers, which `CloudReadersTests` holds in the shapes each service gives. Every reader then runs its real request building, parsing and failure paths with no network: a metric Azure refuses at one grain, a Log Analytics query answered 403, and a Netlify token that cannot see the site.
 
-```live path=api/TheYard.Api/Shared/Instance/OutboundHttp.cs region=outbound-http
+```live path=api/TheYard.Infrastructure/Shared/Http/OutboundHttp.cs region=outbound-http
 ```
 
 ## Addendum, 2026-10-20: the database cards read what they typed
