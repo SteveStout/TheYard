@@ -106,7 +106,7 @@ export function PeopleReadouts({
             </p>
           )}
           <p className={styles.sub}>
-            one a person a day
+            one a person a day, today to the minute
             {read?.visits ? ` · since ${countedFromWords(read.visits.from)}` : ''} · source: the
             kept activity
           </p>

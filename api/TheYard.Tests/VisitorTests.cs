@@ -163,6 +163,64 @@ public sealed class VisitorTests
         Assert.Null((await new ReadPeopleCountHandler(new MemoryVisitorStore(), new Fixed(Today)).HandleAsync(new ReadPeopleCountQuery(), CancellationToken.None)).Visits);
     }
 
+    [Fact]
+    public void A_scanner_record_is_kept_ninety_days_and_a_person_for_good()
+    {
+        Assert.Equal(90 * 86_400, TheYard.Infrastructure.Cosmos.Features.Visitors.VisitorDocument.TtlFor(VisitorKind.Scanners));
+        Assert.Equal(-1, TheYard.Infrastructure.Cosmos.Features.Visitors.VisitorDocument.TtlFor(VisitorKind.People));
+        Assert.Equal(-1, TheYard.Infrastructure.Cosmos.Features.Visitors.VisitorDocument.TtlFor(VisitorKind.Self));
+    }
+
+    [Fact]
+    public async Task Todays_visits_are_counted_again_every_minute_between_the_hourly_counts()
+    {
+        static ActivityVisitor Row(string day, string token) =>
+            new("sql", day, token, "203.0.113", Today, Today, 1, 0, new Dictionary<string, int>());
+        var rows = new List<ActivityVisitor> { Row("2026-10-22", "a1"), Row("2026-10-23", "b1") };
+        var clock = new Stepping(Today);
+        var history = new VisitHistory(new GrowingStore(rows), clock);
+        await history.ReadAsync(CancellationToken.None);
+        await history.Taking;
+        Assert.Equal(2, (await history.ReadAsync(CancellationToken.None))?.Visits);
+
+        // Two more people today, read a minute later: today is counted again without waiting the hour.
+        rows.Add(Row("2026-10-23", "c1"));
+        rows.Add(Row("2026-10-23", "d1"));
+        clock.Advance(TimeSpan.FromSeconds(30));
+        await history.ReadAsync(CancellationToken.None);
+        await history.Taking;
+        Assert.Equal(2, (await history.ReadAsync(CancellationToken.None))?.Visits);
+        clock.Advance(VisitHistory.TodayEvery);
+        await history.ReadAsync(CancellationToken.None);
+        await history.Taking;
+        var kept = await history.ReadAsync(CancellationToken.None);
+        Assert.Equal(4, kept?.Visits);
+        Assert.Equal(3, kept?.ByDay["2026-10-23"]);
+        Assert.Equal(1, kept?.ByDay["2026-10-22"]);
+    }
+
+    /// <summary>A store whose rows can grow, answering only the rows from the day asked.</summary>
+    private sealed class GrowingStore(List<ActivityVisitor> rows) : IActivityStore
+    {
+        public Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation) => Task.FromResult(new ActivityAvailability(true, "kept"));
+
+        public Task RecordAsync(IReadOnlyList<ActivityHit> hits, CancellationToken cancellation) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<ActivityHour>> HoursAsync(DateTimeOffset since, CancellationToken cancellation) => Task.FromResult<IReadOnlyList<ActivityHour>>([]);
+
+        public Task<IReadOnlyList<ActivityVisitor>> VisitorsAsync(DateTimeOffset since, CancellationToken cancellation) =>
+            Task.FromResult<IReadOnlyList<ActivityVisitor>>([.. rows.Where(row => string.CompareOrdinal(row.Day, since.UtcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)) >= 0)]);
+    }
+
+    private sealed class Stepping(DateTimeOffset start) : TimeProvider
+    {
+        private DateTimeOffset _now = start;
+
+        public override DateTimeOffset GetUtcNow() => _now;
+
+        public void Advance(TimeSpan by) => _now += by;
+    }
+
     private sealed class RowsStore(IReadOnlyList<ActivityVisitor> rows) : IActivityStore
     {
         public Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation) => Task.FromResult(new ActivityAvailability(true, "kept"));

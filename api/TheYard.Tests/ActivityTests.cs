@@ -174,6 +174,35 @@ public class ActivityTests
         Assert.Equal(token, person.Visitor);
     }
 
+    [Theory]
+    [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.84 Safari/537.36", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.69 Safari/537.36")]
+    [InlineData("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.6613.88 Mobile Safari/537.36", "Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.81 Mobile Safari/537.36")]
+    [InlineData("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1")]
+    [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.2739.42", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.2849.56")]
+    [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0")]
+    [InlineData("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", "Mozilla/5.0 (compatible; Googlebot/2.2; +http://www.google.com/bot.html)")]
+    public void A_browser_that_updates_itself_is_the_same_visitor(string before, string after)
+    {
+        var tokens = new VisitorTokens("a signing key");
+
+        Assert.Equal(tokens.PersonFor("203.0.113.7", before), tokens.PersonFor("203.0.113.7", after));
+        Assert.Equal(VisitorTokens.AgentFamily(before), VisitorTokens.AgentFamily(after));
+    }
+
+    [Fact]
+    public void Two_browsers_on_one_machine_are_two_visitors()
+    {
+        var tokens = new VisitorTokens("a signing key");
+        string chrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.69 Safari/537.36";
+        string edge = chrome + " Edg/130.0.2849.56";
+        string firefox = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0";
+        string android = "Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.81 Mobile Safari/537.36";
+
+        var hashes = new[] { chrome, edge, firefox, android }.Select(agent => tokens.PersonFor("203.0.113.7", agent)).ToHashSet();
+
+        Assert.Equal(4, hashes.Count);
+    }
+
     [Fact]
     public void The_operators_own_reads_are_the_site_reading_itself_and_keep_no_person()
     {

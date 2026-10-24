@@ -17,6 +17,7 @@
 //   ActivityReportCache    ActivityReportCache.cs   the public report, kept a short while per window
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace TheYard.Api.Shared.Activity;
 
@@ -32,7 +33,7 @@ namespace TheYard.Api.Shared.Activity;
 /// obvious scanner range, and not enough to name a machine. A full address is
 /// never stored, and a full address is never sent anywhere from here.
 /// </summary>
-public sealed class VisitorTokens(string key)
+public sealed partial class VisitorTokens(string key)
 {
     /// <summary>The signing key as bytes, the key of every hash this makes.</summary>
     private readonly byte[] _key = Encoding.UTF8.GetBytes(key);
@@ -46,15 +47,27 @@ public sealed class VisitorTokens(string key)
 
     /// <summary>
     /// The visitor's hash that does not rotate (ADR-116: People who have visited, counted once): the same key,
-    /// the address and the user agent, with the count's own label in the hash and no day, so one browser on one
-    /// address is one visitor for good and the daily token cannot be matched to it. Neither the address nor the
-    /// agent is kept; a person who changes network or browser is counted again, which the record says.
+    /// the address and the browser's family and platform (the user agent with its version numbers taken out), with
+    /// the count's own label in the hash and no day, so one browser on one address is one visitor for good, a
+    /// browser that updates itself stays the same visitor, and the daily token cannot be matched to it. Neither
+    /// the address nor the agent is kept; a person who changes network or browser is counted again, which the
+    /// record says.
     /// </summary>
     public string PersonFor(string address, string? userAgent)
     {
-        byte[] hash = HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes("person|" + address + "|" + (userAgent ?? "")));
+        byte[] hash = HMACSHA256.HashData(_key, Encoding.UTF8.GetBytes("person|" + address + "|" + AgentFamily(userAgent)));
         return Convert.ToHexStringLower(hash.AsSpan(0, 16));
     }
+
+    /// <summary>
+    /// A user agent with every version number taken out, so one browser before and after it updates itself is one
+    /// browser. What is left names the browser, its engine and the platform.
+    /// </summary>
+    public static string AgentFamily(string? userAgent) =>
+        string.IsNullOrEmpty(userAgent) ? "" : Versions().Replace(userAgent, "");
+
+    [GeneratedRegex(@"\d+(?:[._]\d+)*")]
+    private static partial Regex Versions();
 
     /// <summary>
     /// The value of the operator's cookie (<see cref="Hits.OperatorCookie"/>): a keyed hash with its own label and

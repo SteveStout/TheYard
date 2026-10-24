@@ -92,3 +92,11 @@ The review of 24 October found two things the count said that were not so. First
 
 Second, "since 23 Oct" was the first scanner's day: the count's first day was the earliest first-seen over every kept record. It is the earliest first-seen over the people now, and none before the first person, in both adapters.
 
+## Addendum, 2026-10-24 (1.0.4.51): a browser that updates itself is the same person, the tally is counted not read, and today's visits are to the minute
+
+The person hash took the whole user agent, and Chrome's version changes every four weeks, so the same person on the same network became a new person each month. From 1.0.4.51 the hash takes the address and the agent's family and platform, the agent with every version number taken out (VisitorTokens.AgentFamily, held by a test over six real agents: Chrome on a desktop and on Android, Safari on an iPhone, Edge, Firefox and a crawler). The count of people resets once on the day this rolled, 24 October 2026: every person already counted is counted once more, the next time they visit. Two people on one network with the same browser on the same platform are one person, which the count already accepted for one browser.
+
+The tally the Activity card and the first screen read once a minute read every kept visitor record, and scanners were kept for good, about 150 a day. Now it is counted, not read: one aggregate query by kind, the first person's day, and the first days of the people first seen in the thirty-day window. A scanner's record expires after ninety days (`ttl` on the scanner records only; a person's is -1, never), and the scanners left out of the count are a running number on one `visitors-summary` document in the same partition, so the figure keeps its history after the records go. If the store refuses the aggregate read, the whole read it replaced still answers. The request-unit cost of one tally before and after was not read from the response headers in this lane; the before is every visitor document (over a hundred, growing), the after three aggregate answers and one point read.
+
+The visits were counted once an hour, so for up to an hour "new today" could read more people than "visits today". VisitHistory counts today alone again every minute between the hourly counts, one partition, and the readout says "today to the minute".
+

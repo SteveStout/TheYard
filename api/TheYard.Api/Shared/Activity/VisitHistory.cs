@@ -9,7 +9,8 @@ namespace TheYard.Api.Shared.Activity;
 
 // #region visit-history
 /// <summary>
-/// Counts the visits by people across every kept day of activity, at most once an hour, in the background.
+/// Counts the visits by people across every kept day of activity, at most once an hour, in the background, and
+/// today's again every minute between, so today's visits never run behind today's people (one partition read).
 /// A reader is handed the last count at once, or null before the first one finishes; the first read starts it.
 /// The first count reads every kept day; each count after it reads only from the day before the newest day
 /// it holds, because a day's rows can still be written at its boundary and today's are being written, and
@@ -22,6 +23,9 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
     /// <summary>How long a count is handed out before it is taken again.</summary>
     public static readonly TimeSpan Every = TimeSpan.FromHours(1);
 
+    /// <summary>How long today's visits are handed out before today alone is counted again.</summary>
+    public static readonly TimeSpan TodayEvery = TimeSpan.FromMinutes(1);
+
     /// <summary>How long after a count that failed the next is tried: sooner than an hour, never at once.</summary>
     public static readonly TimeSpan RetryAfter = TimeSpan.FromMinutes(5);
 
@@ -31,6 +35,7 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
     private readonly Lock _gate = new();
     private KeptVisits? _last;
     private DateTimeOffset _takenAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _todayAt = DateTimeOffset.MinValue;
     private Task? _taking;
 
     /// <summary>The count as last taken, starting a new one when it is older than <see cref="Every"/>.</summary>
@@ -38,9 +43,17 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
     {
         lock (_gate)
         {
-            if (clock.GetUtcNow() - _takenAt >= Every && _taking is not { IsCompleted: false })
+            var now = clock.GetUtcNow();
+            if (_taking is not { IsCompleted: false })
             {
-                _taking = Task.Run(TakeAsync, CancellationToken.None);
+                if (now - _takenAt >= Every)
+                {
+                    _taking = Task.Run(() => TakeAsync(todayOnly: false), CancellationToken.None);
+                }
+                else if (_last is not null && now - _todayAt >= TodayEvery)
+                {
+                    _taking = Task.Run(() => TakeAsync(todayOnly: true), CancellationToken.None);
+                }
             }
             return Task.FromResult(_last);
         }
@@ -58,7 +71,7 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
         }
     }
 
-    private async Task TakeAsync()
+    private async Task TakeAsync(bool todayOnly)
     {
         KeptVisits? held;
         lock (_gate)
@@ -67,8 +80,22 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
         }
         try
         {
-            var since = held is null ? Beginning : DayBefore(held.ByDay.Keys.Max(StringComparer.Ordinal)!);
+            var since = held is null ? Beginning
+                : todayOnly ? new DateTimeOffset(clock.GetUtcNow().UtcDateTime.Date, TimeSpan.Zero)
+                : DayBefore(held.ByDay.Keys.Max(StringComparer.Ordinal)!);
             var rows = await store.VisitorsAsync(since, CancellationToken.None);
+            if (todayOnly && held is not null)
+            {
+                // Today alone: an empty answer is a quiet start of the day or a store that is not there, and either
+                // way the held count stands; a person's row today replaces today's figure.
+                var today = rows.Count == 0 ? held : Merge(held, Count(rows), since);
+                lock (_gate)
+                {
+                    _last = today;
+                    _todayAt = clock.GetUtcNow();
+                }
+                return;
+            }
             if (rows.Count == 0 && held is not null)
             {
                 // A store that answers nothing for two days it answered before is a store that is not there
@@ -86,6 +113,7 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
             {
                 _last = total ?? _last;
                 _takenAt = clock.GetUtcNow();
+                _todayAt = _takenAt;
             }
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
@@ -95,7 +123,14 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
             // fifteen seconds for the whole history.
             lock (_gate)
             {
-                _takenAt = clock.GetUtcNow() - Every + RetryAfter;
+                if (todayOnly)
+                {
+                    _todayAt = clock.GetUtcNow() - TodayEvery + RetryAfter;
+                }
+                else
+                {
+                    _takenAt = clock.GetUtcNow() - Every + RetryAfter;
+                }
             }
         }
     }
