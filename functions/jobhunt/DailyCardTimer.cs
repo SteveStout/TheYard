@@ -4,21 +4,41 @@ using Microsoft.Extensions.Logging;
 namespace JobHunt.Functions;
 
 /// <summary>
+/// Writes the morning card, nightly/CARD.md, when what it says has changed, and at 6 AM Central whether or not it
+/// has, so the morning always has a fresh one.
+/// </summary>
+/// <remarks>
 /// The daily card, at 5 past every hour (UTC clock). DAILY_CARD=on writes nightly/CARD.md when what it
 /// says has changed, and at 6 AM Central whether or not it has, so the morning always has a fresh one;
 /// anything else is off.
-/// </summary>
+/// </remarks>
 public sealed class DailyCardTimer(IMergeStore store, IHttpClientFactory http, TimeProvider time, ILogger<DailyCardTimer> log)
 {
     [Function("DailyCard")]
     public async Task RunAsync([TimerTrigger("0 5 * * * *")] TimerInfo timer, CancellationToken ct)
     {
-        if (!string.Equals(Environment.GetEnvironmentVariable("DAILY_CARD"), "on", StringComparison.OrdinalIgnoreCase))
+        var run = new RunLine("DailyCard", time.GetUtcNow(), [5]);
+        try
         {
-            log.LogInformation("daily card idle: DAILY_CARD is not on");
-            return;
+            if (!string.Equals(Environment.GetEnvironmentVariable("DAILY_CARD"), "on", StringComparison.OrdinalIgnoreCase))
+            {
+                run.Came("unchanged", "switch_off");
+                log.LogInformation("daily card idle: DAILY_CARD is not on");
+                return;
+            }
+            string result = await WriteAsync(store, new DailyCardSource(store, http, time), time, ct);
+            run.Count("written", result == "written" ? 1 : 0).Came(result == "written" ? "success" : "unchanged");
+            log.LogInformation("daily card: {Result}", result);
         }
-        log.LogInformation("daily card: {Result}", await WriteAsync(store, new DailyCardSource(store, http, time), time, ct));
+        catch (Exception ex)
+        {
+            run.Failed(ex);
+            throw;
+        }
+        finally
+        {
+            RunLines.Write(log, run, time.GetUtcNow());
+        }
     }
 
     /// <summary>Writes the card when its body changed or at 6 AM Central, and says which.</summary>
