@@ -360,7 +360,7 @@ Most of this lives in the Api host, where `Backend.cs` holds one store's catalog
 ## Files
 
 - [`api/TheYard.Api/Shared/Stores/Stores.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/Stores.cs): the backends, the request's choice, and the warm before a read.
-- [`api/TheYard.Infrastructure/ContextFactory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ContextFactory.cs): the relational context factory.
+- [`api/TheYard.Infrastructure/Shared/Stores/ContextFactory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/ContextFactory.cs): the relational context factory.
 - [`api/TheYard.Api/Shared/Wiring/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/StoreRegistration.cs): two stores brought up.
 - [`api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs) and [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the endpoints on the request's store.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health check per store.

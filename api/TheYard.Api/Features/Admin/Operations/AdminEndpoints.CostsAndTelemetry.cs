@@ -1,7 +1,6 @@
 // The Admin tab's cost and telemetry routes: what Azure charges for the site, and the last hour as Application
 // Insights has it. Each asks its one query handler (ADR-115's fourth rung).
 using TheYard.Application.Features.Admin.Costs;
-using TheYard.Application.Features.Admin.Operations;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

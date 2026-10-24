@@ -108,14 +108,14 @@ const rows = [
     sub: 'the adapter behind the same three ports',
     sql: {
       title: 'Entity Framework Core over SqlClient',
-      mono: 'api/TheYard.Infrastructure/YardConnection.cs, EfSources.cs, SqlLogInterceptor.cs',
+      mono: 'api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs, EfSources.cs, SqlLogInterceptor.cs',
       body: [
         'A DbContext per request, LINQ that EF turns into statements, and a managed identity token instead of a password. The interceptor records every statement, parameters by name and never a value (ADR-043).',
       ],
     },
     cosmos: {
       title: 'The Cosmos DB SDK, directly',
-      mono: 'api/TheYard.Infrastructure.Cosmos/CosmosStore.cs, CosmosSources.cs',
+      mono: 'api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosStore.cs, CosmosSources.cs',
       body: [
         'One CosmosClient for the process, point reads and queries by hand, so the request charge and the diagnostics stay visible. Managed identity with a data-plane role; local authentication is disabled, so no key exists to leak (ADR-062).',
       ],
@@ -144,7 +144,7 @@ const rows = [
     sub: 'read, decide, write, and what happens when two writers race',
     sql: {
       title: 'Find, then Add or update, then SaveChanges',
-      mono: 'api/TheYard.Infrastructure/EfSources.cs, region bid-store',
+      mono: 'api/TheYard.Infrastructure/Shared/Auction/EfSources.cs, region bid-store',
       body: [
         'Two statements. A DbUpdateConcurrencyException means another writer moved the row between the read and the write; the store starts again from what is there now, three tries, then the exception travels.',
       ],
@@ -152,7 +152,7 @@ const rows = [
     },
     cosmos: {
       title: 'Point read, then CreateItem or ReplaceItem with If-Match',
-      mono: 'api/TheYard.Infrastructure.Cosmos/CosmosSources.cs, region cosmos-bid-store',
+      mono: 'api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosSources.cs, region cosmos-bid-store',
       body: [
         'Two operations. A 412 is the same race as the concurrency exception and a 409 is a create that lost; the same three tries. The read costs 1 RU, the create 5.52, the replace 10.29.',
       ],
@@ -171,7 +171,7 @@ const rows = [
     },
     cosmos: {
       title: 'A claim document does it',
-      mono: 'api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs, region create',
+      mono: 'api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs, region create',
       body: [
         'No unique index spans partitions. The store creates a document whose id is the address first; a 409 on that create is the refusal. If the account write then fails the claim is removed, and a process that dies between the two leaves a claim with no account, which is the written-down cost of the shape (ADR-061).',
       ],

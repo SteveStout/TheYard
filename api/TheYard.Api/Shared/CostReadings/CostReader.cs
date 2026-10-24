@@ -3,7 +3,6 @@
 // (tokens, paging, refusals) is a different job from shaping the answer, which is Costs.cs.
 using System.Net;
 using System.Text.Json;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.CostReadings;
 

@@ -85,7 +85,7 @@ costs is counted by the adapters instead and reported with the card.
 
 ### What a hit carries, and what it cannot
 
-```live path=api/TheYard.Application/Activity.cs region=activity-port
+```live path=api/TheYard.Application/Shared/History/Activity.cs region=activity-port
 ```
 
 Six fields. When; a visitor token; the network; the path; the store; whether
@@ -211,15 +211,15 @@ The request hook, a local function inside `ObservabilityRegistration` until 1.0.
 
 ## Files
 
-- [`api/TheYard.Application/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Activity.cs): the port, the hit, and the folding of a batch into deltas.
+- [`api/TheYard.Application/Shared/History/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/Activity.cs): the port, the hit, and the folding of a batch into deltas.
 - [`api/TheYard.Api/Shared/Activity/Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Activity/Activity.cs): the token, the bot guess, the collector and the report.
 - [`api/TheYard.Api/Shared/Auth/AdminKey.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Auth/AdminKey.cs): the key, read from the query or the header in one place and compared in constant time.
 - [`api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs): the hook beside the request ring (region activity-hook).
 - [`api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs): the wiring.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region activity-endpoints).
-- [`api/TheYard.Infrastructure/EfActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfActivityStore.cs) and [`ActivityRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ActivityRows.cs): the relational adapter and its two rows.
+- [`api/TheYard.Infrastructure/Shared/History/EfActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/History/EfActivityStore.cs) and [`ActivityRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ActivityRows.cs): the relational adapter and its two rows.
 - [`api/TheYard.Database/Tables/ActivityHours.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityHours.sql) and [`ActivityVisitors.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/ActivityVisitors.sql): the schema, which is the authority.
-- [`api/TheYard.Infrastructure.Cosmos/CosmosActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosActivityStore.cs) and [`infra/cosmos/activity.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/activity.json): the document adapter and the container it needs.
+- [`api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosActivityStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosActivityStore.cs) and [`infra/cosmos/activity.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/activity.json): the document adapter and the container it needs.
 - [`src/lib/activity.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/activity.ts) and [`src/components/admin/ActivityCard/ActivityCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ActivityCard/ActivityCard.tsx): the geometry and the card.
 - [`api/TheYard.Tests/ActivityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ActivityTests.cs) and [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the folding, the token, the endpoints, and the at sign that is never there.
 

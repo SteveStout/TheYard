@@ -1,10 +1,7 @@
 using Mono.Cecil;
 using NetArchTest.Rules;
-using TheYard.Application;
 using TheYard.Data;
-using TheYard.Domain;
 using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 
@@ -161,7 +158,7 @@ public sealed class OnionTests
                 "System.Data.Common",
                 "TheYard.Infrastructure.Cosmos",
                 "TheYard.Infrastructure.YardDbContext",
-                "TheYard.Infrastructure.ContextFactory",
+                "TheYard.Infrastructure.Shared.Stores.ContextFactory",
                 "System.IServiceProvider",
                 "Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions")
             .GetResult();
@@ -177,9 +174,9 @@ public sealed class OnionTests
         var result = Types.InAssembly(typeof(Program).Assembly)
             .That().MeetCustomRule(IsPartOfAnEndpointClass)
             .ShouldNot().HaveDependencyOnAny(
-                "TheYard.Application.BidBook",
-                "TheYard.Application.Room",
-                "TheYard.Application.Stock")
+                "TheYard.Application.Shared.Auction.BidBook",
+                "TheYard.Application.Shared.Auction.Room",
+                "TheYard.Application.Shared.Auction.Stock")
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
     }
@@ -196,7 +193,7 @@ public sealed class OnionTests
             .That().MeetCustomRule(type => IsPartOfAnEndpointClass(type)
                 && !InNamespace(Outermost(type).Namespace, "TheYard.Api.Features.Admin")
                 && !InNamespace(Outermost(type).Namespace, "TheYard.Api.Features.Health"))
-            .ShouldNot().HaveDependencyOnAny("TheYard.Api.Shared.Stores.Backend", "TheYard.Api.Shared.Stores.Backends", "TheYard.Infrastructure.Cosmos.CosmosStore")
+            .ShouldNot().HaveDependencyOnAny("TheYard.Api.Shared.Stores.Backend", "TheYard.Api.Shared.Stores.Backends", "TheYard.Infrastructure.Cosmos.Shared.Stores.CosmosStore")
             .GetResult();
         Assert.True(result.IsSuccessful, Explain(result));
     }
@@ -283,7 +280,7 @@ public sealed class OnionTests
         // The handlers and services take their ports by constructor; a handler that took an
         // IServiceProvider and asked it for a port would pass the ring rule (System is allowed)
         // and hide its dependency from every fake-port test (the review of 1.0.4.0, finding 5).
-        Assert.Empty(RuntimeLookups(typeof(TheYard.Application.StandingReader).Assembly.Location));
+        Assert.Empty(RuntimeLookups(typeof(TheYard.Application.Shared.Auction.StandingReader).Assembly.Location));
     }
 
     /// <summary>
@@ -312,8 +309,8 @@ public sealed class OnionTests
             .Select(path => Path.GetRelativePath(root, path))
             .ToList();
         Assert.True(calling.Count == 0, "these files reach the Anthropic API around IClaudeClient: " + string.Join(", ", calling));
-        Assert.Contains(typeof(TheYard.Application.IUsageLog), typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient).GetConstructors().Single().GetParameters().Select(p => p.ParameterType));
-        Assert.True(typeof(TheYard.Application.IClaudeClient).IsAssignableFrom(typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient)));
+        Assert.Contains(typeof(TheYard.Application.Shared.History.IUsageLog), typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient).GetConstructors().Single().GetParameters().Select(p => p.ParameterType));
+        Assert.True(typeof(TheYard.Application.Shared.Claude.IClaudeClient).IsAssignableFrom(typeof(TheYard.Api.Shared.Usage.AnthropicClaudeClient)));
     }
     // #region host-opens-no-socket
     [Fact]

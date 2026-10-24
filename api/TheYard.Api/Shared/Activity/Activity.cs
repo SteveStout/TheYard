@@ -17,7 +17,6 @@
 //   ActivityReportCache    ActivityReportCache.cs   the public report, kept a short while per window
 using System.Security.Cryptography;
 using System.Text;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Activity;
 

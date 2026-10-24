@@ -66,7 +66,7 @@ stands. `StandingRules` holds the one rule for raising a vehicle's shown price, 
 (the buyer's bids, the room's bids and the room's price to beat) all raise a price through it, so
 the rule has one copy and the three cannot drift apart:
 
-```live path=api/TheYard.Domain/StandingRules.cs region=raised-to
+```live path=api/TheYard.Domain/Shared/Auction/StandingRules.cs region=raised-to
 ```
 
 The host keeps the same discipline at the top. `Program.cs` is a table of contents: each line is
@@ -160,7 +160,7 @@ to the code that calls it, and prefer several small interfaces to one wide one.
 **In TheYard.** The auction has three ports, not one repository, because the catalogue, the photos
 and the bids are read by different code at different times:
 
-```live path=api/TheYard.Application/Ports.cs region=ports
+```live path=api/TheYard.Application/Shared/Auction/Ports.cs region=ports
 ```
 
 `IStoreExperiment`, the port behind the Admin tab's performance proof, has one method, because the

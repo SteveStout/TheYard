@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using TheYard.Api.Features.Admin.Cloud;
 using TheYard.Api.Features.Admin.Operations;
-using TheYard.Application;
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 

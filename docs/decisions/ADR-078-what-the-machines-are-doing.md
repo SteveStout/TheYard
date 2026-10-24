@@ -188,9 +188,9 @@ The readings span four rings: MachineSampler and MachineRecorder sit in the host
 ## Files
 
 - [`api/TheYard.Api/Shared/MachineReadings/Machines.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/MachineReadings/Machines.cs): the sampler and the document reading.
-- [`api/TheYard.Infrastructure/ResourceStats.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/ResourceStats.cs): the relational store's resource view, read by the adapter that owns the database.
-- [`api/TheYard.Application/MachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MachineHistory.cs): a kept minute, a bucket, the windows, the folding and the port.
-- [`api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs) and [`infra/cosmos/machines.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/machines.json): the minutes in the document store, the grouped query, and the container they live in.
+- [`api/TheYard.Infrastructure/Shared/Stores/ResourceStats.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/ResourceStats.cs): the relational store's resource view, read by the adapter that owns the database.
+- [`api/TheYard.Application/Shared/History/MachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/MachineHistory.cs): a kept minute, a bucket, the windows, the folding and the port.
+- [`api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosMachineHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosMachineHistory.cs) and [`infra/cosmos/machines.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/machines.json): the minutes in the document store, the grouped query, and the container they live in.
 - [`api/TheYard.Tests/MachineHistoryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/MachineHistoryTests.cs): the folding, the document, the cache, the endpoint, and the grouped query against the real account.
 - [`api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ActivityRegistration.cs): the sampler registered (region machine-sampler-wiring).
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the endpoint (region machines-endpoint).
@@ -204,12 +204,12 @@ The readings span four rings: MachineSampler and MachineRecorder sit in the host
 ```live path=api/TheYard.Api/Shared/MachineReadings/MachineRecorder.cs region=machine-recorder
 ```
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosMachineHistory.cs region=grouped-query
+```live path=api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosMachineHistory.cs region=grouped-query
 ```
 
 ## Addendum, 2026-10-03: the resource view moved to the adapter
 
-The read of `sys.dm_db_resource_stats` moved from the host into the relational adapter (`api/TheYard.Infrastructure/ResourceStats.cs`), because it is a raw statement against the database and the host should only ask for a reading. The card, the statement and the sentence a refused read shows are unchanged. `OnionTests.The_host_never_queries_a_database_itself` keeps any query out of the host from now on.
+The read of `sys.dm_db_resource_stats` moved from the host into the relational adapter (`api/TheYard.Infrastructure/Shared/Stores/ResourceStats.cs`), because it is a raw statement against the database and the host should only ask for a reading. The card, the statement and the sentence a refused read shows are unchanged. `OnionTests.The_host_never_queries_a_database_itself` keeps any query out of the host from now on.
 
 ## Addendum, 2026-10-17: the latency on the first screen
 

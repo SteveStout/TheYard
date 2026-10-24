@@ -1,12 +1,11 @@
 // The stores this container runs, and which one a request gets: the backends, the request's
 // choice and the warm before a read. The rest of the store wiring lives in files beside this
 // one, and the relational context factory lives with the
-// relational adapters in TheYard.Infrastructure/ContextFactory.cs:
+// relational adapters in TheYard.Infrastructure/Shared/Stores/ContextFactory.cs:
 //   Backend.cs                        one store and what stands on it (Backend, StoreAttachment)
 //   StorePrepare.cs                   the five asks a store gets at startup
 //   StoreSecondChance.cs              the store tried again after startup
 //   Shared/Wiring/StoreRegistration.cs       where the stores are brought up and registered
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Stores;
 

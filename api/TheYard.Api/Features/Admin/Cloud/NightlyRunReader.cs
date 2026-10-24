@@ -2,7 +2,6 @@
 // read from GitHub once an hour, the card's cache filled from GitHub's answer, and the run log kept
 // as the durable copy when its container is there. One job, apart from the Azure reads in
 // NightlySource, so it is tested with a GitHub answer and a log and nothing of Azure.
-using TheYard.Application;
 using TheYard.Data;
 
 namespace TheYard.Api.Features.Admin.Cloud;

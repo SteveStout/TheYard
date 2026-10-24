@@ -1,7 +1,8 @@
 // A bid or a Buy Now, as one use case: is the session on this store, does the vehicle exist, does
 // the domain accept the action on the server's clock, and what the caller sees afterwards.
 using TheYard.Application.Shared;
-using TheYard.Domain;
+using TheYard.Application.Shared.Auction;
+using TheYard.Domain.Shared.Auction;
 
 namespace TheYard.Application.Features.Bids;
 

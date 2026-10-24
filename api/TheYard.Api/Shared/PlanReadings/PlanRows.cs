@@ -2,7 +2,6 @@
 // because they are the card's judgement: which reading answers which question, and when a row
 // turns amber or red (the levels themselves are PlanThresholds, in Application).
 using System.Globalization;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.PlanReadings;
 

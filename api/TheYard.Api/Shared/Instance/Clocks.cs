@@ -1,4 +1,3 @@
-using TheYard.Domain;
 
 namespace TheYard.Api.Shared.Instance;
 

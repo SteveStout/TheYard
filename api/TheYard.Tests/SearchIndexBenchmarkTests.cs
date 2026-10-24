@@ -1,8 +1,5 @@
 using System.Diagnostics;
-using TheYard.Application;
 using TheYard.Data;
-using TheYard.Domain;
-using TheYard.Infrastructure;
 using Xunit.Abstractions;
 
 namespace TheYard.Tests;

@@ -14,15 +14,15 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 1440 xUnit tests, 531 Vitest tests at 1.0.4.45 and 177 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.4.45 hold 3,656 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 1441 xUnit tests, 531 Vitest tests at 1.0.4.46 and 177 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.4.46 hold 3,658 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
-| API | xUnit | 1440 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
-| Frontend | Vitest | 531 at 1.0.4.45 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| API | xUnit | 1441 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
+| Frontend | Vitest | 531 at 1.0.4.46 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
 | End to end | Playwright | 167 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe's eleven scans across nine views at WCAG 2.1 AA. |
 
-**How 3,656 is counted**, from the gate's own results file for 1.0.4.45 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 531 Vitest tests, 1440 xUnit tests on SQLite and the same 1440 booted on Cosmos DB, the 8 that need the live Cosmos DB account, 184 browser runs on SQLite from the 177 declared tests (a loop runs one of them more than once) and 53 of those again on Cosmos DB, which is 3,656. The xUnit and browser counts above are read from the source; a test written after 1.0.4.45 first runs in the gate of the version that ships it. A browser test that passes only on Playwright's one retry is written 'r', never a pass, and a file holding one is refused, so every run counted here passed the first time.
+**How 3,658 is counted**, from the gate's own results file for 1.0.4.46 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 531 Vitest tests, 1441 xUnit tests on SQLite and the same 1441 booted on Cosmos DB, the 8 that need the live Cosmos DB account, 184 browser runs on SQLite from the 177 declared tests (a loop runs one of them more than once) and 53 of those again on Cosmos DB, which is 3,658. The xUnit and browser counts above are read from the source; a test written after 1.0.4.46 first runs in the gate of the version that ships it. A browser test that passes only on Playwright's one retry is written 'r', never a pass, and a file holding one is refused, so every run counted here passed the first time.
 
 **The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The ship pushes the version to a `gate/<version>` branch and [`gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml) runs the gate there, on a GitHub runner; `main` moves only when it is green ([ADR-098](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-098-the-gate-runs-where-the-memory-is.md)): format, lint and type checks, the SQL project, xUnit on SQLite, the eight live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) builds the image and rolls the one web app that serves both sites and The Shed, and [`deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml) rolls the rendering service, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites again on GitHub's runners for every push to main, beside the deploy and without holding it up, and for a pull request, which has had no gate.
 
@@ -350,7 +350,7 @@ walkthrough can happen without leaving it.
   Forward reopens it, and a cold load of a vehicle URL deep-links straight to it.
   *Where:* `src/lib/inventory.ts` (URL and filter serialization), `src/app/hooks/useAddressBar.ts`
   (pushState and popstate), `api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs` (binding),
-  `api/TheYard.Domain/VehicleFilter.cs` (the LINQ predicate).
+  `api/TheYard.Domain/Shared/Auction/VehicleFilter.cs` (the LINQ predicate).
 - **Debounced, cached requests.** Filter changes debounce 500 ms so typing does not
   hammer the API, and responses are cached per query string (5-minute TTL, bounded).
   Cache hits skip the debounce entirely: the delay only exists to protect the server,
@@ -360,8 +360,8 @@ walkthrough can happen without leaving it.
 - **Server-side pagination at scale.** 100,000 records, but the wire only ever carries a
   page: an envelope of `{ total, vehicles }` with `limit` and `offset`, a landing page of
   the top 100 by auction time, and Load More to walk deeper.
-  *Where:* `api/TheYard.Application/Stock.cs` (`Search`),
-  `api/TheYard.Infrastructure/SyntheticVehicleSource.cs` (the 100k expansion),
+  *Where:* `api/TheYard.Application/Shared/Auction/Stock.cs` (`Search`),
+  `api/TheYard.Infrastructure/Shared/Auction/SyntheticVehicleSource.cs` (the 100k expansion),
   `src/app/hooks/useInventory.ts` (`loadMore`).
 - **A search that does its work once.** Both halves of a free-text comparison are
   precomputed: each vehicle's searchable text when the dataset loads, each query's
@@ -374,8 +374,8 @@ walkthrough can happen without leaving it.
   that fails on a busy machine. The
   auction status stays out of the index on purpose because the clock decides it, and
   it is computed only for tokens the static text did not already satisfy.
-  *Where:* `api/TheYard.Domain/VehicleSearchIndex.cs`, `VehicleFilter.cs`
-  (`Compile`), `api/TheYard.Application/Stock.cs` (built with the
+  *Where:* `api/TheYard.Domain/Shared/Auction/VehicleSearchIndex.cs`, `VehicleFilter.cs`
+  (`Compile`), `api/TheYard.Application/Shared/Auction/Stock.cs` (built with the
   dataset), `api/TheYard.Tests/SearchIndexBenchmarkTests.cs` (the measurement),
   `VehicleSearchIndexTests.cs` (the indexed and unindexed paths must agree).
 - **One authoritative home for every business rule.** Auction windows, status, minimum
@@ -385,7 +385,7 @@ walkthrough can happen without leaving it.
   the math in TypeScript, and cross-language drift bit twice (a timezone anchor, then
   DST) before the consolidation. The architecture exists because the bug class it
   eliminates actually happened.
-  *Where:* `api/TheYard.Domain/AuctionSchedule.cs`, `BidRules.cs`, and
+  *Where:* `api/TheYard.Domain/Shared/Auction/AuctionSchedule.cs`, `BidRules.cs`, and
   `AuctionClock.cs`; `api/TheYard.Api/Shared/Wire/VehicleWire.cs` (derived facts onto the wire);
   `src/lib/auction.ts` (all that remains client-side).
 - **Sealed records everywhere data is data.** Every C# data shape (`Vehicle`,
@@ -398,8 +398,8 @@ walkthrough can happen without leaving it.
   shows up in practice: determinism tests compare whole vehicle lists by value, and
   non-destructive `with` mutations power the bid overlay and the synthetic variants.
   *Where:* `api/TheYard.Data/Vehicle.cs`; `with` usage in
-  `api/TheYard.Domain/StandingRules.cs` (the bid overlay), `api/TheYard.Application/BidBook.cs` and
-  `api/TheYard.Infrastructure/SyntheticVehicleSource.cs`; value-equality assertions in
+  `api/TheYard.Domain/Shared/Auction/StandingRules.cs` (the bid overlay), `api/TheYard.Application/Shared/Auction/BidBook.cs` and
+  `api/TheYard.Infrastructure/Shared/Auction/SyntheticVehicleSource.cs`; value-equality assertions in
   `api/TheYard.Tests/SyntheticVehicleSourceTests.cs`.
 - **Onion architecture that earns its layers.** Data (the pure records) has zero
   dependencies; Domain (the rules) depends only on Data; Application talks through ports
@@ -505,7 +505,7 @@ walkthrough can happen without leaving it.
 
 ## Testing
 
-**API (1440 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (1441 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`Stock`, `BidBook` and the handlers with in-memory
@@ -524,7 +524,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (531 Vitest tests at 1.0.4.45):** presentation logic only, since the API owns the rules.
+**Frontend (531 Vitest tests at 1.0.4.46):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,

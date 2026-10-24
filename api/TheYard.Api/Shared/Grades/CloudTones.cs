@@ -1,6 +1,5 @@
 // The words and tones every card under Cloud infrastructure shares, so seven cards say "fine" and
 // draw green for the same reasons (ADR: The App Service plan, read every minute).
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Grades;
 

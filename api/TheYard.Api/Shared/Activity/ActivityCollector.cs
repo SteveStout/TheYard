@@ -3,9 +3,7 @@
 // is the one part of the activity feature that runs in the background and
 // holds state; Activity.cs lists the other parts.
 using System.Threading.Channels;
-using TheYard.Application;
 using TheYard.Application.Features.Visitors;
-using TheYard.Domain;
 
 namespace TheYard.Api.Shared.Activity;
 

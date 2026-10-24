@@ -5,8 +5,6 @@
 // address is written here and nowhere else, so the first feature to ask Claude asks through it.
 using System.Diagnostics;
 using System.Text.Json;
-using TheYard.Application;
-using TheYard.Domain;
 
 namespace TheYard.Api.Shared.Usage;
 

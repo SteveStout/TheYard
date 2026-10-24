@@ -2,7 +2,6 @@
 // 10 GB and pulls a minute on the dials, the images and tags it holds, the untagged layers it is
 // still paying to keep, named and never purged, and whether Basic still fits.
 using System.Globalization;
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 
@@ -206,7 +205,7 @@ public static class AcrCard
                 new($"{cells[1]} · {cells[2]} untagged", null),
                 new($"{Gb(cells[3])} GB, {Gb(cells[4])} GB untagged", null),
                 new(DateTimeOffset.TryParse(cells[5], CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var pushed)
-                    ? TheYard.Domain.NightlySlots.Local(pushed).ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " Central" : "not read", null),
+                    ? TheYard.Domain.Features.Admin.NightlySlots.Local(pushed).ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " Central" : "not read", null),
             ]);
         }
         if (live.TryGetValue(SameBuild.Api, out var apiTag) && live.TryGetValue(SameBuild.Renderer, out var renderTag)

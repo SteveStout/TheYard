@@ -107,19 +107,19 @@ cannot vouch for.
 ## In the code
 
 The overlay, and why the order is the way it is
-(`api/TheYard.Application/Room.cs`):
+(`api/TheYard.Application/Shared/Auction/Room.cs`):
 
-```live path=api/TheYard.Application/Room.cs region=apply
+```live path=api/TheYard.Application/Shared/Auction/Room.cs region=apply
 ```
 
 One round of bidding, and the three limits:
 
-```live path=api/TheYard.Application/Room.cs region=tick
+```live path=api/TheYard.Application/Shared/Auction/Room.cs region=tick
 ```
 
-Where the two overlays are composed (`api/TheYard.Application/StandingReader.cs`):
+Where the two overlays are composed (`api/TheYard.Application/Shared/Auction/StandingReader.cs`):
 
-```live path=api/TheYard.Application/StandingReader.cs region=overlays
+```live path=api/TheYard.Application/Shared/Auction/StandingReader.cs region=overlays
 ```
 
 The endpoints (`api/TheYard.Api/Features/Bids/BidEndpoints.cs`):
@@ -128,9 +128,9 @@ The endpoints (`api/TheYard.Api/Features/Bids/BidEndpoints.cs`):
 ```
 
 The answer the badge needs, derived server-side
-(`api/TheYard.Application/StandingReader.cs`):
+(`api/TheYard.Application/Shared/Auction/StandingReader.cs`):
 
-```live path=api/TheYard.Application/StandingReader.cs region=views
+```live path=api/TheYard.Application/Shared/Auction/StandingReader.cs region=views
 ```
 
 The browser's half: the round it asks for, and the sentence it shows
@@ -224,11 +224,11 @@ The room is Application code: MarketService holds the competing bids and runs a 
 
 ## Files
 
-- [`api/TheYard.Application/Room.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Room.cs): the room, its overlay and its three limits.
-- [`api/TheYard.Application/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StandingReader.cs): the overlay order, the room's round and whether the buyer is still ahead, decided server-side.
-- [`api/TheYard.Domain/StandingRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/StandingRules.cs): the one rule both overlays raise a price with.
+- [`api/TheYard.Application/Shared/Auction/Room.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Room.cs): the room, its overlay and its three limits.
+- [`api/TheYard.Application/Shared/Auction/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/StandingReader.cs): the overlay order, the room's round and whether the buyer is still ahead, decided server-side.
+- [`api/TheYard.Domain/Shared/Auction/StandingRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/StandingRules.cs): the one rule both overlays raise a price with.
 - [`api/TheYard.Api/Features/Bids/BidEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Bids/BidEndpoints.cs): the tick endpoint, and the bid endpoints that ask `Auction` to bid against the room's price.
-- [`api/TheYard.Application/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.cs): the buyer's side, now stamped with when each bid was placed.
+- [`api/TheYard.Application/Shared/Auction/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/BidBook.cs): the buyer's side, now stamped with when each bid was placed.
 - [`src/hooks/useBids.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useBids.ts) and [`src/lib/data.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/data.ts): the round the page asks for.
 - [`src/components/vehicle/BidPanel/BidPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/vehicle/BidPanel/BidPanel.tsx) and [`VehicleCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/inventory/VehicleCard/VehicleCard.tsx): the sentence and the chip.
 - [`api/TheYard.Tests/RoomTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RoomTests.cs): every limit, held.
@@ -236,7 +236,7 @@ The room is Application code: MarketService holds the competing bids and runs a 
 
 ## Addendum, 2026-10-03: the composition moved into Application
 
-The two overlays were composed by the endpoints and the badge's answer was worked out in `BidViews.cs` in the host. Both now live in the Application ring, in `Auction` (`api/TheYard.Application/StandingReader.cs`): `Overlay()` and `AsItStands` hold the order (the buyer's bids first, the room's second), `RoomRound` picks the room's candidates, and `BidsOf` answers the badge. The rule both overlays use to raise a price, only when higher and keeping the larger bid count, is `StandingRules.RaisedTo` in Domain, so it has one copy where it had three. The sentence above that says the overlays are composed at the composition root describes the earlier shape. Endpoints now ask `Auction` and never hold the three services, and `OnionTests.Endpoints_reach_the_auction_only_through_the_Application_ring` fails the build if one does (ADR: Onion and SOLID, how this codebase holds them).
+The two overlays were composed by the endpoints and the badge's answer was worked out in `BidViews.cs` in the host. Both now live in the Application ring, in `Auction` (`api/TheYard.Application/Shared/Auction/StandingReader.cs`): `Overlay()` and `AsItStands` hold the order (the buyer's bids first, the room's second), `RoomRound` picks the room's candidates, and `BidsOf` answers the badge. The rule both overlays use to raise a price, only when higher and keeping the larger bid count, is `StandingRules.RaisedTo` in Domain, so it has one copy where it had three. The sentence above that says the overlays are composed at the composition root describes the earlier shape. Endpoints now ask `Auction` and never hold the three services, and `OnionTests.Endpoints_reach_the_auction_only_through_the_Application_ring` fails the build if one does (ADR: Onion and SOLID, how this codebase holds them).
 
 ## Addendum, 2026-10-09 (1.0.3.111): the first bid on an untouched vehicle could not be placed
 

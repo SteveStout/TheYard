@@ -114,9 +114,9 @@ The single-responsibility line above names `PasswordReset` as the class that hol
 ## Files
 
 - [`api/TheYard.Tests/OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs): the ten rules.
-- [`api/TheYard.Application/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StandingReader.cs): the use cases the endpoints ask.
-- [`api/TheYard.Domain/StandingRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/StandingRules.cs): the one rule for raising a price.
-- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the auction's ports.
+- [`api/TheYard.Application/Shared/Auction/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/StandingReader.cs): the use cases the endpoints ask.
+- [`api/TheYard.Domain/Shared/Auction/StandingRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/StandingRules.cs): the one rule for raising a price.
+- [`api/TheYard.Application/Shared/Auction/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Ports.cs): the auction's ports.
 - [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared): the composition root.
 - [`docs/images/rings.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/rings.mjs): the drawing.
 - [`docs/images/solid.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/solid.mjs): the SOLID letters, one at a time.

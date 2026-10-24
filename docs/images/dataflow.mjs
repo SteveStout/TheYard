@@ -31,19 +31,19 @@ const STYLE = `
 const READ = [
   ['The seed file', 'data/vehicles.json', [
     'The 200 records from the challenge, never modified. The Vehicle record they load into lives with the other plain data shapes in api/TheYard.Data.']],
-  ['JsonFileVehicleSource', 'api/TheYard.Infrastructure/JsonFileSources.cs', [
+  ['JsonFileVehicleSource', 'api/TheYard.Infrastructure/Shared/Auction/JsonFileSources.cs', [
     'Reads the seed once, at startup.']],
-  ['SyntheticVehicleSource', 'api/TheYard.Infrastructure/SyntheticVehicleSource.cs', [
-    "Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a, api/TheYard.Domain/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while keeping the seed's make, model and trim mix."]],
-  ['Stock', 'api/TheYard.Application/Stock.cs', [
-    "Applies each vehicle's photo gallery (api/TheYard.Domain/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and fills the store's catalogue, which every page then queries; the process holds none of them (ADR: The store does the work). The warm runs beside the server and /readyz waits for it."]],
+  ['SyntheticVehicleSource', 'api/TheYard.Infrastructure/Shared/Auction/SyntheticVehicleSource.cs', [
+    "Expands 200 to 100,000 deterministic variants. Each new id is hashed (FNV-1a, api/TheYard.Domain/Shared/Auction/Fnv1a.cs) to vary the VIN, year, odometer, prices and bid state while keeping the seed's make, model and trim mix."]],
+  ['Stock', 'api/TheYard.Application/Shared/Auction/Stock.cs', [
+    "Applies each vehicle's photo gallery (api/TheYard.Domain/Shared/Auction/PhotoGallery.cs picks from the pools in api/TheYard.Api/photo-manifest.json) and fills the store's catalogue, which every page then queries; the process holds none of them (ADR: The store does the work). The warm runs beside the server and /readyz waits for it."]],
   ['GET /api/vehicles', 'api/TheYard.Api/Features/Vehicles/VehicleEndpoints.cs', [
     "api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs binds and validates every parameter into a filter and a sort. The clock is the server's (api/TheYard.Api/Shared/Instance/Clocks.cs): now, and the UTC midnight that began the day, the same for every visitor."]],
-  ['Search, through StandingReader.SearchAsync', 'api/TheYard.Application/StandingReader.cs', [
-    "1. Everybody's bids, then the room's, are laid over each vehicle (StandingReader.Overlay, raising a price through api/TheYard.Domain/StandingRules.cs), so price bounds see the figures the page shows.",
-    '2. Where: api/TheYard.Domain/VehicleFilter.cs',
-    '3. OrderBy: api/TheYard.Domain/VehicleOrdering.cs',
-    '4. The store filters, orders and pages; only the page comes back. Auction windows come from api/TheYard.Domain/AuctionSchedule.cs.']],
+  ['Search, through StandingReader.SearchAsync', 'api/TheYard.Application/Shared/Auction/StandingReader.cs', [
+    "1. Everybody's bids, then the room's, are laid over each vehicle (StandingReader.Overlay, raising a price through api/TheYard.Domain/Shared/Auction/StandingRules.cs), so price bounds see the figures the page shows.",
+    '2. Where: api/TheYard.Domain/Shared/Auction/VehicleFilter.cs',
+    '3. OrderBy: api/TheYard.Domain/Shared/Auction/VehicleOrdering.cs',
+    '4. The store filters, orders and pages; only the page comes back. Auction windows come from api/TheYard.Domain/Shared/Auction/AuctionSchedule.cs.']],
   ['VehicleWire', 'api/TheYard.Api/Shared/Wire/VehicleWire.cs', [
     'Stamps the server-derived facts on each vehicle: auction_starts_at, auction_ends_at, auction_status, min_next_bid. The endpoint answers { total, vehicles } in snake_case.']],
   ['The rendering service, for a page', 'render/loaders.ts, render/render.ts', [
@@ -64,9 +64,9 @@ const WRITE = [
     'Three questions in order: is this session on this store (401 if not), does the vehicle exist (404 if not), does the domain accept the action (400 with the reason if not).']],
   ['PlaceBidHandler', 'api/TheYard.Application/Features/Bids/PlaceBidHandler.cs', [
     "The one handler of PlaceBidCommand (ADR-115). Reads the vehicle as it stands through StandingReader and measures the bid against the room's standing price as well as everybody's bids, so nobody retakes a lead below the going rate."]],
-  ['BidRules', 'api/TheYard.Domain/BidRules.cs', [
+  ['BidRules', 'api/TheYard.Domain/Shared/Auction/BidRules.cs', [
     'The sole authority: the live window, the tiered minimum increment, and the buy-now override (a bid at or above buy_now_price wins outright at that price).']],
-  ['BidBook', 'api/TheYard.Application/BidBook.cs', [
+  ['BidBook', 'api/TheYard.Application/Shared/Auction/BidBook.cs', [
     "Under one gate: an accepted or won bid is written to the store (Azure SQL Database or Cosmos DB, through the IBidStore port) and then to memory, under the buyer's account. The response carries the updated vehicle with a fresh min_next_bid."]],
   ['useBids', 'src/hooks/useBids.ts', [
     'Clears the query cache and refetches, so every list, filter and total reflects the bid through the same read path.']],

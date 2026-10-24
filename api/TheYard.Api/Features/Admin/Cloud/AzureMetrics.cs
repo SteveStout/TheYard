@@ -4,7 +4,6 @@
 // resource is read through this one, each naming its metrics in its card's definition.
 using System.Globalization;
 using System.Text.Json;
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

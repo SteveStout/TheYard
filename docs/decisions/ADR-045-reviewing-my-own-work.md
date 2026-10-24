@@ -277,14 +277,14 @@ The review reached two rings: the database failure now travels as an `Exception`
 
 ## Files
 
-- [`api/TheYard.Application/DatabaseState.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/DatabaseState.cs): `DatabaseState` carrying the failure as an exception rather than as text.
+- [`api/TheYard.Application/Shared/Stores/DatabaseState.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Stores/DatabaseState.cs): `DatabaseState` carrying the failure as an exception rather than as text.
 - [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs) and [`api/TheYard.Api/Shared/Observability/LogRingBuffer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/LogRingBuffer.cs): the self-observation filter and the capacity guards, and the category allow-list in the log ring.
 - [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the timing middleware where it belongs.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): readiness that runs only what it needs.
-- [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the connect budget and the retry policy read together.
+- [`api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs): the connect budget and the retry policy read together.
 - [`tests/e2e/app.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/app.ts): a wait for something that is there.
 - [`docs/decisions/ADR-042-exemptions-that-hide.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-042-exemptions-that-hide.md): the checks that asked easier questions, which this is the sequel to.
 
 ## Addendum, 2026-10-03: the experiment cache is per instance
 
-The item above that names the partition key experiment's static cache is done. `PartitionExperiment` (`api/TheYard.Infrastructure.Cosmos/Experiment.cs`) keeps its last result in an instance field, measures the minute on an injected `TimeProvider`, and sits behind the `IStoreExperiment` port in Application, so the Admin endpoint asks the port and never looks the Cosmos DB store up from the service container. Two hosts in one test run no longer share a result.
+The item above that names the partition key experiment's static cache is done. `PartitionExperiment` (`api/TheYard.Infrastructure.Cosmos/Shared/Stores/Experiment.cs`) keeps its last result in an instance field, measures the minute on an injected `TimeProvider`, and sits behind the `IStoreExperiment` port in Application, so the Admin endpoint asks the port and never looks the Cosmos DB store up from the service container. Two hosts in one test run no longer share a result.

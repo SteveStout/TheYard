@@ -33,7 +33,7 @@ The ports had the same shape. `IBlogStore`, `IAccountStore` and `ILinkOpens` eac
 2. Every request is a sealed record in its slice's Application folder, named `<Verb><Noun>Query` when it reads and `<Verb><Noun>Command` when it changes something, and its handler is named the same with `Handler` in place of the last word. A request with nothing to say is an empty record (`ReadFacetsQuery`, `ListPostsQuery`) rather than a missing one, so every handler has the same shape.
 3. A query handler's constructor takes no parameter whose type ends in `Store` or `Writer`. A command handler may take both sides.
 4. A port that a query needs only half of is split: the reading side is an interface ending in `Reader` or `Catalogue`, and the writing side extends it or stands beside it. `IBlogStore : IBlogReader`, `IAccountStore : IAccountReader` and `ILinkOpens : ILinkOpensReader` in this version.
-5. The three services and `Auction` go. Each store's auction is three parts, each implementing a reading and a writing interface (`api/TheYard.Application/AuctionParts.cs`): `Stock` (the catalogue, read only, so `IStockReader` alone), `BidBook` (`IBidReader`, `IBidWriter`) and `Room` (`IRoomReader`, `IRoomWriter`). `StandingReader` lays the three reading sides over each other in the one order the rules need, and is the only way a query reads a vehicle. The round of the room and a buyer's start-over move into their command handlers.
+5. The three services and `Auction` go. Each store's auction is three parts, each implementing a reading and a writing interface (`api/TheYard.Application/Shared/Auction/AuctionParts.cs`): `Stock` (the catalogue, read only, so `IStockReader` alone), `BidBook` (`IBidReader`, `IBidWriter`) and `Room` (`IRoomReader`, `IRoomWriter`). `StandingReader` lays the three reading sides over each other in the one order the rules need, and is the only way a query reads a vehicle. The round of the room and a buyer's start-over move into their command handlers.
 6. Nothing in the Application ring's root or its slices is named `*Service`.
 
 One query, the three the catalogue answers, each taking the reading side only:
@@ -48,7 +48,7 @@ One command, the bid, which reads the vehicle as it stands and writes through th
 
 The three parts and their two sides:
 
-```live path=api/TheYard.Application/AuctionParts.cs region=auction-parts
+```live path=api/TheYard.Application/Shared/Auction/AuctionParts.cs region=auction-parts
 ```
 
 ## What holds it
@@ -90,9 +90,9 @@ Application ring only, and the host's Modules that build the handlers. Single re
 ## Files
 
 - [`api/TheYard.Application/Shared/Requests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Requests.cs) - the two interfaces (new)
-- [`api/TheYard.Application/AuctionParts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/AuctionParts.cs) - the auction's three parts, a reading and a writing side each (new)
-- [`api/TheYard.Application/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StandingReader.cs) - a vehicle as every query reads it (new; what `Auction` read)
-- [`api/TheYard.Application/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.cs), [`Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs), [`Room.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Room.cs) - the three services, renamed, with their sides
+- [`api/TheYard.Application/Shared/Auction/AuctionParts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/AuctionParts.cs) - the auction's three parts, a reading and a writing side each (new)
+- [`api/TheYard.Application/Shared/Auction/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/StandingReader.cs) - a vehicle as every query reads it (new; what `Auction` read)
+- [`api/TheYard.Application/Shared/Auction/BidBook.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/BidBook.cs), [`Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Stock.cs), [`Room.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Room.cs) - the three services, renamed, with their sides
 - [`api/TheYard.Application/Features/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Application/Features) - every request and its handler
 - [`api/TheYard.Tests/CqrsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CqrsTests.cs) - holds this record (new)
 - [`docs/best-practices/CQRS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/best-practices/CQRS.md) - the practices page (new)

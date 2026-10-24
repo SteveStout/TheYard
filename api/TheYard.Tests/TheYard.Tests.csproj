@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -38,6 +38,30 @@
     <Using Include="TheYard.Api.Shared.Wire" />
     <Using Include="TheYard.Api.Shared.Wiring" />
     <Using Include="TheYard.Infrastructure.Shared.Http" />
+    <Using Include="TheYard.Application.Features.Accounts" />
+    <Using Include="TheYard.Application.Features.Admin.Operations" />
+    <Using Include="TheYard.Application.Shared.Auction" />
+    <Using Include="TheYard.Application.Shared.Caching" />
+    <Using Include="TheYard.Application.Shared.Cards" />
+    <Using Include="TheYard.Application.Shared.Claude" />
+    <Using Include="TheYard.Application.Shared.History" />
+    <Using Include="TheYard.Application.Shared.Stores" />
+    <Using Include="TheYard.Domain.Features.Admin" />
+    <Using Include="TheYard.Domain.Features.Blog" />
+    <Using Include="TheYard.Domain.Features.Visitors" />
+    <Using Include="TheYard.Domain.Shared.Auction" />
+    <Using Include="TheYard.Domain.Shared.Cards" />
+    <Using Include="TheYard.Domain.Shared.Usage" />
+    <Using Include="TheYard.Infrastructure.Cosmos.Features.Accounts" />
+    <Using Include="TheYard.Infrastructure.Cosmos.Features.Admin" />
+    <Using Include="TheYard.Infrastructure.Cosmos.Features.Links" />
+    <Using Include="TheYard.Infrastructure.Cosmos.Shared.Auction" />
+    <Using Include="TheYard.Infrastructure.Cosmos.Shared.History" />
+    <Using Include="TheYard.Infrastructure.Cosmos.Shared.Stores" />
+    <Using Include="TheYard.Infrastructure.Features.Admin.Cloud" />
+    <Using Include="TheYard.Infrastructure.Shared.Auction" />
+    <Using Include="TheYard.Infrastructure.Shared.History" />
+    <Using Include="TheYard.Infrastructure.Shared.Stores" />
   </ItemGroup>
 
   <ItemGroup>

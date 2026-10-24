@@ -17,7 +17,7 @@ Every box in the diagram is a file; each step below names its path.
 `api/TheYard.Api/Shared/` (sources, then services) and each slice's module, then maps each module. A
 handler binds the request and hands straight off to the Application layer; the auction's
 handlers are queries and commands (ADR-115), and every query reads a vehicle through `StandingReader`
-(`api/TheYard.Application/StandingReader.cs`), which lays the catalogue, everybody's bids and the
+(`api/TheYard.Application/Shared/Auction/StandingReader.cs`), which lays the catalogue, everybody's bids and the
 simulated room in the one order the rules need. ADR:
 Program.cs, explained walks the entry point top to bottom.
 
@@ -47,14 +47,14 @@ What that is worth: a developer can trace any request to the file that handles i
 1. **Seed.** The catalogue is read once at startup from the store, Azure SQL Database,
    Azure Cosmos DB or SQLite; `data/vehicles.json` (the challenge's 200 records, untouched)
    seeds a fresh store on first boot through `JsonFileVehicleSource`
-   (`api/TheYard.Infrastructure/JsonFileSources.cs`), deserializing into the `Vehicle` record, which lives with the other pure data shapes
+   (`api/TheYard.Infrastructure/Shared/Auction/JsonFileSources.cs`), deserializing into the `Vehicle` record, which lives with the other pure data shapes
    in `api/TheYard.Data/`.
-2. **Scale.** `SyntheticVehicleSource` (`api/TheYard.Infrastructure/SyntheticVehicleSource.cs`)
+2. **Scale.** `SyntheticVehicleSource` (`api/TheYard.Infrastructure/Shared/Auction/SyntheticVehicleSource.cs`)
    expands it to 100,000 deterministic variants: each new id is hashed (FNV-1a,
-   `api/TheYard.Domain/Fnv1a.cs`) to vary VIN, year, odometer, prices, and bid state
+   `api/TheYard.Domain/Shared/Auction/Fnv1a.cs`) to vary VIN, year, odometer, prices, and bid state
    while inheriting the seed's make/model/trim mix.
-3. **Enrich and cache.** `Stock` (`api/TheYard.Application/Stock.cs`)
-   applies each vehicle's photo gallery (hash-picked by `api/TheYard.Domain/PhotoGallery.cs`
+3. **Enrich and cache.** `Stock` (`api/TheYard.Application/Shared/Auction/Stock.cs`)
+   applies each vehicle's photo gallery (hash-picked by `api/TheYard.Domain/Shared/Auction/PhotoGallery.cs`
    from `api/TheYard.Api/photo-manifest.json` pools, preferring the vehicle's own make)
    and fills the store's catalogue with them, which a page is then a query against: the
    process holds none of the hundred thousand in memory (ADR: The store does the work).
@@ -62,10 +62,10 @@ What that is worth: a developer can trace any request to the file that handles i
    binds through `api/TheYard.Api/Features/Vehicles/VehicleQueryParams.cs`, which validates and produces
    a filter, a sort, and a clock (`api/TheYard.Api/Shared/Instance/Clocks.cs`): now, and the UTC
    midnight that began the day, the same for every caller, so schedule math
-   (`api/TheYard.Domain/AuctionSchedule.cs`, `AuctionClock.cs`) puts every visitor in
+   (`api/TheYard.Domain/Shared/Auction/AuctionSchedule.cs`, `AuctionClock.cs`) puts every visitor in
    the same auction. Everybody's bids, then the simulated room's, overlay **before**
-   filtering (`StandingReader.Overlay` in `api/TheYard.Application/StandingReader.cs`, each raise made by
-   `StandingRules.RaisedTo` in `api/TheYard.Domain/StandingRules.cs`), so price bounds see
+   filtering (`StandingReader.Overlay` in `api/TheYard.Application/Shared/Auction/StandingReader.cs`, each raise made by
+   `StandingRules.RaisedTo` in `api/TheYard.Domain/Shared/Auction/StandingRules.cs`), so price bounds see
    the same figures the UI shows. Then `Where` → `OrderBy` → `Skip/Take`, in the store:
    `Stock.SearchAsync` resolves the filter to the store's own spelling and plans
    the page, and the store's adapter (`EfVehicleCatalogue.cs` over the Catalogue table,
@@ -89,7 +89,7 @@ What that is worth: a developer can trace any request to the file that handles i
 Step 4's overlay, read from this build. It is chosen once per listing, so a cold catalogue
 with no bid and no room pays for neither:
 
-```live path=api/TheYard.Application/StandingReader.cs region=overlays
+```live path=api/TheYard.Application/Shared/Auction/StandingReader.cs region=overlays
 ```
 
 Step 6's seam, the one function every list view goes through:
@@ -103,13 +103,13 @@ Step 6's seam, the one function every list view goes through:
    `POST /api/vehicles/{id}/bids` via `src/lib/data.ts`; the clock is the server's.
    `api/TheYard.Api/Features/Bids/BidEndpoints.cs` hands it to `PlaceBidHandler`, which
    measures it against the room's standing price as well as everybody's bids.
-2. `api/TheYard.Domain/BidRules.cs` is the sole authority: sold first (a vehicle anybody
+2. `api/TheYard.Domain/Shared/Auction/BidRules.cs` is the sole authority: sold first (a vehicle anybody
    has bought takes no bid and no second purchase, a fact `BidBook` supplies from
    everybody's standing), then the live-window check, the tiered minimum increment, and
    the buy-now override (a bid at or above `buy_now_price` wins outright at that price).
 3. Accepted or won bids are written to the store first, Azure SQL Database or Azure
    Cosmos DB through `IBidStore`, and then to the in-memory standing in
-   `api/TheYard.Application/BidBook.cs`, under the signed-in account's id (ADR:
+   `api/TheYard.Application/Shared/Auction/BidBook.cs`, under the signed-in account's id (ADR:
    Accounts and per-user bids); rejections return 400 with a human-readable reason the
    panel shows.
 4. The response carries the updated vehicle (fresh `min_next_bid` included); `src/lib/data.ts`
@@ -121,5 +121,5 @@ Step 2's first check, read from this build. Sold is a fact the rules cannot know
 vehicle alone, so the caller that holds everybody's standing supplies it, and it is asked
 before the clock and before the buy-now shortcut:
 
-```live path=api/TheYard.Domain/BidRules.cs region=sold
+```live path=api/TheYard.Domain/Shared/Auction/BidRules.cs region=sold
 ```

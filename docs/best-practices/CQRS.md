@@ -57,9 +57,9 @@ method that writes, so a listing cannot place a bid however it is changed later.
 `StandingReader` is how every query reads a vehicle: the catalogue, then everybody's bids, then the
 simulated room, in the one order the price rules need, from the reading side of each.
 
-[`api/TheYard.Application/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/StandingReader.cs):
+[`api/TheYard.Application/Shared/Auction/StandingReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/StandingReader.cs):
 
-```live path=api/TheYard.Application/StandingReader.cs region=*
+```live path=api/TheYard.Application/Shared/Auction/StandingReader.cs region=*
 ```
 
 ## A command takes the side it writes through
@@ -89,9 +89,9 @@ And the whole store, which extends it with the three writes and is handed to the
 
 The auction's three parts are split the same way, one reading and one writing interface each:
 
-[`api/TheYard.Application/AuctionParts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/AuctionParts.cs):
+[`api/TheYard.Application/Shared/Auction/AuctionParts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/AuctionParts.cs):
 
-```live path=api/TheYard.Application/AuctionParts.cs region=auction-parts
+```live path=api/TheYard.Application/Shared/Auction/AuctionParts.cs region=auction-parts
 ```
 
 ## No services

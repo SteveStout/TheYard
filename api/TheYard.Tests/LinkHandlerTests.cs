@@ -102,7 +102,7 @@ public sealed class LinkHandlerTests
     [Fact]
     public void A_stored_row_is_moved_by_increments_ten_operations_a_patch_with_paths_as_one_pointer_step()
     {
-        var stored = new TheYard.Infrastructure.Cosmos.LinkOpenDocument
+        var stored = new TheYard.Infrastructure.Cosmos.Shared.Stores.LinkOpenDocument
         {
             Opens = 11,
             FirstSeen = Noon,
@@ -112,19 +112,19 @@ public sealed class LinkHandlerTests
         var delta = new LinkOpenDay("2026-10-20", "k7f2qa", Noon.AddMinutes(-1), Noon.AddMinutes(1), 4,
             new Dictionary<string, int>(StringComparer.Ordinal) { ["/api/go/github"] = 2, ["/p3"] = 1, ["/a~b"] = 1 });
 
-        var patches = TheYard.Infrastructure.Cosmos.CosmosLinkOpens.PatchesFor(stored, delta);
+        var patches = TheYard.Infrastructure.Cosmos.Features.Links.CosmosLinkOpens.PatchesFor(stored, delta);
         var paths = patches.SelectMany(patch => patch.Select(operation => operation.Path)).ToList();
 
-        Assert.All(patches, patch => Assert.InRange(patch.Count, 1, TheYard.Infrastructure.Cosmos.CosmosLinkOpens.OperationsPerPatch));
+        Assert.All(patches, patch => Assert.InRange(patch.Count, 1, TheYard.Infrastructure.Cosmos.Features.Links.CosmosLinkOpens.OperationsPerPatch));
         Assert.Equal(["/opens", "/paths/~1api~1go~1github", "/paths/~1p3", "/last_seen", "/first_seen"], paths);
         Assert.All(patches.SelectMany(patch => patch).Where(operation => operation.Path.StartsWith("/paths/", StringComparison.Ordinal) || operation.Path == "/opens"),
             operation => Assert.Equal(Microsoft.Azure.Cosmos.PatchOperationType.Increment, operation.OperationType));
-        Assert.Equal("~1a~0b", TheYard.Infrastructure.Cosmos.CosmosLinkOpens.Pointer("/a~b"));
+        Assert.Equal("~1a~0b", TheYard.Infrastructure.Cosmos.Features.Links.CosmosLinkOpens.Pointer("/a~b"));
 
         // Twelve new paths on an empty row make two patches: the opens and nine paths, then the rest.
         var wide = new LinkOpenDay("2026-10-20", "k7f2qa", Noon, Noon, 12, Enumerable.Range(0, 12).ToDictionary(i => $"/q{i:00}", _ => 1, StringComparer.Ordinal));
-        var empty = new TheYard.Infrastructure.Cosmos.LinkOpenDocument { FirstSeen = Noon, LastSeen = Noon };
-        Assert.Equal([10, 3], TheYard.Infrastructure.Cosmos.CosmosLinkOpens.PatchesFor(empty, wide).Select(patch => patch.Count));
+        var empty = new TheYard.Infrastructure.Cosmos.Shared.Stores.LinkOpenDocument { FirstSeen = Noon, LastSeen = Noon };
+        Assert.Equal([10, 3], TheYard.Infrastructure.Cosmos.Features.Links.CosmosLinkOpens.PatchesFor(empty, wide).Select(patch => patch.Count));
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public sealed class LinkHandlerTests
     [Fact]
     public void Two_writers_at_eleven_paths_leave_thirteen_and_twelve_are_read_back()
     {
-        var stored = new TheYard.Infrastructure.Cosmos.LinkOpenDocument
+        var stored = new TheYard.Infrastructure.Cosmos.Shared.Stores.LinkOpenDocument
         {
             Day = "2026-10-20",
             Code = "k7f2qa",
@@ -148,14 +148,14 @@ public sealed class LinkHandlerTests
         foreach (string added in new[] { "/w1", "/w2" })
         {
             var delta = new LinkOpenDay("2026-10-20", "k7f2qa", Noon, Noon, 1, new Dictionary<string, int>(StringComparer.Ordinal) { [added] = 1 });
-            var paths = TheYard.Infrastructure.Cosmos.CosmosLinkOpens.PatchesFor(stored, delta)
+            var paths = TheYard.Infrastructure.Cosmos.Features.Links.CosmosLinkOpens.PatchesFor(stored, delta)
                 .SelectMany(patch => patch).Where(operation => operation.Path.StartsWith("/paths/", StringComparison.Ordinal)).ToList();
             Assert.Single(paths);
             row[added] = 1;
         }
         Assert.Equal(13, row.Count);
 
-        var read = TheYard.Infrastructure.Cosmos.CosmosLinkOpens.Kept(new TheYard.Infrastructure.Cosmos.LinkOpenDocument
+        var read = TheYard.Infrastructure.Cosmos.Features.Links.CosmosLinkOpens.Kept(new TheYard.Infrastructure.Cosmos.Shared.Stores.LinkOpenDocument
         {
             Day = stored.Day,
             Code = stored.Code,

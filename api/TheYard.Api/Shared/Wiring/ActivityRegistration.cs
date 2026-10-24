@@ -1,7 +1,4 @@
-using TheYard.Application;
 using TheYard.Application.Features.Visitors;
-using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 using TheYard.Infrastructure.Cosmos.Features.Visitors;
 
 namespace TheYard.Api.Shared.Wiring;

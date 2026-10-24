@@ -2,7 +2,6 @@
 // the totals and the top paths, and the keyed one with the visitor rows. Its
 // own file because it is the shape of what leaves the server; who a visitor
 // was is decided in ActivityWho.cs, and Activity.cs lists the other parts.
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

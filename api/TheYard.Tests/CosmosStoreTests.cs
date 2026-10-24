@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using TheYard.Application;
 using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 

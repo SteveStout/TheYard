@@ -27,7 +27,7 @@ The kept readings show both shapes. From 24 to 26 September a load test lifted t
 
 **The rule, in the server.** `MemoryTraffic.Judge` in Application splits the window in two by time. Memory is climbing when the second half's middle working set is at least 50 MB, or 5 per cent of the memory limit, whichever is more, above the first half's, and the least-squares line through every point slopes up. Traffic is flat when the second half's middle requests a minute is no more than a quarter above the first half's, plus one. Both at once is red. Middles rather than averages, so one busy minute or one collection does not decide a window. Memory that rose as traffic rose is green and says it is worth watching. Fewer than six readings is not judged.
 
-```live path=api/TheYard.Application/MemoryTraffic.cs region=rule
+```live path=api/TheYard.Application/Features/Admin/Operations/MemoryTraffic.cs region=rule
 ```
 
 **Deploys are not leaks.** The last hour is this process's own, a minute at a time, and leaves out its first fifteen minutes, when the runtime, the caches and a fill grow memory for reasons that are not a leak. Steve's rule for the plan's alerts holds here too: a deployment moves the numbers, so a reading has to hold before it means anything. A wider window is the kept buckets, judged on middles, so a roll's dip and climb does not decide it.
@@ -51,7 +51,7 @@ The rule in `TheYard.Application`, pure arithmetic over points with no clock and
 
 ## Files
 
-- [`api/TheYard.Application/MemoryTraffic.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MemoryTraffic.cs) - the rule
+- [`api/TheYard.Application/Features/Admin/Operations/MemoryTraffic.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Admin/Operations/MemoryTraffic.cs) - the rule
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.Follows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.Follows.cs) - the route and its wire
 - [`src/components/admin/FollowsCard/FollowsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/FollowsCard/FollowsCard.tsx) - the card
 - [`src/lib/follows.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/follows.ts) - the dots and the trend line

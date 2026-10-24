@@ -3,7 +3,8 @@
 // the one sentence that is wrong is given back when they do not. It takes its port and its clock by
 // constructor and is tested with a fake and no host.
 using TheYard.Application.Shared;
-using TheYard.Domain;
+using TheYard.Application.Shared.History;
+using TheYard.Domain.Shared.Usage;
 
 namespace TheYard.Application.Features.Usage;
 

@@ -4,7 +4,6 @@
 // ring's Features/Accounts and writes its answer, the cookie included.
 
 using Microsoft.AspNetCore.Http.HttpResults;
-using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;
 

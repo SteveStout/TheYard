@@ -528,7 +528,7 @@ What this read was for: the list of fixes to make in order of what they cost a v
 ## Files
 
 - [`api/TheYard.Api/Shared/Proof/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/Proof.cs) and [`api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs): the runner, and its paired rounds, alternating which store goes first.
-- [`api/TheYard.Infrastructure/YardDatabase.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDatabase.cs): `PingAsync`, the round trip to the relational store the proof measures.
+- [`api/TheYard.Infrastructure/Shared/Stores/YardDatabase.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/YardDatabase.cs): `PingAsync`, the round trip to the relational store the proof measures.
 - [`src/components/admin/BackendsCard/BackendsCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/BackendsCard/BackendsCard.tsx) and [`src/components/admin/ProofCard/ProofCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/ProofCard/ProofCard.tsx): the comparison card and the proof card the numbers above are read from.
 - [`infra/cosmos`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): the container definitions, indexing policy and partition key included.
 - [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): the plan and the two sites, 2 vCPU and 3.5 GB shared with the rendering service.

@@ -3,8 +3,6 @@
 // for the card's view, which draws synchronously. The card's own minute keeps two counts, so the
 // frame's live-read line and its staleness rule work for it the way they do for every other card.
 using System.Globalization;
-using TheYard.Application;
-using TheYard.Domain;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

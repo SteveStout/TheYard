@@ -1,7 +1,6 @@
 // The background service that reads the bill once an hour and keeps the answer for the cards.
 // Its own file because when to read (the hour, the retry, the start delay) is a separate
 // question from how to read, which is CostReader.cs.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.CostReadings;
 

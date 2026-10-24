@@ -1,7 +1,5 @@
 using System.Reflection;
-using TheYard.Application;
 using TheYard.Data;
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 

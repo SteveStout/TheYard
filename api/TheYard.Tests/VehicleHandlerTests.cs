@@ -1,5 +1,4 @@
 using TheYard.Application.Features.Vehicles;
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 

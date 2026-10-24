@@ -83,7 +83,7 @@ follow its address.
 | Keeping an address unique | A unique index on `NormalizedUserName` refuses the second account. Nothing in the application has to remember to check. | No unique index spans partitions. A claim document whose id is the address is created first; a 409 on that create is the refusal, and a failed account write removes the claim again. | [ADR-061](https://theyard.stevenstout.biz/?doc=adr-accounts-documents) |
 | Indexes, and what a query costs | Indexes chosen per query in the DACPAC, a plan the engine picks, and a cost that shows up as compute time against the free limit. | An indexing policy per container as JSON, every path excluded here because the site reads by id, and a cost in request units per call. The experiment: 8.84 RU per seeded document under the tuned policy, 16.07 under the default, and nothing bought on any of seven queries. | [ADR-040](https://theyard.stevenstout.biz/?doc=adr-data-first), [ADR-058](https://theyard.stevenstout.biz/?doc=adr-partition-key) |
 | Consistency and transactions | ACID across any number of tables in one transaction; row versioning keeps readers off writers; the database is the arbiter. | Session consistency; a transactional batch is atomic inside one partition, which is how a reset deletes one buyer's bids as one call. Nothing spans partitions atomically, and the application is arranged so nothing needs to. | [ADR-060](https://theyard.stevenstout.biz/?doc=adr-ports-wait), [ADR-065](https://theyard.stevenstout.biz/?doc=adr-cosmos-explained) |
-| What the Admin tab shows | Every statement with its milliseconds and its parameters by name, on the SQL card and in the console log under `Microsoft.EntityFrameworkCore.Database.Command`. | Every operation with its request units, its milliseconds and whether it named a partition, on the operations card and, since 1.0.0.103, as one console line each under `TheYard.Infrastructure.Cosmos.CosmosStore`. | [ADR-043](https://theyard.stevenstout.biz/?doc=adr-sql-visible), [ADR-062](https://theyard.stevenstout.biz/?doc=adr-store-visible), [ADR-063](https://theyard.stevenstout.biz/?doc=adr-backends) |
+| What the Admin tab shows | Every statement with its milliseconds and its parameters by name, on the SQL card and in the console log under `Microsoft.EntityFrameworkCore.Database.Command`. | Every operation with its request units, its milliseconds and whether it named a partition, on the operations card and, since 1.0.0.103, as one console line each under `TheYard.Infrastructure.Cosmos.Shared.Stores.CosmosStore`. | [ADR-043](https://theyard.stevenstout.biz/?doc=adr-sql-visible), [ADR-062](https://theyard.stevenstout.biz/?doc=adr-store-visible), [ADR-063](https://theyard.stevenstout.biz/?doc=adr-backends) |
 | Measured on this application | From Missouri, p50, on 8 September before the move: bid write 219 ms, sign in 249 ms, register 319 ms. From the container, in West US 2 until 20 September: bid write 84 ms, and 39 ms of every operation is the round trip to a server one region away. From the App Service plan in West US 3 since: bid write 28 ms, a 1 to 2 ms round trip. | From Missouri, p50, on 8 September before the move: bid write 135 ms, sign in 221 ms, register 216 ms. From the container, in West US 2 until 20 September: bid write 10 ms, 6.52 RU, a 2 ms round trip, and every sign-in exactly 2 RU. From the plan in West US 3 since: bid write 89 ms, the same 6.52 RU, a 38 to 40 ms round trip. | [ADR-064](https://theyard.stevenstout.biz/?doc=adr-measuring-stores), [ADR-067](https://theyard.stevenstout.biz/?doc=adr-proof) |
 | What it costs a month | $4.90 a month at list price since 14 September: the sites run on a Basic database, priced by the day whatever it does. Before that, $0.00 a month on the serverless free limit, 100,000 vCore-seconds and 32 GB a month, which paused when nobody visited and made the first request after a quiet stretch wait for it; the allowance ran out on 14 September. | $0.00 a month on the free tier: 1000 RU/s and 25 GB for the life of the account, never paused. Since 19 October both sites are one web app on the one App Service plan, B2 at $24.82 a month since 8 October; from 20 September the second site shared the first site's plan, and before that it had a container group of its own at $34.44 a month. | [ADR-039](https://theyard.stevenstout.biz/?doc=adr-sql-server), [ADR-059](https://theyard.stevenstout.biz/?doc=adr-second-store) |
 
@@ -116,10 +116,10 @@ The relational bid store, then the document bid store. Read the two
 catches is the store's way of saying the same thing, and the document side's
 comment names the relational rule it follows.
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=bid-store
+```live path=api/TheYard.Infrastructure/Shared/Auction/EfSources.cs region=bid-store
 ```
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosSources.cs region=cosmos-bid-store
+```live path=api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosSources.cs region=cosmos-bid-store
 ```
 
 ## The same guarantee, given and built
@@ -131,7 +131,7 @@ partitions (ADR: Accounts on a document store).
 ```live path=api/TheYard.Database/Tables/Identity/AspNetUsers.sql region=*
 ```
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs region=create
+```live path=api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs region=create
 ```
 
 ## Where the two are the same
@@ -229,12 +229,12 @@ Choosing between them:
   `/api/docs/diagrams/sql-vs-cosmos`, and the PNG preview beside it.
 - [`api/TheYard.Database/Tables/Bids.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Bids.sql) and
   [`infra/cosmos/bids.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/bids.json): the same bid at rest.
-- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs) and
-  [`api/TheYard.Infrastructure.Cosmos/CosmosSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosSources.cs): the same write.
+- [`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfSources.cs) and
+  [`api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosSources.cs): the same write.
 - [`api/TheYard.Database/Tables/Identity/AspNetUsers.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Identity/AspNetUsers.sql) and
-  [`api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs): the same guarantee.
-- [`api/TheYard.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SqlLogInterceptor.cs) and
-  [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): what each side records for the Admin tab.
+  [`api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs): the same guarantee.
+- [`api/TheYard.Infrastructure/Shared/Stores/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/SqlLogInterceptor.cs) and
+  [`api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosStore.cs): what each side records for the Admin tab.
 - [`api/TheYard.Tests/SideBySidePageTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SideBySidePageTests.cs): holds this
   page to its promise, a live sample from each side of every pair and a link
   to every record it compares.

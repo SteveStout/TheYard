@@ -127,7 +127,7 @@ public sealed class HandlerRuleTests(WebApplicationFactory<Program> factory) : I
     [Fact]
     public void Every_handler_is_tested_with_fakes_and_no_host()
     {
-        var handlers = typeof(TheYard.Application.StandingReader).Assembly.GetTypes()
+        var handlers = typeof(TheYard.Application.Shared.Auction.StandingReader).Assembly.GetTypes()
             .Where(type => type.IsClass && type.Namespace?.StartsWith(Handlers, StringComparison.Ordinal) == true && type.Name.EndsWith("Handler", StringComparison.Ordinal))
             .Select(type => type.FullName!)
             .ToList();

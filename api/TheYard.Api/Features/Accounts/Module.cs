@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using TheYard.Application;
-using TheYard.Application.Features.Accounts;
 using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 using TheYard.Infrastructure.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;

@@ -234,7 +234,7 @@ public class FileHeaderTests
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
 
         string auction = File.ReadAllText(Path.Combine(src, "lib", "auction.ts"));
-        string ordering = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Domain", "VehicleOrdering.cs"));
+        string ordering = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Domain", "Shared", "Auction", "VehicleOrdering.cs"));
         foreach (var (browser, server) in new[] { ("upcomingBand", "UpcomingBand"), ("endedBand", "EndedBand") })
         {
             string inBrowser = Regex.Match(auction, $@"const {browser} = ([\d_]+);").Groups[1].Value.Replace("_", "", StringComparison.Ordinal);

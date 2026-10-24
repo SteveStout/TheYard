@@ -169,7 +169,7 @@ cloud database needs.
 **The provider is chosen by whether there is a SQL Server to talk to,** and a
 placeholder counts as nothing:
 
-```live path=api/TheYard.Infrastructure/YardConnection.cs region=choose
+```live path=api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs region=choose
 ```
 
 The `__` test is the difference between a bad deploy and an outage. The
@@ -181,7 +181,7 @@ week, instead of crash-looping against a string that is not a connection string.
 
 **Retries, because a serverless database is sometimes asleep:**
 
-```live path=api/TheYard.Infrastructure/YardConnection.cs region=configure
+```live path=api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs region=configure
 ```
 
 The database auto-pauses after an idle hour. The first connection after that
@@ -306,7 +306,7 @@ save and the guarantee is the same with a different owner. The store retries a c
 correct answer to "somebody moved this row" is to start again from what is there
 now:
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=bid-store
+```live path=api/TheYard.Infrastructure/Shared/Auction/EfSources.cs region=bid-store
 ```
 
 **Identity's own tables were left alone**, including the `nvarchar(max)` columns
@@ -676,10 +676,10 @@ YardConnection in Infrastructure is the one class that knows which engine sits u
 
 ## Files
 
-- [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the provider choice, the retry policy, and what may be said about the database.
+- [`api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs): the provider choice, the retry policy, and what may be said about the database.
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the model, both providers, and the value converters.
 - [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs): the row types, and the concurrency token.
-- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the seed, and the store that retries a conflict.
+- [`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfSources.cs): the adapters, the seed, and the store that retries a conflict.
 - [`api/TheYard.Api/Shared/Stores/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/DesignTime.cs): the one design-time factory, and the two commands that use it.
 - [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the SQL Server schema, hand written, and the authority for it.
 - [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the SQLite schema's history.

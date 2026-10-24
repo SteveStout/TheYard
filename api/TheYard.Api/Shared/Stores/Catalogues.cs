@@ -1,9 +1,6 @@
 // The two stores' catalogues, built for the composition root. A file of its own because each one
 // names three adapters and a rule about who fills, and StoreRegistration reads more plainly with
 // one line per store (ADR: The store does the work).
-using TheYard.Application;
-using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api.Shared.Stores;
 

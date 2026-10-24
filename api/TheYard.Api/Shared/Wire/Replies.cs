@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Wire;
 

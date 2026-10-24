@@ -3,7 +3,6 @@
 // file because it is the rule a reader checks first when asking what a row can
 // hold; Activity.cs lists the other parts of the activity feature.
 using System.Text.RegularExpressions;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Activity;
 

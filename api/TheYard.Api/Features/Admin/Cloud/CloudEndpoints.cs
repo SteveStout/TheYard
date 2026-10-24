@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using TheYard.Application;
 using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Api.Features.Admin.Cloud;

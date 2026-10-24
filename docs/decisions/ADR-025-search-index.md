@@ -113,27 +113,27 @@ JIT reads as a slow release. The table above is warm on both sides.
 
 ## In the code
 
-The index, and the text it holds (`api/TheYard.Domain/VehicleSearchIndex.cs`):
+The index, and the text it holds (`api/TheYard.Domain/Shared/Auction/VehicleSearchIndex.cs`):
 
-```live path=api/TheYard.Domain/VehicleSearchIndex.cs region=text
+```live path=api/TheYard.Domain/Shared/Auction/VehicleSearchIndex.cs region=text
 ```
 
-```live path=api/TheYard.Domain/VehicleSearchIndex.cs region=lookup
+```live path=api/TheYard.Domain/Shared/Auction/VehicleSearchIndex.cs region=lookup
 ```
 
-Compiling the filter once (`api/TheYard.Domain/VehicleFilter.cs`):
+Compiling the filter once (`api/TheYard.Domain/Shared/Auction/VehicleFilter.cs`):
 
-```live path=api/TheYard.Domain/VehicleFilter.cs region=compile
+```live path=api/TheYard.Domain/Shared/Auction/VehicleFilter.cs region=compile
 ```
 
 The scan, and why the status is checked separately:
 
-```live path=api/TheYard.Domain/VehicleFilter.cs region=query
+```live path=api/TheYard.Domain/Shared/Auction/VehicleFilter.cs region=query
 ```
 
-Where the two meet (`api/TheYard.Application/Stock.cs`):
+Where the two meet (`api/TheYard.Application/Shared/Auction/Stock.cs`):
 
-```live path=api/TheYard.Application/Stock.Search.cs region=search
+```live path=api/TheYard.Application/Shared/Auction/Stock.Search.cs region=search
 ```
 
 ## Consequences
@@ -162,9 +162,9 @@ The work is Domain code (VehicleSearchIndex.cs and VehicleFilter.Compile), built
 
 ## Files
 
-- [`api/TheYard.Domain/VehicleSearchIndex.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleSearchIndex.cs): the index, its text and its fallback.
-- [`api/TheYard.Domain/VehicleFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleFilter.cs): `Compile`, and the two-part token check.
-- [`api/TheYard.Application/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs): built with the dataset, used by `Search`.
+- [`api/TheYard.Domain/Shared/Auction/VehicleSearchIndex.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/VehicleSearchIndex.cs): the index, its text and its fallback.
+- [`api/TheYard.Domain/Shared/Auction/VehicleFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/VehicleFilter.cs): `Compile`, and the two-part token check.
+- [`api/TheYard.Application/Shared/Auction/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Stock.cs): built with the dataset, used by `Search`.
 - [`api/TheYard.Tests/VehicleSearchIndexTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/VehicleSearchIndexTests.cs): the indexed and unindexed paths must answer identically.
 - [`api/TheYard.Tests/SearchIndexBenchmarkTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SearchIndexBenchmarkTests.cs): the measurement above, and the coverage assertion.
 - [`api/TheYard.Tests/StockTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StockTests.cs): the facets are one instance, built with the catalogue (the addendum below).
@@ -196,7 +196,7 @@ cache middleware and no memory cache: the catalogue is immutable for the
 life of the process and the facets are a field of it, which is the cheapest
 cache there is and the only one a reader has to trust.
 
-```live path=api/TheYard.Application/Stock.cs region=facets
+```live path=api/TheYard.Application/Shared/Auction/Stock.cs region=facets
 ```
 
 ```live path=src/app/hooks/useInventory.ts region=facets-once

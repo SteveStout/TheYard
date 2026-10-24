@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using TheYard.Application;
 using TheYard.Infrastructure;
 
 namespace TheYard.Tests;

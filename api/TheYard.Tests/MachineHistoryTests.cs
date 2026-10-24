@@ -1,8 +1,6 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
-using TheYard.Application;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 

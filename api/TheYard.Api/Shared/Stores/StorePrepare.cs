@@ -1,6 +1,5 @@
 // The five asks a store gets at startup before it is written off. Its own file because it
 // is one small retry policy, read and tested on its own, that both stores share.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Stores;
 

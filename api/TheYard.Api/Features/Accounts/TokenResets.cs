@@ -1,6 +1,5 @@
 // The reset token port over the session issuer, which signs reset tokens with the same key and a
 // fingerprint of the password they replace.
-using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;
 

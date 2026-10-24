@@ -1,5 +1,4 @@
 using TheYard.Application.Features.Links;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api.Features.Links;
 

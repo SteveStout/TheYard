@@ -3,7 +3,6 @@
 // certificate it answers with, what it is costing, and the date it is meant to go. Netlify's
 // figures move hourly, so the card keeps one document an hour; without a token it says so.
 using System.Globalization;
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

@@ -200,7 +200,7 @@ This is front end work held to a Domain rule: `nextAuctionBoundary` and `byAucti
 - [`src/lib/auction.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.ts): `nextAuctionBoundary`, and why the boundary is the moment worth asking at, and `byAuctionUrgency`, which is why asking was not enough.
 - [`src/lib/auction.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/auction.test.ts): what it returns, including the two cases that make it stop asking.
 - [`src/app/hooks/useListingRefresh.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/hooks/useListingRefresh.ts): the timer, the floor, and the hidden tab.
-- [`api/TheYard.Domain/VehicleOrdering.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VehicleOrdering.cs): the ranking that was never wrong.
+- [`api/TheYard.Domain/Shared/Auction/VehicleOrdering.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/VehicleOrdering.cs): the ranking that was never wrong.
 - [`docs/decisions/ADR-055-broken-windows.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-055-broken-windows.md): the shape this belongs to.
 
 ## Addendum, 2026-09-21: the grid that would not hold still

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 
@@ -220,10 +219,10 @@ public class CosmosDefinitionTests
     public void A_catalogue_document_carries_the_fields_its_queries_name_and_comes_back_as_the_vehicle()
     {
         var vehicle = TestData.Vehicle(id: "seed-1-0004d");
-        var entry = new TheYard.Application.CatalogueEntry(77, vehicle);
+        var entry = new TheYard.Application.Shared.Auction.CatalogueEntry(77, vehicle);
         string json = JsonSerializer.Serialize(entry.ToCatalogueDocument(), CosmosStore.Json);
         var back = JsonSerializer.Deserialize<CatalogueDocument>(json, CosmosStore.Json)!.ToEntry();
-        var slot = TheYard.Application.CatalogueSlot.For(vehicle.Id);
+        var slot = TheYard.Application.Shared.Auction.CatalogueSlot.For(vehicle.Id);
 
         foreach (string field in new[] { "\"seq\":77", $"\"start_offset\":{slot.StartOffsetMs}", $"\"end_offset\":{slot.EndOffsetMs}", "\"price\":22800", "\"search\":\"2023 ford bronco" })
         {

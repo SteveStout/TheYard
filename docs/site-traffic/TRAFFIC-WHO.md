@@ -12,7 +12,7 @@ What that is worth: a developer sees a visitor count that groups a day's request
 
 A visit is handed to the counter as a record with six fields, and a record with no field for a thing cannot carry it:
 
-```live path=api/TheYard.Application/Activity.cs region=activity-port
+```live path=api/TheYard.Application/Shared/History/Activity.cs region=activity-port
 ```
 
 - **When**, to the hour.

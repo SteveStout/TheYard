@@ -21,7 +21,7 @@ traffic-search-console | Search Console, step by step | The site put into Google
 
 ## The standing rules
 
-- No email address, no full IP address, no user agent and no query string is ever kept ([`Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Activity.cs), the hit's six fields, held by [ActivityTests](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ActivityTests.cs)).
+- No email address, no full IP address, no user agent and no query string is ever kept ([`Activity.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/Activity.cs), the hit's six fields, held by [ActivityTests](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ActivityTests.cs)).
 - A visitor is a keyed hash of the day and the address, so nothing joins one day to the next.
 - No request waits on the store: a visit is handed to a queue and written in the background.
 - The totals are public; the per-visitor rows and the kept log answer only to the operator's key, and are a 404 without it.

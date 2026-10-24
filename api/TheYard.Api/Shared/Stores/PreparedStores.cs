@@ -1,4 +1,3 @@
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api.Shared.Stores;
 

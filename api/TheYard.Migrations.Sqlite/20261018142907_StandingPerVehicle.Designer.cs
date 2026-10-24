@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TheYard.Infrastructure;
+using TheYard.Infrastructure.Features.Admin.Cloud;
+using TheYard.Infrastructure.Shared.Auction;
+using TheYard.Infrastructure.Shared.History;
+using TheYard.Infrastructure.Shared.Stores;
 
 #nullable disable
 

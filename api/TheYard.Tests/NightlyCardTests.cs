@@ -1,6 +1,5 @@
 using System.Text.Json;
 using TheYard.Api.Features.Admin.Cloud;
-using TheYard.Application;
 using TheYard.Data;
 
 namespace TheYard.Tests;
@@ -28,7 +27,7 @@ public sealed partial class NightlyCardTests
     private static ResourceCardInputs Month(int onTime, double unitsPerBucket = 0, IReadOnlyDictionary<string, string?>? facts = null, IReadOnlyDictionary<string, double?>? costs = null)
     {
         var start = Now.AddDays(-10);
-        var due = TheYard.Domain.NightlySlots.Due(start, Now.AddHours(-1)).Take(onTime).Select(d => d.At).ToHashSet();
+        var due = TheYard.Domain.Features.Admin.NightlySlots.Due(start, Now.AddHours(-1)).Take(onTime).Select(d => d.At).ToHashSet();
         var buckets = new List<ResourceBucket>();
         for (var at = start; at < Now; at = at.AddMinutes(5))
         {
@@ -40,7 +39,7 @@ public sealed partial class NightlyCardTests
         return new ResourceCardInputs("7d", TimeSpan.FromDays(7), Now, new PlanHistoryAvailability(true, "kept in Cosmos DB, 31 days"), lastHour, buckets, buckets, hours, null, "the test site", costs);
     }
 
-    private static int DueInMonth() => TheYard.Domain.NightlySlots.Due(Now.AddDays(-10), Now.AddHours(-1)).Count;
+    private static int DueInMonth() => TheYard.Domain.Features.Admin.NightlySlots.Due(Now.AddDays(-10), Now.AddHours(-1)).Count;
 
     private static NightlyRun Run(string id, int hoursAgo, string cameTo, string lane = "reply") =>
         new(id, long.Parse(id, System.Globalization.CultureInfo.InvariantCulture), Now.AddHours(-hoursAgo), "04:00", GitHubRuns.ByFunction, false, lane, 300, cameTo);

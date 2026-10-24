@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api.Features.Admin.Operations;
-using TheYard.Application;
 
 namespace TheYard.Tests;
 

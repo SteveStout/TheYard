@@ -1,8 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using TheYard.Application;
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 

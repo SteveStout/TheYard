@@ -20,7 +20,7 @@ What that is worth: a developer can trust that two records with the same values 
 
 A whole class from this repository, the in-memory half of the password reset port, as it is written:
 
-```live path=api/TheYard.Application/ResetLinks.cs region=memory
+```live path=api/TheYard.Application/Features/Accounts/ResetLinks.cs region=memory
 ```
 
 Nothing derives from it and nothing was meant to, and the declaration says so before a reader has to
@@ -107,7 +107,7 @@ a method, and expect the rest of the code to keep working. These classes were no
 that. Most of them do one job behind a port, like the null sender that stands in when a container has
 no mail configured:
 
-```live path=api/TheYard.Application/Email.cs region=email-port
+```live path=api/TheYard.Application/Features/Accounts/Email.cs region=email-port
 ```
 
 The interface is the extension point, and the class behind it is finished. That is the shape almost

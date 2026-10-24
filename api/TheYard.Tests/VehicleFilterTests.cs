@@ -1,4 +1,3 @@
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 

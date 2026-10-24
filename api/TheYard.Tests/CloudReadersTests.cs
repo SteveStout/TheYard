@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api.Features.Admin.Cloud;
-using TheYard.Application;
 
 namespace TheYard.Tests;
 

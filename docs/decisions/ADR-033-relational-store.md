@@ -236,9 +236,9 @@ strategy).
 ## In the code
 
 Bringing the store up, or reporting that it could not be brought up
-(`api/TheYard.Infrastructure/EfSources.cs`):
+(`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`):
 
-```live path=api/TheYard.Infrastructure/YardDatabase.cs region=prepare
+```live path=api/TheYard.Infrastructure/Shared/Stores/YardDatabase.cs region=prepare
 ```
 
 The model, and why the ordering column exists
@@ -247,15 +247,15 @@ The model, and why the ordering column exists
 ```live path=api/TheYard.Infrastructure/YardDbContext.cs region=model
 ```
 
-The seam, unchanged above it (`api/TheYard.Infrastructure/EfSources.cs`):
+The seam, unchanged above it (`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`):
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=ef-sources
+```live path=api/TheYard.Infrastructure/Shared/Auction/EfSources.cs region=ef-sources
 ```
 
 Bids, written through the lock that was already there
-(`api/TheYard.Application/BidBook.cs`):
+(`api/TheYard.Application/Shared/Auction/BidBook.cs`):
 
-```live path=api/TheYard.Application/BidBook.cs region=store
+```live path=api/TheYard.Application/Shared/Auction/BidBook.cs region=store
 ```
 
 The proof (`api/TheYard.Tests/PersistenceTests.cs`):
@@ -384,9 +384,9 @@ The store is Infrastructure code (EfSources.cs, YardDbContext.cs and the row typ
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs): the context and the model.
 - [`api/TheYard.Api/Shared/Stores/DesignTime.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/DesignTime.cs): the design-time factory.
 - [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs): the three row types.
-- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the adapters, the mapping, and the seed.
+- [`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfSources.cs): the adapters, the mapping, and the seed.
 - [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the schema's history. It lived beside the context when there was one provider, and moved to a project of its own when there were two, because a migrations assembly holds one model snapshot (ADR: The SQL Server backend). This link pointed at the old folder from that day until a test started checking.
-- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs): the third port, and the null store.
+- [`api/TheYard.Application/Shared/Auction/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Ports.cs): the third port, and the null store.
 - [`api/TheYard.Api/Shared/Wiring/StoreRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/StoreRegistration.cs): the registration, and the migrate and seed block.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the health check.
 - [`api/TheYard.Tests/PersistenceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PersistenceTests.cs): the restart, the seeding, the migration history, and the file on disk.

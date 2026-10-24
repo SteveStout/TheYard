@@ -59,7 +59,7 @@ Every ring, each holding its own part. The rule of who is a person is in Domain,
 
 ## Files
 
-- [`api/TheYard.Domain/VisitorKind.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/VisitorKind.cs) - who a visitor was, the one rule
+- [`api/TheYard.Domain/Features/Visitors/VisitorKind.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Features/Visitors/VisitorKind.cs) - who a visitor was, the one rule
 - [`api/TheYard.Application/Features/Visitors/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Application/Features/Visitors) - the reader and the writer, and the count's query
 - [`api/TheYard.Infrastructure.Cosmos/Features/Visitors/CosmosVisitorStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Features/Visitors/CosmosVisitorStore.cs) - the kept records
 - [`api/TheYard.Api/Features/Visitors/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features/Visitors) - the slice's route

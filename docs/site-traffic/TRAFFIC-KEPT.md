@@ -22,7 +22,7 @@ Beside those, every entry the Admin tab's public lists take, recent errors, the 
 
 Every string on its way in passes through one function: bounded in length, and with every at sign turned into `%40`, so an address in a path, a query, an exception message or a stack cannot be kept as one. The function, read from this build:
 
-```live path=api/TheYard.Application/Logs.cs region=log-text
+```live path=api/TheYard.Application/Shared/History/Logs.cs region=log-text
 ```
 
 ## How long

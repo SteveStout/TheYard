@@ -104,16 +104,16 @@ The use case the bid route asks, one command and its handler,
 
 The method that asks the rules and then calls the port, from the part of `BidBook` that moves a
 price,
-[`api/TheYard.Application/BidBook.Bidding.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BidBook.Bidding.cs):
+[`api/TheYard.Application/Shared/Auction/BidBook.Bidding.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/BidBook.Bidding.cs):
 
-```live path=api/TheYard.Application/BidBook.Bidding.cs region=place
+```live path=api/TheYard.Application/Shared/Auction/BidBook.Bidding.cs region=place
 ```
 
 The rules,
-[`api/TheYard.Domain/BidRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/BidRules.cs).
+[`api/TheYard.Domain/Shared/Auction/BidRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/BidRules.cs).
 Nothing in it is `async`, nothing in it reads a file, and the clock arrives as an argument:
 
-```live path=api/TheYard.Domain/BidRules.cs region=*
+```live path=api/TheYard.Domain/Shared/Auction/BidRules.cs region=*
 ```
 
 ## The inner ring owns the interface
@@ -140,23 +140,23 @@ it an in-memory implementation beside it that keeps the same rules, as `MemoryBi
 the use cases can be tested with no database and no mocking framework.
 
 The ports, whole,
-[`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs):
+[`api/TheYard.Application/Shared/Auction/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Ports.cs):
 
-```live path=api/TheYard.Application/Ports.cs region=*
+```live path=api/TheYard.Application/Shared/Auction/Ports.cs region=*
 ```
 
 The relational adapters, whole: EF Core over Azure SQL Database or SQLite,
-[`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs).
+[`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfSources.cs).
 `EfBidStore` is the last class in the file:
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=*
+```live path=api/TheYard.Infrastructure/Shared/Auction/EfSources.cs region=*
 ```
 
 The document store adapters, whole: the Cosmos DB SDK,
-[`api/TheYard.Infrastructure.Cosmos/CosmosSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosSources.cs).
+[`api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosSources.cs).
 `CosmosBidStore` is the last class in this one too:
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosSources.cs region=*
+```live path=api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosSources.cs region=*
 ```
 
 And the one place that names an adapter: the composition root,
@@ -187,17 +187,17 @@ scheduled from), and every endpoint that needs the time passes that value inward
 ```
 
 The clock itself is a value in Domain,
-[`api/TheYard.Domain/AuctionClock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/AuctionClock.cs):
+[`api/TheYard.Domain/Shared/Auction/AuctionClock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/AuctionClock.cs):
 
-```live path=api/TheYard.Domain/AuctionClock.cs region=*
+```live path=api/TheYard.Domain/Shared/Auction/AuctionClock.cs region=*
 ```
 
 And the rule that uses it, whole,
-[`api/TheYard.Domain/AuctionSchedule.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/AuctionSchedule.cs).
+[`api/TheYard.Domain/Shared/Auction/AuctionSchedule.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Auction/AuctionSchedule.cs).
 Every auction's opening and closing times are worked out from the vehicle's id and the anchor, so
 nothing about the schedule is stored, and the status is a comparison of two numbers:
 
-```live path=api/TheYard.Domain/AuctionSchedule.cs region=*
+```live path=api/TheYard.Domain/Shared/Auction/AuctionSchedule.cs region=*
 ```
 
 One test, from

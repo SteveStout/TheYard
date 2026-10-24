@@ -3,7 +3,6 @@
 // the window, and the words a missing reading is printed as. Each card's own file then says only
 // which reading is which and what its four questions are.
 using System.Globalization;
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

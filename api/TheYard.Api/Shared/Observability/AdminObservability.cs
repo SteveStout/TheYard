@@ -3,7 +3,6 @@
 //   LogRingBuffer.cs      - LogEntry, LogRingBuffer, RingBufferLoggerProvider: the log lines
 //   RequestTimings.cs     - RequestEntry, RequestRingBuffer, EndpointTiming, Percentiles: request timings
 //   HttpCurrentRequest.cs - HttpCurrentRequest: which request caused a statement
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Observability;
 

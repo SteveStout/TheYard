@@ -99,7 +99,7 @@ The bill card spans three rings: CostHistory.cs in Application holds the ICostHi
 
 - [`api/TheYard.Api/Shared/CostReadings/Costs.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/CostReadings/Costs.cs): the two questions, the shaping, the reader and the recorder.
 - [`api/TheYard.Api/Shared/CostReadings/CostReport.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/CostReadings/CostReport.cs): the view the cards are drawn from and its cache.
-- [`api/TheYard.Application/CostHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/CostHistory.cs): the day, the port and the read held in memory, and the windows.
+- [`api/TheYard.Application/Shared/History/CostHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/CostHistory.cs): the day, the port and the read held in memory, and the windows.
 - [`api/TheYard.Api/Shared/Wiring/CostRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/CostRegistration.cs): the wiring.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): `GET /api/admin/costs`.
 - [`src/components/admin/SpendCard/SpendCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/SpendCard/SpendCard.tsx) and [`src/lib/spend.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/spend.ts): the card and the layout it draws from.

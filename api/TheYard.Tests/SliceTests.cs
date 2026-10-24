@@ -52,7 +52,7 @@ public sealed class SliceTests
     {
         // The same folder name in every ring: Application's and Infrastructure's slices are the
         // namespaces under their Features, and none reaches another's.
-        foreach (var ring in new[] { typeof(TheYard.Application.StandingReader).Assembly, typeof(TheYard.Infrastructure.YardDbContext).Assembly })
+        foreach (var ring in new[] { typeof(TheYard.Application.Shared.Auction.StandingReader).Assembly, typeof(TheYard.Infrastructure.YardDbContext).Assembly })
         {
             string root = ring.GetName().Name + ".Features";
             string[] slices = [.. ring.GetTypes().Select(type => type.Namespace).OfType<string>()
@@ -308,8 +308,8 @@ public sealed class SliceTests
             members.AddRange(holder.GetMethods(all).Where(method => !method.IsSpecialName).SelectMany(method => method.GetParameters().Select(parameter => parameter.ParameterType).Append(method.ReturnType).Where(Adapter).Select(type => $"{holder.Name}.{method.Name} : {type.Name}")));
         }
         Assert.True(members.Count == 0, "Backend names an adapter: " + string.Join(", ", members));
-        Assert.True(typeof(TheYard.Application.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.RelationalDiagnostics)));
-        Assert.True(typeof(TheYard.Application.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.Cosmos.DocumentDiagnostics)));
+        Assert.True(typeof(TheYard.Application.Shared.Stores.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.Shared.Stores.RelationalDiagnostics)));
+        Assert.True(typeof(TheYard.Application.Shared.Stores.IStoreDiagnostics).IsAssignableFrom(typeof(TheYard.Infrastructure.Cosmos.Shared.Stores.DocumentDiagnostics)));
     }
 
     [Fact]
@@ -375,8 +375,56 @@ public sealed class SliceTests
             .ToHashSet(StringComparer.Ordinal);
         var missing = named.Where(name => !have.Contains(name)).ToList();
         Assert.True(missing.Count == 0, "the drawing names files the tree does not have: " + string.Join(", ", missing));
-        Assert.False(Directory.Exists(Path.Combine(Repo.Root(), "api", "TheYard.Domain", "Features")), "Domain grew a Features folder; redraw vertical-slices.mjs and amend ADR-107");
         Assert.DoesNotContain("Features/Admin/Cloud/Sql", drawing, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The types Entity Framework maps stay at the relational adapter's root, each named: the migrations and their
+    /// snapshot name every mapped type by its namespace, so moving one would read to the tools as a new table.
+    /// </summary>
+    private static readonly string[] MappedAtTheRoot =
+    [
+        "ActivityRows.cs", "BlogRows.cs", "CatalogueRows.cs", "CatalogueWords.cs", "Rows.cs", "SeedResult.cs", "YardUser.cs",
+        "YardDbContext.cs", "YardDbContext.Blog.cs", "YardDbContext.Catalogue.cs", "YardDbContext.Columns.cs", "YardDbContext.Standings.cs",
+    ];
+
+    [Fact]
+    public void Every_inner_ring_file_sits_in_a_slice_or_a_shared_concern_and_declares_its_folder()
+    {
+        // The rule the host has held since ADR-114, in the four inner rings (ADR: The onion cut into vertical slices,
+        // the addendum of 1.0.4.46): a file is under Features/<Slice>/ or Shared/<Concern>/, and its namespace is its
+        // folder, so a reader finds a type by its feature in every ring.
+        var wrong = new List<string>();
+        foreach (string ring in new[] { "TheYard.Domain", "TheYard.Application", "TheYard.Infrastructure", "TheYard.Infrastructure.Cosmos" })
+        {
+            string root = Path.Combine(Repo.Root(), "api", ring);
+            foreach (string path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+            {
+                string relative = Path.GetRelativePath(root, path);
+                string? folder = Path.GetDirectoryName(relative);
+                if (string.IsNullOrEmpty(folder))
+                {
+                    if (!(ring == "TheYard.Infrastructure" && MappedAtTheRoot.Contains(relative, StringComparer.Ordinal)))
+                    {
+                        wrong.Add($"{ring}/{relative} sits at the ring's root");
+                    }
+                    continue;
+                }
+                string expected = ring + "." + folder.Replace(Path.DirectorySeparatorChar, '.');
+                string declared = System.Text.RegularExpressions.Regex.Match(File.ReadAllText(path), @"(?m)^namespace\s+([\w.]+)").Groups[1].Value;
+                if (!folder.StartsWith("Features", StringComparison.Ordinal) && !folder.StartsWith("Shared", StringComparison.Ordinal))
+                {
+                    wrong.Add($"{ring}/{relative} is in neither Features/ nor Shared/");
+                }
+                else if (declared != expected)
+                {
+                    wrong.Add($"{ring}/{relative} declares {declared}, its folder says {expected}");
+                }
+            }
+        }
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
 }
 // #endregion slice-tests

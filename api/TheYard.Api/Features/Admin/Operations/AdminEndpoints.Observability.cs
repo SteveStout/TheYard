@@ -4,7 +4,6 @@
 // (OperationsReadings.cs, MachineCardReadings.cs). The routes are mapped in AdminEndpoints.cs.
 
 using Microsoft.AspNetCore.Http.HttpResults;
-using TheYard.Application.Features.Admin.Operations;
 using TheYard.Application.Shared;
 
 namespace TheYard.Api.Features.Admin.Operations;

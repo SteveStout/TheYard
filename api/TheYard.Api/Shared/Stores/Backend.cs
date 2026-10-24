@@ -1,7 +1,6 @@
 // One store and everything that stands on it, and the bundle that attaches a store to it.
 // Its own file because the rest of the API reads a backend through this one shape, so a
 // reader looking for what a backend holds finds it here and nothing else.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Stores;
 

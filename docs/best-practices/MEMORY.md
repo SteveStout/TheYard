@@ -40,7 +40,7 @@ var pages = new BoundedCache<string, IReadOnlyList<CatalogueEntry>>(
     bytesOf: page => 64 + page.Count * 1_500);
 ```
 
-```live path=api/TheYard.Application/Stock.cs region=listing-cache
+```live path=api/TheYard.Application/Shared/Auction/Stock.cs region=listing-cache
 ```
 
 ### c. Page, never materialise
@@ -56,7 +56,7 @@ var page = await db.Catalogue.AsNoTracking()
     .ToListAsync();
 ```
 
-```live path=api/TheYard.Infrastructure/EfVehicleCatalogue.cs region=ef-catalogue-query
+```live path=api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs region=ef-catalogue-query
 ```
 
 ### d. Streams over byte arrays past 85 KB

@@ -54,7 +54,7 @@ The rule (what a code is, which requests count, how opens fold) and the port are
 
 - [`api/TheYard.Application/Features/Links/LinkOpens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Links/LinkOpens.cs) - the code, the preview rule, the tagged-request rule, the port, the folding and the memory keeper
 - [`api/TheYard.Application/Features/Links/LinkHandlers.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Links/LinkHandlers.cs) - the pass-through, the page's report and the card's handlers
-- [`api/TheYard.Infrastructure.Cosmos/CosmosLinkOpens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosLinkOpens.cs) - opens in the activity container
+- [`api/TheYard.Infrastructure.Cosmos/Features/Links/CosmosLinkOpens.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Features/Links/CosmosLinkOpens.cs) - opens in the activity container
 - [`api/TheYard.Api/Features/Links/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features/Links) - the routes and the module
 - [`api/TheYard.Api/Features/Links/LinkOpenCollector.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Links/LinkOpenCollector.cs) and [`api/TheYard.Api/Features/Links/ConfiguredLinkTargets.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Links/ConfiguredLinkTargets.cs) - the collector and the configured pass-through addresses
 - [`api/TheYard.Api/Shared/Activity/RequestRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Activity/RequestRecorder.cs) - the hook that offers a tagged request

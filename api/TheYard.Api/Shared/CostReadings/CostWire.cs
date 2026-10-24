@@ -1,7 +1,6 @@
 // The cost cards' answer as the wire carries it: the report and the three kinds of row it holds
 // (a day on the line, a slice of the donut, a bar per type). Plain records with no behaviour
 // beyond the empty answer, kept apart from CostReport.cs so the shape reads on its own.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.CostReadings;
 

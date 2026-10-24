@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using TheYard.Application;
 using TheYard.Application.Features.Visitors;
 
 namespace TheYard.Api.Shared.Instance;

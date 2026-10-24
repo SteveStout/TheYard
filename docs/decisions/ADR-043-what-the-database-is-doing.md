@@ -163,7 +163,7 @@ running on has.
 
 The port the statements are written into, read from this build. The entry type has no field for a parameter's value, which is why no redaction rule is needed for a column that does not exist yet:
 
-```live path=api/TheYard.Application/SqlLog.cs region=sql-log-port
+```live path=api/TheYard.Application/Shared/Stores/SqlLog.cs region=sql-log-port
 ```
 
 ## Where it sits
@@ -172,8 +172,8 @@ Each ring holds one piece: Application/SqlLog.cs declares ISqlLog, ICurrentReque
 
 ## Files
 
-- [`api/TheYard.Application/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/SqlLog.cs): the types with nowhere to put a value, and the two ports.
-- [`api/TheYard.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SqlLogInterceptor.cs): reading the command instead of the log line.
+- [`api/TheYard.Application/Shared/Stores/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Stores/SqlLog.cs): the types with nowhere to put a value, and the two ports.
+- [`api/TheYard.Infrastructure/Shared/Stores/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/SqlLogInterceptor.cs): reading the command instead of the log line.
 - [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs), [`api/TheYard.Api/Shared/Observability/LogRingBuffer.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/LogRingBuffer.cs) and [`api/TheYard.Api/Shared/Activity/RequestTimings.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Activity/RequestTimings.cs): the three rings, the logging provider, and the percentiles.
 - [`api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ObservabilityRegistration.cs): where they are wired (region admin-rings).
 - [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the timing middleware (region request-timing).

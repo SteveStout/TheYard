@@ -4,7 +4,6 @@
 // daily quota, or the component's when the workspace sets none. All of it through Resource Manager
 // with the site's identity, which needs Log Analytics Reader on the workspace.
 using System.Globalization;
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

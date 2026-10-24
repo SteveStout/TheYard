@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using TheYard.Application;
 using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api.Shared.Wiring;
 

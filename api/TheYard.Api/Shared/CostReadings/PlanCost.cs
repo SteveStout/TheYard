@@ -1,6 +1,5 @@
 // The plan's own line of the bill, read from the cost card's kept days rather than typed in, so
 // the plan card and the cost card cannot disagree about what the plan costs.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.CostReadings;
 

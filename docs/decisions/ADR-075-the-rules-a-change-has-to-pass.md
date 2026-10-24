@@ -141,6 +141,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The nightly card asks the job hunt's Function whether the tracker merger is keeping up and keeps only the five numbers its health route answers, so no file name, row or log line from the share reaches the site; the row is good under five minutes waiting and a warning past ten | ADR: The tracker merger runs in Azure | NightlyCardTests |
 | A usage document is kept only when every rule holds (lane, model, run, counts, slot, mode, a start inside seven days), the route refuses without the operator's key before it reads a body, a document posted twice is kept once, the Claude usage card draws through the catalogue with the slot join's two sentences and dry runs out of the averages, and no source file but the one client names the Anthropic API | ADR: Every Claude lane reports its usage | UsageRecordTests, UsageLogTests, AdminEndpointsUsageTests, ClaudeCardTests, OnionTests |
 | Only Infrastructure opens a socket: no host type but Program and a slice's Module names an HttpClient, a handler or a client factory, and every client is built in OutboundHttp beside the one pool | ADR: The onion cut into vertical slices | OnionTests, MemoryRulesTests |
+| Every file in Domain, Application and both adapters sits under Features/<Slice>/ or Shared/<Concern>/ and declares its folder as its namespace; only the types Entity Framework maps stay at the relational adapter's root, each named | ADR: The onion cut into vertical slices | SliceTests |
 
 ## How the table is read
 

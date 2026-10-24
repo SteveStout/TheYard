@@ -1,4 +1,3 @@
-using TheYard.Infrastructure;
 
 namespace TheYard.Api.Shared.MachineReadings;
 

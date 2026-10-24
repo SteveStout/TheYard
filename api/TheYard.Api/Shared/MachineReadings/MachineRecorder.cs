@@ -2,7 +2,6 @@
 // the history port, and the reader that serves the kept day, week and month back to the Admin tab.
 // They are their own file because they are the only part of the Machines card that outlives a
 // roll of the container. The rest of the card starts in Machines.cs.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.MachineReadings;
 

@@ -1,4 +1,3 @@
-using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;
 

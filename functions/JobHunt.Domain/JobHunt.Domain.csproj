@@ -10,7 +10,7 @@
   <ItemGroup>
     <!-- The slot table the Admin tab's nightly card reads too, compiled here from its one file so the
          Function and the card cannot keep two tables (ADR: The Nightly Function on the Admin tab). -->
-    <Compile Include="..\..\api\TheYard.Domain\NightlySlots.cs" Link="NightlySlots.cs" />
+    <Compile Include="..\..\api\TheYard.Domain\Features\Admin\NightlySlots.cs" Link="NightlySlots.cs" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="JobHunt.Domain" />
@@ -19,5 +19,6 @@
     <Using Include="JobHunt.Domain.Features.Merge" />
     <Using Include="JobHunt.Domain.Features.Sheet" />
     <Using Include="JobHunt.Domain.Features.Card" />
+    <Using Include="TheYard.Domain.Features.Admin" />
   </ItemGroup>
 </Project>

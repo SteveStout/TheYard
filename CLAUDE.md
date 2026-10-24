@@ -80,14 +80,14 @@ split).
   the epoch as `long`, UTC** (the clock's anchor, the window's start and end, a bid's `at_ms`), the same unit the
   browser's clock uses; the dataset's own `auction_start` date string passes through as the dataset has it
   and nothing is derived from it.
-- Bid rules live only in `TheYard.Domain/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
+- Bid rules live only in `TheYard.Domain/Shared/Auction/BidRules.cs`. A bid at or above buy-now wins AT the buy-now
   price, and that check runs BEFORE the increment check. A vehicle anybody has bought is SOLD, to
   everybody, on both sites: that check runs before all the others, the standing the store owns supplies it
   (read by `BidBook` under its gate and written back with a compare-and-set; `BidBook.IsSold` is the
   listing's cached copy), `StandingReader.FindAsync` and `StandingReader.SearchAsync` hand every vehicle out with its
   sold flag beside it, and the wire says `sold` on every vehicle. A listing or a rule that forgets it recreates the second buyer (ADR: Accounts and per-user
   bids, addendum). Raising a vehicle's shown price over a bid, and whether the reserve is met, live only
-  in `TheYard.Domain/StandingRules.cs` (`RaisedTo`, `Reserve`).
+  in `TheYard.Domain/Shared/Auction/StandingRules.cs` (`RaisedTo`, `Reserve`).
 
 ## Testing
 

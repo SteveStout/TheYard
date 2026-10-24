@@ -1,6 +1,4 @@
 using System.ComponentModel;
-using TheYard.Application;
-using TheYard.Domain;
 
 namespace TheYard.Api.Shared.Wire;
 

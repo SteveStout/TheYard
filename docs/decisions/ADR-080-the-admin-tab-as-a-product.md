@@ -487,7 +487,7 @@ This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are Rea
 - [`src/lib/machineChart.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/machineChart.test.ts): what a gap is, what a zero is, and what a bar is a share of.
 - [`src/lib/statTiles.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.ts): what each tile says and what makes it amber or red, React-free, and the line under a tile as the points of a polyline.
 - [`src/lib/statTiles.test.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/statTiles.test.ts): every threshold, a reading that has not arrived, and a gap in the line.
-- [`api/TheYard.Application/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs): the page sorted only as far as the page, which is what the first amber tile found.
+- [`api/TheYard.Application/Shared/Auction/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Stock.cs): the page sorted only as far as the page, which is what the first amber tile found.
 - [`src/lib/dayMarks.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/dayMarks.ts) and [`src/components/admin/DayMarks/DayMarks.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/DayMarks/DayMarks.tsx): which slot of a daily chart is a weekend and which carries a Monday or Friday label, and the band and the labels drawn from it.
 - [`src/lib/ranges.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/ranges.ts) and [`src/lib/overview.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/overview.ts): every normal range on the tab in one table, and the Overview's four rows built from it; [`src/components/admin/OverviewCard/OverviewCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/admin/OverviewCard/OverviewCard.tsx) draws them.
 - [`src/lib/workbench.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/workbench.ts): the workbench's addresses, React-free: the cards by slug and what an address opens, the only part of the workbench the page's first chunk carries.
@@ -515,7 +515,7 @@ This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are Rea
 ```live path=src/lib/trafficCard.ts region=traffic-words
 ```
 
-```live path=api/TheYard.Application/Stock.Search.cs region=page
+```live path=api/TheYard.Application/Shared/Auction/Stock.Search.cs region=page
 ```
 
 ## Addendum, 2026-10-18 (1.0.3.178): the page is the store's

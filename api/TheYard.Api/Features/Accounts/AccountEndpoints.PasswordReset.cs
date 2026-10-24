@@ -3,7 +3,6 @@
 // the reset itself are the handlers' (TheYard.Application/Features/Accounts/ResetHandlers.cs).
 
 using Microsoft.AspNetCore.Http.HttpResults;
-using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;
 

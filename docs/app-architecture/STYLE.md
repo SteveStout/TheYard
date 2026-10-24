@@ -61,7 +61,7 @@ this way or what breaks otherwise; it never leans on a date, a version or a
 review to stand in for the reason, and a test holds that (ADR: The rules a
 change has to pass).
 
-```live path=api/TheYard.Application/BidBook.Bidding.cs region=place
+```live path=api/TheYard.Application/Shared/Auction/BidBook.Bidding.cs region=place
 ```
 
 The comment above the store write in that method is worth keeping: the two

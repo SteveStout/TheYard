@@ -1,7 +1,6 @@
 // The plan card's reads: each window built from the kept minutes and cached for a minute, with a
 // live read of Azure only when the newest kept minute is more than a minute old. Its own file
 // because the cache and the freshness rule are what keep the card fast and Azure unbothered.
-using TheYard.Application;
 using TheYard.Application.Features.Admin.Plan;
 
 namespace TheYard.Api.Shared.PlanReadings;

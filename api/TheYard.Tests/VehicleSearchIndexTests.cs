@@ -1,5 +1,4 @@
 using TheYard.Data;
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 

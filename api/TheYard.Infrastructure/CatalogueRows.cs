@@ -2,9 +2,9 @@
 // record. One file because the three change together: a field added to the vehicle is a column,
 // a line of model and a line of mapping, and a reader checking that nothing is dropped finds all
 // three here (ADR: The store does the work).
-using TheYard.Application;
+using TheYard.Application.Shared.Auction;
 using TheYard.Data;
-using TheYard.Domain;
+using TheYard.Domain.Shared.Auction;
 
 namespace TheYard.Infrastructure;
 

@@ -128,7 +128,7 @@ Application needs to save a bid, and the database is outside it. So Application 
 interface it needs, in its own words, and each adapter implements it. At compile time every arrow
 still points inward, at the interface. The auction's ports, read from the running build:
 
-```live path=api/TheYard.Application/Ports.cs region=ports
+```live path=api/TheYard.Application/Shared/Auction/Ports.cs region=ports
 ```
 
 The names say what the inner ring needs (`IBidStore`) and nothing about the technology that answers

@@ -217,7 +217,7 @@ The key paths are declared in `Containers.PartitionKeyPaths` in Infrastructure.C
 
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): one definition per container, with the key path and the indexing policy, which a person applies and the application maps to.
 - [`api/TheYard.Infrastructure.Cosmos/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Infrastructure.Cosmos): the documents, the container catalog that declares the same keys, and the adapters.
-- [`api/TheYard.Infrastructure/SyntheticVehicleSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SyntheticVehicleSource.cs): why the seed's distributions are the catalogue's distributions.
+- [`api/TheYard.Infrastructure/Shared/Auction/SyntheticVehicleSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/SyntheticVehicleSource.cs): why the seed's distributions are the catalogue's distributions.
 - [`docs/decisions/ADR-059-a-second-store-priced.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md): the parent record, with the account and the arithmetic.
 
 ## Addendum, 2026-10-18: the catalogue container serves the site

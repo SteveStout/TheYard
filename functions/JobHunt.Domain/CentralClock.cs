@@ -1,5 +1,3 @@
-using TheYard.Domain;
-
 namespace JobHunt.Domain;
 
 /// <summary>

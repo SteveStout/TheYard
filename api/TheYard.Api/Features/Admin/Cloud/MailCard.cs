@@ -2,7 +2,6 @@
 // the free sender's hourly limit and the bounce rate on the dials, what uses it, whether mail is
 // arriving, what Azure did to it, and whether the Azure-managed sender still fits.
 using System.Globalization;
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

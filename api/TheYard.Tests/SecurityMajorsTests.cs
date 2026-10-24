@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using TheYard.Domain;
 using TheYard.Infrastructure;
 
 namespace TheYard.Tests;

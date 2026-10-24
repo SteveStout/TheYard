@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Hosting.Server;
-using TheYard.Infrastructure;
 
 namespace TheYard.Api.Shared.Wiring;
 

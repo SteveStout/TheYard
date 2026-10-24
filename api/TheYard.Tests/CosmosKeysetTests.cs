@@ -1,5 +1,3 @@
-using TheYard.Application;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 

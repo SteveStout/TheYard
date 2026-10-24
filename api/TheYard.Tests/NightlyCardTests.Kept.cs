@@ -1,7 +1,5 @@
 using System.Text.Json;
 using TheYard.Api.Features.Admin.Cloud;
-using TheYard.Application;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Tests;
 
@@ -61,18 +59,18 @@ public sealed partial class NightlyCardTests
         var fired = new DateTimeOffset(2026, 10, 22, 9, 0, 40, TimeSpan.Zero);
         var firings = new List<TheYard.Data.NightlyFiring>
         {
-            new(new DateTimeOffset(2026, 10, 22, 9, 0, 0, TimeSpan.Zero), "reply", TheYard.Domain.NightlySlots.OnTime, fired),
-            new(new DateTimeOffset(2026, 10, 22, 5, 0, 0, TimeSpan.Zero), "records", TheYard.Domain.NightlySlots.Late, fired.AddHours(-3.9)),
-            new(new DateTimeOffset(2026, 10, 22, 1, 0, 0, TimeSpan.Zero), "records", TheYard.Domain.NightlySlots.Missed, null),
+            new(new DateTimeOffset(2026, 10, 22, 9, 0, 0, TimeSpan.Zero), "reply", TheYard.Domain.Features.Admin.NightlySlots.OnTime, fired),
+            new(new DateTimeOffset(2026, 10, 22, 5, 0, 0, TimeSpan.Zero), "records", TheYard.Domain.Features.Admin.NightlySlots.Late, fired.AddHours(-3.9)),
+            new(new DateTimeOffset(2026, 10, 22, 1, 0, 0, TimeSpan.Zero), "records", TheYard.Domain.Features.Admin.NightlySlots.Missed, null),
         };
         Assert.Equal("3 1 1 1", NightlySource.SlotsWords(firings));
-        Assert.Equal(new TheYard.Domain.SlotTally(3, 1, 1, 1), NightlyCard.HourTally("3 1 1 1"));
+        Assert.Equal(new TheYard.Domain.Features.Admin.SlotTally(3, 1, 1, 1), NightlyCard.HourTally("3 1 1 1"));
         Assert.Null(NightlyCard.HourTally("0 0 0 0"));
         Assert.Null(NightlyCard.HourTally(null));
 
         var hour = new ResourceHour(Now.AddMinutes(-10), "", null, new Dictionary<string, string?> { [NightlySource.SlotsFact] = "3 1 1 1" }, []);
         var fresh = new ResourceCardInputs("24h", TimeSpan.FromDays(1), Now, new PlanHistoryAvailability(true, "kept in Cosmos DB, 31 days"), [], [], [], [hour], null, "the test site");
-        Assert.Equal(new TheYard.Domain.SlotTally(3, 1, 1, 1), NightlyCard.Tally(fresh));
+        Assert.Equal(new TheYard.Domain.Features.Admin.SlotTally(3, 1, 1, 1), NightlyCard.Tally(fresh));
         Assert.Equal("1 of 3 slots", NightlyCard.View(fresh, Names, FunctionPath, []).Dials[0].Absolute);
     }
     // #endregion nightly-kept-tests

@@ -1,6 +1,5 @@
 // The two error rings offered to the kept log, and the moment the process started, both set when
 // the host starts.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Hosted;
 

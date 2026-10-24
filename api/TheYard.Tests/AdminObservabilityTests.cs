@@ -197,7 +197,7 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         if (document)
         {
             var lines = entries
-                .Where(entry => entry.GetProperty("category").GetString() == "TheYard.Infrastructure.Cosmos.CosmosStore")
+                .Where(entry => entry.GetProperty("category").GetString() == "TheYard.Infrastructure.Cosmos.Shared.Stores.CosmosStore")
                 .ToList();
             Assert.NotEmpty(lines);
             foreach (var line in lines)

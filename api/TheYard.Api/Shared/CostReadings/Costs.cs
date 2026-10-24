@@ -5,7 +5,6 @@
 //   CostRecorder.cs - CostRecorder: the background service that reads once an hour
 using System.Globalization;
 using System.Text.Json;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.CostReadings;
 

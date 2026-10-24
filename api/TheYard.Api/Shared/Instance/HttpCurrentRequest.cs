@@ -1,7 +1,6 @@
 // Which request a SQL statement or store operation belongs to, read from the ambient HttpContext.
 // Its own file because it is the one piece here that touches the web request, and what it leaves
 // out (the query string) is a rule about what a public page may print.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Instance;
 

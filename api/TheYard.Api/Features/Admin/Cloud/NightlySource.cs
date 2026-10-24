@@ -7,9 +7,7 @@
 // the card says "not read" on every line that needs it.
 using System.Net;
 using System.Text.Json;
-using TheYard.Application;
 using TheYard.Data;
-using TheYard.Domain;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

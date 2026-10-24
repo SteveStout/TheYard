@@ -49,7 +49,7 @@ address, and the next sign-in finds whichever it finds.
 
 **One container, `users`, partition key `/id`.** Two document shapes in it.
 
-```live path=api/TheYard.Infrastructure.Cosmos/Documents.Users.cs region=documents
+```live path=api/TheYard.Infrastructure.Cosmos/Shared/Stores/Documents.Users.cs region=documents
 ```
 
 **The account is one document**, id and partition key both the account id, so
@@ -68,7 +68,7 @@ is a 409 from the store, not a race that both sides win.
 
 **Registering writes the claim first and the account second.**
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs region=create
+```live path=api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs region=create
 ```
 
 If the claim is refused the registration fails with Identity's own duplicate
@@ -80,7 +80,7 @@ claim is deleted again, so a failed registration leaves nothing behind.
 the claim carries. About two request units and two round trips, in region, and
 neither of them a query:
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs region=find
+```live path=api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs region=find
 ```
 
 This application registers the address as the user name, so Identity's lookup by
@@ -94,7 +94,7 @@ stamp is the document's own `_etag`, read with the document and sent back as
 reports as Identity's concurrency failure, exactly as a row that moved would be
 reported on SQL Server:
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs region=update
+```live path=api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs region=update
 ```
 
 A successful sign-in with no failed guesses on the account writes nothing at
@@ -159,8 +159,8 @@ The accounts code sits in Infrastructure.Cosmos, where `CosmosUserStore` and the
 
 ## Files
 
-- [`api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosUserStore.cs): the five interfaces, the claim, the etag.
-- [`api/TheYard.Infrastructure.Cosmos/Documents.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Documents.cs): the two document shapes.
+- [`api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Features/Accounts/CosmosUserStore.cs): the five interfaces, the claim, the etag.
+- [`api/TheYard.Infrastructure.Cosmos/Shared/Stores/Documents.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Stores/Documents.cs): the two document shapes.
 - [`infra/cosmos/users.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/users.json): the container, partitioned on the id, indexing nothing.
 - [`api/TheYard.Api/Features/Accounts/Module.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Accounts/Module.cs): where Identity is given this store instead of the Entity Framework one (region user-store-per-request).
 - [`api/TheYard.Tests/CosmosStoreTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CosmosStoreTests.cs): the proof, against the real account.

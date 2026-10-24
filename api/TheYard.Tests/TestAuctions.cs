@@ -1,7 +1,5 @@
-using TheYard.Application;
 using TheYard.Application.Features.Bids;
 using TheYard.Data;
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 

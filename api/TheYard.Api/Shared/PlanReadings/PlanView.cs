@@ -3,7 +3,6 @@
 // slower facts. Pure, so PlanViewTests hand it fixed minutes and read a fixed report back; the
 // reads and the cache are PlanHistoryReader.
 using System.Globalization;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.PlanReadings;
 

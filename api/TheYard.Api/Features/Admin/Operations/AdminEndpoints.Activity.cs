@@ -1,7 +1,6 @@
 // The Admin tab's activity routes: the public activity report, and the two reads that answer only to the
 // operator's key, the visitor rows and the kept log. Each asks its one query handler (ADR-115's fourth rung);
 // the key check sits beside the reads it guards and runs before the handler is asked.
-using TheYard.Application.Features.Admin.Operations;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

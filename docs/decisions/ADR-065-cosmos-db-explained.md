@@ -196,7 +196,7 @@ No ring: this is a teaching document that explains Cosmos DB to a reader who kno
 - [`docs/decisions/ADR-059-a-second-store-priced.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-059-a-second-store-priced.md): the decision and the arithmetic.
 - [`docs/decisions/ADR-058-the-partition-key.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-058-the-partition-key.md): the key, the alternatives, and the measured queries.
 - [`docs/decisions/ADR-064-measuring-both-stores.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-064-measuring-both-stores.md): both containers in one session, with the method.
-- [`api/TheYard.Infrastructure.Cosmos/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosStore.cs): the one connection, and the wrapper that writes every charge down.
+- [`api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosStore.cs): the one connection, and the wrapper that writes every charge down.
 - [`infra/cosmos/`](https://github.com/SteveStout/TheYard/tree/main/infra/cosmos): what a container is, in six JSON files.
 
 ## Addendum, 2026-09-09: the comparison, laid out beside this

@@ -142,7 +142,7 @@ No ring: this is a naming decision carried through every project, namespace and 
 ## Files
 
 - [`api/TheYard.slnx`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.slnx): eight projects, all renamed.
-- [`api/TheYard.Infrastructure/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardConnection.cs): the migrations assembly named as a string.
+- [`api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/YardConnection.cs): the migrations assembly named as a string.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the copy list and the entry point.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): the solution path and the DACPAC assertion.
 - [`docs/decisions/ADR-040-database-source-control.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-040-database-source-control.md): why the DACPAC's name is checked at all.

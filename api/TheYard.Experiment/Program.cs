@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using Azure.Identity;
 using Microsoft.Azure.Cosmos;
-using TheYard.Application;
-using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
+using TheYard.Application.Shared.Stores;
+using TheYard.Infrastructure.Cosmos.Shared.Stores;
+using TheYard.Infrastructure.Shared.Auction;
 
 // The partition key experiment (ADR: The partition key).
 //

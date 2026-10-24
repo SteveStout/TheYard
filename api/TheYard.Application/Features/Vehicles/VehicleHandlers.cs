@@ -1,7 +1,8 @@
 // The catalogue as the page reads it: a page of vehicles at their standing prices, the values
 // behind the filters, and one vehicle, each answered from the request store's reading sides.
 using TheYard.Application.Shared;
-using TheYard.Domain;
+using TheYard.Application.Shared.Auction;
+using TheYard.Domain.Shared.Auction;
 
 namespace TheYard.Application.Features.Vehicles;
 

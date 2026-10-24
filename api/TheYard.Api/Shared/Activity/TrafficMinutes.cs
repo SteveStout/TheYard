@@ -1,7 +1,6 @@
 // The request ring folded a minute at a time, for the Machines card on the Admin tab. It is its
 // own file because two readers share it: the hour the card draws, and the minute the recorder in
 // MachineRecorder.cs keeps. The rest of the card starts in Machines.cs.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Activity;
 

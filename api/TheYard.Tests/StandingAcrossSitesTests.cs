@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using TheYard.Application;
 using TheYard.Data;
-using TheYard.Domain;
 using TheYard.Infrastructure;
 
 namespace TheYard.Tests;

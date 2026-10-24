@@ -237,4 +237,4 @@ Twenty-four of the ninety-six records carried no live block. Twelve of them expl
 
 ## Addendum, 2026-10-09 (1.0.3.115): the kept log's one function
 
-What is kept, under Site traffic, says every string passes through one function on its way in, bounded in length and with every at sign turned into `%40`. The sentence now shows the function, `LogText.Clean` in `api/TheYard.Application/Logs.cs`, behind a new `log-text` region, the way the rule above asks: where a sentence talks about the code, and nowhere else.
+What is kept, under Site traffic, says every string passes through one function on its way in, bounded in length and with every at sign turned into `%40`. The sentence now shows the function, `LogText.Clean` in `api/TheYard.Application/Shared/History/Logs.cs`, behind a new `log-text` region, the way the rule above asks: where a sentence talks about the code, and nowhere else.

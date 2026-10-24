@@ -1,7 +1,6 @@
 // The App Service plan kept a minute at a time: the background service that reads Azure Monitor
 // once a minute and the plan's slower facts once an hour, and hands both to the keep. Its own
 // file because when to read is a separate question from how to read, which is PlanReader.cs.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.PlanReadings;
 

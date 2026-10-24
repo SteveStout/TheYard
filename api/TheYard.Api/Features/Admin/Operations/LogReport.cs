@@ -1,7 +1,6 @@
 // The keyed log endpoint's answer, shaped for the Admin tab. It has a file of its own because it
 // is the read side of the kept log: it queries the store the collector writes to and decides
 // what an operator sees, and none of that runs on the request path the collector protects.
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

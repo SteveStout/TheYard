@@ -4,7 +4,7 @@
 // may carry; these only ask them and keep what they admit.
 using TheYard.Application.Shared;
 using TheYard.Data;
-using TheYard.Domain;
+using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Application.Features.Blog;
 

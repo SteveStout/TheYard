@@ -2,7 +2,6 @@
 // the rule's verdict on them. Its own file because it is one card's read with its own wire; the
 // route that points at it is mapped in AdminEndpoints.cs (ADR: Memory follows traffic).
 
-using TheYard.Application.Features.Admin.Operations;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

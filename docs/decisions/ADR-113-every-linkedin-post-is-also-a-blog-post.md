@@ -43,7 +43,7 @@ The rules (where a read came from, the device class, what an event may carry, wh
 
 ## Files
 
-- [`api/TheYard.Domain/BlogRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/BlogRules.cs) - where a read came from, the device class, the events and the slug
+- [`api/TheYard.Domain/Features/Blog/BlogRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Features/Blog/BlogRules.cs) - where a read came from, the device class, the events and the slug
 - [`api/TheYard.Data/BlogPost.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Data/BlogPost.cs) - a post, a read, an event and a post's numbers
 - [`api/TheYard.Application/Features/Blog/BlogHandlers.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Blog/BlogHandlers.cs) and [`BlogStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Blog/BlogStore.cs) - the handlers, the port and the memory store
 - [`api/TheYard.Infrastructure/Features/Blog/EfBlogStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Features/Blog/EfBlogStore.cs) - the relational store

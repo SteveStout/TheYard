@@ -1,7 +1,5 @@
 // What the host says about its stores the moment it starts: the loggers attached to them, each
 // store's state said out loud, and an invented signing key named as such.
-using TheYard.Infrastructure;
-using TheYard.Infrastructure.Cosmos;
 
 namespace TheYard.Api.Shared.Hosted;
 

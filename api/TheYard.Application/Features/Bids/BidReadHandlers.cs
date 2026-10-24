@@ -2,7 +2,8 @@
 // round of the room with their badges after it, and their start-over. Each is a query or a command
 // with one handler (ADR-115: A request is a query or a command).
 using TheYard.Application.Shared;
-using TheYard.Domain;
+using TheYard.Application.Shared.Auction;
+using TheYard.Domain.Shared.Auction;
 
 namespace TheYard.Application.Features.Bids;
 

@@ -138,15 +138,15 @@ The context and its model (`api/TheYard.Infrastructure/YardDbContext.cs`):
 ```live path=api/TheYard.Infrastructure/YardDbContext.cs region=model
 ```
 
-The seed (`api/TheYard.Infrastructure/EfSources.cs`):
+The seed (`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`):
 
-```live path=api/TheYard.Infrastructure/YardSeed.cs region=seed
+```live path=api/TheYard.Infrastructure/Shared/Stores/YardSeed.cs region=seed
 ```
 
 The bid store, which is the only thing here that writes
-(`api/TheYard.Infrastructure/EfSources.cs`):
+(`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`):
 
-```live path=api/TheYard.Infrastructure/EfSources.cs region=bid-store
+```live path=api/TheYard.Infrastructure/Shared/Auction/EfSources.cs region=bid-store
 ```
 
 Startup: migrate, then seed, then serve (`api/TheYard.Api/Program.cs`):
@@ -209,7 +209,7 @@ This walkthrough explains Infrastructure code, YardDbContext and YardSeed, along
 
 - [`api/TheYard.Infrastructure/YardDbContext.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.cs)
 - [`api/TheYard.Infrastructure/Rows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Rows.cs)
-- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs)
+- [`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfSources.cs)
 - [`api/TheYard.Migrations.Sqlite`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Migrations.Sqlite): the SQLite schema's history, which moved out of Infrastructure when a second provider arrived.
 - [`api/TheYard.Database`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Database): the SQL Server schema, which is the authority Entity Framework maps to.
 - [`docs/decisions/ADR-033-relational-store.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-033-relational-store.md): what was decided, and what this deliberately does not give you.

@@ -2,6 +2,7 @@
 // none, through the ICloudCards port, so the endpoint asks one handler and the handler is tested
 // with fake cards and no host (ADR: The onion cut into vertical slices, rule 7).
 using TheYard.Application.Shared;
+using TheYard.Application.Shared.Cards;
 
 namespace TheYard.Application.Features.Admin.Cloud;
 

@@ -25,7 +25,7 @@ What that is worth: the plan's use is a number on a page, per lane, instead of a
 
 1. **One document per run, keyed on the lane and the run.** `UsageRecord` in Domain: lane, kind (`plan` or `api`), model, tokens in, cache write, cache read, tokens out, wall, the API-equivalent cost, the run id, the slot, the mode and when it started. `Validate` answers the one sentence wrong with a document: a lane of 1 to 40 letters, digits, spaces, commas or dashes; a model and a run of plain tokens; counts of zero or more; a slot as HH:MM; a mode of lower-case words; a start inside the last seven days and not in the future. Those rules are also why no folder name, DONE text or file name can travel in one.
 
-```live path=api/TheYard.Domain/UsageRecord.cs region=usage-record
+```live path=api/TheYard.Domain/Shared/Usage/UsageRecord.cs region=usage-record
 ```
 
 2. **One route, behind the operator's key.** `POST /api/admin/usage` reads the key from `X-Admin-Key` before it reads the body, answers 401 without it, 400 with the sentence `Validate` gives, 503 with the log's own reason when it cannot keep documents now (a document is never reported kept that was not), and 200 with the key the document is kept under. A document posted again under the same lane and run replaces the first, so a lane may post again after a failure without counting a run twice.
@@ -41,7 +41,7 @@ What that is worth: the plan's use is a number on a page, per lane, instead of a
 
 5. **The site's own calls go through one client.** `IClaudeClient` in Application is the only way this site's code asks Claude; its adapter, `AnthropicClaudeClient`, calls the Messages endpoint with the key configuration names (`Claude:ApiKey`, never in the repository) and keeps a usage document from every answer's usage block before it hands the answer back, billed as `api`. Nothing calls it yet. `OnionTests.Claude_is_asked_only_through_the_one_client_that_reports_its_usage` fails any other source file of the six projects or the page that names the API's address or an Anthropic SDK, so the first feature that asks Claude cannot skip its document.
 
-```live path=api/TheYard.Application/ClaudeClient.cs region=claude-client
+```live path=api/TheYard.Application/Shared/Claude/ClaudeClient.cs region=claude-client
 ```
 
 6. **The card reads the documents, and the lanes come from them.** "Claude usage" sits under Cloud infrastructure after the nightly card and is built through `ResourceCatalog.Cards` like every other. The left dial is today's tokens out against the seven Central days before it, amber at twice the average and red at four times; the right dial is the plan's week, which says "not read: the plan endpoint is not set" until the plan's own usage is read. The chart is tokens a day, one line a lane, in the order the lanes first appear. The four questions: who used what; what each run cost in tokens, as a table with a link to each GitHub run and a warning for a run over 1,200 s of wall; whether the plan is near its limit; and how the runs sit against the Function, slot by slot, joined to the nightly card's run log by GitHub run id, so a run the reader listed with no document reads "no usage reported" and a document whose run the reader never listed reads "run not seen by the nightly reader". Dry runs are listed and left out of every average.
@@ -64,10 +64,10 @@ The record and its rules are in Domain (`UsageRecord`). The port and the memory 
 
 ## Files
 
-- [`api/TheYard.Domain/UsageRecord.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/UsageRecord.cs) - the document and its rules
-- [`api/TheYard.Application/UsageLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/UsageLog.cs) - the port and the memory keep
-- [`api/TheYard.Application/ClaudeClient.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/ClaudeClient.cs) - the one way the site asks Claude
-- [`api/TheYard.Infrastructure.Cosmos/CosmosUsageLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosUsageLog.cs) - the documents in the plan container
+- [`api/TheYard.Domain/Shared/Usage/UsageRecord.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Usage/UsageRecord.cs) - the document and its rules
+- [`api/TheYard.Application/Shared/History/UsageLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/UsageLog.cs) - the port and the memory keep
+- [`api/TheYard.Application/Shared/Claude/ClaudeClient.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Claude/ClaudeClient.cs) - the one way the site asks Claude
+- [`api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosUsageLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosUsageLog.cs) - the documents in the plan container
 - [`api/TheYard.Application/Features/Usage/KeepUsageHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Usage/KeepUsageHandler.cs) - the route's handler
 - [`api/TheYard.Api/Shared/Wiring/UsageRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/UsageRegistration.cs) - the log and the client, registered once
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.Usage.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.Usage.cs) - the keyed route

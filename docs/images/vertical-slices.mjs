@@ -63,9 +63,9 @@ function arrow(d, label, lx, ly) {
 
 // The rings, as bands. Outside at the top, inside at the bottom; references point down and never up.
 const api = band(100, 122, 'ring0', 'TheYard.Api, the host', 'Features/<Slice>/Module.cs: Register and Map; Program.cs alone at the root; everything shared in Shared/<Concern>/');
-const infra = band(232, 110, 'ring1', 'TheYard.Infrastructure and .Cosmos, the adapters', 'the same ports answered twice, relational and document, at each project\'s root; the one Features/ folder is Accounts');
-const app = band(352, 110, 'ring2', 'TheYard.Application, the use cases', 'Features/<Slice>/: one handler per request, one HandleAsync; the ports in Ports.cs and beside the handler');
-const domain = band(472, 92, 'ring3', 'TheYard.Domain, the rules', 'pure functions and records at the root; no Features/, no clock, no disk, no network');
+const infra = band(232, 110, 'ring1', 'TheYard.Infrastructure and .Cosmos, the adapters', 'the same ports answered twice, relational and document, in Features/<Slice>/ or Shared/<Concern>/; only the mapped rows stay at the root');
+const app = band(352, 110, 'ring2', 'TheYard.Application, the use cases', 'Features/<Slice>/: one handler per request, one HandleAsync; the auction, the stores and the kept history in Shared/<Concern>/');
+const domain = band(472, 92, 'ring3', 'TheYard.Domain, the rules', 'pure functions and records, in Shared/Auction or the slice that owns the rule; no clock, no disk, no network');
 band(574, 60, 'ring4', 'TheYard.Data, the records', 'zero dependencies, zero behaviour');
 
 // The Shared column: what every slice may use and no slice owns.
@@ -79,19 +79,19 @@ files(52, 532, ['Fnv1a.cs, AuctionSchedule.cs', 'CardTone.cs, the one tone rule'
 
 // The slices: the same folder name in every ring, cut through all of them.
 // What each slice owns in each ring, by the real file names (vertical-slices-tests hold them to the tree):
-// the host and Application have the folder; the adapters sit at their ring's root, answering the slice's
-// port; Domain has no folders, only rules.
+// every ring has the folders now; a part two slices share sits in Shared/<Concern>/ and is drawn in the slice
+// that leans on it most, its folder named beside it.
 const bids = slice(300, 190, 'Features/Bids');
 files(bids.x + 12, 160, ['Module.cs', 'BidEndpoints.cs, the wire too']);
 files(bids.x + 12, 292, ['EfBidStore.Standing.cs', 'CosmosBidStore.Standing.cs']);
 files(bids.x + 12, 412, ['PlaceBidHandler.cs', 'BidReadHandlers.cs', 'IBidStore in Ports.cs']);
-files(bids.x + 12, 532, ['BidRules.cs', 'StandingRules.cs']);
+files(bids.x + 12, 532, ['BidRules.cs, StandingRules.cs', 'in Shared/Auction']);
 
 const vehicles = slice(506, 190, 'Features/Vehicles');
 files(vehicles.x + 12, 160, ['Module.cs', 'VehicleEndpoints.cs', 'VehicleWire.cs, in Shared/Wire']);
 files(vehicles.x + 12, 292, ['EfVehicleCatalogue.cs', 'CosmosVehicleCatalogue.cs']);
 files(vehicles.x + 12, 412, ['VehicleHandlers.cs', 'IVehicleCatalogue in Ports.cs']);
-files(vehicles.x + 12, 532, ['VehicleFilter.cs', 'VehicleOrdering.cs', 'AuctionClock.cs']);
+files(vehicles.x + 12, 532, ['VehicleFilter.cs and', 'VehicleOrdering.cs']);
 
 const accounts = slice(712, 190, 'Features/Accounts');
 files(accounts.x + 12, 160, ['Module.cs', 'AccountEndpoints.cs', 'AccountEndpoints.SignIn.cs']);
@@ -101,9 +101,9 @@ files(accounts.x + 12, 532, ['(no rule of its own;', 'the session is Application
 
 const cloud = slice(918, 196, 'Features/Admin/Cloud');
 files(cloud.x + 12, 160, ['Module.cs', 'CloudEndpoints.cs', 'SqlCard.cs and every reader']);
-files(cloud.x + 12, 292, ['(none yet: the readers', 'sit in the host\'s slice,', 'ADR-114)']);
+files(cloud.x + 12, 292, ['YardModelFacts.cs', 'the readers\' requests go', 'out through OutboundHttp']);
 files(cloud.x + 12, 412, ['ReadCloudCardHandler.cs', 'ICloudCards, beside it']);
-files(cloud.x + 12, 532, ['CardTone.cs']);
+files(cloud.x + 12, 532, ['CardTone.cs, in Shared/Cards']);
 out.push(`  <text x="${cloud.midX}" y="652" class="label" text-anchor="middle">and Admin/Plan, Admin/Operations, Docs, Health, each a column like these</text>`);
 
 // The direction of every reference, drawn once beside the bands.

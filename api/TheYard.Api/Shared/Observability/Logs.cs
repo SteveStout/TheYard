@@ -12,7 +12,6 @@
 //   LogReport.cs                 the keyed endpoint's answer
 //   KeptRingWriterReader.cs      the Admin tab's four public lists, kept and read back
 using System.Threading.Channels;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Observability;
 

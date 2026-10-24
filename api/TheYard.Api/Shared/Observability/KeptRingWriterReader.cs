@@ -4,7 +4,6 @@
 // The collector both of them use is in Logs.cs (ADR: Logs that outlive the container).
 using System.Collections.Concurrent;
 using System.Text.Json;
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Observability;
 

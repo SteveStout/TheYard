@@ -2,7 +2,6 @@
 // request units a minute. It is its own file because the document store has no machine reading to
 // give, so its side of the card is built from a different ring by different arithmetic. The rest
 // of the card starts in Machines.cs.
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

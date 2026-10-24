@@ -2,8 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TheYard.Api.Features.Admin.Operations;
-using TheYard.Application;
-using TheYard.Infrastructure;
 
 namespace TheYard.Tests;
 

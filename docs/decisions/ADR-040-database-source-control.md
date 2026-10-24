@@ -108,7 +108,7 @@ a policy that it does not; it is not permitted to.
 What follows from that is in `YardDatabase.BringSchemaUp`, which is the whole of
 the difference between the two providers:
 
-```live path=api/TheYard.Infrastructure/YardDatabase.cs region=schema
+```live path=api/TheYard.Infrastructure/Shared/Stores/YardDatabase.cs region=schema
 ```
 
 On SQL Server it asks whether the schema it maps to is present and refuses the
@@ -213,6 +213,6 @@ The authority is TheYard.Database, a SQL project beside the onion, and Infrastru
 - [`api/TheYard.Database/Tables/Vehicles.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Vehicles.sql): the catalogue, with the reason beside every length.
 - [`api/TheYard.Database/Tables/Bids.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Bids.sql): the concurrency token, the foreign key, and the two things deliberately absent.
 - [`api/TheYard.Tests/SchemaConformanceTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/SchemaConformanceTests.cs): what holds the mapping to the schema.
-- [`api/TheYard.Infrastructure/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfSources.cs): the two ways a schema arrives, and the refusal when it has not.
+- [`api/TheYard.Infrastructure/Shared/Auction/EfSources.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfSources.cs): the two ways a schema arrives, and the refusal when it has not.
 - [`docs/decisions/ADR-039-sql-server-backend.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-039-sql-server-backend.md): the database itself, and the connection string that is not a credential.
 - [`docs/decisions/ADR-041-two-providers-explained.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-041-two-providers-explained.md): the same setup, walked at a new developer's level.

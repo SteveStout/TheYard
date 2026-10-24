@@ -1,4 +1,3 @@
-using TheYard.Application;
 using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Tests;

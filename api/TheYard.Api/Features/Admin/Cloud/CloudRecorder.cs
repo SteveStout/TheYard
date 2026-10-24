@@ -3,7 +3,6 @@
 // SQL site alone. A card is a definition in Cloud/ResourceCatalog.cs, not a recorder of its own.
 // A card whose keep is not there yet still has its hour read once an hour and held here, so the
 // card reads live until the keep exists; its minutes are not read, since nothing could keep them.
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

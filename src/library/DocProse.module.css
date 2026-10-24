@@ -72,7 +72,7 @@
    375 on the live site: the README's body was 375 wide and scrolled to 460, and what
    pushed it was not a code block, which scrolls inside itself, but the long unbroken
    tokens inline code carries in prose and in lists, a file path like
-   api/TheYard.Infrastructure/SyntheticVehicleSource.cs at 396 px in a 306 px column.
+   api/TheYard.Infrastructure/Shared/Auction/SyntheticVehicleSource.cs at 396 px in a 306 px column.
    A word that cannot fit now breaks instead of widening the document; a table too
    wide for a phone scrolls inside its own box rather than taking the page with it.
    `anywhere` rather than `break-word` so the break also shrinks the box's own

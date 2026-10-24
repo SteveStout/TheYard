@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using Microsoft.AspNetCore.Mvc;
-using TheYard.Domain;
 
 namespace TheYard.Api.Features.Vehicles;
 

@@ -69,7 +69,7 @@ Every "latest stable" below was read live on 2026-10-03 from nuget.org, the npm 
 
 The language moved with .NET 10. Each feature was used only where it removes code or says the intent more plainly:
 
-- **Extension members.** `StandingRules` in `api/TheYard.Domain/StandingRules.cs` gives `Vehicle` a `RaisedTo` method and a `Reserve` property, the one copy of the rule the buyer's bids, the room's bids and the room's price to beat all use; it replaced three hand-written copies. `UtcBuckets` in `api/TheYard.Application/UtcBuckets.cs` gives `DateTimeOffset` the `UtcDay`, `UtcHour` and `UtcMinute` properties and replaced five helper methods spread across four classes.
+- **Extension members.** `StandingRules` in `api/TheYard.Domain/Shared/Auction/StandingRules.cs` gives `Vehicle` a `RaisedTo` method and a `Reserve` property, the one copy of the rule the buyer's bids, the room's bids and the room's price to beat all use; it replaced three hand-written copies. `UtcBuckets` in `api/TheYard.Application/Shared/History/UtcBuckets.cs` gives `DateTimeOffset` the `UtcDay`, `UtcHour` and `UtcMinute` properties and replaced five helper methods spread across four classes.
 - **Null-conditional assignment.** `cosmos?.Logger = ...` in `api/TheYard.Api/Composition/Startup.cs` (since 1.0.3.188 `document.Store?.Logger = ...` in `api/TheYard.Api/Shared/Hosted/StoreAnnouncement.cs`) replaced a four-line null check.
 - **The `field` keyword.** Not used. No property here wraps a backing field that `field` would remove, and adding one to use the keyword would be the opposite of the point.
 

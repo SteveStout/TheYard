@@ -44,7 +44,7 @@ A catalogue in memory was a cache pretending to be a store. It had no bound, it 
 
 **The store holds the hundred thousand, each with its slot.** `AuctionSchedule.Window` puts every window at the day's anchor plus an offset that depends on the id alone. Those two offsets, start and end, are written beside each vehicle at the fill, with the price a buyer competes against and the lowercased searchable text. The hash stays the authority. A test reads all hundred thousand slots back and holds each one to the window the hash gives on four anchors either side of both daylight-saving changes, and the status the clock derives to the segment the slot gives. A vehicle's status is still derived from the window and the clock; the store compares the slot with now instead of the code doing it.
 
-```live path=api/TheYard.Application/CatalogueFilter.cs region=slot
+```live path=api/TheYard.Application/Shared/Auction/CatalogueFilter.cs region=slot
 ```
 
 ```live path=api/TheYard.Tests/StoreCatalogueTests.cs region=slot
@@ -52,27 +52,27 @@ A catalogue in memory was a cache pretending to be a store. It had no bound, it 
 
 **Application plans, the adapters translate.** The port `IVehicleCatalogue` has five primitives: how full the store is, a fill, the counts split by schedule segment, one page in one order, and point reads by id. The listing is planned once, in `InventoryService`. The default listing is three segments read one after another (live by closest end, upcoming by soonest start, ended by most recent end), each off its own index, stopping at the page's last row. The adapters only translate a filter and an order into their own query:
 
-```live path=api/TheYard.Infrastructure/EfVehicleCatalogue.cs region=ef-catalogue-query
+```live path=api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs region=ef-catalogue-query
 ```
 
-```live path=api/TheYard.Infrastructure.Cosmos/CosmosVehicleCatalogue.cs region=cosmos-catalogue-query
+```live path=api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosVehicleCatalogue.cs region=cosmos-catalogue-query
 ```
 
 On SQL Server each order is one index ending in `Seq` (`api/TheYard.Database/Tables/Catalogue.sql`), so a page is a seek and a scan that stops, and every read is `AsNoTracking`. The two schedule indexes carry the other end of the window, so a segment's count and a live page's test of its start never read the row, and a filtered count reads one narrow index holding only the columns a count compares, `IX_Catalogue_Counts`, rather than the table at about two kilobytes a row. That index leads with the columns no page ranges over, so the planner never pages off it and then sorts. Measured on the PC before it was added, against a local file of all hundred thousand: the unfiltered count took 400 to 600 ms and a listing 300 to 1,100 ms, enough for seven of the browser suite's 168 tests to run out of time under four browsers at once. A query starts from `Seq < target` only when the table holds rows past the catalogue, because that range over the clustered key is what kept the planner off the order's own index. When bids have moved prices, the count is the store's cached count less the moved vehicles that match on the dataset's figures, and the page is the store's cached page made longer by that many, with the moved ones dropped in the process and each row's place worked out from how many moved vehicles sort before it. Putting the ids into the store's query made it test every row it read against the list, 25 seconds for a count and 58 for a page once under the browser suite, and gave the cache a new key with every bid. And a cache miss loads once a key: everybody who asks while a count is loading waits for that one. Each descending order has an index that descends on its figure and ascends on the place, the way the page is ordered, because an index the wrong way round on either key had SQLite sort every live vehicle for a page of twenty-five (27 seconds once under the suite). A local SQLite file pools its connections, so its page cache outlives a statement; the pool for that one file is emptied before the file is deleted. `StoreCatalogueTests` reads SQLite's own plan for every count and page shape and fails on a count that reads the table or a page that sorts its matches. Counts are read only when a number needs them: unfiltered, the total is the catalogue's size, so the default listing's first pages, the ones most visitors read, cost the store one page and no count. A typed word is looked for in `IX_Catalogue_Words`, the searchable text beside every column a word's count or page compares or orders by. On a SQLite file, whose planner has no statistics, a word's page reads its places off that index alone, with the schedule and order columns written as `+ 0` so no other index can draw the planner into reading every row of a range for its text, and then reads the page's rows by their place. On Cosmos DB every path a WHERE names is in the indexing policy, every two-key ORDER BY has its composite index, and a vehicle read by id is a point read: the synthetic id is a seed id and six characters, and the seed's two hundred makes give every id its partition, so nothing a visitor opens fans out (ADR: The partition key). An unfiltered listing does fan out, to the container's one physical partition, which that record measured at the cost of a pinned page at this size.
 
 **A bid moves a price the store does not hold.** Everybody's bids and the room's answers stay in memory, as they were (BidService, MarketService). When a move can change which vehicles match or where they sort (a price filter, a price sort, the bid-count sort), the store leaves those vehicles out, they are worked out in memory from their raised figures, and the two ordered lists are merged at the page. Otherwise the store's page is the page and the moves are laid on its rows. A test holds every page, at every offset tried, to the page the full sort over the raised catalogue gives.
 
-```live path=api/TheYard.Application/Stock.Search.cs region=overlay
+```live path=api/TheYard.Application/Shared/Auction/Stock.Search.cs region=overlay
 ```
 
 **The expansion is the seeder.** At warm-up the site counts what its store holds. Full, the store answers and nothing is loaded. Short by a few thousand, the warm-up fills it first. Short by more, the site answers from the expansion in memory while it fills its own store beside itself at the store's pace, then switches, lets the list go, and runs one compacting collection so the dial shows the memory the same minute. The other site watches and switches when the fill is done. `Catalogue__Keep` turns that on for the deploy and leaves every test host alone.
 
-```live path=api/TheYard.Application/Stock.Warm.cs region=choose
+```live path=api/TheYard.Application/Shared/Auction/Stock.Warm.cs region=choose
 ```
 
 **Every cache is bounded.** `BoundedCache` holds the listing's counts and pages for one five-second bucket of the clock and the vehicles read by id for ten minutes, each bounded by a count and by an estimate of its bytes.
 
-```live path=api/TheYard.Application/Stock.cs region=listing-cache
+```live path=api/TheYard.Application/Shared/Auction/Stock.cs region=listing-cache
 ```
 
 **A heap limit on each site.** `DOTNET_GCHeapHardLimitPercent` is `0x1E` on both .NET sites in `infra/appservice.bicep`. GC settings read from the environment are hexadecimal, so `30` would have been forty-eight per cent. With the limit, a regression is collected harder, and refused if it must be, inside its own share instead of taking memory from the other three apps on the plan.
@@ -114,14 +114,14 @@ What would change it: a catalogue too big for one physical partition or for the 
 
 ## Files
 
-- [`api/TheYard.Application/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Ports.cs) - `IVehicleCatalogue`, the five primitives
-- [`api/TheYard.Application/CatalogueFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/CatalogueFilter.cs) - the filter in the store's terms, the orders, the segments and the slot
-- [`api/TheYard.Application/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Stock.cs) and its parts `.Warm.cs`, `.Search.cs`, `.Moved.cs`, `.Find.cs` - the warm-up and the fill, the listing plan and the overlay's merge, the store's answer without the moved vehicles, the reads by id
-- [`api/TheYard.Application/MemoryCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/MemoryCatalogue.cs) - the list catalogue: the tests, the file fallback and a fill's bridge
-- [`api/TheYard.Application/BoundedCache.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/BoundedCache.cs) - the one cache shape
-- [`api/TheYard.Infrastructure/EfVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/EfVehicleCatalogue.cs), [`CatalogueRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/CatalogueRows.cs) and [`YardDbContext.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.Catalogue.cs) - the relational adapter
+- [`api/TheYard.Application/Shared/Auction/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Ports.cs) - `IVehicleCatalogue`, the five primitives
+- [`api/TheYard.Application/Shared/Auction/CatalogueFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/CatalogueFilter.cs) - the filter in the store's terms, the orders, the segments and the slot
+- [`api/TheYard.Application/Shared/Auction/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Stock.cs) and its parts `.Warm.cs`, `.Search.cs`, `.Moved.cs`, `.Find.cs` - the warm-up and the fill, the listing plan and the overlay's merge, the store's answer without the moved vehicles, the reads by id
+- [`api/TheYard.Application/Shared/Auction/MemoryCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/MemoryCatalogue.cs) - the list catalogue: the tests, the file fallback and a fill's bridge
+- [`api/TheYard.Application/Shared/Caching/BoundedCache.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Caching/BoundedCache.cs) - the one cache shape
+- [`api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs), [`CatalogueRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/CatalogueRows.cs) and [`YardDbContext.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.Catalogue.cs) - the relational adapter
 - [`api/TheYard.Database/Tables/Catalogue.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Catalogue.sql) - the table and one index per order
-- [`api/TheYard.Infrastructure.Cosmos/CosmosVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosVehicleCatalogue.cs) and [`Documents.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Documents.Catalogue.cs) - the document adapter
+- [`api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosVehicleCatalogue.cs) and [`Documents.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Stores/Documents.Catalogue.cs) - the document adapter
 - [`infra/cosmos/catalogue.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/catalogue.json) - the indexed paths and the composite indexes
 - [`api/TheYard.Api/Shared/Stores/Catalogues.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Stores/Catalogues.cs) - one catalogue per store, and who fills
 - [`api/TheYard.Infrastructure/Shared/Http/OutboundHttp.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Http/OutboundHttp.cs) - the one outbound pool

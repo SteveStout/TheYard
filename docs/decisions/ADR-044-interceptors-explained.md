@@ -149,7 +149,7 @@ problem before you take on the machinery.
 
 The interceptor this record explains, read from this build. It subclasses EF Core's `DbCommandInterceptor`, overrides one method per command kind, and writes the statement's shape into the port in `SqlLog.cs`, never a parameter's value:
 
-```live path=api/TheYard.Infrastructure/SqlLogInterceptor.cs region=sql-interceptor
+```live path=api/TheYard.Infrastructure/Shared/Stores/SqlLogInterceptor.cs region=sql-interceptor
 ```
 
 ## Where it sits
@@ -158,7 +158,7 @@ The walkthrough centres on Infrastructure: SqlLogInterceptor subclasses EF Core'
 
 ## Files
 
-- [`api/TheYard.Infrastructure/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/SqlLogInterceptor.cs)
-- [`api/TheYard.Application/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/SqlLog.cs)
+- [`api/TheYard.Infrastructure/Shared/Stores/SqlLogInterceptor.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/SqlLogInterceptor.cs)
+- [`api/TheYard.Application/Shared/Stores/SqlLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Stores/SqlLog.cs)
 - [`api/TheYard.Api/Shared/Observability/AdminObservability.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/AdminObservability.cs)
 - [`api/TheYard.Tests/AdminObservabilityTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/AdminObservabilityTests.cs)

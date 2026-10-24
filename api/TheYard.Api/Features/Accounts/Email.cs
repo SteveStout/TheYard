@@ -2,8 +2,6 @@ using System.Collections.Concurrent;
 using Azure;
 using Azure.Communication.Email;
 using Azure.Core;
-using TheYard.Application;
-using TheYard.Application.Features.Accounts;
 
 namespace TheYard.Api.Features.Accounts;
 

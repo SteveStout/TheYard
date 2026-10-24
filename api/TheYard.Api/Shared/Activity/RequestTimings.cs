@@ -1,7 +1,6 @@
 // How long requests take, for the Admin tab: one request's timing, the ring of recent ones, and the
 // percentiles worked out from it on read. Its own file because timing requests is a separate job
 // from keeping SQL statements or log lines, and the store ring reads these percentiles too.
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Activity;
 

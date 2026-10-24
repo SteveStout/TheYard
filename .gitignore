@@ -9,6 +9,8 @@ dist/
 dist-render/
 api/**/bin/
 api/**/obj/
+functions/**/bin/
+functions/**/obj/
 playwright-report/
 test-results/
 

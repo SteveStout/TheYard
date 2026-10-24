@@ -1,6 +1,5 @@
 // The scratch SQLite database a process gets when no database is configured, said out loud at
 // startup and deleted when the process has stopped.
-using TheYard.Infrastructure;
 
 namespace TheYard.Api.Shared.Hosted;
 

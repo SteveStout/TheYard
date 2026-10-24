@@ -37,7 +37,7 @@ The site already keeps what its own machines are doing, one document a minute (A
 
 **Thresholds held by a test, sustained before they speak.** Processor amber at 60 and red at 80 per cent, memory amber at 70 and red at 85, the HTTP queue amber at 5 and red at 20 waiting, outbound sockets amber at 60 per cent of the plan's 1,920. Each must hold for fifteen minutes before the card changes colour, so a deploy's two-minute warm-up spike reads as a spike and not as an alarm. Any app stopped, or any unplanned restart in the window, is red at once. `PlanThresholdTests` holds every number.
 
-```live path=api/TheYard.Application/PlanThresholds.cs region=plan-thresholds
+```live path=api/TheYard.Application/Shared/History/PlanThresholds.cs region=plan-thresholds
 ```
 
 **Absent is a sentence, never a zero.** No Reader role on the plan, no minute kept, a window with a gap: each is said in words on the card. A dial at zero would claim the machine is idle, and a flat line through a gap would claim nothing happened. The cost cards set this rule (ADR: What Azure charges) and the plan card keeps it.
@@ -67,10 +67,10 @@ What would change it: a second resource read the same way, at which point the re
 - [`api/TheYard.Api/Shared/PlanReadings/PlanRecorder.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanRecorder.cs) - the minute's read and the hourly read
 - [`api/TheYard.Api/Shared/PlanReadings/PlanReader.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanReader.cs) - the reads from Azure Monitor and Resource Manager
 - [`api/TheYard.Api/Shared/PlanReadings/PlanView.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanView.cs) and [`api/TheYard.Api/Shared/PlanReadings/PlanRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/PlanReadings/PlanRows.cs) - the windows, the percentiles, the markers, the rows
-- [`api/TheYard.Application/PlanThresholds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/PlanThresholds.cs) - every threshold and its hold time
-- [`api/TheYard.Application/CloudWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/CloudWire.cs) - the records the wire carries
-- [`api/TheYard.Application/PlanHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/PlanHistory.cs) - the port
-- [`api/TheYard.Infrastructure.Cosmos/CosmosPlanHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/CosmosPlanHistory.cs) - the keep
+- [`api/TheYard.Application/Shared/History/PlanThresholds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/PlanThresholds.cs) - every threshold and its hold time
+- [`api/TheYard.Application/Shared/Cards/CloudWire.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Cards/CloudWire.cs) - the records the wire carries
+- [`api/TheYard.Application/Shared/History/PlanHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/PlanHistory.cs) - the port
+- [`api/TheYard.Infrastructure.Cosmos/Features/Admin/CosmosPlanHistory.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Features/Admin/CosmosPlanHistory.cs) - the keep
 - [`infra/cosmos/plan.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/plan.json) - the container, its key, its time to live, its index
 - [`api/TheYard.Tests/PlanViewTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PlanViewTests.cs) - fixed minutes in, fixed report out
 - [`api/TheYard.Tests/PlanThresholdTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PlanThresholdTests.cs) - the numbers above, held

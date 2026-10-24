@@ -1,4 +1,3 @@
-using TheYard.Application;
 
 namespace TheYard.Api.Shared.Wiring;
 

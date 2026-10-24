@@ -2,7 +2,6 @@
 // (ADR: One frame for every resource): each card names its resource, the readings it keeps, how
 // it reads its minute and its hour, and how it draws itself in the shared frame. Adding a
 // resource is a definition, not a new recorder, keep or route.
-using TheYard.Application;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

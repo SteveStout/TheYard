@@ -1,4 +1,3 @@
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 
@@ -113,7 +112,7 @@ public sealed class NightlySlotsTests
         Assert.Equal(1, fourAms);
         Assert.Equal((NightlySlots.Reply, NightlySlots.Bookkeeping), (JobHunt.Domain.CentralClock.Reply, JobHunt.Domain.CentralClock.Bookkeeping));
         string project = File.ReadAllText(Path.Combine(Repo.Root(), "functions", "JobHunt.Domain", "JobHunt.Domain.csproj"));
-        Assert.Contains("<Compile Include=\"..\\..\\api\\TheYard.Domain\\NightlySlots.cs\" Link=\"NightlySlots.cs\" />", project, StringComparison.Ordinal);
+        Assert.Contains("<Compile Include=\"..\\..\\api\\TheYard.Domain\\Features\\Admin\\NightlySlots.cs\" Link=\"NightlySlots.cs\" />", project, StringComparison.Ordinal);
     }
     // #endregion nightly-slot-tests
 

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using TheYard.Domain;
 
 namespace TheYard.Tests;
 
@@ -50,10 +49,10 @@ public class ApiIntegrationTests(FullCatalogue factory)
         long previousEnd = long.MinValue;
         foreach (var vehicle in json.RootElement.GetProperty("vehicles").EnumerateArray())
         {
-            var window = new TheYard.Domain.AuctionWindow(vehicle.GetProperty("auction_starts_at").GetInt64(), vehicle.GetProperty("auction_ends_at").GetInt64());
+            var window = new TheYard.Domain.Shared.Auction.AuctionWindow(vehicle.GetProperty("auction_starts_at").GetInt64(), vehicle.GetProperty("auction_ends_at").GetInt64());
             Assert.NotEqual(
-                TheYard.Domain.AuctionStatus.Ended,
-                TheYard.Domain.AuctionSchedule.Status(window, nowBefore));
+                TheYard.Domain.Shared.Auction.AuctionStatus.Ended,
+                TheYard.Domain.Shared.Auction.AuctionSchedule.Status(window, nowBefore));
             Assert.True(window.EndsAtMs >= previousEnd, "live page must be ordered by soonest end");
             previousEnd = window.EndsAtMs;
         }
@@ -266,7 +265,7 @@ public class ApiIntegrationTests(FullCatalogue factory)
     {
         using var page = await GetAsync("/api/vehicles?limit=1");
         string id = page.RootElement.GetProperty("vehicles")[0].GetProperty("id").GetString()!;
-        long yesterday = TheYard.Domain.AuctionClock.Utc(DateTimeOffset.UtcNow.AddDays(-1)).AnchorMs;
+        long yesterday = TheYard.Domain.Shared.Auction.AuctionClock.Utc(DateTimeOffset.UtcNow.AddDays(-1)).AnchorMs;
 
         using var plain = await GetAsync($"/api/vehicles/{id}");
         using var withYesterday = await GetAsync($"/api/vehicles/{id}?anchor_ms={yesterday}");
@@ -278,8 +277,8 @@ public class ApiIntegrationTests(FullCatalogue factory)
         // The window is the hash's on one of the days around the answer's own end, never on this
         // machine's day: a window may run across midnights, and a run across UTC midnight still
         // compares the answer with itself.
-        long endDay = TheYard.Domain.AuctionClock.Utc(DateTimeOffset.FromUnixTimeMilliseconds(endsAt)).AnchorMs;
-        Assert.Contains(endsAt, Enumerable.Range(-3, 7).Select(day => TheYard.Domain.AuctionSchedule.Window(id, endDay + (day * 86_400_000L)).EndsAtMs));
+        long endDay = TheYard.Domain.Shared.Auction.AuctionClock.Utc(DateTimeOffset.FromUnixTimeMilliseconds(endsAt)).AnchorMs;
+        Assert.Contains(endsAt, Enumerable.Range(-3, 7).Select(day => TheYard.Domain.Shared.Auction.AuctionSchedule.Window(id, endDay + (day * 86_400_000L)).EndsAtMs));
     }
     // #endregion one-clock
 
