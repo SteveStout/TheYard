@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  picturesLine,
   bodyParts,
   depthsPassed,
   isNew,
@@ -99,5 +100,20 @@ describe('the blog on the page', () => {
     });
     expect(readReport('a-post', '?r=NOTACODE', '').ref).toBeNull();
     expect(readReport('a-post', '', '').referrer).toBeNull();
+  });
+});
+
+describe('the pictures line', () => {
+  it('counts the kept pictures and their size, and says when the listing was not read', () => {
+    expect(picturesLine({ count: 0, bytes: 0, source: 'memory' })).toBe('0 pictures kept, 0 KB.');
+    expect(picturesLine({ count: 1, bytes: 212_000, source: 'the blog container' })).toBe(
+      '1 picture kept, 212 KB.'
+    );
+    expect(picturesLine({ count: 9, bytes: 2_450_000, source: 'the blog container' })).toBe(
+      '9 pictures kept, 2.5 MB.'
+    );
+    expect(picturesLine({ count: null, bytes: 0, source: 'the listing answered 403' })).toBe(
+      'Pictures: not read (the listing answered 403).'
+    );
   });
 });

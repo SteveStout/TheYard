@@ -27,7 +27,7 @@ public sealed class Module : IModule
         services.AddScoped(provider => new ReadPostHandler(provider.GetRequiredService<IBlogStore>()));
         services.AddScoped(provider => new RecordReadHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         services.AddScoped(provider => new RecordEventHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
-        services.AddScoped(provider => new ReadBlogStatsHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
+        services.AddScoped(provider => new ReadBlogStatsHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System, provider.GetRequiredService<IBlogImageReader>()));
         services.AddScoped(provider => new SavePostHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         // The pictures: the job hunt's storage account's private blog container on Azure, read with the site's
         // identity and kept in the host's memory in front; in this process's memory anywhere else.
@@ -40,7 +40,15 @@ public sealed class Module : IModule
                 : provider.GetRequiredService<MemoryBlogImageStore>();
             return new CachedBlogImages(kept);
         });
+        services.AddSingleton<IBlogImageWriter>(provider =>
+        {
+            var identity = provider.GetRequiredService<HostIdentity>();
+            return identity.OnAppService && account is { Length: > 0 } && container is { Length: > 0 }
+                ? new BlobBlogImageStore(account, container, _ => IdentityTokens.AcquireAsync(OutboundHttp.Client(TimeSpan.FromSeconds(10)), "https://storage.azure.com/", AzureIds.ClientId(configuration), identity))
+                : provider.GetRequiredService<MemoryBlogImageStore>();
+        });
         services.AddSingleton<MemoryBlogImageStore>();
+        services.AddScoped(provider => new PutBlogImageHandler(provider.GetRequiredService<IBlogStore>(), provider.GetRequiredService<IBlogImageWriter>(), TimeProvider.System));
         services.AddScoped(provider => new ReadBlogImageHandler(provider.GetRequiredService<IBlogImageReader>()));
         // #endregion blog-wiring
     }

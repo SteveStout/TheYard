@@ -101,7 +101,7 @@ public sealed class BlogTests : IDisposable
         Assert.Null(await events.HandleAsync(new RecordEventCommand("a-post", "depth", "100", Session(1), false), CancellationToken.None));
         Assert.Null(await events.HandleAsync(new RecordEventCommand("a-post", "click", "linkedin", Session(1), false), CancellationToken.None));
         Assert.Equal("a depth is 25, 50, 75 or 100", await events.HandleAsync(new RecordEventCommand("a-post", "depth", "10", Session(1), false), CancellationToken.None));
-        var (stats, sources, kept) = await new ReadBlogStatsHandler(store, clock).HandleAsync(new ReadBlogStatsQuery(), CancellationToken.None);
+        var (stats, sources, kept, pictures) = await new ReadBlogStatsHandler(store, clock, new MemoryBlogImageStore()).HandleAsync(new ReadBlogStatsQuery(), CancellationToken.None);
         Assert.True(kept.Available);
         var stat = Assert.Single(stats);
         Assert.Equal((2, 2, 1, 1, 1), (stat.Reads, stat.Readers, stat.FromTaggedLinks, stat.ToLinkedIn, stat.Finished));

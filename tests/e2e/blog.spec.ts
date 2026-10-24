@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { openTheYard } from './app';
 
@@ -149,4 +150,50 @@ test('the blog route answers from the store behind it', async ({ request }) => {
     expect(Array.isArray(((await answer.json()) as { posts: unknown }).posts)).toBe(true);
   }
 });
+
+// #region blog-pictures
+/**
+ * The posts' pictures (ADR-113, the addendum on where the pictures live): a post with slides draws its
+ * strip, every picture answers 200 from the site's own address with a year's immutable cache, and the
+ * page is axe clean with every picture's alt text. It reads the real store, so it runs where a post has
+ * pictures (both public names once the slides are in); where none has, it holds the route's 404 problem instead.
+ */
+test('a post with slides draws them from the site and every picture answers with a year of cache', async ({
+  page,
+  request,
+}) => {
+  const answer = await request.get('/api/blog/posts');
+  const posts =
+    answer.status() === 200
+      ? (
+          (await answer.json()) as {
+            posts: { slug: string; images: { url: string; alt_text: string }[] }[];
+          }
+        ).posts
+      : [];
+  const post = posts.find((p) => p.images.length > 1);
+  if (post === undefined) {
+    // No post here has its slides yet (a local store): the picture route still answers a name it does not keep
+    // with a 404 problem, never the page.
+    const missing = await request.get('/blog/images/0123456789abcdef.webp');
+    expect(missing.status()).toBe(404);
+    expect(missing.headers()['content-type']).toContain('application/problem+json');
+    return;
+  }
+  for (const image of post.images) {
+    expect(image.url).toMatch(/^\/blog\/images\/[0-9a-f]{16}\.(webp|png|jpg)$/);
+    expect(image.alt_text.trim().length).toBeGreaterThan(0);
+    const served = await request.get(image.url);
+    expect(served.status()).toBe(200);
+    expect(served.headers()['cache-control']).toBe('public, max-age=31536000, immutable');
+  }
+  await openTheYard(page, `/?view=blog&post=${post.slug}`);
+  const strip = page.getByRole('region', { name: `The slides (${post.images.length})` });
+  await expect(strip.locator('img')).toHaveCount(post.images.length);
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  expect(results.violations.map((v) => v.id)).toEqual([]);
+});
+// #endregion blog-pictures
 // #endregion blog

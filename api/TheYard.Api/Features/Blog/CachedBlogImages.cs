@@ -15,6 +15,30 @@ public sealed class CachedBlogImages(IBlogImageReader inner) : IBlogImageReader
     /// <summary>The most bytes the memory keeps.</summary>
     public const long MaxBytes = 32L * 1024 * 1024;
 
+    private readonly SemaphoreSlim _gate = new(1, 1);
+    private (DateTimeOffset At, BlogImageTally Tally)? _tally;
+
+    /// <summary>The count and bytes, listed at most once a minute.</summary>
+    public async Task<BlogImageTally> TallyAsync(CancellationToken cancellation)
+    {
+        await _gate.WaitAsync(cancellation);
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (_tally is { } held && now - held.At < TimeSpan.FromMinutes(1))
+            {
+                return held.Tally;
+            }
+            var tally = await inner.TallyAsync(cancellation);
+            _tally = (now, tally);
+            return tally;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     private readonly BoundedCache<string, BlogImageFile> _held = new(512, MaxBytes, TimeSpan.FromDays(1), file => file.Bytes.LongLength, comparer: StringComparer.Ordinal);
 
     public async Task<BlogImageFile?> OpenAsync(string name, CancellationToken cancellation)

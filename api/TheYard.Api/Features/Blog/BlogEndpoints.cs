@@ -143,8 +143,8 @@ public static class BlogEndpoints
 
     private static async Task<IResult> Stats(ReadBlogStatsHandler handler, CancellationToken cancellation)
     {
-        var (stats, sources, kept) = await handler.HandleAsync(new ReadBlogStatsQuery(), cancellation);
-        return Results.Json(new { kept = kept.Reason, available = kept.Available, posts = stats, sources }, WireFormat);
+        var (stats, sources, kept, pictures) = await handler.HandleAsync(new ReadBlogStatsQuery(), cancellation);
+        return Results.Json(new { kept = kept.Reason, available = kept.Available, posts = stats, sources, pictures }, WireFormat);
     }
 
     /// <summary>A post as the operator sends it.</summary>

@@ -114,23 +114,25 @@ public sealed class RecordEventHandler(IBlogStore store, TimeProvider clock) : I
 /// <param name="IsBot">The site's guess at a bot.</param>
 public sealed record RecordEventCommand(string Slug, string Type, string Value, byte[] Session, bool IsBot);
 
-/// <summary>Every post's numbers and the month's reads by source, for the Admin tab's Blog analytics card.</summary>
+/// <summary>Every post's numbers, the month's reads by source and the pictures kept, for the Admin tab's Blog analytics card.</summary>
 /// <param name="store">Where the logs are kept.</param>
 /// <param name="clock">The clock the windows are read against.</param>
-public sealed class ReadBlogStatsHandler(IBlogReader store, TimeProvider clock) : IQueryHandler<ReadBlogStatsQuery, (IReadOnlyList<BlogStat> Stats, IReadOnlyList<BlogSourceCount> Sources, BlogAvailability Kept)>
+/// <param name="images">Where the pictures are kept; their count and bytes are the card's pictures line.</param>
+public sealed class ReadBlogStatsHandler(IBlogReader store, TimeProvider clock, IBlogImageReader images) : IQueryHandler<ReadBlogStatsQuery, (IReadOnlyList<BlogStat> Stats, IReadOnlyList<BlogSourceCount> Sources, BlogAvailability Kept, BlogImageTally Pictures)>
 {
-    /// <summary>The numbers, where they are kept, and the sources over the last thirty days.</summary>
+    /// <summary>The numbers, where they are kept, the sources over the last thirty days, and the pictures.</summary>
     /// <param name="query">The numbers, which take nothing.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<(IReadOnlyList<BlogStat> Stats, IReadOnlyList<BlogSourceCount> Sources, BlogAvailability Kept)> HandleAsync(ReadBlogStatsQuery query, CancellationToken cancellation)
+    public async Task<(IReadOnlyList<BlogStat> Stats, IReadOnlyList<BlogSourceCount> Sources, BlogAvailability Kept, BlogImageTally Pictures)> HandleAsync(ReadBlogStatsQuery query, CancellationToken cancellation)
     {
+        var pictures = await images.TallyAsync(cancellation);
         var availability = await store.AvailabilityAsync(cancellation);
         if (!availability.Available)
         {
-            return ([], [], availability);
+            return ([], [], availability, pictures);
         }
         var now = clock.GetUtcNow();
-        return (await store.StatsAsync(now, cancellation), await store.SourcesAsync(now.AddDays(-30), cancellation), availability);
+        return (await store.StatsAsync(now, cancellation), await store.SourcesAsync(now.AddDays(-30), cancellation), availability, pictures);
     }
 }
 

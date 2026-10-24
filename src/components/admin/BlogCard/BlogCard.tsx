@@ -4,7 +4,13 @@
  * blog's SQL views and none typed by hand. Bots are flagged when a read is kept and left out of
  * every view, and no reader is named: a read is the day's keyed hash, never an address.
  */
-import { postDate, sourceShares, type BlogStat, type BlogStats } from '../../../lib/blog';
+import {
+  picturesLine,
+  postDate,
+  sourceShares,
+  type BlogStat,
+  type BlogStats,
+} from '../../../lib/blog';
 import styles from '../shared/card.module.css';
 import { About, failed, useRead } from '../shared/common';
 import { CardState } from '../shared/CardState';
@@ -78,6 +84,12 @@ export default function BlogCard({ tick }: { tick: number }) {
               : sources.map((s) => `${s.label} ${s.share}%`).join(' · ') + '.'}
           </p>
         </>
+      )}
+      {report !== null && report !== 'failed' && report.pictures !== undefined && (
+        <p className={styles.muted} data-testid="blog-pictures-line">
+          {picturesLine(report.pictures)}{' '}
+          <span className={styles.muted}>Source: {report.pictures.source}.</span>
+        </p>
       )}
     </article>
   );

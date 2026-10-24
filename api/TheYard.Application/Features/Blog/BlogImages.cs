@@ -21,7 +21,17 @@ public interface IBlogImageReader
     /// <param name="name">A name BlogImageNames made.</param>
     /// <param name="cancellation">The request's cancellation.</param>
     Task<BlogImageFile?> OpenAsync(string name, CancellationToken cancellation);
+
+    /// <summary>How many pictures are kept and their bytes together, with where that was read.</summary>
+    /// <param name="cancellation">The request's cancellation.</param>
+    Task<BlogImageTally> TallyAsync(CancellationToken cancellation);
 }
+
+/// <summary>The kept pictures counted.</summary>
+/// <param name="Count">How many; null when the listing could not be read.</param>
+/// <param name="Bytes">Their bytes together.</param>
+/// <param name="Source">Where it was read, or why it was not.</param>
+public sealed record BlogImageTally(int? Count, long Bytes, string Source);
 
 /// <summary>Port: keeps a picture under its name.</summary>
 public interface IBlogImageWriter
@@ -53,6 +63,9 @@ public sealed class MemoryBlogImageStore : IBlogImageReader, IBlogImageWriter
         _files[name] = file;
         return Task.CompletedTask;
     }
+
+    public Task<BlogImageTally> TallyAsync(CancellationToken cancellation) =>
+        Task.FromResult(new BlogImageTally(_files.Count, _files.Values.Sum(f => f.Bytes.LongLength), "this process's memory: the pictures end with it; no container is configured here"));
 }
 
 /// <summary>Asks for one picture by its kept name.</summary>

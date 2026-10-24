@@ -57,7 +57,19 @@ export type BlogStats = {
   available: boolean;
   posts: BlogStat[];
   sources: { source: string; reads: number }[];
+  /** The pictures kept for the posts: how many (null when the listing was not read), their bytes, and where that was read. */
+  pictures?: { count: number | null; bytes: number; source: string };
 };
+
+/** The Blog analytics card's pictures line: "4 pictures kept, 0.9 MB". */
+export function picturesLine(pictures: NonNullable<BlogStats['pictures']>): string {
+  if (pictures.count === null) return `Pictures: not read (${pictures.source}).`;
+  const size =
+    pictures.bytes < 1_000_000
+      ? `${Math.round(pictures.bytes / 1000)} KB`
+      : `${(pictures.bytes / 1_000_000).toFixed(1)} MB`;
+  return `${pictures.count === 1 ? '1 picture' : `${pictures.count} pictures`} kept, ${size}.`;
+}
 
 /** A post is NEW in the side nav and on its card for this many days after LinkedIn first had it. */
 export const NEW_FOR_DAYS = 7;

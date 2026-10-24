@@ -69,3 +69,11 @@ Reads are paid once a roll, not once a view: the host keeps the pictures it serv
 
 The query takes the reader only (`IBlogImageReader`); the writer (`IBlogImageWriter`) is for the upload command that follows.
 
+## Addendum, 2026-10-24 (1.0.4.56): putting a picture in
+
+The operator puts a picture on a post with `POST /api/admin/blog/posts/{slug}/images`, a multipart form with the file, its alt text and its position, behind the operator's key. `PutBlogImageCommand` holds the picture to four limits, each refused as a problem that names its figure: at most one megabyte (the route reads one byte past it and no further), a PNG, a JPEG or a WebP by its own magic numbers (never by its file name), at most 2000 pixels wide, and an alt text of one sentence saying what the picture shows. The width and height are read from the file's own header (`BlogImageHeaders`: PNG's IHDR, JPEG's start-of-frame, WebP's VP8, VP8L or VP8X chunk, with no image library), and a test holds one file of each kind.
+
+A kept picture goes in under the hash of its bytes, and its row on the post (`blog.PostImage`) carries the served address `/blog/images/<name>`, the alt text, the width and the height, at its position; a picture already at that position is replaced. The host never resizes: the post lane resizes before it uploads, so the work and the CPU stay off the web app.
+
+The Blog analytics card says how many pictures are kept and their bytes, read from the container's own listing at most once a minute, with its source named.
+
