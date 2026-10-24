@@ -2,7 +2,6 @@
 // No model runs here; the model runs in .github/workflows/nightly.yml.
 using Azure.Storage.Files.Shares;
 using JobHunt.Functions;
-using JobHunt.Functions.Merge;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 

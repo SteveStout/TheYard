@@ -1,14 +1,12 @@
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using JobHunt.Functions.Ats;
-using JobHunt.Functions.Merge;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;
 
 /// <summary>
-/// The ATS sweep (functions/jobhunt/Ats): the records run's rules for a known sender's mail as code,
+/// The ATS sweep (functions/JobHunt.Application/Features/Ats): the records run's rules for a known sender's mail as code,
 /// what a message is, which company, whether a row exists for it to rest on, and the red lines as
 /// tests: a person in the thread keeps it in the inbox, shadow archives nothing and writes no row,
 /// and the inbox port can find, read, list a thread's senders and archive, and nothing else.
@@ -163,8 +161,7 @@ public sealed class AtsSweepTests
     [Fact]
     public void No_code_under_ats_can_send_draft_trash_or_delete()
     {
-        string folder = Path.Combine(Root(), "functions", "jobhunt", "Ats");
-        string code = string.Join("\n", Directory.EnumerateFiles(folder, "*.cs").Select(File.ReadAllText));
+        string code = SliceCode(Root(), "Ats");
         foreach (string forbidden in new[] { "/send", "/drafts", "/trash", "batchDelete", "batchModify", "DeleteAsync", "HttpMethod.Delete", "addLabelIds" })
         {
             Assert.DoesNotContain(forbidden, code, StringComparison.Ordinal);
@@ -190,12 +187,19 @@ public sealed class AtsSweepTests
         using var mail = JsonDocument.Parse($$$"""{"mimeType":"multipart/related","parts":[{"mimeType":"multipart/alternative","parts":[{"mimeType":"text/plain","body":{"data":"{{{B64(alert)}}}"}}]}]}""");
         string lines = GmailInbox.Lines(mail.RootElement);
         Assert.Contains("Acme Corp\nRemote\n", lines, StringComparison.Ordinal);
-        var (leads, unread) = JobHunt.Functions.Leads.LinkedInAlert.Read(lines, "m9");
+        var (leads, unread) = LinkedInAlert.Read(lines, "m9");
         Assert.Equal(0, unread);
         Assert.Equal(["Acme Corp", "Globex"], leads.Select(l => l.Company));
         // The one-line text the ATS rules read cannot be split into blocks, which is how the first live pass read none.
-        Assert.Empty(JobHunt.Functions.Leads.LinkedInAlert.Read(GmailInbox.Text(mail.RootElement), "m9").Leads);
+        Assert.Empty(LinkedInAlert.Read(GmailInbox.Text(mail.RootElement), "m9").Leads);
     }
+
+    /// <summary>Every .cs file of one slice, read across the Function's three rings (ADR-117).</summary>
+    private static string SliceCode(string root, string slice) => string.Join("\n", new[] { "JobHunt.Domain", "JobHunt.Application", "JobHunt.Infrastructure" }
+        .Select(ring => Path.Combine(root, "functions", ring, "Features", slice))
+        .Where(Directory.Exists)
+        .SelectMany(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+        .Select(File.ReadAllText));
 
     private static string Root()
     {

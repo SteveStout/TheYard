@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using JobHunt.Functions.Ats;
-using JobHunt.Functions.Merge;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
@@ -45,11 +43,11 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         string atsLine = ats is "shadow" or "on"
             ? await PartAsync("ats sweep", () => new AtsSweep(store, inbox, time).RunAsync(ats == "on", ct))
             : "off";
-        var harvest = new Leads.LeadsHarvest(store, inbox, time);
+        var harvest = new LeadsHarvest(store, inbox, time);
         string leadsLine = leads is "shadow" or "on"
             ? await PartAsync("leads harvest", () => harvest.RunAsync(leads == "on", ct))
             : "off";
-        string list = (Environment.GetEnvironmentVariable(Dispatch.Gate(Leads.LeadsHarvest.ListEvent)) ?? "").Trim().ToLowerInvariant();
+        string list = (Environment.GetEnvironmentVariable(Dispatch.Gate(LeadsHarvest.ListEvent)) ?? "").Trim().ToLowerInvariant();
         if (list is "shadow" or "on")
         {
             leadsLine += " | list: " + await PartAsync("leads list", () => ListAsync(harvest, list == "on", ct));
@@ -72,7 +70,7 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     /// Fires the leads list run (LEADS-LANE.md, Sonnet at low effort) when the pass harvested a lead that passed
     /// the filter and that the list run has not scored. In shadow it says what it would fire and fires nothing.
     /// </summary>
-    private async Task<string> ListAsync(Leads.LeadsHarvest harvest, bool on, CancellationToken ct)
+    private async Task<string> ListAsync(LeadsHarvest harvest, bool on, CancellationToken ct)
     {
         int count = harvest.Unscored.Count;
         if (count == 0)
@@ -80,8 +78,8 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
             return "0 new, nothing to score";
         }
         return on
-            ? $"{count} new, {await dispatch.RunAsync(Leads.LeadsHarvest.ListEvent, CentralClock.Local(time.GetUtcNow()), ct)}"
-            : $"{count} new, shadow: would fire {Leads.LeadsHarvest.ListEvent}";
+            ? $"{count} new, {await dispatch.RunAsync(LeadsHarvest.ListEvent, CentralClock.Local(time.GetUtcNow()), ct)}"
+            : $"{count} new, shadow: would fire {LeadsHarvest.ListEvent}";
     }
 
     /// <summary>

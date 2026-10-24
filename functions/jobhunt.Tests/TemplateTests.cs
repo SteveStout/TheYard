@@ -73,7 +73,7 @@ public sealed partial class TemplateTests
         var settings = Settings();
         Assert.True(settings.ContainsKey("LEADS_LIST"), "infra/jobhunt.bicep has no LEADS_LIST setting: a redeploy would drop the leads list's mode");
         Assert.Contains(settings["LEADS_LIST"], new[] { "shadow", "on" });
-        Assert.Equal("LEADS_LIST", Dispatch.Gate(Leads.LeadsHarvest.ListEvent));
+        Assert.Equal("LEADS_LIST", Dispatch.Gate(LeadsHarvest.ListEvent));
     }
 
     [Fact]
@@ -101,7 +101,10 @@ public sealed partial class TemplateTests
     public void Every_setting_the_function_reads_is_in_the_template_or_named_as_set_out_of_band()
     {
         var settings = Settings();
-        var read = Directory.EnumerateFiles(Path.Combine(Root(), "functions", "jobhunt"), "*.cs", SearchOption.AllDirectories)
+        // Every project of the Function but its tests: the host and the three rings under it (ADR-117).
+        var read = Directory.EnumerateDirectories(Path.Combine(Root(), "functions"))
+            .Where(folder => !Path.GetFileName(folder).EndsWith(".Tests", StringComparison.Ordinal))
+            .SelectMany(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                            && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .SelectMany(path => ReadName().Matches(File.ReadAllText(path)).Select(m => m.Groups[1].Value))

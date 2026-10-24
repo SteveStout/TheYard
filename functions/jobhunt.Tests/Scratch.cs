@@ -1,5 +1,4 @@
 using System.Text;
-using JobHunt.Functions.Merge;
 
 namespace JobHunt.Functions.Tests;
 

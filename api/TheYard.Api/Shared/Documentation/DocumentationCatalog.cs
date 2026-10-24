@@ -147,6 +147,7 @@ public static class DocumentationCatalog
         ["adr-the-host-root-holds-one-file"] = "docs/decisions/ADR-114-the-host-root-holds-one-file.md",
         ["adr-a-request-is-a-query-or-a-command"] = "docs/decisions/ADR-115-a-request-is-a-query-or-a-command.md",
         ["adr-people-who-have-visited-counted-once"] = "docs/decisions/ADR-116-people-who-have-visited-counted-once.md",
+        ["adr-one-host-per-process-the-rings-under-them"] = "docs/decisions/ADR-117-one-host-per-process-the-rings-under-them.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

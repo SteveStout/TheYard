@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text;
-using JobHunt.Functions.Merge;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;

@@ -1,4 +1,3 @@
-using JobHunt.Functions.Ats;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The job hunt's use cases and their ports (ADR-117): references Domain only. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JobHunt.Domain\JobHunt.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="JobHunt.Domain" />
+    <Using Include="JobHunt.Domain.Features.Ats" />
+    <Using Include="JobHunt.Domain.Features.Leads" />
+    <Using Include="JobHunt.Domain.Features.Merge" />
+    <Using Include="JobHunt.Domain.Features.Sheet" />
+    <Using Include="JobHunt.Domain.Features.Card" />
+    <Using Include="JobHunt.Application" />
+    <Using Include="JobHunt.Application.Features.Ats" />
+    <Using Include="JobHunt.Application.Features.Leads" />
+    <Using Include="JobHunt.Application.Features.Merge" />
+    <Using Include="JobHunt.Application.Features.Sheet" />
+  </ItemGroup>
+</Project>

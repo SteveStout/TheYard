@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The job hunt's adapters (ADR-117): Gmail, Google Sheets, Google Calendar, the Azure Files share and the
+       GitHub dispatch; the only ring that opens a socket or a file. References Application and Domain. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.21.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JobHunt.Application\JobHunt.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="JobHunt.Domain" />
+    <Using Include="JobHunt.Domain.Features.Ats" />
+    <Using Include="JobHunt.Domain.Features.Leads" />
+    <Using Include="JobHunt.Domain.Features.Merge" />
+    <Using Include="JobHunt.Domain.Features.Sheet" />
+    <Using Include="JobHunt.Domain.Features.Card" />
+    <Using Include="JobHunt.Application" />
+    <Using Include="JobHunt.Application.Features.Ats" />
+    <Using Include="JobHunt.Application.Features.Leads" />
+    <Using Include="JobHunt.Application.Features.Merge" />
+    <Using Include="JobHunt.Application.Features.Sheet" />
+    <Using Include="JobHunt.Infrastructure" />
+    <Using Include="JobHunt.Infrastructure.Features.Ats" />
+    <Using Include="JobHunt.Infrastructure.Features.Merge" />
+    <Using Include="JobHunt.Infrastructure.Features.Sheet" />
+    <Using Include="JobHunt.Infrastructure.Features.Card" />
+  </ItemGroup>
+</Project>

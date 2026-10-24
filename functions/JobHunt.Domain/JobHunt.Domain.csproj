@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The job hunt's rules (ADR-117: One host per process, the rings under them): no I/O, no clock read, no
+       setting read; references nothing of the job hunt's own. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The slot table the Admin tab's nightly card reads too, compiled here from its one file so the
+         Function and the card cannot keep two tables (ADR: The Nightly Function on the Admin tab). -->
+    <Compile Include="..\..\api\TheYard.Domain\NightlySlots.cs" Link="NightlySlots.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="JobHunt.Domain" />
+    <Using Include="JobHunt.Domain.Features.Ats" />
+    <Using Include="JobHunt.Domain.Features.Leads" />
+    <Using Include="JobHunt.Domain.Features.Merge" />
+    <Using Include="JobHunt.Domain.Features.Sheet" />
+    <Using Include="JobHunt.Domain.Features.Card" />
+  </ItemGroup>
+</Project>

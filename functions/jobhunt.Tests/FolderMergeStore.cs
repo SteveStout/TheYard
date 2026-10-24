@@ -1,4 +1,3 @@
-using JobHunt.Functions.Merge;
 
 namespace JobHunt.Functions.Tests;
 

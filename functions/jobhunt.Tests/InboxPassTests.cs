@@ -1,6 +1,4 @@
 using System.Reflection;
-using JobHunt.Functions.Ats;
-using JobHunt.Functions.Leads;
 using Microsoft.Azure.Functions.Worker;
 using Xunit;
 
@@ -137,8 +135,8 @@ public sealed class InboxPassTests
     public void No_code_under_leads_or_the_triage_step_can_send_draft_trash_or_delete()
     {
         string root = Root();
-        string code = string.Join("\n", Directory.EnumerateFiles(Path.Combine(root, "functions", "jobhunt", "Leads"), "*.cs").Select(File.ReadAllText))
-            + File.ReadAllText(Path.Combine(root, "functions", "jobhunt", "InboxTriage.cs"))
+        string code = SliceCode(root, "Leads")
+            + File.ReadAllText(Path.Combine(root, "functions", "JobHunt.Application", "InboxTriage.cs"))
             + File.ReadAllText(Path.Combine(root, "functions", "jobhunt", "AtsSweepTimer.cs"));
         foreach (string forbidden in new[] { "/send", "/drafts", "/trash", "batchDelete", "batchModify", "DeleteAsync", "HttpMethod.Delete", "addLabelIds" })
         {
@@ -148,6 +146,13 @@ public sealed class InboxPassTests
 
     private static InboxMessage Alert(string id, string thread, string text) =>
         new(id, thread, "LinkedIn Job Alerts <jobalerts-noreply@linkedin.com>", "Lead Engineer at Acme", Morning, text.Replace('\n', ' ')) { Lines = text };
+
+    /// <summary>Every .cs file of one slice, read across the Function's three rings (ADR-117).</summary>
+    private static string SliceCode(string root, string slice) => string.Join("\n", new[] { "JobHunt.Domain", "JobHunt.Application", "JobHunt.Infrastructure" }
+        .Select(ring => Path.Combine(root, "functions", ring, "Features", slice))
+        .Where(Directory.Exists)
+        .SelectMany(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+        .Select(File.ReadAllText));
 
     private static string Root()
     {

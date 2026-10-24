@@ -1,5 +1,3 @@
-using JobHunt.Functions.Ats;
-using JobHunt.Functions.Leads;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;
@@ -115,7 +113,7 @@ public sealed class BoardAlertsTests
     [Fact]
     public void The_harvest_reads_four_boards_and_every_reader_names_its_own_sender()
     {
-        Assert.Equal(["LinkedIn digest", "LinkedIn nudge", "Ladders", "SuccessFactors agent"], BoardAlerts.All.Select(b => b.Board));
+        Assert.Equal(new[] { "LinkedIn digest", "LinkedIn nudge", "Ladders", "SuccessFactors agent" }, BoardAlerts.All.Select(b => b.Board));
         Assert.All(BoardAlerts.All, board => Assert.StartsWith("from:", board.Query, StringComparison.Ordinal));
         Assert.True(new LaddersAlert().Sends(Mail.Address("Ladders <jobs@my.theladders.com>")));
         Assert.False(new LaddersAlert().Sends("dan@technologypartners.net"));

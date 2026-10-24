@@ -1,13 +1,11 @@
 using System.Reflection;
 using System.Text;
-using JobHunt.Functions.Merge;
-using JobHunt.Functions.Sheet;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;
 
 /// <summary>
-/// The Sheet mirror (functions/jobhunt/Sheet): which master rows the Sheet lacks and may take, the
+/// The Sheet mirror (functions/JobHunt.Application/Features/Sheet): which master rows the Sheet lacks and may take, the
 /// stops the records run applied by hand (drift, a broken numbering, a banned row, a sentence in
 /// Communication), the read-back after an append, and the red lines as tests: the grid port has
 /// two methods, no code under Sheet/ can edit, clear or delete, and shadow adds nothing.
@@ -193,8 +191,7 @@ public sealed class SheetMirrorTests
     [Fact]
     public void No_code_under_sheet_can_edit_clear_or_delete_a_cell_or_touch_gmail()
     {
-        string folder = Path.Combine(TemplateRoot(), "functions", "jobhunt", "Sheet");
-        string code = string.Join("\n", Directory.EnumerateFiles(folder, "*.cs").Select(File.ReadAllText));
+        string code = SliceCode(TemplateRoot(), "Sheet");
         foreach (string forbidden in new[] { ":batchUpdate", ":clear", "PutAsync", "DeleteAsync", "HttpMethod.Put", "HttpMethod.Delete", "gmail.googleapis.com", "valueInputOption=USER_ENTERED" })
         {
             Assert.DoesNotContain(forbidden, code, StringComparison.Ordinal);
@@ -203,6 +200,13 @@ public sealed class SheetMirrorTests
     }
 
     private static string Csv(params string[][] rows) => string.Join("\r\n", rows.Select(TrackerCsvText.Line)) + "\r\n";
+
+    /// <summary>Every .cs file of one slice, read across the Function's three rings (ADR-117).</summary>
+    private static string SliceCode(string root, string slice) => string.Join("\n", new[] { "JobHunt.Domain", "JobHunt.Application", "JobHunt.Infrastructure" }
+        .Select(ring => Path.Combine(root, "functions", ring, "Features", slice))
+        .Where(Directory.Exists)
+        .SelectMany(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories))
+        .Select(File.ReadAllText));
 
     private static string TemplateRoot()
     {

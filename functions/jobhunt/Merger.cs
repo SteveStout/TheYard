@@ -1,4 +1,3 @@
-using JobHunt.Functions.Merge;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 

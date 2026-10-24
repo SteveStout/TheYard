@@ -1,5 +1,4 @@
 using System.Text.Json;
-using JobHunt.Functions.Merge;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;

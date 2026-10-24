@@ -213,4 +213,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '116',
   },
+  adrOneHostPerProcess: {
+    title: 'ADR: One host per process, the rings under them',
+    menuLabel: 'ADR: One host per process, the rings under them',
+    url: '/api/docs/adr-one-host-per-process-the-rings-under-them',
+    kind: 'adr',
+    number: '117',
+  },
 } as const satisfies Record<string, RecordEntry>;

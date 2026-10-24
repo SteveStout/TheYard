@@ -1,12 +1,10 @@
 using System.Net;
-using JobHunt.Functions.Card;
-using JobHunt.Functions.Merge;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;
 
 /// <summary>
-/// The daily card (functions/jobhunt/Card): the blockers read off the newest APPLY-BLOCKERS file, the
+/// The daily card (functions/JobHunt.Infrastructure/Features/Card and JobHunt.Domain's DailyCard): the blockers read off the newest APPLY-BLOCKERS file, the
 /// Sheet's stop and the RULE 50 line under "Waiting on you", a fact that could not be read
 /// said in words, and the card rewritten only when what it says changed, or at 6 AM. Made-up rows.
 /// </summary>
@@ -25,7 +23,7 @@ public sealed class DailyCardTests
     public void Rule_50_is_one_line_with_the_count_and_the_five_that_open_soonest()
     {
         var held = Enumerable.Range(1, 7)
-            .Select(i => new JobHunt.Functions.Leads.CapVerdict($"Company {i}", false, new DateOnly(2026, 11, 10 - i), "held"))
+            .Select(i => new CapVerdict($"Company {i}", false, new DateOnly(2026, 11, 10 - i), "held"))
             .ToList();
         string line = DailyCardSource.CapLine(held);
         Assert.StartsWith("7 companies are held by RULE 50", line, StringComparison.Ordinal);

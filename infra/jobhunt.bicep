@@ -169,15 +169,15 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The shared .md files' appends, on since the cutover: the same Merger is their one writer. 'off'
         // hands them back to the laptop's merger (-AppendsOnly), with the two switches in its scripts.
         { name: 'APPENDS', value: 'on' }
-        // The Sheet mirror (functions/jobhunt/Sheet): 'shadow' writes its plan to the share beside the records
+        // The Sheet mirror (functions/JobHunt.Application/Features/Sheet): 'shadow' writes its plan to the share beside the records
         // run's and adds nothing; 'on' appends the master's missing rows to the Sheet and checks the read-back;
         // anything else is off. The Google client, its refresh token and the Sheet's id are set out of band.
         { name: 'SHEET_MIRROR', value: 'shadow' }
         // The 30-minute inbox pass (functions/jobhunt/AtsSweepTimer.cs, at 20 and 50 past each hour), three parts.
-        // The ATS sweep (functions/jobhunt/Ats): 'on' drops the rows in the spool, archives and reads the labels back;
+        // The ATS sweep (functions/JobHunt.Application/Features/Ats): 'on' drops the rows in the spool, archives and reads the labels back;
         // 'shadow' writes its plan and archives nothing; anything else is off.
         { name: 'ATS_SWEEP', value: 'on' }
-        // The leads harvest (functions/jobhunt/Leads): 'on' appends each whole alert's jobs to nightly/leads-<date>.md,
+        // The leads harvest (functions/JobHunt.Application/Features/Leads): 'on' appends each whole alert's jobs to nightly/leads-<date>.md,
         // then archives it; 'shadow' writes leads-shadow/ only.
         { name: 'LEADS', value: 'on' }
         // The leads list (PROMPT-JOBHUNT-OFF-THE-LAPTOP rung 2): 'on' fires nightly.yml's leads run (Sonnet, low effort,
@@ -191,7 +191,7 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The model's step: 'on' fires nightly.yml's triage run (Sonnet, low effort) when the inbox holds mail
         // that no triage run has judged; anything else never starts it.
         { name: 'TRIAGE', value: 'on' }
-        // The daily card (functions/jobhunt/Card): 'on' keeps nightly/CARD.md current, the one page Steve reads.
+        // The daily card (functions/JobHunt.Infrastructure/Features/Card): 'on' keeps nightly/CARD.md current, the one page Steve reads.
         { name: 'DAILY_CARD', value: 'on' }
       ]
     }

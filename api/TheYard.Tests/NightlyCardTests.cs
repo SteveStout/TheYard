@@ -224,7 +224,7 @@ public sealed partial class NightlyCardTests
     [Fact]
     public void The_snapshot_count_is_the_one_the_function_keeps()
     {
-        string snapshot = File.ReadAllText(Path.Combine(Repo.Root(), "functions", "jobhunt", "ShareSnapshot.cs"));
+        string snapshot = File.ReadAllText(Path.Combine(Repo.Root(), "functions", "JobHunt.Infrastructure", "ShareSnapshot.cs"));
         var keep = System.Text.RegularExpressions.Regex.Match(snapshot, @"public const int Keep = (\d+);");
         Assert.True(keep.Success, "ShareSnapshot.cs should declare Keep");
         Assert.Equal(NightlyCard.SnapshotsKept, int.Parse(keep.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture));

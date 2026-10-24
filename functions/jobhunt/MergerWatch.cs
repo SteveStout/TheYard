@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using JobHunt.Functions.Merge;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 
