@@ -1,6 +1,6 @@
 # ADR: The campaign sends, the model writes rows
 
-Status: accepted in part, 2026-10-24, at 1.0.4.58: the rules (Decision 1). Filled as each rung of the campaign ships: the database, the renderer and the shadow send, the inbox side, the lead run, the card, the shadow week and the switch to on. Nothing sends while this record says shadow.
+Status: accepted in part, 2026-10-24: the rules at 1.0.4.58 (Decision 1), the database at 1.0.4.59 (Decision 2). Filled as each rung of the campaign ships: the database, the renderer and the shadow send, the inbox side, the lead run, the card, the shadow week and the switch to on. Nothing sends while this record says shadow.
 
 ## Reading list
 
@@ -36,13 +36,20 @@ This first version is the rules, written as code with no database and no mail. E
    - `LinkedInOrder` and `SendOrder`: an accepted invite first, then an invite out more than three days, then the rest; then Strength, then the oldest lead.
    - `TemplateFill`: every {Variable} from the row, a required blank fills nothing and names the blank, and an optional line goes whole with the gap under it when any of its values is blank.
 
+2. **The database is one Basic database, `sqldb-jobhunt-ss`, on the server the site already runs on, and the Function signs into it as itself.**
+   - `infra/jobhunt-sql.bicep` makes it and nothing else: Basic, 5 DTU, 2 GB, local backup, on `sql-theyard-ss-westus3`, Incremental. Its own template so a deploy touches this one database. About $4.90 a month, fixed. The free serverless offer was turned down (the review, F2): its allowance is 55 awake hours a month, a campaign that wakes it three times a day spends that by the nineteenth, and then it either pauses with nothing failing loudly or bills by the hour.
+   - `functions/JobHunt.Database` is the schema, the same pattern as the site's (ADR: Data first, and the database in source control): the `campaign` schema, `Companies` (the key, the parent key, the names, the remote stance, the newest .NET posting, the public board to scan, do-not-email), `CompanyEvidence` (one row per posting that asks for .NET), `Leads` (every template variable a column, the address with the URL it was published at, MX checked, AppliedAt, the LinkedIn dates, the proof key, the follow-up post, the ghost score, Strength with its model step, reason and inputs hash, Blocked, the tagged code and its five links), and `EmailsSent` (both bodies, the template and its version, the Gmail ids and the Message-Id a bounce quotes back, touch, shadow, bounced, replied). Three views for the Sheet mirror later: `LeadsMirror`, `SendsMirror`, `DailyCounts`. CI and the gate compile it to a DACPAC.
+   - The Function's identity, `id-jobhunt-ss`, has a contained database user made from its SID, with `db_datareader` and `db_datawriter` on this database only, never on the site's. Made by script on 2026-10-24 (`CREATE USER [id-jobhunt-ss] WITH SID = 0xDD6CF11F4D186148BF294DCB9E7D89C0, TYPE = E`, the SID being the bytes of the identity's client id, the same rule that gives `id-theyard-ss` ADR-039's 0xCAA688281CBEA546A1DEC666B1D193E5) and read back from `sys.database_principals` at 18:38 CDT: `name=id-jobhunt-ss type_desc=EXTERNAL_USER sid_hex=0xDD6CF11F4D186148BF294DCB9E7D89C0`, roles `db_datareader` and `db_datawriter`. The schema was made from these files by the same script and read back: Companies 15 columns, CompanyEvidence 6, Leads 40, EmailsSent 22, three views.
+   - The ports are in `JobHunt.Application/Features/Campaign/`: `ICompanyBook`, `ILeadStore`, `IEmailLog` and `IAddressFinder`. `SqlCampaignStore` in Infrastructure answers the first three over `Microsoft.Data.SqlClient` with `Authentication=Active Directory Managed Identity;User Id=<client id>` and no secret anywhere. `NoFinder` is the only finder (Steve, 12:58): it asks no one and answers nothing, so an address comes only from a public page the lead run names.
+   - The cost card reads the database by resource from the day the bill carries it, because the cost reader groups the subscription's costs by resource id.
+
 ## What holds it
 
-`CampaignRulesTests` (former employers by name and domain, the company key, the 30-day cases F10 names, the gate's order, the live thread over the tracker's real row shapes with every name removed) and `CampaignTextTests` (the tells against the Python file, the WhatTheyDo cases F15 names, the cap and ramp, the recipient domains, the Strength formula and hash, the applied word across the November 1 clock change, the proof clauses, the send order, the optional line and the named blank).
+`CampaignSqlTests` (every column a statement names is a column the SQL project declares, every template variable has its column, the template makes one Basic database and nothing else, the finder finds nothing), `RingTests` (the database client in Infrastructure alone), `CampaignRulesTests` (former employers by name and domain, the company key, the 30-day cases F10 names, the gate's order, the live thread over the tracker's real row shapes with every name removed) and `CampaignTextTests` (the tells against the Python file, the WhatTheyDo cases F15 names, the cap and ramp, the recipient domains, the Strength formula and hash, the applied word across the November 1 clock change, the proof clauses, the send order, the optional line and the named blank).
 
 ## Not done in this version, and why
 
-Each of these is its own rung and version, in this order: the Basic database on the existing server with the Function's identity as a database user; the renderer and the shadow send path; bounces, replies and stop phrases in the inbox pass; the lead run; the campaign card, its rail row and its alert; seven days of shadow; the switch to on.
+Each of these is its own rung and version, in this order: the renderer and the shadow send path; bounces, replies and stop phrases in the inbox pass; the lead run; the campaign card, its rail row and its alert; seven days of shadow; the switch to on.
 
 ## Where it sits
 
@@ -51,6 +58,11 @@ A new slice, `Campaign`, in the job hunt's Function rings, beside `Leads`, whose
 ## Files
 
 - [`functions/JobHunt.Domain/Features/Campaign/`](https://github.com/SteveStout/TheYard/tree/main/functions/JobHunt.Domain/Features/Campaign) - the rules
+- [`functions/JobHunt.Database/`](https://github.com/SteveStout/TheYard/tree/main/functions/JobHunt.Database) - the campaign's schema
+- [`infra/jobhunt-sql.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/jobhunt-sql.bicep) - the database
+- [`functions/JobHunt.Application/Features/Campaign/CampaignPorts.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/JobHunt.Application/Features/Campaign/CampaignPorts.cs) - the ports
+- [`functions/JobHunt.Infrastructure/Features/Campaign/`](https://github.com/SteveStout/TheYard/tree/main/functions/JobHunt.Infrastructure/Features/Campaign) - the database adapter and the finder that finds nothing
 - [`functions/jobhunt.Tests/CampaignRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/CampaignRulesTests.cs) - the company rules, held
+- [`functions/jobhunt.Tests/CampaignSqlTests.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/CampaignSqlTests.cs) - the schema, the template and the finder, held
 - [`functions/jobhunt.Tests/CampaignTextTests.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/CampaignTextTests.cs) - the text and order rules, held
 - [`functions/jobhunt.Tests/Fixtures/ai_tells_five_signs.py`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/Fixtures/ai_tells_five_signs.py) - the copy the tells are held to

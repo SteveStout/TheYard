@@ -27,11 +27,13 @@
     <Using Include="JobHunt.Application.Features.Leads" />
     <Using Include="JobHunt.Application.Features.Merge" />
     <Using Include="JobHunt.Application.Features.Sheet" />
+    <Using Include="JobHunt.Application.Features.Campaign" />
     <Using Include="JobHunt.Infrastructure" />
     <Using Include="JobHunt.Infrastructure.Features.Ats" />
     <Using Include="JobHunt.Infrastructure.Features.Merge" />
     <Using Include="JobHunt.Infrastructure.Features.Sheet" />
     <Using Include="JobHunt.Infrastructure.Features.Card" />
+    <Using Include="JobHunt.Infrastructure.Features.Campaign" />
     <Using Include="JobHunt.Functions" />
   </ItemGroup>
 </Project>

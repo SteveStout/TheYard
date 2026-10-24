@@ -117,7 +117,7 @@ jobs:
             read code s < <(t bash -c 'dotnet format api/TheYard.slnx --verify-no-changes --no-restore > "$RAW/format.txt" 2>&1')
             echo "format=$code" >> "$r"; echo "format_s=$s" >> "$r"
           else echo "format=skipped" >> "$r"; echo "format_s=0" >> "$r"; fi
-          read code s < <(t bash -c 'dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug > "$RAW/sqlproj.txt" 2>&1')
+          read code s < <(t bash -c 'dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug > "$RAW/sqlproj.txt" 2>&1 && dotnet build functions/JobHunt.Database/JobHunt.Database.sqlproj -c Debug >> "$RAW/sqlproj.txt" 2>&1')
           echo "sqlproj=$code" >> "$r"; echo "sqlproj_s=$s" >> "$r"
           # #region both-stores
           read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-sqlite.trx" --results-directory "$RAW/trx" > "$RAW/xunit-sqlite.txt" 2>&1')

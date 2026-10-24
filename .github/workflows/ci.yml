@@ -248,6 +248,11 @@ jobs:
       - run: dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug
       - name: The build has to have produced a package
         run: test -f api/TheYard.Database/bin/Debug/TheYard.Database.dacpac
+      # The campaign's database (ADR-118, Decision 2) is compiled the same way, so its tables cannot drift
+      # from the statements the Function sends them.
+      - run: dotnet build functions/JobHunt.Database/JobHunt.Database.sqlproj -c Debug
+      - name: The campaign's build has to have produced a package
+        run: test -f functions/JobHunt.Database/bin/Debug/JobHunt.Database.dacpac
   # #endregion database-job
 
   e2e:

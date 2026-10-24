@@ -7,8 +7,8 @@ namespace JobHunt.Functions.Tests;
 /// <summary>
 /// The job hunt's Function in rings (ADR-117: One host per process, the rings under them): the rules in
 /// JobHunt.Domain, the use cases and their ports in JobHunt.Application, the adapters in JobHunt.Infrastructure,
-/// and the host over them. Each ring may lean only inward, only Infrastructure talks to Google, GitHub or the
-/// share, nothing under the host reads a setting from the environment but the adapters that are named as doing so,
+/// and the host over them. Each ring may lean only inward, only Infrastructure talks to Google, GitHub, the
+/// share or the campaign's database, nothing under the host reads a setting from the environment but the adapters that are named as doing so,
 /// and a file under a ring's Features/&lt;Slice&gt;/ declares that slice's namespace.
 /// </summary>
 public sealed partial class RingTests
@@ -39,7 +39,9 @@ public sealed partial class RingTests
             Assert.DoesNotContain(names, name => name.StartsWith("Azure.", StringComparison.Ordinal));
             Assert.DoesNotContain("System.Net.Http", names);
             Assert.DoesNotContain("Microsoft.Extensions.Http", names);
+            Assert.DoesNotContain("Microsoft.Data.SqlClient", names);
         }
+        Assert.Contains("Microsoft.Data.SqlClient", Infrastructure.GetReferencedAssemblies().Select(name => name.Name!));
     }
 
     [Fact]

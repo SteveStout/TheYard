@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.Build.Sql/2.3.0">
+
+  <!-- The campaign's database, sqldb-jobhunt-ss (ADR: The campaign sends, the model writes rows, Decision 2).
+       The same pattern as TheYard.Database (ADR: Data first, and the database in source control): this
+       project is the authority for the schema, every .sql file under it is compiled into a DACPAC, and a
+       column of a type that does not exist or a key pointing at nothing fails the build. Three tables the
+       campaign needs (Companies, Leads, EmailsSent) and the .NET evidence rows under Companies; the
+       tracker stays a CSV until its own lane (the review, F5). -->
+
+  <PropertyGroup>
+    <Name>JobHunt.Database</Name>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.SqlAzureV12DatabaseSchemaProvider</DSP>
+    <ModelCollation>1033, CI</ModelCollation>
+    <SuppressTSqlWarnings></SuppressTSqlWarnings>
+  </PropertyGroup>
+
+</Project>
