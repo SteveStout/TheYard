@@ -57,6 +57,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Code shown in a document is read from the build at request time, never pasted | ADR: Live code samples | LiveSamplesTests, LiveSampleCoverageTests |
 | The record count on every living document, and the README's xUnit and Playwright counts, are the counts the build declares | ADR: The public face | PublicFaceTests |
 | The sitemap lists every document the catalogue serves and nothing else, and llms.txt links only to what the site serves | ADR: The public face | PublicFaceTests |
+| The Cloud infrastructure drawing names every card the rail lists under it | ADR: One frame for every resource | CloudDrawingTests |
 | /about is a served page with its own head, its Person names only his name, title, profiles and city, the sitemap lists it with the build's day, and the verification tag is written only when it is given | ADR: Every diagram opens on its own page, ADR: The public face | DiagramPageTests, PublicFaceTests, DockerBuildInputsTests |
 | The slug, the catalog and the sidebar offer the same documents | ADR: The staff review | DocumentationCatalogTests |
 | Every document sits in the folder of the sidebar section that offers it, the records in `docs/decisions/`, and the root of `docs/` holds only those folders, the changelog and the pictures | ADR: One folder per sidebar section | DocsFolderTests |

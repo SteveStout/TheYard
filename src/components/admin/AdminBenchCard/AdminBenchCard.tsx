@@ -205,6 +205,8 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
       case 'cosmosdb':
       case 'registry':
       case 'insights':
+      case 'share':
+      case 'blob':
       case 'mail':
       case 'edge':
       case 'nightly':

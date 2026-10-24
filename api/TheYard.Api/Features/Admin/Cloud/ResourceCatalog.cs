@@ -19,7 +19,9 @@ public static class ResourceCatalog
     /// <param name="nightly">The nightly Function's reader, over a list of its own resource group; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
     /// <param name="planHour">The plan card's newest kept hour, whose apps name the image each runs; the registry card reads it rather than asking Azure a second time. Null reads none.</param>
     /// <param name="claude">The usage documents' reader for the Claude usage card; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null)
+    /// <param name="storage">The job hunt's storage account's reader for the share and blob cards; null leaves both out, which only a test that builds the catalogue by hand does.</param>
+    /// <param name="blobLines">The lines the blob card is read against, from configuration.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -111,6 +113,20 @@ public static class ResourceCatalog
                         ? await source.HourAsync(hour, since, cancellation)
                         : new ResourceHour(hour, "", null, new Dictionary<string, string?> { [ResourceView.MissingFact] = ResourceDirectory.Missing(names.Insights) }, []),
                 InsightsCard.View, Hourly: true, SpecSource: "ARM record of the component"),
+            // #region storage-cards
+            // The job hunt's storage account, after Application Insights in the rail: its file share and its
+            // blob service, each a card of its own. Their minutes are kept in the plan container under kinds
+            // of their own, as the nightly card's are, because the shared database is at twenty-five containers.
+            .. storage is null ? (IEnumerable<ResourceCard>)[] :
+            [
+                new("share", "plan", storage.Names.Storage, ReadingsOf(ShareCard.Metrics),
+                    (from, to, version, cancellation) => storage.MinutesAsync("fileServices", ShareCard.Metrics, from, to, version, cancellation),
+                    storage.ShareHourAsync, ShareCard.View, SpecSource: "Azure Resource Manager", KindPrefix: "share-"),
+                new("blob", "plan", storage.Names.Storage, ReadingsOf(BlobCard.Metrics),
+                    (from, to, version, cancellation) => storage.MinutesAsync("blobServices", BlobCard.Metrics, from, to, version, cancellation),
+                    storage.BlobHourAsync, inputs => BlobCard.View(inputs, blobLines ?? new BlobLines(1_000_000_000, 1_800_000_000, 24_000)), SpecSource: "Azure Resource Manager", KindPrefix: "blob-"),
+            ],
+            // #endregion storage-cards
             new("mail", "mail", names.Mail, MailCard.Readings, Monitor(MailType, names.Mail, MailCard.Metrics),
                 Hourly(MailType, names.Mail, "2023-04-01", async (_, record, cancellation) =>
                 {

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>Cloud infrastructure: seven resources read in the one web app by PlanRecorder and CloudRecorder, kept in seven Cosmos DB containers partitioned on the day for thirty-one days, served by GET /api/admin/plan and GET /api/admin/cloud/{key}, and drawn in one frame, CardShell</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>Cloud infrastructure: eleven cards read in the one web app by PlanRecorder and CloudRecorder, kept in seven Cosmos DB containers partitioned on the day for thirty-one days, four of the cards under kinds of their own in the plan container, served by GET /api/admin/plan and GET /api/admin/cloud/{key}, and drawn in one frame, CardShell</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
@@ -15,84 +15,121 @@
       .caption { fill: #62666f; font-size: 13px; }
     </style>
   </defs>
-  <rect width="1400" height="700" fill="#e9e6e7"/>
-  <text x="40" y="48" class="heading">Cloud infrastructure: seven resources, seven containers, one frame</text>
+
+  <rect width="1400" height="860" fill="#e9e6e7"/>
+  <text x="40" y="48" class="heading">Cloud infrastructure: eleven cards, seven containers, one frame</text>
   <text x="40" y="74" class="caption">Read once a minute (once an hour where the source moves no faster) by the one web app, kept a month, served from the kept copy, drawn the same way every time.</text>
-  <rect x="40" y="130" width="330" height="54" rx="8" class="box"/>
-  <text x="56" y="152" class="title">App Service plan</text>
-  <text x="56" y="172" class="mono">PLAN-THEYARD-SS</text>
-  <path class="flow" d="M370 157 L516 360"/>
-  <rect x="900" y="130" width="200" height="54" rx="8" class="keep"/>
-  <text x="916" y="152" class="title">plan</text>
-  <text x="916" y="172" class="mono">/day, 31 days</text>
-  <path class="flow" d="M770 360 L896 157"/>
-  <path class="flow" d="M1100 157 L1176 360"/>
-  <rect x="40" y="200" width="330" height="54" rx="8" class="box"/>
-  <text x="56" y="222" class="title">Azure SQL Database</text>
-  <text x="56" y="242" class="mono">sqldb-theyard-ss-basic</text>
-  <path class="flow" d="M370 227 L516 360"/>
-  <rect x="900" y="200" width="200" height="54" rx="8" class="keep"/>
-  <text x="916" y="222" class="title">sqldb</text>
-  <text x="916" y="242" class="mono">/day, 31 days</text>
-  <path class="flow" d="M770 360 L896 227"/>
-  <path class="flow" d="M1100 227 L1176 360"/>
-  <rect x="40" y="270" width="330" height="54" rx="8" class="box"/>
-  <text x="56" y="292" class="title">Cosmos DB</text>
-  <text x="56" y="312" class="mono">cosmos-theyard-ss</text>
-  <path class="flow" d="M370 297 L516 360"/>
-  <rect x="900" y="270" width="200" height="54" rx="8" class="keep"/>
-  <text x="916" y="292" class="title">cosmosdb</text>
-  <text x="916" y="312" class="mono">/day, 31 days</text>
-  <path class="flow" d="M770 360 L896 297"/>
-  <path class="flow" d="M1100 297 L1176 360"/>
-  <rect x="40" y="340" width="330" height="54" rx="8" class="box"/>
-  <text x="56" y="362" class="title">Container Registry</text>
-  <text x="56" y="382" class="mono">crtheyardsszmnetj67bn5h2</text>
-  <path class="flow" d="M370 367 L516 360"/>
-  <rect x="900" y="340" width="200" height="54" rx="8" class="keep"/>
-  <text x="916" y="362" class="title">registry</text>
-  <text x="916" y="382" class="mono">/day, 31 days</text>
-  <path class="flow" d="M770 360 L896 367"/>
-  <path class="flow" d="M1100 367 L1176 360"/>
-  <rect x="40" y="410" width="330" height="54" rx="8" class="box"/>
-  <text x="56" y="432" class="title">Application Insights</text>
-  <text x="56" y="452" class="mono">appi-theyard-ss, log-theyard-ss</text>
-  <path class="flow" d="M370 437 L516 360"/>
-  <rect x="900" y="410" width="200" height="54" rx="8" class="keep"/>
-  <text x="916" y="432" class="title">insights</text>
-  <text x="916" y="452" class="mono">/day, 31 days</text>
-  <path class="flow" d="M770 360 L896 437"/>
-  <path class="flow" d="M1100 437 L1176 360"/>
-  <rect x="40" y="480" width="330" height="54" rx="8" class="box"/>
-  <text x="56" y="502" class="title">Communication Services</text>
-  <text x="56" y="522" class="mono">acs-theyard-ss</text>
-  <path class="flow" d="M370 507 L516 360"/>
-  <rect x="900" y="480" width="200" height="54" rx="8" class="keep"/>
-  <text x="916" y="502" class="title">mail</text>
-  <text x="916" y="522" class="mono">/day, 31 days</text>
-  <path class="flow" d="M770 360 L896 507"/>
-  <path class="flow" d="M1100 507 L1176 360"/>
-  <rect x="40" y="550" width="330" height="54" rx="8" class="box"/>
-  <text x="56" y="572" class="title">The Netlify edge</text>
-  <text x="56" y="592" class="mono">theyard-edge</text>
-  <path class="flow" d="M370 577 L516 360"/>
-  <rect x="900" y="550" width="200" height="54" rx="8" class="keep"/>
-  <text x="916" y="572" class="title">edge</text>
-  <text x="916" y="592" class="mono">/day, 31 days</text>
-  <path class="flow" d="M770 360 L896 577"/>
-  <path class="flow" d="M1100 577 L1176 360"/>
-  <rect x="520" y="300" width="250" height="120" rx="8" class="box"/>
-  <text x="536" y="326" class="title">The recorders</text>
-  <text x="536" y="348" class="mono">PlanRecorder, CloudRecorder</text>
-  <text x="536" y="370" class="body">the one web app; Azure Monitor,</text>
-  <text x="536" y="388" class="body">Resource Manager, Log Analytics</text>
-  <text x="536" y="406" class="body">and Netlify, with the identity</text>
-  <rect x="1180" y="280" width="190" height="160" rx="8" class="box"/>
-  <text x="1196" y="306" class="title">One frame</text>
-  <text x="1196" y="328" class="mono">CardShell</text>
-  <text x="1196" y="352" class="body">two dials, the month,</text>
-  <text x="1196" y="370" class="body">four questions and a</text>
-  <text x="1196" y="388" class="body">readout, from one</text>
-  <text x="1196" y="406" class="body">CloudReport each</text>
-  <text x="40" y="672" class="caption">Source: docs/images/cloud-infrastructure.svg in the repository, drawn by hand (ADR: One frame for every resource).</text>
+  <rect x="40" y="110" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="131" class="title">App Service plan</text>
+  <text x="56" y="150" class="mono">PLAN-THEYARD-SS</text>
+  <path class="flow" d="M370 135 L516 440"/>
+  <rect x="880" y="110" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="131" class="title">plan</text>
+  <text x="896" y="150" class="mono">plan, /day, 31 days</text>
+  <path class="flow" d="M770 440 L876 135"/>
+  <path class="flow" d="M1120 135 L1176 440"/>
+  <rect x="40" y="170" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="191" class="title">Azure SQL Database</text>
+  <text x="56" y="210" class="mono">sqldb-theyard-ss-basic</text>
+  <path class="flow" d="M370 195 L516 440"/>
+  <rect x="880" y="170" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="191" class="title">sqldb</text>
+  <text x="896" y="210" class="mono">sqldb, /day, 31 days</text>
+  <path class="flow" d="M770 440 L876 195"/>
+  <path class="flow" d="M1120 195 L1176 440"/>
+  <rect x="40" y="230" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="251" class="title">Cosmos DB</text>
+  <text x="56" y="270" class="mono">cosmos-theyard-ss</text>
+  <path class="flow" d="M370 255 L516 440"/>
+  <rect x="880" y="230" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="251" class="title">cosmosdb</text>
+  <text x="896" y="270" class="mono">cosmosdb, /day, 31 days</text>
+  <path class="flow" d="M770 440 L876 255"/>
+  <path class="flow" d="M1120 255 L1176 440"/>
+  <rect x="40" y="290" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="311" class="title">Container Registry</text>
+  <text x="56" y="330" class="mono">crtheyardsszmnetj67bn5h2</text>
+  <path class="flow" d="M370 315 L516 440"/>
+  <rect x="880" y="290" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="311" class="title">registry</text>
+  <text x="896" y="330" class="mono">registry, /day, 31 days</text>
+  <path class="flow" d="M770 440 L876 315"/>
+  <path class="flow" d="M1120 315 L1176 440"/>
+  <rect x="40" y="350" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="371" class="title">Application Insights</text>
+  <text x="56" y="390" class="mono">appi-theyard-ss, log-theyard-ss</text>
+  <path class="flow" d="M370 375 L516 440"/>
+  <rect x="880" y="350" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="371" class="title">insights</text>
+  <text x="896" y="390" class="mono">insights, /day, 31 days</text>
+  <path class="flow" d="M770 440 L876 375"/>
+  <path class="flow" d="M1120 375 L1176 440"/>
+  <rect x="40" y="410" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="431" class="title">The job-hunt share</text>
+  <text x="56" y="450" class="mono">stjobhuntss / jobhunt</text>
+  <path class="flow" d="M370 435 L516 440"/>
+  <rect x="880" y="410" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="431" class="title">share</text>
+  <text x="896" y="450" class="mono">plan, kinds share-*</text>
+  <path class="flow" d="M770 440 L876 435"/>
+  <path class="flow" d="M1120 435 L1176 440"/>
+  <rect x="40" y="470" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="491" class="title">The blob service</text>
+  <text x="56" y="510" class="mono">stjobhuntss / blob</text>
+  <path class="flow" d="M370 495 L516 440"/>
+  <rect x="880" y="470" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="491" class="title">blob</text>
+  <text x="896" y="510" class="mono">plan, kinds blob-*</text>
+  <path class="flow" d="M770 440 L876 495"/>
+  <path class="flow" d="M1120 495 L1176 440"/>
+  <rect x="40" y="530" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="551" class="title">Communication Services</text>
+  <text x="56" y="570" class="mono">acs-theyard-ss</text>
+  <path class="flow" d="M370 555 L516 440"/>
+  <rect x="880" y="530" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="551" class="title">mail</text>
+  <text x="896" y="570" class="mono">mail, /day, 31 days</text>
+  <path class="flow" d="M770 440 L876 555"/>
+  <path class="flow" d="M1120 555 L1176 440"/>
+  <rect x="40" y="590" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="611" class="title">The Netlify edge</text>
+  <text x="56" y="630" class="mono">theyard-edge</text>
+  <path class="flow" d="M370 615 L516 440"/>
+  <rect x="880" y="590" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="611" class="title">edge</text>
+  <text x="896" y="630" class="mono">edge, /day, 31 days</text>
+  <path class="flow" d="M770 440 L876 615"/>
+  <path class="flow" d="M1120 615 L1176 440"/>
+  <rect x="40" y="650" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="671" class="title">The Nightly Function</text>
+  <text x="56" y="690" class="mono">func-jobhunt-ss</text>
+  <path class="flow" d="M370 675 L516 440"/>
+  <rect x="880" y="650" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="671" class="title">nightly</text>
+  <text x="896" y="690" class="mono">plan, kinds nightly-*</text>
+  <path class="flow" d="M770 440 L876 675"/>
+  <path class="flow" d="M1120 675 L1176 440"/>
+  <rect x="40" y="710" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="731" class="title">Claude usage</text>
+  <text x="56" y="750" class="mono">the lanes' usage documents</text>
+  <path class="flow" d="M370 735 L516 440"/>
+  <rect x="880" y="710" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="731" class="title">claude</text>
+  <text x="896" y="750" class="mono">plan, kinds claude-*</text>
+  <path class="flow" d="M770 440 L876 735"/>
+  <path class="flow" d="M1120 735 L1176 440"/>
+  <rect x="520" y="380" width="250" height="120" rx="8" class="box"/>
+  <text x="536" y="406" class="title">The recorders</text>
+  <text x="536" y="428" class="mono">PlanRecorder, CloudRecorder</text>
+  <text x="536" y="450" class="body">the one web app; Azure Monitor,</text>
+  <text x="536" y="468" class="body">Resource Manager, Log Analytics,</text>
+  <text x="536" y="486" class="body">Netlify and the blob listing</text>
+  <rect x="1180" y="360" width="190" height="160" rx="8" class="box"/>
+  <text x="1196" y="386" class="title">One frame</text>
+  <text x="1196" y="408" class="mono">CardShell</text>
+  <text x="1196" y="432" class="body">two dials, the month,</text>
+  <text x="1196" y="450" class="body">four questions and a</text>
+  <text x="1196" y="468" class="body">readout, from one</text>
+  <text x="1196" y="486" class="body">CloudReport each</text>
+  <text x="40" y="832" class="caption">Source: docs/images/cloud-infrastructure.svg in the repository, drawn by hand (ADR: One frame for every resource); CloudDrawingTests holds it to the catalogue's cards.</text>
 </svg>

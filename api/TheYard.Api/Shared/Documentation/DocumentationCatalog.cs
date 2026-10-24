@@ -190,7 +190,7 @@ public static class DocumentationCatalog
         ["port-adapter"] = ("docs/images/port-adapter.svg", "The inner ring owns the interface"),
         ["solid"] = ("docs/images/solid.svg", "SOLID, in plain words"),
         ["plan-minute"] = ("docs/images/plan-minute.svg", "The plan's minute, from Azure to the card"),
-        ["cloud-infrastructure"] = ("docs/images/cloud-infrastructure.svg", "Cloud infrastructure: the first seven resources, one frame (the nightly card is not drawn yet)"),
+        ["cloud-infrastructure"] = ("docs/images/cloud-infrastructure.svg", "Cloud infrastructure: eleven cards, seven containers, one frame"),
         ["deploy-shape"] = ("docs/images/deploy-shape.svg", "One shape for every app that runs"),
         ["request-path"] = ("docs/images/request-path.svg", "How a request gets answered"),
         ["vertical-slices"] = ("docs/images/vertical-slices.svg", "The onion cut into vertical slices"),

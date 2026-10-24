@@ -54,7 +54,9 @@ public sealed class Module : IModule
             async Task<PlanHour?> NewestPlanHour(CancellationToken cancellation) =>
                 (await planHistory.HoursAsync(TimeProvider.System.GetUtcNow().AddHours(-2), cancellation)) is { Count: > 0 } kept ? kept[^1] : null;
             var claude = new ClaudeSource(provider.GetRequiredService<IUsageLog>(), TimeProvider.System);
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude).Select(card => (card, KeepOf(card)))];
+            // The job hunt's storage account is in the nightly Function's group, listed by that group's directory.
+            var storage = new StorageSource(azure, nightlyDirectory, nightlyNames, provider.GetRequiredService<ICostHistory>(), new BlobListing(clientId, identity.OnAppService, identity));
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration)).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with

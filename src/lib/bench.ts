@@ -63,6 +63,8 @@ export const BENCH_CARDS: BenchCard[] = [
   card('cosmosdb', 'Cosmos DB', 'cloud'),
   card('registry', 'Container Registry', 'cloud'),
   card('insights', 'Application Insights', 'cloud'),
+  card('share', 'The job-hunt share', 'cloud'),
+  card('blob', 'The blob service', 'cloud'),
   card('mail', 'Communication Services', 'cloud'),
   card('edge', 'The Netlify edge', 'cloud'),
   card('azure', "Azure's view of the container", 'cloud'),

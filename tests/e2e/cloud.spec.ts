@@ -67,6 +67,9 @@ test('the shell draws the tone, the chips and the rail dot, and the arrows walk 
  * (five on the nightly card) and a readout, and a local run with nothing kept says so in a sentence.
  */
 test('every resource under Cloud infrastructure draws in the one frame', async ({ page }) => {
+  // One test walks every card, so its time grows with the list: fifteen seconds a card, not a fixed
+  // minute that the eleventh card ran past on the laptop (1.0.4.52's first local check).
+  test.setTimeout(15_000 * CLOUD_RESOURCES.length);
   for (const slug of CLOUD_RESOURCES) {
     await openTheYard(page, `/?view=admin&card=${slug}`);
     await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', slug);
