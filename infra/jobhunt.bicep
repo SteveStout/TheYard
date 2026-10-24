@@ -65,7 +65,9 @@ resource share 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01
   name: shareName
   properties: {
     shareQuota: 100
-    accessTier: 'Hot'
+    // Transaction optimized, not Hot (2026-10-24): the share is small and busy, so the bill is its
+    // transactions, which cost about a fifth of Hot's here; the gigabytes cost a little more.
+    accessTier: 'TransactionOptimized'
   }
 }
 

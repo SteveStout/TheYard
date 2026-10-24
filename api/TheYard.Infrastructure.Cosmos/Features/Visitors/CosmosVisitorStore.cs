@@ -111,7 +111,7 @@ public sealed class CosmosVisitorStore(CosmosStore store, TimeProvider clock) : 
         return new VisitorTally(
             people.Count,
             read.Visitors.Count(v => VisitorKinds.FromWord(v.Who) == VisitorKind.Scanners),
-            read.Visitors.Count == 0 ? null : read.Visitors.Min(v => v.FirstSeen),
+            people.Count == 0 ? null : people.Min(v => v.FirstSeen),
             people.Where(v => string.CompareOrdinal(v.FirstSeen, since) >= 0)
                 .GroupBy(v => v.FirstSeen, StringComparer.Ordinal)
                 .ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal));

@@ -41,6 +41,19 @@ public sealed class HumanMailTests : IDisposable
     }
 
     [Fact]
+    public async Task A_thread_Steve_answered_does_not_fire()
+    {
+        var inbox = new Inbox(("m1", "t1", "Dan <dchinnici@technologypartners.net>", false), ("m2", "t1", "Steve Stout <stevenstout11@gmail.com>", false));
+        var human = new HumanMail(new FolderMergeStore(_root), inbox, At(13));
+
+        var (fire, waiting, why) = await human.CheckAsync(CancellationToken.None);
+
+        Assert.False(fire);
+        Assert.Equal(0, waiting);
+        Assert.Equal("no person waiting", why);
+    }
+
+    [Fact]
     public async Task Nothing_fires_outside_the_hours_or_inside_four_hours_of_the_last_fire()
     {
         var inbox = new Inbox(("m1", "t1", "dchinnici@technologypartners.net", false));

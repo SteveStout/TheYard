@@ -98,7 +98,7 @@ export function PeopleInstrument({
         </text>
       </svg>
       <p className={styles.detail}>
-        Scanners and my own reads left out.{' '}
+        Scanners, my own tools' and my own reads left out.{' '}
         <button
           type="button"
           className={styles.link}

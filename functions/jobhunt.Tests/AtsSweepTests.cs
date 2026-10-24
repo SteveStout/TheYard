@@ -155,7 +155,7 @@ public sealed class AtsSweepTests
     public void The_inbox_port_can_find_read_list_senders_see_a_draft_and_archive_and_nothing_else()
     {
         var methods = typeof(IInbox).GetMethods(BindingFlags.Public | BindingFlags.Instance).Select(m => m.Name).Order().ToList();
-        Assert.Equal(["ArchiveAsync", "FindAsync", "ReadAsync", "ThreadHasDraftAsync", "ThreadSendersAsync"], methods);
+        Assert.Equal(["ArchiveAsync", "FindAsync", "ReadAsync", "ThreadHasDraftAsync", "ThreadNewestSenderAsync", "ThreadSendersAsync"], methods);
     }
 
     [Fact]

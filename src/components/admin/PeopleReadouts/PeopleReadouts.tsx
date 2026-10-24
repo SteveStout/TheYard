@@ -130,7 +130,7 @@ export function PeopleReadouts({
         <div className={styles.readout}>
           <p className={styles.label}>Left out of the count</p>
           {figure(read?.scanners_left_out, 'people-left-out', 'scanners')}
-          <p className={styles.sub}>plus my own reads and the gate&apos;s · source: {source}</p>
+          <p className={styles.sub}>plus my own tools&apos; and my own reads · source: {source}</p>
         </div>
       </div>
       <h3 className={styles.chartHead}>New people each day</h3>

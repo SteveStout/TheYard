@@ -174,6 +174,32 @@ public class ActivityTests
         Assert.Equal(token, person.Visitor);
     }
 
+    [Fact]
+    public void The_operators_own_reads_are_the_site_reading_itself_and_keep_no_person()
+    {
+        var tokens = new VisitorTokens("a signing key");
+        var at = DateTimeOffset.Parse("2026-10-24T16:00:00Z");
+        string token = tokens.TokenFor("203.0.113.7", at);
+
+        var mine = Hits.For(tokens, "203.0.113.7", at, token, "203.0.113.x", "/", "sql", "Mozilla/5.0 (iPhone) Safari/604.1", fromOperator: true);
+
+        Assert.Equal(Hits.SelfNetwork, mine.Network);
+        Assert.True(mine.Bot);
+        Assert.Null(mine.Person);
+    }
+
+    [Fact]
+    public void A_loopback_request_with_no_agent_is_the_site_reading_itself_not_a_scanner()
+    {
+        var tokens = new VisitorTokens("a signing key");
+        var at = DateTimeOffset.Parse("2026-10-24T16:00:00Z");
+
+        var loopback = Hits.For(tokens, "127.0.0.1", at, tokens.TokenFor("127.0.0.1", at), VisitorTokens.NetworkOf("127.0.0.1"), "/api/health", "sql", null);
+
+        Assert.Equal(Hits.SelfNetwork, loopback.Network);
+        Assert.Null(loopback.Person);
+    }
+
     // A port a forwarding hop wrote after the address is not part of it: it
     // made every one of App Service's own requests a new visitor.
     [Theory]

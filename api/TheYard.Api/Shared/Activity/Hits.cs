@@ -70,6 +70,13 @@ public static class Hits
     /// </summary>
     public const string SelfNetwork = "self:x";
 
+    /// <summary>
+    /// The cookie a browser carries once it has presented the operator's key (ADR-116, the addendum on the owner's
+    /// own reads): its value is a keyed hash nobody without the signing key can make, so a request carrying it is the
+    /// operator browsing the site, and is kept as the site reading itself, never as a person.
+    /// </summary>
+    public const string OperatorCookie = "yard_operator";
+
     /// <summary>The user agents App Service sends when it keeps the container warm or asks whether it is up.</summary>
     private static readonly Regex PlatformAgent = new(
         @"^AlwaysOn|HealthCheck|ReadyForRequest",
@@ -112,8 +119,11 @@ public static class Hits
     /// count leaves it out as well. That is the one request that pays for a
     /// second keyed hash.
     /// </summary>
-    public static ActivityHit For(VisitorTokens tokens, string address, DateTimeOffset at, string token, string network, string path, string store, string? userAgent, string? source = null) =>
-        IsSelf(userAgent)
+    /// <para>Also self: a request from the operator (it presented the operator's key, or carries the cookie that
+    /// presenting it set), and a request from the loopback address, which is this machine talking to itself
+    /// whatever agent it names; the Activity card reads a loopback row as self, and the kept row now says so too.</para>
+    public static ActivityHit For(VisitorTokens tokens, string address, DateTimeOffset at, string token, string network, string path, string store, string? userAgent, string? source = null, bool fromOperator = false) =>
+        IsSelf(userAgent) || fromOperator || IsLoopbackNetwork(network)
             ? new ActivityHit(at, tokens.TokenFor(SelfNetwork + "|" + address, at), SelfNetwork, PathOf(path), store, true)
             : new ActivityHit(at, token, network, PathOf(path), store, LooksLikeABot(userAgent, path), source) { Person = tokens.PersonFor(address, userAgent) };
 

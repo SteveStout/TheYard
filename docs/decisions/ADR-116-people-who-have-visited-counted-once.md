@@ -85,3 +85,10 @@ A review of the day's work from three seats, by a reader who had written none of
 
 ```live path=api/TheYard.Api/Shared/Activity/VisitHistory.cs region=visit-history
 ```
+
+## Addendum, 2026-10-24 (1.0.4.50): my own browsing is not a person, and the count runs from the first person
+
+The review of 24 October found two things the count said that were not so. First, my own phone and laptop were counted as people: a read was the site's own only by its tools' agent tag or App Service's own agents. Now a request that presents the operator's key leaves with a cookie, `yard_operator`, whose value is a keyed hash of a fixed label that nobody without the signing key can make, and a request carrying the cookie or the key is kept as the site reading itself, with no person hash. A browser counts as mine from the first time it opens the Admin tab with the key. A loopback request is self too, whatever agent it names, so the kept row and the Activity card no longer disagree on a request with no agent. The under-lines say what is left out in those words: my own tools' reads and my own browsing.
+
+Second, "since 23 Oct" was the first scanner's day: the count's first day was the earliest first-seen over every kept record. It is the earliest first-seen over the people now, and none before the first person, in both adapters.
+

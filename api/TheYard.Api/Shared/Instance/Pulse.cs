@@ -28,7 +28,7 @@ namespace TheYard.Api.Shared.Instance;
 /// <param name="ReadAtMs">When this object was built, in milliseconds since the epoch.</param>
 /// <param name="PeopleAllTime">People who have visited, all time, from the day counting began (ADR-116), or null when unread.</param>
 /// <param name="PeopleNewByDay">People first seen on each of the last thirty UTC days, oldest first, or null when unread.</param>
-/// <param name="CountedFrom">The first day the count kept anything, yyyy-MM-dd, or null before it.</param>
+/// <param name="CountedFrom">The first day the count kept a person, yyyy-MM-dd, or null before it.</param>
 /// <param name="VisitsAllTime">Visits by people across the whole kept activity, one per person per day (ADR-116, the
 /// addendum on the kept visits), or null before the first hourly count.</param>
 /// <param name="VisitsFrom">The first day a person's visit was kept, yyyy-MM-dd, or null with the figure above.</param>

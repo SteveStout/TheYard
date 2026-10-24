@@ -20,7 +20,8 @@ public sealed class RequestRecorder(
     VisitorTokens visitorTokens,
     ActivityCollector activity,
     ILinkOpenOffers links,
-    SiteHosts sites)
+    SiteHosts sites,
+    AdminKey? adminKey = null)
 {
     private readonly string[] _siteHosts = [.. sites.All.Select(site => site.Host)];
 
@@ -53,6 +54,41 @@ public sealed class RequestRecorder(
         && (ObservabilityReads.Contains(path)
             || (path.StartsWith("/api/admin/", StringComparison.Ordinal)
                 && !path.StartsWith("/api/admin/selftest/", StringComparison.Ordinal)));
+
+    /// <summary>
+    /// Whether a request is the operator's: it presents the operator's key, or carries the cookie presenting it set.
+    /// </summary>
+    public bool IsOperator(HttpRequest request) =>
+        (adminKey is not null && adminKey.IsPresentedBy(request))
+        || request.Cookies.TryGetValue(Hits.OperatorCookie, out var mark) && mark == visitorTokens.OperatorMark();
+
+    /// <summary>
+    /// Sets the operator's cookie on a response to a request that presented the operator's key and does not carry it
+    /// yet, so the same browser's later page loads, which carry no key, are kept as the operator's too (ADR-116, the
+    /// addendum on the owner's own reads). Called before the response starts.
+    /// </summary>
+    public void MarkOperator(HttpContext context)
+    {
+        if (adminKey is null || !adminKey.IsPresentedBy(context.Request))
+        {
+            return;
+        }
+
+        string mark = visitorTokens.OperatorMark();
+        if (context.Request.Cookies.TryGetValue(Hits.OperatorCookie, out var held) && held == mark)
+        {
+            return;
+        }
+
+        context.Response.Cookies.Append(Hits.OperatorCookie, mark, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            MaxAge = TimeSpan.FromDays(365),
+            IsEssential = true,
+        });
+    }
 
     /// <summary>Files one finished request and the time it took.</summary>
     /// <param name="context">The request, after its response was written.</param>
@@ -127,7 +163,7 @@ public sealed class RequestRecorder(
         // #endregion link-open-hook
         string token = visitorTokens.TokenFor(address, at);
         string network = VisitorTokens.NetworkOf(address);
-        activity.Offer(Hits.For(visitorTokens, address, at, token, network, path, store, context.Request.Headers.UserAgent.FirstOrDefault(), Hits.SourceOf(context.Request.Headers.Referer.FirstOrDefault(), path, context.Request.Host.Host, _siteHosts)));
+        activity.Offer(Hits.For(visitorTokens, address, at, token, network, path, store, context.Request.Headers.UserAgent.FirstOrDefault(), Hits.SourceOf(context.Request.Headers.Referer.FirstOrDefault(), path, context.Request.Host.Host, _siteHosts), IsOperator(context.Request)));
         // #endregion activity-hook
 
         // #region kept-logs-hook

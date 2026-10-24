@@ -52,10 +52,17 @@ public sealed partial class HumanMail(IMergeStore store, IInbox inbox, TimeProvi
             {
                 continue;
             }
-            if (!await inbox.ThreadHasDraftAsync(message.ThreadId, ct))
+            if (await inbox.ThreadHasDraftAsync(message.ThreadId, ct))
             {
-                waiting.Add(message.Address);
+                continue;
             }
+            // A thread whose newest message is Steve's is answered: the person's mail stays in the inbox for two days
+            // after his reply, and without this the run would fire on it every four hours until it aged out.
+            if (await inbox.ThreadNewestSenderAsync(message.ThreadId, ct) is { } newest && Mail.Address(newest) == Steve)
+            {
+                continue;
+            }
+            waiting.Add(message.Address);
         }
         return waiting.Count == 0
             ? (false, 0, "no person waiting")

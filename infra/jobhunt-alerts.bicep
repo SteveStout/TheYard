@@ -13,6 +13,12 @@ param location string = 'centralus'
 @description('The Function app\'s Application Insights component.')
 param appInsightsName string = 'appi-jobhunt-ss'
 
+@description('The storage account behind the job-hunt folder, billed per transaction.')
+param storageName string = 'stjobhuntss'
+
+@description('Transactions in an hour on the share above which the alert emails: about four times a quiet hour.')
+param transactionsPerHour int = 20000
+
 @description('The address the alert emails; passed at deploy time, never committed.')
 param alertEmail string
 
@@ -20,6 +26,15 @@ var tags = { owner: 'SS', lane: 'jobhunt-cloud-native' }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: appInsightsName
+}
+
+resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
+  name: storageName
+}
+
+resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-05-01' existing = {
+  parent: storage
+  name: 'default'
 }
 
 // #region jobhunt-alerts
@@ -76,7 +91,47 @@ resource deadFunction 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview
     }
   }
 }
+// The share bills every listing, read and write. On 20 to 23 October a walker on the laptop took it from a
+// dollar a day to $24.99 before anyone saw the bill, because Cost Management reports a day late. This one
+// reads the transactions themselves, every fifteen minutes over the last hour, so the email comes the hour
+// it starts.
+resource shareTransactions 'Microsoft.Insights/metricAlerts@2018-03-01' = {
+  name: 'alert-jobhunt-share-transactions'
+  location: 'global'
+  tags: tags
+  properties: {
+    description: 'More than ${transactionsPerHour} transactions in an hour on the job-hunt share (about four times a quiet hour): something is walking J:.'
+    severity: 2
+    enabled: true
+    scopes: [
+      fileService.id
+    ]
+    evaluationFrequency: 'PT15M'
+    windowSize: 'PT1H'
+    criteria: {
+      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
+      allOf: [
+        {
+          criterionType: 'StaticThresholdCriterion'
+          name: 'transactions'
+          metricNamespace: 'Microsoft.Storage/storageAccounts/fileServices'
+          metricName: 'Transactions'
+          operator: 'GreaterThan'
+          threshold: transactionsPerHour
+          timeAggregation: 'Total'
+        }
+      ]
+    }
+    autoMitigate: true
+    actions: [
+      {
+        actionGroupId: alertGroup.id
+      }
+    ]
+  }
+}
 // #endregion jobhunt-alerts
 
 output actionGroupId string = alertGroup.id
 output alertRuleId string = deadFunction.id
+output transactionsAlertId string = shareTransactions.id

@@ -89,7 +89,8 @@ export function ActivityTotals({
             Left out: {scanners.visitor_days.toLocaleString()} visitor-days of scanners and crawlers
             ({scanners.requests.toLocaleString()} requests) and {self.visitor_days.toLocaleString()}{' '}
             of the site's own reads ({self.requests.toLocaleString()} requests: App Service keeping
-            the container warm, the page sweep and the ship's readers).
+            the container warm, the page sweep, the ship's readers, and my own browsing once a
+            browser has shown the operator's key).
           </li>
         )}
         <li className={cardStyles.muted} data-testid="activity-collector">

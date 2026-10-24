@@ -22,4 +22,11 @@ public interface IInbox
 
     /// <summary>True when a draft sits in the thread, which is a reply already waiting for Steve's word; an inbox that cannot tell says no.</summary>
     Task<bool> ThreadHasDraftAsync(string threadId, CancellationToken ct) => Task.FromResult(false);
+
+    /// <summary>
+    /// The From of the newest message in a thread that is not a draft, or null for an empty thread: when it is Steve,
+    /// the thread is answered. An inbox that lists a thread's senders oldest first answers it from that list.
+    /// </summary>
+    async Task<string?> ThreadNewestSenderAsync(string threadId, CancellationToken ct) =>
+        (await ThreadSendersAsync(threadId, ct)).LastOrDefault();
 }

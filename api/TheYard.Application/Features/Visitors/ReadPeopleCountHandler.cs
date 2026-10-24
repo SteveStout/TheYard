@@ -66,7 +66,7 @@ public sealed record ReadPeopleCountQuery;
 /// <param name="PeopleNewToday">People first seen today (UTC).</param>
 /// <param name="PeopleNewMonth">People first seen this calendar month (UTC).</param>
 /// <param name="ScannersLeftOut">Visitors that only ever read as scanners or crawlers, left out of every figure above.</param>
-/// <param name="CountedFrom">The first day anything was kept, yyyy-MM-dd, or null before the first.</param>
+/// <param name="CountedFrom">The first day a person was kept, yyyy-MM-dd (a scanner kept earlier does not start the count), or null before the first person.</param>
 /// <param name="PeopleNewByDay">People first seen on each of the last thirty UTC days, oldest first.</param>
 /// <param name="Source">Where the visitors are kept, or why nothing is.</param>
 /// <param name="Visits">The visits by people the kept activity holds, since the first day kept, or null before the first count.</param>

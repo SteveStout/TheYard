@@ -16,7 +16,7 @@ public sealed record VisitorSighting(string Hash, string Day, VisitorKind Kind);
 /// <summary>The kept visitors as the count reads them.</summary>
 /// <param name="People">How many visitors are people, all time.</param>
 /// <param name="Scanners">How many are scanners or crawlers, left out of the count.</param>
-/// <param name="CountedFrom">The first day anything was kept, or null before the first.</param>
+/// <param name="CountedFrom">The first day a person was kept (a scanner kept earlier does not start the count), or null before the first person.</param>
 /// <param name="FirstSeenByDay">How many people were first seen on each UTC day from the day asked, by yyyy-MM-dd.</param>
 public sealed record VisitorTally(int People, int Scanners, string? CountedFrom, IReadOnlyDictionary<string, int> FirstSeenByDay);
 
@@ -97,7 +97,7 @@ public sealed class MemoryVisitorStore : IVisitorStore
             return Task.FromResult(new VisitorTally(
                 people.Count,
                 _visitors.Values.Count(v => v.Kind == VisitorKind.Scanners),
-                _visitors.Count == 0 ? null : _visitors.Values.Min(v => v.First),
+                people.Count == 0 ? null : people.Min(v => v.First),
                 people.Where(v => string.CompareOrdinal(v.First, since) >= 0).GroupBy(v => v.First, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal)));
         }
     }

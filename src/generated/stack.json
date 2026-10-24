@@ -10,7 +10,7 @@
     },
     {
       "figure": "Azure",
-      "words": "5 Bicep files"
+      "words": "6 Bicep files"
     },
     {
       "figure": "6",
@@ -217,7 +217,7 @@
           "tech": "Bicep for every resource it deploys",
           "note": null,
           "where": "Deployed from the repository",
-          "version": "5 Bicep files",
+          "version": "6 Bicep files",
           "style": "service",
           "proof": {
             "label": "infra/",

@@ -43,6 +43,19 @@ public sealed class InboxPassTests
     }
 
     [Fact]
+    public async Task A_harvest_that_fills_its_cap_on_one_board_asks_no_other_board_for_none()
+    {
+        using var scratch = new Scratch();
+        scratch.Master("");
+        var inbox = new MemoryInbox([.. Enumerable.Range(0, LeadsHarvest.Cap + 5).Select(i => Alert($"a{i}", $"t{i}", Empty))]);
+
+        await new LeadsHarvest(scratch.Store, inbox, new FixedTime(Morning)).RunAsync(false, CancellationToken.None);
+
+        Assert.Equal([LeadsHarvest.Cap], inbox.Maxes);
+        Assert.DoesNotContain(0, inbox.Maxes);
+    }
+
+    [Fact]
     public async Task On_appends_to_the_day_s_leads_file_and_never_rewrites_it()
     {
         using var scratch = new Scratch();
@@ -173,9 +186,12 @@ public sealed class InboxPassTests
 
         public List<string> Queries { get; } = [];
 
+        public List<int> Maxes { get; } = [];
+
         public Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct)
         {
             Queries.Add(query);
+            Maxes.Add(max);
             // A board's search names one sender or one domain; the ATS search's list in brackets and the triage
             // search's bare "in:inbox" take the whole inbox, as before.
             var from = System.Text.RegularExpressions.Regex.Match(query, @"from:([^\s(]+)");

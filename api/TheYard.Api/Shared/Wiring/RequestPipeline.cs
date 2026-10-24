@@ -42,6 +42,7 @@ public static class RequestPipeline
         app.Use(async (context, next) =>
         {
             long start = Stopwatch.GetTimestamp();
+            recorder.MarkOperator(context); // the operator's key leaves with the operator's cookie (ADR-116)
             try
             {
                 await next();

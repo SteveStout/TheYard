@@ -172,3 +172,9 @@ A Function that stops told nobody. `infra/jobhunt-alerts.bicep` is its own templ
 
 The card's next seven days needed no change: the token Steve restored at 09:57 on 23 October was issued by `get_google_token_j.py`, which asks `calendar.readonly`, and CARD.md at 14:05 listed Tuesday's recruiter screen from Google Calendar.
 
+## Addendum, 2026-10-24 (1.0.4.50): an answered thread does not fire, a full harvest asks no more boards, and the share is billed less
+
+Three fixes to the inbox pass, the first a condition for REPLY_ON_HUMAN leaving shadow. A thread whose newest message, not counting a draft, is mine is answered: after I reply, the person's mail stays in the inbox for two days, and HumanMail read the thread as waiting because it held no draft, so it would have fired the reply run every four hours until the mail aged out. The inbox port reads a thread's newest sender (`ThreadNewestSenderAsync`, Gmail lists a thread oldest first), and HumanMailTests holds the answered case. LeadsHarvest stops asking boards once its cap of 150 is met, where it asked each later board for zero, which Gmail answers with its default page or a 400.
+
+The share the Function writes to bills every transaction. From 1.0.4.49 the merger remembers for an hour each folder it has made sure of, which took about 2,200 creates an hour that found the folder already there off the bill. From this version the share is Transaction optimized rather than Hot (infra/jobhunt.bicep), an alert emails when the share passes 20,000 transactions in an hour, about four times a quiet hour (infra/jobhunt-alerts.bicep), and a $50 monthly budget on the subscription emails at 80 % and 100 % of the spend and at 100 % of the forecast (infra/jobhunt-budget.bicep, subscription scope, the address passed at deploy time). TemplateTests holds the tier, the alert and the budget.
+

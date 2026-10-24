@@ -69,6 +69,16 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
             .Any(m => m.TryGetProperty("labelIds", out var labels) && labels.EnumerateArray().Any(l => l.GetString() == "DRAFT"));
     }
 
+    /// <summary>The From of the thread's newest message that is not a draft: Gmail lists a thread's messages oldest first.</summary>
+    public async Task<string?> ThreadNewestSenderAsync(string threadId, CancellationToken ct)
+    {
+        using var json = await GetAsync($"{Api}/threads/{threadId}?format=metadata&metadataHeaders=From", ct);
+        return json.RootElement.GetProperty("messages").EnumerateArray()
+            .Where(m => !(m.TryGetProperty("labelIds", out var labels) && labels.EnumerateArray().Any(l => l.GetString() == "DRAFT")))
+            .Select(m => Header(m.GetProperty("payload"), "From"))
+            .LastOrDefault();
+    }
+
     /// <summary>The message's text: its plain parts, else its HTML parts with the markup taken out.</summary>
     public static string Text(JsonElement payload)
     {

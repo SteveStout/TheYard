@@ -135,6 +135,24 @@ public sealed partial class TemplateTests
     }
 
     /// <summary>The app settings the template lists, by name: each a one-line { name: 'X', value: ... } entry.</summary>
+    [Fact]
+    public void The_share_is_transaction_optimized_because_its_bill_is_its_transactions()
+    {
+        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt.bicep"));
+        Assert.Contains("accessTier: 'TransactionOptimized'", bicep, StringComparison.Ordinal);
+        Assert.DoesNotContain("accessTier: 'Hot'", bicep, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_share_has_a_transactions_alert_and_the_subscription_a_budget()
+    {
+        string alerts = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
+        Assert.Contains("metricName: 'Transactions'", alerts, StringComparison.Ordinal);
+        string budget = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-budget.bicep"));
+        Assert.Contains("thresholdType: 'Forecasted'", budget, StringComparison.Ordinal);
+        Assert.DoesNotContain("@", budget.Replace("@description", "", StringComparison.Ordinal).Replace("budgets@", "", StringComparison.Ordinal), StringComparison.Ordinal);
+    }
+
     private static Dictionary<string, string> Settings()
     {
         string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt.bicep"));

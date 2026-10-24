@@ -91,6 +91,18 @@ public sealed class VisitorTests
     }
 
     [Fact]
+    public async Task The_count_runs_from_the_first_person_not_the_first_scanner()
+    {
+        var visitors = new MemoryVisitorStore();
+        await visitors.KeepAsync([new("s", "2026-10-22", VisitorKind.Scanners)], CancellationToken.None);
+        Assert.Null((await visitors.TallyAsync("2026-09-24", CancellationToken.None)).CountedFrom);
+
+        await visitors.KeepAsync([new("p", "2026-10-23", VisitorKind.People)], CancellationToken.None);
+
+        Assert.Equal("2026-10-23", (await visitors.TallyAsync("2026-09-24", CancellationToken.None)).CountedFrom);
+    }
+
+    [Fact]
     public async Task A_store_that_cannot_keep_visitors_is_unread_and_says_why()
     {
         var count = await new ReadPeopleCountHandler(new NoVisitorStore("no document store"), new Fixed(Today)).HandleAsync(new ReadPeopleCountQuery(), CancellationToken.None);

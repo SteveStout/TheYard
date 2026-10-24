@@ -43,6 +43,11 @@ public sealed class LeadsHarvest(IMergeStore store, IInbox inbox, TimeProvider t
         var alerts = new List<Alert>();
         foreach (var board in BoardAlerts.All)
         {
+            // A full harvest asks no more boards: the cap is met, and a search for none is a wasted read, or a 400.
+            if (alerts.Count >= Cap)
+            {
+                break;
+            }
             foreach (string id in await inbox.FindAsync($"in:inbox {board.Query}", Cap - alerts.Count, ct))
             {
                 if (alerts.Count >= Cap || alerts.Any(a => a.Message.Id == id))
