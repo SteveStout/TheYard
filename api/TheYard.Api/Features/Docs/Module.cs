@@ -1,3 +1,5 @@
+using TheYard.Application.Features.Docs;
+
 namespace TheYard.Api.Features.Docs;
 
 /// <summary>
@@ -10,6 +12,9 @@ public sealed class Module : IModule
     /// <param name="configuration">The host's configuration.</param>
     public void Register(IServiceCollection services, IConfiguration configuration)
     {
+        // The document query and its port (ADR-115's fourth rung).
+        services.AddSingleton<IDocumentReadings>(provider => new DocumentReadings(provider.GetRequiredService<HostPaths>(), provider.GetRequiredService<BuildInfo>()));
+        services.AddScoped<ReadDocumentHandler>();
     }
 
     /// <summary>Maps /api/docs/*, /about, /resume, /api/recommendations and the OpenAPI document.</summary>

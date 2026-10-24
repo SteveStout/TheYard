@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application;
+using TheYard.Application.Features.Docs;
+using TheYard.Application.Shared;
 
 namespace TheYard.Api.Features.Docs;
 
@@ -104,11 +106,20 @@ public static class DocumentationEndpoints
     private static readonly BoundedCache<string, string> Rendered =
         new(64, 16L << 20, TimeSpan.FromMinutes(30), text => text.Length * 2L, comparer: StringComparer.Ordinal);
 
-    private static Results<ContentHttpResult, ProblemHttpResult> Document(string slug, HostPaths paths, BuildInfo build)
+    private static async Task<Results<ContentHttpResult, ProblemHttpResult>> Document(string slug, ReadDocumentHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new ReadDocumentQuery(slug), cancellation) is { Kind: ReadingKind.Read, Body: string text }
+            ? TypedResults.Text(text, "text/markdown")
+            : TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document");
+
+    /// <summary>The rendered markdown of the document with this slug, kept once a build, or null when the catalogue has none.</summary>
+    /// <param name="slug">The catalogue's slug.</param>
+    /// <param name="paths">Where the repository's files are.</param>
+    /// <param name="build">The build, whose commit keys the kept copy and the live fences.</param>
+    internal static string? Render(string slug, HostPaths paths, BuildInfo build)
     {
         if (!DocumentationCatalog.Files.TryGetValue(slug, out var file))
         {
-            return TypedResults.Problem(detail: "No document has that slug.", statusCode: 404, title: "No such document");
+            return null;
         }
         string key = $"{build.Commit}/{slug}";
         if (!Rendered.TryGet(key, out var text))
@@ -117,7 +128,7 @@ public static class DocumentationEndpoints
             text = DocImages.Rewrite(LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot);
             Rendered.Set(key, text);
         }
-        return TypedResults.Text(text, "text/markdown");
+        return text;
     }
     // #endregion rendered-documents
 

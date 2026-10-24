@@ -1,75 +1,51 @@
-// The Admin tab's evidence handlers: the page sweep, the gate's test results, the performance
-// proof and the partition key experiment. Its own file because each of these reads or starts
-// a check of the site rather than a reading of the running process.
-
-using TheYard.Application;
+// The Admin tab's evidence routes: the page sweep, the gate's test results, the performance proof and the
+// partition key experiment. Each asks its one query or command handler (ADR-115's fourth rung); a run that starts
+// answers 202 and a busy one 409, in the words each route always used.
+using TheYard.Application.Features.Admin.Operations;
+using TheYard.Application.Features.Proof;
+using TheYard.Application.Shared;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
-/// <summary>The proof and page-check handlers of AdminEndpoints; the type and what it is for are described in AdminEndpoints.cs.</summary>
+/// <summary>The evidence routes of AdminEndpoints; the type and what it is for are described in AdminEndpoints.cs.</summary>
 public static partial class AdminEndpoints
 {
-    /// <summary>Answers the last page sweep's result, whoever asked for it.</summary>
-    private static IResult PageStatus(PageStatusRunner pageStatus) =>
-        Results.Json(pageStatus.Status);
+    /// <summary>Answers every address as the last sweep found it.</summary>
+    private static async Task<IResult> PageStatus(ReadPageStatusHandler handler, CancellationToken cancellation) =>
+        Answer(await handler.HandleAsync(new ReadPageStatusQuery(), cancellation));
 
-    /// <summary>
-    /// Starts a page sweep now, or answers 409 when one is running, ran in the last twenty seconds, or this
-    /// container has no address of its own to dial.
-    /// </summary>
-    private static IResult RunPageStatus(PageStatusRunner pageStatus) =>
-        pageStatus.TryStart("asked")
-        ? Results.Accepted("/api/admin/pages")
-        : Results.Conflict(new { status = "a sweep is already running, was run in the last twenty seconds, or this container has no address of its own to dial" });
+    /// <summary>Starts a sweep of every address: 202 with where to read it, or 409 with why not.</summary>
+    private static async Task<IResult> RunPageStatus(RunPageSweepHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new RunPageSweepCommand(), cancellation) is { Kind: ReadingKind.Started }
+            ? Results.Accepted("/api/admin/pages")
+            : Results.Conflict(new { status = "a sweep is already running, was run in the last twenty seconds, or this container has no address of its own to dial" });
 
-    /// <summary>
-    /// Answers the counts from the shipped test results file, without the tests themselves, or a 404 when the build
-    /// shipped none.
-    /// </summary>
-    private static IResult TestSummaryRead(HostPaths paths)
-    {
-        if (!File.Exists(paths.TestResultsPath))
-        {
-            return Results.Problem(
-                detail: "No test results shipped with this build. The ship's gate writes them.",
-                statusCode: StatusCodes.Status404NotFound,
-                title: "No test results");
-        }
+    /// <summary>Answers the gate's counts for this build, or 404 when no results shipped with it.</summary>
+    private static async Task<IResult> TestSummaryRead(ReadTestSummaryHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new ReadTestSummaryQuery(), cancellation) is { Kind: ReadingKind.Read } reading
+            ? Results.Json(reading.Body, WireFormat)
+            : Answer(ReadTestSummaryHandler.NoResults());
 
-        return Results.Json(TestSummary.Of(paths.TestResultsPath), WireFormat);
-    }
+    /// <summary>Answers the gate's results file as it shipped, or 404 when none did.</summary>
+    private static async Task<IResult> TestResults(ReadTestResultsHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new ReadTestResultsQuery(), cancellation) is { Kind: ReadingKind.Read, Body: string text }
+            ? Results.Text(text, "application/json")
+            : Answer(ReadTestSummaryHandler.NoResults());
 
-    /// <summary>
-    /// Answers the shipped test results file as the gate wrote it, or a 404 when the build shipped none.
-    /// </summary>
-    private static IResult TestResults(HostPaths paths) =>
-        File.Exists(paths.TestResultsPath)
-        ? Results.Text(File.ReadAllText(paths.TestResultsPath), "application/json")
-        : Results.Problem(
-            detail: "No test results shipped with this build. The ship's gate writes them.",
-            statusCode: StatusCodes.Status404NotFound,
-            title: "No test results");
+    /// <summary>Answers the proof's status.</summary>
+    private static async Task<IResult> ProofStatus(ReadProofStatusHandler handler, CancellationToken cancellation) =>
+        Answer(await handler.HandleAsync(new ReadProofStatusQuery(), cancellation));
 
-    /// <summary>Answers the performance proof's last result, or the run in progress.</summary>
-    private static IResult ProofStatus(ProofRunner proof) =>
-        Results.Json(proof.Status);
+    /// <summary>Starts the proof: 202 "running", or 409 when it is busy.</summary>
+    private static async Task<IResult> ProofStart(int? rounds, StartProofHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new StartProofCommand(rounds ?? ProofRunner.DefaultRounds), cancellation) is { Kind: ReadingKind.Started } started
+            ? Results.Json(started.Body, WireFormat, statusCode: StatusCodes.Status202Accepted)
+            : Results.Problem(
+                detail: "A run is in progress, or the last one finished less than a minute ago. The result is on the card.",
+                statusCode: StatusCodes.Status409Conflict,
+                title: "The proof is busy");
 
-    /// <summary>
-    /// Starts a performance proof of the given rounds (or the default), or answers 409 while a run is on or within
-    /// a minute of the last one.
-    /// </summary>
-    private static IResult ProofStart(int? rounds, ProofRunner proof) =>
-        proof.TryStart(rounds ?? ProofRunner.DefaultRounds)
-        ? Results.Json(new { status = "running" }, WireFormat, statusCode: StatusCodes.Status202Accepted)
-        : Results.Problem(
-            detail: "A run is in progress, or the last one finished less than a minute ago. The result is on the card.",
-            statusCode: StatusCodes.Status409Conflict,
-            title: "The proof is busy");
-
-    /// <summary>
-    /// Answers the partition key experiment's queries with the request charge beside each, or an empty answer on a
-    /// container with no document store.
-    /// </summary>
-    private static async Task<IResult> ExperimentRun(IStoreExperiment experiment) =>
-        Results.Json(await experiment.RunAsync());
+    /// <summary>Runs the partition key experiment and answers what it measured.</summary>
+    private static async Task<IResult> ExperimentRun(RunExperimentHandler handler, CancellationToken cancellation) =>
+        Answer(await handler.HandleAsync(new RunExperimentCommand(), cancellation));
 }

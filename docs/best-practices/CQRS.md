@@ -116,9 +116,9 @@ Read back by `CqrsTests` on every build, so a number here cannot go stale.
 
 | shape | count |
 | --- | --- |
-| queries | 14 |
-| commands | 14 |
-| handlers | 28 |
+| queries | 35 |
+| commands | 17 |
+| handlers | 52 |
 | services | 0 |
 
 ## What this codebase does not do, and why
@@ -131,8 +131,9 @@ synchronisation and data that can be behind
 ([CQRS pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs)). Here each store
 answers a page of a hundred thousand vehicles inside the site's budget, and the bid that changes a
 price has to be read back at once by the buyer who placed it. Two stores would buy nothing this site
-needs and cost the one thing a bid must have, a price that is current. The 24 Admin reads still ask no
-handler; they become queries in the version after this one.
+needs and cost the one thing a bid must have, a price that is current. The Admin tab's 24 reads became
+queries in 1.0.4.43; what is still exempt is the host serving its own files, its health and its error
+rings, fifteen routes named in `HandlerRuleTests` with the reason for each.
 
 ## Sources
 

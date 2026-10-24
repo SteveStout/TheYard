@@ -2,7 +2,7 @@
 // the rule's verdict on them. Its own file because it is one card's read with its own wire; the
 // route that points at it is mapped in AdminEndpoints.cs (ADR: Memory follows traffic).
 
-using TheYard.Application;
+using TheYard.Application.Features.Admin.Operations;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
@@ -57,55 +57,8 @@ public static partial class AdminEndpoints
     /// <summary>The first minutes of a process's life, left out of the hour: the runtime, the caches and a fill all grow memory while nothing is wrong.</summary>
     public static readonly TimeSpan WarmUp = TimeSpan.FromMinutes(15);
 
-    /// <summary>
-    /// Answers the window's points and the verdict. The hour is this process's own, a minute at a
-    /// time from the sampler and the request ring, less its first fifteen minutes; a wider window is
-    /// the kept buckets, the same ones the machines card draws.
-    /// </summary>
-    private static async Task<IResult> Follows(string? window, MachineSampler sampler, MachineHistoryReader kept, RequestRingBuffer requestLog, HostStart start, CancellationToken cancellation)
-    {
-        var now = Clocks.UtcNow();
-        string chosen = MachineWindows.Parse(window)?.Name ?? MachineWindows.Hour;
-        double limit = MachineSampler.MemoryLimitMb;
-        List<FollowsPoint> points;
-        int bucketMinutes;
-        bool skipped = false;
-        if (chosen == MachineWindows.Hour)
-        {
-            bucketMinutes = 1;
-            var samples = sampler.Snapshot();
-            var requests = requestLog.Snapshot();
-            var warm = start.At + WarmUp;
-            skipped = now - TimeSpan.FromHours(1) < warm;
-            points = [];
-            for (var minute = now.UtcMinute.AddMinutes(-60); minute < now.UtcMinute; minute = minute.AddMinutes(1))
-            {
-                if (minute < warm)
-                {
-                    continue;
-                }
-                if (MachineRecorder.Fold(minute, "here", limit, samples, [], [], requests) is { } folded)
-                {
-                    points.Add(new FollowsPoint(folded.At, folded.Requests, folded.CpuPercent, folded.WorkingSetMb));
-                }
-            }
-        }
-        else
-        {
-            var (buckets, minutes) = await kept.BucketsAsync(chosen, now, cancellation);
-            bucketMinutes = minutes;
-            points = [.. buckets.Select(bucket => new FollowsPoint(bucket.At, bucket.Minutes == 0 ? 0 : Math.Round((double)bucket.Requests / bucket.Minutes, 2), bucket.CpuPercent, bucket.WorkingSetMb))];
-            limit = buckets.Count == 0 ? limit : buckets[^1].MemoryLimitMb;
-        }
 
-        var verdict = MemoryTraffic.Judge([.. points.Select(point => new TrafficPoint(point.At, point.RequestsPerMinute, point.CpuPercent, point.WorkingSetMb))], limit);
-        return Results.Json(new FollowsView(
-            chosen,
-            now,
-            bucketMinutes,
-            limit,
-            skipped,
-            points,
-            new FollowsVerdictWire(CloudTones.Of(verdict.Tone), verdict.Words, verdict.MemoryFromMb, verdict.MemoryToMb, verdict.RequestsFrom, verdict.RequestsTo, verdict.ClimbThresholdMb, verdict.CpuFollowsTraffic, verdict.MemoryFollowsTraffic)));
-    }
+    /// <summary>Answers the memory-against-traffic card over the last hour or a kept window.</summary>
+    private static async Task<IResult> Follows(string? window, ReadFollowsHandler handler, CancellationToken cancellation) =>
+        Answer(await handler.HandleAsync(new ReadFollowsQuery(window), cancellation));
 }

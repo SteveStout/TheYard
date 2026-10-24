@@ -1,63 +1,26 @@
-// The Admin tab's activity handlers: the public activity report, and the two reads that
-// answer only to the operator's key, the visitor rows and the kept log. Its own file because
-// these are the reads about who came, and the key check sits beside the reads it guards.
-
-using TheYard.Application;
+// The Admin tab's activity routes: the public activity report, and the two reads that answer only to the
+// operator's key, the visitor rows and the kept log. Each asks its one query handler (ADR-115's fourth rung);
+// the key check sits beside the reads it guards and runs before the handler is asked.
+using TheYard.Application.Features.Admin.Operations;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
-/// <summary>The activity handlers of AdminEndpoints; the type and what it is for are described in AdminEndpoints.cs.</summary>
+/// <summary>The activity routes of AdminEndpoints; the type and what it is for are described in AdminEndpoints.cs.</summary>
 public static partial class AdminEndpoints
 {
-    /// <summary>
-    /// Answers the public activity report for a named window from the report cache, or a 400 when the window is not
-    /// 24h, 7d or 30d.
-    /// </summary>
-    private static async Task<IResult> Activity(string? window, ActivityCollector collector, ActivityReportCache activityReports, Backends backends, AdminSettings admin, CancellationToken cancellation) =>
-        ActivityWindows.Parse(window) is null
-            ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-            : Results.Json(await activityReports.GetAsync(
-                window ?? "24h",
-                (now, building) => ActivityReport.PublicAsync(collector, backends, window ?? "24h", now, admin.VisitorRows, building),
-                cancellation));
+    /// <summary>Answers the public activity report over a window.</summary>
+    private static async Task<IResult> Activity(string? window, ReadActivityHandler handler, CancellationToken cancellation) =>
+        Answer(await handler.HandleAsync(new ReadActivityQuery(window), cancellation));
 
-    /// <summary>
-    /// Answers the visitor rows for a window, only to the operator's key; anything else is a 404, so a stranger
-    /// cannot tell the route exists.
-    /// </summary>
-    private static async Task<IResult> Visitors(string? window, HttpContext http, ActivityCollector collector, Backends backends, AdminKey adminKey, AdminSettings admin, CancellationToken cancellation)
-    {
-        if (!admin.VisitorRows || !adminKey.IsPresentedBy(http.Request))
-        {
-            return Results.NotFound();
-        }
+    /// <summary>Answers the visitor rows over a window, to the operator alone and only where the rows are served; anybody else gets a 404.</summary>
+    private static async Task<IResult> Visitors(string? window, HttpContext http, AdminKey adminKey, AdminSettings admin, ReadVisitorRowsHandler handler, CancellationToken cancellation) =>
+        admin.VisitorRows && adminKey.IsPresentedBy(http.Request)
+            ? Answer(await handler.HandleAsync(new ReadVisitorRowsQuery(window), cancellation))
+            : Results.NotFound();
 
-        return ActivityWindows.Parse(window) is null
-            ? Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read")
-            : Results.Json(await ActivityReport.VisitorsAsync(collector, backends, window ?? "24h", Clocks.UtcNow(), cancellation));
-    }
-
-    /// <summary>
-    /// Answers the kept log for a window, filtered by kind, status and a fragment of the path, only to the
-    /// operator's key.
-    /// </summary>
-    private static async Task<IResult> KeptLogs(string? window, string? kind, int? status, string? path, HttpContext http, LogCollector collector, AdminKey adminKey, AdminSettings admin, CancellationToken cancellation)
-    {
-        if (!admin.VisitorRows || !adminKey.IsPresentedBy(http.Request))
-        {
-            return Results.NotFound();
-        }
-
-        if (ActivityWindows.Parse(window) is null)
-        {
-            return Results.Problem(detail: "window is one of 24h, 7d or 30d.", statusCode: 400, title: "The window could not be read");
-        }
-
-        if (!string.IsNullOrEmpty(kind) && !LogEvent.Kinds.Contains(kind, StringComparer.Ordinal))
-        {
-            return Results.Problem(detail: "kind is one of request, error or app.", statusCode: 400, title: "The kind could not be read");
-        }
-
-        return Results.Json(await LogReport.QueryAsync(collector, window ?? "24h", kind, status, path, Clocks.UtcNow(), cancellation));
-    }
+    /// <summary>Answers the kept log over a window, filtered, to the operator alone and only where the rows are served; anybody else gets a 404.</summary>
+    private static async Task<IResult> KeptLogs(string? window, string? kind, int? status, string? path, HttpContext http, AdminKey adminKey, AdminSettings admin, ReadKeptLogsHandler handler, CancellationToken cancellation) =>
+        admin.VisitorRows && adminKey.IsPresentedBy(http.Request)
+            ? Answer(await handler.HandleAsync(new ReadKeptLogsQuery(window, kind, status, path), cancellation))
+            : Results.NotFound();
 }
