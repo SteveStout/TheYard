@@ -36,6 +36,7 @@ param shareName string = 'jobhunt'
 param logWorkspaceId string = '/subscriptions/df3b718c-6d99-4904-8102-6f865941f640/resourceGroups/RG-THEYARD-SS/providers/Microsoft.OperationalInsights/workspaces/log-theyard-ss'
 
 var smbShareContributor = '0c867c2a-1d8c-454a-a3db-ab2ea1bdc8bb'
+var blobDataContributor = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 var deployContainer = 'deploy'
 var tags = { owner: 'SS', lane: 'jobhunt-cloud-native' }
 
@@ -79,6 +80,51 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01'
 resource deploy 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: blobService
   name: deployContainer
+}
+
+// The blog's pictures (ADR-113, the addendum on where the pictures live): private, read and written only by
+// TheYard's web identity, which serves them from the site's own address with a year's cache.
+resource blogContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'blog'
+  properties: {
+    publicAccess: 'None'
+    metadata: { purpose: 'the blog\'s pictures, served at /blog/images/<hash>' }
+  }
+}
+
+// The hook for a cap on the pictures: a lifecycle rule that is off until a cap is chosen.
+resource lifecycle 'Microsoft.Storage/storageAccounts/managementPolicies@2023-05-01' = {
+  parent: storage
+  name: 'default'
+  properties: {
+    policy: {
+      rules: [
+        {
+          enabled: false
+          name: 'blog-cap-hook'
+          type: 'Lifecycle'
+          definition: {
+            actions: { baseBlob: { delete: { daysAfterModificationGreaterThan: 36500 } } }
+            filters: { blobTypes: [ 'blockBlob' ], prefixMatch: [ 'blog/' ] }
+          }
+        }
+      ]
+    }
+  }
+}
+
+@description('TheYard web identity (id-theyard-ss) principal id, which writes the blog pictures; empty leaves the grant out.')
+param siteIdentityPrincipalId string = ''
+
+resource blogWriter 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(siteIdentityPrincipalId)) {
+  name: guid(blogContainer.id, siteIdentityPrincipalId, blobDataContributor)
+  scope: blogContainer
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', blobDataContributor)
+    principalId: siteIdentityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
 }
 
 resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {

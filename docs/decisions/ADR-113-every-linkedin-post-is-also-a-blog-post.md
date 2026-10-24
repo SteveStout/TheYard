@@ -56,3 +56,16 @@ The rules (where a read came from, the device class, what an event may carry, wh
 ## Addendum, 2026-10-22 (1.0.4.33): a feed
 
 The blog has an RSS 2.0 feed at `/api/blog/rss.xml`, written from the same handler the page reads: every published post, newest first, with its address on the blog, its date, its two-line summary and its hashtags as categories. A reader can follow the posts without LinkedIn, and a feed reader is one more source the read log can name. It answers 503 with the store's reason while the blog cannot be read, like the list (`BlogFeed.cs`, held by `BlogEndpointsTests`).
+
+## Addendum, 2026-10-24 (1.0.4.55): where the pictures live
+
+The blog has modelled pictures since it shipped (`BlogImage`, the `blog.PostImage` table, the slides strip), and both posts had none, because the files had nowhere to live. They live in a private blob container, `blog`, on the job hunt's storage account (stjobhuntss), and the site serves them from its own address: `GET /blog/images/{name}`.
+
+Why a blob container. Not the repository: a post is a row in SQL and its pictures follow the post, not the image, so adding a picture is not a deploy. Not the job-hunt share: a share is billed by the listing, and this record's day is the day that bill was found. A blob read costs $0.004 for ten thousand and a gigabyte $0.018 a month at Hot LRS; a hundred pictures at 300 KB is 30 MB, a tenth of a cent a month to keep, and a year of this blog's pictures is under a dollar.
+
+The name is the picture's own: the first sixteen hex digits of the SHA-256 of its bytes and its kind (`3f9a0c2b1d4e5f60.webp`), so an edited picture is a new name. That is what lets the route answer `Cache-Control: public, max-age=31536000, immutable` with an ETag of the name: a year's cache can never be wrong. A name the rule does not make is never looked up, and a name not kept is a 404 problem.
+
+Reads are paid once a roll, not once a view: the host keeps the pictures it served in its own memory (`CachedBlogImages`, the site's bounded cache, least recently used, 32 MB, a day each, a miss never kept), and the edge keeps them for the year the header allows. The container is private (public access None); the site reads and writes it with its own identity (Storage Blob Data Reader on the account, Storage Blob Data Contributor on the container), over the blob service's REST interface through the one connection pool (`BlobBlogImageStore`, Infrastructure), and a process off Azure keeps pictures in its memory and says so. A lifecycle rule is on the account and off, the hook for a cap when one is chosen. A picture is a page's asset, never a visit.
+
+The query takes the reader only (`IBlogImageReader`); the writer (`IBlogImageWriter`) is for the upload command that follows.
+

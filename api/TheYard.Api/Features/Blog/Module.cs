@@ -12,7 +12,7 @@ public sealed class Module : IModule
 {
     /// <summary>Registers the store and the handlers.</summary>
     /// <param name="services">The host's services.</param>
-    /// <param name="configuration">The host's configuration; the blog reads none.</param>
+    /// <param name="configuration">The host's configuration: where the pictures are kept.</param>
     public void Register(IServiceCollection services, IConfiguration configuration)
     {
         // #region blog-wiring
@@ -29,10 +29,23 @@ public sealed class Module : IModule
         services.AddScoped(provider => new RecordEventHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         services.AddScoped(provider => new ReadBlogStatsHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         services.AddScoped(provider => new SavePostHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
+        // The pictures: the job hunt's storage account's private blog container on Azure, read with the site's
+        // identity and kept in the host's memory in front; in this process's memory anywhere else.
+        string? account = configuration["Blog:ImagesAccount"], container = configuration["Blog:ImagesContainer"];
+        services.AddSingleton<IBlogImageReader>(provider =>
+        {
+            var identity = provider.GetRequiredService<HostIdentity>();
+            IBlogImageReader kept = identity.OnAppService && account is { Length: > 0 } && container is { Length: > 0 }
+                ? new BlobBlogImageStore(account, container, _ => IdentityTokens.AcquireAsync(OutboundHttp.Client(TimeSpan.FromSeconds(10)), "https://storage.azure.com/", AzureIds.ClientId(configuration), identity))
+                : provider.GetRequiredService<MemoryBlogImageStore>();
+            return new CachedBlogImages(kept);
+        });
+        services.AddSingleton<MemoryBlogImageStore>();
+        services.AddScoped(provider => new ReadBlogImageHandler(provider.GetRequiredService<IBlogImageReader>()));
         // #endregion blog-wiring
     }
 
     /// <summary>Maps the blog's routes.</summary>
     /// <param name="app">The built host's routes.</param>
-    public void Map(IEndpointRouteBuilder app) => app.MapBlogEndpoints().MapBlogFeed();
+    public void Map(IEndpointRouteBuilder app) => app.MapBlogEndpoints().MapBlogFeed().MapBlogImages();
 }

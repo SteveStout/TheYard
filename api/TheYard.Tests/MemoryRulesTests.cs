@@ -91,6 +91,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._cached"] = "one per card and window, seven cards by four windows",
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._asked"] = "one per card, the cards in the catalogue",
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._month"] = "one per card, seven",
+        ["TheYard.Application.Features.Blog.MemoryBlogImageStore._files"] = "the pictures the tests or the operator put in a process with no container, a handful",
         ["TheYard.Api.Features.Admin.Cloud.ProcessDescriptions._read"] = "one per file of the job hunt Function it reads, seven: the six processes and its own paragraph",
         ["TheYard.Api.Shared.PlanReadings.PlanHistoryReader._cached"] = "one per window, four",
         ["TheYard.Api.Shared.Activity.ActivityCollector._stores"] = "one per store, two",
