@@ -755,6 +755,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-campaign-sends-the-model-writes-rows</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-tagged-links-who-opened-what</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

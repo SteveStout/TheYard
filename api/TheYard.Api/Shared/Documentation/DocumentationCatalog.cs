@@ -148,6 +148,7 @@ public static class DocumentationCatalog
         ["adr-a-request-is-a-query-or-a-command"] = "docs/decisions/ADR-115-a-request-is-a-query-or-a-command.md",
         ["adr-people-who-have-visited-counted-once"] = "docs/decisions/ADR-116-people-who-have-visited-counted-once.md",
         ["adr-one-host-per-process-the-rings-under-them"] = "docs/decisions/ADR-117-one-host-per-process-the-rings-under-them.md",
+        ["adr-the-campaign-sends-the-model-writes-rows"] = "docs/decisions/ADR-118-the-campaign-sends-the-model-writes-rows.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

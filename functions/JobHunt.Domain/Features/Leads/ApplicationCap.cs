@@ -90,7 +90,7 @@ public static partial class ApplicationCap
     private static string Normal(string name) =>
         Space().Replace(Punctuation().Replace((name ?? string.Empty).ToLowerInvariant(), " "), " ").Trim();
 
-    private static DateOnly? Day(string cell) =>
+    internal static DateOnly? Day(string cell) =>
         DateOnly.TryParseExact((cell ?? string.Empty).Trim(), ["M/d/yyyy", "MM/dd/yyyy", "yyyy-MM-dd"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
 
     [GeneratedRegex(@"\([^)]*\)")]

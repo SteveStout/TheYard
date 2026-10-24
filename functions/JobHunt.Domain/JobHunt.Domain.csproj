@@ -19,6 +19,7 @@
     <Using Include="JobHunt.Domain.Features.Merge" />
     <Using Include="JobHunt.Domain.Features.Sheet" />
     <Using Include="JobHunt.Domain.Features.Card" />
+    <Using Include="JobHunt.Domain.Features.Campaign" />
     <Using Include="TheYard.Domain.Features.Admin" />
   </ItemGroup>
 </Project>

@@ -21,6 +21,7 @@
     <Using Include="JobHunt.Domain.Features.Merge" />
     <Using Include="JobHunt.Domain.Features.Sheet" />
     <Using Include="JobHunt.Domain.Features.Card" />
+    <Using Include="JobHunt.Domain.Features.Campaign" />
     <Using Include="JobHunt.Application" />
     <Using Include="JobHunt.Application.Features.Ats" />
     <Using Include="JobHunt.Application.Features.Leads" />

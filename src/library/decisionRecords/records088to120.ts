@@ -220,4 +220,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '117',
   },
+  adrCampaignSends: {
+    title: 'ADR: The campaign sends, the model writes rows',
+    menuLabel: 'ADR: The campaign sends, the model writes rows',
+    url: '/api/docs/adr-the-campaign-sends-the-model-writes-rows',
+    kind: 'adr',
+    number: '118',
+  },
 } as const satisfies Record<string, RecordEntry>;
