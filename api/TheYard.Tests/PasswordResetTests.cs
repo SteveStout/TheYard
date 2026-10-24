@@ -283,7 +283,7 @@ public class EmailSenderTests
     public void A_missing_or_placeholder_setting_means_no_sender_and_no_credential(string? endpoint, string? from)
     {
         int asked = 0;
-        var sender = AcsEmailSender.FromConfiguration(endpoint, from, () => { asked++; return CosmosStore.CredentialFor("azure-cli", ""); }, NullLogger<AcsEmailSender>.Instance);
+        var sender = AcsEmailSender.FromConfiguration(endpoint, from, () => { asked++; return CosmosConnection.CredentialFor("azure-cli", ""); }, NullLogger<AcsEmailSender>.Instance);
 
         Assert.Same(NullEmailSender.Instance, sender);
         Assert.False(sender.Configured);
@@ -297,7 +297,7 @@ public class EmailSenderTests
         var sender = AcsEmailSender.FromConfiguration(
             " https://acs.example.communication.azure.com ",
             " DoNotReply@example.azurecomm.net ",
-            () => { asked++; return CosmosStore.CredentialFor("azure-cli", ""); },
+            () => { asked++; return CosmosConnection.CredentialFor("azure-cli", ""); },
             NullLogger<AcsEmailSender>.Instance);
 
         Assert.IsType<AcsEmailSender>(sender);
@@ -309,10 +309,10 @@ public class EmailSenderTests
     [Fact]
     public void The_credential_rule_is_the_identity_when_the_setting_says_so_and_the_cli_otherwise()
     {
-        Assert.Equal("ManagedIdentityCredential", CosmosStore.CredentialFor("managed-identity", "00000000-0000-0000-0000-000000000000").GetType().Name);
-        Assert.Equal("ManagedIdentityCredential", CosmosStore.CredentialFor("Managed-Identity", "00000000-0000-0000-0000-000000000000").GetType().Name);
-        Assert.Equal("AzureCliCredential", CosmosStore.CredentialFor("azure-cli", "").GetType().Name);
-        Assert.Equal("AzureCliCredential", CosmosStore.CredentialFor("", "").GetType().Name);
+        Assert.Equal("ManagedIdentityCredential", CosmosConnection.CredentialFor("managed-identity", "00000000-0000-0000-0000-000000000000").GetType().Name);
+        Assert.Equal("ManagedIdentityCredential", CosmosConnection.CredentialFor("Managed-Identity", "00000000-0000-0000-0000-000000000000").GetType().Name);
+        Assert.Equal("AzureCliCredential", CosmosConnection.CredentialFor("azure-cli", "").GetType().Name);
+        Assert.Equal("AzureCliCredential", CosmosConnection.CredentialFor("", "").GetType().Name);
     }
     // #endregion sender
 }

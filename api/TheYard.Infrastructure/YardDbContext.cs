@@ -1,11 +1,15 @@
-// YardDbContext is one class in two files. This one holds the tables and the model: how each
-// row maps to its table on either provider, and why the two providers differ where they do.
-//   YardDbContext.Columns.cs   the named column widths and the auction-start converter
-//   YardDbContext.Standings.cs the Standings table's model
-//   YardDbContext.Catalogue.cs the Catalogue table's model, the hundred thousand the store pages
+// YardDbContext holds the tables and the model: how each row maps to its table on either provider,
+// and why the two providers differ where they do. The parts of the model with jobs of their own are
+// types beside it in Shared/Stores, each called from OnModelCreating:
+//   YardColumns.cs     the named column widths and the auction-start converter
+//   StandingsModel.cs  the Standings table
+//   CatalogueModel.cs  the Catalogue table, the hundred thousand the store pages, and its words
+//   BlogModel.cs       the blog's five tables
+//   ActivityModel.cs   the activity counters
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using TheYard.Infrastructure.Shared.Stores;
 
 namespace TheYard.Infrastructure;
 
@@ -29,7 +33,7 @@ namespace TheYard.Infrastructure;
 /// also why migrations are generated per provider into their own assemblies:
 /// the two models are not the same model, so they cannot share one snapshot.
 /// </summary>
-public sealed partial class YardDbContext(DbContextOptions<YardDbContext> options)
+public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
     : IdentityDbContext<YardUser>(options)
 {
     /// <summary>The 200-record seed catalogue. Read whole, once, at startup.</summary>
@@ -49,6 +53,27 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
 
     /// <summary>Requests per visitor token per store per UTC day, behind a key on the way out.</summary>
     public DbSet<ActivityVisitorRow> ActivityVisitors => Set<ActivityVisitorRow>();
+
+    /// <summary>All hundred thousand vehicles with their slot, read a page at a time.</summary>
+    public DbSet<CatalogueRow> Catalogue => Set<CatalogueRow>();
+
+    /// <summary>Every word of every vehicle's searchable text, one row each, what a typed word is sought in.</summary>
+    public DbSet<CatalogueWordRow> CatalogueWords => Set<CatalogueWordRow>();
+
+    /// <summary>The blog's posts.</summary>
+    public DbSet<PostRow> Posts => Set<PostRow>();
+
+    /// <summary>The posts' images.</summary>
+    public DbSet<PostImageRow> PostImages => Set<PostImageRow>();
+
+    /// <summary>The posts' tags.</summary>
+    public DbSet<PostTagRow> PostTags => Set<PostTagRow>();
+
+    /// <summary>The read log.</summary>
+    public DbSet<PostViewRow> PostViews => Set<PostViewRow>();
+
+    /// <summary>The event log.</summary>
+    public DbSet<PostEventRow> PostEvents => Set<PostEventRow>();
 
     // #region model
     /// <summary>
@@ -76,26 +101,26 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
         // application creates are GUIDs. The widths here exist to match
         // api/TheYard.Database, which is the authority, and a test holds them
         // to it (ADR: Data first, and the database in source control).
-        model.Entity<YardUser>().Property(user => user.Id).HasMaxLength(IdentityKeyLength);
-        model.Entity<IdentityRole>().Property(role => role.Id).HasMaxLength(IdentityKeyLength);
-        model.Entity<IdentityUserClaim<string>>().Property(claim => claim.UserId).HasMaxLength(IdentityKeyLength);
-        model.Entity<IdentityRoleClaim<string>>().Property(claim => claim.RoleId).HasMaxLength(IdentityKeyLength);
+        model.Entity<YardUser>().Property(user => user.Id).HasMaxLength(YardColumns.IdentityKeyLength);
+        model.Entity<IdentityRole>().Property(role => role.Id).HasMaxLength(YardColumns.IdentityKeyLength);
+        model.Entity<IdentityUserClaim<string>>().Property(claim => claim.UserId).HasMaxLength(YardColumns.IdentityKeyLength);
+        model.Entity<IdentityRoleClaim<string>>().Property(claim => claim.RoleId).HasMaxLength(YardColumns.IdentityKeyLength);
         model.Entity<IdentityUserLogin<string>>(login =>
         {
-            login.Property(row => row.LoginProvider).HasMaxLength(IdentityKeyLength);
-            login.Property(row => row.ProviderKey).HasMaxLength(IdentityKeyLength);
-            login.Property(row => row.UserId).HasMaxLength(IdentityKeyLength);
+            login.Property(row => row.LoginProvider).HasMaxLength(YardColumns.IdentityKeyLength);
+            login.Property(row => row.ProviderKey).HasMaxLength(YardColumns.IdentityKeyLength);
+            login.Property(row => row.UserId).HasMaxLength(YardColumns.IdentityKeyLength);
         });
         model.Entity<IdentityUserRole<string>>(role =>
         {
-            role.Property(row => row.UserId).HasMaxLength(IdentityKeyLength);
-            role.Property(row => row.RoleId).HasMaxLength(IdentityKeyLength);
+            role.Property(row => row.UserId).HasMaxLength(YardColumns.IdentityKeyLength);
+            role.Property(row => row.RoleId).HasMaxLength(YardColumns.IdentityKeyLength);
         });
         model.Entity<IdentityUserToken<string>>(token =>
         {
-            token.Property(row => row.UserId).HasMaxLength(IdentityKeyLength);
-            token.Property(row => row.LoginProvider).HasMaxLength(IdentityKeyLength);
-            token.Property(row => row.Name).HasMaxLength(IdentityKeyLength);
+            token.Property(row => row.UserId).HasMaxLength(YardColumns.IdentityKeyLength);
+            token.Property(row => row.LoginProvider).HasMaxLength(YardColumns.IdentityKeyLength);
+            token.Property(row => row.Name).HasMaxLength(YardColumns.IdentityKeyLength);
         });
 
         model.Entity<VehicleRow>(vehicle =>
@@ -124,7 +149,7 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
             // nonclustered. This model maps to that schema and does not build it
             // (ADR: Data first, and the database in source control).
 
-            vehicle.Property(row => row.Id).HasMaxLength(IdLength);
+            vehicle.Property(row => row.Id).HasMaxLength(YardColumns.IdLength);
 
             // Seventeen characters, from a defined alphabet, by ISO 3779. This
             // is the one string in the catalogue whose length and character set
@@ -168,7 +193,7 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
                 // database rather than only in C#. The property stays a string
                 // for the same reason the grade stays a double.
                 vehicle.Property(row => row.AuctionStart)
-                    .HasConversion(AuctionStartToDateTime)
+                    .HasConversion(YardColumns.AuctionStartToDateTime)
                     .HasColumnType("datetime2(0)");
             }
 
@@ -202,8 +227,8 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
 
             // Identity's key column is nvarchar(450) on SQL Server, and a
             // foreign key has to match the column it points at.
-            bid.Property(row => row.UserId).HasMaxLength(IdentityKeyLength);
-            bid.Property(row => row.VehicleId).HasMaxLength(IdLength);
+            bid.Property(row => row.UserId).HasMaxLength(YardColumns.IdentityKeyLength);
+            bid.Property(row => row.VehicleId).HasMaxLength(YardColumns.IdLength);
 
             // A real foreign key, and the only one this model can honestly
             // carry. Deleting an account takes its bids with it, which is the
@@ -250,43 +275,12 @@ public sealed partial class YardDbContext(DbContextOptions<YardDbContext> option
             }
         });
 
-        // #region activity-model
-        // The activity counters (ADR: Site activity, and the line an address
-        // does not cross). Natural keys again: an hour on a store is one row,
-        // a visitor token on a store on a day is one row. The counters move by
-        // ExecuteUpdate so two containers writing the same Azure SQL row add
-        // rather than overwrite; the paths column is a JSON object the store
-        // reads, merges and writes back, bounded at twenty entries, and the
-        // one place a batch can lose to another batch, which the record says.
-        model.Entity<ActivityHourRow>(hour =>
-        {
-            hour.ToTable("ActivityHours");
-            hour.HasKey(row => new { row.Store, row.Hour });
-            hour.Property(row => row.Store).HasMaxLength(StoreKeyLength);
-            hour.Property(row => row.Paths).HasMaxLength(PathsLength);
-        });
+        ActivityModel.Configure(model);
 
-        model.Entity<ActivityVisitorRow>(visitor =>
-        {
-            visitor.ToTable("ActivityVisitors");
-            visitor.HasKey(row => new { row.Store, row.Day, row.Visitor });
-            visitor.Property(row => row.Store).HasMaxLength(StoreKeyLength);
-            // yyyy-MM-dd, and nothing else is ever written here.
-            visitor.Property(row => row.Day).HasMaxLength(10);
-            // The token: the first 16 bytes of a keyed hash, as 32 hex characters.
-            visitor.Property(row => row.Visitor).HasMaxLength(32);
-            // Three octets and an x, or the same shape for an address that
-            // could not be read: never four octets.
-            visitor.Property(row => row.Network).HasMaxLength(NetworkLength);
-            visitor.Property(row => row.Paths).HasMaxLength(PathsLength);
-            visitor.Property(row => row.Sources).HasMaxLength(PathsLength);
-        });
-        // #endregion activity-model
-
-        ConfigureStandings(model);
-        ConfigureCatalogue(model, sqlServer);
-        ConfigureBlog(model, sqlServer);
-        ConfigureCatalogueWords(model);
+        StandingsModel.ConfigureStandings(model);
+        CatalogueModel.ConfigureCatalogue(model, sqlServer);
+        BlogModel.ConfigureBlog(model, sqlServer);
+        CatalogueModel.ConfigureCatalogueWords(model);
     }
     // #endregion model
 }

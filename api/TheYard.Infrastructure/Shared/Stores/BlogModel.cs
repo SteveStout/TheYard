@@ -1,31 +1,16 @@
-// The model for the blog's five tables (ADR: Every LinkedIn post is also a blog post). A file of its own
-// because YardDbContext.cs holds the rest of the model. On SQL Server they sit in the blog schema the SQL
+// The model for the blog's five tables (ADR: Every LinkedIn post is also a blog post). Its own type, called from
+// YardDbContext.OnModelCreating, so the blog's tables change here and nowhere else. On SQL Server they sit in the blog schema the SQL
 // project declares; SQLite has no schemas, so there they are plain tables of the same names.
 using Microsoft.EntityFrameworkCore;
 
-namespace TheYard.Infrastructure;
+namespace TheYard.Infrastructure.Shared.Stores;
 
-/// <summary>The blog's part of the model; the context itself is described in YardDbContext.cs.</summary>
-public sealed partial class YardDbContext
+/// <summary>The blog's five tables' part of the relational model.</summary>
+public static class BlogModel
 {
-    /// <summary>The blog's posts.</summary>
-    public DbSet<PostRow> Posts => Set<PostRow>();
-
-    /// <summary>The posts' images.</summary>
-    public DbSet<PostImageRow> PostImages => Set<PostImageRow>();
-
-    /// <summary>The posts' tags.</summary>
-    public DbSet<PostTagRow> PostTags => Set<PostTagRow>();
-
-    /// <summary>The read log.</summary>
-    public DbSet<PostViewRow> PostViews => Set<PostViewRow>();
-
-    /// <summary>The event log.</summary>
-    public DbSet<PostEventRow> PostEvents => Set<PostEventRow>();
-
     // #region blog-model
     /// <summary>The blog's tables, in the blog schema on SQL Server.</summary>
-    private static void ConfigureBlog(ModelBuilder model, bool sqlServer)
+    internal static void ConfigureBlog(ModelBuilder model, bool sqlServer)
     {
         string? schema = sqlServer ? "blog" : null;
         model.Entity<PostRow>(post =>

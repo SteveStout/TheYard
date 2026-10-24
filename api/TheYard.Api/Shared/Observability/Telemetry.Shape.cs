@@ -1,13 +1,13 @@
 // How TelemetryReader turns Application Insights' answer into the Admin card: one table of
 // columns and rows becomes the summary, the slowest routes, the exceptions and the browser errors.
-// It is its own file because reading a Kusto table by column name is a job of its own, separate
-// from asking the question. The reader starts in Telemetry.cs.
+// Its own type because reading a Kusto table by column name is a job of its own, separate from
+// asking the question and from caching the answer. The reader is in Telemetry.cs.
 using System.Text.Json;
 
 namespace TheYard.Api.Shared.Observability;
 
-/// <summary>The shaping of query results in TelemetryReader; the type and what it is for are described in Telemetry.cs.</summary>
-public sealed partial class TelemetryReader
+/// <summary>Application Insights' one table, turned into the pieces the Admin card renders.</summary>
+public static class TelemetryShape
 {
     // #region shape
     /// <summary>
@@ -18,7 +18,7 @@ public sealed partial class TelemetryReader
     /// columns a row does not have, so each branch reads only its own. The
     /// site and the scope sentence say whose requests the figures are.
     /// </summary>
-    private static object Shape(JsonDocument body, string? siteName)
+    internal static object Shape(JsonDocument body, string? siteName)
     {
         var table = body.RootElement.GetProperty("tables")[0];
         var columns = table.GetProperty("columns").EnumerateArray()
@@ -90,7 +90,7 @@ public sealed partial class TelemetryReader
             available = true,
             window = "the last hour",
             site = siteName,
-            scope = ScopeFor(siteName),
+            scope = TelemetryKql.ScopeFor(siteName),
             summary = summary ?? new { total = 0, failed = 0, p50_ms = (double?)null, p95_ms = (double?)null },
             slowest,
             exceptions,

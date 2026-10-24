@@ -28,7 +28,7 @@ internal static class CosmosLive
     public static (CosmosStore Store, StoreRingBuffer Log) Open()
     {
         var log = new StoreRingBuffer(500);
-        var store = CosmosStore.Connect(
+        var store = CosmosConnection.Connect(
             Endpoint,
             Environment.GetEnvironmentVariable("Cosmos__Database") ?? "theyard",
             "tests-",
@@ -41,7 +41,7 @@ internal static class CosmosLive
     public static async Task<CosmosStore> Prepared()
     {
         var (store, _) = Open();
-        var state = await store.PrepareAsync(
+        var state = await store.Starting.PrepareAsync(
             new JsonFileVehicleSource(Repo.DataFile("vehicles.json")),
             new JsonFilePhotoManifestSource(Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json")));
         Assert.True(state.Ready, state.Note);
@@ -62,13 +62,13 @@ public class CosmosStoreTests
         var vehicles = new JsonFileVehicleSource(Repo.DataFile("vehicles.json"));
         var photos = new JsonFilePhotoManifestSource(Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json"));
 
-        var first = await store.PrepareAsync(vehicles, photos);
+        var first = await store.Starting.PrepareAsync(vehicles, photos);
         Assert.True(first.Ready, first.Note);
         Assert.StartsWith("Azure Cosmos DB, found 4 containers", first.Note);
         Assert.Contains("now holding 200 and 50", first.Note);
 
         // The second boot finds the seed and writes nothing, whatever the first one did.
-        var second = await store.PrepareAsync(vehicles, photos);
+        var second = await store.Starting.PrepareAsync(vehicles, photos);
         Assert.True(second.Ready, second.Note);
         Assert.Contains("inserting 0 vehicles and 0 photos", second.Note);
         Assert.Equal(0, second.SeedRequestUnits);
@@ -265,7 +265,7 @@ public class CosmosStoreTests
         await store.DeleteAsync<VehicleDocument>(store.Vehicles, missing.Id, missing.Make, "pinned to the make");
         Assert.Equal(before.Count - 1, (await new CosmosVehicleSource(store).LoadAsync()).Count);
 
-        var seeded = await store.EnsureSeededAsync(seedVehicles, seedPhotos);
+        var seeded = await store.Starting.EnsureSeededAsync(seedVehicles, seedPhotos);
 
         Assert.Equal(before.Count, seeded.VehiclesInserted);
         Assert.Equal(before.Count, seeded.VehiclesTotal);

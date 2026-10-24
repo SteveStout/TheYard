@@ -206,11 +206,11 @@ public sealed class AdminEndpointsUsageTests(AdminEndpointsUsageTests.KeyedHost 
     [Fact]
     public void The_wire_reads_kind_and_at_before_the_domain_is_asked()
     {
-        var wire = new AdminEndpoints.UsageWire("Personal", "api", "m", 1, 2, 3, 4, 5, null, "r", null, null, null);
-        var unread = AdminEndpoints.Read(wire);
+        var wire = new AdminUsageRoutes.UsageWire("Personal", "api", "m", 1, 2, 3, 4, 5, null, "r", null, null, null);
+        var unread = AdminUsageRoutes.Read(wire);
         Assert.Null(unread.Record);
         Assert.Equal("at is an ISO 8601 instant.", unread.Wrong);
-        var read = AdminEndpoints.Read(wire with { At = DateTimeOffset.UnixEpoch });
+        var read = AdminUsageRoutes.Read(wire with { At = DateTimeOffset.UnixEpoch });
         Assert.Equal(UsageKind.Api, read.Record!.Kind);
     }
 }

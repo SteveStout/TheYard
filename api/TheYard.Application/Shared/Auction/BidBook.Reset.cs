@@ -36,7 +36,7 @@ public sealed partial class BidBook
         {
             // The store is asked even when this process holds nothing for the
             // caller, because the caller may have bid on the other site.
-            string[] touched = _byUser.TryGetValue(userId, out var mine) ? mine.Keys.ToArray() : [];
+            string[] touched = _ledger.TouchedBy(userId);
             var orphaned = new List<string>();
             // The store first, then memory, the same rule the bid path follows.
             // Clearing the dictionaries before the store is asked would leave a
@@ -45,7 +45,7 @@ public sealed partial class BidBook
             // no memory of the project). The store drops the standing of every
             // vehicle this person touched along with their rows.
             await _store.ClearAsync(userId);
-            _byUser.TryRemove(userId, out _);
+            _ledger.Forget(userId);
 
             foreach (string vehicleId in touched)
             {

@@ -1,7 +1,8 @@
 // The catalogue port's typed words: a word of three characters or more is a range on the
-// CatalogueWords table's word index, and the table is filled beside the Catalogue table. A file of
-// its own because EfVehicleCatalogue.cs holds the other queries, and whether the words are there
-// yet is a question of its own (ADR: The store does the work, the addendum on a typed word as a seek).
+// CatalogueWords table's word index, and the table is filled beside the Catalogue table. Its own
+// type, beside EfVehicleCatalogue, because whether the words are there yet is a question with state
+// of its own, the check and the backfill, that changes apart from the catalogue's other queries (ADR:
+// The store does the work, the addendum on a typed word as a seek).
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application.Shared.Auction;
@@ -9,14 +10,21 @@ using TheYard.Domain.Shared.Auction;
 
 namespace TheYard.Infrastructure.Shared.Auction;
 
-/// <summary>The words table's reads and fill; the class is described in EfVehicleCatalogue.cs.</summary>
-public sealed partial class EfVehicleCatalogue
+/// <summary>The relational catalogue's words: the seek a typed word reads, and the fill and backfill of the table.</summary>
+/// <param name="contexts">A context per operation.</param>
+/// <param name="target">How many vehicles the catalogue is.</param>
+/// <param name="local">True for a SQLite file this process owns.</param>
+/// <param name="fillsWords">True for the site that fills this store's catalogue.</param>
+public sealed class EfCatalogueWords(IDbContextFactory<YardDbContext> contexts, int target, bool local, bool fillsWords)
 {
     // Whether every stored row's words are in CatalogueWords. Until they are, a word is looked for
     // in each row's text, which is slow and answers the same.
     private volatile bool _wordsReady;
     private long _wordsCheckedTicks;
     private int _backfilling;
+
+    /// <summary>Makes the next check look at once, so the words a fill just wrote are read.</summary>
+    internal void LookAgain() => Interlocked.Exchange(ref _wordsCheckedTicks, 0);
 
     /// <summary>The backfill of the words for rows stored before the table existed, while one runs. A test awaits it.</summary>
     public Task? WordsFilling { get; private set; }
@@ -26,7 +34,7 @@ public sealed partial class EfVehicleCatalogue
     /// by each row's text otherwise, as the start of a word or, under three characters, anywhere
     /// (VehicleSearchIndex.Holds, which every in-memory filter asks too).
     /// </summary>
-    private IQueryable<CatalogueRow> Holding(YardDbContext db, IQueryable<CatalogueRow> rows, string text, bool live, bool upcoming, bool ended, long d)
+    internal IQueryable<CatalogueRow> Holding(YardDbContext db, IQueryable<CatalogueRow> rows, string text, bool live, bool upcoming, bool ended, long d)
     {
         if (text.Length >= VehicleSearchIndex.WordLength && _wordsReady && !text.Contains(' ', StringComparison.Ordinal))
         {
@@ -56,7 +64,7 @@ public sealed partial class EfVehicleCatalogue
     /// raised by one, because SQLite's LIKE ignores case and so reads no index on a column that
     /// compares as bytes; the words are lowercased, and so is the token.
     /// </summary>
-    private static IQueryable<CatalogueWordRow> WordsInRange(YardDbContext db, string text)
+    internal static IQueryable<CatalogueWordRow> WordsInRange(YardDbContext db, string text)
     {
         string upper = text[^1] == char.MaxValue ? text + char.MaxValue : text[..^1] + (char)(text[^1] + 1);
         return db.CatalogueWords.Where(w => string.Compare(w.Word, text) >= 0 && string.Compare(w.Word, upper) < 0);
@@ -67,7 +75,7 @@ public sealed partial class EfVehicleCatalogue
     /// row has its words, because the fill and the backfill both write in the order of the place.
     /// When they are not, the site that fills the catalogue starts the backfill.
     /// </summary>
-    private async Task CheckWordsAsync(YardDbContext db, int filled, bool now = false)
+    internal async Task CheckWordsAsync(YardDbContext db, int filled, bool now = false)
     {
         if (_wordsReady)
         {
@@ -92,7 +100,7 @@ public sealed partial class EfVehicleCatalogue
     }
 
     /// <summary>Before a query with a typed word on a site still waiting for the words: look again, once a minute.</summary>
-    private async Task WordsBeforeQueryAsync(YardDbContext db, CatalogueFilter filter)
+    internal async Task WordsBeforeQueryAsync(YardDbContext db, CatalogueFilter filter)
     {
         if (!_wordsReady && filter.Tokens.Count > 0)
         {
@@ -101,7 +109,7 @@ public sealed partial class EfVehicleCatalogue
     }
 
     /// <summary>The words for a SQLite file's rows stored before the table existed, split here and written at once.</summary>
-    private async Task BackfillFileAsync(int filled)
+    internal async Task BackfillFileAsync(int filled)
     {
         await using var db = await contexts.CreateDbContextAsync();
         var held = (await db.CatalogueWords.Select(w => w.Seq).Distinct().ToListAsync()).ToHashSet();
@@ -122,7 +130,7 @@ public sealed partial class EfVehicleCatalogue
     /// backfill leaves the Basic tier's log rate for visitors. One at a time; a backfill that
     /// failed is started again by the next minute's check.
     /// </summary>
-    private void StartBackfill(int filled)
+    internal void StartBackfill(int filled)
     {
         if (Interlocked.Exchange(ref _backfilling, 1) == 1)
         {
@@ -157,7 +165,7 @@ public sealed partial class EfVehicleCatalogue
     }
 
     /// <summary>A SQLite file's word rows, in one transaction and one prepared INSERT OR IGNORE a row.</summary>
-    private async Task FillWordsFileAsync(IReadOnlyList<CatalogueWordRow> words)
+    internal async Task FillWordsFileAsync(IReadOnlyList<CatalogueWordRow> words)
     {
         if (words.Count == 0)
         {
@@ -172,7 +180,7 @@ public sealed partial class EfVehicleCatalogue
     }
 
     /// <summary>The prepared INSERT OR IGNORE of word rows, inside a transaction the caller holds.</summary>
-    private static async Task WriteWordsAsync(System.Data.Common.DbConnection connection, System.Data.Common.DbTransaction transaction, IEnumerable<CatalogueWordRow> words)
+    internal static async Task WriteWordsAsync(System.Data.Common.DbConnection connection, System.Data.Common.DbTransaction transaction, IEnumerable<CatalogueWordRow> words)
     {
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;

@@ -122,7 +122,7 @@ async Task<int> SeedAsync()
 async Task<int> QueryAsync()
 {
     var log = new ListLog();
-    var store = CosmosStore.Connect(endpoint, database, "", "azure-cli", "2888a6ca-be1c-46a5-a1de-c666b1d193e5", log);
+    var store = CosmosConnection.Connect(endpoint, database, "", "azure-cli", "2888a6ca-be1c-46a5-a1de-c666b1d193e5", log);
     var target = store.Vehicles.Database.GetContainer(container);
     var ranges = await target.GetFeedRangesAsync();
     Console.WriteLine($"container {container}: {ranges.Count} physical partition(s)");

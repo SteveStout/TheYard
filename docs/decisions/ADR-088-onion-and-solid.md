@@ -141,3 +141,23 @@ What this rung of the review also asked and is not done here: the 300-line rule 
 
 The I in SOLID was held by review until this version. From 1.0.4.39 every request is a query or a command (ADR: A request is a query or a command), and a query handler may not be handed a port whose name ends in `Store` or `Writer`, so a port a query needs half of is split: `IBlogReader` under `IBlogStore`, `IAccountReader` under `IAccountStore`, `ILinkOpensReader` under `ILinkOpens`, and the auction's three parts each behind a reading and a writing interface (`IStockReader`; `IBidReader` and `IBidWriter`; `IRoomReader` and `IRoomWriter`). `CqrsTests` holds it. The three services this record named as the use cases (`InventoryService`, `BidService`, `MarketService`) and `Auction`, which composed them, are gone: the bodies moved whole into `Stock`, `BidBook` and `Room`, the composition into `StandingReader` and the bid handlers, and the regions the records above quote moved with them under the same names. The per-type 300-line rule this record's addendum of 1.0.4.24 left open still waits for its version; `BidBook` and `Stock` are its first two cases.
 
+## Addendum, 2026-10-23 (1.0.4.47): the 300-line rule counts a type, not a file
+
+The addendum of 1.0.4.24 left this open and the one of 1.0.4.39 named its first two cases. From 1.0.4.47 `FileShapeTests.No_production_type_runs_past_three_hundred_lines_across_its_parts` adds up every top-level C# type under `api/` across all of its partial files, from the doc comment above it to its closing brace, and fails the build past 300. A partial class cut into five files of 150 lines was still one class of 750 doing more than one job, and the file rule could not see it.
+
+Nine types were over at 1.0.4.46, and each was cut by job into types of its own rather than into more partial files:
+
+| type at 1.0.4.46 | lines | the job taken out, and where it went |
+| --- | ---: | --- |
+| `Stock` | 771 | the choice of store or list and the fill (`StockSource`), the store's answers through the five-second cache with and without the moved vehicles (`CataloguePages`), the filter in the store's spelling (`CatalogueFilterResolver`) |
+| `CosmosStore` | 568 | the client and the credential (`CosmosConnection`), the container check, seed and probe (`CosmosStoreStartup`, handed out as `Starting`), the wrapper that times every call and writes its charge (`CosmosOperationLog`, handed out as `Recorder`) |
+| `CosmosVehicleCatalogue` | 562 | the kept places of every order (`CosmosCatalogueKeysets`) and the live segment's (`CosmosCatalogueLive`) |
+| `EfVehicleCatalogue` | 515 | the typed words' table (`EfCatalogueWords`) and the fill (`EfCatalogueFill`) |
+| `YardDbContext` | 513 | the column names (`YardColumns`) and each table group's model (`StandingsModel`, `CatalogueModel`, `BlogModel`, `ActivityModel`) |
+| `BidBook` | 468 | the standings it holds and reads (`BidLedger`) and the pure fold of a bid into a standing (`StandingFold`); `BidBook` keeps the writes and the gate |
+| `AdminEndpoints` | 445 | one route class per card family (`AdminActivityRoutes`, `AdminCostRoutes`, `AdminFollowsRoutes`, `AdminObservabilityRoutes`, `AdminEvidenceRoutes`, `AdminUsageRoutes`); `AdminEndpoints` keeps the map |
+| `ProofRunner` | 406 | the timed requests a round makes (`ProofRequests`) |
+| `TelemetryReader` | 317 | the query text (`TelemetryKql`) and the answer's shape (`TelemetryShape`) |
+
+Nothing a visitor reads changed: every cut moved bodies whole, the regions the records quote moved with them under the same names (the live fences were repointed), and the full suite passed after each cut. The largest type is now 294 lines (`RequestPipeline`). The test only counts; what a job is stays a judgement, made here one type at a time with the reason in each new file's header.
+

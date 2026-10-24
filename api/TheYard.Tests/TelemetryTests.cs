@@ -103,7 +103,7 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
               "columns":[{"name":"part"},{"name":"total"},{"name":"failed"},{"name":"p50"},{"name":"p95"},{"name":"newest_at"}],
               "rows":[["requests",0,0,null,null,null],["newest",null,null,null,null,"2026-09-25T18:04:11.52Z"]]}]}
             """);
-        var shape = typeof(TelemetryReader).GetMethod("Shape", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var shape = typeof(TelemetryShape).GetMethod("Shape", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(shape);
 
         string json = JsonSerializer.Serialize(shape!.Invoke(null, [body, null]));
@@ -163,22 +163,24 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
         Assert.Contains("both sites together", both, StringComparison.Ordinal);
     }
 
-    /// <summary>One of the reader's private static helpers, called by name, for the same reason the query is read by reflection.</summary>
+    /// <summary>One of the reader's internal static helpers, in the query's type or the shaping's,, called by name, for the same reason the query is read by reflection.</summary>
     private static T InvokePrivate<T>(string name, params object?[] arguments)
     {
-        var method = typeof(TelemetryReader).GetMethod(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var method = new[] { typeof(TelemetryKql), typeof(TelemetryShape) }
+            .Select(type => type.GetMethod(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static))
+            .FirstOrDefault(found => found is not null);
         Assert.NotNull(method);
         return (T)method!.Invoke(null, arguments)!;
     }
 
     /// <summary>
-    /// The query is private, which is right: it is an implementation detail of
+    /// The query is internal, which is right: it is an implementation detail of
     /// the reader. Reflection is the narrow exception a test earns when the
     /// alternative is making the field public for the test's convenience.
     /// </summary>
     private static string ReadQuery()
     {
-        var field = typeof(TelemetryReader).GetField(
+        var field = typeof(TelemetryKql).GetField(
             "Query",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.NotNull(field);

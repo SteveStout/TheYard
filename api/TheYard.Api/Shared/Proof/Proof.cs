@@ -1,7 +1,7 @@
 // The performance proof starts here: the runner's state, its limits, and how a run starts in
 // the background. The rest of the runner and the types it hands back live beside it:
 //   ProofRunner.Rounds.cs   - one run, the accounts it signs in with and its paired rounds
-//   ProofRunner.Requests.cs - one timed request, and reading what each answer says
+//   ProofRequests.cs        - one timed request, and reading what each answer says
 //   ProofClients.cs         - where the proof's requests go
 //   ProofResult.cs          - the result, its rows and cells, and the verdict on each row
 namespace TheYard.Api.Shared.Proof;
@@ -53,6 +53,9 @@ public sealed partial class ProofRunner(
     /// from being asked to prove the same thing twice at once.
     /// </summary>
     public static readonly TimeSpan Cooldown = TimeSpan.FromMinutes(1);
+
+    /// <summary>How each step is measured and each answer read.</summary>
+    private readonly ProofRequests _requests = new(sqlLog, storeLog);
 
     /// <summary>The one-at-a-time gate: a run holds it from start to finish.</summary>
     private readonly SemaphoreSlim _gate = new(1, 1);

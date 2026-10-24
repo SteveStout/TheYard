@@ -1,14 +1,14 @@
-// The catalogue port's fill on a SQLite file, and the page order a typed word is read in. A file of
-// its own because EfVehicleCatalogue.cs holds the queries and the two are read for different reasons
-// (ADR: The store does the work).
+// The catalogue's fill: a SQLite file's in one prepared statement, Azure SQL Database's through the
+// model. Its own type, beside EfVehicleCatalogue, because writing the table changes for reasons the
+// queries never do (ADR: The store does the work).
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application.Shared.Auction;
 using TheYard.Domain.Shared.Auction;
 
 namespace TheYard.Infrastructure.Shared.Auction;
 
-/// <summary>The SQLite file's fill and the word order; the class is described in EfVehicleCatalogue.cs.</summary>
-public sealed partial class EfVehicleCatalogue
+/// <summary>The relational catalogue's fill, each row with its words beside it.</summary>
+public static class EfCatalogueFill
 {
     /// <summary>The Catalogue table's columns, in the order the file fill writes them.</summary>
     private static readonly string[] Columns =
@@ -25,7 +25,9 @@ public sealed partial class EfVehicleCatalogue
     /// which writes a hundred thousand rows in seconds where change tracking takes minutes. Only
     /// for a file this process owns; Azure SQL Database is filled through the model, at its pace.
     /// </summary>
-    private async Task FillFileAsync(IReadOnlyList<CatalogueEntry> batch)
+    /// <param name="contexts">A context per operation.</param>
+    /// <param name="batch">The rows to store.</param>
+    internal static async Task FillFileAsync(IDbContextFactory<YardDbContext> contexts, IReadOnlyList<CatalogueEntry> batch)
     {
         await using var db = await contexts.CreateDbContextAsync();
         var connection = db.Database.GetDbConnection();
@@ -60,20 +62,27 @@ public sealed partial class EfVehicleCatalogue
             await command.ExecuteNonQueryAsync();
         }
         // Each row's words in the same transaction, so a row is never stored without them.
-        await WriteWordsAsync(connection, transaction, batch.SelectMany(entry => CatalogueWords.For(entry.Seq, VehicleSearchIndex.TextFor(entry.Vehicle))));
+        await EfCatalogueWords.WriteWordsAsync(connection, transaction, batch.SelectMany(entry => CatalogueWords.For(entry.Seq, VehicleSearchIndex.TextFor(entry.Vehicle))));
         await transaction.CommitAsync();
     }
 
-    /// <summary>The same order as <c>Ordered</c>, each key written as "+ 0" so no index serves it and the words index is read alone.</summary>
-    private static IQueryable<CatalogueRow> Unindexed(IQueryable<CatalogueRow> rows, CatalogueOrder order) => order switch
+    /// <summary>Azure SQL Database's fill: the batch's rows the table does not already hold, and their words, in one save.</summary>
+    /// <param name="contexts">A context per operation.</param>
+    /// <param name="batch">The rows to store.</param>
+    internal static async Task FillModelAsync(IDbContextFactory<YardDbContext> contexts, IReadOnlyList<CatalogueEntry> batch)
     {
-        CatalogueOrder.EndAscending => rows.OrderBy(row => row.EndOffsetMs + 0).ThenBy(row => row.Seq + 0),
-        CatalogueOrder.StartAscending => rows.OrderBy(row => row.StartOffsetMs + 0).ThenBy(row => row.Seq + 0),
-        CatalogueOrder.EndDescending => rows.OrderByDescending(row => row.EndOffsetMs + 0).ThenBy(row => row.Seq + 0),
-        CatalogueOrder.PriceAscending => rows.OrderBy(row => row.Price + 0).ThenBy(row => row.Seq + 0),
-        CatalogueOrder.PriceDescending => rows.OrderByDescending(row => row.Price + 0).ThenBy(row => row.Seq + 0),
-        CatalogueOrder.ConditionDescending => rows.OrderByDescending(row => row.ConditionGrade + 0).ThenBy(row => row.Seq + 0),
-        CatalogueOrder.BidsDescending => rows.OrderByDescending(row => row.BidCount + 0).ThenBy(row => row.Seq + 0),
-        _ => rows.OrderBy(row => row.Seq + 0),
-    };
+        await using var db = await contexts.CreateDbContextAsync();
+        db.ChangeTracker.AutoDetectChangesEnabled = false;
+        int low = batch.Min(entry => entry.Seq);
+        int high = batch.Max(entry => entry.Seq);
+        var held = (await db.Catalogue.AsNoTracking()
+            .Where(row => row.Seq >= low && row.Seq <= high)
+            .Select(row => row.Seq)
+            .ToListAsync()).ToHashSet();
+        var rows = batch.Where(entry => !held.Contains(entry.Seq)).Select(entry => entry.ToCatalogueRow()).ToList();
+        db.Catalogue.AddRange(rows);
+        // Each row's words in the same save, so a row is never stored without them.
+        db.CatalogueWords.AddRange(rows.SelectMany(row => CatalogueWords.For(row.Seq, row.SearchText)));
+        await db.SaveChangesAsync();
+    }
 }

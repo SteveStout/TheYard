@@ -1,11 +1,11 @@
 // The column widths and the one value converter the relational model uses, named once so the
 // model and the tests that hold it to the SQL project read the same numbers. They have a file of their own
-// because they are facts about the schema rather than steps in building it, and the model in
-// YardDbContext.cs reads more plainly without them in the way.
-namespace TheYard.Infrastructure;
+// because they are facts about the schema rather than steps in building it: they change when a column
+// does, never when the model's code does.
+namespace TheYard.Infrastructure.Shared.Stores;
 
 /// <summary>The relational store's named column widths and its auction-start converter.</summary>
-public sealed partial class YardDbContext
+public static class YardColumns
 {
     /// <summary>"sql" and "cosmos" are the keys; the width leaves room for a third store and not for a sentence.</summary>
     public const int StoreKeyLength = 16;

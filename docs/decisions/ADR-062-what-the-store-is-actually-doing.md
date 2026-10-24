@@ -43,7 +43,7 @@ what it costs), and every call goes through one wrapper that times it and reads
 the charge off the response. It records the operation whether the call succeeded
 or failed:
 
-```live path=api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosStore.Operations.cs region=operations
+```live path=api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosOperationLog.cs region=timed
 ```
 
 **The no-values rule carries over exactly.** A parameter is a
@@ -164,12 +164,12 @@ request served by the document store and reads the line back under the
 store's own category, and checks the address it looked up is nowhere on the
 page.
 
-```live path=api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosStore.Operations.cs region=record
+```live path=api/TheYard.Infrastructure.Cosmos/Shared/Stores/CosmosOperationLog.cs region=record
 ```
 
 ## Where it sits
 
-Three rings share this one: Application owns the `IStoreLog` port and the `StoreOperation` record in `StoreLog.cs`, Infrastructure.Cosmos fills it from the one wrapper in `CosmosStore.Operations.cs` that times every SDK call and reads its charge, and the Api host keeps the ring the Admin tab's `StoreCard` reads from. Interface segregation, small interfaces shaped to what a caller needs, is the plain reason for a parallel port: `ISqlLog` stayed as it was, so a container on SQL Server never meets a type full of request charges and partitions it has no use for. Dependency inversion follows too, since the adapter writes to an interface Application defined and the host decides where the lines end up. The price is one more fixed ring of two hundred operations in memory and a second card to keep in step with the SQL one, and a system with many store types would probably push this into OpenTelemetry spans instead of a hand-built ring per store.
+Three rings share this one: Application owns the `IStoreLog` port and the `StoreOperation` record in `StoreLog.cs`, Infrastructure.Cosmos fills it from the one wrapper in `CosmosOperationLog.cs` that times every SDK call and reads its charge, and the Api host keeps the ring the Admin tab's `StoreCard` reads from. Interface segregation, small interfaces shaped to what a caller needs, is the plain reason for a parallel port: `ISqlLog` stayed as it was, so a container on SQL Server never meets a type full of request charges and partitions it has no use for. Dependency inversion follows too, since the adapter writes to an interface Application defined and the host decides where the lines end up. The price is one more fixed ring of two hundred operations in memory and a second card to keep in step with the SQL one, and a system with many store types would probably push this into OpenTelemetry spans instead of a hand-built ring per store.
 
 ## Files
 

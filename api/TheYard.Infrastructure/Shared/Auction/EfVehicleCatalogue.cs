@@ -17,8 +17,14 @@ namespace TheYard.Infrastructure.Shared.Auction;
 /// <param name="target">How many vehicles the catalogue is.</param>
 /// <param name="local">True for a SQLite file this process owns, which is filled at warm-up whatever its size.</param>
 /// <param name="fillsWords">True for the site that fills this store's catalogue, which also fills the words of rows stored before the words table existed.</param>
-public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts, int target, bool local, bool fillsWords = false) : IVehicleCatalogue
+public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts, int target, bool local, bool fillsWords = false) : IVehicleCatalogue
 {
+    /// <summary>The words a typed word seeks on, and their fill.</summary>
+    private readonly EfCatalogueWords _words = new(contexts, target, local, fillsWords);
+
+    /// <summary>The backfill of the words for rows stored before the table existed, while one runs. A test awaits it.</summary>
+    public Task? WordsFilling => _words.WordsFilling;
+
     /// <inheritdoc />
     public int Target => target;
 
@@ -43,7 +49,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
         await using var db = await contexts.CreateDbContextAsync();
         int filled = await db.Catalogue.CountAsync(row => row.Seq < target);
         _beyond = await db.Catalogue.AnyAsync(row => row.Seq >= target);
-        await CheckWordsAsync(db, filled, now: true);
+        await _words.CheckWordsAsync(db, filled, now: true);
         return filled;
     }
 
@@ -55,32 +61,20 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
             return;
         }
         // A word check after a fill looks again at once, so the words written with these rows are read.
-        Interlocked.Exchange(ref _wordsCheckedTicks, 0);
+        _words.LookAgain();
         if (local)
         {
-            await FillFileAsync(batch);
+            await EfCatalogueFill.FillFileAsync(contexts, batch);
             return;
         }
-        await using var db = await contexts.CreateDbContextAsync();
-        db.ChangeTracker.AutoDetectChangesEnabled = false;
-        int low = batch.Min(entry => entry.Seq);
-        int high = batch.Max(entry => entry.Seq);
-        var held = (await db.Catalogue.AsNoTracking()
-            .Where(row => row.Seq >= low && row.Seq <= high)
-            .Select(row => row.Seq)
-            .ToListAsync()).ToHashSet();
-        var rows = batch.Where(entry => !held.Contains(entry.Seq)).Select(entry => entry.ToCatalogueRow()).ToList();
-        db.Catalogue.AddRange(rows);
-        // Each row's words in the same save, so a row is never stored without them.
-        db.CatalogueWords.AddRange(rows.SelectMany(row => CatalogueWords.For(row.Seq, row.SearchText)));
-        await db.SaveChangesAsync();
+        await EfCatalogueFill.FillModelAsync(contexts, batch);
     }
 
     // #region ef-catalogue-query
     /// <summary>
     /// The filter as a WHERE clause: the store's own spellings compared with equality, the
     /// segment as a comparison of the slot with now, every typed word as a range on the words
-    /// table (EfVehicleCatalogue.Words.cs) or a status word that names the row's segment, and the ids somebody's
+    /// table (EfCatalogueWords.cs) or a status word that names the row's segment, and the ids somebody's
     /// bid moved left out as one JSON parameter, however many there are.
     /// </summary>
     private IQueryable<CatalogueRow> Query(YardDbContext db, CatalogueFilter filter)
@@ -139,7 +133,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
             bool live = token.AlsoMatches.Contains(CatalogueSegment.Live);
             bool upcoming = token.AlsoMatches.Contains(CatalogueSegment.Upcoming);
             bool ended = token.AlsoMatches.Contains(CatalogueSegment.Ended);
-            rows = Holding(db, rows, text, live, upcoming, ended, d);
+            rows = _words.Holding(db, rows, text, live, upcoming, ended, d);
         }
         if (filter.Exclude.Count > 0)
         {
@@ -172,7 +166,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
     public async Task<SegmentCounts> CountAsync(CatalogueFilter filter)
     {
         await using var db = await contexts.CreateDbContextAsync();
-        await WordsBeforeQueryAsync(db, filter);
+        await _words.WordsBeforeQueryAsync(db, filter);
         long d = filter.SinceAnchorMs;
         var counts = await Query(db, filter.In(CatalogueSegment.Any))
             .GroupBy(_ => 1)
@@ -204,7 +198,7 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
             return [];
         }
         await using var db = await contexts.CreateDbContextAsync();
-        await WordsBeforeQueryAsync(db, filter);
+        await _words.WordsBeforeQueryAsync(db, filter);
         bool word = local && filter.Tokens.Count > 0;
         if (!word && skip < DeepSkip)
         {
@@ -268,4 +262,17 @@ public sealed partial class EfVehicleCatalogue(IDbContextFactory<YardDbContext> 
         values.Sort(StringComparer.Ordinal);
         return values;
     }
+
+    /// <summary>The same order as <c>Ordered</c>, each key written as "+ 0" so no index serves it and the words index is read alone.</summary>
+    private static IQueryable<CatalogueRow> Unindexed(IQueryable<CatalogueRow> rows, CatalogueOrder order) => order switch
+    {
+        CatalogueOrder.EndAscending => rows.OrderBy(row => row.EndOffsetMs + 0).ThenBy(row => row.Seq + 0),
+        CatalogueOrder.StartAscending => rows.OrderBy(row => row.StartOffsetMs + 0).ThenBy(row => row.Seq + 0),
+        CatalogueOrder.EndDescending => rows.OrderByDescending(row => row.EndOffsetMs + 0).ThenBy(row => row.Seq + 0),
+        CatalogueOrder.PriceAscending => rows.OrderBy(row => row.Price + 0).ThenBy(row => row.Seq + 0),
+        CatalogueOrder.PriceDescending => rows.OrderByDescending(row => row.Price + 0).ThenBy(row => row.Seq + 0),
+        CatalogueOrder.ConditionDescending => rows.OrderByDescending(row => row.ConditionGrade + 0).ThenBy(row => row.Seq + 0),
+        CatalogueOrder.BidsDescending => rows.OrderByDescending(row => row.BidCount + 0).ThenBy(row => row.Seq + 0),
+        _ => rows.OrderBy(row => row.Seq + 0),
+    };
 }

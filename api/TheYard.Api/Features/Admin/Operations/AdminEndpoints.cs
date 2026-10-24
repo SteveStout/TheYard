@@ -1,14 +1,15 @@
-// The Admin tab's routes, and the place to start reading them. This file holds the class, the
-// wire format two replies share, and the map of every route. The handlers live beside it, one
-// file per card group:
-//   AdminEndpoints.Observability.cs      the rings, the timing, the Store bar, Azure, the peer, the machines
-//   AdminEndpoints.Follows.cs            memory against traffic, and the verdict on it
-//   AdminEndpoints.Activity.cs           site activity, the visitor rows and the kept log
-//   AdminEndpoints.ProofAndPages.cs      the page sweep, the tests, the proof and the experiment
-//   AdminEndpoints.CostsAndTelemetry.cs  what Azure charges, and the last hour from Application Insights
-//   AdminEndpoints.Usage.cs              a Claude lane's usage document, posted with the operator's key
+// The Admin tab's routes, and the place to start reading them. This file holds the map of every
+// route, the wire format two replies share, and how a reading becomes a status. The handlers live
+// beside it, one type per card group, so each changes only when its cards do:
+//   AdminObservabilityRoutes.cs  the rings, the timing, the Store bar, Azure, the peer, the machines
+//   AdminFollowsRoutes.cs        memory against traffic, and the verdict on it
+//   AdminActivityRoutes.cs       site activity, the visitor rows and the kept log
+//   AdminEvidenceRoutes.cs       the page sweep, the tests, the proof and the experiment
+//   AdminCostRoutes.cs           what Azure charges, and the last hour from Application Insights
+//   AdminUsageRoutes.cs          a Claude lane's usage document, posted with the operator's key
 
 using System.Text.Json;
+using TheYard.Application.Shared;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
@@ -18,13 +19,24 @@ namespace TheYard.Api.Features.Admin.Operations;
 /// Every one reads what the host already keeps; the per-visitor rows and the kept
 /// log answer only to the operator's key.
 /// </summary>
-public static partial class AdminEndpoints
+public static class AdminEndpoints
 {
     /// <summary>
     /// The wire format for the two replies written by hand (the test summary and the
     /// proof's start), which keep the dataset's snake_case shape.
     /// </summary>
-    private static readonly JsonSerializerOptions WireFormat = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+    internal static readonly JsonSerializerOptions WireFormat = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+
+    /// <summary>
+    /// A reading as the route answers it: the body as JSON in the host's own wire, a refusal as a 400 problem and
+    /// nothing to read as a 404 problem, each with the handler's own words.
+    /// </summary>
+    internal static IResult Answer(Reading reading) => reading.Kind switch
+    {
+        ReadingKind.Read => Results.Json(reading.Body),
+        ReadingKind.Refused => Results.Problem(detail: reading.Detail, statusCode: StatusCodes.Status400BadRequest, title: reading.Title),
+        _ => Results.Problem(detail: reading.Detail, statusCode: StatusCodes.Status404NotFound, title: reading.Title),
+    };
 
     /// <summary>Maps the Admin tab's routes under /api/admin, /api/stores and /api/tests.</summary>
     public static IEndpointRouteBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
@@ -33,7 +45,7 @@ public static partial class AdminEndpoints
         // The raw SQL, newest first. Statement text, parameter names and types, how
         // long the database took, and the request that caused it. No parameter values:
         // see the comment on SqlStatement for why there is nowhere to put one.
-        app.MapGet("/api/admin/sql", Sql);
+        app.MapGet("/api/admin/sql", AdminObservabilityRoutes.Sql);
 
         // #region store-endpoint
         // The document store's operations, newest first: container, kind, the query
@@ -41,11 +53,11 @@ public static partial class AdminEndpoints
         // charge beside the milliseconds. Empty on a relational container, exactly as
         // the SQL list is empty on the document one; the page shows whichever the
         // container is (ADR: What the store is actually doing).
-        app.MapGet("/api/admin/store", Store);
+        app.MapGet("/api/admin/store", AdminObservabilityRoutes.Store);
         // #endregion store-endpoint
 
         // The raw log lines, newest first, exactly as the console got them.
-        app.MapGet("/api/admin/logs", Logs);
+        app.MapGet("/api/admin/logs", AdminObservabilityRoutes.Logs);
 
         // #region kept-rings-endpoint
         // The same four lists over a day, a week or a month, read back from the
@@ -53,12 +65,12 @@ public static partial class AdminEndpoints
         // logs, sql or store and window one of 24h, 7d or 30d; both pick from a fixed
         // list and neither reaches the store as anything but a parameter. Public,
         // because every entry is what the ring beside it already serves in public.
-        app.MapGet("/api/admin/kept", Kept);
+        app.MapGet("/api/admin/kept", AdminObservabilityRoutes.Kept);
         // #endregion kept-rings-endpoint
 
         // Timing, computed on read from the two rings. The window is whatever the
         // rings currently hold, which the page states rather than implying.
-        app.MapGet("/api/admin/metrics", Metrics);
+        app.MapGet("/api/admin/metrics", AdminObservabilityRoutes.Metrics);
 
         // #region activity-endpoints
         // Site activity (ADR: Site activity, and the line an address does not cross).
@@ -70,7 +82,7 @@ public static partial class AdminEndpoints
         // minutes after that, so a reader never waits on the visitor rows being counted
         // (ActivityReportCache; ADR: Site activity, and the line an address does not
         // cross, the addendum on the first read).
-        app.MapGet("/api/admin/activity", Activity);
+        app.MapGet("/api/admin/activity", AdminActivityRoutes.Activity);
 
         // The visitor rows, behind the operator's key: a token that rotates daily,
         // the network to three octets, the store, the counts and the top paths. The
@@ -79,7 +91,7 @@ public static partial class AdminEndpoints
         // a stranger cannot tell the endpoint exists. This is the one Admin read that
         // is not public, because a network range beside a timestamp on a public page
         // can name an employer, and the tab is public by design (ADR-054).
-        app.MapGet("/api/admin/activity/visitors", Visitors);
+        app.MapGet("/api/admin/activity/visitors", AdminActivityRoutes.Visitors);
         // #endregion activity-endpoints
 
         // #region kept-logs-endpoints
@@ -89,7 +101,7 @@ public static partial class AdminEndpoints
         // fragment of the path, which travel to the store as parameters and never as
         // syntax. The answer says whether anything is kept at all, so a container
         // with no document store shows an honest card rather than an empty table.
-        app.MapGet("/api/admin/logs/kept", KeptLogs);
+        app.MapGet("/api/admin/logs/kept", AdminActivityRoutes.KeptLogs);
         // #endregion kept-logs-endpoints
 
         // #region stores-endpoints
@@ -100,7 +112,7 @@ public static partial class AdminEndpoints
         // segment is a link to the other site, so the address bar changes and each
         // site stays one store's site. A stale yard-store cookie is expired here, on
         // the first page load that carries it.
-        app.MapGet("/api/stores", Stores)
+        app.MapGet("/api/stores", AdminObservabilityRoutes.Stores)
             .WithName("GetStores")
             .WithTags("Stores")
             .WithSummary("Which stores this container runs, and which one this request is on")
@@ -109,7 +121,7 @@ public static partial class AdminEndpoints
         // #endregion stores-endpoints
         #endregion admin-observability-endpoints
 
-        app.MapGet("/api/admin/azure", Azure);
+        app.MapGet("/api/admin/azure", AdminObservabilityRoutes.Azure);
 
         // #region peer-endpoint
         // A peer container's metrics, read server side with a short patience, where one is
@@ -117,7 +129,7 @@ public static partial class AdminEndpoints
         // and the comparison card sets the two stores of this process side by side. The
         // peer's address, when set, is configuration and never reaches the browser, and the
         // column's title is the answer's own sentence (ADR: Backends, side by side).
-        app.MapGet("/api/admin/peer", Peer);
+        app.MapGet("/api/admin/peer", AdminObservabilityRoutes.Peer);
         // #endregion peer-endpoint
 
         // #region arrival-endpoint
@@ -129,7 +141,7 @@ public static partial class AdminEndpoints
         // site rather than assumed (ADR: The order of the request pipeline). It answers
         // with the caller's own address only, and a stranger gets the same 404 every
         // keyed read gives.
-        app.MapGet(Arrival.Path, ArrivalRead);
+        app.MapGet(Arrival.Path, AdminObservabilityRoutes.ArrivalRead);
         // #endregion arrival-endpoint
 
         // #region proof-endpoints
@@ -147,7 +159,7 @@ public static partial class AdminEndpoints
         // relational store from its own resource view, the document store from what
         // its operations charged, because it has no memory reading to give
         // (ADR: What the machines are doing).
-        app.MapGet("/api/admin/machines", Machines)
+        app.MapGet("/api/admin/machines", AdminObservabilityRoutes.Machines)
             .WithName("GetMachines")
             .WithTags("Admin")
             .WithSummary("What the container and the two stores are doing, each as that machine reports itself, over the last hour or a kept window of 24h, 7d or 30d");
@@ -157,7 +169,7 @@ public static partial class AdminEndpoints
         // Memory against traffic: the processor should follow the requests and memory should
         // not, so memory that climbs while traffic is flat is read as a leak or an unbounded
         // cache, the shape the catalogue held in memory made (ADR: Memory follows traffic).
-        app.MapGet("/api/admin/follows", Follows)
+        app.MapGet("/api/admin/follows", AdminFollowsRoutes.Follows)
             .WithName("GetFollows")
             .WithTags("Admin")
             .WithSummary("The processor and memory against requests a minute over the last hour or a kept window of 24h, 7d or 30d, and whether memory climbed while traffic stayed flat");
@@ -166,7 +178,7 @@ public static partial class AdminEndpoints
         // #region page-status-endpoints
         // The last sweep, whoever asked for it. Public, like every other reading on
         // this tab: it names addresses this site already serves to anybody.
-        app.MapGet("/api/admin/pages", PageStatus)
+        app.MapGet("/api/admin/pages", AdminEvidenceRoutes.PageStatus)
             .WithName("GetPageStatus")
             .WithTags("Admin")
             .WithSummary("Every address this container serves, as the last sweep found it");
@@ -175,7 +187,7 @@ public static partial class AdminEndpoints
         // dials every served address on the loopback, which is work a stranger should
         // not be able to start in a loop. 409 rather than an error when a sweep is
         // already running or the last one is inside the cooldown.
-        app.MapPost("/api/admin/pages", RunPageStatus)
+        app.MapPost("/api/admin/pages", AdminEvidenceRoutes.RunPageStatus)
             .RequireAuthorization()
             .WithName("RunPageStatus")
             .WithTags("Admin")
@@ -193,7 +205,7 @@ public static partial class AdminEndpoints
         // screen. The whole results file is 160 KB and the strip needs six
         // numbers, so this reads the counts and nothing else, and the answer is cached
         // until the file changes, which inside a container it never does.
-        app.MapGet("/api/tests/summary", TestSummaryRead)
+        app.MapGet("/api/tests/summary", AdminEvidenceRoutes.TestSummaryRead)
             .WithName("GetTestSummary")
             .WithTags("Admin")
             .WithSummary("The gate's counts for this build, without the tests themselves")
@@ -202,13 +214,13 @@ public static partial class AdminEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
         // #endregion test-summary
 
-        app.MapGet("/api/admin/tests", TestResults)
+        app.MapGet("/api/admin/tests", AdminEvidenceRoutes.TestResults)
             .WithName("GetTestResults")
             .WithTags("Admin")
             .WithSummary("Every test the ship's gate ran for this build, and its result");
         // #endregion test-results
-        app.MapGet("/api/admin/proof", ProofStatus);
-        app.MapPost("/api/admin/proof", ProofStart).RequireAuthorization();
+        app.MapGet("/api/admin/proof", AdminEvidenceRoutes.ProofStatus);
+        app.MapPost("/api/admin/proof", AdminEvidenceRoutes.ProofStart).RequireAuthorization();
         // #endregion proof-endpoints
 
         // #region experiment-endpoint
@@ -217,7 +229,7 @@ public static partial class AdminEndpoints
         // own identity and cached for a minute (ADR: The partition key). On a
         // relational container it says so and shows nothing, which is the card's
         // fourth empty state.
-        app.MapGet("/api/admin/experiment", ExperimentRun);
+        app.MapGet("/api/admin/experiment", AdminEvidenceRoutes.ExperimentRun);
         // #endregion experiment-endpoint
 
         // #region costs-endpoint
@@ -226,7 +238,7 @@ public static partial class AdminEndpoints
         // bill is nothing to hide: the dollar figure belongs beside the millisecond
         // one. Served from the kept days, never from Azure on the request: the recorder
         // asks Cost Management once an hour. The window is a name from a fixed list.
-        app.MapGet("/api/admin/costs", Costs)
+        app.MapGet("/api/admin/costs", AdminCostRoutes.Costs)
             .WithName("GetCosts")
             .WithTags("Admin")
             .WithSummary("What Azure charges for the site over 24h, 7d or 30d: the spend and forecast, each resource, and the resources by type");
@@ -237,7 +249,7 @@ public static partial class AdminEndpoints
         // Answers a shape the card can render even when telemetry is off or the query
         // fails, because a panel that reports on the system must not be able to break
         // the page it reports from.
-        app.MapGet("/api/admin/telemetry", Telemetry);
+        app.MapGet("/api/admin/telemetry", AdminCostRoutes.Telemetry);
         #endregion telemetry-endpoint
 
         // #region usage-endpoint
@@ -245,7 +257,7 @@ public static partial class AdminEndpoints
         // usage): the nightly workflow after each run, the laptop's script once an hour. Behind the
         // operator's key in its header; a document posted twice under the same lane and run is
         // kept once, so a lane may post again after a failure without counting a run twice.
-        app.MapPost("/api/admin/usage", UsagePost)
+        app.MapPost("/api/admin/usage", AdminUsageRoutes.UsagePost)
             .WithName("PostUsage")
             .WithTags("Admin")
             .WithSummary("Keep one Claude run's usage document, under its lane and run id, behind the operator's key");

@@ -28,56 +28,9 @@ public sealed partial class BidBook
     private async Task<(VehicleStanding? Held, string? Version)> CurrentAsync(string vehicleId)
     {
         var stored = await _store.ReadStandingAsync(vehicleId);
-        var held = stored is not null ? stored.Standing : Derive(await _store.BidsOnAsync(vehicleId));
-        if (held is null)
-        {
-            _standing.TryRemove(vehicleId, out _);
-        }
-        else
-        {
-            _standing[vehicleId] = held;
-        }
+        var held = stored is not null ? stored.Standing : StandingFold.Derive(await _store.BidsOnAsync(vehicleId));
+        _ledger.Hold(vehicleId, held);
         return (held, stored?.Version);
     }
     // #endregion current
-
-    // #region next
-    /// <summary>
-    /// The standing one accepted bid leaves. The price only moves up: a bid at
-    /// or under the standing price that got this far is a buy-now at a price
-    /// the room had already passed, and it marks the vehicle sold without
-    /// taking the lead from whoever holds it. The count never drops, and sold
-    /// never comes undone.
-    /// </summary>
-    private static VehicleStanding Next(VehicleStanding? held, string userId, BidState state) =>
-        held is null
-            ? new VehicleStanding(state.Amount, state.BidCount, userId, state.WonBuyNow, state.AtMs)
-            : state.Amount > held.Amount
-                ? new VehicleStanding(
-                    state.Amount,
-                    Math.Max(held.BidCount, state.BidCount),
-                    userId,
-                    held.SoldBuyNow || state.WonBuyNow,
-                    state.AtMs)
-                : held with
-                {
-                    BidCount = Math.Max(held.BidCount, state.BidCount),
-                    SoldBuyNow = held.SoldBuyNow || state.WonBuyNow,
-                };
-
-    /// <summary>
-    /// The standing a set of buyer rows adds up to, oldest first through
-    /// <see cref="Next"/>, so a tie on price goes to whoever got there first.
-    /// Null when there are no rows at all.
-    /// </summary>
-    private static VehicleStanding? Derive(IEnumerable<StoredBid> bids)
-    {
-        VehicleStanding? held = null;
-        foreach (var bid in bids.OrderBy(bid => bid.State.AtMs).ThenBy(bid => bid.UserId, StringComparer.Ordinal))
-        {
-            held = Next(held, bid.UserId, bid.State);
-        }
-        return held;
-    }
-    // #endregion next
 }

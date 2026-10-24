@@ -1,9 +1,12 @@
 // The catalogue as a visitor's request meets it. This file is the class's fields, its two
 // constructors and how a vehicle leaves; the work is in the files beside it:
-//   Stock.Warm.cs     the warm-up, the choice of store or list, and the fill (region warm)
+//   Stock.Warm.cs     the warm-up (region warm)
 //   Stock.Search.cs   a listing planned out of the port's primitives (region search)
-//   Stock.Find.cs     a filter resolved to the store's spelling, and reads by id (regions resolve, find)
-using TheYard.Application.Shared.Caching;
+//   Stock.Find.cs     the reads by id (region find)
+// and in three classes of their own, cut out when Stock passed three hundred lines (ADR-088):
+//   StockSource.cs              the choice of store or list, and the fill (regions choose, fill)
+//   CataloguePages.cs           the store's answers through the cache (regions listing-cache, page)
+//   CatalogueFilterResolver.cs  a filter resolved to the store's spelling (region resolve)
 using TheYard.Data;
 using TheYard.Domain.Shared.Auction;
 
@@ -61,23 +64,13 @@ public sealed record CatalogueReport(string Mode, int HeldInMemory, int Target, 
 /// </summary>
 public sealed partial class Stock : IStockReader
 {
-    private const int ExpectedVehicleBytes = 1_500;
-    private const long BucketMs = 5_000;
-
-    private readonly IVehicleCatalogue? _store;
-    private readonly IVehicleSource _seeder;
     private readonly IPhotoManifestSource _manifestSource;
     private readonly string _imagePathPrefix;
-    private readonly CatalogueUpkeep _upkeep;
+    private readonly StockSource _source;
 
-    // #region listing-cache
-    // Bounded by count and bytes, expiring after a bucket of the clock: a store's answer is reused
-    // for the five seconds a page of auctions cannot visibly change in, and never grows past the
-    // numbers here (ADR: The store does the work, rule b).
-    private readonly BoundedCache<string, SegmentCounts> _counts = new(512, 1L << 20, TimeSpan.FromSeconds(5), _ => 96);
-    private readonly BoundedCache<string, IReadOnlyList<CatalogueEntry>> _pages = new(64, 16L << 20, TimeSpan.FromSeconds(5), page => 64 + (page.Count * ExpectedVehicleBytes));
-    private readonly BoundedCache<string, CatalogueEntry> _vehicles = new(4_096, 8L << 20, TimeSpan.FromMinutes(10), _ => ExpectedVehicleBytes, comparer: StringComparer.Ordinal);
-    // #endregion listing-cache
+    // The store's answers through the five-second cache (CataloguePages.cs).
+    private readonly CataloguePages _listing = new();
+
 
     /// <summary>The catalogue out of a list in memory, filled from <paramref name="vehicleSource"/>: the tests' shape and the file fallback's.</summary>
     public Stock(IVehicleSource vehicleSource, IPhotoManifestSource manifestSource, string imagePathPrefix = "/api/images")
@@ -93,17 +86,15 @@ public sealed partial class Stock : IStockReader
     /// <param name="imagePathPrefix">The path photos are served under.</param>
     public Stock(IVehicleCatalogue? store, IVehicleSource seeder, IPhotoManifestSource manifestSource, CatalogueUpkeep upkeep, string imagePathPrefix = "/api/images")
     {
-        _store = store;
-        _seeder = seeder;
         _manifestSource = manifestSource;
-        _upkeep = upkeep;
+        _source = new StockSource(store, seeder, upkeep, _listing.Clear);
         _imagePathPrefix = imagePathPrefix;
     }
 
     private async Task<(Warmed Warm, IVehicleCatalogue Catalogue)> ReadyAsync()
     {
         var warm = await WarmTask();
-        return (warm, _active!);
+        return (warm, _source.Active!);
     }
 
     // #region facets

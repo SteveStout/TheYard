@@ -7,8 +7,8 @@ using TheYard.Application.Features.Usage;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
-/// <summary>The usage handler of AdminEndpoints; the type and what it is for are described in AdminEndpoints.cs.</summary>
-public static partial class AdminEndpoints
+/// <summary>The usage handler of AdminEndpoints; mapped in AdminEndpoints.cs.</summary>
+public static class AdminUsageRoutes
 {
     /// <summary>The usage document as a lane posts it, under the wire's snake_case names.</summary>
     /// <param name="Lane">The lane's name.</param>
@@ -38,7 +38,7 @@ public static partial class AdminEndpoints
     /// the log's reason when it cannot keep documents now, 200 with the key it is kept under. Posting the
     /// same lane and run again replaces the copy kept.
     /// </summary>
-    private static async Task<IResult> UsagePost(HttpContext http, AdminKey adminKey, KeepUsageHandler keep, CancellationToken cancellation)
+    internal static async Task<IResult> UsagePost(HttpContext http, AdminKey adminKey, KeepUsageHandler keep, CancellationToken cancellation)
     {
         if (!adminKey.IsPresentedBy(http.Request))
         {
@@ -47,7 +47,7 @@ public static partial class AdminEndpoints
         UsageWire? wire;
         try
         {
-            wire = await JsonSerializer.DeserializeAsync<UsageWire>(http.Request.Body, WireFormat, cancellation);
+            wire = await JsonSerializer.DeserializeAsync<UsageWire>(http.Request.Body, AdminEndpoints.WireFormat, cancellation);
         }
         catch (JsonException)
         {

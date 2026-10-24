@@ -1,11 +1,10 @@
 // Every call the adapters make to the database goes through here: point reads and writes,
-// queries, batches, and the wrapper that times each one and writes its charge to the store log
-// and the console. A file of its own because this is the part the Admin tab exists to show,
+// queries and batches, each timed and written to the store log and the console by the wrapper in
+// CosmosOperationLog.cs. A file of its own because this is the part the Admin tab exists to show,
 // and the part ADR: What the store is actually doing quotes.
 using System.Diagnostics;
 using System.Net;
 using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Logging;
 using TheYard.Application.Shared.Stores;
 
 namespace TheYard.Infrastructure.Cosmos.Shared.Stores;
@@ -24,7 +23,7 @@ public sealed partial class CosmosStore
         var clock = Stopwatch.StartNew();
         try
         {
-            var response = await Timed(container, StoreOperationKind.PointRead, "ReadItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
+            var response = await Recorder.Timed(container, StoreOperationKind.PointRead, "ReadItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
                 () => container.ReadItemAsync<T>(id, new PartitionKey(partitionKey)), r => r.Cost());
             return new MeasuredItem<T>(response.Resource, Math.Round(response.RequestCharge, 2), clock.ElapsedMilliseconds);
         }
@@ -40,17 +39,17 @@ public sealed partial class CosmosStore
     /// on. <paramref name="what"/> is the text the store log shows for it.
     /// </summary>
     public Task<ItemResponse<T>> CreateAsync<T>(Container container, T document, string partitionKey, string partitionLabel, string what = "CreateItem") =>
-        Timed(container, StoreOperationKind.PointWrite, what, [], partitionLabel, 1,
+        Recorder.Timed(container, StoreOperationKind.PointWrite, what, [], partitionLabel, 1,
             () => container.CreateItemAsync(document, new PartitionKey(partitionKey)), r => r.Cost());
 
     /// <summary>A replace that carries the etag it read, so a stale write is refused with 412 rather than winning.</summary>
     public Task<ItemResponse<T>> ReplaceAsync<T>(Container container, T document, string id, string partitionKey, string? etag, string partitionLabel) =>
-        Timed(container, StoreOperationKind.PointWrite, "ReplaceItem (If-Match)", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
+        Recorder.Timed(container, StoreOperationKind.PointWrite, "ReplaceItem (If-Match)", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
             () => container.ReplaceItemAsync(document, id, new PartitionKey(partitionKey), new ItemRequestOptions { IfMatchEtag = etag }), r => r.Cost());
 
     /// <summary>A point delete of one document by id in one partition; a missing document throws the SDK's 404.</summary>
     public Task<ItemResponse<T>> DeleteAsync<T>(Container container, string id, string partitionKey, string partitionLabel) =>
-        Timed(container, StoreOperationKind.PointDelete, "DeleteItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
+        Recorder.Timed(container, StoreOperationKind.PointDelete, "DeleteItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
             () => container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey)), r => r.Cost());
 
     /// <summary>
@@ -74,7 +73,7 @@ public sealed partial class CosmosStore
         {
             options.PartitionKey = new PartitionKey(partitionKey);
         }
-        int physical = partitionKey is null ? PhysicalPartitionsOf(NameOf(container)) : 1;
+        int physical = partitionKey is null ? PhysicalPartitionsOf(Recorder.NameOf(container)) : 1;
 
         var results = new List<T>();
         double charge = 0;
@@ -97,10 +96,10 @@ public sealed partial class CosmosStore
         {
             charge += ex.RequestCharge;
             outcome = "failed: " + ex.StatusCode;
-            Record(container, StoreOperationKind.Query, query.QueryText, parameters, partitionLabel, physical, charge, clock.Elapsed, outcome);
+            Recorder.Record(container, StoreOperationKind.Query, query.QueryText, parameters, partitionLabel, physical, charge, clock.Elapsed, outcome);
             throw;
         }
-        Record(container, StoreOperationKind.Query, query.QueryText, parameters, partitionLabel, physical, charge, clock.Elapsed, outcome);
+        Recorder.Record(container, StoreOperationKind.Query, query.QueryText, parameters, partitionLabel, physical, charge, clock.Elapsed, outcome);
         return new MeasuredQuery<T>(results, Math.Round(charge, 2), pages, clock.ElapsedMilliseconds);
     }
 
@@ -116,7 +115,7 @@ public sealed partial class CosmosStore
             {
                 batch.DeleteItem(id);
             }
-            var response = await Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} DeleteItem", [], partitionLabel, 1,
+            var response = await Recorder.Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} DeleteItem", [], partitionLabel, 1,
                 async () =>
                 {
                     var r = await batch.ExecuteAsync();
@@ -142,7 +141,7 @@ public sealed partial class CosmosStore
         {
             return [];
         }
-        var response = await Timed(container, StoreOperationKind.PointRead, $"ReadMany: {items.Count} ReadItem", [], partitionLabel, 1,
+        var response = await Recorder.Timed(container, StoreOperationKind.PointRead, $"ReadMany: {items.Count} ReadItem", [], partitionLabel, 1,
             () => container.ReadManyItemsAsync<T>([.. items.Select(item => (item.Id, new PartitionKey(item.PartitionKey)))]), r => r.Cost());
         return [.. response];
     }
@@ -159,7 +158,7 @@ public sealed partial class CosmosStore
             {
                 batch.UpsertItem(document);
             }
-            var response = await Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} UpsertItem", [], partitionLabel, 1,
+            var response = await Recorder.Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} UpsertItem", [], partitionLabel, 1,
                 async () =>
                 {
                     var r = await batch.ExecuteAsync();
@@ -175,85 +174,11 @@ public sealed partial class CosmosStore
     }
 
     /// <summary>How many documents a container holds, by a count query across every partition. The seed asks this; the probe does not, because a count is a scan.</summary>
-    private async Task<int> CountAsync(Container container)
+    internal async Task<int> CountAsync(Container container)
     {
         var counts = await QueryAsync<int>(container, new QueryDefinition("SELECT VALUE COUNT(1) FROM c"), null, "cross-partition");
         return counts.Count == 0 ? 0 : counts[0];
     }
 
-    /// <summary>
-    /// Run one operation and write its charge and its duration to the store
-    /// log, whether it succeeded or not. The store log is a public page: this
-    /// records the kind, the container, the shape of the parameters and the
-    /// charge, and never an id that could be an address or a value that could
-    /// be anything (ADR: What the store is actually doing).
-    /// </summary>
-    private async Task<TResponse> Timed<TResponse>(Container container, string kind, string text, IReadOnlyList<SqlParameterShape> parameters, string partitionLabel, int physical, Func<Task<TResponse>> operation, Func<TResponse, Cost> cost)
-    {
-        var clock = Stopwatch.StartNew();
-        try
-        {
-            var response = await operation();
-            var paid = cost(response);
-            Record(container, kind, text, parameters, partitionLabel, physical, paid.Charge, clock.Elapsed, paid.Status.ToString());
-            return response;
-        }
-        catch (CosmosException ex)
-        {
-            Record(container, kind, text, parameters, partitionLabel, physical, ex.RequestCharge, clock.Elapsed, "failed: " + (int)ex.StatusCode);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            // A refused batch throws its own exception rather than the SDK's,
-            // and it is recorded here too, so the one operation that failed is
-            // never the one operation the page cannot show.
-            Record(container, kind, text, parameters, partitionLabel, physical, 0, clock.Elapsed, "failed: " + ex.GetType().Name);
-            throw;
-        }
-    }
-
-    // #region record
-    /// <summary>
-    /// Write one finished operation to the store log and as one console line:
-    /// the kind, the container, the charge, the time, the partition described,
-    /// the outcome and the query text, and never a parameter's value.
-    /// </summary>
-    private void Record(Container container, string kind, string text, IReadOnlyList<SqlParameterShape> parameters, string partitionLabel, int physical, double charge, TimeSpan elapsed, string outcome)
-    {
-        // Nothing in here may break the operation it observed
-        // (ADR: What the database is actually doing).
-        try
-        {
-            string name = NameOf(container);
-            double rounded = Math.Round(charge, 2);
-            long ms = (long)elapsed.TotalMilliseconds;
-            _log.Record(new StoreOperation(
-                DateTimeOffset.UtcNow,
-                name,
-                kind,
-                text,
-                parameters,
-                partitionLabel,
-                physical,
-                rounded,
-                ms,
-                outcome,
-                CurrentRequest.Describe(),
-                CurrentRequest.Identify()));
-            // The same operation as one console line, the shape Entity
-            // Framework gives a statement: what ran, what it cost, how long,
-            // and the query with its parameters by name and never by value.
-            Logger.LogInformation(
-                "Executed Cosmos DB {Kind} on {Container} ({Charge} RU, {Ms} ms, {Partition}) {Outcome}: {Text}",
-                kind, name, rounded, ms, partitionLabel, outcome, text);
-        }
-        catch
-        {
-            // Deliberately silent: a failure to record must never become a
-            // failure of the operation, the same reason the SQL interceptor gives.
-        }
-    }
-    // #endregion record
     // #endregion operations
 }

@@ -14,7 +14,7 @@ namespace TheYard.Api.Shared.Observability;
 /// the same identity that already reads the web app's own record, so no key
 /// is stored anywhere for reading.
 /// </summary>
-public sealed partial class TelemetryReader(string appId, string clientId, bool enabled, string? siteName = null, HostIdentity? identity = null)
+public sealed class TelemetryReader(string appId, string clientId, bool enabled, string? siteName = null, HostIdentity? identity = null)
 {
     /// <summary>The one client every read shares, with a short timeout so a slow service cannot hold the Admin card.</summary>
     private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(8));
@@ -28,7 +28,7 @@ public sealed partial class TelemetryReader(string appId, string clientId, bool 
     /// Service the variable is absent, the role name is not this site's own,
     /// and the reader counts everything and says so.
     /// </summary>
-    private readonly string? _siteName = SiteNameOrNull(siteName ?? identity?.SiteName);
+    private readonly string? _siteName = TelemetryKql.SiteNameOrNull(siteName ?? identity?.SiteName);
 
     /// <summary>The lock that guards the cached answer, since several requests can read and fill it at once.</summary>
     private readonly object _gate = new();
@@ -85,7 +85,7 @@ public sealed partial class TelemetryReader(string appId, string clientId, bool 
             using var req = new HttpRequestMessage(HttpMethod.Post,
                 $"https://api.applicationinsights.io/v1/apps/{appId}/query")
             {
-                Content = JsonContent.Create(new { query = QueryFor(_siteName) }),
+                Content = JsonContent.Create(new { query = TelemetryKql.QueryFor(_siteName) }),
             };
             req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             using var resp = await Http.SendAsync(req);
@@ -95,7 +95,7 @@ public sealed partial class TelemetryReader(string appId, string clientId, bool 
                 return Cache(Failed($"the telemetry API answered {(int)resp.StatusCode}: {Trim(payload)}"));
             }
             using var body = JsonDocument.Parse(payload);
-            return Cache(Shape(body, _siteName));
+            return Cache(TelemetryShape.Shape(body, _siteName));
         }
         catch (Exception ex)
         {

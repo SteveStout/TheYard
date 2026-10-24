@@ -21,13 +21,22 @@ namespace TheYard.Infrastructure.Cosmos.Shared.Auction;
 /// </summary>
 /// <param name="store">The document store.</param>
 /// <param name="target">How many vehicles the catalogue is.</param>
-public sealed partial class CosmosVehicleCatalogue(CosmosStore store, int target) : IVehicleCatalogue
+public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVehicleCatalogue
 {
-    private const string Written = "c.seq < @target AND c.price >= 0";
+    internal const string Written = "c.seq < @target AND c.price >= 0";
 
     private Container Catalogue => store.ContainerNamed(Containers.Catalogue);
 
     private IReadOnlyDictionary<string, string>? _makeBySeedId;
+
+    // The kept places a page deep in an order is read from (CosmosCatalogueKeysets.cs).
+    private readonly CosmosCatalogueKeysets _kept = new(store, target);
+
+    /// <summary>The walks that keep the places, while any runs. A test awaits them.</summary>
+    public Task Walking => _kept.Walking;
+
+    /// <summary>The walk of the live set, while one runs; finished or null otherwise. A test awaits it.</summary>
+    public Task? LiveWalking => _kept.LiveWalking;
 
     /// <inheritdoc />
     public int Target => target;
@@ -40,10 +49,13 @@ public sealed partial class CosmosVehicleCatalogue(CosmosStore store, int target
     public CatalogueFillPace Pace { get; } = new(30, TimeSpan.FromSeconds(1), 2_000);
 
     /// <inheritdoc />
-    public async Task<int> FilledAsync()
+    public Task<int> FilledAsync() => FilledAsync(store, target);
+
+    /// <summary>How many of the catalogue's documents the fill has written, read by the walks too.</summary>
+    internal static async Task<int> FilledAsync(CosmosStore store, int target)
     {
         var counts = await store.QueryAsync<int>(
-            Catalogue,
+            store.ContainerNamed(Containers.Catalogue),
             new QueryDefinition($"SELECT VALUE COUNT(1) FROM c WHERE {Written}").WithParameter("@target", target),
             partitionKey: null,
             "cross-partition");
@@ -123,7 +135,7 @@ public sealed partial class CosmosVehicleCatalogue(CosmosStore store, int target
         return (where.ToString(), parameters, filter.Make);
     }
 
-    private static string? Segment(CatalogueSegment segment) => segment switch
+    internal static string? Segment(CatalogueSegment segment) => segment switch
     {
         CatalogueSegment.Live => "(c.start_offset <= @d AND c.end_offset > @d)",
         CatalogueSegment.Upcoming => "c.start_offset > @d",
@@ -132,7 +144,7 @@ public sealed partial class CosmosVehicleCatalogue(CosmosStore store, int target
     };
 
     /// <summary>The order as an ORDER BY one composite index serves (infra/cosmos/catalogue.json), the place breaking every tie.</summary>
-    private static string OrderBy(CatalogueOrder order) => order switch
+    internal static string OrderBy(CatalogueOrder order) => order switch
     {
         CatalogueOrder.EndAscending => "c.end_offset ASC, c.seq ASC",
         CatalogueOrder.StartAscending => "c.start_offset ASC, c.seq ASC",
@@ -178,7 +190,7 @@ public sealed partial class CosmosVehicleCatalogue(CosmosStore store, int target
 
     /// <summary>
     /// One page: from the kept places when the page is deep in an order they serve
-    /// (CosmosVehicleCatalogue.Keyset.cs), otherwise the ORDER BY, then OFFSET and LIMIT in the
+    /// (CosmosCatalogueKeysets.cs), otherwise the ORDER BY, then OFFSET and LIMIT in the
     /// store. The numbers written into the text are integers this code computed.
     /// </summary>
     public async Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
@@ -187,7 +199,7 @@ public sealed partial class CosmosVehicleCatalogue(CosmosStore store, int target
         {
             return [];
         }
-        if (await KeysetPageAsync(filter, order, skip, take) is { } kept)
+        if (await _kept.PageAsync(filter, order, skip, take) is { } kept)
         {
             return kept;
         }

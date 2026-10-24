@@ -515,7 +515,7 @@ This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are Rea
 ```live path=src/lib/trafficCard.ts region=traffic-words
 ```
 
-```live path=api/TheYard.Application/Shared/Auction/Stock.Search.cs region=page
+```live path=api/TheYard.Application/Shared/Auction/CataloguePages.cs region=page
 ```
 
 ## Addendum, 2026-10-18 (1.0.3.178): the page is the store's

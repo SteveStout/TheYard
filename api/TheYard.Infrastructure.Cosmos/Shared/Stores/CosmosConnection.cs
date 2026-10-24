@@ -1,5 +1,5 @@
 // How the store gets its one client: which credential it signs in with, and the client options
-// the whole application runs on. A file of its own because it is the only part that names the
+// the whole application runs on. A class of its own because it is the only part that names the
 // Azure identity types, and the reason it must be the only one is written on CredentialFor.
 using Azure.Core;
 using Azure.Identity;
@@ -8,8 +8,8 @@ using TheYard.Application.Shared.Stores;
 
 namespace TheYard.Infrastructure.Cosmos.Shared.Stores;
 
-/// <summary>The connection setup of CosmosStore; the type and what it is for are described in CosmosStore.cs.</summary>
-public sealed partial class CosmosStore
+/// <summary>How a <see cref="CosmosStore"/> gets its one client and its credential.</summary>
+public static class CosmosConnection
 {
     // #region connect
     /// <summary>
@@ -40,7 +40,7 @@ public sealed partial class CosmosStore
             // the code and not only in the portal (ADR: A second store on
             // Cosmos DB, and what it costs).
             ConsistencyLevel = ConsistencyLevel.Session,
-            UseSystemTextJsonSerializerWithOptions = Json,
+            UseSystemTextJsonSerializerWithOptions = CosmosStore.Json,
             // The SDK retries a 429 on its own. Nine tries over thirty seconds
             // is what a seed against a 1000 RU/s database needs; a request that
             // is still being throttled after that is a request worth failing.

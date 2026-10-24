@@ -1,7 +1,8 @@
 // The keyset read on the document store: a page deep in an order is asked for from a known row's
 // order key and place, never by a count of rows to skip, because the store's OFFSET reads every
 // document it skips (1,658 request units and 9.4 seconds at an offset of 40,000). A file of its own
-// because the places it keeps, and when it may use them, are one subject
+// because the places it keeps, and when it may use them, are one subject, and the catalogue that
+// reads from them is a class of its own (ADR-088, the 300-line rule)
 // (ADR: The store does the work, the addendum on a typed word as a seek).
 using System.Collections.Concurrent;
 using Microsoft.Azure.Cosmos;
@@ -10,8 +11,14 @@ using TheYard.Infrastructure.Cosmos.Shared.Stores;
 
 namespace TheYard.Infrastructure.Cosmos.Shared.Auction;
 
-/// <summary>The keyset read and its places; the class is described in CosmosVehicleCatalogue.cs.</summary>
-public sealed partial class CosmosVehicleCatalogue
+/// <summary>
+/// The kept places of every order over the whole catalogue, and the page read from them; the live
+/// segment's places are <see cref="CosmosCatalogueLive"/>. The queries are the catalogue's own
+/// (<see cref="CosmosVehicleCatalogue"/>), so a page read here is the page OFFSET would read.
+/// </summary>
+/// <param name="store">The document store.</param>
+/// <param name="target">How many vehicles the catalogue is.</param>
+public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
 {
     /// <summary>How many rows apart the kept places are: the most a page skips with OFFSET once they are kept.</summary>
     public const int KeyStep = 250;
@@ -25,11 +32,19 @@ public sealed partial class CosmosVehicleCatalogue
     private readonly ConcurrentDictionary<CatalogueOrder, Keyset> _keysets = new();
     private readonly ConcurrentDictionary<CatalogueOrder, Task> _walks = new();
 
+    // The live segment's places, which move as the day goes on.
+    private readonly CosmosCatalogueLive _live = new(store, target);
+
+    private Container Catalogue => store.ContainerNamed(Containers.Catalogue);
+
     /// <summary>Every KeyStep-th row's order key and place, in the order's own order.</summary>
     private sealed record Keyset(double[] Keys, int[] Places);
 
     /// <summary>The walks that keep the places, while any runs. A test awaits them.</summary>
     public Task Walking => Task.WhenAll(_walks.Values);
+
+    /// <summary>The walk of the live set, while one runs; finished or null otherwise.</summary>
+    public Task? LiveWalking => _live.Walking;
 
     /// <summary>The document path an order sorts on first, and whether it descends; null for the place itself.</summary>
     private static (string Path, bool Descending)? KeyOf(CatalogueOrder order) => order switch
@@ -59,14 +74,14 @@ public sealed partial class CosmosVehicleCatalogue
             || (filter.Segment == CatalogueSegment.Ended && order == CatalogueOrder.EndDescending));
 
     /// <summary>The row at or after the kept place, in the order: a range on the order's first key that its composite index serves.</summary>
-    private static string AtOrAfter(string path, bool descending) =>
+    internal static string AtOrAfter(string path, bool descending) =>
         $"(c.{path} {(descending ? "<" : ">")} @key OR (c.{path} = @key AND c.seq >= @place))";
 
     /// <summary>
     /// A page deep in an order from the kept places, or null when they are not kept yet, in which
     /// case the walk that keeps them is started and the page is read with OFFSET this once.
     /// </summary>
-    private async Task<IReadOnlyList<CatalogueEntry>?> KeysetPageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
+    public async Task<IReadOnlyList<CatalogueEntry>?> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
     {
         if (skip < KeyStep || !KeysetServes(filter, order) || KeyOf(order) is not { } key)
         {
@@ -74,7 +89,7 @@ public sealed partial class CosmosVehicleCatalogue
         }
         if (filter.Segment == CatalogueSegment.Live)
         {
-            return await LivePageAsync(filter.SinceAnchorMs, skip, take);
+            return await _live.PageAsync(filter.SinceAnchorMs, skip, take);
         }
         if (!_keysets.TryGetValue(order, out var keyset))
         {
@@ -89,7 +104,7 @@ public sealed partial class CosmosVehicleCatalogue
         }
         var documents = await store.QueryAsync<CatalogueDocument>(
             Catalogue,
-            new QueryDefinition($"SELECT * FROM c WHERE {Written} AND {AtOrAfter(key.Path, key.Descending)} ORDER BY {OrderBy(order)} OFFSET {at % KeyStep} LIMIT {take}")
+            new QueryDefinition($"SELECT * FROM c WHERE {CosmosVehicleCatalogue.Written} AND {AtOrAfter(key.Path, key.Descending)} ORDER BY {CosmosVehicleCatalogue.OrderBy(order)} OFFSET {at % KeyStep} LIMIT {take}")
                 .WithParameter("@target", target)
                 .WithParameter("@key", keyset.Keys[index])
                 .WithParameter("@place", keyset.Places[index]),
@@ -124,7 +139,7 @@ public sealed partial class CosmosVehicleCatalogue
         string test = order == CatalogueOrder.StartAscending ? "c.start_offset <= @d" : "c.end_offset > @d";
         var counts = await store.QueryAsync<int>(
             Catalogue,
-            new QueryDefinition($"SELECT VALUE COUNT(1) FROM c WHERE {Written} AND {AtOrAfter(key.Path, key.Descending)} AND {test}")
+            new QueryDefinition($"SELECT VALUE COUNT(1) FROM c WHERE {CosmosVehicleCatalogue.Written} AND {AtOrAfter(key.Path, key.Descending)} AND {test}")
                 .WithParameter("@target", target)
                 .WithParameter("@key", keyset.Keys[last])
                 .WithParameter("@place", keyset.Places[last])
@@ -154,11 +169,11 @@ public sealed partial class CosmosVehicleCatalogue
     {
         try
         {
-            if (KeyOf(order) is not { } key || await FilledAsync() < target)
+            if (KeyOf(order) is not { } key || await CosmosVehicleCatalogue.FilledAsync(store, target) < target)
             {
                 return;
             }
-            var (keys, places) = await WalkPlacesAsync(order, key.Path, key.Descending, null);
+            var (keys, places) = await WalkPlacesAsync(store, target, order, key.Path, key.Descending, null);
             if ((long)(keys.Length - 1) * KeyStep < target && (long)keys.Length * KeyStep >= target)
             {
                 _keysets[order] = new Keyset(keys, places);
@@ -182,7 +197,7 @@ public sealed partial class CosmosVehicleCatalogue
     /// after the last place the one before ended on, so no read skips anything, and keeps the key
     /// and place of every KeyStep-th row: about forty request units a read.
     /// </summary>
-    private async Task<(double[] Keys, int[] Places)> WalkPlacesAsync(CatalogueOrder order, string path, bool descending, string? condition, params (string Name, object Value)[] parameters)
+    internal static async Task<(double[] Keys, int[] Places)> WalkPlacesAsync(CosmosStore store, int target, CatalogueOrder order, string path, bool descending, string? condition, params (string Name, object Value)[] parameters)
     {
         var keys = new List<double>();
         var places = new List<int>();
@@ -196,8 +211,8 @@ public sealed partial class CosmosVehicleCatalogue
         while (true)
         {
             var query = new QueryDefinition(lastKey is null
-                    ? $"SELECT VALUE [c.{path}, c.seq] FROM c WHERE {Written}{within} ORDER BY {OrderBy(order)} OFFSET 0 LIMIT {WalkRead}"
-                    : $"SELECT VALUE [c.{path}, c.seq] FROM c WHERE {Written}{within} AND {after} ORDER BY {OrderBy(order)} OFFSET 0 LIMIT {WalkRead}")
+                    ? $"SELECT VALUE [c.{path}, c.seq] FROM c WHERE {CosmosVehicleCatalogue.Written}{within} ORDER BY {CosmosVehicleCatalogue.OrderBy(order)} OFFSET 0 LIMIT {WalkRead}"
+                    : $"SELECT VALUE [c.{path}, c.seq] FROM c WHERE {CosmosVehicleCatalogue.Written}{within} AND {after} ORDER BY {CosmosVehicleCatalogue.OrderBy(order)} OFFSET 0 LIMIT {WalkRead}")
                 .WithParameter("@target", target);
             if (lastKey is { } known)
             {
@@ -207,7 +222,7 @@ public sealed partial class CosmosVehicleCatalogue
             {
                 query = query.WithParameter(name, value);
             }
-            var read = await store.QueryAsync<double[]>(Catalogue, query, partitionKey: null, "cross-partition");
+            var read = await store.QueryAsync<double[]>(store.ContainerNamed(Containers.Catalogue), query, partitionKey: null, "cross-partition");
             foreach (var pair in read)
             {
                 if (position % KeyStep == 0)

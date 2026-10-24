@@ -295,15 +295,15 @@ public sealed class StoreCatalogueTests
     public void The_document_store_keeps_places_only_for_the_orders_whose_rows_they_count()
     {
         var whole = new CatalogueFilter { SinceAnchorMs = 1 };
-        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole, CatalogueOrder.PriceAscending));
-        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Live }, CatalogueOrder.EndAscending));
-        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Upcoming }, CatalogueOrder.StartAscending));
-        Assert.True(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Ended }, CatalogueOrder.EndDescending));
-        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole, CatalogueOrder.Seq));
-        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Segment = CatalogueSegment.Live }, CatalogueOrder.PriceAscending));
-        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Make = "Ford" }, CatalogueOrder.PriceAscending));
-        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Tokens = [new CatalogueToken("ford", [])] }, CatalogueOrder.PriceAscending));
-        Assert.False(CosmosVehicleCatalogue.KeysetServes(whole with { Exclude = ["a"] }, CatalogueOrder.PriceAscending));
+        Assert.True(CosmosCatalogueKeysets.KeysetServes(whole, CatalogueOrder.PriceAscending));
+        Assert.True(CosmosCatalogueKeysets.KeysetServes(whole with { Segment = CatalogueSegment.Live }, CatalogueOrder.EndAscending));
+        Assert.True(CosmosCatalogueKeysets.KeysetServes(whole with { Segment = CatalogueSegment.Upcoming }, CatalogueOrder.StartAscending));
+        Assert.True(CosmosCatalogueKeysets.KeysetServes(whole with { Segment = CatalogueSegment.Ended }, CatalogueOrder.EndDescending));
+        Assert.False(CosmosCatalogueKeysets.KeysetServes(whole, CatalogueOrder.Seq));
+        Assert.False(CosmosCatalogueKeysets.KeysetServes(whole with { Segment = CatalogueSegment.Live }, CatalogueOrder.PriceAscending));
+        Assert.False(CosmosCatalogueKeysets.KeysetServes(whole with { Make = "Ford" }, CatalogueOrder.PriceAscending));
+        Assert.False(CosmosCatalogueKeysets.KeysetServes(whole with { Tokens = [new CatalogueToken("ford", [])] }, CatalogueOrder.PriceAscending));
+        Assert.False(CosmosCatalogueKeysets.KeysetServes(whole with { Exclude = ["a"] }, CatalogueOrder.PriceAscending));
     }
 
     /// <summary>SQLite's plan for one statement, its steps joined, with the statement's own parameters.</summary>

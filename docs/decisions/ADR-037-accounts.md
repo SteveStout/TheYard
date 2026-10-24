@@ -98,7 +98,7 @@ Reading it back, and who is asking (`api/TheYard.Api/Shared/Auth/Tokens.cs`):
 
 Two indexes, one fact (`api/TheYard.Application/Shared/Auction/BidBook.cs`):
 
-```live path=api/TheYard.Application/Shared/Auction/BidBook.cs region=record
+```live path=api/TheYard.Application/Shared/Auction/BidLedger.cs region=record
 ```
 
 What a badge is told (`api/TheYard.Application/Shared/Auction/StandingReader.cs`):
@@ -242,7 +242,7 @@ it as a parameter and check it before everything else, including the shortcut:
 The service supplies it from the standing it already kept, under the same gate
 as the write that makes it true, so two purchases cannot both find it false:
 
-```live path=api/TheYard.Application/Shared/Auction/BidBook.cs region=sold
+```live path=api/TheYard.Application/Shared/Auction/BidLedger.cs region=sold
 ```
 
 And the wire carries it on every vehicle, in every listing and every detail, as

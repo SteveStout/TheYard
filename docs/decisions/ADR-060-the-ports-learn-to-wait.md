@@ -66,7 +66,7 @@ asks first; the host asks at startup and the writing methods ask again, which
 costs nothing once the load is done and means a service nobody warmed loads
 itself on its first bid:
 
-```live path=api/TheYard.Application/Shared/Auction/BidBook.cs region=store
+```live path=api/TheYard.Application/Shared/Auction/BidLedger.cs region=store
 ```
 
 **`InventoryService` warms once and reads a finished task after that.** The

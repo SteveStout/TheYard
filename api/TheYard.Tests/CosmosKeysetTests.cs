@@ -15,7 +15,7 @@ public class CosmosKeysetTests
     public async Task A_deep_live_page_from_the_kept_places_is_the_offset_page_for_under_a_hundred_request_units()
     {
         var log = new StoreRingBuffer(500);
-        var store = CosmosStore.Connect(
+        var store = CosmosConnection.Connect(
             CosmosLive.Endpoint,
             Environment.GetEnvironmentVariable("Cosmos__Database") ?? "theyard",
             "",

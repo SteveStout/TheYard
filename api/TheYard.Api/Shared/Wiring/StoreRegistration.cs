@@ -176,7 +176,7 @@ public static class StoreRegistration
         StoreSecondChance.Plan? cosmosSecondChance = null;
         if (cosmosConfigured)
         {
-            cosmos = CosmosStore.Connect(
+            cosmos = CosmosConnection.Connect(
                 configuredCosmos!,
                 builder.Configuration["Cosmos:Database"] ?? "theyard",
                 builder.Configuration["Cosmos:ContainerPrefix"] ?? "",
@@ -187,9 +187,9 @@ public static class StoreRegistration
                 AzureIds.ClientId(builder.Configuration),
                 storeLog);
             // Every operation is filed under the request that caused it, the first one included.
-            cosmos.CurrentRequest = currentRequest;
+            cosmos.Recorder.CurrentRequest = currentRequest;
             var cosmosStartup = new StartupTimings();
-            var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.PrepareAsync(seedVehicles, seedPhotos), firstWait));
+            var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.Starting.PrepareAsync(seedVehicles, seedPhotos), firstWait));
             var store = cosmos;
             // The relational backend's shape: the files until the store is attached (ADR: A
             // second store on Cosmos DB, and what it costs).
@@ -215,7 +215,7 @@ public static class StoreRegistration
                 Catalogues.Cosmos(store, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, StoreKeys.Document, servesBothSites)),
                 new BidBook(new CosmosBidStore(store)),
                 new CosmosActivityStore(store),
-                store.ProbeAsync);
+                store.Starting.ProbeAsync);
             if (cosmosState.Ready)
             {
                 cosmosBackend.Attach(CosmosAttachment(cosmosState));
@@ -223,7 +223,7 @@ public static class StoreRegistration
             backendList.Add(cosmosBackend);
             cosmosSecondChance = new StoreSecondChance.Plan(
                 cosmosBackend,
-                () => store.PrepareAsync(seedVehicles, seedPhotos),
+                () => store.Starting.PrepareAsync(seedVehicles, seedPhotos),
                 async state =>
                 {
                     var attachment = CosmosAttachment(state);

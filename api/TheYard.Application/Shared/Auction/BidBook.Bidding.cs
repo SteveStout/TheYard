@@ -43,13 +43,13 @@ public sealed partial class BidBook
                     merged.BidCount + 1,
                     WonBuyNow: outcome.Kind == BidOutcomeKind.Won,
                     AtMs: clock.NowMs);
-                var next = Next(held, userId, state);
+                var next = StandingFold.Next(held, userId, state);
                 // The store first, then memory. A store that throws leaves the
                 // dictionaries as they were, so a failed write means the bid did
                 // not happen anywhere, which is the answer the caller already has.
                 if (await _store.TrySaveAsync(userId, vehicle.Id, state, next, version))
                 {
-                    Record(userId, vehicle.Id, state, next);
+                    _ledger.Record(userId, vehicle.Id, state, next);
                     return outcome;
                 }
             }
@@ -84,10 +84,10 @@ public sealed partial class BidBook
                 }
 
                 var state = new BidState(outcome.Amount, merged.BidCount, WonBuyNow: true, AtMs: clock.NowMs);
-                var next = Next(held, userId, state);
+                var next = StandingFold.Next(held, userId, state);
                 if (await _store.TrySaveAsync(userId, vehicle.Id, state, next, version))
                 {
-                    Record(userId, vehicle.Id, state, next);
+                    _ledger.Record(userId, vehicle.Id, state, next);
                     return outcome;
                 }
             }

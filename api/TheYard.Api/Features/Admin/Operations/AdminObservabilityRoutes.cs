@@ -4,68 +4,57 @@
 // (OperationsReadings.cs, MachineCardReadings.cs). The routes are mapped in AdminEndpoints.cs.
 
 using Microsoft.AspNetCore.Http.HttpResults;
-using TheYard.Application.Shared;
 
 namespace TheYard.Api.Features.Admin.Operations;
 
-/// <summary>The observability routes of AdminEndpoints; the type and what it is for are described in AdminEndpoints.cs.</summary>
-public static partial class AdminEndpoints
+/// <summary>The observability routes of AdminEndpoints; mapped in AdminEndpoints.cs.</summary>
+public static class AdminObservabilityRoutes
 {
-    /// <summary>
-    /// A reading as the route answers it: the body as JSON in the host's own wire, a refusal as a 400 problem and
-    /// nothing to read as a 404 problem, each with the handler's own words.
-    /// </summary>
-    internal static IResult Answer(Reading reading) => reading.Kind switch
-    {
-        ReadingKind.Read => Results.Json(reading.Body),
-        ReadingKind.Refused => Results.Problem(detail: reading.Detail, statusCode: StatusCodes.Status400BadRequest, title: reading.Title),
-        _ => Results.Problem(detail: reading.Detail, statusCode: StatusCodes.Status404NotFound, title: reading.Title),
-    };
 
     /// <summary>Answers the SQL ring: the statements the relational store ran, newest first.</summary>
-    private static async Task<IResult> Sql(ReadSqlRingHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadSqlRingQuery(), cancellation));
+    internal static async Task<IResult> Sql(ReadSqlRingHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadSqlRingQuery(), cancellation));
 
     /// <summary>Answers the document store's operations ring, newest first, with the store's name.</summary>
-    private static async Task<IResult> Store(ReadStoreRingHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadStoreRingQuery(), cancellation));
+    internal static async Task<IResult> Store(ReadStoreRingHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadStoreRingQuery(), cancellation));
 
     /// <summary>Answers how this request arrived, to the operator alone; anybody else gets a 404, as if the route were not there.</summary>
-    private static async Task<IResult> ArrivalRead(HttpContext http, AdminKey adminKey, ReadArrivalHandler handler, CancellationToken cancellation) =>
+    internal static async Task<IResult> ArrivalRead(HttpContext http, AdminKey adminKey, ReadArrivalHandler handler, CancellationToken cancellation) =>
         adminKey.IsPresentedBy(http.Request)
-            ? Answer(await handler.HandleAsync(new ReadArrivalQuery(), cancellation))
+            ? AdminEndpoints.Answer(await handler.HandleAsync(new ReadArrivalQuery(), cancellation))
             : TypedResults.NotFound();
 
     /// <summary>Answers the log ring, newest first.</summary>
-    private static async Task<IResult> Logs(ReadLogRingHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadLogRingQuery(), cancellation));
+    internal static async Task<IResult> Logs(ReadLogRingHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadLogRingQuery(), cancellation));
 
     /// <summary>Answers one card's kept ring over a window.</summary>
-    private static async Task<IResult> Kept(string? card, string? window, ReadKeptRingHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadKeptRingQuery(card, window), cancellation));
+    internal static async Task<IResult> Kept(string? card, string? window, ReadKeptRingHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadKeptRingQuery(card, window), cancellation));
 
     /// <summary>Answers the timings of the request's store and every other.</summary>
-    private static async Task<IResult> Metrics(ReadMetricsHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadMetricsQuery(), cancellation));
+    internal static async Task<IResult> Metrics(ReadMetricsHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadMetricsQuery(), cancellation));
 
     /// <summary>Answers the store bar; an old cookie that named a store is expired on the way, the request's own fact.</summary>
-    private static async Task<Ok<StoresView>> Stores(HttpContext http, ReadStoresHandler handler, CancellationToken cancellation)
+    internal static async Task<Ok<StoresView>> Stores(HttpContext http, ReadStoresHandler handler, CancellationToken cancellation)
     {
         Backends.ExpireLegacyCookie(http);
         return TypedResults.Ok((StoresView)(await handler.HandleAsync(new ReadStoresQuery(), cancellation)).Body!);
     }
 
     /// <summary>Answers this container as Azure has it, with the hourly readings.</summary>
-    private static async Task<IResult> Azure(ReadAzureSelfHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadAzureSelfQuery(), cancellation));
+    internal static async Task<IResult> Azure(ReadAzureSelfHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadAzureSelfQuery(), cancellation));
 
     /// <summary>Answers the other container's metrics.</summary>
-    private static async Task<IResult> Peer(ReadPeerHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadPeerQuery(), cancellation));
+    internal static async Task<IResult> Peer(ReadPeerHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadPeerQuery(), cancellation));
 
     /// <summary>Answers the machines card over the last hour or a kept window.</summary>
-    private static async Task<IResult> Machines(string? window, ReadMachinesHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadMachinesQuery(window), cancellation));
+    internal static async Task<IResult> Machines(string? window, ReadMachinesHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadMachinesQuery(window), cancellation));
 }
 
 /// <summary>How one request arrived: the forwarded headers as they reached the process, and what the middleware made of them.</summary>

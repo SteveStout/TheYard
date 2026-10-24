@@ -25,7 +25,7 @@ public sealed class StoreAnnouncement(
     {
         storeLoggers.Factory = loggers;
         (relational.Contexts as ContextFactory)?.Attach(loggers);
-        document.Store?.Logger = loggers.CreateLogger<CosmosStore>();
+        document.Store?.Recorder.Logger = loggers.CreateLogger<CosmosStore>();
 
         // The promise the accounts record makes: an invented signing key is said out loud,
         // because its consequence is every session ending when this process does (ADR: Accounts

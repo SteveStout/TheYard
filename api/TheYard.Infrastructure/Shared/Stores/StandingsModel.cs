@@ -3,10 +3,10 @@
 // at the length a reader can take in at once.
 using Microsoft.EntityFrameworkCore;
 
-namespace TheYard.Infrastructure;
+namespace TheYard.Infrastructure.Shared.Stores;
 
-/// <summary>The standing's part of the model; the context itself is described in YardDbContext.cs.</summary>
-public sealed partial class YardDbContext
+/// <summary>The Standings table's part of the relational model.</summary>
+public static class StandingsModel
 {
     // #region standings-model
     /// <summary>
@@ -16,13 +16,13 @@ public sealed partial class YardDbContext
     /// reads the rows again whenever a standing is missing, so a standing is
     /// never the only record of a bid.
     /// </summary>
-    private static void ConfigureStandings(ModelBuilder model) =>
+    internal static void ConfigureStandings(ModelBuilder model) =>
         model.Entity<StandingRow>(standing =>
         {
             standing.ToTable("Standings");
             standing.HasKey(row => row.VehicleId);
-            standing.Property(row => row.VehicleId).HasMaxLength(IdLength);
-            standing.Property(row => row.HighBidderId).HasMaxLength(IdentityKeyLength);
+            standing.Property(row => row.VehicleId).HasMaxLength(YardColumns.IdLength);
+            standing.Property(row => row.HighBidderId).HasMaxLength(YardColumns.IdentityKeyLength);
         });
     // #endregion standings-model
 }

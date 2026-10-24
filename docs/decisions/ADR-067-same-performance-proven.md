@@ -50,7 +50,7 @@ five round trips to each store doing as little as a round trip can: a
 document side, the median kept. That number is what lets the card say
 whether a difference is the store or the distance to it.
 
-```live path=api/TheYard.Api/Shared/Proof/ProofRunner.Requests.cs region=timed
+```live path=api/TheYard.Api/Shared/Proof/ProofRequests.cs region=timed
 ```
 
 **The verdict is arithmetic, not adjectives.** Per path: the median of each
@@ -195,7 +195,7 @@ The proof sits in the host Api (ProofRunner and ProofResult) because it drives t
 
 ## Files
 
-- [`api/TheYard.Api/Shared/Proof/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/Proof.cs), [`api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs), [`api/TheYard.Api/Shared/Proof/ProofRunner.Requests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Requests.cs) and [`api/TheYard.Api/Shared/Proof/ProofResult.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofResult.cs): the runner, the samples, the verdict.
+- [`api/TheYard.Api/Shared/Proof/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/Proof.cs), [`api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs), [`api/TheYard.Api/Shared/Proof/ProofRequests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRequests.cs) and [`api/TheYard.Api/Shared/Proof/ProofResult.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofResult.cs): the runner, the samples, the verdict.
 - [`api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminEndpoints.cs): the two endpoints (region proof-endpoints).
 - [`api/TheYard.Api/Shared/Instance/SelfAddress.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Instance/SelfAddress.cs): the loopback address.
 - [`api/TheYard.Api/Shared/Wiring/AdminRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/AdminRegistration.cs): the client the proof uses (region proof-clients).

@@ -51,13 +51,13 @@ public sealed record FollowsVerdictWire(
     double? MemoryFollowsTraffic);
 
 /// <summary>The memory-against-traffic handler of AdminEndpoints; the type is described in AdminEndpoints.cs.</summary>
-public static partial class AdminEndpoints
+public static class AdminFollowsRoutes
 {
     /// <summary>The first minutes of a process's life, left out of the hour: the runtime, the caches and a fill all grow memory while nothing is wrong.</summary>
     public static readonly TimeSpan WarmUp = TimeSpan.FromMinutes(15);
 
 
     /// <summary>Answers the memory-against-traffic card over the last hour or a kept window.</summary>
-    private static async Task<IResult> Follows(string? window, ReadFollowsHandler handler, CancellationToken cancellation) =>
-        Answer(await handler.HandleAsync(new ReadFollowsQuery(window), cancellation));
+    internal static async Task<IResult> Follows(string? window, ReadFollowsHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadFollowsQuery(window), cancellation));
 }

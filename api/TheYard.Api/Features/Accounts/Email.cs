@@ -12,7 +12,7 @@ namespace TheYard.Api.Features.Accounts;
 /// endpoint and the sender address on its Azure-managed domain; no key,
 /// because the identity that reads both stores is allowed to send here too,
 /// and the credential is the store's own, built by the same rule from the
-/// same settings (CosmosStore.CredentialFor) rather than a second one here.
+/// same settings (CosmosConnection.CredentialFor) rather than a second one here.
 /// A send is fire-and-forget on the service side (WaitUntil.Started): the
 /// service queues it and delivery is its problem, not a request thread's.
 /// </summary>

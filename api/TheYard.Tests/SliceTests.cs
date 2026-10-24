@@ -385,7 +385,7 @@ public sealed class SliceTests
     private static readonly string[] MappedAtTheRoot =
     [
         "ActivityRows.cs", "BlogRows.cs", "CatalogueRows.cs", "CatalogueWords.cs", "Rows.cs", "SeedResult.cs", "YardUser.cs",
-        "YardDbContext.cs", "YardDbContext.Blog.cs", "YardDbContext.Catalogue.cs", "YardDbContext.Columns.cs", "YardDbContext.Standings.cs",
+        "YardDbContext.cs",
     ];
 
     [Fact]

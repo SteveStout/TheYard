@@ -87,7 +87,7 @@ public sealed class MachineCardReadings(MachineSampler sampler, MachineHistoryRe
             bucketMinutes = 1;
             var samples = sampler.Snapshot();
             var requests = requestLog.Snapshot();
-            var warm = start.At + AdminEndpoints.WarmUp;
+            var warm = start.At + AdminFollowsRoutes.WarmUp;
             skipped = now - TimeSpan.FromHours(1) < warm;
             points = [];
             for (var minute = now.UtcMinute.AddMinutes(-60); minute < now.UtcMinute; minute = minute.AddMinutes(1))

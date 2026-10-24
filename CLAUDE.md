@@ -75,6 +75,9 @@ split).
   (`VehicleWire.cs`): every dataset field except the reserve amount, plus the six facts the server
   derives. A field added to `Vehicle` is added there too; `VehicleWireTests` fails until it is.
 - **Empty is valid, null is the error.** Never return null for a collection.
+- **300 lines a file, and a type.** No production C# file under `api/`, and no C# type counted across all of
+  its partial files, runs past 300 lines; a longer one is cut by job into types of its own, never into more
+  partial files (`FileShapeTests`, ADR-088's addendum of 1.0.4.47).
 - **Money is whole dollars as `int`**, because the dataset's prices are whole dollars and every rule adds
   whole-dollar increments; nothing needs cents. **Every derived or recorded instant is milliseconds since
   the epoch as `long`, UTC** (the clock's anchor, the window's start and end, a bid's `at_ms`), the same unit the

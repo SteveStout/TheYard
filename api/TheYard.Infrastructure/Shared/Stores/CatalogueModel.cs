@@ -3,24 +3,18 @@
 // a reader can take in at once (ADR: The store does the work).
 using Microsoft.EntityFrameworkCore;
 
-namespace TheYard.Infrastructure;
+namespace TheYard.Infrastructure.Shared.Stores;
 
-/// <summary>The catalogue's part of the model; the context itself is described in YardDbContext.cs.</summary>
-public sealed partial class YardDbContext
+/// <summary>The Catalogue and CatalogueWords tables' part of the relational model.</summary>
+public static class CatalogueModel
 {
-    /// <summary>All hundred thousand vehicles with their slot, read a page at a time.</summary>
-    public DbSet<CatalogueRow> Catalogue => Set<CatalogueRow>();
-
-    /// <summary>Every word of every vehicle's searchable text, one row each, what a typed word is sought in.</summary>
-    public DbSet<CatalogueWordRow> CatalogueWords => Set<CatalogueWordRow>();
-
     // #region catalogue-model
     /// <summary>
     /// The catalogue at the seed table's widths, keyed by id, unique on its place, one index
     /// per order a page is read in, each ending in the place so a tie reads the same on every
     /// store, and one narrow index holding every column a count compares. Which index is clustered, and which keys descend, is the SQL project's to say.
     /// </summary>
-    private static void ConfigureCatalogue(ModelBuilder model, bool sqlServer) =>
+    internal static void ConfigureCatalogue(ModelBuilder model, bool sqlServer) =>
         model.Entity<CatalogueRow>(row =>
         {
             row.ToTable("Catalogue");
@@ -50,7 +44,7 @@ public sealed partial class YardDbContext
             row.HasIndex(r => new { r.SearchText, r.StartOffsetMs, r.EndOffsetMs, r.Price, r.ConditionGrade, r.BidCount, r.Seq })
                 .HasDatabaseName("IX_Catalogue_Words");
 
-            row.Property(r => r.Id).HasMaxLength(IdLength);
+            row.Property(r => r.Id).HasMaxLength(YardColumns.IdLength);
             row.Property(r => r.Vin).HasMaxLength(17).IsUnicode(false);
             row.Property(r => r.Make).HasMaxLength(64);
             row.Property(r => r.Model).HasMaxLength(64);
@@ -75,7 +69,7 @@ public sealed partial class YardDbContext
                 // The seed table's two SQL Server types, for the seed table's reasons.
                 row.Property(r => r.ConditionGrade).HasConversion<decimal>().HasPrecision(3, 1);
                 row.Property(r => r.AuctionStart)
-                    .HasConversion(AuctionStartToDateTime)
+                    .HasConversion(YardColumns.AuctionStartToDateTime)
                     .HasColumnType("datetime2(0)");
             }
         });
@@ -85,7 +79,7 @@ public sealed partial class YardDbContext
     /// The words, keyed by the place and the word so the fill's check for a vehicle's words is a
     /// seek, and indexed by the word so a typed word is a range that hands back places.
     /// </summary>
-    private static void ConfigureCatalogueWords(ModelBuilder model) =>
+    internal static void ConfigureCatalogueWords(ModelBuilder model) =>
         model.Entity<CatalogueWordRow>(row =>
         {
             row.ToTable("CatalogueWords");

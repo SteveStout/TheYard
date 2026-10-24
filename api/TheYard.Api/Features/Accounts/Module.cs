@@ -127,7 +127,7 @@ public sealed class Module : IModule
             configuration["Email:Endpoint"],
             configuration["Email:From"],
             // The same identity the stores use, chosen by the same setting.
-            () => CosmosStore.CredentialFor(
+            () => CosmosConnection.CredentialFor(
                 configuration["Cosmos:Credential"] ?? "azure-cli",
                 AzureIds.ClientId(configuration)),
             services.GetRequiredService<ILogger<AcsEmailSender>>()));

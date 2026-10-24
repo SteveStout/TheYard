@@ -157,7 +157,7 @@ public class SqlServerModelTests
         var vehicles = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync();
         Assert.True(vehicles.Count > 100, "the seed dataset should have been found and read");
 
-        var converter = YardDbContext.AuctionStartToDateTime;
+        var converter = YardColumns.AuctionStartToDateTime;
         var forward = converter.ConvertToProviderExpression.Compile();
         var back = converter.ConvertFromProviderExpression.Compile();
 
@@ -170,7 +170,7 @@ public class SqlServerModelTests
     [Fact]
     public void An_auction_start_the_dataset_could_not_produce_fails_loudly()
     {
-        var forward = YardDbContext.AuctionStartToDateTime.ConvertToProviderExpression.Compile();
+        var forward = YardColumns.AuctionStartToDateTime.ConvertToProviderExpression.Compile();
 
         // A silent fallback here would write the wrong instant into every row of
         // a regenerated dataset rather than stopping the boot that produced it.

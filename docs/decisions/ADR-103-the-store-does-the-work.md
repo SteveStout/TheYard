@@ -67,12 +67,12 @@ On SQL Server each order is one index ending in `Seq` (`api/TheYard.Database/Tab
 
 **The expansion is the seeder.** At warm-up the site counts what its store holds. Full, the store answers and nothing is loaded. Short by a few thousand, the warm-up fills it first. Short by more, the site answers from the expansion in memory while it fills its own store beside itself at the store's pace, then switches, lets the list go, and runs one compacting collection so the dial shows the memory the same minute. The other site watches and switches when the fill is done. `Catalogue__Keep` turns that on for the deploy and leaves every test host alone.
 
-```live path=api/TheYard.Application/Shared/Auction/Stock.Warm.cs region=choose
+```live path=api/TheYard.Application/Shared/Auction/StockSource.cs region=choose
 ```
 
 **Every cache is bounded.** `BoundedCache` holds the listing's counts and pages for one five-second bucket of the clock and the vehicles read by id for ten minutes, each bounded by a count and by an estimate of its bytes.
 
-```live path=api/TheYard.Application/Shared/Auction/Stock.cs region=listing-cache
+```live path=api/TheYard.Application/Shared/Auction/CataloguePages.cs region=listing-cache
 ```
 
 **A heap limit on each site.** `DOTNET_GCHeapHardLimitPercent` is `0x1E` on both .NET sites in `infra/appservice.bicep`. GC settings read from the environment are hexadecimal, so `30` would have been forty-eight per cent. With the limit, a regression is collected harder, and refused if it must be, inside its own share instead of taking memory from the other three apps on the plan.
@@ -116,10 +116,10 @@ What would change it: a catalogue too big for one physical partition or for the 
 
 - [`api/TheYard.Application/Shared/Auction/Ports.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Ports.cs) - `IVehicleCatalogue`, the five primitives
 - [`api/TheYard.Application/Shared/Auction/CatalogueFilter.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/CatalogueFilter.cs) - the filter in the store's terms, the orders, the segments and the slot
-- [`api/TheYard.Application/Shared/Auction/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Stock.cs) and its parts `.Warm.cs`, `.Search.cs`, `.Moved.cs`, `.Find.cs` - the warm-up and the fill, the listing plan and the overlay's merge, the store's answer without the moved vehicles, the reads by id
+- [`api/TheYard.Application/Shared/Auction/Stock.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/Stock.cs) and its parts `.Warm.cs`, `.Search.cs`, `.Find.cs` - the warm-up, the listing plan and the overlay's merge, the reads by id; beside it [`StockSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/StockSource.cs), [`CataloguePages.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/CataloguePages.cs) and [`CatalogueFilterResolver.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/CatalogueFilterResolver.cs) - the choice of store or list and the fill, the cached answers with and without the moved vehicles, the filter in the store's spelling
 - [`api/TheYard.Application/Shared/Auction/MemoryCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Auction/MemoryCatalogue.cs) - the list catalogue: the tests, the file fallback and a fill's bridge
 - [`api/TheYard.Application/Shared/Caching/BoundedCache.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Caching/BoundedCache.cs) - the one cache shape
-- [`api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs), [`CatalogueRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/CatalogueRows.cs) and [`YardDbContext.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/YardDbContext.Catalogue.cs) - the relational adapter
+- [`api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Auction/EfVehicleCatalogue.cs), [`CatalogueRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/CatalogueRows.cs) and [`CatalogueModel.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/CatalogueModel.cs) - the relational adapter
 - [`api/TheYard.Database/Tables/Catalogue.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/Catalogue.sql) - the table and one index per order
 - [`api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosVehicleCatalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Auction/CosmosVehicleCatalogue.cs) and [`Documents.Catalogue.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/Stores/Documents.Catalogue.cs) - the document adapter
 - [`infra/cosmos/catalogue.json`](https://github.com/SteveStout/TheYard/blob/main/infra/cosmos/catalogue.json) - the indexed paths and the composite indexes

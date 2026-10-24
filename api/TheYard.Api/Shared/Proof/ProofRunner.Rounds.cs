@@ -39,13 +39,13 @@ public sealed partial class ProofRunner
             }
 
             string email = $"proof-{Guid.NewGuid():N}@example.com";
-            using var registered = await Timed(client, store, "register", HttpMethod.Post, "/api/auth/register",
+            using var registered = await _requests.Timed(client, store, "register", HttpMethod.Post, "/api/auth/register",
                 new { email, password = _password });
             if (!registered.IsSuccessStatusCode)
             {
                 return ProofResult.Failed($"registration on {store.Backend.Name} answered {(int)registered.StatusCode}", backends);
             }
-            store.Cookie = SessionCookie(registered);
+            store.Cookie = ProofRequests.SessionCookie(registered);
             store.Email = email;
             _accounts[store.Backend.Key] = new ProofAccount(email, store.Samples.Last(sample => sample.Path == "register"));
         }
@@ -66,7 +66,7 @@ public sealed partial class ProofRunner
         // document side. Five each, the median kept.
         foreach (var store in stores)
         {
-            store.HopMs = await HopAsync(store.Backend);
+            store.HopMs = await ProofRequests.HopAsync(store.Backend);
         }
 
         return ProofResult.Of(started, rounds, stores);
@@ -80,37 +80,55 @@ public sealed partial class ProofRunner
     /// </summary>
     private async Task RoundAsync(Outbound client, StoreRun store)
     {
-        using var signedIn = await Timed(client, store, "sign_in", HttpMethod.Post, "/api/auth/login",
+        using var signedIn = await _requests.Timed(client, store, "sign_in", HttpMethod.Post, "/api/auth/login",
             new { email = store.Email, password = _password });
         if (signedIn.IsSuccessStatusCode)
         {
-            store.Cookie = SessionCookie(signedIn) ?? store.Cookie;
+            store.Cookie = ProofRequests.SessionCookie(signedIn) ?? store.Cookie;
         }
 
-        using var listing = await Timed(client, store, "listing", HttpMethod.Get, "/api/vehicles?status=live&sort=most-bids&limit=25");
-        string? vehicleId = await ChooseVehicleAsync(listing);
+        using var listing = await _requests.Timed(client, store, "listing", HttpMethod.Get, "/api/vehicles?status=live&sort=most-bids&limit=25");
+        string? vehicleId = await ProofRequests.ChooseVehicleAsync(listing);
         if (vehicleId is null)
         {
             return;
         }
 
-        using var vehicle = await Timed(client, store, "vehicle", HttpMethod.Get, $"/api/vehicles/{vehicleId}");
-        int? minimum = await MinimumAsync(vehicle);
-        using var facets = await Timed(client, store, "facets", HttpMethod.Get, "/api/facets");
+        using var vehicle = await _requests.Timed(client, store, "vehicle", HttpMethod.Get, $"/api/vehicles/{vehicleId}");
+        int? minimum = await ProofRequests.MinimumAsync(vehicle);
+        using var facets = await _requests.Timed(client, store, "facets", HttpMethod.Get, "/api/facets");
 
         if (minimum is { } first)
         {
-            using var bid = await Timed(client, store, "bid", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
+            using var bid = await _requests.Timed(client, store, "bid", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
                 new { amount = first });
-            int? next = await NextAsync(bid);
+            int? next = await ProofRequests.NextAsync(bid);
             if (next is { } second)
             {
-                using var raise = await Timed(client, store, "raise", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
+                using var raise = await _requests.Timed(client, store, "raise", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
                     new { amount = second });
             }
         }
 
-        using var reset = await Timed(client, store, "reset", HttpMethod.Delete, "/api/bids");
+        using var reset = await _requests.Timed(client, store, "reset", HttpMethod.Delete, "/api/bids");
+    }
+    /// <summary>
+    /// Whether the proof's remembered account still signs in on this store.
+    /// Not timed and not sampled: it is a check that the account survived,
+    /// and the round's own sign-in is the measurement.
+    /// </summary>
+    private async Task<bool> SignsInAsync(Outbound client, StoreRun store, string email)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
+        request.Headers.Add(Backends.HeaderName, store.Backend.Key);
+        request.Content = JsonContent.Create(new { email, password = _password });
+        using var response = await client.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            return false;
+        }
+        store.Cookie = ProofRequests.SessionCookie(response);
+        return true;
     }
     // #endregion rounds
 }

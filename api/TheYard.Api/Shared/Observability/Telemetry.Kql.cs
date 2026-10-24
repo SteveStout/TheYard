@@ -1,11 +1,11 @@
 // The question TelemetryReader asks Application Insights: the one Kusto query, the site name it
-// is filtered to, and the sentence that says whose requests the figures count. It is its own file
-// because the query is long and has rules of its own that are worth reading on their own. The
-// reader starts in Telemetry.cs.
+// is filtered to, and the sentence that says whose requests the figures count. Its own type because
+// the query is long and has rules of its own, and it changes when the question does, never when the
+// reading or the shaping does. The reader is in Telemetry.cs.
 namespace TheYard.Api.Shared.Observability;
 
-/// <summary>The KQL queries of TelemetryReader; the type and what it is for are described in Telemetry.cs.</summary>
-public sealed partial class TelemetryReader
+/// <summary>The Kusto query TelemetryReader asks, filtered to one site, and the sentence that says whose requests it counts.</summary>
+public static class TelemetryKql
 {
     // #region kql
     /// <summary>
@@ -34,7 +34,7 @@ public sealed partial class TelemetryReader
     /// until midnight UTC, and the card would otherwise read that as no traffic.
     /// `newest_at` and not `last`: `last` does not parse.
     /// </summary>
-    private const string Query = """
+    internal const string Query = """
         let lookback = 1h;
         let site_role = "__SITE__";
         let summary = requests
@@ -76,14 +76,14 @@ public sealed partial class TelemetryReader
         """;
 
     /// <summary>The query with this site's name in place of the marker; empty when the name is not known.</summary>
-    private static string QueryFor(string? siteName) => Query.Replace("__SITE__", siteName ?? "", StringComparison.Ordinal);
+    internal static string QueryFor(string? siteName) => Query.Replace("__SITE__", siteName ?? "", StringComparison.Ordinal);
 
     /// <summary>
     /// An App Service site name is letters, digits and hyphens. Anything else
     /// is not a site name, and it is never put into a query: the value goes
     /// inside a Kusto string literal, so a quote in it would end the literal.
     /// </summary>
-    private static string? SiteNameOrNull(string? name) =>
+    internal static string? SiteNameOrNull(string? name) =>
         !string.IsNullOrWhiteSpace(name) && name.Length <= 60 && name.All(c => char.IsAsciiLetterOrDigit(c) || c == '-')
             ? name
             : null;
@@ -93,7 +93,7 @@ public sealed partial class TelemetryReader
     /// its name is known, or every site that reports to the component when it
     /// is not, so a figure from both sites is never read as one site's.
     /// </summary>
-    private static string ScopeFor(string? siteName) => siteName is null
+    internal static string ScopeFor(string? siteName) => siteName is null
         ? "Counts every site that reports to this Application Insights component: both sites share it, so these figures are both sites together."
         : $"Counts {siteName} only. The other site reports to the same Application Insights component and is left out.";
     // #endregion kql

@@ -106,7 +106,7 @@ public sealed class CosmosLinkOpens(CosmosStore store) : ILinkOpens
                     // A count of opens is not worth a retry loop, and this is never on a request
                     // thread: this row is dropped, said by its type and status, never its message.
                     long notKept = Interlocked.Increment(ref _notKept);
-                    store.Logger.LogWarning("A link-open row was not kept: {Type} {Status}, {NotKept} since start", ex.GetType().Name, (int)ex.StatusCode, notKept);
+                    store.Recorder.Logger.LogWarning("A link-open row was not kept: {Type} {Status}, {NotKept} since start", ex.GetType().Name, (int)ex.StatusCode, notKept);
                     break;
                 }
             }

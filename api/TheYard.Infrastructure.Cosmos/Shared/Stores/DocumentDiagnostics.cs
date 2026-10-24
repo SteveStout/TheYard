@@ -21,7 +21,7 @@ public sealed class DocumentDiagnostics(CosmosStore store) : IStoreDiagnostics
     public async Task<double?> RoundTripMillisecondsAsync(CancellationToken cancellation)
     {
         long start = Stopwatch.GetTimestamp();
-        await store.ProbeAsync();
+        await store.Starting.ProbeAsync();
         return Stopwatch.GetElapsedTime(start).TotalMilliseconds / 2;
     }
 

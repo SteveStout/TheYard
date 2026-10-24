@@ -55,8 +55,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.Shared.Auction.MemoryCatalogue._byId"] = "one per vehicle of the list catalogue above",
         ["TheYard.Application.Shared.Auction.MemoryCatalogue._orders"] = "one sorted order per CatalogueOrder value, eight",
         ["TheYard.Application.Shared.Auction.Room._bids"] = "one per vehicle the room has raised: at most the catalogue, emptied by a reset",
-        ["TheYard.Application.Shared.Auction.BidBook._standing"] = "one per vehicle anybody bid on, the store's standing cached: at most the catalogue",
-        ["TheYard.Application.Shared.Auction.BidBook._byUser"] = "one per account with a bid, each holding that account's bids",
+        ["TheYard.Application.Shared.Auction.BidLedger._standing"] = "one per vehicle anybody bid on, the store's standing cached: at most the catalogue",
+        ["TheYard.Application.Shared.Auction.BidLedger._byUser"] = "one per account with a bid, each holding that account's bids",
         ["TheYard.Application.Shared.History.MemoryResourceHistory._minutes"] = "a month of minutes, trimmed on every append",
         ["TheYard.Application.Shared.History.MemoryResourceHistory._hours"] = "a month of hours, trimmed on every append",
         ["TheYard.Application.Shared.History.MemoryNightlyRunLog._runs"] = "the nightly workflow's runs, one per GitHub run, a year of them, trimmed on every upsert",
@@ -102,7 +102,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.Shared.CostReadings.CostHistoryReader._cached"] = "one per named window, four",
         ["TheYard.Api.Shared.MachineReadings.MachineHistoryReader._cached"] = "one per named window, four",
         ["TheYard.Api.Shared.Observability.KeptRingReader._cache"] = "one per kept card and named window, each a known name",
-        ["TheYard.Application.Shared.Auction.Stock._pending"] = "the expansion handed to a fill, taken by the fill the moment it starts",
+        ["TheYard.Application.Shared.Auction.StockSource._pending"] = "the expansion handed to a fill, taken by the fill the moment it starts",
         ["TheYard.Application.Shared.Auction.MemoryBidStore._bids"] = "the bid store of a site whose store is down: one row per buyer's bid, gone with the process",
         ["TheYard.Application.Shared.Auction.MemoryBidStore._standings"] = "the same store's standings, one per vehicle bid on",
         ["TheYard.Application.Features.Accounts.MemoryResetLinks._kept"] = "reset links, each expiring in an hour and swept on every mint",
@@ -111,8 +111,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.Features.Links.ConfiguredLinkTargets._targets"] = "the pass-through addresses configuration names, two, read once at startup",
         ["TheYard.Infrastructure.Cosmos.Shared.Auction.CosmosVehicleCatalogue._makeBySeedId"] = "the seed's two hundred ids and their makes",
         ["TheYard.Infrastructure.Cosmos.Shared.Stores.CosmosStore._physicalPartitions"] = "one per container, read at startup",
-        ["TheYard.Infrastructure.Cosmos.Shared.Auction.CosmosVehicleCatalogue._keysets"] = "one per order, seven, each the key of every 250th row: 400 places",
-        ["TheYard.Infrastructure.Cosmos.Shared.Auction.CosmosVehicleCatalogue._walks"] = "one per order, seven",
+        ["TheYard.Infrastructure.Cosmos.Shared.Auction.CosmosCatalogueKeysets._keysets"] = "one per order, seven, each the key of every 250th row: 400 places",
+        ["TheYard.Infrastructure.Cosmos.Shared.Auction.CosmosCatalogueKeysets._walks"] = "one per order, seven",
     };
 
     private static readonly string[] Projects =
