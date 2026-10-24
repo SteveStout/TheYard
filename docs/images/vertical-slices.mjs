@@ -104,7 +104,7 @@ files(cloud.x + 12, 160, ['Module.cs', 'CloudEndpoints.cs', 'SqlCard.cs and ever
 files(cloud.x + 12, 292, ['YardModelFacts.cs', 'the readers\' requests go', 'out through OutboundHttp']);
 files(cloud.x + 12, 412, ['ReadCloudCardHandler.cs', 'ICloudCards, beside it']);
 files(cloud.x + 12, 532, ['CardTone.cs, in Shared/Cards']);
-out.push(`  <text x="${cloud.midX}" y="652" class="label" text-anchor="middle">and Admin/Plan, Admin/Operations, Docs, Health, each a column like these</text>`);
+out.push(`  <text x="${cloud.midX}" y="652" class="label" text-anchor="middle">and Admin/Plan, Admin/Operations, Docs, Health, Visitors, each a column like these</text>`);
 
 // The direction of every reference, drawn once beside the bands.
 arrow(`M1148 ${api.y + 60} V${infra.y + 50}`);

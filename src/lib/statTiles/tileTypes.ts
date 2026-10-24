@@ -1,8 +1,8 @@
 /**
  * The shapes behind the stat tiles: what one tile holds, the ring a tile may
- * draw, and the readings every tile is built from. Only types live here, so the
- * rules, the words and the drawing code can all name the same shapes without
- * importing each other.
+ * draw, the readings every tile is built from, and the one list of the tiles the
+ * strip holds. Types and that list live here, so the rules, the words and the
+ * drawing code can all name the same shapes without importing each other.
  */
 
 /** How a tile is coloured: good, worth a look (warn), bad, plain, or still waiting for its reading. */
@@ -111,7 +111,13 @@ export type TileReadings = {
    * count, the people first seen today, and the thirty days of new people behind the tile's line.
    * Optional so a reading built before the count still type-checks; absent reads as not read yet.
    */
-  people?: { all_time: number | null; new_today: number | null; by_day: number[] } | null;
+  people?: {
+    all_time: number | null;
+    new_today: number | null;
+    by_day: number[];
+    /** The UTC day the count began, yyyy-mm-dd, for the tile to say "since" rather than "all time"; null before the first visitor. */
+    counted_from?: string | null;
+  } | null;
   /** The last hour behind four of the tiles, one minute or one sample per entry. */
   sparks?: {
     speed?: (number | null)[];
@@ -120,3 +126,20 @@ export type TileReadings = {
     errors?: (number | null)[];
   };
 };
+
+/**
+ * Every tile the strip holds, in display order, whatever the readings say: a tile that has no
+ * reading waits in its place rather than leaving a gap. The browser tests count the strip from
+ * this list, so a tile added here is counted there in the same change.
+ */
+export const TILE_KEYS = [
+  'version',
+  'health',
+  'pages',
+  'speed',
+  'memory',
+  'charged',
+  'errors',
+  'visitors',
+  'people',
+] as const;

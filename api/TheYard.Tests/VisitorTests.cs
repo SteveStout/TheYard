@@ -10,7 +10,8 @@ namespace TheYard.Tests;
 /// <summary>
 /// People who have visited, counted once (ADR-116): the kind rule the Activity card and the count share, the
 /// hash that does not rotate, the collector's one sighting a visitor a day, and the count's query over a
-/// store in memory with the day boundaries in UTC.
+/// store in memory with the day boundaries in UTC, and the visits by people the kept history holds from before the
+/// count began (the addendum of 1.0.4.48).
 /// </summary>
 public sealed class VisitorTests
 {
@@ -98,6 +99,69 @@ public sealed class VisitorTests
         Assert.Equal("no document store", count.Source);
     }
 
+    [Fact]
+    public async Task The_kept_history_counts_one_visit_a_person_a_day_and_leaves_out_scanners_and_the_site_itself()
+    {
+        static ActivityVisitor Row(string day, string token, string network, int requests, int bots) =>
+            new("sql", day, token, network, Today, Today, requests, bots, new Dictionary<string, int>());
+        ActivityVisitor[] rows =
+        [
+            // The same person on two days is two visits: the token rotates daily, so nothing kept can join them.
+            Row("2026-09-24", "a1", "203.0.113", 4, 0),
+            Row("2026-09-25", "a2", "203.0.113", 2, 1),
+            // One person read through both stores the same day is one visit.
+            Row("2026-09-25", "b1", "198.51.100", 1, 0),
+            new("cosmos", "2026-09-25", "b1", "198.51.100", Today, Today, 3, 0, new Dictionary<string, int>()),
+            // A scanner, the site's own tools, and two loopback rows that are one machine: none of them people.
+            Row("2026-09-25", "s1", "192.0.2", 5, 5),
+            Row("2026-09-25", "t1", Hits.SelfNetwork, 9, 0),
+            Row("2026-09-26", "l1", "127.0.0", 1, 0),
+            Row("2026-09-26", "l2", "127.0.0", 1, 0),
+        ];
+        var kept = VisitHistory.Count(rows);
+        Assert.NotNull(kept);
+        Assert.Equal((3, "2026-09-24"), (kept.Visits, kept.From));
+        Assert.Equal(new Dictionary<string, int> { ["2026-09-24"] = 1, ["2026-09-25"] = 2 }, kept.ByDay);
+        Assert.Null(VisitHistory.Count([]));
+
+        var history = new VisitHistory(new RowsStore(rows), new Fixed(Today));
+        Assert.Null(await history.ReadAsync(CancellationToken.None));
+        await history.Taking;
+        Assert.Equal(3, (await history.ReadAsync(CancellationToken.None))?.Visits);
+
+        // A later count reads from the day before the newest day held and replaces those days: a day that grew is
+        // counted again, a day before the read is kept as it was, and a window with no person in it counts as none.
+        var held = new KeptVisits(3, "2026-09-24", new Dictionary<string, int> { ["2026-09-24"] = 1, ["2026-09-25"] = 2 });
+        var later = new KeptVisits(5, "2026-09-25", new Dictionary<string, int> { ["2026-09-25"] = 3, ["2026-09-26"] = 2 });
+        var merged = VisitHistory.Merge(held, later, new DateTimeOffset(2026, 9, 25, 0, 0, 0, TimeSpan.Zero));
+        Assert.Equal((6, "2026-09-24"), (merged.Visits, merged.From));
+        Assert.Equal(new Dictionary<string, int> { ["2026-09-24"] = 1, ["2026-09-25"] = 3, ["2026-09-26"] = 2 }, merged.ByDay);
+        var quiet = VisitHistory.Merge(held, null, new DateTimeOffset(2026, 9, 25, 0, 0, 0, TimeSpan.Zero));
+        Assert.Equal((1, "2026-09-24"), (quiet.Visits, quiet.From));
+        Assert.Equal(new Dictionary<string, int> { ["2026-09-24"] = 1 }, quiet.ByDay);
+
+        // The count carries them: the total, the first day, and the last thirty days with the kept days filled in.
+        var count = await new ReadPeopleCountHandler(new MemoryVisitorStore(), new Fixed(new DateTimeOffset(2026, 9, 26, 12, 0, 0, TimeSpan.Zero)), history).HandleAsync(new ReadPeopleCountQuery(), CancellationToken.None);
+        Assert.NotNull(count.Visits);
+        Assert.Equal((3, "2026-09-24"), (count.Visits.AllTime, count.Visits.From));
+        Assert.Equal(30, count.Visits.ByDay.Count);
+        Assert.Equal([1, 2, 0], count.Visits.ByDay.TakeLast(3).Select(day => day.Visits));
+        Assert.Equal("2026-09-26", count.Visits.ByDay[^1].Day);
+        // Without the history, the count says nothing about visits rather than zero.
+        Assert.Null((await new ReadPeopleCountHandler(new MemoryVisitorStore(), new Fixed(Today)).HandleAsync(new ReadPeopleCountQuery(), CancellationToken.None)).Visits);
+    }
+
+    private sealed class RowsStore(IReadOnlyList<ActivityVisitor> rows) : IActivityStore
+    {
+        public Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation) => Task.FromResult(new ActivityAvailability(true, "kept"));
+
+        public Task RecordAsync(IReadOnlyList<ActivityHit> hits, CancellationToken cancellation) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<ActivityHour>> HoursAsync(DateTimeOffset since, CancellationToken cancellation) => Task.FromResult<IReadOnlyList<ActivityHour>>([]);
+
+        public Task<IReadOnlyList<ActivityVisitor>> VisitorsAsync(DateTimeOffset since, CancellationToken cancellation) => Task.FromResult(rows);
+    }
+
     private sealed class Fixed(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
@@ -114,7 +178,7 @@ public sealed class VisitorRouteTests(WebApplicationFactory<Program> factory) : 
         var response = await factory.CreateClient().GetAsync("/api/admin/visitors/people");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        foreach (string field in new[] { "people_all_time", "people_new_today", "people_new_month", "scanners_left_out", "counted_from", "people_new_by_day", "source" })
+        foreach (string field in new[] { "people_all_time", "people_new_today", "people_new_month", "scanners_left_out", "counted_from", "people_new_by_day", "source", "visits" })
         {
             Assert.True(body.RootElement.TryGetProperty(field, out _), $"the count has no {field}");
         }

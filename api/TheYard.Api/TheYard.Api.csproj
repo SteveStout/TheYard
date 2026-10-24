@@ -50,7 +50,9 @@
   <!-- #region shared-concerns -->
   <!-- The host's shared code, one namespace per concern under Shared/ (ADR-114: The host root holds one file). Every
        file in the host may use a shared concern, so each is imported once here rather than in every file that names
-       one; a slice is never imported, because a slice reaching another is what SliceTests rule 1 forbids. -->
+       one; no slice of the host is imported, because a host slice reaching another is what SliceTests rule 1 forbids.
+       The inner rings' slices below are imported because the host composes them: its wiring builds their handlers
+       and adapters, which is the one place a slice is reached from outside its folder. -->
   <ItemGroup>
     <Using Include="TheYard.Api.Shared.Activity" />
     <Using Include="TheYard.Api.Shared.Auth" />

@@ -81,10 +81,14 @@ export function machinesGlance(report: MachinesGlanceInput): RailGlance {
   return { tone: worst(tones), headline: share === null ? null : percent(share) };
 }
 
-/** Memory against traffic: the server's verdict on the window, with the newest memory against its limit. */
+/**
+ * Memory against traffic: the server's verdict on the window, with the newest memory against its
+ * limit. A container restarted inside the window has no reading yet, and the rail says it is
+ * warming up rather than leaving a blank that reads as a card that died.
+ */
 export function followsGlance(report: FollowsGlanceInput): RailGlance {
   const newest = report.points.at(-1);
-  if (newest === undefined) return { tone: 'unread', headline: null };
+  if (newest === undefined) return { tone: 'unread', headline: 'warming up' };
   const verdict = report.verdict.tone;
   const tone: CardTone = verdict === 'alarm' ? 'red' : verdict === 'warning' ? 'amber' : 'fine';
   const share = report.memory_limit_mb > 0 ? newest.working_set_mb / report.memory_limit_mb : null;

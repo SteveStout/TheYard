@@ -1,9 +1,11 @@
 /**
- * The head of the Site activity card: people who have visited, counted once, all time, in four
- * readouts, and the thirty days of new people drawn over the visitor-days of people the card
- * already counts (ADR: People who have visited, counted once). Every readout names where it is
- * read from. Before the count has begun, the figures say so in words and the chart is empty,
- * the way every other readout on the tab says a figure it could not read.
+ * The head of the Site activity card: people who have visited, counted once, since the day the
+ * count began, in four readouts, the visits by people the kept activity holds since its first day
+ * beside them, and the thirty days of new people drawn over the visitor-days of people the card
+ * already counts (ADR: People who have visited, counted once, and its addendum on the kept
+ * visits). Every readout names where it is read from. Before the count has begun, the figures say
+ * so in words and the chart is empty, the way every other readout on the tab says a figure it
+ * could not read.
  */
 import type { ActivityDay } from '../../../lib/activity';
 import {
@@ -85,9 +87,28 @@ export function PeopleReadouts({
           </p>
           {figure(read?.people_all_time, 'people-all-time')}
           <p className={styles.sub}>
-            all time
-            {read === null ? '' : ` · counted from ${countedFromWords(read.counted_from)}`} ·
-            source: {source}
+            each counted once
+            {read === null ? '' : ` · since ${countedFromWords(read.counted_from)}`} · source:{' '}
+            {source}
+          </p>
+        </div>
+        <div className={styles.readout}>
+          <p className={styles.label}>Visits</p>
+          {read === null || read.visits === null ? (
+            <p className={styles.figure}>
+              <span className={styles.unread} data-testid="people-visits">
+                {read === null ? unread : 'not counted yet'}
+              </span>
+            </p>
+          ) : (
+            <p className={styles.figure}>
+              <span data-testid="people-visits">{countWords(read.visits.all_time)}</span>
+            </p>
+          )}
+          <p className={styles.sub}>
+            one a person a day
+            {read?.visits ? ` · since ${countedFromWords(read.visits.from)}` : ''} · source: the
+            kept activity
           </p>
         </div>
         <div className={styles.readout}>
@@ -100,9 +121,9 @@ export function PeopleReadouts({
           {figure(read?.people_new_month, 'people-new-month')}
           <p className={styles.sub}>
             first seen in{' '}
-            {monthWords(
-              new Date(`${thirty.at(-1)?.day ?? read?.counted_from ?? '2026-10-23'}T00:00:00Z`)
-            )}{' '}
+            {thirty.at(-1)?.day
+              ? monthWords(new Date(`${thirty.at(-1)?.day}T00:00:00Z`))
+              : 'this month'}{' '}
             · source: {source}
           </p>
         </div>

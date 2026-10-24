@@ -6,6 +6,7 @@ import {
   LATENCY_CEILING_MS,
   moneyWords,
   pulseFrom,
+  unitWords,
   share,
   ticks,
   UNREAD,
@@ -26,6 +27,9 @@ const answer = {
   people_all_time: 1284,
   people_new_by_day: [3, 0, 7],
   counted_from: '2026-10-24',
+  visits_all_time: 2104,
+  visits_from: '2026-09-02',
+  visits_by_day: [61, 70, 58],
 };
 
 describe('an answer from /api/pulse', () => {
@@ -53,6 +57,24 @@ describe('an answer from /api/pulse', () => {
     expect(read?.counted_from).toBeNull();
   });
 
+  it('reads the kept visits only with the day they were kept from, and an older answer as none', () => {
+    const { visits_all_time: _visits, visits_from: _since, ...older } = answer;
+    expect(pulseFrom(older)?.visits_all_time).toBeNull();
+    expect(pulseFrom(older)?.visits_from).toBeNull();
+    expect(pulseFrom({ ...answer, visits_from: 'Sep 2' })?.visits_all_time).toBeNull();
+    expect(pulseFrom({ ...answer, visits_all_time: null })?.visits_from).toBeNull();
+    expect(pulseFrom({ ...answer, visits_all_time: null })?.visits_by_day).toEqual([]);
+    expect(pulseFrom({ ...answer, visits_by_day: ['a'] })?.visits_by_day).toEqual([]);
+  });
+
+  it('says a unit in the right number at none, one and many', () => {
+    expect(unitWords(0, 'person', 'people')).toBe('0 people');
+    expect(unitWords(1, 'person', 'people')).toBe('1 person');
+    expect(unitWords(1, 'visit', 'visits')).toBe('1 visit');
+    expect(unitWords(2, 'visit', 'visits')).toBe('2 visits');
+    expect(unitWords(2104, 'visit', 'visits')).toBe('2,104 visits');
+  });
+
   it('keeps a people count of null as not counted yet, and drops a day list that is not numbers', () => {
     const notYet = pulseFrom({ ...answer, people_all_time: null, people_new_by_day: ['a'] });
     expect(notYet?.people_all_time).toBeNull();
@@ -72,6 +94,7 @@ describe('an answer from /api/pulse', () => {
 describe('the words under each instrument', () => {
   it('says the day a count began as the day and the month', () => {
     expect(dayWords('2026-10-24')).toBe('24 Oct');
+    expect(dayWords('2026-09-13')).toBe('13 Sep');
     expect(dayWords(null)).toBe(UNREAD);
   });
 

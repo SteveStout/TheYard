@@ -4,15 +4,16 @@ import {
   COLD_START_MINUTES,
   hourTiming,
   QUIET_BELOW_REQUESTS,
+  ringOf,
   ringStretch,
   ringStretchInFull,
+  ringStroke,
   sparkCaption,
   sparkRuns,
+  TILE_KEYS,
   tileSentence,
   tilesFrom,
   type TileReadings,
-  ringOf,
-  ringStroke,
   uptimeWords,
   visitorsOn,
 } from './statTiles';
@@ -48,7 +49,7 @@ const quietDay: TileReadings = {
   charged: { request_units: 24.49, free_per_second: 1000 },
   errors: 0,
   visitorsToday: 7,
-  people: { all_time: 1284, new_today: 23, by_day: [3, 0, 23] },
+  people: { all_time: 1284, new_today: 23, by_day: [3, 0, 23], counted_from: '2026-10-23' },
 };
 
 const tile = (readings: TileReadings, key: string) => {
@@ -61,17 +62,8 @@ describe('the stat tiles', () => {
   it('says a reading has not arrived rather than showing a zero', () => {
     const tiles = tilesFrom(nothing);
 
-    expect(tiles.map((each) => each.key)).toEqual([
-      'version',
-      'health',
-      'pages',
-      'speed',
-      'memory',
-      'charged',
-      'errors',
-      'visitors',
-      'people',
-    ]);
+    expect(tiles.map((each) => each.key)).toEqual([...TILE_KEYS]);
+    expect(tilesFrom(quietDay).map((each) => each.key)).toEqual([...TILE_KEYS]);
     expect(tiles.every((each) => each.tone === 'waiting')).toBe(true);
     expect(tiles.every((each) => each.value === '…')).toBe(true);
   });
@@ -118,7 +110,7 @@ describe('the stat tiles', () => {
     expect(tile(quietDay, 'people')).toMatchObject({
       label: 'People',
       value: '1,284',
-      detail: 'all time, +23 today',
+      detail: 'since 23 Oct, +23 today',
       tone: 'plain',
       spark: [3, 0, 23],
     });

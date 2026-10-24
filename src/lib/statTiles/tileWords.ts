@@ -6,6 +6,15 @@
  */
 import type { StatTile } from './tileTypes';
 
+/** Three letters a month, by table: a locale's short month can run to four letters, and the band reads three. */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** A UTC day (yyyy-mm-dd) as a tile says it: "23 Oct"; a day that cannot be read is given back as it came. */
+export function dayWords(day: string): string {
+  const at = new Date(`${day}T00:00:00Z`);
+  return Number.isNaN(at.getTime()) ? day : `${at.getUTCDate()} ${MONTHS[at.getUTCMonth()]}`;
+}
+
 /** Uptime as the two largest non-zero units: "2d 5h", "3h 12m" or "7m". */
 export function uptimeWords(totalSeconds: number): string {
   const days = Math.floor(totalSeconds / 86_400);

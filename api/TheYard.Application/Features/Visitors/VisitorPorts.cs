@@ -117,3 +117,30 @@ public static class VisitorRecords
     }
 }
 // #endregion visitor-ports
+
+/// <summary>
+/// The visits by people the kept activity holds from before the count began, and since: one a person a UTC
+/// day, by the rule the Activity card counts with, scanners and the site itself left out. The rows the count
+/// cannot join into people (their token rotates daily) still count visits exactly.
+/// </summary>
+/// <param name="Visits">Visits by people across every kept day.</param>
+/// <param name="From">The first UTC day a person's visit was kept, yyyy-MM-dd.</param>
+/// <param name="ByDay">Visits by people on each kept UTC day, by yyyy-MM-dd.</param>
+public sealed record KeptVisits(int Visits, string From, IReadOnlyDictionary<string, int> ByDay);
+
+/// <summary>The reading side of the kept visits: the last count taken, or null before the first.</summary>
+public interface IVisitHistory
+{
+    /// <summary>The visits as last counted; null before the first count, or when nothing was kept.</summary>
+    Task<KeptVisits?> ReadAsync(CancellationToken cancellation);
+}
+
+/// <summary>No kept visits: a host with nothing kept, and the tests that build the count without them.</summary>
+public sealed class NoVisitHistory : IVisitHistory
+{
+    /// <summary>The one instance.</summary>
+    public static readonly NoVisitHistory Instance = new();
+
+    /// <inheritdoc/>
+    public Task<KeptVisits?> ReadAsync(CancellationToken cancellation) => Task.FromResult<KeptVisits?>(null);
+}

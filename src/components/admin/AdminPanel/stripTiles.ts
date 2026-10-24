@@ -33,7 +33,12 @@ export type StripReadings = {
   pagesSeen: { checked: number; up: number } | null;
   visitorsToday: number | null;
   /** People who have visited, all time, from the strip's own read of the count; null until it answers. */
-  people: { all_time: number | null; new_today: number | null; by_day: number[] } | null;
+  people: {
+    all_time: number | null;
+    new_today: number | null;
+    by_day: number[];
+    counted_from: string | null;
+  } | null;
 };
 
 /** What the strip draws: the tiles, the hour's summary and the sparklines' caption. */

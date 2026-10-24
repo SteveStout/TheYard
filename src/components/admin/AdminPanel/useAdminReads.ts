@@ -29,7 +29,12 @@ export type AdminReads = {
   /** People who visited today, from the activity report; null until it answers. */
   visitorsToday: number | null;
   /** People who have visited, all time, for the People tile; null until the count answers. */
-  people: { all_time: number | null; new_today: number | null; by_day: number[] } | null;
+  people: {
+    all_time: number | null;
+    new_today: number | null;
+    by_day: number[];
+    counted_from: string | null;
+  } | null;
   /** Whether this site serves per-visitor rows (ADR-071); null until the activity report answers. */
   rowsServed: boolean | null;
   /** Takes an activity report, from the strip's read or the Activity card's, and keeps its two facts. */
@@ -104,6 +109,7 @@ export function useAdminReads(): AdminReads {
           all_time: count.people_all_time,
           new_today: count.people_new_today,
           by_day: count.people_new_by_day.map((entry) => entry.people),
+          counted_from: count.counted_from,
         });
       }
     });

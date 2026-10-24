@@ -1,8 +1,8 @@
 /**
  * The first screen's band: four instruments reading the site that is answering this page, from
  * /api/pulse (ADR: One reading for the first screen). How fast it answers, what it has cost this
- * month, how long it has been up since the last roll, and how many people have visited, all time
- * (ADR: People who have visited, counted once).
+ * month, how long it has been up since the last roll, and how many people have visited (ADR: People
+ * who have visited, counted once; that instrument is PeopleInstrument.tsx beside this file).
  *
  * The band stands at its full height from the first paint and every instrument keeps its box
  * whether its figure has arrived or not, so nothing under it moves when one does. A figure the
@@ -18,9 +18,7 @@
  */
 import { useEffect, useState } from 'react';
 import {
-  barHeights,
   buildWords,
-  dayWords,
   LATENCY_CEILING_MS,
   moneyWords,
   PULSE_EVERY_MS,
@@ -32,6 +30,7 @@ import {
   uptimeWords,
   type Pulse,
 } from '../../../lib/pulse';
+import { PeopleInstrument } from './PeopleInstrument';
 import styles from './PulseBand.module.css';
 import { request } from '../../../lib/request';
 
@@ -73,8 +72,6 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
   const billed =
     spend !== null && forecast !== null && forecast > 0 ? Math.min(1, spend / forecast) : 0;
   const latencyShare = share(latency, LATENCY_CEILING_MS);
-  const people = pulse?.people_all_time ?? null;
-  const bars = barHeights(people === null ? [] : (pulse?.people_new_by_day ?? []));
 
   return (
     <section
@@ -213,70 +210,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
         </p>
       </article>
 
-      <article
-        className={styles.instrument}
-        aria-labelledby="pulse-people-label"
-        data-testid="pulse-people"
-      >
-        <p className={`${styles.label} ${styles.people}`} id="pulse-people-label">
-          <span className={styles.swatch} aria-hidden="true" />
-          People who have visited
-        </p>
-        <p className={styles.reading}>
-          {people !== null ? (
-            <>
-              <span className={styles.figure} data-testid="pulse-people-figure">
-                {people.toLocaleString('en-US')}
-              </span>
-              <span className={styles.unit}>people, all time</span>
-            </>
-          ) : pulse?.counted_from ? (
-            <span className={styles.unread} data-testid="pulse-people-counting">
-              counting from {dayWords(pulse.counted_from)}
-            </span>
-          ) : (
-            <span className={styles.unread}>{UNREAD}</span>
-          )}
-        </p>
-        <svg
-          className={styles.bars}
-          viewBox="0 0 320 34"
-          role="img"
-          aria-label={
-            bars.length === 0
-              ? 'New people each day, nothing counted yet'
-              : `New people each day for the last ${bars.length} days`
-          }
-        >
-          {bars.map((height, day) => (
-            <rect
-              key={day}
-              className={day === bars.length - 1 ? styles.today : styles.bar}
-              x={2 + (316 / bars.length) * day + 1}
-              y={22 - 20 * height}
-              width={Math.max(1, 316 / bars.length - 2)}
-              height={20 * height}
-            />
-          ))}
-          <line className={styles.axis} x1="2" y1="22" x2="318" y2="22" />
-          <text className={styles.number} x="2" y="33" textAnchor="start">
-            30 days ago
-          </text>
-          <text className={styles.number} x="318" y="33" textAnchor="end">
-            today
-          </text>
-        </svg>
-        <p className={styles.detail}>
-          Scanners and my own reads left out.{' '}
-          <button
-            type="button"
-            className={styles.link}
-            onClick={() => onOpenDoc('adrPeopleWhoHaveVisited')}
-          >
-            How a visitor is counted
-          </button>
-        </p>
-      </article>
+      <PeopleInstrument pulse={pulse} onOpenDoc={onOpenDoc} />
     </section>
   );
 }

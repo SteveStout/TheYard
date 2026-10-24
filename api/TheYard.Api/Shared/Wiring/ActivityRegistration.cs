@@ -59,6 +59,10 @@ public static class ActivityRegistration
         builder.Services.AddSingleton(new MachineHistoryReader(machineHistory, backends.Default.Key));
         // The first screen's one reading, over the same kept minutes and the same hourly bill the
         // Admin tab reads, kept for fifteen seconds (ADR: One reading for the first screen).
+        // The visits by people across the whole kept history, for the first screen: one read of the keeper's
+        // visitor rows an hour, in the background (ADR-116, its addendum on the kept visits).
+        var visitHistory = new VisitHistory(activityStores[activityKeeper], TimeProvider.System);
+        builder.Services.AddSingleton<IVisitHistory>(visitHistory);
         builder.Services.AddSingleton(services => new PulseReader(
             machineHistory,
             backends.Default.Key,
@@ -66,7 +70,7 @@ public static class ActivityRegistration
             services.GetRequiredService<HostStart>(),
             services.GetRequiredService<BuildInfo>(),
             TimeProvider.System,
-            cancellation => new ReadPeopleCountHandler(visitors, TimeProvider.System).HandleAsync(new ReadPeopleCountQuery(), cancellation)));
+            cancellation => new ReadPeopleCountHandler(visitors, TimeProvider.System, visitHistory).HandleAsync(new ReadPeopleCountQuery(), cancellation)));
         builder.Services.AddSingleton(services => new MachineRecorder(
             services.GetRequiredService<MachineSampler>(),
             machineHistory,

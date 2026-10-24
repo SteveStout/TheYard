@@ -8,7 +8,7 @@ import { formatNumber } from '../format';
 import { RANGES } from '../ranges';
 import { ringOf } from './tileRing';
 import type { StatTile, TileQuestion, TileReadings } from './tileTypes';
-import { millisecondsWords, RING_HOLDS, ringStretch, uptimeWords } from './tileWords';
+import { dayWords, millisecondsWords, RING_HOLDS, ringStretch, uptimeWords } from './tileWords';
 
 /**
  * The speed tile's line and the rest of its sentence. The line says what the
@@ -274,7 +274,7 @@ export function tilesFrom(readings: TileReadings): StatTile[] {
           question: 'who',
           label: 'People',
           value: formatNumber(people.all_time),
-          detail: `all time, +${formatNumber(people.new_today ?? 0)} today`,
+          detail: `${people.counted_from ? `since ${dayWords(people.counted_from)}` : 'all time'}, +${formatNumber(people.new_today ?? 0)} today`,
           more: '; each counted once, scanners and the site itself left out',
           tone: 'plain',
           spark: people.by_day,

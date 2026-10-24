@@ -79,9 +79,14 @@ for (const viewport of [
       for (const [testId, pattern] of [
         ['pulse-latency', /^(\d[\d,]*ms|unread)$/],
         ['pulse-cost', /^(\$[\d,]+\.\d\d|[\d,]+\.\d\d [A-Z]{3}|unread)$/],
-        // People who have visited, all time: a count, or the day the count began while nothing is
-        // counted yet, or unread (ADR: People who have visited, counted once).
-        ['pulse-people', /^(\d[\d,]*people,alltime|countingfrom\d+[A-Z][a-z]{2}|unread)$/],
+        // People who have visited: the kept visits since the first kept day (1.0.4.48), or a count of
+        // people with the day the count began (one person, or people),
+        // the day alone while nothing is counted yet, or unread (ADR: People who have visited,
+        // counted once).
+        [
+          'pulse-people',
+          /^(\d[\d,]*(visits?since\d+[A-Z][a-z]{2}|(people|person)(since\d+[A-Z][a-z]{2}|,alltime))|countingfrom\d+[A-Z][a-z]{2}|unread)$/,
+        ],
       ] as const) {
         // The label, the reading, then the line under it: the reading is the second.
         const reading = (await page.getByTestId(testId).locator('p').nth(1).innerText()).replace(
@@ -351,7 +356,7 @@ async function shiftAfterFirstPaint(
     };
     (window as unknown as { __shifts: Shifts }).__shifts = shifts;
     type Source = {
-      node: Element | null;
+      node: Node | null;
       previousRect: DOMRectReadOnly;
       currentRect: DOMRectReadOnly;
     };
@@ -361,10 +366,15 @@ async function shiftAfterFirstPaint(
         if (entry.hadRecentInput) continue;
         shifts.total += entry.value;
         for (const source of entry.sources ?? []) {
+          // A shift's source can be a text node, which has no tag: naming it by its node name
+          // keeps the loop going, so every shift in the batch is counted.
           const node = source.node;
-          const name = node
-            ? `${node.tagName.toLowerCase()}${node.id ? '#' + node.id : ''}.${String(node.className).split(' ')[0]}`
-            : '?';
+          const name =
+            node instanceof Element
+              ? `${node.tagName.toLowerCase()}${node.id ? '#' + node.id : ''}.${String(node.className).split(' ')[0]}`
+              : node
+                ? node.nodeName.toLowerCase()
+                : '?';
           shifts.moved.push(
             `${entry.value.toFixed(3)} ${name} y ${Math.round(source.previousRect.y)}->${Math.round(source.currentRect.y)} h ${Math.round(source.previousRect.height)}->${Math.round(source.currentRect.height)}`
           );

@@ -1,7 +1,7 @@
 /**
  * Does:      Names the shape /api/pulse answers, reads an answer into it, and turns each figure into the words and the share the band draws.
  * Does not:  Fetch (the band does, with the page's own fetch), draw anything, or decide what a figure means (the server does).
- * Used by:   PulseBand.tsx, pulse.test.ts.
+ * Used by:   PulseBand.tsx, PeopleInstrument.tsx, pulse.test.ts.
  */
 
 /** One reading of the running site, as /api/pulse answers it. A null is unread, never zero. */
@@ -22,6 +22,12 @@ export type Pulse = {
   people_new_by_day: number[];
   /** The UTC day the count began (yyyy-mm-dd), or null on a server older than the count. */
   counted_from: string | null;
+  /** Visits by people across the whole kept activity, one per person per day (ADR-116, its addendum on the kept visits); null before the first hourly count. */
+  visits_all_time: number | null;
+  /** The first day a person's visit was kept (yyyy-mm-dd), or null with the figure above. */
+  visits_from: string | null;
+  /** Visits by people on each of the last thirty UTC days, oldest first, today last; empty with no visits. */
+  visits_by_day: number[];
 };
 
 /** Where the band reads from, and how often it reads again while the page is open. */
@@ -68,6 +74,16 @@ export function pulseFrom(answer: unknown): Pulse | null {
     typeof read.counted_from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(read.counted_from)
       ? read.counted_from
       : null;
+  // The visits arrived after the people count: a server from before them answers without the two fields.
+  const visits = nullable(read.visits_all_time) ? read.visits_all_time : null;
+  const visitsFrom =
+    typeof read.visits_from === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(read.visits_from)
+      ? read.visits_from
+      : null;
+  const visitDays =
+    Array.isArray(read.visits_by_day) && read.visits_by_day.every(number)
+      ? (read.visits_by_day as number[])
+      : [];
   return {
     usual_p95_ms_24h: read.usual_p95_ms_24h,
     requests_24h: read.requests_24h,
@@ -82,6 +98,9 @@ export function pulseFrom(answer: unknown): Pulse | null {
     people_all_time: people,
     people_new_by_day: days,
     counted_from: countedFrom,
+    visits_all_time: visits !== null && visitsFrom !== null ? visits : null,
+    visits_from: visits !== null ? visitsFrom : null,
+    visits_by_day: visits !== null && visitsFrom !== null ? visitDays : [],
   };
 }
 // #endregion pulse-from
@@ -127,12 +146,28 @@ export function share(value: number | null, ceiling: number): number {
   return Math.min(1, Math.max(0, value / ceiling));
 }
 
+/**
+ * The unit a count takes, in the right number: "visit" for one, "visits" for none or many. The one
+ * place the band's units are chosen, so a figure of one never reads as "1 people".
+ */
+export function unitOf(count: number, one: string, many: string): string {
+  return count === 1 ? one : many;
+}
+
+/** A count with its unit: "1 visit", "2,104 visits", "0 people". */
+export function unitWords(count: number, one: string, many: string): string {
+  return `${count.toLocaleString('en-US')} ${unitOf(count, one, many)}`;
+}
+
+/** Three letters a month, by table: a locale's short month can run to four letters, and the band reads three. */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 /** The day a count began, as the band says it: "24 Oct". An unreadable day is the plain word for unread. */
 export function dayWords(day: string | null): string {
   if (day === null) return UNREAD;
   const at = new Date(`${day}T00:00:00Z`);
   if (Number.isNaN(at.getTime())) return UNREAD;
-  return at.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return `${at.getUTCDate()} ${MONTHS[at.getUTCMonth()]}`;
 }
 
 /**

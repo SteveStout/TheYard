@@ -298,6 +298,12 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         await _client.GetAsync("/api/facets");
         await _client.GetAsync("/api/health");
         await _client.GetAsync("/api/admin/logs");
+        // The cloud cards' reads and the people count, which an open Admin tab's rail asks every
+        // tick and which wait on Azure when their window is cold.
+        await _client.GetAsync("/api/admin/plan?window=24h");
+        await _client.GetAsync("/api/admin/cloud/sqldb?window=24h");
+        await _client.GetAsync("/api/admin/follows");
+        await _client.GetAsync("/api/admin/visitors/people");
 
         string body = await _client.GetStringAsync("/api/admin/metrics");
         using var json = JsonDocument.Parse(body);
@@ -309,6 +315,16 @@ public class AdminObservabilityTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotContain("/api/health", paths);
         Assert.DoesNotContain("/api/admin/logs", paths);
         Assert.DoesNotContain("/api/admin/metrics", paths);
+        Assert.DoesNotContain("/api/admin/plan", paths);
+        Assert.DoesNotContain("/api/admin/cloud/sqldb", paths);
+        Assert.DoesNotContain("/api/admin/follows", paths);
+        Assert.DoesNotContain("/api/admin/visitors/people", paths);
+        Assert.True(RequestRecorder.IsObservabilityRead("GET", "/api/admin/cloud/claude"));
+        Assert.False(RequestRecorder.IsObservabilityRead("GET", "/api/admin/selftest/exception"));
+        Assert.False(RequestRecorder.IsObservabilityRead("GET", "/api/vehicles"));
+        // A write under /api/admin/, and a stranger's try at one, is a request the ring must show.
+        Assert.False(RequestRecorder.IsObservabilityRead("POST", "/api/admin/usage"));
+        Assert.False(RequestRecorder.IsObservabilityRead("POST", "/api/admin/pages"));
         // But the deliberate failure is not an observability read, and the
         // timing section is exactly where it should show up.
         Assert.DoesNotContain(paths, path => path == "/api/admin/sql");

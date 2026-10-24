@@ -25,7 +25,12 @@ public sealed class CosmosVisitorStore(CosmosStore store, TimeProvider clock) : 
     public static readonly TimeSpan TallyAge = TimeSpan.FromMinutes(1);
 
     private readonly Container _container = store.ContainerNamed(Containers.Activity);
-    private (DateTimeOffset At, List<VisitorDocument> Visitors)? _read;
+    // One reference, swapped whole, so a reader on another thread sees the last read entire or not at all.
+    private TallyRead? _read;
+    private bool _available;
+
+    /// <summary>One read of the partition and when it was taken.</summary>
+    private sealed record TallyRead(DateTimeOffset At, List<VisitorDocument> Visitors);
 
     /// <inheritdoc/>
     public string Source => "Cosmos DB, the activity container's visitors";
@@ -33,9 +38,15 @@ public sealed class CosmosVisitorStore(CosmosStore store, TimeProvider clock) : 
     /// <inheritdoc/>
     public async Task<bool> AvailableAsync(CancellationToken cancellation)
     {
+        // Read once: a container that answered is there, and a read that fails after says so by failing.
+        if (_available)
+        {
+            return true;
+        }
         try
         {
             await _container.ReadContainerAsync(cancellationToken: cancellation);
+            _available = true;
             return true;
         }
         catch (CosmosException)
@@ -82,7 +93,8 @@ public sealed class CosmosVisitorStore(CosmosStore store, TimeProvider clock) : 
     public async Task<VisitorTally> TallyAsync(string since, CancellationToken cancellation)
     {
         var now = clock.GetUtcNow();
-        if (_read is not { } read || now - read.At > TallyAge)
+        var read = _read;
+        if (read is null || now - read.At > TallyAge)
         {
             var query = new QueryDefinition("SELECT * FROM c WHERE c.day = @day AND c.kind = @kind")
                 .WithParameter("@day", Partition)
@@ -93,7 +105,7 @@ public sealed class CosmosVisitorStore(CosmosStore store, TimeProvider clock) : 
             {
                 visitors.AddRange(await feed.ReadNextAsync(cancellation));
             }
-            _read = read = (now, visitors);
+            _read = read = new TallyRead(now, visitors);
         }
         var people = read.Visitors.Where(v => VisitorKinds.FromWord(v.Who) == VisitorKind.People).ToList();
         return new VisitorTally(

@@ -1,6 +1,6 @@
 /**
- * Does:      Styles the head of the Site activity card: the four readouts of people who have visited, counted once,
- *            and the "New people each day" chart under them, two lines over thirty days.
+ * Does:      Styles the head of the Site activity card: the five readouts of people who have visited, counted once,
+ *            and the kept visits, and the "New people each day" chart under them, two lines over thirty days.
  * Does not:  Style the rest of the card (ActivityCard.module.css) or what every chart shares (charts.module.css).
  * Used by:   PeopleReadouts.tsx.
  */
@@ -14,7 +14,7 @@
 
 @container (min-width: 860px) {
   .head {
-    grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
   }
 }
 

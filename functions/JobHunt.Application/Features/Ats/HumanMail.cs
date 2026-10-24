@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace JobHunt.Application.Features.Ats;
 
 /// <summary>
-/// Human mail never waits for 4 AM (PROMPT-JOBHUNT-OFF-THE-LAPTOP rung 5). The inbox pass asks this whether a
+/// Human mail never waits for 4 AM. The inbox pass asks this whether a
 /// person, not a relay or a machine, has written in the last two days to a thread that holds no reply draft;
 /// when one has, the pass fires the reply run (the existing nightly mode, Opus, drafts only) at most once every
 /// four hours, between 7 AM and 9 PM Central. Nothing here sends, drafts or archives: it reads, and it keeps the

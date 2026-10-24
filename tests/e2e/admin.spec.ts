@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { TILE_KEYS } from '../../src/lib/statTiles';
 import { openTheYard } from './app';
 import { signIn } from './signIn';
 
@@ -1227,7 +1228,9 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   await openTheYard(page, '/?view=admin');
   const strip = page.getByTestId('stat-strip');
   // Each tile is a link to the card that answers it.
-  await expect(strip.getByRole('link')).toHaveCount(9);
+  // One link per tile, counted from the list the strip is built from, so a tile added there is
+  // counted here in the same change.
+  await expect(strip.getByRole('link')).toHaveCount(TILE_KEYS.length);
   // A tile is made of what a card has read, so it waits as long as the card does and then says the same thing.
   await expect(strip.getByTestId('tile-health')).toHaveAttribute('data-tone', 'good', {
     timeout: 45_000,

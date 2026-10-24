@@ -29,6 +29,10 @@ namespace TheYard.Api.Shared.Instance;
 /// <param name="PeopleAllTime">People who have visited, all time, from the day counting began (ADR-116), or null when unread.</param>
 /// <param name="PeopleNewByDay">People first seen on each of the last thirty UTC days, oldest first, or null when unread.</param>
 /// <param name="CountedFrom">The first day the count kept anything, yyyy-MM-dd, or null before it.</param>
+/// <param name="VisitsAllTime">Visits by people across the whole kept activity, one per person per day (ADR-116, the
+/// addendum on the kept visits), or null before the first hourly count.</param>
+/// <param name="VisitsFrom">The first day a person's visit was kept, yyyy-MM-dd, or null with the figure above.</param>
+/// <param name="VisitsByDay">Visits by people on each of the last thirty UTC days, oldest first, or null with the figure above.</param>
 public sealed record PulseReply(
     [property: JsonPropertyName("usual_p95_ms_24h")] long? UsualP95Ms24h,
     [property: JsonPropertyName("requests_24h")] int? Requests24h,
@@ -42,7 +46,10 @@ public sealed record PulseReply(
     long ReadAtMs,
     int? PeopleAllTime = null,
     IReadOnlyList<int>? PeopleNewByDay = null,
-    string? CountedFrom = null);
+    string? CountedFrom = null,
+    int? VisitsAllTime = null,
+    string? VisitsFrom = null,
+    IReadOnlyList<int>? VisitsByDay = null);
 // #endregion pulse-shape
 
 // #region pulse-reader
@@ -123,8 +130,20 @@ public sealed class PulseReader(
         var bill = await costs.ReadAsync("30d", cancellation);
         int requests = buckets.Sum(bucket => bucket.Requests);
         // The people who have visited, read through the Admin tab's own query (ADR-116), so the first screen
-        // and the Activity card can never say two numbers.
-        var count = people is null ? null : await people(cancellation);
+        // and the Activity card can never say two numbers. A count that cannot be read is unread on the band,
+        // never a first screen that fails: the store behind it is one the page did not depend on before.
+        PeopleCount? count = null;
+        if (people is not null)
+        {
+            try
+            {
+                count = await people(cancellation);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException and not OutOfMemoryException)
+            {
+                count = null;
+            }
+        }
         return new PulseReply(
             UsualP95(buckets),
             buckets.Count == 0 ? null : requests,
@@ -138,7 +157,10 @@ public sealed class PulseReader(
             now.ToUnixTimeMilliseconds(),
             count?.PeopleAllTime,
             count is { PeopleAllTime: not null } ? [.. count.PeopleNewByDay.Select(day => day.People)] : null,
-            count?.CountedFrom);
+            count?.CountedFrom,
+            count?.Visits?.AllTime,
+            count?.Visits?.From,
+            count?.Visits is { } kept ? [.. kept.ByDay.Select(day => day.Visits)] : null);
     }
 
     /// <summary>

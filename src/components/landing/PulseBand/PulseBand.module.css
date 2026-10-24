@@ -2,7 +2,7 @@
  * Does:      Styles the first screen's band: four instruments across one glass panel, each with its label, its reading,
  *            its scale or gauge, and the line under it, and the hairlines between them.
  * Does not:  Decide what a figure means or what it says (PulseBand.tsx and src/lib/pulse.ts do), or draw the glass (panels.css does).
- * Used by:   PulseBand.tsx.
+ * Used by:   PulseBand.tsx, PeopleInstrument.tsx.
  */
 .band {
   display: grid;

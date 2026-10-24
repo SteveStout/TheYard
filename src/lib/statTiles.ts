@@ -11,7 +11,7 @@
  * This file is the list of parts; each line names the file beside it that holds one.
  */
 
-// statTiles/tileTypes.ts: what a tile holds, its ring, and the readings tiles are built from
+// statTiles/tileTypes.ts: what a tile holds, its ring, the readings tiles are built from, and the one list of tiles
 export type {
   StatTile,
   TileQuestion,
@@ -23,6 +23,7 @@ export type {
 export { ringOf, ringStroke } from './statTiles/tileRing';
 // statTiles/tileWords.ts: uptime, milliseconds and the hour's stretch in words, and a tile's sentence
 export {
+  dayWords,
   millisecondsWords,
   RING_HOLDS,
   ringStretch,
@@ -39,6 +40,8 @@ export {
   tilesFrom,
   VERY_SLOW_P95_MS,
 } from './statTiles/tileRules';
+// statTiles/tileTypes.ts also holds the one list of the strip's tiles, which the browser specs count from
+export { TILE_KEYS } from './statTiles/tileTypes';
 // statTiles/visitorsToday.ts: today's visitor count from the activity report's days
 export { visitorsOn } from './statTiles/visitorsToday';
 // statTiles/coldStart.ts: the minutes after a start that the speed tile leaves out

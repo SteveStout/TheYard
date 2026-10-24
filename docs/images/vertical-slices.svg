@@ -114,7 +114,7 @@
   <text x="930" y="412" class="body">ReadCloudCardHandler.cs</text>
   <text x="930" y="428" class="body">ICloudCards, beside it</text>
   <text x="930" y="532" class="body">CardTone.cs, in Shared/Cards</text>
-  <text x="1016" y="652" class="label" text-anchor="middle">and Admin/Plan, Admin/Operations, Docs, Health, each a column like these</text>
+  <text x="1016" y="652" class="label" text-anchor="middle">and Admin/Plan, Admin/Operations, Docs, Health, Visitors, each a column like these</text>
   <path d="M1148 160 V282" class="flow"/>
   <path d="M1148 292 V402" class="flow"/>
   <path d="M1148 412 V512" class="flow"/>

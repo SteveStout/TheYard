@@ -16,7 +16,7 @@ public static class VisitorEndpoints
         app.MapGet("/api/admin/visitors/people", People)
             .WithName("GetPeopleWhoHaveVisited")
             .WithTags("Admin")
-            .WithSummary("People who have visited, all time, today and this month, the scanners left out, and the last thirty days, with the source");
+            .WithSummary("People who have visited, all time, today and this month, the scanners left out, the last thirty days, and the kept visits since the first day, with the source");
         // #endregion people-endpoint
         return app;
     }

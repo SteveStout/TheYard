@@ -180,7 +180,7 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The leads harvest (functions/JobHunt.Application/Features/Leads): 'on' appends each whole alert's jobs to nightly/leads-<date>.md,
         // then archives it; 'shadow' writes leads-shadow/ only.
         { name: 'LEADS', value: 'on' }
-        // The leads list (PROMPT-JOBHUNT-OFF-THE-LAPTOP rung 2): 'on' fires nightly.yml's leads run (Sonnet, low effort,
+        // The leads list: 'on' fires nightly.yml's leads run (Sonnet, low effort,
         // LEADS-LANE.md) when a pass harvested a lead that passed the filter and that leads/scored.tsv does not hold;
         // 'shadow' writes what it would fire to the pass's line; anything else never starts it.
         { name: 'LEADS_LIST', value: 'shadow' }

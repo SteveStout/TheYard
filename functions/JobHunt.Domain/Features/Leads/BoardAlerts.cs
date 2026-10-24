@@ -7,7 +7,7 @@ namespace JobHunt.Domain.Features.Leads;
 /// <summary>
 /// One job board's alert mail: which sender it comes from, and how its jobs are read out of it. The leads
 /// harvest asks every reader in <see cref="BoardAlerts.All"/>, so a new board is one class and one line there
-/// (PROMPT-JOBHUNT-OFF-THE-LAPTOP rung 2: every board's alert is harvested before it is archived).
+/// (every board's alert is harvested before it is archived).
 /// </summary>
 public interface IBoardAlert
 {

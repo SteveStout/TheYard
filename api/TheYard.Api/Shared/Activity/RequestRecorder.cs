@@ -27,35 +27,32 @@ public sealed class RequestRecorder(
     /// <summary>
     /// The endpoints that exist to be read by the Admin tab, which are left out of the Admin tab's
     /// own numbers. An open Admin tab polls them every thirty seconds; left in, they would push
-    /// every real request out of the ring inside an hour. Named one by one rather than matched on
-    /// the /api/admin/ prefix, because /api/admin/selftest/exception is the deliberate failure that
-    /// proves the error path works, which the timing section should show.
+    /// every real request out of the ring inside an hour, and the cloud cards' reads, which wait
+    /// seconds on Azure Monitor, Cost Management and Netlify when their window is cold, would put
+    /// seconds into the first screen's usual answer time, which a tab left open overnight once did
+    /// (ADR: One reading for the first screen, the addendum on the Admin tab's reads).
+    /// Every address under /api/admin/ but the self-test, which is the deliberate failure that
+    /// proves the error path works and which the timing section should show, and the four reads
+    /// outside it that are the site watching itself.
     /// </summary>
     private static readonly HashSet<string> ObservabilityReads = new(StringComparer.Ordinal)
     {
-        "/api/admin/sql",
-        "/api/admin/store",
-        "/api/admin/logs",
-        "/api/admin/metrics",
-        "/api/admin/peer",
-        "/api/admin/experiment",
-        "/api/admin/proof",
-        "/api/admin/azure",
-        "/api/admin/links",
-        "/api/admin/telemetry",
-        "/api/admin/activity",
-        "/api/admin/activity/visitors",
-        "/api/admin/pages",
-        "/api/admin/machines",
-        "/api/admin/logs/kept",
-        "/api/admin/kept",
-        "/api/admin/reset-links",
-        "/api/admin/arrival",
         "/api/errors",
         "/api/health",
         "/readyz",
         "/healthz",
     };
+
+    /// <summary>
+    /// Whether a request is one of the Admin tab's reads, or another read of the site by itself. A read
+    /// only: a write under /api/admin/ (a usage document posted, a blog post, a sweep started) and every
+    /// refusal of one stay in the ring and the kept log, because the operator's key is tried against them.
+    /// </summary>
+    public static bool IsObservabilityRead(string method, string path) =>
+        HttpMethods.IsGet(method)
+        && (ObservabilityReads.Contains(path)
+            || (path.StartsWith("/api/admin/", StringComparison.Ordinal)
+                && !path.StartsWith("/api/admin/selftest/", StringComparison.Ordinal)));
 
     /// <summary>Files one finished request and the time it took.</summary>
     /// <param name="context">The request, after its response was written.</param>
@@ -67,7 +64,7 @@ public sealed class RequestRecorder(
         string path = context.Items.TryGetValue(ResumeDoor.ItemKey, out var door) && door is string doorPath
             ? doorPath
             : context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
-        if (ObservabilityReads.Contains(path))
+        if (IsObservabilityRead(context.Request.Method, path))
         {
             return;
         }

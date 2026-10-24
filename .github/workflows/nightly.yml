@@ -85,7 +85,7 @@ jobs:
           else model=claude-opus-5-5; fi
           case "$mode" in bookkeeping) lane=BOOKKEEPING-LANE.md ;; triage) lane=TRIAGE-LANE.md ;; leads) lane=LEADS-LANE.md ;; *) lane=NIGHTLY-LANE.md ;; esac
           # The triage step and the leads list are the light ones: low effort, a few turns, minutes not an hour
-          # (Steve 2026-10-23). The other modes keep Claude Code's default effort, so no flag is passed for them.
+          # The other modes keep Claude Code's default effort, so no flag is passed for them.
           if [ "$mode" = "triage" ] || [ "$mode" = "leads" ]; then effort="--effort low"; turns=40; minutes=10; else effort=""; turns=200; minutes=55; fi
           day=$(TZ=America/Chicago date +%F); slot=$(TZ=America/Chicago date +%H%M)
           suffix=""; [ "$dry" = "true" ] && suffix="-dry"

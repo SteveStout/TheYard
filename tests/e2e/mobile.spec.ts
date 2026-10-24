@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { TILE_KEYS } from '../../src/lib/statTiles';
 import { openTheYard, openAllSections, openSection } from './app';
 
 /**
@@ -180,11 +181,11 @@ test('the Admin tiles are two to a row on a phone and nothing on the tab is wide
     timeout: 45_000,
   });
   // Two to a row (the tweaks pass, A2; two rows of four until then, when a label took three
-  // lines in an 80 px tile), nine tiles since the people tile of 1.0.4.41, so the last row holds
-  // one: the first two side by side and the same size, the third under the first, in the strip's
-  // own order.
+  // lines in an 80 px tile), as many tiles as the strip is built from, so an odd count leaves the
+  // last row holding one: the first two side by side and the same size, the third under the
+  // first, in the strip's own order.
   const tiles = strip.locator('li > [data-testid^="tile-"]');
-  await expect(tiles).toHaveCount(9);
+  await expect(tiles).toHaveCount(TILE_KEYS.length);
   const boxes = await Promise.all([0, 1, 2].map((index) => tiles.nth(index).boundingBox()));
   expect(boxes[1]?.y).toBe(boxes[0]?.y);
   expect(boxes[1]?.width).toBe(boxes[0]?.width);

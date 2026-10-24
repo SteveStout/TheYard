@@ -53,6 +53,6 @@ describe('every Cloud infrastructure card calculates a status', () => {
     expect(followsGlance(report('good'))).toEqual({ tone: 'fine', headline: '25 %' });
     expect(followsGlance(report('info')).tone).toBe('fine');
     expect(followsGlance(report('alarm')).tone).toBe('red');
-    expect(followsGlance(report('good', []))).toEqual({ tone: 'unread', headline: null });
+    expect(followsGlance(report('good', []))).toEqual({ tone: 'unread', headline: 'warming up' });
   });
 });

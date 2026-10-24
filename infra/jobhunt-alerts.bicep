@@ -1,4 +1,4 @@
-// A dead Function tells him (PROMPT-JOBHUNT-OFF-THE-LAPTOP rung 8, grind1023, 1.0.4.42). Its own template so a
+// A dead Function sends an email (1.0.4.42). Its own template so a
 // deploy of it touches these two resources and nothing else: a deploy of infra/jobhunt.bicep replaces the
 // Function's whole settings list, and these two need none of it. Deployed into RG-JOBHUNT-SS, Incremental.
 //
