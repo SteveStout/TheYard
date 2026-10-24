@@ -61,6 +61,14 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
         return !(json.RootElement.TryGetProperty("labelIds", out var labels) && labels.EnumerateArray().Any(l => l.GetString() == "INBOX"));
     }
 
+    /// <summary>True when any message in the thread carries the DRAFT label.</summary>
+    public async Task<bool> ThreadHasDraftAsync(string threadId, CancellationToken ct)
+    {
+        using var json = await GetAsync($"{Api}/threads/{threadId}?format=minimal", ct);
+        return json.RootElement.GetProperty("messages").EnumerateArray()
+            .Any(m => m.TryGetProperty("labelIds", out var labels) && labels.EnumerateArray().Any(l => l.GetString() == "DRAFT"));
+    }
+
     /// <summary>The message's text: its plain parts, else its HTML parts with the markup taken out.</summary>
     public static string Text(JsonElement payload)
     {

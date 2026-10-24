@@ -19,6 +19,9 @@ public interface IInbox
 
     /// <summary>Removes the INBOX label from one message, and returns true when its labels read back without it.</summary>
     Task<bool> ArchiveAsync(string id, CancellationToken ct);
+
+    /// <summary>True when a draft sits in the thread, which is a reply already waiting for Steve's word; an inbox that cannot tell says no.</summary>
+    Task<bool> ThreadHasDraftAsync(string threadId, CancellationToken ct) => Task.FromResult(false);
 }
 
 /// <summary>One message as the sweep reads it.</summary>

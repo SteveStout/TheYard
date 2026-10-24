@@ -184,6 +184,10 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // LEADS-LANE.md) when a pass harvested a lead that passed the filter and that leads/scored.tsv does not hold;
         // 'shadow' writes what it would fire to the pass's line; anything else never starts it.
         { name: 'LEADS_LIST', value: 'shadow' }
+        // Human mail never waits for 4 AM (rung 5): 'on' fires nightly.yml's reply run (drafts only) when a person
+        // waits on a thread with no draft, at most once every four hours between 7 AM and 9 PM Central; 'shadow'
+        // writes what it would fire to the pass's line; anything else never starts it.
+        { name: 'REPLY_ON_HUMAN', value: 'shadow' }
         // The model's step: 'on' fires nightly.yml's triage run (Sonnet, low effort) when the inbox holds mail
         // that no triage run has judged; anything else never starts it.
         { name: 'TRIAGE', value: 'on' }

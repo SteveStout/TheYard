@@ -112,6 +112,25 @@ public sealed partial class TemplateTests
         Assert.True(missing.Count == 0, "read by the Function and not in infra/jobhunt.bicep: " + string.Join(", ", missing));
     }
 
+    [Fact]
+    public void The_template_carries_the_reply_run_for_human_mail_in_shadow_until_it_is_switched_on() =>
+        Assert.Contains(Settings().GetValueOrDefault("REPLY_ON_HUMAN") ?? "", new[] { "shadow", "on" });
+
+    [Fact]
+    public void A_dead_Function_emails_Steve_from_its_own_template_with_the_address_passed_at_deploy_time()
+    {
+        // Rung 8: its own template, so its deploy touches no app setting; the address is a parameter with no default,
+        // so it is never written in the public repository; every ten minutes over thirty, failures or a silent Merger.
+        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
+        Assert.Contains("param alertEmail string\n", bicep.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.DoesNotContain("@gmail.com", bicep, StringComparison.Ordinal);
+        Assert.Contains("evaluationFrequency: 'PT10M'", bicep, StringComparison.Ordinal);
+        Assert.Contains("windowSize: 'PT30M'", bicep, StringComparison.Ordinal);
+        Assert.Contains("success == false", bicep, StringComparison.Ordinal);
+        Assert.Contains("name == \"Merger\"", bicep, StringComparison.Ordinal);
+        Assert.DoesNotContain("appsettings", bicep, StringComparison.OrdinalIgnoreCase);
+    }
+
     /// <summary>The app settings the template lists, by name: each a one-line { name: 'X', value: ... } entry.</summary>
     private static Dictionary<string, string> Settings()
     {
