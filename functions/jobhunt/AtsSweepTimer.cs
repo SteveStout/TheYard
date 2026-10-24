@@ -5,6 +5,12 @@ using Microsoft.Extensions.Logging;
 namespace JobHunt.Functions;
 
 /// <summary>
+/// Reads the inbox so Steve never sees a job-board alert or a rejection again, and every human message, interview
+/// and account mail stays: the ATS sweep logs receipts and rejections to the tracker and archives them; the leads
+/// harvest reads every board's alert into the leads list; what neither could read is handed to the triage run; and
+/// a person waiting with no draft fires the reply run (shadow: it says it would).
+/// </summary>
+/// <remarks>
 /// The inbox pass, every 30 minutes (20 and 50 past each hour, UTC, which is 20 and 50 past in Central too):
 /// the ATS sweep, then the leads harvest, then what neither could read handed to the model. Steve's 2026-10-23
 /// alpha goal: he never sees a job-board alert or a rejection again, and every human message, interview and
@@ -15,7 +21,7 @@ namespace JobHunt.Functions;
 /// not scored, and "shadow" logs what it would fire. REPLY_ON_HUMAN "on" fires the reply run when a person waits
 /// on a thread with no draft (HumanMail), and "shadow" logs what it would fire. Each part's failure is logged and the next part still runs. One line a pass goes
 /// to inbox-pass/pass.log on the share with its wall time. Without the Google settings it logs why and does nothing.
-/// </summary>
+/// </remarks>
 public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, TimeProvider time, Dispatch dispatch, ILogger<AtsSweepTimer> log)
 {
     /// <summary>One line a pass, with its wall time and each part's line.</summary>
@@ -24,16 +30,41 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     [Function("AtsSweep")]
     public async Task RunAsync([TimerTrigger("0 20,50 * * * *")] TimerInfo timer, CancellationToken ct)
     {
+        var run = new RunLine("AtsSweep", time.GetUtcNow(), [20, 50]);
+        try
+        {
+            await PassAsync(run, ct);
+        }
+        catch (Exception ex)
+        {
+            run.Failed(ex);
+            throw;
+        }
+        finally
+        {
+            RunLines.Write(log, run, time.GetUtcNow());
+        }
+    }
+
+    /// <summary>
+    /// One pass: each part that is switched on, its line into pass.log, and the counts into the run's line
+    /// (read, archived, rows from the ATS sweep; leads and leads passed from the harvest; unjudged for the
+    /// model; waiting from human mail). A pass where every switch is shadow came to planned.
+    /// </summary>
+    private async Task PassAsync(RunLine run, CancellationToken ct)
+    {
         string ats = (Environment.GetEnvironmentVariable("ATS_SWEEP") ?? "").Trim().ToLowerInvariant();
         string leads = (Environment.GetEnvironmentVariable("LEADS") ?? "").Trim().ToLowerInvariant();
         string triage = (Environment.GetEnvironmentVariable("TRIAGE") ?? "").Trim().ToLowerInvariant();
         if (ats is not ("shadow" or "on") && leads is not ("shadow" or "on") && triage != "on")
         {
+            run.Came("unchanged", "switch_off");
             log.LogInformation("inbox pass idle: ATS_SWEEP, LEADS and TRIAGE are all off");
             return;
         }
         if (GoogleCredentials.FromEnvironment() is not { } google)
         {
+            run.Came("blocked", "google_settings");
             log.LogWarning("inbox pass blocked: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET or GMAIL_REFRESH_TOKEN is not set");
             return;
         }
@@ -64,6 +95,21 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         await store.EnsureFolderAsync("inbox-pass", ct);
         await store.AppendAsync(PassLog, TrackerCsvText.Encode(line + "\r\n"), ct);
         log.LogInformation("inbox pass: {Line}", line);
+        Fold(run, atsLine, leadsLine, triageLine, humanLine, _refused, ats == "on" || leads == "on" || triage == "on" || human == "on");
+    }
+
+    /// <summary>The pass's counts and what it came to, from its parts' lines: numbers only, never their words.</summary>
+    public static RunLine Fold(RunLine run, string atsLine, string leadsLine, string triageLine, string humanLine, bool refused, bool acted)
+    {
+        RunLines.Counted(run, atsLine, ("read", @"found (\d+)"), ("archived", @"(\d+) archived"));
+        RunLines.Counted(run, leadsLine, ("leads", @"requisitions (\d+)"), ("leads_passed", @"pass (\d+)"));
+        RunLines.Counted(run, triageLine, ("unjudged", @"(\d+) unjudged"));
+        RunLines.Counted(run, humanLine, ("waiting", @"(\d+) waiting"));
+        string[] parts = [atsLine, leadsLine, triageLine, humanLine];
+        return refused ? run.Came("blocked", "google_token")
+            : parts.Any(p => p.StartsWith("FAILED", StringComparison.Ordinal)) ? run.Came("failed", "part_failed")
+            : acted ? run.Came("success")
+            : run.Came("planned");
     }
 
     /// <summary>
