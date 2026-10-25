@@ -106,6 +106,7 @@ public static class AcrCard
                 new("Pulls failed", ResourceView.Number(pulls is { } p && ok is { } o ? p - o : null), pulls is { } p2 && ok is { } o2 && o2 < p2 ? "warning" : "info"),
                 new("Pushes, window", ResourceView.Number(pushes), "info"),
                 new("Tier", ResourceView.Fact(inputs, "tier"), "info") { Source = "ARM record" },
+                new("GitHub's registry", ResourceView.Fact(inputs, GhcrPackages.Fact, "not read yet"), "info") { Source = "ghcr.io, read as an anonymous pull" },
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
             ],
@@ -129,7 +130,8 @@ public static class AcrCard
     /// <param name="holdings">The catalogue, or null when it could not be read.</param>
     /// <param name="usages">The registry's listUsages answer, or null when it could not be read.</param>
     /// <param name="plan">The plan card's newest kept hour, the one read of each web app's image; null when none is kept.</param>
-    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement record, AcrHoldings? holdings, System.Text.Json.JsonElement? usages = null, PlanHour? plan = null)
+    /// <param name="ghcr">GitHub's registry as an anonymous pull reads it, in words; null when it was not read.</param>
+    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement record, AcrHoldings? holdings, System.Text.Json.JsonElement? usages = null, PlanHour? plan = null, string? ghcr = null)
     {
         string? tier = AzureMetrics.Text(record, "sku.name");
         string? loginServer = AzureMetrics.Text(record, "properties.loginServer");
@@ -146,6 +148,7 @@ public static class AcrCard
             ["untagged"] = holdings?.UntaggedManifests.ToString(CultureInfo.InvariantCulture),
             ["untagged_gb"] = holdings is null ? null : (holdings.UntaggedBytes / 1024.0 / 1024 / 1024).ToString("0.00", CultureInfo.InvariantCulture),
             ["spec"] = string.Join(' ', new[] { tier, AzureMetrics.Text(record, "location") }.Where(p => p is not null)).ToUpperInvariant(),
+            [GhcrPackages.Fact] = ghcr,
         };
     }
 
