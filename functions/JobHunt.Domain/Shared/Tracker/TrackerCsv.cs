@@ -1,4 +1,4 @@
-namespace JobHunt.Domain;
+namespace JobHunt.Domain.Shared.Tracker;
 
 /// <summary>
 /// Counts the data rows of Job_Hunt_Tracker.csv. Its quoted fields hold newlines, so a line

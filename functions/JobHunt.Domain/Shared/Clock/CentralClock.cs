@@ -1,4 +1,4 @@
-namespace JobHunt.Domain;
+namespace JobHunt.Domain.Shared.Clock;
 
 /// <summary>
 /// The job hunt's slots in Saint Charles time. Flex Consumption on Linux does not honour

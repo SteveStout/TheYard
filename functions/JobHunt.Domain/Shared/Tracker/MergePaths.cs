@@ -1,4 +1,4 @@
-namespace JobHunt.Domain.Features.Merge;
+namespace JobHunt.Domain.Shared.Tracker;
 
 /// <summary>
 /// Where the tracker merger finds its work. Laptop lanes' row files arrive in tracker-inbox/ (the

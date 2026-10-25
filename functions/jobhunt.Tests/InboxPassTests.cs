@@ -149,7 +149,7 @@ public sealed class InboxPassTests
     {
         string root = Root();
         string code = SliceCode(root, "Leads")
-            + File.ReadAllText(Path.Combine(root, "functions", "JobHunt.Application", "InboxTriage.cs"))
+            + SliceCode(root, "Triage")
             + File.ReadAllText(Path.Combine(root, "functions", "jobhunt", "AtsSweepTimer.cs"));
         foreach (string forbidden in new[] { "/send", "/drafts", "/trash", "batchDelete", "batchModify", "DeleteAsync", "HttpMethod.Delete", "addLabelIds" })
         {

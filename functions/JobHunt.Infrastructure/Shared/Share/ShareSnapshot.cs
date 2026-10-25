@@ -2,7 +2,7 @@ using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using Microsoft.Extensions.Logging;
 
-namespace JobHunt.Infrastructure;
+namespace JobHunt.Infrastructure.Shared.Share;
 
 /// <summary>
 /// One snapshot of the share a night, fourteen kept. Done here rather than by Azure Backup,

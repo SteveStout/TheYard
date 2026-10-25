@@ -1,5 +1,5 @@
 
-namespace JobHunt.Application;
+namespace JobHunt.Application.Features.Triage;
 
 /// <summary>
 /// What the inbox pass's code leaves for the model: whatever is still in the inbox that no triage run has
@@ -9,7 +9,7 @@ namespace JobHunt.Application;
 /// the Gmail id first. So the model is started only when there is mail it has not seen, and a message it left
 /// for Steve is never judged twice. Reading only: nothing here archives, labels or writes to the inbox.
 /// </summary>
-public sealed class InboxTriage(IMergeStore store, IInbox inbox)
+public sealed class InboxTriage(IShareReader store, IInboxReader inbox)
 {
     /// <summary>The repository_dispatch type nightly.yml runs the triage lane for.</summary>
     public const string Event = "triage";

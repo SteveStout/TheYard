@@ -7,7 +7,7 @@ namespace JobHunt.Domain.Features.Campaign;
 /// comes before any draft). Any tracker row for the company (Rule 50's name match) in the last 30 days whose
 /// Communication is not an application channel holds the lead: a LinkedIn message, an email with a person, a
 /// call. Over-holding by design. Two kinds of row do not hold, because they are the application itself and not a
-/// person: an application row (AtsRules.IsApplication, or an ATS named in Communication) and the ATS sweep's RECEIPT
+/// person: an application row (TrackerRows.IsApplication, or an ATS named in Communication) and the ATS sweep's RECEIPT
 /// row, which the Function writes with Communication "Email" for an automated confirmation. A connection request
 /// that nobody has answered does not hold either: it is the LinkedIn preference order's input (LinkedInOrder),
 /// which ranks a lead with an invite out above one without, and holding it here would make that order dead code.
@@ -40,7 +40,7 @@ public static partial class LiveThreadRule
     public static bool Holds(string[] row)
     {
         string channel = row[3];
-        bool application = ApplicationChannels.Any(c => channel.Contains(c, StringComparison.OrdinalIgnoreCase)) || AtsRules.IsApplication(row);
+        bool application = ApplicationChannels.Any(c => channel.Contains(c, StringComparison.OrdinalIgnoreCase)) || TrackerRows.IsApplication(row);
         bool receipt = row[6].TrimStart().StartsWith("RECEIPT", StringComparison.OrdinalIgnoreCase);
         bool invite = channel.Contains("invite", StringComparison.OrdinalIgnoreCase) || Invite().IsMatch(row[6]);
         return !application && !receipt && !invite;

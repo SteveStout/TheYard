@@ -207,3 +207,14 @@ From this version a slice is its name under `Features/` in every ring, and a typ
 ```
 
 `SliceTests.Rule_1_across_the_rings_a_slice_uses_no_other_slice_in_any_ring` holds it. It was red on 1.0.4.66 with only its file applied, naming six types of the Admin operations slice (`ActivityWho`, `AdminEndpoints`, `AdminEvidenceRoutes`, `AdminUsageRoutes`, `Module`, `ProofReadings`), and it is green from 1.0.4.67.
+
+## Addendum, 2026-10-25 (1.0.4.75): the job hunt's Function is sliced the same way
+
+From 1.0.4.44 the Function had the three rings of this record, each with a `Features/` folder a slice. Nothing held those slices apart, and they had grown together: measured on 1.0.4.74 with the rule below applied, 51 places where one slice used another slice's type, and eight files at a ring's root, reachable from every slice. Most of the crossings were the tracker (`TrackerCsvText`, `MergePaths`, the share port `IMergeStore`, which every slice reads), the mail (`IInbox`, `MailSearch`, `InboxMessage`, `Mail`), and one rule every slice asks of a tracker row, whether it records an application, which lived in the Ats slice.
+
+What more than one slice uses moved to `Shared/<Concern>/` in its ring, as in the site: in Domain `Shared/Tracker` (`TrackerCsv`, `TrackerCsvText`, `MergePaths`, and `TrackerRows.IsApplication`, out of `AtsRules`), `Shared/Mail`, `Shared/Applications` (`ApplicationCap`) and `Shared/Clock` (`CentralClock`); in Application `Shared/Mail` (`IInbox`, `MailSearch`), `Shared/Store` (`IMergeStore`) and `Shared/Runs` (`RunLine`); in Infrastructure `Shared/Share` (`Bookend`, `ShareSnapshot`), `Shared/GitHub` (`Dispatch`) and `Shared/Google` (`GoogleCredentials`). The triage window became a slice of its own, `Features/Triage`. Nothing changed what it does.
+
+```live path=tests/rules/SliceRule.cs region=slice-rule
+```
+
+The Function's `SliceTests` holds it from one body, `tests/rules/SliceRule.cs`, read from the compiled rings: a slice uses only its own types and the shared ones in any ring, shared code uses no slice, and no file sits at a ring's root. Two calls are written down. `Dispatch.Gate` names the triage and leads events by their slices' constants, which the compiler copies in as text, so the rule cannot see them and they stay as the one place the gates are mapped. The host's timers are not sliced: each is one trigger bound to one use case, and ADR-117's stage B is where the host gets its settings record.

@@ -21,5 +21,9 @@
     <Using Include="JobHunt.Domain.Features.Card" />
     <Using Include="JobHunt.Domain.Features.Campaign" />
     <Using Include="TheYard.Domain.Features.Admin" />
+    <Using Include="JobHunt.Domain.Shared.Tracker" />
+    <Using Include="JobHunt.Domain.Shared.Clock" />
+    <Using Include="JobHunt.Domain.Shared.Mail" />
+    <Using Include="JobHunt.Domain.Shared.Applications" />
   </ItemGroup>
 </Project>

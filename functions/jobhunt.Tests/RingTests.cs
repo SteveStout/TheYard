@@ -57,9 +57,9 @@ public sealed partial class RingTests
         // empties and this becomes the rule.
         var named = new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["functions/JobHunt.Infrastructure/ShareSnapshot.cs"] = 1,
-            ["functions/JobHunt.Infrastructure/Dispatch.cs"] = 3,
-            ["functions/JobHunt.Infrastructure/GoogleCredentials.cs"] = 3,
+            ["functions/JobHunt.Infrastructure/Shared/Share/ShareSnapshot.cs"] = 1,
+            ["functions/JobHunt.Infrastructure/Shared/GitHub/Dispatch.cs"] = 3,
+            ["functions/JobHunt.Infrastructure/Shared/Google/GoogleCredentials.cs"] = 3,
             ["functions/JobHunt.Infrastructure/Features/Sheet/GoogleSheetGrid.cs"] = 1,
         };
         var reads = Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Infrastructure"), "*.cs", SearchOption.AllDirectories)

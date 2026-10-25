@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace JobHunt.Infrastructure;
+namespace JobHunt.Infrastructure.Shared.Google;
 
 /// <summary>
 /// The Google OAuth client and refresh token the nightly lane holds (ADR-JOBHUNT-001 in the job-hunt

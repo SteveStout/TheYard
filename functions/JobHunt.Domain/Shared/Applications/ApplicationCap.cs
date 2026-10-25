@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace JobHunt.Domain.Features.Leads;
+namespace JobHunt.Domain.Shared.Applications;
 
 /// <summary>
 /// RULE 50 as code (systemRules.md in the job-hunt folder, Steve 2026-10-22): no more than three
@@ -49,7 +49,7 @@ public static partial class ApplicationCap
     /// <summary>The application rows for a company inside the window ending on <paramref name="today"/>.</summary>
     public static IReadOnlyList<(string Count, DateOnly Day)> Applications(string company, IReadOnlyList<string[]> master, DateOnly today) =>
         [.. master
-            .Where(row => AtsRules.IsApplication(row) && Same(row[2], company) && Day(row[4]) is { } day && today.DayNumber - day.DayNumber is >= 0 and < WindowDays)
+            .Where(row => TrackerRows.IsApplication(row) && Same(row[2], company) && Day(row[4]) is { } day && today.DayNumber - day.DayNumber is >= 0 and < WindowDays)
             .Select(row => (row[0].Trim(), Day(row[4])!.Value))
             .OrderBy(a => a.Item2)];
 
@@ -73,7 +73,7 @@ public static partial class ApplicationCap
 
     /// <summary>Every company at or over the cap today, or on the list, for the card.</summary>
     public static IReadOnlyList<CapVerdict> Held(IReadOnlyList<string[]> master, IReadOnlyList<DoNotApply> list, DateOnly today) =>
-        [.. master.Where(AtsRules.IsApplication).Select(row => row[2].Trim()).Where(c => c.Length > 0 && !c.Equals("NA", StringComparison.OrdinalIgnoreCase))
+        [.. master.Where(TrackerRows.IsApplication).Select(row => row[2].Trim()).Where(c => c.Length > 0 && !c.Equals("NA", StringComparison.OrdinalIgnoreCase))
             .Concat(list.Where(d => today < d.Until).Select(d => d.Names[0]))
             .GroupBy(Normal, StringComparer.Ordinal).Select(g => g.First())
             .Select(company => Check(company, master, list, today))

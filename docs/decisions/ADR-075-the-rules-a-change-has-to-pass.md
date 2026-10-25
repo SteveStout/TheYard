@@ -155,6 +155,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every CI and gate job installs .NET through .github/actions/dotnet, which tries the download twice a minute apart and then uses the runner image's own .NET 10 SDK, failing only when there is none | ADR-068 | DotnetInstallTests |
 | The job hunt Function's Infrastructure reads the environment only in the four files named with their counts until stage B of ADR-117 hands each host its settings, and the rule bodies the two suites share live once under tests/rules/, linked into both test projects | ADR-117, ADR-075 the addendum of 1.0.4.70 | RingTests, OnionTests, SliceTests, FileShapeTests |
 | The tracker's SQL copy is the CSV byte for byte: the file is cut at CRLFs outside quotes and put back identical, the mirror writes only the rows whose hash changed, and a rebuild from the copy is compared with the CSV, which stays the master | ADR-111, the addendum of 1.0.4.73 | TrackerSqlTests |
+| The job hunt Function's slices: a type under a ring's Features/<Slice>/ uses only its own slice and the Shared concerns in any ring, shared code uses no slice, no file sits at a ring's root, and a use case that only reads is handed the reading half of a split port | ADR-107 and ADR-115, the addenda of 1.0.4.75 | SliceTests, CqrsTests |
 
 ## How the table is read
 

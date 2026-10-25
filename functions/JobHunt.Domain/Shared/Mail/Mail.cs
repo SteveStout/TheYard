@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace JobHunt.Domain.Features.Ats;
+namespace JobHunt.Domain.Shared.Mail;
 
 /// <summary>Reading a mail address: the address and name out of a From header, and whether a machine sent it.</summary>
 public static partial class Mail

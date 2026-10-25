@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace JobHunt.Application;
+namespace JobHunt.Application.Shared.Runs;
 
 /// <summary>
 /// One process's run, as one line in Application Insights (ADR-109, the addendum on the six processes): the

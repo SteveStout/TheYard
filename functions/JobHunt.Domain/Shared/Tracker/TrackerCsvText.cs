@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.VisualBasic.FileIO;
 
-namespace JobHunt.Domain.Features.Merge;
+namespace JobHunt.Domain.Shared.Tracker;
 
 /// <summary>
 /// Reading and writing the tracker's CSV the way the laptop's merger always has: the same
