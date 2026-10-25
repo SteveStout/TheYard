@@ -765,6 +765,21 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-a-red-that-lasts-an-hour-gets-a-postmortem</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/incidents</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/inc-001-the-share-that-billed-for-looking</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/adr-tagged-links-who-opened-what</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

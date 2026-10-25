@@ -243,6 +243,11 @@ export const MENUS: Record<
       .map(([key]) => ({ key })),
   },
   // #endregion records-menu
+  /** Every red that lasted an hour, the index first (ADR: A red that lasts an hour gets a postmortem). */
+  incidents: {
+    label: 'Incidents',
+    items: [{ key: 'incidents' }, { key: 'inc001' }],
+  },
   // #region menu-changelog
   /** One item on purpose: one file, one sentence per version (ADR-012). */
   changelog: { label: 'Changelog', items: [{ key: 'changelog' }] },

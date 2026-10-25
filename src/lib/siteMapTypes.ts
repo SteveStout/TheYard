@@ -21,6 +21,7 @@ export type MenuVariant =
   | 'cicd'
   | 'practices'
   | 'records'
+  | 'incidents'
   | 'changelog'
   | 'author';
 

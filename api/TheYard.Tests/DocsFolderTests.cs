@@ -37,6 +37,7 @@ public class DocsFolderTests
         ["cicd"] = "ci-cd",
         ["practices"] = "best-practices",
         ["records"] = "decisions",
+        ["incidents"] = "incidents",
     };
 
     /// <summary>What the root of docs/ may hold besides the folders above.</summary>

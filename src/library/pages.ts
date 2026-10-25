@@ -242,5 +242,17 @@ export const PAGES = {
     url: '/api/docs/traffic-search-console',
     kind: 'overview',
   },
+  incidents: {
+    title: 'Incidents',
+    menuLabel: 'Every incident',
+    url: '/api/docs/incidents',
+    kind: 'overview',
+  },
+  inc001: {
+    title: 'INC-001: the share that billed for looking',
+    menuLabel: 'INC-001: the share that billed for looking',
+    url: '/api/docs/inc-001-the-share-that-billed-for-looking',
+    kind: 'overview',
+  },
 } as const satisfies Record<string, PageEntry>;
 // #endregion pages

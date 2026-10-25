@@ -234,4 +234,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '119',
   },
+  adrPostmortem: {
+    title: 'ADR: A red that lasts an hour gets a postmortem',
+    menuLabel: 'ADR: A red that lasts an hour gets a postmortem',
+    url: '/api/docs/adr-a-red-that-lasts-an-hour-gets-a-postmortem',
+    kind: 'adr',
+    number: '120',
+  },
 } as const satisfies Record<string, RecordEntry>;
