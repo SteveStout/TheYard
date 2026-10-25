@@ -107,6 +107,19 @@ public sealed class StorageCardTests
     }
 
     [Fact]
+    public void The_blob_read_line_counts_every_read_but_the_Functions_host_s_own_account_key()
+    {
+        // 25 October 14:20 CDT, read by authentication: a day's GetBlob were the account key's alone (the Functions host's
+        // timers, leases and package) and the site's identity's were 0, while the card stood red at "today 32,637"
+        // against a line meant for the blog's pictures.
+        Assert.Equal("ApiName eq 'GetBlob' and Authentication ne 'AccountKey'", BlobCard.ReadFilter);
+        Assert.Equal(BlobCard.ReadFilter, BlobCard.Metrics.Single(metric => metric.Reading == "reads").Filter);
+        var line = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none" }), new BlobLines(1e9, 1.8e9, 24_000))
+            .Readout.Lines.Single(l => l.Label == "The read line");
+        Assert.EndsWith("the Functions host's own reads, by the account key, are left out", line.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_walker_is_four_times_the_quiet_hour_and_over_a_thousand_listings()
     {
         var facts = ShareFacts();

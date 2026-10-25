@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.4.85** (2026-10-25): The blob service card's red line for reads counts the reads it was drawn for, the site's and its visitors', and leaves out the job hunt Function's own reads of its timers and leases, which had held the card red with no picture yet served.
 - **1.0.4.84** (2026-10-25): The Application Insights card reads the site's own cap against what the site alone sent, with the whole workspace's figure beside it, where it read every app's ingestion against one app's cap and showed red at 173 % on a day nothing was capped.
 - **1.0.4.83** (2026-10-25): The container registry card reads GitHub's registry beside Azure's, each image's tags and newest version as an anonymous pull sees them, and says plainly when a package is still private, the step left before the site can roll from it.
 - **1.0.4.82** (2026-10-25): The Foreman arrives at its first rung, a page on the Admin tab and at /api/admin/foreman that reads every Cloud infrastructure card and the failures Application Insights kept and says what happened, what moved with its source, what is nearest and what it ruled out, where to start by record, file and test, and what it could not read, with no model and nothing acted on, and a new record says why it is a module of the site and what its next rungs need.
