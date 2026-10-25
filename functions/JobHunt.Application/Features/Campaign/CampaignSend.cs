@@ -36,6 +36,9 @@ public sealed record CampaignPassResult(string Came, int Open, int Eligible, int
 
     /// <summary>The open leads with an address, counted by the kind of public page it came from (CampaignReport.SourceKind).</summary>
     public IReadOnlyDictionary<string, int> AddressesBySource { get; init; } = new Dictionary<string, int>();
+
+    /// <summary>The Gmail thread of each real send, by lead id, for the send-time link-token row (the review, F17).</summary>
+    public IReadOnlyDictionary<long, string> Threads { get; init; } = new Dictionary<long, string>();
 }
 
 /// <summary>
@@ -104,6 +107,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
 
         int written = 0;
         var emails = new List<(LeadRecord Lead, RenderedEmail Email)>();
+        var threads = new Dictionary<long, string>();
         var chosenCompanies = new List<PastSend>();
         foreach (var rank in SendOrder.Sort(ready.Select(r => r.Rank)))
         {
@@ -146,6 +150,10 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
             }, ct);
             chosenCompanies.Add(new PastSend(lead.Company.Key, lead.Company.ParentKey, lead.CompanyName, today));
             emails.Add((lead, email));
+            if (sent is not null)
+            {
+                threads[lead.Id] = sent.ThreadId;
+            }
             written++;
         }
 
@@ -154,7 +162,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         string came = written > 0 ? (shadow ? "planned" : "success") : "unchanged";
         var sources = open.Where(l => l.ContactEmail is not null && l.EmailSource is not null)
             .GroupBy(l => CampaignReport.SourceKind(l.EmailSource!, l.Company.Key)).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
-        return new CampaignPassResult(came, open.Count, ready.Count, written, held, line) { Emails = emails, AddressesBySource = sources };
+        return new CampaignPassResult(came, open.Count, ready.Count, written, held, line) { Emails = emails, AddressesBySource = sources, Threads = threads };
     }
 
     /// <summary>The rules for one lead in order: the verdict, the rendered email when it passes, and whether a hold marks the row.</summary>

@@ -178,6 +178,25 @@ public sealed class CampaignSendTests
     }
 
     [Fact]
+    public async Task F17_a_real_send_spools_its_code_with_the_send_time_and_thread_and_shadow_spools_nothing()
+    {
+        var (send, _, _) = Pass([Lead(company: "Acme Dental", key: "acmedental.com"), Lead(company: "No Code", key: "nocode.com", edit: b => b.RefCode = null)]);
+        var at = new DateTimeOffset(2026, 11, 2, 13, 0, 7, TimeSpan.Zero);
+
+        var on = await send.RunAsync(CampaignMode.On, CancellationToken.None);
+        var rows = CampaignReport.TokenRows(on, at);
+
+        var row = Assert.Single(rows);
+        Assert.Equal("inbox/link-tokens/20261102-130007Z-campaign-abc123.csv", row.Path);
+        Assert.Equal("code,person,company,channel,role,thread,sent,lane\r\nabc123,Pat Lee,Acme Dental,Email,,t-1,2026-11-02T13:00:07Z,campaign\r\n", row.Text);
+
+        var (shadowSend, _, _) = Pass([Lead(company: "Acme Dental", key: "acmedental.com")]);
+        var shadow = await shadowSend.RunAsync(CampaignMode.Shadow, CancellationToken.None);
+        Assert.Equal(1, shadow.Written);
+        Assert.Empty(CampaignReport.TokenRows(shadow, at));
+    }
+
+    [Fact]
     public async Task F4_on_sends_ten_of_eleven_and_a_second_firing_the_same_day_sends_nothing()
     {
         var (send, db, mail) = Pass(Enumerable.Range(0, 11).Select(i => Lead(company: $"Shop {i}", key: $"shop{i}.com")));

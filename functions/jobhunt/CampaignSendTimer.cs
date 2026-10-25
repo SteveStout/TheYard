@@ -76,6 +76,12 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
             {
                 // Every real send in Rule 46's block, on the share beside the pass log (rung 8).
                 await store.AppendAsync(CampaignReport.SentLog, TrackerCsvText.Encode(CampaignReport.Sent(result)), ct);
+                // The send-time row for each email's tagged code (the review, F17), beside make_ref.py's mint-time row.
+                await store.EnsureFolderAsync(CampaignReport.LinkTokenSpool, ct);
+                foreach (var (path, text) in CampaignReport.TokenRows(result, time.GetUtcNow()))
+                {
+                    await store.WriteAsync(path, TrackerCsvText.Encode(text), ct);
+                }
             }
             run.Count("open", result.Open).Count("eligible", result.Eligible).Count(mode == CampaignMode.On ? "sent" : "written", result.Written)
                 .Count("held", result.Held.Values.Sum()).Came(result.Came, mode == CampaignMode.On ? "on" : "shadow");

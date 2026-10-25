@@ -1,4 +1,5 @@
 using System.Text;
+using JobHunt.Domain.Features.Merge;
 
 namespace JobHunt.Application.Features.Campaign;
 
@@ -39,6 +40,29 @@ public static class CampaignReport
     /// <param name="result">The pass, in on.</param>
     public static string Sent(CampaignPassResult result) => string.Concat(result.Emails.Select(e =>
         $"--\r\n**SENT** - **TO:** {e.Lead.ContactName} {e.Lead.ContactEmail} - **SUBJECT:** {e.Email.Subject}\r\n--\r\n"));
+
+    /// <summary>The folder make_ref.py spools tagged-link rows to, which opens_report.py folds into link-tokens.csv.</summary>
+    public const string LinkTokenSpool = "inbox/link-tokens";
+
+    /// <summary>
+    /// One spool file a real send, the review's F17: the lead run mints the code when it writes the lead (Steve's rule,
+    /// make_ref.py the one minter), and the send appends a row with the same code and the true send time, so
+    /// opens_report.py, which keeps the latest row a code, labels the opens by the day the email went. The Function
+    /// mints nothing and never writes link-tokens.csv; a lead with no code, or an email Gmail did not take (shadow), writes no row.
+    /// </summary>
+    /// <param name="result">The pass, in on.</param>
+    /// <param name="sentAt">When the pass sent.</param>
+    public static IReadOnlyList<(string Path, string Text)> TokenRows(CampaignPassResult result, DateTimeOffset sentAt)
+    {
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        string stamp = sentAt.UtcDateTime.ToString("yyyyMMdd-HHmmss", inv) + "Z";
+        string sent = sentAt.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss", inv) + "Z";
+        return result.Emails.Where(e => !string.IsNullOrWhiteSpace(e.Lead.RefCode) && result.Threads.ContainsKey(e.Lead.Id)).Select(e =>
+            ($"{LinkTokenSpool}/{stamp}-campaign-{e.Lead.RefCode}.csv",
+             "code,person,company,channel,role,thread,sent,lane\r\n" + TrackerCsvText.Line([
+                 e.Lead.RefCode, e.Lead.ContactName, e.Lead.CompanyName, "Email", e.Lead.RoleTitle ?? "",
+                 result.Threads[e.Lead.Id], sent, "campaign"]) + "\r\n")).ToList();
+    }
 
     /// <summary>The report's text for one morning.</summary>
     /// <param name="day">The Central day.</param>
