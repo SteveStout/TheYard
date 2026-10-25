@@ -38,6 +38,7 @@ export type {
 } from './wire/metricsWire'; // GET /api/admin/metrics and /api/admin/peer
 export type { ExperimentRow, Experiment } from './wire/experimentWire'; // GET /api/admin/experiment
 export type { ProofCell, ProofRow, ProofResult, Proof } from './wire/proofWire'; // GET /api/admin/proof
+export type { IncidentRow, FailureRow, IncidentsReport } from './wire/incidentsWire'; // GET /api/admin/incidents
 
 /**
  * A card's data: nothing yet, the value, or the word that the last fetch failed,

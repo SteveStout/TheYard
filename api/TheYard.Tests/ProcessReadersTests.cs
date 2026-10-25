@@ -176,6 +176,20 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
     }
 
     [Fact]
+    [Covers("GET", "/api/admin/incidents", 200)]
+    public async Task The_incidents_route_lists_every_incident_and_says_why_off_Azure_it_read_no_failures()
+    {
+        using var client = factory.CreateClient();
+        var response = await client.GetAsync("/api/admin/incidents");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("INC-001", body.RootElement.GetProperty("incidents")[0].GetProperty("id").GetString());
+        Assert.False(body.RootElement.GetProperty("failures_available").GetBoolean());
+        Assert.StartsWith("not read here", body.RootElement.GetProperty("failures_note").GetString(), StringComparison.Ordinal);
+        Assert.Equal("unread", body.RootElement.GetProperty("tone").GetString());
+    }
+
+    [Fact]
     public async Task The_nightly_card_carries_its_description_and_seven_sections_and_the_other_cards_neither()
     {
         using var client = factory.CreateClient();

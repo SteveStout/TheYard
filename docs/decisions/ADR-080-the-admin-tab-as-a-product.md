@@ -521,3 +521,7 @@ This is mostly front end: machineChart.ts, statTiles.ts and workbench.ts are Rea
 ## Addendum, 2026-10-18 (1.0.3.178): the page is the store's
 
 The rule from the first amber tile, sort only as far as the page, is now kept by the store: each order is an index ending in the expansion's place, and OFFSET and FETCH stop at the page's last row (ADR: The store does the work).
+
+## Addendum, 2026-10-25 (1.0.4.80): What broke? opens on the incidents
+
+What broke held three cards, recent errors, the log and the kept log, and all three are what this process saw since it last rolled or what the collector kept of it. None of them named an incident, and none read the failures Application Insights keeps from every app, the job hunt's Function among them. From 1.0.4.80 the section opens on a fourth card, Incidents, and what broke this week: every incident `docs/incidents/INCIDENTS.md` lists, each opening its postmortem (ADR: A red that lasts an hour gets a postmortem), then the exceptions and the answers of 500 or more the workspace kept over seven days from every cloud role, by type or status and where, never by message, read with the role the Application Insights card already holds and kept five minutes. It is red with a failure in the last hour, amber with one in the week and fine with none; off Azure it says why it read nothing and still lists the incidents. `GET /api/admin/incidents` answers it; `IncidentsCardTests` holds the reading of the index, the tones and the query, and `ProcessReadersTests` the route.
