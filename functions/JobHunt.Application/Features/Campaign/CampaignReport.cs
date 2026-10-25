@@ -1,5 +1,4 @@
 using System.Text;
-using JobHunt.Domain.Features.Merge;
 
 namespace JobHunt.Application.Features.Campaign;
 
