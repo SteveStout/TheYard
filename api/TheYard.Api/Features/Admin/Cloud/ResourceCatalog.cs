@@ -21,7 +21,8 @@ public static class ResourceCatalog
     /// <param name="claude">The usage documents' reader for the Claude usage card; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
     /// <param name="storage">The job hunt's storage account's reader for the share and blob cards; null leaves both out, which only a test that builds the catalogue by hand does.</param>
     /// <param name="blobLines">The lines the blob card is read against, from configuration.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null)
+    /// <param name="campaign">The email campaign's reads for its card; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null, CampaignSource? campaign = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -164,6 +165,14 @@ public static class ResourceCatalog
             cards.Add(new("claude", "plan", "Claude", [ClaudeSource.RunsToday, ClaudeSource.TokensOutToday], usage.MinutesAsync, usage.HourAsync,
                 inputs => ClaudeCard.View(inputs, usage, nightly?.Cache.Runs ?? [], nightly?.Names.Repo),
                 SpecSource: ClaudeCard.Documents, KindPrefix: "claude-"));
+        }
+        if (campaign is not null)
+        {
+            // After the Claude usage card: the email campaign (ADR-118), its minutes today's counts from the campaign
+            // database's card schema, kept in the plan container under kinds of its own like the nightly card's.
+            CampaignSource source = campaign;
+            cards.Add(new("campaign", "plan", source.Database, CampaignSource.Readings, source.MinutesAsync, source.HourAsync, CampaignCard.View,
+                SpecSource: "infra/jobhunt-sql.bicep and the Function's settings", KindPrefix: "campaign-"));
         }
         return cards;
     }

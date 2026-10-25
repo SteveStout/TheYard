@@ -149,7 +149,16 @@ public sealed partial class CampaignSqlTests
         {
             Assert.Contains(column, tables["EmailsSent"]);
         }
-        Assert.Equal(3, Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Database", "Views"), "*.sql").Count());
+        Assert.Equal(6, Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Database", "Views"), "*.sql").Count());
+        // The card schema holds counts only: no view in it names a column that holds a person, a company, a subject or a code (an address is only counted, in a filter).
+        foreach (string view in Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Database", "Views"), "Card*.sql"))
+        {
+            string sql = File.ReadAllText(view);
+            foreach (string column in new[] { "[ContactName]", "[FirstName]", "[To]", "[Subject]", "[RefCode]", "[Names]", "[Company]", "[Key]", "[BodyText]", "[BodyHtml]" })
+            {
+                Assert.DoesNotContain(column, sql, StringComparison.Ordinal);
+            }
+        }
     }
 
     [Fact]

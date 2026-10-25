@@ -130,8 +130,50 @@ resource shareTransactions 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     ]
   }
 }
+// The email campaign's timer (ADR-118; the review, F13): a timer that stops fails nothing and the Merger keeps
+// running, so its silence would show only as a day with no emails. Evaluated hourly, it can fire only in the
+// 15:00 UTC hour, when the 8 o'clock hour Central has passed under either clock (13:00 UTC in daylight time,
+// 14:00 in standard time): no CampaignSend invocation in the three hours before is a dead campaign. One signal
+// at the hourly rate, the lowest Azure prices log alerts at short of a day.
+resource campaignSilent 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-jobhunt-campaign-silent'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'The email campaign did not run at 8 AM Central'
+    description: 'No CampaignSend invocation in func-jobhunt-ss between 12:00 and 15:00 UTC, checked in the 15:00 UTC hour.'
+    severity: 2
+    enabled: true
+    evaluationFrequency: 'PT1H'
+    windowSize: 'PT3H'
+    scopes: [
+      appInsights.id
+    ]
+    criteria: {
+      allOf: [
+        {
+          query: 'let runs = toscalar(requests | where timestamp > ago(3h) and name == "CampaignSend" | count); print runs = runs, hour = datetime_part("hour", now()) | where hour == 15 and runs == 0'
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    autoMitigate: true
+    actions: {
+      actionGroups: [
+        alertGroup.id
+      ]
+    }
+  }
+}
 // #endregion jobhunt-alerts
 
 output actionGroupId string = alertGroup.id
 output alertRuleId string = deadFunction.id
 output transactionsAlertId string = shareTransactions.id
+output campaignAlertId string = campaignSilent.id

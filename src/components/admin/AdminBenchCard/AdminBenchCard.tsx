@@ -211,6 +211,7 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
       case 'edge':
       case 'nightly':
       case 'claude':
+      case 'campaign':
         return (
           <CloudResourceCard
             resource={slug}

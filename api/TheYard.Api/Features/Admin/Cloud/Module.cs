@@ -27,6 +27,7 @@ public sealed class Module : IModule
         // The nightly Function lives in a resource group of its own, listed by a directory of its own.
         var nightlyNames = NightlyResources.From(configuration);
         string subscription = AzureIds.SubscriptionId(configuration);
+        string campaignDatabase = configuration["Azure:Resources:CampaignDatabase"] ?? throw new InvalidOperationException("Azure:Resources:CampaignDatabase is not configured.");
         services.AddSingleton<NightlyRunCache>();
         services.AddSingleton<INightlyRunLog>(provider => provider.GetRequiredService<DocumentStore>().Store is { } store
             ? (INightlyRunLog)new CosmosNightlyRunLog(store)
@@ -56,7 +57,16 @@ public sealed class Module : IModule
             var claude = new ClaudeSource(provider.GetRequiredService<IUsageLog>(), TimeProvider.System);
             // The job hunt's storage account is in the nightly Function's group, listed by that group's directory.
             var storage = new StorageSource(azure, nightlyDirectory, nightlyNames, provider.GetRequiredService<ICostHistory>(), new BlobListing(clientId, identity.OnAppService, identity));
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration)).Select(card => (card, KeepOf(card)))];
+            // The email campaign's card reads its database over the site's own server connection, the catalog changed,
+            // as an identity that may read the card schema and nothing else (ADR-118, Decision 6).
+            var campaign = new CampaignSource(
+                new SqlCampaignCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
+                cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
+                async cancellation => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), ResourceCatalog.SqlType, "/" + campaignDatabase) is { } found
+                    ? (found.Id, (string?)null)
+                    : null,
+                campaignDatabase);
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with

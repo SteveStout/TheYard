@@ -5,7 +5,7 @@ describe('every Cloud infrastructure card calculates a status', () => {
   it('glances every card the rail files under Cloud infrastructure, in its order, and no other', () => {
     // A card added under Cloud infrastructure without a status fails here before it ships.
     expect(GLANCED.map((g) => g.slug)).toEqual([...CLOUD_SECTION]);
-    expect(CLOUD_SECTION).toHaveLength(14);
+    expect(CLOUD_SECTION).toHaveLength(15);
   });
 
   it("reads Azure's view of the container from its state, the certificate and the SQL store", () => {

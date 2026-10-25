@@ -41,6 +41,7 @@ export const CARD_SLUGS = [
   'follows',
   'nightly',
   'claude',
+  'campaign',
   'errors',
   'log',
   'kept',
@@ -69,6 +70,7 @@ export const CLOUD_RESOURCES = [
   'edge',
   'nightly',
   'claude',
+  'campaign',
 ] as const satisfies readonly CardSlug[];
 
 /** The card ?view=admin opens, and the one a wrong name falls back to: the Overview. */
