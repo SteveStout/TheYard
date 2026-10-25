@@ -230,7 +230,7 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // jobhunt.Tracker once, when the copy is empty, and checks it byte for byte; 'on' copies the rows that changed
         // after every merge and checks the whole file on the first pass of each Central day; anything else is off. The
         // CSV stays the master either way.
-        { name: 'TRACKER_SQL', value: 'import' }
+        { name: 'TRACKER_SQL', value: 'on' }
         // The Sheet mirror (functions/JobHunt.Application/Features/Sheet): 'shadow' writes its plan to the share beside the records
         // run's and adds nothing; 'on' appends the master's missing rows to the Sheet and checks the read-back;
         // anything else is off. The Google client, its refresh token and the Sheet's id are set out of band.

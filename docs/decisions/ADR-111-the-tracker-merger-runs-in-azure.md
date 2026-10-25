@@ -192,3 +192,7 @@ Job_Hunt_Tracker.csv has twelve readers and one writer, this Merger. PROMPT-JOBH
 - **The import.** `TRACKER_SQL=import` makes the Merger copy the file once, after its pass, when the copy is empty, then rebuild the file from the copy and compare it with the CSV byte for byte. Its run line carries the rows, the rows written and the parity. Nothing writes the CSV but the merge it already did.
 
 `TrackerSqlTests` holds the cut and the rebuild over a checked-in sample of the real file's shapes with the names replaced, the mirror writing only changed rows, and the copy following a row taken off the end. `.gitattributes` keeps the sample's CRLF breaks as they are.
+
+## Addendum, 2026-10-25 (1.0.4.74): both, every pass
+
+The second rung of the tracker's move. With `TRACKER_SQL=on` the Merger copies the tracker into SQL after every pass that changed it, the CSV first and the copy second. A pass whose file hash the copy already holds writes nothing, and a copy that fails is logged on the run line (`tracker_sql_failed`) for the next pass to retry, because the CSV stays the master. The first pass of each Central day rebuilds the file from the copy and compares it with the CSV byte for byte; the run line carries `tracker_sql_parity` (1 when the two are the same), so the nightly card's Merger section shows it. Seven straight days of parity come before any reader moves to the copy (the prompt's rung 3).
