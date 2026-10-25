@@ -198,7 +198,7 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         }
       }
       scaleAndConcurrency: { maximumInstanceCount: 40, instanceMemoryMB: 512 }
-      runtime: { name: 'dotnet-isolated', version: '9.0' }
+      runtime: { name: 'dotnet-isolated', version: '10.0' }
     }
     // #region jobhunt-settings
     // This list REPLACES the app's settings on every deploy of this template: a setting that is on

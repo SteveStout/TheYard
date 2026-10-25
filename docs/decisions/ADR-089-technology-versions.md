@@ -105,3 +105,7 @@ On Steve's word at 14:20 Central ("we need to add a tech stack section to the ho
 - [`api/TheYard.Tests/PackagePinTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/PackagePinTests.cs): the Azure.Identity pin.
 - [`package.json`](https://github.com/SteveStout/TheYard/blob/main/package.json): the front-end packages.
 - [`Dockerfile`](https://github.com/SteveStout/TheYard/blob/main/Dockerfile): the build images.
+
+## Addendum, 2026-10-25 (1.0.4.71): the flagged row cleared
+
+The tech stack table flagged one row from 1.0.4.31: the job hunt's Function ran .NET 9 isolated while the site ran .NET 10. The flag was worked out from the two project files rather than written by hand, so it would clear itself once they matched. From 1.0.4.71 they do. The five projects under `functions/` target net10.0, the Flex Consumption app runs dotnet-isolated 10.0 (`infra/jobhunt.bicep`, set on the app the same day), and the Worker packages are the versions NuGet listed as current on 25 October, read by the laptop that morning: Microsoft.Azure.Functions.Worker 2.52.0, Worker.Sdk 2.1.0, Extensions.Http 3.3.0 and Extensions.Timer 4.3.1 (unchanged). Flex Consumption in westus3 was read live that morning before anything moved, and it lists dotnet-isolated 10 with an end of support in November 2028. .NET 9 reaches its own end of support on 10 November 2026. The row now reads ".NET 10 isolated" in the ordinary colour, and no row is flagged. The flag stays in the code for the next piece that falls behind.

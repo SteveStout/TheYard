@@ -178,3 +178,7 @@ Three fixes to the inbox pass, the first a condition for REPLY_ON_HUMAN leaving 
 
 The share the Function writes to bills every transaction. From 1.0.4.49 the merger remembers for an hour each folder it has made sure of, which took about 2,200 creates an hour that found the folder already there off the bill. From this version the share is Transaction optimized rather than Hot (infra/jobhunt.bicep), an alert emails when the share passes 20,000 transactions in an hour, about four times a quiet hour (infra/jobhunt-alerts.bicep), and a $50 monthly budget on the subscription emails at 80 % and 100 % of the spend and at 100 % of the forecast (infra/jobhunt-budget.bicep, subscription scope, the address passed at deploy time). TemplateTests holds the tier, the alert and the budget.
 
+
+## Addendum, 2026-10-25 (1.0.4.71): the Function and its CI job on .NET 10
+
+Point 7 above installed the .NET 9 runtime beside the SDK, because the Function ran on .NET 9. From 1.0.4.71 the Function targets .NET 10 and its Flex Consumption app runs dotnet-isolated 10.0 (ADR-089, the addendum of that version), so the CI job installs .NET 10 alone, the same as every other job.

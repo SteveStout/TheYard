@@ -1,6 +1,6 @@
 /**
  * Does:      Draws the Tech stack panel: the band and chips, the five-column table with a rule per layer,
- *            versions in pills, the .NET 9 piece flagged, and on a phone every row stacked, no sideways scroll.
+ *            versions in pills, a piece on an older .NET than the site flagged, and on a phone every row stacked, no sideways scroll.
  * Does not:  Decide a row or a version (scripts/stack.mjs writes them) or lay out the home page.
  * Used by:   TechStack.tsx.
  */
