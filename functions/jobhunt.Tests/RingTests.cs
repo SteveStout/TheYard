@@ -42,6 +42,32 @@ public sealed partial class RingTests
             Assert.DoesNotContain("Microsoft.Data.SqlClient", names);
         }
         Assert.Contains("Microsoft.Data.SqlClient", Infrastructure.GetReferencedAssemblies().Select(name => name.Name!));
+        // No type in the two inner rings names a client, a handler or a client factory: tests/rules/SocketRule.cs,
+        // the same body the site's suite runs over its host.
+        var doors = TheYard.Rules.SocketRule.Opens(Domain).Concat(TheYard.Rules.SocketRule.Opens(Application)).ToList();
+        Assert.True(doors.Count == 0, string.Join(Environment.NewLine, doors));
+    }
+
+    [Fact]
+    public void Infrastructure_reads_the_environment_only_in_these_files()
+    {
+        // The test above holds Domain and Application to no environment read. Infrastructure still reads it in
+        // four files until stage B of ADR-117 hands each host its settings record; until then the files and their
+        // counts are named here, so a fifth file, or a new read in one of these, fails. When stage B lands the list
+        // empties and this becomes the rule.
+        var named = new Dictionary<string, int>(StringComparer.Ordinal)
+        {
+            ["functions/JobHunt.Infrastructure/ShareSnapshot.cs"] = 1,
+            ["functions/JobHunt.Infrastructure/Dispatch.cs"] = 3,
+            ["functions/JobHunt.Infrastructure/GoogleCredentials.cs"] = 3,
+            ["functions/JobHunt.Infrastructure/Features/Sheet/GoogleSheetGrid.cs"] = 1,
+        };
+        var reads = Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Infrastructure"), "*.cs", SearchOption.AllDirectories)
+            .Where(path => !IsBuildOutput(path))
+            .Select(path => (path: Path.GetRelativePath(Root(), path).Replace('\\', '/'), count: Regex.Matches(File.ReadAllText(path), "GetEnvironmentVariable").Count))
+            .Where(file => file.count > 0)
+            .ToDictionary(file => file.path, file => file.count, StringComparer.Ordinal);
+        Assert.Equal(named.OrderBy(pair => pair.Key, StringComparer.Ordinal), reads.OrderBy(pair => pair.Key, StringComparer.Ordinal));
     }
 
     [Fact]
@@ -94,22 +120,21 @@ public sealed partial class RingTests
     [Fact]
     public void A_file_under_a_ring_s_slice_declares_that_slice_s_namespace()
     {
-        var wrong = new List<string>();
-        foreach (string ring in new[] { "Domain", "Application", "Infrastructure" })
-        {
-            string root = Path.Combine(Root(), "functions", "JobHunt." + ring);
-            foreach (string path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories).Where(path => !IsBuildOutput(path)))
-            {
-                var parts = Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar);
-                string expected = parts.Length > 2 && parts[0] == "Features" ? $"JobHunt.{ring}.Features.{parts[1]}" : $"JobHunt.{ring}";
-                string declared = Namespace().Match(File.ReadAllText(path)).Groups[1].Value;
-                if (declared != expected && !(path.EndsWith("NightlySlots.cs", StringComparison.Ordinal)))
-                {
-                    wrong.Add($"{Path.GetRelativePath(Root(), path).Replace('\\', '/')} declares {declared}, its folder says {expected}");
-                }
-            }
-        }
+        // The body is tests/rules/NamespaceRule.cs, the one the site's suite runs over its rings.
+        var wrong = new[] { "Domain", "Application", "Infrastructure" }
+            .SelectMany(ring => TheYard.Rules.NamespaceRule.NotTheirFolder(Path.Combine(Root(), "functions", "JobHunt." + ring), "JobHunt." + ring, Root()))
+            .ToList();
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+
+    [Fact]
+    public void No_production_source_file_runs_past_three_hundred_lines()
+    {
+        // The site's 300-line rule over the job hunt's code too: tests/rules/LengthRule.cs, one body for both suites.
+        var files = Directory.EnumerateFiles(Path.Combine(Root(), "functions"), "*.cs", SearchOption.AllDirectories)
+            .Where(path => !IsBuildOutput(path) && !path.Contains($"{Path.DirectorySeparatorChar}jobhunt.Tests{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+        var tooLong = TheYard.Rules.LengthRule.TooLong(files, Root());
+        Assert.True(tooLong.Count == 0, string.Join(Environment.NewLine, tooLong));
     }
 
     private static bool IsBuildOutput(string path) =>
@@ -127,7 +152,4 @@ public sealed partial class RingTests
         }
         throw new InvalidOperationException("functions/JobHunt.Domain not found above " + AppContext.BaseDirectory);
     }
-
-    [GeneratedRegex(@"(?m)^namespace\s+([\w.]+)")]
-    private static partial Regex Namespace();
 }

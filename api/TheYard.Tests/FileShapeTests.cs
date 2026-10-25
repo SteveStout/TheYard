@@ -17,9 +17,6 @@ namespace TheYard.Tests;
 /// </summary>
 public sealed class FileShapeTests
 {
-    /// <summary>The longest a source file may be before it is split by job.</summary>
-    private const int LongestFile = 300;
-
     /// <summary>The longest a C# type may be, counted across all of its partial files.</summary>
     private const int LongestType = 300;
 
@@ -47,13 +44,10 @@ public sealed class FileShapeTests
     public void No_production_source_file_runs_past_three_hundred_lines()
     {
         string root = Repo.Root();
-        List<string> tooLong = new[] { "api", "src", "render" }
+        // The body is tests/rules/LengthRule.cs, the one the job hunt's suite runs over functions/ too.
+        List<string> tooLong = TheYard.Rules.LengthRule.TooLong(new[] { "api", "src", "render" }
             .SelectMany(folder => Walk(Path.Combine(root, folder)))
-            .Where(path => !IsTest(path) && !IsGenerated(path))
-            .Select(path => (path, lines: File.ReadAllLines(path).Length))
-            .Where(file => file.lines > LongestFile)
-            .Select(file => $"{Path.GetRelativePath(root, file.path).Replace('\\', '/')} is {file.lines} lines: split it by job")
-            .ToList();
+            .Where(path => !IsTest(path) && !IsGenerated(path)), root);
 
         Assert.True(tooLong.Count == 0, string.Join(Environment.NewLine, tooLong));
     }

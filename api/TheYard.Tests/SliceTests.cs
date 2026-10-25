@@ -117,13 +117,8 @@ public sealed class SliceTests
         // Rule 1 is held by namespace, so a file is in a slice by what it declares. A file under
         // Features/Links/ that declared the host's root namespace would be shared by its words and a
         // slice's by its place; the folder and the namespace say the same thing or this is red.
-        string features = Path.Combine(Repo.Root(), "api", "TheYard.Api", "Features");
-        var wrong = Directory.EnumerateFiles(features, "*.cs", SearchOption.AllDirectories)
-            .Select(path => (path, expected: "TheYard.Api.Features." + Path.GetRelativePath(features, Path.GetDirectoryName(path)!).Replace(Path.DirectorySeparatorChar, '.'),
-                declared: System.Text.RegularExpressions.Regex.Match(File.ReadAllText(path), @"(?m)^namespace\s+([\w.]+)").Groups[1].Value))
-            .Where(file => file.declared != file.expected)
-            .Select(file => $"{Path.GetRelativePath(Repo.Root(), file.path)} declares {file.declared}, its folder says {file.expected}")
-            .ToList();
+        // The body is tests/rules/NamespaceRule.cs, the one the job hunt's suite runs over its rings too.
+        var wrong = TheYard.Rules.NamespaceRule.NotTheirFolder(Path.Combine(Repo.Root(), "api", "TheYard.Api", "Features"), "TheYard.Api.Features", Repo.Root());
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
 
@@ -453,17 +448,13 @@ public sealed class SliceTests
                     }
                     continue;
                 }
-                string expected = ring + "." + folder.Replace(Path.DirectorySeparatorChar, '.');
-                string declared = System.Text.RegularExpressions.Regex.Match(File.ReadAllText(path), @"(?m)^namespace\s+([\w.]+)").Groups[1].Value;
                 if (!folder.StartsWith("Features", StringComparison.Ordinal) && !folder.StartsWith("Shared", StringComparison.Ordinal))
                 {
                     wrong.Add($"{ring}/{relative} is in neither Features/ nor Shared/");
                 }
-                else if (declared != expected)
-                {
-                    wrong.Add($"{ring}/{relative} declares {declared}, its folder says {expected}");
-                }
             }
+            // That the namespace is the folder is tests/rules/NamespaceRule.cs, one body for both suites.
+            wrong.AddRange(TheYard.Rules.NamespaceRule.NotTheirFolder(root, ring, Repo.Root()));
         }
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }

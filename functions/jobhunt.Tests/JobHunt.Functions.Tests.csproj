@@ -10,6 +10,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The rule bodies both suites share (tests/rules/, ADR-075 the addendum of 1.0.4.70): one rule, one body. -->
+    <Compile Include="..\..\tests\rules\*.cs" Link="Rules\%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\jobhunt\JobHunt.Functions.csproj" />
