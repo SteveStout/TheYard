@@ -13,6 +13,7 @@ import { renderDocument } from '../src/lib/markdown';
 import type { Vehicle } from '../src/lib/types';
 import { readFirstAddress } from '../src/app/firstAddress';
 import { DOCS } from '../src/library/documents';
+import { PULSE_URL } from '../src/lib/pulse';
 import { SELF_READ } from './page';
 
 // #region reads
@@ -80,8 +81,11 @@ export async function loadFirst(
   const listingQuery = vehicleQueryParams(first.filters, first.sort).toString();
   const needsListing = first.inventory || first.vehicleId !== null;
   const doc = first.docKey ? DOCS[first.docKey] : null;
+  // The bare address is the landing page, whose band draws the first screen's reading: read here, a crawler and a
+  // link preview see the figures rather than the word the band shows before its first read.
+  const landing = !needsListing && !doc && !first.admin && !first.account && !first.blog;
 
-  const [account, build, page, facets, vehicle, markdown] = await Promise.all([
+  const [account, build, page, facets, vehicle, markdown, pulse] = await Promise.all([
     // Nobody signed in sends no cookie, and needs no read to say so.
     cookie ? inTime(get<AccountWire>('/api/auth/me', signal)) : Promise.resolve(null),
     inTime(get<{ version: string; commit: string }>('/api/version', signal)),
@@ -93,6 +97,7 @@ export async function loadFirst(
       ? inTime(get<Vehicle>(`/api/vehicles/${encodeURIComponent(first.vehicleId)}`, signal))
       : Promise.resolve(null),
     doc ? inTime(get<string>(doc.url, signal)) : Promise.resolve(null),
+    landing ? inTime(get<unknown>(PULSE_URL, signal)) : Promise.resolve(null),
   ]);
 
   const signedIn: Account = account ? toAccount(account) : SIGNED_OUT;
@@ -104,6 +109,7 @@ export async function loadFirst(
     listing: page && facets ? { page, facets } : null,
     vehicle,
     doc: first.docKey && markdown ? await renderedDoc(first.docKey, markdown) : null,
+    pulse,
   };
 }
 

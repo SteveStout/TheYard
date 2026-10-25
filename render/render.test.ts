@@ -52,6 +52,26 @@ const vehicle = {
   sold: false,
 };
 
+/** The first screen's reading as /api/pulse answers it. */
+const PULSE = {
+  usual_p95_ms_24h: 31,
+  requests_24h: 1840,
+  month_to_date: 72.46,
+  forecast_month: 92.34,
+  currency: 'USD',
+  cost_read_at_ms: NOW - 60_000,
+  uptime_seconds: 27_180,
+  version: OWN.version,
+  commit: OWN.commit,
+  read_at_ms: NOW,
+  people_all_time: 1284,
+  people_new_by_day: [3, 0, 7],
+  counted_from: '2026-10-24',
+  visits_all_time: 2104,
+  visits_from: '2026-09-02',
+  visits_by_day: [61, 70, 58],
+};
+
 /** Every request the renderer made, with the headers it sent: what the service reaches, and with what. */
 type Asked = { url: string; headers: Record<string, string> };
 
@@ -72,6 +92,7 @@ function fakeApi(build = OWN, broken: string[] = []) {
     if (path === '/api/facets')
       return json({ makes: [], body_styles: [], title_statuses: [], provinces: [] });
     if (path === `/api/vehicles/${vehicle.id}`) return json(vehicle);
+    if (path === '/api/pulse') return json(PULSE);
     if (path === '/api/auth/me')
       return json({ signed_in: true, email: 'reader@example.com', member_since_ms: NOW });
     if (path.startsWith('/api/docs/'))
@@ -117,6 +138,17 @@ describe('the rendering service', () => {
     );
     expect(response.headers.get(RENDERED_HEADER)).toBe('other-build 1.0.3.99');
     expect(html).toBe(PAGE);
+  });
+
+  it('draws the first screen with its figures on the bare address, so a crawler reads numbers and not the placeholder', async () => {
+    const { html, asked } = await page('');
+    expect(asked.some((read) => read.url.startsWith(`${API}/api/pulse`))).toBe(true);
+    expect(html).toContain('"pulse":{');
+    expect(html).toContain('$72.46');
+    expect(html).not.toMatch(/>unread</);
+    // A document's address draws no band, so it asks nothing of the pulse.
+    const doc = await page('?doc=readme');
+    expect(doc.asked.some((read) => read.url.startsWith(`${API}/api/pulse`))).toBe(false);
   });
 
   it('answers 503 when the API does not answer, the one case with no page to send', async () => {

@@ -158,3 +158,7 @@ Outside the rings. The service is a client of the API, like a browser, and the A
 ## Addendum, 2026-10-21 (1.0.4.24): the heap
 
 The Node heap is held at 128 MB (`NODE_OPTIONS=--max-old-space-size=128`, `infra/render.bicep`), not the 192 MB this record states, since 1.0.3.181.
+
+## Addendum, 2026-10-25 (1.0.4.79): the first screen's reading
+
+Point 3 named every read the loaders made, and the first screen's band was not one of them: the bare address drew the band's four instruments with the placeholder "unread", because the band read `/api/pulse` in the browser only. Read live at 12:22 CDT on 25 October, the drawn landing page said "unread" four times, so a crawler or a link preview saw a placeholder where the answer time, the month's Azure bill, the last roll and the people count belong. From 1.0.4.79 the bare address reads `/api/pulse` with the other reads, under the same deadline; the band's first draw starts from it and the browser reads it again at once and every 15 seconds, as before. A read that fails or runs late still draws "unread", which the browser fills. `render.test.ts` holds it: the bare address asks for the reading and draws its figures, and a document's address asks nothing of it.
