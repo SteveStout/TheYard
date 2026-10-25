@@ -49,7 +49,8 @@ public sealed partial class CampaignSqlTests
     };
 
     private static IEnumerable<(string Name, string Sql)> Statements() =>
-        typeof(SqlCampaignStore).GetFields(BindingFlags.NonPublic | BindingFlags.Static)
+        typeof(SqlCampaignStore).Assembly.GetType("JobHunt.Infrastructure.Features.Campaign.CampaignSql", throwOnError: true)!
+            .GetFields(BindingFlags.NonPublic | BindingFlags.Static)
             .Where(field => field.IsLiteral && field.FieldType == typeof(string))
             .Select(field => (field.Name, (string)field.GetRawConstantValue()!));
 
@@ -69,6 +70,19 @@ public sealed partial class CampaignSqlTests
                     wrong.Add($"{name}: {table}.{m.Groups[2].Value}");
                 }
             }
+            var merge = Merge().Match(sql);
+            if (merge.Success)
+            {
+                string table = merge.Groups[1].Value;
+                foreach (Match column in Bracketed().Matches(sql).Where(c => c.Groups[1].Value != "campaign" && !tables.ContainsKey(c.Groups[1].Value)))
+                {
+                    if (!tables[table].Contains(column.Groups[1].Value))
+                    {
+                        wrong.Add($"{name}: {table}.{column.Groups[1].Value}");
+                    }
+                }
+                continue;
+            }
             var target = Target().Match(sql);
             if (target.Success)
             {
@@ -85,7 +99,7 @@ public sealed partial class CampaignSqlTests
             }
         }
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
-        Assert.True(Statements().Count() >= 10);
+        Assert.True(Statements().Count() >= 16);
     }
 
     // Every variable the templates may name, with the column the row gives it from; the next test holds the
@@ -175,4 +189,7 @@ public sealed partial class CampaignSqlTests
 
     [GeneratedRegex(@"\[(\w+)\]")]
     private static partial Regex Bracketed();
+
+    [GeneratedRegex(@"^MERGE \[campaign\]\.\[(\w+)\]", RegexOptions.Multiline)]
+    private static partial Regex Merge();
 }

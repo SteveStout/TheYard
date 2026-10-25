@@ -292,6 +292,8 @@ public sealed class CampaignSendTests
 
         public Task MarkUnverifiedAsync(long leadId, string reason, CancellationToken ct) => Task.CompletedTask;
 
+        public Task SaveAsync(int companyId, SpoolLead lead, bool? mx, int strength, string inputsHash, string? blocked, string run, DateTimeOffset at, CancellationToken ct) => Task.CompletedTask;
+
         public Task<IReadOnlyList<LoggedEmail>> SinceAsync(DateOnly centralDay, CancellationToken ct)
         {
             Reads++;

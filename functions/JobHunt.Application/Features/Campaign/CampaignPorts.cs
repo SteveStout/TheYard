@@ -11,6 +11,35 @@ public interface ICompanyBook
 
     /// <summary>A reply asked to stop: no email to this company again.</summary>
     Task MarkDoNotEmailAsync(int companyId, DateTimeOffset at, CancellationToken ct);
+
+    /// <summary>Writes a company from the lead run, new or changed, with its evidence rows; answers its id. Never clears DoNotEmail.</summary>
+    Task<int> SaveAsync(SpoolCompany company, string run, DateTimeOffset at, CancellationToken ct);
+
+    /// <summary>Every company with a public board to scan.</summary>
+    Task<IReadOnlyList<BoardCompany>> BoardsAsync(CancellationToken ct);
+
+    /// <summary>The daily scan's answer for one company: the newest .NET posting it saw, and when it looked.</summary>
+    Task MarkScannedAsync(int companyId, DateOnly? lastDotNetPostingAt, string? lastDotNetPostingTitle, DateTimeOffset at, CancellationToken ct);
+}
+
+/// <summary>A company with its public board.</summary>
+public sealed record BoardCompany(int Id, string Kind, string Token);
+
+/// <summary>A domain's MX records, asked of a public resolver: true found, false none, null not answered.</summary>
+public interface IMxCheck
+{
+    /// <summary>Whether the domain takes mail.</summary>
+    Task<bool?> HasMxAsync(string domain, CancellationToken ct);
+}
+
+/// <summary>One posting on a company's public board, as the scan reads it.</summary>
+public sealed record BoardPosting(string Title, string Text, DateOnly? Posted);
+
+/// <summary>A company's public job board: Greenhouse, Lever or Ashby, keyless JSON, one request a company.</summary>
+public interface IBoardReader
+{
+    /// <summary>The board's open postings, or null when the board did not answer.</summary>
+    Task<IReadOnlyList<BoardPosting>?> PostingsAsync(string kind, string token, CancellationToken ct);
 }
 
 /// <summary>The leads the model wrote, as the send rules read them.</summary>
@@ -24,6 +53,12 @@ public interface ILeadStore
 
     /// <summary>A bounce or a check said the address does not take mail.</summary>
     Task MarkUnverifiedAsync(long leadId, string reason, CancellationToken ct);
+
+    /// <summary>
+    /// Writes a lead from the lead run, matched on its company and its manager's name: new, or changed where the
+    /// run changed it. The MX answer is the importer's; Strength and its hash are computed by code, not the run.
+    /// </summary>
+    Task SaveAsync(int companyId, SpoolLead lead, bool? mx, int strength, string inputsHash, string? blocked, string run, DateTimeOffset at, CancellationToken ct);
 }
 
 /// <summary>Every campaign email, sent or written in shadow.</summary>

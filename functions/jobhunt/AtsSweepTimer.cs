@@ -112,13 +112,15 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     }
 
     /// <summary>
-    /// The campaign's part (ADR-118, Decision 4): delivery failures every pass, replies on the pass at 20 past only,
-    /// so the threads are read once an hour.
+    /// The campaign's part (ADR-118, Decisions 4 and 5): the lead run's files into the database, then delivery
+    /// failures every pass and replies on the pass at 20 past only, so the threads are read once an hour.
     /// </summary>
-    private Task<string> CampaignAsync(IInbox inbox, string sql, CancellationToken ct)
+    private async Task<string> CampaignAsync(IInbox inbox, string sql, CancellationToken ct)
     {
         var database = new SqlCampaignStore(sql);
-        return new CampaignInbox(inbox, database, database, database, store, time).RunAsync(CentralClock.Local(time.GetUtcNow()).Minute < 30, ct);
+        string imported = await new LeadImport(store, database, database, new DohMxCheck(http), time).RunAsync(ct);
+        string read = await new CampaignInbox(inbox, database, database, database, store, time).RunAsync(CentralClock.Local(time.GetUtcNow()).Minute < 30, ct);
+        return $"{imported}; {read}";
     }
 
     /// <summary>The pass's counts and what it came to, from its parts' lines: numbers only, never their words.</summary>

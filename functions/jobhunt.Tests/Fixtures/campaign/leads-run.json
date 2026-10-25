@@ -1,0 +1,75 @@
+{
+  "run": "leads-2026-10-24-0850",
+  "companies": [
+    {
+      "key": "acmedental.com",
+      "parentKey": null,
+      "names": ["Acme Dental", "Acme Dental Software"],
+      "remoteStance": "Remote",
+      "boardKind": "greenhouse",
+      "boardToken": "acmedental",
+      "lastDotNetPostingAt": "2026-10-09",
+      "lastDotNetPostingTitle": "Senior .NET Engineer",
+      "evidence": [
+        { "kind": "required", "title": "Senior .NET Engineer", "url": "https://boards.greenhouse.io/acmedental/jobs/1", "seenAt": "2026-10-24T13:00:00Z" },
+        { "kind": "other", "title": "Staff Engineer, C#", "url": "https://boards.greenhouse.io/acmedental/jobs/2", "seenAt": "2026-10-24T13:00:00Z" }
+      ]
+    },
+    {
+      "key": "mail.globex.com",
+      "names": ["Globex"],
+      "remoteStance": "Remote",
+      "evidence": []
+    }
+  ],
+  "leads": [
+    {
+      "companyKey": "acmedental.com", "track": "B", "company": "Acme Dental",
+      "whatTheyDo": "builds practice management software for dental offices",
+      "firstName": "Pat", "contactName": "Pat Lee", "contactTitle": "VP of Engineering",
+      "contactEmail": "pat@acmedental.com", "emailSource": "https://acmedental.com/team",
+      "proofKey": "platform", "followUpPostSlug": "solid-in-five-real-files", "ghostScore": 1, "strengthStep": 1,
+      "strengthWhy": "a .NET platform team hiring a staff engineer this month",
+      "refCode": "abc123",
+      "links": {
+        "resume": "https://theyard.stevenstout.biz/resume?src=email&r=abc123",
+        "site": "https://theyard.stevenstout.biz/?r=abc123",
+        "gitHub": "https://theyard.stevenstout.biz/api/go/github?r=abc123",
+        "linkedIn": "https://theyard.stevenstout.biz/api/go/linkedin?r=abc123",
+        "about": "https://theyard.stevenstout.biz/about?r=abc123"
+      }
+    },
+    {
+      "companyKey": "acmedental.com", "track": "B", "company": "Acme Dental",
+      "whatTheyDo": "builds robust practice software for dental offices",
+      "firstName": "Sam", "contactName": "Sam Roe", "contactTitle": "Director of Engineering",
+      "refCode": "abc124",
+      "links": {
+        "resume": "https://theyard.stevenstout.biz/resume?src=email&r=abc124",
+        "site": "https://theyard.stevenstout.biz/?r=abc124",
+        "gitHub": "https://theyard.stevenstout.biz/api/go/github?r=abc124",
+        "linkedIn": "https://theyard.stevenstout.biz/api/go/linkedin?r=abc124",
+        "about": "https://theyard.stevenstout.biz/about?r=abc124"
+      }
+    },
+    {
+      "companyKey": "acmedental.com", "track": "A", "company": "Acme Dental",
+      "whatTheyDo": "builds practice management software for dental offices",
+      "firstName": "Lee", "contactName": "Lee Fox", "contactTitle": "CTO", "refCode": "abc125",
+      "links": { "resume": "https://x/r=abc125", "site": "https://x/r=abc125", "gitHub": "https://x/r=abc125", "linkedIn": "https://x/r=abc125", "about": "https://x/r=abc125" }
+    },
+    {
+      "companyKey": "acmedental.com", "track": "B", "company": "Acme Dental",
+      "whatTheyDo": "builds practice management software for dental offices",
+      "firstName": "Jo", "contactName": "Jo Ray", "contactTitle": "CTO",
+      "contactEmail": "jo.ray@gmail.com", "emailSource": "https://github.com/joray", "refCode": "abc126",
+      "links": { "resume": "https://x/r=abc126", "site": "https://x/r=abc126", "gitHub": "https://x/r=abc126", "linkedIn": "https://x/r=abc126", "about": "https://x/r=abc126" }
+    },
+    {
+      "companyKey": "initech.com", "track": "B", "company": "Initech",
+      "whatTheyDo": "builds payroll software for restaurants",
+      "firstName": "Bo", "contactName": "Bo Kay", "contactTitle": "CTO", "refCode": "abc127",
+      "links": { "resume": "https://x/r=abc127", "site": "https://x/r=abc127", "gitHub": "https://x/r=abc127", "linkedIn": "https://x/r=abc127", "about": "https://x/r=abc127" }
+    }
+  ]
+}

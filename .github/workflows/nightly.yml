@@ -87,12 +87,16 @@ jobs:
           # The triage step and the leads list are the light ones: low effort, a few turns, minutes not an hour
           # The other modes keep Claude Code's default effort, so no flag is passed for them.
           if [ "$mode" = "triage" ] || [ "$mode" = "leads" ]; then effort="--effort low"; turns=40; minutes=10; else effort=""; turns=200; minutes=55; fi
+          # The leads run finds each manager's address on public pages (ADR-118, Decision 5), so it alone reads the web;
+          # it has more turns for that, and it still writes only its file on the share.
+          tools="Bash,Read,Write,Edit,Glob,Grep"; lanename="Azure Functions, nightly lane"
+          if [ "$mode" = "leads" ]; then tools="Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch"; turns=80; minutes=20; lanename="Azure Functions, leads lane"; fi
           day=$(TZ=America/Chicago date +%F); slot=$(TZ=America/Chicago date +%H%M)
           suffix=""; [ "$dry" = "true" ] && suffix="-dry"
           short=$(echo "$model" | sed 's/^claude-//')
           {
             echo "date=$day"; echo "mode=$mode"; echo "model=$model"; echo "lane=$lane"; echo "dry=$dry"
-            echo "effort_flag=$effort"; echo "turns=$turns"; echo "minutes=$minutes"
+            echo "effort_flag=$effort"; echo "turns=$turns"; echo "minutes=$minutes"; echo "tools=$tools"; echo "lanename=$lanename"
             echo "run_dir=nightly/$day/$slot-$mode-$short$suffix"
             echo "slot=${slot:0:2}:${slot:2:2}"; echo "started=$(date -u +%FT%TZ)"
           } >> "$GITHUB_OUTPUT"
@@ -134,7 +138,7 @@ jobs:
             --max-turns ${{ steps.day.outputs.turns }}
             ${{ steps.day.outputs.effort_flag }}
             --add-dir /mnt/jobhunt
-            --allowedTools "Bash,Read,Write,Edit,Glob,Grep"
+            --allowedTools "${{ steps.day.outputs.tools }}"
 
       - name: Tokens and wall time
         if: always()
@@ -166,13 +170,14 @@ jobs:
           SLOT: ${{ steps.day.outputs.slot }}
           STARTED: ${{ steps.day.outputs.started }}
           RUN: ${{ github.run_id }}
+          LANE: ${{ steps.day.outputs.lanename }}
         run: |
           usage="/mnt/jobhunt/${{ steps.day.outputs.run_dir }}/usage.json"
           if [ -z "$KEY" ]; then echo "usage not reported: THEYARD_ADMIN_KEY is not set" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           if ! jq -e '.usage' "$usage" > /dev/null 2>&1; then echo "usage not reported: no usage in usage.json" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           [ "$DRY" = "true" ] && MODE="$MODE-dry"
-          doc=$(jq -c --arg model "$MODEL" --arg mode "$MODE" --arg slot "$SLOT" --arg at "$STARTED" --arg run "$RUN" \
-            '{lane: "Azure Functions, nightly lane", kind: "plan", model: $model,
+          doc=$(jq -c --arg model "$MODEL" --arg mode "$MODE" --arg slot "$SLOT" --arg at "$STARTED" --arg run "$RUN" --arg lane "${LANE:-Azure Functions, nightly lane}" \
+            '{lane: $lane, kind: "plan", model: $model,
               tokens_in: (.usage.input_tokens // 0), cache_write: (.usage.cache_creation_input_tokens // 0),
               cache_read: (.usage.cache_read_input_tokens // 0), tokens_out: (.usage.output_tokens // 0),
               wall_ms: (.duration_ms // 0), cost_usd: .total_cost_usd, run: $run, slot: $slot, mode: $mode, at: $at}' "$usage")

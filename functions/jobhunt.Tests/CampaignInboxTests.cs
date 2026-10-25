@@ -210,5 +210,13 @@ public sealed class CampaignInboxTests
         public Task<IReadOnlyList<LeadRecord>> OpenAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<LeadRecord>>([]);
 
         public Task BlockAsync(long leadId, string reason, CancellationToken ct) => Task.CompletedTask;
+
+        public Task SaveAsync(int companyId, SpoolLead lead, bool? mx, int strength, string inputsHash, string? blocked, string run, DateTimeOffset at, CancellationToken ct) => Task.CompletedTask;
+
+        public Task<int> SaveAsync(SpoolCompany company, string run, DateTimeOffset at, CancellationToken ct) => Task.FromResult(0);
+
+        public Task<IReadOnlyList<BoardCompany>> BoardsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<BoardCompany>>([]);
+
+        public Task MarkScannedAsync(int companyId, DateOnly? lastDotNetPostingAt, string? lastDotNetPostingTitle, DateTimeOffset at, CancellationToken ct) => Task.CompletedTask;
     }
 }

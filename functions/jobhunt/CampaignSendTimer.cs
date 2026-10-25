@@ -56,10 +56,12 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
                 ? GoogleCredentials.FromEnvironment() is { } google ? new GmailSender(http, google) : throw new InvalidOperationException("EMAIL_CAMPAIGN is on and the Google settings are not set")
                 : new NoSender();
             var database = new SqlCampaignStore(sql);
+            // The daily board scan first in the hour (the review, F6): once a day, before the send ranks Track B by it.
+            string scan = await new BoardScan(database, new PublicBoardReader(http), time).RunAsync(ct);
             var result = await new CampaignSend(database, database, sender, store, time).RunAsync(mode, ct);
             var local = CentralClock.Local(time.GetUtcNow());
             await store.EnsureFolderAsync("campaign", ct);
-            await store.AppendAsync(CampaignSend.PassLog, TrackerCsvText.Encode($"{local:yyyy-MM-dd HH:mm:ss} {result.Line}\r\n"), ct);
+            await store.AppendAsync(CampaignSend.PassLog, TrackerCsvText.Encode($"{local:yyyy-MM-dd HH:mm:ss} scan: {scan} | {result.Line}\r\n"), ct);
             log.LogInformation("campaign pass: {Line}", result.Line);
             run.Count("open", result.Open).Count("eligible", result.Eligible).Count(mode == CampaignMode.On ? "sent" : "written", result.Written)
                 .Count("held", result.Held.Values.Sum()).Came(result.Came, mode == CampaignMode.On ? "on" : "shadow");

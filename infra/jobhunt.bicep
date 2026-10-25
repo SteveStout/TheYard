@@ -236,10 +236,10 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The leads harvest (functions/JobHunt.Application/Features/Leads): 'on' appends each whole alert's jobs to nightly/leads-<date>.md,
         // then archives it; 'shadow' writes leads-shadow/ only.
         { name: 'LEADS', value: 'on' }
-        // The leads list: 'on' fires nightly.yml's leads run (Sonnet, low effort,
+        // The leads list and the campaign's lead run (ADR-118, Decision 5): 'on' fires nightly.yml's leads run (Sonnet, low effort,
         // LEADS-LANE.md) when a pass harvested a lead that passed the filter and that leads/scored.tsv does not hold;
         // 'shadow' writes what it would fire to the pass's line; anything else never starts it.
-        { name: 'LEADS_LIST', value: 'shadow' }
+        { name: 'LEADS_LIST', value: 'on' }
         // Human mail never waits for 4 AM (rung 5): 'on' fires nightly.yml's reply run (drafts only) when a person
         // waits on a thread with no draft, at most once every four hours between 7 AM and 9 PM Central; 'shadow'
         // writes what it would fire to the pass's line; anything else never starts it.
