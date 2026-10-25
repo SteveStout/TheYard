@@ -103,14 +103,14 @@ public sealed class NightlySlotsTests
         int fourAms = 0;
         for (var hour = start; hour < start.AddDays(1); hour = hour.AddHours(1))
         {
-            Assert.Equal(NightlySlots.Slot(hour), JobHunt.Domain.CentralClock.Slot(hour));
-            Assert.Equal(NightlySlots.Local(hour), JobHunt.Domain.CentralClock.Local(hour));
-            Assert.Equal(NightlySlots.Slot(hour) == NightlySlots.Reply, JobHunt.Domain.CentralClock.IsFourAm(hour));
-            fourAms += JobHunt.Domain.CentralClock.IsFourAm(hour) ? 1 : 0;
+            Assert.Equal(NightlySlots.Slot(hour), JobHunt.Domain.Shared.Clock.CentralClock.Slot(hour));
+            Assert.Equal(NightlySlots.Local(hour), JobHunt.Domain.Shared.Clock.CentralClock.Local(hour));
+            Assert.Equal(NightlySlots.Slot(hour) == NightlySlots.Reply, JobHunt.Domain.Shared.Clock.CentralClock.IsFourAm(hour));
+            fourAms += JobHunt.Domain.Shared.Clock.CentralClock.IsFourAm(hour) ? 1 : 0;
         }
         // One 4 AM in each UTC day read: 09:00Z under daylight time, 10:00Z under standard time.
         Assert.Equal(1, fourAms);
-        Assert.Equal((NightlySlots.Reply, NightlySlots.Bookkeeping), (JobHunt.Domain.CentralClock.Reply, JobHunt.Domain.CentralClock.Bookkeeping));
+        Assert.Equal((NightlySlots.Reply, NightlySlots.Bookkeeping), (JobHunt.Domain.Shared.Clock.CentralClock.Reply, JobHunt.Domain.Shared.Clock.CentralClock.Bookkeeping));
         string project = File.ReadAllText(Path.Combine(Repo.Root(), "functions", "JobHunt.Domain", "JobHunt.Domain.csproj"));
         Assert.Contains("<Compile Include=\"..\\..\\api\\TheYard.Domain\\Features\\Admin\\NightlySlots.cs\" Link=\"NightlySlots.cs\" />", project, StringComparison.Ordinal);
     }

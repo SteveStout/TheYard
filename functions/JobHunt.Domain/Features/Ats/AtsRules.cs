@@ -79,7 +79,7 @@ public static partial class AtsRules
         {
             return AtsDecision.Leave(message, kind, null, "the text reads as neither a receipt nor a rejection");
         }
-        var applications = master.Where(IsApplication).ToList();
+        var applications = master.Where(TrackerRows.IsApplication).ToList();
         string? company = Company(message, [.. applications.Select(row => row[2])]);
         if (company is null)
         {
@@ -106,10 +106,6 @@ public static partial class AtsRules
             ? new AtsDecision(message, kind, company, AtsAction.ArchiveOnly, logged[0], null, $"rests on rejection Count {logged[0]}")
             : new AtsDecision(message, kind, company, AtsAction.RowAndArchive, null, Row(message, kind, company, day, mine), "a generic rejection with no rejection row within two days");
     }
-
-    /// <summary>True when a master row records an application: submitted or applied in its note, on any channel.</summary>
-    public static bool IsApplication(string[] row) =>
-        row.Length >= 7 && !row[6].TrimStart().StartsWith("REJECTION", StringComparison.OrdinalIgnoreCase) && Applied().IsMatch(row[6]);
 
     /// <summary>The six-column row the sweep drops in the spool: Person, Company, Communication, Date, Phone/Email, Notes.</summary>
     public static string[] Row(InboxMessage message, AtsKind kind, string company, DateOnly day, IReadOnlyList<string[]> applications)
@@ -149,9 +145,6 @@ public static partial class AtsRules
 
     [GeneratedRegex(@"\b(assessment|your availability|complete (the|your|this) (assessment|questionnaire|form|test)|verify your|action required|please (reply|respond|confirm)|schedule (a|your) (call|interview|time))\b", RegexOptions.IgnoreCase)]
     private static partial Regex Asks();
-
-    [GeneratedRegex(@"\b(submitted|applied|application submitted|easy apply)\b", RegexOptions.IgnoreCase)]
-    private static partial Regex Applied();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Space();

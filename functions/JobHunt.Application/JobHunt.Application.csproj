@@ -27,5 +27,13 @@
     <Using Include="JobHunt.Application.Features.Merge" />
     <Using Include="JobHunt.Application.Features.Sheet" />
     <Using Include="JobHunt.Application.Features.Campaign" />
+    <Using Include="JobHunt.Domain.Shared.Tracker" />
+    <Using Include="JobHunt.Domain.Shared.Clock" />
+    <Using Include="JobHunt.Domain.Shared.Mail" />
+    <Using Include="JobHunt.Domain.Shared.Applications" />
+    <Using Include="JobHunt.Application.Shared.Mail" />
+    <Using Include="JobHunt.Application.Shared.Store" />
+    <Using Include="JobHunt.Application.Shared.Runs" />
+    <Using Include="JobHunt.Application.Features.Triage" />
   </ItemGroup>
 </Project>

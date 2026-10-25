@@ -1,4 +1,4 @@
-namespace JobHunt.Application.Features.Ats;
+namespace JobHunt.Application.Shared.Mail;
 
 // #region mail-search
 /// <summary>

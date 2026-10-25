@@ -13,7 +13,7 @@ public static partial class LeadsFilter
     /// <summary>Each lead with the rule it failed, or null when it passes.</summary>
     public static IReadOnlyList<(Lead Lead, string? Failed)> Judge(IEnumerable<Lead> leads, IReadOnlyList<string[]> master, IReadOnlyList<DoNotApply> list, DateOnly today)
     {
-        var applications = master.Where(AtsRules.IsApplication).ToList();
+        var applications = master.Where(TrackerRows.IsApplication).ToList();
         return [.. leads
             .GroupBy(l => l.Link, StringComparer.Ordinal).Select(g => g.First())
             .Select(lead => (lead, Failed(lead, applications, master, list, today)))];

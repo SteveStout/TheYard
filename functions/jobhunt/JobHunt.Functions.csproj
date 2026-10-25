@@ -39,6 +39,17 @@
     <Using Include="JobHunt.Infrastructure.Features.Sheet" />
     <Using Include="JobHunt.Infrastructure.Features.Card" />
     <Using Include="JobHunt.Infrastructure.Features.Campaign" />
+    <Using Include="JobHunt.Domain.Shared.Tracker" />
+    <Using Include="JobHunt.Domain.Shared.Clock" />
+    <Using Include="JobHunt.Domain.Shared.Mail" />
+    <Using Include="JobHunt.Domain.Shared.Applications" />
+    <Using Include="JobHunt.Application.Shared.Mail" />
+    <Using Include="JobHunt.Application.Shared.Store" />
+    <Using Include="JobHunt.Application.Shared.Runs" />
+    <Using Include="JobHunt.Application.Features.Triage" />
+    <Using Include="JobHunt.Infrastructure.Shared.Share" />
+    <Using Include="JobHunt.Infrastructure.Shared.GitHub" />
+    <Using Include="JobHunt.Infrastructure.Shared.Google" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json" CopyToOutputDirectory="PreserveNewest" />

@@ -28,7 +28,7 @@ public sealed record MergerHealth(
     /// <param name="store">The job-hunt folder.</param>
     /// <param name="now">When the reading is taken.</param>
     /// <param name="ct">Stops the listing.</param>
-    public static async Task<MergerHealth> ReadAsync(IMergeStore store, DateTimeOffset now, CancellationToken ct)
+    public static async Task<MergerHealth> ReadAsync(IShareReader store, DateTimeOffset now, CancellationToken ct)
     {
         var waiting = new List<MergeEntry>();
         DateTimeOffset? logWritten = null;

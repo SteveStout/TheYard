@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
 
-namespace JobHunt.Infrastructure;
+namespace JobHunt.Infrastructure.Shared.GitHub;
 
 /// <summary>
 /// Fires repository_dispatch at the repository that holds nightly.yml: "nightly" for the 4:00 AM

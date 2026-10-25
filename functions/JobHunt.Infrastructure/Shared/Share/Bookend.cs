@@ -2,7 +2,7 @@ using System.Text;
 using Azure.Storage.Files.Shares;
 using Microsoft.Extensions.Logging;
 
-namespace JobHunt.Infrastructure;
+namespace JobHunt.Infrastructure.Shared.Share;
 
 /// <summary>
 /// The opening numbers of the night's bookend, written to nightly\bookend-yyyy-MM-dd.md on the

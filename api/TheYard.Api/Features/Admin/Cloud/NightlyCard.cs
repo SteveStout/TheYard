@@ -21,7 +21,7 @@ public static class NightlyCard
 
     /// <summary>
     /// How many share snapshots the Function keeps: ShareSnapshot.Keep in
-    /// functions/JobHunt.Infrastructure/ShareSnapshot.cs, which this project does not reference. A test reads that
+    /// functions/JobHunt.Infrastructure/Shared/Share/ShareSnapshot.cs, which this project does not reference. A test reads that
     /// file and holds the two equal.
     /// </summary>
     public const int SnapshotsKept = 14;

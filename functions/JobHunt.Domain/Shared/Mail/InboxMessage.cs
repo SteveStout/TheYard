@@ -1,4 +1,4 @@
-namespace JobHunt.Domain.Features.Ats;
+namespace JobHunt.Domain.Shared.Mail;
 
 /// <summary>One message as the sweep reads it.</summary>
 /// <param name="Id">The Gmail message id.</param>

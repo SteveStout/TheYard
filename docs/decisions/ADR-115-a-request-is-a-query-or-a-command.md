@@ -114,3 +114,13 @@ It was green on 1.0.4.67 with only its file applied, and that green is the findi
 
 ```live path=api/TheYard.Tests/CqrsTests.cs region=a-reader-is-known-by-what-it-can-do
 ```
+
+## Addendum, 2026-10-25 (1.0.4.75): what CQRS means in the job hunt's Function
+
+The Function answers no request. Its timers each run one use case on a clock, so there is no request record to name `...Query` or `...Command` and no handler to count, and this record's naming rule does not carry over. The half that does carry over is the one that matters: a use case that only reads cannot write.
+
+- **The ports are split.** `IMergeStore` (the job-hunt share) extends `IShareReader` (exists, read, list), and `IInbox` extends `IInboxReader` (find, read, the thread's senders and draft); the archive and the share's writes are on the extending halves only.
+- **The reading use cases take the reading halves.** `InboxTriage` (the triage window) takes `IShareReader` and `IInboxReader`; `MergerHealth.ReadAsync` takes `IShareReader`.
+- **Nothing is a service** in any of the three rings.
+
+The Function's `CqrsTests` holds all three, reading a port by what it can do with the same writing-verb rule the site's queries are held to (the addendum of 1.0.4.68), widened by the Function's own verbs (Append, Move, Replace, Ensure, Archive, Mark, Block). It was red with the split reverted: "InboxTriage takes IMergeStore store, which can AppendAsync, EnsureFolderAsync, MoveAsync, ReplaceAsync, WriteAsync" and "InboxTriage takes IInbox inbox, which can ArchiveAsync".

@@ -1,4 +1,4 @@
-namespace JobHunt.Application.Features.Ats;
+namespace JobHunt.Application.Shared.Mail;
 
 /// <summary>
 /// The Gmail inbox as the ATS sweep sees it: messages found by a query, one message read whole, the
@@ -6,7 +6,17 @@ namespace JobHunt.Application.Features.Ats;
 /// purpose: nothing here can send, draft, trash or delete (the red line in BOOKKEEPING-LANE.md), and
 /// AtsSweepTests holds the port to these four.
 /// </summary>
-public interface IInbox
+public interface IInbox : IInboxReader
+{
+    /// <summary>Removes the INBOX label from one message, and returns true when its labels read back without it.</summary>
+    Task<bool> ArchiveAsync(string id, CancellationToken ct);
+}
+
+/// <summary>
+/// The reading half of the inbox: a use case that only reads, the triage window,
+/// is handed this, so it cannot archive; the archive is the one write, and IInbox adds it.
+/// </summary>
+public interface IInboxReader
 {
     /// <summary>The ids of the messages a search finds, newest first, at most <paramref name="max"/>; the adapter writes the search in its service's syntax.</summary>
     Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct);
@@ -16,9 +26,6 @@ public interface IInbox
 
     /// <summary>The From address of every message in a thread.</summary>
     Task<IReadOnlyList<string>> ThreadSendersAsync(string threadId, CancellationToken ct);
-
-    /// <summary>Removes the INBOX label from one message, and returns true when its labels read back without it.</summary>
-    Task<bool> ArchiveAsync(string id, CancellationToken ct);
 
     /// <summary>True when a draft sits in the thread, which is a reply already waiting for Steve's word; an inbox that cannot tell says no.</summary>
     Task<bool> ThreadHasDraftAsync(string threadId, CancellationToken ct) => Task.FromResult(false);
