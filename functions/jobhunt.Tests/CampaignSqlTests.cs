@@ -88,8 +88,8 @@ public sealed partial class CampaignSqlTests
         Assert.True(Statements().Count() >= 10);
     }
 
-    // The variables of TEMPLATE-A-posted-v1.md and TEMPLATE-B-cold-v1.md (J:\mentor\email-templates, read
-    // 2026-10-24) and the optional line of 8.2; the templates come into the repository with the renderer.
+    // Every variable the templates may name, with the column the row gives it from; the next test holds the
+    // checked-in templates to this list.
     [Theory]
     [InlineData("FirstName", "Leads", "FirstName")]
     [InlineData("Company", "Leads", "Company")]
@@ -107,6 +107,16 @@ public sealed partial class CampaignSqlTests
     public void Every_template_variable_has_its_column(string variable, string table, string column)
     {
         Assert.True(Tables()[table].Contains(column), $"{{{variable}}} has no {table}.{column}");
+    }
+
+    [Fact]
+    public void Every_variable_of_the_checked_in_templates_is_one_the_rows_give()
+    {
+        var given = typeof(CampaignSqlTests).GetMethod(nameof(Every_template_variable_has_its_column))!
+            .GetCustomAttributes<Xunit.InlineDataAttribute>().Select(a => (string)a.GetData(null!).Single()[0]).ToHashSet(StringComparer.Ordinal);
+        var named = CampaignTemplate.All.SelectMany(t => TemplateFill.Variables(t.Text)).Distinct(StringComparer.Ordinal).ToList();
+        Assert.NotEmpty(named);
+        Assert.All(named, variable => Assert.Contains(variable, given));
     }
 
     [Fact]

@@ -18,6 +18,13 @@ public static class CentralClock
 
     public static bool IsFourAm(DateTimeOffset utcNow) => NightlySlots.Slot(utcNow) == NightlySlots.Reply;
 
+    /// <summary>
+    /// The campaign's hour (ADR-118; Steve, 10/24: "It sends automatically at 8:00 am", seven days a week): the
+    /// 8 o'clock hour in Central, under daylight time or standard time alike, so the hourly UTC timer finds it on
+    /// both sides of the November clock change.
+    /// </summary>
+    public static bool IsCampaignHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 8;
+
     /// <summary>The run this hour starts, or null when the hour is not a slot.</summary>
     public static string? Slot(DateTimeOffset utcNow) => NightlySlots.Slot(utcNow);
 }

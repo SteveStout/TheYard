@@ -38,6 +38,7 @@
     <Using Include="JobHunt.Infrastructure.Features.Merge" />
     <Using Include="JobHunt.Infrastructure.Features.Sheet" />
     <Using Include="JobHunt.Infrastructure.Features.Card" />
+    <Using Include="JobHunt.Infrastructure.Features.Campaign" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json" CopyToOutputDirectory="PreserveNewest" />

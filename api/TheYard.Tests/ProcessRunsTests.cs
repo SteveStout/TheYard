@@ -163,9 +163,9 @@ public sealed class ProcessRunsTests
             .SelectMany(file => Regex.Matches(File.ReadAllText(file), "\\[Function\\(\"(?<name>\\w+)\"\\)\\][\\s\\S]{0,200}?TimerTrigger\\(\"(?<cron>[^\"]+)\"\\)").Select(m => (m.Groups["name"].Value, m.Groups["cron"].Value)))
             .ToDictionary(pair => pair.Item1, pair => pair.Item2);
 
-        Assert.Equal(5, crons.Count);
+        Assert.Equal(6, crons.Count);
         Assert.All(FunctionProcesses.All.Where(p => p.Cron is not null), process => Assert.Equal(crons[process.Key], process.Cron));
-        Assert.Equal(6, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
+        Assert.Equal(7, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
 
         var at = new DateTimeOffset(2026, 10, 24, 16, 43, 10, TimeSpan.Zero);
         Assert.Equal(at.Date.AddHours(16).AddMinutes(50), FunctionProcesses.Next(FunctionProcesses.Find("AtsSweep")!, at).UtcDateTime);
@@ -174,10 +174,14 @@ public sealed class ProcessRunsTests
         Assert.Equal(at.Date.AddHours(17).AddMinutes(5), FunctionProcesses.Next(FunctionProcesses.Find("DailyCard")!, at).UtcDateTime);
         // 17:00 UTC is noon Central in October: the records run's slot.
         Assert.Equal(at.Date.AddHours(17), FunctionProcesses.Next(FunctionProcesses.Find("Nightly")!, at).UtcDateTime);
+        // The campaign acts at 8 AM Central: 13:00 UTC under daylight time, 14:00 UTC from November 1.
+        Assert.Equal(at.Date.AddDays(1).AddHours(13), FunctionProcesses.Next(FunctionProcesses.Find("CampaignSend")!, at).UtcDateTime);
+        Assert.Equal(new DateTime(2026, 11, 2, 14, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("CampaignSend")!, new DateTimeOffset(2026, 11, 1, 14, 0, 0, TimeSpan.Zero)).UtcDateTime);
+        Assert.Equal(new DateTime(2026, 11, 1, 14, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("CampaignSend")!, new DateTimeOffset(2026, 11, 1, 13, 30, 0, TimeSpan.Zero)).UtcDateTime);
     }
 
     [Fact]
-    public void The_six_sections_come_from_the_fold_the_switches_and_the_summaries()
+    public void The_seven_sections_come_from_the_fold_the_switches_and_the_summaries()
     {
         var today = DateOnly.FromDateTime(NightlySlots.Local(Noon));
         var fold = new ProcessFold(true, null,
@@ -187,7 +191,7 @@ public sealed class ProcessRunsTests
 
         var sections = ProcessSections.Build(fold, switches, key => $"{key} does its work.", key => $"https://all/{key}", Noon);
 
-        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The merger's health"], sections.Select(s => s.Name));
+        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The email campaign", "The merger's health"], sections.Select(s => s.Name));
         var inbox = sections[0];
         Assert.Equal(("good", "on", "fine"), (inbox.Tone, inbox.Switches[0].Value, inbox.Switches[0].Tone));
         Assert.Equal(("shadow", "info"), (inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Value, inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Tone));
@@ -200,7 +204,9 @@ public sealed class ProcessRunsTests
         Assert.Equal("68 of 70 on time · 1 late · 1 failed or blocked", inbox.Figures[2].Text);
         Assert.Equal("12:20 Central", inbox.Figures[3].Text);
         Assert.Equal("info", sections[3].Tone);
-        Assert.Equal(["always on"], sections[5].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal(["EMAIL_CAMPAIGN off"], sections[5].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal("off", sections[5].Tone);
+        Assert.Equal(["always on"], sections[6].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.All(sections, section => Assert.All(section.Figures, figure => Assert.False(string.IsNullOrEmpty(figure.Source))));
 
         var unread = ProcessSections.Build(ProcessFold.Unread("Application Insights answered 403"), null, _ => "", _ => null, Noon);

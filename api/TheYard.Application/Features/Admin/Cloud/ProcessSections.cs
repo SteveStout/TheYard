@@ -1,4 +1,4 @@
-// The nightly card's six process sections (ADR-109, the addendum on the six processes; ADR-102, the addendum on
+// The nightly card's seven process sections (ADR-109, the addendum on the six processes; ADR-102, the addendum on
 // the two slots): each process's switches from the Function's health route, its summary from its own code, and
 // its last run, thirty days and day strip from the runs reader's fold. Pure: the fold, the switches, the
 // summaries and the moment go in, the sections come out, so a test holds every figure without a workspace.
@@ -9,7 +9,7 @@ using TheYard.Domain.Features.Admin;
 namespace TheYard.Application.Features.Admin.Cloud;
 
 // #region process-sections
-/// <summary>Builds the six sections from what was read.</summary>
+/// <summary>Builds the seven sections from what was read.</summary>
 public static class ProcessSections
 {
     /// <summary>How many days the strip shows, one cell a Central day, today last.</summary>
@@ -18,7 +18,7 @@ public static class ProcessSections
     /// <summary>Where the run figures come from.</summary>
     public const string RunSource = "Application Insights, the run line", FoldSource = "Application Insights, requests by name";
 
-    /// <summary>The six sections, in the card's order.</summary>
+    /// <summary>The seven sections, in the card's order.</summary>
     /// <param name="fold">Thirty days of runs by process and day, and each process's newest run.</param>
     /// <param name="switches">The switches by name as the health route answered them; null when it did not answer.</param>
     /// <param name="summary">Each process's summary paragraph, by its key.</param>

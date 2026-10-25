@@ -18,7 +18,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 public sealed class InsightsProcessRuns(AzureMetrics azure, string workspaceId, string role) : IProcessRunsReader
 {
     /// <summary>
-    /// Every run of the six in a window: the request row, the run line beside it when the process wrote one, the
+    /// Every run of the seven in a window: the request row, the run line beside it when the process wrote one, the
     /// outcome (the line's, or the request's success for a row from before the lines), whether the history lists
     /// it, and whether it did something. ItemCount is summed for the runs because a sampled row stands for more.
     /// </summary>
@@ -52,7 +52,7 @@ public sealed class InsightsProcessRuns(AzureMetrics azure, string workspaceId, 
     /// <summary>Each process's newest run.</summary>
     public const string Newest = "runs | summarize arg_max(At, TookMs, Ok, Line, OperationId) by Process";
 
-    /// <summary>The query with the role, the window and the six names in place, and one statement after the runs.</summary>
+    /// <summary>The query with the role, the window and the seven names in place, and one statement after the runs.</summary>
     public string Kusto(TimeSpan window, string statement) => Runs
         .Replace("__ROLE__", Quote(role), StringComparison.Ordinal)
         .Replace("__WINDOW__", ((int)Math.Ceiling(window.TotalHours)).ToString(CultureInfo.InvariantCulture) + "h", StringComparison.Ordinal)

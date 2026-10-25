@@ -91,14 +91,14 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
 
 // #region nightly-processes
 /**
- * The nightly card's six processes (ADR-109, the addendum on the six processes): the description and six
+ * The nightly card's seven processes (ADR-109, the addendum on the six processes): the description and seven
  * sections arrive with every run history closed and no runs asked for; opening one asks the runs route once
  * and shows its runs with a trace link (or, where the workspace cannot be read, the sentence that says why);
  * the pills change the window; and on a phone the sections are one column and the runs stack, so neither the
  * table nor the page scrolls sideways (the operator's look: an Admin table fits or stacks). The strip's cell
  * count is the one constant the page draws from.
  */
-test('the nightly card draws six processes whose histories open on request', async ({ page }) => {
+test('the nightly card draws seven processes whose histories open on request', async ({ page }) => {
   test.setTimeout(90_000);
   const asked: string[] = [];
   page.on('request', (request) => {
@@ -109,8 +109,16 @@ test('the nightly card draws six processes whose histories open on request', asy
   await expect(card.getByTestId('cloud-processes')).toBeVisible({ timeout: 30_000 });
   await expect(card.getByTestId('cloud-description')).toContainText('What it is.');
   const sections = card.locator('[data-testid^="process-"][data-tone]');
-  await expect(sections).toHaveCount(6);
-  for (const key of ['AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'MergerHealth']) {
+  await expect(sections).toHaveCount(7);
+  for (const key of [
+    'AtsSweep',
+    'Merger',
+    'Nightly',
+    'SheetMirror',
+    'DailyCard',
+    'CampaignSend',
+    'MergerHealth',
+  ]) {
     await expect(card.getByTestId(`process-history-${key}`)).not.toHaveAttribute('open', /.*/);
     await expect(card.getByTestId(`process-strip-${key}`).locator('rect')).toHaveCount(
       PROCESS_STRIP_CELLS

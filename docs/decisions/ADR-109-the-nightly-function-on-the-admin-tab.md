@@ -148,3 +148,7 @@ Two departures from the mockup, both the operator's look winning over the drawin
 
 What is not built: the mockup's per-process extras that come from somewhere other than the run lines (the clock's GitHub run number and snapshots kept, the Sheet mirror's blocked row from the plan file, the daily card's header line). The clock's GitHub side is the Run log row below, and the rest stay in their files on the share, which the site does not read.
 
+## Addendum, 2026-10-24 (1.0.4.60): the seventh process, the email campaign
+
+The Function gains `CampaignSend` (ADR: The campaign sends, the model writes rows), hourly on the hour in UTC and acting in the 8 o'clock hour Central only, so the card gains its seventh section, "The email campaign", between the daily card and the health route, with its switch `EMAIL_CAMPAIGN` as the section's chip and its run line's counts as its sentence: leads open, eligible, written in shadow or sent, held. The counts only: no company, person or address reaches the run line, the card or the history. The next run reads the next 8 AM Central under either clock, and the health route's switch list carries `EMAIL_CAMPAIGN` so the card shows its word.
+

@@ -10,6 +10,10 @@
     <ProjectReference Include="..\JobHunt.Domain\JobHunt.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The campaign's approved templates, as Steve approved them (ADR-118): code, changed only with his yes. -->
+    <EmbeddedResource Include="Features\Campaign\Templates\*.md" LogicalName="JobHunt.Campaign.Templates.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <Using Include="JobHunt.Domain" />
     <Using Include="JobHunt.Domain.Features.Ats" />
     <Using Include="JobHunt.Domain.Features.Leads" />

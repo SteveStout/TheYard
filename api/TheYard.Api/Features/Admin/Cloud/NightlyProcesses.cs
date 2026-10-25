@@ -1,5 +1,5 @@
 // The nightly card's two added slots (ADR-102 and ADR-109, the addenda on the six processes): the Function's
-// paragraph and its six process sections, put onto the card the frame built. Three reads, each kept two
+// paragraph and its seven process sections, put onto the card the frame built. Three reads, each kept two
 // minutes so a minute's polls on both names cost a workspace query at most once: the runs reader's thirty-day
 // fold, the switches from the Function's health route (the app's settings, names and plain words only, which
 // the site's Reader role cannot list itself), and the summaries from the code, read once.
@@ -26,7 +26,7 @@ public sealed class NightlyProcesses(IProcessRunsReader runs, Func<CancellationT
     /// <summary>How long a fold and the switches are kept before they are read again.</summary>
     public static readonly TimeSpan Keep = TimeSpan.FromMinutes(2);
 
-    /// <summary>The card with its description and its six sections; the card as it was if anything throws.</summary>
+    /// <summary>The card with its description and its seven sections; the card as it was if anything throws.</summary>
     /// <param name="card">The nightly card as the frame built it.</param>
     /// <param name="cancellation">The request's cancellation.</param>
     public async Task<CloudReport> EnrichAsync(CloudReport card, CancellationToken cancellation)
@@ -97,7 +97,7 @@ public sealed class NightlyProcesses(IProcessRunsReader runs, Func<CancellationT
         }
     }
 
-    /// <summary>The answer's "switches", kept only under the six processes' switch names and only as a plain word of up to twelve letters.</summary>
+    /// <summary>The answer's "switches", kept only under the seven processes' switch names and only as a plain word of up to twelve letters.</summary>
     /// <param name="answer">The health route's JSON.</param>
     public static IReadOnlyDictionary<string, string>? Switches(JsonElement answer)
     {

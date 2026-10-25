@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 namespace TheYard.Api.Features.Admin.Cloud;
 
 // #region process-descriptions
-/// <summary>The six processes' summaries and the Function's paragraph, read from the repository files in this build.</summary>
+/// <summary>The seven processes' summaries and the Function's paragraph, read from the repository files in this build.</summary>
 /// <param name="regions">The repository's marked regions, as the live-sample reader renders them.</param>
 public sealed partial class ProcessDescriptions(ICodeRegions regions)
 {
@@ -26,18 +26,19 @@ public sealed partial class ProcessDescriptions(ICodeRegions regions)
         ["Nightly"] = "Nightly.cs",
         ["SheetMirror"] = "SheetMirrorTimer.cs",
         ["DailyCard"] = "DailyCardTimer.cs",
+        ["CampaignSend"] = "CampaignSendTimer.cs",
         ["MergerHealth"] = "MergerWatch.cs",
     };
 
-    /// <summary>Each file's paragraph once read: seven at most, the six processes and the Function's own.</summary>
+    /// <summary>Each file's paragraph once read: eight at most, the seven processes and the Function's own.</summary>
     private readonly ConcurrentDictionary<string, string> _read = new(StringComparer.Ordinal);
 
     /// <summary>The Function's paragraph: what it is, in one paragraph.</summary>
     public string Function() => _read.GetOrAdd("", _ => Paragraph("Program.cs", "what-it-is"));
 
     /// <summary>One process's summary, by its key.</summary>
-    /// <param name="key">One of the six.</param>
-    public string For(string key) => Files.TryGetValue(key, out string? file) ? _read.GetOrAdd(key, _ => Paragraph(file, "summary")) : "not one of the six";
+    /// <param name="key">One of the seven.</param>
+    public string For(string key) => Files.TryGetValue(key, out string? file) ? _read.GetOrAdd(key, _ => Paragraph(file, "summary")) : "not one of the seven";
 
     /// <summary>
     /// One region of one file as a paragraph: the live reader's fenced block with the comment marks, the

@@ -147,6 +147,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The words a process section prints are the code's own: each timer's summary and the Function's paragraph are read from the repository at the version deployed, and the schedule table holds the Function's own cron strings | ADR-109, the addendum on the six processes | ProcessReadersTests, ProcessRunsTests |
 | A blog picture is served from the site's own address under the hash of its bytes with a year's immutable cache, a name the rule does not make is never looked up, the host's memory answers a second read, and the container is private | ADR-113, the addendum on where the pictures live | BlogImageTests, BlogImageRouteTests |
 | A picture is put on a post only with the operator's key, and is refused by the figure it breaks: over a megabyte, not a PNG, JPEG or WebP by its own bytes, over 2000 pixels wide, or without an alt text; its size is read from its own header | ADR-113, the addendum on putting a picture in | BlogUploadTests, BlogUploadRouteTests, blog.test.ts |
+| The nightly card draws the Function's seven processes, the campaign among them with its switch, and its next run is the next 8 AM Central under either clock | ADR-109, the addendum of 1.0.4.60 | ProcessRunsTests, ProcessReadersTests, cloud.spec.ts |
 
 ## How the table is read
 

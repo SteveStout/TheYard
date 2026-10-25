@@ -104,7 +104,7 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
 
         Assert.Contains("let role = 'func-jobhunt-ss';", kusto, StringComparison.Ordinal);
         Assert.Contains("ago(168h)", kusto, StringComparison.Ordinal);
-        Assert.Contains("Name in ('AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'MergerHealth')", kusto, StringComparison.Ordinal);
+        Assert.Contains("Name in ('AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'CampaignSend', 'MergerHealth')", kusto, StringComparison.Ordinal);
         Assert.Contains("Process in ('AtsSweep', 'SheetMirror', 'MergerHealth')", kusto, StringComparison.Ordinal);
         Assert.Contains("Message startswith 'process:'", kusto, StringComparison.Ordinal);
         Assert.DoesNotContain("__", kusto, StringComparison.Ordinal);
@@ -176,13 +176,13 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
     }
 
     [Fact]
-    public async Task The_nightly_card_carries_its_description_and_six_sections_and_the_other_cards_neither()
+    public async Task The_nightly_card_carries_its_description_and_seven_sections_and_the_other_cards_neither()
     {
         using var client = factory.CreateClient();
 
         using var nightly = JsonDocument.Parse(await client.GetStringAsync("/api/admin/cloud/nightly?window=24h"));
         Assert.StartsWith("The job hunt's clock and its hands.", nightly.RootElement.GetProperty("description").GetProperty("text").GetString(), StringComparison.Ordinal);
-        Assert.Equal(6, nightly.RootElement.GetProperty("processes").GetArrayLength());
+        Assert.Equal(7, nightly.RootElement.GetProperty("processes").GetArrayLength());
 
         using var sql = JsonDocument.Parse(await client.GetStringAsync("/api/admin/cloud/sqldb?window=24h"));
         Assert.Equal(JsonValueKind.Null, sql.RootElement.GetProperty("description").ValueKind);

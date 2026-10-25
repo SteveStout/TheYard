@@ -166,6 +166,14 @@ resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
 
 var storageConnection = 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
 
+// The campaign's database (infra/jobhunt-sql.bicep, ADR-118): the Function signs in as its own identity, so the
+// connection string names the identity's client id and holds no secret.
+@description('The campaign database\'s logical server (infra/jobhunt-sql.bicep).')
+param campaignSqlServer string = 'sql-theyard-ss-westus3'
+@description('The campaign\'s database on it.')
+param campaignSqlDatabase string = 'sqldb-jobhunt-ss'
+var campaignSql = 'Server=tcp:${campaignSqlServer}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${campaignSqlDatabase};Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Managed Identity;User Id=${identity.properties.clientId};'
+
 resource app 'Microsoft.Web/sites@2024-04-01' = {
   name: functionAppName
   location: location
@@ -241,6 +249,12 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'TRIAGE', value: 'on' }
         // The daily card (functions/JobHunt.Infrastructure/Features/Card): 'on' keeps nightly/CARD.md current, the one page Steve reads.
         { name: 'DAILY_CARD', value: 'on' }
+        // The hiring-manager email campaign (functions/jobhunt/CampaignSendTimer.cs, ADR-118), at 8 AM Central seven
+        // days a week: 'shadow' writes what it would send to EmailsSent and calls no mail service; 'on' sends from
+        // Steve's Gmail, at most ten a day with a three, five, ten start; anything else is off. 'on' is Steve's
+        // switch after seven mornings of shadow, never a deploy's.
+        { name: 'EMAIL_CAMPAIGN', value: 'shadow' }
+        { name: 'CAMPAIGN_SQL', value: campaignSql }
       ]
     }
     // #endregion jobhunt-settings

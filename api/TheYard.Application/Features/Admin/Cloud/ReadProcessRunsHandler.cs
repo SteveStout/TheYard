@@ -1,5 +1,5 @@
 // The job hunt Function's run history, one process at a time, as a query (ADR-109, the addendum on the six
-// processes; ADR-115): the runs of one of the six for a window, newest first, twenty a page, each with what it
+// processes; ADR-115): the runs of one of the seven for a window, newest first, twenty a page, each with what it
 // came to, what it read and wrote as one sentence and a link to its trace, and the window's totals. The rows
 // come through the IProcessRunsReader port, which Application Insights answers on the host; the words are
 // ProcessWords', so the handler is tested with a fake reader and no host.
@@ -15,7 +15,7 @@ namespace TheYard.Application.Features.Admin.Cloud;
 public interface IProcessRunsReader
 {
     /// <summary>One process's runs in a window, the ones its history lists, newest first (the health route's slowest first), and the window's totals.</summary>
-    /// <param name="process">One of the six.</param>
+    /// <param name="process">One of the seven.</param>
     /// <param name="window">How far back.</param>
     /// <param name="skip">How many listed runs to pass over.</param>
     /// <param name="take">How many to answer.</param>
@@ -163,7 +163,7 @@ public sealed record ProcessRunsPage(string Process, string Title, string Window
 /// <param name="TraceHref">Its trace; null when there is no link.</param>
 public sealed record ProcessRunRow(long AtMs, string Day, string When, string Took, string Outcome, string Came, string Tone, string Sentence, string? TraceHref);
 
-/// <summary>One page of one process's runs; null for a name that is not one of the six.</summary>
+/// <summary>One page of one process's runs; null for a name that is not one of the seven.</summary>
 /// <param name="runs">The run lines and request rows.</param>
 public sealed class ReadProcessRunsHandler(IProcessRunsReader runs) : IQueryHandler<ReadProcessRunsQuery, ProcessRunsPage?>
 {

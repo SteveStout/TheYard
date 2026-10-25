@@ -23,6 +23,8 @@ public static class ProcessWords
         ["switch_off"] = "the switch is off",
         ["not_a_slot"] = "not a slot hour",
         ["part_failed"] = "a part of the pass failed",
+        ["not_the_hour"] = "not the 8 o'clock hour",
+        ["no_database"] = "the database is not set",
     };
 
     /// <summary>The window in words: "24 hours", "7 days", "30 days".</summary>
@@ -66,7 +68,7 @@ public static class ProcessWords
         {
             return run.Outcome == "failed" ? "the request failed; no run line, from before the processes wrote one" : "no run line, from before the processes wrote one: the request row only";
         }
-        if (run.Detail is "switch_off" or "not_a_slot" or "google_token" or "google_settings")
+        if (run.Detail is "switch_off" or "not_a_slot" or "not_the_hour" or "no_database" or "google_token" or "google_settings")
         {
             return Reason(run.Detail, run.Detail) + (run.Detail == "google_token" ? "; the pass skipped its later parts" : "");
         }
@@ -105,6 +107,13 @@ public static class ProcessWords
                 break;
             case "DailyCard":
                 Add("written", n => n == 1 ? "the card written" : "unchanged, not written");
+                break;
+            case "CampaignSend":
+                Add("open", n => $"{Plural(n, "lead")} open");
+                Add("eligible", n => $"{n} eligible");
+                Add("written", n => $"{n} written in shadow");
+                Add("sent", n => $"{n} sent");
+                Add("held", n => $"{n} held");
                 break;
             case "MergerHealth":
                 Add("waiting", n => $"{n} waiting");

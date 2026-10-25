@@ -1,0 +1,14 @@
+Pat,
+
+Good morning! I saw that Acme Dental builds practice management software for dental offices, and I think I could add value on your team in .NET architecture or technical management, along with the AI automation I have been building into my own work.
+
+Do you have any remote roles open, or coming up, where that fits? If so, we should set up a time to talk.
+
+Steve
+
+Links
+Resume: https://theyard.stevenstout.biz/resume?src=email&r=abc123
+Site: https://theyard.stevenstout.biz/?r=abc123
+GitHub: https://theyard.stevenstout.biz/api/go/github?r=abc123
+LinkedIn: https://theyard.stevenstout.biz/api/go/linkedin?r=abc123
+About: https://theyard.stevenstout.biz/about?r=abc123
