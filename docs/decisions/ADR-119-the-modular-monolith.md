@@ -58,3 +58,7 @@ A record over the four that describe the structure, not a change to any of them:
 - [`api/TheYard.Tests/ModularMonolithTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/ModularMonolithTests.cs) - the site's half
 - [`functions/jobhunt.Tests/ModularMonolithTests.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/ModularMonolithTests.cs) - the Function's half
 - [`api/TheYard.Api/Program.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Program.cs) - the loop over the modules
+
+## Addendum, 2026-10-25 (1.0.4.82): the Admin module's fourth sub-slice
+
+Decision 2 named the Admin module's three sub-slices, Cloud, Plan and Operations. From 1.0.4.82 there are four: Foreman, with its own `Module.cs` in the host and its own folder in Application (ADR: The Foreman, a place to start). The prompt for it drew a second Functions app with an identity and a Cosmos DB container of its own; it is a module of the site instead, because every reading it makes is one the site already makes, and Decision 1 holds: still one deployable per process. In the inner rings the four are four slices, so the Foreman's Application folder declares its own records for the failures it cites rather than using the incidents card's, and the host's Foreman adapter, inside the one Admin slice, maps one to the other.

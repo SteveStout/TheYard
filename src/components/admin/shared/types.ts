@@ -39,6 +39,7 @@ export type {
 export type { ExperimentRow, Experiment } from './wire/experimentWire'; // GET /api/admin/experiment
 export type { ProofCell, ProofRow, ProofResult, Proof } from './wire/proofWire'; // GET /api/admin/proof
 export type { IncidentRow, FailureRow, IncidentsReport } from './wire/incidentsWire'; // GET /api/admin/incidents
+export type { ForemanCardReading, ForemanStart, ForemanPage } from './wire/foremanWire'; // GET /api/admin/foreman
 
 /**
  * A card's data: nothing yet, the value, or the word that the last fetch failed,

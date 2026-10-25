@@ -22,7 +22,7 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
 
   it('has every card once, under one of the six questions, in the order the slugs are listed', () => {
     expect(BENCH_CARDS.map((card) => card.slug)).toEqual([...CARD_SLUGS]);
-    expect(new Set(CARD_SLUGS).size).toBe(37);
+    expect(new Set(CARD_SLUGS).size).toBe(38);
     const questions = BENCH_QUESTIONS.map((question) => question.key);
     expect(questions).toEqual(['up', 'fast', 'cost', 'cloud', 'broke', 'desk']);
     // The plan opens Cloud infrastructure, with the container and the machines under it.
@@ -85,11 +85,12 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
   });
 
   it('finds cards by every word typed, in the name, the slug or the question', () => {
-    expect(findCards('').length).toBe(37);
+    expect(findCards('').length).toBe(38);
     expect(findCards('timing').map((card) => card.slug)).toEqual(['timing']);
     expect(findCards('SQL').map((card) => card.slug)).toContain('sql');
     expect(findCards('what broke').map((card) => card.slug)).toEqual([
       'incidents',
+      'foreman',
       'errors',
       'log',
       'kept',

@@ -1260,6 +1260,9 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
     'href',
     '/?doc=inc-001-the-share-that-billed-for-looking'
   );
+  // The Foreman's page sits under it, its first section a sentence with the window (1.0.4.82).
+  await page.getByTestId('question-broke').getByTestId('bench-link-foreman').click();
+  await expect(page.getByTestId('foreman-what')).toContainText('In the 24 hours to');
   // A tile goes to its card.
   await strip.getByTestId('tile-errors').click();
   await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'errors');

@@ -30,7 +30,7 @@ The suites hold 1535 xUnit tests, 542 Vitest tests at 1.0.4.69 and 181 Playwrigh
 
 ## Architecture and decisions
 
-One hundred and twenty decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Six to read first:
+One hundred and twenty-one decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Six to read first:
 
 - [ADR-088, onion and SOLID, how this codebase holds them](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-088-onion-and-solid.md): the rings, the ten tests that fail the gate when a dependency points outward, and what is kept simple on purpose.
 - [ADR-075, the rules a change has to pass](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md): every standing rule beside the test that holds it.
@@ -78,7 +78,7 @@ A failing suite prints everything it printed, then the summary, and the command 
 
 Built by one engineer, with AI drafting against my tests and records. I specify every test before the AI writes
 the first draft of the code against it, three suites of tests run once per version inside the one gate before anything rolls (the counts are at the top of this page, held to the suites
-by a test), and one hundred and twenty decision records carry the trade-off and the number behind each choice. What went
+by a test), and one hundred and twenty-one decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
@@ -103,7 +103,7 @@ it has sent and how long the database took.
 
 Everything about how it is built and hosted is served from inside the running app, under
 App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Style, Hosting, Built with AI, CI/CD
-and Best Practices in the sidebar. One hundred and twenty decision records explain each choice, and the code samples in them are read from the running build
+and Best Practices in the sidebar. One hundred and twenty-one decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -329,7 +329,7 @@ walkthrough can happen without leaving it.
   Records, Changelog, About and Author, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites, store comparison and rings diagrams on their
-  own zoomable pages, one hundred and twenty decision records in one numbered index, the Bicep
+  own zoomable pages, one hundred and twenty-one decision records in one numbered index, the Bicep
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser

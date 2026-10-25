@@ -43,6 +43,7 @@ export const CARD_SLUGS = [
   'claude',
   'campaign',
   'incidents',
+  'foreman',
   'errors',
   'log',
   'kept',

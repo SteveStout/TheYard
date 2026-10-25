@@ -770,6 +770,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-foreman-a-place-to-start</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/incidents</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
