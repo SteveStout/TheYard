@@ -260,3 +260,13 @@ The browser suite failed twice on `main` on the morning of 17 October and passed
 ## Addendum, 2026-10-19 (1.0.3.183): a Resource Manager write is tried three times
 
 The SQL site's roll of 1.0.3.182 failed at 11:44 UTC on its first write: Azure Resource Manager answered `az webapp config appsettings set` with `BadGatewayConnection`, "the network connectivity issue encountered for 'Microsoft.Web'", and the job went red while the Cosmos DB site, the renderer and CI on the same commit went green. A second run of the same job, unchanged, rolled the site. Each deploy workflow's writes to Resource Manager, the app settings and the image, now go through one small shell function that tries a write three times a minute apart before the roll is red, with a warning on the run page for each refusal. The writes set a value, so the same write twice is the same setting; nothing else in the roll is retried, and a red after three tries is still red.
+
+## Addendum, 2026-10-25 (1.0.4.77): both registries, on the way to GitHub's
+
+The Azure Container Registry, Basic, costs about $5.17 a month to hold what this public repository's own registry, ghcr.io, holds for nothing. From this version Deploy and Deploy Render push every image to `ghcr.io/stevestout/theyard` and `ghcr.io/stevestout/theyard-render` as well as to the Azure registry, signed in with the workflow's own `GITHUB_TOKEN` and `packages: write`, and nothing else is granted. The roll still pulls from the Azure registry, so nothing a visitor sees changes.
+
+The next step pulls from ghcr.io with no credential at all, which App Service can do only for a public package. A package GitHub makes from a workflow starts private, and its visibility is a setting on the package, not on the repository.
+
+**Undo, written before the roll moves.** Set each web app's image back to the Azure registry's last tag with `acrUseManagedIdentityCreds` true (infra/appservice.bicep, infra/render.bicep). That works for the week the Azure registry is kept after the switch, and it is deleted only after seven green rolls from ghcr.io (ADR-106).
+
+`DeployWorkflowTests.Each_image_is_pushed_to_GitHub_s_registry_as_well_as_Azure_s` holds both pushes.
