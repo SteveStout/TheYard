@@ -110,6 +110,13 @@ repositories mostly fall away
 ```live path=api/TheYard.Tests/CqrsTests.cs region=cqrs-tests
 ```
 
+## How the rule reads a port
+
+A port's name is a promise and nothing checks a promise. From 1.0.4.68 the rule reads what a port can do: every type a query handler takes by constructor, among this codebase's own, is read by reflection with every interface it inherits, and a member whose name starts with a writing verb (Keep, Write, Save, Upsert, Delete, Add, Remove, Record, Put or Set) makes it a port that writes. A query handler handed one is red, whatever the port is called. The name check stays beside it.
+
+```live path=api/TheYard.Tests/CqrsTests.cs region=a-reader-is-known-by-what-it-can-do
+```
+
 ## The counts this build has
 
 Read back by `CqrsTests` on every build, so a number here cannot go stale.

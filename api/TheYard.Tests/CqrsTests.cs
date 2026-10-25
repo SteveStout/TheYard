@@ -109,6 +109,51 @@ public sealed class CqrsTests(WebApplicationFactory<Program> factory) : IClassFi
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
 
+    // #region a-reader-is-known-by-what-it-can-do
+    [Fact]
+    public void A_query_handler_is_handed_no_port_that_can_write()
+    {
+        // The rule above reads a port's name, so a port named ...Reader that also writes passes it. This one
+        // reads what the port can do: no type a query handler takes by constructor, among this codebase's own,
+        // has a member whose name starts with a writing verb, counting every member of every interface it
+        // inherits. A port that both reads and writes is split, and the query takes the reading half.
+        var wrong = HandlerTypes()
+            .Where(handler => Contracts(handler).Any(contract => contract.Query))
+            .SelectMany(handler => handler.GetConstructors().SelectMany(constructor => constructor.GetParameters())
+                .Select(parameter => (handler, parameter, writes: WritingMembers(Nullable.GetUnderlyingType(parameter.ParameterType) ?? parameter.ParameterType)))
+                .Where(found => found.writes.Count > 0)
+                .Select(found => $"{found.handler.Name} takes {found.parameter.ParameterType.Name} {found.parameter.Name}, which can {string.Join(", ", found.writes)}; a query takes a port that only reads"))
+            .Where(line => !ExemptReaders.Any(exempt => line.StartsWith(exempt.Key + " ", StringComparison.Ordinal)))
+            .ToList();
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+
+    /// <summary>The verbs a member that writes starts with; a reader has none of them.</summary>
+    private static readonly Regex WritingVerb = new(@"^(Keep|Write|Save|Upsert|Delete|Add|Remove|Record|Put|Set)(?=[A-Z_]|$)", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Query handlers that still take a port that writes, each with why and the lane that splits it; the
+    /// list only shrinks.
+    /// </summary>
+    private static readonly Dictionary<string, string> ExemptReaders = new(StringComparer.Ordinal);
+
+    /// <summary>Every member of one of this codebase's types, and of every interface it inherits, whose name starts with a writing verb.</summary>
+    private static List<string> WritingMembers(Type port)
+    {
+        if (port.Namespace?.StartsWith("TheYard.", StringComparison.Ordinal) != true)
+        {
+            return [];
+        }
+        IEnumerable<Type> contracts = port.IsInterface ? port.GetInterfaces().Prepend(port) : [port];
+        return [.. contracts
+            .SelectMany(contract => contract.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            .Where(member => member is not MethodInfo { IsSpecialName: true } && WritingVerb.IsMatch(member.Name))
+            .Select(member => member.Name)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)];
+    }
+    // #endregion a-reader-is-known-by-what-it-can-do
+
     [Fact]
     public void No_type_in_the_Application_ring_s_slices_or_root_is_a_service()
     {

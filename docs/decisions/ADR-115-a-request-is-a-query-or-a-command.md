@@ -105,3 +105,12 @@ The record's first version left the Admin tab's reads asking no handler, named a
 
 Still exempt, each with its reason in `HandlerRuleTests`: fifteen routes where the host serves its own files (the pictures, the drawings, the Bicep, the resume, the about page, the recommendations), its health and version, the pulse, and its error rings. They are not reads of the business or of the Admin cards, and they stay where they are until a lane gives them a reason to be queries.
 
+
+## Addendum, 2026-10-25 (1.0.4.68): a reader port is known by what it can do
+
+The rule that keeps a store out of a query read the port's name: a parameter type ending in Store or Writer was red. A port named "...Reader" that wrote passed. From this version `CqrsTests.A_query_handler_is_handed_no_port_that_can_write` reads the port itself: no type a query handler takes by constructor, among this codebase's own, has a member, counting every member of every interface it inherits, whose name starts with Keep, Write, Save, Upsert, Delete, Add, Remove, Record, Put or Set. The name check stays beside it.
+
+It was green on 1.0.4.67 with only its file applied, and that green is the finding: the ports the queries take were already split, the visitors' reader from its store (`IVisitorReader` under `IVisitorStore`) and the blog's reader from its store among them. To prove it can fail, a writing member planted on `IVisitorReader` turned it red at once ("ReadPeopleCountHandler takes IVisitorReader visitors, which can KeepProbeAsync"). The test carries an exemption list, empty, that only shrinks. docs/best-practices/CQRS.md says how the rule reads a port.
+
+```live path=api/TheYard.Tests/CqrsTests.cs region=a-reader-is-known-by-what-it-can-do
+```

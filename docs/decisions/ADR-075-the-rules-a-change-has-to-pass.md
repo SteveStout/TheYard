@@ -150,6 +150,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The nightly card draws the Function's seven processes, the campaign among them with its switch, and its next run is the next 8 AM Central under either clock | ADR-109, the addendum of 1.0.4.60 | ProcessRunsTests, ProcessReadersTests, cloud.spec.ts |
 | The campaign card reads counts only and never shows a name, a company, an address or a code, is red at two bounces in a day and at no send by 9 AM with leads ready, names the day its counts start, and its cap is the Function's own | ADR-118, Decision 6; ADR-102, the addendum of 1.0.4.63 | CampaignCardTests, CloudDrawingTests, cloud.spec.ts |
 | Rule 1 across the rings: a type under Features/<Slice>/ in Domain, Application, either adapter or the host uses only its own slice and the Shared concerns in any ring, never another slice's type in any ring (the host's Admin sub-slices are the one Admin slice to the inner rings) | ADR-107, the addendum of 1.0.4.67 | SliceTests |
+| A query handler is handed no port that can write: no constructor parameter among this codebase's types has a member, counting every inherited interface, whose name starts with Keep, Write, Save, Upsert, Delete, Add, Remove, Record, Put or Set; the name check stays beside it | ADR-115, the addendum of 1.0.4.68 | CqrsTests |
 
 ## How the table is read
 
