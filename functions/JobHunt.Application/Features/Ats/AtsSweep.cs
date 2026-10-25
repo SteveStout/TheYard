@@ -27,6 +27,9 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
     /// <summary>At most this many messages a pass, as the records run capped itself.</summary>
     public const int Cap = 150;
 
+    /// <summary>The known tracking systems' mail still in the inbox.</summary>
+    public static MailSearch Search { get; } = MailSearch.InInboxFrom(Mail.AtsDomains);
+
     /// <summary>Runs one pass and returns its log line.</summary>
     public async Task<string> RunAsync(bool on, CancellationToken ct)
     {
@@ -34,7 +37,7 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
             .Where(row => row.Length >= 7 && int.TryParse(row[0].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out _))
             .ToList();
         var decisions = new List<AtsDecision>();
-        foreach (string id in await inbox.FindAsync(Mail.Query, Cap, ct))
+        foreach (string id in await inbox.FindAsync(Search, Cap, ct))
         {
             var message = await inbox.ReadAsync(id, ct);
             decisions.Add(AtsRules.Decide(message, await inbox.ThreadSendersAsync(message.ThreadId, ct), master));

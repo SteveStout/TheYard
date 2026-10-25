@@ -13,8 +13,14 @@ public sealed record Bounce(string Recipient, string Status, string Reason);
 /// </summary>
 public static partial class DeliveryFailure
 {
-    /// <summary>The Gmail search for the failures of the last two days.</summary>
-    public const string Query = "from:mailer-daemon@googlemail.com subject:\"Delivery Status Notification\" newer_than:2d";
+    /// <summary>Who a failure comes from.</summary>
+    public const string Sender = "mailer-daemon@googlemail.com";
+
+    /// <summary>The phrase every failure's subject carries.</summary>
+    public const string SubjectPhrase = "Delivery Status Notification";
+
+    /// <summary>How many days back the failures are looked for.</summary>
+    public const int WindowDays = 2;
 
     /// <summary>The failure, or null for any other message (a delay notice is not a failure).</summary>
     public static Bounce? Read(InboxMessage message)

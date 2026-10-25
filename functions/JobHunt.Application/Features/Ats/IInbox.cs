@@ -8,8 +8,8 @@ namespace JobHunt.Application.Features.Ats;
 /// </summary>
 public interface IInbox
 {
-    /// <summary>The ids of the messages a Gmail search finds, newest first, at most <paramref name="max"/>.</summary>
-    Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct);
+    /// <summary>The ids of the messages a search finds, newest first, at most <paramref name="max"/>; the adapter writes the search in its service's syntax.</summary>
+    Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct);
 
     /// <summary>One message: its headers, its date and its text.</summary>
     Task<InboxMessage> ReadAsync(string id, CancellationToken ct);

@@ -218,7 +218,7 @@ public sealed class AtsSweepTests
     {
         public List<string> Archived { get; } = [];
 
-        public Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct) =>
+        public Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<string>>([.. messages.Select(m => m.Id).Take(max)]);
 
         public Task<InboxMessage> ReadAsync(string id, CancellationToken ct) => Task.FromResult(messages.Single(m => m.Id == id));

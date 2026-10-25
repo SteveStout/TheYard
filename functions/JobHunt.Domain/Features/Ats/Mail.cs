@@ -15,9 +15,6 @@ public static partial class Mail
         "jobvite.com", "smartrecruiters.com", "taleo.net", "successfactors.com", "bamboohr.com", "workable.com", "workablemail.com",
     ];
 
-    /// <summary>The Gmail search for the known senders' mail still in the inbox.</summary>
-    public static string Query => "in:inbox from:(" + string.Join(" OR ", AtsDomains) + ")";
-
     /// <summary>The address in a From header, lower case: the part in angle brackets, or the whole header.</summary>
     public static string Address(string from)
     {

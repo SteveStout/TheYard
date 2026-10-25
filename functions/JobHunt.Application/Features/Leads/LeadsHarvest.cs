@@ -21,6 +21,10 @@ public sealed class LeadsHarvest(IMergeStore store, IInbox inbox, TimeProvider t
     /// <summary>At most this many alerts a pass, as the records run capped itself.</summary>
     public const int Cap = 150;
 
+    /// <summary>A board's alerts still in the inbox: its senders, and its subject phrases when it has any.</summary>
+    /// <param name="board">The board.</param>
+    public static MailSearch SearchFor(IBoardAlert board) => MailSearch.InInboxFrom(board.Senders, board.SubjectPhrases);
+
     /// <summary>The leads the list run has already scored, one link a line first in each row (written by that run, read here).</summary>
     public const string Scored = "leads/scored.tsv";
 
@@ -48,7 +52,7 @@ public sealed class LeadsHarvest(IMergeStore store, IInbox inbox, TimeProvider t
             {
                 break;
             }
-            foreach (string id in await inbox.FindAsync($"in:inbox {board.Query}", Cap - alerts.Count, ct))
+            foreach (string id in await inbox.FindAsync(SearchFor(board), Cap - alerts.Count, ct))
             {
                 if (alerts.Count >= Cap || alerts.Any(a => a.Message.Id == id))
                 {

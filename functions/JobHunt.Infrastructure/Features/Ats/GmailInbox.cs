@@ -18,8 +18,9 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
 
     private HttpClient? _client;
 
-    public async Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct)
+    public async Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct)
     {
+        string query = GmailQuery.Compose(search);
         var ids = new List<string>();
         string? page = null;
         do

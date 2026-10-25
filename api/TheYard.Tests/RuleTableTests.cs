@@ -77,6 +77,9 @@ public class RuleTableTests
                 || method.GetCustomAttributes(typeof(TheoryAttribute), inherit: false).Length > 0))
             .Select(type => type.Name)
             .ToHashSet(StringComparer.Ordinal);
+        // The job hunt's Function is the second process and its rules sit in this table too; its test classes
+        // are read from their source, a class that holds at least one fact or theory.
+        classes.UnionWith(FunctionTestClasses());
 
         var wrong = new List<string>();
 
@@ -91,12 +94,19 @@ public class RuleTableTests
 
             foreach (string name in named.Where(name => !classes.Contains(name)))
             {
-                wrong.Add($"'{cells[0]}' names {name}, and this assembly has no test class by that name");
+                wrong.Add($"'{cells[0]}' names {name}, and neither test project has a test class by that name");
             }
         }
 
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
     }
+
+    /// <summary>The test classes of the job hunt's Function, read from functions/jobhunt.Tests: a class whose file holds a fact or a theory.</summary>
+    private static IEnumerable<string> FunctionTestClasses() =>
+        Directory.EnumerateFiles(Path.Combine(Repo.Root(), "functions", "jobhunt.Tests"), "*.cs", SearchOption.AllDirectories)
+            .Select(File.ReadAllText)
+            .Where(text => text.Contains("[Fact]", StringComparison.Ordinal) || text.Contains("[Theory]", StringComparison.Ordinal))
+            .SelectMany(text => Regex.Matches(text, @"\bclass\s+([A-Z][A-Za-z0-9]*Tests)\b").Select(match => match.Groups[1].Value));
 
     [Fact]
     public void Every_record_the_table_cites_is_a_record_that_exists()

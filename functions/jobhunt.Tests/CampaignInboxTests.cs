@@ -144,12 +144,12 @@ public sealed class CampaignInboxTests
 
         public void Add(InboxMessage message) => _messages.Add(message);
 
-        public Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct)
+        public Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct)
         {
             Finds++;
-            IEnumerable<InboxMessage> found = query.StartsWith("from:mailer-daemon", StringComparison.Ordinal)
+            IEnumerable<InboxMessage> found = search.Senders[0].StartsWith("mailer-daemon@", StringComparison.Ordinal)
                 ? _messages.Where(m => m.Address.StartsWith("mailer-daemon@", StringComparison.Ordinal))
-                : _messages.Where(m => query.StartsWith("from:" + m.Address + " ", StringComparison.Ordinal));
+                : _messages.Where(m => search.Senders[0] == m.Address);
             return Task.FromResult<IReadOnlyList<string>>([.. found.Take(max).Select(m => m.Id)]);
         }
 

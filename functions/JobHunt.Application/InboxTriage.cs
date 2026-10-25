@@ -21,7 +21,7 @@ public sealed class InboxTriage(IMergeStore store, IInbox inbox)
     public const string Seen = Folder + "/seen.tsv";
 
     /// <summary>The window the triage run reads: everything still in the inbox. seen.tsv keeps a message from being judged twice.</summary>
-    public const string Query = "in:inbox";
+    public static MailSearch Search => MailSearch.WholeInbox;
 
     /// <summary>At most this many ids a pass.</summary>
     public const int Cap = 100;
@@ -41,6 +41,6 @@ public sealed class InboxTriage(IMergeStore store, IInbox inbox)
                 }
             }
         }
-        return [.. (await inbox.FindAsync(Query, Cap, ct)).Where(id => !seen.Contains(id))];
+        return [.. (await inbox.FindAsync(Search, Cap, ct)).Where(id => !seen.Contains(id))];
     }
 }

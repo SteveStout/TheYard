@@ -14,8 +14,11 @@ public interface IBoardAlert
     /// <summary>The board's name, for the log and the leads file.</summary>
     string Board { get; }
 
-    /// <summary>The Gmail search clause that finds this board's alerts still in the inbox.</summary>
-    string Query { get; }
+    /// <summary>The addresses or domains the board's alerts come from.</summary>
+    IReadOnlyList<string> Senders { get; }
+
+    /// <summary>Phrases one of which an alert's subject carries, or none when every mail from the senders is an alert.</summary>
+    IReadOnlyList<string> SubjectPhrases { get; }
 
     /// <summary>True when a From address is this board's alert sender, so a thread with anybody else in it is left alone.</summary>
     bool Sends(string address);
@@ -48,7 +51,10 @@ public sealed class LinkedInDigest : IBoardAlert
     public string Board => "LinkedIn digest";
 
     /// <inheritdoc/>
-    public string Query => $"from:{LinkedInAlert.Sender}";
+    public IReadOnlyList<string> Senders => [LinkedInAlert.Sender];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> SubjectPhrases => [];
 
     /// <inheritdoc/>
     public bool Sends(string address) => address == LinkedInAlert.Sender;
@@ -73,7 +79,10 @@ public sealed partial class LinkedInNudge : IBoardAlert
     public string Board => "LinkedIn nudge";
 
     /// <inheritdoc/>
-    public string Query => $"from:{Sender} (subject:\"is hiring for\" OR subject:\"apply now to\")";
+    public IReadOnlyList<string> Senders => [Sender];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> SubjectPhrases => ["is hiring for", "apply now to"];
 
     /// <inheritdoc/>
     public bool Sends(string address) => address == Sender;
@@ -132,7 +141,10 @@ public sealed partial class LaddersAlert : IBoardAlert
     public string Board => "Ladders";
 
     /// <inheritdoc/>
-    public string Query => $"from:{Sender}";
+    public IReadOnlyList<string> Senders => [Sender];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> SubjectPhrases => [];
 
     /// <inheritdoc/>
     public bool Sends(string address) => address == Sender;
@@ -190,7 +202,10 @@ public sealed partial class Jobs2WebAlert : IBoardAlert
     public string Board => "SuccessFactors agent";
 
     /// <inheritdoc/>
-    public string Query => $"from:{Domain}";
+    public IReadOnlyList<string> Senders => [Domain];
+
+    /// <inheritdoc/>
+    public IReadOnlyList<string> SubjectPhrases => [];
 
     /// <inheritdoc/>
     public bool Sends(string address) => Mail.Domain(address) == Domain;

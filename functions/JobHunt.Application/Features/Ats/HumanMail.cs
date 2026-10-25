@@ -22,7 +22,7 @@ public sealed partial class HumanMail(IMergeStore store, IInbox inbox, TimeProvi
     public const int FirstHour = 7, EndHour = 21;
 
     /// <summary>The mail this reads: the inbox, the last two days, nothing Steve sent.</summary>
-    public const string Query = "in:inbox newer_than:2d -from:me";
+    public static MailSearch Search { get; } = new([], [], InboxOnly: true, NewerThanDays: 2, NotFromMe: true);
 
     /// <summary>Steve's own address, never a person waiting on him.</summary>
     public const string Steve = "stevenstout11@gmail.com";
@@ -45,7 +45,7 @@ public sealed partial class HumanMail(IMergeStore store, IInbox inbox, TimeProvi
         }
         var waiting = new List<string>();
         var threads = new HashSet<string>(StringComparer.Ordinal);
-        foreach (string id in await inbox.FindAsync(Query, 50, ct))
+        foreach (string id in await inbox.FindAsync(Search, 50, ct))
         {
             var message = await inbox.ReadAsync(id, ct);
             if (!IsPerson(message.Address) || !threads.Add(message.ThreadId))

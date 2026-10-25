@@ -17,6 +17,13 @@ public sealed class CampaignInbox(IInbox inbox, IEmailLog log, ILeadStore leads,
     /// <summary>How far back a send is still read for a reply.</summary>
     public const int ReplyDays = 14;
 
+    /// <summary>Gmail's delivery failures of the last two days.</summary>
+    public static MailSearch Bounces { get; } = new([DeliveryFailure.Sender], [DeliveryFailure.SubjectPhrase], NewerThanDays: DeliveryFailure.WindowDays);
+
+    /// <summary>One of a sent thread's other senders' mail, inside the window a reply is read in.</summary>
+    /// <param name="address">The sender.</param>
+    public static MailSearch RepliesFrom(string address) => new([address], [], NewerThanDays: ReplyDays + 1);
+
     /// <summary>Runs the part and answers its line for the pass log: counts only.</summary>
     public async Task<string> RunAsync(bool readReplies, CancellationToken ct)
     {
@@ -29,7 +36,7 @@ public sealed class CampaignInbox(IInbox inbox, IEmailLog log, ILeadStore leads,
         }
 
         int failures = 0, bounced = 0, bouncesToday = 0;
-        foreach (string id in await inbox.FindAsync(DeliveryFailure.Query, 20, ct))
+        foreach (string id in await inbox.FindAsync(Bounces, 20, ct))
         {
             var message = await inbox.ReadAsync(id, ct);
             if (DeliveryFailure.Read(message) is not { } bounce)
@@ -99,7 +106,7 @@ public sealed class CampaignInbox(IInbox inbox, IEmailLog log, ILeadStore leads,
     {
         foreach (string address in others)
         {
-            foreach (string id in await inbox.FindAsync($"from:{address} newer_than:{ReplyDays + 1}d", 5, ct))
+            foreach (string id in await inbox.FindAsync(RepliesFrom(address), 5, ct))
             {
                 var message = await inbox.ReadAsync(id, ct);
                 if (message.ThreadId == sent.ThreadId && StopPhrases.Find(message.Lines.Length > 0 ? message.Lines : message.Text) is { } phrase)

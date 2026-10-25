@@ -79,7 +79,7 @@ public sealed class HumanMailTests : IDisposable
 
     private sealed class Inbox(params (string Id, string Thread, string From, bool Draft)[] mails) : IInbox
     {
-        public Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct) =>
+        public Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<string>>([.. mails.Select(m => m.Id)]);
 
         public Task<InboxMessage> ReadAsync(string id, CancellationToken ct)

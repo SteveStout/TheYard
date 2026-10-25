@@ -91,7 +91,7 @@ public sealed class BoardAlertsTests
         var (leads, unread) = new LinkedInNudge().Read(new InboxMessage("n2", "t5", "jobs-noreply@linkedin.com", "Your application was viewed by LINQ", At, "x"));
         Assert.Empty(leads);
         Assert.Equal(1, unread);
-        Assert.Contains("is hiring for", new LinkedInNudge().Query, StringComparison.Ordinal);
+        Assert.Contains("is hiring for", new LinkedInNudge().SubjectPhrases);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public sealed class BoardAlertsTests
     public void The_harvest_reads_four_boards_and_every_reader_names_its_own_sender()
     {
         Assert.Equal(new[] { "LinkedIn digest", "LinkedIn nudge", "Ladders", "SuccessFactors agent" }, BoardAlerts.All.Select(b => b.Board));
-        Assert.All(BoardAlerts.All, board => Assert.StartsWith("from:", board.Query, StringComparison.Ordinal));
+        Assert.All(BoardAlerts.All, board => Assert.NotEmpty(board.Senders));
         Assert.True(new LaddersAlert().Sends(Mail.Address("Ladders <jobs@my.theladders.com>")));
         Assert.False(new LaddersAlert().Sends("dan@technologypartners.net"));
     }

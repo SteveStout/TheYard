@@ -188,8 +188,10 @@ public sealed class InboxPassTests
 
         public List<int> Maxes { get; } = [];
 
-        public Task<IReadOnlyList<string>> FindAsync(string query, int max, CancellationToken ct)
+        public Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct)
         {
+            // The fake reads the string the Gmail adapter would send, so the searches are held as they go out.
+            string query = GmailQuery.Compose(search);
             Queries.Add(query);
             Maxes.Add(max);
             // A board's search names one sender or one domain; the ATS search's list in brackets and the triage

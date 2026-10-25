@@ -56,6 +56,42 @@ public sealed partial class RingTests
     }
 
     [Fact]
+    public void Nothing_in_Domain_or_Application_writes_a_mail_search()
+    {
+        // A search language is an adapter's concern: Domain keeps what a board is (its senders and the subject
+        // phrases its alerts carry) as data, Application carries them in a MailSearch, and only the Gmail
+        // adapter composes Gmail's syntax. No code line under Domain or Application writes one of its words.
+        var words = new[] { "from:", "subject:", "in:inbox", "newer_than:" };
+        var found = new[] { "JobHunt.Domain", "JobHunt.Application" }
+            .SelectMany(ring => Directory.EnumerateFiles(Path.Combine(Root(), "functions", ring), "*.cs", SearchOption.AllDirectories))
+            .Where(path => !IsBuildOutput(path))
+            .SelectMany(path => File.ReadAllLines(path)
+                .Select((line, index) => (path, number: index + 1, code: CodeOf(line)))
+                .Where(line => words.Any(word => line.code.Contains(word, StringComparison.Ordinal))))
+            .Select(line => $"{Path.GetRelativePath(Root(), line.path).Replace('\\', '/')}:{line.number} writes a mail search")
+            .ToList();
+        Assert.True(found.Count == 0, string.Join(Environment.NewLine, found));
+    }
+
+    /// <summary>A line without its comment: everything before the first // that is not inside a string.</summary>
+    private static string CodeOf(string line)
+    {
+        bool quoted = false;
+        for (int i = 0; i + 1 < line.Length; i++)
+        {
+            if (line[i] == '"' && (i == 0 || line[i - 1] != '\\'))
+            {
+                quoted = !quoted;
+            }
+            else if (!quoted && line[i] == '/' && line[i + 1] == '/')
+            {
+                return line[..i];
+            }
+        }
+        return line;
+    }
+
+    [Fact]
     public void A_file_under_a_ring_s_slice_declares_that_slice_s_namespace()
     {
         var wrong = new List<string>();
