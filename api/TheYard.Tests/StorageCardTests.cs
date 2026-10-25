@@ -73,6 +73,40 @@ public sealed class StorageCardTests
     }
 
     [Fact]
+    public void An_hour_kept_before_the_bill_was_read_says_not_read_on_both_cards_never_a_day_that_cost_nothing()
+    {
+        // 25 October 12:47 CDT: the site rolled at 12:28, Cost Management answered its first read with 429, and the
+        // share card said "$0.00 today so far, yesterday $0.00, this month $0.00" beside a bill of $45.01 for the
+        // account over thirty days, because the hour was kept from an empty bill.
+        var hour = new DateTimeOffset(2026, 10, 25, 17, 0, 0, TimeSpan.Zero);
+        var unread = new Dictionary<string, string?>(StringComparer.Ordinal);
+        ShareCard.CostFacts(unread, CostKept.Empty, "stjobhuntss", hour);
+        Assert.Equal("yes", unread[ShareCard.CostUnread]);
+        Assert.False(unread.ContainsKey("cost_today"));
+        Assert.False(unread.ContainsKey("cost_month"));
+
+        var facts = ShareFacts();
+        facts.Remove("cost_today");
+        facts.Remove("cost_yesterday");
+        facts.Remove("cost_month");
+        facts.Remove("cost_rows");
+        foreach (var (key, value) in unread)
+        {
+            facts[key] = value;
+        }
+        var share = ShareCard.View(Inputs(100, facts)).Rows.Single(r => r.Key == "cost");
+        var blob = BlobCard.View(Inputs(1, facts), new BlobLines(1e9, 1.8e9, 24_000)).Rows.Single(r => r.Key == "cost");
+        Assert.All([share, blob], row => Assert.Equal("not read yet", row.Answer));
+        Assert.All([share, blob], row => Assert.DoesNotContain("$0.00", string.Concat(row.Detail.Select(d => d.Text)), StringComparison.Ordinal));
+
+        // A bill that was read and names other resources, not this one, is still the account's first day.
+        var read = new Dictionary<string, string?>(StringComparer.Ordinal);
+        ShareCard.CostFacts(read, new CostKept([new CostDay("2026-10-25", "plan-theyard-ss", "microsoft.web/serverfarms", 0.62, "USD")], []), "stjobhuntss", hour);
+        Assert.False(read.ContainsKey(ShareCard.CostUnread));
+        Assert.Equal("0.00", read["cost_month"]);
+    }
+
+    [Fact]
     public void A_walker_is_four_times_the_quiet_hour_and_over_a_thousand_listings()
     {
         var facts = ShareFacts();
