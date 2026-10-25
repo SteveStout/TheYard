@@ -107,6 +107,12 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       blurb: 'Every decision, and why it was made.',
     },
     {
+      menu: 'incidents',
+      icon: 'records',
+      group: 'who',
+      blurb: 'Every time it broke, what it cost, and what changed.',
+    },
+    {
       menu: 'changelog',
       icon: 'changelog',
       group: 'who',

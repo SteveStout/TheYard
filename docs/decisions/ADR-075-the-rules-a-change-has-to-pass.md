@@ -157,6 +157,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The tracker's SQL copy is the CSV byte for byte: the file is cut at CRLFs outside quotes and put back identical, the mirror writes only the rows whose hash changed, and a rebuild from the copy is compared with the CSV, which stays the master | ADR-111, the addendum of 1.0.4.73 | TrackerSqlTests |
 | The job hunt Function's slices: a type under a ring's Features/<Slice>/ uses only its own slice and the Shared concerns in any ring, shared code uses no slice, no file sits at a ring's root, and a use case that only reads is handed the reading half of a split port | ADR-107 and ADR-115, the addenda of 1.0.4.75 | SliceTests, CqrsTests |
 | Each process is one deployable cut into modules that are its slices: a slice's files name no other slice in any ring, every host module registers through a Module.cs, and the site and the Function share rings and two named linked files, never a project | ADR-119 | ModularMonolithTests |
+| Every incident under docs/incidents/ keeps the title, the status line and the eight sections in order, names a source in every Timeline row, names only versions the changelog shipped under What changed, says a state for every follow-up, and is listed in the index | ADR-120 | IncidentShapeTests |
 
 ## How the table is read
 
