@@ -20,6 +20,9 @@ on:
 permissions:
   id-token: write
   contents: read
+  # The images go to GitHub's own registry as well (ADR-009, the addendum of 1.0.4.77): the workflow's token pushes
+  # them, and nothing else is granted.
+  packages: write
 
 # The latest push wins, as for the web app (ADR-009, addendum of 29 September).
 concurrency:
@@ -60,6 +63,7 @@ jobs:
             echo "APP_VERSION=$N"
             echo "APP_COMMIT=${HEAD_SHA:0:7}"
             echo "IMAGE=$ACR/theyard-render:v$N"
+            echo "GHCR_IMAGE=ghcr.io/stevestout/theyard-render:v$N"
           } >> "$GITHUB_ENV"
           echo "Deploying the renderer $N from ${HEAD_SHA:0:7} as $ACR/theyard-render:v$N"
       # #endregion render-version
@@ -73,6 +77,15 @@ jobs:
       - name: Sign in to the registry
         run: az acr login --name "$REGISTRY_NAME"
 
+      # The same image to ghcr.io, signed in with the workflow's own token; the roll still pulls from the Azure
+      # registry until the packages are public and a roll has been proved from GitHub's.
+      - name: Sign in to GitHub's registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: docker/setup-buildx-action@v4
 
       # #region render-build
@@ -83,7 +96,9 @@ jobs:
           context: .
           file: render/Dockerfile
           push: true
-          tags: ${{ env.IMAGE }}
+          tags: |
+            ${{ env.IMAGE }}
+            ${{ env.GHCR_IMAGE }}
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}
             APP_COMMIT=${{ env.APP_COMMIT }}

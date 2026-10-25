@@ -187,6 +187,28 @@ public class DeployWorkflowTests
     }
     // #endregion verify-budget
 
+    // #region ghcr-push
+    /// <summary>
+    /// Both images go to GitHub's registry beside the Azure one (ADR-009, the addendum of 1.0.4.77): the workflow's
+    /// token signs in with packages:write and nothing more, and each build pushes the same version to both. The roll
+    /// still pulls from the Azure registry until a roll from GitHub's has been proved.
+    /// </summary>
+    [Theory]
+    [InlineData("deploy.yml", "theyard")]
+    [InlineData("deploy-render.yml", "theyard-render")]
+    public void Each_image_is_pushed_to_GitHub_s_registry_as_well_as_Azure_s(string file, string image)
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
+        Assert.Contains("  packages: write", workflow, StringComparison.Ordinal);
+        Assert.Contains($"GHCR_IMAGE=ghcr.io/stevestout/{image}:v$N", workflow, StringComparison.Ordinal);
+        Assert.Contains("uses: docker/login-action@v4", workflow, StringComparison.Ordinal);
+        Assert.Contains("registry: ghcr.io", workflow, StringComparison.Ordinal);
+        Assert.Contains("password: ${{ secrets.GITHUB_TOKEN }}", workflow, StringComparison.Ordinal);
+        string build = workflow[workflow.IndexOf("- name: Build and push", StringComparison.Ordinal)..];
+        Assert.Contains("${{ env.IMAGE }}\n            ${{ env.GHCR_IMAGE }}", build.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
+    }
+    // #endregion ghcr-push
+
     // #region deploy-render
     /// <summary>
     /// The renderer rolls on the same push as the two sites, as the same version, and is done when it
