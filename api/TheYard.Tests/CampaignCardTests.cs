@@ -151,11 +151,11 @@ public sealed class CampaignCardTests
     [InlineData(null, false)]
     public void The_campaign_s_connection_is_the_site_s_own_with_the_catalog_changed(string? site, bool built)
     {
-        string? campaign = SqlCampaignCounts.For(site, "sqldb-jobhunt-ss");
+        string? campaign = SqlCampaignCounts.For(site, "sqldb-theyard-ss-basic");
         Assert.Equal(built, campaign is not null);
         if (campaign is not null)
         {
-            Assert.Contains("Initial Catalog=sqldb-jobhunt-ss", campaign, StringComparison.Ordinal);
+            Assert.Contains("Initial Catalog=sqldb-theyard-ss-basic", campaign, StringComparison.Ordinal);
             Assert.Contains("ActiveDirectoryManagedIdentity", campaign.Replace(" ", "", StringComparison.Ordinal), StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("Password", campaign, StringComparison.OrdinalIgnoreCase);
         }

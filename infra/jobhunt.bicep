@@ -166,12 +166,13 @@ resource plan 'Microsoft.Web/serverfarms@2024-04-01' = {
 
 var storageConnection = 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
 
-// The campaign's database (infra/jobhunt-sql.bicep, ADR-118): the Function signs in as its own identity, so the
+// The job hunt's schemas live in the site's database, beside its tables: the Function
+// signs in as its own identity, whose database user may touch the campaign, card and jobhunt schemas only, so the
 // connection string names the identity's client id and holds no secret.
-@description('The campaign database\'s logical server (infra/jobhunt-sql.bicep).')
+@description('The site\'s logical server (infra/main.bicep).')
 param campaignSqlServer string = 'sql-theyard-ss-westus3'
-@description('The campaign\'s database on it.')
-param campaignSqlDatabase string = 'sqldb-jobhunt-ss'
+@description('The site\'s database, which holds the job hunt\'s schemas.')
+param campaignSqlDatabase string = 'sqldb-theyard-ss-basic'
 var campaignSql = 'Server=tcp:${campaignSqlServer}${environment().suffixes.sqlServerHostname},1433;Initial Catalog=${campaignSqlDatabase};Encrypt=True;TrustServerCertificate=False;Authentication=Active Directory Managed Identity;User Id=${identity.properties.clientId};'
 
 resource app 'Microsoft.Web/sites@2024-04-01' = {

@@ -1,0 +1,36 @@
+# The .NET 10 SDK for every job in ci.yml and gate.yml, installed so that a bad answer from the download does not
+# turn a good version red (ADR-068, the addendum of 1.0.4.72). On 25 October at 14:05 CDT the gate for 1.0.4.72
+# failed in its first minute: setup-dotnet resolved 10.0.x to SDK 10.0.403 and runtime 10.0.14 and the download
+# answered 409, so every check after it read red without having run. Here the install is tried twice a minute apart,
+# and if both fail the runner image's own .NET 10 SDK is used, with a warning that names it; only with no .NET 10
+# SDK at all does the step fail, and then it says so in one line.
+name: .NET 10 SDK
+description: setup-dotnet for 10.0.x, tried twice, then the runner image's own .NET 10 SDK
+runs:
+  using: composite
+  steps:
+    - id: first
+      uses: actions/setup-dotnet@v6
+      continue-on-error: true
+      with:
+        dotnet-version: 10.0.x
+    - if: steps.first.outcome == 'failure'
+      shell: bash
+      run: |
+        echo "::warning::setup-dotnet failed on its first try; trying again in 60 seconds"
+        sleep 60
+    - id: second
+      if: steps.first.outcome == 'failure'
+      uses: actions/setup-dotnet@v6
+      continue-on-error: true
+      with:
+        dotnet-version: 10.0.x
+    - if: steps.first.outcome == 'failure' && steps.second.outcome == 'failure'
+      shell: bash
+      run: |
+        sdk=$(dotnet --list-sdks 2>/dev/null | grep -E '^10\.' | tail -n 1 | cut -d' ' -f1)
+        if [ -z "$sdk" ]; then
+          echo "::error::no .NET 10 SDK: the download failed twice and the runner image carries none"
+          exit 1
+        fi
+        echo "::warning::the .NET download failed twice; this run builds with the runner image's own SDK $sdk"

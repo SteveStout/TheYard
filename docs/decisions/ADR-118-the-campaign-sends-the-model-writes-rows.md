@@ -90,7 +90,7 @@ A new slice, `Campaign`, in the job hunt's Function rings, beside `Leads`, whose
 
 - [`functions/JobHunt.Domain/Features/Campaign/`](https://github.com/SteveStout/TheYard/tree/main/functions/JobHunt.Domain/Features/Campaign) - the rules
 - [`functions/JobHunt.Database/`](https://github.com/SteveStout/TheYard/tree/main/functions/JobHunt.Database) - the campaign's schema
-- [`infra/jobhunt-sql.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/jobhunt-sql.bicep) - the database
+- [`functions/JobHunt.Database/JobHunt.Database.sqlproj`](https://github.com/SteveStout/TheYard/blob/main/functions/JobHunt.Database/JobHunt.Database.sqlproj) - the schemas, which live in the site's database since 1.0.4.72 (infra/jobhunt-sql.bicep, the database of their own, is retired)
 - [`functions/JobHunt.Application/Features/Campaign/CampaignPorts.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/JobHunt.Application/Features/Campaign/CampaignPorts.cs) - the ports
 - [`functions/JobHunt.Infrastructure/Features/Campaign/`](https://github.com/SteveStout/TheYard/tree/main/functions/JobHunt.Infrastructure/Features/Campaign) - the database adapter and the finder that finds nothing
 - [`functions/jobhunt.Tests/CampaignRulesTests.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/CampaignRulesTests.cs) - the company rules, held
@@ -104,3 +104,16 @@ A new slice, `Campaign`, in the job hunt's Function rings, beside `Leads`, whose
 - [`functions/jobhunt.Tests/CampaignSqlTests.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/CampaignSqlTests.cs) - the schema, the template and the finder, held
 - [`functions/jobhunt.Tests/CampaignTextTests.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/CampaignTextTests.cs) - the text and order rules, held
 - [`functions/jobhunt.Tests/Fixtures/ai_tells_five_signs.py`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt.Tests/Fixtures/ai_tells_five_signs.py) - the copy the tells are held to
+
+## Addendum, 2026-10-25 (1.0.4.72): one database, the campaign and the tracker as schemas
+
+Decision 2 gave the campaign a Basic database of its own, `sqldb-jobhunt-ss`, about $4.90 a month, so that a deploy of it touched nothing else. On 25 October Steve asked for one database with the campaign and the tracker as schemas. A second fixed-price database for a few hundred rows is the cost the decision bought its separation with, and the separation is kept by permissions instead.
+
+From this version the `campaign` and `card` schemas, and a new `jobhunt` schema for the tracker's tables (PROMPT-JOBHUNT-TRACKER-SQL), live in the site's own database, `sqldb-theyard-ss-basic`, beside the site's tables. `functions/JobHunt.Database` is still their authority and still compiles to its own DACPAC; the site's `api/TheYard.Database` names none of them.
+
+- **The Function's identity** has a contained user in the site's database made from the same SID (`0xDD6CF11F4D186148BF294DCB9E7D89C0`), with SELECT, INSERT, UPDATE and DELETE granted on the three schemas only, and no database role. It cannot read a site table.
+- **The site's identity** is denied the `campaign` and `jobhunt` schemas and granted SELECT on `card`, so the campaign card still cannot show a name, a company or an address.
+- **The rows moved before the switch.** Every row of the four tables was copied with its Id, then both sides' counts and checksums were read back equal. Only then were `CAMPAIGN_SQL` and the site's `Azure:Resources:CampaignDatabase` pointed at the site's database, and the rows written in between were copied a second time. The next lead import was read in the new home.
+- **`sqldb-jobhunt-ss` goes** once the next lead import reads back in the new home (ADR-106: unused resources are deleted). `infra/jobhunt-sql.bicep` is retired in this version, so nothing can make the database again, and `infra/jobhunt.bicep` names the site's database. The cost card stops carrying the second database from the day the bill does.
+
+`CampaignSqlTests.The_schemas_live_in_the_site_s_database_and_no_template_makes_a_second_one` holds the template side. The grants were read back from `sys.database_permissions` and are written in J:\mentor\DOTNET10-DONE-2026-10-25.md.

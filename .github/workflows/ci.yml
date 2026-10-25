@@ -66,9 +66,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
@@ -100,9 +98,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
       # #region coverage
       # The suites are counted as well as run.
       #
@@ -217,9 +213,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
       - name: Run the job hunt Function's tests
         run: dotnet test functions/jobhunt.Tests --logger 'console;verbosity=normal'
   # #endregion functions-job
@@ -240,9 +234,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
       - run: dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug
       - name: The build has to have produced a package
         run: test -f api/TheYard.Database/bin/Debug/TheYard.Database.dacpac
@@ -262,9 +254,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
       - run: npm ci
       - run: npx playwright install --with-deps chrome
       # #region e2e-evidence

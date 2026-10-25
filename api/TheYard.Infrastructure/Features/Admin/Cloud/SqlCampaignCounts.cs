@@ -4,9 +4,10 @@ using TheYard.Application.Features.Admin.Cloud;
 namespace TheYard.Infrastructure.Features.Admin.Cloud;
 
 /// <summary>
-/// The campaign card's counts from sqldb-jobhunt-ss (ADR-118, Decision 6), over the site's own connection to the
-/// server with the catalog changed and the same managed identity: no secret, and a database user that may select
-/// from the `card` schema and from nothing else, so no name, company or address can reach the card. A refused or
+/// The campaign card's counts from the `card` schema (ADR-118, Decision 6), over the site's own connection with the
+/// catalog named by configuration and the same managed identity: no secret. The schema lives in the site's own
+/// database, where the site's user is denied the `campaign` and `jobhunt` schemas, so no name, company or address can
+/// reach the card. A refused or
 /// absent database is a read that did not happen, with the reason as a sentence.
 /// </summary>
 /// <param name="connectionString">The campaign database's connection string; null where the site has no SQL server.</param>

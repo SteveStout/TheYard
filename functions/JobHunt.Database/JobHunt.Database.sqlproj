@@ -1,11 +1,13 @@
 <Project Sdk="Microsoft.Build.Sql/2.3.0">
 
-  <!-- The campaign's database, sqldb-jobhunt-ss (ADR: The campaign sends, the model writes rows, Decision 2).
+  <!-- The job hunt's schemas (ADR: The campaign sends, the model writes rows):
+       campaign, card and jobhunt, which live in the site's database, sqldb-theyard-ss-basic, beside the site's own
+       tables. The SQL Server schema of the site itself is api/TheYard.Database, which names none of them.
        The same pattern as TheYard.Database (ADR: Data first, and the database in source control): this
        project is the authority for the schema, every .sql file under it is compiled into a DACPAC, and a
        column of a type that does not exist or a key pointing at nothing fails the build. Three tables the
-       campaign needs (Companies, Leads, EmailsSent) and the .NET evidence rows under Companies; the
-       tracker stays a CSV until its own lane (the review, F5). -->
+       campaign needs (Companies, Leads, EmailsSent) and the .NET evidence rows under Companies, and the
+       tracker's tables under jobhunt (PROMPT-JOBHUNT-TRACKER-SQL). -->
 
   <PropertyGroup>
     <Name>JobHunt.Database</Name>

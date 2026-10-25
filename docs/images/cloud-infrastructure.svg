@@ -120,7 +120,7 @@
   <path class="flow" d="M1120 735 L1176 440"/>
   <rect x="40" y="770" width="330" height="50" rx="8" class="box"/>
   <text x="56" y="791" class="title">The email campaign</text>
-  <text x="56" y="810" class="mono">sqldb-jobhunt-ss, the card schema</text>
+  <text x="56" y="810" class="mono">sqldb-theyard-ss-basic, the card schema</text>
   <path class="flow" d="M370 795 L516 440"/>
   <rect x="880" y="770" width="240" height="50" rx="8" class="keep"/>
   <text x="896" y="791" class="title">campaign</text>
