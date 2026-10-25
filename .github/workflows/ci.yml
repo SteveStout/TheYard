@@ -208,8 +208,8 @@ jobs:
   # Function shares this repository and nothing in the site's image, so the api job's
   # `dotnet test api` never built it, and the tracker merger's rules, the template check that
   # keeps MERGER on, and the health route's arithmetic ran only on the laptop that wrote them
-  # (ADR: The tracker merger runs in Azure). The Function targets .NET 9, the runtime its Flex
-  # Consumption app runs, so this job installs that runtime beside the SDK every other job uses.
+  # (ADR: The tracker merger runs in Azure). The Function targets .NET 10, the runtime its Flex
+  # Consumption app runs and the one every other job installs (ADR-089, the addendum of 1.0.4.71).
   # The parity test runs the laptop's PowerShell merger beside the new one; it needs Windows and a
   # copy of the real tracker, so here it reports "not run" by design and the rest must pass.
   functions:
@@ -219,9 +219,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: |
-            9.0.x
-            10.0.x
+          dotnet-version: 10.0.x
       - name: Run the job hunt Function's tests
         run: dotnet test functions/jobhunt.Tests --logger 'console;verbosity=normal'
   # #endregion functions-job

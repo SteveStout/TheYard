@@ -2,7 +2,7 @@
   "chips": [
     {
       "figure": ".NET 10",
-      "words": "9 projects"
+      "words": "14 projects"
     },
     {
       "figure": "React 19.3",
@@ -206,8 +206,8 @@
           "tech": "Azure Functions, Flex Consumption",
           "note": "clock, snapshot, tracker merger, Sheet mirror, ATS sweep, daily card",
           "where": "func-jobhunt-ss, Flex Consumption",
-          "version": ".NET 9 isolated",
-          "style": "flag",
+          "version": ".NET 10 isolated",
+          "style": "version",
           "proof": {
             "label": "JobHunt.Functions.csproj",
             "href": "https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt/JobHunt.Functions.csproj"

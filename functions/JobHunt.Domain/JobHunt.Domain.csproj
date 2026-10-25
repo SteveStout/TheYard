@@ -2,7 +2,7 @@
   <!-- The job hunt's rules (ADR-117: One host per process, the rings under them): no I/O, no clock read, no
        setting read; references nothing of the job hunt's own. -->
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

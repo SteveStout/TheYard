@@ -467,7 +467,7 @@ test('asks for no catalogue until the inventory opens', async ({ page }) => {
 /**
  * The Tech stack table on the home page (ADR: Technology versions, the addendum on the home page's
  * table): drawn from the generated table, every row with a version and a link to the file that proves
- * it on GitHub, the .NET 9 Function flagged, and on a phone every row stacked with no sideways scroll.
+ * it on GitHub, a piece on an older .NET than the site flagged, and on a phone every row stacked with no sideways scroll.
  */
 for (const viewport of [
   { width: 1440, height: 900 },
