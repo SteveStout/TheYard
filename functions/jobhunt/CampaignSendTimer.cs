@@ -63,6 +63,20 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
             await store.EnsureFolderAsync("campaign", ct);
             await store.AppendAsync(CampaignSend.PassLog, TrackerCsvText.Encode($"{local:yyyy-MM-dd HH:mm:ss} scan: {scan} | {result.Line}\r\n"), ct);
             log.LogInformation("campaign pass: {Line}", result.Line);
+            var day = DateOnly.FromDateTime(local);
+            string report = $"{CampaignReport.Folder}/{day:yyyy-MM-dd}.md";
+            if (mode == CampaignMode.Shadow && (result.Written > 0 || !await store.ExistsAsync(report, ct)))
+            {
+                // The shadow week's morning report (ADR-118, Decision 7): private on the share, one a day, read each morning;
+                // a second firing in the hour, which writes nothing, leaves the first report as it was.
+                await store.EnsureFolderAsync(CampaignReport.Folder, ct);
+                await store.WriteAsync(report, TrackerCsvText.Encode(CampaignReport.Write(day, result)), ct);
+            }
+            if (mode == CampaignMode.On && result.Written > 0)
+            {
+                // Every real send in Rule 46's block, on the share beside the pass log (rung 8).
+                await store.AppendAsync(CampaignReport.SentLog, TrackerCsvText.Encode(CampaignReport.Sent(result)), ct);
+            }
             run.Count("open", result.Open).Count("eligible", result.Eligible).Count(mode == CampaignMode.On ? "sent" : "written", result.Written)
                 .Count("held", result.Held.Values.Sum()).Came(result.Came, mode == CampaignMode.On ? "on" : "shadow");
         }

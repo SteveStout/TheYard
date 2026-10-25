@@ -29,7 +29,14 @@ public interface IMailSender
 }
 
 /// <summary>A pass's outcome: what it came to, its counts and its line for campaign/pass.log.</summary>
-public sealed record CampaignPassResult(string Came, int Open, int Eligible, int Written, IReadOnlyDictionary<string, int> Held, string Line);
+public sealed record CampaignPassResult(string Came, int Open, int Eligible, int Written, IReadOnlyDictionary<string, int> Held, string Line)
+{
+    /// <summary>The emails this pass wrote or sent, each with its lead, for the shadow week's daily report.</summary>
+    public IReadOnlyList<(LeadRecord Lead, RenderedEmail Email)> Emails { get; init; } = [];
+
+    /// <summary>The open leads with an address, counted by the kind of public page it came from (CampaignReport.SourceKind).</summary>
+    public IReadOnlyDictionary<string, int> AddressesBySource { get; init; } = new Dictionary<string, int>();
+}
 
 /// <summary>
 /// The send (ADR-118): every open lead through the rules in the review's order, the ones that pass ranked, and
@@ -96,6 +103,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         }
 
         int written = 0;
+        var emails = new List<(LeadRecord Lead, RenderedEmail Email)>();
         var chosenCompanies = new List<PastSend>();
         foreach (var rank in SendOrder.Sort(ready.Select(r => r.Rank)))
         {
@@ -137,13 +145,16 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
                 RfcMessageId = sent?.RfcMessageId,
             }, ct);
             chosenCompanies.Add(new PastSend(lead.Company.Key, lead.Company.ParentKey, lead.CompanyName, today));
+            emails.Add((lead, email));
             written++;
         }
 
         string heldWords = held.Count == 0 ? "none" : string.Join(", ", held.OrderByDescending(h => h.Value).ThenBy(h => h.Key, StringComparer.Ordinal).Select(h => $"{h.Value} {h.Key}"));
         string line = $"{Word(mode)}: {open.Count} open, {ready.Count} eligible, {written} {(shadow ? "written" : "sent")} of {left} left today | held: {heldWords}";
         string came = written > 0 ? (shadow ? "planned" : "success") : "unchanged";
-        return new CampaignPassResult(came, open.Count, ready.Count, written, held, line);
+        var sources = open.Where(l => l.ContactEmail is not null && l.EmailSource is not null)
+            .GroupBy(l => CampaignReport.SourceKind(l.EmailSource!, l.Company.Key)).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+        return new CampaignPassResult(came, open.Count, ready.Count, written, held, line) { Emails = emails, AddressesBySource = sources };
     }
 
     /// <summary>The rules for one lead in order: the verdict, the rendered email when it passes, and whether a hold marks the row.</summary>

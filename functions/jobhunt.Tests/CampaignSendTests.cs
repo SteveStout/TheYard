@@ -140,6 +140,43 @@ public sealed class CampaignSendTests
         Assert.StartsWith("shadow: 12 open, 12 eligible, 10 written of 10 left today", result.Line, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("https://acmedental.com/team", "acmedental.com", "the company's site")]
+    [InlineData("https://www.acmedental.com/about", "acmedental.com", "the company's site")]
+    [InlineData("https://github.com/acme/app/commit/abc.patch", "acmedental.com", "GitHub")]
+    [InlineData("https://boards.greenhouse.io/acmedental/jobs/1", "acmedental.com", "the posting")]
+    [InlineData("https://www.linkedin.com/in/pat-lee", "acmedental.com", "a public profile")]
+    [InlineData("https://devconf.example.org/speakers", "acmedental.com", "another public page")]
+    public void Rung7_an_address_s_page_is_named_by_its_kind(string url, string key, string kind) => Assert.Equal(kind, CampaignReport.SourceKind(url, key));
+
+    [Fact]
+    public async Task Rung7_the_shadow_report_carries_the_counts_the_holds_the_sources_and_every_would_send_whole()
+    {
+        var (send, _, _) = Pass([Lead(company: "Acme Dental", key: "acmedental.com"), Lead(company: "Quiet", key: "quiet.com", edit: b => b.ContactEmail = null)]);
+
+        var result = await send.RunAsync(CampaignMode.Shadow, CancellationToken.None);
+        string report = CampaignReport.Write(new DateOnly(2026, 10, 24), result);
+
+        Assert.StartsWith("# Campaign shadow report 2026-10-24\n\nWritten by the Function's 8 AM pass in shadow: nothing below was sent. shadow: 2 open, 1 eligible, 1 written", report, StringComparison.Ordinal);
+        Assert.Contains("- the company's site: 1\n", report, StringComparison.Ordinal);
+        Assert.Contains("- no address: 1\n", report, StringComparison.Ordinal);
+        Assert.Contains("### Acme Dental, track B, to Pat Lee (VP of Engineering)", report, StringComparison.Ordinal);
+        Assert.Contains("- To: pat@acmedental.com, read from https://acmedental.com/team", report, StringComparison.Ordinal);
+        Assert.Contains("Good morning! I saw that Acme Dental builds practice management software", report, StringComparison.Ordinal);
+        Assert.DoesNotContain('\u2014', report);
+    }
+
+    [Fact]
+    public async Task Rung8_each_real_send_is_reported_in_Rule_46_s_block()
+    {
+        var (send, _, _) = Pass([Lead(company: "Acme Dental", key: "acmedental.com")]);
+
+        var result = await send.RunAsync(CampaignMode.On, CancellationToken.None);
+
+        Assert.Equal(1, result.Written);
+        Assert.Equal($"--\r\n**SENT** - **TO:** Pat Lee pat@acmedental.com - **SUBJECT:** {result.Emails[0].Email.Subject}\r\n--\r\n", CampaignReport.Sent(result));
+    }
+
     [Fact]
     public async Task F4_on_sends_ten_of_eleven_and_a_second_firing_the_same_day_sends_nothing()
     {
