@@ -26,7 +26,7 @@ public static class ResumeDoor
     public static string FileName => $"StevenStoutResume_{LockDate:yyyy-MM-dd}.pdf";
 
     /// <summary>The day the served resume was locked; a new resume moves it with the file and its hash.</summary>
-    public static readonly DateOnly LockDate = new(2026, 9, 29);
+    public static readonly DateOnly LockDate = new(2026, 10, 24);
 
     /// <summary>The door a <c>src</c> value names: one of <see cref="Doors"/> in lower case, or <c>other</c>.</summary>
     public static string Of(string? src)
