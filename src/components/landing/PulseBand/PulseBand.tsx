@@ -34,6 +34,7 @@ import {
 import { PeopleInstrument } from './PeopleInstrument';
 import styles from './PulseBand.module.css';
 import { request } from '../../../lib/request';
+import { useFirstLoad } from '../../../hooks/useFirstLoad';
 
 /** The documents an instrument opens: how it performs, how it rolls, and how a visitor is counted. */
 export type PulseDoc = 'performance' | 'adrBlueGreenMeasuredAndHeld' | 'adrPeopleWhoHaveVisited';
@@ -42,7 +43,10 @@ export type PulseDoc = 'performance' | 'adrBlueGreenMeasuredAndHeld' | 'adrPeopl
 const MARKS = ticks(LATENCY_CEILING_MS);
 
 export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void }) {
-  const [pulse, setPulse] = useState<Pulse | null>(null);
+  // A page the rendering service drew carries the reading it drew from, so the browser's first draw matches it
+  // and a crawler reads figures, not the placeholder; the browser reads it again at once and every 15 seconds.
+  const first = useFirstLoad();
+  const [pulse, setPulse] = useState<Pulse | null>(() => pulseFrom(first?.pulse ?? null));
   useEffect(() => {
     let live = true;
     const read = () => {
