@@ -41,9 +41,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
       - run: npm ci
       - run: npx playwright install --with-deps chrome
 
@@ -231,9 +229,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
+      - uses: ./.github/actions/dotnet
       - name: The Shed's xUnit and node tests
         run: |
           x=0; (cd samples/theshed && dotnet test TestProject.sln -nologo -v q) || x=$?

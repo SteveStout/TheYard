@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 namespace JobHunt.Infrastructure.Features.Campaign;
 
 /// <summary>
-/// The campaign's three ports over sqldb-jobhunt-ss (ADR-118, Decision 2), with Microsoft.Data.SqlClient and the
+/// The campaign's three ports over the campaign schema in the site's database (ADR: The campaign sends, the model writes rows), with Microsoft.Data.SqlClient and the
 /// Function's managed identity: the connection string carries `Authentication=Active Directory Managed
 /// Identity;User Id=client id` and no secret, the way the site's does (ADR-039). Every statement is a
 /// constant here with its parameters, and CampaignSqlTests holds every column a statement names to a column

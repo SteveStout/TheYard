@@ -31,7 +31,7 @@ public static class CampaignCard
         ["The switch"] = "the Function's health route",
         ["The cap"] = "the Function's CampaignRules",
         ["Next send"] = "the Function's CentralClock",
-        ["The database"] = "infra/jobhunt-sql.bicep",
+        ["The database"] = "functions/JobHunt.Database/JobHunt.Database.sqlproj",
         ["The finder"] = "ADR-118, Steve's ruling of 10/24",
         ["Last bounce"] = "the campaign database's card schema",
         ["Cost"] = CardFrame.TheBill,

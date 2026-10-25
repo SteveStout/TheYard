@@ -17,12 +17,12 @@ public sealed partial class CampaignSqlTests
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "infra", "jobhunt-sql.bicep")))
+            if (File.Exists(Path.Combine(dir.FullName, "infra", "jobhunt.bicep")))
             {
                 return dir.FullName;
             }
         }
-        throw new InvalidOperationException("infra/jobhunt-sql.bicep not found above " + AppContext.BaseDirectory);
+        throw new InvalidOperationException("infra/jobhunt.bicep not found above " + AppContext.BaseDirectory);
     }
 
     /// <summary>Each table's columns, read from its CREATE TABLE in the SQL project.</summary>
@@ -162,18 +162,15 @@ public sealed partial class CampaignSqlTests
     }
 
     [Fact]
-    public void The_template_makes_one_basic_database_on_the_existing_server_and_nothing_else()
+    public void The_schemas_live_in_the_site_s_database_and_no_template_makes_a_second_one()
     {
-        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-sql.bicep"));
-        Assert.Single(Regex.Matches(bicep, @"^resource \w+ '[^']+' = \{", RegexOptions.Multiline));
-        Assert.Contains("resource server 'Microsoft.Sql/servers@2023-08-01-preview' existing", bicep, StringComparison.Ordinal);
-        Assert.Contains("param sqlServerName string = 'sql-theyard-ss-westus3'", bicep, StringComparison.Ordinal);
-        Assert.Contains("param databaseName string = 'sqldb-jobhunt-ss'", bicep, StringComparison.Ordinal);
-        Assert.Matches(@"name: 'Basic'\s+tier: 'Basic'\s+capacity: 5", bicep);
-        Assert.Contains("maxSizeBytes: 2147483648", bicep, StringComparison.Ordinal);
-        Assert.Contains("requestedBackupStorageRedundancy: 'Local'", bicep, StringComparison.Ordinal);
-        Assert.DoesNotContain("useFreeLimit", bicep, StringComparison.Ordinal);
-        Assert.DoesNotContain("administratorLoginPassword", bicep, StringComparison.Ordinal);
+        // ADR-118, the addendum of 1.0.4.72: one database. The Function's connection names the site's database, the
+        // jobhunt schema sits beside campaign and card, and the template that made a database of the job hunt's own is gone.
+        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt.bicep"));
+        Assert.Contains("param campaignSqlDatabase string = 'sqldb-theyard-ss-basic'", bicep, StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(Root(), "infra", "jobhunt-sql.bicep")));
+        Assert.True(File.Exists(Path.Combine(Root(), "functions", "JobHunt.Database", "Schemas", "jobhunt.sql")));
+        Assert.DoesNotContain(Directory.EnumerateFiles(Path.Combine(Root(), "infra"), "*.bicep").Select(File.ReadAllText), text => text.Contains("sqldb-jobhunt-ss", StringComparison.Ordinal));
     }
 
     [Fact]

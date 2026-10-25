@@ -172,7 +172,7 @@ public static class ResourceCatalog
             // database's card schema, kept in the plan container under kinds of its own like the nightly card's.
             CampaignSource source = campaign;
             cards.Add(new("campaign", "plan", source.Database, CampaignSource.Readings, source.MinutesAsync, source.HourAsync, CampaignCard.View,
-                SpecSource: "infra/jobhunt-sql.bicep and the Function's settings", KindPrefix: "campaign-"));
+                SpecSource: "functions/JobHunt.Database and the Function's settings", KindPrefix: "campaign-"));
         }
         return cards;
     }
