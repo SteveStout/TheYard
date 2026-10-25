@@ -305,6 +305,19 @@ A browser asks the API for a page of vehicles. The API owns the data, the
 rules and the derived facts; the browser formats what it is given and
 counts down clocks. Nothing about an auction is decided twice.
 
+## The architecture, four records and the tests that hold them
+
+Four records name the structure, and each is held by a test in both processes, the site and the job hunt's Function. A rule with no test in one process is said in its record, not skipped.
+
+| The record | What it says | The site's test | The Function's test |
+| --- | --- | --- | --- |
+| [ADR: Onion and SOLID](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid) (ADR-088) | Dependencies point inward; Domain and Application reach no disk, network or clock; only Infrastructure opens a socket | OnionTests, KeptRingTests | RingTests |
+| [ADR: The onion cut into vertical slices](https://theyard.stevenstout.biz/?doc=adr-the-onion-cut-into-vertical-slices) (ADR-107, with ADR-114 for the host's root) | A feature is a slice in every ring; a slice uses no other slice; what two use is a Shared concern | SliceTests, HostLayoutTests | SliceTests |
+| [ADR: A request is a query or a command](https://theyard.stevenstout.biz/?doc=adr-a-request-is-a-query-or-a-command) (ADR-115) | A query or a command with one handler; a reading use case takes reading ports only; no services | CqrsTests, HandlerRuleTests | CqrsTests (the Function answers no request, so its rule is the reading half; the record says why) |
+| [ADR: The modular monolith](https://theyard.stevenstout.biz/?doc=adr-the-modular-monolith) (ADR-119) | One deployable per process, cut into modules that are the slices; the two processes share rings and linked files, never a project | ModularMonolithTests | ModularMonolithTests |
+
+The rule bodies the two suites share live once, under `tests/rules/`, and both test projects compile them by a link (ADR-075, the addendum of 1.0.4.70).
+
 ## The layers, and which way they point
 
 The API is an onion: every arrow points inward, and the innermost layer

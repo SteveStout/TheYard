@@ -149,6 +149,7 @@ public static class DocumentationCatalog
         ["adr-people-who-have-visited-counted-once"] = "docs/decisions/ADR-116-people-who-have-visited-counted-once.md",
         ["adr-one-host-per-process-the-rings-under-them"] = "docs/decisions/ADR-117-one-host-per-process-the-rings-under-them.md",
         ["adr-the-campaign-sends-the-model-writes-rows"] = "docs/decisions/ADR-118-the-campaign-sends-the-model-writes-rows.md",
+        ["adr-the-modular-monolith"] = "docs/decisions/ADR-119-the-modular-monolith.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
         ["color-style"] = "docs/style/COLOR-STYLE.md",
         ["background-ribbon"] = "docs/style/BACKGROUND-RIBBON.md",

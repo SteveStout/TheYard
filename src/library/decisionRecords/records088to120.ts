@@ -227,4 +227,11 @@ export const RECORDS_088_TO_120 = {
     kind: 'adr',
     number: '118',
   },
+  adrModularMonolith: {
+    title: 'ADR: The modular monolith',
+    menuLabel: 'ADR: The modular monolith',
+    url: '/api/docs/adr-the-modular-monolith',
+    kind: 'adr',
+    number: '119',
+  },
 } as const satisfies Record<string, RecordEntry>;
