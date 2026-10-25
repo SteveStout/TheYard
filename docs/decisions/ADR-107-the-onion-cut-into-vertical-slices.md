@@ -196,3 +196,14 @@ One group stays at the relational adapter's root, named in the test with why: th
 
 `SliceTests.Every_inner_ring_file_sits_in_a_slice_or_a_shared_concern_and_declares_its_folder` holds it, red on 1.0.4.45 with only its file applied (129 loose files), and the slices drawing is redrawn for folders in every ring. Rule 1 (a slice uses no other slice) already held the inner rings and still does. The host and the tests import the new namespaces once each in their project files, the way ADR-114 did for the host's concerns; the inner rings name them per file. The job hunt's Function links the slot table from its new place.
 
+
+## Addendum, 2026-10-25 (1.0.4.67): rule 1 across the rings
+
+Rule 1 was checked inside one assembly at a time: the host's slices against the host, and each inner ring's slices against that ring. A host slice could use another slice's Domain or Application types across the ring boundary and nothing failed. Three did. The Admin tab's operations slice reached the Application ring's Proof and Usage slices (the performance proof's handlers and the handler that keeps a lane's usage document) and the Domain ring's Visitors slice (what a visitor was).
+
+From this version a slice is its name under `Features/` in every ring, and a type in one slice uses only that slice's types and the Shared concerns, in any of the five assemblies. The host's three Admin sub-slices (Cloud, Plan and Operations) are the one Admin slice to the inner rings, which hold one. The three crossings were moved, not excused. The proof's and the usage document's handlers had one user, the Admin tab, so they moved into the Application ring's `Features/Admin/Operations/`. What a visitor was has two users, the Visitors slice and the Admin tab, so it moved into the Domain ring's `Shared/Visitors/`.
+
+```live path=api/TheYard.Tests/SliceTests.cs region=rule-1-across-the-rings
+```
+
+`SliceTests.Rule_1_across_the_rings_a_slice_uses_no_other_slice_in_any_ring` holds it. It was red on 1.0.4.66 with only its file applied, naming six types of the Admin operations slice (`ActivityWho`, `AdminEndpoints`, `AdminEvidenceRoutes`, `AdminUsageRoutes`, `Module`, `ProofReadings`), and it is green from 1.0.4.67.

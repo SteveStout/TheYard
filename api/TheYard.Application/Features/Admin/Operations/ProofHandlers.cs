@@ -1,7 +1,7 @@
 // The performance proof as a query and a command (ADR-115's fourth rung): its status, and a run started.
 using TheYard.Application.Shared;
 
-namespace TheYard.Application.Features.Proof;
+namespace TheYard.Application.Features.Admin.Operations;
 
 // #region proof-handlers
 /// <summary>The proof as it stands: the last run's rounds, or the one going.</summary>

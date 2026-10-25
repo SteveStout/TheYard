@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using TheYard.Application.Features.Admin.Costs;
 using TheYard.Application.Features.Docs;
-using TheYard.Application.Features.Proof;
 using TheYard.Application.Shared;
 
 namespace TheYard.Tests;

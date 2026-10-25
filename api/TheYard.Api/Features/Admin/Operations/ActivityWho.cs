@@ -2,7 +2,7 @@
 // itself, and the summaries built on that split (the path to the resume, the
 // referring hosts, the top paths). Its own file because it is the one rule the
 // report, the days and the card all count by; Activity.cs lists the other parts.
-using Kind = TheYard.Domain.Features.Visitors.VisitorKind;
+using Kind = TheYard.Domain.Shared.Visitors.VisitorKind;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

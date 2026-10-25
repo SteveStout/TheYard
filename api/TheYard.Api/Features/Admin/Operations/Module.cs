@@ -1,6 +1,4 @@
 using TheYard.Application.Features.Admin.Costs;
-using TheYard.Application.Features.Proof;
-using TheYard.Application.Features.Usage;
 
 namespace TheYard.Api.Features.Admin.Operations;
 

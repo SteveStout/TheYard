@@ -48,7 +48,7 @@
     <Using Include="TheYard.Application.Shared.Stores" />
     <Using Include="TheYard.Domain.Features.Admin" />
     <Using Include="TheYard.Domain.Features.Blog" />
-    <Using Include="TheYard.Domain.Features.Visitors" />
+    <Using Include="TheYard.Domain.Shared.Visitors" />
     <Using Include="TheYard.Domain.Shared.Auction" />
     <Using Include="TheYard.Domain.Shared.Cards" />
     <Using Include="TheYard.Domain.Shared.Usage" />

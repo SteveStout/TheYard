@@ -70,6 +70,47 @@ public sealed class SliceTests
         }
     }
 
+    // #region rule-1-across-the-rings
+    [Fact]
+    public void Rule_1_across_the_rings_a_slice_uses_no_other_slice_in_any_ring()
+    {
+        // The two rules above hold one assembly at a time, so a host slice could still use another
+        // slice's Domain or Application types across the ring boundary and nothing failed. A slice is its
+        // name under Features in every ring (the host's Admin.Cloud, Admin.Plan and Admin.Operations are
+        // all Admin to the inner rings, which hold one Admin slice): a type under <Ring>.Features.<Slice>
+        // in any of the five assemblies uses only that slice's types and the Shared concerns, in any ring.
+        Assembly[] rings =
+        [
+            typeof(TheYard.Domain.Shared.Auction.BidRules).Assembly,
+            typeof(TheYard.Application.Shared.Auction.StandingReader).Assembly,
+            typeof(TheYard.Infrastructure.YardDbContext).Assembly,
+            typeof(TheYard.Infrastructure.Cosmos.Shared.Stores.CosmosConnection).Assembly,
+            Host,
+        ];
+        string[] prefixes = [.. rings.Select(ring => ring.GetName().Name + ".Features.")];
+        string? SliceName(string? ns) => prefixes
+            .Where(prefix => ns is not null && ns.StartsWith(prefix, StringComparison.Ordinal))
+            .Select(prefix => ns![prefix.Length..].Split('.')[0])
+            .FirstOrDefault();
+        string[] names = [.. rings.SelectMany(ring => ring.GetTypes()).Select(type => SliceName(type.Namespace)).OfType<string>().Distinct(StringComparer.Ordinal)];
+        Assert.True(names.Length >= 8, $"only {names.Length} slice names were found: {string.Join(", ", names)}");
+
+        var wrong = new List<string>();
+        foreach (var ring in rings)
+        {
+            foreach (string name in names)
+            {
+                string mine = ring.GetName().Name + ".Features." + name;
+                string[] others = [.. names.Where(other => other != name).SelectMany(other => prefixes.Select(prefix => prefix + other))];
+                var result = Types.InAssembly(ring).That().ResideInNamespace(mine).ShouldNot().HaveDependencyOnAny(others).GetResult();
+                wrong.AddRange((result.FailingTypes ?? []).Select(type => $"{type.FullName} (slice {name}) reaches another slice's type in some ring"));
+            }
+        }
+        Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
+    }
+
+    // #endregion rule-1-across-the-rings
+
     [Fact]
     public void Rule_1_by_folder_a_file_under_a_slice_declares_that_slice_s_namespace()
     {

@@ -68,7 +68,7 @@ The record and its rules are in Domain (`UsageRecord`). The port and the memory 
 - [`api/TheYard.Application/Shared/History/UsageLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/History/UsageLog.cs) - the port and the memory keep
 - [`api/TheYard.Application/Shared/Claude/ClaudeClient.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Shared/Claude/ClaudeClient.cs) - the one way the site asks Claude
 - [`api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosUsageLog.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosUsageLog.cs) - the documents in the plan container
-- [`api/TheYard.Application/Features/Usage/KeepUsageHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Usage/KeepUsageHandler.cs) - the route's handler
+- [`api/TheYard.Application/Features/Admin/Operations/KeepUsageHandler.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Admin/Operations/KeepUsageHandler.cs) - the route's handler
 - [`api/TheYard.Api/Shared/Wiring/UsageRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/UsageRegistration.cs) - the log and the client, registered once
 - [`api/TheYard.Api/Features/Admin/Operations/AdminUsageRoutes.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Operations/AdminUsageRoutes.cs) - the keyed route
 - [`api/TheYard.Api/Shared/Usage/AnthropicClaudeClient.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Usage/AnthropicClaudeClient.cs) - the client's adapter
@@ -88,3 +88,7 @@ The screenshots found two faults that every card under Cloud infrastructure shar
 The card as it reads live at 1.0.4.30, read again with the same Playwright pass at 15:36 Central with both faults gone (separate facts kept apart by a middle dot, the readout's values whole words):
 
 ![The Claude usage card on theyard.stevenstout.biz at 1440 wide on 1.0.4.30: both dials not read with their reasons, the four questions, and the readout beside them, before any lane has posted a usage document](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/claude-usage-card.png)
+
+## Addendum, 2026-10-25 (1.0.4.67): the handler moved into the Admin slice
+
+The route's one handler, `KeepUsageHandler`, stood in a Usage slice of its own in the Application ring, while the route that asks it is the Admin tab's. Once rule 1 of the slices held across the rings (ADR-107, the addendum of 1.0.4.67), that was one slice using another. The handler has one user, so it moved into `Application/Features/Admin/Operations/`, the Admin slice's operations folder. Nothing it does changed; the document, the port and the store's adapter stay where this record put them.

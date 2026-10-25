@@ -59,7 +59,7 @@ Every ring, each holding its own part. The rule of who is a person is in Domain,
 
 ## Files
 
-- [`api/TheYard.Domain/Features/Visitors/VisitorKind.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Features/Visitors/VisitorKind.cs) - who a visitor was, the one rule
+- [`api/TheYard.Domain/Shared/Visitors/VisitorKind.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Shared/Visitors/VisitorKind.cs) - who a visitor was, the one rule
 - [`api/TheYard.Application/Features/Visitors/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Application/Features/Visitors) - the reader and the writer, and the count's query
 - [`api/TheYard.Infrastructure.Cosmos/Features/Visitors/CosmosVisitorStore.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure.Cosmos/Features/Visitors/CosmosVisitorStore.cs) - the kept records
 - [`api/TheYard.Api/Features/Visitors/`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Features/Visitors) - the slice's route
@@ -100,3 +100,7 @@ The tally the Activity card and the first screen read once a minute read every k
 
 The visits were counted once an hour, so for up to an hour "new today" could read more people than "visits today". VisitHistory counts today alone again every minute between the hourly counts, one partition, and the readout says "today to the minute".
 
+
+## Addendum, 2026-10-25 (1.0.4.67): who a visitor was is shared
+
+`VisitorKind.cs` stood in the Domain ring's Visitors slice, and the Admin tab's Activity card reads it too. Once rule 1 of the slices held across the rings (ADR-107, the addendum of 1.0.4.67), the Admin slice reaching into Visitors was one slice using another. A rule two slices read is a Shared concern, so it moved to `api/TheYard.Domain/Shared/Visitors/VisitorKind.cs`. The rule is unchanged and is still the one place that says who a person is.

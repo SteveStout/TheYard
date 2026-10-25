@@ -1,7 +1,6 @@
 // The Admin tab's evidence routes: the page sweep, the gate's test results, the performance proof and the
 // partition key experiment. Each asks its one query or command handler (ADR-115's fourth rung); a run that starts
 // answers 202 and a busy one 409, in the words each route always used.
-using TheYard.Application.Features.Proof;
 using TheYard.Application.Shared;
 
 namespace TheYard.Api.Features.Admin.Operations;

@@ -87,17 +87,17 @@ public sealed class UsageLogTests
     public async Task The_handler_keeps_a_document_the_rules_admit_and_gives_back_the_sentence_otherwise()
     {
         var log = new MemoryUsageLog("kept in the test");
-        var keep = new TheYard.Application.Features.Usage.KeepUsageHandler(log, new Fixed(Now));
-        Assert.True((await keep.HandleAsync(new TheYard.Application.Features.Usage.KeepUsageCommand(UsageRecordTests.Good(Now.AddHours(-2), run: "kept")), CancellationToken.None)).Kept);
-        Assert.Equal("at is more than seven days ago.", (await keep.HandleAsync(new TheYard.Application.Features.Usage.KeepUsageCommand(UsageRecordTests.Good(Now.AddDays(-8), run: "old")), CancellationToken.None)).Wrong);
+        var keep = new TheYard.Application.Features.Admin.Operations.KeepUsageHandler(log, new Fixed(Now));
+        Assert.True((await keep.HandleAsync(new TheYard.Application.Features.Admin.Operations.KeepUsageCommand(UsageRecordTests.Good(Now.AddHours(-2), run: "kept")), CancellationToken.None)).Kept);
+        Assert.Equal("at is more than seven days ago.", (await keep.HandleAsync(new TheYard.Application.Features.Admin.Operations.KeepUsageCommand(UsageRecordTests.Good(Now.AddDays(-8), run: "old")), CancellationToken.None)).Wrong);
         Assert.Equal(["kept"], (await log.SinceAsync(Now.AddDays(-30), CancellationToken.None)).Select(record => record.Run));
     }
 
     [Fact]
     public async Task A_log_that_cannot_keep_says_why_and_nothing_is_reported_kept()
     {
-        var keep = new TheYard.Application.Features.Usage.KeepUsageHandler(new Unkept(), new Fixed(Now));
-        var said = await keep.HandleAsync(new TheYard.Application.Features.Usage.KeepUsageCommand(UsageRecordTests.Good(Now.AddHours(-2), run: "kept")), CancellationToken.None);
+        var keep = new TheYard.Application.Features.Admin.Operations.KeepUsageHandler(new Unkept(), new Fixed(Now));
+        var said = await keep.HandleAsync(new TheYard.Application.Features.Admin.Operations.KeepUsageCommand(UsageRecordTests.Good(Now.AddHours(-2), run: "kept")), CancellationToken.None);
         Assert.Equal((false, null, "the plan container is not there yet"), (said.Kept, said.Wrong, said.Unavailable));
     }
 

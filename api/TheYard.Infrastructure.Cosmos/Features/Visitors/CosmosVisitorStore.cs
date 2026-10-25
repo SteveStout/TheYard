@@ -7,7 +7,7 @@
 using System.Net;
 using Microsoft.Azure.Cosmos;
 using TheYard.Application.Features.Visitors;
-using TheYard.Domain.Features.Visitors;
+using TheYard.Domain.Shared.Visitors;
 using TheYard.Infrastructure.Cosmos.Shared.Stores;
 
 namespace TheYard.Infrastructure.Cosmos.Features.Visitors;

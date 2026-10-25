@@ -1,7 +1,7 @@
 // Who a visitor was: a person, a scanner or crawler, or the site reading itself. One rule, here, read by
 // both writers that count visitors: the Activity card's visitor-days and the all-time count of people who
 // have visited (ADR-116: People who have visited, counted once), so the two surfaces can never disagree.
-namespace TheYard.Domain.Features.Visitors;
+namespace TheYard.Domain.Shared.Visitors;
 
 // #region visitor-kind
 /// <summary>What a visitor was, by how its requests read.</summary>

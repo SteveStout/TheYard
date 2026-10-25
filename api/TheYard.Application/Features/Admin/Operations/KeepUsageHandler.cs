@@ -6,7 +6,7 @@ using TheYard.Application.Shared;
 using TheYard.Application.Shared.History;
 using TheYard.Domain.Shared.Usage;
 
-namespace TheYard.Application.Features.Usage;
+namespace TheYard.Application.Features.Admin.Operations;
 
 /// <summary>Keeps one run's usage document, or says what is wrong with it.</summary>
 /// <param name="log">Where the documents are kept.</param>

@@ -2,7 +2,7 @@
 // visitor, keyed by a hash that does not rotate, with the day it was first and last seen, how many days it was
 // seen and its kind. Never the address, never the user agent: the hash is all a record holds of who it was.
 // The reading side and the writing side are two interfaces (ADR-115): the count's query takes the reader.
-using TheYard.Domain.Features.Visitors;
+using TheYard.Domain.Shared.Visitors;
 
 namespace TheYard.Application.Features.Visitors;
 
