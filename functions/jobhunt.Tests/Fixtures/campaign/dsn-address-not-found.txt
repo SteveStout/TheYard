@@ -1,0 +1,14 @@
+** Address not found **
+
+Your message wasn't delivered to pat.lee@acmedental.com because the address couldn't be found, or is unable to receive mail.
+
+Learn more here: https://support.google.com/mail/?p=NoSuchUser
+
+The response was:
+
+The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. For more information, go to https://support.google.com/mail/?p=NoSuchUser
+Final-Recipient: rfc822; pat.lee@acmedental.com
+Action: failed
+Status: 5.1.3
+Diagnostic-Code: smtp; The email account that you tried to reach does not exist. Please try double-checking the recipient's email address for typos or unnecessary spaces. For more information, go to https://support.google.com/mail/?p=NoSuchUser
+Last-Attempt-Date: Tue, 28 Jul 2026 12:32:46 -0700 (PDT)

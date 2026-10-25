@@ -38,8 +38,11 @@ public interface IEmailLog
     /// <summary>Writes one email's row and answers its id.</summary>
     Task<long> WriteAsync(EmailRecord email, CancellationToken ct);
 
-    /// <summary>A delivery failure quoted this Message-Id back: the email bounced, and its lead's id is answered.</summary>
-    Task<long?> MarkBouncedAsync(string rfcMessageId, string reason, CancellationToken ct);
+    /// <summary>The real sends from a Central day on that carry a Gmail thread: the bounce and reply joins read these.</summary>
+    Task<IReadOnlyList<SentThread>> SentThreadsAsync(DateOnly centralDay, CancellationToken ct);
+
+    /// <summary>A delivery failure came back for this email: it bounced, with the reason.</summary>
+    Task MarkBouncedAsync(long emailId, string reason, CancellationToken ct);
 
     /// <summary>A reply arrived in a sent thread.</summary>
     Task MarkReplyAsync(string gmailThreadId, DateTimeOffset at, CancellationToken ct);
@@ -110,6 +113,9 @@ public sealed record LeadRecord
 
 /// <summary>One logged email as the 30-day rule reads it.</summary>
 public sealed record LoggedEmail(long LeadId, string Key, string? ParentKey, string Company, DateOnly CentralDay, bool Shadow);
+
+/// <summary>One real send with its thread, as the inbox side reads it.</summary>
+public sealed record SentThread(long EmailId, long LeadId, string Key, string To, string ThreadId, DateOnly CentralDay, bool Bounced, DateTimeOffset? ReplyReceivedAt);
 
 /// <summary>One email to write: what went out, whole, so it can be rebuilt without the template.</summary>
 public sealed record EmailRecord

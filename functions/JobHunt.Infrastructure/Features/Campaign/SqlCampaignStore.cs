@@ -58,8 +58,13 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
             @sent, @day, @touch, @shadow, @ref, @message, @thread, @rfc, 0)
         """;
 
+    internal const string Threads = """
+        SELECT e.[Id], e.[LeadId], e.[Key], e.[To], e.[GmailThreadId], e.[CentralDay], e.[Bounced], e.[ReplyReceivedAt] FROM [campaign].[EmailsSent] e
+        WHERE e.[CentralDay] >= @day AND e.[Shadow] = 0 AND e.[GmailThreadId] IS NOT NULL
+        """;
+
     internal const string Bounce = """
-        UPDATE [campaign].[EmailsSent] SET [Bounced] = 1, [BounceReason] = @reason OUTPUT INSERTED.[LeadId] WHERE [RfcMessageId] = @rfc AND [Shadow] = 0
+        UPDATE [campaign].[EmailsSent] SET [Bounced] = 1, [BounceReason] = @reason WHERE [Id] = @id AND [Bounced] = 0
         """;
 
     internal const string Reply = """
@@ -140,13 +145,23 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     }
 
     /// <inheritdoc />
-    public async Task<long?> MarkBouncedAsync(string rfcMessageId, string reason, CancellationToken ct)
+    public async Task<IReadOnlyList<SentThread>> SentThreadsAsync(DateOnly centralDay, CancellationToken ct)
     {
         await using var connection = await ConnectAsync(ct);
-        await using var command = Command(connection, Bounce, ("@rfc", rfcMessageId), ("@reason", Clip(reason, 400)));
-        object? lead = await command.ExecuteScalarAsync(ct);
-        return lead is null or DBNull ? null : Convert.ToInt64(lead, System.Globalization.CultureInfo.InvariantCulture);
+        await using var command = Command(connection, Threads, ("@day", centralDay.ToDateTime(TimeOnly.MinValue)));
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var threads = new List<SentThread>();
+        while (await reader.ReadAsync(ct))
+        {
+            threads.Add(new SentThread(
+                reader.GetInt64(0), reader.GetInt64(1), reader.GetString(2), reader.GetString(3), reader.GetString(4),
+                DateOnly.FromDateTime(reader.GetDateTime(5)), reader.GetBoolean(6), reader.IsDBNull(7) ? null : reader.GetDateTimeOffset(7)));
+        }
+        return threads;
     }
+
+    /// <inheritdoc />
+    public Task MarkBouncedAsync(long emailId, string reason, CancellationToken ct) => ExecuteAsync(Bounce, ct, ("@id", emailId), ("@reason", Clip(reason, 400)));
 
     /// <inheritdoc />
     public Task MarkReplyAsync(string gmailThreadId, DateTimeOffset at, CancellationToken ct) =>

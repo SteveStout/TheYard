@@ -15,7 +15,8 @@ namespace JobHunt.Functions;
 /// November clock change moves nothing. EMAIL_CAMPAIGN picks the mode: "shadow" writes the would-sends to
 /// EmailsSent with Shadow = 1, "on" sends from Steve's Gmail five seconds apart, anything else is off.
 /// CAMPAIGN_SQL is the database's connection string, managed identity and no secret; without it the pass is
-/// blocked and says so. One line a pass goes to campaign/pass.log on the share. No model runs here (ADR-118).
+/// blocked and says so. A trip row in campaign/switch.log (two bounces in a Central day) holds an "on" campaign in
+/// shadow. One line a pass goes to campaign/pass.log on the share. No model runs here (ADR-118).
 /// </remarks>
 public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http, TimeProvider time, ILogger<CampaignSendTimer> log)
 {
@@ -43,6 +44,13 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
                 run.Came("blocked", "no_database");
                 log.LogWarning("campaign blocked: CAMPAIGN_SQL is not set");
                 return;
+            }
+            // Two bounces in a Central day hold the campaign in shadow until a person clears the row (ADR-118, Decision 4).
+            bool tripped = await store.ExistsAsync(BounceTrip.SwitchLog, ct) && BounceTrip.Tripped(TrackerCsvText.Decode(await store.ReadAsync(BounceTrip.SwitchLog, ct)));
+            if (tripped && mode == CampaignMode.On)
+            {
+                mode = CampaignMode.Shadow;
+                log.LogWarning("campaign held in shadow: {SwitchLog} says two bounces in a day", BounceTrip.SwitchLog);
             }
             IMailSender sender = mode == CampaignMode.On
                 ? GoogleCredentials.FromEnvironment() is { } google ? new GmailSender(http, google) : throw new InvalidOperationException("EMAIL_CAMPAIGN is on and the Google settings are not set")

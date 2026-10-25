@@ -306,7 +306,9 @@ public sealed class CampaignSendTests
             return Task.FromResult((long)Emails.Count);
         }
 
-        public Task<long?> MarkBouncedAsync(string rfcMessageId, string reason, CancellationToken ct) => Task.FromResult<long?>(null);
+        public Task<IReadOnlyList<SentThread>> SentThreadsAsync(DateOnly centralDay, CancellationToken ct) => Task.FromResult<IReadOnlyList<SentThread>>([]);
+
+        public Task MarkBouncedAsync(long emailId, string reason, CancellationToken ct) => Task.CompletedTask;
 
         public Task MarkReplyAsync(string gmailThreadId, DateTimeOffset at, CancellationToken ct) => Task.CompletedTask;
     }

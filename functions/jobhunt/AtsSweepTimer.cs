@@ -21,7 +21,8 @@ namespace JobHunt.Functions;
 /// nightly.yml when the inbox holds mail from the last two days that no triage run has judged; the model
 /// runs there, never here. LEADS_LIST "on" fires the leads list run when a pass harvested a lead the list has
 /// not scored, and "shadow" logs what it would fire. REPLY_ON_HUMAN "on" fires the reply run when a person waits
-/// on a thread with no draft (HumanMail), and "shadow" logs what it would fire. Each part's failure is logged and the next part still runs. One line a pass goes
+/// on a thread with no draft (HumanMail), and "shadow" logs what it would fire. EMAIL_CAMPAIGN "shadow" or "on"
+/// adds the campaign's part: delivery failures, replies and stop phrases in the threads it sent. Each part's failure is logged and the next part still runs. One line a pass goes
 /// to inbox-pass/pass.log on the share with its wall time. Without the Google settings it logs why and does nothing.
 /// </remarks>
 public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, TimeProvider time, Dispatch dispatch, ILogger<AtsSweepTimer> log)
@@ -92,12 +93,32 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         string humanLine = human is "shadow" or "on"
             ? await PartAsync("human mail", () => HumanAsync(inbox, human == "on", ct))
             : "off";
+        var campaign = CampaignSendTimer.Mode(Environment.GetEnvironmentVariable("EMAIL_CAMPAIGN"));
+        string? campaignSql = Environment.GetEnvironmentVariable("CAMPAIGN_SQL");
+        string campaignLine = campaign == CampaignMode.Off || string.IsNullOrWhiteSpace(campaignSql)
+            ? "off"
+            : await PartAsync("campaign", () => CampaignAsync(inbox, campaignSql, ct));
         var local = CentralClock.Local(time.GetUtcNow());
-        string line = $"{local:yyyy-MM-dd HH:mm:ss} {watch.ElapsedMilliseconds} ms | ats: {atsLine} | leads: {leadsLine} | triage: {triageLine} | human: {humanLine}";
+        string line = $"{local:yyyy-MM-dd HH:mm:ss} {watch.ElapsedMilliseconds} ms | ats: {atsLine} | leads: {leadsLine} | triage: {triageLine} | human: {humanLine} | campaign: {campaignLine}";
         await store.EnsureFolderAsync("inbox-pass", ct);
         await store.AppendAsync(PassLog, TrackerCsvText.Encode(line + "\r\n"), ct);
         log.LogInformation("inbox pass: {Line}", line);
         Fold(run, atsLine, leadsLine, triageLine, humanLine, _refused, ats == "on" || leads == "on" || triage == "on" || human == "on");
+        RunLines.Counted(run, campaignLine, ("bounced", @"(\d+) bounced"), ("replies", @"(\d+) replies"), ("stops", @"(\d+) stops"));
+        if (campaignLine.Contains("BLOCKED", StringComparison.Ordinal))
+        {
+            run.Came("blocked", "bounce_trip");
+        }
+    }
+
+    /// <summary>
+    /// The campaign's part (ADR-118, Decision 4): delivery failures every pass, replies on the pass at 20 past only,
+    /// so the threads are read once an hour.
+    /// </summary>
+    private Task<string> CampaignAsync(IInbox inbox, string sql, CancellationToken ct)
+    {
+        var database = new SqlCampaignStore(sql);
+        return new CampaignInbox(inbox, database, database, database, store, time).RunAsync(CentralClock.Local(time.GetUtcNow()).Minute < 30, ct);
     }
 
     /// <summary>The pass's counts and what it came to, from its parts' lines: numbers only, never their words.</summary>
