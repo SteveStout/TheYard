@@ -154,6 +154,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Nothing in the job hunt Function's Domain or Application writes a mail search (no from:, subject:, in:inbox or newer_than: on a code line); a search is a MailSearch and only the Gmail adapter composes Gmail's syntax, every search held to the string it sent before | ADR-117, the addendum of 1.0.4.69 | RingTests, GmailQueryTests |
 | Every CI and gate job installs .NET through .github/actions/dotnet, which tries the download twice a minute apart and then uses the runner image's own .NET 10 SDK, failing only when there is none | ADR-068 | DotnetInstallTests |
 | The job hunt Function's Infrastructure reads the environment only in the four files named with their counts until stage B of ADR-117 hands each host its settings, and the rule bodies the two suites share live once under tests/rules/, linked into both test projects | ADR-117, ADR-075 the addendum of 1.0.4.70 | RingTests, OnionTests, SliceTests, FileShapeTests |
+| The tracker's SQL copy is the CSV byte for byte: the file is cut at CRLFs outside quotes and put back identical, the mirror writes only the rows whose hash changed, and a rebuild from the copy is compared with the CSV, which stays the master | ADR-111, the addendum of 1.0.4.73 | TrackerSqlTests |
 
 ## How the table is read
 

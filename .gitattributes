@@ -18,3 +18,7 @@
 *.woff2 binary
 *.zip binary
 *.tgz binary
+
+# The tracker shapes fixture holds CRLF breaks and a byte order mark on purpose: the tracker's SQL copy is held to
+# the file byte for byte (PROMPT-JOBHUNT-TRACKER-SQL), so git must not touch its line ends.
+functions/jobhunt.Tests/Fixtures/tracker-shapes.csv binary

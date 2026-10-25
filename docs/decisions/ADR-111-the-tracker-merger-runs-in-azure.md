@@ -182,3 +182,13 @@ The share the Function writes to bills every transaction. From 1.0.4.49 the merg
 ## Addendum, 2026-10-25 (1.0.4.71): the Function and its CI job on .NET 10
 
 Point 7 above installed the .NET 9 runtime beside the SDK, because the Function ran on .NET 9. From 1.0.4.71 the Function targets .NET 10 and its Flex Consumption app runs dotnet-isolated 10.0 (ADR-089, the addendum of that version), so the CI job installs .NET 10 alone, the same as every other job.
+
+## Addendum, 2026-10-25 (1.0.4.73): the tracker gets a SQL copy, and the CSV stays the master
+
+Job_Hunt_Tracker.csv has twelve readers and one writer, this Merger. PROMPT-JOBHUNT-TRACKER-SQL moves it into the job hunt's schema one reader at a time, and this version is its first rung: the copy and the proof that the copy is the file.
+
+- **The tables.** `jobhunt.Tracker` holds one row a record: the seven cells as the file holds them (no date parsing, no trimming, no length limit), the record's text with its quotes and inner line breaks, and the record's SHA-256. `jobhunt.TrackerHeader` holds the header record, which carries byte order marks inside its quoted Count cell, whether the file opens with a mark and ends with a break, the row count and the whole file's hash. Both live in the site's database beside the campaign (ADR-118, the addendum of 1.0.4.72).
+- **The cut.** `TrackerFile` cuts the file at every CRLF outside quotes, so a line break inside a field, CRLF or LF alone, stays in its record, and puts the records back byte for byte. Measured on the live file the morning this shipped, by csv.reader and the same cut: 1,816,499 bytes, 3,006 records (the header and 3,005 rows), the last Count 3135, every record one row of seven cells, and the file put back identical.
+- **The import.** `TRACKER_SQL=import` makes the Merger copy the file once, after its pass, when the copy is empty, then rebuild the file from the copy and compare it with the CSV byte for byte. Its run line carries the rows, the rows written and the parity. Nothing writes the CSV but the merge it already did.
+
+`TrackerSqlTests` holds the cut and the rebuild over a checked-in sample of the real file's shapes with the names replaced, the mirror writing only changed rows, and the copy following a row taken off the end. `.gitattributes` keeps the sample's CRLF breaks as they are.

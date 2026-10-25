@@ -78,7 +78,7 @@ public sealed class RunLineTests
     {
         using var scratch = new Scratch();
         var merger = new Lines<Merger>();
-        await new Merger(new TrackerMerger(scratch.Store, TimeProvider.System), TimeProvider.System, merger).RunAsync(null!, CancellationToken.None);
+        await new Merger(new TrackerMerger(scratch.Store, TimeProvider.System), scratch.Store, TimeProvider.System, merger).RunAsync(null!, CancellationToken.None);
         var card = new Lines<DailyCardTimer>();
         await new DailyCardTimer(scratch.Store, new NoHttp(), TimeProvider.System, card).RunAsync(null!, CancellationToken.None);
         var mirror = new Lines<SheetMirrorTimer>();

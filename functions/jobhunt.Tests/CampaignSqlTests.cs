@@ -33,7 +33,12 @@ public sealed partial class CampaignSqlTests
         {
             string sql = File.ReadAllText(path);
             var table = CreateTable().Match(sql);
-            Assert.True(table.Success, path + " has no CREATE TABLE [campaign].[...]");
+            if (!table.Success)
+            {
+                // The tracker's tables sit beside the campaign's under the jobhunt schema (ADR-118, the addendum of 1.0.4.72).
+                Assert.True(sql.Contains("CREATE TABLE [jobhunt].[", StringComparison.Ordinal), path + " has no CREATE TABLE [campaign].[...] or [jobhunt].[...]");
+                continue;
+            }
             var columns = Column().Matches(sql).Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
             tables[table.Groups[1].Value] = columns;
         }

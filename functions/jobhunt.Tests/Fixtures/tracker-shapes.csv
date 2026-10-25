@@ -1,0 +1,8 @@
+﻿"﻿""﻿""""Count""""""",Person,Company,Communication,Date,Phone/Email,Notes
+101,Pat Example,Example Corp,LinkedIn,9/24/2026,pat@example.com,Applied via Easy Apply
+102,NA,NA,Email,2026-10-02,noreply@example.org,"RECEIPT, 10/2/2026 9:14 AM Central (Gmail msg abc, from noreply@example.org, subject 'Thanks'): applications on file: Counts 101."
+103,Sam Sample,"Sample Health (Parent Co)",Indeed,10/9/2026,,"Line one
+line two with LF only"
+104,Alex Placeholder,Placeholder Inc,Email,2026-10-21 9:05 AM CDT,alex@example.net,"Said ""yes"", then
+wrote again on a CRLF line"
+105,Jo Test,Test LLC,Phone,12/31/2026,555-0100,plain

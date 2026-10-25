@@ -226,6 +226,11 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // The shared .md files' appends, on since the cutover: the same Merger is their one writer. 'off'
         // hands them back to the laptop's merger (-AppendsOnly), with the two switches in its scripts.
         { name: 'APPENDS', value: 'on' }
+        // The tracker's SQL copy (PROMPT-JOBHUNT-TRACKER-SQL, functions/jobhunt/Merger.cs): 'import' copies the CSV into
+        // jobhunt.Tracker once, when the copy is empty, and checks it byte for byte; 'on' copies the rows that changed
+        // after every merge and checks the whole file on the first pass of each Central day; anything else is off. The
+        // CSV stays the master either way.
+        { name: 'TRACKER_SQL', value: 'import' }
         // The Sheet mirror (functions/JobHunt.Application/Features/Sheet): 'shadow' writes its plan to the share beside the records
         // run's and adds nothing; 'on' appends the master's missing rows to the Sheet and checks the read-back;
         // anything else is off. The Google client, its refresh token and the Sheet's id are set out of band.
