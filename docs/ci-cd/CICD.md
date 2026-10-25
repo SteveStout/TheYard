@@ -19,13 +19,17 @@ clicks through the running app the way a person would, on a GitHub runner, and
 them never reaches `main`. Every result, test by test, ships with the version and is on
 the Admin tab. The same suites then run again on GitHub's runners for every
 push to main, where anybody can read the result without a login, and for a
-pull request from anybody else, which has had no gate.
+pull request from anybody else, which has had no gate. Every one of those jobs
+installs .NET through one step, `.github/actions/dotnet`, which tries the
+download twice and then builds with the runner's own .NET 10 SDK, so a failed
+download cannot turn a good version red (ADR-068, the addendum of 1.0.4.72).
 
 ![The CI workflow runs on GitHub Actions, every one green, forty-one of them by the end of the second day](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-runs.jpg)
 
 **Continuous deployment.** When the gate pushes to main, a workflow named
-Deploy builds the container image, pushes it to Azure Container Registry,
-and rolls it onto the one web app that serves both sites and The Shed, with no
+Deploy builds the container image, pushes it to Azure Container Registry
+(and, from 1.0.4.77, to GitHub's own registry beside it, which the roll does not
+pull from until the packages are public), and rolls it onto the one web app that serves both sites and The Shed, with no
 human in the loop; it reads the Cosmos DB site's name and The Shed's name at the
 origin before any domain, and the edge moves after it, only when the edge's
 rules changed (ADR: One web app for every .NET process). Until 19 October a

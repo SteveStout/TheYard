@@ -117,3 +117,7 @@ From this version the `campaign` and `card` schemas, and a new `jobhunt` schema 
 - **`sqldb-jobhunt-ss` goes** once the next lead import reads back in the new home (ADR-106: unused resources are deleted). `infra/jobhunt-sql.bicep` is retired in this version, so nothing can make the database again, and `infra/jobhunt.bicep` names the site's database. The cost card stops carrying the second database from the day the bill does.
 
 `CampaignSqlTests.The_schemas_live_in_the_site_s_database_and_no_template_makes_a_second_one` holds the template side. The grants were read back from `sys.database_permissions` and are written in J:\mentor\DOTNET10-DONE-2026-10-25.md.
+
+## Addendum, 2026-10-25 (1.0.4.86): `sqldb-jobhunt-ss` is deleted
+
+The condition the addendum of 1.0.4.72 set was met and the database is gone. Read at 23:00 CDT on 25 October through the queue (J:\staging\sunday1025\onedb\onedb-dropold.txt): the old database held Companies 141, CompanyEvidence 244, Leads 3 and EmailsSent 0; the site's database held Companies 141, CompanyEvidence 244, Leads 5 and EmailsSent 0, and had taken a write since the switch at 15:09 CDT (a lead updated at 21:20 CDT) while the old one had taken none. Only then was `az sql db delete` run, at 23:00:22, and `az sql db show` read ResourceNotFound at 23:00:41. Nothing in infra/ names the database (`CampaignSqlTests` holds it), so no template can make it again. The campaign and the tracker live in `sqldb-theyard-ss-basic` under their own schemas, and the subscription carries one Basic database fewer, about $4.90 a month.
