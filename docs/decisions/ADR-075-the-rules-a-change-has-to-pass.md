@@ -159,6 +159,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Each process is one deployable cut into modules that are its slices: a slice's files name no other slice in any ring, every host module registers through a Module.cs, and the site and the Function share rings and two named linked files, never a project | ADR-119 | ModularMonolithTests |
 | Every incident under docs/incidents/ keeps the title, the status line and the eight sections in order, names a source in every Timeline row, names only versions the changelog shipped under What changed, says a state for every follow-up, and is listed in the index | ADR-120 | IncidentShapeTests |
 | The Foreman's page keeps its five sections in order, every reading names its route, rung 0 names no cause without three agreeing sources, and every place to start names a record, a file and a test that exist | ADR-121 | ForemanTests |
+| A card's live read that times out is the recorder's gap and the card answers from its keep; only the request's own cancellation stops the read | ADR-102 | CloudTimeoutTests |
 
 ## How the table is read
 

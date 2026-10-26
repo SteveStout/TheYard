@@ -52,7 +52,7 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
             {
                 await HourOnceAsync(key, card, history, kept, hour, last, cancellation);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (!cancellation.IsCancellationRequested)
             {
                 failed = ex;
             }
@@ -75,7 +75,7 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
             {
                 await HourOnceAsync(key, card, history, kept, hour, last, cancellation);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (!cancellation.IsCancellationRequested)
             {
                 ex.Data[PartKey] = "hour";
                 throw;
