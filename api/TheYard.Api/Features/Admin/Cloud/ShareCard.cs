@@ -113,10 +113,20 @@ public static class ShareCard
         { Table = table };
     }
 
+    /// <summary>The fact an hour carries when the bill had not been read when it was kept.</summary>
+    public const string CostUnread = "cost_unread";
+
+    /// <summary>The answer when the hour was kept before the bill was read: why, in words.</summary>
+    public const string CostUnreadWords = "the bill had not been read when this hour was kept: the site reads it a minute after it starts, and Cost Management can ask it to wait an hour";
+
     /// <summary>What it costs: today so far, yesterday and the month, and each day on the bill.</summary>
     private static CloudRow CostRow(ResourceCardInputs inputs)
     {
         string today = ResourceView.Fact(inputs, "cost_today", "");
+        if (ResourceView.Fact(inputs, CostUnread, "") == "yes")
+        {
+            return new CloudRow("cost", "What does it cost?", "not read yet", [new(CostUnreadWords, null)], "info");
+        }
         return new CloudRow("cost", "What does it cost?", today == "" ? "not on the bill yet" : $"${today}",
             [new($"today so far · yesterday ${ResourceView.Fact(inputs, "cost_yesterday", "0.00")} · this month ${ResourceView.Fact(inputs, "cost_month", "0.00")} · the bill is transactions, not gigabytes; Azure reports a day eight to twenty four hours late", null)], "info")
         { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cost_rows"), "Day", "Cost", "What happened") };
@@ -184,6 +194,13 @@ public static class ShareCard
     /// <summary>The account's days on the bill: today, yesterday, the month, and each day of the last week with the Activity Log's events that day.</summary>
     public static void CostFacts(Dictionary<string, string?> facts, CostKept kept, string account, DateTimeOffset hour)
     {
+        // A bill with no day for any resource has not been read in this process yet: the site reads it a minute after
+        // it starts, and Cost Management can ask it to wait an hour. That is "not read", never a day that cost $0.00.
+        if (kept.Days.Count == 0)
+        {
+            facts[CostUnread] = "yes";
+            return;
+        }
         var byDay = kept.Days.Where(d => string.Equals(d.Resource, account, StringComparison.OrdinalIgnoreCase))
             .GroupBy(d => d.Day).ToDictionary(g => g.Key, g => g.Sum(d => d.Cost), StringComparer.Ordinal);
         string today = hour.UtcDay, yesterday = hour.AddDays(-1).UtcDay, month = today[..7];
