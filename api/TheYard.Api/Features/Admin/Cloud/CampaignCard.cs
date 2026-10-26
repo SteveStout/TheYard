@@ -111,14 +111,27 @@ public static class CampaignCard
         string? from = When(ResourceView.Fact(inputs, "first_written", ""));
         int bounces = day.Bounced;
         int ready = Int(ResourceView.Fact(inputs, "with_address", "0"));
-        bool lateWithNone = mode == "on" && day.Sent == 0 && ready > 0 && NightlySlots.Local(inputs.Now).Hour >= 9;
+        string atPass = AtPass(inputs, today) ?? mode;
+        bool past9 = mode == "on" && day.Sent == 0 && ready > 0 && NightlySlots.Local(inputs.Now).Hour >= 9;
+        bool lateWithNone = past9 && atPass == "on";
         string tone = bounces >= Trip || lateWithNone ? "alarm" : "good";
         string answer = mode == "on" ? $"{day.Sent} sent today" : mode is "shadow" ? $"Shadow: {day.Shadow} written today" : $"Off ({mode})";
         string why = bounces >= Trip ? $" · {bounces} bounces today: held in shadow until a person clears campaign/switch.log"
-            : lateWithNone ? $" · none sent by 9 AM with {ready} ready" : "";
+            : lateWithNone ? $" · none sent by 9 AM with {ready} ready"
+            : past9 ? $" · the switch was {atPass} at the 8 AM pass; the first sends come at the next one" : "";
         return new CloudRow("sending", "Is it sending?", answer,
             [new($"the switch is {mode} · at 8 AM Central, seven days a week, at most {DailyCap} · counting from {from ?? "the first email, not yet written"}{why}", null)], tone);
     }
+
+    /// <summary>What the switch read at the day's 8 o'clock pass: the newest hour kept that Central day before eight; null when none was kept.</summary>
+    /// <param name="inputs">The kept hours.</param>
+    /// <param name="today">The Central day.</param>
+    public static string? AtPass(ResourceCardInputs inputs, DateOnly today) =>
+        inputs.Hours.Select(h => (Local: NightlySlots.Local(h.At), h.Facts))
+            .Where(h => DateOnly.FromDateTime(h.Local) == today && h.Local.Hour < 8)
+            .OrderBy(h => h.Local)
+            .Select(h => h.Facts.GetValueOrDefault("switch"))
+            .LastOrDefault(s => s is not null);
 
     /// <summary>Are the leads flowing: open, with an address, waiting on one, blocked, and the board scan.</summary>
     public static CloudRow Leads(ResourceCardInputs inputs, DateOnly today)

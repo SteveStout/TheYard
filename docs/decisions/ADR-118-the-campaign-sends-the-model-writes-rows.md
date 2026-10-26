@@ -145,3 +145,11 @@ From this version:
 - **The pass line says how long the scan took**, in whole seconds, so a scan creeping toward the host's ten-minute limit shows before it reaches it.
 
 `LeadImportTests.A_board_that_does_not_answer_in_time_or_answers_with_a_page_is_not_answered`, `LeadImportTests.A_resolver_that_does_not_answer_in_time_or_answers_with_a_page_is_not_known` and `LeadImportTests.A_scan_that_throws_is_written_as_failed_and_the_send_still_runs` hold it.
+
+## Addendum, 2026-10-26 (1.0.4.99): no send by nine counts only a morning the switch was on
+
+Read live on 26 October at 14:39 CDT, the campaign card was red on both names: "0 sent today", "none sent by 9 AM with 92 ready". The switch had been in shadow at that morning's 8 o'clock pass, which wrote its emails in shadow as it should, and it went on at 10:40 CDT (`J:\campaign\switch.log`, `J:\staging\addr1026\on.txt`). The first real sends belong to the next morning. Until this version the rule above, red for no send by 9 AM with leads ready, asked only whether the switch read `on` now, so any day the switch went on after eight read as a morning that failed to send.
+
+From this version the rule asks what the switch read at the pass: the newest hour the card kept on the same Central day before 8 AM. When that hour read anything but `on`, the row stays good and says so ("the switch was shadow at the 8 AM pass; the first sends come at the next one"). When it read `on`, or no hour before eight was kept that day, the rule is what it was. Two bounces in a day stay red whatever the switch read. No threshold moves and nothing that emails Steve changes: `alert-jobhunt-campaign-silent` reads `CampaignSend`'s runs, not this card.
+
+`CampaignCardTests.A_switch_turned_on_after_the_8_o_clock_pass_is_not_a_morning_with_no_send` holds it.

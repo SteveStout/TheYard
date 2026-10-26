@@ -114,6 +114,22 @@ public sealed class CampaignCardTests
     }
 
     [Fact]
+    public void A_switch_turned_on_after_the_8_o_clock_pass_is_not_a_morning_with_no_send()
+    {
+        var onNow = Facts("on", "2026-10-24,10,0,0,0");
+        IReadOnlyList<ResourceHour> Hours(string modeAtSeven) =>
+            [new ResourceHour(Ten.AddHours(-3), "db", null, Facts(modeAtSeven, "2026-10-24,10,0,0,0"), []), new ResourceHour(Ten.AddHours(-1), "db", null, onNow, [])];
+
+        var lateOn = CampaignCard.View(Inputs(onNow, sent: 0) with { Hours = Hours("shadow") });
+        var onAtPass = CampaignCard.View(Inputs(onNow, sent: 0) with { Hours = Hours("on") });
+
+        Assert.Equal("good", lateOn.Rows[0].Tone);
+        Assert.Contains("the switch was shadow at the 8 AM pass; the first sends come at the next one", lateOn.Rows[0].Detail[0].Text, StringComparison.Ordinal);
+        Assert.Equal("alarm", onAtPass.Rows[0].Tone);
+        Assert.Contains("none sent by 9 AM with 4 ready", onAtPass.Rows[0].Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Every_row_and_line_names_its_source_and_the_wire_carries_no_address_or_code()
     {
         var card = CampaignCard.View(Inputs(Facts("shadow", "2026-10-25,0,6,0,0"), written: 6));
