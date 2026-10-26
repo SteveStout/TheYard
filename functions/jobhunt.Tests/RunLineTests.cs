@@ -113,6 +113,46 @@ public sealed class RunLineTests
         }
     }
 
+    /// <summary>
+    /// A health read the host cancelled is a blocked run, not a failed one (ADR-109, the addendum on a cancelled
+    /// health read): the dead Function alert mails on any failed run, and at 21:49 CDT on 25 October a health read
+    /// cancelled under the host (two TaskCanceledException from the share's client, one RpcException) counted as one.
+    /// A share that failed, or an exception with no cancellation behind it, still fails.
+    /// </summary>
+    [Fact]
+    public void A_health_read_the_host_cancelled_is_blocked_and_a_failed_share_still_fails()
+    {
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+
+        Assert.True(MergerWatch.Cancelled(new TaskCanceledException("cancelled"), cancelled.Token));
+        Assert.True(MergerWatch.Cancelled(new OperationCanceledException(cancelled.Token), cancelled.Token));
+        Assert.False(MergerWatch.Cancelled(new TaskCanceledException("the share timed out"), CancellationToken.None));
+        Assert.False(MergerWatch.Cancelled(new IOException("the share refused"), cancelled.Token));
+        string line = new RunLine("MergerHealth", Slot).Came("blocked", "cancelled").Text(Slot);
+        Assert.Contains("outcome=blocked", line, StringComparison.Ordinal);
+        Assert.Contains("detail=cancelled", line, StringComparison.Ordinal);
+
+        string route = File.ReadAllText(Path.Combine(Root(), "functions", "jobhunt", "MergerWatch.cs"));
+        int blocked = route.IndexOf("catch (Exception ex) when (Cancelled(ex, ct))", StringComparison.Ordinal);
+        Assert.True(blocked > 0 && blocked < route.IndexOf("run.Failed(ex);", StringComparison.Ordinal), "the cancelled read is caught before the failure catch");
+        Assert.Contains("run.Came(\"blocked\", \"cancelled\");", route, StringComparison.Ordinal);
+        // The switches keep their own rule beside the new catch: the change touches the route's catch only.
+        Assert.Contains("EMAIL_CAMPAIGN", MergerWatch.SwitchNames);
+    }
+
+    private static string Root()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "infra", "jobhunt.bicep")))
+            {
+                return dir.FullName;
+            }
+        }
+        throw new DirectoryNotFoundException("the repository root");
+    }
+
     /// <summary>A logger that keeps every line written to it.</summary>
     private sealed class Lines<T> : ILogger<T>
     {

@@ -37,6 +37,14 @@ public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<Me
                 run.Count("newest_log_age_s", age);
             }
         }
+        catch (Exception ex) when (Cancelled(ex, ct))
+        {
+            // The invocation was cancelled before the share answered: the host is draining this instance, or the
+            // invocation ran out of time. Nothing was read, so nothing is answered, and the run is blocked rather than
+            // failed, because a failed run is what the dead Function alert mails about and nothing here is dead.
+            run.Came("blocked", "cancelled");
+            return request.CreateResponse(HttpStatusCode.NoContent);
+        }
         catch (Exception ex)
         {
             run.Failed(ex);
@@ -63,4 +71,9 @@ public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<Me
         name => name,
         name => (Environment.GetEnvironmentVariable(name) ?? "off").Trim().ToLowerInvariant() is var v && v.Length is > 0 and <= 12 && v.All(char.IsLetter) ? v : "set",
         StringComparer.Ordinal);
+
+    /// <summary>True when a read stopped because the invocation itself was cancelled, not because the share failed.</summary>
+    /// <param name="ex">What the read threw.</param>
+    /// <param name="ct">The invocation's cancellation, which the host signals when it drains the instance or times the run out.</param>
+    public static bool Cancelled(Exception ex, CancellationToken ct) => ex is OperationCanceledException && ct.IsCancellationRequested;
 }
