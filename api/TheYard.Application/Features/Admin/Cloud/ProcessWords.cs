@@ -92,6 +92,10 @@ public static class ProcessWords
                 break;
             case "Merger":
                 Add("merged", n => n == 0 ? "nothing waiting" : $"{n} merged");
+                // The tracker's SQL copy, written after the merge: the rows it copied, the day's parity check, a failed copy.
+                Add("tracker_sql_written", n => n == 0 ? "the SQL copy in step" : $"{Plural(n, "row")} copied");
+                Add("tracker_sql_parity", n => n == 1 ? "parity same" : "PARITY DIFFERENT");
+                Add("tracker_sql_failed", _ => "copy failed, retried next pass");
                 break;
             case "Nightly":
                 Add("dispatched", n => n == 1 ? $"dispatched the {Slot(run.Detail)}" : $"the {Slot(run.Detail)} dispatch was refused");
@@ -153,7 +157,7 @@ public static class ProcessWords
     /// <param name="words">The window in words.</param>
     public static string CountLine(FunctionProcess process, ProcessTally tally, string words) => process.Key switch
     {
-        "Merger" => $"{N(tally.Runs)} passes in {words}; the {N(tally.Shown)} that merged something are listed, the rest merged nothing",
+        "Merger" => $"{N(tally.Runs)} passes in {words}; the {N(tally.Shown)} that merged something or moved the SQL copy are listed, the rest did neither",
         "Nightly" => $"{N(tally.Shown)} slots in {words}, every one listed; the hours between are counted, not listed",
         "DailyCard" => $"{N(tally.Runs)} runs in {words}; the {N(tally.Shown)} that wrote the card are listed",
         "MergerHealth" => $"{N(tally.Runs)} answers in {words}, the slowest {Math.Min(tally.Shown, 20)} first",
@@ -193,6 +197,15 @@ public static class ProcessWords
         { Planned: > 0, Acted: 0 } => "shadow",
         _ => "ok",
     };
+
+    /// <summary>
+    /// Whether the tracker's SQL copy needs a look: the newest parity check found the copy different from the CSV,
+    /// or the newest pass failed its copy. Either turns the Merger's section amber.
+    /// </summary>
+    /// <param name="newest">The Merger's newest pass.</param>
+    /// <param name="newestParity">The Merger's newest pass that checked parity.</param>
+    public static bool CopyNeedsALook(ProcessRun? newest, ProcessRun? newestParity) =>
+        newestParity?.Counts.GetValueOrDefault("tracker_sql_parity", 1) == 0 || newest?.Counts.ContainsKey("tracker_sql_failed") == true;
 
     /// <summary>A number with thousands separators.</summary>
     public static string N(long value) => value.ToString("#,0", CultureInfo.InvariantCulture);

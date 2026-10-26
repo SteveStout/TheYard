@@ -27,7 +27,7 @@ public sealed record CloudFigure(string Label, string Text, string Source);
 /// <summary>One of the resource's processes.</summary>
 /// <param name="Key">Its name in the Function and the runs route: AtsSweep.</param>
 /// <param name="Name">What the card calls it: "The inbox pass".</param>
-/// <param name="Tone">good, info or off: its first switch's value, and the border's colour.</param>
+/// <param name="Tone">good, info or off: its first switch's value, and the border's colour; warning when the Merger's tracker copy needs a look.</param>
 /// <param name="Switches">Its switches as chips; empty for a process with none.</param>
 /// <param name="Description">What it does, from its own summary comment.</param>
 /// <param name="Schedule">Its schedule in words.</param>
@@ -40,7 +40,7 @@ public sealed record CloudFigure(string Label, string Text, string Source);
 public sealed record CloudProcess(
     string Key,
     string Name,
-    [property: Description("good, info or off")] string Tone,
+    [property: Description("good, info, warning or off")] string Tone,
     IReadOnlyList<CloudSwitch> Switches,
     string Description,
     string Schedule,

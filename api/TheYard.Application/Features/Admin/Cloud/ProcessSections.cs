@@ -15,6 +15,9 @@ public static class ProcessSections
     /// <summary>How many days the strip shows, one cell a Central day, today last.</summary>
     public const int StripDays = 30;
 
+    /// <summary>The newest-run read's extra row: the Merger's newest pass that checked the SQL copy's parity.</summary>
+    public const string ParityKey = "MergerParity";
+
     /// <summary>Where the run figures come from.</summary>
     public const string RunSource = "Application Insights, the run line", FoldSource = "Application Insights, requests by name";
 
@@ -34,10 +37,11 @@ public static class ProcessSections
             fold.Last.TryGetValue(process.Key, out var last);
             fold.Last.TryGetValue("MergerHealth", out var health);
             var chips = Chips(process, switches);
+            fold.Last.TryGetValue(ParityKey, out var parity);
             return new CloudProcess(
                 process.Key,
                 process.Title,
-                Tone(process, chips),
+                process.Key == "Merger" && ProcessWords.CopyNeedsALook(last, parity) ? "warning" : Tone(process, chips),
                 chips,
                 summary(process.Key),
                 process.Schedule,

@@ -103,6 +103,8 @@ public sealed class RunLineTests
 
             Assert.Equal(MergerWatch.SwitchNames, switches.Keys.OrderBy(k => MergerWatch.SwitchNames.ToList().IndexOf(k)));
             Assert.Equal("set", switches["NIGHTLY_ANY_HOUR"]);
+            // The Merger's SQL copy of the tracker has its switch on the card beside MERGER and APPENDS.
+            Assert.Equal(MergerWatch.SwitchNames.ToList().IndexOf("APPENDS") + 1, MergerWatch.SwitchNames.ToList().IndexOf("TRACKER_SQL"));
             Assert.All(switches.Values, v => Assert.Matches("^[a-z]{1,12}$", v));
         }
         finally

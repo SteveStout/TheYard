@@ -22,7 +22,7 @@ public static class FunctionProcesses
     public static readonly IReadOnlyList<FunctionProcess> All =
     [
         new("AtsSweep", "The inbox pass", "0 20,50 * * * *", "Every 30 minutes, at 20 and 50 past (UTC and Central alike).", ["ATS_SWEEP", "LEADS", "LEADS_LIST", "TRIAGE", "REPLY_ON_HUMAN"], true),
-        new("Merger", "The tracker merger", "0 * * * * *", "Every minute, on the minute.", ["MERGER", "APPENDS"], false),
+        new("Merger", "The tracker merger", "0 * * * * *", "Every minute, on the minute.", ["MERGER", "APPENDS", "TRACKER_SQL"], false),
         new("Nightly", "The clock", "0 0 * * * *", "Every hour on the hour; acts at 4 AM, midnight, 8 AM, noon, 4 PM and 8 PM Central.", ["NIGHTLY_ANY_HOUR"], false),
         new("SheetMirror", "The Sheet mirror", "0 7,22,37,52 * * * *", "Every 15 minutes, at 7, 22, 37 and 52 past, clear of the merger's minute and the clock's hour.", ["SHEET_MIRROR"], true),
         new("DailyCard", "The daily card", "0 5 * * * *", "Every hour at 5 past; always writes at 6 AM Central.", ["DAILY_CARD"], false),

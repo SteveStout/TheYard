@@ -108,6 +108,13 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
         Assert.Contains("Process in ('AtsSweep', 'SheetMirror', 'MergerHealth')", kusto, StringComparison.Ordinal);
         Assert.Contains("Message startswith 'process:'", kusto, StringComparison.Ordinal);
         Assert.DoesNotContain("__", kusto, StringComparison.Ordinal);
+
+        // A Merger pass that moved the tracker's SQL copy is listed beside the ones that merged, and the newest-run
+        // read adds the Merger's newest parity check as one more row for the section's tone.
+        Assert.Contains("extend Copied = Process == 'Merger' and (Line contains 'tracker_sql_parity=' or Line contains 'tracker_sql_failed='", kusto, StringComparison.Ordinal);
+        Assert.Contains("Listed = Process in ('AtsSweep', 'SheetMirror', 'MergerHealth') or Copied or", kusto, StringComparison.Ordinal);
+        Assert.Contains("extend Process = 'MergerParity'", InsightsProcessRuns.Newest, StringComparison.Ordinal);
+        Assert.StartsWith("union (runs | summarize arg_max(At, TookMs, Ok, Line, OperationId) by Process), ", InsightsProcessRuns.Newest, StringComparison.Ordinal);
     }
 
     [Fact]

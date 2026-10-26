@@ -21,7 +21,7 @@ export type StripCell = 'ok' | 'late' | 'fail' | 'shadow' | 'skip';
 export type CloudProcess = {
   key: string;
   name: string;
-  tone: 'good' | 'info' | 'off';
+  tone: 'good' | 'info' | 'warning' | 'off';
   switches: CloudSwitch[];
   description: string;
   schedule: string;

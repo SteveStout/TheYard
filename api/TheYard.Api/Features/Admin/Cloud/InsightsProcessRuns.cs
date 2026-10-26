@@ -33,7 +33,8 @@ public sealed class InsightsProcessRuns(AzureMetrics azure, string workspaceId, 
             | project At = TimeGenerated, Process = Name, OperationId, TookMs = DurationMs, Ok = tostring(Success) =~ 'true', Items = ItemCount
             | join kind=leftouter lines on OperationId
             | extend Outcome = coalesce(extract(@'outcome=([a-z]+)', 1, Line), iff(Ok, 'success', 'failed'))
-            | extend Listed = Process in (__QUIET__) or (Outcome != 'unchanged' and (isnotempty(Line) or Outcome == 'failed'))
+            | extend Copied = Process == 'Merger' and (Line contains 'tracker_sql_parity=' or Line contains 'tracker_sql_failed=' or coalesce(toint(extract(@'tracker_sql_written=(\d+)', 1, Line)), 0) > 0)
+            | extend Listed = Process in (__QUIET__) or Copied or (Outcome != 'unchanged' and (isnotempty(Line) or Outcome == 'failed'))
             | extend Acted = Outcome in ('success', 'late') and isnotempty(Line);
         """;
 
@@ -49,8 +50,9 @@ public sealed class InsightsProcessRuns(AzureMetrics azure, string workspaceId, 
     /// <summary>Every process's runs by Central day.</summary>
     public const string Days = "runs | extend Day = format_datetime(datetime_utc_to_local(At, 'America/Chicago'), 'yyyy-MM-dd') | summarize " + Tally + " by Process, Day";
 
-    /// <summary>Each process's newest run.</summary>
-    public const string Newest = "runs | summarize arg_max(At, TookMs, Ok, Line, OperationId) by Process";
+    /// <summary>Each process's newest run, and the Merger's newest pass that checked the tracker copy's parity as one more row.</summary>
+    public const string Newest = "union (runs | summarize arg_max(At, TookMs, Ok, Line, OperationId) by Process), "
+        + "(runs | where Process == 'Merger' and Line contains 'tracker_sql_parity=' | summarize arg_max(At, TookMs, Ok, Line, OperationId) by Process | extend Process = '" + ProcessSections.ParityKey + "')";
 
     /// <summary>The query with the role, the window and the seven names in place, and one statement after the runs.</summary>
     public string Kusto(TimeSpan window, string statement) => Runs

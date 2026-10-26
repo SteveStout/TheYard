@@ -110,6 +110,10 @@ public sealed class ProcessRunsTests
     [Theory]
     [InlineData("Merger", "process:Merger outcome=success took_ms=8 started=x merged=3", "3 merged")]
     [InlineData("Merger", "process:Merger outcome=unchanged took_ms=8 started=x merged=0", "nothing waiting")]
+    [InlineData("Merger", "process:Merger outcome=unchanged took_ms=8 started=x merged=0 tracker_sql_rows=3005 tracker_sql_written=0", "nothing waiting · the SQL copy in step")]
+    [InlineData("Merger", "process:Merger outcome=success took_ms=8 started=x merged=2 tracker_sql_rows=3005 tracker_sql_written=1 tracker_sql_parity=1 tracker_sql_csv_rows=3005 tracker_sql_sql_rows=3005", "2 merged · 1 row copied · parity same")]
+    [InlineData("Merger", "process:Merger outcome=unchanged took_ms=8 started=x merged=0 tracker_sql_rows=3005 tracker_sql_written=0 tracker_sql_parity=0 tracker_sql_csv_rows=3005 tracker_sql_sql_rows=3004", "nothing waiting · the SQL copy in step · PARITY DIFFERENT")]
+    [InlineData("Merger", "process:Merger outcome=unchanged took_ms=8 started=x merged=0 tracker_sql_failed=1", "nothing waiting · copy failed, retried next pass")]
     [InlineData("Nightly", "process:Nightly outcome=success took_ms=8 started=x detail=bookkeeping dispatched=1", "dispatched the records run")]
     [InlineData("Nightly", "process:Nightly outcome=unchanged took_ms=8 started=x detail=not_a_slot", "not a slot hour")]
     [InlineData("SheetMirror", "process:SheetMirror outcome=planned took_ms=8 started=x master_rows=2996 sheet_rows=2993 would_append=3", "3 rows would append · Sheet 2,993 · tracker 2,996")]
@@ -178,6 +182,27 @@ public sealed class ProcessRunsTests
         Assert.Equal(at.Date.AddDays(1).AddHours(13), FunctionProcesses.Next(FunctionProcesses.Find("CampaignSend")!, at).UtcDateTime);
         Assert.Equal(new DateTime(2026, 11, 2, 14, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("CampaignSend")!, new DateTimeOffset(2026, 11, 1, 14, 0, 0, TimeSpan.Zero)).UtcDateTime);
         Assert.Equal(new DateTime(2026, 11, 1, 14, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("CampaignSend")!, new DateTimeOffset(2026, 11, 1, 13, 30, 0, TimeSpan.Zero)).UtcDateTime);
+    }
+
+    [Fact]
+    public void The_merger_turns_amber_when_its_tracker_copy_differs_or_fails_and_names_its_switch()
+    {
+        var switches = new Dictionary<string, string> { ["MERGER"] = "on", ["APPENDS"] = "on", ["TRACKER_SQL"] = "on" };
+        ProcessFold Fold(string newest, string? parity) => new(true, null, [], parity is null
+            ? new Dictionary<string, ProcessRun> { ["Merger"] = Run(newest) }
+            : new Dictionary<string, ProcessRun> { ["Merger"] = Run(newest), [ProcessSections.ParityKey] = Run(parity, 300) });
+        string Tone(string newest, string? parity) =>
+            ProcessSections.Build(Fold(newest, parity), switches, _ => "", _ => null, Noon).Single(s => s.Key == "Merger").Tone;
+
+        const string quiet = "process:Merger outcome=unchanged took_ms=8 started=x merged=0 tracker_sql_rows=3005 tracker_sql_written=0";
+        Assert.Equal("good", Tone(quiet, null));
+        Assert.Equal("good", Tone(quiet, quiet + " tracker_sql_parity=1"));
+        Assert.Equal("warning", Tone(quiet, quiet + " tracker_sql_parity=0"));
+        Assert.Equal("warning", Tone("process:Merger outcome=unchanged took_ms=8 started=x merged=0 tracker_sql_failed=1", quiet + " tracker_sql_parity=1"));
+
+        var merger = ProcessSections.Build(Fold(quiet, null), switches, _ => "", _ => null, Noon).Single(s => s.Key == "Merger");
+        Assert.Equal(["MERGER on", "APPENDS on", "TRACKER_SQL on"], merger.Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Contains("moved the SQL copy", ProcessWords.CountLine(FunctionProcesses.Find("Merger")!, new ProcessTally(1438, 6, 4, 0, 0, 0, 0, 900), "24 hours"), StringComparison.Ordinal);
     }
 
     [Fact]

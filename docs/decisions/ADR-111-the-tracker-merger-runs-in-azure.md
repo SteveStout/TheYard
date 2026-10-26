@@ -196,3 +196,16 @@ Job_Hunt_Tracker.csv has twelve readers and one writer, this Merger. PROMPT-JOBH
 ## Addendum, 2026-10-25 (1.0.4.74): both, every pass
 
 The second rung of the tracker's move. With `TRACKER_SQL=on` the Merger copies the tracker into SQL after every pass that changed it, the CSV first and the copy second. A pass whose file hash the copy already holds writes nothing, and a copy that fails is logged on the run line (`tracker_sql_failed`) for the next pass to retry, because the CSV stays the master. The first pass of each Central day rebuilds the file from the copy and compares it with the CSV byte for byte; the run line carries `tracker_sql_parity` (1 when the two are the same), so the nightly card's Merger section shows it. Seven straight days of parity come before any reader moves to the copy (the prompt's rung 3).
+
+## Addendum, 2026-10-26 (1.0.4.91): the copy's counts are drawn on the card
+
+The addendum above says the nightly card's Merger section shows `tracker_sql_parity`. It did not. The Merger's sentence on the card was built from `merged` alone, its history listed only the passes that merged something, and the health route's switch list had no `TRACKER_SQL`, so a parity check that found the copy different, or a copy that kept failing, would have been in the run line and nowhere a person looks. The copy itself was in step when this was found: the SQL frame's hash equalled the CSV's SHA-256, 3,005 rows.
+
+From this version the card draws what this record said it did:
+
+- **The sentence** names the copy beside the merge: "the SQL copy in step" or "N rows copied" (`tracker_sql_written`), "parity same" or "PARITY DIFFERENT" (`tracker_sql_parity`, the first pass of a Central day), and "copy failed, retried next pass" (`tracker_sql_failed`).
+- **The history** lists a pass that copied rows, checked parity or failed its copy, beside the ones that merged something; a quiet minute is still counted and not listed.
+- **The section turns amber** when the newest parity check in the window found the copy different, or when the newest pass failed its copy. Every other tone is still its first switch's.
+- **The health route names `TRACKER_SQL`** among the switches, and the Merger section shows it as a chip beside `MERGER` and `APPENDS`.
+
+`ProcessRunsTests` holds the words and the tone, `ProcessReadersTests` the listing rule and the parity row, and `RunLineTests` the switch name.
