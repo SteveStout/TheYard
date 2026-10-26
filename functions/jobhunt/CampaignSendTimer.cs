@@ -57,7 +57,8 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
                 : new NoSender();
             var database = new SqlCampaignStore(sql);
             // The daily board scan first in the hour (the review, F6): once a day, before the send ranks Track B by it.
-            string scan = await new BoardScan(database, new PublicBoardReader(http), time).RunAsync(ct);
+            // A scan that fails is written to the pass log and the send still runs, on the postings it already had.
+            string scan = await GuardedScanAsync(token => new BoardScan(database, new PublicBoardReader(http), time).RunAsync(token), time, log, ct);
             var result = await new CampaignSend(database, database, sender, store, time).RunAsync(mode, ct);
             var local = CentralClock.Local(time.GetUtcNow());
             await store.EnsureFolderAsync("campaign", ct);
@@ -96,6 +97,29 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
             RunLines.Write(log, run, time.GetUtcNow());
         }
     }
+
+    /// <summary>
+    /// Runs the board scan and answers its part of the pass line with how long it took. A scan that throws is
+    /// logged as an error and answered as "FAILED: the exception's type", so the send after it still runs; only a
+    /// cancellation the host asked for (the Function stopping) goes on up.
+    /// </summary>
+    public static async Task<string> GuardedScanAsync(Func<CancellationToken, Task<string>> scan, TimeProvider time, ILogger log, CancellationToken ct)
+    {
+        long started = time.GetTimestamp();
+        try
+        {
+            string line = await scan(ct);
+            return $"{line}, {Seconds(time, started)} s";
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            log.LogError(ex, "board scan failed; the send runs without it");
+            return $"FAILED: {ex.GetType().Name}, {Seconds(time, started)} s";
+        }
+    }
+
+    private static string Seconds(TimeProvider time, long started) =>
+        time.GetElapsedTime(started).TotalSeconds.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>The switch's value as a mode: "on" and "shadow", any case, and everything else off.</summary>
     public static CampaignMode Mode(string? value) => (value ?? "").Trim().ToLowerInvariant() switch
