@@ -68,11 +68,12 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The label gives way before the value does: a long source under it wraps, so the value keeps room
-   for whole words. */
+/* The label gives way before the value does: a long source under it wraps, a file path with no space
+   included, so the value keeps room for whole words and the readout keeps to its column. */
 .line dt {
   flex: 0 1 auto;
   min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--color-accent);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;

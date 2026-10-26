@@ -184,3 +184,45 @@ test('on a phone each process is one column and its runs stack, so nothing scrol
   expect(pageScrolls).toBe(false);
 });
 // #endregion nightly-processes
+
+// #region long-names
+/**
+ * A name longer than the line, a file path under a readout's label or an exception's full type in the Foreman's
+ * cause, wraps inside its card rather than pushing the page sideways. Read live on 26 October: the campaign card's
+ * "functions/JobHunt.Database/JobHunt.Database.sqlproj" pushed the page 55 px at 1280 wide, and the Foreman's
+ * "Microsoft.Azure.WebJobs.Script.Workers.Rpc.RpcException" 36 px at 375. The names are put in by the test, so it
+ * holds whatever the local run happens to read.
+ */
+const LONG_NAME =
+  'Microsoft.Azure.WebJobs.Script.Workers.Rpc.RpcException/JobHunt.Database.sqlproj';
+
+const scrollsSideways = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+
+test('a name longer than the line wraps in its card, so the page never scrolls sideways', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=campaign');
+  const readout = page.getByTestId('campaign-card').getByTestId('cloud-readout');
+  await expect(readout.getByTestId('cloud-readout-line').first()).toBeVisible({ timeout: 30_000 });
+  await readout
+    .getByTestId('cloud-readout-line')
+    .first()
+    .locator('dt')
+    .evaluate((dt, name) => {
+      dt.lastElementChild!.textContent = name;
+    }, LONG_NAME);
+  expect(await scrollsSideways(page)).toBe(false);
+
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openTheYard(page, '/?view=admin&card=foreman');
+  const cause = page.getByTestId('foreman-cause');
+  await expect(cause).toBeVisible({ timeout: 30_000 });
+  await cause.evaluate((p, name) => {
+    p.textContent = `Nearest: the newest failure, ${name}, in AtsSweep.`;
+  }, LONG_NAME);
+  expect(await scrollsSideways(page)).toBe(false);
+});
+// #endregion long-names

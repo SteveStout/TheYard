@@ -267,3 +267,9 @@ Steve read the plan card's seven-day chart on 26 October at 06:41 CDT: twenty-od
 - **The legend says only what the chart does not**: the key to the ticks and to Azure's lines, and the server's words that are not a series' colour or a line now labelled on the chart.
 
 Nothing the chart says changes: the same readings, thresholds, rolls and events are drawn, read from the same wire. The pictures before and after, side by side, are in the lane's DONE note (J:\mentor\RAIL1026-DONE-2026-10-26.md). `cloudChart.test.ts` and `cloudGauge.test.ts` hold the rules; `cloud.spec.ts` holds the labels on the dial and the "now" on the axis.
+
+## Addendum, 2026-10-26 (1.0.4.100): a name longer than the line wraps in its card
+
+The final console read on 26 October (J:\staging\sunday1025\console\console-read.json, 14:17 CDT) found two pages that scrolled sideways on both names, neither of which did on 25 October. The campaign card at 1280 wide: its readout's line "The database" names its source, `functions/JobHunt.Database/JobHunt.Database.sqlproj`, one word of 250 pixels that cannot break, so the readout took 322 pixels of a column that holds 260 and pushed the page 55 pixels. The Foreman at 375 wide: its cause named the newest failure by its full type, `Microsoft.Azure.WebJobs.Script.Workers.Rpc.RpcException`, and pushed the page 36 pixels.
+
+From this version a readout's label breaks a word that does not fit, a file path included, as its stylesheet already said it would, and a sentence on any Admin card breaks a name longer than its line rather than widen the card. Nothing a card says changes; a long name reads on two lines. `cloud.spec.ts` puts a long name into the campaign card's readout at 1280 and into the Foreman's cause at 375 and holds that the page does not scroll sideways.

@@ -61,6 +61,12 @@
   gap: var(--card-gap);
 }
 
+/* A card's sentence breaks a name longer than the line (an exception's full type, a file path) rather than push
+   the page sideways. */
+.card p {
+  overflow-wrap: anywhere;
+}
+
 .cardTitle {
   margin: 0;
   font-size: var(--card-title-size);
