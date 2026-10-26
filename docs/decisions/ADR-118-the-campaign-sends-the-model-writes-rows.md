@@ -121,3 +121,15 @@ From this version the `campaign` and `card` schemas, and a new `jobhunt` schema 
 ## Addendum, 2026-10-25 (1.0.4.86): `sqldb-jobhunt-ss` is deleted
 
 The condition the addendum of 1.0.4.72 set was met and the database is gone. Read at 23:00 CDT on 25 October through the queue (J:\staging\sunday1025\onedb\onedb-dropold.txt): the old database held Companies 141, CompanyEvidence 244, Leads 3 and EmailsSent 0; the site's database held Companies 141, CompanyEvidence 244, Leads 5 and EmailsSent 0, and had taken a write since the switch at 15:09 CDT (a lead updated at 21:20 CDT) while the old one had taken none. Only then was `az sql db delete` run, at 23:00:22, and `az sql db show` read ResourceNotFound at 23:00:41. Nothing in infra/ names the database (`CampaignSqlTests` holds it), so no template can make it again. The campaign and the tracker live in `sqldb-theyard-ss-basic` under their own schemas, and the subscription carries one Basic database fewer, about $4.90 a month.
+
+## Addendum, 2026-10-26 (1.0.4.89): a date goes to SQL as a date
+
+The first morning with `EMAIL_CAMPAIGN` on would have failed before it sent anything. To count the day of `on` for the ramp, the send asked the email log for every row since `DateOnly.MinValue`, the year 1. The store turned that day into a `DateTime` and handed it to `AddWithValue`, and Microsoft.Data.SqlClient sends a `DateTime` it was not told the type of as SQL's old `datetime`, whose range starts in 1753. The client refused it before the query left the Function ("SqlDateTime overflow"). Shadow never reached the line, because shadow has no day of `on`, so every shadow morning passed and no test saw it: the test's memory log accepted any day.
+
+From this version:
+
+- **The day count has its own question.** The email log answers the Central days that carry a real send (`OnDaysAsync`: the distinct `CentralDay` of every row with `Shadow = 0`), and the send counts the ones before today. No query asks for "everything since the beginning of time".
+- **A date to SQL is `SqlDbType.Date`.** The store passes a `DateOnly` and its one command builder adds it as a `date` parameter, so a date never travels as `datetime` and never meets the 1753 floor. The columns it is written to (`CentralDay`, `FirstSeen`, `LastDotNetPostingAt`) are `date` already.
+- **The test's log holds SQL's range.** The memory log the send tests use refuses a day before 1753 the way the client does, so a path that asks for one fails in the test and not on the first real morning. A test drives the `on` path with one real send on an earlier day and reads the second day's cap of five.
+
+`CampaignSqlTests.A_date_goes_to_SQL_as_a_date` and `CampaignSendTests.The_on_path_counts_its_days_with_dates_SQL_accepts` hold it.

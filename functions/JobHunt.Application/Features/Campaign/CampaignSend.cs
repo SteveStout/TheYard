@@ -71,7 +71,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         bool shadow = mode == CampaignMode.Shadow;
         var logged = (await log.SinceAsync(today.AddDays(-(ThirtyDayRule.WindowDays + 1)), ct)).Where(e => e.Shadow == shadow).ToList();
         int already = logged.Count(e => e.CentralDay == today);
-        int? dayOfOn = shadow ? null : (await log.SinceAsync(DateOnly.MinValue, ct)).Where(e => !e.Shadow && e.CentralDay < today).Select(e => e.CentralDay).Distinct().Count() + 1;
+        int? dayOfOn = shadow ? null : (await log.OnDaysAsync(ct)).Count(day => day < today) + 1;
         int left = CampaignRules.Left(already, dayOfOn);
         var open = await leads.OpenAsync(ct);
         if (left == 0)

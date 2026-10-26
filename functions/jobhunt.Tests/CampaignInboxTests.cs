@@ -203,6 +203,8 @@ public sealed class CampaignInboxTests
 
         public Task<IReadOnlyList<LoggedEmail>> SinceAsync(DateOnly centralDay, CancellationToken ct) => Task.FromResult<IReadOnlyList<LoggedEmail>>([]);
 
+        public Task<IReadOnlyList<DateOnly>> OnDaysAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<DateOnly>>([]);
+
         public Task<int> CountAsync(DateOnly centralDay, bool shadow, CancellationToken ct) => Task.FromResult(0);
 
         public Task<long> WriteAsync(EmailRecord email, CancellationToken ct) => Task.FromResult(0L);

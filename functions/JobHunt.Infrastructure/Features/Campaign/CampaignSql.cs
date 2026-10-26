@@ -40,6 +40,10 @@ internal static class CampaignSql
         SELECT e.[LeadId], e.[Key], e.[ParentKey], e.[Company], e.[CentralDay], e.[Shadow] FROM [campaign].[EmailsSent] e WHERE e.[CentralDay] >= @day
         """;
 
+    internal const string OnDays = """
+        SELECT DISTINCT e.[CentralDay] FROM [campaign].[EmailsSent] e WHERE e.[Shadow] = 0
+        """;
+
     internal const string Count = """
         SELECT COUNT(*) FROM [campaign].[EmailsSent] e WHERE e.[CentralDay] = @day AND e.[Shadow] = @shadow
         """;

@@ -34,7 +34,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
         await using var connection = await ConnectAsync(ct);
         await using var command = Command(connection, CampaignSql.SaveCompany,
             ("@key", company.Key), ("@parent", company.ParentKey), ("@names", Clip(string.Join(NameSeparator, company.Names), 1000)), ("@stance", company.RemoteStance),
-            ("@lastAt", company.LastDotNetPostingAt?.ToDateTime(TimeOnly.MinValue)), ("@lastTitle", company.LastDotNetPostingTitle is { } t ? Clip(t, 200) : null),
+            ("@lastAt", company.LastDotNetPostingAt), ("@lastTitle", company.LastDotNetPostingTitle is { } t ? Clip(t, 200) : null),
             ("@board", company.BoardKind), ("@token", company.BoardToken), ("@at", at), ("@run", Clip(run, 64)));
         int id = Convert.ToInt32(await command.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
         foreach (var evidence in company.Evidence)
@@ -61,7 +61,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
 
     /// <inheritdoc />
     public Task MarkScannedAsync(int companyId, DateOnly? lastDotNetPostingAt, string? lastDotNetPostingTitle, DateTimeOffset at, CancellationToken ct) =>
-        ExecuteAsync(CampaignSql.Scanned, ct, ("@id", companyId), ("@lastAt", lastDotNetPostingAt?.ToDateTime(TimeOnly.MinValue)), ("@lastTitle", lastDotNetPostingTitle is { } t ? Clip(t, 200) : null), ("@at", at));
+        ExecuteAsync(CampaignSql.Scanned, ct, ("@id", companyId), ("@lastAt", lastDotNetPostingAt), ("@lastTitle", lastDotNetPostingTitle is { } t ? Clip(t, 200) : null), ("@at", at));
 
     /// <inheritdoc />
     public Task SaveAsync(int companyId, SpoolLead lead, bool? mx, int strength, string inputsHash, string? blocked, string run, DateTimeOffset at, CancellationToken ct) =>
@@ -70,7 +70,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
             ("@posting", lead.PostingUrl is { } p ? Clip(p, 500) : null), ("@what", Clip(lead.WhatTheyDo, 110)), ("@first", Clip(lead.FirstName, 60)), ("@title", Clip(lead.ContactTitle, 120)),
             ("@email", lead.ContactEmail), ("@source", lead.EmailSource is { } s ? Clip(s, 500) : null), ("@mx", mx), ("@applied", lead.AppliedAt), ("@count", lead.AppliedCount),
             ("@invited", lead.LinkedInInviteSentAt), ("@accepted", lead.LinkedInAcceptedAt), ("@proof", lead.ProofKey), ("@slug", lead.FollowUpPostSlug),
-            ("@ghost", lead.GhostScore is { } g ? (byte)g : null), ("@band", lead.BandTop), ("@day", DateOnly.FromDateTime(CentralClock.Local(at)).ToDateTime(TimeOnly.MinValue)),
+            ("@ghost", lead.GhostScore is { } g ? (byte)g : null), ("@band", lead.BandTop), ("@day", DateOnly.FromDateTime(CentralClock.Local(at))),
             ("@strength", strength), ("@step", (short)lead.StrengthStep), ("@why", lead.StrengthWhy is { } w ? Clip(w, 400) : null), ("@hash", inputsHash), ("@at", at),
             ("@blocked", blocked is { } b ? Clip(b, 200) : null), ("@ref", lead.RefCode), ("@resume", lead.Links?.Resume), ("@site", lead.Links?.Site),
             ("@github", lead.Links?.GitHub), ("@linkedin", lead.Links?.LinkedIn), ("@about", lead.Links?.About), ("@run", Clip(run, 64)));
@@ -99,7 +99,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     public async Task<IReadOnlyList<LoggedEmail>> SinceAsync(DateOnly centralDay, CancellationToken ct)
     {
         await using var connection = await ConnectAsync(ct);
-        await using var command = Command(connection, CampaignSql.Since, ("@day", centralDay.ToDateTime(TimeOnly.MinValue)));
+        await using var command = Command(connection, CampaignSql.Since, ("@day", centralDay));
         await using var reader = await command.ExecuteReaderAsync(ct);
         var sends = new List<LoggedEmail>();
         while (await reader.ReadAsync(ct))
@@ -112,10 +112,24 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<DateOnly>> OnDaysAsync(CancellationToken ct)
+    {
+        await using var connection = await ConnectAsync(ct);
+        await using var command = Command(connection, CampaignSql.OnDays);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var days = new List<DateOnly>();
+        while (await reader.ReadAsync(ct))
+        {
+            days.Add(DateOnly.FromDateTime(reader.GetDateTime(0)));
+        }
+        return days;
+    }
+
+    /// <inheritdoc />
     public async Task<int> CountAsync(DateOnly centralDay, bool shadow, CancellationToken ct)
     {
         await using var connection = await ConnectAsync(ct);
-        await using var command = Command(connection, CampaignSql.Count, ("@day", centralDay.ToDateTime(TimeOnly.MinValue)), ("@shadow", shadow));
+        await using var command = Command(connection, CampaignSql.Count, ("@day", centralDay), ("@shadow", shadow));
         return Convert.ToInt32(await command.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
     }
 
@@ -126,7 +140,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
         await using var command = Command(connection, CampaignSql.Write,
             ("@lead", email.LeadId), ("@key", email.Key), ("@parent", email.ParentKey), ("@company", email.Company), ("@to", email.To),
             ("@template", email.TemplateId), ("@version", email.TemplateVersion), ("@subject", email.Subject),
-            ("@text", email.BodyText), ("@html", email.BodyHtml), ("@sent", email.SentAt), ("@day", email.CentralDay.ToDateTime(TimeOnly.MinValue)),
+            ("@text", email.BodyText), ("@html", email.BodyHtml), ("@sent", email.SentAt), ("@day", email.CentralDay),
             ("@touch", (byte)email.Touch), ("@shadow", email.Shadow), ("@ref", email.RefCode),
             ("@message", email.GmailMessageId), ("@thread", email.GmailThreadId), ("@rfc", email.RfcMessageId));
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
@@ -136,7 +150,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     public async Task<IReadOnlyList<SentThread>> SentThreadsAsync(DateOnly centralDay, CancellationToken ct)
     {
         await using var connection = await ConnectAsync(ct);
-        await using var command = Command(connection, CampaignSql.Threads, ("@day", centralDay.ToDateTime(TimeOnly.MinValue)));
+        await using var command = Command(connection, CampaignSql.Threads, ("@day", centralDay));
         await using var reader = await command.ExecuteReaderAsync(ct);
         var threads = new List<SentThread>();
         while (await reader.ReadAsync(ct))
@@ -174,10 +188,23 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
         var command = new SqlCommand(sql, connection) { CommandType = CommandType.Text, CommandTimeout = 30 };
         foreach (var (name, value) in parameters)
         {
-            command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+            if (value is DateOnly day)
+            {
+                command.Parameters.Add(Date(name, day));
+            }
+            else
+            {
+                command.Parameters.AddWithValue(name, value ?? DBNull.Value);
+            }
         }
         return command;
     }
+
+    /// <summary>
+    /// A day as a SQL `date` parameter. AddWithValue would send a DateTime as the old `datetime`, which starts in
+    /// 1753 and refuses anything earlier on the client; every column the campaign keeps a day in is a `date`.
+    /// </summary>
+    internal static SqlParameter Date(string name, DateOnly day) => new(name, SqlDbType.Date) { Value = day.ToDateTime(new TimeOnly(0, 0)) };
 
     private static string Clip(string text, int length) => text.Length <= length ? text : text[..length];
 

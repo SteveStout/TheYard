@@ -214,6 +214,21 @@ public sealed class CampaignSendTests
         Assert.All(db.Emails.Where(e => e.CentralDay == new DateOnly(2026, 10, 24)), e => Assert.Equal("m-" + e.LeadId, e.GmailMessageId));
     }
 
+    [Fact]
+    public async Task The_on_path_counts_its_days_with_dates_SQL_accepts()
+    {
+        // One real send yesterday and a shadow row the day before: today is the second day of on, whose cap is five.
+        var (send, db, mail) = Pass(Enumerable.Range(0, 8).Select(i => Lead(company: $"Shop {i}", key: $"shop{i}.com")));
+        db.Emails.Add(Logged(1, shadow: false));
+        db.Emails.Add(Logged(2, shadow: true));
+
+        var result = await send.RunAsync(CampaignMode.On, CancellationToken.None);
+
+        Assert.Equal(CampaignRules.Ramp[1], result.Written);
+        Assert.Equal(5, mail.Calls);
+        Assert.Equal(5, CampaignRules.CapFor(2));
+    }
+
     [Theory]
     [InlineData(0, 3)]
     [InlineData(1, 5)]
@@ -350,10 +365,21 @@ public sealed class CampaignSendTests
 
         public Task SaveAsync(int companyId, SpoolLead lead, bool? mx, int strength, string inputsHash, string? blocked, string run, DateTimeOffset at, CancellationToken ct) => Task.CompletedTask;
 
+        /// <summary>The oldest day SQL's `datetime` holds; the client refuses an earlier one before the query is sent.</summary>
+        public static readonly DateOnly SqlFloor = new(1753, 1, 1);
+
         public Task<IReadOnlyList<LoggedEmail>> SinceAsync(DateOnly centralDay, CancellationToken ct)
         {
             Reads++;
+            // The log holds SQL's range, so a pass that asks for a day SQL cannot carry fails here as it would in Azure.
+            ArgumentOutOfRangeException.ThrowIfLessThan(centralDay, SqlFloor);
             return Task.FromResult<IReadOnlyList<LoggedEmail>>([.. Emails.Where(e => e.CentralDay >= centralDay).Select(e => new LoggedEmail(e.LeadId, e.Key, e.ParentKey, e.Company, e.CentralDay, e.Shadow))]);
+        }
+
+        public Task<IReadOnlyList<DateOnly>> OnDaysAsync(CancellationToken ct)
+        {
+            Reads++;
+            return Task.FromResult<IReadOnlyList<DateOnly>>([.. Emails.Where(e => !e.Shadow).Select(e => e.CentralDay).Distinct()]);
         }
 
         public Task<int> CountAsync(DateOnly centralDay, bool shadow, CancellationToken ct) => Task.FromResult(Emails.Count(e => e.CentralDay == centralDay && e.Shadow == shadow));

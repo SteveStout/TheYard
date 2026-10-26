@@ -67,6 +67,13 @@ public interface IEmailLog
     /// <summary>The sends from a Central day on, real and shadow, for the 30-day rule.</summary>
     Task<IReadOnlyList<LoggedEmail>> SinceAsync(DateOnly centralDay, CancellationToken ct);
 
+    /// <summary>
+    /// The Central days that carry at least one real send, each once. The ramp counts the ones before today to
+    /// know which day of `on` this is; asking for every row since the year 1 instead fails in SQL, whose oldest
+    /// datetime is in 1753.
+    /// </summary>
+    Task<IReadOnlyList<DateOnly>> OnDaysAsync(CancellationToken ct);
+
     /// <summary>How many emails a Central day already carries, of one kind: the cap reads this before every send.</summary>
     Task<int> CountAsync(DateOnly centralDay, bool shadow, CancellationToken ct);
 

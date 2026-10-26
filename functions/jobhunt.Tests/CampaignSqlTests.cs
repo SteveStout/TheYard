@@ -192,6 +192,41 @@ public sealed partial class CampaignSqlTests
     [GeneratedRegex(@"^\s+\[(\w+)\]\s+(?:n?varchar|int|bigint|smallint|tinyint|bit|date|datetimeoffset|char)", RegexOptions.Multiline)]
     private static partial Regex Column();
 
+    [Fact]
+    public void A_date_goes_to_SQL_as_a_date()
+    {
+        // The store's one command builder, called without a connection: a DateOnly becomes a `date` parameter,
+        // whose range starts in the year 1, and everything else keeps the type AddWithValue infers.
+        var build = typeof(SqlCampaignStore).GetMethod("Command", BindingFlags.NonPublic | BindingFlags.Static)!;
+        (string Name, object? Value)[] values = [("@day", new DateOnly(2026, 10, 26)), ("@first", new DateOnly(1, 1, 1)), ("@at", new DateTimeOffset(2026, 10, 26, 13, 0, 0, TimeSpan.Zero)), ("@shadow", true)];
+        using var command = (Microsoft.Data.SqlClient.SqlCommand)build.Invoke(null, [null, "SELECT 1", values])!;
+
+        Assert.Equal(System.Data.SqlDbType.Date, command.Parameters["@day"].SqlDbType);
+        Assert.Equal(new DateTime(2026, 10, 26), command.Parameters["@day"].Value);
+        Assert.Equal(System.Data.SqlDbType.Date, command.Parameters["@first"].SqlDbType);
+        Assert.Equal(System.Data.SqlDbType.DateTimeOffset, command.Parameters["@at"].SqlDbType);
+        Assert.Equal(System.Data.SqlDbType.Bit, command.Parameters["@shadow"].SqlDbType);
+
+        // Every day the store sends is handed over as a DateOnly, so it goes through the line above: no call
+        // turns a day into a DateTime first, and nothing in the Function asks the log for the year 1.
+        string store = File.ReadAllText(Path.Combine(Root(), "functions", "JobHunt.Infrastructure", "Features", "Campaign", "SqlCampaignStore.cs"));
+        Assert.DoesNotContain("ToDateTime(TimeOnly.MinValue)", store, StringComparison.Ordinal);
+        Assert.Matches(@"\(""@day"", centralDay\)", store);
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(Root(), "functions"), "*.cs", SearchOption.AllDirectories).Where(p => !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) && !p.Contains("jobhunt.Tests", StringComparison.Ordinal)))
+        {
+            Assert.DoesNotContain("Async(DateOnly.MinValue", File.ReadAllText(path), StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void The_days_of_on_are_read_by_their_own_statement()
+    {
+        string sql = Statements().Single(s => s.Name == "OnDays").Sql;
+        Assert.Contains("SELECT DISTINCT e.[CentralDay]", sql, StringComparison.Ordinal);
+        Assert.Contains("e.[Shadow] = 0", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("@", sql, StringComparison.Ordinal);
+    }
+
     [GeneratedRegex(@"\b([clev])\.\[(\w+)\]")]
     private static partial Regex Qualified();
 
