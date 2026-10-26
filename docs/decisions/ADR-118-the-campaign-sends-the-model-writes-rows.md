@@ -133,3 +133,15 @@ From this version:
 - **The test's log holds SQL's range.** The memory log the send tests use refuses a day before 1753 the way the client does, so a path that asks for one fails in the test and not on the first real morning. A test drives the `on` path with one real send on an earlier day and reads the second day's cap of five.
 
 `CampaignSqlTests.A_date_goes_to_SQL_as_a_date` and `CampaignSendTests.The_on_path_counts_its_days_with_dates_SQL_accepts` hold it.
+
+## Addendum, 2026-10-26 (1.0.4.90): one slow board does not stop the morning
+
+The board scan runs first in the 8 o'clock hour, one board after another, and the send waits for it. A board that did not answer was meant to be skipped, but only a network error was treated that way. A board that held the request past HttpClient's 100 seconds surfaces as a cancellation, and a board that answered with a page of HTML instead of its JSON surfaces as a parse error; either one escaped the scan and failed the whole pass before the send, so that morning would have sent nothing and written no line.
+
+From this version:
+
+- **Each public request has fifteen seconds.** The board reader and the MX check each wait at most fifteen seconds a request, and treat a timeout, a body that is not JSON and JSON of the wrong shape the same way as a network error: the service did not answer, the port says null, and the scan moves to the next board. A cancellation the host asks for, when the Function is stopping, still goes on up.
+- **The scan cannot stop the send.** The timer runs the scan inside its own guard. A scan that throws anyway is logged as an error and its part of `campaign/pass.log` reads `scan: FAILED: <the exception's type>`, and the send runs on the postings already in the book.
+- **The pass line says how long the scan took**, in whole seconds, so a scan creeping toward the host's ten-minute limit shows before it reaches it.
+
+`LeadImportTests.A_board_that_does_not_answer_in_time_or_answers_with_a_page_is_not_answered`, `LeadImportTests.A_resolver_that_does_not_answer_in_time_or_answers_with_a_page_is_not_known` and `LeadImportTests.A_scan_that_throws_is_written_as_failed_and_the_send_still_runs` hold it.

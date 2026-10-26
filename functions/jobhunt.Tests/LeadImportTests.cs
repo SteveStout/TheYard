@@ -132,6 +132,78 @@ public sealed class LeadImportTests
     [InlineData("{\"Status\":2}", null)]
     public void The_resolver_s_answer_is_mail_no_mail_or_not_known(string json, bool? mail) => Assert.Equal(mail, DohMxCheck.Read(json));
 
+    [Fact]
+    public async Task A_board_that_does_not_answer_in_time_or_answers_with_a_page_is_not_answered()
+    {
+        static PublicBoardReader Reader(Func<CancellationToken, Task<HttpResponseMessage>> answer) => new(new Answering(answer)) { Timeout = TimeSpan.FromMilliseconds(50) };
+
+        Assert.Null(await Reader(Silent).PostingsAsync("greenhouse", "acme", CancellationToken.None));
+        Assert.Null(await Reader(_ => Ok("<html><body>Maintenance</body></html>")).PostingsAsync("lever", "acme", CancellationToken.None));
+        Assert.Null(await Reader(_ => Ok("[{\"title\":\"an array where an object belongs\"}]")).PostingsAsync("greenhouse", "acme", CancellationToken.None));
+        Assert.Single((await Reader(_ => Ok("{\"jobs\":[{\"title\":\"Senior .NET Engineer\"}]}")).PostingsAsync("ashby", "acme", CancellationToken.None))!);
+
+        // The host stopping is not a board that did not answer: that cancellation goes on up.
+        using var stopping = new CancellationTokenSource();
+        await stopping.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Reader(Silent).PostingsAsync("greenhouse", "acme", stopping.Token));
+    }
+
+    [Fact]
+    public async Task A_resolver_that_does_not_answer_in_time_or_answers_with_a_page_is_not_known()
+    {
+        static DohMxCheck Check(Func<CancellationToken, Task<HttpResponseMessage>> answer) => new(new Answering(answer)) { Timeout = TimeSpan.FromMilliseconds(50) };
+
+        Assert.Null(await Check(Silent).HasMxAsync("acme.com", CancellationToken.None));
+        Assert.Null(await Check(_ => Ok("<html>blocked</html>")).HasMxAsync("acme.com", CancellationToken.None));
+        Assert.True(await Check(_ => Ok("{\"Status\":0,\"Answer\":[{\"type\":15}]}")).HasMxAsync("acme.com", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task A_scan_that_throws_is_written_as_failed_and_the_send_still_runs()
+    {
+        var log = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        var time = new FixedTime(Now);
+
+        // BoardScan itself lets a reader's exception through; the timer's guard is what keeps the send.
+        var db = new Book { Boards = [new BoardCompany(1, "greenhouse", "acme")] };
+        await Assert.ThrowsAsync<TaskCanceledException>(() => new BoardScan(db, new ThrowingBoards(), time).RunAsync(CancellationToken.None));
+
+        string failed = await CampaignSendTimer.GuardedScanAsync(token => new BoardScan(db, new ThrowingBoards(), time).RunAsync(token), time, log, CancellationToken.None);
+        Assert.Matches(@"^FAILED: TaskCanceledException, \d+ s$", failed);
+
+        string scanned = await CampaignSendTimer.GuardedScanAsync(_ => Task.FromResult("1 boards, 1 answered, 3 postings, 1 .NET"), time, log, CancellationToken.None);
+        Assert.Matches(@"^1 boards, 1 answered, 3 postings, 1 \.NET, \d+ s$", scanned);
+
+        using var stopping = new CancellationTokenSource();
+        await stopping.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => CampaignSendTimer.GuardedScanAsync(token => Task.FromCanceled<string>(token), time, log, stopping.Token));
+    }
+
+    private static async Task<HttpResponseMessage> Silent(CancellationToken ct)
+    {
+        await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        return new HttpResponseMessage(System.Net.HttpStatusCode.OK);
+    }
+
+    private static Task<HttpResponseMessage> Ok(string body) =>
+        Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(body) });
+
+    private sealed class Answering(Func<CancellationToken, Task<HttpResponseMessage>> answer) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new(new Handler(answer));
+
+        private sealed class Handler(Func<CancellationToken, Task<HttpResponseMessage>> answer) : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => answer(cancellationToken);
+        }
+    }
+
+    private sealed class ThrowingBoards : IBoardReader
+    {
+        public Task<IReadOnlyList<BoardPosting>?> PostingsAsync(string kind, string token, CancellationToken ct) =>
+            throw new TaskCanceledException("the board took longer than HttpClient waits");
+    }
+
     private sealed class FixedTime(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
