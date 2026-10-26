@@ -41,7 +41,12 @@ public static class BlobCard
         ["Live read"] = CardFrame.ThisProcess,
     };
 
-    public const string ReadFilter = "ApiName eq 'GetBlob'";
+    /// <summary>
+    /// The reads the red line counts: every GetBlob but the account key's. The account key is the Functions host's own
+    /// connection (its timers' state, its leases and its package), not a picture anybody asked for (ADR-102, the addendum
+    /// on the blob read line).
+    /// </summary>
+    public const string ReadFilter = "ApiName eq 'GetBlob' and Authentication ne 'AccountKey'";
     public const string WriteFilter = "ApiName eq 'PutBlob' or ApiName eq 'PutBlock' or ApiName eq 'PutBlockList' or ApiName eq 'CopyBlob'";
 
     public static readonly IReadOnlyList<AzureMetric> Metrics =
@@ -108,7 +113,7 @@ public static class BlobCard
                 new("Cache in the host", "not built yet: the blog's pictures lane adds it", "info"),
                 new("Egress this month", egress is { } e ? $"{(e / 1e9).ToString("0.##", CultureInfo.InvariantCulture)} GB of the free {FreeEgressGb:0} GB" : "not read", "info"),
                 new("Lifecycle rule", ResourceView.Fact(inputs, "lifecycle"), "info"),
-                new("The read line", $"{lines.DailyReads:N0} reads a day, the card's red line; today {ResourceView.Number(today)}", overReads ? "alarm" : "info"),
+                new("The read line", $"{lines.DailyReads:N0} reads a day, the card's red line; today {ResourceView.Number(today)} · the Functions host's own reads, by the account key, are left out", overReads ? "alarm" : "info"),
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
             ],
@@ -117,7 +122,7 @@ public static class BlobCard
             [new("Blob reads a day", [.. days.Select(d => new CloudPoint(d.Day.ToUnixTimeMilliseconds(), ResourceView.Share(d.Value, lines.DailyReads)))]),
              new("Bytes kept", [.. inputs.Buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), ResourceView.Share(b.Means.GetValueOrDefault("bytes"), lines.PicturesAmberBytes)))])],
             [.. inputs.Hours.SelectMany(h => h.Events).Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), "event", $"{e.Title} on {e.Resource}"))],
-            100, $"teal blob reads a day · green bytes kept against the pictures' line · red {lines.DailyReads:N0} reads a day",
+            100, $"teal blob reads a day but the account key's · green bytes kept against the pictures' line · red {lines.DailyReads:N0} reads a day",
             days.Count > 0 ? days[0].Day.ToUnixTimeMilliseconds() : (inputs.Now - TimeSpan.FromDays(30)).ToUnixTimeMilliseconds());
         var report = new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && (inputs.LastHour.Count > 0 || inputs.Hours.Count > 0),
