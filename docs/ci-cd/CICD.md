@@ -24,10 +24,30 @@ installs .NET through one step, `.github/actions/dotnet`, which tries the
 download twice and then builds with the runner's own .NET 10 SDK, so a failed
 download cannot turn a good version red (ADR-068, the addendum of 1.0.4.72).
 
+**A ship is a push of `gate/<version>`.** From 1.0.4.101 no machine has to stay
+on for a version to ship (ADR-098, the addendum of 1.0.4.101). When the gate
+and The Shed's suites are both green, the same run promotes itself: its
+promote job runs `scripts/promote.sh`, which checks the version and the locked
+resume, writes the results file and the README's figures from the run's
+reports, folds them into the commit and fast-forwards `main`, never by force.
+The run then calls Deploy and Deploy Render on that commit, starts the edge's
+move, reads both names after the roll, and starts CI on `main` and reads it to
+its end. A version that changes a workflow is the one exception: GitHub never
+lets the run's own token write a workflow, so a person runs the same script
+and pushes `main`.
+
+Before the push, whoever ships does what the laptop's ship script did before
+it pushed, because the gate checks these and does not write them: draws the
+pictures (`node docs/images/render.mjs`, `node docs/images/dataflow.mjs --png`,
+`node docs/images/rings.mjs --png`, `node docs/images/og.mjs`), strips their
+stamps (`python3 scripts/strip_c2pa.py docs/images`), runs Prettier's write,
+commits with the changelog's new line on top, and pushes the commit to
+`gate/<version>`.
+
 ![The CI workflow runs on GitHub Actions, every one green, forty-one of them by the end of the second day](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-runs.jpg)
 
-**Continuous deployment.** When the gate pushes to main, a workflow named
-Deploy builds the container image, pushes it to GitHub's own registry, ghcr.io,
+**Continuous deployment.** When the gate promotes a version to main, it calls a
+workflow named Deploy, which builds the container image, pushes it to GitHub's own registry, ghcr.io,
 and to Azure Container Registry beside it (from 1.0.4.88 the roll pulls from
 GitHub's, public and with no credential, and the Azure registry keeps the same
 tag for the undo), and rolls it onto the one web app that serves both sites and The Shed, with no
@@ -44,7 +64,7 @@ build, so the two rolls need not land together: until the API and the
 service agree, the pages are drawn in the browser, as they were
 before the service existed (ADR: A rendering service beside the API). Both
 web apps share one App Service plan (ADR: One plan, two sites). Each workflow signs in to Azure with a token GitHub mints for this one
-repository's main branch, so no Azure password or key is stored anywhere. The
+repository's `gate` environment, so no Azure password or key is stored anywhere. The
 version in the page footer is stamped by that build. The full record is
 ADR: The deploy pipeline, below this entry in the menu.
 

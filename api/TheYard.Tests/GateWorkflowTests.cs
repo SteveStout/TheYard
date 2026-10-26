@@ -28,13 +28,14 @@ public class GateWorkflowTests
         return workflow[start..end];
     }
 
-    /// <summary>The Shed's job, to the end of the file.</summary>
+    /// <summary>The Shed's job, to the promote job after it.</summary>
     private static string ShedJob()
     {
         string workflow = Workflow();
         int start = workflow.IndexOf("\n  shed:\n", StringComparison.Ordinal);
-        Assert.True(start > 0, "gate.yml should hold The Shed's job");
-        return workflow[start..];
+        int end = workflow.IndexOf("\n  promote:\n", StringComparison.Ordinal);
+        Assert.True(start > 0 && end > start, "gate.yml should hold The Shed's job and then the promote job");
+        return workflow[start..end];
     }
 
     // #region every-check
@@ -148,17 +149,21 @@ public class GateWorkflowTests
 
     // #region the-boundary
     /// <summary>
-    /// The workflow runs on a gate branch and nowhere else, and it cannot push: main moves only when
-    /// the laptop reads a green run and fast-forwards it, so a red run leaves main as it was.
+    /// The workflow runs on a gate branch and nowhere else, and its checks cannot push: the gate job and
+    /// The Shed's read the code and nothing more, so a red run leaves main as it was. Only the promote job,
+    /// after both are green, may write (PromoteWorkflowTests; ADR-098, the addendum of 1.0.4.101).
     /// </summary>
     [Fact]
-    public void The_gate_runs_on_gate_branches_only_and_cannot_push()
+    public void The_gate_runs_on_gate_branches_only_and_its_checks_cannot_push()
     {
         string workflow = Workflow();
         Assert.Contains("on:\n  push:\n    branches: [\"gate/**\"]\n", workflow, StringComparison.Ordinal);
         Assert.Contains("permissions:\n  contents: read\n", workflow, StringComparison.Ordinal);
-        Assert.DoesNotContain("contents: write", workflow, StringComparison.Ordinal);
-        Assert.DoesNotContain("git push", workflow, StringComparison.Ordinal);
+        foreach (string job in new[] { GateJob(), ShedJob() })
+        {
+            Assert.DoesNotContain("contents: write", job, StringComparison.Ordinal);
+            Assert.DoesNotContain("git push", job, StringComparison.Ordinal);
+        }
     }
     // #endregion the-boundary
 }

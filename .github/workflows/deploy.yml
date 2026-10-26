@@ -32,6 +32,15 @@ on:
       - 'functions/**'
       - 'infra/jobhunt.bicep'
       - '.github/workflows/nightly.yml'
+  # The gate calls this workflow after it promotes a green run, because a push made with the
+  # workflow's token starts no workflow (ADR: The gate runs where the memory is, the addendum of
+  # 1.0.4.101). The commit is the one the gate promoted.
+  workflow_call:
+    inputs:
+      sha:
+        description: The commit the gate promoted onto main
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -54,6 +63,10 @@ concurrency:
 jobs:
   deploy:
     # #endregion deploy-trigger
+    # Signs in through the gate's environment on a push and on a call alike: its federated credential
+    # is this deploy identity's and names no branch, so a call from a gate branch signs in as a push
+    # to main does (ADR: The gate runs where the memory is, the addendum of 1.0.4.101).
+    environment: gate
     runs-on: ubuntu-24.04
     # A hung roll must not hold the deploy-production group for the default six hours (ADR-017).
     # Fifty minutes: the build, Verify's twenty-five for the version and ten for readiness, and room.
@@ -88,11 +101,11 @@ jobs:
       # Pin to the exact commit the gate tested and pushed, not wherever main has moved since.
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.sha || github.sha }}
 
       - name: Compute version
         env:
-          HEAD_SHA: ${{ github.sha }}
+          HEAD_SHA: ${{ inputs.sha || github.sha }}
         run: |
           # The changelog's top line is the version (ADR-031). Not a run
           # counter: a counter ticks on runs that are gated off and never ship,

@@ -16,6 +16,15 @@ on:
       - '.github/workflows/nightly.yml'
     # Every push, as Deploy: a push that changes only The Shed still gives the API a new
     # version, and the renderer draws only for the version it was built as.
+  # The gate calls this workflow after it promotes a green run, because a push made with the
+  # workflow's token starts no workflow (ADR: The gate runs where the memory is, the addendum of
+  # 1.0.4.101). The commit is the one the gate promoted.
+  workflow_call:
+    inputs:
+      sha:
+        description: The commit the gate promoted onto main
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -31,6 +40,10 @@ concurrency:
 
 jobs:
   deploy:
+    # Signs in through the gate's environment on a push and on a call alike: its federated credential
+    # is this deploy identity's and names no branch, so a call from a gate branch signs in as a push
+    # to main does (ADR: The gate runs where the memory is, the addendum of 1.0.4.101).
+    environment: gate
     runs-on: ubuntu-24.04
     # The build, Verify's twenty-five minutes, and room.
     timeout-minutes: 40
@@ -44,14 +57,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.sha || github.sha }}
 
       # #region render-version
       # The changelog's top line, read the way Deploy reads it, so the renderer
       # and the API it draws for carry the same version (ADR-031).
       - name: Compute version
         env:
-          HEAD_SHA: ${{ github.sha }}
+          HEAD_SHA: ${{ inputs.sha || github.sha }}
         run: |
           N=$(sed -n 's/^- \*\*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\*\*.*/\1/p' docs/CHANGELOG.md | sed -n 1p)
           if [ -z "$N" ]; then

@@ -5,12 +5,14 @@ name: Gate
 # The laptop that ships has 8 GB and the suites need more than it has free with an editor open: a
 # gate there waited hours for memory, and three takes timed out in specs the change did not touch.
 # So the laptop now only builds the commit and pushes it to a branch named gate/<version>; this
-# workflow runs every check the laptop's gate ran, in the same order, on a runner with 16 GB; and
-# the laptop reads the result. Green, it adds the results file and fast-forwards main, which
-# deploys exactly as before. Red, main is never touched.
+# workflow runs every check the laptop's gate ran, in the same order, on a runner with 16 GB. Red,
+# main is never touched.
 #
-# Nothing here pushes. The run leaves its reports as one artifact, gate-raw, in the layout
-# scripts/test_results.mjs reads, and the laptop writes data/test-results.json from it.
+# Green, the run promotes itself (ADR: The gate runs where the memory is, the addendum of
+# 1.0.4.101): the promote job writes data/test-results.json and the README's figures from the
+# gate-raw artifact, folds them into the commit and fast-forwards main, the run calls Deploy and
+# Deploy Render on that commit, and the after-roll job reads both names and CI on main. A ship is
+# a push of gate/<version>; no machine has to be on. The gate job itself only reads.
 on:
   push:
     branches: ["gate/**"]
@@ -237,3 +239,114 @@ jobs:
           echo "shed_xunit=$x shed_node=$n"
           if [ "$x" != 0 ] || [ "$n" != 0 ]; then echo "::error::red: The Shed (xUnit $x, node $n)"; exit 1; fi
   # #endregion shed-job
+
+  # #region promote-job
+  # The step the laptop ran until 1.0.4.101, now the run's own: only after the gate and The Shed
+  # are both green, and the only job that may write, to fast-forward main without force.
+  promote:
+    needs: [gate, shed]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      sha: ${{ steps.promote.outputs.sha }}
+      version: ${{ steps.promote.outputs.version }}
+      rolls: ${{ steps.promote.outputs.rolls }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v7
+        with:
+          name: gate-raw
+          path: ${{ runner.temp }}/raw
+      - name: Promote
+        id: promote
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          started=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
+          seconds=$(( $(date +%s) - $(date -d "$started" +%s) ))
+          bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds"
+  # #endregion promote-job
+
+  # #region the-roll
+  # A push made with the workflow's token starts no workflow, so the run calls the two deploys
+  # itself, each pinned to the promoted commit.
+  deploy:
+    needs: promote
+    if: needs.promote.outputs.rolls == 'true'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      sha: ${{ needs.promote.outputs.sha }}
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+
+  deploy-render:
+    needs: promote
+    if: needs.promote.outputs.rolls == 'true'
+    uses: ./.github/workflows/deploy-render.yml
+    with:
+      sha: ${{ needs.promote.outputs.sha }}
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+  # #endregion the-roll
+
+  # #region after-roll
+  # The reads after the roll, both names; then CI on main, started by hand (the one start the
+  # token may make) and read to its end; then the gate branch goes.
+  after-roll:
+    needs: [promote, deploy, deploy-render]
+    if: always() && needs.promote.result == 'success' && needs.deploy.result != 'failure' && needs.deploy.result != 'cancelled' && needs.deploy-render.result != 'failure' && needs.deploy-render.result != 'cancelled'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.promote.outputs.sha }}
+      # The edge moves after Deploy (edge-branch.yml), which starts on a Deploy run of its own and so
+      # never on the one this run called: it is started by hand on main, the promoted commit.
+      - name: The edge, after the deploy
+        if: needs.promote.outputs.rolls == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run edge-branch.yml --ref main
+      - name: The reads after the roll
+        if: needs.promote.outputs.rolls == 'true'
+        run: python3 scripts/admin_after_roll.py "${{ needs.promote.outputs.version }}" "${{ needs.promote.outputs.sha }}" "$RUNNER_TEMP/after-roll.log"
+      - name: CI on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.promote.outputs.sha }}
+        run: |
+          gh workflow run ci.yml --ref main
+          run=""
+          for i in $(seq 1 30); do
+            sleep 10
+            run=$(gh run list --workflow ci.yml --branch main --event workflow_dispatch --limit 10 --json databaseId,headSha --jq ".[] | select(.headSha == \"$SHA\") | .databaseId" | head -n 1)
+            [ -n "$run" ] && break
+          done
+          [ -n "$run" ] || { echo "::error::CI on main did not start for $SHA in five minutes"; exit 1; }
+          echo "CI on main: https://github.com/$GITHUB_REPOSITORY/actions/runs/$run"
+          gh run watch "$run" --exit-status --interval 30 > /dev/null || { echo "::error::CI on main is red for $SHA (run $run)"; exit 1; }
+          echo "CI on main: success (run $run)"
+      - name: The gate branch goes
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$GITHUB_REF_NAME" || echo "::warning::the gate branch $GITHUB_REF_NAME was not deleted"
+  # #endregion after-roll
