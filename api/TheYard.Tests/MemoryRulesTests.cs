@@ -58,6 +58,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.Shared.Auction.BidLedger._standing"] = "one per vehicle anybody bid on, the store's standing cached: at most the catalogue",
         ["TheYard.Application.Shared.Auction.BidLedger._byUser"] = "one per account with a bid, each holding that account's bids",
         ["TheYard.Application.Shared.History.MemoryResourceHistory._minutes"] = "a month of minutes, trimmed on every append",
+        ["TheYard.Api.Shared.Instance.PulseDay._day"] = "one day of five-minute buckets, 289 at most, replaced whole or folded on every read",
         ["TheYard.Application.Shared.History.MemoryResourceHistory._hours"] = "a month of hours, trimmed on every append",
         ["TheYard.Application.Shared.History.MemoryNightlyRunLog._runs"] = "the nightly workflow's runs, one per GitHub run, a year of them, trimmed on every upsert",
         ["TheYard.Application.Shared.History.MemoryNightlyRunLog._firings"] = "the Function's judged slots, six a day, a year of them, trimmed on every upsert",

@@ -59,7 +59,8 @@ public sealed record PulseReply(
 /// <para>The figures it carries already exist, on two of the Admin tab's heaviest reads: the kept
 /// machine minutes and the hourly cost read. The landing page is the page a stranger opens, so it
 /// cannot call either of those on every visit. This asks the same sources, keeps the answer for
-/// fifteen seconds, and hands every visitor in that window the same object.</para>
+/// fifteen seconds, and hands every visitor in that window the same object. The day of machine
+/// minutes is read whole only now and then, and its short tail the rest of the time (PulseDay).</para>
 ///
 /// <para>One read at a time: the gate is held while the first caller builds the answer, so a burst
 /// of arrivals costs one query rather than one each.</para>
@@ -80,6 +81,8 @@ public sealed class PulseReader(
     public static readonly TimeSpan Day = TimeSpan.FromHours(24);
 
     private readonly SemaphoreSlim _gate = new(1, 1);
+    // Made on the first read rather than in an initializer, so the history is captured once, not twice.
+    private PulseDay? _day;
     private PulseReply? _last;
     // Ticks rather than a DateTimeOffset: a reader outside the gate reads this in one word, so it
     // never sees half of one instant and half of another.
@@ -122,7 +125,8 @@ public sealed class PulseReader(
         IReadOnlyList<MachineBucket> buckets = [];
         if ((await history.AvailabilityAsync(cancellation)).Available)
         {
-            buckets = await history.QueryAsync(site, now - Day, MachineGrain.FiveMinutes, cancellation);
+            _day ??= new PulseDay(history, site);
+            buckets = await _day.ReadAsync(now, cancellation);
         }
 
         // The month window is what the cost card calls 30d, which is the one that carries the
