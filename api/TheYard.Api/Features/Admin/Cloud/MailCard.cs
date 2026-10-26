@@ -110,7 +110,7 @@ public static class MailCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, "sends", "Sends, 60 min", limit / 60), ResourceView.Spark(inputs, "delivered", "Delivered, 60 min", limit / 60)],
-            ResourceView.Chart(inputs, "Sends and deliveries", ("sends", "Sends", 10, false), ("delivered", "Delivered", 10, false), 100, "teal sends · green delivered, as a share of 10 a minute · gold deploys · red event"),
+            ResourceView.Chart(inputs, "Sends and deliveries", ("sends", "Sends", 10, false), ("delivered", "Delivered", 10, false), 100, "teal sends · green delivered, as a share of 10 a minute · gold deploys · red event", firstLines: (null, 100), secondLines: (null, 100)),
             rows,
             readout), Sources);
     }

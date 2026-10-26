@@ -49,7 +49,7 @@ public static class PlanView
         var marks = Deploys(buckets)
             .Concat(hours.SelectMany(h => h.Events).Where(e => e.Kind == "restart" || !e.Planned)
                 .GroupBy(e => (e.At, e.Title)).Select(g => g.First())
-                .Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), "event", $"{e.Title} on {e.Resource}{(e.Planned ? "" : ", by Azure")}")))
+                .Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), CloudMarks.KindOf(e), $"{e.Title} on {e.Resource}{(e.Planned ? "" : ", by Azure")}")))
             .OrderBy(mark => mark.AtMs)
             .ToList();
         var allEvents = hours.SelectMany(h => h.Events).GroupBy(e => (e.At, e.Title, e.Resource)).Select(g => g.First()).ToList();
@@ -58,8 +58,8 @@ public static class PlanView
         var chart = new CloudChart(
             $"CPU and memory, {CloudTones.WindowWords(window)}",
             [
-                new("CPU", buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), b.CpuPercent)).ToList()),
-                new("Memory", buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), b.MemoryPercent)).ToList()),
+                new("CPU", buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), b.CpuPercent) { Peak = b.CpuMaxPercent }).ToList()) { Amber = PlanThresholds.Cpu.Amber, Red = PlanThresholds.Cpu.Red },
+                new("Memory", buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), b.MemoryPercent) { Peak = b.MemoryMaxPercent }).ToList()) { Amber = PlanThresholds.Memory.Amber, Red = PlanThresholds.Memory.Red },
             ],
             marks,
             PlanThresholds.Cpu.Red,

@@ -201,10 +201,10 @@ public static class ShareCard
         double? dayLine = line * 24;
         var points = days.Select(d => new CloudPoint(d.Day.ToUnixTimeMilliseconds(), ResourceView.Share(d.Value, dayLine))).ToList();
         var used = inputs.Buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), ResourceView.Share(b.Means.GetValueOrDefault("used_gb"), Number(ResourceView.Fact(inputs, "quota_gb", ""))))).ToList();
-        var marks = inputs.Hours.SelectMany(h => h.Events).Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), "event", $"{e.Title} on {e.Resource}")).ToList();
+        var marks = inputs.Hours.SelectMany(h => h.Events).Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), CloudMarks.KindOf(e), $"{e.Title} on {e.Resource}")).ToList();
         long start = days.Count > 0 ? days[0].Day.ToUnixTimeMilliseconds() : (inputs.Now - TimeSpan.FromDays(30)).ToUnixTimeMilliseconds();
         string lineWords = dayLine is { } d ? $"the red line is {d.ToString("N0", CultureInfo.InvariantCulture)} a day ({line!.Value.ToString("N0", CultureInfo.InvariantCulture)} an hour), the alert" : "the alert's line is not read";
-        return new CloudChart("Transactions each day, last 30 days", [new("Transactions a day", points), new("Used of the quota", used)], marks, 100,
+        return new CloudChart("Transactions each day, last 30 days", [new("Transactions a day", points) { Amber = Transactions.Amber, Red = Transactions.Red }, new("Used of the quota", used) { Amber = Quota.Amber, Red = Quota.Red }], marks, 100,
             $"teal transactions a day · green used of the quota · red the alert's line · {lineWords}", start);
     }
 

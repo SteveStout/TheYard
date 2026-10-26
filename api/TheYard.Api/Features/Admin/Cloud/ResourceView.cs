@@ -57,18 +57,29 @@ public static class ResourceView
     public static CloudSpark Spark(ResourceCardInputs inputs, string reading, string name, double? limit, bool percentReading = false) =>
         new(name, Hour(inputs, reading).Select(v => percentReading ? v : Share(v, limit)).ToList());
 
-    /// <summary>The window's chart of two readings as shares of their limits, with deploys and the hours' events marked.</summary>
-    public static CloudChart Chart(ResourceCardInputs inputs, string title, (string Reading, string Name, double? Limit, bool Percent) first, (string Reading, string Name, double? Limit, bool Percent) second, double redLine, string legend, IEnumerable<CloudMark>? extra = null)
+    /// <summary>
+    /// The window's chart of two readings as shares of their limits, with deploys and the hours' events marked. Each
+    /// series carries its own amber and red line, the levels its dial reads, and each point its bucket's peak.
+    /// </summary>
+    public static CloudChart Chart(ResourceCardInputs inputs, string title, (string Reading, string Name, double? Limit, bool Percent) first, (string Reading, string Name, double? Limit, bool Percent) second, double redLine, string legend, IEnumerable<CloudMark>? extra = null, (double? Amber, double? Red)? firstLines = null, (double? Amber, double? Red)? secondLines = null)
     {
-        CloudSeries series((string Reading, string Name, double? Limit, bool Percent) s) =>
-            new(s.Name, inputs.Buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), s.Percent ? b.Means.GetValueOrDefault(s.Reading) : Share(b.Means.GetValueOrDefault(s.Reading), s.Limit))).ToList());
+        double? scaled(double? value, (string Reading, string Name, double? Limit, bool Percent) s) => s.Percent ? value : Share(value, s.Limit);
+        CloudSeries series((string Reading, string Name, double? Limit, bool Percent) s, (double? Amber, double? Red)? lines) =>
+            new(s.Name, inputs.Buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), scaled(b.Means.GetValueOrDefault(s.Reading), s))
+            {
+                Peak = scaled(b.Peaks.GetValueOrDefault(s.Reading), s),
+            }).ToList())
+            {
+                Amber = lines?.Amber,
+                Red = lines?.Red,
+            };
         var marks = Deploys(inputs.Buckets)
             .Concat(inputs.Hours.SelectMany(h => h.Events).Where(e => e.Kind is "restart" or "maintenance" || !e.Planned)
-                .Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), "event", $"{e.Title} on {e.Resource}")))
+                .Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), CloudMarks.KindOf(e), $"{e.Title} on {e.Resource}")))
             .Concat(extra ?? [])
             .OrderBy(mark => mark.AtMs)
             .ToList();
-        return new CloudChart($"{title}, {CloudTones.WindowWords(inputs.Window)}", [series(first), series(second)], marks, redLine, legend, (inputs.Now - inputs.Length).ToUnixTimeMilliseconds());
+        return new CloudChart($"{title}, {CloudTones.WindowWords(inputs.Window)}", [series(first, firstLines), series(second, secondLines)], marks, redLine, legend, (inputs.Now - inputs.Length).ToUnixTimeMilliseconds());
     }
 
     /// <summary>A gold line where a bucket first shows a build the bucket before it did not.</summary>

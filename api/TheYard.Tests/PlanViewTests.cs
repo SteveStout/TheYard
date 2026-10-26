@@ -97,6 +97,40 @@ public class PlanViewTests
     // #endregion plan-view-tests
 
     [Fact]
+    public void Each_series_carries_its_own_lines_and_each_point_its_buckets_peak()
+    {
+        // CPU and memory turn at different levels (amber 60 and red 80, amber 70 and red 85), so each series carries its
+        // own and the chart draws one panel each, never one 80 % line that belongs to only one of them (ADR-102, the
+        // addendum on how a card draws time). A spike averaged into its bucket is kept as the bucket's peak.
+        // Fifteen minutes, three whole buckets of five, each with one minute at 90 and four at 10.
+        var minutes = Enumerable.Range(6, 15).Reverse().Select(i => Minute(i, (60 - i) % 5 == 0 ? 90 : 10, 50)).ToList();
+        var report = Build(minutes, Hour());
+        var (cpu, memory) = (report.Chart.Series[0], report.Chart.Series[1]);
+
+        Assert.Equal(("CPU", 60d, 80d), (cpu.Name, cpu.Amber!.Value, cpu.Red!.Value));
+        Assert.Equal(("Memory", 70d, 85d), (memory.Name, memory.Amber!.Value, memory.Red!.Value));
+        Assert.All(cpu.Points, point => Assert.Equal(90d, point.Peak!.Value, 6));
+        Assert.All(cpu.Points, point => Assert.True(point.Value < point.Peak));
+        Assert.All(memory.Points, point => Assert.Equal(50d, point.Peak!.Value, 6));
+    }
+
+    [Fact]
+    public void A_configuration_write_is_a_counted_change_and_only_a_restart_is_drawn_at_full_height()
+    {
+        // Each roll writes both web apps' configuration and the finished entry names no caller, so a week of rolls
+        // was drawn as two hundred full-height red lines "by Azure" (read live on 26 October: 221 in seven days).
+        var minutes = Enumerable.Range(0, 30).Reverse().Select(i => Minute(i, 30, 50)).ToList();
+        var write = new PlanEvent(Now.AddMinutes(-25), "config", "UpdateWebSite", "APP-THEYARD-SS", Planned: false);
+        var restart = new PlanEvent(Now.AddMinutes(-20), "restart", "Restart Web App", "APP-THEYARD-SS", Planned: false);
+        var report = Build(minutes, Hour(write, restart));
+
+        Assert.Single(report.Chart.Marks, mark => mark.Kind == "change" && mark.Title.StartsWith("UpdateWebSite", StringComparison.Ordinal));
+        Assert.Single(report.Chart.Marks, mark => mark.Kind == "event" && mark.Title.StartsWith("Restart Web App", StringComparison.Ordinal));
+        Assert.Equal("change", CloudMarks.KindOf(write));
+        Assert.Equal("event", CloudMarks.KindOf(new PlanEvent(Now, "maintenance", "Planned maintenance", "PLAN", Planned: true)));
+    }
+
+    [Fact]
     public void A_deploy_is_a_shaded_span_and_a_spike_inside_it_is_named_a_blip()
     {
         var t = new DateTimeOffset(2026, 10, 18, 20, 40, 0, TimeSpan.Zero);

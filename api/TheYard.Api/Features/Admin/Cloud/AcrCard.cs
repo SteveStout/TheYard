@@ -120,7 +120,7 @@ public static class AcrCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, "storage_gb", "Storage, 60 min", storageGb), ResourceView.Spark(inputs, "pulls", "Pulls, 60 min", readsPerMinute)],
-            ResourceView.Chart(inputs, "Storage and pulls", ("storage_gb", "Storage", storageGb, false), ("pulls", "Pulls", readsPerMinute, false), Storage.Red, $"teal storage · green pulls · gold deploys · red event · dashed {Storage.Red} %"),
+            ResourceView.Chart(inputs, "Storage and pulls", ("storage_gb", "Storage", storageGb, false), ("pulls", "Pulls", readsPerMinute, false), Storage.Red, $"teal storage · green pulls · gold deploys · red event · dashed {Storage.Red} %", firstLines: (Storage.Amber, Storage.Red), secondLines: (Pulls.Amber, Pulls.Red)),
             rows,
             readout), Sources);
     }

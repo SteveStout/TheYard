@@ -74,7 +74,9 @@ public class CloudThresholdTests
         Assert.Equal(90, view.Dials[0].Percent);
         Assert.Equal("alarm", view.Dials[0].Tone);
         Assert.Equal("warning", view.Rows.Single(r => r.Key == "throttling").Tone);
-        Assert.Contains(view.Chart.Marks, mark => mark.Kind == "event" && mark.Title.Contains("429", StringComparison.Ordinal));
+        // A throttled bucket is a tally on the time axis, not a full-height line: only what Azure did is drawn at full height.
+        Assert.Contains(view.Chart.Marks, mark => mark.Kind == "count" && mark.Title.Contains("429", StringComparison.Ordinal));
+        Assert.DoesNotContain(view.Chart.Marks, mark => mark.Kind == "event" && mark.Title.Contains("429", StringComparison.Ordinal));
     }
 
 

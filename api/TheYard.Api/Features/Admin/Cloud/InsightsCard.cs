@@ -105,7 +105,7 @@ public static class InsightsCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, capped, "Today, 60 h", cap), ResourceView.Spark(inputs, "sampling", "Sampling, 60 h", 100, percentReading: true)],
-            ResourceView.Chart(inputs, "Ingestion and sampling", (capped, "Ingested", cap, false), ("sampling", "Sampling kept", 100, true), Ingestion.Red, "teal ingestion · green sampling · gold deploys · red capped hour", marks),
+            ResourceView.Chart(inputs, "Ingestion and sampling", (capped, "Ingested", cap, false), ("sampling", "Sampling kept", 100, true), Ingestion.Red, "teal ingestion · green sampling · gold deploys · red capped hour", marks, (Ingestion.Amber, Ingestion.Red), (100 - Dropped.Amber, 100 - Dropped.Red)),
             rows,
             readout), Sources);
     }

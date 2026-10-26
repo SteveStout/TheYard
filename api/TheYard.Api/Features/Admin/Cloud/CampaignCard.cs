@@ -164,8 +164,8 @@ public static class CampaignCard
         var byDay = days.ToDictionary(d => d.Day);
         var sent = window.Select(d => new CloudPoint(Ms(d), byDay.TryGetValue(d, out var r) ? 100.0 * r.Sent / DailyCap : 0)).ToList();
         var written = window.Select(d => new CloudPoint(Ms(d), byDay.TryGetValue(d, out var r) ? 100.0 * r.Shadow / DailyCap : 0)).ToList();
-        var marks = window.Where(d => byDay.TryGetValue(d, out var r) && r.Replies > 0).Select(d => new CloudMark(Ms(d), "event", $"{byDay[d].Replies} replies to the {d:ddd d MMM} emails")).ToList();
-        return new CloudChart("Emails a day, last 30 days", [new("Sent", sent), new("Written in shadow", written)], marks, 100,
+        var marks = window.Where(d => byDay.TryGetValue(d, out var r) && r.Replies > 0).Select(d => new CloudMark(Ms(d), "count", $"{byDay[d].Replies} replies to the {d:ddd d MMM} emails")).ToList();
+        return new CloudChart("Emails a day, last 30 days", [new("Sent", sent) { Red = 100 }, new("Written in shadow", written) { Red = 100 }], marks, 100,
             "teal sent · green written in shadow · red the daily cap of ten · each red mark is a day whose emails drew replies; weekends count like weekdays (Steve's ruling, seven days a week)",
             Ms(window[0]));
     }

@@ -109,7 +109,7 @@ public static class SqlCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, "dtu", "DTU, 60 min", 100, percentReading: true), ResourceView.Spark(inputs, "workers", "Workers, 60 min", 100, percentReading: true)],
-            ResourceView.Chart(inputs, "DTU and data space", ("dtu", "DTU", 100, true), ("storage_gb", "Data space", spaceLimit, false), Dtu.Red, $"teal DTU · green data space · gold deploys · red event · dashed {Dtu.Red} %"),
+            ResourceView.Chart(inputs, "DTU and data space", ("dtu", "DTU", 100, true), ("storage_gb", "Data space", spaceLimit, false), Dtu.Red, $"teal DTU · green data space · gold deploys · red event · dashed {Dtu.Red} %", firstLines: (Dtu.Amber, Dtu.Red), secondLines: (Space.Amber, Space.Red)),
             rows,
             readout), Sources);
     }

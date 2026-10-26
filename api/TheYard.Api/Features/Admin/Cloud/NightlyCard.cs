@@ -192,6 +192,6 @@ public static class NightlyCard
             running = bucket.At < monthStart ? 0 : running + (bucket.Sums.GetValueOrDefault("units_mbms") ?? 0);
             points.Add(new CloudPoint(bucket.At.ToUnixTimeMilliseconds(), ResourceView.Share(running / NightlyMetrics.MbMsPerGbSecond, CloudThresholds.FreeGrantGbSeconds)));
         }
-        return new CloudSeries("Grant used", points);
+        return new CloudSeries("Grant used", points) { Amber = Grant.Amber, Red = Grant.Red };
     }
 }

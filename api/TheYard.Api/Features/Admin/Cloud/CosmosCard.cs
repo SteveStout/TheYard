@@ -97,7 +97,7 @@ public static class CosmosCard
         string throttleShare = throttled is { } t && siteRequests is > 0 ? $"{(t / siteRequests.Value * 100).ToString("0.00", CultureInfo.InvariantCulture)} % of the site's requests" : "no requests read";
         static double SiteOf(ResourceBucket b) => Math.Max(0, (b.Sums.GetValueOrDefault("throttled") ?? 0) - (b.Sums.GetValueOrDefault("throttled_tests") ?? 0));
         var throttles = inputs.Buckets.Where(b => SiteOf(b) > 0)
-            .Select(b => new CloudMark(b.At.ToUnixTimeMilliseconds(), "event", $"{SiteOf(b):0} of the site's requests throttled (429)"));
+            .Select(b => new CloudMark(b.At.ToUnixTimeMilliseconds(), "count", $"{SiteOf(b):0} of the site's requests throttled (429)"));
         var events = inputs.Hours.SelectMany(h => h.Events).ToList();
         var ruTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "ru_per_s").Select(v => ResourceView.Share(v, provisioned)).ToList(), Throughput);
         string throttleTone = ThrottleTone(throttled, siteRequests, ruTone);
@@ -143,7 +143,7 @@ public static class CosmosCard
             ResourceView.Resource(inputs),
             dials,
             [ResourceView.Spark(inputs, "ru_per_s", "RU/s, 60 min", provisioned), ResourceView.Spark(inputs, "normalized", "Normalized RU, 60 min", 100, percentReading: true)],
-            ResourceView.Chart(inputs, "RU/s and storage", ("ru_per_s", "RU/s", provisioned, false), ("storage_gb", "Storage", storageLimit, false), Throughput.Red, $"teal RU/s · green storage · gold deploys · red 429s · dashed {Throughput.Red} %", throttles),
+            ResourceView.Chart(inputs, "RU/s and storage", ("ru_per_s", "RU/s", provisioned, false), ("storage_gb", "Storage", storageLimit, false), Throughput.Red, $"teal RU/s · green storage · gold deploys · red 429s · dashed {Throughput.Red} %", throttles, (Throughput.Amber, Throughput.Red), (Storage.Amber, Storage.Red)),
             rows,
             readout), Sources);
     }

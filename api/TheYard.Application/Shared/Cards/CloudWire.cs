@@ -112,16 +112,27 @@ public sealed record CloudBand(long StartMs, long EndMs, string Title);
 /// <summary>One series of the chart.</summary>
 /// <param name="Name">What it is.</param>
 /// <param name="Points">Its points, oldest first; a null value breaks the line.</param>
-public sealed record CloudSeries(string Name, IReadOnlyList<CloudPoint> Points);
+public sealed record CloudSeries(string Name, IReadOnlyList<CloudPoint> Points)
+{
+    /// <summary>The series' own amber line in percent, the level its dial or row turns amber at; null when it has none.</summary>
+    public double? Amber { get; init; }
+
+    /// <summary>The series' own red line in percent; null when it has none. A chart whose series carry lines draws one panel a series, each against its own.</summary>
+    public double? Red { get; init; }
+}
 
 /// <summary>One point of a series.</summary>
 /// <param name="AtMs">The start of the bucket, in milliseconds since the epoch, UTC.</param>
 /// <param name="Value">The value in percent; null when not read.</param>
-public sealed record CloudPoint(long AtMs, double? Value);
+public sealed record CloudPoint(long AtMs, double? Value)
+{
+    /// <summary>The bucket's highest minute in the same scale as the value, so a spike averaged into an hour still shows; null when not read.</summary>
+    public double? Peak { get; init; }
+}
 
 /// <summary>A moment marked on the chart.</summary>
 /// <param name="AtMs">When, in milliseconds since the epoch, UTC.</param>
-/// <param name="Kind">"deploy" for a gold line, "event" for a red dashed one.</param>
+/// <param name="Kind">"deploy" for a roll, "event" for a restart or maintenance (a full-height red line), "change" for any other Activity Log entry such as a configuration write, and "count" for a bucket's tally such as throttled requests (each of the last two a tick on the time axis).</param>
 /// <param name="Title">What it was, for the hover.</param>
 public sealed record CloudMark(long AtMs, string Kind, string Title);
 

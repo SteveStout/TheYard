@@ -117,7 +117,7 @@ public static class EdgeCard
             new CloudLink(project, admin),
             dials,
             [ResourceView.Spark(inputs, "credits", "Credits, 60 h", NetlifyEdge.FreeCredits), SameSample(ResourceView.Spark(inputs, "cache_hit", "Cache hits, 60 h", 100, percentReading: true), hit)],
-            SameSample(ResourceView.Chart(inputs, "Credits and cache hits", ("credits", "Credits", NetlifyEdge.FreeCredits, false), ("cache_hit", "Cache hits", 100, true), Credits.Red, $"teal credits · green cache hits · gold deploys · dashed {Credits.Red} %"), "Cache hits", hit),
+            SameSample(ResourceView.Chart(inputs, "Credits and cache hits", ("credits", "Credits", NetlifyEdge.FreeCredits, false), ("cache_hit", "Cache hits", 100, true), Credits.Red, $"teal credits · green cache hits · gold deploys · dashed {Credits.Red} %", firstLines: (Credits.Amber, Credits.Red), secondLines: (100 - Misses.Amber, 100 - Misses.Red)), "Cache hits", hit),
             rows,
             readout), Sources);
     }

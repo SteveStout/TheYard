@@ -135,9 +135,9 @@ public static class BlobCard
             ],
             "Blob storage charges for keeping and for each read; a picture named by the hash of its bytes is cached a year, so most reads never reach it.");
         var chart = new CloudChart("Blob reads each day, last 30 days",
-            [new("Blob reads a day", [.. days.Select(d => new CloudPoint(d.Day.ToUnixTimeMilliseconds(), ResourceView.Share(d.Value, lines.DailyReads)))]),
-             new("Bytes kept", [.. inputs.Buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), ResourceView.Share(b.Means.GetValueOrDefault("bytes"), lines.PicturesAmberBytes)))])],
-            [.. inputs.Hours.SelectMany(h => h.Events).Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), "event", $"{e.Title} on {e.Resource}"))],
+            [new("Blob reads a day", [.. days.Select(d => new CloudPoint(d.Day.ToUnixTimeMilliseconds(), ResourceView.Share(d.Value, lines.DailyReads)))]) { Red = 100 },
+             new("Bytes kept", [.. inputs.Buckets.Select(b => new CloudPoint(b.At.ToUnixTimeMilliseconds(), ResourceView.Share(b.Means.GetValueOrDefault("bytes"), lines.PicturesAmberBytes)))]) { Amber = 100 }],
+            [.. inputs.Hours.SelectMany(h => h.Events).Select(e => new CloudMark(e.At.ToUnixTimeMilliseconds(), CloudMarks.KindOf(e), $"{e.Title} on {e.Resource}"))],
             100, $"teal blob reads a day but the account key's · green bytes kept against the pictures' line · red {lines.DailyReads:N0} reads a day",
             days.Count > 0 ? days[0].Day.ToUnixTimeMilliseconds() : (inputs.Now - TimeSpan.FromDays(30)).ToUnixTimeMilliseconds());
         var report = new CloudReport(
