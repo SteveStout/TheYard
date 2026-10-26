@@ -106,6 +106,8 @@
   --pulse-bar-opacity: 0.6; /* the thirty days behind today on the people instrument */
   --strip-ok-opacity: 0.75; /* a day of the nightly card's process strip whose runs all came to success */
   --strip-shadow-opacity: 0.45; /* a day of that strip whose runs only planned (shadow) */
+  --chart-peak-opacity: 0.16; /* the pale band from a bucket's average to its peak, behind a cloud card's line */
+  --chart-roll-opacity: 0.7; /* a roll's full-height gold line on a cloud card's day chart, under the reading */
 
   /* Motion */
   --transition-fast: 150ms ease;

@@ -1,75 +1,84 @@
 /**
- * One dial of a Cloud infrastructure card (ADR: The App Service plan, read every minute): a tick ring round
- * a whole track, the reading's arc in its tone from twelve o'clock, the amber and red marks on the
- * inner edge, a gold dot on the ring at the thirty-day 95th and a red dot at the peak, the big
- * figure with its absolute in the middle, and the dial's name under it.
+ * Does:      Draws one dial as the approved canvas does (ADR: One frame for every resource, the addendum on how a
+ *            card draws time): the open ring of three quarters, the reading's arc in its tone, each threshold's tick
+ *            across the ring with its words outside it on a leader line (amber, red and the thirty-day 95th), a red
+ *            dot at the thirty-day peak, and the big figure with its absolute in the middle.
+ * Does not:  Decide the tone, the levels or where a label goes (the server and src/lib/cloudGauge.ts do), or print
+ *            the dial's name, hold line and sparkline (CardShell.tsx does).
+ * Used by:   src/components/admin/CardShell/CardShell.tsx, through index.ts.
  */
-import { angleOf, arcPath, pointAt, ticks, type CloudDial as Dial } from '../../../lib/cloud';
+import {
+  gaugeArc,
+  gaugeLabels,
+  gaugePoint,
+  gaugeAngle,
+  type GaugeLabel,
+} from '../../../lib/cloudGauge';
+import type { CloudDial as Dial } from '../../../lib/cloud';
 import styles from './CloudDial.module.css';
 
-const SIZE = 200;
-const C = SIZE / 2;
-const R = 72;
+const W = 340;
+const H = 190;
+const CX = W / 2;
+const CY = 100;
+const R = 64;
+
+function Label({ label }: { label: GaugeLabel }) {
+  return (
+    <g className={styles[label.key]} data-testid="dial-threshold" data-key={label.key}>
+      <line
+        className={styles.tick}
+        x1={label.tick.x1}
+        y1={label.tick.y1}
+        x2={label.tick.x2}
+        y2={label.tick.y2}
+      />
+      <path className={styles.leader} d={label.leader} />
+      <text className={styles.label} x={label.textX} y={label.textY} textAnchor={label.anchor}>
+        {label.text}
+      </text>
+    </g>
+  );
+}
 
 export function CloudDial({ dial, testId }: { dial: Dial; testId: string }) {
-  const at = (percent: number, radius: number) => pointAt(C, C, radius, angleOf(percent));
-  const mark = (percent: number, className: string) => {
-    const inner = at(percent, R - 16);
-    const outer = at(percent, R - 9);
-    return <line className={className} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} />;
-  };
+  const labels = gaugeLabels(dial, CX, CY, R, H);
+  const peak = dial.peak === null ? null : gaugePoint(CX, CY, R, gaugeAngle(dial.peak));
   return (
     <figure className={styles.dial} data-testid={testId} data-tone={dial.tone}>
       <svg
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
+        viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={`${dial.name}: ${dial.big}, ${dial.absolute}`}
+        aria-label={`${dial.name}: ${dial.big}, ${dial.absolute}; ${labels.map((l) => l.text).join(', ')}`}
       >
-        <circle className={styles.face} cx={C} cy={C} r={R + 24} />
-        {ticks().map((tick) => {
-          const a = at(tick.percent, R + 13);
-          const b = at(tick.percent, R + (tick.long ? 21 : 17));
-          return (
-            <line key={tick.percent} className={styles.tick} x1={a.x} y1={a.y} x2={b.x} y2={b.y} />
-          );
-        })}
-        <circle className={styles.track} cx={C} cy={C} r={R} />
+        <path className={styles.track} d={gaugeArc(CX, CY, R, 0, 100)} />
         {dial.percent !== null && dial.percent > 0 && (
           <path
             className={`${styles.arc} ${styles[dial.tone]}`}
-            d={arcPath(C, C, R, 0, dial.percent)}
+            d={gaugeArc(CX, CY, R, 0, dial.percent)}
           />
         )}
-        {mark(dial.amber, styles.amberMark)}
-        {mark(dial.red, styles.redMark)}
-        {dial.p95 !== null && (
-          <circle className={styles.p95} cx={at(dial.p95, R).x} cy={at(dial.p95, R).y} r={6}>
-            <title>{`95th over 30 days: ${Math.round(dial.p95)} %`}</title>
-          </circle>
-        )}
-        {dial.peak !== null && (
-          <circle
-            className={styles.peak}
-            cx={at(dial.peak, R + 9).x}
-            cy={at(dial.peak, R + 9).y}
-            r={4}
-          >
+        {labels.map((label) => (
+          <Label key={label.key} label={label} />
+        ))}
+        {peak !== null && dial.peak !== null && (
+          <circle className={styles.peakDot} cx={peak.x} cy={peak.y} r={3.5}>
             <title>{`Peak over 30 days: ${Math.round(dial.peak)} %`}</title>
           </circle>
         )}
         <text
           className={dial.percent === null ? styles.bigWord : styles.big}
-          x={C}
-          y={C + 6}
+          x={CX}
+          y={CY + 8}
           textAnchor="middle"
+          data-testid="dial-big"
         >
           {dial.big}
         </text>
-        <text className={styles.absolute} x={C} y={C + 28} textAnchor="middle">
+        <text className={styles.absolute} x={CX} y={CY + 30} textAnchor="middle">
           {dial.absolute}
         </text>
       </svg>
-      <figcaption className={styles.name}>{dial.name}</figcaption>
     </figure>
   );
 }

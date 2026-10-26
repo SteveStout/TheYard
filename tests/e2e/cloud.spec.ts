@@ -21,8 +21,11 @@ test('the plan card opens Cloud infrastructure and draws its dials and questions
   await expect(card.getByTestId('cloud-dial-right')).toBeVisible();
   await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(4);
   await expect(card.getByTestId('cloud-readout')).toBeVisible();
-  // A local run has no identity to ask Azure with: the dials say "not read", never 0 %.
-  await expect(card.getByTestId('cloud-dial-left')).not.toContainText('0 %');
+  // A local run has no identity to ask Azure with: the dials say "not read", never 0 %. The figure is read on its
+  // own, because the dial now names its thresholds on itself ("red 80 %").
+  await expect(card.getByTestId('cloud-dial-left').getByTestId('dial-big')).not.toContainText(
+    '0 %'
+  );
   const rail = page.getByTestId('bench-rail');
   const links = rail.locator('[data-testid^="bench-link-"]');
   const slugs = await links.evaluateAll((nodes) =>
@@ -36,8 +39,8 @@ test('the plan card opens Cloud infrastructure and draws its dials and questions
 // #region card-shell
 /**
  * The CardShell's slots (ADR: The onion cut into vertical slices, the CardShell): the tone chip
- * beside the title, the spec's source, the thresholds as chips, the rail's tone dot read before
- * the card is opened, and up and down walking the rail.
+ * beside the title, the spec's source, the thresholds named on the dials, the chart's "now", the
+ * rail's tone dot read before the card is opened, and up and down walking the rail.
  */
 test('the shell draws the tone, the chips and the rail dot, and the arrows walk the rail', async ({
   page,
@@ -45,7 +48,13 @@ test('the shell draws the tone, the chips and the rail dot, and the arrows walk 
   await openTheYard(page, '/?view=admin&card=plan');
   const card = page.getByTestId('plan-card');
   await expect(card.getByTestId('card-tone')).toBeVisible({ timeout: 30_000 });
-  await expect(card.getByTestId('card-thresholds').locator('li').first()).toBeVisible();
+  // Each threshold is named on its dial by a leader line, where the row of chips used to be (the approved canvas).
+  await expect(card.getByTestId('card-thresholds')).toHaveCount(0);
+  await expect(
+    card.getByTestId('cloud-dial-left').getByTestId('dial-threshold').first()
+  ).toBeVisible();
+  // The chart's time axis says where now is.
+  await expect(card.getByTestId('cloud-chart').getByTestId('cloud-now')).toBeVisible();
   const rail = page.getByTestId('bench-rail');
   await expect(rail.getByTestId('bench-tone-sqldb')).toBeVisible({ timeout: 30_000 });
   // Every card under Cloud infrastructure calculates a status, the three that draw their own body too.

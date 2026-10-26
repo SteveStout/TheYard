@@ -1,41 +1,36 @@
 /**
- * Does:      Draws one dial: a pale face, the tick ring in hairlines, the arc in the reading's tone, the amber and
- *            red marks, the 30-day 95th in the gold bar's dark tone and the peak in red.
- * Does not:  Decide the tone or the angles (the server and src/lib/cloud.ts do).
+ * Does:      Draws one dial as the approved canvas does: the open ring's track, the arc in the reading's tone, each
+ *            threshold's tick, leader line and words in its own colour (amber, red, the 95th in the gold bar's dark
+ *            tone, dotted), the peak dot in red and the big figure with its absolute.
+ * Does not:  Decide the tone, the angles or where a label goes (the server and src/lib/cloudGauge.ts do), or lay the
+ *            dial out beside its title and sparkline (CardShell does).
  * Used by:   CloudDial.tsx.
  */
 .dial {
   display: grid;
   justify-items: center;
-  gap: var(--space-1);
   margin: 0;
   min-width: 0;
+  width: 100%;
 }
 
 .dial svg {
-  width: min(200px, 100%);
+  width: min(340px, 100%);
   height: auto;
-}
-
-.face {
-  fill: var(--color-surface-muted);
-  stroke: var(--color-border);
-}
-
-.tick {
-  stroke: var(--color-border-strong);
-  stroke-width: 1;
+  overflow: visible;
 }
 
 .track {
   fill: none;
   stroke: var(--color-neutral-soft);
   stroke-width: 14;
+  stroke-linecap: round;
 }
 
 .arc {
   fill: none;
   stroke-width: 14;
+  stroke-linecap: round;
 }
 
 .good {
@@ -54,21 +49,53 @@
   stroke: var(--color-danger);
 }
 
-.amberMark {
+.tick {
+  stroke-width: 3;
+}
+
+.leader {
+  fill: none;
+  stroke-width: 1;
+}
+
+.label {
+  font-size: var(--chart-text-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.amber .tick,
+.amber .leader {
   stroke: var(--color-warning);
-  stroke-width: 2.5;
 }
 
-.redMark {
+.amber .label {
+  fill: var(--color-warning);
+}
+
+.red .tick,
+.red .leader {
   stroke: var(--color-danger);
-  stroke-width: 2.5;
 }
 
-.p95 {
+.red .label {
+  fill: var(--color-danger);
+}
+
+.p95 .tick {
+  stroke: var(--color-gold-bar-dark);
+  stroke-dasharray: 2 2;
+}
+
+.p95 .leader {
+  stroke: var(--color-gold-bar-dark);
+}
+
+.p95 .label {
   fill: var(--color-gold-bar-dark);
 }
 
-.peak {
+.peakDot {
   fill: var(--color-danger);
 }
 
@@ -90,10 +117,4 @@
   fill: var(--color-text);
   font-size: var(--chart-text-sm);
   font-variant-numeric: tabular-nums;
-}
-
-.name {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-heading);
 }

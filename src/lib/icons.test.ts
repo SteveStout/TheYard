@@ -74,12 +74,25 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // hairline of the card's ground between the donut's slices. Drawings, not icons.
   'SpendCard.module.css': ['.newest', '.arc'],
   'Ring.module.css': ['.tick', '.tickMajor'],
-  // The Cloud infrastructure frame (ADR: The App Service plan, read every minute): the sparkline,
-  // the chart's grid, red line, events, deploys and two series, the dial's ticks, track, arc and
-  // its amber and red marks, and the readout's uptime ring. Drawings, not icons.
+  // The Cloud infrastructure frame (ADR: The App Service plan, read every minute; ADR: One frame for
+  // every resource, the addendum on how a card draws time): the sparkline, each panel's grid, its
+  // amber and red lines, events, deploys and series line, the time axis's baseline, its counted
+  // ticks and the "now" mark; the dial's threshold ticks and leader lines, track and arc; and the
+  // readout's uptime ring. Drawings, not icons.
   'CardShell.module.css': ['.spark path'],
-  'CloudChart.module.css': ['.grid', '.redLine', '.event', '.deploy line', '.first', '.second'],
-  'CloudDial.module.css': ['.tick', '.track', '.arc', '.amberMark', '.redMark'],
+  'CloudChart.module.css': [
+    '.grid',
+    '.redLine',
+    '.amberLine',
+    '.event',
+    '.deploy line',
+    '.line',
+    '.baseline',
+    '.countTick line',
+    '.changeTick line',
+    '.nowMark line',
+  ],
+  'CloudDial.module.css': ['.tick', '.leader', '.track', '.arc'],
   // The working lock (ADR: One working lock for the whole site): the ring's glass, track and
   // graduations, the gold sweep and the teal arc. A drawing, not an icon.
   'WorkingLock.module.css': ['.glass', '.track', '.ticks', '.sweep', '.inner'],

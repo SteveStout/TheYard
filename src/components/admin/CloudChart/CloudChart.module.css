@@ -1,12 +1,14 @@
 /**
- * Does:      Draws the window's chart: two hairline series, the red line dashed, deploys in the gold bar's dark
- *            tone, events dotted red, and the days named under it.
- * Does not:  Place points or marks (src/lib/cloud.ts does) or draw the dials.
- * Used by:   CloudChart.tsx.
+ * Does:      Draws a card's chart as the approved canvas does: one panel a series with its own amber and red lines
+ *            labelled in the margin, light day lines, the peak band pale behind each line, the series heaviest and
+ *            darkest, Azure's events dotted red at full height, the rolls gold, and under the panels the time axis
+ *            with counted ticks, a day label under every day and the "now" mark; the legend as chips.
+ * Does not:  Place points, marks or labels (src/lib/cloud.ts and src/lib/cloudChart.ts do) or draw the dials.
+ * Used by:   CloudChart.tsx, CloudPanel.tsx.
  */
 .chart {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
   margin: 0;
   min-width: 0;
 }
@@ -24,14 +26,42 @@
   color: var(--color-heading);
 }
 
-.chart svg {
-  width: 100%;
-  height: auto;
+.panelBox {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.panelName {
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.now {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+.panel,
+.axisTrack {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
 }
 
 .frame {
-  fill: var(--color-surface);
-  stroke: var(--color-border);
+  fill: var(--color-surface-muted);
+  stroke: none;
 }
 
 .grid {
@@ -39,19 +69,13 @@
   stroke-width: 0.75;
 }
 
-.axis,
-.monday {
+.axis {
   fill: var(--color-text-muted);
   font-size: var(--chart-text-2xs);
   font-variant-numeric: tabular-nums;
 }
 
-.monday {
-  fill: var(--color-heading);
-  font-weight: var(--weight-semibold);
-}
-
-/* A deploy's span: a pale wash of the accent behind the series, never a line of its own. */
+/* A deploy's span at an hour or a day: a pale wash of the accent behind the series, never a line of its own. */
 .band {
   fill: var(--color-accent-soft);
 }
@@ -62,33 +86,125 @@
   stroke-width: 1;
 }
 
+.amberLine {
+  stroke: var(--color-warning);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+}
+
+.redText,
+.amberText {
+  font-size: var(--chart-text-xs);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.redText {
+  fill: var(--color-danger);
+}
+
+.amberText {
+  fill: var(--color-warning);
+}
+
 .event {
   stroke: var(--color-danger);
   stroke-dasharray: 1.5 2;
-  stroke-width: 1;
+  stroke-width: 1.25;
 }
 
 .deploy line {
   stroke: var(--color-gold-bar-dark);
-  stroke-width: 1.25;
+  stroke-width: 1;
+  stroke-opacity: var(--chart-roll-opacity);
 }
 
 .deploy path {
   fill: var(--color-gold-bar-dark);
 }
 
-.first {
+/* The reading is the darkest, heaviest thing on the chart, drawn after every mark, in its series' colour. */
+.line {
   fill: none;
-  stroke: var(--color-accent);
-  stroke-width: 1.5;
+  stroke: var(--series-colour);
+  stroke-width: 2;
   stroke-linejoin: round;
 }
 
+.peakBand {
+  stroke: none;
+  fill: var(--series-colour);
+  fill-opacity: var(--chart-peak-opacity);
+}
+
+.first {
+  --series-colour: var(--color-accent);
+}
+
 .second {
-  fill: none;
-  stroke: var(--color-green-dark);
+  --series-colour: var(--color-green-dark);
+}
+
+.third {
+  --series-colour: var(--color-gold-bar-dark);
+}
+
+.fourth {
+  --series-colour: var(--color-text-muted);
+}
+
+.baseline {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+
+.rollTick circle {
+  fill: var(--color-gold-bar-dark);
+}
+
+.rollTick text {
+  fill: var(--color-surface);
+  font-size: var(--chart-text-2xs);
+  font-weight: var(--weight-semibold);
+}
+
+.countTick line {
+  stroke: var(--color-danger);
+  stroke-width: 2;
+}
+
+.changeTick line {
+  stroke: var(--color-text-muted);
   stroke-width: 1.5;
-  stroke-linejoin: round;
+}
+
+.changeTick text {
+  fill: var(--color-text-muted);
+  font-size: var(--chart-text-2xs);
+  font-weight: var(--weight-semibold);
+}
+
+.countTick text {
+  fill: var(--color-danger);
+  font-size: var(--chart-text-2xs);
+  font-weight: var(--weight-semibold);
+}
+
+.day {
+  fill: var(--color-text-muted);
+  font-size: var(--chart-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.nowMark line {
+  stroke: var(--color-heading);
+  stroke-width: 1.5;
+}
+
+.nowMark text {
+  fill: var(--color-heading);
+  font-size: var(--chart-text-xs);
+  font-weight: var(--weight-semibold);
 }
 
 .legend {
@@ -96,7 +212,7 @@
   color: var(--color-text-muted);
 }
 
-/* The legend as chips, one a series or a mark, in place of one sentence. */
+/* The legend as chips: only what the chart does not already say on itself. */
 .legendChips {
   display: flex;
   flex-wrap: wrap;

@@ -32,7 +32,7 @@ The site already keeps what its own machines are doing, one document a minute (A
 
 **Deploys and platform events on the memory line.** Every kept minute carries the build version the site was running, so the thirty-day chart draws a gold marker wherever the version changed, with no second source and no clock to reconcile. Azure's own events, read from the Activity Log, draw as red dashed lines on the same axis. This is the decision the whole card rests on: the two things that move memory are drawn where memory is drawn.
 
-```live path=src/components/admin/CloudChart/CloudChart.tsx region=plan-markers
+```live path=src/components/admin/CloudChart/CloudPanel.tsx region=plan-markers
 ```
 
 **Thresholds held by a test, sustained before they speak.** Processor amber at 60 and red at 80 per cent, memory amber at 70 and red at 85, the HTTP queue amber at 5 and red at 20 waiting, outbound sockets amber at 60 per cent of the plan's 1,920. Each must hold for fifteen minutes before the card changes colour, so a deploy's two-minute warm-up spike reads as a spike and not as an alarm. Any app stopped, or any unplanned restart in the window, is red at once. `PlanThresholdTests` holds every number.

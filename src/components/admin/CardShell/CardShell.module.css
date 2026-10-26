@@ -1,7 +1,8 @@
 /**
  * Does:      Lays out the shell every Cloud infrastructure card shares: the card and its summary side by side, the
- *            header with its tone chip and the spec's source chip, the sub line, the dials with the sparklines
- *            between them, the line under each dial naming its marks, and the threshold chips.
+ *            header with its tone chip and the spec's source chip, the sub line, and the two dial panels across the
+ *            card's full width (side by side when the card is wide, stacked when it is a phone's width), each with
+ *            its name, its hold line and its own sparkline under it, then any sparkline that is no dial's own.
  * Does not:  Draw a dial, the chart, the rows or the readout (each has its own sheet), or the panels' glass.
  * Used by:   CardShell.tsx.
  */
@@ -17,6 +18,7 @@
   gap: var(--space-3);
   padding: var(--space-4);
   min-width: 0;
+  container-type: inline-size;
 }
 
 .header {
@@ -45,16 +47,17 @@
   color: var(--color-text);
 }
 
+/* The dials take the card's full width: two side by side when the card is wide, one above the other on a phone. */
 .dials {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 120px) minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-2);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
 }
 
-.between {
-  display: grid;
-  gap: var(--space-2);
+@container (min-width: 640px) {
+  .dials {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 }
 
 .spark {
@@ -110,8 +113,7 @@
 
 /* The card's one tone, beside its title: the same tone as the rail's dot. */
 .toneChip,
-.sourceChip,
-.chip {
+.sourceChip {
   display: inline-block;
   padding: 1px var(--space-2);
   border: 1px solid var(--color-border-strong);
@@ -124,22 +126,19 @@
   background: var(--color-surface);
 }
 
-.toneChip[data-tone='fine'],
-.chip[data-tone='held'] {
+.toneChip[data-tone='fine'] {
   border-color: var(--color-success);
   color: var(--color-success);
   background: var(--color-success-soft);
 }
 
-.toneChip[data-tone='amber'],
-.chip[data-tone='amber'] {
+.toneChip[data-tone='amber'] {
   border-color: var(--color-warning-border);
   color: var(--color-warning);
   background: var(--color-warning-soft);
 }
 
-.toneChip[data-tone='red'],
-.chip[data-tone='red'] {
+.toneChip[data-tone='red'] {
   border-color: var(--color-danger);
   color: var(--color-danger);
   background: var(--color-danger-soft);
@@ -153,39 +152,38 @@
 
 .dialBox {
   display: grid;
-  justify-items: center;
-  gap: 2px;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  min-width: 0;
 }
 
-/* The line under a dial naming its marks, so the ticks are read without a key. */
-.marks {
+.dialName {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-heading);
+}
+
+/* The sixty-minute lines that are no dial's own, side by side under the dials, never dropped. */
+.sparks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-2);
+}
+
+/* How the dial's colour is held, in one quiet line under it. */
+.hold {
   margin: 0;
   font-size: var(--chart-text-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   text-align: center;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.chip {
-  text-transform: none;
 }
 
 @media (max-width: 1023.98px) {
   .frame {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dials {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
   }
 }

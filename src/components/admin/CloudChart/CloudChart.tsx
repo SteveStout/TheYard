@@ -1,19 +1,56 @@
 /**
- * A Cloud infrastructure card's window as one chart (ADR: The App Service plan, read every minute): the
- * first series in teal and the second in dark green against the dashed red line, deploys as gold
- * lines with a triangle on top, events as red dotted lines, and the days named on Mondays and
- * Fridays. A missing bucket breaks the line rather than drawing a zero nobody measured.
+ * Does:      Draws a card's window as the approved canvas "Admin card chart redesign" does: one panel a series when
+ *            each series has its own lines, stacked on one time axis, each titled with its name and ending in its
+ *            newest reading; under them the time axis with the rolls and the tallies as counted ticks, a day label
+ *            under every day and a "now" mark at the right edge; and the legend saying only what the chart does not.
+ *            It measures its own width, so the words on it stay the size the page sets. A missing bucket breaks the
+ *            line rather than drawing a zero nobody measured.
+ * Does not:  Place points, marks or labels (src/lib/cloud.ts and src/lib/cloudChart.ts do), draw a panel's inside
+ *            (CloudPanel.tsx does), or draw the dials.
+ * Used by:   src/components/admin/CardShell/CardShell.tsx, through index.ts.
  */
-import type { ReactNode } from 'react';
-import { dayMarks, legendChips, linePath, xOf, yOf, type CloudReport } from '../../../lib/cloud';
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
+import { xOf, type CloudReport } from '../../../lib/cloud';
+import {
+  dayLabels,
+  isWide,
+  joinClose,
+  legendRest,
+  markKey,
+  midnights,
+  nowLabel,
+  panelsOf,
+  spaced,
+  ticksOf,
+  windowOf,
+} from '../../../lib/cloudChart';
+import { CloudPanel, LEFT, RIGHT } from './CloudPanel';
 import styles from './CloudChart.module.css';
 
-const W = 560;
-const H = 150;
-const LEFT = 34;
-const RIGHT = 4;
-const TOP = 6;
-const PLOT = 112;
+/** The width a chart is drawn at before the page has measured it, and in a test with no layout. */
+const FALLBACK_WIDTH = 560;
+/** Below this the axis prints two-letter day names. */
+const NARROW = 480;
+const AXIS = 60;
+/** Where the time axis's line runs: the rolls' counted dots sit on it, the tallies and changes stand above it. */
+const BASE = 22;
+
+/** The figure's own width, measured, so text on the chart stays the size the page sets rather than scaling with it. */
+function useWidth(): [RefObject<HTMLElement | null>, number] {
+  const ref = useRef<HTMLElement | null>(null);
+  const [width, setWidth] = useState(FALLBACK_WIDTH);
+  useEffect(() => {
+    const element = ref.current;
+    if (element === null || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver((entries) => {
+      const seen = Math.floor(entries[0]?.contentRect.width ?? 0);
+      if (seen > 0) setWidth(seen);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width];
+}
 
 export function CloudChart({
   chart,
@@ -24,102 +61,122 @@ export function CloudChart({
   endMs: number;
   toolbar: ReactNode;
 }) {
-  const x = (at: number) => LEFT + xOf(at, chart.start_ms, endMs, W - LEFT - RIGHT);
-  const y = (percent: number) => TOP + yOf(percent, PLOT);
-  const [first, second] = chart.series;
-  const line = (series: typeof first | undefined) =>
-    series === undefined
-      ? ''
-      : linePath(
-          series.points.map((p) => ({ x: x(p.at_ms), y: p.value === null ? null : y(p.value) }))
-        );
+  const window = windowOf(chart.start_ms, endMs);
+  const [ref, width] = useWidth();
+  const x = (at: number) => LEFT + xOf(at, chart.start_ms, endMs, width - LEFT - RIGHT);
+  const panels = panelsOf(chart);
+  const hasPeaks = chart.series.some((s) => s.points.some((p) => p.peak != null));
+  const height = panels.length > 1 ? 104 : 140;
+  const short = width < NARROW;
+  const ticks = joinClose(ticksOf(chart.marks, window), x, 16);
+  const days = spaced(dayLabels(chart.start_ms, endMs, window, short), x, short ? 38 : 52);
+  const bucket = window === '30d' ? 'four hours’' : 'hour’s';
+  const how =
+    isWide(window) && hasPeaks
+      ? short
+        ? `${window === '30d' ? '4-hour' : 'hourly'} average, peak shaded`
+        : `each ${bucket} average, its peak shaded`
+      : '';
   return (
-    <figure className={styles.chart} data-testid="cloud-chart">
+    <figure className={styles.chart} data-testid="cloud-chart" ref={ref}>
       <div className={styles.head}>
         <span className={styles.title}>{chart.title}</span>
         {toolbar}
       </div>
+      {panels.map((panel) => (
+        <div key={panel.name} className={styles.panelBox}>
+          <p className={styles.panelHead}>
+            <span>
+              <span className={styles.panelName}>{panel.name}</span>
+              {how === '' ? '' : ` · ${how}`}
+            </span>
+            {panel.series.length === 1 && (
+              <span className={styles.now}>{nowLabel(panel.series[0])}</span>
+            )}
+          </p>
+          <CloudPanel
+            chart={chart}
+            panel={panel}
+            window={window}
+            width={width}
+            height={height}
+            x={x}
+            endMs={endMs}
+          />
+        </div>
+      ))}
       <svg
-        viewBox={`0 0 ${W} ${H}`}
+        className={styles.axisTrack}
+        width={width}
+        height={AXIS}
+        viewBox={`0 0 ${width} ${AXIS}`}
         role="img"
-        aria-label={`${chart.title}, with deploys and events marked`}
+        aria-label={`Time axis, ${ticks.length} counted marks`}
       >
-        <rect className={styles.frame} x={LEFT} y={TOP} width={W - LEFT - RIGHT} height={PLOT} />
-        {[20, 40, 60, 80].map((level) => (
-          <g key={level}>
-            <line className={styles.grid} x1={LEFT} x2={W - RIGHT} y1={y(level)} y2={y(level)} />
-            <text className={styles.axis} x={LEFT - 5} y={y(level) + 3} textAnchor="end">
-              {level}%
-            </text>
-          </g>
+        <line className={styles.baseline} x1={LEFT} x2={width - RIGHT} y1={BASE} y2={BASE} />
+        {midnights(chart.start_ms, endMs).map((at) => (
+          <line
+            key={at}
+            className={styles.baseline}
+            x1={x(at)}
+            x2={x(at)}
+            y1={BASE}
+            y2={BASE + 6}
+          />
         ))}
-        {/* #region deploy-bands */}
-        {/* Each roll shaded behind the lines, so a spike inside one reads as the deploy it was. */}
-        {chart.bands.map((band) => (
-          <rect
-            key={`${band.start_ms}-${band.title}`}
-            className={styles.band}
-            x={x(band.start_ms)}
-            y={TOP}
-            width={Math.max(2, x(band.end_ms) - x(band.start_ms))}
-            height={PLOT}
-            data-testid="cloud-band"
-          >
-            <title>{band.title}</title>
-          </rect>
-        ))}
-        {/* #endregion deploy-bands */}
-        <line
-          className={styles.redLine}
-          x1={LEFT}
-          x2={W - RIGHT}
-          y1={y(chart.red_line)}
-          y2={y(chart.red_line)}
-        />
-        {/* #region plan-markers */}
-        {/* A gold line where the build changed, a red dashed line where Azure acted, on the series' own axis. */}
-        {chart.marks.map((mark) =>
-          mark.kind === 'deploy' ? (
-            <g key={`${mark.at_ms}-${mark.title}`} className={styles.deploy}>
-              <line x1={x(mark.at_ms)} x2={x(mark.at_ms)} y1={TOP} y2={TOP + PLOT} />
-              <path
-                d={`M ${x(mark.at_ms) - 3.5} ${TOP - 4} L ${x(mark.at_ms) + 3.5} ${TOP - 4} L ${x(mark.at_ms)} ${TOP + 2} Z`}
-              />
-              <title>{mark.title}</title>
+        {ticks.map((tick) =>
+          tick.kind === 'deploy' ? (
+            <g
+              key={`d-${tick.atMs}`}
+              className={styles.rollTick}
+              data-testid="cloud-tick"
+              data-kind="deploy"
+            >
+              <circle cx={x(tick.atMs)} cy={BASE} r={7} />
+              <text x={x(tick.atMs)} y={BASE + 3.5} textAnchor="middle">
+                {tick.count}
+              </text>
+              <title>{tick.titles.join('\n')}</title>
             </g>
           ) : (
-            <line
-              key={`${mark.at_ms}-${mark.title}`}
-              className={styles.event}
-              x1={x(mark.at_ms)}
-              x2={x(mark.at_ms)}
-              y1={TOP}
-              y2={TOP + PLOT}
+            <g
+              key={`${tick.kind}-${tick.atMs}`}
+              className={tick.kind === 'change' ? styles.changeTick : styles.countTick}
+              data-testid="cloud-tick"
+              data-kind={tick.kind}
             >
-              <title>{mark.title}</title>
-            </line>
+              <line x1={x(tick.atMs)} x2={x(tick.atMs)} y1={2} y2={12} />
+              {tick.count > 1 && (
+                <text x={x(tick.atMs) + 3} y={10} textAnchor="start">
+                  {tick.count}
+                </text>
+              )}
+              <title>{tick.titles.join('\n')}</title>
+            </g>
           )
         )}
-        {/* #endregion plan-markers */}
-        <path className={styles.second} d={line(second)} />
-        <path className={styles.first} d={line(first)} />
-        {dayMarks(chart.start_ms, endMs)
-          .filter((mark) => mark.label !== null)
-          .map((mark) => (
-            <text
-              key={mark.atMs}
-              className={mark.label === 'Mon' ? styles.monday : styles.axis}
-              x={x(mark.atMs)}
-              y={H - 18}
-              textAnchor="middle"
-            >
-              {`${mark.label} ${new Date(mark.atMs).getUTCDate()}`}
-            </text>
-          ))}
+        {days.map((label) => (
+          <text
+            key={label.atMs}
+            className={styles.day}
+            x={x(label.atMs)}
+            y={BASE + 20}
+            textAnchor="middle"
+            data-testid="cloud-day"
+          >
+            {label.text}
+          </text>
+        ))}
+        <g className={styles.nowMark} data-testid="cloud-now">
+          <line x1={width - RIGHT} x2={width - RIGHT} y1={BASE - 8} y2={BASE + 8} />
+          <text x={width - RIGHT} y={AXIS - 3} textAnchor="end">
+            now
+          </text>
+        </g>
       </svg>
       <figcaption className={styles.legend}>
         <ul className={styles.legendChips} aria-label="Legend">
-          {legendChips(chart.legend).map((chip) => (
+          {[...markKey(chart, window), ...legendRest(chart.legend)].map((chip) => (
             <li key={chip} className={styles.legendChip}>
               {chip}
             </li>

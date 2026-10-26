@@ -54,8 +54,15 @@ export type CloudReport = {
   refresh_seconds: number;
   chart: {
     title: string;
-    series: { name: string; points: { at_ms: number; value: number | null }[] }[];
-    marks: { at_ms: number; kind: 'deploy' | 'event'; title: string }[];
+    /** Each series, with its own amber and red line when it has one, and each point its bucket's peak. */
+    series: {
+      name: string;
+      points: { at_ms: number; value: number | null; peak?: number | null }[];
+      amber?: number | null;
+      red?: number | null;
+    }[];
+    /** A roll, a restart or maintenance (full height), an app's settings written, or a bucket's tally (ticks). */
+    marks: { at_ms: number; kind: 'deploy' | 'event' | 'change' | 'count'; title: string }[];
     red_line: number;
     legend: string;
     start_ms: number;
