@@ -179,7 +179,7 @@ public class AppServiceTemplateTests
         Assert.Contains("ENV PORT=8080", Read("render", "Dockerfile"), StringComparison.Ordinal);
         Assert.Contains("healthCheckPath: '/healthz'", template, StringComparison.Ordinal);
         Assert.Contains("url.pathname === '/healthz'", Read("render", "server.mjs"), StringComparison.Ordinal);
-        Assert.Contains("acrUseManagedIdentityCreds: true", template, StringComparison.Ordinal);
+        Assert.Contains("acrUseManagedIdentityCreds: false", template, StringComparison.Ordinal);
         Assert.Contains("{ name: 'YARD_SITES', value: 'sql=https://${toLower(oneSite)}.azurewebsites.net,cosmos=https://${toLower(oneSite)}.azurewebsites.net' }", template, StringComparison.Ordinal);
         foreach (string secret in new[] { "Auth__SigningKey", "Admin__Key", "ConnectionStrings", "APPLICATIONINSIGHTS_CONNECTION_STRING", "Cosmos__", "@secure()" })
         {

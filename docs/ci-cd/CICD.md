@@ -27,9 +27,10 @@ download cannot turn a good version red (ADR-068, the addendum of 1.0.4.72).
 ![The CI workflow runs on GitHub Actions, every one green, forty-one of them by the end of the second day](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-runs.jpg)
 
 **Continuous deployment.** When the gate pushes to main, a workflow named
-Deploy builds the container image, pushes it to Azure Container Registry
-(and, from 1.0.4.77, to GitHub's own registry beside it, which the roll does not
-pull from until the packages are public), and rolls it onto the one web app that serves both sites and The Shed, with no
+Deploy builds the container image, pushes it to GitHub's own registry, ghcr.io,
+and to Azure Container Registry beside it (from 1.0.4.88 the roll pulls from
+GitHub's, public and with no credential, and the Azure registry keeps the same
+tag for the undo), and rolls it onto the one web app that serves both sites and The Shed, with no
 human in the loop; it reads the Cosmos DB site's name and The Shed's name at the
 origin before any domain, and the edge moves after it, only when the edge's
 rules changed (ADR: One web app for every .NET process). Until 19 October a

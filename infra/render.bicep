@@ -67,7 +67,8 @@ resource render 'Microsoft.Web/sites@2023-12-01' = {
       http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
-      acrUseManagedIdentityCreds: true
+      // Pulled from GitHub's registry, public, with no credential (ADR-009); the undo sets this back to true.
+      acrUseManagedIdentityCreds: false
       acrUserManagedIdentityID: identity.properties.clientId
       appSettings: [
         { name: 'WEBSITES_PORT', value: '8080' }

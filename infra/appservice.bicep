@@ -152,8 +152,9 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
         http20Enabled: true
         minTlsVersion: '1.2'
         ftpsState: 'Disabled'
-        // The registry pull as the user-assigned identity, no admin user and no password anywhere.
-        acrUseManagedIdentityCreds: true
+        // The image is pulled from GitHub's registry, public, with no credential (ADR-009). The undo sets
+        // this back to true with the Azure registry's tag, and the identity below is the pull it uses then.
+        acrUseManagedIdentityCreds: false
         acrUserManagedIdentityID: identity.properties.clientId
         appSettings: [
           // The platform's three: where the container listens, that nothing is
