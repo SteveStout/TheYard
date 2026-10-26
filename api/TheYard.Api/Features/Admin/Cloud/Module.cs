@@ -113,6 +113,13 @@ public sealed class Module : IModule
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
         services.AddScoped<ReadCloudCardHandler>();
         services.AddScoped<ReadProcessRunsHandler>();
+        // What broke: the incidents the docs keep and the failures the same workspace kept (ADR-120).
+        services.AddSingleton<IIncidentsReader>(provider =>
+        {
+            var identity = provider.GetRequiredService<HostIdentity>();
+            return new InsightsIncidents(new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity), workspace, provider.GetRequiredService<HostPaths>().RepoRoot, TimeProvider.System);
+        });
+        services.AddScoped<ReadIncidentsHandler>();
         // #endregion resource-wiring
     }
 

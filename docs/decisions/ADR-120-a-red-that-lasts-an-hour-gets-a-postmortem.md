@@ -46,3 +46,7 @@ A record about how the site is run, not how it is built: it touches no ring of t
 - [`docs/incidents/INCIDENTS.md`](https://github.com/SteveStout/TheYard/blob/main/docs/incidents/INCIDENTS.md) - the index
 - [`docs/incidents/INC-001-the-share-that-billed-for-looking.md`](https://github.com/SteveStout/TheYard/blob/main/docs/incidents/INC-001-the-share-that-billed-for-looking.md) - the first incident
 - [`api/TheYard.Tests/IncidentShapeTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/IncidentShapeTests.cs) - the shape, held
+
+## Addendum, 2026-10-25 (1.0.4.80): the Admin tab reads the index
+
+Decision 5 said the Admin tab gains nothing. It gains one card under What broke?, and the rail gains no row of its own: the card lists the index's rows and links each to its postmortem, beside the failures Application Insights kept over seven days, so the incidents and the errors that could become the next one are read in one place (ADR: The Admin tab, as a product, the addendum of 1.0.4.80). The index stays the one list; the card reads it and types nothing.

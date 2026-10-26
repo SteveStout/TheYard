@@ -1254,6 +1254,12 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   await expect(page.getByTestId('question-fast').getByTestId('bench-link-traffic')).toBeVisible();
   await expect(page.getByTestId('question-cloud').getByTestId('bench-link-machines')).toBeVisible();
   await expect(page.getByTestId('question-broke').getByTestId('bench-link-errors')).toBeVisible();
+  // What broke? opens on the incidents, each linked to its postmortem (1.0.4.80).
+  await page.getByTestId('question-broke').getByTestId('bench-link-incidents').click();
+  await expect(page.getByTestId('incidents-card').getByTestId('incident-INC-001')).toHaveAttribute(
+    'href',
+    '/?doc=inc-001-the-share-that-billed-for-looking'
+  );
   // A tile goes to its card.
   await strip.getByTestId('tile-errors').click();
   await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', 'errors');

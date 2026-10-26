@@ -6,7 +6,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <summary>The resource cards' route, a window of one resource from its keep, and the nightly card's run histories.</summary>
 public static class CloudEndpoints
 {
-    /// <summary>Maps GET /api/admin/cloud/{key} and GET /api/admin/cloud/nightly/runs/{process}.</summary>
+    /// <summary>Maps GET /api/admin/cloud/{key}, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
     public static IEndpointRouteBuilder MapCloudEndpoints(this IEndpointRouteBuilder app)
     {
         // #region resource-endpoint
@@ -28,6 +28,14 @@ public static class CloudEndpoints
             .WithTags("Admin")
             .WithSummary("One page of one of the job hunt Function's seven processes' runs, newest first, for 24h, 7d or 30d");
         // #endregion process-runs-endpoint
+        // #region incidents-endpoint
+        // Public like the cards: the incidents are public pages, and a failure is named by its type and where it
+        // happened, never by its message, which can carry what a visitor sent.
+        app.MapGet("/api/admin/incidents", Incidents)
+            .WithName("GetIncidents")
+            .WithTags("Admin")
+            .WithSummary("What broke: every incident the docs keep, and the exceptions and 5xx answers Application Insights kept in the last 7 days");
+        // #endregion incidents-endpoint
         return app;
     }
 
@@ -35,6 +43,9 @@ public static class CloudEndpoints
         await handler.HandleAsync(new ReadProcessRunsQuery(process, window, page), cancellation) is { } runs
             ? TypedResults.Ok(runs)
             : TypedResults.Problem(detail: "The job hunt's Function has no process by that name; the seven are AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend and MergerHealth.", statusCode: 404, title: "No such process");
+
+    private static async Task<Ok<IncidentsReport>> Incidents(ReadIncidentsHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadIncidentsQuery(), cancellation));
 
     private static async Task<Results<Ok<CloudReport>, NotFound>> Card(string key, string? window, ReadCloudCardHandler handler, CancellationToken cancellation) =>
         await handler.HandleAsync(new ReadCloudCardQuery(key, window), cancellation) is { } report ? TypedResults.Ok(report) : TypedResults.NotFound();
