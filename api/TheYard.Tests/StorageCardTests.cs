@@ -99,11 +99,21 @@ public sealed class StorageCardTests
         Assert.All([share, blob], row => Assert.Equal("not read yet", row.Answer));
         Assert.All([share, blob], row => Assert.DoesNotContain("$0.00", string.Concat(row.Detail.Select(d => d.Text)), StringComparison.Ordinal));
 
-        // A bill that was read and names other resources, not this one, is still the account's first day.
+        // A bill that was read and holds no line under the account's name says so: the month is not read, never $0.00.
         var read = new Dictionary<string, string?>(StringComparer.Ordinal);
         ShareCard.CostFacts(read, new CostKept([new CostDay("2026-10-25", "plan-theyard-ss", "microsoft.web/serverfarms", 0.62, "USD")], []), "stjobhuntss", hour);
         Assert.False(read.ContainsKey(ShareCard.CostUnread));
-        Assert.Equal("0.00", read["cost_month"]);
+        Assert.Equal("yes", read[ShareCard.CostMissing]);
+        Assert.False(read.ContainsKey("cost_month"));
+        var missing = ShareCard.View(Inputs(100, new Dictionary<string, string?>(ShareFacts()) { [ShareCard.CostMissing] = "yes" })).Rows.Single(r => r.Key == "cost");
+        Assert.Equal(("not on the bill yet", ShareCard.CostMissingWords), (missing.Answer, missing.Detail[0].Text));
+        var blobMissing = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", [ShareCard.CostMissing] = "yes" }), new BlobLines(1e9, 1.8e9, 24_000)).Rows.Single(r => r.Key == "cost");
+        Assert.Equal(("not on the bill yet", ShareCard.CostMissingWords), (blobMissing.Answer, blobMissing.Detail[0].Text));
+
+        // The account's own line is the month, summed from its days.
+        var billed = new Dictionary<string, string?>(StringComparer.Ordinal);
+        ShareCard.CostFacts(billed, new CostKept([new CostDay("2026-10-24", "stjobhuntss", "microsoft.storage/storageaccounts", 1.25, "USD"), new CostDay("2026-10-25", "stjobhuntss", "microsoft.storage/storageaccounts", 0.75, "USD")], []), "stjobhuntss", hour);
+        Assert.Equal("2.00", billed["cost_month"]);
     }
 
     [Fact]
@@ -120,13 +130,45 @@ public sealed class StorageCardTests
     }
 
     [Fact]
-    public void A_walker_is_four_times_the_quiet_hour_and_over_a_thousand_listings()
+    public void The_blob_card_s_second_dial_is_the_month_s_egress_against_the_free_hundred_gigabytes()
     {
-        var facts = ShareFacts();
-        var walked = ShareCard.Walking(Inputs(3 * 50_000.0 / 60, facts));
+        var card = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", ["egress_month_bytes"] = "8530000000" }), new BlobLines(1e9, 1.8e9, 24_000));
 
-        Assert.Equal("Yes", walked.Answer);
-        Assert.Equal("warning", walked.Tone);
+        Assert.Equal(("Egress this month", "8.53 GB"), (card.Dials[1].Name, card.Dials[1].Big));
+        Assert.Equal(8.53, card.Dials[1].Percent!.Value, 3);
+        Assert.Equal("good", card.Dials[1].Tone);
+        Assert.Equal("alarm", BlobCard.EgressDial(120e9).Tone);
+        Assert.Equal(("not read", "info"), (BlobCard.EgressDial(null).Big, BlobCard.EgressDial(null).Tone));
+        Assert.DoesNotContain(card.Dials, dial => dial.Name == "Served from memory");
+    }
+
+    [Theory]
+    [InlineData(2_500, "No", "good")]
+    [InlineData(9_000, "Yes", "warning")]
+    [InlineData(20_000, "Yes", "alarm")]
+    public void Walking_is_judged_in_listings_an_hour_against_money_and_the_alert_s_line(double listingsAnHour, string answer, string tone)
+    {
+        // 25 October 17:5x: 2,502 listings in an hour while the laptop's queue runner shipped, a quiet hour of 0 every
+        // night, and the card amber. A busy hour that costs pennies is not a walker.
+        var auth = new Dictionary<string, double> { ["SAS"] = 1_569, ["AccountKey"] = 3_594 };
+        var walked = ShareCard.Walking(Inputs(3 * listingsAnHour / 60, ShareFacts()), 20_000, auth);
+
+        Assert.Equal((answer, tone), (walked.Answer, walked.Tone));
+        Assert.Contains("amber over 7,000 an hour", walked.Detail[0].Text, StringComparison.Ordinal);
+        Assert.Contains("by SAS (the laptop's mount and the chats) 1,569 and by the account key (the job hunt's Function) 3,594", walked.Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_split_by_caller_is_the_clock_hour_under_way_and_never_two_hours_added()
+    {
+        var hour = new DateTimeOffset(2026, 10, 25, 22, 0, 0, TimeSpan.Zero);
+        var byAuth = new Dictionary<string, IReadOnlyDictionary<DateTimeOffset, double>>(StringComparer.Ordinal)
+        {
+            ["SAS"] = new Dictionary<DateTimeOffset, double> { [hour.AddHours(-1)] = 2_000, [hour] = 1_569 },
+            ["AccountKey"] = new Dictionary<DateTimeOffset, double> { [hour.AddHours(-1)] = 6_625, [hour] = 3_594 },
+        };
+
+        Assert.Equal("SAS=1569;AccountKey=3594", ShareCard.AuthHour(byAuth, hour));
     }
 
     [Fact]

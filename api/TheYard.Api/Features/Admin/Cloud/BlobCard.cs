@@ -62,6 +62,19 @@ public static class BlobCard
     /// <summary>The free egress a month, which the readout reads the month's egress against.</summary>
     public const double FreeEgressGb = 100;
 
+    /// <summary>The egress dial: amber at 80 % of the free egress, red when the month passes it.</summary>
+    public static readonly (double Amber, double Red) Egress = (80, 100);
+
+    /// <summary>The month's egress against the free 100 GB, or "not read".</summary>
+    /// <param name="bytes">The month's egress in bytes.</param>
+    public static CloudDial EgressDial(double? bytes)
+    {
+        double? share = bytes is { } b ? 100 * b / 1e9 / FreeEgressGb : null;
+        string tone = share is not { } s ? "info" : s >= Egress.Red ? "alarm" : s >= Egress.Amber ? "warning" : "good";
+        return new CloudDial("Egress this month", share, bytes is { } e ? $"{(e / 1e9).ToString("0.##", CultureInfo.InvariantCulture)} GB" : "not read",
+            $"of the free {FreeEgressGb:0} GB a month · amber at {Egress.Amber:0} % · red past the free allowance", Egress.Amber, Egress.Red, null, null, tone);
+    }
+
     public static CloudReport View(ResourceCardInputs inputs, BlobLines lines)
     {
         double? pictures = Number(ResourceView.Fact(inputs, "pictures_bytes", ""));
@@ -74,7 +87,8 @@ public static class BlobCard
             new CloudDial("The blog's pictures", share, pictures is { } p ? Bytes(p) : "none yet",
                 pictures is null ? "no blog container yet; the pictures land with the blog's pictures lane" : $"{pictureCount:N0} pictures · of the {Bytes(lines.PicturesAmberBytes)} line, not a quota · red {Bytes(lines.PicturesRedBytes)}",
                 100, redShare, null, null, picturesTone),
-            new CloudDial("Served from memory", null, "not read", "the host's picture cache arrives with the blog's pictures; a read it answers costs no transaction · amber under 70 % · red under 50 %", 70, 50, null, null, "info"),
+            // The month's egress against the free allowance, in place of a cache dial that cannot read until the cache exists.
+            EgressDial(Number(ResourceView.Fact(inputs, "egress_month_bytes", ""))),
         };
         var reads = Series.Decode(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("reads_hourly"));
         var days = Series.Daily(reads);
@@ -89,6 +103,8 @@ public static class BlobCard
                 exposed ? "alarm" : "info") { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("container_rows"), "Container", "Blobs", "Bytes", "What it is for", "Public access") },
             ResourceView.Fact(inputs, ShareCard.CostUnread, "") == "yes"
                 ? new("cost", "What does it cost?", "not read yet", [new(ShareCard.CostUnreadWords, null)], "info")
+                : ResourceView.Fact(inputs, ShareCard.CostMissing, "") == "yes"
+                ? new("cost", "What does it cost?", "not on the bill yet", [new(ShareCard.CostMissingWords, null)], "info")
                 : new("cost", "What does it cost?", ResourceView.Fact(inputs, "cost_month", "") is { Length: > 0 } month ? $"${month}" : "not on the bill yet",
                     [new("this month, the whole storage account: the bill keeps one line an account, so the blob meters and the share's are not split here", null)], "info"),
             new("answering", "Is it answering?", ResourceView.Fact(inputs, "store_ms", "") is { Length: > 0 } ms ? $"{ms} ms" : "not read yet",

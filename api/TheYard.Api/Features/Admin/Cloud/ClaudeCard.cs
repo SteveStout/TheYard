@@ -1,5 +1,5 @@
 // The Claude usage card (ADR: Every Claude lane reports its usage): today's tokens out against the
-// seven days before it and the plan's week on the dials, tokens a day per lane on the chart, four
+// seven days before it as a ratio and today's runs as a count on the dials, tokens a day per lane on the chart, four
 // questions, and a readout of the last run. Every figure is read from the usage documents the lanes
 // post; the lanes come from the documents, never from a list here. A dry run is shown and left out
 // of every average, and every dollar is the API-equivalent price of a run billed to the plan.
@@ -17,6 +17,10 @@ public static class ClaudeCard
     /// <summary>What the plan dial and row say until the plan's own usage is read.</summary>
     public const string PlanUnread = "not read: the plan endpoint is not set";
 
+    /// <summary>Today against the week's average as a ratio: "1.2x the week", or "not read".</summary>
+    /// <param name="share">Today as a percentage of the 7-day average.</param>
+    public static string Ratio(double? share) => share is { } s ? $"{(s / 100).ToString("0.0", CultureInfo.InvariantCulture)}x the week" : "not read";
+
     /// <summary>Where the documents are read, for every row and line that reads them.</summary>
     public const string Documents = "the usage documents the lanes post";
 
@@ -33,6 +37,15 @@ public static class ClaudeCard
     {
         var start = NightlySlots.StartOfCentralDay(now);
         return records.Where(record => !record.Dry && record.At >= start && record.At <= now).Sum(record => record.TokensOut);
+    }
+
+    /// <summary>Runs since the Central day began, dry runs left out: the second dial's count until the plan endpoint reads.</summary>
+    /// <param name="records">The documents.</param>
+    /// <param name="now">When the card is drawn.</param>
+    public static int RunsToday(IReadOnlyList<UsageRecord> records, DateTimeOffset now)
+    {
+        var start = NightlySlots.StartOfCentralDay(now);
+        return records.Count(record => !record.Dry && record.At >= start && record.At <= now);
     }
 
     /// <summary>The seven Central days before today, their tokens out a day on average, dry runs left out; null when they hold none.</summary>
@@ -112,10 +125,15 @@ public static class ClaudeCard
         long today = Today(records, inputs.Now);
         var dials = new[]
         {
-            new CloudDial("Today against the 7-day average", share, PlanView.Percent(share),
+            // The figure is a ratio, never a percentage: over 100 in green reads as a limit crossed on the rail beside it.
+            new CloudDial("Today against the 7-day average", share, Ratio(share),
                 average is { } a ? $"{Tokens(today)} tokens out today, a {Tokens((long)a)} average" : "no runs in the seven days before today",
                 CloudThresholds.ClaudeDay.Amber, CloudThresholds.ClaudeDay.Red, null, null, Tone(share, CloudThresholds.ClaudeDay)),
-            new CloudDial("Plan week used", null, PlanView.Percent(null), PlanUnread, CloudThresholds.ClaudePlanWeek.Amber, CloudThresholds.ClaudePlanWeek.Red, null, null, "info"),
+            // Every card draws two dials (the e2e cloud.spec holds the frame to it). The plan's week would be the second, but a
+            // dial that only ever says "not read" is not a reading, so until the plan endpoint reads this one is today's run count.
+            new CloudDial("Runs today", null, RunsToday(records, inputs.Now).ToString("N0", CultureInfo.InvariantCulture),
+                $"since the Central day began, dry runs left out · the plan's week takes this dial when its endpoint is read ({PlanUnread})",
+                CloudThresholds.ClaudePlanWeek.Amber, CloudThresholds.ClaudePlanWeek.Red, null, null, "info"),
         };
         var week = Days(inputs.Now - TimeSpan.FromDays(6), inputs.Now);
         IReadOnlyList<double?> PerDay(Func<IEnumerable<UsageRecord>, double> measure) =>

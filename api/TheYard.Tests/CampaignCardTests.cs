@@ -78,7 +78,7 @@ public sealed class CampaignCardTests
     {
         var card = CampaignCard.View(Inputs(Facts("shadow", "2026-10-25,0,6,0,0"), written: 6));
 
-        Assert.Equal(("Written today, in shadow", "6", 60d), (card.Dials[0].Name, card.Dials[0].Big, card.Dials[0].Percent!.Value));
+        Assert.Equal(("Written today, in shadow", "6 of 10", 60d), (card.Dials[0].Name, card.Dials[0].Big, card.Dials[0].Percent!.Value));
         Assert.Equal("Shadow: 6 written today", card.Rows[0].Answer);
         Assert.Contains("counting from Sun 25 Oct, 08:00 Central", card.Rows[0].Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal("12 open", card.Rows[1].Answer);
@@ -92,7 +92,7 @@ public sealed class CampaignCardTests
     {
         var card = CampaignCard.View(Inputs(Facts("on", "2026-10-23,3,0,0,1;2026-10-24,5,0,0,1;2026-10-25,10,0,0,0"), sent: 10));
 
-        Assert.Equal(("Sent today", "10"), (card.Dials[0].Name, card.Dials[0].Big));
+        Assert.Equal(("Sent today", "10 of 10"), (card.Dials[0].Name, card.Dials[0].Big));
         Assert.Equal(("2 of 18 sent", "11 %"), (card.Dials[1].Absolute.Replace(" replies", "", StringComparison.Ordinal), card.Dials[1].Big));
         Assert.Equal("10 sent today", card.Rows[0].Answer);
         Assert.Equal("2 replies in 30 days", card.Rows[2].Answer);

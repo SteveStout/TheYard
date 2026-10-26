@@ -16,7 +16,7 @@ public static class ShareCard
     {
         ["reading"] = "Azure Monitor, transactions by ApiName",
         ["cost"] = CardFrame.TheBill,
-        ["walking"] = "Azure Monitor, listings against the last 7 days",
+        ["walking"] = "Azure Monitor, listings against the last 7 days, and transactions by authentication",
         ["on"] = "Azure Monitor, file count and capacity",
         ["Tier"] = "Azure Resource Manager",
         ["Redundancy"] = "Azure Resource Manager",
@@ -48,6 +48,13 @@ public static class ShareCard
     /// <summary>The transactions dial: amber at half the alert's line, red at the line.</summary>
     public static readonly (double Amber, double Red) Transactions = (50, 100);
 
+    /// <summary>
+    /// The walking row's lines, in listings an hour: amber where listings alone add about a quarter of a dollar a
+    /// day at the Transaction optimized tier's list price (7,000 an hour), red at the alert's own line, which is
+    /// read from the alert when it can be.
+    /// </summary>
+    public static readonly (double Amber, double Red) WalkingListings = (7_000, 20_000);
+
     /// <summary>The quota dial: amber at 80 % used, red at 90 %.</summary>
     public static readonly (double Amber, double Red) Quota = (80, 90);
 
@@ -70,8 +77,9 @@ public static class ShareCard
                 with { Big = usedGb is { } u ? $"{u.ToString("0.#", CultureInfo.InvariantCulture)} GB" : "not read" },
         };
         double perMinute = line is { } limit ? limit / 60 : 0;
-        var rows = new List<CloudRow> { Reading(inputs, thisHour), CostRow(inputs), Walking(inputs), OnIt(inputs) };
         var auth = Pairs(ResourceView.Fact(inputs, "auth_hour", ""));
+        var rows = new List<CloudRow> { Reading(inputs, thisHour), CostRow(inputs), Walking(inputs, line, auth), OnIt(inputs) };
+        string since = ResourceView.Fact(inputs, "auth_since", "") is { Length: > 0 } s ? $"since {s} UTC" : "in the clock hour under way";
         var readout = new CloudReadout(
             "The share, now",
             ResourceView.Uptime(inputs),
@@ -81,8 +89,8 @@ public static class ShareCard
                 new("Redundancy", RedundancyWords(ResourceView.Fact(inputs, "sku", "")), "info"),
                 new("Quota", quotaGb is { } q ? $"{q:0} GB, {Words(usedGb, "0.#")} used" : "not read", "info"),
                 new("Last write seen", LastWrite(inputs), "info"),
-                new("Who mounts it", auth.TryGetValue("SAS", out double sas) ? $"the laptop's mount and the chats, by SAS: {sas:N0} in the last hour" : "not read", "info"),
-                new("Who reads it on a timer", auth.TryGetValue("AccountKey", out double key) ? $"the job hunt's Function, by the account key: {key:N0} in the last hour" : "not read", "info"),
+                new("Who mounts it", auth.TryGetValue("SAS", out double sas) ? $"the laptop's mount and the chats, by SAS: {sas:N0} {since}" : "not read", "info"),
+                new("Who reads it on a timer", auth.TryGetValue("AccountKey", out double key) ? $"the job hunt's Function, by the account key: {key:N0} {since}" : "not read", "info"),
                 new("The alert", line is { } a ? $"{a.ToString("N0", CultureInfo.InvariantCulture)} transactions an hour, to his phone ({(ResourceView.Fact(inputs, "alert_enabled", "") == "true" ? "on" : "off")})" : "not read", "info"),
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
@@ -119,6 +127,12 @@ public static class ShareCard
     /// <summary>The answer when the hour was kept before the bill was read: why, in words.</summary>
     public const string CostUnreadWords = "the bill had not been read when this hour was kept: the site reads it a minute after it starts, and Cost Management can ask it to wait an hour";
 
+    /// <summary>The fact an hour carries when the bill was read and holds no line under the storage account's name.</summary>
+    public const string CostMissing = "cost_missing";
+
+    /// <summary>The answer when the bill holds no line for the account: never a zero, which would say it was free.</summary>
+    public const string CostMissingWords = "the bill read holds no line under the storage account's name in the last 34 days, so the month is not read rather than shown as free";
+
     /// <summary>What it costs: today so far, yesterday and the month, and each day on the bill.</summary>
     private static CloudRow CostRow(ResourceCardInputs inputs)
     {
@@ -127,26 +141,50 @@ public static class ShareCard
         {
             return new CloudRow("cost", "What does it cost?", "not read yet", [new(CostUnreadWords, null)], "info");
         }
+        if (ResourceView.Fact(inputs, CostMissing, "") == "yes")
+        {
+            return new CloudRow("cost", "What does it cost?", "not on the bill yet", [new(CostMissingWords, null)], "info");
+        }
         return new CloudRow("cost", "What does it cost?", today == "" ? "not on the bill yet" : $"${today}",
             [new($"today so far · yesterday ${ResourceView.Fact(inputs, "cost_yesterday", "0.00")} · this month ${ResourceView.Fact(inputs, "cost_month", "0.00")} · the bill is transactions, not gigabytes; Azure reports a day eight to twenty four hours late", null)], "info")
         { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cost_rows"), "Day", "Cost", "What happened") };
     }
 
-    /// <summary>Whether anything is walking it: listings this hour against the quiet hour of the last seven days (their 5th percentile).</summary>
-    public static CloudRow Walking(ResourceCardInputs inputs)
+    /// <summary>
+    /// Whether anything is walking it: listings this hour against the week's median busy hour (the median of the hours
+    /// that listed anything; the quietest hour is 0 every night and says nothing), judged in money: amber over
+    /// <see cref="WalkingListings"/>' amber line, red at the alert's line. The hour's split by caller sits inside the
+    /// row, so a reader sees whether it was the mounts and chats or the Function.
+    /// </summary>
+    /// <param name="inputs">The card's inputs.</param>
+    /// <param name="alertLine">The alert's line in transactions an hour, when it was read.</param>
+    /// <param name="auth">Transactions in the clock hour under way, by authentication.</param>
+    public static CloudRow Walking(ResourceCardInputs inputs, double? alertLine, IReadOnlyDictionary<string, double> auth)
     {
         var listings = Series.Decode(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("listings_hourly"));
         double? now = ResourceView.HourSum(inputs, "listings") ?? (listings.Count > 0 ? listings[^1].Value : null);
-        double? quiet = Series.Percentile(listings.Select(l => l.Value), 5);
-        if (now is null || quiet is null)
+        if (now is null)
         {
-            return new CloudRow("walking", "Is anything walking it?", "not read yet", [new("listings this hour against the quiet hour of the last seven days", null)], "info");
+            return new CloudRow("walking", "Is anything walking it?", "not read yet", [new("listings this hour against the week's median busy hour", null)], "info");
         }
-        bool walking = now.Value > Math.Max(1000, 4 * quiet.Value);
-        return new CloudRow("walking", "Is anything walking it?", walking ? "Yes" : "No",
-            [new($"listings this hour {now.Value:N0} against a quiet hour of {quiet.Value:N0} · a walker is four times the quiet hour and over a thousand · the laptop's mount and exclusions are written in J:\\staging\\cost1024\\rung2.txt, which this site does not read", null)],
-            walking ? "warning" : "good");
+        double? busy = Series.Percentile(listings.Select(l => l.Value).Where(v => v > 0), 50);
+        double red = alertLine ?? WalkingListings.Red;
+        string tone = now.Value >= red ? "alarm" : now.Value > WalkingListings.Amber ? "warning" : "good";
+        string split = auth.Count == 0 ? "who made them is not read"
+            : string.Create(CultureInfo.InvariantCulture, $"this clock hour by SAS (the laptop's mount and the chats) {auth.GetValueOrDefault("SAS"):N0} and by the account key (the job hunt's Function) {auth.GetValueOrDefault("AccountKey"):N0} transactions");
+        return new CloudRow("walking", "Is anything walking it?", tone == "good" ? "No" : "Yes",
+            [new(string.Create(CultureInfo.InvariantCulture, $"listings this hour {now.Value:N0} against a median busy hour of {(busy is { } b ? b.ToString("N0", CultureInfo.InvariantCulture) : "not read")} this week · amber over {WalkingListings.Amber:N0} an hour, about a quarter of a dollar a day · red at the alert's {red:N0} · {split}"), null)],
+            tone);
     }
+
+    /// <summary>
+    /// Transactions by authentication in the clock hour under way: Azure Monitor's hour buckets start on the hour, and
+    /// the hour before is left out so the split is one window, never two added together.
+    /// </summary>
+    /// <param name="byAuth">Hourly transactions by authentication.</param>
+    /// <param name="hour">The start of the clock hour under way.</param>
+    public static string AuthHour(IReadOnlyDictionary<string, IReadOnlyDictionary<DateTimeOffset, double>> byAuth, DateTimeOffset hour) =>
+        string.Join(';', byAuth.Select(pair => $"{pair.Key}={pair.Value.Where(p => p.Key >= hour).Sum(p => p.Value).ToString("0", CultureInfo.InvariantCulture)}"));
 
     /// <summary>What is on it: the files and bytes Azure counts.</summary>
     private static CloudRow OnIt(ResourceCardInputs inputs)
@@ -203,6 +241,11 @@ public static class ShareCard
         }
         var byDay = kept.Days.Where(d => string.Equals(d.Resource, account, StringComparison.OrdinalIgnoreCase))
             .GroupBy(d => d.Day).ToDictionary(g => g.Key, g => g.Sum(d => d.Cost), StringComparer.Ordinal);
+        if (byDay.Count == 0)
+        {
+            facts[CostMissing] = "yes";
+            return;
+        }
         string today = hour.UtcDay, yesterday = hour.AddDays(-1).UtcDay, month = today[..7];
         facts["cost_today"] = byDay.GetValueOrDefault(today).ToString("0.00", CultureInfo.InvariantCulture);
         facts["cost_yesterday"] = byDay.GetValueOrDefault(yesterday).ToString("0.00", CultureInfo.InvariantCulture);

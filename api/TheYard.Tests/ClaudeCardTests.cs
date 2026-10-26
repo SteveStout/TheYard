@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using TheYard.Api.Features.Admin.Cloud;
 using TheYard.Data;
@@ -62,7 +63,7 @@ public sealed class ClaudeCardTests
     [Fact]
     public async Task The_catalogue_draws_four_questions_and_lists_every_run_with_its_dry_runs_said()
     {
-        var (card, _, minutes) = await Catalogued(Ten);
+        var (card, source, minutes) = await Catalogued(Ten);
         var view = card.View(Inputs(minutes));
         Assert.Equal(["lanes", "runs", "plan", "function"], view.Rows.Select(row => row.Key));
         var table = view.Rows.Single(row => row.Key == "runs").Table;
@@ -71,7 +72,13 @@ public sealed class ClaudeCardTests
         Assert.Equal(2, table.Rows.Count(row => row[2].Text == "bookkeeping (dry run)"));
         Assert.Equal("Claude usage", view.Title);
         Assert.Equal(ClaudeCard.PlanUnread, view.Rows.Single(row => row.Key == "plan").Answer);
-        Assert.Equal(ClaudeCard.PlanUnread, view.Dials[1].Absolute);
+        // The second dial is today's run count until the plan endpoint is read; the plan row still says it is not read.
+        Assert.Equal(2, view.Dials.Count);
+        Assert.EndsWith("x the week", view.Dials[0].Big, StringComparison.Ordinal);
+        Assert.Equal("Runs today", view.Dials[1].Name);
+        Assert.Null(view.Dials[1].Percent);
+        Assert.Equal(ClaudeCard.RunsToday(source.Records, Inputs(minutes).Now).ToString("N0", CultureInfo.InvariantCulture), view.Dials[1].Big);
+        Assert.Contains(ClaudeCard.PlanUnread, view.Dials[1].Absolute, StringComparison.Ordinal);
         Assert.Contains("API-equivalent", view.Readout.Footnote, StringComparison.Ordinal);
     }
 
@@ -126,6 +133,13 @@ public sealed class ClaudeCardTests
         Assert.DoesNotContain("nightly/2026", wire, StringComparison.Ordinal);
         Assert.DoesNotContain("DONE", wire, StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData(118.0, "1.2x the week")]
+    [InlineData(45.0, "0.5x the week")]
+    [InlineData(null, "not read")]
+    public void Today_against_the_week_is_a_ratio_never_a_percentage(double? share, string words) =>
+        Assert.Equal(words, ClaudeCard.Ratio(share));
 
     [Fact]
     public async Task An_empty_log_says_no_document_has_been_posted_and_reads_nothing_as_zero()

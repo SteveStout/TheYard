@@ -64,8 +64,8 @@ public static class CampaignCard
         int sent30 = month.Sum(d => d.Sent), replies30 = month.Sum(d => d.Replies);
         var dials = new[]
         {
-            new CloudDial(shadow ? "Written today, in shadow" : "Sent today", ResourceView.Share(sentToday, DailyCap), ResourceView.Number(sentToday),
-                $"of {DailyCap}, the daily cap", SendsLevels.Amber, SendsLevels.Red, null, null, sentToday is null ? "info" : "good"),
+            new CloudDial(shadow ? "Written today, in shadow" : "Sent today", ResourceView.Share(sentToday, DailyCap), sentToday is { } n ? $"{ResourceView.Number(n)} of {DailyCap}" : ResourceView.Number(sentToday),
+                "the daily cap", SendsLevels.Amber, SendsLevels.Red, null, null, sentToday is null ? "info" : "good"),
             new CloudDial("Reply rate, 30 days", sent30 == 0 ? null : 100.0 * replies30 / sent30, Rate(replies30, sent30),
                 $"{replies30} replies of {sent30} sent", ReplyLevels.Amber, ReplyLevels.Red, null, null, "good"),
         };

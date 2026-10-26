@@ -50,7 +50,18 @@ public sealed class InsightsCapTests
         Assert.Equal("Ingested today", card.Dials[0].Name);
         Assert.Equal("0.173 of 0.1 GB cap", card.Dials[0].Absolute);
         Assert.Equal("alarm", card.Dials[0].Tone);
-        Assert.Equal("no, today is close to it", card.Rows.Single(row => row.Key == "cap").Answer);
+        Assert.Equal(("close: today is 173 % of it", "alarm"), (card.Rows.Single(row => row.Key == "cap").Answer, card.Rows.Single(row => row.Key == "cap").Tone));
+    }
+
+    [Fact]
+    public void A_component_near_its_cap_says_how_near_and_names_the_two_ways_out_without_changing_the_cap()
+    {
+        // After 1.0.4.84 the site's own ingestion read about 0.085 GB a day against its 0.1 GB cap.
+        var cap = InsightsCard.CapRow(Inputs("the component"), 0.1, 0.085, "ingest_component_today_gb", true, PlanTone.Good);
+
+        Assert.Equal(("close: today is 85 % of it", "warning"), (cap.Answer, cap.Tone));
+        Assert.Contains("two ways out: raise the component's daily cap, a setting this card never changes, or send less from the job hunt's Function", cap.Detail[0].Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("two ways out", InsightsCard.CapRow(Inputs("the component"), 0.1, 0.021, "ingest_component_today_gb", true, PlanTone.Good).Detail[0].Text, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -74,9 +74,7 @@ public static class InsightsCard
                 [new($"{(inputs.CostMonth is { } bill ? $"${bill.ToString("0.00", CultureInfo.InvariantCulture)} this month on the bill" : "not on the bill yet")} · retention {ResourceView.Fact(inputs, "retention_days")} days", null)],
                 // Paying past the free allowance is information on this card, not a fault: the cap row says whether it is too much.
                 billable is > 0 ? "info" : "good"),
-            new("cap", "Is the cap still right?", cap is null ? "no daily cap is set" : ingestTone == PlanTone.Alarm ? "no, today is close to it" : "yes",
-                [new($"cap {(cap is { } c2 ? c2.ToString("0.###", CultureInfo.InvariantCulture) + " GB a day" : "none")} from {ResourceView.Fact(inputs, "cap_from", "neither")} · 30-day p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, capped).P95, "0.000")} GB{(own ? " · read against what this component sent, not the whole workspace" : "")}", null)],
-                cap is null ? "info" : ingestTone == PlanTone.Alarm ? "alarm" : "good"),
+            CapRow(inputs, cap, today, capped, own, ingestTone),
         };
         var readout = new CloudReadout(
             "Application Insights",
@@ -110,6 +108,22 @@ public static class InsightsCard
             ResourceView.Chart(inputs, "Ingestion and sampling", (capped, "Ingested", cap, false), ("sampling", "Sampling kept", 100, true), Ingestion.Red, "teal ingestion · green sampling · gold deploys · red capped hour", marks),
             rows,
             readout), Sources);
+    }
+
+    /// <summary>
+    /// Whether the cap is still right: today's share of it in words, and once today is past the amber line the two ways
+    /// out, a higher cap or less telemetry from the Function. The row reads the cap and never changes it.
+    /// </summary>
+    public static CloudRow CapRow(ResourceCardInputs inputs, double? cap, double? today, string capped, bool own, PlanTone ingestTone)
+    {
+        double? share = ResourceView.Share(today, cap);
+        bool close = share is { } s && s >= Ingestion.Amber;
+        string answer = cap is null ? "no daily cap is set"
+            : close ? $"close: today is {share!.Value.ToString("0", CultureInfo.InvariantCulture)} % of it" : "yes";
+        string detail = $"cap {(cap is { } c2 ? c2.ToString("0.###", CultureInfo.InvariantCulture) + " GB a day" : "none")} from {ResourceView.Fact(inputs, "cap_from", "neither")} · 30-day p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, capped).P95, "0.000")} GB{(own ? " · read against what this component sent, not the whole workspace" : "")}"
+            + (close ? " · two ways out: raise the component's daily cap, a setting this card never changes, or send less from the job hunt's Function (its host's own logs at Warning, its dependency rows sampled)" : "");
+        string tone = cap is null ? "info" : ingestTone == PlanTone.Alarm ? "alarm" : close ? "warning" : "good";
+        return new CloudRow("cap", "Is the cap still right?", answer, [new(detail, null)], tone);
     }
 
     /// <summary>The component's own sampling setting as a percentage, or "not read" when its record states none.</summary>
