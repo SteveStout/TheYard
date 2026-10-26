@@ -8,7 +8,24 @@ public sealed class FolderMergeStore(string root) : IMergeStore
 
     public Task<bool> ExistsAsync(string path, CancellationToken ct) => Task.FromResult(File.Exists(Full(path)));
 
-    public Task<byte[]> ReadAsync(string path, CancellationToken ct) => File.ReadAllBytesAsync(Full(path), ct);
+    public Task<byte[]> ReadAsync(string path, CancellationToken ct)
+    {
+        Reads++;
+        return File.ReadAllBytesAsync(Full(path), ct);
+    }
+
+    public Task<MergeEntry?> StatAsync(string path, CancellationToken ct)
+    {
+        Stats++;
+        var file = new FileInfo(Full(path));
+        return Task.FromResult(file.Exists ? new MergeEntry(file.Name, file.LastWriteTimeUtc, file.Length) : null);
+    }
+
+    /// <summary>How many times a file was read whole.</summary>
+    public int Reads { get; private set; }
+
+    /// <summary>How many times only a file's properties were asked for.</summary>
+    public int Stats { get; private set; }
 
     public Task<IReadOnlyList<MergeEntry>> ListFilesAsync(string folder, CancellationToken ct)
     {

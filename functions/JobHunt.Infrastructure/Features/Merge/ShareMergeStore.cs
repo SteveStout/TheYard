@@ -28,6 +28,21 @@ public sealed class ShareMergeStore(ShareClient share, string root, TimeProvider
         return buffer.ToArray();
     }
 
+    public async Task<MergeEntry?> StatAsync(string path, CancellationToken ct)
+    {
+        try
+        {
+            // One properties request: the size and the times, no content.
+            ShareFileProperties properties = (await File(path).GetPropertiesAsync(cancellationToken: ct)).Value;
+            DateTimeOffset written = properties.SmbProperties?.FileLastWrittenOn ?? properties.LastModified;
+            return new MergeEntry(path.Split('/')[^1], written, properties.ContentLength);
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
+    }
+
     public async Task<IReadOnlyList<MergeEntry>> ListFilesAsync(string folder, CancellationToken ct)
     {
         var entries = new List<MergeEntry>();

@@ -28,6 +28,7 @@ var host = new HostBuilder()
             sp.GetRequiredService<ShareClient>(), Environment.GetEnvironmentVariable("MERGER_ROOT") ?? string.Empty));
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<TrackerMerger>();
+        services.AddSingleton<TrackerSeen>();
     })
     .Build();
 

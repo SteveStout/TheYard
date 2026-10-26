@@ -47,18 +47,30 @@ public sealed record TrackerParity(bool Same, int CsvRows, int SqlRows);
 /// </summary>
 /// <param name="store">The job-hunt folder, where the master is.</param>
 /// <param name="table">The SQL copy.</param>
-public sealed class TrackerMirror(IMergeStore store, ITrackerTable table)
+/// <param name="seen">What the last pass saw of the file, kept for the life of the host; null reads the file every pass.</param>
+public sealed class TrackerMirror(IMergeStore store, ITrackerTable table, TrackerSeen? seen = null)
 {
-    /// <summary>Brings the copy in step with the master; nothing is written when the file's hash already matches.</summary>
+    /// <summary>
+    /// Brings the copy in step with the master; nothing is written when the file's hash already matches. When the
+    /// file's size and last write are what the last pass saw and the copy still holds the hash that pass read, the
+    /// file is not read at all.
+    /// </summary>
     /// <param name="ct">Stops the pass.</param>
     public async Task<TrackerCopied> CopyAsync(CancellationToken ct)
     {
+        var stat = seen is null ? null : await store.StatAsync(MergePaths.Master, ct);
+        var frame = await table.FrameAsync(ct);
+        if (stat is not null && seen!.Unmoved(stat, frame?.FileHash) is { } unmovedRows)
+        {
+            return new TrackerCopied(unmovedRows, 0);
+        }
         byte[] bytes = await store.ReadAsync(MergePaths.Master, ct);
         var file = TrackerFile.Split(bytes);
         string hash = TrackerFile.FileHash(bytes);
         int rows = file.Records.Count - 1;
-        if ((await table.FrameAsync(ct))?.FileHash == hash)
+        if (frame?.FileHash == hash)
         {
+            Remember(stat, rows, hash);
             return new TrackerCopied(rows, 0);
         }
         var kept = await table.HashesAsync(ct);
@@ -66,7 +78,18 @@ public sealed class TrackerMirror(IMergeStore store, ITrackerTable table)
             .Where(position => !kept.TryGetValue(position, out string? was) || was != TrackerFile.Hash(file.Records[position]))
             .ToList();
         await table.KeepAsync(file, changed, hash, ct);
+        Remember(stat, rows, hash);
         return new TrackerCopied(rows, changed.Count);
+    }
+
+    // The properties were read before the content, so a write in between leaves a newer last-write time on the
+    // share than the one remembered here, and the next pass reads the file again: the safe way to be wrong.
+    private void Remember(MergeEntry? stat, int rows, string hash)
+    {
+        if (stat is not null)
+        {
+            seen?.Remember(stat, rows, hash);
+        }
     }
 
     /// <summary>True when no parity check has run yet on this Central day: the first pass of a day checks the whole file.</summary>

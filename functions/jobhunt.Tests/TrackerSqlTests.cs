@@ -83,6 +83,44 @@ public sealed class TrackerSqlTests
         Assert.Equal(["1", "", "", "", "", "", ""], SqlTrackerTable.Cells("1"));
     }
 
+    [Fact]
+    public async Task An_unmoved_tracker_is_not_read_again()
+    {
+        using var scratch = new Scratch();
+        byte[] bytes = Sample();
+        string path = Path.Combine(scratch.Root, MergePaths.Master);
+        await scratch.Store.WriteAsync(MergePaths.Master, bytes, CancellationToken.None);
+        var table = new MemoryTrackerTable();
+        var seen = new TrackerSeen();
+        var mirror = new TrackerMirror(scratch.Store, table, seen);
+
+        // The first pass reads the file and copies it; the second finds the same size and last write and reads nothing.
+        Assert.Equal(new TrackerCopied(5, 5), await mirror.CopyAsync(CancellationToken.None));
+        Assert.Equal(new TrackerCopied(5, 0), await mirror.CopyAsync(CancellationToken.None));
+        Assert.Equal((1, 2), (scratch.Store.Reads, scratch.Store.Stats));
+
+        // A write moves the last-write time, and the next pass reads the file whole and copies what changed.
+        var file = TrackerFile.Split(bytes);
+        var next = file with { Records = [.. file.Records, "106,New Person,New Co,Email,10/25/2026,,new"] };
+        await scratch.Store.WriteAsync(MergePaths.Master, next.ToBytes(), CancellationToken.None);
+        File.SetLastWriteTimeUtc(path, File.GetLastWriteTimeUtc(path).AddMinutes(1));
+        Assert.Equal(new TrackerCopied(6, 1), await mirror.CopyAsync(CancellationToken.None));
+        Assert.Equal(2, scratch.Store.Reads);
+
+        // The same size with a newer last write is read again, and writes nothing when the content did not change.
+        File.SetLastWriteTimeUtc(path, File.GetLastWriteTimeUtc(path).AddMinutes(1));
+        Assert.Equal(new TrackerCopied(6, 0), await mirror.CopyAsync(CancellationToken.None));
+        Assert.Equal(3, scratch.Store.Reads);
+
+        // A copy whose frame does not hold the hash the last pass read is never trusted: an empty copy reads the file.
+        Assert.Equal(new TrackerCopied(6, 6), await new TrackerMirror(scratch.Store, new MemoryTrackerTable(), seen).CopyAsync(CancellationToken.None));
+        Assert.Equal(4, scratch.Store.Reads);
+
+        // The day's parity check still reads the whole file.
+        Assert.True((await mirror.ParityAsync(DateTimeOffset.UnixEpoch, CancellationToken.None)).Same);
+        Assert.Equal(5, scratch.Store.Reads);
+    }
+
     /// <summary>The copy in memory, the way SqlTrackerTable keeps it.</summary>
     private sealed class MemoryTrackerTable : ITrackerTable
     {

@@ -15,7 +15,7 @@ namespace JobHunt.Functions;
 /// "on", so the laptop's merger can hand over at a chosen minute and take back the same way.
 /// Each pass merges whatever lanes left in the spool folders and logs to tracker-inbox/merge.log.
 /// </remarks>
-public sealed class Merger(TrackerMerger merger, IMergeStore store, TimeProvider time, ILogger<Merger> log)
+public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen seen, TimeProvider time, ILogger<Merger> log)
 {
     [Function("Merger")]
     public async Task RunAsync([TimerTrigger("0 * * * * *")] TimerInfo timer, CancellationToken ct)
@@ -67,7 +67,7 @@ public sealed class Merger(TrackerMerger merger, IMergeStore store, TimeProvider
         try
         {
             var table = new SqlTrackerTable(sql);
-            var mirror = new TrackerMirror(store, table);
+            var mirror = new TrackerMirror(store, table, seen);
             var now = time.GetUtcNow();
             var frame = await table.FrameAsync(ct);
             if (mode == "import" && frame is not null)

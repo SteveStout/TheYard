@@ -32,6 +32,9 @@ public interface IShareReader
 
     Task<byte[]> ReadAsync(string path, CancellationToken ct);
 
+    /// <summary>One file's name, last write and size without its content, or null when it is absent.</summary>
+    Task<MergeEntry?> StatAsync(string path, CancellationToken ct);
+
     /// <summary>The files directly in a folder; an absent folder lists as empty.</summary>
     Task<IReadOnlyList<MergeEntry>> ListFilesAsync(string folder, CancellationToken ct);
 

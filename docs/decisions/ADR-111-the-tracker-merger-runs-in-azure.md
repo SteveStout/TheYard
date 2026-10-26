@@ -209,3 +209,11 @@ From this version the card draws what this record said it did:
 - **The health route names `TRACKER_SQL`** among the switches, and the Merger section shows it as a chip beside `MERGER` and `APPENDS`.
 
 `ProcessRunsTests` holds the words and the tone, `ProcessReadersTests` the listing rule and the parity row, and `RunLineTests` the switch name.
+
+## Addendum, 2026-10-26 (1.0.4.92): the copy reads the tracker only when it moved
+
+The copy pass read the whole tracker from the share every minute (1.8 MB on 25 October) and hashed it, to learn that the copy already held it nearly every time. The share bills that as one read operation a minute, inside its free line, so this is not about the bill: it is the host's time and the trace volume of fourteen hundred needless reads a day.
+
+From this version the pass first asks the share for the tracker's size and last-write time, one properties request that moves no content. When both equal what the last pass saw, and the copy's frame still holds the hash that pass read, the pass writes nothing and does not read the file. Any write to the tracker, the Merger's own included, moves its last-write time, so the next pass reads it whole. What the last pass saw lives in the Function's memory only, so the first pass after a restart reads the file as before. The daily parity check is unchanged and still reads the whole file.
+
+`TrackerSqlTests.An_unmoved_tracker_is_not_read_again` holds it.
