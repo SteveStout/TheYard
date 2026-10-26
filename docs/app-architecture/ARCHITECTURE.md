@@ -43,12 +43,12 @@ flowchart LR
     RENDER["Web app for containers, the rendering service<br/>on the same plan, its own image: draws every page<br/>for either site, naming its store on every read"]
     ACR[("Container Registry")]
     MI["Managed identity<br/>id-theyard-ss"]
-    AI["Application Insights<br/>appi-theyard-ss"]
-    LAW[("Log Analytics<br/>log-theyard-ss, 0.1 GB cap")]
+    AI["Application Insights<br/>appi-theyard-ss, 0.1 GB daily cap"]
+    LAW[("Log Analytics<br/>log-theyard-ss, no daily quota of its own")]
   end
 
   subgraph sql["Azure SQL Database, the first site's store, West US 3"]
-    SQL[("Azure SQL Database<br/>sqldb-theyard-ss-basic, Basic, 5 DTU<br/>catalogue, photo manifest, accounts, bids")]
+    SQL[("Azure SQL Database<br/>sqldb-theyard-ss-basic, Basic, 5 DTU<br/>catalogue, photo manifest, accounts, bids<br/>and the job hunt's campaign, card and jobhunt schemas")]
   end
 
   subgraph cosmos["Azure Cosmos DB, the Cosmos DB site's store, West US 2"]
@@ -345,8 +345,9 @@ a part of it, and what two features share sits in `Shared/<Concern>/` of that ri
 ADR-107's addendum of that version; only the types Entity Framework maps stay at the relational
 adapter's root), and in the host that folder holds the feature's
 endpoints and a `Module.cs` that registers and maps it:
-`Features/Bids`, `Features/Vehicles`, `Features/Accounts`, `Features/Docs`, `Features/Health` and
-the Admin tab's `Features/Admin/Operations`, `Features/Admin/Plan` and `Features/Admin/Cloud`. What
+`Features/Accounts`, `Features/Bids`, `Features/Blog`, `Features/Docs`, `Features/Health`, `Features/Links`,
+`Features/Vehicles`, `Features/Visitors` and the Admin tab's `Features/Admin/Operations`, `Features/Admin/Plan`, `Features/Admin/Cloud` and, from 1.0.4.82,
+`Features/Admin/Foreman`. What
 every feature shares is in `Shared/`. `Program.cs` registers the shared parts by name and loops over
 the modules, and `SliceTests` fails the gate when a slice reaches into another. The shape is drawn on
 [its own page](https://theyard.stevenstout.biz/api/docs/diagrams/vertical-slices) and argued in

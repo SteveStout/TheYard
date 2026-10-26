@@ -150,7 +150,7 @@ the same missing subscription named above.
 same place a crash in the server does. Its message and stack are bounded, and
 browser reports keep their own ring so a flood of them cannot push real server
 errors off the page an operator would read during an outage. Each report is also
-one Application Insights line under the workspace's 0.1 GB daily cap, so a
+one Application Insights line under the component's own 0.1 GB daily cap, so a
 flood of reports can close the day's telemetry; the ring keeps the page
 readable when that happens.
 
