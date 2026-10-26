@@ -94,15 +94,17 @@ public static class ResourceCatalog
                     {
                         // The card says the catalogue could not be read and what the identity needs.
                     }
+                    // GitHub's registry beside it, read as an anonymous pull reads it (ADR-009, the addendum on GitHub's registry).
+                    string ghcr = nightly is null ? "not read" : GhcrPackages.Words(await GhcrPackages.ReadAsync(nightly.Names.Repo.Split('/')[0].ToLowerInvariant(), GhcrPackages.Images, cancellation));
                     // The registry's size limit as Azure states it, rather than the Basic figure written down.
                     try
                     {
                         using var usages = await azure.GetJsonAsync($"{resource.Id}/listUsages?api-version=2023-07-01", cancellation);
-                        return AcrCard.Facts(record, holdings, usages.RootElement.Clone(), planHour is null ? null : await planHour(cancellation));
+                        return AcrCard.Facts(record, holdings, usages.RootElement.Clone(), planHour is null ? null : await planHour(cancellation), ghcr);
                     }
                     catch (HttpRequestException)
                     {
-                        return AcrCard.Facts(record, holdings, plan: planHour is null ? null : await planHour(cancellation));
+                        return AcrCard.Facts(record, holdings, plan: planHour is null ? null : await planHour(cancellation), ghcr: ghcr);
                     }
                 }),
                 AcrCard.View),
