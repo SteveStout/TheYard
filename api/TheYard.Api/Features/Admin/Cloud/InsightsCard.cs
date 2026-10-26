@@ -18,6 +18,7 @@ public static class InsightsCard
         ["cost"] = "Log Analytics, and the bill",
         ["cap"] = "ARM record of the component",
         ["Today"] = "Log Analytics",
+        ["Today, this component"] = "Log Analytics, the component's own rows",
         ["This month"] = "Log Analytics",
         ["Free allowance"] = "Microsoft's Azure Monitor pricing page",
         ["Sampling kept"] = "Log Analytics",
@@ -31,20 +32,30 @@ public static class InsightsCard
     /// <summary>The sampling dial runs the other way: what was dropped by sampling is read against these.</summary>
     public static readonly (double Amber, double Red) Dropped = CloudThresholds.InsightsDropped;
 
-    public static readonly IReadOnlyList<string> Readings = ["ingest_today_gb", "ingest_month_gb", "sampling", "capped"];
+    public static readonly IReadOnlyList<string> Readings = ["ingest_today_gb", "ingest_month_gb", "sampling", "capped", "ingest_component_today_gb"];
+
+    /// <summary>
+    /// The reading a cap is read against: a workspace's quota against everything the workspace took, a component's cap
+    /// against what that component alone sent. Reading three apps' ingestion against one component's cap drew the card
+    /// red at 173 % on a day no hour was capped.
+    /// </summary>
+    public static string CapReading(ResourceCardInputs inputs) =>
+        ResourceView.Fact(inputs, "cap_from", "") == "the component" ? "ingest_component_today_gb" : "ingest_today_gb";
 
     public static CloudReport View(ResourceCardInputs inputs)
     {
         double? cap = InsightsSource.Parse(ResourceView.Fact(inputs, "cap_gb", ""));
-        double? today = ResourceView.Now(inputs, "ingest_today_gb"), month = ResourceView.Now(inputs, "ingest_month_gb"), sampling = ResourceView.Now(inputs, "sampling");
-        var ingestTone = ResourceView.Tone(ResourceView.Hour(inputs, "ingest_today_gb").Select(v => ResourceView.Share(v, cap)).ToList(), Ingestion, hourly: true);
+        string capped = CapReading(inputs);
+        bool own = capped != "ingest_today_gb";
+        double? today = ResourceView.Now(inputs, capped), everything = ResourceView.Now(inputs, "ingest_today_gb"), month = ResourceView.Now(inputs, "ingest_month_gb"), sampling = ResourceView.Now(inputs, "sampling");
+        var ingestTone = ResourceView.Tone(ResourceView.Hour(inputs, capped).Select(v => ResourceView.Share(v, cap)).ToList(), Ingestion, hourly: true);
         var droppedTone = ResourceView.Tone(ResourceView.Hour(inputs, "sampling").Select(v => v is { } s ? 100 - s : (double?)null).ToList(), Dropped, hourly: true);
         double cappedHours = inputs.Buckets.Sum(b => b.Sums.GetValueOrDefault("capped") is > 0 ? 1 : 0);
         double? billable = month is { } m ? Math.Max(0, m - InsightsSource.FreeGbPerMonth) : null;
         string free = $"the free {InsightsSource.FreeGbPerMonth:0} GB";
         var dials = new[]
         {
-            ResourceView.Dial(inputs, "ingest_today_gb", "Ingested today", cap, Ingestion, v => v is { } g ? $"{g.ToString("0.000", CultureInfo.InvariantCulture)} of {(cap is { } c ? c.ToString("0.###", CultureInfo.InvariantCulture) + " GB cap" : "no cap")}" : "not read", hourly: true),
+            ResourceView.Dial(inputs, capped, own ? "Ingested today, this component" : "Ingested today", cap, Ingestion, v => v is { } g ? $"{g.ToString("0.000", CultureInfo.InvariantCulture)} of {(cap is { } c ? c.ToString("0.###", CultureInfo.InvariantCulture) + " GB cap" : "no cap")}" : "not read", hourly: true),
             ResourceView.Dial(inputs, "sampling", "Sampling kept", 100, (100 - Dropped.Amber, 100 - Dropped.Red), v => v is { } s ? $"{s.ToString("0", CultureInfo.InvariantCulture)} % of requests kept" : "no requests in the hour", percentReading: true, hourly: true) with { Tone = CloudTones.Of(droppedTone) },
         };
         var marks = inputs.Buckets.Where(b => b.Sums.GetValueOrDefault("capped") is > 0)
@@ -64,7 +75,7 @@ public static class InsightsCard
                 // Paying past the free allowance is information on this card, not a fault: the cap row says whether it is too much.
                 billable is > 0 ? "info" : "good"),
             new("cap", "Is the cap still right?", cap is null ? "no daily cap is set" : ingestTone == PlanTone.Alarm ? "no, today is close to it" : "yes",
-                [new($"cap {(cap is { } c2 ? c2.ToString("0.###", CultureInfo.InvariantCulture) + " GB a day" : "none")} from {ResourceView.Fact(inputs, "cap_from", "neither")} · 30-day p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ingest_today_gb").P95, "0.000")} GB", null)],
+                [new($"cap {(cap is { } c2 ? c2.ToString("0.###", CultureInfo.InvariantCulture) + " GB a day" : "none")} from {ResourceView.Fact(inputs, "cap_from", "neither")} · 30-day p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, capped).P95, "0.000")} GB{(own ? " · read against what this component sent, not the whole workspace" : "")}", null)],
                 cap is null ? "info" : ingestTone == PlanTone.Alarm ? "alarm" : "good"),
         };
         var readout = new CloudReadout(
@@ -72,7 +83,8 @@ public static class InsightsCard
             ResourceView.Uptime(inputs, 60),
             $"read, {CloudTones.WindowWords(inputs.Window)}",
             [
-                new("Today", $"{ResourceView.Number(today, "0.000")} GB", CloudTones.Of(ingestTone)),
+                new(own ? "Today, this component" : "Today", $"{ResourceView.Number(today, "0.000")} GB", CloudTones.Of(ingestTone)),
+                new("Today, the whole workspace", $"{ResourceView.Number(everything, "0.000")} GB", "info") { Source = "Log Analytics" },
                 new("Daily cap", cap is { } c3 ? $"{c3.ToString("0.###", CultureInfo.InvariantCulture)} GB" : "none", "info") { Source = "ARM record of the component" },
                 new("This month", $"{ResourceView.Number(month, "0.00")} GB", "info"),
                 new("Free allowance", $"{InsightsSource.FreeGbPerMonth:0} GB", "info"),
@@ -94,8 +106,8 @@ public static class InsightsCard
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),
             ResourceView.Resource(inputs),
             dials,
-            [ResourceView.Spark(inputs, "ingest_today_gb", "Today, 60 h", cap), ResourceView.Spark(inputs, "sampling", "Sampling, 60 h", 100, percentReading: true)],
-            ResourceView.Chart(inputs, "Ingestion and sampling", ("ingest_today_gb", "Ingested", cap, false), ("sampling", "Sampling kept", 100, true), Ingestion.Red, "teal ingestion · green sampling · gold deploys · red capped hour", marks),
+            [ResourceView.Spark(inputs, capped, "Today, 60 h", cap), ResourceView.Spark(inputs, "sampling", "Sampling, 60 h", 100, percentReading: true)],
+            ResourceView.Chart(inputs, "Ingestion and sampling", (capped, "Ingested", cap, false), ("sampling", "Sampling kept", 100, true), Ingestion.Red, "teal ingestion · green sampling · gold deploys · red capped hour", marks),
             rows,
             readout), Sources);
     }

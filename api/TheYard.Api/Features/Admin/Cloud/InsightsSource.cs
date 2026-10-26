@@ -1,7 +1,8 @@
 // What the Application Insights card reads, once an hour: the workspace's own Usage table for
 // what was ingested today and this month, the effective sampling from the requests' item counts,
 // the minutes the daily cap stopped collection, and which apps report. The cap is the workspace's
-// daily quota, or the component's when the workspace sets none. All of it through Resource Manager
+// daily quota, read against everything the workspace took, or the component's when the workspace sets
+// none, read against what the component alone sent. All of it through Resource Manager
 // with the site's identity, which needs Log Analytics Reader on the workspace.
 using System.Globalization;
 
@@ -23,6 +24,15 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
     public const string Capped = "_LogOperation | where TimeGenerated > ago(1h) and Operation has 'Data collection stopped' | summarize capped = count()";
     public const string Reporters = "union AppRequests, AppTraces, AppDependencies | where TimeGenerated > ago(1d) | summarize items = count() by AppRoleName | order by items desc";
 
+    /// <summary>
+    /// What this component alone sent today, by the billed size of its own rows. A component's cap governs its own data,
+    /// and the workspace's Usage counts every app that sends to it, so a component's cap is read against this.
+    /// </summary>
+    public const string ComponentToday = "union isfuzzy=true AppRequests, AppDependencies, AppTraces, AppExceptions, AppEvents, AppMetrics, AppPageViews, AppBrowserTimings, AppAvailabilityResults, AppPerformanceCounters | where TimeGenerated >= startofday(now()) and _ResourceId =~ '__COMPONENT__' | summarize gb = sum(_BilledSize) / 1073741824.0";
+
+    /// <summary>The component's own query, with its resource id in place.</summary>
+    public string ComponentTodayKusto => ComponentToday.Replace("__COMPONENT__", componentId.Replace("'", "", StringComparison.Ordinal), StringComparison.Ordinal);
+
     /// <summary>The hour's one reading.</summary>
     public async Task<IReadOnlyList<ResourceMinute>> MinutesAsync(DateTimeOffset now, string version, CancellationToken cancellation)
     {
@@ -31,12 +41,14 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
         var sampled = (await RowsAsync(Sampling, cancellation)).FirstOrDefault();
         double? kept = Parse(sampled?.GetValueOrDefault("kept")), seen = Parse(sampled?.GetValueOrDefault("seen"));
         double? capped = await NumberAsync(Capped, "capped", cancellation);
+        double? own = await NumberAsync(ComponentTodayKusto, "gb", cancellation);
         var values = new Dictionary<string, double?>(StringComparer.Ordinal)
         {
             ["ingest_today_gb"] = today is { } t ? Math.Round(t, 4) : null,
             ["ingest_month_gb"] = month is { } m ? Math.Round(m, 4) : null,
             ["sampling"] = kept is { } k && seen is > 0 ? Math.Round(100 * k / seen.Value, 1) : null,
             ["capped"] = capped,
+            ["ingest_component_today_gb"] = own is { } o ? Math.Round(o, 4) : null,
         };
         return [new ResourceMinute(MachineWindows.BucketOf(now, MachineGrain.Hour), values, version)];
     }
