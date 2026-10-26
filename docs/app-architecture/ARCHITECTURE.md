@@ -38,10 +38,12 @@ flowchart LR
     TLS["TLS termination, Let's Encrypt<br/>rewrite proxy: / with its query to the rendering service, /* to the one web app with X-Yard-Host"]
   end
 
+  GHCR[("GitHub's registry, ghcr.io<br/>public: theyard and theyard-render")]
+
   subgraph azure["Azure, resource group RG-THEYARD-SS"]
     ACI["Web app for containers, APP-THEYARD-ONE-SS: both sites and The Shed<br/>on PLAN-THEYARD-SS, Linux B2, West US 3<br/>2 vCPU and 3.5 GB shared with the rendering service<br/>the store follows the name, or X-Yard-Store"]
     RENDER["Web app for containers, the rendering service<br/>on the same plan, its own image: draws every page<br/>for either site, naming its store on every read"]
-    ACR[("Container Registry")]
+    ACR[("Container Registry<br/>the same tags, kept for the undo")]
     MI["Managed identity<br/>id-theyard-ss"]
     AI["Application Insights<br/>appi-theyard-ss, 0.1 GB daily cap"]
     LAW[("Log Analytics<br/>log-theyard-ss, no daily quota of its own")]
@@ -74,8 +76,8 @@ flowchart LR
   API -.->|when SQL is unreachable| FILE
   MI -.->|db_datareader, db_datawriter| SQL
   SEED -.->|first boot only| SQL
-  ACR -.->|image pulled on every roll| ACI
-  ACR -.->|its own image, theyard-render, on the same push| RENDER
+  GHCR -.->|image pulled on every roll, no credential| ACI
+  GHCR -.->|its own image, theyard-render, on the same push| RENDER
   ACI -.->|token from the plan's identity endpoint| MI
   MI -.->|Reader, Monitoring Reader| AI
   API -.->|requests, dependencies, exceptions| AI

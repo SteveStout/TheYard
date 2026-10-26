@@ -190,8 +190,8 @@ public class DeployWorkflowTests
     // #region ghcr-push
     /// <summary>
     /// Both images go to GitHub's registry beside the Azure one (ADR-009, the addendum of 1.0.4.77): the workflow's
-    /// token signs in with packages:write and nothing more, and each build pushes the same version to both. The roll
-    /// still pulls from the Azure registry until a roll from GitHub's has been proved.
+    /// token signs in with packages:write and nothing more, and each build pushes the same version to both, so the
+    /// Azure registry holds the tag the undo rolls back to.
     /// </summary>
     [Theory]
     [InlineData("deploy.yml", "theyard")]
@@ -208,6 +208,27 @@ public class DeployWorkflowTests
         Assert.Contains("${{ env.IMAGE }}\n            ${{ env.GHCR_IMAGE }}", build.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
     }
     // #endregion ghcr-push
+
+    // #region ghcr-roll
+    /// <summary>
+    /// Each roll pulls from GitHub's registry (ADR-009, the addendum of 1.0.4.88): the web app's image is the ghcr.io
+    /// tag of the version, and the identity's registry pull is turned off in the same write, because a public package
+    /// needs no credential and App Service would otherwise offer the identity's to a registry that never issued it.
+    /// Both templates say the same, so a deployment of either cannot put the old pull back.
+    /// </summary>
+    [Theory]
+    [InlineData("deploy.yml", "appservice.bicep")]
+    [InlineData("deploy-render.yml", "render.bicep")]
+    public void Each_roll_pulls_from_GitHub_s_registry_with_no_credential(string file, string template)
+    {
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
+        Assert.Contains("--linux-fx-version \"DOCKER|$GHCR_IMAGE\" --generic-configurations '{\"acrUseManagedIdentityCreds\": false}'", workflow, StringComparison.Ordinal);
+        Assert.DoesNotContain("--linux-fx-version \"DOCKER|$IMAGE\"", workflow, StringComparison.Ordinal);
+        string infra = File.ReadAllText(Path.Combine(Repo.Root(), "infra", template));
+        Assert.Contains("acrUseManagedIdentityCreds: false", infra, StringComparison.Ordinal);
+        Assert.DoesNotContain("acrUseManagedIdentityCreds: true", infra, StringComparison.Ordinal);
+    }
+    // #endregion ghcr-roll
 
     // #region deploy-render
     /// <summary>

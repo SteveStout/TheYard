@@ -124,7 +124,7 @@ jobs:
             echo "IMAGE=$ACR/theyard:v$N"
             echo "GHCR_IMAGE=ghcr.io/stevestout/theyard:v$N"
           } >> "$GITHUB_ENV"
-          echo "Deploying $N from ${HEAD_SHA:0:7} as $ACR/theyard:v$N"
+          echo "Deploying $N from ${HEAD_SHA:0:7} as ghcr.io/stevestout/theyard:v$N"
       # #endregion compute-version
 
       - uses: azure/login@v3
@@ -141,8 +141,8 @@ jobs:
       - name: Sign in to the registry
         run: az acr login --name "$REGISTRY_NAME"
 
-      # The same image to ghcr.io, signed in with the workflow's own token; the roll still pulls from the Azure
-      # registry until the packages are public and a roll has been proved from GitHub's.
+      # The same image to ghcr.io, signed in with the workflow's own token. The roll pulls from there; the Azure
+      # registry keeps the same tag beside it, which is what the undo in ADR-009 rolls back to.
       - name: Sign in to GitHub's registry
         uses: docker/login-action@v4
         with:
@@ -254,7 +254,10 @@ jobs:
           # The image is the only thing that changes between rolls. App Service
           # starts the new container beside the old one and moves traffic when
           # the new one answers, so the site serves through its own roll.
-          arm az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$IMAGE" -o none
+          # It is pulled from GitHub's registry, which serves a public package to
+          # anyone, so the identity's registry pull is turned off in the same write
+          # and no credential is stored (ADR-009, the addendum on rolling from it).
+          arm az webapp config set -g "$RG" -n "$APP" --linux-fx-version "DOCKER|$GHCR_IMAGE" --generic-configurations '{"acrUseManagedIdentityCreds": false}' -o none
           az webapp show -g "$RG" -n "$APP" --query "{state:state, image:siteConfig.linuxFxVersion, host:defaultHostName}" -o json
       # #endregion roll
       # #region verify
@@ -375,7 +378,7 @@ jobs:
           {
             echo "## Deployed $N"
             echo "- commit: $APP_COMMIT"
-            echo "- image: $IMAGE"
+            echo "- image: $GHCR_IMAGE (and $IMAGE, kept for the undo)"
             echo "- site: $SITE"
           } >> "$GITHUB_STEP_SUMMARY"
       # #endregion verify
