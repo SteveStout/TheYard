@@ -70,9 +70,10 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
                 await recorder.RecordOnceAsync(key, cancellation);
                 lastHour = await history.NewestAsync(60, cancellation);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception) when (!cancellation.IsCancellationRequested)
             {
-                // Any failed live read, Azure's or Netlify's, is the recorder's gap, never this route's 500.
+                // Any failed live read, Azure's or Netlify's, is the recorder's gap, never this route's 500: a client
+                // that timed out throws an OperationCanceledException too, so only the request's own cancellation passes.
                 // The card answers from what is kept; the readout's live-read line says how old it is.
             }
         }
@@ -99,7 +100,7 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             {
                 view = await processes.EnrichAsync(view, cancellation);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception) when (!cancellation.IsCancellationRequested)
             {
                 // A workspace or a health route that fails costs the card its two added slots, never the card.
             }
