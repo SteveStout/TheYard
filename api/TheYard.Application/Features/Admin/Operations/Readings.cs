@@ -2,8 +2,7 @@
 // Admin reads that asked no handler). Each reading is already in the shape its card draws, built by the host part
 // that holds the data (the rings, the collectors, the gate's file, Azure's answers); the Application ring declares
 // what it may ask for, in ports split by what they read, so every query has a port a test can fake and a route
-// asks one handler and nothing else. The Foreman reads exactly these routes, and a read with no handler has no
-// fake to test against.
+// asks one handler and nothing else: a read with no handler has no fake to test against.
 namespace TheYard.Application.Features.Admin.Operations;
 
 

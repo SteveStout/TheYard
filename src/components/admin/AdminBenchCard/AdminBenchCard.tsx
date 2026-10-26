@@ -41,6 +41,7 @@ export const CARD_CHUNKS = {
   SqlCard: () => import('../SqlCard/SqlCard'),
   StoreCard: () => import('../StoreCard/StoreCard'),
   IncidentsCard: () => import('../IncidentsCard/IncidentsCard'),
+  ForemanCard: () => import('../ForemanCard/ForemanCard'),
   ErrorsCard: () => import('../ErrorsCard/ErrorsCard'),
   LogCard: () => import('../LogCard/LogCard'),
   KeptLogsCard: () => import('../KeptLogsCard/KeptLogsCard'),
@@ -86,6 +87,8 @@ const SqlCard = lazy(CARD_CHUNKS.SqlCard);
 const StoreCard = lazy(CARD_CHUNKS.StoreCard);
 /** The Incidents card, its code fetched the first time it is drawn. */
 const IncidentsCard = lazy(CARD_CHUNKS.IncidentsCard);
+/** The Foreman's card, its code fetched the first time it is drawn. */
+const ForemanCard = lazy(CARD_CHUNKS.ForemanCard);
 /** The Errors card, its code fetched the first time it is drawn. */
 const ErrorsCard = lazy(CARD_CHUNKS.ErrorsCard);
 /** The Log card, its code fetched the first time it is drawn. */
@@ -232,6 +235,8 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
         return <StoreCard tick={tick} />;
       case 'incidents':
         return <IncidentsCard tick={tick} />;
+      case 'foreman':
+        return <ForemanCard tick={tick} />;
       case 'errors':
         return <ErrorsCard errors={props.errors} tick={tick} />;
       case 'log':

@@ -50,3 +50,7 @@ A record about how the site is run, not how it is built: it touches no ring of t
 ## Addendum, 2026-10-25 (1.0.4.80): the Admin tab reads the index
 
 Decision 5 said the Admin tab gains nothing. It gains one card under What broke?, and the rail gains no row of its own: the card lists the index's rows and links each to its postmortem, beside the failures Application Insights kept over seven days, so the incidents and the errors that could become the next one are read in one place (ADR: The Admin tab, as a product, the addendum of 1.0.4.80). The index stays the one list; the card reads it and types nothing.
+
+## Addendum, 2026-10-25 (1.0.4.82): the Foreman ships without drafting
+
+Decision 4 said the Foreman drafts the Timeline when it ships. It shipped at 1.0.4.82 at rung 0, a page with no model (ADR: The Foreman, a place to start), and drafts nothing: its page names the cards that moved, the nearest change and where to start, which are a timeline's first rows, but the incident file is still written by the lane after the red. The drafting waits for the Foreman's model rung.
