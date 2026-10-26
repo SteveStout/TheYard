@@ -39,8 +39,8 @@ public sealed class SheetMirrorTimer(IMergeStore store, IHttpClientFactory http,
             }
             string line = await new SheetMirror(store, new GoogleSheetGrid(http, settings), time).RunAsync(mode, ct);
             RunLines.Counted(run, line, ("sheet_rows", @"sheet (\d+)"), ("master_rows", @"master (\d+)"), ("would_append", @"add (\d+)"));
-            bool mismatch = line.Contains("MISMATCH", StringComparison.Ordinal);
-            run.Came(mismatch ? "blocked" : mode == SheetMode.Shadow ? "planned" : "success", mismatch ? "mismatch" : null);
+            var (outcome, detail) = Outcome(line, mode);
+            run.Came(outcome, detail);
             log.LogInformation("sheet mirror: {Line}", line);
         }
         catch (Exception ex)
@@ -53,6 +53,16 @@ public sealed class SheetMirrorTimer(IMergeStore store, IHttpClientFactory http,
             RunLines.Write(log, run, time.GetUtcNow());
         }
     }
+
+    /// <summary>
+    /// What a pass came to, from its line: a read-back that disagreed is blocked on the mismatch; a plan the gate
+    /// stopped at a row it may not copy is blocked on the gate, so the card shows the rows waiting behind it; otherwise
+    /// shadow planned and on appended.
+    /// </summary>
+    public static (string Outcome, string? Detail) Outcome(string line, SheetMode mode) =>
+        line.Contains("MISMATCH", StringComparison.Ordinal) ? ("blocked", "mismatch")
+        : line.Contains(" STOPPED at ", StringComparison.Ordinal) ? ("blocked", "gate")
+        : (mode == SheetMode.Shadow ? "planned" : "success", null);
 
     /// <summary>The mode a SHEET_MIRROR value names: shadow, on, or off for anything else.</summary>
     public static SheetMode Mode(string? value) =>

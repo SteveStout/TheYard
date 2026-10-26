@@ -90,6 +90,15 @@ public sealed class SheetMirrorTests
         Assert.False(plan.InStep);
     }
 
+    [Theory]
+    [InlineData("SHADOW sheet 2993 master 2996 add 3 (Counts 2994 to 2996)", SheetMode.Shadow, "planned", null)]
+    [InlineData("ON sheet 2993 master 2996 add 3 (Counts 2994 to 2996) | VERIFIED 2996 rows, 1..2996, the 3 added read back cell for cell", SheetMode.On, "success", null)]
+    [InlineData("SHADOW sheet 2852 master 2994 add 0 STOPPED at 2994: a banned row", SheetMode.Shadow, "blocked", "gate")]
+    [InlineData("ON sheet 2852 master 2994 add 0 STOPPED at 2994: a banned row", SheetMode.On, "blocked", "gate")]
+    [InlineData("ON sheet 2993 master 2996 add 3 | MISMATCH: the Sheet reads 2995 rows after the append, 2996 expected", SheetMode.On, "blocked", "mismatch")]
+    public void A_plan_the_gate_stopped_is_blocked_on_the_gate_and_not_planned(string line, SheetMode mode, string outcome, string? detail) =>
+        Assert.Equal((outcome, detail), SheetMirrorTimer.Outcome(line, mode));
+
     [Fact]
     public void A_sentence_in_communication_stops_the_append_there()
     {

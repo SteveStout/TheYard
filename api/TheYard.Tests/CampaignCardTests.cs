@@ -53,6 +53,16 @@ public sealed class CampaignCardTests
     }
 
     [Fact]
+    public void The_cost_row_claims_nothing_of_its_own_and_names_the_shared_database()
+    {
+        var cost = CampaignCard.View(Inputs(Facts("shadow", "2026-10-25,0,6,0,0"), written: 6)).Rows.Single(r => r.Key == "cost");
+
+        Assert.Equal("nothing of its own this month", cost.Answer);
+        Assert.StartsWith("shares the site's Basic database, already on the bill ($1.02 this month on the Azure SQL card)", cost.Detail[0].Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("a flat price", cost.Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void With_nothing_read_every_question_says_so_and_nothing_is_red()
     {
         var card = CampaignCard.View(Inputs(null));

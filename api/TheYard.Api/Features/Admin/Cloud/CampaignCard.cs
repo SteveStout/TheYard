@@ -147,10 +147,14 @@ public static class CampaignCard
         { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("weeks"), "Template", "Weekday", "Proof", "Replies of sent") };
     }
 
-    /// <summary>What it costs: the database's month on the bill, and the parts that cost nothing.</summary>
+    /// <summary>
+    /// What it costs: nothing of its own. Its tables live in the site's Basic database, whose month the Azure SQL card
+    /// already carries, so this row names that month as shared and never claims it a second time.
+    /// </summary>
     private static CloudRow CostRow(ResourceCardInputs inputs) =>
-        new("cost", "Is it costing anything?", inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} this month" : "not on the bill yet",
-            [new("the Basic database, a flat price a month on the bill · the Function's runs inside its free grant (the nightly card) · Gmail at ten a day, inside its free limit · no finder, no key, no account", null)], "info");
+        new("cost", "Is it costing anything?", "nothing of its own this month",
+            [new((inputs.CostMonth is { } dollars ? $"shares the site's Basic database, already on the bill (${dollars.ToString("0.00", CultureInfo.InvariantCulture)} this month on the Azure SQL card)" : "shares the site's Basic database, already on the bill on the Azure SQL card")
+                + " · the Function's runs inside its free grant (the nightly card) · Gmail at ten a day, inside its free limit · no finder, no key, no account", null)], "info");
 
     /// <summary>Emails a day for thirty days against the cap, the replies marked.</summary>
     private static CloudChart Chart(IReadOnlyList<(DateOnly Day, int Sent, int Shadow, int Bounced, int Replies)> days, DateOnly today)

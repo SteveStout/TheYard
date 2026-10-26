@@ -20,6 +20,7 @@ public static class ProcessWords
         ["google_token"] = "the Google token was refused",
         ["google_settings"] = "the Google settings are not there",
         ["mismatch"] = "the Sheet and the tracker disagree",
+        ["gate"] = "the plan stopped at a row it may not copy",
         ["switch_off"] = "the switch is off",
         ["not_a_slot"] = "not a slot hour",
         ["part_failed"] = "a part of the pass failed",
@@ -107,6 +108,10 @@ public static class ProcessWords
                 if (run.Detail == "mismatch")
                 {
                     parts.Insert(0, "stopped where the Sheet and the tracker disagree");
+                }
+                if (run.Detail == "gate")
+                {
+                    parts.Insert(0, "stopped at a row the gate holds; the rows after it wait");
                 }
                 break;
             case "DailyCard":

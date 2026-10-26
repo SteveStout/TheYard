@@ -5,7 +5,8 @@ namespace JobHunt.Application.Features.Campaign;
 /// the database knows, so it writes a file to campaign/leads-inbox/ on the share and the Function, the one writer
 /// of the campaign's rows, reads it here: each company and lead held to LeadSpool's rules, each new address asked
 /// for its MX records, Strength and its inputs hash computed by code, and the file moved to merged/ or rejected/
-/// with a line saying what was written and what was refused. One file at a time, oldest first.
+/// with a line saying what was written and what was refused. One file at a time, oldest first. The part's line
+/// counts every refusal (a file, a company or a lead) and each company saved once.
 /// </summary>
 public sealed class LeadImport(IMergeStore store, ICompanyBook companies, ILeadStore leads, IMxCheck mx, TimeProvider time)
 {
@@ -21,7 +22,9 @@ public sealed class LeadImport(IMergeStore store, ICompanyBook companies, ILeadS
         {
             return "0 lead files";
         }
-        int companiesSaved = 0, leadsSaved = 0, blocked = 0, refused = 0;
+        // A company named in more than one file is saved once a file but counted once a pass.
+        var companiesSaved = new HashSet<string>(StringComparer.Ordinal);
+        int leadsSaved = 0, blocked = 0, refused = 0;
         foreach (var entry in files)
         {
             string path = $"{LeadSpool.Inbox}/{entry.Name}";
@@ -40,10 +43,11 @@ public sealed class LeadImport(IMergeStore store, ICompanyBook companies, ILeadS
                 if (LeadSpool.Refuse(company) is { } why)
                 {
                     notes.Add($"company {company.Key}: {why}");
+                    refused++;
                     continue;
                 }
                 keys[company.Key] = (await companies.SaveAsync(company, file.Run, now, ct), company.Names, company);
-                companiesSaved++;
+                companiesSaved.Add(company.Key);
             }
             foreach (string key in file.Leads.Select(l => l.CompanyKey).Distinct().Where(k => !keys.ContainsKey(k)))
             {
@@ -80,7 +84,7 @@ public sealed class LeadImport(IMergeStore store, ICompanyBook companies, ILeadS
             string line = $"{entry.Name}: run {file.Run}, {file.Companies.Count} companies, {file.Leads.Count} leads" + (notes.Count == 0 ? "" : " | " + string.Join("; ", notes));
             await MoveAsync(path, entry.Name, "merged", line, ct);
         }
-        return $"{files.Count} lead files, {companiesSaved} companies, {leadsSaved} leads written, {blocked} blocked, {refused} refused";
+        return $"{files.Count} lead files, {companiesSaved.Count} companies saved, {leadsSaved} leads written, {blocked} blocked, {refused} refused";
     }
 
     private async Task MoveAsync(string path, string name, string folder, string line, CancellationToken ct)

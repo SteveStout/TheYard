@@ -69,11 +69,14 @@ public static partial class DailyCard
         .Select(n => n.Name)
         .FirstOrDefault();
 
-    /// <summary>The card without its title line, so two cards that differ only in when they were written read as the same.</summary>
+    /// <summary>
+    /// The card without its title line and with every age in it ("7 h ago") read as "ago", so two cards that differ
+    /// only in when they were written read as the same. The card itself keeps the ages; only the comparison drops them.
+    /// </summary>
     public static string Body(string card)
     {
         int line = card.IndexOf('\n', StringComparison.Ordinal);
-        return line < 0 ? card : card[(line + 1)..];
+        return Ages().Replace(line < 0 ? card : card[(line + 1)..], "ago");
     }
 
     private static string First(string sentence)
@@ -85,6 +88,9 @@ public static partial class DailyCard
 
     [GeneratedRegex(@"(?m)^\d+\.\s+\*\*(.+?)\*\*\s*(.*)$")]
     private static partial Regex Numbered();
+
+    [GeneratedRegex(@"\b\d+ (?:min|h|days) ago\b")]
+    private static partial Regex Ages();
 
     [GeneratedRegex(@"^APPLY-BLOCKERS-(\d{4}-\d{2}-\d{2})\.md$")]
     private static partial Regex Dated();

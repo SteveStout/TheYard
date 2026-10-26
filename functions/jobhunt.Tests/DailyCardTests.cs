@@ -53,6 +53,16 @@ public sealed class DailyCardTests
     }
 
     [Fact]
+    public void Two_cards_that_differ_only_in_their_ages_and_title_read_as_the_same()
+    {
+        string at10 = "# CARD, Sunday 2026-10-25 10:05 Central\r\n\r\n- merge.log: last line 7 h ago: MERGED x.csv\r\n- sweep.log: last line 12 min ago: ok\r\n- tracker: 3 days ago\r\n";
+        string at11 = "# CARD, Sunday 2026-10-25 11:05 Central\r\n\r\n- merge.log: last line 8 h ago: MERGED x.csv\r\n- sweep.log: last line 72 min ago: ok\r\n- tracker: 3 days ago\r\n";
+        Assert.Equal(DailyCard.Body(at10), DailyCard.Body(at11));
+        Assert.NotEqual(DailyCard.Body(at10), DailyCard.Body(at11.Replace("MERGED x.csv", "MERGED y.csv", StringComparison.Ordinal)));
+        Assert.Contains("7 h ago", at10, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task The_card_is_rewritten_only_when_it_changed()
     {
         using var scratch = Folder();
@@ -60,6 +70,8 @@ public sealed class DailyCardTests
         var time = new FixedTime(Afternoon);
         Assert.Equal("written", await DailyCardTimer.WriteAsync(scratch.Store, source, time, CancellationToken.None));
         Assert.Equal("unchanged", await DailyCardTimer.WriteAsync(scratch.Store, source, time, CancellationToken.None));
+        // An hour later every age on the card has moved and nothing else has: still unchanged.
+        Assert.Equal("unchanged", await DailyCardTimer.WriteAsync(scratch.Store, source, new FixedTime(Afternoon.AddHours(1)), CancellationToken.None));
         scratch.Write("tracker-inbox/merge.log", "2026-10-22 14:00:00 MERGED x.csv\r\n2026-10-22 14:20:00 MERGED y.csv\r\n");
         Assert.Equal("written", await DailyCardTimer.WriteAsync(scratch.Store, source, time, CancellationToken.None));
         Assert.True(File.Exists(Path.Combine(scratch.Root, "nightly", "CARD.md")));

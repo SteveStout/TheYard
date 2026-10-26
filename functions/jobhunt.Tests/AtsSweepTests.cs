@@ -138,6 +138,41 @@ public sealed class AtsSweepTests
     }
 
     [Fact]
+    public async Task A_message_left_before_is_not_read_again_until_its_thread_or_the_tracker_moves()
+    {
+        using var scratch = new Scratch();
+        scratch.Master(TrackerCsvText.Line(Applied(10)) + "\r\n");
+        var interview = Mail1("Hiring Manager Interview at Acme for Senior Software Engineer. Pick a time that works.", subject: "Hiring Manager Interview at Acme", id: "m1");
+        var inbox = new MemoryInbox(interview, Mail1(ReceiptText, id: "m2"));
+        var sweep = new AtsSweep(scratch.Store, inbox, new FixedTime(Afternoon));
+
+        // The first pass reads both; the interview is left and remembered, the receipt is planned for the archive.
+        Assert.StartsWith("SHADOW found 2: left 1, archive only 1", await sweep.RunAsync(false, CancellationToken.None), StringComparison.Ordinal);
+        Assert.StartsWith("m1\tt-m1\t", File.ReadAllText(Path.Combine(scratch.Root, "ats-sweep", "judged.tsv")), StringComparison.Ordinal);
+
+        // The second pass reads only the receipt again; the interview is counted as left without being read.
+        string again = await sweep.RunAsync(false, CancellationToken.None);
+        Assert.StartsWith("SHADOW found 2: left 1, archive only 1", again, StringComparison.Ordinal);
+        Assert.Contains("(1 left before, not read again)", again, StringComparison.Ordinal);
+        Assert.Equal(["m1", "m2", "m2"], inbox.Read);
+
+        // A person writes into the interview's thread: it is read and judged again.
+        var answered = new MemoryInbox(interview, Mail1(ReceiptText, id: "m2"), Mail1("Looking forward to it.", from: "Jane Recruiter <jane@acme.example>", id: "m3") with { ThreadId = "t-m1" });
+        await new AtsSweep(scratch.Store, answered, new FixedTime(Afternoon)).RunAsync(false, CancellationToken.None);
+        Assert.Contains("m1", answered.Read);
+
+        // The person's message gone again moves the senders back, so it is read once more; then a change to the
+        // tracker, with the thread as it was, reads it again too.
+        var fresh = new MemoryInbox(interview, Mail1(ReceiptText, id: "m2"));
+        await new AtsSweep(scratch.Store, fresh, new FixedTime(Afternoon)).RunAsync(false, CancellationToken.None);
+        Assert.Equal(["m1", "m2"], fresh.Read);
+        scratch.Master(TrackerCsvText.Line(Applied(10)) + "\r\n" + TrackerCsvText.Line(Applied(11)) + "\r\n");
+        var after = new MemoryInbox(interview, Mail1(ReceiptText, id: "m2"));
+        await new AtsSweep(scratch.Store, after, new FixedTime(Afternoon)).RunAsync(false, CancellationToken.None);
+        Assert.Equal(["m1", "m2"], after.Read);
+    }
+
+    [Fact]
     public async Task On_drops_the_row_for_the_merger_then_archives_and_reads_back()
     {
         using var scratch = new Scratch();
@@ -222,7 +257,13 @@ public sealed class AtsSweepTests
         public Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<string>>([.. messages.Select(m => m.Id).Take(max)]);
 
-        public Task<InboxMessage> ReadAsync(string id, CancellationToken ct) => Task.FromResult(messages.Single(m => m.Id == id));
+        public List<string> Read { get; } = [];
+
+        public Task<InboxMessage> ReadAsync(string id, CancellationToken ct)
+        {
+            Read.Add(id);
+            return Task.FromResult(messages.Single(m => m.Id == id));
+        }
 
         public Task<IReadOnlyList<string>> ThreadSendersAsync(string threadId, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<string>>([.. messages.Where(m => m.ThreadId == threadId).Select(m => m.From)]);

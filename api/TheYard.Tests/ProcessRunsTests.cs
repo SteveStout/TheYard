@@ -117,6 +117,7 @@ public sealed class ProcessRunsTests
     [InlineData("Nightly", "process:Nightly outcome=success took_ms=8 started=x detail=bookkeeping dispatched=1", "dispatched the records run")]
     [InlineData("Nightly", "process:Nightly outcome=unchanged took_ms=8 started=x detail=not_a_slot", "not a slot hour")]
     [InlineData("SheetMirror", "process:SheetMirror outcome=planned took_ms=8 started=x master_rows=2996 sheet_rows=2993 would_append=3", "3 rows would append · Sheet 2,993 · tracker 2,996")]
+    [InlineData("SheetMirror", "process:SheetMirror outcome=blocked took_ms=8 started=x detail=gate master_rows=2994 sheet_rows=2852 would_append=0", "stopped at a row the gate holds; the rows after it wait · 0 rows would append · Sheet 2,852 · tracker 2,994")]
     [InlineData("DailyCard", "process:DailyCard outcome=unchanged took_ms=8 started=x written=0", "unchanged, not written")]
     [InlineData("MergerHealth", "process:MergerHealth outcome=success took_ms=8 started=x newest_log_age_s=7440 past_10=0 past_5=0 waiting=0", "0 waiting · 0 past 5 min · 0 past 10 · newest log 2 h 4 min")]
     [InlineData("AtsSweep", "process:AtsSweep outcome=blocked took_ms=8 started=x detail=google_token", "the Google token was refused; the pass skipped its later parts")]

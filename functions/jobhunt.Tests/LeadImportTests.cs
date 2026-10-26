@@ -46,7 +46,8 @@ public sealed class LeadImportTests
 
         string line = await import.RunAsync(CancellationToken.None);
 
-        Assert.Equal("1 lead files, 1 companies, 2 leads written, 1 blocked, 3 refused", line);
+        // Three leads and one company refused; the company the rules took is counted once.
+        Assert.Equal("1 lead files, 1 companies saved, 2 leads written, 1 blocked, 4 refused", line);
         Assert.Equal(["acmedental.com"], db.Companies.Select(c => c.Key));
         Assert.Equal(["Pat Lee", "Sam Roe"], db.Leads.Select(l => l.Lead.ContactName));
         var pat = db.Leads[0];
@@ -66,13 +67,24 @@ public sealed class LeadImportTests
     }
 
     [Fact]
+    public async Task A_company_in_two_files_is_counted_once_a_pass()
+    {
+        string run = Fixture("leads-run.json");
+        var (import, _, _, _) = Import(("a.json", run), ("b.json", run));
+
+        string line = await import.RunAsync(CancellationToken.None);
+
+        Assert.StartsWith("2 lead files, 1 companies saved, ", line, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_file_that_is_not_a_lead_file_goes_to_rejected_and_nothing_is_written()
     {
         var (import, db, _, root) = Import(("bad.json", "{ \"companies\": 3 }"), ("notes.txt", "not json"));
 
         string line = await import.RunAsync(CancellationToken.None);
 
-        Assert.Equal("1 lead files, 0 companies, 0 leads written, 0 blocked, 1 refused", line);
+        Assert.Equal("1 lead files, 0 companies saved, 0 leads written, 0 blocked, 1 refused", line);
         Assert.Empty(db.Companies);
         Assert.Single(Directory.GetFiles(Path.Combine(root, "campaign", "leads-inbox", "rejected")));
         Assert.True(File.Exists(Path.Combine(root, "campaign", "leads-inbox", "notes.txt")));
