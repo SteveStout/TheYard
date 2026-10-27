@@ -1,5 +1,5 @@
 /**
- * A Cloud infrastructure card's readout, beside the card (ADR: The App Service plan, read every minute): the
+ * A Cloud infrastructure card's readout, inside the card beside its dials (ADR: The App Service plan, read every minute): the
  * resource's name in capitals, a ring for how much of the window it was up, then one line a
  * reading with its tone on the left edge and its source under its label, and where the readings
  * come from.

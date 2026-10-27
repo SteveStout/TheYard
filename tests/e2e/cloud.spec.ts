@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { openTheYard } from './app';
 import { CLOUD_RESOURCES } from '../../src/lib/workbench';
 import { PROCESS_STRIP_CELLS } from '../../src/lib/cloudProcesses';
@@ -70,6 +70,64 @@ test('the shell draws the tone, the chips and the rail dot, and the arrows walk 
 });
 // #endregion card-shell
 
+// #region full-width
+const scrollsSideways = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+
+/**
+ * Below the dials every block takes the card's full width (ADR: One frame for every resource, the addendum of
+ * 1.0.4.109, from the approved layout): the readout sits beside the lead block, so its box starts beside the
+ * left dial and above the rows, and the chart spans from the left dial's edge to the readout's far edge. A
+ * desk's width; a phone is one column and is held below.
+ */
+async function expectFullWidthBelowDials(card: Locator): Promise<void> {
+  const box = async (id: string) => {
+    const found = await card.getByTestId(id).boundingBox();
+    expect(found, `${id} has a box`).not.toBeNull();
+    return found!;
+  };
+  const dial = await box('cloud-dial-left');
+  const readout = await box('cloud-readout');
+  const rows = await box('cloud-rows');
+  const chart = await box('cloud-chart');
+  expect(readout.x, 'the readout is beside the dials').toBeGreaterThanOrEqual(dial.x + dial.width);
+  expect(readout.y, 'the readout starts beside the left dial').toBeLessThan(dial.y + dial.height);
+  expect(readout.y, 'the readout is not below the rows').toBeLessThan(rows.y);
+  // The chart is at least as wide as the lead block and the readout together, within a pixel of rounding.
+  expect(chart.width, 'the chart spans the lead and the readout').toBeGreaterThanOrEqual(
+    readout.x + readout.width - dial.x - 2
+  );
+}
+
+test("below the dials every block takes the card's full width on a desk, and a phone is one column", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=plan');
+  const card = page.getByTestId('plan-card');
+  await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(4, {
+    timeout: 30_000,
+  });
+  await expectFullWidthBelowDials(card);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=admin&card=plan');
+  const phone = page.getByTestId('plan-card');
+  await expect(phone.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(4, {
+    timeout: 30_000,
+  });
+  const rows = (await phone.getByTestId('cloud-rows').boundingBox())!;
+  const readout = (await phone.getByTestId('cloud-readout').boundingBox())!;
+  const article = (await phone.locator('article').first().boundingBox())!;
+  expect(readout.y, 'on a phone the readout follows the rows').toBeGreaterThanOrEqual(
+    rows.y + rows.height - 1
+  );
+  expect(article.width, 'the card fits a phone').toBeLessThanOrEqual(390);
+  expect(await scrollsSideways(page)).toBe(false);
+});
+// #endregion full-width
+
 // #region cloud-resources
 /**
  * The resource cards after the plan (ADR: One frame for every resource): each opens from its
@@ -94,6 +152,8 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
     );
     await expect(card.getByTestId('cloud-readout')).toBeVisible();
     await expect(card.getByTestId('cloud-note')).toBeVisible();
+    // And every card, not the plan alone, reads at full width below its dials.
+    await expectFullWidthBelowDials(card);
   }
 });
 // #endregion cloud-resources
@@ -195,9 +255,6 @@ test('on a phone each process is one column and its runs stack, so nothing scrol
  */
 const LONG_NAME =
   'Microsoft.Azure.WebJobs.Script.Workers.Rpc.RpcException/JobHunt.Database.sqlproj';
-
-const scrollsSideways = (page: import('@playwright/test').Page) =>
-  page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
 
 test('a name longer than the line wraps in its card, so the page never scrolls sideways', async ({
   page,

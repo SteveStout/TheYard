@@ -1,24 +1,51 @@
 /**
- * Does:      Lays out the shell every Cloud infrastructure card shares: the card and its summary side by side, the
- *            header with its tone chip and the spec's source chip, the sub line, and the two dial panels across the
- *            card's full width (side by side when the card is wide, stacked when it is a phone's width), each with
- *            its name, its hold line and its own sparkline under it, then any sparkline that is no dial's own.
+ * Does:      Lays out the shell every Cloud infrastructure card shares: a lead block beside the readout, then the
+ *            chart, the processes and the rows across the card's full width. The lead holds the header with its
+ *            tone chip and the spec's source chip, the sub line, and the two dial panels (side by side when the
+ *            lead is wide, stacked when it is a phone's width), each with its name, its hold line and its own
+ *            sparkline under it, then any sparkline that is no dial's own.
  * Does not:  Draw a dial, the chart, the rows or the readout (each has its own sheet), or the panels' glass.
  * Used by:   CardShell.tsx.
  */
+/* The frame is the card's name on the page and nothing more: the card itself lays the blocks out. */
 .frame {
+  min-width: 0;
+}
+
+/* The card's three blocks, as the approved layout draws them: the lead beside the readout, and everything
+   below the dials across the card's full width. */
+.card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+  grid-template-areas:
+    'lead readout'
+    'rest rest';
   gap: var(--space-4);
+  padding: var(--space-4);
+  min-width: 0;
   align-items: start;
 }
 
-.card {
+/* The lead is the container the dials measure, so two dials sit side by side by the lead's own width, not the
+   card's: beside the readout, the lead is the width the whole card was before the readout moved inside it. */
+.lead {
+  grid-area: lead;
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4);
   min-width: 0;
   container-type: inline-size;
+}
+
+.readout {
+  grid-area: readout;
+  min-width: 0;
+}
+
+.rest {
+  grid-area: rest;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 .header {
@@ -47,7 +74,7 @@
   color: var(--color-text);
 }
 
-/* The dials take the card's full width: two side by side when the card is wide, one above the other on a phone. */
+/* The dials take the lead's full width: two side by side when the lead is wide, one above the other on a phone. */
 .dials {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -182,8 +209,13 @@
   text-align: center;
 }
 
+/* Under a desk's width the card is one column, in today's order: the lead, the full-width blocks, the readout. */
 @media (max-width: 1023.98px) {
-  .frame {
+  .card {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'lead'
+      'rest'
+      'readout';
   }
 }

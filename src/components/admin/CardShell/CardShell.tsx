@@ -1,9 +1,9 @@
 /**
  * Does:      Draws every card under Cloud infrastructure from its report, in one frame (ADR: The onion cut into
- *            vertical slices, the CardShell; ADR: One frame for every resource): the header, the two dial panels
- *            across the card's full width as the approved canvas draws them (each with its name, its thresholds
- *            named on the dial, one quiet hold line and its sixty minutes), the chart, the processes, the rows and
- *            the summary column. The parts are in the folders beside it:
+ *            vertical slices, the CardShell; ADR: One frame for every resource): a lead block (the header, the sub
+ *            line, the two dial panels as the approved canvas draws them, each with its name, its thresholds named
+ *            on the dial, one quiet hold line and its sixty minutes) with the readout beside it, then the chart, the
+ *            processes and the rows across the card's full width. The parts are in the folders beside it:
  *              CloudDial      a dial, now, each threshold named on it by a leader line
  *              CloudChart     the window, one panel a series against its own lines, the rolls on the time axis
  *              CloudRows      the four questions, each naming its source
@@ -117,7 +117,9 @@ function Retry() {
 // #region card-shell
 /**
  * The shell: a loading or failed line until the card's route answers, then the slots in mockup 6's
- * order. The window buttons are the tab's shared ones, drawn beside the chart's title.
+ * order, the lead block beside the readout and everything below the dials across the card's full
+ * width, as the approved layout draws it. The window buttons are the tab's shared ones, drawn
+ * beside the chart's title.
  */
 export function CardShell({
   report,
@@ -144,73 +146,79 @@ export function CardShell({
   return (
     <div className={styles.frame} data-testid={testId} data-tone={report.tone}>
       <article className={`${styles.card} op-glass`}>
-        <header className={styles.header}>
-          <h2 className={`${cardStyles.cardTitle} ${styles.title}`}>
-            {report.title}
-            <span className={styles.toneChip} data-tone={report.tone} data-testid="card-tone">
-              {cardToneWord(report.tone)}
-            </span>
-          </h2>
-          {report.spec !== null && (
-            <span className={styles.spec}>
-              {report.spec}
-              {report.spec_source !== null && (
-                <span className={styles.sourceChip} data-testid="card-spec-source">
-                  {report.spec_source}
-                </span>
-              )}
-            </span>
-          )}
-        </header>
-        <p className={styles.resource} data-testid="cloud-resource">
-          {report.resource !== null && (
-            <>
-              <PortalLink link={report.resource} />{' '}
-              <span className={styles.quiet}>{portalSentence(report.resource.href)}</span>
-            </>
-          )}
-          <span className={styles.quiet} data-testid="cloud-read-age">
-            {' · '}
-            {report.read_age_seconds === null
-              ? 'not read yet'
-              : `read ${report.read_age_seconds} s ago`}
-          </span>
-          {instances !== undefined && !instances.value.startsWith('not read') && (
-            <span className={styles.quiet}>
+        <div className={styles.lead} data-testid="cloud-lead">
+          <header className={styles.header}>
+            <h2 className={`${cardStyles.cardTitle} ${styles.title}`}>
+              {report.title}
+              <span className={styles.toneChip} data-tone={report.tone} data-testid="card-tone">
+                {cardToneWord(report.tone)}
+              </span>
+            </h2>
+            {report.spec !== null && (
+              <span className={styles.spec}>
+                {report.spec}
+                {report.spec_source !== null && (
+                  <span className={styles.sourceChip} data-testid="card-spec-source">
+                    {report.spec_source}
+                  </span>
+                )}
+              </span>
+            )}
+          </header>
+          <p className={styles.resource} data-testid="cloud-resource">
+            {report.resource !== null && (
+              <>
+                <PortalLink link={report.resource} />{' '}
+                <span className={styles.quiet}>{portalSentence(report.resource.href)}</span>
+              </>
+            )}
+            <span className={styles.quiet} data-testid="cloud-read-age">
               {' · '}
-              {instances.value} instances
+              {report.read_age_seconds === null
+                ? 'not read yet'
+                : `read ${report.read_age_seconds} s ago`}
             </span>
-          )}
-        </p>
-        {report.description != null && <CloudWhat description={report.description} />}
-        {report.note !== null && (
-          <p className={cardStyles.muted} data-testid="cloud-note">
-            {report.note}
+            {instances !== undefined && !instances.value.startsWith('not read') && (
+              <span className={styles.quiet}>
+                {' · '}
+                {instances.value} instances
+              </span>
+            )}
           </p>
-        )}
-        <div className={styles.dials}>
-          {report.dials.slice(0, 2).map((dial, index) => (
-            <DialPanel
-              key={dial.name}
-              dial={dial}
-              testId={index === 0 ? 'cloud-dial-left' : 'cloud-dial-right'}
-              hold={hold}
-              spark={sparks.byDial[index]}
-            />
-          ))}
-        </div>
-        {sparks.rest.length > 0 && (
-          <div className={styles.sparks}>
-            {sparks.rest.map((spark) => (
-              <Spark key={spark.name} name={spark.name} values={spark.values} tone="info" />
+          {report.description != null && <CloudWhat description={report.description} />}
+          {report.note !== null && (
+            <p className={cardStyles.muted} data-testid="cloud-note">
+              {report.note}
+            </p>
+          )}
+          <div className={styles.dials}>
+            {report.dials.slice(0, 2).map((dial, index) => (
+              <DialPanel
+                key={dial.name}
+                dial={dial}
+                testId={index === 0 ? 'cloud-dial-left' : 'cloud-dial-right'}
+                hold={hold}
+                spark={sparks.byDial[index]}
+              />
             ))}
           </div>
-        )}
-        <CloudChart chart={report.chart} endMs={report.as_of_ms} toolbar={toolbar} />
-        <CloudProcesses processes={report.processes ?? []} />
-        <CloudRows rows={report.rows} />
+          {sparks.rest.length > 0 && (
+            <div className={styles.sparks}>
+              {sparks.rest.map((spark) => (
+                <Spark key={spark.name} name={spark.name} values={spark.values} tone="info" />
+              ))}
+            </div>
+          )}
+        </div>
+        <div className={styles.readout}>
+          <CloudReadout readout={report.readout} />
+        </div>
+        <div className={styles.rest} data-testid="cloud-rest">
+          <CloudChart chart={report.chart} endMs={report.as_of_ms} toolbar={toolbar} />
+          <CloudProcesses processes={report.processes ?? []} />
+          <CloudRows rows={report.rows} />
+        </div>
       </article>
-      <CloudReadout readout={report.readout} />
     </div>
   );
 }
