@@ -81,3 +81,13 @@ The Blog analytics card says how many pictures are kept and their bytes, read fr
 
 With the two posts' fourteen real slides in, the strip is wider than its card on every screen, and axe named it: a region that scrolls must be reachable from the keyboard (scrollable-region-focusable). The strip takes focus (`tabIndex` 0), names itself ("The slides, 7 of them, scroll sideways") and shows the site's focus ring, so the arrow keys scroll it. Before the slides, no strip on the live site was wide enough for the rule to fire, which is why the gate's axe pages never saw it; blog.spec.ts now runs axe on a post with a strip whether the store holds real pictures or the test answers made-up ones.
 
+
+## Addendum, 2026-10-26 (1.0.4.104): a post that reads as a blog
+
+The body was kept and drawn as LinkedIn had it: one run of plain text with its line breaks, the hashtags coloured, and every link in a first comment the blog could not show. Read on this site that is a LinkedIn post pasted on a page, and the reference a post rests on (the video, the test, the record) is not on it. From this version the body is written for the blog and the LinkedIn text stays on LinkedIn, where the link under "Comment on LinkedIn" already leads.
+
+The body is a small Markdown: a line of one to three hashes is a heading, a line that opens with a dash is an item and the items that follow one another are one list, a blank line ends a paragraph, and inside a line `**bold**`, `` `code` `` and `[words](https://...)` are what they say. `src/lib/blogBody.ts` reads the text into those blocks (`bodyBlocks`, `inlineParts`) and the card draws each as the element it is: `h3`, `p`, `ul`, `strong`, `code`, `a`. A link is let through only when it is http or https, and a mark that is not one of these stays as the writer typed it. A body with no marks at all comes out as paragraphs, so a post kept as LinkedIn had it still reads. The hashtags are no longer in the body (the post's tags are a column of their own) and the "save this" line, which asks for a repost, is not on a page that has no repost.
+
+A link in the body is a way out of the post, so a click on it is kept the way the two actions already were: `click` with `body:` and the host it went to, as decision 3 named, never the address. `blogBody.test.ts` holds the reading: plain text whole, a heading, a list and a paragraph apart, bold, code and a link read, and a `javascript:` address refused.
+
+What a post should carry, written for the page: the date of what it answers rather than "yesterday", the reference as a link in the sentence that uses it, and a References list at the end with the source, the code and the record, so the page stands on its own after the LinkedIn post has scrolled away.

@@ -1,8 +1,9 @@
 /**
  * Does:      The blog's words and numbers for the page (ADR: Every LinkedIn post is also a blog post): the post and
- *            stats shapes the API answers, the NEW POST rule, the date line, the body split into words and hashtags,
- *            where readers came from as shares, the most read, and the reports a page sends for a read and an event.
- * Does not:  Draw anything (components/blog does) or decide where a read came from (the API does, from what is sent).
+ *            stats shapes the API answers, the NEW POST rule, the date line, where readers came from as shares, the
+ *            most read, and the reports a page sends for a read and an event.
+ * Does not:  Draw anything (components/blog does), read the text's marks (blogBody.ts does) or decide where a read
+ *            came from (the API does, from what is sent).
  * Used by:   BlogPage, BlogPostCard, BlogCard, useBlogPosts, useBlogReport.
  */
 import { linkCode } from './links';
@@ -91,14 +92,6 @@ export function postDate(iso: string): string {
     year: 'numeric',
     timeZone: 'America/Chicago',
   });
-}
-
-/** A post's text in pieces: plain words, and the hashtags the card colours. */
-export function bodyParts(body: string): { tag: boolean; text: string }[] {
-  return body
-    .split(/(#[A-Za-z][A-Za-z0-9_]*)/)
-    .filter((text) => text !== '')
-    .map((text) => ({ tag: /^#[A-Za-z]/.test(text), text }));
 }
 
 /** What a source is called on the page. */

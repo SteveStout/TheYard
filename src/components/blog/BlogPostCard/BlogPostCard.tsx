@@ -2,11 +2,13 @@
  * Does:      Draws one post in full, in the feed layout readers know from LinkedIn and in the site's own colours: who wrote
  *            it and when, the title and the text clamped with "see more", the slides, the reads, and three actions
  *            (comment on LinkedIn, read the code, copy the link). Reports the read and what the reader does.
- * Does not:  Fetch the post (BlogPage hands it over) or keep anything about the reader (useBlogReport.ts sends, the API keeps).
+ * Does not:  Fetch the post (BlogPage hands it over), read the text's marks (blogBody.ts does) or keep anything about
+ *            the reader (useBlogReport.ts sends, the API keeps).
  * Used by:   BlogPage.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
-import { bodyParts, postDate, type BlogPost } from '../../../lib/blog';
+import { postDate, type BlogPost } from '../../../lib/blog';
+import { bodyBlocks, type BodyInline } from '../../../lib/blogBody';
 import { useBlogReport } from '../../../hooks/useBlogReport';
 import styles from './BlogPostCard.module.css';
 
@@ -22,6 +24,51 @@ const AUTHOR = {
 function postAddress(slug: string): string {
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   return `${origin}/?view=blog&post=${slug}`;
+}
+
+/** One line of the text as the card draws it: plain runs, bold, code, hashtags, and links that count as a click out. */
+function Line({ parts, onLink }: { parts: BodyInline[]; onLink: (href: string) => void }) {
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.kind === 'link' ? (
+          <a
+            key={index}
+            href={part.href}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => onLink(part.href)}
+          >
+            {part.text}
+          </a>
+        ) : part.kind === 'bold' ? (
+          <strong key={index}>{part.text}</strong>
+        ) : part.kind === 'code' ? (
+          <code key={index}>{part.text}</code>
+        ) : part.kind === 'tag' ? (
+          <span key={index} className={styles.hash}>
+            {part.text}
+          </span>
+        ) : (
+          <span key={index}>{part.text}</span>
+        )
+      )}
+    </>
+  );
+}
+
+/** Lines of one paragraph or item, each on a line of its own as the writer broke them. */
+function Lines({ lines, onLink }: { lines: BodyInline[][]; onLink: (href: string) => void }) {
+  return (
+    <>
+      {lines.map((parts, index) => (
+        <span key={index}>
+          {index > 0 && <br />}
+          <Line parts={parts} onLink={onLink} />
+        </span>
+      ))}
+    </>
+  );
 }
 
 export function BlogPostCard({ post }: { post: BlogPost }) {
@@ -49,6 +96,15 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
     return () => watch.disconnect();
   }, [send, post.images.length]);
   // #endregion slides-seen
+
+  /** A link in the text is a way out of the post, kept as a click that names the host it went to, never the address. */
+  const linkOut = (href: string) => {
+    try {
+      send('click', `body:${new URL(href).host}`);
+    } catch {
+      // Not an address the browser can read: the link still opens, and nothing is kept about it.
+    }
+  };
 
   const copy = () => {
     send('copy', '1');
@@ -86,13 +142,23 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
         <h2 id={`post-${post.slug}`} className={styles.title}>
           {post.title}
         </h2>
-        {bodyParts(post.body).map((part, index) =>
-          part.tag ? (
-            <span key={index} className={styles.hash}>
-              {part.text}
-            </span>
+        {bodyBlocks(post.body).map((block, index) =>
+          block.kind === 'heading' ? (
+            <h3 key={index} className={styles.heading}>
+              <Line parts={block.text} onLink={linkOut} />
+            </h3>
+          ) : block.kind === 'list' ? (
+            <ul key={index} className={styles.list}>
+              {block.items.map((item, at) => (
+                <li key={at}>
+                  <Line parts={item} onLink={linkOut} />
+                </li>
+              ))}
+            </ul>
           ) : (
-            <span key={index}>{part.text}</span>
+            <p key={index} className={styles.paragraph}>
+              <Lines lines={block.lines} onLink={linkOut} />
+            </p>
           )
         )}
       </div>

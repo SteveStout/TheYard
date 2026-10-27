@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   picturesLine,
-  bodyParts,
   depthsPassed,
   isNew,
   mostRead,
@@ -40,14 +39,6 @@ describe('the blog on the page', () => {
   it('prints the date in Central time, so an evening post keeps its own day', () => {
     expect(postDate('2026-10-19T14:00:00Z')).toBe('Oct 19, 2026');
     expect(postDate('2026-10-20T02:30:00Z')).toBe('Oct 19, 2026');
-  });
-
-  it('splits the text into words and hashtags, losing nothing', () => {
-    const parts = bodyParts('SOLID is five habits.\n#dotnet #csharp and C# stays a word');
-    expect(parts.map((p) => p.text).join('')).toBe(
-      'SOLID is five habits.\n#dotnet #csharp and C# stays a word'
-    );
-    expect(parts.filter((p) => p.tag).map((p) => p.text)).toEqual(['#dotnet', '#csharp']);
   });
 
   it('gives each source a whole share of the reads, largest first, and nothing for no reads', () => {

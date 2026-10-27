@@ -60,8 +60,42 @@
   padding: var(--space-1) var(--space-5);
   line-height: 1.55;
   color: var(--color-text);
-  white-space: pre-line;
   overflow-wrap: break-word;
+}
+
+.paragraph {
+  margin: 0 0 var(--space-3);
+}
+
+.heading {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--color-heading);
+}
+
+.list {
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-5);
+}
+
+.list li {
+  margin-bottom: var(--space-1);
+}
+
+.body code {
+  padding: 0 0.3em;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  font-family: var(--font-code);
+  font-size: 0.92em;
+}
+
+.body a {
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .clamped {
@@ -75,7 +109,6 @@
   font-size: var(--text-lg);
   font-weight: var(--weight-bold);
   color: var(--color-heading);
-  white-space: normal;
 }
 
 .hash {
