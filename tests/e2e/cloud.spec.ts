@@ -190,6 +190,24 @@ test("What the machines are doing draws in the shell's shape: each machine's lin
   });
   expect(await scrollsSideways(page)).toBe(false);
 });
+
+test("Memory against traffic draws in the shell's shape: the verdict beside the words, the plots full width", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=follows');
+  const card = page.getByTestId('follows-card');
+  await expect(card.getByTestId('follows-verdict')).toBeVisible({ timeout: 60_000 });
+  await expect(card.getByTestId('follows-cpu')).toBeVisible();
+  await expectOwnLayoutShape(card, 'follows-verdict');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=admin&card=follows');
+  await expect(page.getByTestId('follows-card').getByTestId('follows-verdict')).toBeVisible({
+    timeout: 60_000,
+  });
+  expect(await scrollsSideways(page)).toBe(false);
+});
 // #endregion own-layout-shape
 
 // #region cloud-resources
