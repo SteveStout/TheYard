@@ -218,7 +218,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         }
         var template = CampaignTemplate.For(lead.Track);
         var values = TemplateRender.Values(lead, now);
-        var email = TemplateRender.Render(template, values);
+        var email = TemplateRender.Render(template, values, TemplateRender.OptionalFor(lead));
         if (!email.Complete)
         {
             return (CampaignVerdict.Hold("blank: " + string.Join(", ", email.Blanks)), null, true);

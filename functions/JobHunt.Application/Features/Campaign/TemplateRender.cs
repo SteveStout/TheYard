@@ -52,15 +52,21 @@ public sealed record RenderedEmail(string? Subject, string? Text, string? Html, 
 /// </summary>
 public static class TemplateRender
 {
-    /// <summary>
-    /// The variables that may be blank, each on a line of its own that goes when it is. FirstName is one: a lead
-    /// whose public page names no engineering leader writes to the company's own mailbox, and its email opens on
-    /// the greeting alone, with no name and no comma (the owner's yes on that template line, ADR-118).
-    /// </summary>
-    public static readonly IReadOnlySet<string> Optional = new HashSet<string>(StringComparer.Ordinal) { "FirstName", "LastDotNetPostingTitle", "LastDotNetPostingMonth" };
+    /// <summary>The variables that may be blank for any lead, each on a line of its own that goes when it is.</summary>
+    public static readonly IReadOnlySet<string> Optional = new HashSet<string>(StringComparer.Ordinal) { "LastDotNetPostingTitle", "LastDotNetPostingMonth" };
 
-    /// <summary>Render one template with one row's values.</summary>
-    public static RenderedEmail Render(CampaignTemplate template, IReadOnlyDictionary<string, string?> values)
+    /// <summary>
+    /// A company mailbox's blanks: the same, and FirstName. Its email opens on the greeting alone, with no name and
+    /// no comma (the owner's yes on that template line, ADR-118). Only a declared mailbox gets this set.
+    /// </summary>
+    public static readonly IReadOnlySet<string> MailboxOptional = new HashSet<string>(Optional, StringComparer.Ordinal) { "FirstName" };
+
+    /// <summary>The blanks a lead may have: FirstName only when its contact title declares a company mailbox (ADR-118, 1.0.4.106).</summary>
+    public static IReadOnlySet<string> OptionalFor(LeadRecord lead) =>
+        LeadSpool.IsCompanyMailbox(lead.ContactTitle) ? MailboxOptional : Optional;
+
+    /// <summary>Render one template with one row's values; a blank outside <paramref name="optional"/> stops it.</summary>
+    public static RenderedEmail Render(CampaignTemplate template, IReadOnlyDictionary<string, string?> values, IReadOnlySet<string> optional)
     {
         string text = template.Text.Replace("\r\n", "\n", StringComparison.Ordinal);
         int end = text.IndexOf('\n', StringComparison.Ordinal);
@@ -69,8 +75,8 @@ public static class TemplateRender
         {
             throw new InvalidOperationException($"template {template.Id}-{template.Version} has no Subject line");
         }
-        var subject = TemplateFill.Fill(subjectLine["Subject: ".Length..], values, Optional);
-        var body = TemplateFill.Fill(text[(end + 1)..].Trim('\n'), values, Optional);
+        var subject = TemplateFill.Fill(subjectLine["Subject: ".Length..], values, optional);
+        var body = TemplateFill.Fill(text[(end + 1)..].Trim('\n'), values, optional);
         var blanks = subject.Blanks.Concat(body.Blanks).Distinct(StringComparer.Ordinal).ToList();
         if (blanks.Count > 0)
         {

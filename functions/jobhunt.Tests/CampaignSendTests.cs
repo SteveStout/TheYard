@@ -65,7 +65,7 @@ public sealed class CampaignSendTests
     [InlineData('B', "B-v1")]
     public void F12_each_approved_template_renders_byte_for_byte(char track, string fixture)
     {
-        var email = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track), Eight));
+        var email = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track), Eight), TemplateRender.Optional);
         Assert.True(email.Complete, string.Join(", ", email.Blanks));
         Assert.Equal(Fixture(fixture + ".subject.txt").TrimEnd('\n'), email.Subject);
         Assert.Equal(Fixture(fixture + ".txt"), email.Text);
@@ -79,8 +79,8 @@ public sealed class CampaignSendTests
     {
         var template = new CampaignTemplate("B", "test", Fixture("B-optional.md"));
         var with = Lead(edit: b => b.Company = b.Company with { LastDotNetPostingTitle = "Senior .NET Engineer", LastDotNetPostingAt = new DateOnly(2026, 10, 9) });
-        Assert.Equal(Fixture("B-optional-with.txt"), TemplateRender.Render(template, TemplateRender.Values(with, Eight)).Text);
-        Assert.Equal(Fixture("B-optional-without.txt"), TemplateRender.Render(template, TemplateRender.Values(Lead(), Eight)).Text);
+        Assert.Equal(Fixture("B-optional-with.txt"), TemplateRender.Render(template, TemplateRender.Values(with, Eight), TemplateRender.Optional).Text);
+        Assert.Equal(Fixture("B-optional-without.txt"), TemplateRender.Render(template, TemplateRender.Values(Lead(), Eight), TemplateRender.Optional).Text);
     }
 
     [Fact]
@@ -92,9 +92,40 @@ public sealed class CampaignSendTests
             Assert.All(TemplateFill.Variables(template.Text), variable => Assert.True(values.ContainsKey(variable), $"{template.Id}-{template.Version} names {{{variable}}}"));
         }
         Assert.Equal(["A", "B"], CampaignTemplate.All.Where(t => t.Version == CampaignTemplate.Current).Select(t => t.Id).Order());
-        var blank = TemplateRender.Render(CampaignTemplate.For('B'), TemplateRender.Values(Lead(edit: b => b.WhatTheyDo = " "), Eight));
+        var blank = TemplateRender.Render(CampaignTemplate.For('B'), TemplateRender.Values(Lead(edit: b => b.WhatTheyDo = " "), Eight), TemplateRender.Optional);
         Assert.False(blank.Complete);
         Assert.Equal(["WhatTheyDo"], blank.Blanks);
+        var nameless = Lead(edit: b => b.FirstName = " ");
+        var noName = TemplateRender.Render(CampaignTemplate.For('B'), TemplateRender.Values(nameless, Eight), TemplateRender.OptionalFor(nameless));
+        Assert.False(noName.Complete);
+        Assert.Equal(["FirstName"], noName.Blanks);
+    }
+
+    [Theory]
+    [InlineData('A')]
+    [InlineData('B')]
+    public void A_named_contact_with_no_first_name_is_an_incomplete_email(char track)
+    {
+        var pat = Lead(track, edit: b => b.FirstName = "");
+
+        var email = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(pat, Eight), TemplateRender.OptionalFor(pat));
+
+        Assert.False(email.Complete);
+        Assert.Equal(["FirstName"], email.Blanks);
+        Assert.Null(CampaignTestSend.TestMail(pat, "steve@example.com", Eight));
+    }
+
+    [Fact]
+    public async Task A_named_contact_with_no_first_name_already_in_the_book_is_held_and_never_sent()
+    {
+        var (send, db, mail) = Pass([Lead(company: "Acme Dental", key: "acmedental.com", edit: b => b.FirstName = "")]);
+
+        var result = await send.RunAsync(CampaignMode.On, CancellationToken.None);
+
+        Assert.Equal(0, mail.Calls);
+        Assert.Equal(0, result.Written);
+        Assert.Empty(db.Emails);
+        Assert.Equal(1, result.Held["blank"]);
     }
 
     [Fact]
@@ -115,10 +146,11 @@ public sealed class CampaignSendTests
     [Theory]
     [InlineData('A')]
     [InlineData('B')]
-    public void A_lead_with_no_first_name_opens_on_the_greeting_alone(char track)
+    public void A_company_mailbox_with_no_first_name_opens_on_the_greeting_alone(char track)
     {
-        var named = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track), Eight));
-        var email = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track, edit: b => b.FirstName = ""), Eight));
+        var named = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track), Eight), TemplateRender.Optional);
+        var mailbox = Lead(track, edit: b => { b.FirstName = ""; b.ContactName = "Acme Dental"; b.ContactTitle = LeadSpool.CompanyMailbox; b.ContactEmail = "careers@acmedental.com"; });
+        var email = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(mailbox, Eight), TemplateRender.OptionalFor(mailbox));
         Assert.True(email.Complete, string.Join(", ", email.Blanks));
         Assert.StartsWith("Good morning! ", email.Text, StringComparison.Ordinal);
         Assert.StartsWith("<div dir=\"ltr\">\n<div>Good morning! ", email.Html, StringComparison.Ordinal);

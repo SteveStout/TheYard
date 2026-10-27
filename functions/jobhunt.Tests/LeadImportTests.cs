@@ -78,7 +78,7 @@ public sealed class LeadImportTests
     }
 
     [Fact]
-    public void A_company_mailbox_with_no_first_name_is_written_and_no_name_with_no_address_is_refused()
+    public void A_company_mailbox_with_no_first_name_is_written_and_a_named_contact_with_none_is_refused()
     {
         var keys = new HashSet<string>(StringComparer.Ordinal) { "acmedental.com" };
         var mailbox = new SpoolLead
@@ -102,8 +102,10 @@ public sealed class LeadImportTests
         };
 
         Assert.Null(LeadSpool.Refuse(mailbox, keys));
-        Assert.Equal("no manager named and no address", LeadSpool.Refuse(mailbox with { ContactEmail = null, EmailSource = null }, keys));
+        Assert.Equal("a company mailbox with no address", LeadSpool.Refuse(mailbox with { ContactEmail = null, EmailSource = null }, keys));
         Assert.Equal("no contact named", LeadSpool.Refuse(mailbox with { ContactName = " " }, keys));
+        Assert.Equal("no manager named", LeadSpool.Refuse(mailbox with { ContactName = "Pat Lee", ContactTitle = "VP Engineering", ContactEmail = "pat@acmedental.com" }, keys));
+        Assert.Equal("no manager named", LeadSpool.Refuse(mailbox with { ContactName = "Pat Lee", ContactTitle = "VP Engineering", ContactEmail = "careers@acmedental.com" }, keys));
         Assert.Null(LeadSpool.Refuse(mailbox with { FirstName = "Pat", ContactName = "Pat Lee", ContactTitle = "VP Engineering", ContactEmail = null, EmailSource = null }, keys));
     }
 

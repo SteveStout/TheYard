@@ -80,7 +80,7 @@ public sealed class CampaignTestSend(IMergeStore store, IHttpClientFactory http,
     /// </summary>
     public static OutgoingMail? TestMail(LeadRecord lead, string to, DateTimeOffset sendAtUtc)
     {
-        var email = TemplateRender.Render(CampaignTemplate.For(lead.Track), TemplateRender.Values(lead, sendAtUtc));
+        var email = TemplateRender.Render(CampaignTemplate.For(lead.Track), TemplateRender.Values(lead, sendAtUtc), TemplateRender.OptionalFor(lead));
         if (!email.Complete)
         {
             return null;

@@ -164,3 +164,15 @@ Lane addr1026 built these on 26 October at Steve's word (07:28, "any email will 
 - **A finder, kept off.** The "no finder" ruling of 24 October still stands in practice: `HunterFinder` sits behind the finder port and is built only when the app setting `HUNTER_KEY` holds a key, which it does not. With a key it would ask only for a lead whose public pages gave none, keep an answer scored 70 or more that cites a public page, and stop at the free plan's 50 calls a month. Turning it on is Steve's call, after the first shadow week's numbers.
 
 `CampaignSendTests`, `LeadImportTests`, `AddressSearchTests` and `AtsSweepTests` hold it. Shipping puts the code on main; the Function runs it once it is deployed from that commit.
+
+## Addendum, 2026-10-27 (1.0.4.106): the company mailbox is declared, never inferred from a missing name
+
+The addendum of 1.0.4.103 meant one shape: a lead whose public pages name no engineering leader, written to the company's own published address. The code took a wider one. `LeadSpool` took any lead with a blank first name as long as it had an address, and the render made the first name optional for every lead. So a lead that named a manager (Pat Lee, VP Engineering) at a personal work address, where the model left the first name out, was written to the book and would have gone to that person as "Good morning!" with no name. The review of 27 October found it (D1) while the switch was on.
+
+From this version:
+
+- **A company mailbox says so.** A lead is a company mailbox only when its contact title is "Company mailbox", the shape the lead run writes for one. Nothing else makes it one: not a blank first name, not the address, not the contact's name.
+- **Every other blank first name is refused.** `LeadSpool` refuses a lead with a blank first name that is not a company mailbox, with "no manager named". A company mailbox still needs its address.
+- **The render holds the same line.** `TemplateRender.OptionalFor` lets the first name be blank only for a company mailbox. For any other lead a blank first name is a blank, and the email is incomplete and never sent, so a row already in the book from 1.0.4.103 is held at the 8 o'clock pass rather than sent.
+
+`LeadImportTests.A_company_mailbox_with_no_first_name_is_written_and_a_named_contact_with_none_is_refused`, `CampaignSendTests.A_named_contact_with_no_first_name_is_an_incomplete_email` and the template test's blank first name hold it. Shipping puts the code on main; the Function runs it once it is deployed from that commit.

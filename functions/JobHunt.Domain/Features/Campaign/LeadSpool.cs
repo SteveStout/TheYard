@@ -56,8 +56,8 @@ public sealed record LeadSpoolFile(string Run, IReadOnlyList<SpoolCompany> Compa
 /// <summary>
 /// The lead run's rows, read and held to the rules before any reaches the database (ADR-118, Decision 5). The
 /// model writes a file; code decides what it may say. A lead that breaks a shape rule (no company, a track that
-/// is not A or B, Track A with no application, no contact, no manager named and no address, an address with no
-/// https source, a link without the lead's code,
+/// is not A or B, Track A with no application, no contact, a blank first name on a lead that is not a declared
+/// company mailbox, a company mailbox with no address, an address with no https source, a link without the lead's code,
 /// a proof key not on the list) is refused with the reason and goes nowhere. A lead whose WhatTheyDo clause breaks
 /// WhatTheyDoRule is kept with Blocked set, so the next run sees why. Personal addresses are refused here too:
 /// nothing the campaign may not send to is written.
@@ -73,6 +73,13 @@ public static partial class LeadSpool
 
     /// <summary>The folder the lead run writes to; merged/ and rejected/ sit inside it.</summary>
     public const string Inbox = "campaign/leads-inbox";
+
+    /// <summary>The contact title the lead run writes for a company's own published address, the one lead that may have no first name.</summary>
+    public const string CompanyMailbox = "Company mailbox";
+
+    /// <summary>Whether the contact title declares a company mailbox; a missing name never makes one (ADR-118, 1.0.4.106).</summary>
+    public static bool IsCompanyMailbox(string? contactTitle) =>
+        string.Equals(contactTitle?.Trim(), CompanyMailbox, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The file, or null with the reason it could not be read.</summary>
     public static (LeadSpoolFile? File, string? Error) Parse(string json)
@@ -133,9 +140,13 @@ public static partial class LeadSpool
         {
             return "no contact named";
         }
+        if (string.IsNullOrWhiteSpace(lead.FirstName) && !IsCompanyMailbox(lead.ContactTitle))
+        {
+            return "no manager named";
+        }
         if (string.IsNullOrWhiteSpace(lead.FirstName) && lead.ContactEmail is null)
         {
-            return "no manager named and no address";
+            return "a company mailbox with no address";
         }
         if (lead.ContactEmail is { } email)
         {
