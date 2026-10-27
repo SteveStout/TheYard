@@ -170,6 +170,26 @@ test("Azure's view of the container draws in the shell's shape: its hourly readi
   });
   expect(await scrollsSideways(page)).toBe(false);
 });
+
+test("What the machines are doing draws in the shell's shape: each machine's line beside the gauges, the charts full width", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=machines');
+  const card = page.getByTestId('machines-card');
+  await expect(card.getByTestId('machines-container-line')).toBeVisible({ timeout: 60_000 });
+  await expect(card.getByTestId('machine-chart-container')).toBeVisible();
+  await expectOwnLayoutShape(card, 'machines-container-line');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=admin&card=machines');
+  await expect(
+    page.getByTestId('machines-card').getByTestId('machines-container-line')
+  ).toBeVisible({
+    timeout: 60_000,
+  });
+  expect(await scrollsSideways(page)).toBe(false);
+});
 // #endregion own-layout-shape
 
 // #region cloud-resources
