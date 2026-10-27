@@ -4,7 +4,10 @@
  *            rows, the sections) across the card's full width; one column under a desk's width in the order lead,
  *            rest, readout. One sheet, so the shell and the cards that draw their own body cannot drift apart.
  * Does not:  Draw a dial, a chart, a row or a readout's lines (each card's own sheets do), or the glass (panels.css).
- * Used by:   AzureCard.tsx, CardShell.tsx.
+ *            The pair and the sections are the two grids the cards share: two gauges across the lead, and the
+ *            full-width sections two across once the card is wide, by their own width and no window's.
+ * Used by:   AzureCard.tsx, CardShell.tsx, MachinesCard.tsx, MachinesContainerSection.tsx, MachinesDocumentSection.tsx,
+ *            MachinesRelationalSection.tsx.
  */
 
 /* The card's three blocks: the lead beside the readout, and everything below the dials across the full width. */
@@ -57,6 +60,47 @@
   font-size: var(--text-xs);
   letter-spacing: var(--readout-tracking);
   text-transform: uppercase;
+  color: var(--color-heading);
+}
+
+/* Two gauges across the lead, as the shell's dials go: side by side when the lead is wide, stacked on a phone. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+@container (min-width: 640px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* The full-width sections, two across once the card gives each three hundred pixels, one above the other before. */
+.sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.section {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  align-content: start;
+}
+
+/* One machine's line in a readout a card draws itself: its name over its sentence. */
+.asideLine {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.asideName {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   color: var(--color-heading);
 }
 

@@ -1,9 +1,12 @@
 /**
  * What the machines are doing (ADR: What the machines are doing), over the window
- * every chart on the tab shares, which the tab hands in. This file is the card's
- * frame and the list of its parts, each in the folder beside it:
+ * every chart on the tab shares, which the tab hands in, drawn in the shape every
+ * card under Cloud infrastructure shares (the addendum on the shell's shape): the
+ * two gauges in the lead, each machine's line of words in a readout beside them,
+ * and the charts and tables at full width below. This file is the card's frame and
+ * the list of its parts, each in the folder beside it:
  *   MachinesKeptWindow         a day, a week or a month, from the kept minutes
- *   MachinesContainerSection   the container: memory, processor, catalogues
+ *   MachinesContainerSection   the container: its line, its memory gauge, its chart
  *   MachinesRelationalSection  the relational store's own resource view
  *   MachinesDocumentSection    the document store's request units
  */
@@ -12,12 +15,13 @@ import { Range } from '../shared/Range';
 import type { ReactNode } from 'react';
 import { type MachineWindow, windowName } from '../../../lib/machineChart';
 import styles from '../shared/card.module.css';
+import areas from '../shared/cardAreas.module.css';
 import type { Fetched, Machines } from '../shared/types';
 import { About } from '../shared/common';
 import { MachinesKeptWindow } from '../MachinesKeptWindow';
-import { MachinesContainerSection } from '../MachinesContainerSection';
-import { MachinesRelationalSection } from '../MachinesRelationalSection';
-import { MachinesDocumentSection } from '../MachinesDocumentSection';
+import { ContainerDetail, ContainerGauge, ContainerLine } from '../MachinesContainerSection';
+import { RelationalDetail, RelationalLine } from '../MachinesRelationalSection';
+import { DocumentDetail, DocumentGauge, DocumentLine } from '../MachinesDocumentSection';
 
 /**
  * The machines card: a loading or failed line until the answer arrives, then
@@ -52,9 +56,10 @@ export default function MachinesCard({
 }
 
 /**
- * The card once the machines have answered: what it shows and why, the window
- * line, the kept window when one wider than the hour is chosen, then the
- * three machines in turn.
+ * The card once the machines have answered, in the shell's shape: what it shows
+ * and why, the window line and the two gauges in the lead; the three machines'
+ * lines of words in the readout; the kept window when one wider than the hour is
+ * chosen, then each machine's chart and table, at full width below.
  */
 function MachinesBody({
   machines,
@@ -66,30 +71,52 @@ function MachinesBody({
   toolbar: ReactNode;
 }) {
   return (
-    <article className={`${styles.wide} op-glass`} data-testid="machines-card">
-      <h2 className={styles.cardTitle}>What the machines are doing</h2>
-      <Range of="memory" />
-      <About>
-        The three machines under this site, each reporting the way it actually reports. The
-        container knows its own memory and its own processor time, and the limit its share is read
-        against is the runtime&rsquo;s own, which is lower than the memory the machine has, and a
-        process that passes its own limit is the one that gets collected; Azure SQL Database keeps a
-        reading of itself for the last hour, fifteen seconds at a time, free on every tier; Azure
-        Cosmos DB has no memory or processor reading to give, because it is sold by request unit, so
-        what it shows is what the operations cost against the free allowance. The last hour is this
-        container&rsquo;s own, kept in its memory, and empties on every roll. The wider windows are
-        a minute at a time, kept in Azure Cosmos DB by the recording site for thirty-one days, so
-        they survive a roll and show one.
-      </About>
-      {toolbar}
-      <p className={styles.muted} data-testid="machines-window-line">
-        Showing {windowName(window_).toLowerCase()}. One window for every chart on this tab: the
-        buttons here, on the traffic card and over the tiles are the same buttons.
-      </p>
-      {window_ !== '1h' && <MachinesKeptWindow machines={machines} window={window_} />}
-      <MachinesContainerSection container={machines.container} window={window_} />
-      <MachinesRelationalSection relational={machines.relational} />
-      <MachinesDocumentSection documentStore={machines.document} />
+    <article className={`${areas.card} op-glass`} data-testid="machines-card">
+      <div className={areas.lead} data-testid="cloud-lead">
+        <h2 className={styles.cardTitle}>What the machines are doing</h2>
+        <Range of="memory" />
+        <About>
+          The three machines under this site, each reporting the way it actually reports. The
+          container knows its own memory and its own processor time, and the limit its share is read
+          against is the runtime&rsquo;s own, which is lower than the memory the machine has, and a
+          process that passes its own limit is the one that gets collected; Azure SQL Database keeps
+          a reading of itself for the last hour, fifteen seconds at a time, free on every tier;
+          Azure Cosmos DB has no memory or processor reading to give, because it is sold by request
+          unit, so what it shows is what the operations cost against the free allowance. The last
+          hour is this container&rsquo;s own, kept in its memory, and empties on every roll. The
+          wider windows are a minute at a time, kept in Azure Cosmos DB by the recording site for
+          thirty-one days, so they survive a roll and show one.
+        </About>
+        {toolbar}
+        <p className={styles.muted} data-testid="machines-window-line">
+          Showing {windowName(window_).toLowerCase()}. One window for every chart on this tab: the
+          buttons here, on the traffic card and over the tiles are the same buttons.
+        </p>
+        <div className={areas.pair}>
+          <ContainerGauge container={machines.container} />
+          <DocumentGauge documentStore={machines.document} />
+        </div>
+      </div>
+      <div className={areas.readout}>
+        <aside
+          className={`${areas.aside} op-glass`}
+          data-testid="cloud-readout"
+          aria-label="The three machines, in words"
+        >
+          <h3 className={areas.asideHeading}>Each machine, as it reports itself</h3>
+          <ContainerLine container={machines.container} window={window_} />
+          <RelationalLine relational={machines.relational} />
+          <DocumentLine documentStore={machines.document} />
+        </aside>
+      </div>
+      <div className={areas.rest} data-testid="cloud-rest">
+        {window_ !== '1h' && <MachinesKeptWindow machines={machines} window={window_} />}
+        <div className={areas.sections}>
+          <ContainerDetail container={machines.container} />
+          <RelationalDetail relational={machines.relational} />
+          <DocumentDetail documentStore={machines.document} />
+        </div>
+      </div>
     </article>
   );
 }
