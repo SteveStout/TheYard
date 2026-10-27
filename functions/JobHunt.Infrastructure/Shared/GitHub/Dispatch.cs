@@ -38,6 +38,9 @@ public sealed class Dispatch(IHttpClientFactory http, ILogger<Dispatch> log)
         return line;
     }
 
+    /// <summary>Whether a dispatch line says GitHub took the event: a 204, and nothing else.</summary>
+    public static bool Delivered(string line) => line.StartsWith("dispatch ", StringComparison.Ordinal) && line.EndsWith(" 204", StringComparison.Ordinal);
+
     /// <summary>The setting that must be "on" for an event to be fired.</summary>
     public static string Gate(string eventType) => eventType switch
     {

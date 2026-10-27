@@ -57,15 +57,17 @@ echo "c00ee5e0bdb019e2d531edfdec242e9229ca54b953bd83f39bdefe8dca7e4d13  api/TheY
 
 # #region cloud-roles
 # A live Cloud card that says the site's identity is missing a role stops the ship before anything is written.
-# A card that does not answer is said, never failed on: the ship may be its fix. "not read: no hour kept yet"
-# is an honest wait, so only the three sentences of a missing role count.
+# A card that does not answer is said, never failed on: the ship may be its fix. A card that answers with anything
+# but JSON (a page in front of the API, a sign-in) is refused, because it could not say a role is missing. "not
+# read: no hour kept yet" is an honest wait, so only the three sentences of a missing role count.
 missing=""
 for site in https://theyard.stevenstout.biz https://theyard-cosmos.stevenstout.biz; do
   for card in sqldb cosmosdb registry insights mail edge nightly; do
-    if ! text=$(curl -fsS --max-time 30 -A 'TheYard-SelfRead/1 (promote)' "$site/api/admin/cloud/$card?window=24h"); then
+    if ! text=$(curl -fsS --max-time 30 -H 'Accept: application/json' -A 'TheYard-SelfRead/1 (promote)' "$site/api/admin/cloud/$card?window=24h"); then
       echo "cloud roles: $site $card did not answer; not judged"
       continue
     fi
+    jq -e 'type == "object"' <<< "$text" > /dev/null 2>&1 || refuse "the Cloud card $site/$card answered with something that is not JSON"
     said=$(grep -oE '(no role on|not read: no role|holds no role)[^"]{0,120}' <<< "$text" | head -n 1 || true)
     [ -z "$said" ] || missing="$missing $site/$card: $said;"
   done

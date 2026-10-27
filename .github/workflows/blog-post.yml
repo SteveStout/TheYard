@@ -42,6 +42,10 @@ jobs:
           import hashlib, json, sys
           post = json.load(open(sys.argv[1], encoding="utf-8"))
           body = open(sys.argv[2], encoding="utf-8").read().replace("\r\n", "\n").rstrip("\n")
+          # The save writes back what the read gave, so a read that came back without the slides or the tags would
+          # save the post without them: every post has both, so a read with either empty saves nothing.
+          if not post.get("images") or not post.get("tags"):
+              sys.exit(f"::error::the live read of {post.get('slug')} has {len(post.get('images') or [])} slides and {len(post.get('tags') or [])} tags: nothing saved")
           keep = ("slug", "title", "summary", "published_at", "linkedin_url", "code_url", "tags")
           save = {k: post[k] for k in keep}
           save["body"] = body
@@ -64,10 +68,13 @@ jobs:
         run: |
           want=$(python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],encoding='utf-8').read().replace('\r\n','\n').rstrip('\n').encode()).hexdigest())" "data/blog/$SLUG.md")
           for site in "$SITE" "$COSMOS_SITE"; do
+            got=""
+            # A read that fails is tried again, so one dropped answer after the save never reads as a failed save.
             for i in $(seq 1 12); do
-              curl -fsS -H 'Cache-Control: no-cache' "$site/api/blog/posts/$SLUG?nocache=$(date +%s%3N)" -o "$RUNNER_TEMP/back.json"
-              got=$(python3 -c "import hashlib,json,sys; print(hashlib.sha256(json.load(open(sys.argv[1]))['body'].encode()).hexdigest())" "$RUNNER_TEMP/back.json")
-              [ "$got" = "$want" ] && break
+              if curl -fsS -H 'Cache-Control: no-cache' "$site/api/blog/posts/$SLUG?nocache=$(date +%s%3N)" -o "$RUNNER_TEMP/back.json"; then
+                got=$(python3 -c "import hashlib,json,sys; print(hashlib.sha256(json.load(open(sys.argv[1]))['body'].encode()).hexdigest())" "$RUNNER_TEMP/back.json" || true)
+                [ "$got" = "$want" ] && break
+              fi
               sleep 10
             done
             echo "$site: body sha ${got:0:12}, $( [ "$got" = "$want" ] && echo matches || echo DIFFERS ) the file"

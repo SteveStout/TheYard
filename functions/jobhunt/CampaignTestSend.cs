@@ -44,6 +44,11 @@ public sealed class CampaignTestSend(IMergeStore store, IHttpClientFactory http,
                 run.Came("blocked", "no_test_address");
                 return await AnswerAsync(request, HttpStatusCode.Conflict, $"{Setting} or CAMPAIGN_SQL is not set: nothing sent", ct);
             }
+            if (!OneAddress(to))
+            {
+                run.Came("blocked", "not_one_address");
+                return await AnswerAsync(request, HttpStatusCode.Conflict, $"{Setting} is not one address: nothing sent", ct);
+            }
             if (GoogleCredentials.FromEnvironment() is not { } google)
             {
                 run.Came("blocked", "no_google");
@@ -88,6 +93,10 @@ public sealed class CampaignTestSend(IMergeStore store, IHttpClientFactory http,
         string Swap(string text) => lead.RefCode is { Length: > 0 } code ? text.Replace("r=" + code, "r=" + TestCode, StringComparison.Ordinal) : text;
         return new OutgoingMail(to.Trim(), "[TEST] " + email.Subject, Swap(email.Text!), Swap(email.Html!));
     }
+
+    /// <summary>Whether the setting is one plain address, not a list or a display name, so the test goes to one inbox only.</summary>
+    public static bool OneAddress(string? value) =>
+        value?.Trim() is { Length: > 0 } to && System.Net.Mail.MailAddress.TryCreate(to, out var address) && string.Equals(address.Address, to, StringComparison.Ordinal);
 
     private static async Task<HttpResponseData> AnswerAsync(HttpRequestData request, HttpStatusCode status, string text, CancellationToken ct)
     {

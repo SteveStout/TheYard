@@ -29,41 +29,63 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
     public static string CountPath(string finderName, DateTimeOffset local) =>
         $"campaign/finder/{finderName}-{local.ToString("yyyy-MM", CultureInfo.InvariantCulture)}.txt";
 
-    /// <summary>Asks the finder for each waiting lead under the cap; answers the part's line, counts only.</summary>
+    /// <summary>The leads a finder was asked about this month, one id a line, so a lead it had no answer for is not asked again.</summary>
+    public static string AskedPath(string finderName, DateTimeOffset local) =>
+        $"campaign/finder/{finderName}-{local.ToString("yyyy-MM", CultureInfo.InvariantCulture)}-asked.txt";
+
+    /// <summary>
+    /// Asks the finder for each waiting lead under the cap that it has not been asked about this month; answers the
+    /// part's line, counts only. The count and the asked leads are written even when a call throws, so a failed pass
+    /// never lets the next one spend past the cap.
+    /// </summary>
     public async Task<string> RunAsync(CancellationToken ct)
     {
         var local = CentralClock.Local(time.GetUtcNow());
         string path = CountPath(finder.Name, local);
+        string askedPath = AskedPath(finder.Name, local);
         int used = await UsedAsync(path, ct);
-        int asked = 0, found = 0, dropped = 0;
-        foreach (var lead in await book.WaitingAsync(ct))
+        var before = await AskedAsync(askedPath, ct);
+        var now = new List<long>();
+        int found = 0, dropped = 0;
+        try
         {
-            if (used + asked >= monthCap)
+            foreach (var lead in await book.WaitingAsync(ct))
             {
-                break;
+                if (used + now.Count >= monthCap)
+                {
+                    break;
+                }
+                if (before.Contains(lead.Id))
+                {
+                    continue;
+                }
+                now.Add(lead.Id);
+                var answer = await finder.FindAsync(lead.ContactName, lead.CompanyKey, ct);
+                if (answer is null)
+                {
+                    continue;
+                }
+                string? why = Refuse(answer, lead.CompanyKey);
+                bool? hasMx = why is null ? await mx.HasMxAsync(lead.CompanyKey, ct) : null;
+                if (why is not null || hasMx != true)
+                {
+                    dropped++;
+                    continue;
+                }
+                await book.SetAddressAsync(lead.Id, answer.Address.Trim(), answer.SourceUrl, hasMx, time.GetUtcNow(), ct);
+                found++;
             }
-            asked++;
-            var answer = await finder.FindAsync(lead.ContactName, lead.CompanyKey, ct);
-            if (answer is null)
-            {
-                continue;
-            }
-            string? why = Refuse(answer, lead.CompanyKey);
-            bool? hasMx = why is null ? await mx.HasMxAsync(lead.CompanyKey, ct) : null;
-            if (why is not null || hasMx != true)
-            {
-                dropped++;
-                continue;
-            }
-            await book.SetAddressAsync(lead.Id, answer.Address.Trim(), answer.SourceUrl, hasMx, time.GetUtcNow(), ct);
-            found++;
         }
-        if (asked > 0)
+        finally
         {
-            await store.EnsureFolderAsync("campaign/finder", ct);
-            await store.WriteAsync(path, Encoding.UTF8.GetBytes((used + asked).ToString(CultureInfo.InvariantCulture)), ct);
+            if (now.Count > 0)
+            {
+                await store.EnsureFolderAsync("campaign/finder", CancellationToken.None);
+                await store.WriteAsync(path, Encoding.UTF8.GetBytes((used + now.Count).ToString(CultureInfo.InvariantCulture)), CancellationToken.None);
+                await store.WriteAsync(askedPath, Encoding.UTF8.GetBytes(string.Join('\n', before.Concat(now).Select(id => id.ToString(CultureInfo.InvariantCulture))) + "\n"), CancellationToken.None);
+            }
         }
-        return $"{finder.Name}: {asked} asked, {found} found, {dropped} dropped, {used + asked} of {monthCap} this month";
+        return $"{finder.Name}: {now.Count} asked, {found} found, {dropped} dropped, {used + now.Count} of {monthCap} this month";
     }
 
     /// <summary>Null when a finder's address may be written for the company, or the reason it may not.</summary>
@@ -88,6 +110,12 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
             ? null
             : "no https page it was read from";
     }
+
+    private async Task<HashSet<long>> AskedAsync(string path, CancellationToken ct) =>
+        await store.ExistsAsync(path, ct)
+            ? [.. Encoding.UTF8.GetString(await store.ReadAsync(path, ct)).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(line => long.TryParse(line, NumberStyles.None, CultureInfo.InvariantCulture, out long id) ? id : -1).Where(id => id >= 0)]
+            : [];
 
     private async Task<int> UsedAsync(string path, CancellationToken ct) =>
         await store.ExistsAsync(path, ct) && int.TryParse(Encoding.UTF8.GetString(await store.ReadAsync(path, ct)).Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int n) ? n : 0;

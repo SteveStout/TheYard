@@ -116,17 +116,51 @@ public sealed class CampaignCardTests
     [Fact]
     public void A_switch_turned_on_after_the_8_o_clock_pass_is_not_a_morning_with_no_send()
     {
-        var onNow = Facts("on", "2026-10-24,10,0,0,0");
-        IReadOnlyList<ResourceHour> Hours(string modeAtSeven) =>
-            [new ResourceHour(Ten.AddHours(-3), "db", null, Facts(modeAtSeven, "2026-10-24,10,0,0,0"), []), new ResourceHour(Ten.AddHours(-1), "db", null, onNow, [])];
+        // The 8 o'clock pass wrote six in shadow today.
+        var onNow = Facts("on", "2026-10-24,10,0,0,0;2026-10-25,0,6,0,0");
+        IReadOnlyList<ResourceHour> Hours(string modeAtSeven, IReadOnlyDictionary<string, string?> now) =>
+            [new ResourceHour(Ten.AddHours(-3), "db", null, Facts(modeAtSeven, "2026-10-24,10,0,0,0"), []), new ResourceHour(Ten.AddHours(-1), "db", null, now, [])];
 
-        var lateOn = CampaignCard.View(Inputs(onNow, sent: 0) with { Hours = Hours("shadow") });
-        var onAtPass = CampaignCard.View(Inputs(onNow, sent: 0) with { Hours = Hours("on") });
+        var lateOn = CampaignCard.View(Inputs(onNow, sent: 0) with { Hours = Hours("shadow", onNow) });
+        var onAtPass = CampaignCard.View(Inputs(onNow, sent: 0) with { Hours = Hours("on", onNow) });
 
         Assert.Equal("good", lateOn.Rows[0].Tone);
         Assert.Contains("the switch was shadow at the 8 AM pass; the first sends come at the next one", lateOn.Rows[0].Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal("alarm", onAtPass.Rows[0].Tone);
         Assert.Contains("none sent by 9 AM with 4 ready", onAtPass.Rows[0].Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_shadow_morning_whose_pass_wrote_nothing_is_still_a_morning_with_no_send()
+    {
+        var silent = Facts("on", "2026-10-24,10,0,0,0;2026-10-25,0,0,0,0");
+        var card = CampaignCard.View(Inputs(silent, sent: 0) with
+        {
+            Hours = [new ResourceHour(Ten.AddHours(-3), "db", null, Facts("shadow", "2026-10-24,10,0,0,0"), []), new ResourceHour(Ten.AddHours(-1), "db", null, silent, [])],
+        });
+
+        Assert.Equal("alarm", card.Rows[0].Tone);
+        Assert.Contains("none sent by 9 AM with 4 ready", card.Rows[0].Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_switch_at_the_pass_is_the_newest_early_hour_on_both_sides_of_the_clock_change()
+    {
+        ResourceHour Hour(DateTimeOffset at, string mode) => new(at, "db", null, Facts(mode, ""), []);
+        var today = new DateOnly(2026, 10, 25);
+
+        // 05:00, 06:00 and 07:00 CDT: the newest of the three is the one the pass ran under, in either order.
+        var shadowLast = Inputs(null) with { Hours = [Hour(Ten.AddHours(-3), "shadow"), Hour(Ten.AddHours(-5), "on"), Hour(Ten.AddHours(-4), "on")] };
+        var onLast = Inputs(null) with { Hours = [Hour(Ten.AddHours(-5), "shadow"), Hour(Ten.AddHours(-3), "on"), Hour(Ten.AddHours(-4), "shadow")] };
+        Assert.Equal("shadow", CampaignCard.AtPass(shadowLast, today));
+        Assert.Equal("on", CampaignCard.AtPass(onLast, today));
+
+        // Sunday 1 November, the day the clock goes back: 13:30 UTC is 07:30 CST, before the pass; 14:10 UTC is 08:10, after it.
+        var fallBack = Inputs(null) with
+        {
+            Hours = [Hour(new DateTimeOffset(2026, 11, 1, 13, 30, 0, TimeSpan.Zero), "shadow"), Hour(new DateTimeOffset(2026, 11, 1, 14, 10, 0, TimeSpan.Zero), "on")],
+        };
+        Assert.Equal("shadow", CampaignCard.AtPass(fallBack, new DateOnly(2026, 11, 1)));
     }
 
     [Fact]

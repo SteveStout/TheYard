@@ -20,9 +20,9 @@ public sealed class HunterFinder(IHttpClientFactory http, string key) : IAddress
     /// <summary>The lowest score kept.</summary>
     public const int MinScore = 70;
 
-    /// <summary>The finder when the setting holds a key, or null so nothing is built.</summary>
+    /// <summary>The finder when the setting holds a key, or null so nothing is built; "off" is off, as for every switch.</summary>
     public static HunterFinder? FromSetting(string? value, IHttpClientFactory http) =>
-        string.IsNullOrWhiteSpace(value) ? null : new HunterFinder(http, value.Trim());
+        string.IsNullOrWhiteSpace(value) || string.Equals(value.Trim(), "off", StringComparison.OrdinalIgnoreCase) ? null : new HunterFinder(http, value.Trim());
 
     /// <inheritdoc />
     public string Name => "hunter";

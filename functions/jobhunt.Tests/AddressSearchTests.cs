@@ -4,7 +4,8 @@ namespace JobHunt.Functions.Tests;
 
 /// <summary>
 /// The finder pass (ADR-118): a finder's answer is held to the public-page rules before it is written, the month's
-/// cap stops the asking, and with no key the Hunter adapter is never built. Hunter's JSON is kept only with a
+/// cap stops the asking, a lead is asked once a month, a call that throws is still counted, and with no key (or
+/// "off") the Hunter adapter is never built. Hunter's JSON is kept only with a
 /// score of 70 or more, a valid mark and a public page it cites.
 /// </summary>
 public sealed class AddressSearchTests
@@ -43,10 +44,37 @@ public sealed class AddressSearchTests
         Assert.Equal("fake: 0 asked, 0 found, 0 dropped, 50 of 50 this month", await search.RunAsync(CancellationToken.None));
     }
 
+    [Fact]
+    public async Task A_lead_asked_this_month_is_not_asked_again()
+    {
+        var book = new Book(new WaitingLead(1, "acme.com", "Pat Lee"), new WaitingLead(2, "acme.com", "Sam Roe"));
+        var finder = new Finder([]);
+        var (search, root) = Search(book, finder, 50);
+
+        Assert.Equal("fake: 2 asked, 0 found, 0 dropped, 2 of 50 this month", await search.RunAsync(CancellationToken.None));
+        Assert.Equal("fake: 0 asked, 0 found, 0 dropped, 2 of 50 this month", await search.RunAsync(CancellationToken.None));
+        Assert.Equal(2, finder.Calls);
+        Assert.Equal("1\n2\n", File.ReadAllText(Path.Combine(root, "campaign", "finder", "fake-2026-10-asked.txt")));
+    }
+
+    [Fact]
+    public async Task A_call_that_throws_is_still_counted_against_the_cap()
+    {
+        var book = new Book(new WaitingLead(1, "acme.com", "Pat Lee"), new WaitingLead(2, "acme.com", "Sam Roe"), new WaitingLead(3, "acme.com", "Jo Ray"));
+        var (search, root) = Search(book, new Finder([]) { Throws = "Sam Roe" }, 50);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => search.RunAsync(CancellationToken.None));
+
+        Assert.Equal("2", File.ReadAllText(Path.Combine(root, "campaign", "finder", "fake-2026-10.txt")));
+        Assert.Equal("1\n2\n", File.ReadAllText(Path.Combine(root, "campaign", "finder", "fake-2026-10-asked.txt")));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
+    [InlineData("off")]
+    [InlineData(" OFF ")]
     public void With_no_key_the_hunter_finder_is_never_built(string? key) =>
         Assert.Null(HunterFinder.FromSetting(key, new NoHttp()));
 
@@ -85,8 +113,16 @@ public sealed class AddressSearchTests
     {
         public string Name => "fake";
 
-        public Task<FoundAddress?> FindAsync(string fullName, string domain, CancellationToken ct) =>
-            Task.FromResult(answers.TryGetValue(fullName, out var a) ? a : null);
+        public int Calls { get; private set; }
+
+        public string? Throws { get; init; }
+
+        public Task<FoundAddress?> FindAsync(string fullName, string domain, CancellationToken ct)
+        {
+            Calls++;
+            return fullName == Throws ? throw new HttpRequestException("the finder failed")
+                : Task.FromResult(answers.TryGetValue(fullName, out var a) ? a : null);
+        }
     }
 
     private sealed class Mx : IMxCheck

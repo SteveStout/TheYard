@@ -84,6 +84,8 @@ public class MachineFreeWorkflowsTests
         Assert.Contains("-H @\"$RUNNER_TEMP/key.header\"", blog, StringComparison.Ordinal);
         Assert.DoesNotContain("echo \"$ADMIN_KEY", blog, StringComparison.Ordinal);
         Assert.Contains("for site in \"$SITE\" \"$COSMOS_SITE\"; do", blog, StringComparison.Ordinal);
+        Assert.Contains("if not post.get(\"images\") or not post.get(\"tags\"):", blog, StringComparison.Ordinal);
+        Assert.Contains("if curl -fsS -H 'Cache-Control: no-cache' \"$site/api/blog/posts/$SLUG", blog, StringComparison.Ordinal);
         Assert.Contains("workflow_dispatch:", blog, StringComparison.Ordinal);
         foreach (string slug in new[] { "the-spec-has-to-run", "solid-in-five-real-files" })
         {
@@ -105,6 +107,8 @@ public class MachineFreeWorkflowsTests
             Assert.DoesNotContain($"az{write}", read, StringComparison.Ordinal);
         }
         Assert.DoesNotContain("appsettings", read, StringComparison.Ordinal);
+        Assert.Contains("concurrency:\n  group: azure-read\n", read, StringComparison.Ordinal);
+        Assert.Contains("retention-days: 7", read, StringComparison.Ordinal);
     }
     // #endregion the-read
 }

@@ -1,7 +1,6 @@
 name: Azure read
 
-# Reads Azure Monitor with no machine (ADR: The gate runs where the memory is, the addendum of 1.0.4.105). Until then
-# a lane asked the laptop's queue to run az under the owner's sign-in and write the answer to the job hunt share. Read
+# Reads Azure Monitor with no machine (ADR: The gate runs where the memory is, the addendum of 1.0.4.105). Read
 # only: every metric is asked with a start and an end (a start alone reads one hour) and --top 100 (the default keeps
 # ten series), and the raw answers leave as the run's artifact, azure-read, with an index of what was asked.
 on:
@@ -18,6 +17,11 @@ permissions:
   id-token: write
   contents: read
 
+# One read at a time; a second waits, so two never ask Azure Monitor for the same spans at once.
+concurrency:
+  group: azure-read
+  cancel-in-progress: false
+
 jobs:
   read:
     environment: gate
@@ -32,7 +36,7 @@ jobs:
 
       # #region cosmos-throttling
       # Where Cosmos DB's 429s fall, by container and operation, over a day and a week; the share each container
-      # takes; and the partition's normalized RU at one minute for six hours (rail1026's R2 read, queue 3700).
+      # takes; and the partition's normalized RU at one minute for six hours.
       - name: Cosmos DB throttling
         if: inputs.read == 'cosmos-throttling'
         run: |
@@ -61,3 +65,5 @@ jobs:
         with:
           name: azure-read
           path: ${{ runner.temp }}/azure-read/
+          # The repository is public: a raw read is kept a week, long enough to read, then it goes.
+          retention-days: 7

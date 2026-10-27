@@ -72,6 +72,7 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
             return;
         }
         var watch = Stopwatch.StartNew();
+        var started = CentralClock.Local(time.GetUtcNow());
         var inbox = new GmailInbox(http, google);
         _refused = false;
         string atsLine = ats is "shadow" or "on"
@@ -84,7 +85,7 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         string list = (Environment.GetEnvironmentVariable(Dispatch.Gate(LeadsHarvest.ListEvent)) ?? "").Trim().ToLowerInvariant();
         if (list is "shadow" or "on")
         {
-            leadsLine += " | list: " + await PartAsync("leads list", () => ListAsync(harvest, list == "on", ct));
+            leadsLine += " | list: " + await PartAsync("leads list", () => ListAsync(harvest, list == "on", started, ct));
         }
         string triageLine = triage == "on"
             ? await PartAsync("triage", () => TriageAsync(inbox, ct))
@@ -145,12 +146,13 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     /// Fires the leads list run (LEADS-LANE.md) when the pass harvested a lead that passed the filter and that the
     /// list run has not scored, and once a day in the pass at 50 past ten at night Central whether or not one waits,
     /// so the company book is worked on a quiet day too (ADR-118). A mark on the share says the day's slot fired, so a
-    /// second pass in the slot does not fire it again. In shadow it says what it would fire and fires nothing.
+    /// second pass in the slot does not fire it again; it is written only when GitHub took the dispatch, so a refused
+    /// one is tried again at the next pass in the slot. The slot is the pass's own start, not the time the sweep ended.
+    /// In shadow it says what it would fire and fires nothing.
     /// </summary>
-    private async Task<string> ListAsync(LeadsHarvest harvest, bool on, CancellationToken ct)
+    private async Task<string> ListAsync(LeadsHarvest harvest, bool on, DateTime local, CancellationToken ct)
     {
         int count = harvest.Unscored.Count;
-        var local = CentralClock.Local(time.GetUtcNow());
         bool daily = DailyRun(count, local, await store.ExistsAsync(DailyMark(local), ct));
         if (count == 0 && !daily)
         {
@@ -162,7 +164,7 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
             return $"{why}, shadow: would fire {LeadsHarvest.ListEvent}";
         }
         string fired = await dispatch.RunAsync(LeadsHarvest.ListEvent, local, ct);
-        if (daily)
+        if (daily && Dispatch.Delivered(fired))
         {
             await store.EnsureFolderAsync("leads", ct);
             await store.WriteAsync(DailyMark(local), System.Text.Encoding.UTF8.GetBytes(fired), ct);

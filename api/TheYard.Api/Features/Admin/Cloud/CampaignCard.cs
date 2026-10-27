@@ -113,7 +113,9 @@ public static class CampaignCard
         int ready = Int(ResourceView.Fact(inputs, "with_address", "0"));
         string atPass = AtPass(inputs, today) ?? mode;
         bool past9 = mode == "on" && day.Sent == 0 && ready > 0 && NightlySlots.Local(inputs.Now).Hour >= 9;
-        bool lateWithNone = past9 && atPass == "on";
+        // A morning the switch read shadow before eight is quiet only if its shadow pass wrote something: a pass that
+        // wrote nothing is a silent morning whatever the switch read, since the hour is read before eight, not at it.
+        bool lateWithNone = past9 && (atPass == "on" || day.Shadow == 0);
         string tone = bounces >= Trip || lateWithNone ? "alarm" : "good";
         string answer = mode == "on" ? $"{day.Sent} sent today" : mode is "shadow" ? $"Shadow: {day.Shadow} written today" : $"Off ({mode})";
         string why = bounces >= Trip ? $" · {bounces} bounces today: held in shadow until a person clears campaign/switch.log"

@@ -1,7 +1,7 @@
 """Write the README's and Built with AI's results figures from data/test-results.json, so every number they quote is
-the gate's own for the version it names (the review of 2 October, M5). Run from the repository's root after
-scripts/test_results.mjs; the gate's promote job does (ADR: The gate runs where the memory is, the addendum of
-1.0.4.101), and so does a person promoting a run by hand. Prints what it wrote."""
+the gate's own for the version it names. Run from the repository's root after scripts/test_results.mjs; the gate's
+promote job does (ADR: The gate runs where the memory is, the addendum of 1.0.4.101), and so does a person promoting
+a run by hand. Prints what it wrote."""
 import json, re, sys
 
 d = json.load(open("data/test-results.json", encoding="utf-8"))
@@ -48,7 +48,7 @@ if gate_count:
         (r"\(\d+( xUnit tests, separate)", lambda m: f"({x}{m.group(1)}"),
         (r"(\| API \| xUnit \| )\d+", lambda m: f"{m.group(1)}{x}"),
     ])
-# Built with AI moved into docs/built-with-ai/ with 1.0.3.84; the old path is read only on an older tree.
+# Built with AI lives in docs/built-with-ai/; the old path at docs/ is read only on a tree that still has it there.
 import os
 bwa = "docs/built-with-ai/BUILT-WITH-AI.md" if os.path.exists("docs/built-with-ai/BUILT-WITH-AI.md") else "docs/BUILT-WITH-AI.md"
 rewrite(bwa, [(r"\d+ Vitest tests at \d+\.\d+\.\d+\.\d+", f"{n('vitest')} Vitest tests at {ver}")])

@@ -176,3 +176,15 @@ From this version:
 - **The render holds the same line.** `TemplateRender.OptionalFor` lets the first name be blank only for a company mailbox. For any other lead a blank first name is a blank, and the email is incomplete and never sent, so a row already in the book from 1.0.4.103 is held at the 8 o'clock pass rather than sent.
 
 `LeadImportTests.A_company_mailbox_with_no_first_name_is_written_and_a_named_contact_with_none_is_refused`, `CampaignSendTests.A_named_contact_with_no_first_name_is_an_incomplete_email` and the template test's blank first name hold it. Shipping puts the code on main; the Function runs it once it is deployed from that commit.
+
+## Addendum, 2026-10-27 (1.0.4.108): the book run's mark, the finder's month, the test address and the 8 AM card
+
+The review of 27 October found five smaller places where the campaign's parts said more than they knew. From this version:
+
+- **The day's book run is marked only when GitHub took it.** The dispatch answers its line rather than throwing, so a refused token or a missing one used to write the day's mark anyway and that day's leads run was lost. The mark is written only on a 204 (`Dispatch.Delivered`), so a refused dispatch is tried again at the next pass in the slot, and the slot is read from the pass's own start rather than the time its sweep ended.
+- **The finder asks about a lead once a month.** A lead the finder had no answer for was asked again every thirty minutes, spending the month's calls on the same names. Each lead asked is written to `campaign/finder/<finder>-<month>-asked.txt` and skipped for the rest of the month, and the count and that list are written even when a call throws, so a failed pass never lets the next one spend past the cap.
+- **"off" turns the finder off.** `HUNTER_KEY` set to `off` builds no finder, as every other switch reads it.
+- **The test send goes to one address.** `CAMPAIGN_TEST_TO` must be one plain address (`MailAddress.TryCreate`, and nothing beside it); a list or a display name answers 409 and sends nothing, where it threw a 500.
+- **A silent shadow morning is a morning with no send.** The 8 AM card's switch at the pass is read from the newest hour kept before eight, about a minute past seven, not at the pass itself. So a switch read as shadow at seven is taken as the pass's mode only when the day's shadow count shows the pass wrote something; a shadow morning that wrote nothing is red like any other morning with no send. The better fix, the Function writing the mode its 08:00 pass ran in, is not in this version.
+
+`AtsSweepTests`, `AddressSearchTests`, `CampaignSendTests` and `CampaignCardTests` hold it, the card's newest-of-several-early-hours and the day the clock goes back included.
