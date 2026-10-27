@@ -92,3 +92,13 @@ The review of 27 October read every run of the night of 26 October and found the
 What this version does not do: gate.yml stays at 377 lines; moving promote and after-roll into a reusable workflow is left for a version of its own. The `gate` environment still has no branch policy and main no ruleset; those are settings, and Steve's (J:\mentor\FIX1027-DONE-2026-10-27.md).
 
 `PromoteScriptTests` runs promote.sh against a bare repository and holds each refusal to leaving main where it was; `PromoteWorkflowTests` and `MachineFreeWorkflowsTests` hold the workflows to these lines, and `RunLineTests` holds the commit the health route names.
+
+## Addendum, 2026-10-27 (1.0.4.108): a card read is JSON or refused, a read is kept a week, and a blog save cannot drop its slides
+
+Three of the review of 27 October's smaller findings on the workflows of 1.0.4.105, from this version:
+
+- **promote reads the Cloud cards as JSON.** It asks for `application/json`, and a card that answers with anything but a JSON object (a page in front of the API, a sign-in) refuses the promotion, where it read as a card with no missing role. A card that does not answer at all is still said and not judged.
+- **`azure-read.yml` keeps its raw answers seven days** on this public repository, and runs one read at a time.
+- **`blog-post.yml` will not save a post whose live read lost its slides or its tags**, since the save writes back what the read gave and every post has both; and the read-back after the save tries a failed read again rather than failing a save that landed.
+
+`PromoteScriptTests` holds the card refusal by running promote.sh against a card that answers a page; `MachineFreeWorkflowsTests` holds the other two.

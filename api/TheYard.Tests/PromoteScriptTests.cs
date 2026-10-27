@@ -8,9 +8,10 @@ namespace TheYard.Tests;
 ///
 /// <para>The text of the script is held elsewhere (PromoteWorkflowTests). Text survives a check weakened to
 /// <c>|| true</c>, so these cases run it: a run whose checks were red, a commit the run did not test, a commit that
-/// does not sit on main, two commits ahead of main, a version that goes down, and a stray file beside the results.
-/// <c>gh</c>, <c>curl</c>, <c>node</c> and <c>python3</c> are stand-ins on the path: the run's answer, a Cloud card
-/// that does not answer, and the two results writers, which this test does not judge.</para>
+/// does not sit on main, two commits ahead of main, a version that goes down, a stray file beside the results, and a
+/// Cloud card that answers with a page instead of JSON. <c>gh</c>, <c>curl</c>, <c>node</c> and <c>python3</c> are
+/// stand-ins on the path: the run's answer, a Cloud card that does not answer (or answers a page), and the two results
+/// writers, which this test does not judge.</para>
 /// </summary>
 public sealed class PromoteScriptTests : IDisposable
 {
@@ -95,7 +96,7 @@ public sealed class PromoteScriptTests : IDisposable
         string bin = Path.Combine(_root, "bin");
         Directory.CreateDirectory(bin);
         File.WriteAllText(Path.Combine(bin, "gh"), "#!/usr/bin/env bash\ncase \"$*\" in *headSha*) echo \"$FAKE_TESTED\";; *jobs*) echo \"$FAKE_GREEN\";; *) exit 1;; esac\n");
-        File.WriteAllText(Path.Combine(bin, "curl"), "#!/usr/bin/env bash\nexit 22\n");
+        File.WriteAllText(Path.Combine(bin, "curl"), "#!/usr/bin/env bash\n[ -n \"$FAKE_CARD\" ] || exit 22\nprintf '%s' \"$FAKE_CARD\"\n");
         File.WriteAllText(Path.Combine(bin, "node"), "#!/usr/bin/env bash\nexit 0\n");
         File.WriteAllText(Path.Combine(bin, "python3"), "#!/usr/bin/env bash\nexit 0\n");
         Assert.Equal(0, Run(bin, "chmod", "+x gh curl node python3").Code);
@@ -113,12 +114,13 @@ public sealed class PromoteScriptTests : IDisposable
     private string MainOnOrigin() => Run(_root, "git", "--git-dir origin.git rev-parse main").Output.Trim();
 
     /// <summary>promote.sh as a person runs it, the run's answer given by the stand-in gh.</summary>
-    private (int Code, string Output) Promote(string version, string? tested = null, int green = 2) =>
+    private (int Code, string Output) Promote(string version, string? tested = null, int green = 2, string card = "") =>
         Run(Work, "bash", $"scripts/promote.sh {Path.Combine(_root, "raw")} 60 {version} 4242", new Dictionary<string, string>
         {
             ["PATH"] = Path.Combine(_root, "bin") + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH"),
             ["FAKE_TESTED"] = tested ?? Git("rev-parse HEAD"),
             ["FAKE_GREEN"] = green.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            ["FAKE_CARD"] = card,
         });
     // #endregion the-sandbox
 
@@ -149,6 +151,7 @@ public sealed class PromoteScriptTests : IDisposable
         { "two-ahead", "not one commit on main" },
         { "goes-down", "the version goes down" },
         { "extra-file", "the results touched more than their three files" },
+        { "page-for-a-card", "answered with something that is not JSON" },
     };
 
     /// <summary>Each push it must refuse is refused with its reason, and main does not move.</summary>
@@ -165,6 +168,7 @@ public sealed class PromoteScriptTests : IDisposable
         string? tested = null;
         int green = 2;
         string version = "1.0.4.106";
+        string card = "";
         switch (shape)
         {
             case "red":
@@ -203,9 +207,13 @@ public sealed class PromoteScriptTests : IDisposable
                 Version(version);
                 Write("stray.txt", "not a result\n");
                 break;
+            case "page-for-a-card":
+                Version(version);
+                card = "<!doctype html><title>Sign in</title>";
+                break;
         }
 
-        var (code, output) = Promote(version, tested, green);
+        var (code, output) = Promote(version, tested, green, card);
 
         Assert.NotEqual(0, code);
         Assert.Contains(reason, output, StringComparison.Ordinal);

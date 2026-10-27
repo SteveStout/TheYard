@@ -215,6 +215,10 @@ public sealed class AtsSweepTests
         Assert.False(AtsSweepTimer.DailyRun(0, slot.AddHours(-1), firedToday: false));
         Assert.False(AtsSweepTimer.DailyRun(2, slot, firedToday: false));
         Assert.Equal("leads/daily-run-2026-10-26.txt", AtsSweepTimer.DailyMark(slot));
+        Assert.True(Dispatch.Delivered("dispatch leads-list 204"));
+        Assert.False(Dispatch.Delivered("dispatch leads-list 401"));
+        Assert.False(Dispatch.Delivered("dispatch blocked: NIGHTLY_GITHUB_TOKEN is not set"));
+        Assert.False(Dispatch.Delivered("dispatch off (LEADS_LIST is not on)"));
     }
 
     [Fact]

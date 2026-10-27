@@ -160,6 +160,16 @@ public sealed class CampaignSendTests
     }
 
     [Theory]
+    [InlineData("steve@example.com", true)]
+    [InlineData(" steve@example.com ", true)]
+    [InlineData("steve@example.com, pat@example.com", false)]
+    [InlineData("steve@example.com;pat@example.com", false)]
+    [InlineData("Steve <steve@example.com>", false)]
+    [InlineData("not an address", false)]
+    public void The_test_address_is_one_address_or_nothing_is_sent(string setting, bool one) =>
+        Assert.Equal(one, CampaignTestSend.OneAddress(setting));
+
+    [Theory]
     [InlineData("shadow", CampaignMode.Shadow)]
     [InlineData(" ON ", CampaignMode.On)]
     [InlineData("off", CampaignMode.Off)]

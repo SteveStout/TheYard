@@ -1,5 +1,5 @@
-"""admin_after_roll.py <version> <commit> <log>. The reads after a roll, both sites, read only (Steve: "make sure you do
-some health checks on the admin section after deploy"). Waits up to twenty-five minutes for both names to answer the
+"""admin_after_roll.py <version> <commit> <log>. The reads after a roll, both sites, read only, so the Admin section's
+health is checked after every deploy. Waits up to twenty-five minutes for both names to answer the
 version and commit on /api/version, then reads /api/health (every check named), /api/admin/pages (every address not
 up, named), the Admin routes in READS and the tests summary, each with its status and time. When the roll's sweep has
 anything down, waits for the settled sweep (three minutes after the start) and reads pages again; if that still has
