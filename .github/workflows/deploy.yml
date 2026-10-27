@@ -41,6 +41,14 @@ on:
         description: The commit the gate promoted onto main
         required: true
         type: string
+    # The three secrets the roll reads, handed over by name, so a call is given nothing else.
+    secrets:
+      YARD_AUTH_SIGNING_KEY:
+        required: true
+      ADMIN_KEY:
+        required: true
+      NETLIFY_TOKEN:
+        required: true
 
 permissions:
   id-token: write
@@ -102,6 +110,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.sha || github.sha }}
+      # A re-run of an older run never rolls production back: the commit must still be main's head.
+      - name: The commit is main's head
+        env:
+          SHA: ${{ inputs.sha || github.sha }}
+        run: |
+          git fetch -q --depth=1 origin +refs/heads/main:refs/remotes/origin/main
+          [ "$(git rev-parse origin/main)" = "$SHA" ] || { echo "::error::$SHA is no longer main's head"; exit 1; }
 
       - name: Compute version
         env:

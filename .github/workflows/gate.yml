@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -48,14 +48,16 @@ jobs:
       - run: npx playwright install --with-deps chrome
 
       # #region two-cuts
-      # What the commit changed decides two things, as on the laptop (ADR: The five-minute gate, the
+      # What the branch changed decides two things, as on the laptop (ADR: The five-minute gate, the
       # addendum on the two cuts): whether dotnet format runs, and whether the two passes on Cosmos DB
-      # run or are carried forward from the last version that ran them.
-      - name: What the commit changed
+      # run or are carried forward from the last version that ran them. The diff is from where the
+      # branch left main, so every commit it would ship is read, however many there are.
+      - name: What the branch changed
         run: |
           mkdir -p "$RUNNER_TEMP/raw/trx" "$RUNNER_TEMP/raw/trx-shed"
           echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
-          git diff --name-only HEAD~1 HEAD > "$RUNNER_TEMP/raw/touched.txt"
+          git fetch -q origin +refs/heads/main:refs/remotes/origin/main
+          git diff --name-only "$(git merge-base origin/main HEAD)" HEAD > "$RUNNER_TEMP/raw/touched.txt"
           cat "$RUNNER_TEMP/raw/touched.txt"
           if grep -qE '\.(cs|csproj|slnx|editorconfig)$' "$RUNNER_TEMP/raw/touched.txt"; then echo "FORMAT_NEEDED=1" >> "$GITHUB_ENV"; else echo "FORMAT_NEEDED=0" >> "$GITHUB_ENV"; fi
           if grep -qE '^(api/|infra/cosmos/|tests/e2e/(store-toggle|account|admin)\.spec\.ts$)' "$RUNNER_TEMP/raw/touched.txt"; then echo "COSMOS_NEEDED=1" >> "$GITHUB_ENV"; else echo "COSMOS_NEEDED=0" >> "$GITHUB_ENV"; fi
@@ -131,8 +133,7 @@ jobs:
           else echo "format=skipped" >> "$r"; echo "format_s=0" >> "$r"; fi
           read code s < <(t bash -c 'dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug > "$RAW/sqlproj.txt" 2>&1 && dotnet build functions/JobHunt.Database/JobHunt.Database.sqlproj -c Debug >> "$RAW/sqlproj.txt" 2>&1')
           echo "sqlproj=$code" >> "$r"; echo "sqlproj_s=$s" >> "$r"
-          # The job hunt's Function's own suite, so a version that breaks it never reaches main (until 1.0.4.105
-          # only CI ran it, after the roll).
+          # The job hunt's Function's own suite, so a version that breaks it never reaches main.
           read code s < <(t bash -c 'dotnet test functions/jobhunt.Tests > "$RAW/functions.txt" 2>&1')
           echo "functions=$code" >> "$r"; echo "functions_s=$s" >> "$r"
           # #region both-stores
@@ -257,8 +258,8 @@ jobs:
   # #endregion shed-job
 
   # #region promote-job
-  # The step the laptop ran until 1.0.4.101, now the run's own: only after the gate and The Shed
-  # are both green, and the only job that may write, to fast-forward main without force.
+  # The run's own promotion: only after the gate and The Shed are both green, and the only job that
+  # may write, to fast-forward main without force.
   promote:
     needs: [gate, shed]
     runs-on: ubuntu-24.04
@@ -269,7 +270,6 @@ jobs:
     outputs:
       sha: ${{ steps.promote.outputs.sha }}
       version: ${{ steps.promote.outputs.version }}
-      rolls: ${{ steps.promote.outputs.rolls }}
       functions: ${{ steps.promote.outputs.functions }}
     steps:
       - uses: actions/checkout@v7
@@ -289,19 +289,21 @@ jobs:
         run: |
           started=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
           seconds=$(( $(date +%s) - $(date -d "$started" +%s) ))
-          bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds"
+          bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds" "${GITHUB_REF_NAME#gate/}" "$GITHUB_RUN_ID"
   # #endregion promote-job
 
   # #region the-roll
   # A push made with the workflow's token starts no workflow, so the run calls the two deploys
-  # itself, each pinned to the promoted commit.
+  # itself, each pinned to the promoted commit. Each is handed only the secrets it reads, by name.
   deploy:
     needs: promote
-    if: needs.promote.outputs.rolls == 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       sha: ${{ needs.promote.outputs.sha }}
-    secrets: inherit
+    secrets:
+      YARD_AUTH_SIGNING_KEY: ${{ secrets.YARD_AUTH_SIGNING_KEY }}
+      ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+      NETLIFY_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
     permissions:
       id-token: write
       contents: read
@@ -309,11 +311,9 @@ jobs:
 
   deploy-render:
     needs: promote
-    if: needs.promote.outputs.rolls == 'true'
     uses: ./.github/workflows/deploy-render.yml
     with:
       sha: ${{ needs.promote.outputs.sha }}
-    secrets: inherit
     permissions:
       id-token: write
       contents: read
@@ -327,7 +327,8 @@ jobs:
     needs: [promote, deploy, deploy-render]
     if: always() && needs.promote.result == 'success' && needs.deploy.result != 'failure' && needs.deploy.result != 'cancelled' && needs.deploy-render.result != 'failure' && needs.deploy-render.result != 'cancelled'
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # The reads after the roll take up to thirty-three minutes, CI's start five, and CI its own length.
+    timeout-minutes: 75
     permissions:
       contents: write
       actions: write
@@ -338,30 +339,34 @@ jobs:
       # The edge moves after Deploy (edge-branch.yml), which starts on a Deploy run of its own and so
       # never on the one this run called: it is started by hand on main, the promoted commit.
       - name: The edge, after the deploy
-        if: needs.promote.outputs.rolls == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run edge-branch.yml --ref main
       # The job hunt's Function, when the version touched it: a run of its own, so a Function that will not
       # deploy is read on its own run and never turns this one red (ADR-098, the addendum of 1.0.4.105).
+      # Only while the promoted commit is still main's head: a re-run of an older run never sends the Function back.
       - name: The Function, by a run of its own
         if: needs.promote.outputs.functions == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy-function.yml --ref main -f sha="${{ needs.promote.outputs.sha }}"
+          SHA: ${{ needs.promote.outputs.sha }}
+        run: |
+          if [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$SHA" ]; then echo "::warning::$SHA is no longer main's head; the Function is not deployed from it"; exit 0; fi
+          gh workflow run deploy-function.yml --ref main -f sha="$SHA"
       - name: The reads after the roll
-        if: needs.promote.outputs.rolls == 'true'
         run: python3 scripts/admin_after_roll.py "${{ needs.promote.outputs.version }}" "${{ needs.promote.outputs.sha }}" "$RUNNER_TEMP/after-roll.log"
       - name: CI on main
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ needs.promote.outputs.sha }}
+        # Only a run created after this dispatch counts, so a re-run never reads an earlier dispatch's result.
         run: |
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           gh workflow run ci.yml --ref main
           run=""
           for i in $(seq 1 30); do
             sleep 10
-            run=$(gh run list --workflow ci.yml --branch main --event workflow_dispatch --limit 10 --json databaseId,headSha --jq ".[] | select(.headSha == \"$SHA\") | .databaseId" | head -n 1)
+            run=$(gh run list --workflow ci.yml --branch main --event workflow_dispatch --limit 10 --json databaseId,headSha,createdAt --jq ".[] | select(.headSha == \"$SHA\" and .createdAt >= \"$since\") | .databaseId" | head -n 1)
             [ -n "$run" ] && break
           done
           [ -n "$run" ] || { echo "::error::CI on main did not start for $SHA in five minutes"; exit 1; }

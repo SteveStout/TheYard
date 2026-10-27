@@ -38,14 +38,29 @@ public class MachineFreeWorkflowsTests
         string deploy = Workflow("deploy-function.yml");
         Assert.Contains("environment: gate", deploy, StringComparison.Ordinal);
         Assert.Contains("az functionapp deployment source config-zip", deploy, StringComparison.Ordinal);
-        Assert.Contains("[ \"$code\" = 200 ] || [ \"$code\" = 204 ]", deploy, StringComparison.Ordinal);
-        Assert.DoesNotContain("appsettings set", deploy, StringComparison.Ordinal);
-        Assert.DoesNotContain("appsettings delete", deploy, StringComparison.Ordinal);
+        Assert.Contains("defaults:\n  run:\n    shell: bash\n", deploy, StringComparison.Ordinal);
+        Assert.Contains("git merge-base --is-ancestor \"$SHA\" origin/main", deploy, StringComparison.Ordinal);
+        Assert.Contains("[ -s \"$RUNNER_TEMP/before.txt\" ] || {", deploy, StringComparison.Ordinal);
+        Assert.Contains("-p:SourceRevisionId=\"$SHA\"", deploy, StringComparison.Ordinal);
+        Assert.Contains("[ \"$commit\" = \"$SHA\" ] || {", deploy, StringComparison.Ordinal);
+        Assert.DoesNotContain("[ \"$code\" = 204 ]", deploy, StringComparison.Ordinal);
+        Assert.True(deploy.IndexOf("Wait out the records run", StringComparison.Ordinal) > deploy.IndexOf("name: Publish and zip", StringComparison.Ordinal), "the records-run wait is read just before the zip deploy");
         Assert.DoesNotContain("workflow_call", deploy, StringComparison.Ordinal);
 
         string gate = Workflow("gate.yml");
         Assert.Contains("gh workflow run deploy-function.yml --ref main", gate, StringComparison.Ordinal);
         Assert.DoesNotContain("uses: ./.github/workflows/deploy-function.yml", gate, StringComparison.Ordinal);
+    }
+
+    /// <summary>Every az call the Function's deploy makes is one of the reads and the one zip deploy it needs: nothing that sets, assigns or deletes.</summary>
+    [Fact]
+    public void The_function_deploy_calls_only_the_az_verbs_it_needs()
+    {
+        string[] allowed = ["functionapp function list", "functionapp show", "resource show", "functionapp deployment source config-zip"];
+        var calls = System.Text.RegularExpressions.Regex.Matches(string.Join('\n', Workflow("deploy-function.yml").Split('\n').Where(line => !line.TrimStart().StartsWith('#'))), @"\baz ((?:[a-z-]+ ?)+?)(?= -|$)", System.Text.RegularExpressions.RegexOptions.Multiline)
+            .Select(m => m.Groups[1].Value.Trim()).ToList();
+        Assert.NotEmpty(calls);
+        Assert.All(calls, call => Assert.Contains(call, allowed));
     }
 
     /// <summary>The Function's suite runs in the gate, before main moves, and its red is the run's red.</summary>
