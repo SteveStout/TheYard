@@ -116,4 +116,16 @@ internal static class CampaignSql
             @slug, @ghost, @band, @day, @strength, @step, @why, @hash, @at, @blocked,
             @ref, @resume, @site, @github, @linkedin, @about, @at, @run, @at);
         """;
+
+    internal const string WaitingLeads = """
+        SELECT l.[Id], c.[Key], l.[ContactName]
+        FROM [campaign].[Leads] l JOIN [campaign].[Companies] c ON c.[Id] = l.[CompanyId]
+        WHERE l.[Blocked] IS NULL AND l.[ContactEmail] IS NULL AND l.[FirstName] <> N'' AND c.[DoNotEmail] = 0
+        ORDER BY l.[Strength] DESC, l.[CreatedAt], l.[Id]
+        """;
+
+    internal const string SetAddress = """
+        UPDATE [campaign].[Leads] SET [ContactEmail] = @email, [EmailSource] = @source, [MxChecked] = @mx, [MxCheckedAt] = @at, [Verified] = NULL, [UpdatedAt] = @at
+        WHERE [Id] = @id AND [ContactEmail] IS NULL
+        """;
 }

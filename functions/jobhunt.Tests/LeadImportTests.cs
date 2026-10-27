@@ -78,6 +78,36 @@ public sealed class LeadImportTests
     }
 
     [Fact]
+    public void A_company_mailbox_with_no_first_name_is_written_and_no_name_with_no_address_is_refused()
+    {
+        var keys = new HashSet<string>(StringComparer.Ordinal) { "acmedental.com" };
+        var mailbox = new SpoolLead
+        {
+            CompanyKey = "acmedental.com",
+            Track = "B",
+            Company = "Acme Dental",
+            WhatTheyDo = "builds scheduling software for dental offices",
+            FirstName = "",
+            ContactName = "Acme Dental",
+            ContactTitle = "Company mailbox",
+            ContactEmail = "careers@acmedental.com",
+            EmailSource = "https://acmedental.com/careers",
+            RefCode = "abc123",
+            Links = new SpoolLinks(
+                "https://theyard.stevenstout.biz/resume?src=email&r=abc123",
+                "https://theyard.stevenstout.biz/?r=abc123",
+                "https://theyard.stevenstout.biz/api/go/github?r=abc123",
+                "https://theyard.stevenstout.biz/api/go/linkedin?r=abc123",
+                "https://theyard.stevenstout.biz/about?r=abc123"),
+        };
+
+        Assert.Null(LeadSpool.Refuse(mailbox, keys));
+        Assert.Equal("no manager named and no address", LeadSpool.Refuse(mailbox with { ContactEmail = null, EmailSource = null }, keys));
+        Assert.Equal("no contact named", LeadSpool.Refuse(mailbox with { ContactName = " " }, keys));
+        Assert.Null(LeadSpool.Refuse(mailbox with { FirstName = "Pat", ContactName = "Pat Lee", ContactTitle = "VP Engineering", ContactEmail = null, EmailSource = null }, keys));
+    }
+
+    [Fact]
     public async Task A_file_that_is_not_a_lead_file_goes_to_rejected_and_nothing_is_written()
     {
         var (import, db, _, root) = Import(("bad.json", "{ \"companies\": 3 }"), ("notes.txt", "not json"));

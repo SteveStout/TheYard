@@ -119,6 +119,10 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     {
         var database = new SqlCampaignStore(sql);
         string imported = await new LeadImport(store, database, database, new DohMxCheck(http), time).RunAsync(ct);
+        if (HunterFinder.FromSetting(Environment.GetEnvironmentVariable(HunterFinder.Setting), http) is { } hunter)
+        {
+            imported += "; " + await new AddressSearch(database, hunter, new DohMxCheck(http), store, time, HunterFinder.MonthCap).RunAsync(ct);
+        }
         string read = await new CampaignInbox(inbox, database, database, database, store, time).RunAsync(CentralClock.Local(time.GetUtcNow()).Minute < 30, ct);
         return $"{imported}; {read}";
     }
@@ -138,20 +142,41 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     }
 
     /// <summary>
-    /// Fires the leads list run (LEADS-LANE.md, Sonnet at low effort) when the pass harvested a lead that passed
-    /// the filter and that the list run has not scored. In shadow it says what it would fire and fires nothing.
+    /// Fires the leads list run (LEADS-LANE.md) when the pass harvested a lead that passed the filter and that the
+    /// list run has not scored, and once a day in the pass at 50 past ten at night Central whether or not one waits,
+    /// so the company book is worked on a quiet day too (ADR-118). A mark on the share says the day's slot fired, so a
+    /// second pass in the slot does not fire it again. In shadow it says what it would fire and fires nothing.
     /// </summary>
     private async Task<string> ListAsync(LeadsHarvest harvest, bool on, CancellationToken ct)
     {
         int count = harvest.Unscored.Count;
-        if (count == 0)
+        var local = CentralClock.Local(time.GetUtcNow());
+        bool daily = DailyRun(count, local, await store.ExistsAsync(DailyMark(local), ct));
+        if (count == 0 && !daily)
         {
             return "0 new, nothing to score";
         }
-        return on
-            ? $"{count} new, {await dispatch.RunAsync(LeadsHarvest.ListEvent, CentralClock.Local(time.GetUtcNow()), ct)}"
-            : $"{count} new, shadow: would fire {LeadsHarvest.ListEvent}";
+        string why = count > 0 ? $"{count} new" : "daily book run";
+        if (!on)
+        {
+            return $"{why}, shadow: would fire {LeadsHarvest.ListEvent}";
+        }
+        string fired = await dispatch.RunAsync(LeadsHarvest.ListEvent, local, ct);
+        if (daily)
+        {
+            await store.EnsureFolderAsync("leads", ct);
+            await store.WriteAsync(DailyMark(local), System.Text.Encoding.UTF8.GetBytes(fired), ct);
+        }
+        return $"{why}, {fired}";
     }
+
+    /// <summary>Whether this pass fires the day's book run: no lead waits, it is the slot after half past ten at night, and the slot has not fired today.</summary>
+    public static bool DailyRun(int unscored, DateTime local, bool firedToday) =>
+        unscored == 0 && local.Hour == 22 && local.Minute >= 30 && !firedToday;
+
+    /// <summary>The share file that marks the day's book run as fired.</summary>
+    public static string DailyMark(DateTime local) =>
+        $"leads/daily-run-{local.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)}.txt";
 
     /// <summary>
     /// Fires the reply run (the nightly mode, drafts only) when a person waits on a thread with no draft, at most

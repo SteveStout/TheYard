@@ -206,6 +206,18 @@ public sealed class AtsSweepTests
     }
 
     [Fact]
+    public void The_book_run_fires_once_a_day_in_the_late_slot_with_no_lead_waiting()
+    {
+        var slot = new DateTime(2026, 10, 26, 22, 50, 0);
+        Assert.True(AtsSweepTimer.DailyRun(0, slot, firedToday: false));
+        Assert.False(AtsSweepTimer.DailyRun(0, slot, firedToday: true));
+        Assert.False(AtsSweepTimer.DailyRun(0, slot.AddMinutes(-30), firedToday: false));
+        Assert.False(AtsSweepTimer.DailyRun(0, slot.AddHours(-1), firedToday: false));
+        Assert.False(AtsSweepTimer.DailyRun(2, slot, firedToday: false));
+        Assert.Equal("leads/daily-run-2026-10-26.txt", AtsSweepTimer.DailyMark(slot));
+    }
+
+    [Fact]
     public void The_text_is_the_plain_part_else_the_html_without_markup()
     {
         static string B64(string s) => Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).Replace('+', '-').Replace('/', '_').TrimEnd('=');

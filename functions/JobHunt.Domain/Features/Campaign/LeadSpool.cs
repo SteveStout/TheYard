@@ -56,7 +56,8 @@ public sealed record LeadSpoolFile(string Run, IReadOnlyList<SpoolCompany> Compa
 /// <summary>
 /// The lead run's rows, read and held to the rules before any reaches the database (ADR-118, Decision 5). The
 /// model writes a file; code decides what it may say. A lead that breaks a shape rule (no company, a track that
-/// is not A or B, Track A with no application, an address with no https source, a link without the lead's code,
+/// is not A or B, Track A with no application, no contact, no manager named and no address, an address with no
+/// https source, a link without the lead's code,
 /// a proof key not on the list) is refused with the reason and goes nowhere. A lead whose WhatTheyDo clause breaks
 /// WhatTheyDoRule is kept with Blocked set, so the next run sees why. Personal addresses are refused here too:
 /// nothing the campaign may not send to is written.
@@ -128,9 +129,13 @@ public static partial class LeadSpool
         {
             return "Track A without the application's time and the role";
         }
-        if (string.IsNullOrWhiteSpace(lead.FirstName) || string.IsNullOrWhiteSpace(lead.ContactName) || string.IsNullOrWhiteSpace(lead.ContactTitle))
+        if (string.IsNullOrWhiteSpace(lead.ContactName) || string.IsNullOrWhiteSpace(lead.ContactTitle))
         {
-            return "no manager named";
+            return "no contact named";
+        }
+        if (string.IsNullOrWhiteSpace(lead.FirstName) && lead.ContactEmail is null)
+        {
+            return "no manager named and no address";
         }
         if (lead.ContactEmail is { } email)
         {

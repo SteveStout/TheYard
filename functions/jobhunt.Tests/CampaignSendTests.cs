@@ -92,9 +92,39 @@ public sealed class CampaignSendTests
             Assert.All(TemplateFill.Variables(template.Text), variable => Assert.True(values.ContainsKey(variable), $"{template.Id}-{template.Version} names {{{variable}}}"));
         }
         Assert.Equal(["A", "B"], CampaignTemplate.All.Where(t => t.Version == CampaignTemplate.Current).Select(t => t.Id).Order());
-        var blank = TemplateRender.Render(CampaignTemplate.For('B'), TemplateRender.Values(Lead(edit: b => b.FirstName = " "), Eight));
+        var blank = TemplateRender.Render(CampaignTemplate.For('B'), TemplateRender.Values(Lead(edit: b => b.WhatTheyDo = " "), Eight));
         Assert.False(blank.Complete);
-        Assert.Equal(["FirstName"], blank.Blanks);
+        Assert.Equal(["WhatTheyDo"], blank.Blanks);
+    }
+
+    [Fact]
+    public void A_test_send_goes_to_the_test_address_only_marked_and_with_the_test_code()
+    {
+        var lead = Lead('B');
+        var mail = CampaignTestSend.TestMail(lead, " steve@example.com ", Eight);
+
+        Assert.NotNull(mail);
+        Assert.Equal("steve@example.com", mail!.To);
+        Assert.StartsWith("[TEST] ", mail.Subject, StringComparison.Ordinal);
+        Assert.DoesNotContain("pat@acmedental.com", mail.Text + mail.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("r=abc123", mail.Text + mail.Html, StringComparison.Ordinal);
+        Assert.Equal(5, System.Text.RegularExpressions.Regex.Matches(mail.Html, "r=tst001").Count);
+        Assert.Null(CampaignTestSend.TestMail(Lead('B', edit: b => b.WhatTheyDo = " "), "steve@example.com", Eight));
+    }
+
+    [Theory]
+    [InlineData('A')]
+    [InlineData('B')]
+    public void A_lead_with_no_first_name_opens_on_the_greeting_alone(char track)
+    {
+        var named = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track), Eight));
+        var email = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track, edit: b => b.FirstName = ""), Eight));
+        Assert.True(email.Complete, string.Join(", ", email.Blanks));
+        Assert.StartsWith("Good morning! ", email.Text, StringComparison.Ordinal);
+        Assert.StartsWith("<div dir=\"ltr\">\n<div>Good morning! ", email.Html, StringComparison.Ordinal);
+        string namedText = named.Text!;
+        Assert.Equal(namedText[namedText.IndexOf("Good morning! ", StringComparison.Ordinal)..], email.Text);
+        Assert.Equal(named.Subject, email.Subject);
     }
 
     [Theory]

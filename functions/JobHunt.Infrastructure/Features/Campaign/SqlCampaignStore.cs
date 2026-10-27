@@ -10,7 +10,7 @@ namespace JobHunt.Infrastructure.Features.Campaign;
 /// constant here with its parameters, and CampaignSqlTests holds every column a statement names to a column
 /// the SQL project declares. A connection is opened per call from the pool and closed after.
 /// </summary>
-public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, ILeadStore, IEmailLog
+public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, ILeadStore, IEmailLog, IAddressBook
 {
     /// <summary>The names column's separator, the lead run writes it the same way.</summary>
     public const string NameSeparator = " | ";
@@ -168,6 +168,24 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     /// <inheritdoc />
     public Task MarkReplyAsync(string gmailThreadId, DateTimeOffset at, CancellationToken ct) =>
         ExecuteAsync(CampaignSql.Reply, ct, ("@thread", gmailThreadId), ("@at", at));
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<WaitingLead>> WaitingAsync(CancellationToken ct)
+    {
+        await using var connection = await ConnectAsync(ct);
+        await using var command = Command(connection, CampaignSql.WaitingLeads);
+        await using var r = await command.ExecuteReaderAsync(ct);
+        var waiting = new List<WaitingLead>();
+        while (await r.ReadAsync(ct))
+        {
+            waiting.Add(new WaitingLead(r.GetInt64(0), r.GetString(1), r.GetString(2)));
+        }
+        return waiting;
+    }
+
+    /// <inheritdoc />
+    public Task SetAddressAsync(long leadId, string address, string sourceUrl, bool? mx, DateTimeOffset at, CancellationToken ct) =>
+        ExecuteAsync(CampaignSql.SetAddress, ct, ("@id", leadId), ("@email", Clip(address, 254)), ("@source", Clip(sourceUrl, 500)), ("@mx", mx), ("@at", at));
 
     private async Task<SqlConnection> ConnectAsync(CancellationToken ct)
     {

@@ -153,3 +153,14 @@ Read live on 26 October at 14:39 CDT, the campaign card was red on both names: "
 From this version the rule asks what the switch read at the pass: the newest hour the card kept on the same Central day before 8 AM. When that hour read anything but `on`, the row stays good and says so ("the switch was shadow at the 8 AM pass; the first sends come at the next one"). When it read `on`, or no hour before eight was kept that day, the rule is what it was. Two bounces in a day stay red whatever the switch read. No threshold moves and nothing that emails Steve changes: `alert-jobhunt-campaign-silent` reads `CampaignSend`'s runs, not this card.
 
 `CampaignCardTests.A_switch_turned_on_after_the_8_o_clock_pass_is_not_a_morning_with_no_send` holds it.
+
+## Addendum, 2026-10-26 (1.0.4.103): a company mailbox, a test send, a daily lead run and a finder kept off
+
+Lane addr1026 built these on 26 October at Steve's word (07:28, "any email will do, even if it's the companies about me email"; 09:33, "do the testing"), and they shipped as one version. Each changes the Function only; the site's rules do not move.
+
+- **A company mailbox is a lead.** A lead with no first name opens on the greeting alone, with no name and no comma, so Template A and B can go to a company's published general address. `LeadSpool` takes a lead with an address and no manager named, and still refuses one that names neither.
+- **A test send on demand.** `POST /api/campaign/test-send`, with the function key, renders one open lead through the real Gmail sender to the one address in the app setting `CAMPAIGN_TEST_TO` and never to the lead: the subject is marked [TEST], the links carry the code tst001, nothing is written to `EmailsSent`, and neither the cap nor the 30-day rule is spent. With the setting absent it answers 409 and sends nothing.
+- **The book is worked every day.** Besides the run a newly harvested lead triggers, the leads run fires once a day in the pass after half past ten at night Central, marked on the share so a second pass in the slot does not fire it again.
+- **A finder, kept off.** The "no finder" ruling of 24 October still stands in practice: `HunterFinder` sits behind the finder port and is built only when the app setting `HUNTER_KEY` holds a key, which it does not. With a key it would ask only for a lead whose public pages gave none, keep an answer scored 70 or more that cites a public page, and stop at the free plan's 50 calls a month. Turning it on is Steve's call, after the first shadow week's numbers.
+
+`CampaignSendTests`, `LeadImportTests`, `AddressSearchTests` and `AtsSweepTests` hold it. Shipping puts the code on main; the Function runs it once it is deployed from that commit.

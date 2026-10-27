@@ -52,8 +52,12 @@ public sealed record RenderedEmail(string? Subject, string? Text, string? Html, 
 /// </summary>
 public static class TemplateRender
 {
-    /// <summary>The variables that may be blank, each on a line of its own that goes when it is.</summary>
-    public static readonly IReadOnlySet<string> Optional = new HashSet<string>(StringComparer.Ordinal) { "LastDotNetPostingTitle", "LastDotNetPostingMonth" };
+    /// <summary>
+    /// The variables that may be blank, each on a line of its own that goes when it is. FirstName is one: a lead
+    /// whose public page names no engineering leader writes to the company's own mailbox, and its email opens on
+    /// the greeting alone, with no name and no comma (the owner's yes on that template line, ADR-118).
+    /// </summary>
+    public static readonly IReadOnlySet<string> Optional = new HashSet<string>(StringComparer.Ordinal) { "FirstName", "LastDotNetPostingTitle", "LastDotNetPostingMonth" };
 
     /// <summary>Render one template with one row's values.</summary>
     public static RenderedEmail Render(CampaignTemplate template, IReadOnlyDictionary<string, string?> values)
