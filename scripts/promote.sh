@@ -67,11 +67,16 @@ fi
 
 # #region the-results
 if grep -q '^oncosmos=skipped' "$raw/dotnet.result"; then export YARD_CARRY_COSMOS=1; else export YARD_CARRY_COSMOS=0; fi
+# The version card the gate drew from this commit, folded in with the results.
+if [ -f "$raw/og.svg" ] && [ -f "$raw/og.png" ]; then
+  cp "$raw/og.svg" docs/images/og.svg
+  cp "$raw/og.png" public/og.png
+fi
 node scripts/test_results.mjs "$raw" "$version" "$seconds"
 python3 scripts/readme_results.py
-extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md' || true)
-[ -z "$extra" ] || refuse "the results touched more than their three files: $extra"
-git add data/test-results.json README.md docs/built-with-ai/BUILT-WITH-AI.md
+extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
+[ -z "$extra" ] || refuse "the results touched more than their three files and the version card: $extra"
+git add data/test-results.json README.md docs/built-with-ai/BUILT-WITH-AI.md docs/images/og.svg public/og.png
 GIT_COMMITTER_NAME="$(git log -1 --format=%an)" GIT_COMMITTER_EMAIL="$(git log -1 --format=%ae)" git commit -q --amend --no-edit
 sha=$(git rev-parse HEAD)
 echo "the results folded into the commit: ${sha:0:8}"
@@ -80,6 +85,9 @@ echo "the results folded into the commit: ${sha:0:8}"
 # A version that changes only the job hunt's files rolls nothing, as Deploy's path filter says.
 rolls=false
 if git diff --name-only origin/main HEAD | grep -qvE '^(functions/|infra/jobhunt\.bicep$|\.github/workflows/nightly\.yml$)'; then rolls=true; fi
+# A version that touches the job hunt's Function is deployed to it by a run of its own (deploy-function.yml).
+functions=false
+if git diff --name-only origin/main HEAD | grep -qE '^functions/'; then functions=true; fi
 
 # #region fast-forward
 for try in 1 2 3 4; do
@@ -89,9 +97,9 @@ for try in 1 2 3 4; do
   [ "$try" -lt 4 ] && sleep $((try * 30))
 done
 [ "$(git ls-remote origin refs/heads/main | cut -f1)" = "$sha" ] || refuse "main was not fast-forwarded to ${sha:0:8} in four tries"
-echo "main is now ${sha:0:8}, $version; rolls: $rolls"
+echo "main is now ${sha:0:8}, $version; rolls: $rolls; the Function: $functions"
 # #endregion fast-forward
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
-  { echo "sha=$sha"; echo "version=$version"; echo "rolls=$rolls"; } >> "$GITHUB_OUTPUT"
+  { echo "sha=$sha"; echo "version=$version"; echo "rolls=$rolls"; echo "functions=$functions"; } >> "$GITHUB_OUTPUT"
 fi

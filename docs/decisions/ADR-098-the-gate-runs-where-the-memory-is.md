@@ -62,3 +62,17 @@ What the machine that pushes still does, as the laptop's script did before it pu
 `PromoteWorkflowTests` holds the order, the permissions and the no-force rule, and `CiTriggerTests` and `DeployWorkflowTests` still hold the push triggers.
 
 1.0.4.101 changed the workflows itself, so it was the first version promoted by hand under the new rule: its gate run (40424564652) went green in 870 seconds and its promote job refused with the sentence above, and `scripts/promote.sh` was run against that run's `gate-raw` from the Linux machine on 26 October, which wrote 4,060 test runs into the results file and fast-forwarded main to 9f22e420. 1.0.4.102, this line, is the first version that went from a push of its gate branch to the live footer with no machine involved.
+
+## Addendum, 2026-10-26 (1.0.4.105): nothing the site needs waits on a machine
+
+After 1.0.4.101 four things still waited on the laptop or the Linux machine: drawing the version card before a push, deploying the job hunt's Function, saving a blog post's body, and reading Azure Monitor. Steve, 26 October: "I really want these workflows as independent and isolated and robust as possible." From this version each is a workflow of its own, signing in, where it signs in at all, as the deploy identity through the `gate` environment, and each fails on its own run with its own red:
+
+- **The version card is the gate's.** The gate job draws it (`node docs/images/og.mjs`) from the commit's own changelog before any test reads it, and puts it in `gate-raw`; promote folds it into the commit with the results. A session that pushes a gate branch no longer has to draw anything; the other drawings change only with what they draw.
+- **The Function's suite is in the gate.** Until this version only CI ran `functions/jobhunt.Tests`, after main had moved, so a version that broke the Function could be promoted; the gate now runs it, the verdict reads it, and the results file lists it as a check.
+- **`deploy-function.yml` deploys the job hunt's Function** with the laptop script's steps (publish, zip, config-zip, then the functions, the runtime and the health route read back, 200 or the 204 of a cancelled read). It never sets an app setting, so a deploy cannot turn the campaign on or off. The gate's after-roll starts it as a run of its own when a version touched `functions/`, so a Function that will not deploy never turns a site ship red; it also runs by hand.
+- **`blog-post.yml` saves a post's body** from `data/blog/<slug>.md` in the commit: it reads the post from the live API, changes only the body, saves it with the repository's `ADMIN_KEY` secret through a header file, and reads both names back until each serves the file's SHA-256.
+- **`azure-read.yml` reads Azure Monitor** by hand, read only, every metric with a start and an end, its raw answers as the run's artifact (the first read is the Cosmos DB throttling split).
+
+What still needs Steve, once: the deploy identity has no role on `func-jobhunt-ss` or delete on the registry yet, so `deploy-function.yml` stays red until he grants the first, and Deploy's prune keeps warning until he grants the second (J:\mentor\BLOCKERS-FOR-STEVE-2026-10-27.md holds the two commands). The laptop's queue runner has nothing of TheYard's left to run.
+
+`MachineFreeWorkflowsTests` holds each workflow to that shape, and `GateWorkflowTests` holds the Function's suite to the verdict.

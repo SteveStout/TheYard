@@ -13,7 +13,7 @@
       "words": "6 Bicep files"
     },
     {
-      "figure": "6",
+      "figure": "9",
       "words": "GitHub Actions workflows"
     }
   ],
@@ -316,9 +316,9 @@
       "rows": [
         {
           "tech": "GitHub Actions",
-          "note": "ci, deploy-render, deploy, edge-branch, gate, nightly",
+          "note": "azure-read, blog-post, ci, deploy-function, deploy-render, deploy, edge-branch, gate, nightly",
           "where": "GitHub",
-          "version": "6 workflows",
+          "version": "9 workflows",
           "style": "version",
           "proof": {
             "label": "workflows/",

@@ -1,0 +1,76 @@
+name: Blog post
+
+# Saves one blog post's body from data/blog/<slug>.md, with no machine (ADR: The gate runs where the memory is, the
+# addendum of 1.0.4.105). Until then a lane saved a body from the laptop's queue with the operator's key read from the
+# job hunt share. The post is read from the live API first, so its title, summary, date, links, slides and tags go
+# back exactly as they are and only the body changes; then both names are read back and the body's SHA-256 must match
+# the file's. The key is the repository's ADMIN_KEY secret, the one Deploy hands the site, and it goes to curl in a
+# header file, never on a command line or in the log.
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: The post's slug; its body is data/blog/<slug>.md
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blog-post
+  cancel-in-progress: false
+
+jobs:
+  save:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SITE: https://theyard.stevenstout.biz
+      COSMOS_SITE: https://theyard-cosmos.stevenstout.biz
+      SLUG: ${{ inputs.slug }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # #region blog-save
+      - name: Read the post and build the save
+        run: |
+          [[ "$SLUG" =~ ^[a-z0-9-]+$ ]] || { echo "::error::a slug is lower-case letters, digits and hyphens"; exit 1; }
+          [ -f "data/blog/$SLUG.md" ] || { echo "::error::data/blog/$SLUG.md is not in the commit"; exit 1; }
+          curl -fsS -H 'Cache-Control: no-cache' "$SITE/api/blog/posts/$SLUG?nocache=$(date +%s%3N)" -o "$RUNNER_TEMP/post.json"
+          python3 - "$RUNNER_TEMP/post.json" "data/blog/$SLUG.md" "$RUNNER_TEMP/save.json" <<'PY'
+          import hashlib, json, sys
+          post = json.load(open(sys.argv[1], encoding="utf-8"))
+          body = open(sys.argv[2], encoding="utf-8").read().replace("\r\n", "\n").rstrip("\n")
+          keep = ("slug", "title", "summary", "published_at", "linkedin_url", "code_url", "tags")
+          save = {k: post[k] for k in keep}
+          save["body"] = body
+          save["images"] = [{k: i[k] for k in ("position", "url", "alt_text", "width", "height")} for i in post["images"]]
+          json.dump(save, open(sys.argv[3], "w", encoding="utf-8"), ensure_ascii=False)
+          print(f"{post['slug']}: {len(post['images'])} slides, {len(post['tags'])} tags, published {post['published_at']}; "
+                f"body {len(post['body'])} chars now, {len(body)} chars saved, sha {hashlib.sha256(body.encode()).hexdigest()[:12]}")
+          PY
+      - name: Save
+        env:
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+        run: |
+          umask 077
+          printf 'X-Admin-Key: %s\n' "$ADMIN_KEY" > "$RUNNER_TEMP/key.header"
+          curl -fsS -X POST "$SITE/api/admin/blog/posts" -H @"$RUNNER_TEMP/key.header" \
+            -H 'Content-Type: application/json; charset=utf-8' --data-binary @"$RUNNER_TEMP/save.json" -o "$RUNNER_TEMP/saved.json"
+          rm -f "$RUNNER_TEMP/key.header"
+          python3 -c "import json,sys; r=json.load(open(sys.argv[1])); print('saved: id', r.get('id'), 'slug', r.get('slug'))" "$RUNNER_TEMP/saved.json"
+      - name: Read back on both names
+        run: |
+          want=$(python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],encoding='utf-8').read().replace('\r\n','\n').rstrip('\n').encode()).hexdigest())" "data/blog/$SLUG.md")
+          for site in "$SITE" "$COSMOS_SITE"; do
+            for i in $(seq 1 12); do
+              curl -fsS -H 'Cache-Control: no-cache' "$site/api/blog/posts/$SLUG?nocache=$(date +%s%3N)" -o "$RUNNER_TEMP/back.json"
+              got=$(python3 -c "import hashlib,json,sys; print(hashlib.sha256(json.load(open(sys.argv[1]))['body'].encode()).hexdigest())" "$RUNNER_TEMP/back.json")
+              [ "$got" = "$want" ] && break
+              sleep 10
+            done
+            echo "$site: body sha ${got:0:12}, $( [ "$got" = "$want" ] && echo matches || echo DIFFERS ) the file"
+            [ "$got" = "$want" ] || { echo "::error::$site does not serve the saved body"; exit 1; }
+          done
+      # #endregion blog-save

@@ -61,6 +61,18 @@ jobs:
           if grep -qE '^(api/|infra/cosmos/|tests/e2e/(store-toggle|account|admin)\.spec\.ts$)' "$RUNNER_TEMP/raw/touched.txt"; then echo "COSMOS_NEEDED=1" >> "$GITHUB_ENV"; else echo "COSMOS_NEEDED=0" >> "$GITHUB_ENV"; fi
       # #endregion two-cuts
 
+      # #region version-card
+      # The link preview card names the version, so it is drawn here from the commit's own changelog
+      # before any test reads it, and leaves in gate-raw for promote to fold into the commit with the
+      # results: a ship needs no machine to draw it first (ADR-098, the addendum of 1.0.4.105).
+      - name: The version card
+        run: |
+          node docs/images/og.mjs
+          python3 scripts/strip_c2pa.py docs/images
+          cp docs/images/og.svg public/og.png "$RAW/"
+          git status --short -- docs/images/og.svg public/og.png
+      # #endregion version-card
+
       # A login that fails does not stop the run here: the live Cosmos DB tests that need it then
       # fail on their own, by name, and the verdict below turns the run red.
       - uses: azure/login@v3
@@ -119,6 +131,10 @@ jobs:
           else echo "format=skipped" >> "$r"; echo "format_s=0" >> "$r"; fi
           read code s < <(t bash -c 'dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug > "$RAW/sqlproj.txt" 2>&1 && dotnet build functions/JobHunt.Database/JobHunt.Database.sqlproj -c Debug >> "$RAW/sqlproj.txt" 2>&1')
           echo "sqlproj=$code" >> "$r"; echo "sqlproj_s=$s" >> "$r"
+          # The job hunt's Function's own suite, so a version that breaks it never reaches main (until 1.0.4.105
+          # only CI ran it, after the roll).
+          read code s < <(t bash -c 'dotnet test functions/jobhunt.Tests > "$RAW/functions.txt" 2>&1')
+          echo "functions=$code" >> "$r"; echo "functions_s=$s" >> "$r"
           # #region both-stores
           read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-sqlite.trx" --results-directory "$RAW/trx" > "$RAW/xunit-sqlite.txt" 2>&1')
           echo "xunit=$code" >> "$r"; echo "xunit_s=$s" >> "$r"
@@ -195,7 +211,7 @@ jobs:
           val() { { grep -E "^$2=" "$RAW/$1" 2>/dev/null || true; } | head -n 1 | cut -d= -f2; }
           for k in prettier lint tsc vitest browser; do [ "$(val node.result $k)" = 0 ] || red="$red $k"; done
           v=$(val node.result browser_cosmos); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red browser_cosmos"
-          for k in sqlproj xunit live; do [ "$(val dotnet.result $k)" = 0 ] || red="$red $k"; done
+          for k in sqlproj functions xunit live; do [ "$(val dotnet.result $k)" = 0 ] || red="$red $k"; done
           for k in format oncosmos; do v=$(val dotnet.result $k); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red $k"; done
           [ "$(val rest.result emdash)" = 0 ] || red="$red emdash"
           [ "$(val build.result warnings)" = 0 ] || red="$red warnings"
@@ -204,7 +220,7 @@ jobs:
             for f in prettier.txt lint.txt tsc.txt format.txt sqlproj.txt emdash.txt; do
               if [ -s "$RAW/$f" ]; then tail -n 12 "$RAW/$f" | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done; fi
             done
-            for f in xunit-sqlite.txt xunit-live.txt xunit-cosmos.txt; do
+            for f in functions.txt xunit-sqlite.txt xunit-live.txt xunit-cosmos.txt; do
               [ -f "$RAW/$f" ] || continue; { grep -E '^\s*Failed |Error Message' "$RAW/$f" || true; } | head -n 8 | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done
             done
             for f in browser-sqlite.txt browser-cosmos.txt; do
@@ -254,6 +270,7 @@ jobs:
       sha: ${{ steps.promote.outputs.sha }}
       version: ${{ steps.promote.outputs.version }}
       rolls: ${{ steps.promote.outputs.rolls }}
+      functions: ${{ steps.promote.outputs.functions }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -325,6 +342,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run edge-branch.yml --ref main
+      # The job hunt's Function, when the version touched it: a run of its own, so a Function that will not
+      # deploy is read on its own run and never turns this one red (ADR-098, the addendum of 1.0.4.105).
+      - name: The Function, by a run of its own
+        if: needs.promote.outputs.functions == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-function.yml --ref main -f sha="${{ needs.promote.outputs.sha }}"
       - name: The reads after the roll
         if: needs.promote.outputs.rolls == 'true'
         run: python3 scripts/admin_after_roll.py "${{ needs.promote.outputs.version }}" "${{ needs.promote.outputs.sha }}" "$RUNNER_TEMP/after-roll.log"

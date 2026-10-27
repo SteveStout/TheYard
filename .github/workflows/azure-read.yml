@@ -1,0 +1,63 @@
+name: Azure read
+
+# Reads Azure Monitor with no machine (ADR: The gate runs where the memory is, the addendum of 1.0.4.105). Until then
+# a lane asked the laptop's queue to run az under the owner's sign-in and write the answer to the job hunt share. Read
+# only: every metric is asked with a start and an end (a start alone reads one hour) and --top 100 (the default keeps
+# ten series), and the raw answers leave as the run's artifact, azure-read, with an index of what was asked.
+on:
+  workflow_dispatch:
+    inputs:
+      read:
+        description: What to read
+        required: true
+        type: choice
+        options:
+          - cosmos-throttling
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  read:
+    environment: gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # #region cosmos-throttling
+      # Where Cosmos DB's 429s fall, by container and operation, over a day and a week; the share each container
+      # takes; and the partition's normalized RU at one minute for six hours (rail1026's R2 read, queue 3700).
+      - name: Cosmos DB throttling
+        if: inputs.read == 'cosmos-throttling'
+        run: |
+          out="$RUNNER_TEMP/azure-read"; mkdir -p "$out"; index="$out/index.txt"
+          acct=$(az cosmosdb show -g RG-THEYARD-SS -n cosmos-theyard-ss --query id -o tsv)
+          endH=$(date -u +%Y-%m-%dT%H:00:00Z); s24=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:00:00Z); s7d=$(date -u -d '7 days ago' +%Y-%m-%dT%H:00:00Z)
+          endM=$(date -u +%Y-%m-%dT%H:%M:00Z); s6h=$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:00Z)
+          echo "spans 24h $s24..$endH  7d $s7d..$endH  6h $s6h..$endM" > "$index"
+          read_metric() {
+            az monitor metrics list --resource "$acct" --metric "$2" --aggregation "$3" --interval "$4" --start-time "$5" --end-time "$6" --filter "$7" --top 100 -o json > "$out/$1.json"
+            echo "$1	$2 $3 $4 $5..$6 [$7] $(wc -c < "$out/$1.json") bytes" >> "$index"
+          }
+          read_metric 429-by-coll-24h TotalRequests Count PT1H "$s24" "$endH" "StatusCode eq '429' and CollectionName eq '*'"
+          read_metric 429-by-op-24h TotalRequests Count PT1H "$s24" "$endH" "StatusCode eq '429' and OperationType eq '*'"
+          read_metric 429-by-coll-op-24h TotalRequests Count PT1H "$s24" "$endH" "StatusCode eq '429' and CollectionName eq '*' and OperationType eq '*'"
+          read_metric 429-by-coll-7d TotalRequests Count PT1H "$s7d" "$endH" "StatusCode eq '429' and CollectionName eq '*'"
+          read_metric req-by-coll-24h TotalRequests Count PT1H "$s24" "$endH" "CollectionName eq '*'"
+          read_metric req-by-coll-7d TotalRequests Count PT1H "$s7d" "$endH" "CollectionName eq '*'"
+          read_metric nru-by-pkr-6h NormalizedRUConsumption Maximum PT1M "$s6h" "$endM" "PartitionKeyRangeId eq '*'"
+          read_metric nru-by-coll-6h NormalizedRUConsumption Maximum PT1M "$s6h" "$endM" "CollectionName eq '*'"
+          cat "$index"
+      # #endregion cosmos-throttling
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: azure-read
+          path: ${{ runner.temp }}/azure-read/

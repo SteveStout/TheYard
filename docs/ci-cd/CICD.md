@@ -42,7 +42,16 @@ pictures (`node docs/images/render.mjs`, `node docs/images/dataflow.mjs --png`,
 `node docs/images/rings.mjs --png`, `node docs/images/og.mjs`), strips their
 stamps (`python3 scripts/strip_c2pa.py docs/images`), runs Prettier's write,
 commits with the changelog's new line on top, and pushes the commit to
-`gate/<version>`.
+`gate/<version>`. From 1.0.4.105 the gate draws the version card itself, so
+the commit and the push are all a ship needs.
+
+**Nothing else waits on a machine either** (ADR-098, the addendum of
+1.0.4.105). Each of these is a workflow of its own and goes red on its own run:
+`.github/workflows/deploy-function.yml` deploys the job hunt's Function when a
+version touches it, started by the gate after the roll and never setting an
+app setting; `.github/workflows/blog-post.yml` saves a blog post's body from
+`data/blog/<slug>.md`, started by hand; and `.github/workflows/azure-read.yml`
+reads Azure Monitor by hand and leaves the raw answers as its artifact.
 
 ![The CI workflow runs on GitHub Actions, every one green, forty-one of them by the end of the second day](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/github-ci-runs.jpg)
 

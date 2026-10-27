@@ -224,6 +224,7 @@ const checks = [
   ['TypeScript', node, 'tsc'],
   ['dotnet format', dotnet, 'format'],
   ['The SQL project', dotnet, 'sqlproj'],
+  ["The job hunt Function's tests", dotnet, 'functions'],
 ]
   // A check the gate did not run (dotnet format, when no C# or project file changed) is not in the file.
   .filter(([, side, key]) => side[key] !== undefined && side[key] !== 'skipped')

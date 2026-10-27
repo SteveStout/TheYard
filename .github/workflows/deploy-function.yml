@@ -1,0 +1,82 @@
+name: Deploy Function
+
+# The job hunt's Function (func-jobhunt-ss, Flex Consumption, .NET 10), deployed from a commit on main with no
+# machine (ADR: The gate runs where the memory is, the addendum of 1.0.4.105). Until then it was deployed from the
+# laptop by J:\staging\...\deploy-fn.ps1 under the owner's az sign-in; these are the same steps: publish, zip,
+# config-zip, then read the functions, the runtime and the health route back.
+#
+# It changes no app setting, ever: EMAIL_CAMPAIGN, CAMPAIGN_TEST_TO, HUNTER_KEY and the rest are set by a person, so
+# a deploy can never turn the campaign on or off. The gate starts it as a run of its own after promote when the
+# version touched functions/, so a Function that will not deploy never turns a site ship red; and it can be run by
+# hand on main.
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: The commit to deploy (empty for main's head)
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+# One deploy of the Function at a time; a newer one waits rather than cutting a zip deploy in half.
+concurrency:
+  group: deploy-function
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # The deploy identity's federated credential for the gate's environment names no branch (ADR-098).
+    environment: gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RG: RG-JOBHUNT-SS
+      APP: func-jobhunt-ss
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+      - uses: ./.github/actions/dotnet
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # #region the-function-deploy
+      # The records run is dispatched on the hour every four hours; a restart in its first ten minutes is the
+      # risk, so a deploy that lands there waits to eleven past (the laptop's script did the same).
+      - name: Wait out the records run's first minutes
+        run: |
+          h=$(TZ=America/Chicago date +%-H); m=$(TZ=America/Chicago date +%-M)
+          if [ $((h % 4)) -eq 0 ] && [ "$m" -lt 10 ]; then echo "waiting to :11 of $h"; sleep $(( (11 - m) * 60 )); fi
+      - name: Before
+        run: |
+          az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort | tee "$RUNNER_TEMP/before.txt"
+          az resource show --ids "$(az functionapp show -g "$RG" -n "$APP" --query id -o tsv)" --api-version 2024-04-01 --query "properties.functionAppConfig.runtime" -o json
+      - name: Publish and zip
+        run: |
+          dotnet publish functions/jobhunt/JobHunt.Functions.csproj -c Release -o "$RUNNER_TEMP/publish" --nologo -v q
+          (cd "$RUNNER_TEMP/publish" && zip -qr "$RUNNER_TEMP/function.zip" .)
+          echo "zip: $(unzip -l "$RUNNER_TEMP/function.zip" | tail -n 1)"
+      - name: Zip deploy
+        run: az functionapp deployment source config-zip -g "$RG" -n "$APP" --src "$RUNNER_TEMP/function.zip" -o json --query "{status:status,complete:complete}"
+      - name: After
+        run: |
+          sleep 45
+          az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort | tee "$RUNNER_TEMP/after.txt"
+          missing=$(comm -23 "$RUNNER_TEMP/before.txt" "$RUNNER_TEMP/after.txt")
+          [ -z "$missing" ] || { echo "::error::functions listed before the deploy and not after: $missing"; exit 1; }
+          host=$(az functionapp show -g "$RG" -n "$APP" --query properties.defaultHostName -o tsv)
+          for i in $(seq 1 12); do
+            code=$(curl -s -o "$RUNNER_TEMP/health.json" -w '%{http_code}' --max-time 60 "https://$host/api/merger/health" || true)
+            [ "$code" = 200 ] || [ "$code" = 204 ] && break
+            sleep 15
+          done
+          echo "health route: $code"; head -c 600 "$RUNNER_TEMP/health.json"; echo
+          # 204 is a read the host cancelled under it, blocked and not failed (ADR-109, the addendum of 1.0.4.96).
+          [ "$code" = 200 ] || [ "$code" = 204 ] || { echo "::error::the health route answered $code after the deploy"; exit 1; }
+      # #endregion the-function-deploy
