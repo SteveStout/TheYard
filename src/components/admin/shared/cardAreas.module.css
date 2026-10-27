@@ -6,8 +6,8 @@
  * Does not:  Draw a dial, a chart, a row or a readout's lines (each card's own sheets do), or the glass (panels.css).
  *            The pair and the sections are the two grids the cards share: two gauges across the lead, and the
  *            full-width sections two across once the card is wide, by their own width and no window's.
- * Used by:   AzureCard.tsx, CardShell.tsx, MachinesCard.tsx, MachinesContainerSection.tsx, MachinesDocumentSection.tsx,
- *            MachinesRelationalSection.tsx.
+ * Used by:   AzureCard.tsx, CardShell.tsx, FollowsCard.tsx, MachinesCard.tsx, MachinesContainerSection.tsx,
+ *            MachinesDocumentSection.tsx, MachinesRelationalSection.tsx.
  */
 
 /* The card's three blocks: the lead beside the readout, and everything below the dials across the full width. */

@@ -14,7 +14,7 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 1638 xUnit tests, 570 Vitest tests at 1.0.4.109 and 185 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.4.109 hold 4,097 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 1638 xUnit tests, 570 Vitest tests at 1.0.4.109 and 186 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.4.109 hold 4,097 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
@@ -532,7 +532,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (185 Playwright tests):** the real stack. The inventory view shows 100 of
+**End-to-end (186 Playwright tests):** the real stack. The inventory view shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

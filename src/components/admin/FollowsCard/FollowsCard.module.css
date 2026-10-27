@@ -1,7 +1,8 @@
 /**
- * Does:      Styles the memory-against-traffic card: the verdict line with its tone, the two scatter plots side by
- *            side, their dots, trend lines and axis words, and the readout under them.
- * Does not:  Style the card frame (card.module.css does) or choose what is red (the server's rule does).
+ * Does:      Styles the memory-against-traffic card: the verdict line with its tone and the readout's lines beside
+ *            the lead, and the two scatter plots side by side at full width, their dots, trend lines and axis words.
+ * Does not:  Place the lead, the readout and the plots (shared/cardAreas.module.css does), style the card frame
+ *            (card.module.css does) or choose what is red (the server's rule does).
  * Used by:   FollowsCard.tsx.
  */
 
