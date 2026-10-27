@@ -33,6 +33,7 @@ import { CloudChart } from '../CloudChart';
 import { CloudRows, PortalLink } from '../CloudRows';
 import { CloudReadout } from '../CloudReadout';
 import { CloudProcesses, CloudWhat } from '../CloudProcesses';
+import areas from '../shared/cardAreas.module.css';
 import styles from './CardShell.module.css';
 
 /** One sixty-minute hairline in a bordered box, oldest on the left, in its dial's tone, with the newest figure on its title line. */
@@ -145,8 +146,8 @@ export function CardShell({
   const instances = report.readout.lines.find((line) => line.key === 'instances');
   return (
     <div className={styles.frame} data-testid={testId} data-tone={report.tone}>
-      <article className={`${styles.card} op-glass`}>
-        <div className={styles.lead} data-testid="cloud-lead">
+      <article className={`${areas.card} op-glass`}>
+        <div className={areas.lead} data-testid="cloud-lead">
           <header className={styles.header}>
             <h2 className={`${cardStyles.cardTitle} ${styles.title}`}>
               {report.title}
@@ -210,10 +211,10 @@ export function CardShell({
             </div>
           )}
         </div>
-        <div className={styles.readout}>
+        <div className={areas.readout}>
           <CloudReadout readout={report.readout} />
         </div>
-        <div className={styles.rest} data-testid="cloud-rest">
+        <div className={areas.rest} data-testid="cloud-rest">
           <CloudChart chart={report.chart} endMs={report.as_of_ms} toolbar={toolbar} />
           <CloudProcesses processes={report.processes ?? []} />
           <CloudRows rows={report.rows} />
