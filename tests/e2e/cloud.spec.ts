@@ -128,6 +128,50 @@ test("below the dials every block takes the card's full width on a desk, and a p
 });
 // #endregion full-width
 
+// #region own-layout-shape
+/**
+ * A card that draws its own body under Cloud infrastructure (Azure's view of the container, What the machines are
+ * doing, Memory against traffic) draws in the shell's shape: its lead block, whose title spans it, beside a
+ * readout of its own summary lines on a desk, and its full-width blocks, where it has them, as wide as both
+ * together. Before the shape the readout's lines sat under the title at the card's full width.
+ */
+async function expectOwnLayoutShape(card: Locator, readoutLine: string): Promise<void> {
+  const title = (await card.locator('h2').first().boundingBox())!;
+  const line = await card.getByTestId(readoutLine).boundingBox();
+  expect(line, `${readoutLine} has a box`).not.toBeNull();
+  expect(line!.x, 'the readout is beside the lead').toBeGreaterThanOrEqual(
+    title.x + title.width - 1
+  );
+  expect(line!.y, 'the readout starts beside the lead').toBeLessThan(title.y + 400);
+  const rest = card.getByTestId('cloud-rest');
+  if ((await rest.count()) > 0) {
+    const wide = (await rest.boundingBox())!;
+    const readout = (await card.getByTestId('cloud-readout').boundingBox())!;
+    expect(
+      wide.width,
+      'the full-width blocks span the lead and the readout'
+    ).toBeGreaterThanOrEqual(readout.x + readout.width - title.x - 2);
+  }
+}
+
+test("Azure's view of the container draws in the shell's shape: its hourly readings beside its state", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=admin&card=azure');
+  const card = page.getByTestId('azure-card');
+  await expect(card.getByTestId('azure-hourly')).toBeVisible({ timeout: 30_000 });
+  await expectOwnLayoutShape(card, 'azure-hourly');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=admin&card=azure');
+  await expect(page.getByTestId('azure-card').getByTestId('azure-hourly')).toBeVisible({
+    timeout: 30_000,
+  });
+  expect(await scrollsSideways(page)).toBe(false);
+});
+// #endregion own-layout-shape
+
 // #region cloud-resources
 /**
  * The resource cards after the plan (ADR: One frame for every resource): each opens from its

@@ -1,0 +1,72 @@
+/**
+ * Does:      Lays out the shape every card under Cloud infrastructure draws in, as the approved layout draws it: a
+ *            lead block beside a readout up top, and everything below the dials (the chart, the processes, the
+ *            rows, the sections) across the card's full width; one column under a desk's width in the order lead,
+ *            rest, readout. One sheet, so the shell and the cards that draw their own body cannot drift apart.
+ * Does not:  Draw a dial, a chart, a row or a readout's lines (each card's own sheets do), or the glass (panels.css).
+ * Used by:   AzureCard.tsx, CardShell.tsx.
+ */
+
+/* The card's three blocks: the lead beside the readout, and everything below the dials across the full width. */
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+  grid-template-areas:
+    'lead readout'
+    'rest rest';
+  gap: var(--space-4);
+  padding: var(--space-4);
+  min-width: 0;
+  align-items: start;
+}
+
+/* The lead is the container its dials measure, so two dials sit side by side by the lead's own width, not the
+   card's: beside the readout, the lead is the width the whole card was before the readout moved inside it. */
+.lead {
+  grid-area: lead;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.readout {
+  grid-area: readout;
+  min-width: 0;
+}
+
+.rest {
+  grid-area: rest;
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* A readout a card draws itself, from its own summary lines: the same box the shell's readout is, with its glass. */
+.aside {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.asideHeading {
+  margin: 0;
+  font-size: var(--text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-heading);
+}
+
+/* Under a desk's width the card is one column, in today's order: the lead, the full-width blocks, the readout. */
+@media (max-width: 1023.98px) {
+  .card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'lead'
+      'rest'
+      'readout';
+  }
+}
