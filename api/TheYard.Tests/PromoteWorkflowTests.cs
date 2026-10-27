@@ -43,6 +43,8 @@ public class PromoteWorkflowTests
         Assert.Contains("needs: [promote, deploy, deploy-render]", Job("after-roll"), StringComparison.Ordinal);
         Assert.Equal(2, Gate().Split("contents: write").Length - 1);
         Assert.DoesNotContain("git push", Job("after-roll"), StringComparison.Ordinal);
+        Assert.DoesNotContain("\n    if:", promote, StringComparison.Ordinal);
+        Assert.Contains("\"$GITHUB_RUN_ID\"", promote, StringComparison.Ordinal);
     }
     // #endregion the-order
 
@@ -103,13 +105,29 @@ public class PromoteWorkflowTests
         string called = Job(job);
         Assert.Contains($"uses: ./.github/workflows/{file}", called, StringComparison.Ordinal);
         Assert.Contains("sha: ${{ needs.promote.outputs.sha }}", called, StringComparison.Ordinal);
-        Assert.Contains("secrets: inherit", called, StringComparison.Ordinal);
+        Assert.DoesNotContain("secrets: inherit", called, StringComparison.Ordinal);
         string deploy = Read(".github", "workflows", file);
+        Assert.Contains("[ \"$(git rev-parse origin/main)\" = \"$SHA\" ] || { echo \"::error::$SHA is no longer main's head\"; exit 1; }", deploy, StringComparison.Ordinal);
         Assert.Contains("on:\n  push:\n    branches: [main]\n", deploy, StringComparison.Ordinal);
         Assert.Contains("  workflow_call:\n", deploy, StringComparison.Ordinal);
         Assert.Contains(group, deploy, StringComparison.Ordinal);
         Assert.Contains("environment: gate", deploy, StringComparison.Ordinal);
         Assert.DoesNotContain("${{ github.sha }}", deploy, StringComparison.Ordinal);
+    }
+
+    /// <summary>Deploy is handed the three secrets it reads, by name; Deploy Render, which reads none, is handed nothing.</summary>
+    [Fact]
+    public void Each_deploy_is_handed_only_the_secrets_it_reads()
+    {
+        string called = Job("deploy");
+        string[] names = ["YARD_AUTH_SIGNING_KEY", "ADMIN_KEY", "NETLIFY_TOKEN"];
+        foreach (string name in names)
+        {
+            Assert.Contains($"      {name}: ${{{{ secrets.{name} }}}}", called, StringComparison.Ordinal);
+            Assert.Contains($"      {name}:\n        required: true", Read(".github", "workflows", "deploy.yml"), StringComparison.Ordinal);
+        }
+        Assert.Equal(names.Length, System.Text.RegularExpressions.Regex.Matches(called, @"secrets\.").Count);
+        Assert.DoesNotContain("secrets", Job("deploy-render"), StringComparison.Ordinal);
     }
     // #endregion the-roll
 

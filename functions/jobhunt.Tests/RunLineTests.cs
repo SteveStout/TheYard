@@ -170,4 +170,13 @@ public sealed class RunLineTests
     {
         public HttpClient CreateClient(string name) => throw new InvalidOperationException("no network in this test");
     }
+
+    /// <summary>The health route's commit is the part of the informational version after its plus sign, and none without one.</summary>
+    [Theory]
+    [InlineData("1.0.0+3f2a9c1d", "3f2a9c1d")]
+    [InlineData("1.0.0", null)]
+    [InlineData("1.0.0+", null)]
+    [InlineData(null, null)]
+    public void The_health_route_names_the_commit_its_build_was_published_from(string? informational, string? commit) =>
+        Assert.Equal(commit, MergerWatch.CommitOf(informational));
 }

@@ -1,9 +1,10 @@
 name: Deploy Function
 
 # The job hunt's Function (func-jobhunt-ss, Flex Consumption, .NET 10), deployed from a commit on main with no
-# machine (ADR: The gate runs where the memory is, the addendum of 1.0.4.105). Until then it was deployed from the
-# laptop by J:\staging\...\deploy-fn.ps1 under the owner's az sign-in; these are the same steps: publish, zip,
-# config-zip, then read the functions, the runtime and the health route back.
+# machine (ADR: The gate runs where the memory is, the addendum of 1.0.4.105). These are the steps the laptop's
+# deploy script ran under the owner's az sign-in: publish, zip, config-zip, then read the functions, the runtime
+# and the health route back. The health route names the commit it was published from, so the deploy is done only
+# when the new code is the code answering (the addendum of 1.0.4.107).
 #
 # It changes no app setting, ever: EMAIL_CAMPAIGN, CAMPAIGN_TEST_TO, HUNTER_KEY and the rest are set by a person, so
 # a deploy can never turn the campaign on or off. The gate starts it as a run of its own after promote when the
@@ -26,19 +27,34 @@ concurrency:
   group: deploy-function
   cancel-in-progress: false
 
+# Bash with pipefail, so a failed az call before a pipe fails its step instead of taking the pipe's last status.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   deploy:
     # The deploy identity's federated credential for the gate's environment names no branch (ADR-098).
     environment: gate
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # Publish, a wait of up to sixteen minutes for the records run, config-zip, and five minutes of health reads.
+    timeout-minutes: 45
     env:
       RG: RG-JOBHUNT-SS
       APP: func-jobhunt-ss
+      SHA: ${{ inputs.sha || github.sha }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.sha || github.sha }}
+          fetch-depth: 0
+      # Only a commit on main is deployed, so a sha from any other branch never reaches the live campaign.
+      - name: The commit is on main
+        run: |
+          git fetch -q origin +refs/heads/main:refs/remotes/origin/main
+          SHA=$(git rev-parse "$SHA")
+          echo "SHA=$SHA" >> "$GITHUB_ENV"
+          git merge-base --is-ancestor "$SHA" origin/main || { echo "::error::$SHA is not on main"; exit 1; }
       - uses: ./.github/actions/dotnet
       - uses: azure/login@v3
         with:
@@ -47,36 +63,55 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       # #region the-function-deploy
+      - name: Before
+        run: |
+          az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort > "$RUNNER_TEMP/before.txt"
+          cat "$RUNNER_TEMP/before.txt"
+          [ -s "$RUNNER_TEMP/before.txt" ] || { echo "::error::the function list before the deploy is empty, so nothing could be compared"; exit 1; }
+          az resource show --ids "$(az functionapp show -g "$RG" -n "$APP" --query id -o tsv)" --api-version 2024-04-01 --query "properties.functionAppConfig.runtime" -o json
+      - name: Publish and zip
+        run: |
+          dotnet publish functions/jobhunt/JobHunt.Functions.csproj -c Release -o "$RUNNER_TEMP/publish" --nologo -v q -p:SourceRevisionId="$SHA"
+          (cd "$RUNNER_TEMP/publish" && zip -qr "$RUNNER_TEMP/function.zip" .)
+          echo "zip: $(unzip -l "$RUNNER_TEMP/function.zip" | tail -n 1)"
       # The records run is dispatched on the hour every four hours; a restart in its first ten minutes is the
-      # risk, so a deploy that lands there waits to eleven past (the laptop's script did the same).
+      # risk, so a zip deploy that would land there waits to eleven past. Read just before the deploy, and from five
+      # to the hour before, so the minutes of the deploy and the restart after it cannot carry it into the window.
       - name: Wait out the records run's first minutes
         run: |
           h=$(TZ=America/Chicago date +%-H); m=$(TZ=America/Chicago date +%-M)
           if [ $((h % 4)) -eq 0 ] && [ "$m" -lt 10 ]; then echo "waiting to :11 of $h"; sleep $(( (11 - m) * 60 )); fi
-      - name: Before
-        run: |
-          az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort | tee "$RUNNER_TEMP/before.txt"
-          az resource show --ids "$(az functionapp show -g "$RG" -n "$APP" --query id -o tsv)" --api-version 2024-04-01 --query "properties.functionAppConfig.runtime" -o json
-      - name: Publish and zip
-        run: |
-          dotnet publish functions/jobhunt/JobHunt.Functions.csproj -c Release -o "$RUNNER_TEMP/publish" --nologo -v q
-          (cd "$RUNNER_TEMP/publish" && zip -qr "$RUNNER_TEMP/function.zip" .)
-          echo "zip: $(unzip -l "$RUNNER_TEMP/function.zip" | tail -n 1)"
+          if [ $((h % 4)) -eq 3 ] && [ "$m" -ge 55 ]; then echo "waiting to :11 of $(( (h + 1) % 24 ))"; sleep $(( (71 - m) * 60 )); fi
       - name: Zip deploy
-        run: az functionapp deployment source config-zip -g "$RG" -n "$APP" --src "$RUNNER_TEMP/function.zip" -o json --query "{status:status,complete:complete}"
+        run: az functionapp deployment source config-zip -g "$RG" -n "$APP" --src "$RUNNER_TEMP/function.zip" -o none
       - name: After
         run: |
           sleep 45
-          az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort | tee "$RUNNER_TEMP/after.txt"
+          for i in 1 2 3 4 5; do
+            if az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort > "$RUNNER_TEMP/after.txt" && [ -s "$RUNNER_TEMP/after.txt" ]; then break; fi
+            echo "the function list after the deploy did not answer (try $i); the host may be restarting"
+            sleep 20
+          done
+          cat "$RUNNER_TEMP/after.txt"
+          [ -s "$RUNNER_TEMP/after.txt" ] || { echo "::error::the function list after the deploy is empty in five tries"; exit 1; }
           missing=$(comm -23 "$RUNNER_TEMP/before.txt" "$RUNNER_TEMP/after.txt")
           [ -z "$missing" ] || { echo "::error::functions listed before the deploy and not after: $missing"; exit 1; }
           host=$(az functionapp show -g "$RG" -n "$APP" --query properties.defaultHostName -o tsv)
-          for i in $(seq 1 12); do
-            code=$(curl -s -o "$RUNNER_TEMP/health.json" -w '%{http_code}' --max-time 60 "https://$host/api/merger/health" || true)
-            [ "$code" = 200 ] || [ "$code" = 204 ] && break
+          # Five minutes of reads. Only a 200 that names this commit is done: a 204 is a read the host cancelled under
+          # it (ADR-109, the addendum of 1.0.4.96), and an answer from the old build means the deploy has not landed.
+          code="" commit="" ok=0 seen=0 end=$((SECONDS + 300))
+          while [ "$SECONDS" -lt "$end" ]; do
+            code=$(curl -s -o "$RUNNER_TEMP/health.json" -w '%{http_code}' --max-time 30 "https://$host/api/merger/health" || true)
+            seen=$((seen + 1))
+            if [ "$code" = 200 ]; then
+              ok=$((ok + 1))
+              commit=$(jq -r '.commit // ""' "$RUNNER_TEMP/health.json" 2>/dev/null || true)
+              if [ "$commit" = "$SHA" ]; then break; fi
+            fi
             sleep 15
           done
-          echo "health route: $code"; head -c 600 "$RUNNER_TEMP/health.json"; echo
-          # 204 is a read the host cancelled under it, blocked and not failed (ADR-109, the addendum of 1.0.4.96).
-          [ "$code" = 200 ] || [ "$code" = 204 ] || { echo "::error::the health route answered $code after the deploy"; exit 1; }
+          echo "health route: $code after $seen reads, commit ${commit:-none}"; head -c 600 "$RUNNER_TEMP/health.json"; echo
+          [ "$ok" -gt 0 ] || { echo "::error::the health route never answered 200 after the deploy (last $code)"; exit 1; }
+          [ "$code" = 200 ] || echo "::warning::the health route's last answer was $code"
+          [ "$commit" = "$SHA" ] || { echo "::error::the Function answers from ${commit:-an unstamped build}, not $SHA"; exit 1; }
       # #endregion the-function-deploy

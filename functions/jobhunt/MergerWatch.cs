@@ -1,4 +1,5 @@
 using System.Net;
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -17,7 +18,9 @@ namespace JobHunt.Functions;
 /// GET /api/merger/health: whether the tracker merger is keeping up, as five numbers (MergerHealth).
 /// The Admin tab's nightly card reads it once a minute. It is anonymous because the site holds no
 /// key to this app and gets none: the answer is counts and ages only, the same figures the card
-/// shows the public, and it lists two folders and reads nothing inside any file.
+/// shows the public, and it lists two folders and reads nothing inside any file. It also names the
+/// commit the running build was published from, so the Function's deploy can prove the new code is the
+/// code answering (ADR-098, the addendum of 1.0.4.107).
 /// </remarks>
 public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<MergerWatch> log)
 {
@@ -59,9 +62,18 @@ public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<Me
         response.Headers.Add("Cache-Control", "no-store");
         var answer = JsonSerializer.SerializeToNode(health)!.AsObject();
         answer["switches"] = JsonSerializer.SerializeToNode(Switches());
+        answer["commit"] = Commit;
         await response.WriteStringAsync(answer.ToJsonString(), ct);
         return response;
     }
+
+    /// <summary>The commit this build was published from, stamped by <c>dotnet publish -p:SourceRevisionId</c>; null when none was.</summary>
+    public static string? Commit { get; } = CommitOf(typeof(MergerWatch).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+
+    /// <summary>The commit in an informational version, the part after its plus sign; null when there is none.</summary>
+    /// <param name="informational">The assembly's informational version, such as 1.0.0+3f2a.</param>
+    public static string? CommitOf(string? informational) =>
+        informational?.IndexOf('+', StringComparison.Ordinal) is int plus and >= 0 && plus < informational.Length - 1 ? informational[(plus + 1)..] : null;
 
     /// <summary>The processes' switches, by name, as the app's settings hold them: names and words only, never another setting.</summary>
     public static readonly IReadOnlyList<string> SwitchNames = ["ATS_SWEEP", "LEADS", "LEADS_LIST", "TRIAGE", "REPLY_ON_HUMAN", "MERGER", "APPENDS", "TRACKER_SQL", "NIGHTLY_ANY_HOUR", "SHEET_MIRROR", "DAILY_CARD", "EMAIL_CAMPAIGN"];

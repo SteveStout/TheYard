@@ -34,7 +34,18 @@ The run then calls Deploy and Deploy Render on that commit, starts the edge's
 move, reads both names after the roll, and starts CI on `main` and reads it to
 its end. A version that changes a workflow is the one exception: GitHub never
 lets the run's own token write a workflow, so a person runs the same script
-and pushes `main`.
+and pushes `main`, naming the run:
+`gh run download <run> -n gate-raw -D raw && bash scripts/promote.sh raw <gate seconds> <version> <run>`.
+
+**What promote refuses** (ADR-098, the addendum of 1.0.4.107). Before it
+writes anything, `scripts/promote.sh` reads the named run and refuses unless
+that run tested HEAD, its gate and Shed jobs are both green, HEAD is exactly
+one commit on `main`, and the version goes up by one in its fourth number. The
+gate's two cuts read the whole branch from where it left `main`. Deploy and
+Deploy Render refuse a commit that is no longer `main`'s head, and the
+Function's deploy one that is not on `main`, so re-running an older run never
+rolls anything back. The Function's deploy is done only when its health route
+answers 200 naming the commit it was published from.
 
 Before the push, whoever ships does what the laptop's ship script did before
 it pushed, because the gate checks these and does not write them: draws the
