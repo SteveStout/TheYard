@@ -47,7 +47,7 @@ public sealed class Module : IModule
             string? sqlSite = sqlName is null ? null : identity.SiteName is { } siteName ? $"{sqlName}, on {siteName}" : sqlName;
             var cosmos = provider.GetRequiredService<DocumentStore>().Store;
             IResourceHistory KeepOf(ResourceCard card) => cosmos is not null
-                ? new CosmosResourceHistory(cosmos, card.Container, card.KindPrefix)
+                ? new CosmosResourceHistory(cosmos, card.Container, TimeProvider.System, card.KindPrefix)
                 : new MemoryResourceHistory("kept in this process's memory, so the readings end with it; the document store is not configured here");
             // The registry card names which web app runs each image from the plan card's own hour, the
             // one read of every app's linuxFxVersion, rather than reading the apps a second time.

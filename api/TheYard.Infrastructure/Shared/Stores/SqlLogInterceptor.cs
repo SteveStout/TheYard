@@ -17,7 +17,7 @@ namespace TheYard.Infrastructure.Shared.Stores;
 /// the <see cref="DbCommand"/> itself, so this code can read a parameter's name,
 /// type and size and never touch <c>Value</c> at all.
 /// </summary>
-public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request) : DbCommandInterceptor
+public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, TimeProvider clock) : DbCommandInterceptor
 {
     // A statement is trimmed before it is stored: EF writes a SELECT of every
     // column of Vehicles, which is thirty of them, and the Admin tab is a page
@@ -63,7 +63,7 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request) : Db
             : command.CommandText[..MaxTextLength] + "\n... trimmed";
 
         log.Record(new SqlStatement(
-            DateTimeOffset.UtcNow,
+            clock.GetUtcNow(),
             text,
             parameters,
             (long)duration.TotalMilliseconds,

@@ -139,7 +139,7 @@ public static class StoreRegistration
         {
             var sqlOptions = new DbContextOptionsBuilder<YardDbContext>();
             yard.Configure(sqlOptions);
-            sqlOptions.AddInterceptors(new SqlLogInterceptor(sqlLog, currentRequest));
+            sqlOptions.AddInterceptors(new SqlLogInterceptor(sqlLog, currentRequest, TimeProvider.System));
             var contexts = new ContextFactory(sqlOptions.Options);
             // The same database without the interceptor, for the activity counters:
             // a batch every five seconds would fill the SQL log with the feature that
@@ -208,7 +208,7 @@ public static class StoreRegistration
             };
             // One document per account and one per address, and none of Identity's seven tables
             // (ADR: Accounts on a document store), keyed by the store the way the relational one is.
-            builder.Services.AddKeyedScoped<IUserStore<YardUser>>(cosmosBackend.Key, (_, _) => new CosmosUserStore(store));
+            builder.Services.AddKeyedScoped<IUserStore<YardUser>>(cosmosBackend.Key, (_, _) => new CosmosUserStore(store, TimeProvider.System));
             StoreAttachment CosmosAttachment(DatabaseState state) => new(
                 state,
                 new DocumentDiagnostics(store),

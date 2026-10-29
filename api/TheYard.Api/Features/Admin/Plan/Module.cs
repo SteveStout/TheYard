@@ -28,7 +28,7 @@ public sealed class Module : IModule
             return new PlanReader(clientId, self, configured: identity.OnAppService, identity: identity, machine: provider.GetRequiredService<MachineSize>());
         });
         services.AddSingleton<IPlanHistory>(provider => provider.GetRequiredService<DocumentStore>().Store is { } cosmos
-            ? new CosmosPlanHistory(cosmos)
+            ? new CosmosPlanHistory(cosmos, TimeProvider.System)
             : new MemoryPlanHistory("kept in this process's memory, so the readings end with it; the document store is not configured here"));
 
         // One reading of a shared plan is the whole truth, so one process records it: the one

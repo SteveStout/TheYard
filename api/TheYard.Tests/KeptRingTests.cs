@@ -98,7 +98,7 @@ public class KeptRingTests : IClassFixture<WebApplicationFactory<Program>>
         var store = new ListStore();
         var collector = new LogCollector(store);
         var writer = new KeptRingWriter(collector, "cosmos");
-        var errors = new ErrorRingBuffer(5) { Kept = entry => writer.Keep(KeptRings.Errors, entry.At, entry) };
+        var errors = new ErrorRingBuffer(5, TimeProvider.System) { Kept = entry => writer.Keep(KeptRings.Errors, entry.At, entry) };
         var lines = new LogRingBuffer(5) { Kept = line => writer.Keep(KeptRings.Log, line.At, line) };
         var operations = new StoreRingBuffer(5) { Kept = operation => writer.Keep(KeptRings.Store, operation.At, operation) };
 

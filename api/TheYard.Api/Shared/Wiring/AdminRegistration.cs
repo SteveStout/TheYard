@@ -81,8 +81,8 @@ public static class AdminRegistration
         // The two error rings and the moment the process started, registered before the
         // host exists so the endpoints can ask for them; the rings are wired to the kept
         // log and the start is marked when the host starts (Shared/Hosted/ErrorRingKeeping.cs).
-        builder.Services.AddSingleton(new ErrorRings());
+        builder.Services.AddSingleton(new ErrorRings(TimeProvider.System));
         builder.Services.AddSingleton(new SelfTestCooldown(TimeProvider.System));
-        builder.Services.AddSingleton(new HostStart());
+        builder.Services.AddSingleton(new HostStart(TimeProvider.System));
     }
 }

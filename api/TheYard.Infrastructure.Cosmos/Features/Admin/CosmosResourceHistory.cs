@@ -19,7 +19,7 @@ namespace TheYard.Infrastructure.Cosmos.Features.Admin;
 /// <param name="store">The document store.</param>
 /// <param name="containerName">The container the minutes and hours are kept in.</param>
 /// <param name="kindPrefix">What this card's kinds and ids open with when it shares a container; empty for a container of its own.</param>
-public sealed class CosmosResourceHistory(CosmosStore store, string containerName, string kindPrefix = "") : IResourceHistory
+public sealed class CosmosResourceHistory(CosmosStore store, string containerName, TimeProvider clock, string kindPrefix = "") : IResourceHistory
 {
     private readonly string _minute = kindPrefix + "minute";
     private readonly string _hour = kindPrefix + "hour";
@@ -82,7 +82,7 @@ public sealed class CosmosResourceHistory(CosmosStore store, string containerNam
         {
             return [];
         }
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.GetUtcNow();
         var definition = new QueryDefinition("SELECT TOP @count * FROM c WHERE c.kind = @kind AND (c.day = @today OR c.day = @yesterday) ORDER BY c.at DESC")
             .WithParameter("@count", count)
             .WithParameter("@kind", _minute)

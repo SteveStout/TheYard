@@ -11,7 +11,7 @@ namespace JobHunt.Infrastructure.Features.Merge;
 /// one transaction, so the copy is never half a file.
 /// </summary>
 /// <param name="connectionString">The database's connection string: managed identity, no secret.</param>
-public sealed class SqlTrackerTable(string connectionString) : ITrackerTable
+public sealed class SqlTrackerTable(string connectionString, TimeProvider clock) : ITrackerTable
 {
     private const string Frame = "SELECT [Record], [Bom], [EndsWithBreak], [Rows], [FileHash], [ParityAt] FROM [jobhunt].[TrackerHeader] WHERE [Id] = 1;";
     private const string Hashes = "SELECT [Position], [RecordHash] FROM [jobhunt].[Tracker];";
@@ -61,7 +61,7 @@ public sealed class SqlTrackerTable(string connectionString) : ITrackerTable
     /// <inheritdoc />
     public async Task KeepAsync(TrackerFile file, IReadOnlyList<int> positions, string fileHash, CancellationToken ct)
     {
-        var at = DateTimeOffset.UtcNow;
+        var at = clock.GetUtcNow();
         int rows = file.Records.Count - 1;
         await using var connection = await ConnectAsync(ct);
         await using var transaction = (SqlTransaction)await connection.BeginTransactionAsync(ct);

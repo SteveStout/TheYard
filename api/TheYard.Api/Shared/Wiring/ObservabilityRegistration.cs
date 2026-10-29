@@ -41,7 +41,7 @@ public static class ObservabilityRegistration
         builder.Services.AddSingleton<IStoreLog>(storeLog);
         builder.Services.AddSingleton<IHttpContextAccessor>(accessor);
         builder.Services.AddSingleton<ICurrentRequest>(currentRequest);
-        builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog));
+        builder.Logging.AddProvider(new RingBufferLoggerProvider(logLog, TimeProvider.System));
 
         // #region kept-logs-wiring
         // The kept log (ADR: Logs that outlive the container): the same three things
@@ -56,7 +56,7 @@ public static class ObservabilityRegistration
         // the GUID a link carries is kept in the document store for the hour and
         // forgotten on use; without one, in this process's memory, which is what
         // the test host and a developer's machine get.
-        IResetLinks resetLinks = cosmos is not null ? new CosmosResetLinks(cosmos) : new MemoryResetLinks();
+        IResetLinks resetLinks = cosmos is not null ? new CosmosResetLinks(cosmos, TimeProvider.System) : new MemoryResetLinks();
         builder.Services.AddSingleton(resetLinks);
         var logCollector = new LogCollector(logStore, builder.Configuration.GetValue("Logs:DrainSeconds", LogCollector.DefaultIntervalSeconds));
         builder.Services.AddSingleton(logCollector);
@@ -74,7 +74,7 @@ public static class ObservabilityRegistration
         logLog.Kept = line => keptRings.Keep(KeptRings.Log, line.At, line);
         builder.Services.AddSingleton(new KeptRingReader(logCollector, backends.Default.Key, backends.Named(StoreKeys.Document)?.Name ?? backends.Default.Name));
         // #endregion kept-rings-wiring
-        builder.Logging.AddProvider(new CollectorLoggerProvider(logCollector, () =>
+        builder.Logging.AddProvider(new CollectorLoggerProvider(logCollector, TimeProvider.System, () =>
         {
             var http = accessor.HttpContext;
             return http is null

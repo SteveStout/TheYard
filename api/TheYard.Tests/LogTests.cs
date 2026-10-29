@@ -114,7 +114,7 @@ public class LogTests
     {
         var store = new ListStore();
         var collector = new LogCollector(store);
-        using var provider = new CollectorLoggerProvider(collector, () => ("cosmos", "/somewhere", "t1"));
+        using var provider = new CollectorLoggerProvider(collector, TimeProvider.System, () => ("cosmos", "/somewhere", "t1"));
 
         var ours = provider.CreateLogger("TheYard.Something");
         ours.LogInformation("not kept: information is the request log's job");

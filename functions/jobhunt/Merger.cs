@@ -66,7 +66,7 @@ public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen 
         }
         try
         {
-            var table = new SqlTrackerTable(sql);
+            var table = new SqlTrackerTable(sql, time);
             var mirror = new TrackerMirror(store, table, seen);
             var now = time.GetUtcNow();
             var frame = await table.FrameAsync(ct);

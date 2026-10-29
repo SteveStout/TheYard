@@ -75,7 +75,7 @@ public sealed class LogRingBuffer(int capacity)
 /// a dependency added next year is silent here by default rather than public by
 /// default (ADR: Reviewing my own work).</para>
 /// </summary>
-public sealed class RingBufferLoggerProvider(LogRingBuffer buffer) : ILoggerProvider
+public sealed class RingBufferLoggerProvider(LogRingBuffer buffer, TimeProvider clock) : ILoggerProvider
 {
     /// <summary>
     /// Whose log lines reach the Admin tab: this application's own, and the one
@@ -91,13 +91,13 @@ public sealed class RingBufferLoggerProvider(LogRingBuffer buffer) : ILoggerProv
     /// it, one that drops everything otherwise.
     /// </summary>
     public ILogger CreateLogger(string categoryName) =>
-        Captured(categoryName) ? new RingLogger(buffer, categoryName) : NullLogger.Instance;
+        Captured(categoryName) ? new RingLogger(buffer, clock, categoryName) : NullLogger.Instance;
 
     /// <summary>Nothing to release: the ring belongs to the host, not to the provider.</summary>
     public void Dispose() { }
 
     /// <summary>The logger handed out for a captured category: writes each line into the ring.</summary>
-    private sealed class RingLogger(LogRingBuffer buffer, string category) : ILogger
+    private sealed class RingLogger(LogRingBuffer buffer, TimeProvider clock, string category) : ILogger
     {
         /// <summary>No scopes: the ring keeps the line alone.</summary>
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
@@ -119,7 +119,7 @@ public sealed class RingBufferLoggerProvider(LogRingBuffer buffer) : ILoggerProv
 
             string message = formatter(state, exception!);
             buffer.Record(new LogEntry(
-                DateTimeOffset.UtcNow,
+                clock.GetUtcNow(),
                 logLevel.ToString(),
                 category,
                 message.Length > 1_000 ? message[..1_000] + "..." : message,

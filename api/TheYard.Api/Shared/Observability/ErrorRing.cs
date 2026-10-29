@@ -53,7 +53,7 @@ public static class StackFrames
 /// Fixed-size, thread-safe buffer of recent server errors. In-memory on
 /// purpose for this demo: it resets on every roll, and the Admin tab says so.
 /// </summary>
-public sealed class ErrorRingBuffer(int capacity)
+public sealed class ErrorRingBuffer(int capacity, TimeProvider clock)
 {
     private readonly object _gate = new();
     private readonly Queue<ErrorEntry> _entries = new();
@@ -63,7 +63,7 @@ public sealed class ErrorRingBuffer(int capacity)
 
     public void Record(string path, int status, string message, IReadOnlyList<string>? frames = null)
     {
-        var entry = new ErrorEntry(DateTimeOffset.UtcNow, path, status, message, frames ?? []);
+        var entry = new ErrorEntry(clock.GetUtcNow(), path, status, message, frames ?? []);
         lock (_gate)
         {
             _entries.Enqueue(entry);

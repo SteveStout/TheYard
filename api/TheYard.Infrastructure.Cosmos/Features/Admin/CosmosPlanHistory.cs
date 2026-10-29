@@ -12,7 +12,7 @@ namespace TheYard.Infrastructure.Cosmos.Features.Admin;
 /// document every hour, and the container's own time-to-live as the retention. Like the machines
 /// adapter it calls the container directly, so a write a minute never shows in the store log.
 /// </summary>
-public sealed class CosmosPlanHistory(CosmosStore store) : IPlanHistory
+public sealed class CosmosPlanHistory(CosmosStore store, TimeProvider clock) : IPlanHistory
 {
     private readonly Container _container = store.ContainerNamed(Containers.Plan);
     private PlanHistoryAvailability? _availability;
@@ -69,7 +69,7 @@ public sealed class CosmosPlanHistory(CosmosStore store) : IPlanHistory
             return [];
         }
         // Today's partition and yesterday's, so the hour after midnight still reads a full hour.
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.GetUtcNow();
         var definition = new QueryDefinition("SELECT TOP @count * FROM c WHERE c.kind = 'minute' AND (c.day = @today OR c.day = @yesterday) ORDER BY c.at DESC")
             .WithParameter("@count", count)
             .WithParameter("@today", PlanFolding.DayOf(now))

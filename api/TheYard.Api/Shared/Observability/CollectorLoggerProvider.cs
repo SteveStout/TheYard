@@ -15,7 +15,7 @@ namespace TheYard.Api.Shared.Observability;
 /// event per request. Which store and which request a line belongs to are
 /// read from the current request when there is one.
 /// </summary>
-public sealed class CollectorLoggerProvider(LogCollector collector, Func<(string Store, string Path, string TraceId)> current) : ILoggerProvider
+public sealed class CollectorLoggerProvider(LogCollector collector, TimeProvider clock, Func<(string Store, string Path, string TraceId)> current) : ILoggerProvider
 {
     /// <summary>
     /// The framework category that reports an unhandled exception, taken beside
@@ -35,7 +35,7 @@ public sealed class CollectorLoggerProvider(LogCollector collector, Func<(string
     /// discards everything for any other.
     /// </summary>
     public ILogger CreateLogger(string categoryName) =>
-        Captured(categoryName) ? new CollectorLogger(collector, current, categoryName) : NullLogger.Instance;
+        Captured(categoryName) ? new CollectorLogger(collector, clock, current, categoryName) : NullLogger.Instance;
 
     /// <summary>Nothing to release: the collector belongs to the host, not to this provider.</summary>
     public void Dispose() { }
@@ -45,7 +45,7 @@ public sealed class CollectorLoggerProvider(LogCollector collector, Func<(string
     /// offered to the collector, tagged with the current request's store, path
     /// and trace id.
     /// </summary>
-    private sealed class CollectorLogger(LogCollector collector, Func<(string Store, string Path, string TraceId)> current, string category) : ILogger
+    private sealed class CollectorLogger(LogCollector collector, TimeProvider clock, Func<(string Store, string Path, string TraceId)> current, string category) : ILogger
     {
         /// <summary>Scopes are not recorded, so there is nothing to begin.</summary>
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
@@ -62,7 +62,7 @@ public sealed class CollectorLoggerProvider(LogCollector collector, Func<(string
             }
 
             var (store, path, traceId) = current();
-            collector.Offer(LogEvents.Line(DateTimeOffset.UtcNow, logLevel, category, formatter(state, exception!), exception, store, path, traceId));
+            collector.Offer(LogEvents.Line(clock.GetUtcNow(), logLevel, category, formatter(state, exception!), exception, store, path, traceId));
         }
     }
 }

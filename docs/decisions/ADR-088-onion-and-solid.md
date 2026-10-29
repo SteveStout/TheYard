@@ -161,3 +161,47 @@ Nine types were over at 1.0.4.46, and each was cut by job into types of its own 
 
 Nothing a visitor reads changed: every cut moved bodies whole, the regions the records quote moved with them under the same names (the live fences were repointed), and the full suite passed after each cut. The largest type is now 294 lines (`RequestPipeline`). The test only counts; what a job is stays a judgement, made here one type at a time with the reason in each new file's header.
 
+## Addendum, 2026-10-29: the clock is handed in, and this is why that changed
+
+The "Known trade-offs" above says the server's clock is a static, that endpoints read it through
+`Clocks` and hand it inward, and that "injecting a `TimeProvider` into every handler would add a
+parameter that tests do not need". That was true of the handlers and it is still true of them.
+It stopped being true of everything else.
+
+**What changed is the amount of code that is not a handler.** When that line was written, the
+clock was read by endpoints and passed inward as a value, and the only things holding a time of
+their own were the auction's own windows. Since then the host has grown rings it keeps in memory
+with a time on each entry, two stores' adapters that stamp a row they write, a nightly lane, a
+plan recorder and seven resource cards that each decide which hour they are reading. None of
+those is handed a clock by an endpoint, because none of them is on a request path. They read
+`DateTimeOffset.UtcNow` where they stand, and the count of places doing that went from 46 to 57
+in the fortnight to 29 October (ADR: The numbers that may only fall).
+
+**Two clocks in one codebase is the cost, and the tests are where it is paid.** `TimeProvider`
+was already handed in across 43 files before this version, so the codebase had both shapes at
+once: the half that can be faked and the half that cannot. A reader cannot tell which a class is
+without opening it, and the half that cannot be faked is the half whose behaviour at a day
+boundary, at a daylight-saving change or at an expiry nobody has written down.
+
+**So, from 1.0.4.118:** `DateTime.Now`, `DateTime.UtcNow` and `DateTimeOffset.UtcNow` belong in
+a composition root, which is a `Features/<Slice>/Module.cs`, a file under `Shared/Wiring/`,
+`Program.cs`, or the `Clocks` seam itself. Everything else is handed a `TimeProvider`, by
+constructor, named `clock`, and the real one is `TimeProvider.System` written at the
+registration. `Clocks` keeps its static and its job: it is the auction's clock, read by an
+endpoint and passed inward as a value, which is the shape this record defended and still the
+right one for a request that must not see two different nows.
+
+**What this version did, and what it did not.** The two stores' adapters that stamp a row (the
+reset link's expiry, the orphan claim's age, the two Cosmos history readers' day boundary, the
+relational statement ring, the job hunt Function's tracker rows) and the three things the host
+keeps in memory with a time on them, plus `HostStart`, take their clock by constructor. The
+count went 57 to 45. The rest is named in the next rung's handoff, and three of them cannot be
+done until they are split: `PlanReader`, `TelemetryReader` and `ProofRunner` each take five
+dependencies, and a sixth is the number that says a class has more than one job.
+
+**A parameter is not a seam, and the build says so.** A class with a primary constructor that
+takes a `TimeProvider` and never reads it is `CS9113`, an error here under `-warnaserror`, so
+the laziest version of this change does not compile. What the build cannot see is a class that
+reads the clock it was handed in one place and the real one in another, so `ClockSeamTests`
+moves a clock the test owns and insists the stamp follows it. That case was proved by planting
+exactly that shape and watching it fail.

@@ -151,6 +151,9 @@ public class CosmosStoreTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(store);
+        // The store is activated by Identity's own container here, not handed in by the host's
+        // wiring, so this container is the one that has to say what the clock is.
+        services.AddSingleton(TimeProvider.System);
         services.AddIdentityCore<YardUser>(options =>
         {
             options.Password.RequiredLength = 8;
@@ -235,12 +238,12 @@ public class CosmosStoreTests
 
         // A store with the usual patience leaves it alone: it could be a
         // registration still in flight.
-        var patient = new CosmosUserStore(store);
+        var patient = new CosmosUserStore(store, TimeProvider.System);
         Assert.Null(await patient.FindByEmailAsync(normalized, CancellationToken.None));
         Assert.NotNull(await store.ReadAsync<EmailClaimDocument>(store.Users, claimId, claimId, "pinned to the address"));
 
         // A store that treats any age as old removes it, and the address is free.
-        var impatient = new CosmosUserStore(store, TimeSpan.Zero);
+        var impatient = new CosmosUserStore(store, TimeProvider.System, TimeSpan.Zero);
         Assert.Null(await impatient.FindByEmailAsync(normalized, CancellationToken.None));
         Assert.Null(await store.ReadAsync<EmailClaimDocument>(store.Users, claimId, claimId, "pinned to the address"));
 

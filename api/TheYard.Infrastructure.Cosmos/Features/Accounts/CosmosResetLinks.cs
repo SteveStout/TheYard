@@ -18,7 +18,7 @@ namespace TheYard.Infrastructure.Cosmos.Features.Accounts;
 /// a link is minted on the request path and its three operations are a
 /// point write, a point read and a point delete, each a few request units.</para>
 /// </summary>
-public sealed class CosmosResetLinks(CosmosStore store) : IResetLinks
+public sealed class CosmosResetLinks(CosmosStore store, TimeProvider clock) : IResetLinks
 {
     private readonly Container _container = store.ContainerNamed(Containers.Resets);
 
@@ -29,7 +29,7 @@ public sealed class CosmosResetLinks(CosmosStore store) : IResetLinks
         {
             Id = id,
             Token = token,
-            Expires = DateTimeOffset.UtcNow.Add(lifetime).ToString("O"),
+            Expires = clock.GetUtcNow().Add(lifetime).ToString("O"),
             Ttl = (int)Math.Ceiling(lifetime.TotalSeconds),
         };
         await _container.CreateItemAsync(document, new PartitionKey(id), cancellationToken: cancellation);
@@ -49,7 +49,7 @@ public sealed class CosmosResetLinks(CosmosStore store) : IResetLinks
             // The container's clock expires the document; this is the same
             // rule applied a little sooner, so a link read in the seconds
             // before the store sweeps it is still refused.
-            return DateTimeOffset.TryParse(response.Resource.Expires, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expires) && expires > DateTimeOffset.UtcNow
+            return DateTimeOffset.TryParse(response.Resource.Expires, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expires) && expires > clock.GetUtcNow()
                 ? response.Resource.Token
                 : null;
         }

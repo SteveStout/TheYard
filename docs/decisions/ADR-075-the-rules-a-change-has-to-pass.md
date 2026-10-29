@@ -163,6 +163,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A card's live read that times out is the recorder's gap and the card answers from its keep; only the request's own cancellation stops the read | ADR-102 | CloudTimeoutTests |
 | Every quality number the ratchet file holds has a row in the record that explains what it counts, both workflows run the scanner against that file, the gate's verdict reads its result, and the coverage floor stays at ninety and seventy-five | ADR: The numbers that may only fall | QualityRatchetTests |
 | Every async method in production C# takes a CancellationToken but the one framework override whose signature this codebase does not own; the parameters a declaration takes are read across an attribute's brackets, a tuple's and the lines a wide signature wraps onto; and every timer the job hunt Function runs declares the token Azure hands it and passes it on | ADR: The numbers that may only fall | CancellationTests |
+| Outside a composition root (a slice's Module, the wiring, Program.cs or the Clocks seam) a time is read from a TimeProvider handed in by constructor, and the thing it was handed to uses that clock rather than the real one | ADR: Onion and SOLID, how this codebase holds them | ClockSeamTests |
 
 ## How the table is read
 
@@ -316,3 +317,11 @@ exception is. The same row holds the two things that made the count larger than 
 the scanner reading a declaration's parameters up to the first closing bracket, and a Function timer
 that declares the token and never passes it on (ADR: The numbers that may only fall, the addendum on
 reading a whole signature).
+## Addendum, 2026-10-29: one row for the clock that is handed in
+
+`ADR: Onion and SOLID, how this codebase holds them` defended a static clock until the addendum
+of this date, so until this version there was no rule to put in this table. There is now, and it
+is worth a row for the reason the cancellation row above is: the ratchet's count falls when a
+parameter appears, and the rule is that the parameter is used. The test moves a clock it owns
+rather than reading a signature, because a class that takes a `TimeProvider` and reads
+`DateTimeOffset.UtcNow` anyway satisfies a count and nothing else.

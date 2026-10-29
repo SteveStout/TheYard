@@ -18,7 +18,7 @@ namespace TheYard.Infrastructure.Cosmos.Features.Accounts;
 /// the claim by address and then the account by id; "who am I" is one; a failed
 /// password is one replace. Nothing here queries.</para>
 /// </summary>
-public sealed class CosmosUserStore(CosmosStore store, TimeSpan? orphanAge = null) :
+public sealed class CosmosUserStore(CosmosStore store, TimeProvider clock, TimeSpan? orphanAge = null) :
     IUserStore<YardUser>,
     IUserPasswordStore<YardUser>,
     IUserEmailStore<YardUser>,
@@ -164,7 +164,7 @@ public sealed class CosmosUserStore(CosmosStore store, TimeSpan? orphanAge = nul
 
     private bool IsOrphan(EmailClaimDocument claim) =>
         claim.Timestamp is { } written
-        && DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(written) >= OrphanAge;
+        && clock.GetUtcNow() - DateTimeOffset.FromUnixTimeSeconds(written) >= OrphanAge;
 
     public Task<YardUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken) =>
         FindByEmailAsync(normalizedUserName, cancellationToken);
