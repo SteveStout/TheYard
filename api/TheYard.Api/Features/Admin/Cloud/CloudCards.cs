@@ -32,7 +32,7 @@ public sealed record ResourceCardInputs(
     IReadOnlyDictionary<string, double?>? CostLines = null);
 
 /// <summary>One card under Cloud infrastructure, as the recorder and the reader see it.</summary>
-/// <param name="Key">The card's route and container key: sqldb, cosmosdb, registry, insights, mail, edge, nightly.</param>
+/// <param name="Key">The card's route and container key: sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude or campaign.</param>
 /// <param name="Container">The document store container its minutes are kept in.</param>
 /// <param name="ResourceName">The resource's name on the bill, which its cost line is matched against.</param>
 /// <param name="Readings">The names of the readings it keeps.</param>

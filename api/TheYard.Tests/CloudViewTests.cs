@@ -1,13 +1,14 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using TheYard.Api.Features.Admin.Cloud;
 
 namespace TheYard.Tests;
 
 /// <summary>
-/// The six cards after the plan (ADR: One frame for every resource): every portal link built from
-/// what Azure returned, the resource group's list each card finds its resource in, a Log Analytics
-/// answer read by column, and the one route that serves them, only for the keys the catalogue names.
+/// The cards after the plan (ADR: One frame for every resource): every portal link built from what
+/// Azure returned, the resource group's list each card finds its resource in, a Log Analytics answer
+/// read by column, and the one route that serves them, for every key the catalogue names and no other.
 /// </summary>
 public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> factory)
     : IClassFixture<Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>>
@@ -82,22 +83,41 @@ public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicat
     }
 
 
+    /// <summary>
+    /// Every key the catalogue names, read from the catalogue the host built rather than written out
+    /// here, so a twelfth card cannot be added without a route test; an unknown key is a bare 404 and
+    /// an unknown window is read as the day.
+    /// </summary>
     [Fact]
     [Covers("GET", "/api/admin/cloud/{key}", 200)]
     [Covers("GET", "/api/admin/cloud/{key}", 404)]
-    public async Task The_route_answers_for_the_seven_keys_and_404s_for_any_other()
+    public async Task The_route_answers_for_every_key_the_catalogue_names_and_404s_for_any_other()
     {
         using var client = factory.CreateClient();
-        foreach (string key in new[] { "sqldb", "cosmosdb", "registry", "insights", "mail", "edge", "nightly" })
+        var keys = Catalogue().Select(entry => entry.Card.Key).ToList();
+        Assert.NotEmpty(keys);
+        foreach (string key in keys)
         {
             var response = await client.GetAsync($"/api/admin/cloud/{key}?window=24h");
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             Assert.False(body.RootElement.GetProperty("available").GetBoolean());
             Assert.Equal(JsonValueKind.Array, body.RootElement.GetProperty("rows").ValueKind);
+            Assert.Equal("24h", body.RootElement.GetProperty("window").GetString());
+        }
+        // A window no card keeps is read as the day, on every key rather than one.
+        foreach (string key in keys)
+        {
+            using var unknown = JsonDocument.Parse(await client.GetStringAsync($"/api/admin/cloud/{key}?window=nonsense"));
+            Assert.Equal("24h", unknown.RootElement.GetProperty("window").GetString());
         }
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/admin/cloud/plan")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/admin/cloud/nosuchcard")).StatusCode);
     }
+
+    /// <summary>The cards the host built, so a test holds the build's own number and not a number written down.</summary>
+    private IReadOnlyList<(ResourceCard Card, IResourceHistory History)> Catalogue() =>
+        factory.Services.GetRequiredService<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>();
     [Fact]
     public void Every_metric_a_card_asks_for_is_one_its_resource_reports()
     {

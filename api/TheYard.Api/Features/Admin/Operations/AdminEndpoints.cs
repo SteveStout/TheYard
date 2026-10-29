@@ -121,7 +121,10 @@ public static class AdminEndpoints
         // #endregion stores-endpoints
         #endregion admin-observability-endpoints
 
-        app.MapGet("/api/admin/azure", AdminObservabilityRoutes.Azure);
+        // It declares the one status it answers, so rule 7 holds an integration case to it
+        // (ADR: The rules a change has to pass, rule 7); the body is the handler's own reading.
+        app.MapGet("/api/admin/azure", AdminObservabilityRoutes.Azure)
+            .Produces(StatusCodes.Status200OK);
 
         // #region peer-endpoint
         // A peer container's metrics, read server side with a short patience, where one is
@@ -162,7 +165,8 @@ public static class AdminEndpoints
         app.MapGet("/api/admin/machines", AdminObservabilityRoutes.Machines)
             .WithName("GetMachines")
             .WithTags("Admin")
-            .WithSummary("What the container and the two stores are doing, each as that machine reports itself, over the last hour or a kept window of 24h, 7d or 30d");
+            .WithSummary("What the container and the two stores are doing, each as that machine reports itself, over the last hour or a kept window of 24h, 7d or 30d")
+            .Produces(StatusCodes.Status200OK);
         // #endregion machines-endpoint
 
         // #region follows-endpoint
@@ -172,7 +176,8 @@ public static class AdminEndpoints
         app.MapGet("/api/admin/follows", AdminFollowsRoutes.Follows)
             .WithName("GetFollows")
             .WithTags("Admin")
-            .WithSummary("The processor and memory against requests a minute over the last hour or a kept window of 24h, 7d or 30d, and whether memory climbed while traffic stayed flat");
+            .WithSummary("The processor and memory against requests a minute over the last hour or a kept window of 24h, 7d or 30d, and whether memory climbed while traffic stayed flat")
+            .Produces(StatusCodes.Status200OK);
         // #endregion follows-endpoint
 
         // #region page-status-endpoints

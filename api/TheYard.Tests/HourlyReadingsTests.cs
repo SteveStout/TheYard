@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
@@ -43,12 +43,23 @@ public class HourlyReadingsTests(WebApplicationFactory<Program> factory)
         Assert.Null(await StorageStats.ReadAsync(null, CancellationToken.None));
     }
 
+    /// <summary>
+    /// The route declares the one status it answers, so rule 7 holds this case to it: the 200 asserted
+    /// here and not inferred from a body that parsed (ADR-075 rule 7, the addendum of 1.0.4.113).
+    /// </summary>
     [Fact]
+    [Covers("GET", "/api/admin/azure", 200)]
     public async Task The_azure_answer_carries_the_hourly_readings()
     {
-        var azure = await factory.CreateClient().GetFromJsonAsync<JsonElement>("/api/admin/azure");
+        using var client = factory.CreateClient();
 
-        Assert.True(azure.TryGetProperty("hourly", out _));
+        var response = await client.GetAsync("/api/admin/azure");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(body.RootElement.TryGetProperty("hourly", out _));
+        // Off Azure the card says so rather than failing: available is false and the note says why.
+        Assert.False(body.RootElement.GetProperty("available").GetBoolean());
     }
     // #endregion hourly-readings-tests
 }

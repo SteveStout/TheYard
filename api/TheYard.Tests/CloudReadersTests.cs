@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api.Features.Admin.Cloud;
+using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Tests;
 
@@ -27,6 +28,14 @@ internal sealed class RecordedCloud : HttpMessageHandler
     public const string Workspace = Group + "/providers/Microsoft.OperationalInsights/workspaces/log-theyard-ss";
     public const string Mail = Group + "/providers/Microsoft.Communication/CommunicationServices/acs-theyard-ss";
     public const string Domain = Mail + "/domains/AzureManagedDomain";
+
+    /// <summary>The job hunt's own resource group, which the nightly Function and the storage account live in.</summary>
+    public const string JobHunt = "/subscriptions/sub-1/resourceGroups/RG-JOBHUNT-SS";
+    public const string Storage = JobHunt + "/providers/Microsoft.Storage/storageAccounts/stjobhuntss";
+    public const string FunctionPlan = JobHunt + "/providers/Microsoft.Web/serverfarms/plan-jobhunt-ss";
+    public const string FunctionApp = JobHunt + "/providers/Microsoft.Web/sites/func-jobhunt-ss";
+    public const string FunctionHost = "func-jobhunt-ss.azurewebsites.net";
+    public const string ShareOfAccount = Storage + "/fileServices/default/shares/jobhunt";
 
     /// <summary>A metric Azure refuses by name with a 400 at every grain but five minutes, the way AppConnections and FileSystemUsage were refused.</summary>
     public string? Refused { get; init; }
@@ -54,6 +63,9 @@ internal sealed class RecordedCloud : HttpMessageHandler
             "management.azure.com" => request.Method == HttpMethod.Post ? Query(body) : Arm(uri),
             "crtheyard.azurecr.io" => Registry_(uri),
             "api.netlify.com" => Netlify(uri),
+            "api.github.com" => Json(Workflow),
+            FunctionHost => Json(new { merger = new { ok = true, written = 9, read = 42, at = "2026-10-18T20:55:00Z" }, switches = new { EMAIL_CAMPAIGN = "off" } }),
+            "stjobhuntss.blob.core.windows.net" => Listing(uri),
             "stevenstout.biz" => JustPurged ? Purged(uri, Asked.Count(a => a == uri.ToString())) : Edge(uri),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
@@ -128,8 +140,58 @@ internal sealed class RecordedCloud : HttpMessageHandler
             Workspace => Json(new { properties = new { workspaceCapping = new { dailyQuotaGb = -1 }, retentionInDays = 30 } }),
             Mail => Json(new { properties = new { dataLocation = "United States", linkedDomains = new[] { Domain } } }),
             Domain => Json(new { name = "AzureManagedDomain", properties = new { domainManagement = "AzureManaged", mailFromSenderDomain = "ae4d.azurecomm.net" } }),
+            // #region job-hunt-group
+            // The job hunt's group, as its own directory lists it: the Function the nightly card reads
+            // and the storage account the share and blob cards read, each with the records those cards
+            // make their facts from. Added by R3 (1.0.4.113), where five cards had no reader test.
+            JobHunt + "/resources" => Json(new
+            {
+                value = new object[]
+                {
+                    new { id = Storage, name = "stjobhuntss", type = StorageSource.AccountType },
+                    new { id = FunctionApp, name = "func-jobhunt-ss", type = NightlySource.SiteType },
+                    new { id = FunctionPlan, name = "plan-jobhunt-ss", type = "Microsoft.Web/serverfarms" },
+                },
+            }),
+            Storage => Json(new { name = "stjobhuntss", sku = new { name = "Standard_LRS" }, location = "westus3", properties = new { accessTier = "Hot", allowBlobPublicAccess = false } }),
+            ShareOfAccount => Json(new { name = "jobhunt", properties = new { accessTier = "TransactionOptimized", shareQuota = 100, shareUsageBytes = 29_000_000_000L } }),
+            JobHunt + "/providers/Microsoft.Insights/metricAlerts/alert-jobhunt-share-transactions" =>
+                Json(new { properties = new { enabled = true, criteria = new { allOf = new[] { new { threshold = 20_000 } } } } }),
+            Storage + "/fileServices/default/providers/Microsoft.Insights/diagnosticSettings" => Json(new { value = new[] { new { name = "to-log-analytics" } } }),
+            Storage + "/blobServices/default/containers" => Json(new
+            {
+                value = new object[]
+                {
+                    new { name = "blog", properties = new { publicAccess = "None", metadata = new { purpose = "pictures" } } },
+                    new { name = "resumes", properties = new { publicAccess = "None" } },
+                },
+            }),
+            Storage + "/managementPolicies/default" => Json(new { properties = new { policy = new { rules = new[] { new { name = "cool-after-30" } } } } }),
+            Storage + "/fileServices/default/shares" => Json(new { value = new object[] { new { name = "jobhunt", properties = new { shareQuota = 100, snapshot = (string?)null } } } }),
+            FunctionApp => Json(new { kind = "functionapp,linux", location = "westus3", properties = new { state = "Running", defaultHostName = FunctionHost, serverFarmId = FunctionPlan, lastModifiedTimeUtc = "2026-10-18T19:00:00Z" } }),
+            FunctionPlan => Json(new { sku = new { name = "Y1", capacity = 0 }, location = "westus3", kind = "functionapp" }),
+            // #endregion job-hunt-group
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
+    }
+
+    /// <summary>The workflow's runs as GitHub answers them, the two the nightly card's run reader folds in.</summary>
+    private static readonly object Workflow = new
+    {
+        workflow_runs = new object[]
+        {
+            new { id = 21, run_number = 21, @event = "repository_dispatch", display_title = "nightly", status = "completed", conclusion = "success", created_at = "2026-10-18T09:00:02Z", run_started_at = "2026-10-18T09:00:05Z", updated_at = "2026-10-18T09:04:05Z" },
+            new { id = 22, run_number = 22, @event = "repository_dispatch", display_title = "bookkeeping", status = "completed", conclusion = "success", created_at = "2026-10-18T13:00:02Z", run_started_at = "2026-10-18T13:00:05Z", updated_at = "2026-10-18T13:03:05Z" },
+        },
+    };
+
+    /// <summary>The blob service's own listing, in the XML it answers with; a container nothing lists answers empty.</summary>
+    private static HttpResponseMessage Listing(Uri uri)
+    {
+        string xml = uri.AbsolutePath.Contains("blog", StringComparison.Ordinal)
+            ? """<?xml version="1.0" encoding="utf-8"?><EnumerationResults><Blobs><Blob><Name>a.webp</Name><Properties><Last-Modified>Sun, 18 Oct 2026 14:12:00 GMT</Last-Modified><Content-Length>212000</Content-Length></Properties></Blob><Blob><Name>b.webp</Name><Properties><Last-Modified>Sun, 18 Oct 2026 14:13:00 GMT</Last-Modified><Content-Length>198000</Content-Length></Properties></Blob></Blobs></EnumerationResults>"""
+            : """<?xml version="1.0" encoding="utf-8"?><EnumerationResults><Blobs></Blobs></EnumerationResults>""";
+        return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(xml, Encoding.UTF8, "application/xml") };
     }
 
     /// <summary>
@@ -156,15 +218,30 @@ internal sealed class RecordedCloud : HttpMessageHandler
             points.Add(new { timeStamp = at.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture), average = 20.0 + i, total = 120.0 + i, maximum = 30.0 + i, count = 3.0 + i });
         }
         points.Add(new { timeStamp = span[1].ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture) });
+        // A filter on a dimension splits the answer into one series a value, each naming the value it
+        // is; the share card's API and authentication tables are read from exactly that shape.
+        string? dimension = parts.TryGetValue("$filter", out var where) && where.Contains("eq", StringComparison.Ordinal)
+            ? where.Split(' ')[0].ToLowerInvariant()
+            : null;
         return Json(new
         {
             value = names.Select(name => new
             {
                 name = new { value = name },
-                timeseries = name == "Http5xx" ? Array.Empty<object>() : new object[] { new { data = points } },
+                timeseries = name == "Http5xx" ? Array.Empty<object>()
+                    : dimension is null ? new object[] { new { data = points } }
+                    : [.. Split(dimension).Select(value => new { metadatavalues = new[] { new { name = new { value = dimension }, value } }, data = points })],
             }),
         });
     }
+
+    /// <summary>The values a dimension splits into, as the share's own metric answers them.</summary>
+    private static string[] Split(string dimension) => dimension switch
+    {
+        "apiname" => ["ListFiles", "CreateDirectory"],
+        "authentication" => ["AccountKey", "SAS"],
+        _ => ["?"],
+    };
 
     private HttpResponseMessage Query(string body)
     {
@@ -255,9 +332,11 @@ internal sealed class RecordedCloud : HttpMessageHandler
 // #endregion recorded-cloud
 
 /// <summary>
-/// Holds the readers behind the plan card and the six resource cards against Azure's and
-/// Netlify's recorded answers (ADR: One frame for every resource): what each one asks for, what
-/// it makes of the answer, and what it does when a service refuses part of it.
+/// Holds the readers behind the plan card and every resource card the catalogue names against
+/// Azure's, Netlify's, GitHub's and the blob service's recorded answers (ADR: One frame for every
+/// resource, and ADR-075 row 115): what each one asks for, what it makes of the answer, and what it
+/// does when a service refuses part of it. Until 1.0.4.113 only six cards were held here, so a
+/// reader change to share, blob, nightly, claude or campaign could only be caught on the live site.
 /// </summary>
 public sealed class CloudReadersTests
 {
@@ -330,15 +409,168 @@ public sealed class CloudReadersTests
     // #endregion plan-reader
 
     // #region resource-cards
+    /// <summary>The job hunt's names as the Nightly section of appsettings.json gives them.</summary>
+    private static readonly NightlyResources Nightly = new("RG-JOBHUNT-SS", "func-jobhunt-ss", "plan-jobhunt-ss", "stjobhuntss", "SteveStout/TheYard", "nightly.yml");
+
+    /// <summary>Four usage documents today, so the Claude card's minute counts something.</summary>
+    private static readonly IReadOnlyList<UsageRecord> Usage =
+    [
+        new("Nightly", UsageKind.Plan, "claude-opus-5-5", 98, 152_435, 5_264_192, 31_920, 536_000, 2.91m, "run-1", "08:00", "bookkeeping", DateTimeOffset.UtcNow.AddMinutes(-40)),
+        new("Nightly", UsageKind.Plan, "claude-opus-5-5", 136, 163_711, 7_966_901, 40_200, 616_000, 4.08m, "run-2", "04:00", "reply", DateTimeOffset.UtcNow.AddMinutes(-30)),
+        new("Nightly", UsageKind.Plan, "claude-sonnet-5-5", 32, 65_992, 663_544, 9_474, 151_000, 0.43m, "run-3", "12:00", "bookkeeping", DateTimeOffset.UtcNow.AddMinutes(-20)),
+        new("Personal", UsageKind.Plan, "claude-opus-5-5", 72, 117_309, 2_935_391, 20_626, 322_000, 1.94m, "run-4", null, "bookkeeping", DateTimeOffset.UtcNow.AddMinutes(-10)),
+    ];
+
+    /// <summary>The campaign's card schema as one read of it answers: two days, the leads and one Sunday row.</summary>
+    private static CampaignCountsRead CampaignRead() => new(true, null,
+        [new CampaignDay(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)), 0, 9, 0, 0), new CampaignDay(DateOnly.FromDateTime(DateTime.UtcNow), 0, 6, 0, 0)],
+        new CampaignLeadCounts(12, 4, 8, 1, 0, 0, 15, 1, 9, null, DateTimeOffset.UtcNow.AddHours(-2), null, null),
+        [new CampaignWeekRow("B v1", "Sunday", "B", "ai", 3, 1)]);
+
+    /// <summary>The usage log filled, in memory, so the Claude card reads documents rather than nothing.</summary>
+    private static MemoryUsageLog UsageLog()
+    {
+        var log = new MemoryUsageLog("no document store in the test");
+        foreach (var record in Usage)
+        {
+            // In memory under a lock, so this completes before it is awaited; nothing here reaches a network.
+            log.UpsertAsync(record, CancellationToken.None).GetAwaiter().GetResult();
+        }
+        return log;
+    }
+
+    /// <summary>The campaign's reads over a hand-written port, as the host builds them.</summary>
+    private sealed class Counts(CampaignCountsRead read) : ICampaignCounts
+    {
+        public Task<CampaignCountsRead> ReadAsync(CancellationToken cancellation) => Task.FromResult(read);
+    }
+
+    /// <summary>
+    /// Every card the catalogue names, over the recorded answers: the six that read the site's own group,
+    /// the share and blob cards over the job hunt's storage account, the nightly card over the Function and
+    /// GitHub, the Claude card over a usage log in memory, and the campaign card over its card schema.
+    /// </summary>
     private static (CloudReader Reader, CloudRecorder Recorder, IReadOnlyList<(ResourceCard Card, IResourceHistory History)> Cards) Cards(NetlifyEdge? edge = null)
     {
         var azure = new AzureMetrics("client-1", configured: true);
         var directory = new ResourceDirectory(azure, RecordedCloud.Group, TimeProvider.System);
-        var cards = ResourceCatalog.Cards(azure, directory, edge ?? new NetlifyEdge("netlify-token", "theyard-edge", new Uri("https://stevenstout.biz")), (7, "StandingPerVehicle"), Names)
+        var jobHunt = new ResourceDirectory(azure, RecordedCloud.JobHunt, TimeProvider.System);
+        var runLog = new MemoryNightlyRunLog("no document store in the test");
+        var nightly = new NightlySource(azure, jobHunt, Nightly,
+            new NightlyRunReader(new GitHubRuns(Nightly.Repo, Nightly.Workflow), runLog, new NightlyRunCache(), TimeProvider.System),
+            runLog, RecordedCloud.FunctionApp);
+        var claude = new ClaudeSource(UsageLog(), TimeProvider.System);
+        var storage = new StorageSource(azure, jobHunt, Nightly, new CostsInMemory(), new BlobListing("client-1", configured: true));
+        var campaign = new CampaignSource(new Counts(CampaignRead()), _ => Task.FromResult<string?>(RecordedCloud.FunctionHost), _ => Task.FromResult<(string, string?)?>((RecordedCloud.Sql, "tenant-1")), "campaign-db");
+        var cards = ResourceCatalog.Cards(azure, directory, edge ?? new NetlifyEdge("netlify-token", "theyard-edge", new Uri("https://stevenstout.biz")), (7, "StandingPerVehicle"), Names,
+                sqlSite: null, nightly: nightly, planHour: null, claude: claude, storage: storage, blobLines: new BlobLines(1_000_000_000, 1_800_000_000, 24_000), campaign: campaign)
             .Select(card => (card, (IResourceHistory)new MemoryResourceHistory("no document store in the test")))
             .ToList();
         var recorder = new CloudRecorder(cards, Build, TimeProvider.System, NullLogger<CloudRecorder>.Instance);
         return (new CloudReader(cards, recorder, (_, _) => Task.FromResult<double?>(1.5), TimeProvider.System), recorder, cards);
+    }
+
+    /// <summary>The catalogue built here holds every key the host's does, so a card added is a card held.</summary>
+    [Fact]
+    public void The_recorded_catalogue_holds_every_card_the_rail_draws()
+    {
+        var (_, _, cards) = Cards();
+
+        Assert.Equal(
+            ["sqldb", "cosmosdb", "registry", "insights", "share", "blob", "mail", "edge", "nightly", "claude", "campaign"],
+            cards.Select(entry => entry.Card.Key));
+    }
+
+    /// <summary>
+    /// The five cards that had no reader test until R3 (1.0.4.113): the share and the blob service over
+    /// the job hunt's storage account, the Function over its own group and GitHub, the Claude card over a
+    /// usage log, and the campaign over its card schema. Each reads a recorded answer and makes a fact of
+    /// it, so a reader change that breaks one of these cards is red here and not on the live site.
+    /// </summary>
+    [Theory]
+    [InlineData("share", "The job-hunt share", "100 GB quota", "of 20,000")]
+    [InlineData("blob", "The blob service", "Blob storage on stjobhuntss", "410 KB in 2 blobs")]
+    [InlineData("nightly", "The Nightly Function", "FLEX CONSUMPTION WESTUS3", "#22, bookkeeping")]
+    [InlineData("claude", "Claude usage", "2 LANES", "4 runs, 102,220 tokens out")]
+    [InlineData("campaign", "The email campaign", "Azure SQL Basic", "9 of 10")]
+    public async Task Each_card_left_out_of_the_recorded_answers_reads_its_own_source_and_answers_in_the_frame(string key, string title, string expected, string alsoExpected)
+    {
+        using var route = OutboundHttp.RouteTo(new RecordedCloud());
+        var (reader, _, _) = Cards();
+
+        var report = await reader.ReadAsync(key, "24h", CancellationToken.None);
+        string text = Text(report);
+
+        Assert.True(reader.Knows(key));
+        Assert.True(report.Available, $"{key} answered unavailable: {report.Note}");
+        Assert.Equal(title, report.Title);
+        Assert.NotEmpty(report.Rows);
+        Assert.Equal(2, report.Dials.Count);
+        Assert.Contains(expected, text, StringComparison.Ordinal);
+        Assert.Contains(alsoExpected, text, StringComparison.Ordinal);
+        // Nothing the card draws is a swallowed exception: a row that could not be read says so in words.
+        Assert.DoesNotContain("Exception", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The Claude card's source apart from the card (it was held only at view level before 1.0.4.113):
+    /// the minute counts today's runs and tokens out from the log and leaves a dry run out, and the hour
+    /// says where the documents are kept and how many the read found.
+    /// </summary>
+    [Fact]
+    public async Task The_claude_source_counts_today_s_runs_a_minute_and_says_where_the_documents_are_an_hour()
+    {
+        var now = new DateTimeOffset(2026, 10, 22, 18, 0, 0, TimeSpan.Zero);
+        var log = new MemoryUsageLog("kept in the test");
+        var central = new DateTimeOffset(2026, 10, 22, 9, 0, 0, TimeSpan.FromHours(-5));
+        await log.UpsertAsync(new UsageRecord("Nightly", UsageKind.Plan, "claude-opus-5-5", 90, 1_000, 2_000, 30_000, 500_000, 2.5m, "today-1", "08:00", "bookkeeping", central), CancellationToken.None);
+        await log.UpsertAsync(new UsageRecord("Nightly", UsageKind.Plan, "claude-opus-5-5", 90, 1_000, 2_000, 7_000, 100_000, 0.5m, "today-dry", "08:00", "bookkeeping-dry", central.AddMinutes(10)), CancellationToken.None);
+        await log.UpsertAsync(new UsageRecord("Nightly", UsageKind.Plan, "claude-opus-5-5", 90, 1_000, 2_000, 11_000, 200_000, 1m, "yesterday", "08:00", "bookkeeping", central.AddDays(-1)), CancellationToken.None);
+        var source = new ClaudeSource(log, new AtTime(now));
+
+        var minute = (await source.MinutesAsync(now.AddMinutes(-1), now, "1.0.4.113", CancellationToken.None)).Single();
+        var hour = await source.HourAsync(now, now.AddHours(-1), CancellationToken.None);
+
+        // Today's one counted run: the dry run of the same day is left out, and yesterday's is not today.
+        Assert.Equal(1d, minute.Values[ClaudeSource.RunsToday]);
+        Assert.Equal(30_000d, minute.Values[ClaudeSource.TokensOutToday]);
+        Assert.Equal("1.0.4.113", minute.Version);
+        Assert.Equal(now.AddSeconds(-now.Second), minute.At);
+        // The hour says where they are kept and how many the last read found, the whole thirty days.
+        Assert.Equal("kept in the test", hour.Facts["usage"]);
+        Assert.Equal("3", hour.Facts["documents"]);
+        Assert.Equal(3, source.Records.Count);
+        Assert.Equal("kept in the test", source.Said);
+    }
+
+    /// <summary>A log that cannot be read is a sentence on the card, never an exception.</summary>
+    [Fact]
+    public async Task A_usage_log_that_cannot_be_read_says_so_and_keeps_no_minute()
+    {
+        var source = new ClaudeSource(new NoLog(), new AtTime(new DateTimeOffset(2026, 10, 22, 18, 0, 0, TimeSpan.Zero)));
+
+        var hour = await source.HourAsync(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddHours(-1), CancellationToken.None);
+
+        Assert.Equal("not read: the document store is not configured here", hour.Facts["usage"]);
+        Assert.Equal("0", hour.Facts["documents"]);
+        Assert.Empty(source.Records);
+    }
+
+    /// <summary>A usage log that answers unavailable with a reason, the way a site with no document store does.</summary>
+    private sealed class NoLog : IUsageLog
+    {
+        public Task<PlanHistoryAvailability> AvailabilityAsync(CancellationToken cancellation) =>
+            Task.FromResult(new PlanHistoryAvailability(false, "the document store is not configured here"));
+
+        public Task UpsertAsync(UsageRecord record, CancellationToken cancellation) => throw new InvalidOperationException("a log that cannot be read is never written");
+
+        public Task<IReadOnlyList<UsageRecord>> SinceAsync(DateTimeOffset since, CancellationToken cancellation) => Task.FromResult<IReadOnlyList<UsageRecord>>([]);
+    }
+
+    /// <summary>A clock stopped at one moment, so "today" is the same day on every machine.</summary>
+    private sealed class AtTime(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     [Fact]

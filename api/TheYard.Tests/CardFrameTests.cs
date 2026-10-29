@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using TheYard.Api.Features.Admin.Cloud;
 
 namespace TheYard.Tests;
 
@@ -72,12 +74,19 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
         Assert.Equal(CardFrame.RefreshSeconds * 1000, int.Parse(match.Groups[1].Value.Replace("_", "", StringComparison.Ordinal), System.Globalization.CultureInfo.InvariantCulture));
     }
 
+    /// <summary>
+    /// Every card the catalogue names and the plan beside them, read from the catalogue the host built
+    /// rather than a list written out here, so share, blob and campaign are held with the rest and a
+    /// twelfth card cannot be added without answering the same slots (ADR-075 row 139).
+    /// </summary>
     [Fact]
     public async Task Every_card_answers_the_same_slots_and_every_line_and_row_names_its_source()
     {
         using var client = factory.CreateClient();
         string[] slots = ["title", "resource", "tone", "spec", "spec_source", "headline", "dials", "sparks", "thresholds", "chart", "rows", "readout", "as_of_ms", "read_age_seconds", "refresh_seconds"];
-        foreach (string route in new[] { "/api/admin/plan", "/api/admin/cloud/sqldb", "/api/admin/cloud/cosmosdb", "/api/admin/cloud/registry", "/api/admin/cloud/insights", "/api/admin/cloud/mail", "/api/admin/cloud/edge", "/api/admin/cloud/nightly", "/api/admin/cloud/claude" })
+        var cards = factory.Services.GetRequiredService<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>();
+        Assert.NotEmpty(cards);
+        foreach (string route in (string[])["/api/admin/plan", .. cards.Select(entry => $"/api/admin/cloud/{entry.Card.Key}")])
         {
             using var card = JsonDocument.Parse(await client.GetStringAsync(route));
             var root = card.RootElement;

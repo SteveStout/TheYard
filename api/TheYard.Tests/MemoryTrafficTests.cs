@@ -115,6 +115,7 @@ public class MemoryTrafficTests(WebApplicationFactory<Program> factory)
     [InlineData("1h", "1h")]
     [InlineData("24h", "24h")]
     [InlineData("nonsense", "1h")]
+    [Covers("GET", "/api/admin/follows", 200)]
     public async Task The_endpoint_answers_the_window_its_points_and_a_verdict(string asked, string answered)
     {
         using var client = factory.CreateClient();

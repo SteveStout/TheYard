@@ -10,8 +10,8 @@ namespace TheYard.Application.Features.Admin.Cloud;
 /// <summary>Port: the resource cards, each by its key, built from what is kept.</summary>
 public interface ICloudCards
 {
-    /// <summary>Whether a card by this key exists.</summary>
-    /// <param name="key">sqldb, cosmosdb, registry, insights, mail, edge or nightly.</param>
+    /// <summary>Whether a card by this key exists. The keys below are the catalogue's own, held to it by a test rather than kept by hand.</summary>
+    /// <param name="key">sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude or campaign.</param>
     bool Knows(string key);
 
     /// <summary>The card's report for the window.</summary>

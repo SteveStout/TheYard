@@ -17,7 +17,7 @@ public static class CloudEndpoints
         app.MapGet("/api/admin/cloud/{key}", Card)
             .WithName("GetResourceCard")
             .WithTags("Admin")
-            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, mail, edge or nightly, for 24h, 7d or 30d");
+            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude or campaign, for 24h, 7d or 30d");
         // #endregion resource-endpoint
         // #region process-runs-endpoint
         // Public like the card: a run's when, how long, what it came to and its counts, nothing the card and

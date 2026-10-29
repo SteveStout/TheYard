@@ -3,7 +3,7 @@ using TheYard.Application.Features.Admin.Cloud;
 namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>
-/// The eight resource cards under Cloud infrastructure (ADR: One frame for every resource): one
+/// The eleven resource cards under Cloud infrastructure (ADR: One frame for every resource): one
 /// reader of Azure Monitor, one of Netlify and one of GitHub, the resource groups' lists each card
 /// finds its resource in (the nightly Function's group is its own, ADR: The Nightly Function on the
 /// Admin tab), a keep per card, the nightly run log and its cache, the one recorder, the one cached reader the endpoint answers from,

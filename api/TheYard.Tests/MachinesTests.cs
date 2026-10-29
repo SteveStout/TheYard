@@ -148,6 +148,7 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
     /// developer's machine.
     /// </summary>
     [Fact]
+    [Covers("GET", "/api/admin/machines", 200)]
     public async Task The_endpoint_answers_with_the_container_and_both_stores()
     {
         using var client = factory.CreateClient();
@@ -175,6 +176,31 @@ public class MachinesTests(WebApplicationFactory<Program> factory)
         Assert.Equal(DocumentLoad.FreeRequestUnitsPerSecond, allowance.GetInt32());
         // The ring's total always travels with the stretch it covers, null while it holds nothing.
         Assert.True(document.TryGetProperty("span_minutes", out _));
+    }
+
+    /// <summary>
+    /// A window no store keeps is read as the hour, the way the follows route reads one: the hour comes
+    /// from the sampler's own ring, so the answer says kept false and names the hour rather than
+    /// refusing the request (MachineWindows.Parse, R3 of 1.0.4.113).
+    /// </summary>
+    [Theory]
+    [InlineData("24h", "24h", true)]
+    [InlineData("1h", "1h", false)]
+    [InlineData("nonsense", "1h", false)]
+    [InlineData("", "1h", false)]
+    [Covers("GET", "/api/admin/machines", 200)]
+    public async Task The_endpoint_reads_a_window_it_keeps_and_an_unknown_one_as_the_hour(string asked, string answered, bool kept)
+    {
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/admin/machines?window={asked}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var history = body.RootElement.GetProperty("history");
+        Assert.Equal(answered, history.GetProperty("window").GetString());
+        Assert.Equal(kept, history.GetProperty("kept").GetBoolean());
+        Assert.Equal(MachineWindows.Names, body.RootElement.GetProperty("windows").EnumerateArray().Select(name => name.GetString()!).ToList());
     }
 
     // #region traffic-minutes
