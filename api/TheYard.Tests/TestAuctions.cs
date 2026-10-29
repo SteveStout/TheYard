@@ -30,12 +30,12 @@ internal static class TestAuctions
 
     private sealed class FakeVehicles(Vehicle[] vehicles) : IVehicleSource
     {
-        public Task<IReadOnlyList<Vehicle>> LoadAsync() => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
+        public Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation) => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
     }
 
     private sealed class FakePhotos : IPhotoManifestSource
     {
-        public Task<IReadOnlyList<PhotoEntry>> LoadAsync() => Task.FromResult<IReadOnlyList<PhotoEntry>>([]);
+        public Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation) => Task.FromResult<IReadOnlyList<PhotoEntry>>([]);
     }
 }
 
@@ -52,22 +52,22 @@ internal sealed record TestAuction(Stock Inventory, BidBook Bids, Room Room)
     /// <summary>The vehicles as every query reads them.</summary>
     internal StandingReader Standings => new(Inventory, Bids, Room);
 
-    internal Task<StandingVehicle?> FindAsync(string vehicleId) => Standings.FindAsync(vehicleId);
+    internal Task<StandingVehicle?> FindAsync(string vehicleId) => Standings.FindAsync(vehicleId, CancellationToken.None);
 
     internal Task<StandingPage> SearchAsync(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset) =>
-        Standings.SearchAsync(filter, clock, sort, limit, offset);
+        Standings.SearchAsync(filter, clock, sort, limit, offset, CancellationToken.None);
 
     internal Task<BidOutcome> PlaceBidAsync(StandingVehicle vehicle, int amount, AuctionClock clock, string userId) =>
-        Bids.PlaceBidAsync(vehicle.Vehicle, amount, clock, userId);
+        Bids.PlaceBidAsync(vehicle.Vehicle, amount, clock, userId, CancellationToken.None);
 
     internal Task<BidOutcome> BuyNowAsync(StandingVehicle vehicle, AuctionClock clock, string userId) =>
-        Bids.BuyNowAsync(vehicle.Vehicle, clock, userId);
+        Bids.BuyNowAsync(vehicle.Vehicle, clock, userId, CancellationToken.None);
 
     internal Task ResetAsync(string userId) => new ResetBidsHandler(Bids, Room).HandleAsync(new ResetBidsCommand(userId), CancellationToken.None);
 
-    internal Task<IReadOnlyList<string>> RoomRoundAsync(AuctionClock clock) => RoomRoundHandler.RoundAsync(Bids, Inventory, Room, clock);
+    internal Task<IReadOnlyList<string>> RoomRoundAsync(AuctionClock clock) => RoomRoundHandler.RoundAsync(Bids, Inventory, Room, clock, CancellationToken.None);
 
     internal IReadOnlyDictionary<string, BidView> BidsOf(string userId) => Standings.BidsOf(userId);
 
-    internal Task<BidHistory> HistoryOfAsync(string userId) => Standings.HistoryOfAsync(userId);
+    internal Task<BidHistory> HistoryOfAsync(string userId) => Standings.HistoryOfAsync(userId, CancellationToken.None);
 }

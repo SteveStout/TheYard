@@ -91,9 +91,9 @@ public sealed partial class Stock : IStockReader
         _imagePathPrefix = imagePathPrefix;
     }
 
-    private async Task<(Warmed Warm, IVehicleCatalogue Catalogue)> ReadyAsync()
+    private async Task<(Warmed Warm, IVehicleCatalogue Catalogue)> ReadyAsync(CancellationToken cancellation)
     {
-        var warm = await WarmTask();
+        var warm = await WarmTask(cancellation);
         return (warm, _source.Active!);
     }
 
@@ -103,7 +103,7 @@ public sealed partial class Stock : IStockReader
     /// back by reference, because they cannot change after the fill and walking the catalogue for
     /// them on every request is the cost ADR: The search index took out (its addendum).
     /// </summary>
-    public async Task<InventoryFacets> FacetsAsync() => (await WarmTask()).Facets;
+    public async Task<InventoryFacets> FacetsAsync(CancellationToken cancellation) => (await WarmTask(cancellation)).Facets;
     // #endregion facets
 
     /// <summary>A vehicle as it leaves: its gallery photos in place of the dataset's, then at the price it stands at.</summary>

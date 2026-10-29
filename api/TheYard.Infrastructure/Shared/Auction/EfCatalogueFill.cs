@@ -27,12 +27,12 @@ public static class EfCatalogueFill
     /// </summary>
     /// <param name="contexts">A context per operation.</param>
     /// <param name="batch">The rows to store.</param>
-    internal static async Task FillFileAsync(IDbContextFactory<YardDbContext> contexts, IReadOnlyList<CatalogueEntry> batch)
+    internal static async Task FillFileAsync(IDbContextFactory<YardDbContext> contexts, IReadOnlyList<CatalogueEntry> batch, CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
         var connection = db.Database.GetDbConnection();
-        await connection.OpenAsync();
-        await using var transaction = await connection.BeginTransactionAsync();
+        await connection.OpenAsync(cancellation);
+        await using var transaction = await connection.BeginTransactionAsync(cancellation);
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = $"INSERT OR IGNORE INTO \"Catalogue\" ({string.Join(", ", Columns.Select(c => $"\"{c}\""))}) "
@@ -59,30 +59,30 @@ public static class EfCatalogueFill
             {
                 parameters[i].Value = values[i] ?? DBNull.Value;
             }
-            await command.ExecuteNonQueryAsync();
+            await command.ExecuteNonQueryAsync(cancellation);
         }
         // Each row's words in the same transaction, so a row is never stored without them.
-        await EfCatalogueWords.WriteWordsAsync(connection, transaction, batch.SelectMany(entry => CatalogueWords.For(entry.Seq, VehicleSearchIndex.TextFor(entry.Vehicle))));
-        await transaction.CommitAsync();
+        await EfCatalogueWords.WriteWordsAsync(connection, transaction, batch.SelectMany(entry => CatalogueWords.For(entry.Seq, VehicleSearchIndex.TextFor(entry.Vehicle))), cancellation);
+        await transaction.CommitAsync(cancellation);
     }
 
     /// <summary>Azure SQL Database's fill: the batch's rows the table does not already hold, and their words, in one save.</summary>
     /// <param name="contexts">A context per operation.</param>
     /// <param name="batch">The rows to store.</param>
-    internal static async Task FillModelAsync(IDbContextFactory<YardDbContext> contexts, IReadOnlyList<CatalogueEntry> batch)
+    internal static async Task FillModelAsync(IDbContextFactory<YardDbContext> contexts, IReadOnlyList<CatalogueEntry> batch, CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
         db.ChangeTracker.AutoDetectChangesEnabled = false;
         int low = batch.Min(entry => entry.Seq);
         int high = batch.Max(entry => entry.Seq);
         var held = (await db.Catalogue.AsNoTracking()
             .Where(row => row.Seq >= low && row.Seq <= high)
             .Select(row => row.Seq)
-            .ToListAsync()).ToHashSet();
+            .ToListAsync(cancellation)).ToHashSet();
         var rows = batch.Where(entry => !held.Contains(entry.Seq)).Select(entry => entry.ToCatalogueRow()).ToList();
         db.Catalogue.AddRange(rows);
         // Each row's words in the same save, so a row is never stored without them.
         db.CatalogueWords.AddRange(rows.SelectMany(row => CatalogueWords.For(row.Seq, row.SearchText)));
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(cancellation);
     }
 }

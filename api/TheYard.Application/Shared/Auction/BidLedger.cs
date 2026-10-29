@@ -62,17 +62,36 @@ public sealed class BidLedger : IBidReader
     /// that was down at startup is read the first time it is up rather than
     /// never (ADR: The ports learn to wait, addendum). Replaying twice is safe,
     /// because it writes the store's facts over themselves.
+    ///
+    /// <para>One replay is shared, so cancelling has to mean two different
+    /// things and does: the caller who STARTS the replay lends it their token,
+    /// and every caller who arrives while it is in flight stops only their own
+    /// wait. A visitor who closed a tab therefore never abandons the load that
+    /// every other request is queued behind; they get their thread back and the
+    /// replay finishes for the callers still there. In a running container the
+    /// starter is the host at startup, so the token the store sees is the
+    /// host's stopping token; a replay that is cancelled is not kept, and the
+    /// next caller starts a fresh one, which is the same self-healing rule a
+    /// failed replay already had (ADR: The ports learn to wait, the addendum on
+    /// the token).</para>
     /// </summary>
-    public Task LoadAsync()
+    /// <param name="cancellation">Lent to the store when this caller starts the replay; otherwise it ends this caller's wait alone.</param>
+    public Task LoadAsync(CancellationToken cancellation)
     {
+        Task loading;
+        bool started = false;
         lock (_loadGate)
         {
             if (_loaded is null || _loaded.IsFaulted || _loaded.IsCanceled)
             {
-                _loaded = LoadFromStoreAsync();
+                _loaded = LoadFromStoreAsync(cancellation);
+                started = true;
             }
-            return _loaded;
+            loading = _loaded;
         }
+        // The starter already owns the token the replay is running under, so waiting on it
+        // again through WaitAsync would only wrap the same cancellation twice.
+        return started || loading.IsCompleted ? loading : loading.WaitAsync(cancellation);
     }
 
     /// <summary>
@@ -83,8 +102,9 @@ public sealed class BidLedger : IBidReader
     /// between them; the standing is the authority, so the holder's row is put
     /// back in memory from it rather than the price being lowered to match.
     /// </summary>
-    private async Task LoadFromStoreAsync() =>
-        Replay(await _store.LoadStandingsAsync(), await _store.LoadAsync());
+    /// <param name="cancellation">The starting caller's, which in a running container is the host's stopping token.</param>
+    private async Task LoadFromStoreAsync(CancellationToken cancellation) =>
+        Replay(await _store.LoadStandingsAsync(cancellation), await _store.LoadAsync(cancellation));
 
     /// <summary>
     /// Throws the cache away and reads it again from the store. The other site's
@@ -93,10 +113,11 @@ public sealed class BidLedger : IBidReader
     /// store themselves.
     /// </summary>
     /// <remarks>Called by <see cref="BidBook.RefreshAsync"/> under the book's gate, so no write lands half way through.</remarks>
-    internal async Task RefreshAsync()
+    /// <param name="cancellation">The caller's cancellation, carried to the store: this read is one caller's and nobody shares it.</param>
+    internal async Task RefreshAsync(CancellationToken cancellation)
     {
-        var standings = await _store.LoadStandingsAsync();
-        var bids = await _store.LoadAsync();
+        var standings = await _store.LoadStandingsAsync(cancellation);
+        var bids = await _store.LoadAsync(cancellation);
         _standing.Clear();
         _byUser.Clear();
         Replay(standings, bids);

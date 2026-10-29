@@ -37,7 +37,7 @@ public sealed class CosmosCatalogueLive(CosmosStore store, int target)
     /// that place; both are counts over the minutes since the walk, a few hundred rows an hour.
     /// Null while no walk of today's live set is kept, after starting one.
     /// </summary>
-    public async Task<IReadOnlyList<CatalogueEntry>?> PageAsync(long d, int skip, int take)
+    public async Task<IReadOnlyList<CatalogueEntry>?> PageAsync(long d, int skip, int take, CancellationToken cancellation)
     {
         var live = _live;
         if (live is null || d < live.Since || DateTimeOffset.UtcNow - live.Walked > LiveFor)
@@ -50,12 +50,14 @@ public sealed class CosmosCatalogueLive(CosmosStore store, int target)
         }
         long ended = await CountWhereAsync(
             "c.start_offset <= @since AND c.end_offset > @since AND c.end_offset <= @d",
+            cancellation,
             ("@since", live.Since), ("@d", d));
         long index = Math.Min((skip + ended) / KeyStep, live.Ends.Length - 1);
         while (index >= 0 && index * KeyStep >= ended)
         {
             long started = await CountWhereAsync(
                 "c.start_offset > @since AND c.start_offset <= @d AND c.end_offset > @d AND (c.end_offset < @key OR (c.end_offset = @key AND c.seq < @place))",
+                cancellation,
                 ("@since", live.Since), ("@d", d), ("@key", live.Ends[index]), ("@place", live.Places[index]));
             long before = index * KeyStep - ended + started;
             if (before <= skip)
@@ -68,7 +70,7 @@ public sealed class CosmosCatalogueLive(CosmosStore store, int target)
                         .WithParameter("@key", live.Ends[index])
                         .WithParameter("@place", live.Places[index]),
                     partitionKey: null,
-                    "cross-partition");
+                    "cross-partition", cancellation: cancellation);
                 return [.. documents.Select(document => document.ToEntry())];
             }
             index--;
@@ -77,14 +79,14 @@ public sealed class CosmosCatalogueLive(CosmosStore store, int target)
     }
 
     /// <summary>One COUNT over the written catalogue with these extra conditions.</summary>
-    private async Task<long> CountWhereAsync(string condition, params (string Name, object Value)[] parameters)
+    private async Task<long> CountWhereAsync(string condition, CancellationToken cancellation, params (string Name, object Value)[] parameters)
     {
         var query = new QueryDefinition($"SELECT VALUE COUNT(1) FROM c WHERE {CosmosVehicleCatalogue.Written} AND {condition}").WithParameter("@target", target);
         foreach (var (name, value) in parameters)
         {
             query = query.WithParameter(name, value);
         }
-        var counts = await store.QueryAsync<long>(store.ContainerNamed(Containers.Catalogue), query, partitionKey: null, "cross-partition");
+        var counts = await store.QueryAsync<long>(store.ContainerNamed(Containers.Catalogue), query, partitionKey: null, "cross-partition", cancellation: cancellation);
         return counts.Count == 0 ? 0 : counts[0];
     }
 
@@ -100,14 +102,16 @@ public sealed class CosmosCatalogueLive(CosmosStore store, int target)
         {
             try
             {
-                if (await CosmosVehicleCatalogue.FilledAsync(store, target) < target)
+                if (await CosmosVehicleCatalogue.FilledAsync(store, target, CancellationToken.None) < target)
                 {
                     return;
                 }
                 var walked = DateTimeOffset.UtcNow;
                 var (ends, places) = await CosmosCatalogueKeysets.WalkPlacesAsync(
                     store, target,
-                    CatalogueOrder.EndAscending, "end_offset", false, "(c.start_offset <= @since AND c.end_offset > @since)", ("@since", d));
+                    // No token: one live walk is kept and read by every later request, so the
+                    // request that started it does not get to take it from the rest of them.
+                    CatalogueOrder.EndAscending, "end_offset", false, "(c.start_offset <= @since AND c.end_offset > @since)", CancellationToken.None, ("@since", d));
                 _live = new LiveKeyset(d, walked, ends, places);
             }
             catch (Exception ex) when (ex is not OutOfMemoryException)

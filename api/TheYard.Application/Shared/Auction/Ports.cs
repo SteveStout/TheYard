@@ -11,17 +11,23 @@ namespace TheYard.Application.Shared.Auction;
 //
 // Every member returns a Task, because the document store has no synchronous
 // driver, and a port that held a request thread while a cloud store answered
-// would stall a one-vCPU container (ADR: The ports learn to wait).
+// would stall a one-vCPU container (ADR: The ports learn to wait). Every member
+// also takes a CancellationToken, because a read the visitor walked away from is
+// work the site pays for twice, and a path that drops the token cannot be made to
+// stop later without changing every caller (the same record, the addendum on the
+// token). Taking it is not the same as cancelling: a bid write that has entered
+// the gate runs to its end, and the two startup loads take the host's stopping
+// token rather than any request's.
 /// <summary>Port: where the vehicle dataset comes from.</summary>
 public interface IVehicleSource
 {
-    Task<IReadOnlyList<Vehicle>> LoadAsync();
+    Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation);
 }
 
 /// <summary>Port: where the photo manifest comes from.</summary>
 public interface IPhotoManifestSource
 {
-    Task<IReadOnlyList<PhotoEntry>> LoadAsync();
+    Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation);
 }
 
 /// <summary>
@@ -37,13 +43,13 @@ public interface IPhotoManifestSource
 public interface IBidStore
 {
     /// <summary>Every buyer's row, for the replay at startup.</summary>
-    Task<IReadOnlyList<StoredBid>> LoadAsync();
+    Task<IReadOnlyList<StoredBid>> LoadAsync(CancellationToken cancellation);
 
     /// <summary>Every vehicle's stored standing, for the replay at startup.</summary>
-    Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync();
+    Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync(CancellationToken cancellation);
 
     /// <summary>One vehicle's stored standing and its version, or null when the store holds none for it.</summary>
-    Task<StoredStanding?> ReadStandingAsync(string vehicleId);
+    Task<StoredStanding?> ReadStandingAsync(string vehicleId, CancellationToken cancellation);
 
     /// <summary>
     /// Every buyer's row on one vehicle. Read when the store holds no standing
@@ -51,7 +57,7 @@ public interface IBidStore
     /// reset cleared, so the standing is worked out from the rows rather than
     /// taken to be the opening ask.
     /// </summary>
-    Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId);
+    Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId, CancellationToken cancellation);
 
     /// <summary>
     /// Writes the buyer's row and the vehicle's new standing, but only if the
@@ -60,7 +66,7 @@ public interface IBidStore
     /// and nothing of this bid was kept: the caller reads again and runs the
     /// rules again.
     /// </summary>
-    Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion);
+    Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion, CancellationToken cancellation);
 
     /// <summary>
     /// Forget one person's bids, and the standing of every vehicle they bid on,
@@ -68,7 +74,7 @@ public interface IBidStore
     /// everybody's: this is what the reset button on a page a stranger can also
     /// be looking at is allowed to do (ADR: Reset is one person's start-over).
     /// </summary>
-    Task ClearAsync(string userId);
+    Task ClearAsync(string userId, CancellationToken cancellation);
 }
 
 /// <summary>
@@ -90,22 +96,22 @@ public interface IVehicleCatalogue
     CatalogueFillPace Pace { get; }
 
     /// <summary>How many of the first <see cref="Target"/> vehicles the store holds with their slot, read as one count.</summary>
-    Task<int> FilledAsync();
+    Task<int> FilledAsync(CancellationToken cancellation);
 
     /// <summary>Writes one batch of the expansion, each vehicle at its place; a vehicle already there is left as it is or rewritten the same.</summary>
-    Task FillAsync(IReadOnlyList<CatalogueEntry> batch);
+    Task FillAsync(IReadOnlyList<CatalogueEntry> batch, CancellationToken cancellation);
 
     /// <summary>How many vehicles match, split by the three schedule segments, in one read where the store allows it.</summary>
-    Task<SegmentCounts> CountAsync(CatalogueFilter filter);
+    Task<SegmentCounts> CountAsync(CatalogueFilter filter, CancellationToken cancellation);
 
     /// <summary>One page of the matches in one order, skipped and taken in the store's own query.</summary>
-    Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take);
+    Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take, CancellationToken cancellation);
 
     /// <summary>The vehicles with these ids, by point read where the address names the partition; an id the catalogue lacks is simply absent.</summary>
-    Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids);
+    Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids, CancellationToken cancellation);
 
     /// <summary>The distinct values behind the filters, read once at warm-up.</summary>
-    Task<InventoryFacets> FacetsAsync();
+    Task<InventoryFacets> FacetsAsync(CancellationToken cancellation);
 }
 
 // #endregion ports

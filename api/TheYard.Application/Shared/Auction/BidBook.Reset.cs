@@ -27,11 +27,16 @@ public sealed partial class BidBook
     /// clearing the room's answer on a shared car would take away a stranger's
     /// outbid badge and drop the price a stranger is competing at. The room is
     /// a separate service and this one does not reach into it.</para>
+    ///
+    /// <para>Cancellation stops the wait for the gate and nothing after it. The rows are
+    /// dropped and then each touched vehicle is read again to see who is left; a reset
+    /// abandoned between those would return no orphans and leave the room answering a price
+    /// nobody is bidding (ADR: The ports learn to wait, the addendum on the token).</para>
     /// </summary>
-    public async Task<IReadOnlyList<string>> ResetAsync(string userId)
+    public async Task<IReadOnlyList<string>> ResetAsync(string userId, CancellationToken cancellation)
     {
-        await LoadAsync();
-        await _gate.WaitAsync();
+        await LoadAsync(cancellation);
+        await _gate.WaitAsync(cancellation);
         try
         {
             // The store is asked even when this process holds nothing for the
@@ -44,7 +49,7 @@ public sealed partial class BidBook
             // the rows to be replayed at the next start (ADR: Three readers with
             // no memory of the project). The store drops the standing of every
             // vehicle this person touched along with their rows.
-            await _store.ClearAsync(userId);
+            await _store.ClearAsync(userId, CancellationToken.None);
             _ledger.Forget(userId);
 
             foreach (string vehicleId in touched)
@@ -53,7 +58,7 @@ public sealed partial class BidBook
                 // this process's memory, so a bid placed on the other site
                 // still counts. Removing it would hand the vehicle back to its
                 // opening ask and delete a third person's bid without a word.
-                var (held, _) = await CurrentAsync(vehicleId);
+                var (held, _) = await CurrentAsync(vehicleId, CancellationToken.None);
                 if (held is null)
                 {
                     // Nobody left on this one, so the room's answer to it has

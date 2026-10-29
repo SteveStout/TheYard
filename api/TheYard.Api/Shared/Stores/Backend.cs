@@ -55,8 +55,13 @@ public sealed class Backend
     /// </summary>
     public IActivityStore Activity { get; set; } = NullActivityStore.Instance;
 
-    /// <summary>Is the seed catalogue in the store right now. Two reads, timed by the health check.</summary>
-    public required Func<Task<bool>> Probe { get; set; }
+    /// <summary>
+    /// Is the seed catalogue in the store right now. Two point reads over the network, timed by
+    /// the health check, and handed the cancellation of whoever asked: the report is polled by
+    /// the Admin tab and a poll that gave up used to leave the container reading the store for as
+    /// long as the store took (ADR: The ports learn to wait, the addendum on the token).
+    /// </summary>
+    public required Func<CancellationToken, Task<bool>> Probe { get; set; }
 
     /// <summary>
     /// The relational store's own reading of itself for the Machines card, read by the adapter
@@ -127,12 +132,12 @@ public sealed class Backend
 /// <param name="Inventory">The catalogue service reading from this store.</param>
 /// <param name="Bids">The bid service writing through to this store.</param>
 /// <param name="Activity">Where this store keeps the requests it served.</param>
-/// <param name="Probe">Checks whether the seed catalogue is in the store right now.</param>
+/// <param name="Probe">Checks whether the seed catalogue is in the store right now, under the caller's cancellation.</param>
 public sealed record StoreAttachment(
     DatabaseState Database,
     IStoreDiagnostics Diagnostics,
     Stock Inventory,
     BidBook Bids,
     IActivityStore Activity,
-    Func<Task<bool>> Probe);
+    Func<CancellationToken, Task<bool>> Probe);
 // #endregion backend

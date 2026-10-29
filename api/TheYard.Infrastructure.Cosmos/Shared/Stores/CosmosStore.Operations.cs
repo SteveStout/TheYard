@@ -14,17 +14,17 @@ public sealed partial class CosmosStore
 {
     // #region operations
     /// <summary>A point read that answers null on 404 rather than throwing, because a missing document is an ordinary answer.</summary>
-    public async Task<T?> ReadAsync<T>(Container container, string id, string partitionKey, string partitionLabel) where T : class =>
-        (await ReadMeasuredAsync<T>(container, id, partitionKey, partitionLabel)).Item;
+    public async Task<T?> ReadAsync<T>(Container container, string id, string partitionKey, string partitionLabel, CancellationToken cancellation = default) where T : class =>
+        (await ReadMeasuredAsync<T>(container, id, partitionKey, partitionLabel, cancellation)).Item;
 
     /// <summary>The same point read, with what it cost handed back to the caller as well as to the log. The experiment card reads through this.</summary>
-    public async Task<MeasuredItem<T>> ReadMeasuredAsync<T>(Container container, string id, string partitionKey, string partitionLabel) where T : class
+    public async Task<MeasuredItem<T>> ReadMeasuredAsync<T>(Container container, string id, string partitionKey, string partitionLabel, CancellationToken cancellation = default) where T : class
     {
         var clock = Stopwatch.StartNew();
         try
         {
             var response = await Recorder.Timed(container, StoreOperationKind.PointRead, "ReadItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
-                () => container.ReadItemAsync<T>(id, new PartitionKey(partitionKey)), r => r.Cost());
+                () => container.ReadItemAsync<T>(id, new PartitionKey(partitionKey), cancellationToken: cancellation), r => r.Cost());
             return new MeasuredItem<T>(response.Resource, Math.Round(response.RequestCharge, 2), clock.ElapsedMilliseconds);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -38,19 +38,19 @@ public sealed partial class CosmosStore
     /// already there is refused with 409, which is what the email claim relies
     /// on. <paramref name="what"/> is the text the store log shows for it.
     /// </summary>
-    public Task<ItemResponse<T>> CreateAsync<T>(Container container, T document, string partitionKey, string partitionLabel, string what = "CreateItem") =>
+    public Task<ItemResponse<T>> CreateAsync<T>(Container container, T document, string partitionKey, string partitionLabel, string what = "CreateItem", CancellationToken cancellation = default) =>
         Recorder.Timed(container, StoreOperationKind.PointWrite, what, [], partitionLabel, 1,
-            () => container.CreateItemAsync(document, new PartitionKey(partitionKey)), r => r.Cost());
+            () => container.CreateItemAsync(document, new PartitionKey(partitionKey), cancellationToken: cancellation), r => r.Cost());
 
     /// <summary>A replace that carries the etag it read, so a stale write is refused with 412 rather than winning.</summary>
-    public Task<ItemResponse<T>> ReplaceAsync<T>(Container container, T document, string id, string partitionKey, string? etag, string partitionLabel) =>
+    public Task<ItemResponse<T>> ReplaceAsync<T>(Container container, T document, string id, string partitionKey, string? etag, string partitionLabel, CancellationToken cancellation = default) =>
         Recorder.Timed(container, StoreOperationKind.PointWrite, "ReplaceItem (If-Match)", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
-            () => container.ReplaceItemAsync(document, id, new PartitionKey(partitionKey), new ItemRequestOptions { IfMatchEtag = etag }), r => r.Cost());
+            () => container.ReplaceItemAsync(document, id, new PartitionKey(partitionKey), new ItemRequestOptions { IfMatchEtag = etag }, cancellation), r => r.Cost());
 
     /// <summary>A point delete of one document by id in one partition; a missing document throws the SDK's 404.</summary>
-    public Task<ItemResponse<T>> DeleteAsync<T>(Container container, string id, string partitionKey, string partitionLabel) =>
+    public Task<ItemResponse<T>> DeleteAsync<T>(Container container, string id, string partitionKey, string partitionLabel, CancellationToken cancellation = default) =>
         Recorder.Timed(container, StoreOperationKind.PointDelete, "DeleteItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
-            () => container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey)), r => r.Cost());
+            () => container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey), cancellationToken: cancellation), r => r.Cost());
 
     /// <summary>
     /// A query, every page of it, with the charge of every page added up and
@@ -59,11 +59,11 @@ public sealed partial class CosmosStore
     /// physical partition when it cannot, which is the difference the Admin tab
     /// exists to show (ADR: The partition key).
     /// </summary>
-    public async Task<IReadOnlyList<T>> QueryAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel) =>
-        (await QueryMeasuredAsync<T>(container, query, partitionKey, partitionLabel)).Items;
+    public async Task<IReadOnlyList<T>> QueryAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel, CancellationToken cancellation = default) =>
+        (await QueryMeasuredAsync<T>(container, query, partitionKey, partitionLabel, cancellation)).Items;
 
     /// <summary>The same query, with the summed charge, the page count and the time handed back as well as logged.</summary>
-    public async Task<MeasuredQuery<T>> QueryMeasuredAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel)
+    public async Task<MeasuredQuery<T>> QueryMeasuredAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel, CancellationToken cancellation = default)
     {
         var parameters = query.GetQueryParameters()
             .Select(p => new SqlParameterShape(p.Name, p.Value?.GetType().Name ?? "null", p.Value is string s ? s.Length : null))
@@ -85,7 +85,7 @@ public sealed partial class CosmosStore
             using var iterator = container.GetItemQueryIterator<T>(query, requestOptions: options);
             while (iterator.HasMoreResults)
             {
-                var page = await iterator.ReadNextAsync();
+                var page = await iterator.ReadNextAsync(cancellation);
                 charge += page.RequestCharge;
                 pages++;
                 results.AddRange(page);
@@ -104,7 +104,7 @@ public sealed partial class CosmosStore
     }
 
     /// <summary>One partition's deletes, at most a hundred at a time, as one atomic batch.</summary>
-    public async Task<double> DeleteBatchAsync(Container container, string partitionKey, IReadOnlyList<string> ids, string partitionLabel)
+    public async Task<double> DeleteBatchAsync(Container container, string partitionKey, IReadOnlyList<string> ids, string partitionLabel, CancellationToken cancellation = default)
     {
         double charge = 0;
         for (int start = 0; start < ids.Count; start += 100)
@@ -118,6 +118,8 @@ public sealed partial class CosmosStore
             var response = await Recorder.Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} DeleteItem", [], partitionLabel, 1,
                 async () =>
                 {
+                    // The batch itself runs to its end: it is one atomic unit, and the SDK
+                    // cancelling it part way through is the one outcome a batch exists to avoid.
                     var r = await batch.ExecuteAsync();
                     if (!r.IsSuccessStatusCode)
                     {
@@ -126,6 +128,7 @@ public sealed partial class CosmosStore
                     return r;
                 }, r => r.Cost());
             charge += response.RequestCharge;
+            cancellation.ThrowIfCancellationRequested();
         }
         return charge;
     }
@@ -135,19 +138,19 @@ public sealed partial class CosmosStore
     /// them as point reads and never as a query that fans out. A document that is not there is
     /// simply absent from the answer.
     /// </summary>
-    public async Task<IReadOnlyList<T>> ReadManyAsync<T>(Container container, IReadOnlyList<(string Id, string PartitionKey)> items, string partitionLabel)
+    public async Task<IReadOnlyList<T>> ReadManyAsync<T>(Container container, IReadOnlyList<(string Id, string PartitionKey)> items, string partitionLabel, CancellationToken cancellation = default)
     {
         if (items.Count == 0)
         {
             return [];
         }
         var response = await Recorder.Timed(container, StoreOperationKind.PointRead, $"ReadMany: {items.Count} ReadItem", [], partitionLabel, 1,
-            () => container.ReadManyItemsAsync<T>([.. items.Select(item => (item.Id, new PartitionKey(item.PartitionKey)))]), r => r.Cost());
+            () => container.ReadManyItemsAsync<T>([.. items.Select(item => (item.Id, new PartitionKey(item.PartitionKey)))], cancellationToken: cancellation), r => r.Cost());
         return [.. response];
     }
 
     /// <summary>One partition's upserts, at most a hundred at a time, each hundred one atomic batch; the summed charge comes back.</summary>
-    public async Task<double> UpsertBatchAsync<T>(Container container, string partitionKey, IReadOnlyList<T> documents, string partitionLabel)
+    public async Task<double> UpsertBatchAsync<T>(Container container, string partitionKey, IReadOnlyList<T> documents, string partitionLabel, CancellationToken cancellation = default)
     {
         double charge = 0;
         for (int start = 0; start < documents.Count; start += 100)
@@ -161,6 +164,7 @@ public sealed partial class CosmosStore
             var response = await Recorder.Timed(container, StoreOperationKind.Batch, $"TransactionalBatch: {slice.Count} UpsertItem", [], partitionLabel, 1,
                 async () =>
                 {
+                    // One atomic batch, run to its end for the reason the delete batch gives.
                     var r = await batch.ExecuteAsync();
                     if (!r.IsSuccessStatusCode)
                     {
@@ -169,14 +173,19 @@ public sealed partial class CosmosStore
                     return r;
                 }, r => r.Cost());
             charge += response.RequestCharge;
+            // Between batches, not inside one: a fill of a hundred thousand vehicles a hundred
+            // at a time is restarted a batch back, so stopping it here loses nothing.
+            cancellation.ThrowIfCancellationRequested();
         }
         return charge;
     }
 
     /// <summary>How many documents a container holds, by a count query across every partition. The seed asks this; the probe does not, because a count is a scan.</summary>
-    internal async Task<int> CountAsync(Container container)
+    /// <param name="container">The container to count.</param>
+    /// <param name="cancellation">The caller's: a count fans out across every partition, so it is worth stopping.</param>
+    internal async Task<int> CountAsync(Container container, CancellationToken cancellation = default)
     {
-        var counts = await QueryAsync<int>(container, new QueryDefinition("SELECT VALUE COUNT(1) FROM c"), null, "cross-partition");
+        var counts = await QueryAsync<int>(container, new QueryDefinition("SELECT VALUE COUNT(1) FROM c"), null, "cross-partition", cancellation);
         return counts.Count == 0 ? 0 : counts[0];
     }
 

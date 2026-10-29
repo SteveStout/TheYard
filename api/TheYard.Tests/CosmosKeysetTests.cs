@@ -31,14 +31,14 @@ public class CosmosKeysetTests
         var liveLater = live with { SinceAnchorMs = later };
 
         // The first deep page reads with OFFSET and starts the walk of the live set.
-        var byOffset = await catalogue.PageAsync(live, CatalogueOrder.EndAscending, 5_000, 100);
+        var byOffset = await catalogue.PageAsync(live, CatalogueOrder.EndAscending, 5_000, 100, CancellationToken.None);
         Assert.NotNull(catalogue.LiveWalking);
         await catalogue.LiveWalking!;
 
         foreach (var (filter, expected) in new[] { (live, byOffset), (liveLater, await OffsetPageAsync(store, liveLater)) })
         {
             var since = DateTimeOffset.UtcNow;
-            var byKey = await catalogue.PageAsync(filter, CatalogueOrder.EndAscending, 5_000, 100);
+            var byKey = await catalogue.PageAsync(filter, CatalogueOrder.EndAscending, 5_000, 100, CancellationToken.None);
             var operations = log.Snapshot().Where(operation => operation.At >= since).ToList();
 
             Assert.Equal(100, byKey.Count);

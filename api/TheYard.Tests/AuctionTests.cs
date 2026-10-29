@@ -166,11 +166,11 @@ public sealed class AuctionTests
 /// <summary>A catalogue held in memory, for the tests above.</summary>
 file sealed class Vehicles(params Vehicle[] vehicles) : IVehicleSource
 {
-    public Task<IReadOnlyList<Vehicle>> LoadAsync() => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
+    public Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation) => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
 }
 
 /// <summary>An empty photo manifest, so the gallery leaves each vehicle's own images alone.</summary>
 file sealed class NoPhotos : IPhotoManifestSource
 {
-    public Task<IReadOnlyList<PhotoEntry>> LoadAsync() => Task.FromResult<IReadOnlyList<PhotoEntry>>([]);
+    public Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation) => Task.FromResult<IReadOnlyList<PhotoEntry>>([]);
 }

@@ -15,7 +15,7 @@ namespace TheYard.Infrastructure.Cosmos.Shared.Auction;
 public sealed class CosmosVehicleSource(CosmosStore store) : IVehicleSource
 {
     // #region cosmos-sources
-    public async Task<IReadOnlyList<Vehicle>> LoadAsync()
+    public async Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation)
     {
         // The whole container, once, as one cross-partition query, and ordered
         // here rather than by the store. ORDER BY needs an index on the sorted
@@ -23,7 +23,7 @@ public sealed class CosmosVehicleSource(CosmosStore store) : IVehicleSource
         // sort of two hundred documents that costs nothing (ADR: The partition
         // key).
         var documents = await store.QueryAsync<VehicleDocument>(
-            store.Vehicles, new QueryDefinition("SELECT * FROM c"), partitionKey: null, "cross-partition");
+            store.Vehicles, new QueryDefinition("SELECT * FROM c"), partitionKey: null, "cross-partition", cancellation: cancellation);
         return documents.OrderBy(d => d.Seq).Select(d => d.ToVehicle()).ToList();
     }
     // #endregion cosmos-sources
@@ -32,10 +32,12 @@ public sealed class CosmosVehicleSource(CosmosStore store) : IVehicleSource
 /// <summary>Adapter: the photo manifest, out of the document store.</summary>
 public sealed class CosmosPhotoManifestSource(CosmosStore store) : IPhotoManifestSource
 {
-    public async Task<IReadOnlyList<PhotoEntry>> LoadAsync()
+    /// <summary>Every photo entry, read once as one cross-partition query.</summary>
+    /// <param name="cancellation">The caller's; the warm-up is what asks, so in a container this is the host's stopping token.</param>
+    public async Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation)
     {
         var documents = await store.QueryAsync<PhotoDocument>(
-            store.Photos, new QueryDefinition("SELECT * FROM c"), partitionKey: null, "cross-partition");
+            store.Photos, new QueryDefinition("SELECT * FROM c"), partitionKey: null, "cross-partition", cancellation: cancellation);
         return documents.OrderBy(d => d.Seq).Select(d => d.ToEntry()).ToList();
     }
 }
@@ -54,13 +56,14 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
 
     // #region cosmos-bid-store
     /// <summary>Every buyer's document, and none of the standings that share the container.</summary>
-    public async Task<IReadOnlyList<StoredBid>> LoadAsync()
+    /// <param name="cancellation">The caller's; the replay's starter lends it, which in a container is the host.</param>
+    public async Task<IReadOnlyList<StoredBid>> LoadAsync(CancellationToken cancellation)
     {
         var documents = await store.QueryAsync<BidDocument>(
             store.Bids,
             new QueryDefinition("SELECT * FROM c WHERE c.user_id != @standing").WithParameter("@standing", StandingDocument.Partition),
             partitionKey: null,
-            "cross-partition");
+            "cross-partition", cancellation: cancellation);
         return documents.Select(d => d.ToStoredBid()).ToList();
     }
 
@@ -69,7 +72,7 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
     /// one id across every buyer's partition. It runs only when the vehicle has
     /// no standing yet.
     /// </summary>
-    public async Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId)
+    public async Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId, CancellationToken cancellation)
     {
         var documents = await store.QueryAsync<BidDocument>(
             store.Bids,
@@ -77,7 +80,7 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
                 .WithParameter("@vehicle", vehicleId)
                 .WithParameter("@standing", StandingDocument.Partition),
             partitionKey: null,
-            "cross-partition");
+            "cross-partition", cancellation: cancellation);
         return documents.Select(d => d.ToStoredBid()).ToList();
     }
 
@@ -88,15 +91,21 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
     /// read, and a buyer's document missing after a standing that names them is
     /// repaired from the standing when the cache is next read from the store.
     /// A 412 or 409 on the standing answers false, nothing written.
+    ///
+    /// <para>The token is taken and not used, which is this rung's one deliberate exception:
+    /// the standing goes first and the buyer's document second, and a write stopped between
+    /// them leaves the store holding a standing whose holder has no row. The caller above has
+    /// already stopped honouring cancellation by the time it reaches here (ADR: The ports
+    /// learn to wait, the addendum on the token).</para>
     /// </summary>
-    public async Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion)
+    public async Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion, CancellationToken cancellation)
     {
-        if (!await TryWriteStandingAsync(vehicleId, standing, expectedVersion))
+        if (!await TryWriteStandingAsync(vehicleId, standing, expectedVersion, CancellationToken.None))
         {
             return false;
         }
 
-        await SaveBuyerAsync(userId, vehicleId, state);
+        await SaveBuyerAsync(userId, vehicleId, state, CancellationToken.None);
         return true;
     }
 
@@ -110,13 +119,13 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
     /// already been decided by then, so the retry writes this bid over what it
     /// finds.
     /// </summary>
-    private async Task SaveBuyerAsync(string userId, string vehicleId, BidState state)
+    private async Task SaveBuyerAsync(string userId, string vehicleId, BidState state, CancellationToken cancellation)
     {
         for (int attempt = 1; ; attempt++)
         {
             try
             {
-                await WriteAsync(userId, vehicleId, state);
+                await WriteAsync(userId, vehicleId, state, cancellation);
                 return;
             }
             catch (CosmosException ex) when (attempt < 3
@@ -127,9 +136,9 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
         }
     }
 
-    private async Task WriteAsync(string userId, string vehicleId, BidState state)
+    private async Task WriteAsync(string userId, string vehicleId, BidState state, CancellationToken cancellation)
     {
-        var existing = await store.ReadAsync<BidDocument>(store.Bids, vehicleId, userId, Partition);
+        var existing = await store.ReadAsync<BidDocument>(store.Bids, vehicleId, userId, Partition, cancellation: cancellation);
         var document = new BidDocument
         {
             Id = vehicleId,
@@ -141,11 +150,11 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
         };
         if (existing is null)
         {
-            await store.CreateAsync(store.Bids, document, userId, Partition);
+            await store.CreateAsync(store.Bids, document, userId, Partition, cancellation: cancellation);
         }
         else
         {
-            await store.ReplaceAsync(store.Bids, document, vehicleId, userId, existing.ETag, Partition);
+            await store.ReplaceAsync(store.Bids, document, vehicleId, userId, existing.ETag, Partition, cancellation: cancellation);
         }
     }
 
@@ -156,17 +165,20 @@ public sealed partial class CosmosBidStore(CosmosStore store) : IBidStore
     /// There is no ExecuteDelete on this side; the batch is what a partition
     /// offers instead (ADR: Reset is one person's start-over).
     /// </summary>
-    public async Task ClearAsync(string userId)
+    public async Task ClearAsync(string userId, CancellationToken cancellation)
     {
         var ids = await store.QueryAsync<string>(
             store.Bids,
             new QueryDefinition("SELECT VALUE c.id FROM c WHERE c.user_id = @user").WithParameter("@user", userId),
             partitionKey: userId,
-            Partition);
+            Partition, cancellation: cancellation);
         if (ids.Count > 0)
         {
-            await store.DeleteBatchAsync(store.Bids, userId, ids, Partition);
-            await ForgetStandingsAsync(ids);
+            // Both with no token, as a pair: a reset that dropped the buyer's documents and
+            // then stopped would leave every vehicle they touched standing at a price nobody
+            // holds, which is the one thing a start-over must not do.
+            await store.DeleteBatchAsync(store.Bids, userId, ids, Partition, cancellation: CancellationToken.None);
+            await ForgetStandingsAsync(ids, CancellationToken.None);
         }
     }
     // #endregion cosmos-bid-store

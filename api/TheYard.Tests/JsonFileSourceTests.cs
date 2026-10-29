@@ -24,7 +24,7 @@ public class JsonFileSourceTests
             """);
         try
         {
-            var vehicle = Assert.Single(await new JsonFileVehicleSource(path).LoadAsync());
+            var vehicle = Assert.Single(await new JsonFileVehicleSource(path).LoadAsync(CancellationToken.None));
 
             Assert.Equal("abc", vehicle.Id);
             Assert.Equal("SUV", vehicle.BodyStyle);
@@ -43,7 +43,7 @@ public class JsonFileSourceTests
     [Fact]
     public async Task Loads_the_real_repository_dataset()
     {
-        var vehicles = await new JsonFileVehicleSource(Path.Combine(RepoRoot(), "data", "vehicles.json")).LoadAsync();
+        var vehicles = await new JsonFileVehicleSource(Path.Combine(RepoRoot(), "data", "vehicles.json")).LoadAsync(CancellationToken.None);
 
         Assert.Equal(200, vehicles.Count);
         Assert.Equal(200, vehicles.Select(v => v.Id).Distinct().Count());
@@ -56,7 +56,7 @@ public class JsonFileSourceTests
     public async Task Loads_the_real_photo_manifest()
     {
         var manifest = await new JsonFilePhotoManifestSource(
-            Path.Combine(RepoRoot(), "api", "TheYard.Api", "photo-manifest.json")).LoadAsync();
+            Path.Combine(RepoRoot(), "api", "TheYard.Api", "photo-manifest.json")).LoadAsync(CancellationToken.None);
 
         Assert.Equal(50, manifest.Count);
         Assert.Equal(5, manifest.Select(photo => photo.Style).Distinct().Count());

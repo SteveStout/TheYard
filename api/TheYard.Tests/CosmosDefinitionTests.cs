@@ -120,7 +120,7 @@ public class CosmosDefinitionTests
     [Fact]
     public async Task Every_field_but_images_survives_the_round_trip_through_a_document()
     {
-        var source = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync();
+        var source = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync(CancellationToken.None);
         var roundTripped = source.Select((vehicle, index) =>
         {
             string json = JsonSerializer.Serialize(vehicle.ToDocument(index), CosmosStore.Json);
@@ -149,9 +149,9 @@ public class CosmosDefinitionTests
         // placeholder URLs and the document store to nothing, and this is the
         // test that says so before a visitor does (ADR: A second store on
         // Cosmos DB, and what it costs).
-        var vehicles = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync();
+        var vehicles = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync(CancellationToken.None);
         var manifest = await new JsonFilePhotoManifestSource(
-            Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json")).LoadAsync();
+            Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json")).LoadAsync(CancellationToken.None);
         var pools = manifest.Select(photo => photo.Style.ToLowerInvariant()).ToHashSet();
 
         foreach (string style in vehicles.Select(v => v.BodyStyle.ToLowerInvariant()).Distinct())

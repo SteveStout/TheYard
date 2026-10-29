@@ -75,7 +75,7 @@ public sealed class EfCatalogueWords(IDbContextFactory<YardDbContext> contexts, 
     /// row has its words, because the fill and the backfill both write in the order of the place.
     /// When they are not, the site that fills the catalogue starts the backfill.
     /// </summary>
-    internal async Task CheckWordsAsync(YardDbContext db, int filled, bool now = false)
+    internal async Task CheckWordsAsync(YardDbContext db, int filled, CancellationToken cancellation, bool now = false)
     {
         if (_wordsReady)
         {
@@ -88,38 +88,38 @@ public sealed class EfCatalogueWords(IDbContextFactory<YardDbContext> contexts, 
         }
         Interlocked.Exchange(ref _wordsCheckedTicks, ticks);
         int last = Math.Min(filled, target) - 1;
-        _wordsReady = last < 0 || await db.CatalogueWords.AnyAsync(w => w.Seq == last);
+        _wordsReady = last < 0 || await db.CatalogueWords.AnyAsync(w => w.Seq == last, cancellation);
         if (!_wordsReady && local)
         {
-            await BackfillFileAsync(last + 1);
+            await BackfillFileAsync(last + 1, cancellation);
         }
         else if (!_wordsReady && fillsWords)
         {
-            StartBackfill(last + 1);
+            StartBackfill(last + 1, cancellation);
         }
     }
 
     /// <summary>Before a query with a typed word on a site still waiting for the words: look again, once a minute.</summary>
-    internal async Task WordsBeforeQueryAsync(YardDbContext db, CatalogueFilter filter)
+    internal async Task WordsBeforeQueryAsync(YardDbContext db, CatalogueFilter filter, CancellationToken cancellation)
     {
         if (!_wordsReady && filter.Tokens.Count > 0)
         {
-            await CheckWordsAsync(db, target);
+            await CheckWordsAsync(db, target, cancellation);
         }
     }
 
     /// <summary>The words for a SQLite file's rows stored before the table existed, split here and written at once.</summary>
-    internal async Task BackfillFileAsync(int filled)
+    internal async Task BackfillFileAsync(int filled, CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
-        var held = (await db.CatalogueWords.Select(w => w.Seq).Distinct().ToListAsync()).ToHashSet();
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
+        var held = (await db.CatalogueWords.Select(w => w.Seq).Distinct().ToListAsync(cancellation)).ToHashSet();
         for (int low = 0; low < filled; low += 5_000)
         {
             var rows = await db.Catalogue.AsNoTracking()
                 .Where(row => row.Seq >= low && row.Seq < low + 5_000)
                 .Select(row => new { row.Seq, row.SearchText })
-                .ToListAsync();
-            await FillWordsFileAsync([.. rows.Where(row => !held.Contains(row.Seq)).SelectMany(row => CatalogueWords.For(row.Seq, row.SearchText))]);
+                .ToListAsync(cancellation);
+            await FillWordsFileAsync([.. rows.Where(row => !held.Contains(row.Seq)).SelectMany(row => CatalogueWords.For(row.Seq, row.SearchText))], cancellation);
         }
         _wordsReady = true;
     }
@@ -129,8 +129,15 @@ public sealed class EfCatalogueWords(IDbContextFactory<YardDbContext> contexts, 
     /// split by the server a range of places at a time with a fifth of a second between, so the
     /// backfill leaves the Basic tier's log rate for visitors. One at a time; a backfill that
     /// failed is started again by the next minute's check.
+    ///
+    /// <para>A backfill of a hundred thousand rows a range at a time is the longest-running
+    /// thing in this file, and before this rung nothing could stop it: a container being
+    /// replaced kept splitting words until the process died. It now takes the token of the
+    /// read that started it, which the host's warm-up makes its own stopping token.</para>
     /// </summary>
-    internal void StartBackfill(int filled)
+    /// <param name="filled">How many rows the catalogue holds.</param>
+    /// <param name="cancellation">The host's, so a shutdown ends the loop at its next wait.</param>
+    internal void StartBackfill(int filled, CancellationToken cancellation)
     {
         if (Interlocked.Exchange(ref _backfilling, 1) == 1)
         {
@@ -142,13 +149,21 @@ public sealed class EfCatalogueWords(IDbContextFactory<YardDbContext> contexts, 
             {
                 for (int low = 0; low < filled; low += CatalogueWords.BackfillSpan)
                 {
-                    await using var db = await contexts.CreateDbContextAsync();
+                    await using var db = await contexts.CreateDbContextAsync(cancellation);
                     db.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
+                    // The parameters as one array, not as a params list, because the overload
+                    // that takes a token takes an IEnumerable: passed loose, the token itself
+                    // would be bound as a third SQL parameter and the statement would fail at
+                    // the server rather than here.
                     await db.Database.ExecuteSqlRawAsync(
                         CatalogueWords.BackfillSql,
-                        new SqlParameter("@low", low),
-                        new SqlParameter("@high", Math.Min(filled, low + CatalogueWords.BackfillSpan)));
-                    await Task.Delay(TimeSpan.FromMilliseconds(200));
+                        new object[]
+                        {
+                            new SqlParameter("@low", low),
+                            new SqlParameter("@high", Math.Min(filled, low + CatalogueWords.BackfillSpan)),
+                        },
+                        cancellation);
+                    await Task.Delay(TimeSpan.FromMilliseconds(200), cancellation);
                 }
                 _wordsReady = true;
             }
@@ -165,22 +180,22 @@ public sealed class EfCatalogueWords(IDbContextFactory<YardDbContext> contexts, 
     }
 
     /// <summary>A SQLite file's word rows, in one transaction and one prepared INSERT OR IGNORE a row.</summary>
-    internal async Task FillWordsFileAsync(IReadOnlyList<CatalogueWordRow> words)
+    internal async Task FillWordsFileAsync(IReadOnlyList<CatalogueWordRow> words, CancellationToken cancellation)
     {
         if (words.Count == 0)
         {
             return;
         }
-        await using var db = await contexts.CreateDbContextAsync();
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
         var connection = db.Database.GetDbConnection();
-        await connection.OpenAsync();
-        await using var transaction = await connection.BeginTransactionAsync();
-        await WriteWordsAsync(connection, transaction, words);
-        await transaction.CommitAsync();
+        await connection.OpenAsync(cancellation);
+        await using var transaction = await connection.BeginTransactionAsync(cancellation);
+        await WriteWordsAsync(connection, transaction, words, cancellation);
+        await transaction.CommitAsync(cancellation);
     }
 
     /// <summary>The prepared INSERT OR IGNORE of word rows, inside a transaction the caller holds.</summary>
-    internal static async Task WriteWordsAsync(System.Data.Common.DbConnection connection, System.Data.Common.DbTransaction transaction, IEnumerable<CatalogueWordRow> words)
+    internal static async Task WriteWordsAsync(System.Data.Common.DbConnection connection, System.Data.Common.DbTransaction transaction, IEnumerable<CatalogueWordRow> words, CancellationToken cancellation)
     {
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
@@ -195,7 +210,7 @@ public sealed class EfCatalogueWords(IDbContextFactory<YardDbContext> contexts, 
         {
             seq.Value = row.Seq;
             word.Value = row.Word;
-            await command.ExecuteNonQueryAsync();
+            await command.ExecuteNonQueryAsync(cancellation);
         }
     }
 }

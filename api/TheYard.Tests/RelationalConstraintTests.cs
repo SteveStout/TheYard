@@ -122,9 +122,9 @@ public class RelationalConstraintTests : IDisposable
     {
         var store = new EfBidStore(new PlainFactory(Connection));
 
-        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null, CancellationToken.None));
         byte[] first = TokenOf();
-        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(11_000, 2, false, 2), Standing(11_000, 2), "1"));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(11_000, 2, false, 2), Standing(11_000, 2), "1", CancellationToken.None));
         byte[] second = TokenOf();
 
         Assert.NotEmpty(first);
@@ -141,7 +141,7 @@ public class RelationalConstraintTests : IDisposable
     public async Task A_conflict_on_the_buyers_row_writes_nothing()
     {
         var store = new EfBidStore(new PlainFactory(Connection));
-        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null, CancellationToken.None));
 
         using (var other = Context())
         {
@@ -151,7 +151,7 @@ public class RelationalConstraintTests : IDisposable
             other.SaveChanges();
         }
 
-        Assert.False(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(12_000, 3, false, 3), Standing(12_000, 3), "1"));
+        Assert.False(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(12_000, 3, false, 3), Standing(12_000, 3), "1", CancellationToken.None));
 
         using var db = Context();
         Assert.Equal(10_000, db.Bids.Single().Amount);
@@ -163,8 +163,8 @@ public class RelationalConstraintTests : IDisposable
     public async Task The_second_first_bid_on_a_vehicle_loses_the_insert()
     {
         var store = new EfBidStore(new PlainFactory(Connection));
-        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null));
-        Assert.False(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_500, 1, false, 2), Standing(10_500, 1), null));
+        Assert.True(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_000, 1, false, 1), Standing(10_000, 1), null, CancellationToken.None));
+        Assert.False(await store.TrySaveAsync("buyer-1", "veh-1", new BidState(10_500, 1, false, 2), Standing(10_500, 1), null, CancellationToken.None));
 
         using var db = Context();
         Assert.Equal(10_000, db.Standings.Single().Amount);

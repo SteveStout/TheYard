@@ -43,7 +43,7 @@ internal static class CosmosLive
         var (store, _) = Open();
         var state = await store.Starting.PrepareAsync(
             new JsonFileVehicleSource(Repo.DataFile("vehicles.json")),
-            new JsonFilePhotoManifestSource(Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json")));
+            new JsonFilePhotoManifestSource(Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json")), CancellationToken.None);
         Assert.True(state.Ready, state.Note);
         return store;
     }
@@ -62,13 +62,13 @@ public class CosmosStoreTests
         var vehicles = new JsonFileVehicleSource(Repo.DataFile("vehicles.json"));
         var photos = new JsonFilePhotoManifestSource(Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json"));
 
-        var first = await store.Starting.PrepareAsync(vehicles, photos);
+        var first = await store.Starting.PrepareAsync(vehicles, photos, CancellationToken.None);
         Assert.True(first.Ready, first.Note);
         Assert.StartsWith("Azure Cosmos DB, found 4 containers", first.Note);
         Assert.Contains("now holding 200 and 50", first.Note);
 
         // The second boot finds the seed and writes nothing, whatever the first one did.
-        var second = await store.Starting.PrepareAsync(vehicles, photos);
+        var second = await store.Starting.PrepareAsync(vehicles, photos, CancellationToken.None);
         Assert.True(second.Ready, second.Note);
         Assert.Contains("inserting 0 vehicles and 0 photos", second.Note);
         Assert.Equal(0, second.SeedRequestUnits);
@@ -84,9 +84,9 @@ public class CosmosStoreTests
     public async Task The_catalogue_comes_back_in_seed_order_and_without_the_images_it_never_shows()
     {
         var store = await CosmosLive.Prepared();
-        var fromFile = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync();
+        var fromFile = await new JsonFileVehicleSource(Repo.DataFile("vehicles.json")).LoadAsync(CancellationToken.None);
 
-        var loaded = await new CosmosVehicleSource(store).LoadAsync();
+        var loaded = await new CosmosVehicleSource(store).LoadAsync(CancellationToken.None);
 
         Assert.Equal(fromFile.Select(v => v.Id), loaded.Select(v => v.Id));
         Assert.All(loaded, v => Assert.Empty(v.Images));
@@ -101,7 +101,7 @@ public class CosmosStoreTests
                 loaded[i] with { DamageNotes = none, Images = none });
         }
 
-        var manifest = await new CosmosPhotoManifestSource(store).LoadAsync();
+        var manifest = await new CosmosPhotoManifestSource(store).LoadAsync(CancellationToken.None);
         Assert.Equal(50, manifest.Count);
     }
     // #endregion catalogue
@@ -115,22 +115,22 @@ public class CosmosStoreTests
         string buyer = $"buyer-{Guid.NewGuid():N}";
 
         string first = $"veh-1-{Guid.NewGuid():N}", second = $"veh-2-{Guid.NewGuid():N}";
-        Assert.True(await bids.TrySaveAsync(buyer, first, new BidState(10_000, 1, false, 1), new VehicleStanding(10_000, 1, buyer, false, 1), null));
-        var read = await bids.ReadStandingAsync(first);
-        Assert.True(await bids.TrySaveAsync(buyer, first, new BidState(11_000, 2, false, 2), new VehicleStanding(11_000, 2, buyer, false, 2), read!.Version));
+        Assert.True(await bids.TrySaveAsync(buyer, first, new BidState(10_000, 1, false, 1), new VehicleStanding(10_000, 1, buyer, false, 1), null, CancellationToken.None));
+        var read = await bids.ReadStandingAsync(first, CancellationToken.None);
+        Assert.True(await bids.TrySaveAsync(buyer, first, new BidState(11_000, 2, false, 2), new VehicleStanding(11_000, 2, buyer, false, 2), read!.Version, CancellationToken.None));
         // The etag it decided against has moved, so the same write again is refused.
-        Assert.False(await bids.TrySaveAsync(buyer, first, new BidState(12_000, 3, false, 3), new VehicleStanding(12_000, 3, buyer, false, 3), read.Version));
-        Assert.True(await bids.TrySaveAsync(buyer, second, new BidState(5_000, 1, false, 3), new VehicleStanding(5_000, 1, buyer, false, 3), null));
+        Assert.False(await bids.TrySaveAsync(buyer, first, new BidState(12_000, 3, false, 3), new VehicleStanding(12_000, 3, buyer, false, 3), read.Version, CancellationToken.None));
+        Assert.True(await bids.TrySaveAsync(buyer, second, new BidState(5_000, 1, false, 3), new VehicleStanding(5_000, 1, buyer, false, 3), null, CancellationToken.None));
 
-        var mine = (await bids.LoadAsync()).Where(b => b.UserId == buyer).OrderBy(b => b.VehicleId, StringComparer.Ordinal).ToList();
+        var mine = (await bids.LoadAsync(CancellationToken.None)).Where(b => b.UserId == buyer).OrderBy(b => b.VehicleId, StringComparer.Ordinal).ToList();
         Assert.Equal(2, mine.Count);
-        Assert.Equal(11_000, (await bids.ReadStandingAsync(first))!.Standing.Amount);
+        Assert.Equal(11_000, (await bids.ReadStandingAsync(first, CancellationToken.None))!.Standing.Amount);
         Assert.Equal(11_000, mine[0].State.Amount);
         Assert.Equal(2, mine[0].State.BidCount);
 
-        await bids.ClearAsync(buyer);
-        Assert.DoesNotContain((await bids.LoadAsync()), b => b.UserId == buyer);
-        Assert.Null(await bids.ReadStandingAsync(first));
+        await bids.ClearAsync(buyer, CancellationToken.None);
+        Assert.DoesNotContain((await bids.LoadAsync(CancellationToken.None)), b => b.UserId == buyer);
+        Assert.Null(await bids.ReadStandingAsync(first, CancellationToken.None));
 
         var operations = log.Snapshot();
         // Every write was pinned to the buyer; the second save was a replace carrying the etag.
@@ -256,21 +256,21 @@ public class CosmosStoreTests
         var store = await CosmosLive.Prepared();
         var seedVehicles = new JsonFileVehicleSource(Repo.DataFile("vehicles.json"));
         var seedPhotos = new JsonFilePhotoManifestSource(Path.Combine(Repo.Root(), "api", "TheYard.Api", "photo-manifest.json"));
-        var before = await new CosmosVehicleSource(store).LoadAsync();
-        Assert.Equal((await seedVehicles.LoadAsync()).Count, before.Count);
+        var before = await new CosmosVehicleSource(store).LoadAsync(CancellationToken.None);
+        Assert.Equal((await seedVehicles.LoadAsync(CancellationToken.None)).Count, before.Count);
 
         // One document gone, the way a crash mid-seed leaves things: not empty,
         // not seeded either.
         var missing = before[0];
         await store.DeleteAsync<VehicleDocument>(store.Vehicles, missing.Id, missing.Make, "pinned to the make");
-        Assert.Equal(before.Count - 1, (await new CosmosVehicleSource(store).LoadAsync()).Count);
+        Assert.Equal(before.Count - 1, (await new CosmosVehicleSource(store).LoadAsync(CancellationToken.None)).Count);
 
-        var seeded = await store.Starting.EnsureSeededAsync(seedVehicles, seedPhotos);
+        var seeded = await store.Starting.EnsureSeededAsync(seedVehicles, seedPhotos, CancellationToken.None);
 
         Assert.Equal(before.Count, seeded.VehiclesInserted);
         Assert.Equal(before.Count, seeded.VehiclesTotal);
         Assert.Equal(0, seeded.PhotosInserted);
-        var after = await new CosmosVehicleSource(store).LoadAsync();
+        var after = await new CosmosVehicleSource(store).LoadAsync(CancellationToken.None);
         Assert.Equal(before.Count, after.Count);
         Assert.Contains(after, vehicle => vehicle.Id == missing.Id);
     }

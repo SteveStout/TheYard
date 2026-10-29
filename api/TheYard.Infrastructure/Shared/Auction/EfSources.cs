@@ -23,12 +23,13 @@ public sealed class EfVehicleSource(IDbContextFactory<YardDbContext> factory) : 
 {
     // #region ef-sources
     /// <summary>Every seed vehicle, in the order it was seeded, read once without change tracking.</summary>
-    public async Task<IReadOnlyList<Vehicle>> LoadAsync()
+    /// <param name="cancellation">The caller's; in a running container this is the host's stopping token, because the warm-up is what asks.</param>
+    public async Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation)
     {
-        using var db = await factory.CreateDbContextAsync();
+        using var db = await factory.CreateDbContextAsync(cancellation);
         // Read once, in seed order, tracking nothing: these rows are a
         // catalogue this process will never write back.
-        return await db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.ToVehicle()).ToListAsync();
+        return await db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.ToVehicle()).ToListAsync(cancellation);
     }
     // #endregion ef-sources
 }
@@ -37,12 +38,13 @@ public sealed class EfVehicleSource(IDbContextFactory<YardDbContext> factory) : 
 public sealed class EfPhotoManifestSource(IDbContextFactory<YardDbContext> factory) : IPhotoManifestSource
 {
     /// <summary>Every photo entry, in manifest order, read once without change tracking.</summary>
-    public async Task<IReadOnlyList<PhotoEntry>> LoadAsync()
+    /// <param name="cancellation">The caller's, carried to EF Core.</param>
+    public async Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation)
     {
-        using var db = await factory.CreateDbContextAsync();
+        using var db = await factory.CreateDbContextAsync(cancellation);
         return await db.Photos.AsNoTracking().OrderBy(row => row.Seq)
             .Select(row => new PhotoEntry(row.File, row.Style, row.Title))
-            .ToListAsync();
+            .ToListAsync(cancellation);
     }
 }
 
@@ -55,14 +57,15 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
 {
     // #region bid-store
     /// <summary>Every stored bid, for BidBook to replay into its indexes at startup.</summary>
-    public async Task<IReadOnlyList<StoredBid>> LoadAsync()
+    /// <param name="cancellation">The caller's; the replay's starter lends it, and in a container that is the host.</param>
+    public async Task<IReadOnlyList<StoredBid>> LoadAsync(CancellationToken cancellation)
     {
-        using var db = await factory.CreateDbContextAsync();
+        using var db = await factory.CreateDbContextAsync(cancellation);
         return await db.Bids.AsNoTracking().Select(row => new StoredBid(
                 row.UserId,
                 row.VehicleId,
                 new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs)))
-            .ToListAsync();
+            .ToListAsync(cancellation);
     }
 
     /// <summary>
@@ -70,14 +73,16 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
     /// so this reads the table; it runs only when a vehicle has no standing yet,
     /// once per vehicle, on a table of visitor bids.
     /// </summary>
-    public async Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId)
+    /// <param name="vehicleId">The vehicle.</param>
+    /// <param name="cancellation">The caller's. A table read is the most expensive thing this adapter does, so it is the one most worth stopping.</param>
+    public async Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId, CancellationToken cancellation)
     {
-        using var db = await factory.CreateDbContextAsync();
+        using var db = await factory.CreateDbContextAsync(cancellation);
         return await db.Bids.AsNoTracking().Where(row => row.VehicleId == vehicleId).Select(row => new StoredBid(
                 row.UserId,
                 row.VehicleId,
                 new BidState(row.Amount, row.BidCount, row.WonBuyNow, row.AtMs)))
-            .ToListAsync();
+            .ToListAsync(cancellation);
     }
 
     /// <summary>
@@ -89,12 +94,19 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
     /// again and runs the rules again. The buyer's row keeps its own token,
     /// which catches one account writing from two sites at once, and that too
     /// answers false rather than writing over what it never saw.
+    ///
+    /// <para>The token this takes is never handed to the transaction, and that is the whole of
+    /// what the ports record promised: a write abandoned between the standing and the buyer's
+    /// row would leave the store holding a standing nothing has a row for. The caller above
+    /// has already stopped honouring cancellation by the time it gets here, so the parameter
+    /// exists to keep one shape across the port and not to be used (ADR: The ports learn to
+    /// wait, the addendum on the token).</para>
     /// </summary>
-    public async Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion)
+    public async Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion, CancellationToken cancellation)
     {
         using var db = await factory.CreateDbContextAsync();
         await using var transaction = await db.Database.BeginTransactionAsync();
-        if (expectedVersion is not null && !await TryMoveStandingAsync(db, vehicleId, standing, long.Parse(expectedVersion, CultureInfo.InvariantCulture)))
+        if (expectedVersion is not null && !await TryMoveStandingAsync(db, vehicleId, standing, long.Parse(expectedVersion, CultureInfo.InvariantCulture), CancellationToken.None))
         {
             return false;
         }
@@ -104,7 +116,7 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
             db.Standings.Add(RowOf(vehicleId, standing, version: 1));
         }
 
-        await StageBuyerRowAsync(db, userId, vehicleId, state);
+        await StageBuyerRowAsync(db, userId, vehicleId, state, cancellation);
         try
         {
             await db.SaveChangesAsync();
@@ -119,7 +131,7 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
             // same standing. Anything else that broke is a real failure and
             // travels.
             await transaction.RollbackAsync();
-            if (await StandingExistsAsync(vehicleId))
+            if (await StandingExistsAsync(vehicleId, CancellationToken.None))
             {
                 return false;
             }
@@ -135,7 +147,7 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
     /// context, with the concurrency token moved where the provider does not
     /// move it itself. Nothing is written until the caller saves.
     /// </summary>
-    private static async Task StageBuyerRowAsync(YardDbContext db, string userId, string vehicleId, BidState state)
+    private static async Task StageBuyerRowAsync(YardDbContext db, string userId, string vehicleId, BidState state, CancellationToken cancellation)
     {
         var existing = await db.Bids.FindAsync(userId, vehicleId);
         if (existing is null)
@@ -173,8 +185,12 @@ public sealed partial class EfBidStore(IDbContextFactory<YardDbContext> factory)
     /// Deletes one buyer's rows, every vehicle, and the standing of each of
     /// those vehicles, in one transaction. The standings go so the next bid on
     /// each vehicle works its standing out again from whoever is left.
+    ///
+    /// <para>Like the bid write, the token is not given to the transaction: the standings and
+    /// the rows go together or not at all, and a reset stopped between them would leave
+    /// vehicles with no standing and rows still claiming one.</para>
     /// </summary>
-    public async Task ClearAsync(string userId)
+    public async Task ClearAsync(string userId, CancellationToken cancellation)
     {
         using var db = await factory.CreateDbContextAsync();
         await using var transaction = await db.Database.BeginTransactionAsync();

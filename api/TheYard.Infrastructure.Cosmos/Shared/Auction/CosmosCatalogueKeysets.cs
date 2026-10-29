@@ -81,7 +81,7 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
     /// A page deep in an order from the kept places, or null when they are not kept yet, in which
     /// case the walk that keeps them is started and the page is read with OFFSET this once.
     /// </summary>
-    public async Task<IReadOnlyList<CatalogueEntry>?> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
+    public async Task<IReadOnlyList<CatalogueEntry>?> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take, CancellationToken cancellation)
     {
         if (skip < KeyStep || !KeysetServes(filter, order) || KeyOf(order) is not { } key)
         {
@@ -89,14 +89,14 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
         }
         if (filter.Segment == CatalogueSegment.Live)
         {
-            return await _live.PageAsync(filter.SinceAnchorMs, skip, take);
+            return await _live.PageAsync(filter.SinceAnchorMs, skip, take, cancellation);
         }
         if (!_keysets.TryGetValue(order, out var keyset))
         {
             StartWalks(order);
             return null;
         }
-        long at = skip + await LeadAsync(filter, order, keyset, key);
+        long at = skip + await LeadAsync(filter, order, keyset, key, cancellation);
         long index = at / KeyStep;
         if (index >= keyset.Keys.Length)
         {
@@ -109,7 +109,7 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
                 .WithParameter("@key", keyset.Keys[index])
                 .WithParameter("@place", keyset.Places[index]),
             partitionKey: null,
-            "cross-partition");
+            "cross-partition", cancellation: cancellation);
         return [.. documents.Select(document => document.ToEntry())];
     }
 
@@ -118,7 +118,7 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
     /// the upcoming segment, every row that started by now; for the ended, every row that ends
     /// after now. Read as the kept place at the boundary and one count of at most KeyStep rows after it.
     /// </summary>
-    private async Task<long> LeadAsync(CatalogueFilter filter, CatalogueOrder order, Keyset keyset, (string Path, bool Descending) key)
+    private async Task<long> LeadAsync(CatalogueFilter filter, CatalogueOrder order, Keyset keyset, (string Path, bool Descending) key, CancellationToken cancellation)
     {
         if (filter.Segment == CatalogueSegment.Any)
         {
@@ -145,7 +145,7 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
                 .WithParameter("@place", keyset.Places[last])
                 .WithParameter("@d", filter.SinceAnchorMs),
             partitionKey: null,
-            "cross-partition");
+            "cross-partition", cancellation: cancellation);
         return (long)last * KeyStep + (counts.Count == 0 ? 0 : counts[0]);
     }
 
@@ -157,7 +157,10 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
     {
         foreach (var wanted in new[] { order, CatalogueOrder.StartAscending, CatalogueOrder.EndDescending }.Distinct())
         {
-            _walks.GetOrAdd(wanted, chosen => Task.Run(() => WalkAsync(chosen)));
+            // No token: this walk is kept under its order and handed to every later
+            // request that wants the same one, so the request that happened to start it
+            // does not get to take it away from the rest of them.
+            _walks.GetOrAdd(wanted, chosen => Task.Run(() => WalkAsync(chosen, CancellationToken.None)));
         }
     }
 
@@ -165,15 +168,15 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
     /// Reads the whole order once and keeps every KeyStep-th place. Only a whole catalogue is
     /// walked; a walk that fails is let go, and the next deep page starts another.
     /// </summary>
-    private async Task WalkAsync(CatalogueOrder order)
+    private async Task WalkAsync(CatalogueOrder order, CancellationToken cancellation)
     {
         try
         {
-            if (KeyOf(order) is not { } key || await CosmosVehicleCatalogue.FilledAsync(store, target) < target)
+            if (KeyOf(order) is not { } key || await CosmosVehicleCatalogue.FilledAsync(store, target, cancellation) < target)
             {
                 return;
             }
-            var (keys, places) = await WalkPlacesAsync(store, target, order, key.Path, key.Descending, null);
+            var (keys, places) = await WalkPlacesAsync(store, target, order, key.Path, key.Descending, null, cancellation);
             if ((long)(keys.Length - 1) * KeyStep < target && (long)keys.Length * KeyStep >= target)
             {
                 _keysets[order] = new Keyset(keys, places);
@@ -197,7 +200,7 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
     /// after the last place the one before ended on, so no read skips anything, and keeps the key
     /// and place of every KeyStep-th row: about forty request units a read.
     /// </summary>
-    internal static async Task<(double[] Keys, int[] Places)> WalkPlacesAsync(CosmosStore store, int target, CatalogueOrder order, string path, bool descending, string? condition, params (string Name, object Value)[] parameters)
+    internal static async Task<(double[] Keys, int[] Places)> WalkPlacesAsync(CosmosStore store, int target, CatalogueOrder order, string path, bool descending, string? condition, CancellationToken cancellation, params (string Name, object Value)[] parameters)
     {
         var keys = new List<double>();
         var places = new List<int>();
@@ -222,7 +225,7 @@ public sealed class CosmosCatalogueKeysets(CosmosStore store, int target)
             {
                 query = query.WithParameter(name, value);
             }
-            var read = await store.QueryAsync<double[]>(store.ContainerNamed(Containers.Catalogue), query, partitionKey: null, "cross-partition");
+            var read = await store.QueryAsync<double[]>(store.ContainerNamed(Containers.Catalogue), query, partitionKey: null, "cross-partition", cancellation: cancellation);
             foreach (var pair in read)
             {
                 if (position % KeyStep == 0)

@@ -29,7 +29,7 @@ public sealed class CosmosStoreStartup(CosmosStore store)
     /// the code was written for, and refuse the store if they are not
     /// (ADR: Data first, and the database in source control, addendum).
     /// </summary>
-    public async Task<DatabaseState> PrepareAsync(IVehicleSource seedVehicles, IPhotoManifestSource seedPhotos)
+    public async Task<DatabaseState> PrepareAsync(IVehicleSource seedVehicles, IPhotoManifestSource seedPhotos, CancellationToken cancellation)
     {
         try
         {
@@ -53,7 +53,7 @@ public sealed class CosmosStoreStartup(CosmosStore store)
             checking.Stop();
 
             var seeding = Stopwatch.StartNew();
-            var seeded = await EnsureSeededAsync(seedVehicles, seedPhotos);
+            var seeded = await EnsureSeededAsync(seedVehicles, seedPhotos, cancellation);
             seeding.Stop();
             store.Startup = new StartupCost(checking.ElapsedMilliseconds, seeding.ElapsedMilliseconds, seeded.SeedCharge, seeded.VehiclesInserted, seeded.PhotosInserted);
 
@@ -96,14 +96,14 @@ public sealed class CosmosStoreStartup(CosmosStore store)
     /// cost, and it is measured rather than estimated
     /// (ADR: A second store on Cosmos DB, and what it costs).
     /// </summary>
-    public async Task<CosmosSeedResult> EnsureSeededAsync(IVehicleSource vehicles, IPhotoManifestSource photos)
+    public async Task<CosmosSeedResult> EnsureSeededAsync(IVehicleSource vehicles, IPhotoManifestSource photos, CancellationToken cancellation)
     {
         double charge = 0;
         int vehiclesAdded = 0;
         int photosAdded = 0;
 
-        int vehicleCount = await store.CountAsync(store.Vehicles);
-        var seedVehicles = await vehicles.LoadAsync();
+        int vehicleCount = await store.CountAsync(store.Vehicles, cancellation: cancellation);
+        var seedVehicles = await vehicles.LoadAsync(cancellation);
         if (vehicleCount < seedVehicles.Count)
         {
             int seq = 0;
@@ -118,8 +118,8 @@ public sealed class CosmosStoreStartup(CosmosStore store)
             _firstVehicle = null;
         }
 
-        int photoCount = await store.CountAsync(store.Photos);
-        var seedPhotos = await photos.LoadAsync();
+        int photoCount = await store.CountAsync(store.Photos, cancellation: cancellation);
+        var seedPhotos = await photos.LoadAsync(cancellation);
         if (photoCount < seedPhotos.Count)
         {
             int seq = 0;
@@ -145,17 +145,17 @@ public sealed class CosmosStoreStartup(CosmosStore store)
     /// because an open Admin tab asks every thirty seconds and a count is a scan
     /// of the container every time it is asked.
     /// </summary>
-    public async Task<bool> ProbeAsync()
+    public async Task<bool> ProbeAsync(CancellationToken cancellation)
     {
-        _firstVehicle ??= await FirstAsync<VehicleDocument, (string, string)>(store.Vehicles, d => (d.Id, d.Make));
-        _firstPhoto ??= await FirstAsync<PhotoDocument, (string, string)>(store.Photos, d => (d.Id, d.Style));
+        _firstVehicle ??= await FirstAsync<VehicleDocument, (string, string)>(store.Vehicles, d => (d.Id, d.Make), cancellation);
+        _firstPhoto ??= await FirstAsync<PhotoDocument, (string, string)>(store.Photos, d => (d.Id, d.Style), cancellation);
         if (_firstVehicle is null || _firstPhoto is null)
         {
             return false;
         }
 
-        var vehicle = await store.ReadAsync<VehicleDocument>(store.Vehicles, _firstVehicle.Value.Id, _firstVehicle.Value.Make, "pinned to the make");
-        var photo = await store.ReadAsync<PhotoDocument>(store.Photos, _firstPhoto.Value.Id, _firstPhoto.Value.Style, "pinned to the style");
+        var vehicle = await store.ReadAsync<VehicleDocument>(store.Vehicles, _firstVehicle.Value.Id, _firstVehicle.Value.Make, "pinned to the make", cancellation: cancellation);
+        var photo = await store.ReadAsync<PhotoDocument>(store.Photos, _firstPhoto.Value.Id, _firstPhoto.Value.Style, "pinned to the style", cancellation: cancellation);
         return vehicle is not null && photo is not null;
     }
 
@@ -164,10 +164,13 @@ public sealed class CosmosStoreStartup(CosmosStore store)
     /// to point-read it again, or null when the container is empty. The probe
     /// keeps the answer, so this query is not paid on every health check.
     /// </summary>
-    private async Task<TResult?> FirstAsync<TDocument, TResult>(Container container, Func<TDocument, TResult> pick)
+    /// <param name="container">The container to look in.</param>
+    /// <param name="pick">Reduces the document to the fields the probe keeps.</param>
+    /// <param name="cancellation">The caller's, which on the health report's path is the request's.</param>
+    private async Task<TResult?> FirstAsync<TDocument, TResult>(Container container, Func<TDocument, TResult> pick, CancellationToken cancellation)
         where TResult : struct
     {
-        var page = await store.QueryAsync<TDocument>(container, new QueryDefinition("SELECT TOP 1 * FROM c"), partitionKey: null, "cross-partition");
+        var page = await store.QueryAsync<TDocument>(container, new QueryDefinition("SELECT TOP 1 * FROM c"), partitionKey: null, "cross-partition", cancellation: cancellation);
         return page.Count == 0 ? null : pick(page[0]);
     }
     // #endregion probe

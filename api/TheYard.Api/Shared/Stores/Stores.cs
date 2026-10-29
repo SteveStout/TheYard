@@ -194,8 +194,15 @@ public sealed class CurrentBackend(Backends backends, IHttpContextAccessor acces
 public static class Warmth
 {
     /// <summary>Warms the backend's catalogue if it is not warm; a warm one is a task already finished.</summary>
-    public static Task EnsureAsync(Backend backend) =>
-        backend.Inventory.IsWarm ? Task.CompletedTask : backend.Inventory.WarmAsync();
+    /// <param name="backend">The store this request is on.</param>
+    /// <param name="cancellation">
+    /// The request's. One warm-up is shared, so this ends the request's wait and not the
+    /// warm-up: a visitor who closed a tab during the seconds after a roll must not abandon the
+    /// load every other request is queued behind (ADR: The ports learn to wait, the addendum on
+    /// the token).
+    /// </param>
+    public static Task EnsureAsync(Backend backend, CancellationToken cancellation) =>
+        backend.Inventory.IsWarm ? Task.CompletedTask : backend.Inventory.WarmAsync(cancellation);
 }
 // #endregion warm-before-reading
 

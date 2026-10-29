@@ -126,8 +126,18 @@ public sealed class BoundedCache<TKey, TValue>
     /// miss while a load for their key is under way wait for that load rather than starting their
     /// own, so a listing whose five-second bucket has just turned costs the store one count, not
     /// one for every visitor who asked in the same moment.
+    ///
+    /// <para>Sharing a load means cancelling has to mean two things, and here it does: the caller
+    /// who starts the load lends the factory their token, and a caller who merely arrived while it
+    /// was in flight stops only their own wait. Letting a waiter cancel the load itself would hand
+    /// one visitor who closed a tab the power to abandon the read every other visitor on that key
+    /// is queued behind, which is the opposite of what this cache is for (ADR: The ports learn to
+    /// wait, the addendum on the token).</para>
     /// </summary>
-    public async Task<TValue> GetOrAddAsync(TKey key, Func<Task<TValue>> factory)
+    /// <param name="key">The key to read or fill.</param>
+    /// <param name="factory">Reads the value, under the starting caller's token.</param>
+    /// <param name="cancellation">The caller's: the factory's token when this caller starts the load, and the end of this caller's wait otherwise.</param>
+    public async Task<TValue> GetOrAddAsync(TKey key, Func<CancellationToken, Task<TValue>> factory, CancellationToken cancellation)
     {
         if (TryGet(key, out var cached))
         {
@@ -146,11 +156,11 @@ public sealed class BoundedCache<TKey, TValue>
         }
         if (mine is null)
         {
-            return await load;
+            return await load.WaitAsync(cancellation);
         }
         try
         {
-            var made = await factory();
+            var made = await factory(cancellation);
             Set(key, made);
             mine.SetResult(made);
             return made;

@@ -44,17 +44,17 @@ public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts
     private volatile bool _beyond = true;
 
     /// <inheritdoc />
-    public async Task<int> FilledAsync()
+    public async Task<int> FilledAsync(CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
-        int filled = await db.Catalogue.CountAsync(row => row.Seq < target);
-        _beyond = await db.Catalogue.AnyAsync(row => row.Seq >= target);
-        await _words.CheckWordsAsync(db, filled, now: true);
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
+        int filled = await db.Catalogue.CountAsync(row => row.Seq < target, cancellation);
+        _beyond = await db.Catalogue.AnyAsync(row => row.Seq >= target, cancellation);
+        await _words.CheckWordsAsync(db, filled, cancellation, now: true);
         return filled;
     }
 
     /// <summary>Inserts the batch's rows the table does not already hold, in one save.</summary>
-    public async Task FillAsync(IReadOnlyList<CatalogueEntry> batch)
+    public async Task FillAsync(IReadOnlyList<CatalogueEntry> batch, CancellationToken cancellation)
     {
         if (batch.Count == 0)
         {
@@ -64,10 +64,10 @@ public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts
         _words.LookAgain();
         if (local)
         {
-            await EfCatalogueFill.FillFileAsync(contexts, batch);
+            await EfCatalogueFill.FillFileAsync(contexts, batch, cancellation);
             return;
         }
-        await EfCatalogueFill.FillModelAsync(contexts, batch);
+        await EfCatalogueFill.FillModelAsync(contexts, batch, cancellation);
     }
 
     // #region ef-catalogue-query
@@ -163,10 +163,10 @@ public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts
     /// the rows by segment, and a segment in the WHERE draws the planner to a range over a schedule
     /// index that then reads every row in it for the other columns the filter names.
     /// </summary>
-    public async Task<SegmentCounts> CountAsync(CatalogueFilter filter)
+    public async Task<SegmentCounts> CountAsync(CatalogueFilter filter, CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
-        await _words.WordsBeforeQueryAsync(db, filter);
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
+        await _words.WordsBeforeQueryAsync(db, filter, cancellation);
         long d = filter.SinceAnchorMs;
         var counts = await Query(db, filter.In(CatalogueSegment.Any))
             .GroupBy(_ => 1)
@@ -176,7 +176,7 @@ public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts
                 Upcoming = all.Count(row => row.StartOffsetMs > d),
                 Ended = all.Count(row => row.EndOffsetMs <= d),
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellation);
         if (counts is null)
         {
             return SegmentCounts.None;
@@ -191,18 +191,18 @@ public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts
     }
 
     /// <summary>One page: the ORDER BY, then OFFSET and FETCH in the database, so it reads only as far as the page.</summary>
-    public async Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
+    public async Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take, CancellationToken cancellation)
     {
         if (take <= 0)
         {
             return [];
         }
-        await using var db = await contexts.CreateDbContextAsync();
-        await _words.WordsBeforeQueryAsync(db, filter);
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
+        await _words.WordsBeforeQueryAsync(db, filter, cancellation);
         bool word = local && filter.Tokens.Count > 0;
         if (!word && skip < DeepSkip)
         {
-            var rows = await Ordered(Query(db, filter), order).Skip(skip).Take(take).ToListAsync();
+            var rows = await Ordered(Query(db, filter), order).Skip(skip).Take(take).ToListAsync(cancellation);
             return [.. rows.Select(row => row.ToEntry())];
         }
         // A page deep in the order, or a typed word on a SQLite file: the page's places first, then
@@ -212,30 +212,30 @@ public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts
         // the places come off the words index in an order no index serves, so the planner cannot
         // walk an order's index reading every row for its text.
         var places = await (word ? Unindexed(Query(db, filter), order) : Ordered(Query(db, filter), order))
-            .Skip(skip).Take(take).Select(row => row.Seq).ToListAsync();
+            .Skip(skip).Take(take).Select(row => row.Seq).ToListAsync(cancellation);
         if (places.Count == 0)
         {
             return [];
         }
-        var found = (await db.Catalogue.AsNoTracking().Where(row => EF.Parameter(places).Contains(row.Seq)).ToListAsync())
+        var found = (await db.Catalogue.AsNoTracking().Where(row => EF.Parameter(places).Contains(row.Seq)).ToListAsync(cancellation))
             .ToDictionary(row => row.Seq);
         return [.. places.Select(place => found[place].ToEntry())];
     }
     // #endregion ef-catalogue-query
 
     /// <summary>The rows for these ids, by the primary key, in the catalogue's order.</summary>
-    public async Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids)
+    public async Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids, CancellationToken cancellation)
     {
         if (ids.Count == 0)
         {
             return [];
         }
         string[] wanted = [.. ids.Distinct(StringComparer.Ordinal)];
-        await using var db = await contexts.CreateDbContextAsync();
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
         var rows = await db.Catalogue.AsNoTracking()
             .Where(row => EF.Parameter(wanted).Contains(row.Id) && row.Seq < target)
             .OrderBy(row => row.Seq)
-            .ToListAsync();
+            .ToListAsync(cancellation);
         return [.. rows.Select(row => row.ToEntry())];
     }
 
@@ -246,15 +246,15 @@ public sealed class EfVehicleCatalogue(IDbContextFactory<YardDbContext> contexts
     /// DISTINCTs over two hundred rows cost nothing where four over a hundred thousand are four
     /// scans of the table on every warm-up.
     /// </summary>
-    public async Task<InventoryFacets> FacetsAsync()
+    public async Task<InventoryFacets> FacetsAsync(CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
         var seed = db.Vehicles.AsNoTracking();
         return new InventoryFacets(
-            Sorted(await seed.Select(row => row.Make).Distinct().ToListAsync()),
-            Sorted(await seed.Select(row => row.BodyStyle).Distinct().ToListAsync()),
-            Sorted(await seed.Select(row => row.TitleStatus).Distinct().ToListAsync()),
-            Sorted(await seed.Select(row => row.Province).Distinct().ToListAsync()));
+            Sorted(await seed.Select(row => row.Make).Distinct().ToListAsync(cancellation)),
+            Sorted(await seed.Select(row => row.BodyStyle).Distinct().ToListAsync(cancellation)),
+            Sorted(await seed.Select(row => row.TitleStatus).Distinct().ToListAsync(cancellation)),
+            Sorted(await seed.Select(row => row.Province).Distinct().ToListAsync(cancellation)));
     }
 
     private static List<string> Sorted(List<string> values)

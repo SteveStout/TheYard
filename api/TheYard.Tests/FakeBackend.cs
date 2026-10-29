@@ -14,18 +14,18 @@ internal static class FakeBackend
         Inventory = new Stock(new EmptyVehicles(), new EmptyPhotos()),
         Bids = new BidBook(new MemoryBidStore()),
         Market = new Room(new Random(7)),
-        Probe = () => Task.FromResult(ready),
+        Probe = _ => Task.FromResult(ready),
     };
 
     private sealed class EmptyVehicles : IVehicleSource
     {
-        public Task<IReadOnlyList<Vehicle>> LoadAsync() =>
+        public Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation) =>
             Task.FromResult<IReadOnlyList<Vehicle>>([]);
     }
 
     private sealed class EmptyPhotos : IPhotoManifestSource
     {
-        public Task<IReadOnlyList<PhotoEntry>> LoadAsync() =>
+        public Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation) =>
             Task.FromResult<IReadOnlyList<PhotoEntry>>([]);
     }
 }

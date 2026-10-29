@@ -29,7 +29,7 @@ public sealed class ReadBidHistoryHandler(StandingReader standings) : IQueryHand
     /// <summary>The signed-in bidder's history.</summary>
     /// <param name="query">Whose history.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public Task<BidHistory> HandleAsync(ReadBidHistoryQuery query, CancellationToken cancellation) => standings.HistoryOfAsync(query.UserId);
+    public Task<BidHistory> HandleAsync(ReadBidHistoryQuery query, CancellationToken cancellation) => standings.HistoryOfAsync(query.UserId, cancellation);
 }
 
 /// <summary>A signed-in bidder's history.</summary>
@@ -49,7 +49,7 @@ public sealed class RoomRoundHandler(IBidReader bids, IStockReader inventory, IR
     /// <param name="cancellation">The request's cancellation.</param>
     public async Task<RoomRound> HandleAsync(RoomRoundCommand command, CancellationToken cancellation)
     {
-        var raised = await RoundAsync(bids, inventory, room, clock());
+        var raised = await RoundAsync(bids, inventory, room, clock(), cancellation);
         return new RoomRound(raised.Count, command.UserId is null ? new Dictionary<string, BidView>(StringComparer.Ordinal) : standings.BidsOf(command.UserId));
     }
 
@@ -65,13 +65,18 @@ public sealed class RoomRoundHandler(IBidReader bids, IStockReader inventory, IR
     /// counts every match to keep a handful of them; the store answers the first live ones off its
     /// own order and stops at the fortieth.
     /// </summary>
+    /// <param name="bids">Everybody's bids, reading side.</param>
+    /// <param name="inventory">The catalogue, reading side.</param>
+    /// <param name="room">The room, writing side.</param>
+    /// <param name="clock">The server's clock.</param>
+    /// <param name="cancellation">The request's: the two catalogue reads are the whole cost of a round, and the round itself is memory.</param>
     /// <returns>The ids the room raised.</returns>
-    public static async Task<IReadOnlyList<string>> RoundAsync(IBidReader bids, IStockReader inventory, IRoomWriter room, AuctionClock clock)
+    public static async Task<IReadOnlyList<string>> RoundAsync(IBidReader bids, IStockReader inventory, IRoomWriter room, AuctionClock clock, CancellationToken cancellation)
     {
         var standing = bids.StandingAsBids();
-        var found = (await inventory.FindManyAsync(standing.Keys.ToList())).ToDictionary(v => v.Id, StringComparer.Ordinal);
+        var found = (await inventory.FindManyAsync(standing.Keys.ToList(), cancellation)).ToDictionary(v => v.Id, StringComparer.Ordinal);
         var contested = standing.Keys.Where(found.ContainsKey).Select(id => found[id]);
-        var live = await inventory.FirstLiveAsync(clock, RoomRoundLiveCount);
+        var live = await inventory.FirstLiveAsync(clock, RoomRoundLiveCount, cancellation);
         var candidates = contested.Concat(live).DistinctBy(v => v.Id).ToList();
         return room.Tick(candidates, standing, clock);
     }
@@ -100,7 +105,7 @@ public sealed class ResetBidsHandler(IBidWriter bids, IRoomWriter room) : IComma
         // One buyer's start-over: their bids go, and so do the room's answers on the vehicles nobody
         // else is bidding on any more. Leaving the room's counter-bid standing would make the reset
         // clear one side of an auction and not the other.
-        room.Forget(await bids.ResetAsync(command.UserId));
+        room.Forget(await bids.ResetAsync(command.UserId, cancellation));
         // #endregion reset
         return true;
     }

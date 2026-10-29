@@ -27,7 +27,7 @@ public sealed class RelationalDiagnostics(IDbContextFactory<YardDbContext> conte
     public async Task<double?> RoundTripMillisecondsAsync(CancellationToken cancellation)
     {
         long start = Stopwatch.GetTimestamp();
-        await YardDatabase.PingAsync(contexts);
+        await YardDatabase.PingAsync(contexts, cancellation);
         return Stopwatch.GetElapsedTime(start).TotalMilliseconds;
     }
 

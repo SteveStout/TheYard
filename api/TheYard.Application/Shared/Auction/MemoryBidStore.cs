@@ -8,6 +8,11 @@ namespace TheYard.Application.Shared.Auction;
 /// Bids and standings in a dictionary, gone when the process ends. One instance per BidBook
 /// unless a test shares one on purpose: a shared instance is what two sites over one store look
 /// like, in miniature.
+///
+/// <para>The cancellation every member takes is never read here. Each one is a dictionary
+/// read or write under a lock, which finishes in the time it takes to ask; a token is only
+/// worth checking where there is a wait to abandon, and that is the two durable stores
+/// (ADR: The ports learn to wait, the addendum on the token).</para>
 /// </summary>
 public sealed class MemoryBidStore : IBidStore
 {
@@ -20,7 +25,7 @@ public sealed class MemoryBidStore : IBidStore
     /// <summary>One standing per vehicle, and the version that moves on every write of it.</summary>
     private readonly Dictionary<string, (VehicleStanding Standing, long Version)> _standings = new(StringComparer.Ordinal);
 
-    public Task<IReadOnlyList<StoredBid>> LoadAsync()
+    public Task<IReadOnlyList<StoredBid>> LoadAsync(CancellationToken cancellation)
     {
         lock (_lock)
         {
@@ -29,7 +34,7 @@ public sealed class MemoryBidStore : IBidStore
         }
     }
 
-    public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync()
+    public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync(CancellationToken cancellation)
     {
         lock (_lock)
         {
@@ -38,7 +43,7 @@ public sealed class MemoryBidStore : IBidStore
         }
     }
 
-    public Task<StoredStanding?> ReadStandingAsync(string vehicleId)
+    public Task<StoredStanding?> ReadStandingAsync(string vehicleId, CancellationToken cancellation)
     {
         lock (_lock)
         {
@@ -46,7 +51,7 @@ public sealed class MemoryBidStore : IBidStore
         }
     }
 
-    public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId)
+    public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId, CancellationToken cancellation)
     {
         lock (_lock)
         {
@@ -57,7 +62,7 @@ public sealed class MemoryBidStore : IBidStore
         }
     }
 
-    public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion)
+    public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion, CancellationToken cancellation)
     {
         lock (_lock)
         {
@@ -78,7 +83,7 @@ public sealed class MemoryBidStore : IBidStore
         }
     }
 
-    public Task ClearAsync(string userId)
+    public Task ClearAsync(string userId, CancellationToken cancellation)
     {
         lock (_lock)
         {

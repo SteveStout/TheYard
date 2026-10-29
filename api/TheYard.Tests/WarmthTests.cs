@@ -19,7 +19,7 @@ public class WarmthTests
         var source = new GatedVehicles();
         var backend = ColdBackend(source);
 
-        var waiting = Warmth.EnsureAsync(backend);
+        var waiting = Warmth.EnsureAsync(backend, CancellationToken.None);
 
         // Still loading: the task is pending and the store says so. A version
         // that blocked would never have returned this task at all.
@@ -39,9 +39,9 @@ public class WarmthTests
         var source = new GatedVehicles();
         var backend = ColdBackend(source);
         source.Release();
-        await backend.Inventory.WarmAsync();
+        await backend.Inventory.WarmAsync(CancellationToken.None);
 
-        var again = Warmth.EnsureAsync(backend);
+        var again = Warmth.EnsureAsync(backend, CancellationToken.None);
 
         Assert.True(again.IsCompletedSuccessfully);
         Assert.Equal(1, source.Loads);
@@ -57,7 +57,7 @@ public class WarmthTests
         Inventory = new Stock(source, new NoPhotos()),
         Bids = new BidBook(new MemoryBidStore()),
         Market = new Room(new Random(7)),
-        Probe = () => Task.FromResult(true),
+        Probe = _ => Task.FromResult(true),
     };
 
     /// <summary>A catalogue that loads when the test says so, and counts how often it was asked.</summary>
@@ -68,7 +68,7 @@ public class WarmthTests
 
         public int Loads { get; private set; }
 
-        public Task<IReadOnlyList<Vehicle>> LoadAsync()
+        public Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation)
         {
             Loads++;
             return _gate.Task;
@@ -79,7 +79,7 @@ public class WarmthTests
 
     private sealed class NoPhotos : IPhotoManifestSource
     {
-        public Task<IReadOnlyList<PhotoEntry>> LoadAsync() =>
+        public Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation) =>
             Task.FromResult<IReadOnlyList<PhotoEntry>>([]);
     }
 }

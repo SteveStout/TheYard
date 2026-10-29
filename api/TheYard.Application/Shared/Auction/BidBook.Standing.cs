@@ -25,10 +25,13 @@ public sealed partial class BidBook
     /// which a write reads as "there was nothing here": if another writer
     /// creates one in between, the write is refused like any other conflict.
     /// </summary>
-    private async Task<(VehicleStanding? Held, string? Version)> CurrentAsync(string vehicleId)
+    /// <param name="vehicleId">The vehicle whose standing is read.</param>
+    /// <param name="cancellation">The caller's, on the two reads; both callers hold the gate, and
+    /// the write that follows does not take it (ADR: The ports learn to wait, the addendum on the token).</param>
+    private async Task<(VehicleStanding? Held, string? Version)> CurrentAsync(string vehicleId, CancellationToken cancellation)
     {
-        var stored = await _store.ReadStandingAsync(vehicleId);
-        var held = stored is not null ? stored.Standing : StandingFold.Derive(await _store.BidsOnAsync(vehicleId));
+        var stored = await _store.ReadStandingAsync(vehicleId, cancellation);
+        var held = stored is not null ? stored.Standing : StandingFold.Derive(await _store.BidsOnAsync(vehicleId, cancellation));
         _ledger.Hold(vehicleId, held);
         return (held, stored?.Version);
     }

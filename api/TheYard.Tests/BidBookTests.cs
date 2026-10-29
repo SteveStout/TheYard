@@ -28,7 +28,7 @@ public class BidBookTests
         var market = new Room(new Random(7));
 
         // The buyer takes the lead at the minimum, 22,800 + 500.
-        Assert.Equal(BidOutcomeKind.Accepted, (await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer)).Kind);
+        Assert.Equal(BidOutcomeKind.Accepted, (await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer, CancellationToken.None)).Kind);
 
         // The room answers twice, so it stands at 24,300.
         var buyer = bids.SnapshotFor(Buyer);
@@ -39,7 +39,7 @@ public class BidBookTests
         Assert.Equal(24_300, market.For(vehicle.Id)!.Amount);
 
         // 23,800 is a raise on the buyer's own bid and $500 under the room.
-        var rejected = await bids.PlaceBidAsync(market.Apply(vehicle), 23_800, laterStill, Buyer);
+        var rejected = await bids.PlaceBidAsync(market.Apply(vehicle), 23_800, laterStill, Buyer, CancellationToken.None);
 
         Assert.Equal(BidOutcomeKind.Rejected, rejected.Kind);
         Assert.Contains("24,800", rejected.Reason);
@@ -57,7 +57,7 @@ public class BidBookTests
         var bids = new BidBook(new MemoryBidStore());
         var market = new Room(new Random(7));
 
-        await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer);
+        await bids.PlaceBidAsync(vehicle, 23_300, clock, Buyer, CancellationToken.None);
         int afterMine = market.Apply(bids.Apply(vehicle)).BidCount;
 
         var later = TestData.ClockAt(new DateTimeOffset(2026, 8, 15, 12, 1, 0, TimeSpan.FromHours(-4)));
@@ -66,7 +66,7 @@ public class BidBookTests
         Assert.True(afterTheirs > afterMine);
 
         var composed = market.Apply(bids.Apply(vehicle));
-        await bids.PlaceBidAsync(composed, BidRules.MinNextBid(composed), later, Buyer);
+        await bids.PlaceBidAsync(composed, BidRules.MinNextBid(composed), later, Buyer, CancellationToken.None);
 
         Assert.True(market.Apply(bids.Apply(vehicle)).BidCount >= afterTheirs,
             "the bid count fell when the buyer retook the lead");
@@ -108,15 +108,15 @@ public class BidBookTests
         var service = new BidBook(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800); // bid_count 16
 
-        var outcome = await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
+        var outcome = await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer, CancellationToken.None);
 
         Assert.Equal(BidOutcomeKind.Accepted, outcome.Kind);
         var merged = service.Apply(vehicle);
         Assert.Equal(23_300, merged.CurrentBid);
         Assert.Equal(17, merged.BidCount);
         // The next bid must clear the new high bid, not the old one.
-        Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 23_400, Now, Buyer)).Kind);
-        Assert.Equal(BidOutcomeKind.Accepted, (await service.PlaceBidAsync(vehicle, 23_800, Now, Buyer)).Kind);
+        Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 23_400, Now, Buyer, CancellationToken.None)).Kind);
+        Assert.Equal(BidOutcomeKind.Accepted, (await service.PlaceBidAsync(vehicle, 23_800, Now, Buyer, CancellationToken.None)).Kind);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class BidBookTests
         var service = new BidBook(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId()) with { BuyNowPrice = 28_000 };
 
-        var outcome = await service.BuyNowAsync(vehicle, Now, Buyer);
+        var outcome = await service.BuyNowAsync(vehicle, Now, Buyer, CancellationToken.None);
 
         Assert.Equal(BidOutcomeKind.Won, outcome.Kind);
         var state = service.SnapshotFor(Buyer)[vehicle.Id];
@@ -150,15 +150,15 @@ public class BidBookTests
         const string Stranger = "second-account";
 
         Assert.False(service.IsSold(vehicle.Id));
-        Assert.Equal(BidOutcomeKind.Won, (await service.BuyNowAsync(vehicle, Now, Buyer)).Kind);
+        Assert.Equal(BidOutcomeKind.Won, (await service.BuyNowAsync(vehicle, Now, Buyer, CancellationToken.None)).Kind);
         Assert.True(service.IsSold(vehicle.Id));
 
         // The three doors a second buyer could try: a bid at the buy-now price,
         // which used to win; a bid above the minimum, which used to be accepted;
         // and Buy Now itself.
-        var atBuyNow = await service.PlaceBidAsync(vehicle, 28_000, Now, Stranger);
-        var overMinimum = await service.PlaceBidAsync(vehicle, 28_500, Now, Stranger);
-        var again = await service.BuyNowAsync(vehicle, Now, Stranger);
+        var atBuyNow = await service.PlaceBidAsync(vehicle, 28_000, Now, Stranger, CancellationToken.None);
+        var overMinimum = await service.PlaceBidAsync(vehicle, 28_500, Now, Stranger, CancellationToken.None);
+        var again = await service.BuyNowAsync(vehicle, Now, Stranger, CancellationToken.None);
         foreach (var outcome in new[] { atBuyNow, overMinimum, again })
         {
             Assert.Equal(BidOutcomeKind.Rejected, outcome.Kind);
@@ -182,11 +182,11 @@ public class BidBookTests
         var service = new BidBook(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 27_900) with { BuyNowPrice = 28_000 };
 
-        Assert.Equal(BidOutcomeKind.Won, (await service.PlaceBidAsync(vehicle, 30_000, Now, Buyer)).Kind);
+        Assert.Equal(BidOutcomeKind.Won, (await service.PlaceBidAsync(vehicle, 30_000, Now, Buyer, CancellationToken.None)).Kind);
 
         Assert.True(service.IsSold(vehicle.Id));
-        Assert.Equal(BidRules.SoldReason, (await service.BuyNowAsync(vehicle, Now, "second-account")).Reason);
-        Assert.Equal(BidRules.SoldReason, (await service.PlaceBidAsync(vehicle, 29_000, Now, Buyer)).Reason);
+        Assert.Equal(BidRules.SoldReason, (await service.BuyNowAsync(vehicle, Now, "second-account", CancellationToken.None)).Reason);
+        Assert.Equal(BidRules.SoldReason, (await service.PlaceBidAsync(vehicle, 29_000, Now, Buyer, CancellationToken.None)).Reason);
     }
 
     /// <summary>
@@ -201,9 +201,9 @@ public class BidBookTests
         var store = new FlakyStore(sale);
         var service = new BidBook(store);
         // The first replay fails by design of the fake; the next caller retries it.
-        await Assert.ThrowsAsync<IOException>(() => service.LoadAsync());
+        await Assert.ThrowsAsync<IOException>(() => service.LoadAsync(CancellationToken.None));
 
-        var outcome = await service.BuyNowAsync(vehicle, Now, "second-account");
+        var outcome = await service.BuyNowAsync(vehicle, Now, "second-account", CancellationToken.None);
 
         Assert.Equal(BidRules.SoldReason, outcome.Reason);
         Assert.True(service.IsSold(vehicle.Id));
@@ -216,9 +216,9 @@ public class BidBookTests
     {
         var service = new BidBook(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
-        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
+        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer, CancellationToken.None);
 
-        var touched = await service.ResetAsync(Buyer);
+        var touched = await service.ResetAsync(Buyer, CancellationToken.None);
 
         Assert.Empty(service.SnapshotFor(Buyer));
         Assert.Equal(22_800, service.Apply(vehicle).CurrentBid);
@@ -235,10 +235,10 @@ public class BidBookTests
         // both be told the truth.
         var service = new BidBook(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
-        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
-        await service.PlaceBidAsync(vehicle, 24_000, Now, "somebody-else");
+        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer, CancellationToken.None);
+        await service.PlaceBidAsync(vehicle, 24_000, Now, "somebody-else", CancellationToken.None);
 
-        var orphaned = await service.ResetAsync(Buyer);
+        var orphaned = await service.ResetAsync(Buyer, CancellationToken.None);
 
         Assert.Empty(service.SnapshotFor(Buyer));
         Assert.Single(service.SnapshotFor("somebody-else"));
@@ -266,9 +266,9 @@ public class BidBookTests
         var store = new RefusingResetStore();
         var service = new BidBook(store);
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
-        Assert.Equal(BidOutcomeKind.Accepted, (await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer)).Kind);
+        Assert.Equal(BidOutcomeKind.Accepted, (await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer, CancellationToken.None)).Kind);
 
-        await Assert.ThrowsAsync<IOException>(() => service.ResetAsync(Buyer));
+        await Assert.ThrowsAsync<IOException>(() => service.ResetAsync(Buyer, CancellationToken.None));
 
         Assert.Equal(23_300, service.SnapshotFor(Buyer)[vehicle.Id].Amount);
         Assert.Equal(23_300, service.Apply(vehicle).CurrentBid);
@@ -281,18 +281,18 @@ public class BidBookTests
 
         public int Clears { get; private set; }
 
-        public Task<IReadOnlyList<StoredBid>> LoadAsync() => _inner.LoadAsync();
+        public Task<IReadOnlyList<StoredBid>> LoadAsync(CancellationToken cancellation) => _inner.LoadAsync(CancellationToken.None);
 
-        public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync() => _inner.LoadStandingsAsync();
+        public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync(CancellationToken cancellation) => _inner.LoadStandingsAsync(CancellationToken.None);
 
-        public Task<StoredStanding?> ReadStandingAsync(string vehicleId) => _inner.ReadStandingAsync(vehicleId);
+        public Task<StoredStanding?> ReadStandingAsync(string vehicleId, CancellationToken cancellation) => _inner.ReadStandingAsync(vehicleId, CancellationToken.None);
 
-        public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId) => _inner.BidsOnAsync(vehicleId);
+        public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId, CancellationToken cancellation) => _inner.BidsOnAsync(vehicleId, CancellationToken.None);
 
-        public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion) =>
-            _inner.TrySaveAsync(userId, vehicleId, state, standing, expectedVersion);
+        public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion, CancellationToken cancellation) =>
+            _inner.TrySaveAsync(userId, vehicleId, state, standing, expectedVersion, CancellationToken.None);
 
-        public Task ClearAsync(string userId)
+        public Task ClearAsync(string userId, CancellationToken cancellation)
         {
             Clears++;
             return Task.FromException(new IOException("the store is not answering"));
@@ -304,9 +304,9 @@ public class BidBookTests
     {
         var service = new BidBook(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
-        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer);
+        await service.PlaceBidAsync(vehicle, 23_300, Now, Buyer, CancellationToken.None);
 
-        Assert.Empty(await service.ResetAsync("a-stranger"));
+        Assert.Empty(await service.ResetAsync("a-stranger", CancellationToken.None));
         Assert.Single(service.SnapshotFor(Buyer));
         Assert.Equal(23_300, service.Apply(vehicle).CurrentBid);
     }
@@ -318,7 +318,7 @@ public class BidBookTests
         var service = new BidBook(new MemoryBidStore());
         var vehicle = TestData.Vehicle(id: LiveId(), currentBid: 22_800);
 
-        Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 100, Now, Buyer)).Kind);
+        Assert.Equal(BidOutcomeKind.Rejected, (await service.PlaceBidAsync(vehicle, 100, Now, Buyer, CancellationToken.None)).Kind);
         Assert.Empty(service.SnapshotFor(Buyer));
     }
 
@@ -335,10 +335,10 @@ public class BidBookTests
         var store = new FlakyStore(new StoredBid(Buyer, "v-held", new BidState(23_300, 1, false, 1)));
         var service = new BidBook(store);
 
-        await Assert.ThrowsAsync<IOException>(() => service.LoadAsync());
+        await Assert.ThrowsAsync<IOException>(() => service.LoadAsync(CancellationToken.None));
         Assert.Empty(service.SnapshotFor(Buyer));
 
-        await service.LoadAsync();
+        await service.LoadAsync(CancellationToken.None);
         Assert.Single(service.SnapshotFor(Buyer));
         Assert.Equal(2, store.LoadCalls);
     }
@@ -347,7 +347,7 @@ public class BidBookTests
     {
         public int LoadCalls { get; private set; }
 
-        public Task<IReadOnlyList<StoredBid>> LoadAsync()
+        public Task<IReadOnlyList<StoredBid>> LoadAsync(CancellationToken cancellation)
         {
             LoadCalls++;
             return LoadCalls == 1
@@ -355,17 +355,17 @@ public class BidBookTests
                 : Task.FromResult<IReadOnlyList<StoredBid>>(bids);
         }
 
-        public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync() => Task.FromResult<IReadOnlyList<StoredStanding>>([]);
+        public Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync(CancellationToken cancellation) => Task.FromResult<IReadOnlyList<StoredStanding>>([]);
 
-        public Task<StoredStanding?> ReadStandingAsync(string vehicleId) => Task.FromResult<StoredStanding?>(null);
+        public Task<StoredStanding?> ReadStandingAsync(string vehicleId, CancellationToken cancellation) => Task.FromResult<StoredStanding?>(null);
 
-        public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId) =>
+        public Task<IReadOnlyList<StoredBid>> BidsOnAsync(string vehicleId, CancellationToken cancellation) =>
             Task.FromResult<IReadOnlyList<StoredBid>>(bids.Where(bid => bid.VehicleId == vehicleId).ToList());
 
-        public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion) =>
+        public Task<bool> TrySaveAsync(string userId, string vehicleId, BidState state, VehicleStanding standing, string? expectedVersion, CancellationToken cancellation) =>
             Task.FromResult(true);
 
-        public Task ClearAsync(string userId) => Task.CompletedTask;
+        public Task ClearAsync(string userId, CancellationToken cancellation) => Task.CompletedTask;
     }
     // #endregion replay-retry
 }

@@ -75,15 +75,15 @@ public sealed class StandingAcrossSitesTests : IDisposable
     {
         var (first, second) = TwoSites(kind);
         var vehicle = Live();
-        await first.LoadAsync();
-        await second.LoadAsync();
+        await first.LoadAsync(CancellationToken.None);
+        await second.LoadAsync(CancellationToken.None);
 
-        Assert.Equal(BidOutcomeKind.Won, (await first.BuyNowAsync(vehicle, Now, "buyer-a")).Kind);
+        Assert.Equal(BidOutcomeKind.Won, (await first.BuyNowAsync(vehicle, Now, "buyer-a", CancellationToken.None)).Kind);
 
         // The second site's memory has never seen that sale; the store has.
         Assert.False(second.IsSold(vehicle.Id));
-        var again = await second.BuyNowAsync(vehicle, Now, "buyer-b");
-        var bid = await second.PlaceBidAsync(vehicle, 30_000, Now, "buyer-b");
+        var again = await second.BuyNowAsync(vehicle, Now, "buyer-b", CancellationToken.None);
+        var bid = await second.PlaceBidAsync(vehicle, 30_000, Now, "buyer-b", CancellationToken.None);
 
         Assert.Equal(BidOutcomeKind.Rejected, again.Kind);
         Assert.Equal(BidRules.SoldReason, again.Reason);
@@ -98,17 +98,17 @@ public sealed class StandingAcrossSitesTests : IDisposable
     {
         var (first, second) = TwoSites(kind);
         var vehicle = Live(22_800);
-        await first.LoadAsync();
-        await second.LoadAsync();
+        await first.LoadAsync(CancellationToken.None);
+        await second.LoadAsync(CancellationToken.None);
 
-        Assert.Equal(BidOutcomeKind.Accepted, (await first.PlaceBidAsync(vehicle, 24_000, Now, "buyer-a")).Kind);
+        Assert.Equal(BidOutcomeKind.Accepted, (await first.PlaceBidAsync(vehicle, 24_000, Now, "buyer-a", CancellationToken.None)).Kind);
 
         // 23,300 cleared the dataset's minimum and is under the first site's bid.
-        var under = await second.PlaceBidAsync(vehicle, 23_300, Now, "buyer-b");
+        var under = await second.PlaceBidAsync(vehicle, 23_300, Now, "buyer-b", CancellationToken.None);
         Assert.Equal(BidOutcomeKind.Rejected, under.Kind);
         Assert.Contains("24,500", under.Reason);
 
-        var over = await second.PlaceBidAsync(vehicle, 24_500, Now, "buyer-b");
+        var over = await second.PlaceBidAsync(vehicle, 24_500, Now, "buyer-b", CancellationToken.None);
         Assert.Equal(BidOutcomeKind.Accepted, over.Kind);
         Assert.Equal("buyer-b", second.Standing()[vehicle.Id].HighBidderId);
     }
@@ -119,10 +119,10 @@ public sealed class StandingAcrossSitesTests : IDisposable
     {
         var (first, second) = TwoSites(kind);
         var vehicle = Live(22_800);
-        await first.PlaceBidAsync(vehicle, 24_000, Now, "buyer-a");
-        await second.PlaceBidAsync(vehicle, 24_500, Now, "buyer-b");
+        await first.PlaceBidAsync(vehicle, 24_000, Now, "buyer-a", CancellationToken.None);
+        await second.PlaceBidAsync(vehicle, 24_500, Now, "buyer-b", CancellationToken.None);
 
-        await first.RefreshAsync();
+        await first.RefreshAsync(CancellationToken.None);
 
         Assert.Equal(24_500, first.Apply(vehicle).CurrentBid);
         Assert.Equal("buyer-b", first.Standing()[vehicle.Id].HighBidderId);
@@ -135,15 +135,15 @@ public sealed class StandingAcrossSitesTests : IDisposable
     {
         var (first, second) = TwoSites(kind);
         var vehicle = Live(22_800);
-        await first.PlaceBidAsync(vehicle, 24_000, Now, "buyer-a");
-        await second.PlaceBidAsync(vehicle, 24_500, Now, "buyer-b");
-        await first.PlaceBidAsync(vehicle, 25_000, Now, "buyer-a");
+        await first.PlaceBidAsync(vehicle, 24_000, Now, "buyer-a", CancellationToken.None);
+        await second.PlaceBidAsync(vehicle, 24_500, Now, "buyer-b", CancellationToken.None);
+        await first.PlaceBidAsync(vehicle, 25_000, Now, "buyer-a", CancellationToken.None);
 
         // The first site never saw buyer-b's bid in memory; the reset reads the rows.
-        Assert.Empty(await first.ResetAsync("buyer-a"));
+        Assert.Empty(await first.ResetAsync("buyer-a", CancellationToken.None));
         Assert.Equal(24_500, first.Apply(vehicle).CurrentBid);
 
-        var under = await second.PlaceBidAsync(vehicle, 24_600, Now, "buyer-b");
+        var under = await second.PlaceBidAsync(vehicle, 24_600, Now, "buyer-b", CancellationToken.None);
         Assert.Equal(BidOutcomeKind.Rejected, under.Kind);
     }
     // #endregion across-sites

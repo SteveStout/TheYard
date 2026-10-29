@@ -290,7 +290,7 @@ public static class RequestPipeline
         {
             if (context.Request.Path.StartsWithSegments("/api"))
             {
-                await Warmth.EnsureAsync(backends.For(context));
+                await Warmth.EnsureAsync(backends.For(context), context.RequestAborted);
             }
             await next();
         });

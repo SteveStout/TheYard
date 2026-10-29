@@ -19,7 +19,7 @@ public sealed class SearchVehiclesHandler(StandingReader standings) : IQueryHand
     /// <param name="request">The filter, the clock it was read on, the sort and the page.</param>
     /// <param name="cancellation">The request's cancellation.</param>
     public Task<StandingPage> HandleAsync(SearchVehiclesQuery request, CancellationToken cancellation) =>
-        standings.SearchAsync(request.Filter, request.Clock, request.Sort, request.Limit, request.Offset);
+        standings.SearchAsync(request.Filter, request.Clock, request.Sort, request.Limit, request.Offset, cancellation);
 }
 
 /// <summary>The distinct values behind the filters, across the whole catalogue.</summary>
@@ -29,7 +29,7 @@ public sealed class ReadFacetsHandler(IStockReader inventory) : IQueryHandler<Re
     /// <summary>The makes, body styles, title statuses and provinces.</summary>
     /// <param name="query">The facets, which take nothing.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public Task<InventoryFacets> HandleAsync(ReadFacetsQuery query, CancellationToken cancellation) => inventory.FacetsAsync();
+    public Task<InventoryFacets> HandleAsync(ReadFacetsQuery query, CancellationToken cancellation) => inventory.FacetsAsync(cancellation);
 }
 
 /// <summary>The values behind the filters; there is nothing to ask beyond the asking.</summary>
@@ -44,7 +44,7 @@ public sealed class FindVehicleHandler(StandingReader standings, Func<AuctionClo
     /// <param name="query">Which vehicle.</param>
     /// <param name="cancellation">The request's cancellation.</param>
     public async Task<FoundVehicle> HandleAsync(FindVehicleQuery query, CancellationToken cancellation) =>
-        new(await standings.FindAsync(query.Id), clock());
+        new(await standings.FindAsync(query.Id, cancellation), clock());
 }
 
 /// <summary>One vehicle by its id.</summary>

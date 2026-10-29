@@ -10,7 +10,7 @@ file sealed class FakeVehicles(params Vehicle[] vehicles) : IVehicleSource
 {
     public int LoadCalls { get; private set; }
 
-    public Task<IReadOnlyList<Vehicle>> LoadAsync()
+    public Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation)
     {
         LoadCalls++;
         return Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
@@ -19,7 +19,7 @@ file sealed class FakeVehicles(params Vehicle[] vehicles) : IVehicleSource
 
 file sealed class FakeManifest(params PhotoEntry[] photos) : IPhotoManifestSource
 {
-    public Task<IReadOnlyList<PhotoEntry>> LoadAsync() => Task.FromResult<IReadOnlyList<PhotoEntry>>(photos);
+    public Task<IReadOnlyList<PhotoEntry>> LoadAsync(CancellationToken cancellation) => Task.FromResult<IReadOnlyList<PhotoEntry>>(photos);
 }
 
 /// <summary>A source that is down for its first call and up after: the store at startup, sometimes.</summary>
@@ -27,7 +27,7 @@ file sealed class FlakyVehicles(params Vehicle[] vehicles) : IVehicleSource
 {
     public int LoadCalls { get; private set; }
 
-    public Task<IReadOnlyList<Vehicle>> LoadAsync()
+    public Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation)
     {
         LoadCalls++;
         return LoadCalls == 1
@@ -60,32 +60,32 @@ file sealed class CountingStore(IReadOnlyList<Vehicle> vehicles, int filled, Cat
 
     public CatalogueFillPace Pace => pace;
 
-    public Task<int> FilledAsync() => Task.FromResult(Filled);
+    public Task<int> FilledAsync(CancellationToken cancellation) => Task.FromResult(Filled);
 
-    public Task FillAsync(IReadOnlyList<CatalogueEntry> batch)
+    public Task FillAsync(IReadOnlyList<CatalogueEntry> batch, CancellationToken cancellation)
     {
         Written += batch.Count;
         Filled = Math.Max(Filled, batch.Max(entry => entry.Seq) + 1);
         return Task.CompletedTask;
     }
 
-    public Task<SegmentCounts> CountAsync(CatalogueFilter filter)
+    public Task<SegmentCounts> CountAsync(CatalogueFilter filter, CancellationToken cancellation)
     {
         Counts++;
         AskedToExclude += filter.Exclude.Count > 0 ? 1 : 0;
-        return _inner.CountAsync(filter);
+        return _inner.CountAsync(filter, CancellationToken.None);
     }
 
-    public Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
+    public Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take, CancellationToken cancellation)
     {
         Pages++;
         AskedToExclude += filter.Exclude.Count > 0 ? 1 : 0;
-        return _inner.PageAsync(filter, order, skip, take);
+        return _inner.PageAsync(filter, order, skip, take, CancellationToken.None);
     }
 
-    public Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids) => _inner.FindAsync(ids);
+    public Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids, CancellationToken cancellation) => _inner.FindAsync(ids, CancellationToken.None);
 
-    public Task<InventoryFacets> FacetsAsync() => _inner.FacetsAsync();
+    public Task<InventoryFacets> FacetsAsync(CancellationToken cancellation) => _inner.FacetsAsync(CancellationToken.None);
 }
 // #endregion fakes
 
@@ -119,12 +119,12 @@ public class StockTests
         var source = new FlakyVehicles(TestData.Vehicle(id: "v-1"));
         var service = new Stock(source, new FakeManifest(TestData.SuvPool));
 
-        await Assert.ThrowsAsync<IOException>(() => service.WarmAsync());
+        await Assert.ThrowsAsync<IOException>(() => service.WarmAsync(CancellationToken.None));
         Assert.False(service.IsWarm);
 
-        await service.WarmAsync();
+        await service.WarmAsync(CancellationToken.None);
         Assert.True(service.IsWarm);
-        Assert.Equal("v-1", (await service.FindAsync("v-1"))?.Id);
+        Assert.Equal("v-1", (await service.FindAsync("v-1", CancellationToken.None))?.Id);
         Assert.Equal(2, source.LoadCalls);
     }
 
@@ -134,7 +134,7 @@ public class StockTests
         var original = TestData.Vehicle(bodyStyle: "van", images: ["https://placehold.co/keep-me"]);
         var service = new Stock(new FakeVehicles(original), new FakeManifest(TestData.SuvPool));
 
-        Assert.Equal(["https://placehold.co/keep-me"], (await service.FindAsync(original.Id))!.Images);
+        Assert.Equal(["https://placehold.co/keep-me"], (await service.FindAsync(original.Id, CancellationToken.None))!.Images);
     }
 
     [Fact]
@@ -144,8 +144,8 @@ public class StockTests
             new FakeVehicles(TestData.Vehicle(id: "v-1"), TestData.Vehicle(id: "v-2")),
             new FakeManifest(TestData.SuvPool));
 
-        Assert.Equal("v-2", (await service.FindAsync("v-2"))?.Id);
-        Assert.Null(await service.FindAsync("nope"));
+        Assert.Equal("v-2", (await service.FindAsync("v-2", CancellationToken.None))?.Id);
+        Assert.Null(await service.FindAsync("nope", CancellationToken.None));
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class StockTests
         var service = new Stock(vehicles, new FakeManifest(TestData.SuvPool));
 
         await service.SearchAsync(new VehicleFilter(), Noon);
-        await service.FindAsync("test-id");
+        await service.FindAsync("test-id", CancellationToken.None);
         await service.SearchAsync(new VehicleFilter(), Noon);
 
         Assert.Equal(1, vehicles.LoadCalls);
@@ -298,7 +298,7 @@ public class StockTests
                 TestData.Vehicle(id: "c", make: "Kia")),
             new FakeManifest(TestData.SuvPool));
 
-        Assert.Equal(["Ford", "Kia"], (await service.FacetsAsync()).Makes);
+        Assert.Equal(["Ford", "Kia"], (await service.FacetsAsync(CancellationToken.None)).Makes);
     }
 
     /// <summary>
@@ -313,7 +313,7 @@ public class StockTests
             new FakeVehicles(TestData.Vehicle(id: "a", make: "Kia"), TestData.Vehicle(id: "b", make: "Ford")),
             new FakeManifest(TestData.SuvPool));
 
-        Assert.Same(await service.FacetsAsync(), await service.FacetsAsync());
+        Assert.Same(await service.FacetsAsync(CancellationToken.None), await service.FacetsAsync(CancellationToken.None));
     }
 
     [Fact]
@@ -322,7 +322,7 @@ public class StockTests
         var original = TestData.Vehicle(currentBid: null);
         var service = new Stock(new FakeVehicles(original), new FakeManifest(TestData.SuvPool));
 
-        var vehicle = (await service.FindAsync(original.Id))!;
+        var vehicle = (await service.FindAsync(original.Id, CancellationToken.None))!;
         Assert.Equal(original with { Images = vehicle.Images }, vehicle);
     }
 
@@ -340,9 +340,9 @@ public class StockTests
         var seeder = new FakeVehicles(seeds);
         var service = new Stock(store, seeder, new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Fill);
 
-        await service.WarmAsync();
+        await service.WarmAsync(CancellationToken.None);
         var page = await service.SearchAsync(new VehicleFilter(), Noon, VehicleSort.EndingSoonest, 24, 0);
-        var live = await service.FirstLiveAsync(Noon, 40);
+        var live = await service.FirstLiveAsync(Noon, 40, CancellationToken.None);
 
         Assert.Equal(new CatalogueReport("store", 0, 500, 500, null), service.Report());
         Assert.Equal(0, seeder.LoadCalls);
@@ -408,7 +408,7 @@ public class StockTests
         var store = new CountingStore(seeds, 120, new CatalogueFillPace(100, TimeSpan.Zero, 10));
         var service = new Stock(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Fill);
 
-        await service.WarmAsync();
+        await service.WarmAsync(CancellationToken.None);
         Assert.NotNull(service.Filling);
         await service.Filling!;
 
@@ -426,7 +426,7 @@ public class StockTests
         var store = new CountingStore(seeds, 0, new CatalogueFillPace(100, TimeSpan.Zero, 10));
         var service = new Stock(store, new FakeVehicles(seeds), new FakeManifest(TestData.SuvPool), CatalogueUpkeep.Off);
 
-        await service.WarmAsync();
+        await service.WarmAsync(CancellationToken.None);
 
         var report = service.Report();
         Assert.Equal(("memory", 300), (report.Mode, report.HeldInMemory));

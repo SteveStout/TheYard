@@ -87,3 +87,41 @@ Outside the rings, beside the coverage script: `.github/` is the build's own fol
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) - the step in the api job, beside the coverage step
 - [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml) - the step at the gate, and the verdict that reads it
 - [`api/TheYard.Tests/QualityRatchetTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/QualityRatchetTests.cs) - the table and the file, held to each other both ways
+
+## Addendum, 2026-10-29 (1.0.4.116): the first rung, and what a count is worth
+
+`async_without_cancellation` went from 113 to 33 in one version, which is the first evidence
+this record set out to collect. Three things are worth writing down about how it went, because
+the next seven rungs will go the same way.
+
+**The number was not the work; it was the map.** Reading the scanner's own list told the rung
+where to start and, more usefully, where the cost actually was: not in the endpoints, which
+minimal APIs already hand a token, but in the four auction ports and the two store adapters
+under them, where a token had been left out on purpose in 2026-09 and the reason had stopped
+being true (ADR: The ports learn to wait, the addendum on the token). A review would have
+found the endpoints and stopped.
+
+**Three methods already took a token and threw it away.** `RoundTripMillisecondsAsync` on both
+store diagnostics, and three Application handlers whose `HandleAsync(request, cancellation)`
+ADR-107 had already shaped, received the request's cancellation and called the store without
+it. That shape is invisible to the count, which asks only whether the parameter is declared,
+and it is the shape a reader is most likely to trust on sight. So the rung's own guard is a
+test of the ports' surface by reflection plus one behaviour test that cancels the caller's
+source and reads the token the store was handed, because a version that threads the parameter
+and then passes `CancellationToken.None` at the last call satisfies a count and nothing else.
+
+**Thirty-three are left, and they are named rather than rounded off.** Seven are Function
+timers, five are the proof runner's rounds, three the observability writers, two The Shed's
+sample, and the rest are a startup or a host path each. One of them, `TokenValidated` in
+`RefuseSession.cs`, is an override of a framework type whose signature this codebase does not
+own and can never take a token; it is a known miscount of the kind the Consequences above
+warn about, and it will still be there when this number reaches its floor. The limit is 33
+from this version, so none of the thirty-three can grow back while the rest of the rung is
+paid off.
+
+**Taking a token is not the same as cancelling, and three places say so out loud.** A bid
+write that has entered the gate, a reset that has dropped a buyer's rows, and a transactional
+batch each run to their end whatever the caller does, because the alternative is a store
+holding half of something. A count cannot tell the difference between a token dropped by
+accident and one not used on purpose, so each of those carries the reason beside it in the
+code.

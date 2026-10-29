@@ -205,8 +205,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         var cache = new BoundedCache<int, int>(10, 1_000, TimeSpan.FromMinutes(1), _ => 4);
         int asked = 0;
 
-        int first = await cache.GetOrAddAsync(1, () => Task.FromResult(++asked));
-        int second = await cache.GetOrAddAsync(1, () => Task.FromResult(++asked));
+        int first = await cache.GetOrAddAsync(1, _ => Task.FromResult(++asked), CancellationToken.None);
+        int second = await cache.GetOrAddAsync(1, _ => Task.FromResult(++asked), CancellationToken.None);
 
         Assert.Equal((1, 1, 1), (first, second, asked));
     }
@@ -218,7 +218,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         var gate = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         int asked = 0;
 
-        var waiting = Enumerable.Range(0, 8).Select(_ => cache.GetOrAddAsync(1, () => { Interlocked.Increment(ref asked); return gate.Task; })).ToList();
+        var waiting = Enumerable.Range(0, 8).Select(_ => cache.GetOrAddAsync(1, _ => { Interlocked.Increment(ref asked); return gate.Task; }, CancellationToken.None)).ToList();
         gate.SetResult(42);
         int[] answers = await Task.WhenAll(waiting);
 
@@ -231,8 +231,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
     {
         var cache = new BoundedCache<int, int>(10, 1_000, TimeSpan.FromMinutes(1), _ => 4);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetOrAddAsync(1, () => Task.FromException<int>(new InvalidOperationException("the store is away"))));
-        int answer = await cache.GetOrAddAsync(1, () => Task.FromResult(7));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetOrAddAsync(1, _ => Task.FromException<int>(new InvalidOperationException("the store is away")), CancellationToken.None));
+        int answer = await cache.GetOrAddAsync(1, _ => Task.FromResult(7), CancellationToken.None);
 
         Assert.Equal(7, answer);
     }

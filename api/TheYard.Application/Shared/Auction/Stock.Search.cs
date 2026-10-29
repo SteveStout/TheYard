@@ -22,9 +22,10 @@ public sealed partial class Stock
         VehicleSort sort = VehicleSort.EndingSoonest,
         int limit = int.MaxValue,
         int offset = 0,
-        ListingOverlay? overlay = null)
+        ListingOverlay? overlay = null,
+        CancellationToken cancellation = default)
     {
-        var (warm, catalogue) = await ReadyAsync();
+        var (warm, catalogue) = await ReadyAsync(cancellation);
         offset = Math.Max(0, offset);
         limit = Math.Max(0, limit);
         if (CatalogueFilterResolver.Resolve(filter, clock, warm.Facets) is not { } resolved)
@@ -42,12 +43,12 @@ public sealed partial class Stock
                 || filter.PriceMin is not null || filter.PriceMax is not null);
         if (!overlayMatters)
         {
-            var (total, rows) = await _listing.StorePageAsync(catalogue, resolved, sort, offset, limit);
+            var (total, rows) = await _listing.StorePageAsync(catalogue, resolved, sort, offset, limit, cancellation);
             return new SearchResult(total, [.. rows.Select(entry => Finish(entry.Vehicle, warm, overlay))]);
         }
 
         var matches = filter.Compile(clock);
-        var moved = await _listing.FindEntriesAsync(catalogue, overlay!.Ids);
+        var moved = await _listing.FindEntriesAsync(catalogue, overlay!.Ids, cancellation);
         var raised = moved
             .Select(entry => entry with { Vehicle = overlay.Apply(entry.Vehicle) })
             .Where(entry => matches(entry.Vehicle))
@@ -55,7 +56,7 @@ public sealed partial class Stock
             .ToList();
         int skip = Math.Max(0, offset - raised.Count);
         int take = (int)Math.Min(int.MaxValue, (long)offset + limit - skip);
-        var (storeTotal, stored) = await _listing.StorePageAsync(catalogue, resolved with { Exclude = overlay.Ids }, sort, skip, take, moved);
+        var (storeTotal, stored) = await _listing.StorePageAsync(catalogue, resolved with { Exclude = overlay.Ids }, sort, skip, take, cancellation, moved);
         return new SearchResult(
             storeTotal + raised.Count,
             // The raised vehicles already stand at their price and the store's rows are none of

@@ -20,23 +20,27 @@ public static class YardSeed
     /// Fills the vehicle table and the photo table, each only when it is empty,
     /// in one save, and returns what was inserted and what each table now holds.
     /// </summary>
-    public static async Task<SeedResult> EnsureSeededAsync(YardDbContext db, IVehicleSource vehicles, IPhotoManifestSource photos)
+    /// <param name="db">The context to seed on.</param>
+    /// <param name="vehicles">Where the seed vehicles come from.</param>
+    /// <param name="photos">Where the seed photo manifest comes from.</param>
+    /// <param name="cancellation">The host's; this runs once while the container is coming up.</param>
+    public static async Task<SeedResult> EnsureSeededAsync(YardDbContext db, IVehicleSource vehicles, IPhotoManifestSource photos, CancellationToken cancellation)
     {
         int vehiclesAdded = 0;
         int photosAdded = 0;
 
         // "Empty" rather than "new", so a database that half-filled because a
         // process died mid-seed is not left half-filled forever.
-        if (!await db.Vehicles.AnyAsync())
+        if (!await db.Vehicles.AnyAsync(cancellation))
         {
-            var rows = (await vehicles.LoadAsync()).Select((vehicle, index) => vehicle.ToRow(index)).ToList();
+            var rows = (await vehicles.LoadAsync(cancellation)).Select((vehicle, index) => vehicle.ToRow(index)).ToList();
             db.Vehicles.AddRange(rows);
             vehiclesAdded = rows.Count;
         }
 
-        if (!await db.Photos.AnyAsync())
+        if (!await db.Photos.AnyAsync(cancellation))
         {
-            var rows = (await photos.LoadAsync())
+            var rows = (await photos.LoadAsync(cancellation))
                 .Select((photo, index) => new PhotoRow
                 {
                     Seq = index,
@@ -51,7 +55,7 @@ public static class YardSeed
 
         if (vehiclesAdded > 0 || photosAdded > 0)
         {
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellation);
         }
 
         return new SeedResult(vehiclesAdded, photosAdded, await db.Vehicles.CountAsync(), await db.Photos.CountAsync());

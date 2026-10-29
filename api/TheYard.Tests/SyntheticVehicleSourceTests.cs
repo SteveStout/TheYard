@@ -4,7 +4,7 @@ namespace TheYard.Tests;
 
 file sealed class SeedSource(params Vehicle[] vehicles) : IVehicleSource
 {
-    public Task<IReadOnlyList<Vehicle>> LoadAsync() => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
+    public Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation) => Task.FromResult<IReadOnlyList<Vehicle>>(vehicles);
 }
 
 /// <summary>Holds the synthetic vehicle source: it expands seeds to the target count with unique, deterministic ids, keeps grades and dataset invariants, and inherits seed identity fields.</summary>
@@ -19,7 +19,7 @@ public class SyntheticVehicleSourceTests
     [Fact]
     public async Task Expands_to_the_target_count_with_unique_ids()
     {
-        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 1_000).LoadAsync();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 1_000).LoadAsync(CancellationToken.None);
 
         Assert.Equal(1_000, vehicles.Count);
         Assert.Equal(1_000, vehicles.Select(v => v.Id).Distinct().Count());
@@ -28,8 +28,8 @@ public class SyntheticVehicleSourceTests
     [Fact]
     public async Task Is_deterministic_across_loads()
     {
-        var first = await new SyntheticVehicleSource(new SeedSource(Seeds), 500).LoadAsync();
-        var second = await new SyntheticVehicleSource(new SeedSource(Seeds), 500).LoadAsync();
+        var first = await new SyntheticVehicleSource(new SeedSource(Seeds), 500).LoadAsync(CancellationToken.None);
+        var second = await new SyntheticVehicleSource(new SeedSource(Seeds), 500).LoadAsync(CancellationToken.None);
 
         Assert.Equal(first, second);
     }
@@ -37,7 +37,7 @@ public class SyntheticVehicleSourceTests
     [Fact]
     public async Task Passes_the_seeds_through_untouched_when_the_target_is_not_larger()
     {
-        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 2).LoadAsync();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 2).LoadAsync(CancellationToken.None);
         Assert.Equal(Seeds, vehicles);
     }
 
@@ -63,7 +63,7 @@ public class SyntheticVehicleSourceTests
         var seed = TestData.Vehicle(id: "seed-graded") with { ConditionGrade = seedGrade };
         double band = Math.Floor(seedGrade);
 
-        var variants = (await new SyntheticVehicleSource(new SeedSource(seed), 400).LoadAsync()).Skip(1);
+        var variants = (await new SyntheticVehicleSource(new SeedSource(seed), 400).LoadAsync(CancellationToken.None)).Skip(1);
 
         Assert.All(variants, vehicle =>
             Assert.InRange(vehicle.ConditionGrade, band, Math.Min(5.0, band + 0.9)));
@@ -72,7 +72,7 @@ public class SyntheticVehicleSourceTests
     [Fact]
     public async Task Variants_keep_the_dataset_invariants()
     {
-        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 2_000).LoadAsync();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 2_000).LoadAsync(CancellationToken.None);
 
         Assert.All(vehicles, v =>
         {
@@ -94,7 +94,7 @@ public class SyntheticVehicleSourceTests
     [Fact]
     public async Task Variants_inherit_the_seed_identity_fields()
     {
-        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 100).LoadAsync();
+        var vehicles = await new SyntheticVehicleSource(new SeedSource(Seeds), 100).LoadAsync(CancellationToken.None);
 
         Assert.All(vehicles, v => Assert.Contains(v.Make, new[] { "Ford", "Kia" }));
     }

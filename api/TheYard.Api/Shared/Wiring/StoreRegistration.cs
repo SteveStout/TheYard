@@ -103,7 +103,7 @@ public static class StoreRegistration
         // configuration shortens it, which only a test that proves the fallback does).
         var firstWait = StorePrepare.FirstWaitFrom(builder.Configuration);
         var sqlStartup = new StartupTimings();
-        var sqlState = await sqlStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos), firstWait));
+        var sqlState = await sqlStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos, CancellationToken.None), firstWait));
         // The backend stands on the files until its store is attached: the same two
         // ports answered out of the JSON, the null bid store, no accounts, with the
         // synthetic scale-up still decorating the vehicle source (ADR: The relational
@@ -119,7 +119,7 @@ public static class StoreRegistration
             Inventory = new Stock(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
             Bids = new BidBook(new MemoryBidStore()),
             Market = new Room(new Random(), builder.Configuration.GetValue("Market:GraceSeconds", Room.DefaultGraceSeconds)),
-            Probe = () => Task.FromResult(false),
+            Probe = _ => Task.FromResult(false),
         };
         // Identity's store over the accounts tables, keyed by the store, given a context from the
         // request's scope. The type is the one AddEntityFrameworkStores would have registered for a
@@ -158,7 +158,7 @@ public static class StoreRegistration
                 Catalogues.Sql(contexts, yard, targetCount, Catalogues.UpkeepFor(keepCatalogues, defaultStore, StoreKeys.Relational, servesBothSites)),
                 new BidBook(new EfBidStore(contexts)),
                 new EfActivityStore(quietContexts),
-                () => YardDatabase.HasSeedAsync(contexts));
+                token => YardDatabase.HasSeedAsync(contexts, token));
         }
         if (sqlState.Ready)
         {
@@ -189,7 +189,7 @@ public static class StoreRegistration
             // Every operation is filed under the request that caused it, the first one included.
             cosmos.Recorder.CurrentRequest = currentRequest;
             var cosmosStartup = new StartupTimings();
-            var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.Starting.PrepareAsync(seedVehicles, seedPhotos), firstWait));
+            var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.Starting.PrepareAsync(seedVehicles, seedPhotos, CancellationToken.None), firstWait));
             var store = cosmos;
             // The relational backend's shape: the files until the store is attached (ADR: A
             // second store on Cosmos DB, and what it costs).
@@ -203,7 +203,7 @@ public static class StoreRegistration
                 Inventory = new Stock(new SyntheticVehicleSource(seedVehicles, targetCount), seedPhotos),
                 Bids = new BidBook(new MemoryBidStore()),
                 Market = new Room(new Random(), builder.Configuration.GetValue("Market:GraceSeconds", Room.DefaultGraceSeconds)),
-                Probe = () => Task.FromResult(false),
+                Probe = _ => Task.FromResult(false),
             };
             // One document per account and one per address, and none of Identity's seven tables
             // (ADR: Accounts on a document store), keyed by the store the way the relational one is.
@@ -223,12 +223,12 @@ public static class StoreRegistration
             backendList.Add(cosmosBackend);
             cosmosSecondChance = new StoreSecondChance.Plan(
                 cosmosBackend,
-                () => store.Starting.PrepareAsync(seedVehicles, seedPhotos),
+                () => store.Starting.PrepareAsync(seedVehicles, seedPhotos, CancellationToken.None),
                 async state =>
                 {
                     var attachment = CosmosAttachment(state);
-                    await attachment.Inventory.WarmAsync();
-                    await attachment.Bids.LoadAsync();
+                    await attachment.Inventory.WarmAsync(CancellationToken.None);
+                    await attachment.Bids.LoadAsync(CancellationToken.None);
                     cosmosBackend.Attach(attachment);
                 });
         }
@@ -259,12 +259,12 @@ public static class StoreRegistration
         {
             new(
                 sqlBackend,
-                () => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos),
+                () => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos, CancellationToken.None),
                 async state =>
                 {
                     var attachment = SqlAttachment(state);
-                    await attachment.Inventory.WarmAsync();
-                    await attachment.Bids.LoadAsync();
+                    await attachment.Inventory.WarmAsync(CancellationToken.None);
+                    await attachment.Bids.LoadAsync(CancellationToken.None);
                     sqlBackend.Attach(attachment);
                 }),
         };

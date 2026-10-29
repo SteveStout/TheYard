@@ -36,8 +36,16 @@ public sealed class CatalogueWarm(Backends backends, IHostApplicationLifetime li
         {
             try
             {
-                await backends.Default.Startup.Time("bids", backends.Default.Bids.LoadAsync);
-                await backends.Default.Startup.Time("catalogue", backends.Default.Inventory.WarmAsync);
+                // The host's stopping token, not the start token: these two run beside the
+                // listening server and for minutes after StartAsync has returned, and they are
+                // the callers that START the shared replay and the shared warm-up, so what they
+                // lend is what the store, the background fill and the words backfill all see. A
+                // container being replaced now stops loading instead of filling a store it is
+                // about to be shut down for (ADR: The ports learn to wait, the addendum on the
+                // token).
+                var stopping = lifetime.ApplicationStopping;
+                await backends.Default.Startup.Time("bids", () => backends.Default.Bids.LoadAsync(stopping));
+                await backends.Default.Startup.Time("catalogue", () => backends.Default.Inventory.WarmAsync(stopping));
                 backends.Default.Startup.Ready();
             }
             catch (Exception ex) when (!lifetime.ApplicationStopping.IsCancellationRequested)
@@ -49,7 +57,7 @@ public sealed class CatalogueWarm(Backends backends, IHostApplicationLifetime li
         // #endregion listen-first
         if (warmOthers)
         {
-            _ = Task.Run(WarmTheOthersAsync, CancellationToken.None);
+            _ = Task.Run(() => WarmTheOthersAsync(lifetime.ApplicationStopping), CancellationToken.None);
         }
         return Task.CompletedTask;
     }
@@ -58,14 +66,15 @@ public sealed class CatalogueWarm(Backends backends, IHostApplicationLifetime li
     /// <param name="cancellationToken">The host's stop cancellation.</param>
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    private async Task WarmTheOthersAsync()
+    /// <param name="cancellation">The host's stopping token: a container being replaced stops warming the stores it is about to stop serving.</param>
+    private async Task WarmTheOthersAsync(CancellationToken cancellation)
     {
         foreach (var backend in backends.All.Where(candidate => !ReferenceEquals(candidate, backends.Default)))
         {
             try
             {
-                await backend.Startup.Time("catalogue", backend.Inventory.WarmAsync);
-                await backend.Startup.Time("bids", backend.Bids.LoadAsync);
+                await backend.Startup.Time("catalogue", () => backend.Inventory.WarmAsync(cancellation));
+                await backend.Startup.Time("bids", () => backend.Bids.LoadAsync(cancellation));
                 backend.Startup.Ready();
             }
             catch (Exception ex)

@@ -36,7 +36,7 @@ public sealed class CataloguePages
     /// live by closest end, upcoming by soonest start, ended by most recent end, so it is read
     /// segment by segment, each off its own index, and stops at the page's last row.
     /// </summary>
-    internal async Task<(int Total, IReadOnlyList<CatalogueEntry> Rows)> StorePageAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, VehicleSort sort, int skip, int take, IReadOnlyList<CatalogueEntry>? excluded = null)
+    internal async Task<(int Total, IReadOnlyList<CatalogueEntry> Rows)> StorePageAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, VehicleSort sort, int skip, int take, CancellationToken cancellation, IReadOnlyList<CatalogueEntry>? excluded = null)
     {
         // The counts are read only when a number needs them. Unfiltered, the total is the
         // catalogue's size, less the moved vehicles the store leaves out, and a page that starts
@@ -100,10 +100,10 @@ public sealed class CataloguePages
         return (total, rows);
 
         async Task<SegmentCounts> Counts() =>
-            counts ??= excluded is null ? await CountsAsync(catalogue, filter) : await CountsLessAsync(catalogue, filter, excluded);
+            counts ??= excluded is null ? await CountsAsync(catalogue, filter, cancellation) : await CountsLessAsync(catalogue, filter, excluded, cancellation);
 
         Task<IReadOnlyList<CatalogueEntry>> Page(CatalogueFilter f, CatalogueOrder order, int s, int t) =>
-            excluded is null ? PageAsync(catalogue, f, order, s, t) : PageLessAsync(catalogue, f, order, s, t, excluded);
+            excluded is null ? PageAsync(catalogue, f, order, s, t, cancellation) : PageLessAsync(catalogue, f, order, s, t, excluded, cancellation);
     }
 
     /// <summary>Whether a filter keeps every vehicle, so its total is the catalogue's size.</summary>
@@ -121,10 +121,10 @@ public sealed class CataloguePages
 
     private static string Bucket(CatalogueFilter filter) => (filter.SinceAnchorMs / BucketMs).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    private Task<SegmentCounts> CountsAsync(IVehicleCatalogue catalogue, CatalogueFilter filter) =>
+    private Task<SegmentCounts> CountsAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, CancellationToken cancellation) =>
         catalogue is MemoryCatalogue
-            ? catalogue.CountAsync(filter)
-            : _counts.GetOrAddAsync($"{Bucket(filter)}\u001e{filter.Key()}", () => catalogue.CountAsync(filter));
+            ? catalogue.CountAsync(filter, cancellation)
+            : _counts.GetOrAddAsync($"{Bucket(filter)}\u001e{filter.Key()}", token => catalogue.CountAsync(filter, token), cancellation);
 
     /// <summary>
     /// One page, through the five-second cache. A segment's page cached earlier in the bucket can
@@ -132,20 +132,20 @@ public sealed class CataloguePages
     /// instant by the schedule's own rule and read again when any row has moved on: the page a
     /// visitor gets never shows an ended auction among the live ones.
     /// </summary>
-    internal async Task<IReadOnlyList<CatalogueEntry>> PageAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, CatalogueOrder order, int skip, int take)
+    internal async Task<IReadOnlyList<CatalogueEntry>> PageAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, CatalogueOrder order, int skip, int take, CancellationToken cancellation)
     {
         if (catalogue is MemoryCatalogue)
         {
-            return await catalogue.PageAsync(filter, order, skip, take);
+            return await catalogue.PageAsync(filter, order, skip, take, cancellation);
         }
         string key = $"{Bucket(filter)}\u001e{filter.Key()}\u001e{order}\u001e{skip}\u001e{take}";
-        var page = await _pages.GetOrAddAsync(key, () => catalogue.PageAsync(filter, order, skip, take));
+        var page = await _pages.GetOrAddAsync(key, token => catalogue.PageAsync(filter, order, skip, take, token), cancellation);
         if (filter.Segment == CatalogueSegment.Any
             || page.All(entry => CatalogueSlot.For(entry.Vehicle.Id).SegmentAt(filter.SinceAnchorMs) == filter.Segment))
         {
             return page;
         }
-        page = await catalogue.PageAsync(filter, order, skip, take);
+        page = await catalogue.PageAsync(filter, order, skip, take, cancellation);
         _pages.Set(key, page);
         return page;
     }
@@ -158,10 +158,10 @@ public sealed class CataloguePages
     /// would key the cache on a list that changes with every bid; this way the count is the same
     /// cached, index-served count every listing with that filter shares.
     /// </summary>
-    private async Task<SegmentCounts> CountsLessAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, IReadOnlyList<CatalogueEntry> excluded)
+    private async Task<SegmentCounts> CountsLessAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, IReadOnlyList<CatalogueEntry> excluded, CancellationToken cancellation)
     {
         var whole = filter with { Exclude = [] };
-        var all = await CountsAsync(catalogue, whole);
+        var all = await CountsAsync(catalogue, whole, cancellation);
         int live = 0, upcoming = 0, ended = 0;
         foreach (var entry in excluded)
         {
@@ -194,7 +194,7 @@ public sealed class CataloguePages
     /// query itself stays the cached, index-served one every visitor shares, where the ids in it
     /// made the store test each row it read against the list, 58 seconds once under the browser suite.
     /// </summary>
-    private async Task<IReadOnlyList<CatalogueEntry>> PageLessAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, CatalogueOrder order, int skip, int take, IReadOnlyList<CatalogueEntry> excluded)
+    private async Task<IReadOnlyList<CatalogueEntry>> PageLessAsync(IVehicleCatalogue catalogue, CatalogueFilter filter, CatalogueOrder order, int skip, int take, IReadOnlyList<CatalogueEntry> excluded, CancellationToken cancellation)
     {
         var whole = filter with { Exclude = [] };
         var before = excluded
@@ -203,7 +203,7 @@ public sealed class CataloguePages
             .Order()
             .ToList();
         var ids = filter.Exclude.ToHashSet(StringComparer.Ordinal);
-        var rows = await PageAsync(catalogue, whole, order, skip, (int)Math.Min(int.MaxValue, (long)take + before.Count));
+        var rows = await PageAsync(catalogue, whole, order, skip, (int)Math.Min(int.MaxValue, (long)take + before.Count), cancellation);
         var kept = new List<CatalogueEntry>(Math.Min(take, rows.Count));
         int place = skip;
         foreach (var row in rows)
@@ -242,7 +242,7 @@ public sealed class CataloguePages
     }
 
     /// <summary>The vehicles with these ids, each read once from the store and kept for ten minutes, in the expansion's order.</summary>
-    internal async Task<IReadOnlyList<CatalogueEntry>> FindEntriesAsync(IVehicleCatalogue catalogue, IReadOnlyCollection<string> ids)
+    internal async Task<IReadOnlyList<CatalogueEntry>> FindEntriesAsync(IVehicleCatalogue catalogue, IReadOnlyCollection<string> ids, CancellationToken cancellation)
     {
         if (ids.Count == 0)
         {
@@ -250,7 +250,7 @@ public sealed class CataloguePages
         }
         if (catalogue is MemoryCatalogue)
         {
-            return await catalogue.FindAsync(ids);
+            return await catalogue.FindAsync(ids, cancellation);
         }
 
         var found = new List<CatalogueEntry>(ids.Count);
@@ -268,7 +268,7 @@ public sealed class CataloguePages
         }
         if (missing.Count > 0)
         {
-            foreach (var entry in await catalogue.FindAsync(missing))
+            foreach (var entry in await catalogue.FindAsync(missing, cancellation))
             {
                 _vehicles.Set(entry.Vehicle.Id, entry);
                 found.Add(entry);

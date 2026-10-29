@@ -12,6 +12,12 @@ namespace TheYard.Application.Shared.Auction;
 /// page can be read in is sorted once, the first time it is asked for, and a page walks it and
 /// stops at its last row, which is the rule of sorting only as far as the page, kept for the
 /// list as the stores keep it with their indexes.
+///
+/// <para>Every member takes the caller's cancellation because the port declares it, and
+/// none of them reads it: a list in this process answers between two instructions, so
+/// there is no wait to abandon and checking the token would only add one. The two store
+/// adapters behind the same port are where the token does work (ADR: The ports learn to
+/// wait, the addendum on the token).</para>
 /// </summary>
 public sealed class MemoryCatalogue : IVehicleCatalogue
 {
@@ -49,13 +55,13 @@ public sealed class MemoryCatalogue : IVehicleCatalogue
     public CatalogueFillPace Pace { get; } = new(int.MaxValue, TimeSpan.Zero, int.MaxValue);
 
     /// <inheritdoc />
-    public Task<int> FilledAsync() => Task.FromResult(_entries.Length);
+    public Task<int> FilledAsync(CancellationToken cancellation) => Task.FromResult(_entries.Length);
 
     /// <summary>Nothing to write: the list is the catalogue.</summary>
-    public Task FillAsync(IReadOnlyList<CatalogueEntry> batch) => Task.CompletedTask;
+    public Task FillAsync(IReadOnlyList<CatalogueEntry> batch, CancellationToken cancellation) => Task.CompletedTask;
 
     /// <inheritdoc />
-    public Task<SegmentCounts> CountAsync(CatalogueFilter filter)
+    public Task<SegmentCounts> CountAsync(CatalogueFilter filter, CancellationToken cancellation)
     {
         int live = 0, upcoming = 0, ended = 0;
         for (int seq = 0; seq < _entries.Length; seq++)
@@ -75,7 +81,7 @@ public sealed class MemoryCatalogue : IVehicleCatalogue
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
+    public Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take, CancellationToken cancellation)
     {
         var page = new List<CatalogueEntry>(Math.Clamp(take, 0, 1_000));
         if (take <= 0)
@@ -104,12 +110,12 @@ public sealed class MemoryCatalogue : IVehicleCatalogue
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids) =>
+    public Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids, CancellationToken cancellation) =>
         Task.FromResult<IReadOnlyList<CatalogueEntry>>(
             [.. ids.Where(_byId.ContainsKey).Distinct(StringComparer.Ordinal).Select(id => _entries[_byId[id]]).OrderBy(entry => entry.Seq)]);
 
     /// <inheritdoc />
-    public Task<InventoryFacets> FacetsAsync() =>
+    public Task<InventoryFacets> FacetsAsync(CancellationToken cancellation) =>
         Task.FromResult(new InventoryFacets(
             Distinct(vehicle => vehicle.Make),
             Distinct(vehicle => vehicle.BodyStyle),

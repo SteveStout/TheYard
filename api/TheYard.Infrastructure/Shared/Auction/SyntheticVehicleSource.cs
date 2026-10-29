@@ -15,9 +15,15 @@ public sealed class SyntheticVehicleSource(IVehicleSource seedSource, int target
 {
     private const string VinChars = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789";
 
-    public async Task<IReadOnlyList<Vehicle>> LoadAsync()
+    /// <summary>The seed dataset scaled up to the target count, every variant derived from its own id.</summary>
+    /// <param name="cancellation">
+    /// Passed to the source underneath. The expansion itself runs to its end once started:
+    /// it is a loop over memory with no wait in it, so there is nothing for a token to
+    /// interrupt that a check would not cost more than.
+    /// </param>
+    public async Task<IReadOnlyList<Vehicle>> LoadAsync(CancellationToken cancellation)
     {
-        var seeds = await seedSource.LoadAsync();
+        var seeds = await seedSource.LoadAsync(cancellation);
         if (targetCount <= seeds.Count)
         {
             return seeds;

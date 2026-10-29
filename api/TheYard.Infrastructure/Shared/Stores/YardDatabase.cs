@@ -21,10 +21,9 @@ public static class YardDatabase
     /// empty catalogue, and times both halves. Never throws: a failure comes
     /// back as a state that is not ready, with the exception attached for the log.
     /// </summary>
-    public static async Task<DatabaseState> PrepareAsync(
-        YardConnection connection,
+    public static async Task<DatabaseState> PrepareAsync(YardConnection connection,
         IVehicleSource seedVehicles,
-        IPhotoManifestSource seedPhotos)
+        IPhotoManifestSource seedPhotos, CancellationToken cancellation)
     {
         try
         {
@@ -34,10 +33,10 @@ public static class YardDatabase
             // start, and a container that takes longer to answer its first
             // request is a cost this change has to be able to state.
             var migrating = System.Diagnostics.Stopwatch.StartNew();
-            string schemaNote = await BringSchemaUpAsync(db, connection);
+            string schemaNote = await BringSchemaUpAsync(db, connection, cancellation);
             migrating.Stop();
             var seeding = System.Diagnostics.Stopwatch.StartNew();
-            var seeded = await YardSeed.EnsureSeededAsync(db, seedVehicles, seedPhotos);
+            var seeded = await YardSeed.EnsureSeededAsync(db, seedVehicles, seedPhotos, cancellation);
             seeding.Stop();
 
             return new DatabaseState(
@@ -84,11 +83,11 @@ public static class YardDatabase
     /// per test, and a container-lifetime file in the fallback. Nothing
     /// publishes to it and nothing else reads it.
     /// </summary>
-    private static async Task<string> BringSchemaUpAsync(YardDbContext db, YardConnection connection)
+    private static async Task<string> BringSchemaUpAsync(YardDbContext db, YardConnection connection, CancellationToken cancellation)
     {
         if (connection.Provider == YardProvider.Sqlite)
         {
-            await db.Database.MigrateAsync();
+            await db.Database.MigrateAsync(cancellation);
             return "migrated";
         }
 
@@ -96,7 +95,7 @@ public static class YardDatabase
         // lists can drift, and this is a check whose whole job is to notice
         // drift.
         string[] required = ["Vehicles", "Photos", "Bids", "Standings", "AspNetUsers"];
-        var present = await db.Database.SqlQuery<string>($"SELECT name AS Value FROM sys.tables").ToListAsync();
+        var present = await db.Database.SqlQuery<string>($"SELECT name AS Value FROM sys.tables").ToListAsync(cancellation);
         var missing = required.Where(table => !present.Contains(table, StringComparer.OrdinalIgnoreCase)).ToList();
         return missing.Count == 0
             ? "found the published schema"
@@ -107,9 +106,9 @@ public static class YardDatabase
     // #endregion schema
 
     /// <summary>Whether the seed catalogue is in the database right now: one vehicle and one photo row.</summary>
-    public static async Task<bool> HasSeedAsync(IDbContextFactory<YardDbContext> contexts)
+    public static async Task<bool> HasSeedAsync(IDbContextFactory<YardDbContext> contexts, CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
         return await db.Vehicles.AnyAsync() && await db.Photos.AnyAsync();
     }
 
@@ -117,10 +116,10 @@ public static class YardDatabase
     /// One round trip to the database doing as little work as a round trip can, for the
     /// performance proof's measure of the network between the container and the store.
     /// </summary>
-    public static async Task PingAsync(IDbContextFactory<YardDbContext> contexts)
+    public static async Task PingAsync(IDbContextFactory<YardDbContext> contexts, CancellationToken cancellation)
     {
-        await using var db = await contexts.CreateDbContextAsync();
-        await db.Database.ExecuteSqlRawAsync("SELECT 1");
+        await using var db = await contexts.CreateDbContextAsync(cancellation);
+        await db.Database.ExecuteSqlRawAsync("SELECT 1", cancellation);
     }
 
     /// <summary>

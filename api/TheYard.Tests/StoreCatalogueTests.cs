@@ -16,7 +16,7 @@ namespace TheYard.Tests;
 public sealed class StoreCatalogueTests
 {
     private static async Task<IReadOnlyList<Vehicle>> ExpansionAsync(int count) =>
-        await new SyntheticVehicleSource(new JsonFileVehicleSource(Path.Combine(Repo.Root(), "data", "vehicles.json")), count).LoadAsync();
+        await new SyntheticVehicleSource(new JsonFileVehicleSource(Path.Combine(Repo.Root(), "data", "vehicles.json")), count).LoadAsync(CancellationToken.None);
 
     // #region slot
     /// <summary>
@@ -64,11 +64,11 @@ public sealed class StoreCatalogueTests
     [Fact]
     public async Task The_expansions_filter_values_are_the_seeds()
     {
-        var seed = new MemoryCatalogue(await new JsonFileVehicleSource(Path.Combine(Repo.Root(), "data", "vehicles.json")).LoadAsync());
+        var seed = new MemoryCatalogue(await new JsonFileVehicleSource(Path.Combine(Repo.Root(), "data", "vehicles.json")).LoadAsync(CancellationToken.None));
         var whole = new MemoryCatalogue(await ExpansionAsync(100_000));
 
-        var a = await seed.FacetsAsync();
-        var b = await whole.FacetsAsync();
+        var a = await seed.FacetsAsync(CancellationToken.None);
+        var b = await whole.FacetsAsync(CancellationToken.None);
 
         Assert.Equal(a.Makes, b.Makes);
         Assert.Equal(a.BodyStyles, b.BodyStyles);
@@ -102,13 +102,13 @@ public sealed class StoreCatalogueTests
             var memory = new MemoryCatalogue(vehicles);
             for (int start = 0; start < Target; start += 500)
             {
-                await store.FillAsync([.. vehicles.Skip(start).Take(500).Select((v, i) => new CatalogueEntry(start + i, v))]);
+                await store.FillAsync([.. vehicles.Skip(start).Take(500).Select((v, i) => new CatalogueEntry(start + i, v))], CancellationToken.None);
             }
             // A second pass over the same rows writes nothing twice.
-            await store.FillAsync([.. vehicles.Take(10).Select((v, i) => new CatalogueEntry(i, v))]);
-            Assert.Equal(Target, await store.FilledAsync());
+            await store.FillAsync([.. vehicles.Take(10).Select((v, i) => new CatalogueEntry(i, v))], CancellationToken.None);
+            Assert.Equal(Target, await store.FilledAsync(CancellationToken.None));
 
-            var facets = await memory.FacetsAsync();
+            var facets = await memory.FacetsAsync(CancellationToken.None);
             string make = facets.Makes[1];
             string province = facets.Provinces[0];
             string moved = vehicles[7].Id;
@@ -138,13 +138,13 @@ public sealed class StoreCatalogueTests
                 foreach (var shape in filters)
                 {
                     var filter = shape with { SinceAnchorMs = since };
-                    Assert.Equal(await memory.CountAsync(filter), await store.CountAsync(filter));
+                    Assert.Equal(await memory.CountAsync(filter, CancellationToken.None), await store.CountAsync(filter, CancellationToken.None));
                     foreach (var order in Enum.GetValues<CatalogueOrder>())
                     {
                         foreach (var (skip, take) in new[] { (0, 24), (30, 7), (1_150, 100) })
                         {
-                            var expected = (await memory.PageAsync(filter, order, skip, take)).Select(e => (e.Seq, e.Vehicle.Id)).ToList();
-                            var actual = (await store.PageAsync(filter, order, skip, take)).Select(e => (e.Seq, e.Vehicle.Id)).ToList();
+                            var expected = (await memory.PageAsync(filter, order, skip, take, CancellationToken.None)).Select(e => (e.Seq, e.Vehicle.Id)).ToList();
+                            var actual = (await store.PageAsync(filter, order, skip, take, CancellationToken.None)).Select(e => (e.Seq, e.Vehicle.Id)).ToList();
                             Assert.True(expected.SequenceEqual(actual), $"{order} {skip}/{take} at {since} for {filter.Key()}");
                             compared++;
                         }
@@ -152,10 +152,10 @@ public sealed class StoreCatalogueTests
                 }
             }
 
-            var found = await store.FindAsync([moved, vehicles[900].Id, "nope"]);
+            var found = await store.FindAsync([moved, vehicles[900].Id, "nope"], CancellationToken.None);
             Assert.Equal([7, 900], found.Select(entry => entry.Seq));
             Assert.Equivalent(vehicles[7], found[0].Vehicle, strict: true);
-            Assert.Equal(facets.Makes, (await store.FacetsAsync()).Makes);
+            Assert.Equal(facets.Makes, (await store.FacetsAsync(CancellationToken.None)).Makes);
             Assert.True(compared > 600);
 
             // A site whose catalogue is smaller than what the file holds answers as its own
@@ -163,13 +163,13 @@ public sealed class StoreCatalogueTests
             // starts from the place again, which the full catalogue above leaves out.
             const int Smaller = 1_000;
             var narrower = new EfVehicleCatalogue(new ContextFactory(connection.Options()), Smaller, local: true);
-            Assert.Equal(Smaller, await narrower.FilledAsync());
+            Assert.Equal(Smaller, await narrower.FilledAsync(CancellationToken.None));
             var first = new MemoryCatalogue([.. vehicles.Take(Smaller)]);
             var now = new CatalogueFilter { SinceAnchorMs = 13 * 3_600_000L };
-            Assert.Equal(await first.CountAsync(now), await narrower.CountAsync(now));
+            Assert.Equal(await first.CountAsync(now, CancellationToken.None), await narrower.CountAsync(now, CancellationToken.None));
             Assert.Equal(
-                (await first.PageAsync(now, CatalogueOrder.PriceDescending, 0, 50)).Select(e => e.Seq),
-                (await narrower.PageAsync(now, CatalogueOrder.PriceDescending, 0, 50)).Select(e => e.Seq));
+                (await first.PageAsync(now, CatalogueOrder.PriceDescending, 0, 50, CancellationToken.None)).Select(e => e.Seq),
+                (await narrower.PageAsync(now, CatalogueOrder.PriceDescending, 0, 50, CancellationToken.None)).Select(e => e.Seq));
         }
         finally
         {
@@ -203,8 +203,8 @@ public sealed class StoreCatalogueTests
             connection.Configure(options);
             options.AddInterceptors(capture);
             var store = new EfVehicleCatalogue(new ContextFactory(options.Options), Target, local: true);
-            await store.FillAsync([.. vehicles.Select((v, i) => new CatalogueEntry(i, v))]);
-            Assert.Equal(Target, await store.FilledAsync());
+            await store.FillAsync([.. vehicles.Select((v, i) => new CatalogueEntry(i, v))], CancellationToken.None);
+            Assert.Equal(Target, await store.FilledAsync(CancellationToken.None));
 
             long since = 13 * 3_600_000L;
             string make = vehicles[0].Make;
@@ -222,7 +222,7 @@ public sealed class StoreCatalogueTests
             foreach (var filter in counted)
             {
                 capture.Clear();
-                await store.CountAsync(filter);
+                await store.CountAsync(filter, CancellationToken.None);
                 string plan = await PlanAsync(file, Assert.Single(capture.Taken));
                 Assert.True(plan.Contains("COVERING INDEX", StringComparison.Ordinal), $"the count for {filter.Key()} reads the table: {plan}");
             }
@@ -246,7 +246,7 @@ public sealed class StoreCatalogueTests
             foreach (var (filter, order) in paged)
             {
                 capture.Clear();
-                await store.PageAsync(filter, order, 100, 100);
+                await store.PageAsync(filter, order, 100, 100, CancellationToken.None);
                 string plan = await PlanAsync(file, Assert.Single(capture.Taken));
                 Assert.False(plan.Contains("TEMP B-TREE FOR ORDER BY", StringComparison.Ordinal), $"the {order} page for {filter.Key()} sorts every match: {plan}");
             }
@@ -257,7 +257,7 @@ public sealed class StoreCatalogueTests
             {
                 capture.Clear();
                 var live = new CatalogueFilter { SinceAnchorMs = since, Segment = CatalogueSegment.Live };
-                await store.PageAsync(live, order, EfVehicleCatalogue.DeepSkip, 100);
+                await store.PageAsync(live, order, EfVehicleCatalogue.DeepSkip, 100, CancellationToken.None);
                 string plan = await PlanAsync(file, capture.Taken[0]);
                 Assert.True(plan.Contains("COVERING INDEX", StringComparison.Ordinal), $"the deep {order} page reads the table for the rows it skips: {plan}");
             }
@@ -272,7 +272,7 @@ public sealed class StoreCatalogueTests
                 {
                     capture.Clear();
                     var filter = new CatalogueFilter { SinceAnchorMs = since, Segment = segment, Tokens = [word] };
-                    await store.PageAsync(filter, order, 0, 25);
+                    await store.PageAsync(filter, order, 0, 25, CancellationToken.None);
                     string plan = await PlanAsync(file, capture.Taken[0]);
                     Assert.True(plan.Contains("COVERING INDEX IX_CatalogueWords_Word (Word>? AND Word<?)", StringComparison.Ordinal), $"the {order} page of {segment} for a word does not seek the word index: {plan}");
                     Assert.False(plan.Contains("IX_Catalogue_Words", StringComparison.Ordinal), $"the {order} page of {segment} for a word scans every row's text: {plan}");

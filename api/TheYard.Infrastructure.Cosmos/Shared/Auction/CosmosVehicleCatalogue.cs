@@ -49,25 +49,28 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
     public CatalogueFillPace Pace { get; } = new(30, TimeSpan.FromSeconds(1), 2_000);
 
     /// <inheritdoc />
-    public Task<int> FilledAsync() => FilledAsync(store, target);
+    public Task<int> FilledAsync(CancellationToken cancellation) => FilledAsync(store, target, cancellation);
 
     /// <summary>How many of the catalogue's documents the fill has written, read by the walks too.</summary>
-    internal static async Task<int> FilledAsync(CosmosStore store, int target)
+    /// <param name="store">The document store.</param>
+    /// <param name="target">How many vehicles the catalogue is.</param>
+    /// <param name="cancellation">The caller's: this is a count across every partition.</param>
+    internal static async Task<int> FilledAsync(CosmosStore store, int target, CancellationToken cancellation)
     {
         var counts = await store.QueryAsync<int>(
             store.ContainerNamed(Containers.Catalogue),
             new QueryDefinition($"SELECT VALUE COUNT(1) FROM c WHERE {Written}").WithParameter("@target", target),
             partitionKey: null,
-            "cross-partition");
+            "cross-partition", cancellation: cancellation);
         return counts.Count == 0 ? 0 : counts[0];
     }
 
     /// <summary>Upserts the batch, one transactional batch per make.</summary>
-    public async Task FillAsync(IReadOnlyList<CatalogueEntry> batch)
+    public async Task FillAsync(IReadOnlyList<CatalogueEntry> batch, CancellationToken cancellation)
     {
         foreach (var partition in batch.Select(entry => entry.ToCatalogueDocument()).GroupBy(document => document.Make))
         {
-            await store.UpsertBatchAsync(Catalogue, partition.Key, [.. partition], "pinned to the make");
+            await store.UpsertBatchAsync(Catalogue, partition.Key, [.. partition], "pinned to the make", cancellation: cancellation);
         }
     }
 
@@ -170,7 +173,7 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
     /// The three segments' counts: one COUNT per segment the filter keeps, each answered off the
     /// index without loading a document, because the store has no conditional count.
     /// </summary>
-    public async Task<SegmentCounts> CountAsync(CatalogueFilter filter)
+    public async Task<SegmentCounts> CountAsync(CatalogueFilter filter, CancellationToken cancellation)
     {
         async Task<int> Count(CatalogueSegment segment)
         {
@@ -179,7 +182,7 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
                 return 0;
             }
             var (where, parameters, partition) = Where(filter.In(segment), target);
-            var counts = await store.QueryAsync<int>(Catalogue, Define($"SELECT VALUE COUNT(1) FROM c WHERE {where}", parameters), partition, Label(partition));
+            var counts = await store.QueryAsync<int>(Catalogue, Define($"SELECT VALUE COUNT(1) FROM c WHERE {where}", parameters), partition, Label(partition), cancellation: cancellation);
             return counts.Count == 0 ? 0 : counts[0];
         }
         return new SegmentCounts(
@@ -193,13 +196,13 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
     /// (CosmosCatalogueKeysets.cs), otherwise the ORDER BY, then OFFSET and LIMIT in the
     /// store. The numbers written into the text are integers this code computed.
     /// </summary>
-    public async Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take)
+    public async Task<IReadOnlyList<CatalogueEntry>> PageAsync(CatalogueFilter filter, CatalogueOrder order, int skip, int take, CancellationToken cancellation)
     {
         if (take <= 0)
         {
             return [];
         }
-        if (await _kept.PageAsync(filter, order, skip, take) is { } kept)
+        if (await _kept.PageAsync(filter, order, skip, take, cancellation) is { } kept)
         {
             return kept;
         }
@@ -208,7 +211,7 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
             Catalogue,
             Define($"SELECT * FROM c WHERE {where} ORDER BY {OrderBy(order)} OFFSET {skip} LIMIT {take}", parameters),
             partition,
-            Label(partition));
+            Label(partition), cancellation: cancellation);
         return [.. documents.Select(document => document.ToEntry())];
     }
     // #endregion cosmos-catalogue-query
@@ -216,13 +219,13 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
     private static string Label(string? partition) => partition is null ? "cross-partition" : "pinned to the make";
 
     /// <summary>The vehicles with these ids, by point reads, each partition named from the seed's makes.</summary>
-    public async Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids)
+    public async Task<IReadOnlyList<CatalogueEntry>> FindAsync(IReadOnlyCollection<string> ids, CancellationToken cancellation)
     {
         if (ids.Count == 0)
         {
             return [];
         }
-        var makes = await MakesAsync();
+        var makes = await MakesAsync(cancellation);
         var items = new List<(string Id, string PartitionKey)>();
         foreach (string id in ids.Distinct(StringComparer.Ordinal))
         {
@@ -231,7 +234,7 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
                 items.Add((id, make));
             }
         }
-        var documents = await store.ReadManyAsync<CatalogueDocument>(Catalogue, items, "pinned to the make");
+        var documents = await store.ReadManyAsync<CatalogueDocument>(Catalogue, items, "pinned to the make", cancellation);
         return [.. documents.Where(document => document.Seq < target && document.Price >= 0).Select(document => document.ToEntry()).OrderBy(entry => entry.Seq)];
     }
 
@@ -240,10 +243,10 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
     /// varies identity and numbers and never these four fields (SyntheticVehicleSourceTests holds
     /// that), and a DISTINCT over the hundred thousand would load every document to answer it.
     /// </summary>
-    public async Task<InventoryFacets> FacetsAsync()
+    public async Task<InventoryFacets> FacetsAsync(CancellationToken cancellation)
     {
         var seed = await store.QueryAsync<VehicleDocument>(
-            store.Vehicles, new QueryDefinition("SELECT * FROM c"), partitionKey: null, "cross-partition");
+            store.Vehicles, new QueryDefinition("SELECT * FROM c"), partitionKey: null, "cross-partition", cancellation: cancellation);
         _makeBySeedId = seed.ToDictionary(document => document.Id, document => document.Make, StringComparer.Ordinal);
         return new InventoryFacets(
             Distinct(seed.Select(document => document.Make)),
@@ -254,11 +257,11 @@ public sealed class CosmosVehicleCatalogue(CosmosStore store, int target) : IVeh
 
     private static List<string> Distinct(IEnumerable<string> values) => [.. values.Distinct().Order(StringComparer.Ordinal)];
 
-    private async Task<IReadOnlyDictionary<string, string>> MakesAsync()
+    private async Task<IReadOnlyDictionary<string, string>> MakesAsync(CancellationToken cancellation)
     {
         if (_makeBySeedId is null)
         {
-            await FacetsAsync();
+            await FacetsAsync(cancellation);
         }
         return _makeBySeedId!;
     }

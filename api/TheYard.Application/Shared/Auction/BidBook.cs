@@ -41,19 +41,21 @@ public sealed partial class BidBook(IBidStore store) : IBidReader, IBidWriter
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     /// <summary>Loads the ledger from the store once; see <see cref="BidLedger.LoadAsync"/>.</summary>
-    public Task LoadAsync() => _ledger.LoadAsync();
+    /// <param name="cancellation">Stops this caller waiting for the shared replay; it does not stop the replay.</param>
+    public Task LoadAsync(CancellationToken cancellation) => _ledger.LoadAsync(cancellation);
 
     /// <summary>
     /// Throws the cache away and reads it again from the store, under the gate so no write lands half way
     /// through. The other site's bids reach this process's listing here, at startup, and on the next write to
     /// the same vehicle; the rules never wait for it, because they read the store themselves.
     /// </summary>
-    public async Task RefreshAsync()
+    /// <param name="cancellation">Honoured while waiting for the gate and while the store is read.</param>
+    public async Task RefreshAsync(CancellationToken cancellation)
     {
-        await _gate.WaitAsync();
+        await _gate.WaitAsync(cancellation);
         try
         {
-            await _ledger.RefreshAsync();
+            await _ledger.RefreshAsync(cancellation);
         }
         finally
         {

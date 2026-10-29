@@ -16,17 +16,17 @@ public sealed partial class CosmosBidStore
 
     // #region cosmos-standing-store
     /// <summary>Every standing: one query inside the standing partition.</summary>
-    public async Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync()
+    public async Task<IReadOnlyList<StoredStanding>> LoadStandingsAsync(CancellationToken cancellation)
     {
         var documents = await store.QueryAsync<StandingDocument>(
-            store.Bids, new QueryDefinition("SELECT * FROM c"), StandingDocument.Partition, StandingLabel);
+            store.Bids, new QueryDefinition("SELECT * FROM c"), StandingDocument.Partition, StandingLabel, cancellation: cancellation);
         return documents.Select(Stored).ToList();
     }
 
     /// <summary>One vehicle's standing: a point read, null when there is none.</summary>
-    public async Task<StoredStanding?> ReadStandingAsync(string vehicleId)
+    public async Task<StoredStanding?> ReadStandingAsync(string vehicleId, CancellationToken cancellation)
     {
-        var document = await store.ReadAsync<StandingDocument>(store.Bids, vehicleId, StandingDocument.Partition, StandingLabel);
+        var document = await store.ReadAsync<StandingDocument>(store.Bids, vehicleId, StandingDocument.Partition, StandingLabel, cancellation: cancellation);
         return document is null ? null : Stored(document);
     }
 
@@ -38,7 +38,7 @@ public sealed partial class CosmosBidStore
     /// loss by another route (the relational store updates no row and answers
     /// false). Every loss answers false, and the service reads again.
     /// </summary>
-    private async Task<bool> TryWriteStandingAsync(string vehicleId, VehicleStanding standing, string? expectedVersion)
+    private async Task<bool> TryWriteStandingAsync(string vehicleId, VehicleStanding standing, string? expectedVersion, CancellationToken cancellation)
     {
         var document = new StandingDocument
         {
@@ -53,11 +53,11 @@ public sealed partial class CosmosBidStore
         {
             if (expectedVersion is null)
             {
-                await store.CreateAsync(store.Bids, document, StandingDocument.Partition, StandingLabel);
+                await store.CreateAsync(store.Bids, document, StandingDocument.Partition, StandingLabel, cancellation: cancellation);
             }
             else
             {
-                await store.ReplaceAsync(store.Bids, document, vehicleId, StandingDocument.Partition, expectedVersion, StandingLabel);
+                await store.ReplaceAsync(store.Bids, document, vehicleId, StandingDocument.Partition, expectedVersion, StandingLabel, cancellation: cancellation);
             }
             return true;
         }
@@ -71,13 +71,13 @@ public sealed partial class CosmosBidStore
     /// Deletes the standing of each vehicle, one point delete apiece. A
     /// standing already gone is the answer wanted, so a 404 is not an error.
     /// </summary>
-    private async Task ForgetStandingsAsync(IReadOnlyList<string> vehicleIds)
+    private async Task ForgetStandingsAsync(IReadOnlyList<string> vehicleIds, CancellationToken cancellation)
     {
         foreach (string vehicleId in vehicleIds)
         {
             try
             {
-                await store.DeleteAsync<StandingDocument>(store.Bids, vehicleId, StandingDocument.Partition, StandingLabel);
+                await store.DeleteAsync<StandingDocument>(store.Bids, vehicleId, StandingDocument.Partition, StandingLabel, cancellation: cancellation);
             }
             catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {

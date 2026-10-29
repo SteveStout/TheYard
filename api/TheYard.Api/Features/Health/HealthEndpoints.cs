@@ -75,9 +75,17 @@ public static class HealthEndpoints
     /// vehicles to load (ADR: The order of the request pipeline). The keep-warm loop
     /// loads the other store within minutes of a start.
     /// </summary>
-    private static async Task<Results<ContentHttpResult, ProblemHttpResult>> Readiness(HostPaths paths, Backends backends, string? stores)
+    /// <param name="paths">Where the files this site cannot run without are.</param>
+    /// <param name="backends">The stores this container runs.</param>
+    /// <param name="stores">"all" to ask every store, which a blue-green swap does.</param>
+    /// <param name="cancellation">
+    /// The request's. Readiness reaches no store, so there is nothing of the store's to stop
+    /// here; the token is threaded anyway so that the day a check behind this one does reach
+    /// the network, it arrives already carrying the one thing that can stop it.
+    /// </param>
+    private static async Task<Results<ContentHttpResult, ProblemHttpResult>> Readiness(HostPaths paths, Backends backends, string? stores, CancellationToken cancellation)
     {
-        if (!(await RunChecksAsync(paths, backends, readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass"))
+        if (!(await RunChecksAsync(paths, backends, cancellation, readinessOnly: true)).Where(check => check.GatesReadiness).All(check => check.Status == "pass"))
         {
             return TypedResults.Problem(detail: "A file this site cannot run without is missing, or its catalogue is still loading; the health report says which.", statusCode: 503, title: "Not ready");
         }
@@ -89,9 +97,22 @@ public static class HealthEndpoints
     }
     // #endregion readiness
 
-    private static async Task<Ok<HealthReport>> Health(HostPaths paths, Backends backends, BuildInfo build, HostStart start, KeepWarmState keepWarm)
+    /// <summary>
+    /// Every check, timed, and the build that answered. The store's check is two point reads
+    /// over the network, and this address is polled by the Admin tab, so the request's own
+    /// cancellation is what stops those reads when the poll gives up: before this rung the
+    /// container went on paying for a read whose answer had nowhere to go (ADR: The ports learn
+    /// to wait, the addendum on the token).
+    /// </summary>
+    /// <param name="paths">Where the files this site cannot run without are.</param>
+    /// <param name="backends">The stores this container runs.</param>
+    /// <param name="build">The build this container was made from.</param>
+    /// <param name="start">When this host started.</param>
+    /// <param name="keepWarm">The keep-warm loop's last reading, when there is one.</param>
+    /// <param name="cancellation">The request's, carried to each store's probe.</param>
+    private static async Task<Ok<HealthReport>> Health(HostPaths paths, Backends backends, BuildInfo build, HostStart start, KeepWarmState keepWarm, CancellationToken cancellation)
     {
-        var checks = await RunChecksAsync(paths, backends);
+        var checks = await RunChecksAsync(paths, backends, cancellation);
         return TypedResults.Ok(
             new HealthReport(
                 checks.All(c => c.Status == "pass") ? "healthy" : "degraded",
@@ -106,14 +127,18 @@ public static class HealthEndpoints
     // Each probe is timed and each answer is a value, never an exception: a
     // health endpoint that throws tells an orchestrator nothing. The checks are
     // deliberately about the files this app cannot run without.
-    private static async Task<HealthCheckEntry[]> RunChecksAsync(HostPaths paths, Backends backends, bool readinessOnly = false)
+    /// <param name="paths">Where the files this site cannot run without are.</param>
+    /// <param name="backends">The stores this container runs.</param>
+    /// <param name="cancellation">The request's, handed to each store's probe and to nothing else; the file checks do not wait.</param>
+    /// <param name="readinessOnly">True to run only the checks that gate readiness, which leaves the store alone.</param>
+    private static async Task<HealthCheckEntry[]> RunChecksAsync(HostPaths paths, Backends backends, CancellationToken cancellation, bool readinessOnly = false)
     {
         // Each probe is timed: the Admin tab shows the milliseconds beside the check,
         // so a slow disk or a slow lookup shows up before it fails (ADR-010, second pass).
         // Awaited, because the document store's probe is two point reads over the
         // network and a health check that blocked a thread on them would be the
         // defect the ports record describes (ADR: The ports learn to wait).
-        async Task<HealthCheckEntry> Check(string name, Func<Task<bool>> probe, string detail, bool gatesReadiness = true)
+        async Task<HealthCheckEntry> Check(string name, Func<CancellationToken, Task<bool>> probe, string detail, bool gatesReadiness = true)
         {
             if (readinessOnly && !gatesReadiness)
             {
@@ -123,18 +148,18 @@ public static class HealthEndpoints
             }
 
             var clock = Stopwatch.StartNew();
-            try { return new HealthCheckEntry(name, await probe() ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
+            try { return new HealthCheckEntry(name, await probe(cancellation) ? "pass" : "fail", detail, clock.ElapsedMilliseconds, gatesReadiness); }
             catch (Exception ex) { return new HealthCheckEntry(name, "fail", ex.GetType().Name, clock.ElapsedMilliseconds, gatesReadiness); }
         }
         var checks = new List<HealthCheckEntry>
         {
-            await Check("dataset file", () => Task.FromResult(File.Exists(paths.DataPath)), "data/vehicles.json present"),
-            await Check("docs", () => Task.FromResult(File.Exists(Path.Combine(paths.RepoRoot, "docs", "hosting", "HOSTING.md"))), "served documents findable"),
-            await Check("photo manifest", () => Task.FromResult(File.Exists(paths.ManifestPath)), "image manifest present"),
+            await Check("dataset file", _ => Task.FromResult(File.Exists(paths.DataPath)), "data/vehicles.json present"),
+            await Check("docs", _ => Task.FromResult(File.Exists(Path.Combine(paths.RepoRoot, "docs", "hosting", "HOSTING.md"))), "served documents findable"),
+            await Check("photo manifest", _ => Task.FromResult(File.Exists(paths.ManifestPath)), "image manifest present"),
             // The process listens before its catalogue is in (Startup.cs, listen-first),
             // so ready means the default store's catalogue has loaded: the thing a
             // deploy, and a blue-green swap, must wait for before sending a visitor.
-            await Check("catalogue", () => Task.FromResult(backends.Default.CatalogueLoaded), "the default store's catalogue is loaded"),
+            await Check("catalogue", _ => Task.FromResult(backends.Default.CatalogueLoaded), "the default store's catalogue is loaded"),
         };
         // One check per store, named by the store, so a container running both
         // says which one is unavailable. The default store's check is called

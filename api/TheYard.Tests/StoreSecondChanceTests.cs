@@ -19,7 +19,7 @@ public class StoreSecondChanceTests
         backend.Inventory,
         backend.Bids,
         backend.Activity,
-        () => Task.FromResult(true));
+        _ => Task.FromResult(true));
 
     [Fact]
     public async Task A_store_that_answers_on_the_third_ask_is_attached_once_and_the_asking_stops()
@@ -45,7 +45,7 @@ public class StoreSecondChanceTests
         Assert.Equal(1, attached);
         Assert.True(backend.Ready);
         Assert.Equal("Azure SQL Database, found the published schema", backend.Database.Note);
-        Assert.True(await backend.Probe());
+        Assert.True(await backend.Probe(CancellationToken.None));
     }
 
     [Fact]

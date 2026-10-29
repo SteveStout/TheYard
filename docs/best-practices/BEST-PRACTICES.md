@@ -37,6 +37,18 @@ footer displays exactly that.
   questions and all of them held through a fortnight in which half of these
   doubled, which is why a count sits beside each rule now. Recorded in ADR: The
   numbers that may only fall.
+- **Work the caller walked away from is stopped.** Every I/O path carries the
+  request's own cancellation from the endpoint through the handler and the port
+  to the adapter, which hands it to EF Core or to the Cosmos DB SDK. A read a
+  visitor abandoned, by closing a tab or by a poll timing out, is work the site
+  would otherwise pay for twice: once to run it and once in the thread and the
+  request units it takes from the read somebody is still waiting for. Taking the
+  token is not the same as cancelling it: a bid write that has entered the gate
+  finishes, because a bid half written is worse than a bid that took its time,
+  and the few places that run to their end whatever the caller does say why
+  beside the code. One load shared by many callers is cancelled by none of them;
+  a caller who leaves stops only their own wait. Recorded in ADR: The ports learn
+  to wait, the addendum on the token.
 - **The architecture is written down, not remembered.** One page for the
   layers and the rules that keep them, one for naming, layering and
   commenting, and an `.editorconfig` doing the mechanical half. Both are

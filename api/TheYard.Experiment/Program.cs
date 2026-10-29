@@ -73,7 +73,7 @@ async Task<int> SeedAsync()
         return 1;
     }
 
-    var vehicles = await new SyntheticVehicleSource(new JsonFileVehicleSource(dataPath), count).LoadAsync();
+    var vehicles = await new SyntheticVehicleSource(new JsonFileVehicleSource(dataPath), count).LoadAsync(CancellationToken.None);
     Console.WriteLine($"seeding {vehicles.Count} documents at {DateTime.Now:HH:mm:ss}");
     var clock = Stopwatch.StartNew();
     double charge = 0;

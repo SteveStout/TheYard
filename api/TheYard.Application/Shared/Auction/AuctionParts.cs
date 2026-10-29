@@ -13,19 +13,19 @@ namespace TheYard.Application.Shared.Auction;
 public interface IStockReader
 {
     /// <summary>One vehicle by id, at the dataset's figures, or null when the catalogue has no such id.</summary>
-    Task<Vehicle?> FindAsync(string id);
+    Task<Vehicle?> FindAsync(string id, CancellationToken cancellation);
 
     /// <summary>The vehicles with these ids that the catalogue holds, in no promised order.</summary>
-    Task<IReadOnlyList<Vehicle>> FindManyAsync(IReadOnlyCollection<string> ids);
+    Task<IReadOnlyList<Vehicle>> FindManyAsync(IReadOnlyCollection<string> ids, CancellationToken cancellation);
 
     /// <summary>The first live auctions in the catalogue's own order, at most <paramref name="take"/>.</summary>
-    Task<IReadOnlyList<Vehicle>> FirstLiveAsync(AuctionClock clock, int take);
+    Task<IReadOnlyList<Vehicle>> FirstLiveAsync(AuctionClock clock, int take, CancellationToken cancellation);
 
     /// <summary>The values behind the catalogue's filters.</summary>
-    Task<InventoryFacets> FacetsAsync();
+    Task<InventoryFacets> FacetsAsync(CancellationToken cancellation);
 
     /// <summary>One page of the catalogue, filtered and sorted, with the overlay laid on before either.</summary>
-    Task<SearchResult> SearchAsync(VehicleFilter filter, AuctionClock clock, VehicleSort sort = VehicleSort.EndingSoonest, int limit = int.MaxValue, int offset = 0, ListingOverlay? overlay = null);
+    Task<SearchResult> SearchAsync(VehicleFilter filter, AuctionClock clock, VehicleSort sort = VehicleSort.EndingSoonest, int limit = int.MaxValue, int offset = 0, ListingOverlay? overlay = null, CancellationToken cancellation = default);
 }
 
 /// <summary>Everybody's bids as a query reads them: the standing on each vehicle, one buyer's bids, and whether a vehicle is sold.</summary>
@@ -54,13 +54,18 @@ public interface IBidReader
 public interface IBidWriter
 {
     /// <summary>One bid from one buyer, measured against the vehicle as it stands.</summary>
-    Task<BidOutcome> PlaceBidAsync(Vehicle vehicle, int amount, AuctionClock clock, string userId);
+    /// <remarks>The token is honoured up to the gate and not past it: once a bid's turn comes
+    /// the store is written and memory follows, and that pair finishes (ADR: The ports learn to
+    /// wait, the addendum on the token).</remarks>
+    Task<BidOutcome> PlaceBidAsync(Vehicle vehicle, int amount, AuctionClock clock, string userId, CancellationToken cancellation);
 
     /// <summary>A buy-now purchase from one buyer, at the vehicle's buy-now price.</summary>
-    Task<BidOutcome> BuyNowAsync(Vehicle vehicle, AuctionClock clock, string userId);
+    /// <remarks>Cancellable up to the gate, for the reason a bid is.</remarks>
+    Task<BidOutcome> BuyNowAsync(Vehicle vehicle, AuctionClock clock, string userId, CancellationToken cancellation);
 
     /// <summary>One buyer's bids removed; answers the vehicles nobody else is bidding on any more.</summary>
-    Task<IReadOnlyList<string>> ResetAsync(string userId);
+    /// <remarks>Cancellable up to the gate, for the reason a bid is.</remarks>
+    Task<IReadOnlyList<string>> ResetAsync(string userId, CancellationToken cancellation);
 }
 
 /// <summary>The room's bids as a query reads them.</summary>

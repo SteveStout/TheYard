@@ -32,15 +32,15 @@ public sealed class PlaceBidHandler(StandingReader standings, IBidWriter bids, F
         }
         var now = clock();
         cancellation.ThrowIfCancellationRequested();
-        if (await standings.FindAsync(request.VehicleId) is not { } vehicle)
+        if (await standings.FindAsync(request.VehicleId, cancellation) is not { } vehicle)
         {
             return BidAnswer.Refused(BidAnswerKind.NoSuchVehicle, null);
         }
         // The bid is measured against the vehicle as it stands, the room's price included: measuring
         // against the dataset's figure alone would let a buyer retake the lead below the going rate.
         var outcome = request.Amount is { } amount
-            ? await bids.PlaceBidAsync(vehicle.Vehicle, amount, now, request.UserId)
-            : await bids.BuyNowAsync(vehicle.Vehicle, now, request.UserId);
+            ? await bids.PlaceBidAsync(vehicle.Vehicle, amount, now, request.UserId, cancellation)
+            : await bids.BuyNowAsync(vehicle.Vehicle, now, request.UserId, cancellation);
         if (outcome.Kind == BidOutcomeKind.Rejected)
         {
             return BidAnswer.Refused(BidAnswerKind.Rejected, outcome.Reason);
@@ -54,7 +54,9 @@ public sealed class PlaceBidHandler(StandingReader standings, IBidWriter bids, F
             outcome,
             null,
             standings.BidsOf(request.UserId).TryGetValue(request.VehicleId, out var standing) ? standing : null,
-            await standings.FindAsync(request.VehicleId) ?? vehicle,
+            // Read with no token: the bid has been taken and this is the answer describing
+            // what it left, so a caller who has gone must not turn a placed bid into an error.
+            await standings.FindAsync(request.VehicleId, CancellationToken.None) ?? vehicle,
             now);
     }
 }

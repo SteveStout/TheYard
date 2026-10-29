@@ -190,7 +190,7 @@ public class PersistenceTests : IDisposable
     [Fact]
     public async Task Every_field_survives_the_round_trip_through_a_row()
     {
-        var source = await new JsonFileVehicleSource(SeedPath()).LoadAsync();
+        var source = await new JsonFileVehicleSource(SeedPath()).LoadAsync(CancellationToken.None);
 
         var roundTripped = source.Select((vehicle, index) => vehicle.ToRow(index).ToVehicle()).ToList();
 
@@ -229,7 +229,7 @@ public class PersistenceTests : IDisposable
             api.CreateClient().Dispose();
         }
 
-        var fromFile = (await new JsonFileVehicleSource(SeedPath()).LoadAsync()).Select(v => v.Id).ToList();
+        var fromFile = (await new JsonFileVehicleSource(SeedPath()).LoadAsync(CancellationToken.None)).Select(v => v.Id).ToList();
         using var db = Context();
         var fromStore = db.Vehicles.AsNoTracking().OrderBy(row => row.Seq).Select(row => row.Id).ToList();
 

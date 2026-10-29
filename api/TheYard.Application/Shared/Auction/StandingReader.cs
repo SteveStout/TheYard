@@ -51,13 +51,13 @@ public sealed class StandingReader(IStockReader inventory, IBidReader bids, IRoo
     // #endregion overlays
 
     /// <summary>One vehicle by id, standing at its price and with its sold flag, or null when the catalogue has no such id.</summary>
-    public async Task<StandingVehicle?> FindAsync(string vehicleId) =>
-        await inventory.FindAsync(vehicleId) is { } vehicle ? new StandingVehicle(AsItStands(vehicle), bids.IsSold(vehicleId)) : null;
+    public async Task<StandingVehicle?> FindAsync(string vehicleId, CancellationToken cancellation) =>
+        await inventory.FindAsync(vehicleId, cancellation) is { } vehicle ? new StandingVehicle(AsItStands(vehicle), bids.IsSold(vehicleId)) : null;
 
     /// <summary>One page of the catalogue, filtered and sorted, each vehicle at the price it stands at and with its sold flag.</summary>
-    public async Task<StandingPage> SearchAsync(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset)
+    public async Task<StandingPage> SearchAsync(VehicleFilter filter, AuctionClock clock, VehicleSort sort, int limit, int offset, CancellationToken cancellation)
     {
-        var page = await inventory.SearchAsync(filter, clock, sort, limit, offset, Overlay());
+        var page = await inventory.SearchAsync(filter, clock, sort, limit, offset, Overlay(), cancellation);
         return new StandingPage(page.Total, [.. page.Vehicles.Select(vehicle => new StandingVehicle(vehicle, bids.IsSold(vehicle.Id)))]);
     }
 
@@ -104,10 +104,10 @@ public sealed class StandingReader(IStockReader inventory, IBidReader bids, IRoo
     /// One buyer's history for the account page, newest first: each vehicle's title beside the
     /// buyer's standing on it, or "(withdrawn)" when the vehicle has left the catalogue.
     /// </summary>
-    public async Task<BidHistory> HistoryOfAsync(string userId)
+    public async Task<BidHistory> HistoryOfAsync(string userId, CancellationToken cancellation)
     {
         var mine = BidsOf(userId);
-        var titles = (await inventory.FindManyAsync(mine.Keys.ToList()))
+        var titles = (await inventory.FindManyAsync(mine.Keys.ToList(), cancellation))
             .ToDictionary(v => v.Id, v => $"{v.Year} {v.Make} {v.Model}", StringComparer.Ordinal);
         var entries = mine
             .OrderByDescending(entry => entry.Value.AtMs)

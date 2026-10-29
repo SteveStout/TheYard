@@ -39,7 +39,13 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
     }
 
     /// <summary>Chooses the catalogue that answers, once per warm-up.</summary>
-    public async Task<IVehicleCatalogue> ChooseAsync() => _active = await PickAsync();
+    /// <param name="cancellation">
+    /// The warming caller's, which the hosted service makes the host's stopping token. It is
+    /// carried to the reads this call waits on AND kept by the two loops this call may leave
+    /// running behind it, the fill and the watch, because those outlive every request and the
+    /// only thing that should ever stop them is the container going down.
+    /// </param>
+    public async Task<IVehicleCatalogue> ChooseAsync(CancellationToken cancellation) => _active = await PickAsync(cancellation);
 
     // #region choose
     /// <summary>
@@ -48,23 +54,23 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
     /// beside the site when this site owns the fill. A store that cannot be read at all is the
     /// same as an empty one that is not filled: the site keeps serving, and the Admin tab says why.
     /// </summary>
-    private async Task<IVehicleCatalogue> PickAsync()
+    private async Task<IVehicleCatalogue> PickAsync(CancellationToken cancellation)
     {
         if (_store is null)
         {
-            return Bridge(await _seeder.LoadAsync());
+            return Bridge(await _seeder.LoadAsync(cancellation));
         }
 
         int filled;
         try
         {
-            filled = await _store.FilledAsync();
+            filled = await _store.FilledAsync(cancellation);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             _note = $"the store's catalogue could not be read ({ex.GetType().Name}), so the expansion answers from memory";
-            var unread = Bridge(await _seeder.LoadAsync());
-            Watch(_store);
+            var unread = Bridge(await _seeder.LoadAsync(cancellation));
+            Watch(_store, cancellation);
             return unread;
         }
         Volatile.Write(ref _filled, filled);
@@ -74,10 +80,10 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
             return _store;
         }
 
-        var expansion = await _seeder.LoadAsync();
+        var expansion = await _seeder.LoadAsync(cancellation);
         if (missing <= _store.Pace.FillAtWarmUpTo)
         {
-            await FillAsync(_store, expansion, filled, pause: false);
+            await FillAsync(_store, expansion, filled, pause: false, cancellation);
             return _store;
         }
 
@@ -89,12 +95,12 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
             // lets go of the list nothing else in this object still holds it.
             _pending = expansion;
             var store = _store;
-            Filling = Task.Run(() => FillBesideAsync(store, filled));
+            Filling = Task.Run(() => FillBesideAsync(store, filled, cancellation), cancellation);
         }
         else
         {
             _note = $"the store holds {filled:N0} of {_store.Target:N0}, and this site does not fill it, so the expansion answers from memory";
-            Watch(_store);
+            Watch(_store, cancellation);
         }
         return bridge;
     }
@@ -103,8 +109,15 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
     /// For a site that does not fill this store: count it once a minute, for a day at most, and
     /// switch to it the minute it holds the whole catalogue, which is when the other site's fill
     /// finishes. Nothing when upkeep is off, which is every test host.
+    ///
+    /// <para>A day of one-minute counts is the longest-running thing this class starts, and
+    /// before this rung nothing could stop it: a container being replaced kept counting until
+    /// the process died. It now takes the warm-up's token, which the host makes its own
+    /// stopping token, so a shutdown ends the loop at its next wait.</para>
     /// </summary>
-    private void Watch(IVehicleCatalogue store)
+    /// <param name="store">The store to count.</param>
+    /// <param name="cancellation">The host's, so the loop ends when the container goes down.</param>
+    private void Watch(IVehicleCatalogue store, CancellationToken cancellation)
     {
         if (_upkeep == CatalogueUpkeep.Off)
         {
@@ -112,12 +125,12 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
         }
         Filling = Task.Run(async () =>
         {
-            for (int minute = 0; minute < 24 * 60; minute++)
+            for (int minute = 0; minute < 24 * 60 && !cancellation.IsCancellationRequested; minute++)
             {
-                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Task.Delay(TimeSpan.FromMinutes(1), cancellation);
                 try
                 {
-                    int filled = await store.FilledAsync();
+                    int filled = await store.FilledAsync(cancellation);
                     Volatile.Write(ref _filled, filled);
                     if (filled >= store.Target)
                     {
@@ -130,7 +143,7 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
                     _note = $"the store's catalogue could not be counted ({ex.GetType().Name}); counting again in a minute";
                 }
             }
-        });
+        }, cancellation);
     }
 
     /// <summary>
@@ -157,7 +170,12 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
 
     // #region fill
     /// <summary>Writes the expansion from just before <paramref name="from"/> to the end, a batch at a time at the store's pace.</summary>
-    private async Task FillAsync(IVehicleCatalogue store, IReadOnlyList<Vehicle> expansion, int from, bool pause)
+    /// <param name="store">The store to write.</param>
+    /// <param name="expansion">The whole expansion, read once by the caller.</param>
+    /// <param name="from">The count the store last reported.</param>
+    /// <param name="pause">Whether to keep the store's pace between batches, which a fill beside a running site does.</param>
+    /// <param name="cancellation">The host's; a fill stopped part way is picked up a batch back next time, which is why stopping it is safe.</param>
+    private async Task FillAsync(IVehicleCatalogue store, IReadOnlyList<Vehicle> expansion, int from, bool pause, CancellationToken cancellation)
     {
         int batch = Math.Clamp(store.Pace.Batch, 1, 10_000);
         // A batch back from the count, because a fill that stopped mid-batch wrote some of it;
@@ -170,11 +188,11 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
             {
                 slice.Add(new CatalogueEntry(seq, expansion[seq]));
             }
-            await store.FillAsync(slice);
+            await store.FillAsync(slice, cancellation);
             Volatile.Write(ref _filled, Math.Max(Volatile.Read(ref _filled), start + slice.Count));
             if (pause && store.Pace.Pause > TimeSpan.Zero)
             {
-                await Task.Delay(store.Pace.Pause);
+                await Task.Delay(store.Pace.Pause, cancellation);
             }
         }
     }
@@ -183,10 +201,13 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
     /// The fill beside a running site, then the switch. Tried again a minute later when the store
     /// refuses, up to ten times.
     /// </summary>
-    private async Task FillBesideAsync(IVehicleCatalogue store, int from)
+    /// <param name="store">The store to fill.</param>
+    /// <param name="from">The count the store reported at the warm-up.</param>
+    /// <param name="cancellation">The host's, so a container being replaced stops filling.</param>
+    private async Task FillBesideAsync(IVehicleCatalogue store, int from, CancellationToken cancellation)
     {
         IReadOnlyList<Vehicle> expansion = Interlocked.Exchange(ref _pending, null) ?? [];
-        for (int attempt = 1; attempt <= 10; attempt++)
+        for (int attempt = 1; attempt <= 10 && !cancellation.IsCancellationRequested; attempt++)
         {
             try
             {
@@ -196,8 +217,8 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
                     // that has already been got past.
                     _note = $"the store holds {from:N0} of {store.Target:N0}; filling it beside the site again after a refused batch";
                 }
-                await FillAsync(store, expansion, from, pause: true);
-                int filled = await store.FilledAsync();
+                await FillAsync(store, expansion, from, pause: true, cancellation);
+                int filled = await store.FilledAsync(cancellation);
                 Volatile.Write(ref _filled, filled);
                 if (filled >= store.Target)
                 {
@@ -210,7 +231,7 @@ public sealed class StockSource(IVehicleCatalogue? _store, IVehicleSource _seede
             {
                 _note = $"the fill stopped at {Volatile.Read(ref _filled):N0} of {store.Target:N0} ({ex.GetType().Name}); trying again in a minute";
                 from = Volatile.Read(ref _filled);
-                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Task.Delay(TimeSpan.FromMinutes(1), cancellation);
             }
         }
         if (Volatile.Read(ref _filled) < store.Target)

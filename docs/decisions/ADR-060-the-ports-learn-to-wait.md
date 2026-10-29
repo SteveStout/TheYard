@@ -203,3 +203,63 @@ What listening first did change is everything after it. The new version's API an
 ## Addendum, 2026-10-18: the warm-up no longer loads the catalogue
 
 From 1.0.3.178 warming a store reads the photo manifest, the filter values and one count of what the store holds; the hundred thousand vehicles stay in the store and every listing awaits its query (ADR: The store does the work). The shared task, and the rule that a failed warm-up is not kept, are unchanged.
+
+## Addendum, 2026-10-29 (1.0.4.116): the ports learn to stop
+
+"No cancellation tokens, deliberately" stopped being true here. The sentence in the
+Decision block above was written when the ports had two kinds of caller: a bid write that
+must not be abandoned halfway through the store-then-memory sequence, and two loads that
+run once at startup. Both of those callers still exist and the reasoning about them was
+never wrong. What the sentence missed is the caller that arrived afterwards. From the
+store-does-the-work change the catalogue is a port too, and every listing, every search,
+every page and every point read is a query a visitor asked for and can walk away from: a
+closed tab, a reload, a phone that slept, a poll that timed out at three seconds against a
+store still answering. A read nobody is waiting for is work the site pays for twice, once
+to run it and once in the thread and the request units it took from the read somebody is
+waiting for, and on a one-vCPU container that is the same arithmetic this record already
+did about blocking.
+
+So every port member now takes a `CancellationToken`, and the shape is held by a test for
+the same reason the awaitable shape is: a member added next year with no token would
+otherwise be found on the live site rather than here.
+
+```live path=api/TheYard.Application/Shared/Auction/Ports.cs region=ports
+```
+
+**Taking the token is not the same as cancelling.** The two promises above are kept
+exactly as they were, and keeping them is the reason this is an addendum and not a
+rewrite:
+
+- **The bid write still finishes.** `BidBook.PlaceBidAsync` takes the token and honours it
+  up to the moment it enters the gate. Inside the critical section the store is written and
+  memory follows, and that sequence is run to its end whatever the caller does, because a
+  bid abandoned between the two leaves the store holding a standing memory does not. The
+  token is checked before the wait for the gate and not after it, which is where a caller
+  who has gone can still be let go of for free.
+- **The startup loads take the host's token, not a request's.** `IVehicleSource.LoadAsync`
+  and `IPhotoManifestSource.LoadAsync` are asked once, by the hosted service that warms the
+  catalogue beside the listening server, and what they are handed is the host's stopping
+  token. A container being shut down stops warming; nothing else can stop it.
+
+**What a request's token is.** Minimal APIs bind `CancellationToken` to
+`HttpContext.RequestAborted`, so an endpoint that declares the parameter is handed the
+connection's own cancellation and the whole chain under it needs no plumbing of its own.
+That is the whole mechanism on the read paths: the endpoint declares it, the handler takes
+it, the port carries it, and the adapter gives it to EF Core or to the Cosmos DB SDK, both
+of which take one on every call they offer.
+
+**The health endpoints went first**, because they are the clearest case of the defect and
+the easiest to overlook: `/api/health` is polled by the Admin tab, and its database check is
+two point reads over the network. A poll that gave up left the container reading the store
+for as long as the store took, and the report's own answer went nowhere. `/readyz` is
+polled by the deploy and by the platform every few seconds and does not reach the store at
+all, which the test beside the new one holds, so threading the token through readiness
+cannot quietly turn the most-polled address on the site into a network read.
+
+```live path=api/TheYard.Tests/HealthCancellationTests.cs region=health-token
+```
+
+**Where the count sits.** This is the first rung of the remediation the numbers record
+sets out, and `async_without_cancellation` in `.github/quality-ratchet.json` falls in this
+commit by what the rung reached (ADR: The numbers that may only fall). The number is not a
+proxy for this change; it is the change, which is why it moves in the same commit.
