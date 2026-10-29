@@ -111,6 +111,20 @@ the fix**, which is the only way a limit ever moves; the step prints a notice wh
 the good way and the file has not followed it. Never lower the 90 per cent line and 75 per cent branch
 coverage floor to make a run green (ADR-122).
 
+## Shipping
+
+**A ship is a push of `gate/<version>`.** Before that push, run the preflight:
+
+```
+bash scripts/preflight.sh
+```
+
+**A red preflight is never pushed.** It runs the four gate checks that fit on a shipping machine (`dotnet
+format`, Prettier, oxlint, the type check) and says whether this version changes `.github/workflows` and
+whether the secret `PROMOTE_TOKEN` will carry it; a version that changes a workflow with no such secret
+is promoted by hand after a green gate, which the preflight prints the command for (ADR-098, the addendum
+of 1.0.4.119). The browser suite and the two passes on Cosmos DB are the gate's, on its 16 GB runner.
+
 ## Testing
 
 - `dotnet test` - xUnit. Domain with fixed clocks, Application with hand-written fakes at the ports

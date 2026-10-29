@@ -114,14 +114,22 @@ public sealed class PromoteScriptTests : IDisposable
     private string MainOnOrigin() => Run(_root, "git", "--git-dir origin.git rev-parse main").Output.Trim();
 
     /// <summary>promote.sh as a person runs it, the run's answer given by the stand-in gh.</summary>
-    private (int Code, string Output) Promote(string version, string? tested = null, int green = 2, string card = "") =>
-        Run(Work, "bash", $"scripts/promote.sh {Path.Combine(_root, "raw")} 60 {version} 4242", new Dictionary<string, string>
+    private (int Code, string Output) Promote(string version, string? tested = null, int green = 2, string card = "", IReadOnlyDictionary<string, string>? env = null)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["PATH"] = Path.Combine(_root, "bin") + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH"),
             ["FAKE_TESTED"] = tested ?? Git("rev-parse HEAD"),
             ["FAKE_GREEN"] = green.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["FAKE_CARD"] = card,
-        });
+        };
+        foreach (var (name, value) in env ?? new Dictionary<string, string>())
+        {
+            values[name] = value;
+        }
+
+        return Run(Work, "bash", $"scripts/promote.sh {Path.Combine(_root, "raw")} 60 {version} 4242", values);
+    }
     // #endregion the-sandbox
 
     // #region the-cases
@@ -220,4 +228,69 @@ public sealed class PromoteScriptTests : IDisposable
         Assert.Equal(before, MainOnOrigin());
     }
     // #endregion the-cases
+
+    // #region the-three-paths
+    /// <summary>
+    /// The three paths a promotion inside the gate can take (ADR-098, the addendum of 1.0.4.119), each run for
+    /// real: a plain version, a version that changes a workflow with PROMOTE_TOKEN to carry it, and the same
+    /// version with no such secret. The third is the one that was sending failure emails for green code: seven
+    /// of the eleven red Gate runs of 26 to 29 October were this refusal, on a gate that had already passed.
+    /// </summary>
+    /// <param name="shape">Which of the three paths the case sets up.</param>
+    /// <param name="workflow">Whether the version changes a file under .github/workflows.</param>
+    /// <param name="secret">Whether the promote job was handed PROMOTE_TOKEN.</param>
+    /// <param name="moves">Whether main is expected to move.</param>
+    /// <param name="outputs">The lines the job's outputs file is expected to hold.</param>
+    public static TheoryData<string, bool, bool, bool, string[]> Paths => new()
+    {
+        { "plain", false, false, true, ["promoted=true", "by_push=false"] },
+        { "workflow-with-the-token", true, true, true, ["promoted=true", "by_push=true"] },
+        { "workflow-with-no-token", true, false, false, ["promoted=false", "by_push=false"] },
+    };
+
+    [Theory]
+    [MemberData(nameof(Paths))]
+    public void Each_of_the_three_paths_a_promotion_can_take_ends_green_and_says_which_it_took(string shape, bool workflow, bool secret, bool moves, string[] outputs)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        string before = MainOnOrigin();
+        if (workflow)
+        {
+            Write(Path.Combine(".github", "workflows", "gate.yml"), "name: Gate\n# changed by " + shape + "\n");
+        }
+        Git("add -A");
+        Version("1.0.4.106");
+        string outputFile = Path.Combine(_root, "outputs.txt");
+        File.WriteAllText(outputFile, "");
+        var env = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["GITHUB_ACTIONS"] = "true",
+            ["GITHUB_OUTPUT"] = outputFile,
+        };
+        if (secret)
+        {
+            env["HAS_PROMOTE_TOKEN"] = "true";
+        }
+
+        var (code, output) = Promote("1.0.4.106", env: env);
+
+        // Green on all three, which is the whole point: a gate that passed never sends a failure email.
+        Assert.True(code == 0, output);
+        Assert.Equal(moves ? Git("rev-parse HEAD") : before, MainOnOrigin());
+        string wrote = File.ReadAllText(outputFile);
+        foreach (string line in outputs)
+        {
+            Assert.Contains(line, wrote, StringComparison.Ordinal);
+        }
+        if (!moves)
+        {
+            Assert.Contains("::notice::this version changes a workflow: promote it by hand with scripts/promote.sh", output, StringComparison.Ordinal);
+            Assert.DoesNotContain("::error::", output, StringComparison.Ordinal);
+        }
+    }
+    // #endregion the-three-paths
 }

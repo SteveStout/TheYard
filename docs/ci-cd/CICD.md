@@ -32,10 +32,41 @@ resume, writes the results file and the README's figures from the run's
 reports, folds them into the commit and fast-forwards `main`, never by force.
 The run then calls Deploy and Deploy Render on that commit, starts the edge's
 move, reads both names after the roll, and starts CI on `main` and reads it to
-its end. A version that changes a workflow is the one exception: GitHub never
-lets the run's own token write a workflow, so a person runs the same script
-and pushes `main`, naming the run:
+its end.
+
+**A version that changes a workflow** needs more than the run's own token,
+which GitHub never lets write to `.github/workflows` (ADR-098, the addendum of
+1.0.4.119). With the repository secret `PROMOTE_TOKEN`, a fine-grained personal
+token with Contents and Workflows write, the promote job pushes `main` itself;
+and because a personal token's push starts the workflows the run's own push
+would not, that push is the roll, so the gate's two deploy jobs skip and the
+after-roll job waits for the push's own Deploy and Deploy Render runs and reads
+the push's CI run. With no such secret the promote job ends GREEN with
+`::notice::this version changes a workflow: promote it by hand with
+scripts/promote.sh`, moves nothing, and the deploys skip, because a gate that
+found nothing wrong must not send a failure email; a person then promotes the
+run by hand, naming it:
 `gh run download <run> -n gate-raw -D raw && bash scripts/promote.sh raw <gate seconds> <version> <run>`.
+
+**Before the push, run the preflight** (ADR-098, the addendum of 1.0.4.119):
+
+```
+bash scripts/preflight.sh
+```
+
+It runs the four gate checks a shipping machine can run in under three minutes
+and inside 8 GB (`dotnet format api/TheYard.slnx --verify-no-changes`, `npm run
+format:check`, `npm run lint`, `npx tsc -b`), names the red one with the first
+twenty lines of its output, and then says whether this version changes
+`.github/workflows` and whether `PROMOTE_TOKEN` will carry it, reading the
+repository's secret NAMES and never a value. It does not run the browser suite
+or the two passes on Cosmos DB: those need the gate's 16 GB runner, which is why
+the gate is there. A check this machine cannot run says UNKNOWN. **A red
+preflight is never pushed.**
+
+**What a red gate run prints.** Each log belongs to one check, and its tail
+reaches the run's error annotations only when that check is red, so the failure
+email names the real failure and not the green checks beside it.
 
 **What promote refuses** (ADR-098, the addendum of 1.0.4.107). Before it
 writes anything, `scripts/promote.sh` reads the named run and refuses unless
@@ -196,6 +227,7 @@ URL, and every deploy so far has been gated on it.
 
 ## Files
 
+- [`scripts/preflight.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/preflight.sh): the gate's four quick checks and the promote path, run before the push; a red preflight is never pushed.
 - [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `gate/<version>` branch the ship pushes; `main` moves only on its green.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the suites as three jobs behind it, on every push to main and on a pull request.
 - [`.github/workflows/edge-branch.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/edge-branch.yml): moves the edge's branch to main after Deploy, only when what the edge serves (edge/ or netlify.toml) changed.
