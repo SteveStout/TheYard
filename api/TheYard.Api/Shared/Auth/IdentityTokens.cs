@@ -45,12 +45,17 @@ public static class IdentityTokens
     /// startup into HostIdentity, never from the environment here (ADR-107, rule 6). Throws what the
     /// HTTP call throws; every caller already answers a failure with a shape rather than an exception.
     /// </summary>
-    public static async Task<string> AcquireAsync(Outbound http, string resource, string clientId, HostIdentity identity)
+    /// <param name="http">The one outbound pool.</param>
+    /// <param name="resource">The resource the token is for.</param>
+    /// <param name="clientId">The identity to ask as, empty for the only one assigned.</param>
+    /// <param name="identity">What the platform said about this host's door, read once at startup.</param>
+    /// <param name="cancellation">Cancelled when the read that wanted the token has gone.</param>
+    public static async Task<string> AcquireAsync(Outbound http, string resource, string clientId, HostIdentity identity, CancellationToken cancellation)
     {
         using var request = RequestFor(resource, clientId, identity.IdentityEndpoint, identity.IdentityHeader);
-        using var response = await http.SendAsync(request);
+        using var response = await http.SendAsync(request, cancellation);
         response.EnsureSuccessStatusCode();
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
         return json.RootElement.GetProperty("access_token").GetString()!;
     }
 }

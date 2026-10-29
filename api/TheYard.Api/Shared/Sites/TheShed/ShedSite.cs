@@ -37,8 +37,9 @@ public sealed class ShedSite(string host, ShedSettings settings, IEnumerable<She
 
     /// <summary>Hands one request to The Shed's own application.</summary>
     /// <param name="context">The request.</param>
-    public Task HandleAsync(HttpContext context) =>
-        (Volatile.Read(ref _application) ?? throw new InvalidOperationException("The Shed has not started")).HandleAsync(context);
+    /// <param name="cancellation">Cancelled when the visitor has gone.</param>
+    public Task HandleAsync(HttpContext context, CancellationToken cancellation) =>
+        (Volatile.Read(ref _application) ?? throw new InvalidOperationException("The Shed has not started")).HandleAsync(context, cancellation);
 
     /// <summary>Stops and releases The Shed, once.</summary>
     public ValueTask DisposeAsync() =>

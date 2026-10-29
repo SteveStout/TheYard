@@ -135,3 +135,20 @@ The health card, from the fetch to the rows
 
 The process listens before its catalogue loads (ADR: The ports learn to wait, the addendum on listening first), so `/readyz` gained one check that gates it, `catalogue`, which passes once the default store's hundred thousand vehicles are in memory. `/healthz` still answers the moment the process is up. `/api/health` shows the new check beside the others, and since it is an API read it waits for the load like every other, so the Admin tab sees the check pass; it is `/readyz` that says 503 while a fresh container loads. The deploy waits on `/readyz` before it reads the filters, and a blue-green swap will wait on the same thing.
 
+## Addendum, 2026-10-29: the error ring has its own file, and the Azure read takes a token
+
+Two changes, both forced by a rung rather than chosen for this record's own reasons.
+
+`Observability.cs` was 294 lines, four inside the three-hundred cap, and the cancellation rung
+needed three parameters in it. A split made under the pressure of an unrelated change is made by
+the alphabet instead of by job, so it was made first and by job: `ErrorEntry`, `StackFrames` and
+`ErrorRingBuffer` are now
+[`api/TheYard.Api/Shared/Observability/ErrorRing.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/ErrorRing.cs),
+which changes when what is recorded about a failure changes. `Observability.cs` keeps its name,
+the health probe's outcome, the site asking Azure about itself, and an index of its parts. The
+`azure-events` region a live sample on this page reads was left where it is.
+
+`AzureSelf.GetStateAsync` takes the cancellation of the poll that asked and carries it to the
+token exchange and to all three reads, so a card the Admin tab has stopped drawing stops asking
+Azure about this web app. It caches for sixty seconds either way, so the saving is a connection
+and not a read.

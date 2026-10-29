@@ -57,7 +57,8 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled,
     /// status code alone does not name the cause, and finding it otherwise
     /// takes a deploy.
     /// </summary>
-    public async Task<object> GetRecentAsync()
+    /// <param name="cancellation">Cancelled when the poll that asked has gone.</param>
+    public async Task<object> GetRecentAsync(CancellationToken cancellation)
     {
         if (!Configured)
         {
@@ -80,7 +81,7 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled,
         {
             // Whichever door this host has: the metadata address on Container
             // Instances, the named endpoint on App Service (ADR: One plan, two sites).
-            string token = await IdentityTokens.AcquireAsync(Http, "https://api.applicationinsights.io", clientId, identity ?? HostIdentity.None);
+            string token = await IdentityTokens.AcquireAsync(Http, "https://api.applicationinsights.io", clientId, identity ?? HostIdentity.None, cancellation);
 
             using var req = new HttpRequestMessage(HttpMethod.Post,
                 $"https://api.applicationinsights.io/v1/apps/{appId}/query")
@@ -88,8 +89,8 @@ public sealed class TelemetryReader(string appId, string clientId, bool enabled,
                 Content = JsonContent.Create(new { query = TelemetryKql.QueryFor(_siteName) }),
             };
             req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            using var resp = await Http.SendAsync(req);
-            string payload = await resp.Content.ReadAsStringAsync();
+            using var resp = await Http.SendAsync(req, cancellation);
+            string payload = await resp.Content.ReadAsStringAsync(cancellation);
             if (!resp.IsSuccessStatusCode)
             {
                 return Cache(Failed($"the telemetry API answered {(int)resp.StatusCode}: {Trim(payload)}"));

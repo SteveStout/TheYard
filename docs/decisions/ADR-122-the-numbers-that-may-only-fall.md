@@ -125,3 +125,44 @@ batch each run to their end whatever the caller does, because the alternative is
 holding half of something. A count cannot tell the difference between a token dropped by
 accident and one not used on purpose, so each of those carries the reason beside it in the
 code.
+## Addendum, 2026-10-29: the count was reading the first bracket, not the signature
+
+The rest of the first rung found that eight of the thirty-three were not there. The scanner read
+a declaration's parameters with `([^)]*)`, which stops at the first closing bracket, and three
+ordinary shapes put a bracket in front of the token:
+
+- an attribute with arguments of its own, which every Azure Functions timer has
+  (`RunAsync([TimerTrigger("0 5 * * * *")] TimerInfo timer, CancellationToken ct)`), and which
+  accounted for six of the eight;
+- a tuple parameter, `LeadAsync(..., (string Path, bool Descending) key, CancellationToken cancellation)`;
+- a signature wide enough to wrap, where `PrepareAsync`'s token is two lines below the line the
+  declaration starts on.
+
+Every one of those eight declares a token and carries it. The number was wrong, not the code.
+
+**Why this is written here and not fixed quietly.** The cheapest way to make the count fall was
+to reorder an Azure Functions trigger's parameters so a regular expression could see past them:
+a change to six deployed entry points, in service of a script. That is the failure mode a ratchet
+invites and the reason a limit may only move in the commit that earns it; the rule says nothing
+about *earning it honestly*, so the record has to. A number that disagrees with the code is fixed
+in the scanner, with the eight signatures quoted, and the fix is held by a test.
+
+**What the scanner does now.** It reads the text between a declaration's own brackets, balancing
+them across up to twelve lines (`# #region whole-signature` in `.github/quality.py`). The set of
+lines it considers is unchanged, and only the test for the token widened, so the count could only
+fall: it went 33 to 25 on an untouched checkout, and the eight are named above.
+
+**And the rest of the rung.** The remaining twenty-four are done, so
+`async_without_cancellation` is 1: `TokenValidated` in `RefuseSession.cs`, the framework override
+the addendum above named as a permanent miscount. That is the floor, and `CancellationTests`
+asserts both the one and which one. Four more methods were found to have taken a token and thrown
+it away, on top of the three the addendum above names: `AzureReadings.SelfAsync`, `.PeerAsync` and
+`.TelemetryAsync` each received a cancellation and called with none, and the blog's image store was
+built twice over a `Func<CancellationToken, Task<string>>` with `_ =>`. The count cannot see any
+of them, which is this record's own Consequences section happening twice in two versions.
+
+**One thing the build already holds.** A surface-only version of this change, where
+`UploadAsync` takes a token and `CopyToAsync` does not get it, does not compile: analyzer CA2016
+refuses it under `-warnaserror`. So take-and-drop is already caught wherever the callee has a
+token overload, and the hole is only where it does not: a delegate, a port of this codebase's
+own, or a call that reads a token off something else.

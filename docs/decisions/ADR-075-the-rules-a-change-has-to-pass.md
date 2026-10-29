@@ -162,6 +162,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The Foreman's page keeps its five sections in order, every reading names its route, rung 0 names no cause without three agreeing sources, and every place to start names a record, a file and a test that exist | ADR-121 | ForemanTests |
 | A card's live read that times out is the recorder's gap and the card answers from its keep; only the request's own cancellation stops the read | ADR-102 | CloudTimeoutTests |
 | Every quality number the ratchet file holds has a row in the record that explains what it counts, both workflows run the scanner against that file, the gate's verdict reads its result, and the coverage floor stays at ninety and seventy-five | ADR: The numbers that may only fall | QualityRatchetTests |
+| Every async method in production C# takes a CancellationToken but the one framework override whose signature this codebase does not own; the parameters a declaration takes are read across an attribute's brackets, a tuple's and the lines a wide signature wraps onto; and every timer the job hunt Function runs declares the token Azure hands it and passes it on | ADR: The numbers that may only fall | CancellationTests |
 
 ## How the table is read
 
@@ -305,3 +306,13 @@ Every address under Cloud infrastructure has been a read until now, and the thre
 ## Addendum, 2026-10-29 (1.0.4.115): the numbers beside the rules
 
 Every row above asks a yes-or-no question, and in the two weeks to 29 October every one of them held while six things nobody was counting roughly doubled (ADR: The numbers that may only fall). Fourteen counts now sit in `.github/quality-ratchet.json`, `.github/quality.py` reads them off the checkout, CI's api job and the ship gate hold each one to its limit, and a limit moves only in the commit that earns it. The table has its row. This record keeps the rules; the new one keeps the numbers, and the difference between them is the difference between a thing that is broken and a thing that is getting worse.
+## Addendum, 2026-10-29: one row for what is left of the cancellation count
+
+The rung that threads the request's cancellation through every I/O path is finished, and the count
+it was measured by is 1: an override of a framework type that can never take one. A number at its
+floor is worth a rule, because the next change that adds an async method with no token would make
+the count worse and say only that, whereas the row above names what is expected and where the one
+exception is. The same row holds the two things that made the count larger than the code deserved:
+the scanner reading a declaration's parameters up to the first closing bracket, and a Function timer
+that declares the token and never passes it on (ADR: The numbers that may only fall, the addendum on
+reading a whole signature).

@@ -62,18 +62,19 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
     /// so the page can update its counts without a second request.
     /// </summary>
     /// <param name="path">The folder that receives the files.</param>
+    /// <param name="cancellation">Cancelled when the visitor has gone; bound by the framework from the request.</param>
     /// <param name="overwrite">True to replace existing files with the same name.</param>
     [HttpPost("upload")]
     [WritesAllowed]
     [EnableRateLimiting(WritesAllowedAttribute.LimitPolicy)]
-    public async Task<TransferResult> Upload([FromQuery] string? path, [FromQuery] bool overwrite = false)
+    public async Task<TransferResult> Upload([FromQuery] string? path, CancellationToken cancellation, [FromQuery] bool overwrite = false)
     {
         if (!Request.HasFormContentType)
         {
             throw ApiRefusalException.Refused("An upload needs at least one file.");
         }
         // Read without blocking: the form is the request body, and a large upload takes time.
-        IFormCollection form = await Request.ReadFormAsync(HttpContext.RequestAborted);
+        IFormCollection form = await Request.ReadFormAsync(cancellation);
         if (form.Files.Count == 0)
         {
             throw ApiRefusalException.Refused("An upload needs at least one file.");
@@ -82,7 +83,7 @@ public sealed class FilesController(FileBrowser browser) : ControllerBase
         foreach (IFormFile file in form.Files)
         {
             await using Stream content = file.OpenReadStream();
-            written.Add(await browser.UploadAsync(path, file.FileName, file.Length, content, overwrite));
+            written.Add(await browser.UploadAsync(path, file.FileName, file.Length, content, overwrite, cancellation));
         }
         return new TransferResult(written, browser.Browse(path).Totals);
     }

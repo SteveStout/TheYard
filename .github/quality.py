@@ -230,11 +230,48 @@ R["slices"] = sorted(p.name for p in (ROOT / "api/TheYard.Api/Features").iterdir
 R["slices_without_module"] = [s for s in R["slices"] if not (ROOT / f"api/TheYard.Api/Features/{s}/Module.cs").exists()]
 
 # ---------- SOLID proxies and async hygiene ----------
+# #region whole-signature
+# The parameter list of a declaration that starts on a line, read by balancing brackets
+# from the method's own opening one and running on to the lines below it until they close.
+# A parameter list is not "everything up to the first closing bracket": an attribute brings
+# its own pair ([TimerTrigger("0 5 * * * *")]), so does a tuple parameter ((string Path,
+# bool Descending) key), and a signature wide enough to wrap puts its last parameters on
+# the lines after the one the declaration starts on. Reading to the first bracket counted
+# eight methods that declare a CancellationToken as methods that do not, which is a defect
+# in the count and not in the code (ADR: The numbers that may only fall, the addendum on
+# reading a whole signature). RUN_ON is the look-ahead: no signature in this codebase wraps
+# further, and a declaration whose brackets never close falls back to the line itself, so a
+# file the reader cannot parse is still counted rather than silently skipped.
+RUN_ON = 12
+
+
+def parameters(lines, start, open_at):
+    """The text between a declaration's brackets, across as many lines as it takes."""
+    depth = 0
+    out = []
+    for i in range(start, min(start + RUN_ON, len(lines))):
+        text = lines[i].split("//")[0] if i > start else lines[i].split("//")[0][open_at:]
+        for ch in text:
+            if ch == "(":
+                depth += 1
+                if depth == 1:
+                    continue
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    return "".join(out)
+            if depth >= 1:
+                out.append(ch)
+        out.append(" ")
+    return None
+# #endregion whole-signature
+
 smell = defaultdict(list)
 for f in CS_PROD:
     s = rel(f)
     t = f.read_text(encoding="utf-8", errors="replace")
-    for n, line in enumerate(t.splitlines(), 1):
+    all_lines = t.splitlines()
+    for n, line in enumerate(all_lines, 1):
         code = line.split("//")[0]
         if re.search(r"\.Result\b|\.Wait\(\)|GetAwaiter\(\)\.GetResult\(\)", code):
             smell["blocking_wait"].append(f"{s}:{n}")
@@ -248,9 +285,11 @@ for f in CS_PROD:
             smell["empty_catch"].append(f"{s}:{n}")
         if "#pragma warning disable" in code or "SuppressMessage" in code:
             smell["suppression"].append(f"{s}:{n}")
-        m = re.search(r"\b(public|internal|private|protected)\s+(?:static\s+|override\s+|virtual\s+)*async\s+[\w<>\[\],? ]+\s+(\w+)\s*\(([^)]*)\)?", code)
-        if m and "CancellationToken" not in m.group(3) and not re.search(r"\bMain\b|Dispose", m.group(2)) and line.rstrip().endswith((")", "{", ",")):
-            smell["async_no_token"].append(f"{s}:{n} {m.group(2)}")
+        m = re.search(r"\b(public|internal|private|protected)\s+(?:static\s+|override\s+|virtual\s+)*async\s+[\w<>\[\],? ]+\s+(\w+)\s*\(", code)
+        if m and not re.search(r"\bMain\b|Dispose", m.group(2)) and line.rstrip().endswith((")", "{", ",")):
+            taken = parameters(all_lines, n - 1, m.end() - 1)
+            if "CancellationToken" not in (taken if taken is not None else code):
+                smell["async_no_token"].append(f"{s}:{n} {m.group(2)}")
         m = re.search(r"\b(class|record)\s+\w+(<[^>]*>)?\s*\(([^)]*)\)", code)
         if m and m.group(3).count(",") >= 5:
             smell["ctor_6plus_params"].append(f"{s}:{n}")

@@ -24,7 +24,8 @@ public sealed partial class ProofRunner(
     Backends backends,
     ProofClients clients,
     SqlRingBuffer sqlLog,
-    StoreRingBuffer storeLog)
+    StoreRingBuffer storeLog,
+    IHostApplicationLifetime lifetime)
 {
     /// <summary>How many paired rounds a run takes when the caller does not say.</summary>
     public const int DefaultRounds = 8;
@@ -118,7 +119,11 @@ public sealed partial class ProofRunner(
         {
             try
             {
-                _last = await RunAsync(rounds);
+                // The host's stopping token, not the asking request's: the POST that started
+                // this run was answered before the first round, and a run that stopped when the
+                // Admin tab's request finished would never produce a result. A container being
+                // replaced does stop measuring itself, which is what this token is for.
+                _last = await RunAsync(rounds, lifetime.ApplicationStopping);
             }
             catch (Exception ex)
             {

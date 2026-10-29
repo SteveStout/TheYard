@@ -76,29 +76,29 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         var inbox = new GmailInbox(http, google);
         _refused = false;
         string atsLine = ats is "shadow" or "on"
-            ? await PartAsync("ats sweep", () => new AtsSweep(store, inbox, time).RunAsync(ats == "on", ct))
+            ? await PartAsync("ats sweep", token => new AtsSweep(store, inbox, time).RunAsync(ats == "on", token), ct)
             : "off";
         var harvest = new LeadsHarvest(store, inbox, time);
         string leadsLine = leads is "shadow" or "on"
-            ? await PartAsync("leads harvest", () => harvest.RunAsync(leads == "on", ct))
+            ? await PartAsync("leads harvest", token => harvest.RunAsync(leads == "on", token), ct)
             : "off";
         string list = (Environment.GetEnvironmentVariable(Dispatch.Gate(LeadsHarvest.ListEvent)) ?? "").Trim().ToLowerInvariant();
         if (list is "shadow" or "on")
         {
-            leadsLine += " | list: " + await PartAsync("leads list", () => ListAsync(harvest, list == "on", started, ct));
+            leadsLine += " | list: " + await PartAsync("leads list", token => ListAsync(harvest, list == "on", started, token), ct);
         }
         string triageLine = triage == "on"
-            ? await PartAsync("triage", () => TriageAsync(inbox, ct))
+            ? await PartAsync("triage", token => TriageAsync(inbox, token), ct)
             : "off";
         string human = (Environment.GetEnvironmentVariable("REPLY_ON_HUMAN") ?? "").Trim().ToLowerInvariant();
         string humanLine = human is "shadow" or "on"
-            ? await PartAsync("human mail", () => HumanAsync(inbox, human == "on", ct))
+            ? await PartAsync("human mail", token => HumanAsync(inbox, human == "on", token), ct)
             : "off";
         var campaign = CampaignSendTimer.Mode(Environment.GetEnvironmentVariable("EMAIL_CAMPAIGN"));
         string? campaignSql = Environment.GetEnvironmentVariable("CAMPAIGN_SQL");
         string campaignLine = campaign == CampaignMode.Off || string.IsNullOrWhiteSpace(campaignSql)
             ? "off"
-            : await PartAsync("campaign", () => CampaignAsync(inbox, campaignSql, ct));
+            : await PartAsync("campaign", token => CampaignAsync(inbox, campaignSql, token), ct);
         var local = CentralClock.Local(time.GetUtcNow());
         string line = $"{local:yyyy-MM-dd HH:mm:ss} {watch.ElapsedMilliseconds} ms | ats: {atsLine} | leads: {leadsLine} | triage: {triageLine} | human: {humanLine} | campaign: {campaignLine}";
         await store.EnsureFolderAsync("inbox-pass", ct);
@@ -219,7 +219,10 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     private bool _refused;
 
     /// <summary>Runs one part; a failure is logged as an error and becomes the part's line, so the next part still runs.</summary>
-    private async Task<string> PartAsync(string name, Func<Task<string>> part)
+    /// <param name="name">The part's name, which its log line and its failure are keyed by.</param>
+    /// <param name="part">The part itself, handed the pass's own token rather than closing over one.</param>
+    /// <param name="ct">The token Azure Functions handed the timer, lent to every part of the pass.</param>
+    private async Task<string> PartAsync(string name, Func<CancellationToken, Task<string>> part, CancellationToken ct)
     {
         if (_refused)
         {
@@ -227,7 +230,7 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         }
         try
         {
-            return await part();
+            return await part(ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

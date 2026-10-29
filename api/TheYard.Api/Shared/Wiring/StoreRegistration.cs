@@ -17,7 +17,8 @@ public static class StoreRegistration
     /// <summary>Prepares and registers both stores, their backends and the second chance, and answers what it made.</summary>
     /// <param name="builder">The host being built.</param>
     /// <param name="paths">Where the dataset and the photo manifest are.</param>
-    public static async Task<PreparedStores> AddTheYardStoresAsync(this WebApplicationBuilder builder, HostPaths paths)
+    /// <param name="cancellation">What stops the two stores being asked. Program.cs decides it, because the host it belongs to does not exist until after this call.</param>
+    public static async Task<PreparedStores> AddTheYardStoresAsync(this WebApplicationBuilder builder, HostPaths paths, CancellationToken cancellation)
     {
         string dataPath = paths.DataPath;
         string manifestPath = paths.ManifestPath;
@@ -103,7 +104,7 @@ public static class StoreRegistration
         // configuration shortens it, which only a test that proves the fallback does).
         var firstWait = StorePrepare.FirstWaitFrom(builder.Configuration);
         var sqlStartup = new StartupTimings();
-        var sqlState = await sqlStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos, CancellationToken.None), firstWait));
+        var sqlState = await sqlStartup.Time("prepare", stopping => StorePrepare.WithTriesAsync(() => YardDatabase.PrepareAsync(yard, seedVehicles, seedPhotos, stopping), firstWait), cancellation);
         // The backend stands on the files until its store is attached: the same two
         // ports answered out of the JSON, the null bid store, no accounts, with the
         // synthetic scale-up still decorating the vehicle source (ADR: The relational
@@ -189,7 +190,7 @@ public static class StoreRegistration
             // Every operation is filed under the request that caused it, the first one included.
             cosmos.Recorder.CurrentRequest = currentRequest;
             var cosmosStartup = new StartupTimings();
-            var cosmosState = await cosmosStartup.Time("prepare", () => StorePrepare.WithTriesAsync(() => cosmos.Starting.PrepareAsync(seedVehicles, seedPhotos, CancellationToken.None), firstWait));
+            var cosmosState = await cosmosStartup.Time("prepare", stopping => StorePrepare.WithTriesAsync(() => cosmos.Starting.PrepareAsync(seedVehicles, seedPhotos, stopping), firstWait), cancellation);
             var store = cosmos;
             // The relational backend's shape: the files until the store is attached (ADR: A
             // second store on Cosmos DB, and what it costs).

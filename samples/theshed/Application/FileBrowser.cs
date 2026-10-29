@@ -98,7 +98,8 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
     /// <param name="length">The size in bytes the request declared for this file.</param>
     /// <param name="content">The stream of the file's bytes.</param>
     /// <param name="overwrite">True to replace an existing file with the same name.</param>
-    public async Task<FileEntry> UploadAsync(string? folder, string? name, long length, Stream content, bool overwrite)
+    /// <param name="cancellation">Cancelled when the visitor has gone, which stops the copy: a file nobody is still sending is not written to its end.</param>
+    public async Task<FileEntry> UploadAsync(string? folder, string? name, long length, Stream content, bool overwrite, CancellationToken cancellation)
     {
         if (length > options.MaxUploadBytes)
         {
@@ -117,7 +118,7 @@ public sealed class FileBrowser(HomePath home, IFileStore store, FilesOptions op
         }
         await using (Stream file = store.Create(target, overwrite))
         {
-            await content.CopyToAsync(file);
+            await content.CopyToAsync(file, cancellation);
         }
         return File(store.Describe(target));
     }

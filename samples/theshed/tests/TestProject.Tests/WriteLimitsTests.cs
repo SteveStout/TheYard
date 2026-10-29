@@ -131,10 +131,10 @@ public sealed class WriteLimitsTests : IDisposable
         var browser = new FileBrowser(home, store, options, new HomeQuota(home, store, options));
 
         using var small = new MemoryStream(new byte[50]);
-        await browser.UploadAsync("docs", "small.bin", 50, small, overwrite: false);
+        await browser.UploadAsync("docs", "small.bin", 50, small, overwrite: false, CancellationToken.None);
 
         using var big = new MemoryStream(new byte[200]);
-        var upload = await Assert.ThrowsAsync<ApiRefusalException>(() => browser.UploadAsync("docs", "big.bin", 200, big, overwrite: false));
+        var upload = await Assert.ThrowsAsync<ApiRefusalException>(() => browser.UploadAsync("docs", "big.bin", 200, big, overwrite: false, CancellationToken.None));
         var copy = Assert.Throws<ApiRefusalException>(() => browser.Copy("docs/readme.md", "again.md"));
 
         Assert.Equal(507, upload.Status);

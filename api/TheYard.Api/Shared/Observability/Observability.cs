@@ -4,6 +4,9 @@ namespace TheYard.Api.Shared.Observability;
 
 // The observability types behind the Admin tab (ADR-010), in a file of their own so
 // the composition root says what is wired and this file says how each piece works.
+// Its parts, split by job:
+//   Observability.cs  - one health probe's outcome, and the site asking Azure about itself
+//   ErrorRing.cs      - one recorded error, its trimmed stack, and the ring they are kept in
 
 /// <summary>
 /// One health probe's outcome and how long it took, serialized snake_case for
@@ -24,85 +27,6 @@ namespace TheYard.Api.Shared.Observability;
 /// <param name="GatesReadiness">True when a failure withholds the container from traffic, not only from a healthy report.</param>
 public sealed record HealthCheckEntry(
     string Name, string Status, string Detail, long DurationMs, bool GatesReadiness = true);
-
-/// <summary>
-/// One recorded server error, newest first in snapshots. <c>Frames</c> is the
-/// exception's own stack, trimmed: method names, the file each one is in and
-/// the line it is on, which is the source this repository publishes anyway and
-/// the fastest way from a 500 on the Admin tab to the line that threw. The
-/// exception's message is still not here and still never will be: a message is
-/// where a framework writes a connection detail or the value that broke a
-/// constraint, and this list is public (ADR: Error handling, the addendum on
-/// frames).
-/// </summary>
-/// <param name="At">When the error was recorded, UTC.</param>
-/// <param name="Path">The request path, or the page a browser report came from.</param>
-/// <param name="Status">The HTTP status code; 0 for a browser report.</param>
-/// <param name="Message">A short description, such as the exception type name; never the exception's own message.</param>
-/// <param name="Frames">The exception's stack, trimmed; empty when there was none.</param>
-public sealed record ErrorEntry(
-    DateTimeOffset At,
-    string Path,
-    int Status,
-    string Message,
-    IReadOnlyList<string> Frames);
-
-/// <summary>An exception's stack as the Admin tab shows it: the frames, trimmed to the ones a reader gets through.</summary>
-public static class StackFrames
-{
-    public const int Most = 12;
-
-    public static IReadOnlyList<string> Of(Exception? exception)
-    {
-        if (exception?.StackTrace is not { Length: > 0 } stack)
-        {
-            return [];
-        }
-
-        return stack
-            .Split('\n')
-            .Select(line => line.Trim().TrimStart('a', 't', ' ').TrimStart())
-            .Where(line => line.Length > 0)
-            .Take(Most)
-            .ToArray();
-    }
-}
-
-/// <summary>
-/// Fixed-size, thread-safe buffer of recent server errors. In-memory on
-/// purpose for this demo: it resets on every roll, and the Admin tab says so.
-/// </summary>
-public sealed class ErrorRingBuffer(int capacity)
-{
-    private readonly object _gate = new();
-    private readonly Queue<ErrorEntry> _entries = new();
-
-    /// <summary>Where an entry also goes so a roll does not end it (ADR: Logs that outlive the container, the addendum on the cards); unset, nowhere.</summary>
-    public Action<ErrorEntry>? Kept { get; set; }
-
-    public void Record(string path, int status, string message, IReadOnlyList<string>? frames = null)
-    {
-        var entry = new ErrorEntry(DateTimeOffset.UtcNow, path, status, message, frames ?? []);
-        lock (_gate)
-        {
-            _entries.Enqueue(entry);
-            while (_entries.Count > capacity)
-            {
-                _entries.Dequeue();
-            }
-        }
-
-        Kept?.Invoke(entry);
-    }
-
-    public IReadOnlyList<ErrorEntry> Snapshot()
-    {
-        lock (_gate)
-        {
-            return _entries.Reverse().ToArray();
-        }
-    }
-}
 
 /// <summary>
 /// The site asking Azure about itself: a management-plane token from its own
@@ -132,7 +56,8 @@ public sealed class AzureSelf(string clientId, string resourceId, HostIdentity? 
     public static bool IsSite(string resourceId) =>
         resourceId.Contains("/providers/Microsoft.Web/sites/", StringComparison.OrdinalIgnoreCase);
 
-    public async Task<object> GetStateAsync()
+    /// <param name="cancellation">Cancelled when the poll that asked has gone; the three reads this makes stop with it.</param>
+    public async Task<object> GetStateAsync(CancellationToken cancellation)
     {
         lock (_gate)
         {
@@ -143,24 +68,24 @@ public sealed class AzureSelf(string clientId, string resourceId, HostIdentity? 
         }
         try
         {
-            string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
+            string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
             object result;
             if (IsSite(resourceId))
             {
                 // The site first, because it names the plan; then its
                 // configuration and the plan side by side. Either of those two
                 // failing costs the card a line, not the card.
-                using var site = await ReadAsync(token, resourceId + "?api-version=2023-12-01");
+                using var site = await ReadAsync(token, resourceId + "?api-version=2023-12-01", cancellation);
                 string? planId = site.RootElement.GetProperty("properties").TryGetProperty("serverFarmId", out var farm) ? farm.GetString() : null;
-                var configRead = TryReadAsync(token, resourceId + "/config/web?api-version=2023-12-01");
-                var planRead = planId is null ? Task.FromResult<JsonDocument?>(null) : TryReadAsync(token, planId + "?api-version=2023-12-01");
+                var configRead = TryReadAsync(token, resourceId + "/config/web?api-version=2023-12-01", cancellation);
+                var planRead = planId is null ? Task.FromResult<JsonDocument?>(null) : TryReadAsync(token, planId + "?api-version=2023-12-01", cancellation);
                 using var config = await configRead;
                 using var plan = await planRead;
                 result = ShapeSite(site.RootElement, config?.RootElement, plan?.RootElement, DateTimeOffset.UtcNow);
             }
             else
             {
-                using var group = await ReadAsync(token, resourceId + "?api-version=2023-05-01");
+                using var group = await ReadAsync(token, resourceId + "?api-version=2023-05-01", cancellation);
                 result = ShapeGroup(group.RootElement, DateTimeOffset.UtcNow);
             }
             lock (_gate)
@@ -176,20 +101,20 @@ public sealed class AzureSelf(string clientId, string resourceId, HostIdentity? 
         }
     }
 
-    private static async Task<JsonDocument> ReadAsync(string token, string pathAndQuery)
+    private static async Task<JsonDocument> ReadAsync(string token, string pathAndQuery, CancellationToken cancellation)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://management.azure.com" + pathAndQuery);
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        using var response = await Http.SendAsync(request);
+        using var response = await Http.SendAsync(request, cancellation);
         response.EnsureSuccessStatusCode();
-        return JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
     }
 
-    private static async Task<JsonDocument?> TryReadAsync(string token, string pathAndQuery)
+    private static async Task<JsonDocument?> TryReadAsync(string token, string pathAndQuery, CancellationToken cancellation)
     {
         try
         {
-            return await ReadAsync(token, pathAndQuery);
+            return await ReadAsync(token, pathAndQuery, cancellation);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {

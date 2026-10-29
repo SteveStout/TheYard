@@ -62,7 +62,8 @@ public static class AdminRegistration
             services.GetRequiredService<Backends>(),
             services.GetRequiredService<ProofClients>(),
             services.GetRequiredService<SqlRingBuffer>(),
-            services.GetRequiredService<StoreRingBuffer>()));
+            services.GetRequiredService<StoreRingBuffer>(),
+            services.GetRequiredService<IHostApplicationLifetime>()));
         // The sweep over every address this container serves (ADR: Every page, checked at every roll):
         // it dials the loopback once the server is listening, and is started at the roll further down.
         builder.Services.AddSingleton(services => new PageStatusRunner(

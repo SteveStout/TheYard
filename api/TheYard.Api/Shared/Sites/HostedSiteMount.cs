@@ -12,7 +12,8 @@ public static class HostedSiteMount
 {
     /// <summary>Starts every hosted site and adds the one middleware that hands each its requests.</summary>
     /// <param name="app">The built host.</param>
-    public static async Task MountTheHostedSitesAsync(this WebApplication app)
+    /// <param name="stopping">Cancelled when the host begins to stop, handed in by the composition root rather than read off the built app here (ADR: The onion cut into vertical slices, rule 6).</param>
+    public static async Task MountTheHostedSitesAsync(this WebApplication app, CancellationToken stopping)
     {
         var sites = app.Services.GetServices<IHostedSite>().ToList();
         if (sites.Count == 0)
@@ -25,7 +26,7 @@ public static class HostedSiteMount
         {
             try
             {
-                await site.StartAsync(app.Lifetime.ApplicationStopping);
+                await site.StartAsync(stopping);
                 app.Logger.LogInformation("The hosted site {Host} is running", site.Host);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -49,7 +50,7 @@ public static class HostedSiteMount
             }
             try
             {
-                await site.HandleAsync(context);
+                await site.HandleAsync(context, context.RequestAborted);
             }
             catch (Exception ex) when (!context.RequestAborted.IsCancellationRequested)
             {

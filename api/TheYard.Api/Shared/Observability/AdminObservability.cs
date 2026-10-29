@@ -228,24 +228,26 @@ public sealed class StartupTimings
 
     /// <summary>
     /// Runs one step of coming up, records how long it took under <paramref name="step"/>, and
-    /// passes its result on.
+    /// passes its result on. The step is handed the caller's cancellation rather than closing over
+    /// one, so a step that forgets to stop is a signature this timer refuses and not a token a
+    /// lambda happened not to capture.
     /// </summary>
-    public async Task<T> Time<T>(string step, Func<Task<T>> work)
+    public async Task<T> Time<T>(string step, Func<CancellationToken, Task<T>> work, CancellationToken cancellation)
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        var result = await work();
+        var result = await work(cancellation);
         _steps[step] = clock.ElapsedMilliseconds;
         return result;
     }
 
     /// <summary>
     /// Runs one step of coming up that returns nothing and records how long it took under <paramref
-    /// name="step"/>.
+    /// name="step"/>, handing the step the caller's cancellation.
     /// </summary>
-    public async Task Time(string step, Func<Task> work)
+    public async Task Time(string step, Func<CancellationToken, Task> work, CancellationToken cancellation)
     {
         var clock = System.Diagnostics.Stopwatch.StartNew();
-        await work();
+        await work(cancellation);
         _steps[step] = clock.ElapsedMilliseconds;
     }
 

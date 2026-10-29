@@ -22,6 +22,7 @@ public interface IHostedSite : IAsyncDisposable
 
     /// <summary>Answers one request that arrived on the site's name.</summary>
     /// <param name="context">The request.</param>
-    Task HandleAsync(HttpContext context);
+    /// <param name="cancellation">Cancelled when the visitor has gone; a request already abandoned is not handed on.</param>
+    Task HandleAsync(HttpContext context, CancellationToken cancellation);
 }
 // #endregion hosted-site

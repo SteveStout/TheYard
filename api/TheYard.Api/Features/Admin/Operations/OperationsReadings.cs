@@ -60,16 +60,16 @@ public sealed class AzureReadings(AzureSelf self, HourlyReadings hourly, PeerRea
     /// <inheritdoc/>
     public async Task<object> SelfAsync(CancellationToken cancellation)
     {
-        var answer = JsonSerializer.SerializeToNode(await self.GetStateAsync())!.AsObject();
+        var answer = JsonSerializer.SerializeToNode(await self.GetStateAsync(cancellation))!.AsObject();
         answer["hourly"] = hourly.View is { } view ? JsonSerializer.SerializeToNode(view) : null;
         return answer;
     }
 
     /// <inheritdoc/>
-    public async Task<object> PeerAsync(CancellationToken cancellation) => await peer.ReadAsync();
+    public async Task<object> PeerAsync(CancellationToken cancellation) => await peer.ReadAsync(cancellation);
 
     /// <inheritdoc/>
-    public Task<object> TelemetryAsync(CancellationToken cancellation) => telemetry.GetRecentAsync();
+    public Task<object> TelemetryAsync(CancellationToken cancellation) => telemetry.GetRecentAsync(cancellation);
 }
 
 /// <summary>The request itself and the store bar.</summary>

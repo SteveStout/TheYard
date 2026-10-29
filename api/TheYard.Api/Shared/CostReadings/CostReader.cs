@@ -66,7 +66,7 @@ public sealed class CostReader(string subscriptionId, string clientId, bool conf
             return new CostRead(CostOutcome.Failed, NotConfigured, [], []);
         }
 
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
+        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
         var actuals = await PostAsync(token, "query", CostQuery.Actuals(from, to), cancellation);
         if (actuals.Outcome != CostOutcome.Read)
         {

@@ -286,3 +286,9 @@ are doing).
 
 ```live path=api/TheYard.Infrastructure.Cosmos/Shared/History/CosmosLogStore.cs region=ring
 ```
+## Addendum, 2026-10-29: the error ring moved file
+
+`ErrorRingBuffer`, and the `Kept` hook this record added to it, are now in
+[`api/TheYard.Api/Shared/Observability/ErrorRing.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/ErrorRing.cs)
+beside `Observability.cs`, split off by job (ADR: Observability, the addendum of 2026-10-29).
+What each ring hands on, and what it leaves out, is unchanged.

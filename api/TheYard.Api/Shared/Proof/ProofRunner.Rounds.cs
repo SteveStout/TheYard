@@ -13,7 +13,11 @@ public sealed partial class ProofRunner
     /// paired rounds, measure the round trip to each store, and sum it up.
     /// Clamps the rounds to between one and <see cref="MaxRounds"/>.
     /// </summary>
-    public async Task<ProofResult> RunAsync(int rounds)
+    /// <param name="rounds">How many paired rounds to take, clamped to between one and <see cref="MaxRounds"/>.</param>
+    /// <param name="cancellation">The host's stopping token, which the starter lent this run. Not
+    /// the token of the request that asked: that request is answered the moment the run starts and
+    /// the run goes on for half a minute after it.</param>
+    public async Task<ProofResult> RunAsync(int rounds, CancellationToken cancellation)
     {
         rounds = Math.Clamp(rounds, 1, MaxRounds);
         if (backends.All.Count < 2)
@@ -31,7 +35,7 @@ public sealed partial class ProofRunner
         // a fresh one, which is the one case that spends a registration.
         foreach (var store in stores)
         {
-            if (_accounts.TryGetValue(store.Backend.Key, out var account) && await SignsInAsync(client, store, account.Email))
+            if (_accounts.TryGetValue(store.Backend.Key, out var account) && await SignsInAsync(client, store, account.Email, cancellation))
             {
                 store.Email = account.Email;
                 store.Samples.Add(account.Registration);
@@ -40,7 +44,7 @@ public sealed partial class ProofRunner
 
             string email = $"proof-{Guid.NewGuid():N}@example.com";
             using var registered = await _requests.Timed(client, store, "register", HttpMethod.Post, "/api/auth/register",
-                new { email, password = _password });
+                cancellation, new { email, password = _password });
             if (!registered.IsSuccessStatusCode)
             {
                 return ProofResult.Failed($"registration on {store.Backend.Name} answered {(int)registered.StatusCode}", backends);
@@ -57,7 +61,7 @@ public sealed partial class ProofRunner
             var order = round % 2 == 0 ? stores : stores.Reverse().ToArray();
             foreach (var store in order)
             {
-                await RoundAsync(client, store);
+                await RoundAsync(client, store, cancellation);
             }
         }
 
@@ -66,7 +70,7 @@ public sealed partial class ProofRunner
         // document side. Five each, the median kept.
         foreach (var store in stores)
         {
-            store.HopMs = await ProofRequests.HopAsync(store.Backend);
+            store.HopMs = await ProofRequests.HopAsync(store.Backend, cancellation);
         }
 
         return ProofResult.Of(started, rounds, stores);
@@ -78,51 +82,58 @@ public sealed partial class ProofRunner
     /// and reset. A round with no vehicle worth bidding on stops after the
     /// listing rather than bidding on one that would end or sell mid-run.
     /// </summary>
-    private async Task RoundAsync(Outbound client, StoreRun store)
+    /// <param name="client">The loopback client every request in the round goes out on.</param>
+    /// <param name="store">The store's side of the run.</param>
+    /// <param name="cancellation">The host's stopping token, lent by the run.</param>
+    private async Task RoundAsync(Outbound client, StoreRun store, CancellationToken cancellation)
     {
         using var signedIn = await _requests.Timed(client, store, "sign_in", HttpMethod.Post, "/api/auth/login",
-            new { email = store.Email, password = _password });
+            cancellation, new { email = store.Email, password = _password });
         if (signedIn.IsSuccessStatusCode)
         {
             store.Cookie = ProofRequests.SessionCookie(signedIn) ?? store.Cookie;
         }
 
-        using var listing = await _requests.Timed(client, store, "listing", HttpMethod.Get, "/api/vehicles?status=live&sort=most-bids&limit=25");
-        string? vehicleId = await ProofRequests.ChooseVehicleAsync(listing);
+        using var listing = await _requests.Timed(client, store, "listing", HttpMethod.Get, "/api/vehicles?status=live&sort=most-bids&limit=25", cancellation);
+        string? vehicleId = await ProofRequests.ChooseVehicleAsync(listing, cancellation);
         if (vehicleId is null)
         {
             return;
         }
 
-        using var vehicle = await _requests.Timed(client, store, "vehicle", HttpMethod.Get, $"/api/vehicles/{vehicleId}");
-        int? minimum = await ProofRequests.MinimumAsync(vehicle);
-        using var facets = await _requests.Timed(client, store, "facets", HttpMethod.Get, "/api/facets");
+        using var vehicle = await _requests.Timed(client, store, "vehicle", HttpMethod.Get, $"/api/vehicles/{vehicleId}", cancellation);
+        int? minimum = await ProofRequests.MinimumAsync(vehicle, cancellation);
+        using var facets = await _requests.Timed(client, store, "facets", HttpMethod.Get, "/api/facets", cancellation);
 
         if (minimum is { } first)
         {
             using var bid = await _requests.Timed(client, store, "bid", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
-                new { amount = first });
-            int? next = await ProofRequests.NextAsync(bid);
+                cancellation, new { amount = first });
+            int? next = await ProofRequests.NextAsync(bid, cancellation);
             if (next is { } second)
             {
                 using var raise = await _requests.Timed(client, store, "raise", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
-                    new { amount = second });
+                    cancellation, new { amount = second });
             }
         }
 
-        using var reset = await _requests.Timed(client, store, "reset", HttpMethod.Delete, "/api/bids");
+        using var reset = await _requests.Timed(client, store, "reset", HttpMethod.Delete, "/api/bids", cancellation);
     }
     /// <summary>
     /// Whether the proof's remembered account still signs in on this store.
     /// Not timed and not sampled: it is a check that the account survived,
     /// and the round's own sign-in is the measurement.
     /// </summary>
-    private async Task<bool> SignsInAsync(Outbound client, StoreRun store, string email)
+    /// <param name="client">The loopback client the check goes out on.</param>
+    /// <param name="store">The store's side of the run.</param>
+    /// <param name="email">The address the proof's account on this store was registered with.</param>
+    /// <param name="cancellation">The host's stopping token, lent by the run.</param>
+    private async Task<bool> SignsInAsync(Outbound client, StoreRun store, string email, CancellationToken cancellation)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/login");
         request.Headers.Add(Backends.HeaderName, store.Backend.Key);
         request.Content = JsonContent.Create(new { email, password = _password });
-        using var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request, cancellation);
         if (!response.IsSuccessStatusCode)
         {
             return false;

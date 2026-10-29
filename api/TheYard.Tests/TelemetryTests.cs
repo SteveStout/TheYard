@@ -41,7 +41,7 @@ public class TelemetryTests(WebApplicationFactory<Program> factory)
         // Awaited, but nothing is awaited on the wire: an empty app id
         // short-circuits before any token request, which is what makes this
         // safe to call from a test host with no identity.
-        var state = await reader.GetRecentAsync();
+        var state = await reader.GetRecentAsync(CancellationToken.None);
         string json = JsonSerializer.Serialize(state);
         Assert.Contains("\"configured\":false", json);
         Assert.Contains("not configured", json);

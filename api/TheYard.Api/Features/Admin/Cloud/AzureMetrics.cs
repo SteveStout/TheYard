@@ -34,7 +34,7 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
     /// </summary>
     public async Task<IReadOnlyList<ResourceMinute>> MinutesAsync(string resourceId, IReadOnlyList<AzureMetric> metrics, DateTimeOffset from, DateTimeOffset to, string version, CancellationToken cancellation)
     {
-        string token = await Token();
+        string token = await Token(cancellation);
         var series = new Dictionary<string, Dictionary<DateTimeOffset, double>>(StringComparer.Ordinal);
         var held = new Dictionary<string, double>(StringComparer.Ordinal);
         var none = new HashSet<string>(StringComparer.Ordinal);
@@ -145,14 +145,14 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
     /// <summary>The resource's own record from Resource Manager, for its size and settings, and the tenant for its portal link.</summary>
     public async Task<(JsonDocument Record, string? Tenant)> RecordAsync(string resourceId, string apiVersion, CancellationToken cancellation)
     {
-        string token = await Token();
+        string token = await Token(cancellation);
         return (await GetAsync(token, $"{resourceId}?api-version={apiVersion}", cancellation), PlanReader.TenantOf(token));
     }
 
     /// <summary>The resource's Activity Log between two moments, classified.</summary>
     public async Task<IReadOnlyList<PlanEvent>> EventsAsync(string resourceId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellation)
     {
-        string token = await Token();
+        string token = await Token(cancellation);
         string subscription = resourceId.Split('/', StringSplitOptions.RemoveEmptyEntries)[1];
         string filter = Uri.EscapeDataString($"eventTimestamp ge '{from.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}' and eventTimestamp le '{to.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}' and resourceUri eq '{resourceId}'");
         using var answer = await GetAsync(token, $"/subscriptions/{subscription}/providers/Microsoft.Insights/eventtypes/management/values?api-version=2015-04-01&$filter={filter}", cancellation);
@@ -160,7 +160,7 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
     }
 
     /// <summary>A Resource Manager read of any path under management.azure.com.</summary>
-    public async Task<JsonDocument> GetJsonAsync(string pathAndQuery, CancellationToken cancellation) => await GetAsync(await Token(), pathAndQuery, cancellation);
+    public async Task<JsonDocument> GetJsonAsync(string pathAndQuery, CancellationToken cancellation) => await GetAsync(await Token(cancellation), pathAndQuery, cancellation);
 
     /// <summary>
     /// A Kusto query against a Log Analytics workspace through Resource Manager, which needs Log
@@ -172,7 +172,7 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
         {
             Content = System.Net.Http.Json.JsonContent.Create(new { query = kusto }),
         };
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await Token());
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await Token(cancellation));
         using var response = await Http.SendAsync(request, cancellation);
         response.EnsureSuccessStatusCode();
         using var answer = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
@@ -211,9 +211,10 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
         element.ValueKind == JsonValueKind.Object && (element.TryGetProperty(camel, out var found) || element.TryGetProperty(pascal, out found)) ? found : null;
 
     /// <summary>A Resource Manager token for the site's identity, which the registry exchanges for one of its own.</summary>
-    public Task<string> ArmTokenAsync() => Token();
+    /// <param name="cancellation">Cancelled when the read that wanted the token has gone.</param>
+    public Task<string> ArmTokenAsync(CancellationToken cancellation) => Token(cancellation);
 
-    private Task<string> Token() => IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
+    private Task<string> Token(CancellationToken cancellation) => IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
 
     private static async Task<JsonDocument> GetAsync(string token, string pathAndQuery, CancellationToken cancellation)
     {

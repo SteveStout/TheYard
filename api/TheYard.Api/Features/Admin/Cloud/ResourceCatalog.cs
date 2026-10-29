@@ -87,7 +87,7 @@ public static class ResourceCatalog
                     AcrHoldings? holdings = null;
                     try
                     {
-                        string token = await azure.ArmTokenAsync();
+                        string token = await azure.ArmTokenAsync(cancellation);
                         holdings = await AcrCatalog.ReadAsync(AzureMetrics.Text(record, "properties.loginServer") ?? "", token, PlanReader.TenantOf(token) ?? "", cancellation);
                     }
                     catch (HttpRequestException)

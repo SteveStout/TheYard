@@ -105,7 +105,7 @@ public sealed class BlobListing(string clientId, bool configured, HostIdentity? 
         {
             return [];
         }
-        string token = await IdentityTokens.AcquireAsync(Http, "https://storage.azure.com/", clientId, identity ?? HostIdentity.None);
+        string token = await IdentityTokens.AcquireAsync(Http, "https://storage.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
         var listings = new List<ContainerListing>();
         foreach (string container in containers)
         {

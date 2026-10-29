@@ -14,7 +14,10 @@ builder.Services.AddSingleton(paths);
 builder.Services.AddSingleton(build);
 builder.Services.AddSingleton(identity);
 
-var stores = await builder.AddTheYardStoresAsync(paths);                           // Shared/Wiring/StoreRegistration.cs
+// None, said here rather than deep inside the registration: the lifetime that owns
+// ApplicationStopping is made by Build() below, so nothing stops the stores being asked, and this
+// is the one file where that is a true statement instead of a token somebody forgot to thread.
+var stores = await builder.AddTheYardStoresAsync(paths, CancellationToken.None);   // Shared/Wiring/StoreRegistration.cs
 builder.AddTheYardObservability(stores.Backends, stores.Document, stores.SqlLog, stores.StoreLog, stores.Accessor, stores.CurrentRequest);
 builder.AddTheYardSessions();                                                      // Shared/Wiring/AuthRegistration.cs
 builder.AddTheYardActivity(stores.Backends, stores.Document, stores.Relational);   // Shared/Wiring/ActivityRegistration.cs
@@ -33,7 +36,7 @@ builder.AddTheYardStartup(identity);                                            
 builder.AddTheYardHostedSites();                                                   // Shared/Wiring/HostedSiteRegistration.cs, last
 
 var app = builder.Build();
-await app.MountTheHostedSitesAsync();                                              // Shared/Sites/HostedSiteMount.cs
+await app.MountTheHostedSitesAsync(app.Lifetime.ApplicationStopping);  // Shared/Sites/HostedSiteMount.cs
 app.UseTheYardRequestPipeline(paths, identity);                                    // Shared/Wiring/RequestPipeline.cs
 #endregion composition
 

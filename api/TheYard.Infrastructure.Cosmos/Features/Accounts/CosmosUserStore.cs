@@ -61,7 +61,9 @@ public sealed class CosmosUserStore(CosmosStore store, TimeSpan? orphanAge = nul
         }
         catch (CosmosException)
         {
-            await TryDeleteClaimAsync(claim.Id);
+            // None: this undoes the claim this method wrote a moment ago, and a registration
+            // that stopped here would leave the address claimed with no account behind it.
+            await TryDeleteClaimAsync(claim.Id, CancellationToken.None);
             throw;
         }
     }
@@ -95,7 +97,8 @@ public sealed class CosmosUserStore(CosmosStore store, TimeSpan? orphanAge = nul
         await store.DeleteAsync<UserDocument>(store.Users, user.Id, user.Id, Partition);
         if (user.NormalizedEmail is { } normalized)
         {
-            await TryDeleteClaimAsync(EmailClaimDocument.IdFor(normalized));
+            // None: the account document is already gone, so the claim has nothing behind it.
+            await TryDeleteClaimAsync(EmailClaimDocument.IdFor(normalized), CancellationToken.None);
         }
         // Not the bids. There is no cascade on this side: a bid is a document
         // in another container partitioned on the buyer, and taking it with
@@ -104,11 +107,15 @@ public sealed class CosmosUserStore(CosmosStore store, TimeSpan? orphanAge = nul
         return IdentityResult.Success;
     }
 
-    private async Task TryDeleteClaimAsync(string claimId)
+    /// <param name="claimId">The address claim document's id.</param>
+    /// <param name="cancellation">What stops the delete. A caller undoing a write it has already
+    /// made passes none, deliberately: a half-done compensation leaves an address claimed by an
+    /// account that does not exist, and the address is then refused forever.</param>
+    private async Task TryDeleteClaimAsync(string claimId, CancellationToken cancellation)
     {
         try
         {
-            await store.DeleteAsync<EmailClaimDocument>(store.Users, claimId, claimId, ClaimPartition);
+            await store.DeleteAsync<EmailClaimDocument>(store.Users, claimId, claimId, ClaimPartition, cancellation);
         }
         catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -145,7 +152,9 @@ public sealed class CosmosUserStore(CosmosStore store, TimeSpan? orphanAge = nul
             // was refused forever. Removed only once it is older than the
             // longest a registration takes, so a claim written a moment ago by
             // a registration still in flight is left alone (the second review).
-            await TryDeleteClaimAsync(claimId);
+            // Housekeeping a read noticed, not work the read owes: a find the visitor walked
+            // away from leaves the sweep to the next one.
+            await TryDeleteClaimAsync(claimId, cancellationToken);
         }
         return user;
     }

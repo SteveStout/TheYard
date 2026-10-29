@@ -36,7 +36,8 @@ public sealed class PeerReader(string? configuredUrl, Outbound client, bool both
             ? null
             : Uri.TryCreate(configuredUrl.TrimEnd('/'), UriKind.Absolute, out var url) ? url : null;
 
-    public async Task<PeerView> ReadAsync()
+    /// <param name="cancellation">Cancelled when the poll that asked has gone; the peer is then no longer waited on.</param>
+    public async Task<PeerView> ReadAsync(CancellationToken cancellation)
     {
         if (Url is null)
         {
@@ -46,7 +47,11 @@ public sealed class PeerReader(string? configuredUrl, Outbound client, bool both
         string host = Url.Host;
         try
         {
-            using var timeout = new CancellationTokenSource(Patience);
+            // The caller's cancellation and this read's own patience, so whichever comes
+            // first stops the ask: a poll the Admin tab abandoned no longer holds a connection
+            // open for two and a half seconds nobody is waiting out.
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            timeout.CancelAfter(Patience);
             using var response = await client.GetAsync(new Uri(Url, "/api/admin/metrics"), timeout.Token);
             if (!response.IsSuccessStatusCode)
             {

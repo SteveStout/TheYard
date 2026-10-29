@@ -180,3 +180,10 @@ The boundary still wraps `<App />` at the root, now in `src/app/TheYard.tsx`, th
 ## Addendum, 2026-10-07 (1.0.3.92): the request log that never wrote
 
 "Every request is logged, as structured JSON" above was not true on any day of this project. `AddHttpLogging` and `UseHttpLogging` were wired from the first commit, but the logging configuration has always held `Microsoft.AspNetCore` at Warning and the HTTP logger writes at Information, so it found itself filtered on every request and wrote nothing. Both are removed rather than switched on: every request is recorded already, by the timing ring on the Admin tab and by the request telemetry sent to Application Insights, and a line per request through the logger would spend that service's daily cap, which is already reached most afternoons. The error record moved up beside the exception handler in the same version, so a failure while reading the session now reaches the Admin tab (ADR: The order of the request pipeline).
+## Addendum, 2026-10-29: the ring both sides record into has its own file
+
+The error ring named above is now
+[`api/TheYard.Api/Shared/Observability/ErrorRing.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/ErrorRing.cs)
+rather than `Observability.cs`, split off by job when the file came within four lines of the
+three-hundred cap (ADR: Observability, the addendum of 2026-10-29). Nothing it records, keeps or
+withholds changed: the exception's message is still not in it.

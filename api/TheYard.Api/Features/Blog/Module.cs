@@ -36,7 +36,7 @@ public sealed class Module : IModule
         {
             var identity = provider.GetRequiredService<HostIdentity>();
             IBlogImageReader kept = identity.OnAppService && account is { Length: > 0 } && container is { Length: > 0 }
-                ? new BlobBlogImageStore(account, container, _ => IdentityTokens.AcquireAsync(OutboundHttp.Client(TimeSpan.FromSeconds(10)), "https://storage.azure.com/", AzureIds.ClientId(configuration), identity))
+                ? new BlobBlogImageStore(account, container, cancellation => IdentityTokens.AcquireAsync(OutboundHttp.Client(TimeSpan.FromSeconds(10)), "https://storage.azure.com/", AzureIds.ClientId(configuration), identity, cancellation))
                 : provider.GetRequiredService<MemoryBlogImageStore>();
             return new CachedBlogImages(kept);
         });
@@ -44,7 +44,7 @@ public sealed class Module : IModule
         {
             var identity = provider.GetRequiredService<HostIdentity>();
             return identity.OnAppService && account is { Length: > 0 } && container is { Length: > 0 }
-                ? new BlobBlogImageStore(account, container, _ => IdentityTokens.AcquireAsync(OutboundHttp.Client(TimeSpan.FromSeconds(10)), "https://storage.azure.com/", AzureIds.ClientId(configuration), identity))
+                ? new BlobBlogImageStore(account, container, cancellation => IdentityTokens.AcquireAsync(OutboundHttp.Client(TimeSpan.FromSeconds(10)), "https://storage.azure.com/", AzureIds.ClientId(configuration), identity, cancellation))
                 : provider.GetRequiredService<MemoryBlogImageStore>();
         });
         services.AddSingleton<MemoryBlogImageStore>();

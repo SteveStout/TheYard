@@ -37,8 +37,8 @@ serves a file asks for it as a parameter.
 What the file is today:
 
 ```
-53 total
-  9 comment
+56 total
+  12 comment
   7 blank
   37 code, across 0 endpoints
 ```
@@ -290,3 +290,13 @@ The section on endpoints says a handler calls the service that owns the rule. A 
 
 ```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=routing
 ```
+## Addendum, 2026-10-29: three lines of comment, and the same thirty-seven of code
+
+The shape above went from 53 lines to 56, all three of them comment. The stores are prepared
+before anything is registered, and that call now takes the cancellation that stops it; the only
+honest value for it here is none, because the lifetime that owns `ApplicationStopping` is made by
+`Build()` eleven lines further down. So this file says so, in three lines, rather than a
+registration deep in `Shared/Wiring` hard-coding `CancellationToken.None` twice where no reader
+would look for the decision (ADR: The numbers that may only fall, the addendum on reading a whole
+signature). Naming a token this file does not have is a composition root's job; the code count is
+unchanged, and no route is mapped here still.

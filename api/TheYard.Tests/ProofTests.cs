@@ -118,6 +118,10 @@ public class ProofTests(WebApplicationFactory<Program> factory)
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            // What the real handler does, and the reason this is here: a fake that answers a
+            // request whose cancellation is already asked for cannot show whether the caller
+            // threaded the token, because every assertion passes either way.
+            cancellationToken.ThrowIfCancellationRequested();
             string path = request.RequestUri!.AbsolutePath;
             string store = request.Headers.TryGetValues(Backends.HeaderName, out var named) ? named.First() : "?";
             string? cookie = request.Headers.TryGetValues("Cookie", out var cookies) ? cookies.First() : null;
@@ -155,18 +159,77 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         }
     }
 
+    /// <summary>
+    /// The run takes the host's stopping token, not the token of the request that asked for it.
+    /// A proof is started by a POST that is answered before the first round and goes on for half
+    /// a minute after it, so a run stopped by the asking request would never produce a result;
+    /// what a run must stop for is the container being replaced under it. This holds the thing
+    /// the token comes from and stops it, rather than asserting on the shape of a signature.
+    /// </summary>
+    [Fact]
+    public async Task A_run_stops_when_the_host_is_stopping_and_sends_nothing_more()
+    {
+        var yard = new CannedYard();
+        var backends = new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql");
+        using var host = new StoppableHost();
+        var runner = new ProofRunner(
+            backends,
+            new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
+            new SqlRingBuffer(10),
+            new StoreRingBuffer(10),
+            host);
+
+        host.Stop();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => runner.RunAsync(2, host.ApplicationStopping));
+
+        Assert.Empty(yard.Seen);
+    }
+
+    /// <summary>
+    /// And the token the background run is lent is the host's: starting one on a host that is
+    /// already stopping ends with a result that says the run stopped, rather than one that walked
+    /// every round of a container on its way out.
+    /// </summary>
+    [Fact]
+    public async Task A_started_run_on_a_stopping_host_ends_as_stopped_rather_than_walking_the_rounds()
+    {
+        var yard = new CannedYard();
+        var backends = new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql");
+        using var host = new StoppableHost();
+        var runner = new ProofRunner(
+            backends,
+            new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
+            new SqlRingBuffer(10),
+            new StoreRingBuffer(10),
+            host);
+
+        host.Stop();
+        Assert.True(runner.TryStart(1));
+        while (runner.Running)
+        {
+            await Task.Delay(10);
+        }
+
+        Assert.NotNull(runner.Last);
+        Assert.Equal("failed", runner.Last!.Status);
+        Assert.Contains("stopped on", runner.Last.Sentence, StringComparison.Ordinal);
+        Assert.Empty(yard.Seen);
+    }
+
     [Fact]
     public async Task A_run_walks_every_step_of_a_round_on_both_stores_and_keeps_one_session_per_store()
     {
         var yard = new CannedYard();
         var backends = new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql");
+        var host = new StoppableHost();
         var runner = new ProofRunner(
             backends,
             new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
             new SqlRingBuffer(10),
-            new StoreRingBuffer(10));
+            new StoreRingBuffer(10),
+            host);
 
-        var result = await runner.RunAsync(2);
+        var result = await runner.RunAsync(2, host.ApplicationStopping);
 
         Assert.Equal("done", result.Status);
         Assert.Equal(2, result.Rounds);
@@ -208,15 +271,17 @@ public class ProofTests(WebApplicationFactory<Program> factory)
     public async Task A_second_run_signs_into_the_accounts_the_first_one_made_and_registers_nothing()
     {
         var yard = new CannedYard();
+        var host = new StoppableHost();
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
             new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
             new SqlRingBuffer(10),
-            new StoreRingBuffer(10));
+            new StoreRingBuffer(10),
+            host);
 
-        var first = await runner.RunAsync(1);
+        var first = await runner.RunAsync(1, host.ApplicationStopping);
         int registeredByFirst = yard.Seen.Count(seen => seen.Path == "/api/auth/register");
-        var second = await runner.RunAsync(1);
+        var second = await runner.RunAsync(1, host.ApplicationStopping);
 
         Assert.Equal("done", first.Status);
         Assert.Equal("done", second.Status);
@@ -232,13 +297,15 @@ public class ProofTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task A_run_on_a_container_with_one_store_says_it_needs_two()
     {
+        var host = new StoppableHost();
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite")], "sql"),
             new ProofClients(() => throw new InvalidOperationException("no request should be made")),
             new SqlRingBuffer(10),
-            new StoreRingBuffer(10));
+            new StoreRingBuffer(10),
+            host);
 
-        var result = await runner.RunAsync(3);
+        var result = await runner.RunAsync(3, host.ApplicationStopping);
 
         Assert.Equal("failed", result.Status);
         Assert.Contains("one store", result.Reason);
@@ -249,13 +316,15 @@ public class ProofTests(WebApplicationFactory<Program> factory)
     public async Task A_registration_that_is_refused_ends_the_run_with_the_status_it_got()
     {
         var refusing = new RefusingYard();
+        var host = new StoppableHost();
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
             new ProofClients(() => Outbound.Over(new HttpClient(refusing) { BaseAddress = new Uri("http://yard.test") })),
             new SqlRingBuffer(10),
-            new StoreRingBuffer(10));
+            new StoreRingBuffer(10),
+            host);
 
-        var result = await runner.RunAsync(1);
+        var result = await runner.RunAsync(1, host.ApplicationStopping);
 
         Assert.Equal("failed", result.Status);
         Assert.Contains("429", result.Reason);

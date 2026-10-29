@@ -56,19 +56,19 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
         {
             using var share = await azure.GetJsonAsync($"{service}/shares/{shareName}?api-version=2023-05-01&$expand=stats", cancellation);
             ShareCard.ShareFacts(facts, share.RootElement);
-        });
+        }, cancellation);
         await Try(facts, "alert", async () =>
         {
             using var rule = await azure.GetJsonAsync($"{names.GroupPath(account.Id.Split('/')[2])}/providers/Microsoft.Insights/metricAlerts/{alertName}?api-version=2018-03-01", cancellation);
             facts["alert_threshold"] = Threshold(rule.RootElement);
             facts["alert_enabled"] = AzureMetrics.Text(rule.RootElement, "properties.enabled");
-        });
+        }, cancellation);
         var dayStart = new DateTimeOffset(hour.UtcDateTime.Date, TimeSpan.Zero);
         await Try(facts, "api", async () =>
         {
             var byApi = await SplitAsync(service, "ApiName", dayStart.AddDays(-1), hour.AddHours(1), cancellation);
             facts["api_rows"] = ShareCard.ApiRows(byApi, dayStart, hour);
-        });
+        }, cancellation);
         await Try(facts, "auth", async () =>
         {
             var byAuth = await SplitAsync(service, "Authentication", hour.AddHours(-1), hour.AddHours(1), cancellation);
@@ -76,18 +76,18 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
             var clockHour = new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, 0, 0, TimeSpan.Zero);
             facts["auth_hour"] = ShareCard.AuthHour(byAuth, clockHour);
             facts["auth_since"] = clockHour.ToString("HH:mm", CultureInfo.InvariantCulture);
-        });
+        }, cancellation);
         await Try(facts, "hourly", async () =>
         {
             facts["tx_hourly"] = Series.Encode(await TotalsAsync(service, "Transactions", null, hour.AddDays(-30), hour.AddHours(1), cancellation));
             facts["listings_hourly"] = Series.Encode(await TotalsAsync(service, "Transactions", ShareCard.ListingFilter, hour.AddDays(-7), hour.AddHours(1), cancellation));
-        });
+        }, cancellation);
         await Try(facts, "diagnostics", async () =>
         {
             using var settings = await azure.GetJsonAsync($"{service}/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview", cancellation);
             facts["diagnostic_log"] = settings.RootElement.TryGetProperty("value", out var list) && list.GetArrayLength() > 0 ? "on" : "off";
-        });
-        await Try(facts, "bill", async () => ShareCard.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour));
+        }, cancellation);
+        await Try(facts, "bill", async () => ShareCard.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour), cancellation);
         return new ResourceHour(hour, $"{service}/shares/{shareName}", tenant, facts, await azure.EventsAsync(account.Id, since, hour, cancellation));
     }
 
@@ -114,7 +114,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
         {
             using var list = await azure.GetJsonAsync($"{service}/containers?api-version=2023-05-01", cancellation);
             containers = BlobCard.Containers(list.RootElement);
-        });
+        }, cancellation);
         await Try(facts, "lifecycle", async () =>
         {
             try
@@ -126,7 +126,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
             {
                 facts["lifecycle"] = "none yet";
             }
-        });
+        }, cancellation);
         var listed = await blobs.ListAsync(names.Storage, [.. containers.Select(c => c.Name)], cancellation);
         BlobCard.ListingFacts(facts, containers, listed, blobs.Last);
         await Try(facts, "hourly", async () =>
@@ -134,8 +134,8 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
             facts["reads_hourly"] = Series.Encode(await TotalsAsync(service, "Transactions", BlobCard.ReadFilter, hour.AddDays(-30), hour.AddHours(1), cancellation));
             var monthStart = new DateTimeOffset(hour.Year, hour.Month, 1, 0, 0, 0, TimeSpan.Zero);
             facts["egress_month_bytes"] = (await TotalsAsync(service, "Egress", null, monthStart, hour.AddHours(1), cancellation)).Values.Sum().ToString("0", CultureInfo.InvariantCulture);
-        });
-        await Try(facts, "bill", async () => ShareCard.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour));
+        }, cancellation);
+        await Try(facts, "bill", async () => ShareCard.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour), cancellation);
         return new ResourceHour(hour, service, tenant, facts, await azure.EventsAsync(account.Id, since, hour, cancellation));
     }
 
@@ -163,7 +163,14 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
             && all[0].TryGetProperty("threshold", out var t) ? t.GetRawText() : null;
 
     /// <summary>One read that may be refused: a refusal is kept as a fact naming what was not read, and the hour goes on.</summary>
-    private static async Task Try(Dictionary<string, string?> facts, string what, Func<Task> read)
+    /// <param name="facts">The hour's facts, which a refusal is written into.</param>
+    /// <param name="what">The name of the read, which the refusal fact is keyed by.</param>
+    /// <param name="read">The read itself, which lends the hour's cancellation to whatever it asks.</param>
+    /// <param name="cancellation">The hour's own cancellation, read before a refusal is recorded:
+    /// tearing a socket down under an abandoned read raises the same HttpRequestException a real
+    /// refusal does, and a card that said "refused_share" because the Admin tab was closed would be
+    /// reporting on this process rather than on the share.</param>
+    private static async Task Try(Dictionary<string, string?> facts, string what, Func<Task> read, CancellationToken cancellation)
     {
         try
         {
@@ -171,6 +178,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException)
         {
+            cancellation.ThrowIfCancellationRequested();
             facts[$"refused_{what}"] = ex is HttpRequestException http && http.StatusCode is { } status ? ((int)status).ToString(CultureInfo.InvariantCulture) : ex.GetType().Name;
         }
     }

@@ -48,11 +48,11 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
             {
                 if (now - _takenAt >= Every)
                 {
-                    _taking = Task.Run(() => TakeAsync(todayOnly: false), CancellationToken.None);
+                    _taking = Task.Run(() => TakeAsync(todayOnly: false, cancellation), CancellationToken.None);
                 }
                 else if (_last is not null && now - _todayAt >= TodayEvery)
                 {
-                    _taking = Task.Run(() => TakeAsync(todayOnly: true), CancellationToken.None);
+                    _taking = Task.Run(() => TakeAsync(todayOnly: true, cancellation), CancellationToken.None);
                 }
             }
             return Task.FromResult(_last);
@@ -71,7 +71,11 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
         }
     }
 
-    private async Task TakeAsync(bool todayOnly)
+    /// <param name="todayOnly">Whether to ask the store for today alone or for every day since the last answer.</param>
+    /// <param name="cancellation">The token of the request that STARTED this take, lent to it. A
+    /// later reader waiting on the same take is not the one who began it and does not stop it, which
+    /// is the rule shared once-per-process work follows here (ADR: The ports learn to wait).</param>
+    private async Task TakeAsync(bool todayOnly, CancellationToken cancellation)
     {
         KeptVisits? held;
         lock (_gate)
@@ -83,7 +87,7 @@ public sealed class VisitHistory(IActivityStore store, TimeProvider clock) : IVi
             var since = held is null ? Beginning
                 : todayOnly ? new DateTimeOffset(clock.GetUtcNow().UtcDateTime.Date, TimeSpan.Zero)
                 : DayBefore(held.ByDay.Keys.Max(StringComparer.Ordinal)!);
-            var rows = await store.VisitorsAsync(since, CancellationToken.None);
+            var rows = await store.VisitorsAsync(since, cancellation);
             if (todayOnly && held is not null)
             {
                 // Today alone: an empty answer is a quiet start of the day or a store that is not there, and either

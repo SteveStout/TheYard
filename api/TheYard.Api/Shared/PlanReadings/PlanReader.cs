@@ -54,7 +54,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// </summary>
     public async Task<IReadOnlyList<PlanMinute>> ReadMinutesAsync(DateTimeOffset from, DateTimeOffset to, string version, CancellationToken cancellation)
     {
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
+        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
         var (planId, apps) = await LayoutAsync(token, cancellation);
         var plan = await MetricsAsync(token, planId, PlanMetrics, from, to, cancellation);
         var perApp = new List<(string Name, Dictionary<string, Dictionary<DateTimeOffset, double>> Series)>();
@@ -91,7 +91,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// <summary>The hour's slower read: the plan's size, each app's state and configuration, and the Activity Log since <paramref name="since"/>.</summary>
     public async Task<PlanHour> ReadHourAsync(DateTimeOffset hour, DateTimeOffset since, CancellationToken cancellation)
     {
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None);
+        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
         var (planId, apps) = await LayoutAsync(token, cancellation, fresh: true);
         using var plan = await GetAsync(token, planId + "?api-version=2023-12-01", cancellation);
         var sku = plan.RootElement.TryGetProperty("sku", out var s) && s.ValueKind == JsonValueKind.Object ? s : default;

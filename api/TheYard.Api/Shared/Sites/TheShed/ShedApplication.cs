@@ -67,8 +67,13 @@ public sealed class ShedApplication : IAsyncDisposable
     /// the request's service scope are released when the response has finished, as Kestrel would
     /// release them, so anything The Shed asked to run on completion still has its services.
     /// </summary>
-    public async Task HandleAsync(HttpContext context)
+    /// <param name="context">The request, as TheYard's pipeline saw it.</param>
+    /// <param name="cancellation">Cancelled when the visitor has gone. Read before the scope is
+    /// made rather than threaded further: everything past this point is ASP.NET Core's own request
+    /// pipeline, which reads the cancellation off the context it is handed.</param>
+    public async Task HandleAsync(HttpContext context, CancellationToken cancellation)
     {
+        cancellation.ThrowIfCancellationRequested();
         if (_maxRequestBytes is { } limit
             && context.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } body)
         {

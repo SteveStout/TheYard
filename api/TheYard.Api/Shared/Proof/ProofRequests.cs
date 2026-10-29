@@ -18,7 +18,14 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
     /// whole exchange and the two rings read for what the request caused: how
     /// many statements or operations, and what the document store charged.
     /// </summary>
-    public async Task<HttpResponseMessage> Timed(Outbound client, ProofRunner.StoreRun store, string path, HttpMethod method, string url, object? body = null)
+    /// <param name="client">The loopback client the request goes out on.</param>
+    /// <param name="store">The store's side of the run, which the sample is added to.</param>
+    /// <param name="path">The key of the path being measured, such as sign_in or listing.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="url">The address on this container.</param>
+    /// <param name="cancellation">The host's stopping token, lent by the run: a container being replaced stops measuring itself.</param>
+    /// <param name="body">What to send, or null for a request with none.</param>
+    public async Task<HttpResponseMessage> Timed(Outbound client, ProofRunner.StoreRun store, string path, HttpMethod method, string url, CancellationToken cancellation, object? body = null)
     {
         using var request = new HttpRequestMessage(method, url);
         request.Headers.Add(Backends.HeaderName, store.Backend.Key);
@@ -33,9 +40,9 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
 
         var at = DateTimeOffset.UtcNow;
         long start = Stopwatch.GetTimestamp();
-        var response = await client.SendAsync(request);
+        var response = await client.SendAsync(request, cancellation);
         // The body is part of what a visitor waits for.
-        await response.Content.LoadIntoBufferAsync();
+        await response.Content.LoadIntoBufferAsync(cancellation);
         long elapsedMs = (long)Stopwatch.GetElapsedTime(start).TotalMilliseconds;
 
         int statements = store.Backend.LogsStatements ? sqlLog.Snapshot().Count(statement => statement.At >= at) : 0;
@@ -64,13 +71,15 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
     }
 
     /// <summary>A live vehicle with ten minutes left and room under buy-now for a bid and a raise.</summary>
-    public static async Task<string?> ChooseVehicleAsync(HttpResponseMessage listing)
+    /// <param name="listing">The listing page's answer.</param>
+    /// <param name="cancellation">The host's stopping token, lent by the run.</param>
+    public static async Task<string?> ChooseVehicleAsync(HttpResponseMessage listing, CancellationToken cancellation)
     {
         if (!listing.IsSuccessStatusCode)
         {
             return null;
         }
-        var body = await listing.Content.ReadFromJsonAsync<JsonElement>();
+        var body = await listing.Content.ReadFromJsonAsync<JsonElement>(cancellation);
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         foreach (var vehicle in body.GetProperty("vehicles").EnumerateArray())
         {
@@ -90,24 +99,28 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
     }
 
     /// <summary>The lowest bid the vehicle page will accept, read from its min_next_bid, or null when the page did not answer.</summary>
-    public static async Task<int?> MinimumAsync(HttpResponseMessage vehicle)
+    /// <param name="vehicle">The vehicle page's answer.</param>
+    /// <param name="cancellation">The host's stopping token, lent by the run.</param>
+    public static async Task<int?> MinimumAsync(HttpResponseMessage vehicle, CancellationToken cancellation)
     {
         if (!vehicle.IsSuccessStatusCode)
         {
             return null;
         }
-        var body = await vehicle.Content.ReadFromJsonAsync<JsonElement>();
+        var body = await vehicle.Content.ReadFromJsonAsync<JsonElement>(cancellation);
         return body.TryGetProperty("min_next_bid", out var minimum) ? minimum.GetInt32() : null;
     }
 
     /// <summary>The next acceptable bid after an accepted one, from the vehicle the bid answered with.</summary>
-    public static async Task<int?> NextAsync(HttpResponseMessage bid)
+    /// <param name="bid">The bid write's answer.</param>
+    /// <param name="cancellation">The host's stopping token, lent by the run.</param>
+    public static async Task<int?> NextAsync(HttpResponseMessage bid, CancellationToken cancellation)
     {
         if (!bid.IsSuccessStatusCode)
         {
             return null;
         }
-        var body = await bid.Content.ReadFromJsonAsync<JsonElement>();
+        var body = await bid.Content.ReadFromJsonAsync<JsonElement>(cancellation);
         if (body.TryGetProperty("kind", out var kind) && kind.GetString() != "accepted")
         {
             return null;
@@ -118,13 +131,15 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
     }
 
     /// <summary>The median of five round trips to the store, doing as little work as a round trip can.</summary>
-    public static async Task<long?> HopAsync(Backend backend)
+    /// <param name="backend">The store to reach, asked through its own diagnostics.</param>
+    /// <param name="cancellation">The host's stopping token, lent by the run; five round trips is five chances to stop.</param>
+    public static async Task<long?> HopAsync(Backend backend, CancellationToken cancellation)
     {
         var samples = new List<long>();
         for (int i = 0; i < 5; i++)
         {
             // Asked of the store through its diagnostics, which each adapter answers its own way.
-            if (await backend.Diagnostics.RoundTripMillisecondsAsync(CancellationToken.None) is not { } milliseconds)
+            if (await backend.Diagnostics.RoundTripMillisecondsAsync(cancellation) is not { } milliseconds)
             {
                 return null;
             }

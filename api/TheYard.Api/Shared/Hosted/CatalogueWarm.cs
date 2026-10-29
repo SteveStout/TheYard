@@ -44,8 +44,8 @@ public sealed class CatalogueWarm(Backends backends, IHostApplicationLifetime li
                 // about to be shut down for (ADR: The ports learn to wait, the addendum on the
                 // token).
                 var stopping = lifetime.ApplicationStopping;
-                await backends.Default.Startup.Time("bids", () => backends.Default.Bids.LoadAsync(stopping));
-                await backends.Default.Startup.Time("catalogue", () => backends.Default.Inventory.WarmAsync(stopping));
+                await backends.Default.Startup.Time("bids", backends.Default.Bids.LoadAsync, stopping);
+                await backends.Default.Startup.Time("catalogue", backends.Default.Inventory.WarmAsync, stopping);
                 backends.Default.Startup.Ready();
             }
             catch (Exception ex) when (!lifetime.ApplicationStopping.IsCancellationRequested)
@@ -73,8 +73,8 @@ public sealed class CatalogueWarm(Backends backends, IHostApplicationLifetime li
         {
             try
             {
-                await backend.Startup.Time("catalogue", () => backend.Inventory.WarmAsync(cancellation));
-                await backend.Startup.Time("bids", () => backend.Bids.LoadAsync(cancellation));
+                await backend.Startup.Time("catalogue", backend.Inventory.WarmAsync, cancellation);
+                await backend.Startup.Time("bids", backend.Bids.LoadAsync, cancellation);
                 backend.Startup.Ready();
             }
             catch (Exception ex)
