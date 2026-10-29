@@ -7,7 +7,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// reader of Azure Monitor, one of Netlify and one of GitHub, the resource groups' lists each card
 /// finds its resource in (the nightly Function's group is its own, ADR: The Nightly Function on the
 /// Admin tab), a keep per card, the nightly run log and its cache, the one recorder, the one cached reader the endpoint answers from,
-/// and the endpoint. Each card's own file says what it reads and how it draws.
+/// the endpoint, and the one handler a card is fed through. Each card's own file says what it reads and how it draws.
 /// </summary>
 public sealed class Module : IModule
 {
@@ -113,6 +113,11 @@ public sealed class Module : IModule
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
         services.AddScoped<ReadCloudCardHandler>();
         services.AddScoped<ReadProcessRunsHandler>();
+        // The one write in this slice: the nightly workflow posting the run it was, which the card's
+        // reader then prefers over a read of GitHub (ADR: The Nightly Function on the Admin tab). It
+        // writes the same log the hourly read upserts into, keyed on GitHub's id, so the pushed copy
+        // and the read copy are one document.
+        services.AddScoped(provider => new KeepNightlyRunHandler(provider.GetRequiredService<INightlyRunLog>(), TimeProvider.System));
         // What broke: the incidents the docs keep and the failures the same workspace kept (ADR-120).
         services.AddSingleton<IIncidentsReader>(provider =>
         {
@@ -123,7 +128,7 @@ public sealed class Module : IModule
         // #endregion resource-wiring
     }
 
-    /// <summary>Maps GET /api/admin/cloud/{key}.</summary>
+    /// <summary>Maps the cards' reads and the nightly run's push.</summary>
     /// <param name="app">The built host's routes.</param>
     public void Map(IEndpointRouteBuilder app) => app.MapCloudEndpoints();
 }

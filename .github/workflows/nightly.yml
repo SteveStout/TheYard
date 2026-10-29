@@ -186,6 +186,42 @@ jobs:
           fi
       # #endregion usage-report
 
+      # #region nightly-run-report
+      # This run, posted to the site as one nightly run (ADR: The Nightly Function on the Admin
+      # tab): GitHub's own facts for it (the id, the number, the event, the display title, when it
+      # started and how long it had taken) and what the job had come to at
+      # this step, and nothing else. The site reads the slot, the lane, whether it was a dry run and
+      # who started it off the event and the title by the same rules it reads GitHub's own list by,
+      # so a run posted here and the same run read from GitHub are one document. This is what
+      # retires the nightly card's hourly read of GitHub and its sixty-an-hour allowance.
+      # job.status is the run as this step knows it: GitHub's final conclusion can still differ (a
+      # later step can fail, and the run can be cancelled after this), and the card's reader
+      # reconciles it against GitHub's own list on its daily read, which is why that read stays. A
+      # missing key or a refused post writes one line to the summary and never fails the run: the
+      # night's work matters more than its report.
+      - name: Report this run to the site
+        if: always()
+        env:
+          KEY: ${{ secrets.THEYARD_ADMIN_KEY }}
+          SITE: ${{ vars.THEYARD_SITE || 'https://theyard.stevenstout.biz' }}
+          RUN: ${{ github.run_id }}
+          NUMBER: ${{ github.run_number }}
+          EVENT: ${{ github.event_name }}
+          # The run name, which is what GitHub keeps as the run's display title.
+          TITLE: ${{ github.event_name == 'repository_dispatch' && github.event.action || format('{0}{1}', inputs.mode, inputs.dry_run && ' (dry run)' || '') }}
+          STARTED: ${{ steps.day.outputs.started }}
+          CAME_TO: ${{ job.status }}
+        run: |
+          if [ -z "$KEY" ]; then echo "run not reported: THEYARD_ADMIN_KEY is not set" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          took=$(( $(date -u +%s) - $(date -u -d "$STARTED" +%s) ))
+          doc=$(jq -nc --arg run "$RUN" --argjson number "$NUMBER" --arg event "$EVENT" --arg title "$TITLE" \
+            --arg at "$STARTED" --argjson took "$took" --arg came_to "$CAME_TO" \
+            '{run: $run, number: $number, event: $event, title: $title, at: $at, took_seconds: $took, came_to: $came_to}')
+          if ! curl --fail-with-body -sS -X POST "$SITE/api/admin/cloud/nightly/run" -H "X-Admin-Key: $KEY" -H 'content-type: application/json' --data "$doc"; then
+            echo "run not reported: the site refused the post" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      # #endregion nightly-run-report
+
       - name: Unmount
         if: always()
         run: sudo umount /mnt/jobhunt || true

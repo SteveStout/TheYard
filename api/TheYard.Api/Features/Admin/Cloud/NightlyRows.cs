@@ -40,6 +40,21 @@ public static class NightlyRows
             : read.StartsWith("not read: ", StringComparison.Ordinal) ? read["not read: ".Length..]
             : "GitHub listed no runs in 30 days";
 
+    /// <summary>The words the hour's github fact ends with when the log answered on its own, with nothing asked of GitHub.</summary>
+    public const string FromTheLog = " runs kept";
+
+    /// <summary>
+    /// Where this hour's runs came from, read off the hour's own github fact (ADR: The Nightly
+    /// Function on the Admin tab): the site's log, which the workflow fills as each run ends, or a
+    /// read of GitHub, which a slot with nothing pushed falls back to.
+    /// </summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static string RunsFrom(ResourceCardInputs inputs) =>
+        ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("github") is not { } read ? "where they came from: no hour kept yet"
+            : read.StartsWith("not read: ", StringComparison.Ordinal) ? $"GitHub was asked this hour and did not answer, so these are the log's: {read["not read: ".Length..]}"
+            : read.EndsWith(FromTheLog, StringComparison.Ordinal) ? "read from this site's own run log, which the workflow fills by posting each run as it ends; GitHub is asked only to reconcile"
+            : "read from GitHub this hour, which is what a slot the workflow did not post falls back to";
+
     /// <summary>The run log's tone: warning when the newest run failed, alarm when the two newest did, good otherwise, information with no runs.</summary>
     /// <param name="runs">The runs, newest first.</param>
     public static string RunsTone(IReadOnlyList<NightlyRun> runs) =>
@@ -145,7 +160,8 @@ public static class NightlyRows
             MergerRow(inputs),
             new("runs", "Run log",
                 runs.Count == 0 ? $"no runs read yet: {NoRuns(inputs)}" : $"{runs.Count} runs in 30 days, the newest {CameTo(runs[0])}",
-                [new($"each run kept a year under its GitHub id · the workflow {names.Workflow} in {names.Repo}", $"https://github.com/{names.Repo}/actions/workflows/{names.Workflow}")],
+                [new($"each run kept a year under its GitHub id · the workflow {names.Workflow} in {names.Repo}", $"https://github.com/{names.Repo}/actions/workflows/{names.Workflow}"),
+                    new(RunsFrom(inputs), null)],
                 RunsTone(runs))
             { Table = RunTable(runs), Source = $"GitHub Actions, {names.Workflow} runs" },
             new("cost", "Is it costing anything?", Dollars(CostTotal(inputs)) + (CostTotal(inputs) is null ? "" : " this month"),
