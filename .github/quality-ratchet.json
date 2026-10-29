@@ -1,0 +1,16 @@
+{
+ "undocumented_declarations": 549,
+ "onion_outward_refs": 0,
+ "inner_ring_leaks": 0,
+ "cross_slice_usings": 0,
+ "wide_service_classes": 9,
+ "async_without_cancellation": 113,
+ "clock_outside_composition": 57,
+ "history_or_name_comments": 17,
+ "blocking_waits": 0,
+ "files_over_300": 0,
+ "files_within_10_of_cap": 7,
+ "behavior_types_never_named_in_a_test": 8,
+ "test_to_prod_ratio_higher_is_better": 0.76,
+ "dotnet_tests_higher_is_better": 2255
+}

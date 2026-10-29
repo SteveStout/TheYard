@@ -152,6 +152,7 @@ public static class DocumentationCatalog
         ["adr-the-modular-monolith"] = "docs/decisions/ADR-119-the-modular-monolith.md",
         ["adr-a-red-that-lasts-an-hour-gets-a-postmortem"] = "docs/decisions/ADR-120-a-red-that-lasts-an-hour-gets-a-postmortem.md",
         ["adr-the-foreman-a-place-to-start"] = "docs/decisions/ADR-121-the-foreman-a-place-to-start.md",
+        ["adr-the-numbers-that-may-only-fall"] = "docs/decisions/ADR-122-the-numbers-that-may-only-fall.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",

@@ -92,6 +92,25 @@ split).
   bids, addendum). Raising a vehicle's shown price over a bid, and whether the reserve is met, live only
   in `TheYard.Domain/Shared/Auction/StandingRules.cs` (`RaisedTo`, `Reserve`).
 
+## Quality ratchet
+
+Fourteen counts describe the shape of this codebase and live in `.github/quality-ratchet.json`:
+declarations with no `///` summary, service classes taking six or more dependencies, async methods
+with no `CancellationToken`, direct clock reads outside a composition root, comments carrying a date
+or a name, files within ten lines of the 300 cap, behaviour types no test names, the outward
+references and ring leaks already held at zero, and two floors (the test-to-production line ratio and
+the xUnit count). Run it before the gate:
+
+```
+python3 .github/quality.py . --ratchet .github/quality-ratchet.json
+```
+
+Every line must read `ok`. CI's api job and the ship gate run the same command, so a change that
+makes any number worse is red. **A number you improve is lowered in the file in the same commit as
+the fix**, which is the only way a limit ever moves; the step prints a notice when a number has moved
+the good way and the file has not followed it. Never lower the 90 per cent line and 75 per cent branch
+coverage floor to make a run green (ADR-122).
+
 ## Testing
 
 - `dotnet test` - xUnit. Domain with fixed clocks, Application with hand-written fakes at the ports

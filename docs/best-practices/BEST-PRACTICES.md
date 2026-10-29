@@ -28,6 +28,15 @@ footer displays exactly that.
 - **Tests gate every ship.** Three suites run before any image is built:
   the API tests, the frontend unit tests, and the Playwright end-to-end
   checks. A red suite stops the pipeline, no exceptions.
+- **The things that decline slowly are counted, not remembered.** Fourteen
+  numbers describe the shape of the code: declarations with no summary, classes
+  taking six or more dependencies, async paths with no cancellation token,
+  clocks read behind the composition root's back, and ten more. They live in a
+  file, CI and the ship gate hold each one to its limit, and a limit moves only
+  in the commit that earns it. The rules this project holds are yes-or-no
+  questions and all of them held through a fortnight in which half of these
+  doubled, which is why a count sits beside each rule now. Recorded in ADR: The
+  numbers that may only fall.
 - **The architecture is written down, not remembered.** One page for the
   layers and the rules that keep them, one for naming, layering and
   commenting, and an `.editorconfig` doing the mechanical half. Both are
