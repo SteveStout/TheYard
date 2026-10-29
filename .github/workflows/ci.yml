@@ -198,6 +198,27 @@ jobs:
       - name: Count what the tests cover
         if: always()
         run: python3 .github/coverage.py TestResults 90.0 75.0
+      # #region quality-ratchet
+      # The quality numbers, beside the coverage ones and held the same way. Coverage says
+      # how much of the code a test touches; these say what shape the code is in: how many
+      # declarations carry no summary, how many service classes take six dependencies, how
+      # many I/O paths take no cancellation token, how many places read the clock behind
+      # the composition root's back.
+      #
+      # They are a ratchet and not a target. The file holds the count this repository
+      # actually had when the line was drawn, so the step is green on the day it lands and
+      # red the moment a change makes any of them worse. A fix lowers its number in the
+      # same commit, which is the only way the line ever moves, and the step says so in a
+      # notice when a number has fallen and the file has not followed it down.
+      #
+      # It reads the checkout and builds nothing, so it costs a few seconds and runs even
+      # when the suites above went red: a reader looking at a red run should see both.
+      # The coverage floor above is not this file's to touch (ADR: The numbers that may
+      # only fall).
+      - name: The quality ratchet
+        if: always()
+        run: python3 .github/quality.py . --ratchet .github/quality-ratchet.json
+      # #endregion quality-ratchet
 
   # #region functions-job
   # The job hunt's Function and its tests (functions/jobhunt, functions/jobhunt.Tests). The

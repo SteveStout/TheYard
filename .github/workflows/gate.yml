@@ -197,6 +197,21 @@ jobs:
           cat "$r"
       # #endregion em-dashes
 
+      # #region quality-ratchet
+      # The quality ratchet, the same command CI runs, so a version cannot reach main with
+      # any of its numbers worse than the file says (ADR: The numbers that may only fall).
+      # It reads the checkout and builds nothing, so it costs seconds and runs whatever the
+      # suites above did. Its result joins rest.result, which the verdict reads.
+      - name: The quality ratchet
+        if: always()
+        run: |
+          r="$RAW/rest.result"
+          code=0
+          python3 .github/quality.py . --ratchet .github/quality-ratchet.json > "$RAW/quality.txt" 2>&1 || code=$?
+          echo "quality=$code" >> "$r"
+          cat "$RAW/quality.txt"
+      # #endregion quality-ratchet
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -215,10 +230,11 @@ jobs:
           for k in sqlproj functions xunit live; do [ "$(val dotnet.result $k)" = 0 ] || red="$red $k"; done
           for k in format oncosmos; do v=$(val dotnet.result $k); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red $k"; done
           [ "$(val rest.result emdash)" = 0 ] || red="$red emdash"
+          [ "$(val rest.result quality)" = 0 ] || red="$red quality"
           [ "$(val build.result warnings)" = 0 ] || red="$red warnings"
           if [ -n "$red" ]; then
             echo "::error::red:$red"
-            for f in prettier.txt lint.txt tsc.txt format.txt sqlproj.txt emdash.txt; do
+            for f in prettier.txt lint.txt tsc.txt format.txt sqlproj.txt emdash.txt quality.txt; do
               if [ -s "$RAW/$f" ]; then tail -n 12 "$RAW/$f" | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done; fi
             done
             for f in functions.txt xunit-sqlite.txt xunit-live.txt xunit-cosmos.txt; do

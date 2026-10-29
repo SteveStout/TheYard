@@ -17,4 +17,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '121',
   },
+  adrQualityRatchet: {
+    title: 'ADR: The numbers that may only fall',
+    menuLabel: 'ADR: The numbers that may only fall',
+    url: '/api/docs/adr-the-numbers-that-may-only-fall',
+    kind: 'adr',
+    number: '122',
+  },
 } as const satisfies Record<string, RecordEntry>;
