@@ -44,6 +44,8 @@ Outside the rings: the build machinery, read by nothing at run time. Single resp
 - [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, in the regions `two-cuts`, `build`, `dotnet-side`, `node-side`, `em-dashes`, `verdict` and `shed-job`.
 - [`api/TheYard.Tests/GateWorkflowTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/GateWorkflowTests.cs): the workflow held to the checks, the reports and the verdict.
 - [`scripts/test_results.mjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/test_results.mjs): the results file, written from the run's reports.
+- [`scripts/preflight.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/preflight.sh): the gate's four quick checks, run before a push of `gate/<version>`.
+- [`api/TheYard.Tests/GateVerdictTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/GateVerdictTests.cs): the verdict's own script, run over planted results.
 - [ADR: The five-minute gate](https://theyard.stevenstout.biz/?doc=adr-five-minute-gate): the gate itself, with an addendum pointing here.
 
 ## Addendum, 2026-10-26 (1.0.4.101): the gate promotes its own green run
@@ -102,3 +104,71 @@ Three of the review of 27 October's smaller findings on the workflows of 1.0.4.1
 - **`blog-post.yml` will not save a post whose live read lost its slides or its tags**, since the save writes back what the read gave and every post has both; and the read-back after the save tries a failed read again rather than failing a save that landed.
 
 `PromoteScriptTests` holds the card refusal by running promote.sh against a card that answers a page; `MachineFreeWorkflowsTests` holds the other two.
+
+## Addendum, 2026-10-29 (1.0.4.119): a gate that passed never sends a failure email
+
+Steve, 29 October: "I am getting a lot of these emails, any way for my deploy script to catch these errors?"
+The last thirty Gate runs, 26 to 29 October, were read: eleven failed, and **seven of the eleven were a green
+gate refusing to promote itself** (runs 40903343066, 40889845665, 40884853607, 40522513222, 40518359561,
+40437977063, 40424564652). Each of those versions changed a file under `.github/workflows`, which the run's own
+token may never push, so the promote job said so with `::error::` and exited non-zero. Every check had passed.
+GitHub sends a failure email for a failed run, so each of those seven told the owner his code was broken when
+nothing was. The other four were real reds in the gate job's verdict, and each of those emails carried the tails
+of the logs of checks that had passed beside the one that had not, so "All matched files use Prettier code style!"
+arrived as an error annotation. An email that is wrong seven times in eleven is an email nobody opens, and then
+the four that matter are not read either.
+
+Three things change from this version, and a fourth moves the catching earlier:
+
+- **A workflow version promotes itself when it can.** The secret `PROMOTE_TOKEN` is a fine-grained personal
+  token scoped to this repository with Contents and Workflows write. The promote job checks out with
+  `secrets.PROMOTE_TOKEN || github.token`, so where the secret exists the push `scripts/promote.sh` makes at the
+  end carries the workflow, and where it does not the checkout is the run's own token as before. The script is
+  told only whether the secret existed (`HAS_PROMOTE_TOKEN`, the result of `secrets.PROMOTE_TOKEN != ''`); it
+  never reads, prints or passes the value, and the only two mentions of the secret in the workflow are the
+  checkout's token and that one test. Nothing is ever force-pushed; the four tries and the ancestor check in
+  front of each are unchanged.
+- **A workflow version with no such secret ends GREEN.** The promote job prints
+  `::notice::this version changes a workflow: promote it by hand with scripts/promote.sh`, writes
+  `promoted=false` to its outputs and exits 0, and the deploy, deploy-render and after-roll jobs skip on that
+  output. A person then promotes the run by hand exactly as before. The sentence is the same sentence; what
+  changed is that it is a notice on a green run instead of an error on a red one, because a run that found
+  nothing wrong must not say it did.
+- **The push is the roll when a personal token made it.** A push made with the run's own token starts no
+  workflow, which is why the gate calls Deploy and Deploy Render itself. A push made with a personal token
+  starts them, and CI, and through Deploy the edge's move. So when promote pushed with `PROMOTE_TOKEN` it
+  reports `by_push=true`, the two deploy jobs skip rather than put a second run in the deploy-production and
+  deploy-render concurrency groups for one commit, the edge is not started by hand because `edge-branch.yml` is
+  already watching the push's own Deploy run, and after-roll waits for the push's two runs by their head commit
+  before it reads the version on either name and reads the push's CI run instead of dispatching another. The
+  Function's deploy is unchanged on both paths: `deploy-function.yml` has only a `workflow_dispatch` trigger, so
+  no push ever starts it. Every promoted version still rolls exactly once, by one path or the other.
+- **The verdict prints only what failed.** Each log belongs to one check, and its tail reaches the annotations
+  only when that check is in `$red`. A red run on the quality ratchet now names `quality.txt` and nothing else.
+  The build's warnings, which were red with no evidence printed at all, get their `: warning` lines too.
+- **`scripts/preflight.sh` catches what it can before the push.** `dotnet format api/TheYard.slnx
+  --verify-no-changes`, `npm run format:check`, `npm run lint` and `npx tsc -b`, the gate's own four commands,
+  under three minutes and inside 8 GB, each named with the first twenty lines of its output when it is red, and
+  then one line saying whether this version changes `.github/workflows` and whether `PROMOTE_TOKEN` will carry
+  it, read from the repository's secret NAMES and never a value. It does not run the browser suite or the two
+  passes on Cosmos DB: those need the 16 GB runner, which is the whole reason the gate moved here. A check this
+  machine cannot run says UNKNOWN and is never assumed green. The ship rule in CLAUDE.md and
+  docs/ci-cd/CICD.md is now: run it, and a red preflight is never pushed. `dotnet format` is in it because the
+  before-the-push list never named that command and the first gate of 1.0.4.117 died on it.
+
+What this version does not do. It does not create the secret: a credential is the owner's to make, and until he
+does, every workflow version takes the green notice path, which is the path this version itself took. So the
+token path ships held by tests and unexercised live, and the first version to change a workflow after the secret
+exists is the one that proves it. It does not touch Azure, any role or any setting.
+
+`PromoteScriptTests` runs `promote.sh` against a bare repository on each of the three paths and holds all three
+to ending green, to whether main moved and to the outputs each writes; `GateVerdictTests` lifts the verdict's own
+script out of the workflow and runs it over a planted `gate-raw` where one check is red among green ones, and
+holds the annotations to naming only the red one's log; `PromoteWorkflowTests` holds the token, the notice, the
+skips and the preflight, and that the secret is never read, printed or put on a command line.
+
+`GateVerdictTests` skips where **bash is absent**, not where Windows is, which is the older guard in
+`PromoteScriptTests`. The first push of this version proved why: two of its cases asserted the annotation with
+the log's line trimmed, the verdict emits it as the log holds it, and the gate's runner was the only machine
+that could see the difference, so the mistake cost a whole gate run instead of a minute. The laptop that ships
+has Git Bash, and a case only the runner can run is a case the push finds out about the expensive way.

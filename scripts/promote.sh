@@ -7,8 +7,10 @@
 #            data/test-results.json and the README's figures from the run's reports in <raw>, folds them into the
 #            commit, and fast-forwards main to it. Never force-pushes. Writes sha, version and functions to
 #            $GITHUB_OUTPUT when it runs in the gate.
-# Does not:  Run a check (the gate did), roll the site (the gate calls Deploy and Deploy Render), or push a commit
-#            that changes a workflow from the gate (the token may not; a person runs this by hand for that one).
+# Does not:  Run a check (the gate did), roll the site (the gate calls Deploy and Deploy Render, or the push does
+#            when a personal token made it), or read, print or pass a token value: a version that changes a
+#            workflow is carried by the secret PROMOTE_TOKEN the promote job checks out with, and where that
+#            secret does not exist this ends green with a notice and moves nothing.
 # Used by:   .github/workflows/gate.yml's promote job, and a person promoting a run by hand, naming the run:
 #            gh run download <run> -n gate-raw -D raw && scripts/promote.sh raw <seconds> <version> <run>
 set -euo pipefail
@@ -78,8 +80,25 @@ echo "cloud roles: every card on both names reads with the roles it needs"
 
 # #region the-ancestor
 git merge-base --is-ancestor origin/main HEAD || refuse "main is not an ancestor of the gate's commit: rebase onto main and gate again"
-if [ -n "${GITHUB_ACTIONS:-}" ] && git diff --name-only origin/main HEAD -- .github/workflows | grep -q .; then
-  refuse "this version changes a workflow, which the gate's token may not push: promote it by hand with scripts/promote.sh"
+# A push that carries a file under .github/workflows needs Workflows write, which the run's own token does not
+# have. In the gate that write comes from the secret PROMOTE_TOKEN, which the promote job hands to its checkout,
+# so the push at the end of this script already uses it; HAS_PROMOTE_TOKEN says only whether the secret existed,
+# and this script never reads, prints or passes the value. Without the secret the job ends GREEN with a notice
+# and moves nothing, because green code must not send a failure email (ADR-098, the addendum of 1.0.4.119).
+# A push made with a personal token DOES start the push-triggered workflows, unlike the run's own, so when one
+# carries this version the roll is the push's and the run must not call the two deploys a second time.
+workflow=false
+if git diff --name-only origin/main HEAD -- .github/workflows | grep -q .; then workflow=true; fi
+by_push=false
+if [ "$workflow" = true ]; then
+  if [ -z "${GITHUB_ACTIONS:-}" ] || [ "${HAS_PROMOTE_TOKEN:-}" = true ]; then
+    by_push=true
+    echo "this version changes a workflow and the token that promotes it carries one: the push rolls the site"
+  else
+    echo "::notice::this version changes a workflow: promote it by hand with scripts/promote.sh"
+    if [ -n "${GITHUB_OUTPUT:-}" ]; then { echo "promoted=false"; echo "by_push=false"; } >> "$GITHUB_OUTPUT"; fi
+    exit 0
+  fi
 fi
 # #endregion the-ancestor
 
@@ -119,5 +138,5 @@ echo "main is now ${sha:0:8}, $version; the Function: $functions"
 # #endregion fast-forward
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
-  { echo "sha=$sha"; echo "version=$version"; echo "functions=$functions"; } >> "$GITHUB_OUTPUT"
+  { echo "sha=$sha"; echo "version=$version"; echo "functions=$functions"; echo "promoted=true"; echo "by_push=$by_push"; } >> "$GITHUB_OUTPUT"
 fi

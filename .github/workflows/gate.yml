@@ -13,6 +13,12 @@ name: Gate
 # gate-raw artifact, folds them into the commit and fast-forwards main, the run calls Deploy and
 # Deploy Render on that commit, and the after-roll job reads both names and CI on main. A ship is
 # a push of gate/<version>; no machine has to be on. The gate job itself only reads.
+#
+# A version that changes a workflow is the one that needs more than the run's own token. With the
+# secret PROMOTE_TOKEN it pushes itself, and because a personal token's push starts the workflows
+# the run's own push would not, that push is the roll and the two deploy jobs skip. With no such
+# secret the promote job ends GREEN with a notice and moves nothing, and a person promotes the run
+# by hand: green code never sends a failure email (ADR-098, the addendum of 1.0.4.119).
 on:
   push:
     branches: ["gate/**"]
@@ -232,16 +238,29 @@ jobs:
           [ "$(val rest.result emdash)" = 0 ] || red="$red emdash"
           [ "$(val rest.result quality)" = 0 ] || red="$red quality"
           [ "$(val build.result warnings)" = 0 ] || red="$red warnings"
+          # A log's tail is printed only when that log's OWN check is red. Every red run used to print the
+          # last twelve lines of all seven text logs, so "All matched files use Prettier code style!" landed
+          # as an ::error:: annotation, and the failure email named six checks when one had failed: a reader
+          # who has to find the real failure among the green ones stops reading the email. The build's
+          # warnings are red with no log of their own until here; they get their lines too.
+          is_red() { case " $red " in *" $1 "*) return 0;; *) return 1;; esac; }
+          lines() { while IFS= read -r line; do printf '::error::%s: %s\n' "$1" "$(printf '%s' "$line" | cut -c1-300)"; done; }
           if [ -n "$red" ]; then
             echo "::error::red:$red"
-            for f in prettier.txt lint.txt tsc.txt format.txt sqlproj.txt emdash.txt quality.txt; do
-              if [ -s "$RAW/$f" ]; then tail -n 12 "$RAW/$f" | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done; fi
+            for pair in prettier:prettier.txt lint:lint.txt tsc:tsc.txt format:format.txt sqlproj:sqlproj.txt emdash:emdash.txt quality:quality.txt; do
+              f=${pair#*:}; is_red "${pair%%:*}" || continue
+              if [ -s "$RAW/$f" ]; then tail -n 12 "$RAW/$f" | lines "$f"; fi
             done
-            for f in functions.txt xunit-sqlite.txt xunit-live.txt xunit-cosmos.txt; do
-              [ -f "$RAW/$f" ] || continue; { grep -E '^\s*Failed |Error Message' "$RAW/$f" || true; } | head -n 8 | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done
+            if is_red warnings && [ -s "$RAW/build.txt" ]; then
+              { grep -E ': warning ' "$RAW/build.txt" || true; } | head -n 8 | lines build.txt
+            fi
+            for pair in functions:functions.txt xunit:xunit-sqlite.txt live:xunit-live.txt oncosmos:xunit-cosmos.txt; do
+              f=${pair#*:}; is_red "${pair%%:*}" || continue
+              [ -f "$RAW/$f" ] || continue; { grep -E '^\s*Failed |Error Message' "$RAW/$f" || true; } | head -n 8 | lines "$f"
             done
-            for f in browser-sqlite.txt browser-cosmos.txt; do
-              [ -f "$RAW/$f" ] || continue; { grep -E '^\s+[0-9]+\) ' "$RAW/$f" || true; } | head -n 8 | while IFS= read -r line; do printf '::error::%s: %s\n' "$f" "$(printf '%s' "$line" | cut -c1-300)"; done
+            for pair in browser:browser-sqlite.txt browser_cosmos:browser-cosmos.txt; do
+              f=${pair#*:}; is_red "${pair%%:*}" || continue
+              [ -f "$RAW/$f" ] || continue; { grep -E '^\s+[0-9]+\) ' "$RAW/$f" || true; } | head -n 8 | lines "$f"
             done
             exit 1
           fi
@@ -287,10 +306,17 @@ jobs:
       sha: ${{ steps.promote.outputs.sha }}
       version: ${{ steps.promote.outputs.version }}
       functions: ${{ steps.promote.outputs.functions }}
+      promoted: ${{ steps.promote.outputs.promoted }}
+      by_push: ${{ steps.promote.outputs.by_push }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # A version that changes a workflow needs Workflows write, which the run's own token never has.
+          # The secret PROMOTE_TOKEN carries Contents and Workflows write, and checkout keeps it for the
+          # push promote.sh makes; where the secret does not exist this is the run's own token again and
+          # the script ends green with its notice (ADR-098, the addendum of 1.0.4.119).
+          token: ${{ secrets.PROMOTE_TOKEN || github.token }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -302,6 +328,9 @@ jobs:
         id: promote
         env:
           GH_TOKEN: ${{ github.token }}
+          # Whether the secret exists, never its value: the script decides which of its three paths it is on
+          # from this and prints neither.
+          HAS_PROMOTE_TOKEN: ${{ secrets.PROMOTE_TOKEN != '' }}
         run: |
           started=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
           seconds=$(( $(date +%s) - $(date -d "$started" +%s) ))
@@ -311,8 +340,16 @@ jobs:
   # #region the-roll
   # A push made with the workflow's token starts no workflow, so the run calls the two deploys
   # itself, each pinned to the promoted commit. Each is handed only the secrets it reads, by name.
+  #
+  # Two promotions do not come here. A promote that moved nothing (a version that changes a workflow
+  # with no PROMOTE_TOKEN to carry it) has nothing to roll. A promote that pushed WITH that token made
+  # a push a person's credentials could have made, and such a push starts Deploy and Deploy Render on
+  # its own: calling them again would put a second run in each concurrency group and roll the site
+  # twice for one commit. So the push is the roll, and after-roll waits for the push's two runs
+  # instead (ADR-098, the addendum of 1.0.4.119).
   deploy:
     needs: promote
+    if: needs.promote.outputs.promoted == 'true' && needs.promote.outputs.by_push != 'true'
     uses: ./.github/workflows/deploy.yml
     with:
       sha: ${{ needs.promote.outputs.sha }}
@@ -327,6 +364,7 @@ jobs:
 
   deploy-render:
     needs: promote
+    if: needs.promote.outputs.promoted == 'true' && needs.promote.outputs.by_push != 'true'
     uses: ./.github/workflows/deploy-render.yml
     with:
       sha: ${{ needs.promote.outputs.sha }}
@@ -341,7 +379,7 @@ jobs:
   # token may make) and read to its end; then the gate branch goes.
   after-roll:
     needs: [promote, deploy, deploy-render]
-    if: always() && needs.promote.result == 'success' && needs.deploy.result != 'failure' && needs.deploy.result != 'cancelled' && needs.deploy-render.result != 'failure' && needs.deploy-render.result != 'cancelled'
+    if: always() && needs.promote.result == 'success' && needs.promote.outputs.promoted == 'true' && needs.deploy.result != 'failure' && needs.deploy.result != 'cancelled' && needs.deploy-render.result != 'failure' && needs.deploy-render.result != 'cancelled'
     runs-on: ubuntu-24.04
     # The reads after the roll take up to thirty-three minutes, CI's start five, and CI its own length.
     timeout-minutes: 75
@@ -352,9 +390,33 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.promote.outputs.sha }}
+      # When the promote pushed with PROMOTE_TOKEN the push started Deploy and Deploy Render itself, so this
+      # job waits for those two runs where it would otherwise have called them: the reads below must not read
+      # the version before it is rolled. The commit is this version's and no other run's, so the runs are
+      # found by their head commit (ADR-098, the addendum of 1.0.4.119).
+      - name: The roll the push started
+        if: needs.promote.outputs.by_push == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ needs.promote.outputs.sha }}
+        run: |
+          for workflow in deploy.yml deploy-render.yml; do
+            run=""
+            for i in $(seq 1 30); do
+              run=$(gh run list --workflow "$workflow" --branch main --event push --limit 10 --json databaseId,headSha --jq ".[] | select(.headSha == \"$SHA\") | .databaseId" | head -n 1)
+              [ -n "$run" ] && break
+              sleep 10
+            done
+            [ -n "$run" ] || { echo "::error::$workflow did not start for $SHA in five minutes"; exit 1; }
+            echo "$workflow on the push: https://github.com/$GITHUB_REPOSITORY/actions/runs/$run"
+            gh run watch "$run" --exit-status --interval 30 > /dev/null || { echo "::error::$workflow is red for $SHA (run $run)"; exit 1; }
+          done
       # The edge moves after Deploy (edge-branch.yml), which starts on a Deploy run of its own and so
-      # never on the one this run called: it is started by hand on main, the promoted commit.
+      # never on the one this run called: it is started by hand on main, the promoted commit. A promote
+      # that pushed with PROMOTE_TOKEN needs no start: the push's own Deploy run is a Deploy run of its
+      # own, and edge-branch.yml is already watching for it.
       - name: The edge, after the deploy
+        if: needs.promote.outputs.by_push != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run edge-branch.yml --ref main
@@ -375,14 +437,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ needs.promote.outputs.sha }}
+          BY_PUSH: ${{ needs.promote.outputs.by_push }}
         # Only a run created after this dispatch counts, so a re-run never reads an earlier dispatch's result.
+        # A promote that pushed with PROMOTE_TOKEN already started CI on that push, so its run is read instead
+        # of a second one being dispatched; it is older than this step, and the head commit alone names it.
         run: |
-          since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          gh workflow run ci.yml --ref main
+          if [ "$BY_PUSH" = true ]; then
+            event=push
+            since=1970-01-01T00:00:00Z
+          else
+            event=workflow_dispatch
+            since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            gh workflow run ci.yml --ref main
+          fi
           run=""
           for i in $(seq 1 30); do
             sleep 10
-            run=$(gh run list --workflow ci.yml --branch main --event workflow_dispatch --limit 10 --json databaseId,headSha,createdAt --jq ".[] | select(.headSha == \"$SHA\" and .createdAt >= \"$since\") | .databaseId" | head -n 1)
+            run=$(gh run list --workflow ci.yml --branch main --event "$event" --limit 10 --json databaseId,headSha,createdAt --jq ".[] | select(.headSha == \"$SHA\" and .createdAt >= \"$since\") | .databaseId" | head -n 1)
             [ -n "$run" ] && break
           done
           [ -n "$run" ] || { echo "::error::CI on main did not start for $SHA in five minutes"; exit 1; }
