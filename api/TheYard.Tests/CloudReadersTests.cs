@@ -421,11 +421,21 @@ public sealed class CloudReadersTests
         new("Personal", UsageKind.Plan, "claude-opus-5-5", 72, 117_309, 2_935_391, 20_626, 322_000, 1.94m, "run-4", null, "bookkeeping", DateTimeOffset.UtcNow.AddMinutes(-10)),
     ];
 
-    /// <summary>The campaign's card schema as one read of it answers: two days, the leads and one Sunday row.</summary>
-    private static CampaignCountsRead CampaignRead() => new(true, null,
-        [new CampaignDay(DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)), 0, 9, 0, 0), new CampaignDay(DateOnly.FromDateTime(DateTime.UtcNow), 0, 6, 0, 0)],
-        new CampaignLeadCounts(12, 4, 8, 1, 0, 0, 15, 1, 9, null, DateTimeOffset.UtcNow.AddHours(-2), null, null),
-        [new CampaignWeekRow("B v1", "Sunday", "B", "ai", 3, 1)]);
+    /// <summary>
+    /// The campaign's card schema as one read of it answers: two days, the leads and one Sunday row.
+    /// The days are CENTRAL days, because CampaignSource.Today and the card both read the Central day
+    /// off the moment (NightlySlots.Local), and the two zones are on different dates from 00:00 to
+    /// 05:00 UTC. Dated by UTC, as this fixture was until 1.0.4.114, the theory's campaign case read
+    /// the wrong day's row and was red on every run outside that five-hour window.
+    /// </summary>
+    private static CampaignCountsRead CampaignRead()
+    {
+        var today = DateOnly.FromDateTime(TheYard.Domain.Features.Admin.NightlySlots.Local(DateTimeOffset.UtcNow));
+        return new(true, null,
+            [new CampaignDay(today.AddDays(-1), 0, 6, 0, 0), new CampaignDay(today, 0, 9, 0, 0)],
+            new CampaignLeadCounts(12, 4, 8, 1, 0, 0, 15, 1, 9, null, DateTimeOffset.UtcNow.AddHours(-2), null, null),
+            [new CampaignWeekRow("B v1", "Sunday", "B", "ai", 3, 1)]);
+    }
 
     /// <summary>The usage log filled, in memory, so the Claude card reads documents rather than nothing.</summary>
     private static MemoryUsageLog UsageLog()

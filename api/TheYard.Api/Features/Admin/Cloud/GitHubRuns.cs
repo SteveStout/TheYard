@@ -24,6 +24,9 @@ public sealed class GitHubRuns(string repo, string workflow, string? token = nul
     /// <summary>How the card says who started a run.</summary>
     public const string ByFunction = "Function dispatch", ByHand = "by hand";
 
+    /// <summary>GitHub's two events this workflow runs on: the Function's dispatch, and a run started by hand. One copy, which the push route reads too.</summary>
+    public const string Dispatched = "repository_dispatch", ByHandEvent = "workflow_dispatch";
+
     /// <summary>How the card names a run that carries no lane, one older than the workflow's run name.</summary>
     public const string NotNamed = "not named";
 
@@ -88,7 +91,7 @@ public sealed class GitHubRuns(string repo, string workflow, string? token = nul
                 Whole(run, "run_number") ?? 0,
                 created,
                 NightlySlots.Local(created).ToString("HH:mm", CultureInfo.InvariantCulture),
-                trigger == "repository_dispatch" ? ByFunction : ByHand,
+                trigger == Dispatched ? ByFunction : ByHand,
                 dry,
                 lane,
                 took,
@@ -107,14 +110,14 @@ public sealed class GitHubRuns(string repo, string workflow, string? token = nul
     /// <param name="title">GitHub's display_title for the run.</param>
     public static (string Lane, bool Dry) LaneOf(string trigger, string title)
     {
-        bool dry = trigger == "workflow_dispatch" && title.EndsWith(DrySuffix, StringComparison.Ordinal);
+        bool dry = trigger == ByHandEvent && title.EndsWith(DrySuffix, StringComparison.Ordinal);
         string name = dry ? title[..^DrySuffix.Length] : title;
         string lane = (trigger, name) switch
         {
-            ("repository_dispatch", NightlySlots.Reply) => "reply",
-            ("repository_dispatch", NightlySlots.Bookkeeping) => "bookkeeping",
-            ("workflow_dispatch", "reply") => "reply",
-            ("workflow_dispatch", "bookkeeping") => "bookkeeping",
+            (Dispatched, NightlySlots.Reply) => "reply",
+            (Dispatched, NightlySlots.Bookkeeping) => "bookkeeping",
+            (ByHandEvent, "reply") => "reply",
+            (ByHandEvent, "bookkeeping") => "bookkeeping",
             _ => NotNamed,
         };
         return (lane, dry && lane != NotNamed);

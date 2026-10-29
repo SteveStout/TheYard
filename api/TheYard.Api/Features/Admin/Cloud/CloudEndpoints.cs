@@ -3,10 +3,10 @@ using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 
-/// <summary>The resource cards' route, a window of one resource from its keep, and the nightly card's run histories.</summary>
+/// <summary>The resource cards' route, a window of one resource from its keep, the nightly card's run histories, and the one address a card is fed through.</summary>
 public static class CloudEndpoints
 {
-    /// <summary>Maps GET /api/admin/cloud/{key}, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
+    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
     public static IEndpointRouteBuilder MapCloudEndpoints(this IEndpointRouteBuilder app)
     {
         // #region resource-endpoint
@@ -28,6 +28,23 @@ public static class CloudEndpoints
             .WithTags("Admin")
             .WithSummary("One page of one of the job hunt Function's seven processes' runs, newest first, for 24h, 7d or 30d");
         // #endregion process-runs-endpoint
+        // #region nightly-run-endpoint
+        // One run of the nightly workflow, posted by the workflow that ran it (ADR: The Nightly
+        // Function on the Admin tab), behind the operator's key in its header. This is what
+        // retires the card's hourly read of GitHub and its sixty-an-hour
+        // allowance: the runs arrive as they end, and GitHub is asked only to reconcile. A run
+        // posted twice is kept once, under GitHub's own id, so a workflow may post again after a
+        // failure without the card counting the run twice. Unlike every other address on this tab
+        // it is a write, so it declares each status it answers and each one has a case.
+        app.MapPost("/api/admin/cloud/nightly/run", NightlyRunRoutes.RunPost)
+            .WithName("PostNightlyRun")
+            .WithTags("Admin")
+            .WithSummary("Keep one run of the nightly workflow, under GitHub's own run id, behind the operator's key")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status503ServiceUnavailable);
+        // #endregion nightly-run-endpoint
         // #region incidents-endpoint
         // Public like the cards: the incidents are public pages, and a failure is named by its type and where it
         // happened, never by its message, which can carry what a visitor sent.
