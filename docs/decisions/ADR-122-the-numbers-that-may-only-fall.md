@@ -282,3 +282,32 @@ The rule, from the build:
 A constant is excused in both, because its name and its value are already on the line the reader is
 looking at. Nothing any of the ten files does has changed: every line this instalment adds is a
 comment.
+
+## Addendum, 2026-10-30 (1.0.4.125): a corrected measurement is not slippage, and this one moved both ways
+
+`history_or_name_comments` read 17, and the number was wrong in both directions at once, which is
+the second time a count here has been found measuring something other than what its name says (the
+addendum of 1.0.4.120, where a constructor's width was being read off one line of a signature).
+
+It was counting four comments that are not history. A date inside backticks or quotes is an example
+of a format, which a comment naming the wire format a function parses has to show; `ProductionCommentTests`
+had always stripped those spans before reading a line, and this scanner never had. And it could not
+see fourteen that are: a person beside a short date (`the 9/19 rule`, `Steve, 10/24 12:58`), a day
+beside a month name with no year (`unregistered on 23 Oct`), a version number standing where a reason
+belongs (`the addendum of 1.0.4.107`), and a review named rather than described. One of those
+fourteen was in the site's own code, which the suite has guarded since 1.0.3.71: `the 9/19 rule` in
+`BlogImageEndpoints.cs`, a shape neither the test's pattern nor the scanner's had a clause for.
+
+So the honest number on the checkout where nothing else had changed was 27, not 17, against a limit
+of 17. Rather than let a corrected measurement read as a rung going backwards, all 27 are rewritten
+in this same commit and the limit goes to **0**, with the rule's shapes and the scanner's held the
+same deliberately: a count and a rule that disagreed would be describing two codebases, and the
+project the suite called clean would still be counted by the number.
+
+**What this says about the other thirteen numbers.** Two of fourteen have now been found mismeasuring
+after a rung was already partly paid, both of them the same way: a regular expression that was easy
+to write read a shape that was easy to see rather than the shape the number is named for. The lesson
+is not to distrust the counts, which caught real work both times. It is that the first thing a rung
+does is read its own number's rule and check the list it prints by eye, because a number read wrongly
+costs a version either way: once to pay arrears that were never owed, and once to discover the real
+ones after the rung was called done.

@@ -35,9 +35,10 @@ public sealed record GoogleCredentials(string ClientId, string ClientSecret, str
         }), ct);
         if (!trade.IsSuccessStatusCode)
         {
-            // Google answers 400 invalid_grant when the refresh token was revoked, as Steve's password change of
-            // 2026-10-23 08:12 did: every Gmail call of the 09:20 and 09:50 passes failed on it. Named, so the pass
-            // says what is wrong and what restores it instead of three identical HTTP errors.
+            // Google answers 400 invalid_grant when the refresh token has been revoked, which an account's
+            // password change does to every token it issued. Named as its own exception, because otherwise a
+            // whole pass fails on a row of identical HTTP errors that say nothing about the cause, and the
+            // remedy is one consent click that nobody will think of from a 400.
             throw new GoogleTokenRefusedException((int)trade.StatusCode);
         }
         using var token = JsonDocument.Parse(await trade.Content.ReadAsStringAsync(ct));

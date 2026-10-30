@@ -14,9 +14,10 @@ namespace JobHunt.Functions;
 // #endregion summary
 /// <remarks>
 /// The inbox pass, every 30 minutes (20 and 50 past each hour, UTC, which is 20 and 50 past in Central too):
-/// the ATS sweep, then the leads harvest, then what neither could read handed to the model. Steve's 2026-10-23
-/// alpha goal: he never sees a job-board alert or a rejection again, and every human message, interview and
-/// account mail stays. ATS_SWEEP and LEADS each pick their mode: "shadow" plans and writes the plan only,
+/// the ATS sweep, then the leads harvest, then what neither could read handed to the model. The goal every
+/// rule below is shaped to: no job-board alert and no rejection reaches the inbox a person reads, and every
+/// human message, interview and account mail stays, because archiving one of those would cost more than all
+/// the alerts the pass will ever catch. ATS_SWEEP and LEADS each pick their mode: "shadow" plans and writes the plan only,
 /// "on" acts (rows, harvest, archive, read back), anything else is off. TRIAGE "on" fires the triage run in
 /// nightly.yml when the inbox holds mail from the last two days that no triage run has judged; the model
 /// runs there, never here. LEADS_LIST "on" fires the leads list run when a pass harvested a lead the list has

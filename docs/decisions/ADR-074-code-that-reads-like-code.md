@@ -159,3 +159,53 @@ The renderer arriving with the first document had a cost the 17 September addend
 - **The document and its renderer start together.** The dialog asks for the document, the renderer and, for the Author page, its layout in one `Promise.all`, so the two trips overlap rather than follow each other. `prefetch.spec.ts` holds the overlap: with the document held back half a second, the renderer's request has to begin before the document's response ends.
 - **Fetched ahead, when the page is idle.** Once the first page has loaded and the browser is idle (`requestIdleCallback`, or a short timer where a browser has none), the page fetches the renderer and the Admin tab's chunk; once the Admin tab has mounted, it fetches every card's chunk in the rail the same way (`src/lib/prefetch.ts`). A reader whose browser asks to save data, or rates the connection as 2G, gets none of it, which `prefetch.test.ts` holds. The browser suite opens every page as such a reader (`tests/e2e/app.ts`), because the specs that hold a card fetched when it is opened, and a chunk a deploy replaced loading the page again, are about that very fetch; `prefetch.spec.ts` turns the prefetch back on and holds it. None of it is on the first page's critical path: it starts after the page's `load` event.
 - **What a card waits on now.** With every card's chunk already in the browser, choosing a card waits on its first data read and not on its code, so the read is not started any earlier than the card's own `useRead` starts it: there is no second request for the same address to race the first.
+
+## Addendum, 2026-10-30 (1.0.4.125): the rule has a body, and it is asked in two strengths
+
+The rule that a comment says what, how and why on its own was held by one test over one area, the
+six onion projects and the frontend under `src`, and the whole job hunt's Function sat outside it.
+That gap is the reason the comments there had drifted: seventeen of them explained by a date or by
+who asked, and nothing in the build could tell. The arrears are paid in this version, but the gap is
+the fix.
+
+**The body is `tests/rules/HistoryRule.cs`**, compiled into both test projects by a link the way
+`LengthRule` and `SummaryRule` are, so what the suite refuses and what `.github/quality.py` counts
+cannot drift into describing two different codebases. The question is asked by
+`ProductionCommentTests`, a file of its own now: the rule had grown a second area and four theories
+while living beside the em dash scan, which is two jobs in one file, and a file is cut at the warning
+and not at the cliff.
+
+**It is asked in two strengths, and the reason is in the code rather than in a preference.** The
+site's own code has no reason to write a month of the year or the owner's first name, so there both
+are provenance and nothing else. The job hunt's Function reads his inbox, his calendar and his
+tracker, so his name there is the subject the code acts on; and its clock turns over when the clocks
+do, so the word November in it is the calendar. A rule strong enough for the site would have forced
+`November clock change` and `Sends one email from Steve's Gmail` to be rewritten into something less
+true, which is how a style rule starts costing more than it returns. What is provenance in both is a
+date, a version number, a named review, and his name beside a date or beside an ask.
+
+**A date can be the subject, and the measurement had not known that.** Four of the seventeen the
+ratchet was counting were not history at all: a comment naming the wire format a function parses has
+to show it, and showing it means writing a date, so `` a day as `2026-10-12` `` and `"Status:
+accepted, 2026-09-02, shipped as 1.0.0.21."` are examples of a format. The test had always known
+this, by stripping backticked and quoted spans before it read a line; the scanner had not, and read
+one regular expression over the raw line. Both now strip, and the handful the stripper cannot reach
+are named one by one: a quotation that runs across two source lines, where a quote has no other half
+to pair with, and a month written in code rather than in prose.
+
+**A date that spells its year out is naming a fixed point, not a past.** A recent date in this
+project's own history is written the way a person writes one, `23 Oct` or `7 October`, because the
+year is this one, so the day-and-month form counts only when no four-digit year follows it. The one
+date in this repository that spells its year out is `1 January 1970 UTC` in The Shed, the Unix epoch,
+and a comment may legitimately need it.
+
+The rule, from the build:
+
+```live path=tests/rules/HistoryRule.cs region=history-rule
+```
+
+What the sample under `samples/` is held by is the ratchet's own count rather than this suite, which
+does not walk a sample: a sample is its own solution with its own gate and its own copies of these
+rules (`Repo.NotOurs`). A comment of this shape added there turns `history_or_name_comments` red
+instead, which is weaker than a named failure and is written down here rather than left to be
+discovered.

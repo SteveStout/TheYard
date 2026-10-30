@@ -1,8 +1,10 @@
 namespace JobHunt.Domain.Shared.Tracker;
 
 /// <summary>
-/// Counts the data rows of Job_Hunt_Tracker.csv. Its quoted fields hold newlines, so a line
-/// count is wrong (failure-log 2026-09-03); this walks the quotes the way csv.reader does.
+/// Counts the data rows of Job_Hunt_Tracker.csv. Its quoted fields hold newlines of their own, so a
+/// count of the file's lines reads high and reads high by a different amount every pass, which makes
+/// every number built on it quietly wrong rather than obviously wrong. This walks the quotes the way
+/// csv.reader does, so a newline inside a field is part of its row and not a row of its own.
 /// </summary>
 public static class TrackerCsv
 {

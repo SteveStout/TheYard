@@ -19,8 +19,9 @@ namespace JobHunt.Functions;
 /// The Admin tab's nightly card reads it once a minute. It is anonymous because the site holds no
 /// key to this app and gets none: the answer is counts and ages only, the same figures the card
 /// shows the public, and it lists two folders and reads nothing inside any file. It also names the
-/// commit the running build was published from, so the Function's deploy can prove the new code is the
-/// code answering (ADR-098, the addendum of 1.0.4.107).
+/// commit the running build was published from, so a deploy can prove the new code is the code answering
+/// rather than only that the publish step exited zero, which a warm instance of the old build would also
+/// let it believe (ADR-098).
 /// </remarks>
 public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<MergerWatch> log)
 {

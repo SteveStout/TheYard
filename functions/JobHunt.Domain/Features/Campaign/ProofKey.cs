@@ -3,12 +3,14 @@ namespace JobHunt.Domain.Features.Campaign;
 /// <summary>
 /// One proof per posting (the review, 8.2 item 4): the lead run picks a key from the posting's words and code
 /// holds the words, so no model writes a line of the email. Each is a clause that follows "in .NET architecture
-/// or technical management," the way the approved templates' AI clause does, and each fact is a line of the
-/// 2026-10-24 resume (Conway: 200+ releases on a live financial platform, sole engineer for the last three
-/// years; Storee: four applications onto one .NET 9 platform on Azure, release cycle cut 50 %; a four-person team
-/// hired and led). A key that is missing or unknown renders the AI clause, which is the one both v1 templates
-/// already carry. Neither template has a {Proof} line yet: putting one in is a template change, so it waits for
-/// Steve's yes, and until then these are rendered by no email.
+/// or technical management," the way the approved templates' AI clause does, and every fact in it is a line
+/// the resume already carries (Conway: 200+ releases on a live financial platform, sole engineer for the last
+/// three years; Storee: four applications onto one .NET 9 platform on Azure, release cycle cut 50 %; a
+/// four-person team hired and led). Nothing is written here that the resume does not say, because a claim in
+/// an email that the resume behind it cannot support is the one mistake this file exists to make impossible.
+/// A key that is missing or unknown renders the AI clause, which is the one both v1 templates already carry.
+/// No template holds a {Proof} line yet, so nothing here is rendered by any email: adding one changes a
+/// template, and a template changes only on an approval.
 /// </summary>
 public static class ProofKey
 {

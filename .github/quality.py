@@ -359,14 +359,70 @@ R["wide_service_classes"] = {"count": len(wide), "list": wide}
 clock = [x for x in smell["clock_direct"] if not re.search(r"Module\.cs|/Wiring/|Program\.cs|Clocks\.cs", x)]
 R["clock_outside_composition"] = {"count": len(clock), "sample": clock[:15]}
 
-# Comments carrying history (a date, or who said what) in place of the what, how and why.
+# #region history-rule
+# Comments leaning on provenance in place of the what, how and why: when the code was written, who
+# asked for it, which version shipped it, which review found it. The shapes are the ones
+# tests/rules/HistoryRule.cs asks, kept the same deliberately, because a count and a rule that
+# disagreed would be describing two different codebases.
+#
+# Two things make this harder than a list of forbidden words. A date can be the subject rather than
+# the history: a comment naming the wire format a function parses has to show it, so a date inside
+# backticks or quotes is an example of a format and not a note about the past, and those spans come
+# out before the line is read. And the three lines whose quotation runs across two source lines are
+# named one by one, because a stripper cannot pair a quote with its other half on the next line.
+#
+# A day beside a month name counts only when no four-digit year follows it. A recent date in this
+# project's own past is written the way a person writes one, "23 Oct", because the year is this one,
+# while a date that spells its year out is naming a fixed point a comment may legitimately need, and
+# the one in this repository is the Unix epoch. A bare slash date is never read alone, because
+# "90/75" is the coverage floor and "1/2" is a half; it counts beside the owner's name or beside a
+# word for an instruction. His bare name and a bare month name are provenance in the site's own code
+# and the subject in the job hunt's, which is why HistoryRule asks in two strengths; this number asks
+# only the shapes that are provenance in both, so it never counts a clock's November or an inbox's
+# owner.
+PROVENANCE = re.compile(
+    r"\b20\d\d-\d\d(-\d\d)?\b"
+    r"|\b\d{1,2}/\d{1,2}/20\d\d\b"
+    r"|\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\b(?! \d{4})"
+    r"|\b(Steve|he)('s)? (said|asked|named|wants|ruled|word|call)\b"
+    r"|\b(Steve|he|his)\b[^.]{0,40}?\b\d{1,2}/\d{1,2}\b"
+    r"|\b\d{1,2}/\d{1,2}\b[^.]{0,40}?\b(rule|ask|asked|said|named|wants|ruled|call)\b"
+    r"|\b1\.0\.\d+\.\d+\b"
+    r"|the review of|the staff review|the tweaks pass|the self-review")
+# The lines whose quotation runs across two source lines: the chart's axis labels, and the opening
+# line of a decision record as the document layout matches it. A file name and a fragment that line
+# holds, which is narrower than a file name alone and survives the line moving.
+FORMAT_EXAMPLES = (
+    ("docLayout.ts", "shipped as 1.0.0.21."),
+    ("dayMarks.ts", '"Mon 5 Oct, Fri 9,'),
+    ("dayMarks.ts", 'Mon 12, Fri 16"'),
+    ("RunLine.cs", "process:Merger outcome=success"),
+)
+
+
+def comment_of(line):
+    """The part of a line that is a comment: the whole line when it opens with one, else a trailing one."""
+    text = line.lstrip()
+    if text.startswith(("//", "*", "/*", "{/*")):
+        return line
+    at = line.find(" // ")
+    return line[at:] if at >= 0 else ""
+
+
+def leans_on_history(path, line):
+    """Whether this line's comment leans on provenance, its format examples taken out first."""
+    if any(path.endswith("/" + name) and fragment in line for name, fragment in FORMAT_EXAMPLES):
+        return False
+    return bool(PROVENANCE.search(re.sub(r"`[^`]*`|\"[^\"]*\"", "", comment_of(line))))
+
+
 hist = []
 for f in CS_PROD + TS_PROD:
     for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-        t = line.strip()
-        if t.startswith(("//", "*", "/*")) and not t.startswith("/// <param") and re.search(r"\b20\d\d-\d\d-\d\d\b|\b\d{1,2}/\d{1,2}/20\d\d\b|\b(Steve|he)('s)? (said|asked|named|wants|ruled|word|call)\b", t):
+        if not line.strip().startswith("/// <param") and leans_on_history(rel(f), line):
             hist.append(f"{rel(f)}:{n}")
 R["history_or_name_comments"] = {"count": len(hist), "sample": hist[:15]}
+# #endregion history-rule
 
 # Files within ten lines of the 300-line cap: the next edit forces a split, so plan it.
 near = []

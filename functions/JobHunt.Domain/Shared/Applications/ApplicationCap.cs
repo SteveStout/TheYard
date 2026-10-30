@@ -4,8 +4,8 @@ using System.Text.RegularExpressions;
 namespace JobHunt.Domain.Shared.Applications;
 
 /// <summary>
-/// RULE 50 as code (systemRules.md in the job-hunt folder, Steve 2026-10-22): no more than three
-/// applications to one company in any rolling 60 days, and no application at all to a company on the
+/// Rule 50 of the job hunt's systemRules.md as code: no more than three applications to one company in any
+/// rolling 60 days, and no application at all to a company on the
 /// do-not-apply list before its date. One check, read by the card today and by the leads filter next,
 /// so the number lives in one place (the devil's review of the executable-process plan: build one cap
 /// check, not two). Company names match case-insensitively with their known variants, and a name that

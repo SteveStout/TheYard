@@ -3,8 +3,9 @@ using System.Text.RegularExpressions;
 namespace JobHunt.Domain.Features.Campaign;
 
 /// <summary>
-/// No cold email over a thread that is already alive (the review, F16; Steve's 9/2 rule that the reply thread
-/// comes before any draft). Any tracker row for the company (Rule 50's name match) in the last 30 days whose
+/// No cold email over a thread that is already alive, because a live thread is a conversation and a cold
+/// email arriving beside it reads as though nobody was listening; answering comes before writing anything
+/// new. Any tracker row for the company (Rule 50's name match) in the last 30 days whose
 /// Communication is not an application channel holds the lead: a LinkedIn message, an email with a person, a
 /// call. Over-holding by design. Two kinds of row do not hold, because they are the application itself and not a
 /// person: an application row (TrackerRows.IsApplication, or an ATS named in Communication) and the ATS sweep's RECEIPT

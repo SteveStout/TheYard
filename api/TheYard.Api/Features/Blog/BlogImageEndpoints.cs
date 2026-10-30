@@ -1,5 +1,5 @@
 // The blog's pictures from the site's own address (ADR-113, the addendum on where the pictures live; the
-// 9/19 rule that every asset is served from the site's own domain): GET /blog/images/{name}, a year's cache
+// standing rule that every asset is served from the site's own domain): GET /blog/images/{name}, a year's cache
 // because a name is its bytes' hash, and the host's own memory in front of the container so a post's slides
 // cost one blob read a roll, not one a view.
 using TheYard.Application.Features.Blog;

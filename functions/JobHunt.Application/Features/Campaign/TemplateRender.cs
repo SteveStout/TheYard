@@ -11,8 +11,10 @@ public sealed record CampaignTemplate(string Id, string Version, string Text)
     public static IReadOnlyList<CampaignTemplate> All { get; } = Load();
 
     /// <summary>
-    /// The version the send renders. Templates are code and change only with Steve's yes (10/24 12:22): v2
-    /// comes in as its own files and this one constant, the morning after he says yes.
+    /// The version the send renders. Templates are code, not configuration, and change only on an approval,
+    /// which is why a new one arrives as its own files beside the old ones and this single constant moves to
+    /// it: the text that went out can still be read back at the version that sent it, and nothing already
+    /// sent is rewritten by the change.
     /// </summary>
     public const string Current = "v1";
 
@@ -46,8 +48,9 @@ public sealed record RenderedEmail(string? Subject, string? Text, string? Html, 
 /// <summary>
 /// The template and the lead's row to a message (the review, F12). Code fills every variable from the row and
 /// adds nothing. The plain body drops the Markdown marks and leaves the links bare; the HTML body is Gmail's
-/// own shape (Steve's 10/21 rule: a div a line, no p or pre, so no indent breaks), Links in bold (his 10/15
-/// rule) and the five links a list of anchors named for what they open, each carrying its ?r= code. A required
+/// own shape, a div a line with no p and no pre, because Gmail adds its own indentation to those two and the
+/// message arrives broken; Links in bold, so the one part a reader is meant to act on is the part they see
+/// first; and the five links a list of anchors named for what they open, each carrying its ?r= code. A required
 /// blank renders nothing and names the blank.
 /// </summary>
 public static class TemplateRender
@@ -61,7 +64,11 @@ public static class TemplateRender
     /// </summary>
     public static readonly IReadOnlySet<string> MailboxOptional = new HashSet<string>(Optional, StringComparer.Ordinal) { "FirstName" };
 
-    /// <summary>The blanks a lead may have: FirstName only when its contact title declares a company mailbox (ADR-118, 1.0.4.106).</summary>
+    /// <summary>
+    /// The blanks a lead may have: FirstName only when its contact title declares a company mailbox, because
+    /// a shared mailbox has no person to greet and a greeting invented for one would be the only false line
+    /// in the message (ADR-118).
+    /// </summary>
     public static IReadOnlySet<string> OptionalFor(LeadRecord lead) =>
         LeadSpool.IsCompanyMailbox(lead.ContactTitle) ? MailboxOptional : Optional;
 

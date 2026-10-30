@@ -7,7 +7,9 @@ namespace JobHunt.Infrastructure.Features.Card;
 /// <summary>
 /// The next seven days of Steve's calendar as the card needs them (the automation plan's fifth
 /// increment): each event that reads as an interview or a call, with how he joins it. A call with no
-/// join link and no number is the major failure he named on 2026-09-30, so its line starts with STOP.
+/// join link and no number is the one failure this card treats as major, so its line starts with STOP:
+/// a booked call is the only item here that cannot be recovered later, because the hour passes whether
+/// or not anybody found the way in.
 /// Read-only: the calendar is read with the calendar.readonly scope and nothing is written to it.
 /// </summary>
 public static partial class CalendarWeek

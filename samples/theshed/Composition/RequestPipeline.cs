@@ -51,8 +51,8 @@ public static class RequestPipeline
         app.UseRateLimiter();
         // What this site leaves out of TheYard's pipeline, and why. No visitor address from the
         // forwarded headers: nothing here counts visitors, sets a cookie or builds a link from a
-        // host. No compression: the page is about 4.5 KB and its script about 1 KB, measured at
-        // the domain on 7 October, so there is little to save and the core is shared. No cache
+        // host. No compression: the page is about 4.5 KB and its script about 1 KB as served, so
+        // there is little to save and the CPU doing the saving is shared. No cache
         // rules: the files keep plain names (css/, js/), so a long cache would serve a stale file
         // after a deploy; the static files middleware's own ETag and Last-Modified let a browser
         // ask cheaply instead. No short-circuited probes: there is no user, session or store

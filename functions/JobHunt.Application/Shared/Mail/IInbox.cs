@@ -27,7 +27,12 @@ public interface IInboxReader
     /// <summary>The From address of every message in a thread.</summary>
     Task<IReadOnlyList<string>> ThreadSendersAsync(string threadId, CancellationToken ct);
 
-    /// <summary>True when a draft sits in the thread, which is a reply already waiting for Steve's word; an inbox that cannot tell says no.</summary>
+    /// <summary>
+    /// True when a draft sits in the thread, which means a reply is already written and waiting to be
+    /// approved, so nothing here should offer to write a second one. An inbox that cannot tell says no,
+    /// because the cost of asking twice is one duplicate draft and the cost of staying silent is a person
+    /// left waiting.
+    /// </summary>
     Task<bool> ThreadHasDraftAsync(string threadId, CancellationToken ct) => Task.FromResult(false);
 
     /// <summary>

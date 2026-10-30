@@ -33,8 +33,10 @@ public static class CampaignReport
     public const string SentLog = "campaign/sent.log";
 
     /// <summary>
-    /// Each real send of a pass as systemRules.md Rule 46 has every send reported (Steve 2026-10-02 12:33): a
-    /// three-line block, the markers on lines of their own, SENT, TO and SUBJECT in bold.
+    /// Each real send of a pass as Rule 46 in the job hunt's systemRules.md asks for it: a three-line block,
+    /// the markers on lines of their own, SENT, TO and SUBJECT in bold. The shape is the point. A pass that
+    /// sent is read later by a person scanning a log for who it wrote to, and a block whose boundaries are on
+    /// their own lines can be found and counted by eye without the log being parsed.
     /// </summary>
     /// <param name="result">The pass, in on.</param>
     public static string Sent(CampaignPassResult result) => string.Concat(result.Emails.Select(e =>

@@ -91,9 +91,10 @@ public interface IEmailLog
 }
 
 /// <summary>
-/// Where an address comes from when no public source published one. Steve, 10/24 12:58: no third-party finder,
-/// so the one adapter is NoFinder, which answers nothing; the port is here so the decision is one adapter to
-/// reverse later, with the shadow week's numbers in hand.
+/// Where an address comes from when no public source published one. No third-party finder is used, so the one
+/// adapter is NoFinder, which answers nothing. The port exists anyway, and that is the decision worth reading:
+/// a finder is a question to settle on the shadow week's own numbers rather than on a guess, and keeping the
+/// seam means settling it costs one adapter instead of a change to every caller.
 /// </summary>
 public interface IAddressFinder
 {

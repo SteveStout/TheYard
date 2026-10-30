@@ -6,8 +6,9 @@ namespace JobHunt.Functions;
 // #region summary
 /// <summary>
 /// Merges whatever the lanes left in the spool folders into the tracker, row fragments and text appends alike, and
-/// logs each pass to tracker-inbox/merge.log. It runs only while its switch is on, so the laptop's merger could
-/// hand over at a chosen minute and take back the same way; the laptop's was unregistered on 23 Oct.
+/// logs each pass to tracker-inbox/merge.log. It runs only while its switch is on, which is how it and the
+/// laptop's merger hand the job over at a chosen minute and take it back the same way: two mergers writing
+/// the same tracker would append every fragment twice, so exactly one of them is on at any minute.
 /// </summary>
 // #endregion summary
 /// <remarks>

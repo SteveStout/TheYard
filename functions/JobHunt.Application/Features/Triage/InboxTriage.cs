@@ -3,8 +3,9 @@ namespace JobHunt.Application.Features.Triage;
 
 /// <summary>
 /// What the inbox pass's code leaves for the model: whatever is still in the inbox that no triage run has
-/// judged, however old. Until 2026-10-23 the window was the last two days, so an alert older than that (the
-/// Ladders alert of 10/19) was never judged by any run; the floor is now the inbox itself. The triage run (nightly.yml, mode triage, nightly/TRIAGE-LANE.md on the share) judges each
+/// judged, however old. The floor is the inbox itself and deliberately not a window of days: a window leaves
+/// anything older than it unjudged for good, because nothing ever widens to reach back, so a single alert that
+/// arrived while the pass was off would sit in the inbox unread by any run. The triage run (nightly.yml, mode triage, nightly/TRIAGE-LANE.md on the share) judges each
 /// one, acts on the alerts and rejections, leaves the rest, and writes one line a message to triage/seen.tsv,
 /// the Gmail id first. So the model is started only when there is mail it has not seen, and a message it left
 /// for Steve is never judged twice. Reading only: nothing here archives, labels or writes to the inbox.

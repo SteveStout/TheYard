@@ -77,7 +77,11 @@ public static partial class LeadSpool
     /// <summary>The contact title the lead run writes for a company's own published address, the one lead that may have no first name.</summary>
     public const string CompanyMailbox = "Company mailbox";
 
-    /// <summary>Whether the contact title declares a company mailbox; a missing name never makes one (ADR-118, 1.0.4.106).</summary>
+    /// <summary>
+    /// Whether the contact title declares a company mailbox. It is read from the title and never inferred
+    /// from a missing first name, because a lead whose name simply failed to be read would otherwise be
+    /// treated as a shared mailbox and lose its greeting (ADR-118).
+    /// </summary>
     public static bool IsCompanyMailbox(string? contactTitle) =>
         string.Equals(contactTitle?.Trim(), CompanyMailbox, StringComparison.OrdinalIgnoreCase);
 

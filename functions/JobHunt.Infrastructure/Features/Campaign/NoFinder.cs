@@ -1,7 +1,7 @@
 namespace JobHunt.Infrastructure.Features.Campaign;
 
 /// <summary>
-/// The only address finder (Steve, 10/24 12:58: "I'm not sure about the 3rd party for email"): it asks no one,
+/// The only address finder, and it is a refusal rather than a stub: it asks no one,
 /// spends nothing and answers nothing, so an address comes only from a public source the lead run recorded
 /// with its URL. No account, no key, no setting.
 /// </summary>

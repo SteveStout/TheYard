@@ -4,10 +4,11 @@ namespace JobHunt.Infrastructure.Features.Merge;
 
 /// <summary>
 /// The folders this process has made sure of on the share, each remembered for an hour. The merger runs
-/// every minute and makes sure of every folder it writes to, one create per path part; on a share that bills
-/// each create, that was about 2,200 creates an hour that answered "already exists" (stjobhuntss, 24 Oct,
-/// the cost lane). A folder made sure of is taken as there until the hour is up, so a folder moved away by
-/// hand is made again within the hour and a write into it fails at most until then.
+/// every minute and makes sure of every folder it writes to, one create per path part, and the share bills
+/// each of those creates: unremembered, that is a couple of thousand billed calls an hour whose whole answer
+/// is "already exists". A folder made sure of is taken as there until the hour is up, which is the trade this
+/// class exists to make: a folder moved away by hand is made again within the hour, and a write into it
+/// fails until then rather than for good.
 /// </summary>
 public sealed class EnsuredFolders(TimeProvider clock)
 {

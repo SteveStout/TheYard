@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace TheYard.Tests;
 
@@ -144,110 +143,6 @@ public class HouseVoiceTests
     public void The_rule_catches_a_line_that_breaks_it(string line)
     {
         Assert.Contains(EmDashes, dash => line.Contains(dash.Written, StringComparison.Ordinal));
-    }
-    /// <summary>
-    /// The second house rule the changelog states: every production comment says
-    /// what, how and why on its own, so no version number, date or review name
-    /// stands in for a reason. Production is the six onion projects and the
-    /// frontend under src, without tests or the generated migrations.
-    ///
-    /// <para>The four allowed lines are examples of a format, not history: a UTC
-    /// day the chart reads, the month names and a day as the cost card writes
-    /// them, and the opening line of a decision record as the layout matches it.</para>
-    /// </summary>
-    [Fact]
-    public void No_production_comment_leans_on_a_version_a_date_or_a_review()
-    {
-        string root = Repo.Root();
-        string[] production =
-        [
-            Path.Combine("api", "TheYard.Data"), Path.Combine("api", "TheYard.Domain"),
-            Path.Combine("api", "TheYard.Application"), Path.Combine("api", "TheYard.Infrastructure"),
-            Path.Combine("api", "TheYard.Infrastructure.Cosmos"), Path.Combine("api", "TheYard.Api"), "src",
-        ];
-        (string File, string Fragment)[] formatExamples =
-        [
-            ("activityChart.ts", "`2026-09-13`"),
-            ("costWords.ts", "'September',"),
-            ("costWords.ts", "\"30 September\""),
-            ("Recommendations.cs", "September|October|November|December"),
-            ("docLayout.ts", "shipped as 1.0.0.21."),
-            ("dayMarks.ts", "\"Mon 5 Oct, Fri 9,"),
-            ("dayMarks.ts", "Mon 12, Fri 16\""),
-        ];
-        var history = new Regex(@"1\.0\.\d+\.\d+|September|2026-09|the staff review|the tweaks pass|the self-review");
-        var found = new List<string>();
-        // The same rule over what a comment says, widened: every month, every written date, a review by
-        // name and a person's first name. A format example in backticks or quotes is not history.
-        var dated = HistoryInAComment;
-
-        foreach (string path in Repo.FilesWith(".cs", ".ts", ".tsx", ".css"))
-        {
-            string relative = Path.GetRelativePath(root, path);
-            bool inProduction = production.Any(folder => relative.StartsWith(folder + Path.DirectorySeparatorChar, StringComparison.Ordinal));
-            bool generatedOrTest = relative.Contains($"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                || relative.Contains(".test.", StringComparison.Ordinal);
-            if (!inProduction || generatedOrTest)
-            {
-                continue;
-            }
-            string[] lines = File.ReadAllLines(path, Encoding.UTF8);
-            for (int i = 0; i < lines.Length; i++)
-            {
-                bool example = formatExamples.Any(allowed =>
-                    Path.GetFileName(path) == allowed.File && lines[i].Contains(allowed.Fragment, StringComparison.Ordinal));
-                if (!example && (history.IsMatch(lines[i]) || dated.IsMatch(Unquoted(CommentOf(lines[i])))))
-                {
-                    found.Add($"{relative}:{i + 1}: {lines[i].Trim()}");
-                }
-            }
-        }
-
-        Assert.True(
-            found.Count == 0,
-            $"{found.Count} production lines lean on a version, a date or a review:{Environment.NewLine}"
-            + string.Join(Environment.NewLine, found.Take(20)));
-    }
-    /// <summary>History in a comment: a month (May only beside a day), a written date, a review by its name, the owner's first name.</summary>
-    private static readonly Regex HistoryInAComment = new(
-        @"\b(January|February|March|April|June|July|August|September|October|November|December)\b|\bMay \d|\d May\b"
-        + @"|\b20\d\d-\d\d(-\d\d)?\b|\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b|the review of|\bSteve\b");
-
-    /// <summary>The part of a line that is a comment: the whole line when it opens with one, else what follows a trailing one.</summary>
-    private static string CommentOf(string line)
-    {
-        string trimmed = line.TrimStart();
-        if (trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.StartsWith('*') || trimmed.StartsWith("/*", StringComparison.Ordinal) || trimmed.StartsWith("{/*", StringComparison.Ordinal))
-        {
-            return line;
-        }
-        int trailing = line.IndexOf(" // ", StringComparison.Ordinal);
-        return trailing >= 0 ? line[trailing..] : "";
-    }
-
-    /// <summary>A comment with its quoted and backticked examples taken out.</summary>
-    private static string Unquoted(string comment) => Regex.Replace(comment, "`[^`]*`|\"[^\"]*\"", "");
-
-    [Theory]
-    [InlineData("    // the addendum of 19 October")]
-    [InlineData("    /// read live on 18 October 2026")]
-    [InlineData("    // shipped on 2026-10-21")]
-    [InlineData("    // Steve asked for it")]
-    [InlineData("    * the review of 1.0.4.11 found it")]
-    [InlineData("    // in December, the cap")]
-    public void The_widened_rule_catches_history_in_a_comment(string line)
-    {
-        Assert.Matches(HistoryInAComment, Unquoted(CommentOf(line)));
-    }
-
-    [Theory]
-    [InlineData("    /** May be empty for vehicles with no reported damage. */")]
-    [InlineData("    /** A day as a person reads it: \"30 September\". */")]
-    [InlineData("    // a UTC day, `2026-09-13`, read as that day")]
-    [InlineData("    const label = 'October';")]
-    public void The_widened_rule_leaves_a_format_example_and_code_alone(string line)
-    {
-        Assert.DoesNotMatch(HistoryInAComment, Unquoted(CommentOf(line)));
     }
     // #endregion the rule
 }

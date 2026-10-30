@@ -75,8 +75,9 @@ public sealed class TextAppendMerge(MergeContext context, ISet<string> said)
         foreach (MergeEntry file in recent)
         {
             // A fragment filed as already present under a name merged/ already held was renamed -dupHHMMSS on the
-            // way in; its stamp is the original name's, so that stamp counts too. Without this the -dup name read
-            // as vanished and was appended again (the laptop merger did that 332 times on 2026-10-22).
+            // way in; its stamp is the original name's, so that stamp counts too. Without this the -dup name reads
+            // as vanished and is appended again, and because the re-queue runs every pass that is a loop rather
+            // than a single mistake: the same block lands in the target over and over until somebody notices.
             if (text.Contains(Aid(file.Name), StringComparison.Ordinal) || text.Contains(Aid(Undup(file.Name)), StringComparison.Ordinal)) { continue; }
             await LogAsync($"REVERTED: AID:{Path.GetFileNameWithoutExtension(file.Name)} is gone from {target}; re-queued", ct);
             await context.Store.MoveAsync(MergePaths.In(merged, file.Name), MergePaths.In(folder, file.Name), ct);
