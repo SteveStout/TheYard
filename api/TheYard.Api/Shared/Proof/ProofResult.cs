@@ -78,11 +78,14 @@ public sealed record ProofResult(
     public string DifferenceOrder => Stores.Count < 2 ? "" : $"{Stores[1].Name} minus {Stores[0].Name}";
 
     /// <summary>A run that could not finish: the reason doubles as the sentence, and every store is named with no round trip.</summary>
-    public static ProofResult Failed(string reason, Backends backends) => new(
+    /// <param name="reason">What stopped the run, in words the card can show.</param>
+    /// <param name="backends">The stores this container runs, named with no round trip measured.</param>
+    /// <param name="at">The moment the run failed, read from the runner's own clock rather than here.</param>
+    public static ProofResult Failed(string reason, Backends backends, DateTimeOffset at) => new(
         "failed",
         reason,
         null,
-        DateTimeOffset.UtcNow,
+        at,
         0,
         backends.All.Select(backend => new ProofStore(backend.Key, backend.Name, null)).ToArray(),
         [],
@@ -104,7 +107,11 @@ public sealed record ProofResult(
     /// store minus first), the same with each side's round trips taken off,
     /// and the row's verdict; then the sentence over all the rows.
     /// </summary>
-    public static ProofResult Of(DateTimeOffset started, int rounds, IReadOnlyList<ProofRunner.StoreRun> stores)
+    /// <param name="started">The moment the run began, read from the runner's clock.</param>
+    /// <param name="finished">The moment it ended, read from the same clock rather than here.</param>
+    /// <param name="rounds">How many paired rounds it took.</param>
+    /// <param name="stores">Each store's side of the run, with every sample it took.</param>
+    public static ProofResult Of(DateTimeOffset started, DateTimeOffset finished, int rounds, IReadOnlyList<ProofRunner.StoreRun> stores)
     {
         var first = stores[0];
         var second = stores[1];
@@ -127,7 +134,7 @@ public sealed record ProofResult(
             "done",
             null,
             started,
-            DateTimeOffset.UtcNow,
+            finished,
             rounds,
             stores.Select(store => new ProofStore(store.Backend.Key, store.Backend.Name, store.HopMs)).ToArray(),
             rows,

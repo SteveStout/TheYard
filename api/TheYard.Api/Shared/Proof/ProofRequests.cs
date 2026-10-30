@@ -10,7 +10,8 @@ namespace TheYard.Api.Shared.Proof;
 /// <summary>How the proof measures one step: the request with the clock and the two rings around it, and the readers of each answer.</summary>
 /// <param name="sqlLog">The relational store's statement ring, read for what a request caused.</param>
 /// <param name="storeLog">The document store's operation ring, read for what a request caused and charged.</param>
-public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog)
+/// <param name="clock">The clock the measurement is stamped by, handed in so a test can move it.</param>
+public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog, TimeProvider clock)
 {
     // #region timed
     /// <summary>
@@ -38,7 +39,7 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
             request.Content = JsonContent.Create(body);
         }
 
-        var at = DateTimeOffset.UtcNow;
+        var at = clock.GetUtcNow();
         long start = Stopwatch.GetTimestamp();
         var response = await client.SendAsync(request, cancellation);
         // The body is part of what a visitor waits for.
@@ -70,17 +71,20 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
         return null;
     }
 
-    /// <summary>A live vehicle with ten minutes left and room under buy-now for a bid and a raise.</summary>
+    /// <summary>
+    /// A live vehicle with ten minutes left and room under buy-now for a bid and a raise. Reads the
+    /// ten minutes off the handed clock, because what counts as live is a question about now.
+    /// </summary>
     /// <param name="listing">The listing page's answer.</param>
     /// <param name="cancellation">The host's stopping token, lent by the run.</param>
-    public static async Task<string?> ChooseVehicleAsync(HttpResponseMessage listing, CancellationToken cancellation)
+    public async Task<string?> ChooseVehicleAsync(HttpResponseMessage listing, CancellationToken cancellation)
     {
         if (!listing.IsSuccessStatusCode)
         {
             return null;
         }
         var body = await listing.Content.ReadFromJsonAsync<JsonElement>(cancellation);
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long now = clock.GetUtcNow().ToUnixTimeMilliseconds();
         foreach (var vehicle in body.GetProperty("vehicles").EnumerateArray())
         {
             long endsAt = vehicle.GetProperty("auction_ends_at").GetInt64();

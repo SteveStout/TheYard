@@ -251,12 +251,24 @@ worth distinguishing out loud: grouping parameters that belong together removes 
 grouping parameters that have nothing to do with each other only hides it, which leaves a class
 with the same several reasons to change and a tidier signature.
 
+**A third way: hand over the collaborator, not its parts.** The performance proof's runner was
+handed two ring buffers so it could build the type that measures one request out of them. Building
+its own collaborator cost it two parameters and cost every test the chance to hand it another one,
+so the collaborator arrives by constructor now and the two rings go to the type whose job they
+are. That is not a parameter object: nothing was grouped, a class stopped doing a job that was
+already somebody else's. The same move made room for a clock in all three classes this rung split,
+each of which keeps an answer for a window and so has to be able to be told what time it is:
+
+```live path=api/TheYard.Api/Shared/Observability/Telemetry.cs region=read
+```
+
 **Two things to know before splitting one.** The compiler catches every `new X(...)` whose arity
 changed, so the only break it cannot see is a type the service container activates by name: a part
 split off a class and registered nowhere fails when something first asks for it, which on this
 project meant a red gate on a store boot the shipping machine cannot run. And a class at exactly
 five is one parameter from the line, so the clock or the token the next rung wants to hand it is
-the parameter that makes it wide; the two rungs are worked in that order for that reason.
+the parameter that makes it wide; the two rungs are worked in that order for that reason, and the
+four classes that sat at five with a clock they could not be handed are where that order paid.
 
 ## The build holds the rings
 

@@ -2,7 +2,9 @@
 // for each app on it, and once an hour the plan's size, its apps' states and its Activity Log.
 // Its own file because asking Azure (the token, the paths, the shapes it answers in) is a
 // different job from keeping the answer, which is PlanRecorder.cs, and shaping it for the card,
-// which is PlanReport.cs.
+// which is PlanReport.cs. Two parts of the asking live beside it: PlanLayout.cs, which finds the
+// plan and the apps on it and keeps that for an hour, and PlanArm.cs, the one door to Azure
+// Resource Manager both of them read through.
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -15,9 +17,13 @@ namespace TheYard.Api.Shared.PlanReadings;
 /// each app (ADR: The App Service plan, read every minute). No key anywhere. The plan's id is not
 /// configured: it is read off this site, so the reader follows the site if it ever moves plans.
 /// </summary>
-public sealed class PlanReader(string clientId, string selfResourceId, bool configured, HostIdentity? identity = null, MachineSize? machine = null)
+/// <param name="clientId">The user-assigned identity the token is asked for.</param>
+/// <param name="layout">Which plan this site is on and which apps share it, kept for an hour.</param>
+/// <param name="configured">True only where there is an identity to ask with.</param>
+/// <param name="identity">Where this process runs, which decides the door the token is asked at.</param>
+/// <param name="machine">The cores and memory this container was given, reported beside the plan's size.</param>
+public sealed class PlanReader(string clientId, PlanLayout layout, bool configured, HostIdentity? identity = null, MachineSize? machine = null)
 {
-    private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(20));
 
     /// <summary>The plan's metrics, with the aggregation each is read with.</summary>
     public static readonly (string Name, string Aggregation)[] PlanMetrics =
@@ -40,13 +46,10 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     public static readonly (string Name, string Aggregation) FileSystem = ("FileSystemUsage", "average");
 
     /// <summary>True only on Azure, where there is an identity to ask with and a site to start from.</summary>
-    public bool Configured => configured && !string.IsNullOrWhiteSpace(selfResourceId);
+    public bool Configured => configured && layout.SiteKnown;
 
     /// <summary>The plan's resource name once it has been read off this site; null before the first read.</summary>
-    public string? PlanName => _layout is { } known ? NameOf(known.PlanId) : null;
-
-    /// <summary>The plan's id and the ids of every app on it, read off this site and the plan, cached for an hour.</summary>
-    private (DateTimeOffset At, string PlanId, IReadOnlyList<string> Apps)? _layout;
+    public string? PlanName => layout.PlanName;
 
     /// <summary>
     /// The minutes Azure Monitor has for the plan and its apps from <paramref name="from"/> to
@@ -54,8 +57,8 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// </summary>
     public async Task<IReadOnlyList<PlanMinute>> ReadMinutesAsync(DateTimeOffset from, DateTimeOffset to, string version, CancellationToken cancellation)
     {
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
-        var (planId, apps) = await LayoutAsync(token, cancellation);
+        string token = await IdentityTokens.AcquireAsync(PlanArm.Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
+        var (planId, apps) = await layout.OfAsync(token, cancellation);
         var plan = await MetricsAsync(token, planId, PlanMetrics, from, to, cancellation);
         var perApp = new List<(string Name, Dictionary<string, Dictionary<DateTimeOffset, double>> Series)>();
         var storage = new Dictionary<string, double?>(StringComparer.Ordinal);
@@ -91,16 +94,16 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     /// <summary>The hour's slower read: the plan's size, each app's state and configuration, and the Activity Log since <paramref name="since"/>.</summary>
     public async Task<PlanHour> ReadHourAsync(DateTimeOffset hour, DateTimeOffset since, CancellationToken cancellation)
     {
-        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
-        var (planId, apps) = await LayoutAsync(token, cancellation, fresh: true);
-        using var plan = await GetAsync(token, planId + "?api-version=2023-12-01", cancellation);
+        string token = await IdentityTokens.AcquireAsync(PlanArm.Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
+        var (planId, apps) = await layout.OfAsync(token, cancellation, fresh: true);
+        using var plan = await PlanArm.GetAsync(token, planId + "?api-version=2023-12-01", cancellation);
         var sku = plan.RootElement.TryGetProperty("sku", out var s) && s.ValueKind == JsonValueKind.Object ? s : default;
         string? skuName = sku.ValueKind == JsonValueKind.Object && sku.TryGetProperty("name", out var n) ? n.GetString() : null;
         int? instances = sku.ValueKind == JsonValueKind.Object && sku.TryGetProperty("capacity", out var c) && c.TryGetInt32(out int count) ? count : null;
         var states = new List<PlanAppState>();
         foreach (string app in apps)
         {
-            using var site = await GetAsync(token, app + "?api-version=2023-12-01", cancellation);
+            using var site = await PlanArm.GetAsync(token, app + "?api-version=2023-12-01", cancellation);
             var props = site.RootElement.GetProperty("properties");
             bool? alwaysOn = props.TryGetProperty("siteConfig", out var config) && config.TryGetProperty("alwaysOn", out var on) && on.ValueKind is JsonValueKind.True or JsonValueKind.False ? on.GetBoolean() : null;
             DateTimeOffset? modified = props.TryGetProperty("lastModifiedTimeUtc", out var lm) && DateTimeOffset.TryParse(lm.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at : null;
@@ -135,24 +138,6 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     }
     // #endregion plan-reader
 
-    /// <summary>This site's plan and the apps on it, read once an hour or when asked fresh.</summary>
-    private async Task<(string PlanId, IReadOnlyList<string> Apps)> LayoutAsync(string token, CancellationToken cancellation, bool fresh = false)
-    {
-        if (!fresh && _layout is { } known && DateTimeOffset.UtcNow - known.At < TimeSpan.FromHours(1))
-        {
-            return (known.PlanId, known.Apps);
-        }
-        using var site = await GetAsync(token, selfResourceId + "?api-version=2023-12-01", cancellation);
-        string planId = site.RootElement.GetProperty("properties").GetProperty("serverFarmId").GetString()!;
-        using var listed = await GetAsync(token, planId + "/sites?api-version=2023-12-01", cancellation);
-        var apps = listed.RootElement.GetProperty("value").EnumerateArray()
-            .Select(app => app.GetProperty("id").GetString()!)
-            .Order(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        _layout = (DateTimeOffset.UtcNow, planId, apps);
-        return (planId, apps);
-    }
-
     /// <summary>One resource's metrics at a minute's grain, as metric name to minute to value.</summary>
     private static async Task<Dictionary<string, Dictionary<DateTimeOffset, double>>> MetricsAsync(
         string token, string resourceId, (string Name, string Aggregation)[] metrics, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellation)
@@ -160,7 +145,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
         string names = string.Join(',', metrics.Select(metric => metric.Name));
         string aggregations = string.Join(',', metrics.Select(metric => metric.Aggregation).Distinct());
         string span = $"{from.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}/{to.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}";
-        using var answer = await GetAsync(token, $"{resourceId}/providers/microsoft.insights/metrics?api-version=2023-10-01&metricnames={names}&interval=PT1M&timespan={span}&aggregation={aggregations}", cancellation);
+        using var answer = await PlanArm.GetAsync(token, $"{resourceId}/providers/microsoft.insights/metrics?api-version=2023-10-01&metricnames={names}&interval=PT1M&timespan={span}&aggregation={aggregations}", cancellation);
         return PlanShapes.Series(answer.RootElement, metrics);
     }
 
@@ -170,7 +155,7 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
         string span = $"{to.AddHours(-12).UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}/{to.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}";
         try
         {
-            using var answer = await GetAsync(token, $"{app}/providers/microsoft.insights/metrics?api-version=2023-10-01&metricnames={FileSystem.Name}&interval=PT6H&timespan={span}&aggregation={FileSystem.Aggregation}", cancellation);
+            using var answer = await PlanArm.GetAsync(token, $"{app}/providers/microsoft.insights/metrics?api-version=2023-10-01&metricnames={FileSystem.Name}&interval=PT6H&timespan={span}&aggregation={FileSystem.Aggregation}", cancellation);
             return PlanShapes.Series(answer.RootElement, [FileSystem]).TryGetValue(FileSystem.Name, out var points) && points.Count > 0
                 ? points.MaxBy(pair => pair.Key).Value
                 : null;
@@ -187,17 +172,8 @@ public sealed class PlanReader(string clientId, string selfResourceId, bool conf
     {
         string subscription = resourceId.Split('/', StringSplitOptions.RemoveEmptyEntries)[1];
         string filter = Uri.EscapeDataString($"eventTimestamp ge '{from.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}' and eventTimestamp le '{to.UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}' and resourceUri eq '{resourceId}'");
-        using var answer = await GetAsync(token, $"/subscriptions/{subscription}/providers/Microsoft.Insights/eventtypes/management/values?api-version=2015-04-01&$filter={filter}", cancellation);
+        using var answer = await PlanArm.GetAsync(token, $"/subscriptions/{subscription}/providers/Microsoft.Insights/eventtypes/management/values?api-version=2015-04-01&$filter={filter}", cancellation);
         return PlanShapes.Events(answer.RootElement, NameOf(resourceId));
-    }
-
-    private static async Task<JsonDocument> GetAsync(string token, string pathAndQuery, CancellationToken cancellation)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://management.azure.com" + pathAndQuery);
-        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        using var response = await Http.SendAsync(request, cancellation);
-        response.EnsureSuccessStatusCode();
-        return JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
     }
 
     private static double? Value(Dictionary<string, Dictionary<DateTimeOffset, double>> series, string metric, DateTimeOffset at) =>

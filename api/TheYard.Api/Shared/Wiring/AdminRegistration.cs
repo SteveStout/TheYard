@@ -58,12 +58,16 @@ public static class AdminRegistration
         builder.Services.AddHostedService(services => services.GetRequiredService<HourlyReadings>());
         // The performance proof (ADR: Same performance, proven), built on first use so a test's own
         // ProofClients registration is the one it gets.
+        builder.Services.AddSingleton(services => new ProofRequests(
+            services.GetRequiredService<SqlRingBuffer>(),
+            services.GetRequiredService<StoreRingBuffer>(),
+            TimeProvider.System));
         builder.Services.AddSingleton(services => new ProofRunner(
             services.GetRequiredService<Backends>(),
             services.GetRequiredService<ProofClients>(),
-            services.GetRequiredService<SqlRingBuffer>(),
-            services.GetRequiredService<StoreRingBuffer>(),
-            services.GetRequiredService<IHostApplicationLifetime>()));
+            services.GetRequiredService<ProofRequests>(),
+            services.GetRequiredService<IHostApplicationLifetime>(),
+            TimeProvider.System));
         // The sweep over every address this container serves (ADR: Every page, checked at every roll):
         // it dials the loopback once the server is listening, and is started at the roll further down.
         builder.Services.AddSingleton(services => new PageStatusRunner(

@@ -353,7 +353,7 @@ public sealed class CloudReadersTests
     {
         var cloud = new RecordedCloud();
         using var route = OutboundHttp.RouteTo(cloud);
-        var reader = new PlanReader("client-1", RecordedCloud.Site, configured: true);
+        var reader = new PlanReader("client-1", new PlanLayout(RecordedCloud.Site, TimeProvider.System), configured: true);
         var now = DateTimeOffset.UtcNow;
 
         var minutes = await reader.ReadMinutesAsync(now.AddMinutes(-5), now, "1.0.3.177", CancellationToken.None);
@@ -369,7 +369,7 @@ public sealed class CloudReadersTests
     public async Task The_plan_reader_reads_the_hour_the_size_the_apps_and_what_Azure_did()
     {
         using var route = OutboundHttp.RouteTo(new RecordedCloud());
-        var reader = new PlanReader("client-1", RecordedCloud.Site, configured: true, machine: new MachineSize(2, 3.5));
+        var reader = new PlanReader("client-1", new PlanLayout(RecordedCloud.Site, TimeProvider.System), configured: true, machine: new MachineSize(2, 3.5));
         var hour = new DateTimeOffset(2026, 10, 18, 20, 0, 0, TimeSpan.Zero);
 
         var read = await reader.ReadHourAsync(hour, hour.AddHours(-1), CancellationToken.None);
@@ -395,7 +395,7 @@ public sealed class CloudReadersTests
     {
         using var route = OutboundHttp.RouteTo(new RecordedCloud());
         var history = new MemoryPlanHistory("no document store in the test");
-        var recorder = new PlanRecorder(new PlanReader("client-1", RecordedCloud.Site, configured: true), history, Build, TimeProvider.System, NullLogger<PlanRecorder>.Instance);
+        var recorder = new PlanRecorder(new PlanReader("client-1", new PlanLayout(RecordedCloud.Site, TimeProvider.System), configured: true), history, Build, TimeProvider.System, NullLogger<PlanRecorder>.Instance);
         var reader = new PlanHistoryReader(history, recorder, _ => Task.FromResult<double?>(11.14), TimeProvider.System);
 
         var report = await reader.ReadAsync("24h", CancellationToken.None);

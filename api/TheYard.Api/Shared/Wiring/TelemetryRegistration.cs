@@ -31,14 +31,15 @@ public static class TelemetryRegistration
         }
         // The component's app id is public (it is not a key) and is what the Admin
         // tab queries with the container's managed identity.
-        var telemetry = new TelemetryReader(
+        var source = new TelemetrySource(
             builder.Configuration["Azure:AppInsightsAppId"] ?? "6ff89351-7fcc-4a41-8238-db65c5903c36",
             AzureIds.ClientId(builder.Configuration),
-            // Wired only where the connection string is: the app id has a default and
-            // is therefore no evidence at all that this build can read anything.
-            enabled: telemetryOn,
             identity: identity);
-        builder.Services.AddSingleton(telemetry);
+        builder.Services.AddSingleton(source);
+        // Wired only where the connection string is: the app id has a default and
+        // is therefore no evidence at all that this build can read anything. The real
+        // clock is handed over here, which is the one place a clock belongs.
+        builder.Services.AddSingleton(new TelemetryReader(source, enabled: telemetryOn, TimeProvider.System));
         #endregion telemetry
     }
 }

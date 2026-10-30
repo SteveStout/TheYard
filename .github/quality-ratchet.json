@@ -5,12 +5,12 @@
  "cross_slice_usings": 0,
  "wide_service_classes": 8,
  "async_without_cancellation": 1,
- "clock_outside_composition": 45,
+ "clock_outside_composition": 35,
  "history_or_name_comments": 17,
  "blocking_waits": 0,
  "files_over_300": 0,
  "files_within_10_of_cap": 6,
  "behavior_types_never_named_in_a_test": 8,
  "test_to_prod_ratio_higher_is_better": 0.78,
- "dotnet_tests_higher_is_better": 2310
+ "dotnet_tests_higher_is_better": 2320
 }

@@ -238,3 +238,44 @@ so a part split off a class and registered nowhere fails when something first as
 this project meant a red gate on a store boot the shipping laptop cannot run (1.0.4.118). So
 `ConstructorWidthTests` resolves every part off the real host, and the rule for this rung is that a
 split and its registration go in the same commit as each other.
+
+## Addendum, 2026-10-29 (1.0.4.121): the three that were waiting, and a third way to narrow
+
+The addendum above named `PlanReader`, `TelemetryReader` and `ProofRunner` as waiting on a split
+before they could be handed a clock. This version splits all three and hands each one its clock in
+the same commit, which is the only order that works: each sat at exactly five parameters, so a
+clock handed to any of them before the split would have made it wide and the rung above would have
+gone backwards to let this one move.
+
+**All three were keeping an answer for a window, which is why all three needed a clock.** The
+plan's layout is good for an hour, the telemetry reading for a minute, and the proof will not start
+a run within a minute of the last one finishing. A window is a question about now, so each of them
+was reading `DateTimeOffset.UtcNow` where the thing it was asking about was time.
+
+**The split in each case put the window on one side and the asking on the other.** `PlanLayout`
+holds which plan this site is on and which apps share it, which is the only part of the plan's
+reading that remembers anything, and `PlanArm` is the one door to Azure Resource Manager both parts
+read through. `TelemetrySource` holds the token, the query and the POST, so what is left in
+`TelemetryReader` is how long an answer is good for. `ProofRunner` keeps the gate, the cooldown and
+the last result.
+
+**A third honest narrowing belongs beside the two above: hand over the collaborator, not its
+parts.** `ProofRunner` took a `SqlRingBuffer` and a `StoreRingBuffer` only to build the
+`ProofRequests` that measures one request out of them. It takes the `ProofRequests` now. That is
+not grouping parameters: a class stopped doing a job that was already another type's, which is the
+same reason as the first way and not the second. It also removed the one thing no test could reach
+past, because a class that builds its own collaborator cannot be handed a different one.
+
+**The tests moved a clock rather than reading a signature.** Each of the four cases sets a clock to
+a moment no real clock will be at, reads inside the window and outside it, and counts what actually
+went out to the service; the proof's own case asserts that the stamp on a finished run is the
+handed clock's moment. The shape they exist to catch was planted and watched fail: a windowed read
+left on `DateTimeOffset.UtcNow` while the stamp beside it used the handed clock. Worth writing
+down, because the first plant was cruder and would not build at all: a constructor parameter that
+is read nowhere is `CS9113`, which this build turns into an error, so a class handed a clock it
+ignores entirely cannot ship here. The shape that can ship is the mixed one, and that is the one
+the tests hold.
+
+`clock_outside_composition` is 35 from 45, lowered in this same commit. `wide_service_classes` is
+unchanged at 8: none of these three was ever on that list, and each is still under the line with
+its clock.

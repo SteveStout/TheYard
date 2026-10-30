@@ -22,10 +22,18 @@ public sealed class Module : IModule
             ?? AzureResources.From(configuration).SitePath(AzureIds.SubscriptionId(configuration));
         string clientId = AzureIds.ClientId(configuration);
         services.AddSingleton(MachineSize.OfThisProcess());
+        // The layout is a part of its own, with the real clock given to it here: it is the one part
+        // of the reading that remembers an answer, and an hour is how long it keeps one.
+        services.AddSingleton(new PlanLayout(self, TimeProvider.System));
         services.AddSingleton(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
-            return new PlanReader(clientId, self, configured: identity.OnAppService, identity: identity, machine: provider.GetRequiredService<MachineSize>());
+            return new PlanReader(
+                clientId,
+                provider.GetRequiredService<PlanLayout>(),
+                configured: identity.OnAppService,
+                identity: identity,
+                machine: provider.GetRequiredService<MachineSize>());
         });
         services.AddSingleton<IPlanHistory>(provider => provider.GetRequiredService<DocumentStore>().Store is { } cosmos
             ? new CosmosPlanHistory(cosmos, TimeProvider.System)

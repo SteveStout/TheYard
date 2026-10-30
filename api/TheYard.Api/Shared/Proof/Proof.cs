@@ -18,14 +18,17 @@ namespace TheYard.Api.Shared.Proof;
 /// <para>It runs in the background and keeps its last result, because eight
 /// rounds of eight requests on two stores is half a minute, and an Admin tab
 /// that hung for half a minute would be measuring the wrong thing. One run
-/// at a time: a second request to start while one is running is told so.</para>
+/// at a time: a second request to start while one is running is told so, and
+/// no sooner than a minute after the last one finished, by the clock it is
+/// handed. How each step is measured is <see cref="ProofRequests"/>, handed in
+/// rather than built here out of the rings it reads.</para>
 /// </summary>
 public sealed partial class ProofRunner(
     Backends backends,
     ProofClients clients,
-    SqlRingBuffer sqlLog,
-    StoreRingBuffer storeLog,
-    IHostApplicationLifetime lifetime)
+    ProofRequests requests,
+    IHostApplicationLifetime lifetime,
+    TimeProvider clock)
 {
     /// <summary>How many paired rounds a run takes when the caller does not say.</summary>
     public const int DefaultRounds = 8;
@@ -54,9 +57,6 @@ public sealed partial class ProofRunner(
     /// from being asked to prove the same thing twice at once.
     /// </summary>
     public static readonly TimeSpan Cooldown = TimeSpan.FromMinutes(1);
-
-    /// <summary>How each step is measured and each answer read.</summary>
-    private readonly ProofRequests _requests = new(sqlLog, storeLog);
 
     /// <summary>The one-at-a-time gate: a run holds it from start to finish.</summary>
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -105,7 +105,7 @@ public sealed partial class ProofRunner(
     /// <summary>Start a run in the background; false when one is already running or the last one finished less than a minute ago.</summary>
     public bool TryStart(int rounds)
     {
-        if (_last?.FinishedAt is { } finished && DateTimeOffset.UtcNow - finished < Cooldown)
+        if (_last?.FinishedAt is { } finished && clock.GetUtcNow() - finished < Cooldown)
         {
             return false;
         }
@@ -129,7 +129,7 @@ public sealed partial class ProofRunner(
             {
                 // The type, not the message: this result is served on a public
                 // page, and an exception message can carry a host name.
-                _last = ProofResult.Failed($"the proof stopped on {ex.GetType().Name}", backends);
+                _last = ProofResult.Failed($"the proof stopped on {ex.GetType().Name}", backends, clock.GetUtcNow());
             }
             finally
             {

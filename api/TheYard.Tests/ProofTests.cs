@@ -48,7 +48,7 @@ public class ProofTests(WebApplicationFactory<Program> factory)
             ("listing", 101, 0), ("listing", 99, 0), ("listing", 103, 0),
             ("bid", 20, 2), ("bid", 21, 2), ("bid", 19, 2));
 
-        var result = ProofResult.Of(DateTimeOffset.UtcNow, 3, [sql, cosmos]);
+        var result = ProofResult.Of(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, 3, [sql, cosmos]);
 
         Assert.Equal("done", result.Status);
         var listing = Assert.Single(result.Rows, row => row.Path == "listing");
@@ -72,7 +72,7 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var sql = Run("sql", "Azure SQL Database", 40, ("bid", 100, 2), ("bid", 101, 2), ("bid", 99, 2));
         var cosmos = Run("cosmos", "Azure Cosmos DB", 2, ("bid", 24, 2), ("bid", 25, 2), ("bid", 23, 2));
 
-        var result = ProofResult.Of(DateTimeOffset.UtcNow, 3, [sql, cosmos]);
+        var result = ProofResult.Of(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, 3, [sql, cosmos]);
 
         var bid = Assert.Single(result.Rows, row => row.Path == "bid");
         Assert.Equal(-76, bid.MedianDifferenceMs);
@@ -93,13 +93,13 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var sql = Run("sql", "Azure SQL Database", 1, ("bid", 100, 2));
         var cosmos = Run("cosmos", "Azure Cosmos DB", 1, ("bid", 20, 2));
 
-        var result = ProofResult.Of(DateTimeOffset.UtcNow, 1, [sql, cosmos]);
+        var result = ProofResult.Of(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, 1, [sql, cosmos]);
         string wire = JsonSerializer.Serialize(result, KeptRingWriter.Wire);
 
         Assert.Equal("Azure Cosmos DB minus Azure SQL Database", result.DifferenceOrder);
         Assert.Contains("\"difference_order\":\"Azure Cosmos DB minus Azure SQL Database\"", wire, StringComparison.Ordinal);
         Assert.True(Assert.Single(result.Rows, row => row.Path == "bid").MedianDifferenceMs < 0);
-        Assert.Equal("", ProofResult.Failed("one store", new Backends([FakeBackend.Named("sql", "SQLite")], "sql")).DifferenceOrder);
+        Assert.Equal("", ProofResult.Failed("one store", new Backends([FakeBackend.Named("sql", "SQLite")], "sql"), DateTimeOffset.UtcNow).DifferenceOrder);
     }
     // #endregion verdict-tests
 
@@ -175,9 +175,9 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var runner = new ProofRunner(
             backends,
             new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
-            new SqlRingBuffer(10),
-            new StoreRingBuffer(10),
-            host);
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), TimeProvider.System),
+            host,
+            TimeProvider.System);
 
         host.Stop();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => runner.RunAsync(2, host.ApplicationStopping));
@@ -199,9 +199,9 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var runner = new ProofRunner(
             backends,
             new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
-            new SqlRingBuffer(10),
-            new StoreRingBuffer(10),
-            host);
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), TimeProvider.System),
+            host,
+            TimeProvider.System);
 
         host.Stop();
         Assert.True(runner.TryStart(1));
@@ -225,9 +225,9 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var runner = new ProofRunner(
             backends,
             new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
-            new SqlRingBuffer(10),
-            new StoreRingBuffer(10),
-            host);
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), TimeProvider.System),
+            host,
+            TimeProvider.System);
 
         var result = await runner.RunAsync(2, host.ApplicationStopping);
 
@@ -275,9 +275,9 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
             new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
-            new SqlRingBuffer(10),
-            new StoreRingBuffer(10),
-            host);
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), TimeProvider.System),
+            host,
+            TimeProvider.System);
 
         var first = await runner.RunAsync(1, host.ApplicationStopping);
         int registeredByFirst = yard.Seen.Count(seen => seen.Path == "/api/auth/register");
@@ -294,6 +294,43 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         Assert.All(register.Cells, cell => Assert.Equal(1, cell.Samples));
     }
 
+    /// <summary>A clock stopped at one moment, which is the moment the run reads for every window.</summary>
+    private sealed class Frozen(DateTimeOffset now) : TimeProvider
+    {
+        /// <summary>The moment this clock reads.</summary>
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    /// <summary>
+    /// Whether a vehicle is worth bidding on is a question about now, and the answer comes off the
+    /// clock the measurement was handed rather than the machine's. On a clock set years past every
+    /// window the canned listing offers, the round reads the listing and stops, because every
+    /// vehicle on it looks finished; the real clock finds the two-hour vehicle and bids twice,
+    /// which is what the run above does. A measurement that took the clock and read
+    /// DateTimeOffset.UtcNow anyway would bid here.
+    /// </summary>
+    [Fact]
+    public async Task A_round_bids_on_nothing_when_the_handed_clock_is_past_every_window_the_listing_offers()
+    {
+        var yard = new CannedYard();
+        using var host = new StoppableHost();
+        var clock = new Frozen(DateTimeOffset.UtcNow.AddYears(10));
+        var runner = new ProofRunner(
+            new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
+            new ProofClients(() => Outbound.Over(new HttpClient(yard) { BaseAddress = new Uri("http://yard.test") })),
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), clock),
+            host,
+            clock);
+
+        var result = await runner.RunAsync(1, host.ApplicationStopping);
+
+        Assert.Equal("done", result.Status);
+        Assert.Contains(yard.Seen, seen => seen.Path == "/api/vehicles");
+        Assert.DoesNotContain(yard.Seen, seen => seen.Path == "/api/vehicles/v1");
+        Assert.DoesNotContain(yard.Seen, seen => seen.Path == "/api/vehicles/v1/bids");
+        Assert.Equal("not measured", Assert.Single(result.Rows, row => row.Path == "bid").Verdict);
+    }
+
     [Fact]
     public async Task A_run_on_a_container_with_one_store_says_it_needs_two()
     {
@@ -301,9 +338,9 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite")], "sql"),
             new ProofClients(() => throw new InvalidOperationException("no request should be made")),
-            new SqlRingBuffer(10),
-            new StoreRingBuffer(10),
-            host);
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), TimeProvider.System),
+            host,
+            TimeProvider.System);
 
         var result = await runner.RunAsync(3, host.ApplicationStopping);
 
@@ -320,9 +357,9 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         var runner = new ProofRunner(
             new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
             new ProofClients(() => Outbound.Over(new HttpClient(refusing) { BaseAddress = new Uri("http://yard.test") })),
-            new SqlRingBuffer(10),
-            new StoreRingBuffer(10),
-            host);
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), TimeProvider.System),
+            host,
+            TimeProvider.System);
 
         var result = await runner.RunAsync(1, host.ApplicationStopping);
 

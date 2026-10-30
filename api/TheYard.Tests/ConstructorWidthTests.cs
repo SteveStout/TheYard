@@ -196,6 +196,15 @@ public class ConstructorWidthTests
     [InlineData("MachineCardReadings", 5, "api/TheYard.Api/Features/Admin/Operations/MachineCardReadings.cs")]
     [InlineData("CostKeeping", 5, "api/TheYard.Api/Shared/CostReadings/CostKeeping.cs")]
     [InlineData("CostRecorder", 2, "api/TheYard.Api/Shared/CostReadings/CostRecorder.cs")]
+    // The three that were waiting on a split before they could be handed a clock, and the parts
+    // split off them. Each of the three reads a clock now, so each is one parameter wider than it
+    // was and still under the line, which is what the split bought.
+    [InlineData("PlanReader", 5, "api/TheYard.Api/Shared/PlanReadings/PlanReader.cs")]
+    [InlineData("PlanLayout", 2, "api/TheYard.Api/Shared/PlanReadings/PlanLayout.cs")]
+    [InlineData("TelemetryReader", 3, "api/TheYard.Api/Shared/Observability/Telemetry.cs")]
+    [InlineData("TelemetrySource", 4, "api/TheYard.Api/Shared/Observability/Telemetry.Source.cs")]
+    [InlineData("ProofRunner", 5, "api/TheYard.Api/Shared/Proof/Proof.cs")]
+    [InlineData("ProofRequests", 3, "api/TheYard.Api/Shared/Proof/ProofRequests.cs")]
     public void Each_class_this_version_split_is_handed_fewer_than_six_things(string type, int handed, string path)
     {
         var taken = HandedTo(type, path.Split('/'));
@@ -276,6 +285,11 @@ public class ConstructorWidthTests
         Assert.NotNull(host.Services.GetRequiredService<StoreStartupLines>());
         Assert.NotNull(host.Services.GetRequiredService<CostKeeping>());
         Assert.NotNull(host.Services.GetRequiredService<CostRecorder>());
+        // The parts split off the three classes that were waiting on a clock. Every one of them is
+        // registered where the class it came off is registered, which is the rule for this rung.
+        Assert.NotNull(host.Services.GetRequiredService<PlanLayout>());
+        Assert.NotNull(host.Services.GetRequiredService<TelemetrySource>());
+        Assert.NotNull(host.Services.GetRequiredService<ProofRequests>());
 
         // The two readings are scoped to a request, as everything the Admin tab's handlers take is.
         using var scope = host.Services.CreateScope();

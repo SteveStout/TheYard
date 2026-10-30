@@ -22,10 +22,10 @@ public sealed partial class ProofRunner
         rounds = Math.Clamp(rounds, 1, MaxRounds);
         if (backends.All.Count < 2)
         {
-            return ProofResult.Failed("this container runs one store, and a proof needs two", backends);
+            return ProofResult.Failed("this container runs one store, and a proof needs two", backends, clock.GetUtcNow());
         }
 
-        var started = DateTimeOffset.UtcNow;
+        var started = clock.GetUtcNow();
         var stores = backends.All.Select(backend => new StoreRun(backend)).ToArray();
         using var client = clients.Create();
 
@@ -43,11 +43,11 @@ public sealed partial class ProofRunner
             }
 
             string email = $"proof-{Guid.NewGuid():N}@example.com";
-            using var registered = await _requests.Timed(client, store, "register", HttpMethod.Post, "/api/auth/register",
+            using var registered = await requests.Timed(client, store, "register", HttpMethod.Post, "/api/auth/register",
                 cancellation, new { email, password = _password });
             if (!registered.IsSuccessStatusCode)
             {
-                return ProofResult.Failed($"registration on {store.Backend.Name} answered {(int)registered.StatusCode}", backends);
+                return ProofResult.Failed($"registration on {store.Backend.Name} answered {(int)registered.StatusCode}", backends, clock.GetUtcNow());
             }
             store.Cookie = ProofRequests.SessionCookie(registered);
             store.Email = email;
@@ -73,7 +73,7 @@ public sealed partial class ProofRunner
             store.HopMs = await ProofRequests.HopAsync(store.Backend, cancellation);
         }
 
-        return ProofResult.Of(started, rounds, stores);
+        return ProofResult.Of(started, clock.GetUtcNow(), rounds, stores);
     }
 
     /// <summary>
@@ -87,37 +87,37 @@ public sealed partial class ProofRunner
     /// <param name="cancellation">The host's stopping token, lent by the run.</param>
     private async Task RoundAsync(Outbound client, StoreRun store, CancellationToken cancellation)
     {
-        using var signedIn = await _requests.Timed(client, store, "sign_in", HttpMethod.Post, "/api/auth/login",
+        using var signedIn = await requests.Timed(client, store, "sign_in", HttpMethod.Post, "/api/auth/login",
             cancellation, new { email = store.Email, password = _password });
         if (signedIn.IsSuccessStatusCode)
         {
             store.Cookie = ProofRequests.SessionCookie(signedIn) ?? store.Cookie;
         }
 
-        using var listing = await _requests.Timed(client, store, "listing", HttpMethod.Get, "/api/vehicles?status=live&sort=most-bids&limit=25", cancellation);
-        string? vehicleId = await ProofRequests.ChooseVehicleAsync(listing, cancellation);
+        using var listing = await requests.Timed(client, store, "listing", HttpMethod.Get, "/api/vehicles?status=live&sort=most-bids&limit=25", cancellation);
+        string? vehicleId = await requests.ChooseVehicleAsync(listing, cancellation);
         if (vehicleId is null)
         {
             return;
         }
 
-        using var vehicle = await _requests.Timed(client, store, "vehicle", HttpMethod.Get, $"/api/vehicles/{vehicleId}", cancellation);
+        using var vehicle = await requests.Timed(client, store, "vehicle", HttpMethod.Get, $"/api/vehicles/{vehicleId}", cancellation);
         int? minimum = await ProofRequests.MinimumAsync(vehicle, cancellation);
-        using var facets = await _requests.Timed(client, store, "facets", HttpMethod.Get, "/api/facets", cancellation);
+        using var facets = await requests.Timed(client, store, "facets", HttpMethod.Get, "/api/facets", cancellation);
 
         if (minimum is { } first)
         {
-            using var bid = await _requests.Timed(client, store, "bid", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
+            using var bid = await requests.Timed(client, store, "bid", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
                 cancellation, new { amount = first });
             int? next = await ProofRequests.NextAsync(bid, cancellation);
             if (next is { } second)
             {
-                using var raise = await _requests.Timed(client, store, "raise", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
+                using var raise = await requests.Timed(client, store, "raise", HttpMethod.Post, $"/api/vehicles/{vehicleId}/bids",
                     cancellation, new { amount = second });
             }
         }
 
-        using var reset = await _requests.Timed(client, store, "reset", HttpMethod.Delete, "/api/bids", cancellation);
+        using var reset = await requests.Timed(client, store, "reset", HttpMethod.Delete, "/api/bids", cancellation);
     }
     /// <summary>
     /// Whether the proof's remembered account still signs in on this store.

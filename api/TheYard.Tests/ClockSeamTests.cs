@@ -83,6 +83,106 @@ public class ClockSeamTests
         Assert.Equal(Then, Assert.Single(store.Written).At);
     }
 
+    // #region kept-for-a-window
+    /// <summary>
+    /// The three classes rung 3 split so they could take a clock each keep an answer for a window,
+    /// and a window is a question about now. Each case below reads twice inside the window and once
+    /// outside it, on a clock the test moves, and counts what actually went out to the service: a
+    /// class that took the clock and read the real one anyway would ask once here and twice there
+    /// however far the handed clock was moved.
+    ///
+    /// <para>The plan's layout is kept for an hour, because apps are added to a plan about never
+    /// and the minute read asks for the layout every minute.</para>
+    /// </summary>
+    [Fact]
+    public async Task The_plan_s_layout_is_read_again_only_once_the_handed_clock_has_passed_an_hour()
+    {
+        var cloud = new RecordedCloud();
+        using var route = OutboundHttp.RouteTo(cloud);
+        var clock = new Stopped(Then);
+        var layout = new PlanLayout(RecordedCloud.Site, clock);
+
+        var first = await layout.OfAsync("token-1", CancellationToken.None);
+        clock.Now = Then.Add(PlanLayout.GoodFor).AddMinutes(-1);
+        await layout.OfAsync("token-1", CancellationToken.None);
+        int inside = cloud.Asked.Count(address => address.Contains("/sites?api-version", StringComparison.Ordinal));
+
+        clock.Now = Then.Add(PlanLayout.GoodFor).AddMinutes(1);
+        await layout.OfAsync("token-1", CancellationToken.None);
+
+        Assert.Equal(RecordedCloud.Plan, first.PlanId);
+        Assert.Equal("asp-theyard-ss", layout.PlanName);
+        Assert.Equal(1, inside);
+        Assert.Equal(2, cloud.Asked.Count(address => address.Contains("/sites?api-version", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// The telemetry reading is kept for a minute, failures included, because the Admin tab is a
+    /// page someone leaves open and the query costs a token exchange plus a round trip. The
+    /// recorded cloud has no telemetry component, so every ask comes back as the note the card
+    /// renders, which is kept exactly as an answer would be.
+    /// </summary>
+    [Fact]
+    public async Task The_telemetry_reading_is_asked_for_again_only_once_the_handed_clock_has_passed_a_minute()
+    {
+        var cloud = new RecordedCloud();
+        using var route = OutboundHttp.RouteTo(cloud);
+        var clock = new Stopped(Then);
+        var reader = new TelemetryReader(new TelemetrySource("app-1", "client-1"), enabled: true, clock);
+
+        var first = await reader.GetRecentAsync(CancellationToken.None);
+        clock.Now = Then.Add(TelemetryReader.GoodFor).AddSeconds(-1);
+        var inside = await reader.GetRecentAsync(CancellationToken.None);
+
+        clock.Now = Then.Add(TelemetryReader.GoodFor).AddSeconds(1);
+        var outside = await reader.GetRecentAsync(CancellationToken.None);
+
+        // The same answer object, not an equal one: the keep hands back what it holds.
+        Assert.Same(first, inside);
+        Assert.NotSame(first, outside);
+        // The component's own query, not the token exchange that comes before it: the token is asked
+        // for at the metadata endpoint with this same service named as the scope.
+        Assert.Equal(2, cloud.Asked.Count(address => address.Contains("/v1/apps/app-1/query", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// The proof will not start a run within a minute of the last one finishing, because starting
+    /// one is a write and the accounts it bids with are made once per process (ADR: The one write a
+    /// stranger can make, addendum). Both ends of that minute are the handed clock: the moment the
+    /// last run finished is stamped by it, and the refusal is measured from that stamp.
+    /// </summary>
+    [Fact]
+    public async Task A_proof_run_is_refused_inside_the_cooldown_and_allowed_once_the_handed_clock_has_passed_it()
+    {
+        var clock = new Stopped(Then);
+        using var host = new StoppableHost();
+        var runner = new ProofRunner(
+            new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
+            new ProofClients(() => throw new InvalidOperationException("this run never gets as far as a request")),
+            new ProofRequests(new SqlRingBuffer(10), new StoreRingBuffer(10), clock),
+            host,
+            clock);
+
+        host.Stop();
+        Assert.True(runner.TryStart(1));
+        while (runner.Running)
+        {
+            await Task.Delay(10);
+        }
+
+        // The stamp on the run that just failed is the handed clock's moment, not the real one.
+        Assert.Equal(Then, runner.Last!.FinishedAt);
+        Assert.False(runner.TryStart(1), "a second run inside the cooldown should be refused");
+
+        clock.Now = Then.Add(ProofRunner.Cooldown).AddSeconds(1);
+        Assert.True(runner.TryStart(1), "the cooldown has passed on the clock the runner was handed");
+        while (runner.Running)
+        {
+            await Task.Delay(10);
+        }
+    }
+    // #endregion kept-for-a-window
+
     /// <summary>A log store that keeps what it is handed, so the test can read the stamp back.</summary>
     private sealed class OneBatchStore : ILogStore
     {
