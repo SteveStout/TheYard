@@ -76,6 +76,7 @@ public class PromoteWorkflowTests
         { "the served resume is the locked one", "promote.sh", "api/TheYard.Api/wwwroot/docs/resume.pdf\" | sha256sum -c" },
         { "the Cosmos DB passes carried forward", "promote.sh", "YARD_CARRY_COSMOS" },
         { "the results file", "promote.sh", "node scripts/test_results.mjs \"$raw\" \"$version\" \"$seconds\"" },
+        { "the results describe this run and not another attempt", "promote.sh", "the results file records a suite this green gate did not have" },
         { "the README's figures", "promote.sh", "python3 scripts/readme_results.py" },
         { "the results touch three files only", "promote.sh", "the results touched more than their three files" },
         { "the results folded into the gate's commit", "promote.sh", "git commit -q --amend --no-edit" },

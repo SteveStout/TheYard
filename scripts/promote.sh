@@ -110,6 +110,12 @@ if [ -f "$raw/og.svg" ] && [ -f "$raw/og.png" ]; then
   cp "$raw/og.png" public/og.png
 fi
 node scripts/test_results.mjs "$raw" "$version" "$seconds"
+# The file the site serves has to describe the run that shipped it. A green gate cannot hold a failing or a
+# skipped suite, so a results file that records one was assembled from another attempt's reports: that is what
+# happened at 1.0.4.122, where a gate job that went red on one Cosmos test was re-run green and this script
+# folded the first attempt's gate-raw into the commit, shipping a record that said a suite failed and turning
+# CI on main red on the test that reads it. The reports are the run's, or nothing is promoted.
+node -e 'const r = require("./data/test-results.json"); const bad = r.suites.filter(s => s.failed > 0 || s.skipped > 0); if (bad.length) { console.error(bad.map(s => `${s.id}: ${s.failed} failed, ${s.skipped} skipped`).join("; ")); process.exit(1); }'   || refuse "the results file records a suite this green gate did not have: its reports are another attempt's, so re-run the gate by pushing the branch again rather than re-running the job"
 python3 scripts/readme_results.py
 extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
 [ -z "$extra" ] || refuse "the results touched more than their three files and the version card: $extra"
