@@ -311,3 +311,63 @@ is not to distrust the counts, which caught real work both times. It is that the
 does is read its own number's rule and check the list it prints by eye, because a number read wrongly
 costs a version either way: once to pay arrears that were never owed, and once to discover the real
 ones after the rung was called done.
+
+## Addendum, 2026-10-30 (1.0.4.126): the third of these numbers to be found mismeasuring, and the two limits a number is allowed to have
+
+`behavior_types_never_named_in_a_test` read 8. Read as the addendum above asks, by reading its own
+rule before trusting its count, it was wrong once and limited twice, and both are worth writing down
+because they are the two different things a reader can mean by "the number is wrong".
+
+**What was wrong: a comment counted as a test.** The rule finds every public or internal class or
+record whose name ends in Handler, Store, Rules, Reader, Writer, Service, Policy or Calculator, and
+then looks for the bare name anywhere in the concatenated text of every test file. Anywhere included
+inside a comment. `StandingRules` was counted as named for a month by one sentence in the `///`
+summary of `StandingRulesTests`, the very file that could not name it: both its members are extension
+members on the vehicle, so every caller writes `vehicle.RaisedTo(...)` and `vehicle.Reserve` and the
+type that declares them appears in no caller's code, including the test's. The honest number was
+**9**, and all nine are named by a test in this same commit, so the limit goes to **0**. The scanner
+now reads the test text through `without_comments`, which keeps every string literal and blanks every
+comment body.
+
+That stripper is a state machine and not a regular expression, for a reason that cost a measurement
+here: `AppServiceTemplateTests` and `CosmosDefinitionTests` both hold the literal `"/*"` as test data,
+so the obvious non-greedy `/\*.*?\*/` opens a comment inside a string and swallows thousands of lines
+of real test code. Measured that way the first time, this number read 48 and named `CloudReader`
+among the untested, which `CloudReadersTests` builds on line 480. A rule that reads code has to know
+where a string ends.
+
+**What is limited, left limited, and now written down.** Two limits were found that are not defects
+to fix but judgments to record, because the alternative in each case makes the number worse at
+describing the codebase.
+
+- **A name that ends in none of the eight words is never counted.** Widening the list reaches 219
+  more public or internal production types that no test names. By eye they are overwhelmingly data
+  shapes: thirteen end in Row, eleven in Endpoints, nine in Readings, seven each in Wire, Report and
+  Document, six each in Request and View, five in Routes, and most of the remainder are records
+  holding a reply, a tally, an entry, a page or a point. A number that counted those would no longer
+  be the number its name describes, and the behaviour-shaped remainder inside them (the merge classes
+  under `functions/`, the Cosmos logs and histories, the null adapters, The Shed's controllers) is
+  several versions of work rather than a widening. It is left out, measured, and named here so nobody
+  has to re-derive the 219.
+- **A positional record whose name merely ends in one of the words is counted, though it holds no
+  behaviour.** Two of this rung's own nine were exactly that: `ProofStore` is three values and
+  `DocumentStore` is one. Excluding them would have been easy and would have lowered the number in
+  the same commit that was paying it, which is the move this record exists to refuse. They are left
+  counted, because a shape no test ever constructs is also untested, and both now have a test that
+  constructs them and asserts something that was not asserted before: what a proof run says about the
+  stores themselves, and that a container with no account still registers every port behind the seam.
+
+**Three of fourteen.** The addendum above said two of fourteen meant a rung reads its own rule first.
+That held: reading the rule is what found this one, before a single test was written. What this third
+one adds is that the answer is not always a correction. Two of the three findings here were limits
+worth keeping, and a limit kept on purpose and written down is stronger than a limit nobody noticed,
+because the next rung argues with a decision instead of rediscovering a surprise.
+
+**What this number still does not have, and it is the one thing left owing.** `undocumented_declarations`
+has `tests/rules/SummaryRule.cs` and `history_or_name_comments` has `tests/rules/HistoryRule.cs`: one
+body each, linked into both suites, asked in the shapes this scanner counts, so a project paid down
+cannot quietly fill up again while the total still falls. This number has no such body. What guards
+it from here is the ratchet's count at zero, which catches the next behaviour type the moment it
+arrives but cannot say which suite should have named it. Giving it a rule body is a job of its own,
+because the rule would need the same comment stripper in C# and the two would have to be held the
+same deliberately; it is on the list rather than in this commit.

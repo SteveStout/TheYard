@@ -95,6 +95,74 @@ def comment_split(text):
     return code, comment
 
 
+# #region without-comments
+def without_comments(text):
+    """The same text with every // and /* */ comment blanked and every string literal kept.
+
+    Used where a name has to be FOUND in code rather than anywhere in a file: a type named only in a
+    comment in a test file is not tested by it. Comment bodies become spaces rather than vanishing, so
+    a line number is still a line number.
+
+    A state machine and not a regular expression, because the obvious regular expression is wrong in
+    this repository and wrong invisibly: AppServiceTemplateTests and CosmosDefinitionTests both hold
+    the literal "/*" as test data, so a non-greedy /\\*.*?\\*/ opens a comment inside a string and eats
+    thousands of lines of real test code. Measured once, that mistake read 48 untested types and named
+    CloudReader among them, which CloudReadersTests builds on line 480. Ordinary quotes, verbatim
+    @"..." strings, C# raw triple-quoted strings, char literals and TypeScript backtick templates are
+    each walked to their own end.
+    """
+    out = []
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if c == '"' and text.startswith('"""', i):
+            j = text.find('"""', i + 3)
+            j = n if j < 0 else j + 3
+            out.append(text[i:j])
+            i = j
+        elif c == "@" and i + 1 < n and text[i + 1] == '"':
+            j = i + 2
+            while j < n:
+                if text[j] == '"':
+                    if j + 1 < n and text[j + 1] == '"':
+                        j += 2
+                        continue
+                    j += 1
+                    break
+                j += 1
+            out.append(text[i:j])
+            i = j
+        elif c in '"\'`':
+            quote, j = c, i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == quote:
+                    j += 1
+                    break
+                if quote != "`" and text[j] == "\n":
+                    break  # an unterminated quote: stop at the line rather than run away
+                j += 1
+            out.append(text[i:j])
+            i = j
+        elif c == "/" and i + 1 < n and text[i + 1] == "/":
+            j = text.find("\n", i)
+            j = n if j < 0 else j
+            out.append(" " * (j - i))
+            i = j
+        elif c == "/" and i + 1 < n and text[i + 1] == "*":
+            j = text.find("*/", i + 2)
+            j = n if j < 0 else j + 2
+            out.append("".join(ch if ch == "\n" else " " for ch in text[i:j]))
+            i = j
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+# #endregion without-comments
+
+
 size = defaultdict(lambda: {"files": 0, "code": 0, "comment": 0, "over_250": 0, "over_300": 0, "no_comment_40plus": []})
 for f in CS_PROD + TS_PROD:
     text = f.read_text(encoding="utf-8", errors="replace")
@@ -439,12 +507,31 @@ vit = sum(len(re.findall(r"^\s*(it|test)\(", f.read_text(encoding="utf-8", error
 pw = sum(len(re.findall(r"^\s*test\(", f.read_text(encoding="utf-8", errors="replace"), re.M)) for f in E2E)
 test_loc = sum(comment_split(f.read_text(encoding="utf-8", errors="replace"))[0] for f in CS_TEST + TS_TEST + E2E)
 prod_loc = sum(comment_split(f.read_text(encoding="utf-8", errors="replace"))[0] for f in CS_PROD + TS_PROD)
-test_text = "\n".join(f.read_text(encoding="utf-8", errors="replace") for f in CS_TEST + TS_TEST + E2E)
+# #region named-by-a-test
+# A behaviour type no test names. The name is the measurement: a type whose name ends in one of these
+# eight words holds behaviour, and a suite that never writes the name down has never built one and
+# asked it anything. The test text is read WITHOUT its comments, because a type named only in a
+# comment in a test file is not tested by that file: StandingRules was counted as named for a month
+# by the sentence "has one copy in the code (StandingRules)" in the summary of the very test that
+# could not name it, its two members being extension members every caller writes on the Vehicle
+# (1.0.4.126, and the second time one of these fourteen numbers has been found reading what was easy
+# to see rather than what it is named for).
+#
+# What this still cannot see is written down rather than guessed at. A behaviour type whose name ends
+# in none of the eight words is not counted; widening the list reaches 219 more production types, of
+# which the great majority are data shapes - a row, a wire record, a view, a reply, a tally - so the
+# widened number would stop being the number its name describes. And a positional record whose name
+# merely ends in one of the words, such as ProofStore or DocumentStore, is counted though it holds no
+# behaviour at all; it is left counted on purpose, because a shape no test ever constructs is also
+# untested and dropping it would make the number easier in the same commit that paid it. Both are in
+# ADR-122's addendum of 1.0.4.126.
+test_text = "\n".join(without_comments(f.read_text(encoding="utf-8", errors="replace")) for f in CS_TEST + TS_TEST + E2E)
 untested = []
 for f in CS_PROD:
     for name in re.findall(r"^\s*(?:public|internal)\s+(?:sealed\s+|static\s+|partial\s+)*(?:class|record)\s+(\w+(?:Handler|Store|Rules|Reader|Writer|Service|Policy|Calculator))\b", f.read_text(encoding="utf-8", errors="replace"), re.M):
         if not re.search(r"\b" + name + r"\b", test_text):
             untested.append(f"{name} ({rel(f)})")
+# #endregion named-by-a-test
 R["tests"] = {"dotnet_facts_and_theories": facts, "inline_data_rows": rows, "vitest": vit, "playwright": pw,
               "test_loc": test_loc, "prod_loc": prod_loc, "test_to_prod": round(test_loc / max(prod_loc, 1), 2),
               "behavior_types_never_named_in_a_test": len(untested), "untested_sample": untested[:30]}

@@ -101,6 +101,40 @@ public class ProofTests(WebApplicationFactory<Program> factory)
         Assert.True(Assert.Single(result.Rows, row => row.Path == "bid").MedianDifferenceMs < 0);
         Assert.Equal("", ProofResult.Failed("one store", new Backends([FakeBackend.Named("sql", "SQLite")], "sql"), DateTimeOffset.UtcNow).DifferenceOrder);
     }
+
+    /// <summary>
+    /// What a run says about the stores themselves rather than about a path: a
+    /// finished run carries one <see cref="ProofStore"/> per store in store
+    /// order, each with the store's key, the name the card shows and the round
+    /// trip that was measured to it, which is the number the hop-adjusted
+    /// difference column is worked out from. A run that could not start carries
+    /// the same stores with no round trip at all rather than a zero, because a
+    /// trip that was never measured and a trip that took no time are different
+    /// things and only one of them is true.
+    /// </summary>
+    [Fact]
+    public void A_run_names_every_store_with_the_round_trip_measured_to_it_and_a_failed_one_measures_none()
+    {
+        var finished = ProofResult.Of(
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
+            1,
+            [Run("sql", "Azure SQL Database", 7, ("bid", 100, 2)), Run("cosmos", "Azure Cosmos DB", 21, ("bid", 20, 2))]);
+
+        Assert.Equal(
+            [new ProofStore("sql", "Azure SQL Database", 7), new ProofStore("cosmos", "Azure Cosmos DB", 21)],
+            finished.Stores);
+
+        var failed = ProofResult.Failed(
+            "one store",
+            new Backends([FakeBackend.Named("sql", "SQLite"), FakeBackend.Named("cosmos", "Azure Cosmos DB")], "sql"),
+            DateTimeOffset.UtcNow);
+
+        Assert.Equal(
+            [new ProofStore("sql", "SQLite", null), new ProofStore("cosmos", "Azure Cosmos DB", null)],
+            failed.Stores);
+        Assert.All(failed.Stores, store => Assert.Null(store.HopMs));
+    }
     // #endregion verdict-tests
 
     // #region canned-run

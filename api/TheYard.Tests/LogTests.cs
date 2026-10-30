@@ -16,6 +16,41 @@ namespace TheYard.Tests;
 /// </summary>
 public class LogTests
 {
+    // #region nothing-wired
+    /// <summary>
+    /// The port wired to nothing. A container with no document store still has
+    /// an <see cref="ILogStore"/> registered, because the collector, the log
+    /// provider and the Admin tab's kept-ring cards all ask for one on every
+    /// boot, and a missing registration would be an exception at startup
+    /// rather than a card that says why it is empty. So the null form answers
+    /// every question harmlessly: it is not available and it says in words a
+    /// card can show why, an append is accepted and dropped so the collector
+    /// off the request path never has to know which store it is writing to,
+    /// and every read comes back empty rather than null. The shared
+    /// <see cref="NullLogStore.Instance"/> carries the one reason the wiring
+    /// uses, so two containers with no store give the same answer.
+    /// </summary>
+    [Fact]
+    public async Task The_log_wired_to_nothing_says_why_it_keeps_nothing_and_answers_every_read_empty()
+    {
+        var shared = await NullLogStore.Instance.AvailabilityAsync(CancellationToken.None);
+        Assert.Equal((false, "no document store is configured, so nothing is kept"), (shared.Available, shared.Reason));
+
+        var store = new NullLogStore("the account was not reachable when this container came up");
+        var said = await store.AvailabilityAsync(CancellationToken.None);
+        Assert.Equal((false, "the account was not reachable when this container came up"), (said.Available, said.Reason));
+
+        // An append is taken and dropped: the collector writes in batches and
+        // is not the place to decide whether there is anywhere to write to.
+        await store.AppendAsync([LogEvents.Request(DateTimeOffset.UtcNow, "GET", "/", 200, 1, "sql", "v", "203.0.113.x", "trace")], CancellationToken.None);
+
+        Assert.Empty(await store.QueryAsync(new LogQuery(DateTimeOffset.UnixEpoch, null, null, null, 50), CancellationToken.None));
+        Assert.Empty(await store.CountAsync(DateTimeOffset.UnixEpoch, CancellationToken.None));
+        var ring = await store.RingAsync(KeptRings.Errors, "sql", DateTimeOffset.UnixEpoch, 10, CancellationToken.None);
+        Assert.Equal((0, 0), (ring.Entries.Count, ring.Total));
+    }
+    // #endregion nothing-wired
+
     // #region cleaning
     [Fact]
     public void Text_is_bounded_and_an_at_sign_cannot_survive_it()

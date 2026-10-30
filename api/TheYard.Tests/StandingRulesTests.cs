@@ -1,3 +1,4 @@
+using System.Reflection;
 
 namespace TheYard.Tests;
 
@@ -7,6 +8,8 @@ namespace TheYard.Tests;
 /// </summary>
 public sealed class StandingRulesTests
 {
+    private const string Raised = "RaisedTo";
+
     [Fact]
     public void A_bid_raises_the_price_only_when_it_is_higher_and_keeps_the_larger_count()
     {
@@ -31,5 +34,28 @@ public sealed class StandingRulesTests
         var vehicle = TestData.Vehicle(currentBid: standing) with { ReservePrice = reserve };
 
         Assert.Equal(expected, vehicle.Reserve);
+    }
+
+    /// <summary>
+    /// The one copy, held as a check rather than as a sentence. Both members
+    /// above are extension members, so every caller writes
+    /// <c>vehicle.RaisedTo(...)</c> and <c>vehicle.Reserve</c> and the type
+    /// that declares them is never written down anywhere, including here: the
+    /// two facts above would read exactly the same if a second copy of the
+    /// rule appeared in another type and the buyer's bids, the room's bids and
+    /// the room's price to beat began to drift apart. So this names
+    /// <see cref="StandingRules"/> itself and asks the domain which types
+    /// declare the rule, which is the claim this file's own summary makes.
+    /// </summary>
+    [Fact]
+    public void The_rule_for_raising_a_price_is_declared_in_one_place_and_that_place_is_StandingRules()
+    {
+        var declaring = typeof(StandingRules).Assembly.GetTypes()
+            .Where(type => type.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Any(method => method.Name.Contains(Raised, StringComparison.Ordinal)))
+            .ToArray();
+
+        Assert.Equal([typeof(StandingRules)], declaring);
+        Assert.True(typeof(StandingRules).IsAbstract && typeof(StandingRules).IsSealed, $"{nameof(StandingRules)} holds a rule and no state, so it is static.");
     }
 }
