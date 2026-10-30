@@ -19,64 +19,91 @@ public sealed class CatalogueRow
     /// <summary>Where this vehicle sits in the deterministic expansion; the clustered key and every order's tie-break.</summary>
     public required int Seq { get; set; }
 
+    /// <summary>The vehicle's id, a GUID. Kept because the slot its hash gives it, and every other table that names a vehicle, both start from this.</summary>
     public required string Id { get; set; }
 
+    /// <summary>The vehicle identification number. Kept because it is one of the columns a typed word is searched in, and the one identifier a buyer can check against the vehicle itself.</summary>
     public required string Vin { get; set; }
 
+    /// <summary>The model year. Kept as a number on the row because the listing filters a range of them off an index.</summary>
     public required int Year { get; set; }
 
+    /// <summary>The manufacturer, such as Mazda. Kept because the listing filters on it and it is part of the searchable text.</summary>
     public required string Make { get; set; }
 
+    /// <summary>The model, such as CX-5. Kept for the same two reasons as the make beside it: a filter, and a searched word.</summary>
     public required string Model { get; set; }
 
+    /// <summary>The trim level. Kept because it is searched and shown, and it is how two otherwise identical listings are told apart.</summary>
     public required string Trim { get; set; }
 
+    /// <summary>The body style, such as SUV. Kept because the listing filters on it and it chooses which pool of stock photos the gallery is drawn from.</summary>
     public required string BodyStyle { get; set; }
 
+    /// <summary>The exterior colour. Kept because a page of the listing is answered from this row alone, and the card shows it.</summary>
     public required string ExteriorColor { get; set; }
 
+    /// <summary>The interior colour. Kept for the same reason as the exterior colour beside it: the detail page is served from this row.</summary>
     public required string InteriorColor { get; set; }
 
+    /// <summary>The engine, such as 2.5L I4. Kept as the dataset's own text, shown and searched and never parsed.</summary>
     public required string Engine { get; set; }
 
+    /// <summary>The transmission, such as automatic. Kept as the dataset's own text, shown and never parsed.</summary>
     public required string Transmission { get; set; }
 
+    /// <summary>The drivetrain, such as FWD. Kept as the dataset's own text, shown and never parsed.</summary>
     public required string Drivetrain { get; set; }
 
+    /// <summary>The odometer reading, in kilometres. Kept as a number because the listing sorts and filters a range of them off an index.</summary>
     public required int OdometerKm { get; set; }
 
+    /// <summary>The fuel type, such as gasoline. Kept because the listing filters on it.</summary>
     public required string FuelType { get; set; }
 
+    /// <summary>The condition grade, where higher is better. Kept as the number rather than the band, because the listing sorts on the number and the page bands it for display.</summary>
     public required double ConditionGrade { get; set; }
 
+    /// <summary>The inspector's written condition report. Kept because it is what a buyer reads before bidding, and the detail page is answered from this row.</summary>
     public required string ConditionReport { get; set; }
 
     /// <summary>A primitive collection: EF stores it as a JSON column.</summary>
     public required List<string> DamageNotes { get; set; }
 
+    /// <summary>The title status, such as clean. Kept because it is the one legal fact about the vehicle every listing has to show.</summary>
     public required string TitleStatus { get; set; }
 
+    /// <summary>The province the vehicle is in. Kept because the listing filters on it.</summary>
     public required string Province { get; set; }
 
+    /// <summary>The city the vehicle is in. Kept because the card says where the vehicle is, and the province alone is too coarse to be of use.</summary>
     public required string City { get; set; }
 
+    /// <summary>The dataset's own auction date, as the text the dataset holds. Kept as text on purpose: the window is the slot beside it, derived from the id's hash, and parsing this would invent a second schedule.</summary>
     public required string AuctionStart { get; set; }
 
+    /// <summary>The opening bid, in whole dollars. Kept because it is the floor the rules work from until the first bid, and half of what the price column is derived from.</summary>
     public required int StartingBid { get; set; }
 
+    /// <summary>The seller's reserve, in whole dollars, or null when there is none. Kept on the server and never sent: the wire carries whether the reserve is met and the amount stays here.</summary>
     public required int? ReservePrice { get; set; }
 
+    /// <summary>The buy-now price, in whole dollars, or null when there is no buy-now option. Kept because a bid at or above it wins at this price, which the rules check before everything else.</summary>
     public required int? BuyNowPrice { get; set; }
 
     /// <summary>The dataset's images, a JSON column, kept for a body style the gallery has no pool for.</summary>
     public required List<string> Images { get; set; }
 
+    /// <summary>The dealership selling the vehicle. Kept because the listing shows who is selling, which is part of what a bid is placed on trust of.</summary>
     public required string SellingDealership { get; set; }
 
+    /// <summary>The lot number, such as A-0001. Kept because it is how a vehicle is called out on the floor, and no derived id stands in for it.</summary>
     public required string Lot { get; set; }
 
+    /// <summary>The price the dataset came with, or null when it had no bid. Kept because the price column is derived from it at the fill; once the site is running, the standing the store owns is the authority on what a vehicle stands at.</summary>
     public required int? CurrentBid { get; set; }
 
+    /// <summary>How many bids the dataset came with. Kept beside the price it came with, and superseded by the standing in the same way.</summary>
     public required int BidCount { get; set; }
 
     /// <summary>The window's start, milliseconds from the day's anchor (CatalogueSlot).</summary>

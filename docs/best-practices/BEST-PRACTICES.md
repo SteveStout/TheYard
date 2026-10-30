@@ -35,8 +35,13 @@ footer displays exactly that.
   file, CI and the ship gate hold each one to its limit, and a limit moves only
   in the commit that earns it. The rules this project holds are yes-or-no
   questions and all of them held through a fortnight in which half of these
-  doubled, which is why a count sits beside each rule now. Recorded in ADR: The
-  numbers that may only fall.
+  doubled, which is why a count sits beside each rule now. A count has one
+  weakness, and the rung paying these down closes it as it goes: a total falls
+  when one project is cleaned up and stays level when that project fills back up
+  while another is cleaned up in its place. So a project taken to zero is named
+  one by one in a test from then on, and the question asked of a named project
+  stops being "how many" and becomes "any", which has one right answer. Recorded
+  in ADR: The numbers that may only fall.
 - **Work the caller walked away from is stopped.** Every I/O path carries the
   request's own cancellation from the endpoint through the handler and the port
   to the adapter, which hands it to EF Core or to the Cosmos DB SDK. A read a

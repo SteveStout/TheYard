@@ -93,6 +93,7 @@ public static class OutboundHttp
 
     private sealed class Restore(HttpMessageHandler? before) : IDisposable
     {
+        /// <summary>Puts back the handler that was routed before, so a test that routed one leaves the next test the pool it expected.</summary>
         public void Dispose() => Routed.Value = before;
     }
 }

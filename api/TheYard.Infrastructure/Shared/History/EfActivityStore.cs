@@ -35,6 +35,13 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
     private ActivityAvailability? _availability;
 
     // #region availability
+    /// <summary>
+    /// Whether the activity tables are there to be written to, and a line saying where. Keeps a yes and
+    /// never a no, so a database that gains the tables starts being written to without a restart; on SQL
+    /// Server it also checks that every column this build maps is published, because a table that is
+    /// missing one would otherwise fail every batch instead of refusing the store once.
+    /// </summary>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<ActivityAvailability> AvailabilityAsync(CancellationToken cancellation)
     {
         if (_availability is { Available: true })
@@ -80,6 +87,13 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
     // #endregion availability
 
     // #region record
+    /// <summary>
+    /// Folds a batch of hits into the hour and visitor counters and moves each row by its delta. Folding
+    /// first means one update an hour and one a visitor a day however many requests arrived, which is what
+    /// lets the tab answer from counters instead of from a row per request.
+    /// </summary>
+    /// <param name="hits">The batch, already reduced to a keyed hash and a path.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task RecordAsync(IReadOnlyList<ActivityHit> hits, CancellationToken cancellation)
     {
         if (hits.Count == 0 || !(await AvailabilityAsync(cancellation)).Available)
@@ -188,6 +202,9 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
     // #endregion record
 
     // #region read
+    /// <summary>Every store's hourly counts from the hour a moment falls in, by store and then by hour. Gives back nothing at all when the tables are not there, because an empty answer is a reading the card can draw and an exception is not.</summary>
+    /// <param name="since">The moment whose hour the window starts at.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<IReadOnlyList<ActivityHour>> HoursAsync(DateTimeOffset since, CancellationToken cancellation)
     {
         if (!(await AvailabilityAsync(cancellation)).Available)
@@ -212,6 +229,9 @@ public sealed class EfActivityStore(IDbContextFactory<YardDbContext> factory) : 
             .ToList();
     }
 
+    /// <summary>Every store's daily visitor counters from the day a moment falls in. Compares the day as text because that is the column's own type, which keeps the comparison on the index rather than on a converted value.</summary>
+    /// <param name="since">The moment whose day the window starts at.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<IReadOnlyList<ActivityVisitor>> VisitorsAsync(DateTimeOffset since, CancellationToken cancellation)
     {
         if (!(await AvailabilityAsync(cancellation)).Available)

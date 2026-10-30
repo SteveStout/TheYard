@@ -28,6 +28,9 @@ public sealed class BlobBlogImageStore(string account, string container, Func<Ca
     /// <param name="name">Its kept name.</param>
     public Uri Address(string name) => new($"https://{account}.blob.core.windows.net/{Uri.EscapeDataString(container)}/{Uri.EscapeDataString(name)}");
 
+    /// <summary>One picture's bytes and its content type, or null when the container holds no blob of that name. The type is taken from the kept name first and from the blob's own header only as a fallback, because the name is this codebase's rule and the header is whatever was sent.</summary>
+    /// <param name="name">The picture's kept name, which is its bytes' hash.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<BlogImageFile?> OpenAsync(string name, CancellationToken cancellation)
     {
         using var request = await RequestAsync(HttpMethod.Get, name, cancellation);
@@ -41,6 +44,8 @@ public sealed class BlobBlogImageStore(string account, string container, Func<Ca
         return new BlogImageFile(await response.Content.ReadAsByteArrayAsync(cancellation), type);
     }
 
+    /// <summary>How many pictures the container holds and how many bytes they come to, from one listing. A listing that answers with anything but success gives back a tally with no count and the status in words, because an unread card says so and never guesses a zero.</summary>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<BlogImageTally> TallyAsync(CancellationToken cancellation)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, $"https://{account}.blob.core.windows.net/{Uri.EscapeDataString(container)}?restype=container&comp=list&maxresults=5000");
@@ -56,6 +61,10 @@ public sealed class BlobBlogImageStore(string account, string container, Func<Ca
         return new BlogImageTally(sizes.Count, sizes.Sum(), $"the {container} container's listing on {account}");
     }
 
+    /// <summary>Writes a picture under its name, and does nothing when that name is already there. The name is the bytes' own hash, so a name already kept is these same bytes; the refusal is asked for of the blob service itself rather than read first and written after, which is a race.</summary>
+    /// <param name="name">The picture's kept name, which is its bytes' hash.</param>
+    /// <param name="file">The bytes and the content type to keep.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task PutAsync(string name, BlogImageFile file, CancellationToken cancellation)
     {
         using var request = await RequestAsync(HttpMethod.Put, name, cancellation);

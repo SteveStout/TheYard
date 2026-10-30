@@ -165,6 +165,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every async method in production C# takes a CancellationToken but the one framework override whose signature this codebase does not own; the parameters a declaration takes are read across an attribute's brackets, a tuple's and the lines a wide signature wraps onto; and every timer the job hunt Function runs declares the token Azure hands it and passes it on | ADR: The numbers that may only fall | CancellationTests |
 | Outside a composition root (a slice's Module, the wiring, Program.cs or the Clocks seam) a time is read from a TimeProvider handed in by constructor, and the thing it was handed to uses that clock rather than the real one | ADR: Onion and SOLID, how this codebase holds them | ClockSeamTests |
 | How many things a class is handed is counted in parameters and not in commas, so a comma inside a generic type argument is not a separator and a parameter list that wraps is read to its closing bracket; the classes still handed six or more are named one by one and their number is the ratchet's limit; and every part split off one of them resolves from the real host | ADR: The numbers that may only fall | ConstructorWidthTests |
+| The projects whose declarations all carry a summary are named one by one, and in a named project every public, internal or protected declaration says what it does, asked through one rule body both suites share and the same question the ratchet's scanner asks | ADR: The numbers that may only fall | MemberSummaryTests |
 
 ## How the table is read
 
@@ -326,3 +327,18 @@ is worth a row for the reason the cancellation row above is: the ratchet's count
 parameter appears, and the rule is that the parameter is used. The test moves a clock it owns
 rather than reading a signature, because a class that takes a `TimeProvider` and reads
 `DateTimeOffset.UtcNow` anyway satisfies a count and nothing else.
+
+
+## Addendum, 2026-10-30 (1.0.4.124): one row for a project whose documentation is finished
+
+The same shape as the two rows above it, and for the same reason. `undocumented_declarations` falls
+as summaries are written, and the rung paying it down goes a project at a time, so a count on its
+own would be satisfied by a project filling back up while another was cleaned out in its place. The
+row holds the yes-or-no question underneath the count: the projects taken to zero are named one by
+one, and in a named project every public, internal or protected declaration says what it does.
+
+The rule body is `tests/rules/SummaryRule.cs`, under the addendum of 1.0.4.70 above: one rule, one
+body, linked into both suites, so the job hunt's own projects can be named the same way when their
+instalment lands. It asks exactly what `.github/quality.py` asks, which is the point of it, and
+`MemberSummaryTests` also reads a count of the declarations it scanned, because a scan that read
+nothing would otherwise pass for a scan that found nothing.

@@ -71,12 +71,14 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, Time
             request.Describe()));
     }
 
+    /// <summary>Records a query that returned rows, as "read", and hands the reader on untouched.</summary>
     public override DbDataReader ReaderExecuted(DbCommand command, CommandExecutedEventData eventData, DbDataReader result)
     {
         Record(command, eventData.Duration, "read");
         return base.ReaderExecuted(command, eventData, result);
     }
 
+    /// <summary>Records a query that returned rows on the asynchronous path, which is the one the application uses.</summary>
     public override ValueTask<DbDataReader> ReaderExecutedAsync(
         DbCommand command, CommandExecutedEventData eventData, DbDataReader result, CancellationToken cancellationToken = default)
     {
@@ -84,12 +86,14 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, Time
         return base.ReaderExecutedAsync(command, eventData, result, cancellationToken);
     }
 
+    /// <summary>Records a statement that changed rows, with how many it affected as the outcome, because that count is the only evidence a write did anything.</summary>
     public override int NonQueryExecuted(DbCommand command, CommandExecutedEventData eventData, int result)
     {
         Record(command, eventData.Duration, $"{result} row(s) affected");
         return base.NonQueryExecuted(command, eventData, result);
     }
 
+    /// <summary>Records a statement that changed rows on the asynchronous path, with the same affected count.</summary>
     public override ValueTask<int> NonQueryExecutedAsync(
         DbCommand command, CommandExecutedEventData eventData, int result, CancellationToken cancellationToken = default)
     {
@@ -97,12 +101,14 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, Time
         return base.NonQueryExecutedAsync(command, eventData, result, cancellationToken);
     }
 
+    /// <summary>Records a statement that returned one value, as "scalar". The value itself is never recorded: it is data, and this log is about statements.</summary>
     public override object? ScalarExecuted(DbCommand command, CommandExecutedEventData eventData, object? result)
     {
         Record(command, eventData.Duration, "scalar");
         return base.ScalarExecuted(command, eventData, result);
     }
 
+    /// <summary>Records a statement that returned one value on the asynchronous path, and keeps the value out in the same way.</summary>
     public override ValueTask<object?> ScalarExecutedAsync(
         DbCommand command, CommandExecutedEventData eventData, object? result, CancellationToken cancellationToken = default)
     {
@@ -110,6 +116,7 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, Time
         return base.ScalarExecutedAsync(command, eventData, result, cancellationToken);
     }
 
+    /// <summary>Records a command that threw, naming the exception's type and never its message, so a provider quoting the value that broke a constraint cannot put that value in the log.</summary>
     public override void CommandFailed(DbCommand command, CommandErrorEventData eventData)
     {
         // The exception type, not its message: a provider's message can quote
@@ -118,6 +125,7 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, Time
         base.CommandFailed(command, eventData);
     }
 
+    /// <summary>Records a command that threw on the asynchronous path, naming the type and not the message for the same reason.</summary>
     public override Task CommandFailedAsync(
         DbCommand command, CommandErrorEventData eventData, CancellationToken cancellationToken = default)
     {

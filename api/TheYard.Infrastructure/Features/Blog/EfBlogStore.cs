@@ -15,6 +15,13 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
 {
     private BlogAvailability? _availability;
 
+    /// <summary>
+    /// Whether the blog's tables are there to be read, and a line saying where they are. Asks once by
+    /// taking a single row from each of the three, then keeps a yes: a person publishes the schema from
+    /// the SQL project, so a database without it is a state to report on the Admin tab rather than an
+    /// exception on every read. A no is not kept, so the answer turns to yes the moment the tables land.
+    /// </summary>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<BlogAvailability> AvailabilityAsync(CancellationToken cancellation)
     {
         if (_availability is { Available: true })
@@ -39,6 +46,11 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         }
     }
 
+    /// <summary>
+    /// Every published post, newest first, each with its images in order and its tags. The ordering is
+    /// done in memory because the rows are few and the alternative is a second index to keep.
+    /// </summary>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<IReadOnlyList<BlogPost>> PostsAsync(CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
@@ -46,6 +58,9 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         return await WithPartsAsync(db, posts, cancellation);
     }
 
+    /// <summary>One published post by its address, with its parts, or null when no published post answers at that address.</summary>
+    /// <param name="slug">The post's address on the site.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<BlogPost?> PostAsync(string slug, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
@@ -53,6 +68,15 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         return post is null ? null : (await WithPartsAsync(db, [post], cancellation))[0];
     }
 
+    /// <summary>
+    /// Writes a post, by its address, and gives back its id. A post already there is updated rather than
+    /// added, and its images and tags are replaced whole rather than reconciled one by one, because the
+    /// post as it went out is the authority and a half-matched set would be neither version. Tags are
+    /// deduplicated without regard to case, so a post that says a hashtag twice keeps one row.
+    /// </summary>
+    /// <param name="post">The post as it went out, with its images and tags.</param>
+    /// <param name="at">The moment the save is stamped with, handed in so the store keeps no clock of its own.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<int> SaveAsync(BlogPost post, DateTimeOffset at, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
@@ -79,6 +103,12 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         return row.Id;
     }
 
+    /// <summary>
+    /// Appends one read to the log, bots included: a read thrown away could never be counted another way,
+    /// and every number the cards show leaves the bots out when it reads rather than when it writes.
+    /// </summary>
+    /// <param name="read">The read, already reduced to the day's keyed hash and a device class.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task KeepReadAsync(BlogRead read, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
@@ -100,6 +130,9 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         await db.SaveChangesAsync(cancellation);
     }
 
+    /// <summary>Appends one thing a reader did to the event log, bots included, for the same reason a read is kept that way.</summary>
+    /// <param name="blogEvent">The event, under the same day's hash its read was kept under.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task KeepEventAsync(BlogEvent blogEvent, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
@@ -107,6 +140,13 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         await db.SaveChangesAsync(cancellation);
     }
 
+    /// <summary>
+    /// Each published post's numbers, bots left out. Reads the two logs whole and counts in memory through
+    /// the rules that own the arithmetic, so the funnel is worked out in one place and not half in SQL:
+    /// the logs are small enough for that to be the cheaper honesty.
+    /// </summary>
+    /// <param name="now">The moment the windows are measured back from, handed in so the store keeps no clock of its own.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
@@ -117,6 +157,9 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         return [.. posts.Select(p => BlogNumbers.Of(p, reads.Where(r => r.PostId == p.Id), events.Where(e => e.PostId == p.Id), now))];
     }
 
+    /// <summary>Reads of the blog by where they came from since a moment, most read first, bots left out.</summary>
+    /// <param name="since">The start of the window.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<IReadOnlyList<BlogSourceCount>> SourcesAsync(DateTimeOffset since, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);

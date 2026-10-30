@@ -236,3 +236,49 @@ rather than a count it has to trust. That test also resolves every part split of
 real host: the compiler catches every `new X(...)` whose arity changed, but a type the container
 activates by type is resolved at run time, and 1.0.4.118's first gate went red on exactly that,
 on a boot the shipping laptop cannot run.
+
+
+## Addendum, 2026-10-30 (1.0.4.124): a count that falls a project at a time, and the rule under it
+
+`undocumented_declarations` is the largest of the fourteen and the one that had not moved since the
+rung above it began: 543, where a fortnight of doubling production code took it from 239. This
+instalment takes one project to zero, `TheYard.Infrastructure`, 142 declarations, and the number
+falls to 401 with the file lowered in the same commit.
+
+The order is the one the quality guard set, worst documented first: Infrastructure, then the job
+hunt Function, the document store, Application, the host, Data and Domain. What is left after this
+instalment is 401, and it is 120 under `functions/`, 100 in `TheYard.Infrastructure.Cosmos`, 74 in
+`TheYard.Application`, 59 in `TheYard.Api`, 26 in `TheYard.Data`, 21 in `TheYard.Domain` and 1 in
+The Shed.
+
+**Most of the 142 are row properties, and a generated comment cannot write them.** A column's
+summary has to say what the column holds *and why it is kept*, and the second half is the half worth
+reading: that the reserve price is kept on the server and never sent, because the wire carries
+whether the reserve is met; that a visitor's token is a keyed hash which rotates with the day,
+because that counts distinct visitors within a day and cannot be joined to the next day's; that a
+bot's read is kept rather than dropped, because a row thrown away can never be counted another way;
+that the dataset's auction date is kept as text on purpose, because the window comes from the id's
+hash and parsing the string would invent a second schedule. Each of those was read off the model,
+the mapping or the record that decided it, and none was invented to fill a line.
+
+**A count has a weakness this instalment exposes, so a rule goes in beside it.** A total falls when
+one project is paid down, and stays level when that project fills back up while another is paid down
+in its place. So from this version the projects taken to zero are named one by one in
+`MemberSummaryTests`, and the question asked of a named project is not "how many" but "any", which
+has one right answer. The rule body is `tests/rules/SummaryRule.cs`, shared with the job hunt's
+suite the way the length rule is, so the Function's own projects can be named there in the same way
+when their instalment lands. It asks exactly what `.github/quality.py` asks: the same declaration
+pattern, and the same walk back over the attributes, blank lines and region markers that may sit
+between a summary and the thing it describes. That sameness is deliberate. If the two ever
+disagreed, a project this suite called finished would still be counted by the ratchet, and the
+number and the rule would be describing different codebases. The red before it was green named all
+142, and its count agreed with the scanner's exactly, which is the check that the port is honest.
+
+The rule, from the build:
+
+```live path=tests/rules/SummaryRule.cs region=summary-rule
+```
+
+A constant is excused in both, because its name and its value are already on the line the reader is
+looking at. Nothing any of the ten files does has changed: every line this instalment adds is a
+comment.

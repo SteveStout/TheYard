@@ -151,6 +151,13 @@ public sealed record YardConnection(YardProvider Provider, string ConnectionStri
     /// </summary>
     public const int ConnectSeconds = 60;
 
+    /// <summary>
+    /// The connection string with room to wait for a serverless database to wake up: fills in
+    /// <see cref="ConnectSeconds"/> as the connect timeout, and leaves an explicit one alone. Asks the
+    /// builder whether the caller supplied the keyword rather than whether it knows it, because a typed
+    /// connection string builder knows every keyword the provider has and would answer yes to all of them.
+    /// </summary>
+    /// <param name="connectionString">The connection string as the setting gave it.</param>
     public static string WithResumeBudget(string connectionString)
     {
         var builder = new SqlConnectionStringBuilder(connectionString);
