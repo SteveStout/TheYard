@@ -3,8 +3,18 @@
 
 namespace TheYard.Api.Features.Admin.Operations;
 
-/// <summary>The machines: what the container and the stores are doing, and memory against traffic.</summary>
-public sealed class MachineCardReadings(MachineSampler sampler, MachineHistoryReader kept, Backends backends, StoreRingBuffer storeLog, RequestRingBuffer requestLog, HostStart start) : IMachineReadings
+/// <summary>
+/// The machines: what the container and the stores are doing, and memory against traffic. It is
+/// handed <see cref="HostRings"/> rather than the store ring and the request ring separately,
+/// because both cards read the rings as one thing - the operations a store did and the requests
+/// that arrived in the same minutes (ADR: One host per process, the rings under them).
+/// </summary>
+/// <param name="sampler">The container's own samples, taken off the request path.</param>
+/// <param name="kept">The kept minutes, for any window wider than the sampler holds.</param>
+/// <param name="backends">The stores, for the relational load and the catalogues held.</param>
+/// <param name="rings">The four rings this process keeps; these cards read the store's and the requests'.</param>
+/// <param name="start">When this process started, which the uptime and the warm-up are measured from.</param>
+public sealed class MachineCardReadings(MachineSampler sampler, MachineHistoryReader kept, Backends backends, HostRings rings, HostStart start) : IMachineReadings
 {
     /// <inheritdoc/>
     public async Task<object> MachinesAsync(string? window, CancellationToken cancellation)
@@ -15,7 +25,7 @@ public sealed class MachineCardReadings(MachineSampler sampler, MachineHistoryRe
             ? StoreLoad.Absent("this container has no relational store, or it did not come up")
             : await relational.ReadLoadAsync(RingSizes.MachineSamples, cancellation);
         var now = Clocks.UtcNow();
-        var document = DocumentLoad.From(storeLog.Snapshot(), backends.Named(StoreKeys.Document)?.Name ?? "Azure Cosmos DB", now);
+        var document = DocumentLoad.From(rings.Store.Snapshot(), backends.Named(StoreKeys.Document)?.Name ?? "Azure Cosmos DB", now);
         return new
         {
             // The hour below is this process's own memory and is always here. A
@@ -26,7 +36,7 @@ public sealed class MachineCardReadings(MachineSampler sampler, MachineHistoryRe
             // written in, so the hour and the month are one chart. The ring is
             // a number of requests and not an hour: when it is full its oldest
             // minute is marked, and the page says how many minutes it reaches.
-            traffic = new { ring = RingSizes.RequestRing, minutes = TrafficMinutes.OfRing(requestLog.Snapshot(), RingSizes.RequestRing) },
+            traffic = new { ring = RingSizes.RequestRing, minutes = TrafficMinutes.OfRing(rings.Requests.Snapshot(), RingSizes.RequestRing) },
             container = new
             {
                 memory_limit_mb = MachineSampler.MemoryLimitMb,
@@ -86,7 +96,7 @@ public sealed class MachineCardReadings(MachineSampler sampler, MachineHistoryRe
         {
             bucketMinutes = 1;
             var samples = sampler.Snapshot();
-            var requests = requestLog.Snapshot();
+            var requests = rings.Requests.Snapshot();
             var warm = start.At + AdminFollowsRoutes.WarmUp;
             skipped = now - TimeSpan.FromHours(1) < warm;
             points = [];

@@ -166,3 +166,73 @@ of them, which is this record's own Consequences section happening twice in two 
 refuses it under `-warnaserror`. So take-and-drop is already caught wherever the callee has a
 token overload, and the hole is only where it does not: a delegate, a port of this codebase's
 own, or a call that reads a token off something else.
+
+## Addendum, 2026-10-29 (1.0.4.120): the width was counted in commas, and it was wrong both ways
+
+The third rung is the wide classes, and the first thing it found was that the count did not
+mean what the table above says it means. `wide_service_classes` read a class's declaration with
+`([^,)]*,){5,}`: five commas on the line the class is declared on, before the first closing
+bracket. How many things a class is handed is a different question from how many commas are on
+a line, and the two disagreed in both directions.
+
+**Three classes were counted that take four and five.** A generic type argument carries a comma
+of its own, so `Func<CancellationToken, Task<string?>>` is one parameter that reads as two:
+
+- `CampaignSource` takes four and has two such parameters, so it read as six;
+- `NightlyProcesses` takes five and has one;
+- `PlanHistoryReader` takes five and has one.
+
+Splitting any of those three would have been work done for a regular expression, which is the
+failure mode the addendum above named when the same thing happened to `async_without_cancellation`.
+
+**Seven were not counted at all.** Six wrap their parameter list over several lines, so the
+commas the rule wanted were not on the line it read: `RequestRecorder` takes eight,
+`StoreAnnouncement`, `MachineRecorder` and `PulseReader` take seven, and `CostRecorder` and
+`CloudReader` take six. The seventh, `BoundedCache`, has a traditional constructor in the class
+body rather than a primary one, and the rule only ever looked at class declarations.
+
+**What the rule does now.** It reads the parameter list through the same whole-signature helper
+the async rule has used since the addendum above, and splits it only where a reader would: on a
+comma at the list's own bracket depth, outside any angle brackets. `WIDE_AT = 6` is named rather
+than spelled as five commas, because the number in the table is six.
+
+```live path=.github/quality.py region=constructor-width
+```
+
+**One shape is still invisible, and it is named rather than quietly included.** A traditional
+constructor, `public Thing(...)` inside the class body, is not counted: telling a class's
+constructor from a record's means tracking the enclosing type, which is more than a line reader
+does, and this record's own Consequences section accepts that price. The one production type it
+hides is `BoundedCache` in `api/TheYard.Application/Shared/Caching/BoundedCache.cs`, whose six
+parameters are four pieces of configuration and two optional collaborators. Whether that is a
+class with six jobs or a cache with four settings is a judgment, not a count, and the next
+instalment of this rung makes it in the open rather than having a regular expression make it by
+accident.
+
+**This is the first corrected count that made a number go up.** The async fix could only lower a
+count, because only the test for the token widened. This one both adds and removes, and on an
+untouched checkout of 1.0.4.119 it took `wide_service_classes` from 9 to 12 and turned the step
+red: `WORSE wide_service_classes: 12 (limit 9)`. A limit may only move the good way, so the honest
+number had to land under the old one in the same commit, and four classes were split to get it to
+eight:
+
+| Class | Was handed | Now | Split by |
+| --- | ---: | ---: | --- |
+| `StoreAnnouncement` | 7 | 2 | `StoreLogAttachment` attaches the host's loggers, `StoreStartupLines` says what came up, and the hosted service holds only the order |
+| `RingReadings` | 7 | 4 | `HostRings`, the four rings this process keeps, as one thing |
+| `MachineCardReadings` | 6 | 5 | the same `HostRings` |
+| `CostRecorder` | 6 | 2 | `CostKeeping` holds one read and everything it leaves behind; the recorder holds the schedule |
+
+`HostRings` is a parameter object and not a job split, which is worth saying plainly because the
+difference is exactly what this number is for. It is the right move in these two cases because
+every answer both classes give reads the rings and nothing else about them, so the rings are one
+collaborator rather than four, and a fifth ring now adds a property instead of changing two
+constructors. It would be the wrong move on a class whose parameters have nothing to do with each
+other, where it would hide the width instead of removing it.
+
+**Eight are left and `ConstructorWidthTests` names them**, by file and type, beside the three
+over-counts and the four wrapped shapes, so the next instalment starts from a list it can check
+rather than a count it has to trust. That test also resolves every part split off a class from the
+real host: the compiler catches every `new X(...)` whose arity changed, but a type the container
+activates by type is resolved at run time, and 1.0.4.118's first gate went red on exactly that,
+on a boot the shipping laptop cannot run.

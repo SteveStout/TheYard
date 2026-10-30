@@ -351,7 +351,7 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
         var status = new CostStatus();
         var reader = new CostReader("sub", "client", configured: false);
 
-        using var recorder = new CostRecorder(reader, history, status, clock, NullLogger<CostRecorder>.Instance, TimeSpan.FromSeconds(30));
+        using var recorder = new CostRecorder(new CostKeeping(reader, history, status, clock, NullLogger<CostKeeping>.Instance), TimeSpan.FromSeconds(30));
         await recorder.RecordOnceAsync(CancellationToken.None);
         var report = await new CostHistoryReader(history, reader, status, clock).ReadAsync("30d", CancellationToken.None);
 

@@ -14,6 +14,10 @@ public static class StartupRegistration
     /// <param name="identity">Where this process runs: the keep-warm loop is on by default on App Service only.</param>
     public static void AddTheYardStartup(this WebApplicationBuilder builder, HostIdentity identity)
     {
+        // The announcement's two jobs, each a type of its own: the container activates the
+        // hosted service by type, so both have to be resolvable from here.
+        builder.Services.AddSingleton<StoreLogAttachment>();
+        builder.Services.AddSingleton<StoreStartupLines>();
         builder.Services.AddHostedService<StoreAnnouncement>();
         builder.Services.AddHostedService<ScratchDatabaseCleanup>();
         builder.Services.AddHostedService<ErrorRingKeeping>();

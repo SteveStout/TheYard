@@ -35,6 +35,9 @@ public static class ObservabilityRegistration
         var requestLog = new RequestRingBuffer(RingSizes.RequestRing);
         builder.Services.AddSingleton(logLog);
         builder.Services.AddSingleton(requestLog);
+        // The four of them as one thing, for the readings whose job is singular and which used to
+        // be handed every ring separately (HostRings.cs).
+        builder.Services.AddSingleton(new HostRings(sqlLog, storeLog, logLog, requestLog));
         builder.Services.AddSingleton(sqlLog);
         builder.Services.AddSingleton<ISqlLog>(sqlLog);
         builder.Services.AddSingleton(storeLog);

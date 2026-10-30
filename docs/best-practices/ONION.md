@@ -216,6 +216,48 @@ twins, and fails on the first it finds. .NET 8 added `TimeProvider` for code tha
 swap, and the record says why a plain value is enough here
 ([What is kept on purpose](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid#what-is-kept-on-purpose)).
 
+## How many things a class may be handed
+
+The S in SOLID is the half of this page's record that is not about rings, and it is held by a
+number rather than by a yes-or-no test, because one more constructor parameter is never the
+moment to object. The number is `wide_service_classes` in `.github/quality-ratchet.json`: how many
+classes are handed six or more things (ADR: The numbers that may only fall). Six collaborators is
+more than one job, and a class with more than one job is changed for more than one reason.
+
+**Count parameters, not commas.** The rule used to read five commas on the line a class was
+declared on, which is a different question and gets a different answer. A generic type argument
+carries a comma of its own, so `Func<CancellationToken, Task<string?>>` read as two parameters and
+three classes taking four and five were counted as wide; and a parameter list long enough to wrap
+puts its last parameters on the lines below, so seven classes taking six to eight were not counted
+at all. It now reads the whole signature and splits it on a comma at the list's own bracket depth,
+outside any angle brackets:
+
+```live path=.github/quality.py region=constructor-width
+```
+
+**A split is by job, and the file that keeps the name lists its parts.** The announcement the host
+makes about its stores took seven things to do two jobs: attach the loggers, then say what came up.
+Attaching is a type of its own, saying is another, and what is left is the order between them,
+which is the only thing that was ever really a decision:
+
+```live path=api/TheYard.Api/Shared/Hosted/StoreAnnouncement.cs region=*
+```
+
+**A parameter object is sometimes the right answer, and it is not the same thing.** Four of this
+host's constructors were wide only because the four rings this process keeps were handed over one
+at a time. The rings are one concern, named in a record's own title, and every answer those classes
+give reads the rings and nothing else about them, so they travel as one collaborator now. That is
+worth distinguishing out loud: grouping parameters that belong together removes the width, and
+grouping parameters that have nothing to do with each other only hides it, which leaves a class
+with the same several reasons to change and a tidier signature.
+
+**Two things to know before splitting one.** The compiler catches every `new X(...)` whose arity
+changed, so the only break it cannot see is a type the service container activates by name: a part
+split off a class and registered nowhere fails when something first asks for it, which on this
+project meant a red gate on a store boot the shipping machine cannot run. And a class at exactly
+five is one parameter from the line, so the clock or the token the next rung wants to hand it is
+the parameter that makes it wide; the two rungs are worked in that order for that reason.
+
 ## The build holds the rings
 
 A rule held by code review alone slips the first busy week. TheYard's is held by ten tests that read

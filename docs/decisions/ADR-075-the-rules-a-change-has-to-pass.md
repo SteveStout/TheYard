@@ -164,6 +164,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every quality number the ratchet file holds has a row in the record that explains what it counts, both workflows run the scanner against that file, the gate's verdict reads its result, and the coverage floor stays at ninety and seventy-five | ADR: The numbers that may only fall | QualityRatchetTests |
 | Every async method in production C# takes a CancellationToken but the one framework override whose signature this codebase does not own; the parameters a declaration takes are read across an attribute's brackets, a tuple's and the lines a wide signature wraps onto; and every timer the job hunt Function runs declares the token Azure hands it and passes it on | ADR: The numbers that may only fall | CancellationTests |
 | Outside a composition root (a slice's Module, the wiring, Program.cs or the Clocks seam) a time is read from a TimeProvider handed in by constructor, and the thing it was handed to uses that clock rather than the real one | ADR: Onion and SOLID, how this codebase holds them | ClockSeamTests |
+| How many things a class is handed is counted in parameters and not in commas, so a comma inside a generic type argument is not a separator and a parameter list that wraps is read to its closing bracket; the classes still handed six or more are named one by one and their number is the ratchet's limit; and every part split off one of them resolves from the real host | ADR: The numbers that may only fall | ConstructorWidthTests |
 
 ## How the table is read
 

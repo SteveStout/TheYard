@@ -33,12 +33,16 @@ public static class CostRegistration
         builder.Services.AddSingleton(reader);
         builder.Services.AddSingleton(status);
         builder.Services.AddSingleton(new CostHistoryReader(history, reader, status, TimeProvider.System));
-        builder.Services.AddSingleton(services => new CostRecorder(
+        // One read and what it leaves behind, then the schedule that runs it: the recorder holds
+        // only the waits, so it is handed the keeping rather than everything the keeping needs.
+        builder.Services.AddSingleton(services => new CostKeeping(
             reader,
             history,
             status,
             TimeProvider.System,
-            services.GetRequiredService<ILogger<CostRecorder>>(),
+            services.GetRequiredService<ILogger<CostKeeping>>()));
+        builder.Services.AddSingleton(services => new CostRecorder(
+            services.GetRequiredService<CostKeeping>(),
             CostRecorder.FirstReadAfter(builder.Configuration["Store:Default"])));
         builder.Services.AddHostedService(services => services.GetRequiredService<CostRecorder>());
         // #endregion cost-wiring

@@ -205,3 +205,36 @@ the laziest version of this change does not compile. What the build cannot see i
 reads the clock it was handed in one place and the real one in another, so `ClockSeamTests`
 moves a clock the test owns and insists the stamp follows it. That case was proved by planting
 exactly that shape and watching it fail.
+
+## Addendum, 2026-10-29 (1.0.4.120): six is the line, and three ways a class gets there
+
+The rung above left `PlanReader`, `TelemetryReader` and `ProofRunner` waiting on a split, so this
+version is about the S rather than the D: how many things a class may be handed before it is doing
+more than one job. The line is six, held by a count rather than a yes-or-no test, because one more
+parameter is never the moment anybody objects (ADR: The numbers that may only fall, the addendum on
+counting a constructor's width). The practices page gained a section with the samples, and three
+things learned here belong in the record.
+
+**A count of commas is not a count of parameters.** The rule read five commas on the declaration's
+line, so a generic type argument's own comma made three narrow classes look wide and a wrapped
+parameter list hid seven that were. The fix is the same one the cancellation rule got: read the
+whole signature, split it where a reader would. The lesson repeating twice in four versions is the
+general one, which is that a measurement of this codebase is a claim about this codebase and gets
+checked against it before anything is paid down.
+
+**There are two honest ways to narrow a constructor and they are not the same.** Splitting by job
+is the first: the host's store announcement was handed seven things to do two jobs, attaching the
+loggers and saying what came up, so each is a type of its own and what is left is the order between
+them. Grouping by concern is the second: the four rings this process keeps were handed over one at
+a time to classes whose every answer reads the rings and nothing else about them, so the rings
+travel as one collaborator now. The first removes a reason to change; the second removes a
+parameter. Grouping parameters that have nothing to do with each other would leave the reasons to
+change where they were and only tidy the signature, which is worth refusing by name because it is
+the cheap way to make this number fall.
+
+**Splitting a class has one failure the compiler cannot see.** Every `new X(...)` whose arity
+changed is a build error. A type the service container activates by name is resolved at run time,
+so a part split off a class and registered nowhere fails when something first asks for it, which on
+this project meant a red gate on a store boot the shipping laptop cannot run (1.0.4.118). So
+`ConstructorWidthTests` resolves every part off the real host, and the rule for this rung is that a
+split and its registration go in the same commit as each other.

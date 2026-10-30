@@ -71,7 +71,7 @@ public static class StoreRegistration
         // exists before the container does; registered later so everything shares this one.
         var httpContextAccessor = new HttpContextAccessor();
         var currentRequest = new HttpCurrentRequest(httpContextAccessor);
-        // The host's loggers, attached to a context factory made after startup too (StoreAnnouncement).
+        // The host's loggers, attached to a context factory made after startup too (StoreLogAttachment).
         var loggers = new StoreLoggers();
         // The relational store's two context factories, held once it is attached (RelationalContexts.cs).
         var relationalContexts = new RelationalContexts();

@@ -8,25 +8,34 @@ using TheYard.Application.Features.Admin.Costs;
 namespace TheYard.Api.Features.Admin.Operations;
 
 // #region operations-readings
-/// <summary>The process's own rings.</summary>
-public sealed class RingReadings(SqlRingBuffer sql, StoreRingBuffer store, LogRingBuffer logs, RequestRingBuffer requests, Backends backends, HostStart start, IHttpContextAccessor accessor) : IRingReadings
+/// <summary>
+/// The process's own rings, handed out as the three ring sections and the metrics report read
+/// them. It is handed <see cref="HostRings"/> rather than a buffer per ring: every one of its
+/// four answers reads the rings and nothing else about them, so the rings are one collaborator
+/// here and not four (ADR: One host per process, the rings under them).
+/// </summary>
+/// <param name="rings">The four rings this process keeps.</param>
+/// <param name="backends">The stores, for the document store's name and the request's own store.</param>
+/// <param name="start">When this process started, which the metrics report dates its window from.</param>
+/// <param name="accessor">The request in flight, whose store the metrics report is built for.</param>
+public sealed class RingReadings(HostRings rings, Backends backends, HostStart start, IHttpContextAccessor accessor) : IRingReadings
 {
     /// <inheritdoc/>
-    public object Sql() => sql.Snapshot();
+    public object Sql() => rings.Sql.Snapshot();
 
     /// <inheritdoc/>
     public object Store() => new
     {
         store = backends.Named(StoreKeys.Document)?.Name ?? backends.Default.Name,
-        operations = store.Snapshot(),
+        operations = rings.Store.Snapshot(),
     };
 
     /// <inheritdoc/>
-    public object Logs() => logs.Snapshot();
+    public object Logs() => rings.Logs.Snapshot();
 
     /// <inheritdoc/>
     public object Metrics() =>
-        MetricsReport.Build(backends, backends.For(accessor.HttpContext), requests.Snapshot(), sql.Snapshot(), store.Snapshot(), start.At);
+        MetricsReport.Build(backends, backends.For(accessor.HttpContext), rings.Requests.Snapshot(), rings.Sql.Snapshot(), rings.Store.Snapshot(), start.At);
 }
 
 /// <summary>The kept rings.</summary>

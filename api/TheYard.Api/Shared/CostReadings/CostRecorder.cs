@@ -1,6 +1,6 @@
-// The background service that reads the bill once an hour and keeps the answer for the cards.
-// Its own file because when to read (the hour, the retry, the start delay) is a separate
-// question from how to read, which is CostReader.cs.
+// The background service that reads the bill once an hour. Its own file because when to read
+// (the hour, the retry, the start delay) is a separate question from how to read, which is
+// CostReader.cs, and from what a read leaves behind, which is CostKeeping.cs.
 
 namespace TheYard.Api.Shared.CostReadings;
 
@@ -9,21 +9,16 @@ namespace TheYard.Api.Shared.CostReadings;
 /// Reads Cost Management once an hour and holds the answer (ADR: What Azure
 /// charges). Never on a request: the service is rate limited, lags the day by
 /// eight to twenty four hours, and a card that asked it on every open would
-/// spend the allowance on the same answer. Thirty-five days each time, the
-/// month window and five more, because a day is revised after it ends and the
-/// next read is how the revision lands.
+/// spend the allowance on the same answer.
+///
+/// <para>This type is the schedule and nothing else: the wait after start, the wait after each
+/// answer, and the loop between them. The read itself and everything it leaves behind are
+/// <see cref="CostKeeping"/>, which is why this is handed two things rather than six.</para>
 /// </summary>
-public sealed class CostRecorder(
-    CostReader reader,
-    ICostHistory history,
-    CostStatus status,
-    TimeProvider clock,
-    ILogger<CostRecorder> logger,
-    TimeSpan firstReadAfter) : BackgroundService
+/// <param name="keeping">One read of the bill, kept, with its failures already written down.</param>
+/// <param name="firstReadAfter">How long after the start the first read waits (see <see cref="FirstReadAfter"/>).</param>
+public sealed class CostRecorder(CostKeeping keeping, TimeSpan firstReadAfter) : BackgroundService
 {
-    /// <summary>The wait the last read asked for, so the loop sleeps as long as the refusal named.</summary>
-    private TimeSpan? _retryAfter;
-
     /// <summary>How often the bill is read.</summary>
     public static readonly TimeSpan Every = TimeSpan.FromHours(1);
 
@@ -59,44 +54,21 @@ public sealed class CostRecorder(
     /// so the two first reads never reach Cost Management in the same second; the one web app that
     /// serves both sites sets no default store and waits the shorter time.
     /// </summary>
+    /// <param name="defaultStore">The store this process serves by default, or null when it serves both.</param>
     public static TimeSpan FirstReadAfter(string? defaultStore) =>
         string.Equals(defaultStore, StoreKeys.Document, StringComparison.OrdinalIgnoreCase)
             ? TimeSpan.FromSeconds(90)
             : TimeSpan.FromSeconds(30);
 
     /// <summary>One read, public so the suite can run one without waiting an hour; says how it went.</summary>
-    public async Task<CostOutcome> RecordOnceAsync(CancellationToken cancellation)
-    {
-        var now = clock.GetUtcNow();
-        if (!reader.Configured)
-        {
-            status.Set(now, false, CostReader.NotConfigured);
-            return CostOutcome.Failed;
-        }
-
-        var availability = await history.AvailabilityAsync(cancellation);
-        if (!availability.Available)
-        {
-            status.Set(now, false, availability.Reason);
-            return CostOutcome.Failed;
-        }
-
-        var today = DateOnly.FromDateTime(now.UtcDateTime);
-        var read = await reader.ReadAsync(today.AddDays(-(CostWindows.ReadDays - 1)), today, cancellation);
-        if (read.Outcome == CostOutcome.Read)
-        {
-            await history.KeepAsync(read.Days, read.Forecast, cancellation);
-        }
-
-        status.Set(now, read.Outcome == CostOutcome.Read, read.Note);
-        _retryAfter = read.RetryAfter;
-        return read.Outcome;
-    }
+    /// <param name="cancellation">The read's cancellation.</param>
+    public Task<CostOutcome> RecordOnceAsync(CancellationToken cancellation) => keeping.RecordOnceAsync(cancellation);
 
     /// <summary>
     /// The loop: a short wait after start (see FirstReadAfter), then a read, then a wait set by how the read went.
     /// A run that is not on Azure stops after its first read, since there is nothing to ask with.
     /// </summary>
+    /// <param name="stopping">The host's stopping token, which ends the loop.</param>
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
         // A short wait after the start, so the first read never competes with
@@ -105,11 +77,11 @@ public sealed class CostRecorder(
         await Task.Delay(firstReadAfter, stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         while (!stopping.IsCancellationRequested)
         {
-            var outcome = CostOutcome.Failed;
+            CostOutcome outcome;
             try
             {
-                outcome = await RecordOnceAsync(stopping);
-                if (!reader.Configured)
+                outcome = await keeping.TryRecordAsync(stopping);
+                if (!keeping.Configured)
                 {
                     return;
                 }
@@ -118,15 +90,8 @@ public sealed class CostRecorder(
             {
                 return;
             }
-            catch (Exception ex)
-            {
-                // The type, never the message: a message from the identity
-                // endpoint or the service names the resource it refused.
-                logger.LogWarning("The bill could not be read ({Exception})", ex.GetType().Name);
-                status.Set(clock.GetUtcNow(), false, $"the last read did not finish ({ex.GetType().Name}); the next is in five minutes");
-            }
 
-            await Task.Delay(WaitAfter(outcome, _retryAfter), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
+            await Task.Delay(WaitAfter(outcome, keeping.RetryAfter), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         }
     }
 }

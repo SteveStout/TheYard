@@ -269,6 +269,7 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
             "A request walks the rings",
             "The inner ring owns the interface",
             "The rules take the clock as a value",
+            "How many things a class may be handed",
             "The build holds the rings",
             "One project, rings as folders",
             "When not to build it this way",

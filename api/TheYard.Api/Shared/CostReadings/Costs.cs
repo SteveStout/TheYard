@@ -2,6 +2,7 @@
 // This file holds CostQuery: the two questions asked of Cost Management and how each answer is
 // cut down to days. The rest of the cost reading lives beside it, one job per file:
 //   CostReader.cs   - CostOutcome, CostRead, CostReader, CostStatus: one read and how it went
+//   CostKeeping.cs  - CostKeeping: one read, kept, and what it leaves behind
 //   CostRecorder.cs - CostRecorder: the background service that reads once an hour
 using System.Globalization;
 using System.Text.Json;

@@ -302,13 +302,58 @@ for f in CS_PROD:
             smell["static_mutable"].append(f"{s}:{n}")
 R["smells"] = {k: {"count": len(v), "sample": v[:12]} for k, v in smell.items()}
 
+# #region constructor-width
 # Service classes (not records) handed six or more dependencies: the SRP signal that matters.
+# The count is of PARAMETERS, read the way a reader reads them, and it used to be of commas on
+# one line. Two different things: a generic type argument carries a comma of its own, so
+# Func<CancellationToken, Task<string?>> was read as two parameters and three classes taking
+# four and five were counted as taking six; and a parameter list wide enough to wrap puts its
+# last parameters on the lines below, so six classes taking six to eight were not counted at
+# all. The whole-signature helper above already reads a declaration's brackets across the lines
+# it takes, so this rule now reads the list through it and splits that list only where a reader
+# would: a comma at the list's own bracket depth, outside any angle brackets (ADR: The numbers
+# that may only fall, the addendum on counting a constructor's width).
+#
+# What this still does not see, said out loud rather than left for the next reader to find: a
+# traditional constructor, "public Thing(...)" inside the class body. Telling a class's
+# constructor from a record's would mean tracking the enclosing type, which is more than a line
+# reader can do, and the one production type it hides is named in the record's addendum.
+def handed(taken):
+    """The parameters in a parameter list, split where a reader would split them."""
+    if taken is None:
+        return []
+    depth = angle = 0
+    out, cur = [], ""
+    for ch in taken:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == "<":
+            angle += 1
+        elif ch == ">":
+            angle = max(0, angle - 1)
+        if ch == "," and depth == 0 and angle == 0:
+            out.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    out.append(cur)
+    return [p.strip() for p in out if p.strip()]
+
+
+PRIMARY = re.compile(r"^\s*(public|internal)\s+(sealed\s+|partial\s+|abstract\s+)*class\s+\w+(<[^>]*>)?\s*\(")
+WIDE_AT = 6
+
 wide = []
 for f in CS_PROD:
-    for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-        if re.search(r"^\s*(public|internal)\s+(sealed\s+)?(partial\s+)?class\s+\w+(<[^>]*>)?\s*\(([^,)]*,){5,}", line):
+    all_lines = f.read_text(encoding="utf-8", errors="replace").splitlines()
+    for n, line in enumerate(all_lines, 1):
+        m = PRIMARY.search(line.split("//")[0])
+        if m and len(handed(parameters(all_lines, n - 1, m.end() - 1))) >= WIDE_AT:
             wide.append(f"{rel(f)}:{n}")
 R["wide_service_classes"] = {"count": len(wide), "list": wide}
+# #endregion constructor-width
 
 # Clock read directly outside a composition root, where TimeProvider or the Clocks seam should be handed in.
 clock = [x for x in smell["clock_direct"] if not re.search(r"Module\.cs|/Wiring/|Program\.cs|Clocks\.cs", x)]
