@@ -124,3 +124,74 @@ The Function answers no request. Its timers each run one use case on a clock, so
 - **Nothing is a service** in any of the three rings.
 
 The Function's `CqrsTests` holds all three, reading a port by what it can do with the same writing-verb rule the site's queries are held to (the addendum of 1.0.4.68), widened by the Function's own verbs (Append, Move, Replace, Ensure, Archive, Mark, Block). It was red with the split reverted: "InboxTriage takes IMergeStore store, which can AppendAsync, EnsureFolderAsync, MoveAsync, ReplaceAsync, WriteAsync" and "InboxTriage takes IInbox inbox, which can ArchiveAsync".
+
+## Addendum, 2026-10-30 (1.0.4.127): the Function's read-only use cases are found, not listed
+
+The addendum above is still the rule. What changed is its subject. It named two use cases,
+`InboxTriage` and `MergerHealth`, and the Function's `CqrsTests` held exactly those two to reading
+ports through a dictionary kept by hand. So the rule was as good as somebody's memory: a use case
+written next week that reads the share and is handed `IMergeStore` rather than `IShareReader` would
+never be asked the question, because it would not be in the dictionary. A rule whose subject is a
+list only ever covers the list, and this list had not grown in the month since it was written.
+
+The dictionary is gone. `tests/rules/UseCaseRule.cs` reads the Application ring for every type handed
+a port and asks the compiled code which of them write; the rule runs over the ones that do not. It
+finds the same two, and that is the result worth recording: **the number did not change, the way of
+arriving at it did**, and the next read-only use case is covered the day it is written rather than the
+day somebody remembers it.
+
+### Proved both ways, with one plant
+
+A read-only use case handed the writing half of the share's port was planted under
+`Features/Triage/`: `TriageBacklog(IMergeStore store)`, which lists the triage folder, asks whether
+`seen.tsv` is there, and does nothing else.
+
+- The hand-kept test **passed**, 3 of 3, with the plant in the tree. That is the defect, not a
+  surprise: it iterates its dictionary, and `TriageBacklog` is not in it.
+- Discovery **failed** on the same tree: *"TriageBacklog only reads and takes IMergeStore store by its
+  constructor, which can AppendAsync, EnsureFolderAsync, MoveAsync, ReplaceAsync, WriteAsync; a use
+  case that only reads takes the reading half"*.
+
+### What "writes" means, and the near-miss that would have shipped a false red
+
+Whether a use case writes is read from its compiled code and never from its name, because a name is a
+promise and nothing checks a promise. A use case writes when the code it owns reaches a call to a
+member whose name starts with a writing verb on one of its family's types. *Reaches* is the whole
+difficulty, and two hops are invisible to a scan of one method body.
+
+The first is the **state machine**. An `async` method's own body is builder plumbing; the calls a
+reader sees in the source live in the `MoveNext` of a nested compiler-generated type that the builder
+starts generically, so no call instruction joins the two. The edge is taken from
+`AsyncStateMachineAttribute`, which names that type.
+
+The second is **delegation**, and it is the one that nearly shipped. Measured one method deep, the
+first run of the discovery read `TrackerMerger` as a use case that only reads while holding
+`IMergeStore` - this rule's own failure message, aimed at the type whose entire job is writing.
+`TrackerMerger` calls nothing that writes: it makes a `MergeContext` and the merge steps and lets them
+write. It was caught by reading the whole printed list by eye rather than its total, which is what
+ADR-122's addendum of 1.0.4.125 asks of a rung, and it was caught before a line of the rule was
+written. So a write now travels backwards along every call a method makes.
+
+The walk is over **methods and not types**, deliberately. Collapsed to types, `MergerHealth` would
+read as a writer for calling `TrackerMerger.IsSpoolFile`, a static that tests a file name.
+
+### What is a port, and the two limits left in place
+
+A port is one of the family's interfaces, or one of its classes that is not a record - which is how
+`MergeContext`, a class holding the share's writing half behind two safe ways to change the master, is
+a port and is read as a writer. A **record is never a port**: its compiler-generated equality takes
+its own type, so every record in the ring would read as a type handed one of the family's types, and
+twenty-two of them did on the first measurement.
+
+Two limits are named rather than quietly fixed, because fixing a measurement inside the commit that
+depends on it is the move ADR-122 exists to refuse:
+
+- **`TrackerFrame.Record` matches the writing-verb pattern as the verb "record" where it is the noun**,
+  the CSV record text. It cannot bite, because a record is never a port, but it is the same shape of
+  defect as the three ratchet numbers this lane has found mismeasuring.
+- **A write reached through a delegate is invisible.** A port passed as a `Func<>` or an action and
+  invoked there leaves no call instruction naming the member. Nothing in the Function does it, and the
+  one delegate in the ring is a clock.
+
+The counts the build holds - eighteen use cases, two of them read-only - are read back out of
+`docs/best-practices/CQRS.md` by the Function's own `CqrsTests`, so the page cannot go stale either.

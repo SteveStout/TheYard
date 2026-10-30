@@ -12,5 +12,5 @@
  "files_within_10_of_cap": 2,
  "behavior_types_never_named_in_a_test": 0,
  "test_to_prod_ratio_higher_is_better": 0.79,
- "dotnet_tests_higher_is_better": 2358
+ "dotnet_tests_higher_is_better": 2361
 }

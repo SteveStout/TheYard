@@ -128,6 +128,44 @@ Read back by `CqrsTests` on every build, so a number here cannot go stale.
 | handlers | 58 |
 | services | 0 |
 
+## The Function finds its read-only use cases rather than being told them
+
+The job hunt's Function answers no request, so it has no query to name and no handler to count. The half
+of this page that does carry over is the half that matters: a use case that only reads cannot write. Its
+ports are split for it - `IMergeStore` extends `IShareReader`, `IInbox` extends `IInboxReader` - and the
+reading use cases take the reading halves.
+
+Until 1.0.4.126 that rule ran over a dictionary of two names kept by hand in the Function's `CqrsTests`,
+which made it exactly as good as somebody's memory: a new use case that reads the share and is handed the
+writing half of its port was never asked the question, because it was not in the dictionary. A rule whose
+subject is a list only covers the list.
+
+So the subject is read from the build. `tests/rules/UseCaseRule.cs` asks the ring which types are handed a
+port, and asks the compiled code which of them write; the rule runs over the ones that do not. It finds the
+same two the dictionary named, which is the point - the number did not change, the way of arriving at it
+did, and the next read-only use case is covered the moment it is written.
+
+Whether a use case writes is read from its code and never from its name, and two hops make that harder
+than scanning one method body. The first is the state machine: an `async` method's own body is builder
+plumbing, and the calls a reader sees in the source live in the `MoveNext` of a nested compiler-generated
+type that the builder starts generically, so no call instruction joins the two. The second is delegation:
+`TrackerMerger` is handed the writing port and calls nothing that writes, because it makes a `MergeContext`
+and the merge steps and lets them write. Measured one method deep it reads as a use case that only reads
+holding a port that writes - this rule's own failure message, aimed at the type whose whole job is writing.
+So writes travel backwards along the calls a method makes, over methods rather than types: collapsed to
+types, `MergerHealth` would read as a writer for calling `TrackerMerger.IsSpoolFile`, a static that tests a
+file name.
+
+```live path=tests/rules/UseCaseRule.cs region=use-case-rule
+```
+
+| shape | count |
+| --- | --- |
+| the Function's use cases | 18 |
+| of them that only read | 2 |
+
+Read back by the Function's `CqrsTests` on every build, so these two cannot go stale either.
+
 ## What this codebase does not do, and why
 
 No second store for reads, no events between a write side and a read side, no event sourcing and no
