@@ -119,7 +119,7 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
         using var site = await GetAsync($"/api/v1/sites/{id}", cancellation);
         using var ssl = await GetAsync($"/api/v1/sites/{id}/ssl", cancellation);
         using var deploys = await GetAsync($"/api/v1/sites/{id}/deploys?per_page=20", cancellation);
-        var (log, live, skipped, failed) = DeployLog(deploys.RootElement);
+        var (log, live, skipped, failed) = NetlifyDeploys.DeployLog(deploys.RootElement);
         string? answeredBy, statuses;
         (_cacheHit, statuses) = await SampleAsync(cancellation);
         answeredBy = await AnsweredAsync(cancellation);
@@ -132,7 +132,7 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
             ["plan"] = AzureMetrics.Text(site.RootElement, "plan"),
             ["admin_url"] = AzureMetrics.Text(site.RootElement, "admin_url"),
             ["deploy_log"] = log,
-            ["deploy_rows"] = DeployRows(deploys.RootElement),
+            ["deploy_rows"] = NetlifyDeploys.DeployRows(deploys.RootElement),
             ["deploys_live"] = live.ToString(CultureInfo.InvariantCulture),
             ["deploys_skipped"] = skipped.ToString(CultureInfo.InvariantCulture),
             ["deploys_failed"] = failed.ToString(CultureInfo.InvariantCulture),
@@ -143,45 +143,8 @@ public sealed partial class NetlifyEdge(string? token, string siteName, Uri publ
         }, []);
     }
 
-    /// <summary>
-    /// What a deploy came to, in the card's words: live when Netlify published it, skipped when the
-    /// repository's ignore rule found no change under edge/ (Netlify files those as errors with the
-    /// reason "Canceled build due to no content change"), failed for any other error, and building
-    /// while it runs. The card never calls a skipped build failed.
-    /// </summary>
-    public static string Outcome(JsonElement deploy)
-    {
-        string? state = AzureMetrics.Text(deploy, "state");
-        string reason = AzureMetrics.Text(deploy, "error_message") ?? "";
-        return state switch
-        {
-            "ready" => "live",
-            "skipped" => "skipped",
-            "error" when reason.Contains("no content change", StringComparison.OrdinalIgnoreCase) || reason.Contains("ignore", StringComparison.OrdinalIgnoreCase) => "skipped",
-            "error" or "rejected" => "failed",
-            _ => "building",
-        };
-    }
 
-    /// <summary>The deploy log the card prints: the newest few, each with its time and what it came to.</summary>
-    public static (string Log, int Live, int Skipped, int Failed) DeployLog(JsonElement deploys, int newest = 5)
-    {
-        var listed = deploys.ValueKind == JsonValueKind.Array ? deploys.EnumerateArray().ToList() : [];
-        var outcomes = listed.Select(d => (At: AzureMetrics.Text(d, "created_at"), Outcome: Outcome(d))).ToList();
-        string log = string.Join(" · ", outcomes.Take(newest).Select(o =>
-            (DateTimeOffset.TryParse(o.At, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at.UtcDateTime.ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " UTC " : "")
-            + (o.Outcome == "skipped" ? "skipped, no edge change" : o.Outcome)));
-        return (outcomes.Count == 0 ? "no deploys listed" : log, outcomes.Count(o => o.Outcome == "live"), outcomes.Count(o => o.Outcome == "skipped"), outcomes.Count(o => o.Outcome == "failed"));
-    }
 
-    /// <summary>The newest deploys as table rows: when, what kind of thing, and what it came to.</summary>
-    public static string DeployRows(JsonElement deploys, int newest = 8) =>
-        CloudTable.ToFact((deploys.ValueKind == JsonValueKind.Array ? deploys.EnumerateArray().ToList() : []).Take(newest).Select(d => new[]
-        {
-            DateTimeOffset.TryParse(AzureMetrics.Text(d, "created_at"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at.UtcDateTime.ToString("MMM d HH:mm", CultureInfo.InvariantCulture) + " UTC" : "",
-            AzureMetrics.Text(d, "context") == "production" ? "Production deploy" : "Deploy",
-            Outcome(d) == "skipped" ? "skipped, no edge change" : Outcome(d),
-        }));
 
     /// <summary>
     /// Asks the edge for each address it may keep, twice, and counts the second answers its cache

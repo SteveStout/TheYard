@@ -80,8 +80,8 @@ public sealed class StorageCardTests
         // account over thirty days, because the hour was kept from an empty bill.
         var hour = new DateTimeOffset(2026, 10, 25, 17, 0, 0, TimeSpan.Zero);
         var unread = new Dictionary<string, string?>(StringComparer.Ordinal);
-        ShareCard.CostFacts(unread, CostKept.Empty, "stjobhuntss", hour);
-        Assert.Equal("yes", unread[ShareCard.CostUnread]);
+        ShareKeeping.CostFacts(unread, CostKept.Empty, "stjobhuntss", hour);
+        Assert.Equal("yes", unread[ShareKeeping.CostUnread]);
         Assert.False(unread.ContainsKey("cost_today"));
         Assert.False(unread.ContainsKey("cost_month"));
 
@@ -101,18 +101,18 @@ public sealed class StorageCardTests
 
         // A bill that was read and holds no line under the account's name says so: the month is not read, never $0.00.
         var read = new Dictionary<string, string?>(StringComparer.Ordinal);
-        ShareCard.CostFacts(read, new CostKept([new CostDay("2026-10-25", "plan-theyard-ss", "microsoft.web/serverfarms", 0.62, "USD")], []), "stjobhuntss", hour);
-        Assert.False(read.ContainsKey(ShareCard.CostUnread));
-        Assert.Equal("yes", read[ShareCard.CostMissing]);
+        ShareKeeping.CostFacts(read, new CostKept([new CostDay("2026-10-25", "plan-theyard-ss", "microsoft.web/serverfarms", 0.62, "USD")], []), "stjobhuntss", hour);
+        Assert.False(read.ContainsKey(ShareKeeping.CostUnread));
+        Assert.Equal("yes", read[ShareKeeping.CostMissing]);
         Assert.False(read.ContainsKey("cost_month"));
-        var missing = ShareCard.View(Inputs(100, new Dictionary<string, string?>(ShareFacts()) { [ShareCard.CostMissing] = "yes" })).Rows.Single(r => r.Key == "cost");
-        Assert.Equal(("not on the bill yet", ShareCard.CostMissingWords), (missing.Answer, missing.Detail[0].Text));
-        var blobMissing = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", [ShareCard.CostMissing] = "yes" }), new BlobLines(1e9, 1.8e9, 24_000)).Rows.Single(r => r.Key == "cost");
-        Assert.Equal(("not on the bill yet", ShareCard.CostMissingWords), (blobMissing.Answer, blobMissing.Detail[0].Text));
+        var missing = ShareCard.View(Inputs(100, new Dictionary<string, string?>(ShareFacts()) { [ShareKeeping.CostMissing] = "yes" })).Rows.Single(r => r.Key == "cost");
+        Assert.Equal(("not on the bill yet", ShareKeeping.CostMissingWords), (missing.Answer, missing.Detail[0].Text));
+        var blobMissing = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", [ShareKeeping.CostMissing] = "yes" }), new BlobLines(1e9, 1.8e9, 24_000)).Rows.Single(r => r.Key == "cost");
+        Assert.Equal(("not on the bill yet", ShareKeeping.CostMissingWords), (blobMissing.Answer, blobMissing.Detail[0].Text));
 
         // The account's own line is the month, summed from its days.
         var billed = new Dictionary<string, string?>(StringComparer.Ordinal);
-        ShareCard.CostFacts(billed, new CostKept([new CostDay("2026-10-24", "stjobhuntss", "microsoft.storage/storageaccounts", 1.25, "USD"), new CostDay("2026-10-25", "stjobhuntss", "microsoft.storage/storageaccounts", 0.75, "USD")], []), "stjobhuntss", hour);
+        ShareKeeping.CostFacts(billed, new CostKept([new CostDay("2026-10-24", "stjobhuntss", "microsoft.storage/storageaccounts", 1.25, "USD"), new CostDay("2026-10-25", "stjobhuntss", "microsoft.storage/storageaccounts", 0.75, "USD")], []), "stjobhuntss", hour);
         Assert.Equal("2.00", billed["cost_month"]);
     }
 
@@ -226,7 +226,7 @@ public sealed class StorageCardTests
         using var answer = JsonDocument.Parse(json);
 
         var split = Series.Split(answer.RootElement);
-        string rows = ShareCard.ApiRows(split, new DateTimeOffset(2026, 10, 24, 0, 0, 0, TimeSpan.Zero), Noon);
+        string rows = ShareKeeping.ApiRows(split, new DateTimeOffset(2026, 10, 24, 0, 0, 0, TimeSpan.Zero), Noon);
 
         Assert.Equal("ListFiles\t40\t100\nGetFile\t3\t0", rows);
     }

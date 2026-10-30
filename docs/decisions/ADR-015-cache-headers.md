@@ -54,7 +54,7 @@ name is the same idea, done by the build, for every file, every time.
 The rules, read from this build
 ([`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs)):
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=cache-headers
+```live path=api/TheYard.Api/Shared/Wiring/ResponseKeeping.cs region=cache-headers
 ```
 
 The proof is
@@ -95,7 +95,7 @@ The cache rules live in the host Api, in one inline middleware in Composition/Re
 The static file middleware, the photo set's own rule, and the fallback that
 answers only app routes ([`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs)):
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=static-files
+```live path=api/TheYard.Api/Shared/Wiring/ResponseKeeping.cs region=static-files
 ```
 
 ## Addendum, 2026-09-28 (1.0.3.35): the edge is warmed after every deploy

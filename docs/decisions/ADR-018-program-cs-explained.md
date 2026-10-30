@@ -117,10 +117,10 @@ session's renewal, the store's warmth, the error record, the cache rules, and th
 run at the end of the pipeline whichever line maps them, so the order that matters is the order in this
 one file.
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=request-timing
+```live path=api/TheYard.Api/Shared/Wiring/RequestRecording.cs region=request-timing
 ```
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=error-log
+```live path=api/TheYard.Api/Shared/Wiring/RequestRecording.cs region=error-log
 ```
 
 ### Endpoints: binding, then delegation

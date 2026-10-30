@@ -38,7 +38,7 @@ The order, top to bottom, in `Composition/RequestPipeline.cs`:
 | 10 | Session renewal | Needs the user, and must set its cookie before the response starts. | Above authentication, it never sees a user. |
 | 11 | Store warmth | Only API reads wait for the catalogue. | Above the files, the photos wait for a hundred thousand vehicles after a roll. |
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=static-files
+```live path=api/TheYard.Api/Shared/Wiring/ResponseKeeping.cs region=static-files
 ```
 
 **The forwarded headers trust two hops, by count (Steve's A, 7 October).** A visitor reaches the container through the edge and App Service's front end, and neither has an address the app can list. So the app clears the known proxies and trusts the two rightmost entries of X-Forwarded-For and X-Forwarded-Proto. A value a visitor wrote is to the left of those and never read. X-Forwarded-Host is never read: a link's host is configuration (`Site:Url`), which every web app the template writes carries. A caller that skips the edge can still write the second entry; the address feeds counts, never a permission. The count is a setting, `Edge:ForwardLimit`, and `/api/admin/arrival`, behind the operator's key, shows X-Forwarded-For as it arrived beside what the app resolved (since 1.0.3.93; at 1.0.3.92 it showed only what was left after the middleware took its entries). Until a live reading of it is recorded in this record, the count of two is what both proxies are documented to do, not a measurement.
@@ -92,6 +92,19 @@ The same version adds a reading for the next one: `/api/admin/metrics` now says 
 
 ```live path=api/TheYard.Api/Features/Admin/Operations/MetricsReport.cs region=runtime-metrics
 ```
+
+## Addendum, 2026-10-29 (1.0.4.122): eleven steps, three files, one order
+
+`RequestPipeline.cs` had reached the 300-line cap, so it was cut by job before anything else was
+added to it (ADR: Onion and SOLID, the addendum of 1.0.4.122). The table above is unchanged: every
+step is still in that order, and the file still holds the order. What moved is the bodies. What
+every answer is recorded and stamped with, positions 1 and 4, is `RequestRecording.cs`; what a
+browser and the edge may keep, positions 5, 6 and 7, is `ResponseKeeping.cs`.
+
+Positions 1 and 4 are two methods and not one, and that is the whole reason this file has two: the
+timing is outside the exception handler and the record is directly inside it, which the table's own
+"what breaks if it moves" column says in both rows. Putting them together in one call reads better
+and is wrong; it was tried, and the error list came back empty in the test that reads it.
 
 ## Where it sits
 

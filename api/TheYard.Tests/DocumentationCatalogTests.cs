@@ -270,6 +270,7 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
             "The inner ring owns the interface",
             "The rules take the clock as a value",
             "How many things a class may be handed",
+            "A file at the cap is cut by job, before anything is added to it",
             "The build holds the rings",
             "One project, rings as folders",
             "When not to build it this way",

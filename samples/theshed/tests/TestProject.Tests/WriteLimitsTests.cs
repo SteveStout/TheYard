@@ -128,7 +128,7 @@ public sealed class WriteLimitsTests : IDisposable
         store.File("docs/readme.md", 900);
         var options = new FilesOptions { HomeQuotaBytes = 1000 };
         var home = new HomePath(root);
-        var browser = new FileBrowser(home, store, options, new HomeQuota(home, store, options));
+        var browser = new FileBrowser(home, store, options, new HomeQuota(home, store, options), new BrowsePaths(home, store));
 
         using var small = new MemoryStream(new byte[50]);
         await browser.UploadAsync("docs", "small.bin", 50, small, overwrite: false, CancellationToken.None);

@@ -62,7 +62,7 @@ public sealed class FileUploadTests : SampleTree
     public async Task Upload_past_the_limit_is_413_before_the_file_is_written()
     {
         var options = new FilesOptions { MaxUploadBytes = 4 };
-        var browser = new FileBrowser(new HomePath(Root), Store, options, new HomeQuota(new HomePath(Root), Store, options));
+        var browser = new FileBrowser(new HomePath(Root), Store, options, new HomeQuota(new HomePath(Root), Store, options), new BrowsePaths(new HomePath(Root), Store));
         using var content = new MemoryStream(new byte[5]);
         var problem = await Assert.ThrowsAsync<ApiRefusalException>(() => browser.UploadAsync("", "big.bin", 5, content, overwrite: false, CancellationToken.None));
         Assert.Equal(413, problem.Status);

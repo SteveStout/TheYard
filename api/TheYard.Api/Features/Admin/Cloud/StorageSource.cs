@@ -55,7 +55,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
         await Try(facts, "share", async () =>
         {
             using var share = await azure.GetJsonAsync($"{service}/shares/{shareName}?api-version=2023-05-01&$expand=stats", cancellation);
-            ShareCard.ShareFacts(facts, share.RootElement);
+            ShareKeeping.ShareFacts(facts, share.RootElement);
         }, cancellation);
         await Try(facts, "alert", async () =>
         {
@@ -67,7 +67,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
         await Try(facts, "api", async () =>
         {
             var byApi = await SplitAsync(service, "ApiName", dayStart.AddDays(-1), hour.AddHours(1), cancellation);
-            facts["api_rows"] = ShareCard.ApiRows(byApi, dayStart, hour);
+            facts["api_rows"] = ShareKeeping.ApiRows(byApi, dayStart, hour);
         }, cancellation);
         await Try(facts, "auth", async () =>
         {
@@ -87,7 +87,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
             using var settings = await azure.GetJsonAsync($"{service}/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview", cancellation);
             facts["diagnostic_log"] = settings.RootElement.TryGetProperty("value", out var list) && list.GetArrayLength() > 0 ? "on" : "off";
         }, cancellation);
-        await Try(facts, "bill", async () => ShareCard.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour), cancellation);
+        await Try(facts, "bill", async () => ShareKeeping.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour), cancellation);
         return new ResourceHour(hour, $"{service}/shares/{shareName}", tenant, facts, await azure.EventsAsync(account.Id, since, hour, cancellation));
     }
 
@@ -135,7 +135,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
             var monthStart = new DateTimeOffset(hour.Year, hour.Month, 1, 0, 0, 0, TimeSpan.Zero);
             facts["egress_month_bytes"] = (await TotalsAsync(service, "Egress", null, monthStart, hour.AddHours(1), cancellation)).Values.Sum().ToString("0", CultureInfo.InvariantCulture);
         }, cancellation);
-        await Try(facts, "bill", async () => ShareCard.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour), cancellation);
+        await Try(facts, "bill", async () => ShareKeeping.CostFacts(facts, await costs.ReadAsync(hour.AddDays(-34).UtcDay, cancellation), names.Storage, hour), cancellation);
         return new ResourceHour(hour, service, tenant, facts, await azure.EventsAsync(account.Id, since, hour, cancellation));
     }
 

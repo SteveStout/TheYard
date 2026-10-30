@@ -268,7 +268,7 @@ cannot fail is not a check, and the seed's own comment was the reminder.
 
 The exception slot, read from this build. The message travels in the slot and never in the template, which is the fix this review found:
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=error-log
+```live path=api/TheYard.Api/Shared/Wiring/RequestRecording.cs region=error-log
 ```
 
 ## Where it sits

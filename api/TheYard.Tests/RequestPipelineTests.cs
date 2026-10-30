@@ -29,6 +29,42 @@ public class RequestPipelineTests(RequestPipelineTests.KeyedHost host) : IClassF
 
     private HttpClient Client() => host.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
 
+    // #region the-order-itself
+    /// <summary>
+    /// The order is the one thing <c>RequestPipeline.cs</c> still holds. Two groups were split out
+    /// of it at the line cap, <c>RequestRecording</c> and <c>ResponseKeeping</c>, and both are
+    /// named in it in the places they have to be: the timing above the exception handler, because
+    /// unwinding runs inner to outer and a timing below it would record every failed request as a
+    /// 200; the answer record directly inside it, so it sees a failure in anything below; and what
+    /// a browser may keep before routing, because none of those three steps needs an endpoint.
+    ///
+    /// <para>This reads the order where a reviewer reads it. What each placement actually does is
+    /// held by the tests below and by <c>ExceptionHandlerTests</c>, which is what caught the first
+    /// cut of this split putting the record above the handler instead of below it.</para>
+    /// </summary>
+    [Fact]
+    public void The_pipeline_names_the_two_groups_split_out_of_it_where_each_has_to_go()
+    {
+        string wiring = Path.Combine(Repo.Root(), "api", "TheYard.Api", "Shared", "Wiring");
+        string pipeline = File.ReadAllText(Path.Combine(wiring, "RequestPipeline.cs"));
+
+        int timing = pipeline.IndexOf("UseTheYardRequestTiming", StringComparison.Ordinal);
+        int handler = pipeline.IndexOf("UseExceptionHandler", StringComparison.Ordinal);
+        int record = pipeline.IndexOf("UseTheYardAnswerRecord", StringComparison.Ordinal);
+        int keeping = pipeline.IndexOf("UseTheYardResponseKeeping", StringComparison.Ordinal);
+        int routing = pipeline.IndexOf("UseRouting", StringComparison.Ordinal);
+
+        Assert.True(timing > 0, "the pipeline should name the timing step");
+        Assert.True(timing < handler, "the timing goes above the exception handler, never below it");
+        Assert.True(handler < record, "the answer record goes directly inside the exception handler");
+        Assert.True(record < keeping, "what a browser may keep comes after the record");
+        Assert.True(keeping < routing, "the files and the cache rules go before routing");
+
+        Assert.Contains("public static class RequestRecording", File.ReadAllText(Path.Combine(wiring, "RequestRecording.cs")), StringComparison.Ordinal);
+        Assert.Contains("public static class ResponseKeeping", File.ReadAllText(Path.Combine(wiring, "ResponseKeeping.cs")), StringComparison.Ordinal);
+    }
+    // #endregion the-order-itself
+
     // #region files-first
     [Fact]
     public async Task A_photo_is_answered_by_the_files_before_any_session_is_read()

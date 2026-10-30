@@ -218,7 +218,7 @@ the same twenty milliseconds, since ordering and serialising a page is most of w
 every bundle file is named by a hash of its contents, so a browser keeps it for a year and a returning
 visitor fetches the small HTML page and the data, never the bundle again ([Cache headers](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-015-cache-headers.md)):
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=cache-headers
+```live path=api/TheYard.Api/Shared/Wiring/ResponseKeeping.cs region=cache-headers
 ```
 
 ## What the page costs on the wire, measured on 17 September
@@ -414,7 +414,7 @@ From 1.0.3.104 a rendering service beside the API draws every page a visitor can
 
 It is switched on only for a GET of those two addresses, in [`RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs):
 
-```live path=api/TheYard.Api/Shared/Wiring/RequestPipeline.cs region=compression
+```live path=api/TheYard.Api/Shared/Wiring/ResponseKeeping.cs region=compression
 ```
 
 **Why only those two.** Compressing an HTTPS response can leak a secret through its size. The attack is called BREACH. It needs a secret, such as a session token, and text the attacker chooses in the same compressed body. By sending many requests and watching the length shrink, the attacker guesses the secret a character at a time. That is why ASP.NET Core leaves HTTPS compression off unless it is asked for. The listing and the filter values are the same public data for every visitor and carry no secret in their bodies; a session travels in the Cookie header, which this compression never touches. Bids, accounts and the admin endpoints are sent as they are.

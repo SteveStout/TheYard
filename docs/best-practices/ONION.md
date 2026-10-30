@@ -270,6 +270,29 @@ five is one parameter from the line, so the clock or the token the next rung wan
 the parameter that makes it wide; the two rungs are worked in that order for that reason, and the
 four classes that sat at five with a clock they could not be handed are where that order paid.
 
+## A file at the cap is cut by job, before anything is added to it
+
+The same S, one line down: no production C# file runs past 300 lines, and no type does across all
+of its parts (`FileShapeTests`). A cap alone is a cliff, so the ratchet counts the files within ten
+lines of it, `files_within_10_of_cap`, which is the list of files whose next edit is the one that
+would have to split them. The rule is to cut them at that point and not at the cliff, because the
+edit that finds a file at 299 lines is never the edit that wants to think about its shape.
+
+**The cut follows a job, and the file that keeps the name keeps the decision.** The request
+pipeline had reached exactly 300 lines holding eleven middleware steps and the order between them.
+The order is the only part of it that was ever a decision, so that is what the file kept; what every
+answer is recorded and stamped with went to one file, and what a browser and the edge may keep went
+to another:
+
+```live path=api/TheYard.Api/Shared/Wiring/RequestRecording.cs region=site-header
+```
+
+**Where the pieces are not next to each other, the file that holds the order says so by calling
+them separately.** Two of those eleven steps sit on either side of the exception handler: the timing
+outside it, so it records the status the caller actually got, and the error record directly inside
+it, so it sees a failure in anything below. Gathering them into one call is tidier and wrong, and
+the test that reads the error list said so within a minute of the first attempt.
+
 ## The build holds the rings
 
 A rule held by code review alone slips the first busy week. TheYard's is held by ten tests that read

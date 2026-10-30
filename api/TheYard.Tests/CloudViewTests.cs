@@ -150,7 +150,7 @@ public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicat
               {"state":"error","error_message":"Build script returned non-zero exit code: 2","created_at":"2026-10-07T10:00:00Z"}
             ]
             """);
-        var (log, live, skipped, failed) = NetlifyEdge.DeployLog(deploys.RootElement);
+        var (log, live, skipped, failed) = NetlifyDeploys.DeployLog(deploys.RootElement);
         Assert.Equal((1, 1, 1), (live, skipped, failed));
         Assert.StartsWith("Oct 18 19:34 UTC skipped, no edge change", log, StringComparison.Ordinal);
         Assert.DoesNotContain("failed", log.Split(" · ")[0], StringComparison.Ordinal);

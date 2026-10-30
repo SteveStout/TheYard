@@ -9,8 +9,8 @@
  "history_or_name_comments": 17,
  "blocking_waits": 0,
  "files_over_300": 0,
- "files_within_10_of_cap": 6,
+ "files_within_10_of_cap": 2,
  "behavior_types_never_named_in_a_test": 8,
  "test_to_prod_ratio_higher_is_better": 0.78,
- "dotnet_tests_higher_is_better": 2320
+ "dotnet_tests_higher_is_better": 2321
 }

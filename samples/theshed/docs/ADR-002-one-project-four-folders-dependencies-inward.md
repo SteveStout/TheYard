@@ -118,6 +118,19 @@ part.
 
 The title said four folders when it was written; the code has six rings, plus `Documentation/` beside Controllers, as the decision above says. The title changed to seven on 4 October; the file name and the address stay. `LayeringTests` no longer reads `using` lines. `OnionTests` now checks the rings by reading the compiled app, so a fully written name is caught too (ADR-013), and `LayeringTests` keeps the Data and Domain purity check and the `Program.cs` check. One line is tighter than the diagram: Controllers may not use Infrastructure or Composition or touch the disk, so downloads and the health check now go through `FileBrowser`, and Documentation reaches only Data. `FileBrowser` sits at the 300-line cap, not about 260.
 
+## Addendum, 2026-10-29: the browser was cut by job at the line cap
+
+`FileBrowser.cs` had reached 298 lines of a 300-line cap, so the next edit to it would have been
+the one that had to split it. It is split now, before anything was added: resolving a path from
+home, refusing when nothing is there, and turning a store entry into the record the API answers
+with are one job and are `BrowsePaths`, and carrying out an operation is the other and is still
+`FileBrowser`. Every method on `BrowsePaths` answers a question about a path and none of them
+changes anything, which is the line the cut follows.
+
+`BrowsePaths` is handed to the browser by constructor and registered beside it, because the
+container activates `FileBrowser` by type and a part split off a class and registered nowhere fails
+on the first request rather than at startup.
+
 ## Where it sits
 
 This record draws every ring, from Data in the middle out to Composition at the edge, and a folder may only use the folders inside it. It follows the D in SOLID: Application owns the IFileStore interface and Infrastructure plugs the disk into it, so the rules never call the disk by name. The cost is that the compiler cannot hold a folder line, so a test does, and FileBrowser carries every rule in one file of about 300 lines. With a bigger team or a second app reusing the rules, each ring would become its own project so the compiler stops a wrong reference.
@@ -140,7 +153,8 @@ The port, as it is in this build:
 ```live path=Application/IFileStore.cs region=*
 ```
 
-The rules a move and a copy share:
+The rules a move and a copy share, which live in `BrowsePaths` since the browser was cut by job
+(see the addendum below):
 
-```live path=Application/FileBrowser.cs region=transfer-rules
+```live path=Application/BrowsePaths.cs region=transfer-rules
 ```

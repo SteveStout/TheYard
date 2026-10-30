@@ -279,3 +279,45 @@ the tests hold.
 `clock_outside_composition` is 35 from 45, lowered in this same commit. `wide_service_classes` is
 unchanged at 8: none of these three was ever on that list, and each is still under the line with
 its clock.
+
+## Addendum, 2026-10-29 (1.0.4.122): four files cut at the line cap, and the two that are not
+
+The 300-line rule has an early warning beside it: `files_within_10_of_cap`, the files within ten
+lines of the cap, which is the list of files whose next edit would be the one that had to split
+them. It was six. The rule says a file that close is cut by job *before* anything is added to it,
+and this version cuts four of the six:
+
+- **`RequestPipeline.cs`** (300 lines, at the cap) keeps the order, which is the only thing in it
+  that was ever a decision, and the eleven steps now sit in three files: `RequestRecording.cs` for
+  what every answer is recorded and stamped with, `ResponseKeeping.cs` for what a browser and the
+  edge may keep, and the pipeline itself for the order and the four steps that are only a line each.
+- **`ShareCard.cs`** (293) keeps the rows and the chart the card draws; `ShareKeeping.cs` holds what
+  a kept hour carries and the words it is read back in. One changes when the card changes, the other
+  when Azure's record or the bill's shape does.
+- **`NetlifyEdge.cs`** (292) keeps the reader that asks Netlify; `NetlifyDeploys.cs` holds what the
+  deploy list it answers with says, every member pure and handed the JSON the reader already has.
+- **The Shed's `FileBrowser.cs`** (298) keeps carrying out an operation; `BrowsePaths.cs` holds
+  resolving a path, refusing when nothing is there, and describing an entry. Every method on the new
+  type answers a question about a path and none of them changes anything, which is the line the cut
+  follows (ADR-002 in that project, the addendum of 2026-10-29).
+
+**Two are left, each for a reason worth writing down rather than a reason to hurry.**
+`StoreRegistration.cs` (298) is one `await`ed method whose two halves, the relational backend and
+the document one, read a dozen locals each; cutting it honestly means a type to carry those locals,
+which is a version of its own rather than the tail of this one. `NightlySource.cs` (294) is also one
+of the eight classes still handed six or more things, and it keeps a `volatile` field both halves
+read, so it should be cut once, by the instalment that takes its width, and not twice.
+
+**A split like this has a failure the compiler cannot see either, and it is the order.** Two of the
+pipeline's steps are not next to each other on purpose: the timing is outside the exception handler
+and the error record is directly inside it. The first cut of this split put them together, which
+reads better and is wrong, and `ExceptionHandlerTests` failed at once with an empty error list. So
+`RequestRecording` is two methods rather than one, the file that holds the order is the file that
+puts them in their places, and a test now reads that order where a reviewer reads it.
+
+**The records follow the code in the same commit.** Nine live fences across five documents quoted
+regions by file, and a region that has moved to another file renders as a note where the record
+promised code; `LiveSampleCoverageTests` names every one of them, which is how they were found.
+
+`files_within_10_of_cap` is 2 from 6, lowered in this same commit. No file in the six projects or
+the sample is over 300 lines, and none of the four cuts changed what anything does.

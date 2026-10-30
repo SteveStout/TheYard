@@ -25,7 +25,7 @@ public abstract class SampleTree
     protected SampleTree()
     {
         var options = new FilesOptions { SearchLimit = 3, SearchCeiling = 5 };
-        Browser = new FileBrowser(new HomePath(Root), Store, options, new HomeQuota(new HomePath(Root), Store, options));
+        Browser = new FileBrowser(new HomePath(Root), Store, options, new HomeQuota(new HomePath(Root), Store, options), new BrowsePaths(new HomePath(Root), Store));
         Store.Folder("docs");
         Store.Folder("docs/notes");
         Store.Folder("Archive");

@@ -101,10 +101,10 @@ public static class BlobCard
             new("in", "What is in it?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "container_count", "0")} containers",
                 [new(Refused(inputs) is { } why ? $"the listing was refused ({why}): the site's identity needs Storage Blob Data Reader on the account" : $"public access {publicAccess} · each container's purpose is its metadata tag", null)],
                 exposed ? "alarm" : "info") { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("container_rows"), "Container", "Blobs", "Bytes", "What it is for", "Public access") },
-            ResourceView.Fact(inputs, ShareCard.CostUnread, "") == "yes"
-                ? new("cost", "What does it cost?", "not read yet", [new(ShareCard.CostUnreadWords, null)], "info")
-                : ResourceView.Fact(inputs, ShareCard.CostMissing, "") == "yes"
-                ? new("cost", "What does it cost?", "not on the bill yet", [new(ShareCard.CostMissingWords, null)], "info")
+            ResourceView.Fact(inputs, ShareKeeping.CostUnread, "") == "yes"
+                ? new("cost", "What does it cost?", "not read yet", [new(ShareKeeping.CostUnreadWords, null)], "info")
+                : ResourceView.Fact(inputs, ShareKeeping.CostMissing, "") == "yes"
+                ? new("cost", "What does it cost?", "not on the bill yet", [new(ShareKeeping.CostMissingWords, null)], "info")
                 : new("cost", "What does it cost?", ResourceView.Fact(inputs, "cost_month", "") is { Length: > 0 } month ? $"${month}" : "not on the bill yet",
                     [new("this month, the whole storage account: the bill keeps one line an account, so the blob meters and the share's are not split here", null)], "info"),
             new("answering", "Is it answering?", ResourceView.Fact(inputs, "store_ms", "") is { Length: > 0 } ms ? $"{ms} ms" : "not read yet",

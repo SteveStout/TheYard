@@ -39,6 +39,10 @@ public static class FilesRegistration
         // on the interface, so tests can swap in a different store.
         builder.Services.AddSingleton<IFileStore, PhysicalFileStore>();
         builder.Services.AddSingleton<HomeQuota>();
+        // The paths and the describing, a type of its own and registered beside the browser that is
+        // handed it: the container activates FileBrowser by type, so a part split off it and
+        // registered nowhere would fail on the first request rather than at startup.
+        builder.Services.AddSingleton<BrowsePaths>();
         builder.Services.AddSingleton<FileBrowser>();
 
         // FileBrowser.UploadAsync checks the exact per-file limit and names the file in its error.
