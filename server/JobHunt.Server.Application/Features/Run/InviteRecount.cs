@@ -1,5 +1,3 @@
-using System.Text.Json.Nodes;
-
 namespace JobHunt.Server.Application.Features.Run;
 
 /// <summary>What the recount came to.</summary>
@@ -34,10 +32,8 @@ public sealed class InviteRecount(IShare share, IClaudeCli claude, ServerConfig 
         string runFolder = share.Full(RunSlot.RunFolder(start.Day, start.Lane, lane.Model, start.Dry));
         var request = new ClaudeRequest(ClaudeArguments.Recount(lane, share.Root, runFolder, start.Dry), runFolder, $"{runFolder}/recount.jsonl", TimeSpan.FromMinutes(Minutes));
         ClaudeRun run = await claude.RunAsync(request, ct);
-        JsonNode? line = run.ResultLine is null ? null : JsonNode.Parse(run.ResultLine);
-        string? structured = line?["structured_output"]?.ToJsonString();
-        LaneResult? result = structured is null ? null : LaneResult.Parse(structured);
-        var lines = new List<string> { $"Recount: {(result?.LiveInviteCount is { } read ? read.ToString(System.Globalization.CultureInfo.InvariantCulture) : "not read")}, cost {line?["total_cost_usd"]}, {result?.StopDetail}" };
+        LaneResult? result = LaneResult.FromLine(run.ResultLine);
+        var lines = new List<string> { $"Recount: {(result?.LiveInviteCount is { } read ? read.ToString(System.Globalization.CultureInfo.InvariantCulture) : "not read")}. {result?.StopDetail}" };
         if (result is null)
         {
             return new Recount(null, 0, "the recount gave no result", "the recount gave no result", lines);

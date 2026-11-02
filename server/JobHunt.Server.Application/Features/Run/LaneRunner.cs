@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace JobHunt.Server.Application.Features.Run;
@@ -27,6 +27,8 @@ public sealed record LaneStart(Lane Lane, DateOnly Day, bool Dry, OutreachCounts
 /// <param name="time">The clock.</param>
 public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSink usage, ServerConfig config, TimeProvider time)
 {
+    private const int CrashDays = 7;
+
     /// <summary>Writes a lane that did not run: its DONE note says why.</summary>
     /// <param name="start">The lane.</param>
     /// <param name="held">Why it did not run.</param>
@@ -41,17 +43,25 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     }
 
     /// <summary>
-    /// Why a lane may not start because an earlier run of it today died: a progress file with no DONE note is sends with
-    /// no records, and a person has to read them before the same worklist is built again.
+    /// Why a lane may not start because an earlier run of it died, today or in the week before: a progress file with no
+    /// DONE note is sends with no records, and a person has to read them before the same worklist is built again.
     /// </summary>
     /// <param name="start">The lane.</param>
     /// <param name="ct">Stops the read.</param>
     public async Task<string?> CrashedAsync(LaneStart start, CancellationToken ct)
     {
-        string folder = RunFolder(start, config.For(start.Lane));
-        return await share.ExistsAsync($"{folder}/progress.tsv", ct) && !await share.ExistsAsync($"{folder}/DONE.md", ct)
-            ? $"an earlier run left {folder}/progress.tsv and no DONE note; read it before this lane runs again"
-            : null;
+        for (int back = 0; back <= CrashDays; back++)
+        {
+            string day = RunSlot.DayFolder(start.Day.AddDays(-back));
+            foreach (string folder in await share.FoldersAsync(day, $"{RunSlot.Hour}-{RunSlot.Word(start.Lane)}-*", ct))
+            {
+                if (!folder.EndsWith("-dry", StringComparison.Ordinal) && await share.ExistsAsync($"{folder}/progress.tsv", ct) && !await share.ExistsAsync($"{folder}/DONE.md", ct))
+                {
+                    return $"an earlier run left {folder}/progress.tsv and no DONE note: sends with no records. Write their rows, then rename that file, before this lane runs again";
+                }
+            }
+        }
+        return null;
     }
 
     /// <summary>Runs the lane to its end and writes its records.</summary>
@@ -82,6 +92,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
 
         LaneResult? result = null;
         IReadOnlyList<SendRecord> sends = [];
+        bool cutShort = false;
         if (list.Rows.Count == 0)
         {
             lines.Add("Nothing on the worklist; no model run.");
@@ -97,11 +108,12 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             ClaudeRun run = await claude.RunAsync(request, ct);
             lines.Add($"claude -p exit {run.ExitCode}{(run.TimedOut ? ", killed at the wall-clock limit or by a stop" : string.Empty)}.");
             CancellationToken finish = CancellationToken.None;
+            cutShort = run.TimedOut || run.ResultLine is null;
             result = await ReadResultAsync(run, start, folder, list, lines, finish);
             sends = await RecordAsync(start, folder, lane.Model, list, result, lines, finish);
             await ReportUsageAsync(run, start, folder, began, lines, finish);
         }
-        var report = new LaneReport(start.Lane, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, list.Rows, list.Dropped, result, sends, lines, null);
+        var report = new LaneReport(start.Lane, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, list.Rows, list.Dropped, result, sends, lines, null, cutShort);
         await share.WriteAsync($"{folder}/DONE.md", DoneNote.Render(report), CancellationToken.None);
         return report;
     }
@@ -117,8 +129,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
 
     private async Task<LaneResult?> ReadResultAsync(ClaudeRun run, LaneStart start, string folder, Worklist list, List<string> lines, CancellationToken ct)
     {
-        string? structured = run.ResultLine is null ? null : JsonNode.Parse(run.ResultLine)?["structured_output"]?.ToJsonString();
-        LaneResult? result = structured is null ? null : LaneResult.Parse(structured);
+        LaneResult? result = LaneResult.FromLine(run.ResultLine);
         IReadOnlyList<RowResult> progress = await ProgressAsync(folder, list, ct);
         if (result is null)
         {
@@ -146,7 +157,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             var interim = new LaneReport(start.Lane, config.For(start.Lane).Model, start.Dry, began, time.GetUtcNow(), start.Before, [], [], null, [], [], null);
             lines.Add(await usage.ReportAsync(UsageCut.Document(cut, interim, RegistryRows.Lane + began.ToUnixTimeSeconds()), ct));
         }
-        catch (IOException failure)
+        catch (Exception failure) when (failure is IOException or JsonException)
         {
             lines.Add($"usage not written: {failure.Message}");
         }

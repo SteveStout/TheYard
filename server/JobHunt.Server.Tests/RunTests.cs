@@ -237,6 +237,97 @@ public sealed class RunTests
     }
 
     [Fact]
+    public async Task A_crash_yesterday_holds_the_lane_this_morning()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files["nightly/2026-11-02/0600-apply-sonnet-5-5/progress.tsv"] = "1\tsent\tx\n";
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Contains("sends with no records", output, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
+    }
+
+    [Fact]
+    public async Task A_dry_crash_holds_nothing()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files["nightly/2026-11-02/0600-apply-sonnet-5-5-dry/progress.tsv"] = "1\tsent\tx\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.NotEmpty(morning.Claude.Requests);
+    }
+
+    [Fact]
+    public async Task A_timeout_with_every_row_in_progress_still_closes_LinkedIn()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request) || !IsLane(request, Lane.Invites))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "1\tsent\tSam Roe\n2\tsent\tBo Kay\n";
+            return new ClaudeRun(137, true, null);
+        });
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.DoesNotContain(morning.Claude.Requests, request => IsLane(request, Lane.Messages));
+    }
+
+    [Fact]
+    public async Task A_cli_that_will_not_start_still_ends_in_a_card_and_a_close_row()
+    {
+        var morning = new Morning(_ => throw new System.ComponentModel.Win32Exception(2));
+        (int exit, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.Equal(1, exit);
+        Assert.Contains("DEFECT", output, StringComparison.Ordinal);
+        Assert.Contains(morning.Share.Files.Keys, path => path.EndsWith("-server6am-close.md", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_broken_result_line_does_not_cost_the_records_from_progress()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "1\tsent\tSam Roe\n";
+            return new ClaudeRun(0, false, "{not json \"type\":\"result\"");
+        });
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Single(morning.TrackerRows());
+    }
+
+    [Fact]
+    public async Task One_lane_run_later_leaves_the_morning_s_card_alone()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files["nightly/2026-11-03/0600-card.md"] = "the morning";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Equal("the morning", morning.Share.Files["nightly/2026-11-03/0600-card.md"]);
+    }
+
+    [Fact]
+    public async Task A_lane_held_this_morning_may_run_again_once_it_is_clear()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/DONE.md"] = "# DONE\n\nHELD: a reason\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.NotEmpty(morning.Claude.Requests);
+    }
+
+    [Fact]
+    public async Task An_accept_finds_its_company_on_the_tracker_and_reaches_a_short_draft()
+    {
+        string tracker = "\"Count\",Person,Company,Communication,Date,Phone/Email,Notes\n1,Sam Roe,AccuLynx,LinkedIn,10/27/2026,,\"CONNECTION REQUEST SENT by Claude. Profile linkedin.com/in/samroe\"\n";
+        var morning = new Morning(Quiet, tracker);
+        morning.Share.Files["nightly/2026-10-27/0400-reply-opus-5-5/drafts/li-followup-acculynx.txt"] = "Sam,\n\nThanks for connecting. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to take a look?\n\nThanks,\nSteve\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Messages), default);
+        Assert.Contains("Sam Roe\tAccuLynx\tmessage", morning.Share.Files["nightly/2026-11-03/0600-messages-sonnet-5-5/worklist.tsv"], StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_stop_from_the_service_still_writes_the_records_and_the_close()
     {
         using var stop = new CancellationTokenSource();

@@ -56,6 +56,24 @@ public sealed class ResultTests
     }
 
     [Fact]
+    public void A_run_cut_short_closes_LinkedIn_and_is_not_clean_even_with_every_row_answered()
+    {
+        RowResult sent = Sent(new RowEvidence(true, "Invitation sent to Pat.", Note, null, "/tmp/x.jpg"));
+        LaneReport report = Report(Clean([sent]), [Verified()]) with { CutShort = true };
+        Assert.True(report.ClosesLinkedIn);
+        Assert.False(report.Clean);
+    }
+
+    [Fact]
+    public void A_broken_or_empty_result_line_is_no_result()
+    {
+        Assert.Null(LaneResult.FromLine(null));
+        Assert.Null(LaneResult.FromLine("{not json"));
+        Assert.Null(LaneResult.FromLine("""{"type":"result"}"""));
+        Assert.NotNull(LaneResult.FromLine(ResultLine.Empty));
+    }
+
+    [Fact]
     public void A_closed_lane_does_not_hold_the_gate()
     {
         Assert.Empty(RegistryTail.LiveOnLinkedIn(Fixture.Read("state-tail.md"), At));

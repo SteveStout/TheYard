@@ -114,6 +114,11 @@ public sealed partial class PersonGate
         [.. rows.Where(row => row.Length >= 7 && TrackerKinds.IsLinkedIn(row) && ApplicationCap.Same(row[2], company) && Name(row[1]).Length > 0 && Name(row[1]) != "na")
             .Select(row => row[1].Trim()).Distinct(StringComparer.OrdinalIgnoreCase)];
 
+    /// <summary>The company the tracker has for a person, empty when it has none.</summary>
+    /// <param name="person">The person.</param>
+    public string CompanyOf(string person) =>
+        rows.Where(row => row.Length >= 7 && TrackerKinds.IsLinkedIn(row) && Name(row[1]) == Name(person)).Select(row => row[2].Trim()).LastOrDefault() ?? string.Empty;
+
     private string? Outreach(string person, string company)
     {
         if (Employer(company) is { } employer)
@@ -166,13 +171,16 @@ public sealed partial class PersonGate
     }
 
     private static string Name(string cell) =>
-        Title().Replace(Parenthesis().Replace(cell, string.Empty), string.Empty).Trim().ToLowerInvariant();
+        Space().Replace(Title().Replace(Parenthesis().Replace(cell.Split(',')[0], string.Empty), string.Empty), " ").Trim().ToLowerInvariant();
 
     [GeneratedRegex(@"(?m)^\|\s*\*\*([^*|]+)\*\*\s*\|")]
     private static partial Regex Block();
 
     [GeneratedRegex(@"\([^)]*\)")]
     private static partial Regex Parenthesis();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Space();
 
     [GeneratedRegex(@"^\s*(Dr|Mr|Mrs|Ms)\.?\s+", RegexOptions.IgnoreCase)]
     private static partial Regex Title();

@@ -16,6 +16,7 @@ namespace JobHunt.Server.Domain.Shared.Records;
 /// <param name="Sends">The claimed sends, with what their evidence lacked.</param>
 /// <param name="Lines">Lines the note carries whole: reads, holds, blockers with their fix.</param>
 /// <param name="Held">Why the lane did not run, or null.</param>
+/// <param name="CutShort">True when the model was killed, or ended with no result line.</param>
 public sealed record LaneReport(
     Lane Lane,
     string Model,
@@ -28,13 +29,14 @@ public sealed record LaneReport(
     LaneResult? Answer,
     IReadOnlyList<SendRecord> Sends,
     IReadOnlyList<string> Lines,
-    string? Held)
+    string? Held,
+    bool CutShort = false)
 {
     /// <summary>Sends that passed their evidence.</summary>
     public int Verified => Sends.Count(send => send.Missing.Count == 0);
 
     /// <summary>True when every send stood and nothing broke: a run that counts toward a lane's cheaper model.</summary>
-    public bool Clean => Held is null && Answer is not null && Sends.Count > 0 && Verified == Sends.Count && Answer.StopCondition == "none" && !NoRecount;
+    public bool Clean => Held is null && !CutShort && Answer is not null && Sends.Count > 0 && Verified == Sends.Count && Answer.StopCondition == "none" && !NoRecount;
 
     /// <summary>
     /// True when the LinkedIn work of the day must end: a stop condition, a row the model called blocked, a browser that
@@ -42,7 +44,7 @@ public sealed record LaneReport(
     /// may have ended on a checkpoint.
     /// </summary>
     public bool ClosesLinkedIn =>
-        Answer is null ? Rows.Count > 0 : Answer.StopCondition != "none" || Answer.Rows.Any(row => row.Outcome == "blocked") || Answer.Rows.Count < Rows.Count;
+        CutShort || Answer is null ? Rows.Count > 0 : Answer.StopCondition != "none" || Answer.Rows.Any(row => row.Outcome == "blocked") || Answer.Rows.Count < Rows.Count;
 
     /// <summary>True when invites went out with no live count read first: the sent page governs, so that is a defect.</summary>
     public bool NoRecount => Lane == Lane.Invites && Sends.Count > 0 && Answer?.LiveInviteCount is null;

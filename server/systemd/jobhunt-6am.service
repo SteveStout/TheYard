@@ -3,7 +3,8 @@
 # running session, because the Chrome the lanes drive lives there.
 [Unit]
 Description=JobHunt 6 AM lanes: LinkedIn invites, LinkedIn messages, applications
-After=default.target
+After=default.target jdrive.service
+Wants=jdrive.service
 
 [Service]
 Type=oneshot

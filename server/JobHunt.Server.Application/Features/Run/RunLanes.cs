@@ -61,11 +61,11 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         {
             await WorkAsync(lanes, day, dry, reports, ct);
         }
-        catch (Exception failure) when (failure is IOException or OperationCanceledException)
+        catch (Exception failure) when (failure is not OutOfMemoryException)
         {
             broke = $"DEFECT: the run stopped early: {failure.Message}. Read the DONE notes before any lane runs again.";
         }
-        return (broke is null ? 0 : 1, await CloseAsync(reports, started, day, dry, broke, CancellationToken.None));
+        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, options.Only is not null), CancellationToken.None));
     }
 
     private async Task WorkAsync(IReadOnlyList<Lane> lanes, DateOnly day, bool dry, List<LaneReport> reports, CancellationToken ct)
@@ -125,15 +125,25 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         }
     }
 
-    private async Task<bool> AlreadyRanAsync(Lane lane, DateOnly day, bool dry, CancellationToken ct) =>
-        !dry && await share.ExistsAsync($"{RunSlot.RunFolder(day, lane, config.For(lane).Model, false)}/DONE.md", ct);
+    private async Task<bool> AlreadyRanAsync(Lane lane, DateOnly day, bool dry, CancellationToken ct)
+    {
+        string note = $"{RunSlot.RunFolder(day, lane, config.For(lane).Model, false)}/DONE.md";
+        return !dry && await share.ExistsAsync(note, ct) && !(await share.ReadAsync(note, ct)).Contains("\nHELD: ", StringComparison.Ordinal);
+    }
 
     private async Task<string?> SecondDriverAsync(CancellationToken ct)
     {
         string tail = await share.TailAsync("state.md", RegistryTailBytes, ct);
         foreach (ShareFile file in await share.ListAsync(Spool, "*.md", ct))
         {
-            tail += RegistryTail.Stamped(Path.GetFileNameWithoutExtension(file.Path), await share.ReadAsync(file.Path, ct));
+            try
+            {
+                tail += RegistryTail.Stamped(Path.GetFileNameWithoutExtension(file.Path), await share.ReadAsync(file.Path, ct));
+            }
+            catch (FileNotFoundException)
+            {
+                // The merger took it between the list and the read, so the fragment is in state.md now.
+            }
         }
         var live = RegistryTail.LiveOnLinkedIn(tail, guards.Time.GetUtcNow());
         return live.Count > 0 ? $"{string.Join(", ", live)} LIVE on LinkedIn" : null;
@@ -150,8 +160,30 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         };
     }
 
-    private async Task<string> CloseAsync(IReadOnlyList<LaneReport> reports, DateTimeOffset started, DateOnly day, bool dry, string? broke, CancellationToken ct)
+    private async Task<string> CloseAsync(CloseOf run, CancellationToken ct)
     {
+        (IReadOnlyList<LaneReport> reports, DateTimeOffset started, DateOnly day, bool dry, string? broke, bool oneLane) = run;
+        string card = await CardAsync(run, ct);
+        try
+        {
+            string path = $"{RunSlot.DayFolder(day)}/{RunSlot.Hour}-card.md";
+            if ((reports.Count > 0 || broke is not null) && !(oneLane && await share.ExistsAsync(path, ct)))
+            {
+                await share.WriteAsync(path, card, ct);
+            }
+            DateTimeOffset now = guards.Time.GetUtcNow();
+            await share.WriteNewAsync(RegistryRows.Path(now, "close"), RegistryRows.Closed(now, started, card), ct);
+        }
+        catch (IOException failure)
+        {
+            return $"{card}The card or the close row was not written: {failure.Message}\n";
+        }
+        return card;
+    }
+
+    private async Task<string> CardAsync(CloseOf run, CancellationToken ct)
+    {
+        (IReadOnlyList<LaneReport> reports, _, DateOnly day, bool dry, string? broke, _) = run;
         foreach (string line in reports.Select(report => CleanRuns.Line(day, report)).OfType<string>())
         {
             await share.AppendAsync(WritePolicy.RunsTable, line, ct);
@@ -171,13 +203,8 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 extra.Add($"{RunSlot.Word(report.Lane)}: {CleanRuns.Needed} clean runs, eligible for {target} (the local config's Model line).");
             }
         }
-        string card = RunCard.Render(day, dry, reports, extra);
-        if (reports.Count > 0 || broke is not null)
-        {
-            await share.WriteAsync($"{RunSlot.DayFolder(day)}/{RunSlot.Hour}-card.md", card, ct);
-        }
-        DateTimeOffset now = guards.Time.GetUtcNow();
-        await share.WriteNewAsync(RegistryRows.Path(now, "close"), RegistryRows.Closed(now, started, card), ct);
-        return card;
+        return RunCard.Render(day, dry, reports, extra);
     }
+
+    private sealed record CloseOf(IReadOnlyList<LaneReport> Reports, DateTimeOffset Started, DateOnly Day, bool Dry, string? Broke, bool OneLane);
 }

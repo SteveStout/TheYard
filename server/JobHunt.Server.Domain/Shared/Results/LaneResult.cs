@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace JobHunt.Server.Domain.Shared.Results;
@@ -48,6 +49,25 @@ public sealed record LaneResult(
 {
     /// <summary>True when a stop condition fired that ends both LinkedIn lanes for the day.</summary>
     public bool StopsLinkedIn => StopCondition is "weekly_limit" or "checkpoint" or "captcha" or "sign_in" or "restriction";
+
+    /// <summary>The structured result a stream's result line carries, or null when it has none or does not parse.</summary>
+    /// <param name="line">The result line, or null.</param>
+    public static LaneResult? FromLine(string? line)
+    {
+        if (line is null)
+        {
+            return null;
+        }
+        try
+        {
+            string? structured = JsonNode.Parse(line)?["structured_output"]?.ToJsonString();
+            return structured is null ? null : Parse(structured);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>The result out of its JSON, or null when it does not parse.</summary>
     /// <param name="json">The structured_output object.</param>

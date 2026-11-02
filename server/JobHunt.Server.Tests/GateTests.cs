@@ -205,6 +205,17 @@ public sealed class GateTests
         Assert.Equal("Rule 25: already messaged", GateOver(unnamed).Message("New Person", "Acme"));
     }
 
+    [Theory]
+    [InlineData("New Person, Jr.")]
+    [InlineData("New (Xinda) Person")]
+    public void A_suffix_or_a_middle_name_is_the_same_person(string cell)
+    {
+        string[] row = ["1", cell, "Acme", "LinkedIn", "10/14/2026", "", "FOLLOW-UP MESSAGE SENT by Claude."];
+        Assert.Equal("Rule 25: already messaged", GateOver(row).Message("New Person", "Acme"));
+        Assert.Equal("Acme", GateOver(row).CompanyOf("New Person"));
+        Assert.Equal(string.Empty, GateOver(row).CompanyOf("Someone Else"));
+    }
+
     [Fact]
     public void An_unnamed_invite_is_out_when_the_company_was_invited_this_month()
     {

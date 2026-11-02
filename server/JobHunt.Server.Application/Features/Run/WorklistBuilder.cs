@@ -62,7 +62,8 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             foreach (ReplyItem item in ReplyQueue.Items(queue))
             {
                 string name = item.Person.Length > 0 ? item.Person : item.Company;
-                string path = drafts is null || item.Company.Length == 0 ? string.Empty : $"{drafts}/{ReplyQueue.DraftName(item.Company)}";
+                string company = item.Company.Length > 0 ? item.Company : reads.Gate.CompanyOf(item.Person);
+                string path = drafts is null || company.Length == 0 ? string.Empty : $"{drafts}/{ReplyQueue.DraftName(company)}";
                 if (path.Length == 0 || !await share.ExistsAsync(path, ct))
                 {
                     dropped.Add(new Dropped(name, "no drafted text"));
@@ -70,13 +71,13 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
                 }
                 string body = ReplyQueue.Body(await share.ReadAsync(path, ct));
                 string first = ReplyQueue.Greeted(body);
-                string? person = FullName(reads, first, item.Company);
+                string? person = FullName(reads, first, company);
                 if (person is null)
                 {
-                    dropped.Add(new Dropped(name, $"the draft greets {first}, and no tracker row at {item.Company} gives a full name to check Rule 25 by"));
+                    dropped.Add(new Dropped(name, $"the draft greets {first}, and no tracker row at {company} gives a full name to check Rule 25 by"));
                     continue;
                 }
-                candidates.Add(new Candidate(person, item.Company, WorkAction.Message, body, Profile(reads, person, item.Company), $"{item.Source}, {path}"));
+                candidates.Add(new Candidate(person, company, WorkAction.Message, body, Profile(reads, person, company), $"{item.Source}, {path}"));
             }
         }
         Worklist list = await FinishAsync(candidates, reads, candidate => reads.Gate.Message(candidate.Person, candidate.Company), room, dry, ct);
