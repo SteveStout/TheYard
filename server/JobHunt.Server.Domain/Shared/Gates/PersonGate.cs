@@ -171,8 +171,9 @@ public sealed partial class PersonGate
     private bool Applied(string company, string link, string role)
     {
         string id = PostingId().Matches(link).Select(m => m.Value).LastOrDefault() ?? link.TrimEnd('/');
+        string title = ClosedReqs.Normal(TitleEnd().Split(role)[0]);
         return rows.Any(row => row.Length >= 7 && ((id.Length > 0 && row[6].Contains(id, StringComparison.OrdinalIgnoreCase))
-            || (role.Length > 0 && TrackerRows.IsApplication(row) && ApplicationCap.Same(row[2], company) && row[6].Contains(role, StringComparison.OrdinalIgnoreCase))));
+            || (title.Length > 0 && TrackerRows.IsApplication(row) && ApplicationCap.Same(row[2], company) && $" {ClosedReqs.Normal(row[2] + " " + row[6])} ".Contains($" {title} ", StringComparison.Ordinal))));
     }
 
     /// <summary>A person's name however the tracker wrote it: no title, no parenthesis, no initial, nothing after a comma.</summary>
@@ -188,6 +189,9 @@ public sealed partial class PersonGate
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Space();
+
+    [GeneratedRegex(@"\s+[-|]\s+")]
+    private static partial Regex TitleEnd();
 
     [GeneratedRegex(@"\s[A-Za-z]\.?\s")]
     private static partial Regex Initial();

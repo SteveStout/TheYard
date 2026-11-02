@@ -834,4 +834,27 @@ public sealed class RunTests
         await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
         Assert.Contains("one application a company a morning", morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task A_tracker_write_that_fails_once_is_tried_again()
+    {
+        var morning = new Morning(request => IsRecount(request) ? Quiet(request) : Answer(Result(Row(1, "sent", "Sam Roe", Evidence))));
+        morning.Share.RefuseSpool = 1;
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Single(morning.TrackerRows());
+    }
+
+    [Fact]
+    public async Task A_row_that_never_wrote_holds_the_lane_the_next_morning()
+    {
+        var morning = new Morning(request => IsRecount(request) ? Quiet(request) : Answer(Result(Row(1, "sent", "Sam Roe", Evidence))));
+        morning.Share.RefuseSpool = 99;
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        morning.Share.RefuseSpool = 0;
+        morning.Time.Now = Morning.At.AddDays(1);
+        morning.Claude.Requests.Clear();
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("tracker row", output, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
+    }
 }

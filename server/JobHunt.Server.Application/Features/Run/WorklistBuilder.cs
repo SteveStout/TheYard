@@ -171,6 +171,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             {
                 dropped.Add(new Dropped(what, reason));
             }
+            else if (candidate.Person.Length > 0 && kept.Any(other => other.Person.Equals(candidate.Person, StringComparison.OrdinalIgnoreCase)))
+            {
+                dropped.Add(new Dropped(what, "already on this worklist"));
+            }
             else
             {
                 kept.Add(candidate);

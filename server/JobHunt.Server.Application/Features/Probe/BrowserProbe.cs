@@ -19,7 +19,7 @@ public sealed class BrowserProbe(IClaudeCli claude, IDesktop desktop, string fol
     public static IReadOnlyList<string> Arguments() =>
     [
         "-p",
-        "Call list_connected_browsers and report what it lists. Call select_browser with the deviceId of the one browser whose platform is Linux. Call tabs_context_mcp with createIfEmpty true. Navigate that tab to https://example.com. Take a computer screenshot with save_to_disk true. Do one computer left_click at coordinate 5,5. Close the tab with tabs_close_mcp. Report the saved path and whether every step worked. Touch nothing else.",
+        "Call list_connected_browsers and report what it lists. Call select_browser with the deviceId of the one browser whose platform is Linux; if there is no such browser, stop here and report that. Call tabs_context_mcp with createIfEmpty true. Navigate that tab to https://example.com. Take a computer screenshot with save_to_disk true. Do one computer left_click at coordinate 5,5. Close the tab with tabs_close_mcp. Report the saved path and whether every step worked. Touch nothing else.",
         "--chrome", "--strict-mcp-config", "--model", Model, "--max-turns", "12", "--output-format", "stream-json", "--verbose",
         "--allowedTools", Chrome + "list_connected_browsers", Chrome + "select_browser", Chrome + "tabs_context_mcp", Chrome + "navigate", Chrome + "computer", Chrome + "tabs_close_mcp",
     ];

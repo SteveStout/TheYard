@@ -158,4 +158,40 @@ public sealed class ClosedReqTests
     {
         Assert.Contains("cannot read", ClosedReqs.Why("Acme", "Pat, since I applied there last month I would like to connect.", Rows), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_rejection_filed_under_the_name_in_the_applications_parenthesis_counts()
+    {
+        string[][] rows =
+        [
+            Row("1428", "AF Group (Accident Fund)", "Greenhouse", "9/1/2026", "SUBMITTED Lead Software Engineer (ECM Specialization)"),
+            Row("3213", "Accident Fund Insurance Company", "Email", "10/28/2026", "REJECTION, generic, no role named."),
+        ];
+        Assert.NotNull(ClosedReqs.Why("AF Group", "I applied for the Remote Lead Software Engineer (ECM Specialization) role at AF Group.", rows));
+    }
+
+    [Theory]
+    [InlineData("Closed - onsite only")]
+    [InlineData("CLOSED, BOTH REQS")]
+    public void The_plain_word_closed_counts(string note)
+    {
+        string[][] rows = [.. Rows, Row("3021", "AHEAD", "Email", "10/30/2026", note)];
+        Assert.NotNull(ClosedReqs.Why("AHEAD", "I applied for the Remote Software Engineering Manager, Foundry role at AHEAD.", rows));
+    }
+
+    [Theory]
+    [InlineData("I put in for the Senior Software Engineer II, Risk role at Aledade.")]
+    [InlineData("I sent my resume for the Risk role at Aledade.")]
+    public void A_text_that_names_a_role_in_words_the_gate_cannot_read_is_held(string text)
+    {
+        Assert.Contains("cannot read", ClosedReqs.Why("Aledade", text, Rows), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_same_title_worded_differently_is_already_applied()
+    {
+        string[][] rows = [Row("736", "PerfectServe", "Greenhouse", "8/4/2026", "Senior Software Engineer .NET - $120,000-$160,000, Remote US. Submitted.")];
+        var gate = new PersonGate(new GateSources(rows, Fixture.Read("limits.md"), Fixture.Read("rules.md"), Fixture.Read("responders.md"), []), new DateOnly(2026, 11, 2));
+        Assert.Equal("already applied", gate.Apply("PerfectServe", "https://job-boards.greenhouse.io/perfectserve/jobs/5826519004", "Senior Software Engineer, .NET - US Remote"));
+    }
 }

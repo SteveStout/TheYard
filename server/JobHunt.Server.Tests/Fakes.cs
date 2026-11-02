@@ -23,6 +23,8 @@ internal sealed class MemoryShare : IShare
 
     public string? Refused { get; set; }
 
+    public int RefuseSpool { get; set; }
+
     public string Root => "/mnt/j";
 
     public string Full(string relative) => $"{Root}/{relative}";
@@ -64,6 +66,11 @@ internal sealed class MemoryShare : IShare
 
     public Task WriteNewAsync(string relative, string text, CancellationToken ct)
     {
+        if (RefuseSpool > 0 && relative.StartsWith("inbox/tracker-inbox/", StringComparison.Ordinal))
+        {
+            RefuseSpool--;
+            throw new IOException($"{relative} refused");
+        }
         if (!Files.TryAdd(Allowed(relative), text))
         {
             throw new IOException($"{relative} exists");

@@ -10,7 +10,8 @@ namespace JobHunt.Server.Domain.Shared.Gates;
 /// application. A text with a req id is matched by the id, because two reqs often share a title, and the dates run from the
 /// first application on that req, so a later row cannot hide an earlier rejection. A text that speaks of applying in words
 /// this cannot read is held, because a claim nobody checked is the thing this is here to stop. The tracker is what this
-/// reads, not the employer, so a closing nobody has logged still passes.
+/// reads, not the employer, so a closing nobody has logged still passes. A name in the parenthesis of an application's
+/// company cell counts as the company, because the tracker files one employer under both.
 /// </summary>
 public static partial class ClosedReqs
 {
@@ -41,14 +42,18 @@ public static partial class ClosedReqs
         {
             return $"no application on file for {role}";
         }
+        string[] names = [company, .. applications.SelectMany(row => Aliases(row[2]))];
         DateOnly applied = applications.Select(TrackerKinds.Day).OfType<DateOnly>().DefaultIfEmpty(DateOnly.MinValue).Min();
-        string[]? closing = rows.FirstOrDefault(row => row.Length >= 7 && At(row, company) && Closes(row) && TrackerKinds.Day(row) is { } day && day >= applied
+        string[]? closing = rows.FirstOrDefault(row => row.Length >= 7 && names.Any(name => At(row, name)) && Closes(row) && TrackerKinds.Day(row) is { } day && day >= applied
             && (Names(row) || applications.Any(application => Cites(row, application)) || !CitesACount().IsMatch(row[6])));
         return closing is null ? null : $"closed req: {role}, Count {closing[0]} {closing[4]}";
     }
 
     private static bool IsApplicationAt(string[] row, string company) =>
         TrackerRows.IsApplication(row) && !TrackerKinds.IsLinkedIn(row) && At(row, company) && !Closes(row) && !NeverWentIn(row);
+
+    private static IEnumerable<string> Aliases(string cell) =>
+        Alias().Matches(cell).Select(match => match.Groups[1].Value);
 
     private static bool At(string[] row, string company) => row[2].Split('/').Any(part => ApplicationCap.Same(part, company));
 
@@ -67,18 +72,23 @@ public static partial class ClosedReqs
     private static bool Cites(string[] row, string[] application) =>
         application[0].Trim().Length > 0 && Regex.IsMatch(row[6], $@"\b{Regex.Escape(application[0].Trim())}\b");
 
-    private static string Normal(string text) => Space().Replace(NotWord().Replace(text.ToLowerInvariant(), " "), " ").Trim();
+    /// <summary>A title or a note reduced to lower-case words, so two wordings of one title compare.</summary>
+    /// <param name="text">The text.</param>
+    public static string Normal(string text) => Space().Replace(NotWord().Replace(text.ToLowerInvariant(), " "), " ").Trim();
 
     [GeneratedRegex(@"\b(?:applied(?:\s+on\s+[^.]*?)?\s+(?:for|to)|in process for)\s+the\s+(?:Remote\s+)?(?<role>\S.*?)\s+role\b", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
     private static partial Regex Claim();
 
-    [GeneratedRegex(@"\b(applied|applying|application|in process)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(applied|applying|application|in process|role|req|requisition|position|opening)\b", RegexOptions.IgnoreCase)]
     private static partial Regex Speaks();
+
+    [GeneratedRegex(@"\(([^)]+)\)")]
+    private static partial Regex Alias();
 
     [GeneratedRegex(@"\((?<id>[A-Za-z]*\d{4,})\)")]
     private static partial Regex Req();
 
-    [GeneratedRegex(@"reject|not selected|no longer (being )?consider|position (has been )?(filled|closed)|posting closed|\b(req|requisition|role) (has been |is )?(closed|filled)|withdr[ae]w|not moving forward|move forward with other|no longer accepting", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"reject|\bclosed\b|not selected|no longer (being )?consider|position (has been )?(filled|closed)|posting closed|\b(req|requisition|role) (has been |is )?(closed|filled)|withdr[ae]w|not moving forward|move forward with other|no longer accepting", RegexOptions.IgnoreCase)]
     private static partial Regex Closed();
 
     [GeneratedRegex(@"\b(Counts?|rows?)\s+\d{3,5}", RegexOptions.IgnoreCase)]

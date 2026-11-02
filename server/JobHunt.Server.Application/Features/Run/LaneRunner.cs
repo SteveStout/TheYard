@@ -28,6 +28,9 @@ public sealed record LaneStart(Lane Lane, DateOnly Day, bool Dry, OutreachCounts
 public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSink usage, ServerConfig config, TimeProvider time)
 {
     private const int CrashDays = 7;
+    private const int RowAttempts = 3;
+    private const int Spacing = 1000;
+    private const string NotWritten = "TRACKER ROW NOT WRITTEN";
 
     /// <summary>
     /// Writes a lane that did not run: its DONE note says why. A folder a crash left is the exception, because a DONE note
@@ -48,8 +51,9 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     }
 
     /// <summary>
-    /// Why a lane may not start because an earlier run of it died, today or in the week before: a progress file with no
-    /// DONE note is sends with no records, and a person has to read them before the same worklist is built again.
+    /// Why a lane may not start because an earlier run of it died or lost a row, today or in the week before: a progress
+    /// file with no DONE note, or a note saying a row never wrote, is a send with no record, and a person has to read it
+    /// before the same worklist is built again.
     /// </summary>
     /// <param name="start">The lane.</param>
     /// <param name="ct">Stops the read.</param>
@@ -60,7 +64,15 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             string day = RunSlot.DayFolder(start.Day.AddDays(-back));
             foreach (string folder in await share.FoldersAsync(day, $"{RunSlot.Hour}-{RunSlot.Word(start.Lane)}-*", ct))
             {
-                if (!folder.EndsWith("-dry", StringComparison.Ordinal) && await share.ExistsAsync($"{folder}/progress.tsv", ct) && !await FinishedAsync(folder, ct))
+                if (folder.EndsWith("-dry", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                if (await share.ExistsAsync($"{folder}/DONE.md", ct) && (await share.ReadAsync($"{folder}/DONE.md", ct)).Contains(NotWritten, StringComparison.Ordinal))
+                {
+                    return $"{folder}/DONE.md says a tracker row was not written: a send with no record. Write the row, then take that line out of the note, before this lane runs again";
+                }
+                if (await share.ExistsAsync($"{folder}/progress.tsv", ct) && !await FinishedAsync(folder, ct))
                 {
                     return $"an earlier run left {folder}/progress.tsv and no DONE note: sends with no records. Write their rows, then rename that file, before this lane runs again";
                 }
@@ -178,23 +190,8 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         {
             return [];
         }
-        var rows = new List<RowResult>();
-        foreach (string line in (await share.ReadAsync($"{folder}/progress.tsv", ct)).Split('\n'))
-        {
-            Match sent = ProgressLine().Match(line.TrimEnd('\r'));
-            if (sent.Success && int.TryParse(sent.Groups["row"].Value, out int row))
-            {
-                if (rows.All(r => r.Row != row))
-                {
-                    string person = sent.Groups["person"].Value.Trim();
-                    rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));
-                }
-            }
-            else if (line.Contains("sent", StringComparison.OrdinalIgnoreCase) && !ProgressHeader().IsMatch(line))
-            {
-                lines.Add($"DEFECT: progress.tsv line not read, read the page: {line.Trim()}");
-            }
-        }
+        (IReadOnlyList<RowResult> rows, IReadOnlyList<string> unread) = ProgressFile.Read(await share.ReadAsync($"{folder}/progress.tsv", ct));
+        lines.AddRange(unread.Select(line => $"DEFECT: progress.tsv line not read, read the page: {line}"));
         return rows;
     }
 
@@ -227,17 +224,25 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
 
     private async Task WriteRowAsync(SendRecord record, int order, List<string> lines, CancellationToken ct)
     {
-        DateTimeOffset at = time.GetUtcNow().AddSeconds(order);
         string what = record.Reported.Person is { Length: > 0 } person ? person : record.Row.Company;
-        string path = $"inbox/tracker-inbox/{TrackerRowFile.Name(at, what)}";
-        try
+        for (int attempt = 1; ; attempt++)
         {
-            await share.WriteNewAsync(path, TrackerRowFile.Line(record, at), ct);
-            lines.Add($"Row written and read back: {path}");
-        }
-        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
-        {
-            lines.Add($"TRACKER ROW NOT WRITTEN for row {record.Row.Row} ({what}): {failure.Message}. Write it by hand from this note.");
+            DateTimeOffset at = time.GetUtcNow().AddSeconds(order + (attempt * Spacing));
+            string path = $"inbox/tracker-inbox/{TrackerRowFile.Name(at, what)}";
+            try
+            {
+                await share.WriteNewAsync(path, TrackerRowFile.Line(record, at), ct);
+                lines.Add($"Row written and read back: {path}");
+                return;
+            }
+            catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+            {
+                if (attempt == RowAttempts)
+                {
+                    lines.Add($"{NotWritten} for row {record.Row.Row} ({what}): {failure.Message}. Write it by hand from this note.");
+                    return;
+                }
+            }
         }
     }
 
@@ -259,12 +264,6 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             return from;
         }
     }
-
-    [GeneratedRegex(@"^\s*(?<row>\d+)(?:[\s|,:;]|<TAB>)+sent(?:(?:[\s|,:;]|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
-    private static partial Regex ProgressLine();
-
-    [GeneratedRegex(@"^\s*row(\t|<TAB>)", RegexOptions.IgnoreCase)]
-    private static partial Regex ProgressHeader();
 
     [GeneratedRegex(@"^/tmp/claude-chrome-screenshots-[\w-]+/[\w.-]+\.(jpg|jpeg|png)$")]
     private static partial Regex Shot();
