@@ -416,4 +416,26 @@ public sealed class AdapterTests : IDisposable
         ResumeBuild built = await new ShareHelpers("/bin/sh", new ShareFolder(folder)).BuildAsync("Staff Engineer", "Acme", "/out", default);
         Assert.Contains("one line", built.Failure, StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Every_run_can_pick_the_box_s_browser_and_none_can_page_a_person(bool dry)
+    {
+        foreach (var arguments in new[] { ClaudeArguments.For(new LaneConfig(), Lane.Invites, Share, RunDir, dry), ClaudeArguments.Recount(new LaneConfig(), Share, RunDir, dry), BrowserProbe.Arguments() })
+        {
+            Assert.Contains("mcp__claude-in-chrome__list_connected_browsers", arguments);
+            Assert.Contains("mcp__claude-in-chrome__select_browser", arguments);
+        }
+        int refused = ClaudeArguments.For(new LaneConfig(), Lane.Invites, Share, RunDir, dry).ToList().IndexOf("--disallowedTools");
+        var after = ClaudeArguments.For(new LaneConfig(), Lane.Invites, Share, RunDir, dry).Skip(refused);
+        Assert.Contains("mcp__claude-in-chrome__switch_browser", after);
+        Assert.DoesNotContain("mcp__claude-in-chrome__select_browser", after);
+    }
+
+    [Fact]
+    public void The_probe_says_which_browser_to_pick()
+    {
+        Assert.Contains("Linux", BrowserProbe.Arguments()[1], StringComparison.Ordinal);
+    }
 }

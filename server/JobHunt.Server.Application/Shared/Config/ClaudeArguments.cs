@@ -7,13 +7,15 @@ namespace JobHunt.Server.Application.Shared.Config;
 /// way to click, so a dry run cannot send whatever its prompt says. The live list leaves out `browser_batch` and
 /// `javascript_tool`, because a batch or a script against linkedin.com is the loop the human pace rule forbids.
 /// --strict-mcp-config leaves the extension as the only server, so no mail or calendar connector is even loaded, and
-/// the refused list names what the allowed list already leaves out, so nothing rests on one list alone.
+/// the refused list names what the allowed list already leaves out, so nothing rests on one list alone. With a second
+/// computer's Chrome connected the extension answers nothing until a browser is selected, so every run may select one;
+/// the lane doc says it is this box's and no other. switch_browser stays refused: it pages every Chrome for a click.
 /// </summary>
 public static class ClaudeArguments
 {
     private const string Chrome = "mcp__claude-in-chrome__";
 
-    private static readonly string[] Reading = ["tabs_context_mcp", "tabs_create_mcp", "tabs_close_mcp", "navigate", "read_page", "get_page_text", "find"];
+    private static readonly string[] Reading = ["list_connected_browsers", "select_browser", "tabs_context_mcp", "tabs_create_mcp", "tabs_close_mcp", "navigate", "read_page", "get_page_text", "find"];
 
     private static readonly string[] Acting = ["computer", "form_input"];
 
@@ -21,7 +23,7 @@ public static class ClaudeArguments
     [
         "Bash", "Task", "Agent", "WebFetch", "WebSearch", "CronCreate", "CronDelete", "CronList", "RemoteTrigger", "Workflow", "Skill", "SendMessage", "PushNotification", "ScheduleWakeup",
         "NotebookEdit", "EnterWorktree", "ExitWorktree", "DesignSync", Chrome + "browser_batch", Chrome + "javascript_tool", Chrome + "shortcuts_execute", Chrome + "shortcuts_list", Chrome + "gif_creator",
-        Chrome + "upload_image", Chrome + "read_network_requests", Chrome + "read_console_messages", Chrome + "select_browser", Chrome + "switch_browser",
+        Chrome + "upload_image", Chrome + "read_network_requests", Chrome + "read_console_messages", Chrome + "switch_browser",
     ];
 
     /// <summary>The argument list.</summary>
