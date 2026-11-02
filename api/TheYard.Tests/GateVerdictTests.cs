@@ -54,7 +54,7 @@ public sealed class GateVerdictTests : IDisposable
     {
         Directory.CreateDirectory(_root);
         Plant("node.result", "prettier=0\nprettier_s=4\nlint=0\nlint_s=9\ntsc=0\ntsc_s=7\nvitest=0\nvitest_s=60\nbrowser=0\nbrowser_s=570\nbrowser_cosmos=skipped\nbrowser_cosmos_s=0\n");
-        Plant("dotnet.result", "format=0\nformat_s=20\nsqlproj=0\nsqlproj_s=30\nfunctions=0\nfunctions_s=60\nxunit=0\nxunit_s=300\nlive=0\nlive_s=40\noncosmos=skipped\noncosmos_s=0\n");
+        Plant("dotnet.result", "format=0\nformat_s=20\nsqlproj=0\nsqlproj_s=30\nfunctions=0\nfunctions_s=60\nserver=0\nserver_s=10\nxunit=0\nxunit_s=300\nlive=0\nlive_s=40\noncosmos=skipped\noncosmos_s=0\n");
         Plant("rest.result", "emdash=0\nquality=0\n");
         Plant("build.result", "warnings=0\n");
         // Every text log holds what it holds on a GREEN run: this is the noise the verdict used to print.
@@ -67,6 +67,7 @@ public sealed class GateVerdictTests : IDisposable
         Plant("quality.txt", "undocumented_declarations 543 ok\ndotnet_tests_higher_is_better 2274 ok\n");
         Plant("build.txt", "Build succeeded.\n    0 Warning(s)\n");
         Plant("functions.txt", "Passed!  - Failed:     0, Passed:   386\n");
+        Plant("server.txt", "Passed!  - Failed:     0, Passed:   195\n");
         Plant("xunit-sqlite.txt", "Passed!  - Failed:     0, Passed:  1693\n");
         Plant("xunit-live.txt", "Passed!  - Failed:     0, Passed:    31\n");
         Plant("browser-sqlite.txt", "  193 passed (9.5m)\n");

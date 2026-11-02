@@ -62,3 +62,20 @@ A record over the four that describe the structure, not a change to any of them:
 ## Addendum, 2026-10-25 (1.0.4.82): the Admin module's fourth sub-slice
 
 Decision 2 named the Admin module's three sub-slices, Cloud, Plan and Operations. From 1.0.4.82 there are four: Foreman, with its own `Module.cs` in the host and its own folder in Application (ADR: The Foreman, a place to start). The prompt for it drew a second Functions app with an identity and a Cosmos DB container of its own; it is a module of the site instead, because every reading it makes is one the site already makes, and Decision 1 holds: still one deployable per process. In the inner rings the four are four slices, so the Foreman's Application folder declares its own records for the failures it cites rather than using the incidents card's, and the host's Foreman adapter, inside the one Admin slice, maps one to the other.
+
+## Addendum, 2026-11-02 (1.0.4.128): a third process, the machine lanes
+
+Decision 1 and Decision 5 named two processes. From 1.0.4.128 there are three. The site cannot drive a browser and neither can a GitHub runner, and the job hunt's LinkedIn sends and applications need a Chrome with a signed-in session, which exists on one box, WickedAwsome. So the third process runs there: `server/JobHunt.Server`, a .NET console program a systemd user timer starts at 06:00 America/Chicago. It is not a service, it holds no database, and it shares nothing with the site or the Function at run time; it reads the job-hunt share and writes the same two inboxes every other lane writes.
+
+The rule is the same and the test now names three.
+
+1. **One deployable.** The third process is `server/JobHunt.Server`. A second web host, executable or Functions app under `server/` fails the build.
+2. **The same rings.** `JobHunt.Server.Domain` holds the rules with no I/O, `JobHunt.Server.Application` holds the use cases and their ports and references Domain only, `JobHunt.Server.Infrastructure` holds the adapters and references both, and the host sits over them. Its modules are `Run`, `Probe` and `Status`; what they share is a concern under `Shared/`, the same shape as the other two (Decision 4).
+3. **Rings and linked files, never a project.** No project of any process references a project of another. What crosses is a source file compiled in by a link, and each one is named in the test. Five cross from the Function to the machine lanes, because a second copy of Rule 50 or of the tracker's CSV reader is how the two would drift apart: `TrackerCsvText.cs`, `TrackerRows.cs`, `ApplicationCap.cs`, `CompanyKey.cs` and `FormerEmployers.cs`.
+
+`ModularMonolithRule.Processes` names the three folders, and `ModularMonolithRule.AcrossProcesses` walks every pair of them. `ModularMonolithTests` in `server/JobHunt.Server.Tests` holds one deployable, the slices, every pair of processes and the five linked files. `ci.yml`, `gate.yml` and the machine's `yard-test` run the suite, and `quality.py` reads the folder, so the third process counts in every number the other two count in.
+
+What this does not change: the site and the Function keep their own halves as they stood, and neither knows the third process exists. It is deployed by `server/publish-to-wickedawsome.sh` on the box, never by a workflow, because no runner can reach a machine at home and nothing here should try.
+
+What an independent read of the send path changed before anything shipped. The first build left the pause at 90 to the model, so a short run now reads the sent page first and the program cuts the worklist from that count. It read Rule 25 by exact name and company over rows filtered by the word "applied", which hid sent messages; it now reads the person on any row, and only a row's opening words decide its kind. It let the apply lane drive linkedin.com while LinkedIn was closed; those rows now stay off the list. A run that ends with no answer now closes LinkedIn for the day, because it may have ended on a checkpoint.
+

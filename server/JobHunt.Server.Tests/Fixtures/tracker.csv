@@ -1,0 +1,14 @@
+"""Count""",Person,Company,Communication,Date,Phone/Email,Notes
+3315,Bo Example,Aledade,LinkedIn,11/2/2026,,"CONNECTION REQUEST SENT by Claude (linuxreach1102, scheduled task, WickedAwsome Chrome) 10:10 CST 11/2 under Steve's 10/27 approval. Code ntcgfc.
+Profile linkedin.com/in/bo-example, read 11/2"
+3316,Ann Example,AccuLynx,LinkedIn,11/2/2026,,"SCOPED CONNECTION REQUEST SENT by Claude 10:13 CST 11/2. Code 18h3xr. Profile linkedin.com/in/annexample75"
+3292,Pat Lee,OneStream,LinkedIn,10/30/2026,,"INBOUND InMail 1:28 PM CDT 10/30 (Gmail notice 1a18e12570c639d7, INBOX)"
+3264,NA,Talently,LinkedIn,10/29/2026,,"REJECTION, generic, 10/29/2026 17:46 Central (Gmail msg 1a189d79c7ae7a)"
+3200,Sam Roe,LINQ,LinkedIn,10/28/2026,,"FOLLOW-UP MESSAGE SENT by Claude (chat1028) 09:00 CDT, resume attached."
+3199,Jo Ray,LINQ,LinkedIn connection invite w/ note,10/27/2026,,"Sent with a note."
+3100,Sam Roe,Array,LinkedIn,10/20/2026,,"CONNECTION ACCEPTED 10/20"
+3090,Bo Kay,Acme Health,Interview,10/25/2026,,"Round one held."
+2953,NA,Upstart,Greenhouse,10/21/2026,,"Application submitted, Senior EM Servicing"
+2954,NA,Upstart,Greenhouse,10/21/2026,,"Application submitted, Senior EM Site Reliability"
+2955,NA,Upstart,Greenhouse,10/21/2026,,"Application submitted, Principal Software Engineer"
+2701,NA,Acme Network,Greenhouse,10/21/2026,,"Application submitted. https://job-boards.greenhouse.io/acmenetwork/jobs/123456"

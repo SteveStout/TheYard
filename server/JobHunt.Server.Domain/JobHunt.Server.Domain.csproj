@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The machine lanes' rules (ADR-119, the addendum on the third process): no I/O, no clock read, no setting
+       read; references no project at all. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Rule 50, the tracker's CSV and the former employers, compiled here from their one file so the Function and
+         the machine lanes cannot keep two copies. ModularMonolithTests names each one. -->
+    <Compile Include="..\..\functions\JobHunt.Domain\Shared\Tracker\TrackerCsvText.cs" Link="Linked\TrackerCsvText.cs" />
+    <Compile Include="..\..\functions\JobHunt.Domain\Shared\Tracker\TrackerRows.cs" Link="Linked\TrackerRows.cs" />
+    <Compile Include="..\..\functions\JobHunt.Domain\Shared\Applications\ApplicationCap.cs" Link="Linked\ApplicationCap.cs" />
+    <Compile Include="..\..\functions\JobHunt.Domain\Features\Campaign\CompanyKey.cs" Link="Linked\CompanyKey.cs" />
+    <Compile Include="..\..\functions\JobHunt.Domain\Features\Campaign\FormerEmployers.cs" Link="Linked\FormerEmployers.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="JobHunt.Domain.Features.Campaign" />
+    <Using Include="JobHunt.Domain.Shared.Applications" />
+    <Using Include="JobHunt.Domain.Shared.Tracker" />
+    <Using Include="JobHunt.Server.Domain.Shared.Gates" />
+    <Using Include="JobHunt.Server.Domain.Shared.Records" />
+    <Using Include="JobHunt.Server.Domain.Shared.Registry" />
+    <Using Include="JobHunt.Server.Domain.Shared.Results" />
+    <Using Include="JobHunt.Server.Domain.Shared.Slots" />
+    <Using Include="JobHunt.Server.Domain.Shared.Worklists" />
+  </ItemGroup>
+</Project>
