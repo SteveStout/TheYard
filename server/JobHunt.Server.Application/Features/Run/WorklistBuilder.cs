@@ -113,7 +113,6 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         var dropped = new List<Dropped>();
         var blockers = new List<Posting>();
         var candidates = new List<Candidate>();
-        var companies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (Posting posting in postings.DistinctBy(posting => posting.Link))
         {
             string what = $"{posting.Company}, {posting.Role}";
@@ -130,7 +129,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
                 blockers.Add(posting);
                 dropped.Add(new Dropped(what, "skipped: account wall or no form this lane may use"));
             }
-            else if (!companies.Add(posting.Company))
+            else if (candidates.Any(candidate => ApplicationCap.Same(candidate.Company, posting.Company)))
             {
                 dropped.Add(new Dropped(what, "one application a company a morning"));
             }
@@ -234,14 +233,14 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         {
             return $"code {code} already on a tracker row";
         }
-        if (reads.Gate.ClosedReq(candidate.Company, candidate.Text) is { } closed)
-        {
-            return closed;
-        }
         var problems = TextCheck.Problems(candidate.Text, candidate.Action == WorkAction.Invite);
         if (problems.Count > 0)
         {
             return "text failed: " + string.Join(", ", problems);
+        }
+        if (reads.Gate.ClosedReq(candidate.Company, candidate.Text) is { } closed)
+        {
+            return closed;
         }
         return await prose.CleanAsync(candidate.Text, ct) ? null : "text failed check_aiisms.py";
     }

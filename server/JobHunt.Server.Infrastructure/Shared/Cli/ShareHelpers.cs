@@ -12,7 +12,8 @@ namespace JobHunt.Server.Infrastructure.Shared.Cli;
 /// <param name="share">The share.</param>
 public sealed partial class ShareHelpers(string python, IShare share) : ICodeMinter, IProseCheck, IResumeBuilder
 {
-    private static readonly TimeSpan BuildLimit = TimeSpan.FromMinutes(3);
+    /// <summary>How long a resume build may run.</summary>
+    public TimeSpan BuildLimit { get; init; } = TimeSpan.FromMinutes(3);
 
     /// <inheritdoc/>
     public async Task<string?> MintAsync(string person, string company, CancellationToken ct)
@@ -26,14 +27,26 @@ public sealed partial class ShareHelpers(string python, IShare share) : ICodeMin
     {
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(ct);
         limit.CancelAfter(BuildLimit);
-        (int exit, string output) = await RunAsync([title, "--company", company, "--out", folder], null, "build_tailored_resume.py", limit.Token);
+        int exit;
+        string output;
+        try
+        {
+            (exit, output) = await RunAsync([title, "--company", company, "--out", folder], null, "build_tailored_resume.py", limit.Token);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return new ResumeBuild(string.Empty, string.Empty, string.Empty, $"the build timed out at {BuildLimit.TotalMinutes:0} minutes");
+        }
         Match path = SendCopy().Match(output), headline = Headline().Match(output), sha = Sha().Match(output);
         if (exit != 0 || !path.Success || !headline.Success || !sha.Success)
         {
             string why = output.Split('\n').FirstOrDefault(line => line.StartsWith("STOP", StringComparison.Ordinal)) ?? $"exit {exit}";
             return new ResumeBuild(string.Empty, string.Empty, string.Empty, why);
         }
-        return new ResumeBuild(path.Groups[1].Value.Trim(), headline.Groups[1].Value.Trim(), sha.Groups[1].Value.Trim());
+        string used = headline.Groups[1].Value.Trim();
+        return used.Contains(' ', StringComparison.Ordinal)
+            ? new ResumeBuild(path.Groups[1].Value.Trim(), used, sha.Groups[1].Value.Trim())
+            : new ResumeBuild(string.Empty, string.Empty, string.Empty, $"the headline came out one word, {used}, from {title}");
     }
 
     /// <inheritdoc/>

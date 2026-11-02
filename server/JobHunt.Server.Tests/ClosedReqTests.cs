@@ -110,4 +110,52 @@ public sealed class ClosedReqTests
         var gate = new PersonGate(new GateSources(Rows, Fixture.Read("limits.md"), Fixture.Read("rules.md"), Fixture.Read("responders.md"), []), new DateOnly(2026, 11, 2));
         Assert.NotNull(gate.ClosedReq("Aledade", Aledade));
     }
+
+    [Fact]
+    public void A_later_row_on_the_same_title_does_not_hide_a_rejection()
+    {
+        string[][] rows =
+        [
+            Row("1000", "OnBoard", "Greenhouse", "9/1/2026", "SUBMITTED Principal Software Engineer - AI, req 6145193004"),
+            Row("1752", "OnBoard", "Email", "9/20/2026", "REJECTION, generic: Principal Software Engineer - AI, req 6145193004"),
+            Row("1959", "OnBoard", "Greenhouse", "10/20/2026", "ATS RECEIPT confirms submitted: Principal Software Engineer - AI, req 6222461004"),
+        ];
+        Assert.NotNull(ClosedReqs.Why("OnBoard", "I applied for the Remote Principal Software Engineer - AI (6145193004) role at OnBoard.", rows));
+    }
+
+    [Fact]
+    public void A_req_id_in_the_text_matches_by_the_id_and_not_by_the_title()
+    {
+        string[][] rows =
+        [
+            Row("1000", "OnBoard", "Greenhouse", "10/1/2026", "SUBMITTED Staff Engineer, req 1111111"),
+            Row("1752", "OnBoard", "Email", "10/20/2026", "REJECTION, generic: Staff Engineer, req 2222222, Count 1700"),
+        ];
+        Assert.Null(ClosedReqs.Why("OnBoard", "I applied for the Remote Staff Engineer (1111111) role at OnBoard.", rows));
+        Assert.Contains("no application on file", ClosedReqs.Why("OnBoard", "I applied for the Remote Staff Engineer (3333333) role at OnBoard.", rows), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("QUEUED FOR HIS DECISION, NOT APPLIED: Senior Software Engineer")]
+    [InlineData("STAGED, not submitted: Senior Software Engineer")]
+    [InlineData("PARKED, submitted nothing: Senior Software Engineer")]
+    public void A_row_that_never_went_in_is_no_application_wherever_it_says_so(string note)
+    {
+        string[][] rows = [Row("1807", "Topstep", "Greenhouse", "9/1/2026", note)];
+        Assert.Contains("no application on file", ClosedReqs.Why("Topstep", "I applied for the Remote Senior Software Engineer role at Topstep.", rows), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("I applied on Monday, October 19 for the Senior Staff Software Engineer role at Acme.")]
+    [InlineData("I applied to the Senior Staff Software Engineer role at Acme.")]
+    public void Every_way_a_draft_words_the_claim_is_read(string text)
+    {
+        Assert.Contains("no application on file", ClosedReqs.Why("Acme", text, Rows), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_claim_the_gate_cannot_read_is_held()
+    {
+        Assert.Contains("cannot read", ClosedReqs.Why("Acme", "Pat, since I applied there last month I would like to connect.", Rows), StringComparison.Ordinal);
+    }
 }

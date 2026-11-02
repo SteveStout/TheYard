@@ -401,4 +401,14 @@ public sealed class ResultTests
         Assert.NotNull(EvidenceCheck.WrongPerson(Named(string.Empty, "Eddie Salas; Sam Roe"), Sent(null) with { Person = "Sam Roe" }));
         Assert.Null(EvidenceCheck.WrongPerson(Named(string.Empty, "Eddie Salas; Sam Roe"), Sent(null) with { Person = "New Person" }));
     }
+
+    [Theory]
+    [InlineData("Andrea (Dre) Hazel", "Andrea Hazel")]
+    [InlineData("Dr. Patrick Goldberg", "Patrick Goldberg")]
+    [InlineData("Amanda Petrone / Jenny George", "Jenny George")]
+    [InlineData("Kirk Wagner, Jr.", "Kirk Wagner")]
+    public void The_avoid_column_matches_a_name_however_the_tracker_wrote_it(string avoid, string reported)
+    {
+        Assert.NotNull(EvidenceCheck.WrongPerson(Named(string.Empty, avoid), Sent(null) with { Person = reported }));
+    }
 }

@@ -158,14 +158,6 @@ public sealed class AdapterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_lock_with_a_broken_body_turns_the_run_away()
-    {
-        var share = new ShareFolder(folder);
-        await share.WriteAsync("nightly/2026-11-03/0600.lock", "junk", default);
-        Assert.Null(await new FileRunLock(share, new FixedTime(Morning.At)).TakeAsync("nightly/2026-11-03", default));
-    }
-
-    [Fact]
     public async Task A_stale_lock_whose_id_is_not_this_program_is_replaced_and_nothing_is_killed()
     {
         var share = new ShareFolder(folder);
@@ -437,5 +429,51 @@ public sealed class AdapterTests : IDisposable
     public void The_probe_says_which_browser_to_pick()
     {
         Assert.Contains("Linux", BrowserProbe.Arguments()[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_lock_a_run_hosted_by_dotnet_holds_still_turns_the_next_run_away()
+    {
+        var share = new ShareFolder(folder);
+        await share.WriteAsync("nightly/2026-11-03/0600.lock", $"{Environment.ProcessId}\t{Morning.At.AddMinutes(-5).ToUnixTimeSeconds()}\n", default);
+        Assert.Null(await new FileRunLock(share, new FixedTime(Morning.At)).TakeAsync("nightly/2026-11-03", default));
+    }
+
+    [Fact]
+    public async Task A_lock_another_run_took_over_is_not_deleted_by_the_run_that_lost_it()
+    {
+        var share = new ShareFolder(folder);
+        IAsyncDisposable? taken = await new FileRunLock(share, new FixedTime(Morning.At)).TakeAsync("nightly/2026-11-03", default);
+        await share.WriteAsync("nightly/2026-11-03/0600.lock", "424242\t1\n", default);
+        await taken!.DisposeAsync();
+        Assert.True(await share.ExistsAsync("nightly/2026-11-03/0600.lock", default));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("12345")]
+    public async Task A_torn_lock_reads_as_a_crash_and_not_as_a_silent_no_op(string body)
+    {
+        var share = new ShareFolder(folder);
+        await share.WriteAsync("nightly/2026-11-03/0600.lock", body, default);
+        await using IAsyncDisposable? taken = await new FileRunLock(share, new FixedTime(Morning.At)).TakeAsync("nightly/2026-11-03", default);
+        Assert.NotNull(taken);
+    }
+
+    [Fact]
+    public async Task A_headline_the_helper_cut_to_one_word_is_parked()
+    {
+        await File.WriteAllTextAsync(Path.Combine(folder, "build_tailored_resume.py"), "echo \"headline      : DIRECTOR\"\necho \"send copy     : /out/x.pdf\"\necho \"sha256        : abc\"\n");
+        ResumeBuild built = await new ShareHelpers("/bin/sh", new ShareFolder(folder)).BuildAsync("Director, Software Engineering", "Acme", "/out", default);
+        Assert.Contains("one word", built.Failure, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_build_that_hangs_comes_back_as_a_failure()
+    {
+        await File.WriteAllTextAsync(Path.Combine(folder, "build_tailored_resume.py"), "sleep 30\n");
+        var helpers = new ShareHelpers("/bin/sh", new ShareFolder(folder)) { BuildLimit = TimeSpan.FromMilliseconds(200) };
+        ResumeBuild built = await helpers.BuildAsync("Staff Engineer", "Acme", "/out", default);
+        Assert.Contains("timed out", built.Failure, StringComparison.Ordinal);
     }
 }

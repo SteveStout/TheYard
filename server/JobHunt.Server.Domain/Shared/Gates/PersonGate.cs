@@ -175,7 +175,9 @@ public sealed partial class PersonGate
             || (role.Length > 0 && TrackerRows.IsApplication(row) && ApplicationCap.Same(row[2], company) && row[6].Contains(role, StringComparison.OrdinalIgnoreCase))));
     }
 
-    private static string Name(string cell) =>
+    /// <summary>A person's name however the tracker wrote it: no title, no parenthesis, no initial, nothing after a comma.</summary>
+    /// <param name="cell">A Person cell.</param>
+    public static string Name(string cell) =>
         Space().Replace(Initial().Replace(Title().Replace(Parenthesis().Replace(cell.Split(',')[0], string.Empty), string.Empty), " "), " ").Trim().ToLowerInvariant();
 
     [GeneratedRegex(@"(?m)^\|\s*\*\*([^*|]+)\*\*\s*\|")]

@@ -760,4 +760,78 @@ public sealed class RunTests
         Assert.Contains("registry", output, StringComparison.Ordinal);
         Assert.Empty(morning.Claude.Requests);
     }
+
+    [Fact]
+    public async Task A_progress_line_for_a_row_the_worklist_never_held_is_a_defect_and_closes_LinkedIn()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "7\tsent\tJane Doe\n";
+            return Answer(Result(Row(1, "skipped", "Sam Roe", "null") + "," + Row(2, "skipped", "Bo Kay", "null")));
+        });
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("Jane Doe", output, StringComparison.Ordinal);
+        Assert.Contains("nightly/2026-11-03/0600-linkedin-closed.md", morning.Share.Files.Keys);
+    }
+
+    [Fact]
+    public async Task A_progress_line_nobody_can_read_is_said_out_loud()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "row one was sent to Jane\n";
+            return new ClaudeRun(137, true, null);
+        });
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("progress.tsv line not read", output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("1 | sent | Sam Roe\n")]
+    [InlineData("1, sent, Sam Roe\n")]
+    public async Task A_progress_line_with_other_separators_still_counts(string line)
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = line;
+            return new ClaudeRun(137, true, null);
+        });
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("Sam Roe,", morning.Share.Files[Assert.Single(morning.TrackerRows())], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Every_urgent_line_reaches_the_card_however_many_there_are()
+    {
+        var at = Morning.At;
+        LaneReport Report(Lane lane) => new(lane, "m", false, at, at, null, [], [], null, [], [], null);
+        string[] urgent = ["TRACKER ROW NOT WRITTEN for row 1", "TRACKER ROW NOT WRITTEN for row 2", "TRACKER ROW NOT WRITTEN for row 3", "TRACKER ROW NOT WRITTEN for row 4"];
+        string card = RunCard.Render(new DateOnly(2026, 11, 3), false, [Report(Lane.Invites), Report(Lane.Messages), Report(Lane.Apply)], urgent);
+        Assert.Contains("row 4", card, StringComparison.Ordinal);
+        Assert.True(card.TrimEnd().Split('\n').Length <= RunCard.MostLines);
+    }
+
+    [Fact]
+    public async Task Two_names_for_one_company_are_one_application_a_morning()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files["APPLY-SWEEP-2026-10-29-two.md"] = "## CONFIRMED LIVE\n| Company | Role | Link |\n|---|---|---|\n| Northwind | Staff Engineer | https://jobs.lever.co/northwind/a |\n| Northwind Network | Principal Engineer | https://jobs.lever.co/northwind/b |\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Contains("one application a company a morning", morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
+    }
 }

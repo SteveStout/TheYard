@@ -138,7 +138,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     private async Task<LaneResult?> ReadResultAsync(ClaudeRun run, LaneStart start, string folder, Worklist list, List<string> lines, CancellationToken ct)
     {
         LaneResult? result = LaneResult.FromLine(run.ResultLine);
-        IReadOnlyList<RowResult> progress = await ProgressAsync(folder, list, ct);
+        IReadOnlyList<RowResult> progress = await ProgressAsync(folder, lines, ct);
         if (result is null)
         {
             lines.Add("The model gave no structured result; progress.tsv read instead, and every send in it stands UNVERIFIED.");
@@ -172,7 +172,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         }
     }
 
-    private async Task<IReadOnlyList<RowResult>> ProgressAsync(string folder, Worklist list, CancellationToken ct)
+    private async Task<IReadOnlyList<RowResult>> ProgressAsync(string folder, List<string> lines, CancellationToken ct)
     {
         if (!await share.ExistsAsync($"{folder}/progress.tsv", ct))
         {
@@ -182,10 +182,17 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         foreach (string line in (await share.ReadAsync($"{folder}/progress.tsv", ct)).Split('\n'))
         {
             Match sent = ProgressLine().Match(line.TrimEnd('\r'));
-            if (sent.Success && int.TryParse(sent.Groups["row"].Value, out int row) && list.Rows.Any(r => r.Row == row) && rows.All(r => r.Row != row))
+            if (sent.Success && int.TryParse(sent.Groups["row"].Value, out int row))
             {
-                string person = sent.Groups["person"].Value.Trim();
-                rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));
+                if (rows.All(r => r.Row != row))
+                {
+                    string person = sent.Groups["person"].Value.Trim();
+                    rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));
+                }
+            }
+            else if (line.Contains("sent", StringComparison.OrdinalIgnoreCase) && !ProgressHeader().IsMatch(line))
+            {
+                lines.Add($"DEFECT: progress.tsv line not read, read the page: {line.Trim()}");
             }
         }
         return rows;
@@ -253,8 +260,11 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         }
     }
 
-    [GeneratedRegex(@"^\s*(?<row>\d+)(?:\s|<TAB>)+sent(?:(?:\s|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s*(?<row>\d+)(?:[\s|,:;]|<TAB>)+sent(?:(?:[\s|,:;]|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
     private static partial Regex ProgressLine();
+
+    [GeneratedRegex(@"^\s*row(\t|<TAB>)", RegexOptions.IgnoreCase)]
+    private static partial Regex ProgressHeader();
 
     [GeneratedRegex(@"^/tmp/claude-chrome-screenshots-[\w-]+/[\w.-]+\.(jpg|jpeg|png)$")]
     private static partial Regex Shot();

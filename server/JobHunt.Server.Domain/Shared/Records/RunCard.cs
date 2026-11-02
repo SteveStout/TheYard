@@ -5,8 +5,8 @@ namespace JobHunt.Server.Domain.Shared.Records;
 
 /// <summary>
 /// The morning card, six lines or fewer: what went out per lane, what is held and why, what is blocked with its one fix.
-/// It carries no question, because a card that has to be answered is an interruption. Lines beyond six are
-/// dropped from the end, and the end is the eligibility note, the least urgent thing on it.
+/// It carries no question, because a card that has to be answered is an interruption. Extra lines past the sixth are
+/// folded into the sixth, never dropped: an unwritten tracker row must reach the card however many there are.
 /// </summary>
 public static class RunCard
 {
@@ -25,7 +25,12 @@ public static class RunCard
             string.Create(CultureInfo.InvariantCulture, $"{RegistryRows.Lane} {day:ddd M/d}{(dry ? " DRY RUN, nothing sent" : string.Empty)}:"),
         };
         lines.AddRange(reports.Select(Line));
-        lines.AddRange(extra);
+        int room = MostLines - lines.Count;
+        lines.AddRange(extra.Take(Math.Max(0, Math.Min(extra.Count, room) - (extra.Count > room ? 1 : 0))));
+        if (extra.Count > room && room > 0)
+        {
+            lines.Add(string.Join(" | ", extra.Skip(room - 1)));
+        }
         return string.Join('\n', lines.Take(MostLines).Select(line => line.Replace("?", string.Empty, StringComparison.Ordinal))) + "\n";
     }
 

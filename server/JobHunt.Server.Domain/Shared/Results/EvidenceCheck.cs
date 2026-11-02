@@ -60,16 +60,16 @@ public static partial class EvidenceCheck
     /// <param name="result">What the model reported.</param>
     public static string? WrongPerson(WorkRow row, RowResult result)
     {
-        string said = Named(result.Person);
+        string said = PersonGate.Name(result.Person ?? string.Empty);
         if (said.Length == 0)
         {
             return null;
         }
         if (row.Person.Length > 0)
         {
-            return said == Named(row.Person) ? null : $"reported {result.Person}, the worklist names {row.Person}";
+            return said == PersonGate.Name(row.Person) ? null : $"reported {result.Person}, the worklist names {row.Person}";
         }
-        return row.Avoid.Split(';').Any(name => Named(name) == said) ? $"{result.Person} is on the row's avoid list" : null;
+        return row.Avoid.Split(';', '/').Any(name => PersonGate.Name(name) == said) ? $"{result.Person} is on the row's avoid list" : null;
     }
 
     /// <summary>The text with a found name in place of [First name].</summary>
@@ -80,9 +80,6 @@ public static partial class EvidenceCheck
         string first = (person ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
         return first.Length == 0 ? text : text.Replace("[First name]", first, StringComparison.Ordinal);
     }
-
-    private static string Named(string? person) =>
-        Space().Replace((person ?? string.Empty).Split(',')[0], " ").Trim().ToLowerInvariant();
 
     private static bool Same(string expected, string? actual) =>
         actual is not null && Space().Replace(expected, " ").Trim() == Space().Replace(actual, " ").Trim();
