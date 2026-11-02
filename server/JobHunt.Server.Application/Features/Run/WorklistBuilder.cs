@@ -71,6 +71,11 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
                 }
                 string body = ReplyQueue.Body(await share.ReadAsync(path, ct));
                 string first = ReplyQueue.Greeted(body);
+                if (item.Person.Length > 0 && !item.Person.StartsWith(first + " ", StringComparison.OrdinalIgnoreCase))
+                {
+                    dropped.Add(new Dropped(name, $"the draft greets {first}"));
+                    continue;
+                }
                 string? person = FullName(reads, first, company);
                 if (person is null)
                 {

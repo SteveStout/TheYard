@@ -23,7 +23,8 @@ public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRun
 /// The morning: mount, lock, registry, then the three lanes in order, then the card and the close row. LinkedIn fails
 /// closed: a stop condition, a blocked row, a run that gave no result, or another lane LIVE ends the LinkedIn work of the
 /// day, and that includes the apply lane's rows on linkedin.com, because they are a drive too. The registry is read
-/// again before each lane. The invite room is cut from the live count in code, so the pause at 90 is the program's and
+/// again before each lane. A LinkedIn stop is a file for the day, so a hard stop for the day stays one through any later
+/// run. The invite room is cut from the live count in code, so the pause at 90 is the program's and
 /// not only the model's. A stop from the service holds what has not started, and everything after it still closes.
 /// </summary>
 /// <param name="share">The share.</param>
@@ -65,7 +66,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         {
             broke = $"DEFECT: the run stopped early: {failure.Message}. Read the DONE notes before any lane runs again.";
         }
-        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, options.Only is not null), CancellationToken.None));
+        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, reports.Count < RunSlot.Order.Count), CancellationToken.None));
     }
 
     private async Task WorkAsync(IReadOnlyList<Lane> lanes, DateOnly day, bool dry, List<LaneReport> reports, CancellationToken ct)
@@ -83,7 +84,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             closed = $"a gate could not be read: {failure.Message}";
         }
         closed ??= await guards.Desktop.EnsureChromeAsync(ct);
-        string? linkedInStop = null;
+        string? linkedInStop = await share.ExistsAsync(RunSlot.LinkedInClosed(day), ct) ? (await share.ReadAsync(RunSlot.LinkedInClosed(day), ct)).Trim() : null;
         foreach (Lane lane in lanes)
         {
             if (await AlreadyRanAsync(lane, day, dry, ct))
@@ -108,7 +109,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 Recount recount = await work.Recounter.ReadAsync(start, ceilings!, before.InviteRoom(ceilings!), ct);
                 if (recount.Held is not null)
                 {
-                    linkedInStop ??= recount.Stop;
+                    linkedInStop ??= await CloseLinkedInAsync(day, recount.Stop, ct);
                     reports.Add(await work.Runner.HoldAsync(start with { Lines = [.. start.Lines, .. recount.Lines] }, recount.Held, CancellationToken.None));
                     continue;
                 }
@@ -120,9 +121,18 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             reports.Add(report);
             if (RunSlot.OnLinkedIn(lane) && report.ClosesLinkedIn)
             {
-                linkedInStop ??= $"{RunSlot.Word(lane)} lane did not finish clean, read its DONE note";
+                linkedInStop ??= await CloseLinkedInAsync(day, $"{RunSlot.Word(lane)} lane did not finish clean, read its DONE note", CancellationToken.None);
             }
         }
+    }
+
+    private async Task<string?> CloseLinkedInAsync(DateOnly day, string? stop, CancellationToken ct)
+    {
+        if (stop is not null)
+        {
+            await share.WriteAsync(RunSlot.LinkedInClosed(day), stop + "\n", ct);
+        }
+        return stop;
     }
 
     private async Task<bool> AlreadyRanAsync(Lane lane, DateOnly day, bool dry, CancellationToken ct)
@@ -162,21 +172,29 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
 
     private async Task<string> CloseAsync(CloseOf run, CancellationToken ct)
     {
-        (IReadOnlyList<LaneReport> reports, DateTimeOffset started, DateOnly day, bool dry, string? broke, bool oneLane) = run;
-        string card = await CardAsync(run, ct);
+        (IReadOnlyList<LaneReport> reports, DateTimeOffset started, DateOnly day, _, string? broke, bool oneLane) = run;
+        string card = $"{RegistryRows.Lane}: the card could not be built.\n";
         try
         {
+            card = await CardAsync(run, ct);
             string path = $"{RunSlot.DayFolder(day)}/{RunSlot.Hour}-card.md";
             if ((reports.Count > 0 || broke is not null) && !(oneLane && await share.ExistsAsync(path, ct)))
             {
                 await share.WriteAsync(path, card, ct);
             }
+        }
+        catch (IOException failure)
+        {
+            card += $"The card was not written: {failure.Message}\n";
+        }
+        try
+        {
             DateTimeOffset now = guards.Time.GetUtcNow();
             await share.WriteNewAsync(RegistryRows.Path(now, "close"), RegistryRows.Closed(now, started, card), ct);
         }
         catch (IOException failure)
         {
-            return $"{card}The card or the close row was not written: {failure.Message}\n";
+            card += $"The close row was not written: {failure.Message}\n";
         }
         return card;
     }

@@ -82,6 +82,10 @@ public static class RunSlot
     public static string RunFolder(DateOnly day, Lane lane, string model, bool dry) =>
         $"{DayFolder(day)}/{Hour}-{Word(lane)}-{ModelShort(model)}{(dry ? "-dry" : string.Empty)}";
 
+    /// <summary>The file that says LinkedIn is closed for the day, which every later run that day reads.</summary>
+    /// <param name="day">The Central day.</param>
+    public static string LinkedInClosed(DateOnly day) => $"{DayFolder(day)}/{Hour}-linkedin-closed.md";
+
     /// <summary>The UTC stamp a spool file's name starts with.</summary>
     /// <param name="utc">The instant.</param>
     public static string Stamp(DateTimeOffset utc) => utc.UtcDateTime.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "Z";

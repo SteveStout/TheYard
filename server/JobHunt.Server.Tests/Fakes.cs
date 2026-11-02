@@ -21,6 +21,8 @@ internal sealed class MemoryShare : IShare
 {
     public Dictionary<string, string> Files { get; } = new(StringComparer.Ordinal);
 
+    public string? Refused { get; set; }
+
     public string Root => "/mnt/j";
 
     public string Full(string relative) => $"{Root}/{relative}";
@@ -71,6 +73,10 @@ internal sealed class MemoryShare : IShare
 
     public Task AppendAsync(string relative, string text, CancellationToken ct)
     {
+        if (relative == Refused)
+        {
+            throw new IOException($"{relative} refused");
+        }
         Files[Allowed(relative)] = Files.GetValueOrDefault(relative, string.Empty) + text;
         return Task.CompletedTask;
     }

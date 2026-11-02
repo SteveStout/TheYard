@@ -208,6 +208,7 @@ public sealed class GateTests
     [Theory]
     [InlineData("New Person, Jr.")]
     [InlineData("New (Xinda) Person")]
+    [InlineData("New R. Person, CFP, AIF")]
     public void A_suffix_or_a_middle_name_is_the_same_person(string cell)
     {
         string[] row = ["1", cell, "Acme", "LinkedIn", "10/14/2026", "", "FOLLOW-UP MESSAGE SENT by Claude."];

@@ -29,7 +29,10 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
 {
     private const int CrashDays = 7;
 
-    /// <summary>Writes a lane that did not run: its DONE note says why.</summary>
+    /// <summary>
+    /// Writes a lane that did not run: its DONE note says why. A folder a crash left is the exception, because a DONE note
+    /// there would read as the crash being dealt with, so the hold goes in HELD.md and the lane stays held.
+    /// </summary>
     /// <param name="start">The lane.</param>
     /// <param name="held">Why it did not run.</param>
     /// <param name="ct">Stops the write.</param>
@@ -38,7 +41,9 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         DateTimeOffset now = time.GetUtcNow();
         LaneConfig lane = config.For(start.Lane);
         var report = new LaneReport(start.Lane, lane.Model, start.Dry, now, now, start.Before, [], [], null, [], start.Lines, held);
-        await share.WriteAsync($"{RunFolder(start, lane)}/DONE.md", DoneNote.Render(report), ct);
+        string folder = RunFolder(start, lane);
+        string note = await share.ExistsAsync($"{folder}/progress.tsv", ct) ? "HELD.md" : "DONE.md";
+        await share.WriteAsync($"{folder}/{note}", DoneNote.Render(report), ct);
         return report;
     }
 
@@ -108,7 +113,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             ClaudeRun run = await claude.RunAsync(request, ct);
             lines.Add($"claude -p exit {run.ExitCode}{(run.TimedOut ? ", killed at the wall-clock limit or by a stop" : string.Empty)}.");
             CancellationToken finish = CancellationToken.None;
-            cutShort = run.TimedOut || run.ResultLine is null;
+            cutShort = run.TimedOut || LaneResult.FromLine(run.ResultLine) is null;
             result = await ReadResultAsync(run, start, folder, list, lines, finish);
             sends = await RecordAsync(start, folder, lane.Model, list, result, lines, finish);
             await ReportUsageAsync(run, start, folder, began, lines, finish);

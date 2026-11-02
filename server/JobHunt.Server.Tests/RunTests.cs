@@ -247,6 +247,92 @@ public sealed class RunTests
     }
 
     [Fact]
+    public async Task A_crash_stays_held_through_any_number_of_later_runs()
+    {
+        var morning = new Morning(Quiet);
+        const string Folder = "nightly/2026-11-03/0600-apply-sonnet-5-5";
+        morning.Share.Files[$"{Folder}/progress.tsv"] = "1\tsent\tx\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        morning.Time.Now = Morning.At.AddMinutes(30);
+        (_, string second) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Contains("sends with no records", second, StringComparison.Ordinal);
+        Assert.False(morning.Share.Files.ContainsKey($"{Folder}/DONE.md"));
+        Assert.Contains($"{Folder}/HELD.md", morning.Share.Files.Keys);
+        Assert.Empty(morning.Claude.Requests);
+    }
+
+    [Fact]
+    public async Task A_stop_stays_a_stop_through_a_second_run_the_same_day()
+    {
+        var morning = new Morning(request => IsLane(request, Lane.Invites) && !IsRecount(request) ? Answer(Result(string.Empty, "checkpoint")) : Quiet(request));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.Contains("nightly/2026-11-03/0600-linkedin-closed.md", morning.Share.Files.Keys);
+        morning.Claude.Requests.Clear();
+        morning.Time.Now = Morning.At.AddMinutes(30);
+        (_, string second) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Messages), default);
+        Assert.Contains("did not finish clean", second, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
+    }
+
+    [Fact]
+    public async Task A_stop_on_the_recount_stops_a_second_run_recounting()
+    {
+        var morning = new Morning(_ => Answer(Result(string.Empty, "captcha")));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        int first = morning.Claude.Requests.Count;
+        morning.Time.Now = Morning.At.AddMinutes(30);
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Equal(first, morning.Claude.Requests.Count);
+    }
+
+    [Fact]
+    public async Task A_result_line_with_no_structured_answer_closes_LinkedIn()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request) || !IsLane(request, Lane.Invites))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "1\tsent\tSam Roe\n2\tsent\tBo Kay\n";
+            return new ClaudeRun(0, false, """{"type":"result","subtype":"error_max_turns"}""");
+        });
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.DoesNotContain(morning.Claude.Requests, request => IsLane(request, Lane.Messages));
+    }
+
+    [Fact]
+    public async Task A_share_that_refuses_the_runs_table_still_leaves_a_close_row()
+    {
+        var bad = new Morning(request => IsLane(request, Lane.Invites) && !IsRecount(request) ? Answer(Result(Row(1, "sent", "Sam Roe", "null"))) : Quiet(request));
+        bad.Share.Refused = WritePolicy.RunsTable;
+        (_, string output) = await bad.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.Contains("the card could not be built", output, StringComparison.Ordinal);
+        Assert.Contains(bad.Share.Files.Keys, path => path.EndsWith("-server6am-close.md", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_full_rerun_after_a_held_lane_leaves_the_morning_s_card_alone()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/DONE.md"] = "done";
+        morning.Share.Files["nightly/2026-11-03/0600-card.md"] = "the morning";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.Equal("the morning", morning.Share.Files["nightly/2026-11-03/0600-card.md"]);
+    }
+
+    [Fact]
+    public async Task A_draft_greeting_someone_else_never_reaches_the_person_the_queue_named()
+    {
+        string tracker = "\"Count\",Person,Company,Communication,Date,Phone/Email,Notes\n1,Sam Roe,AccuLynx,LinkedIn,10/27/2026,,\"CONNECTION REQUEST SENT by Claude\"\n";
+        var morning = new Morning(Quiet, tracker);
+        morning.Share.Files["nightly/2026-10-27/0400-reply-opus-5-5/drafts/li-followup-acculynx.txt"] = "Ann,\n\nThanks. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to look?\n\nThanks,\nSteve\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Messages), default);
+        Assert.Contains("Sam Roe: the draft greets Ann", morning.Share.Files["nightly/2026-11-03/0600-messages-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_dry_crash_holds_nothing()
     {
         var morning = new Morning(Quiet);

@@ -171,7 +171,7 @@ public sealed partial class PersonGate
     }
 
     private static string Name(string cell) =>
-        Space().Replace(Title().Replace(Parenthesis().Replace(cell.Split(',')[0], string.Empty), string.Empty), " ").Trim().ToLowerInvariant();
+        Space().Replace(Initial().Replace(Title().Replace(Parenthesis().Replace(cell.Split(',')[0], string.Empty), string.Empty), " "), " ").Trim().ToLowerInvariant();
 
     [GeneratedRegex(@"(?m)^\|\s*\*\*([^*|]+)\*\*\s*\|")]
     private static partial Regex Block();
@@ -181,6 +181,9 @@ public sealed partial class PersonGate
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Space();
+
+    [GeneratedRegex(@"\s[A-Za-z]\.?\s")]
+    private static partial Regex Initial();
 
     [GeneratedRegex(@"^\s*(Dr|Mr|Mrs|Ms)\.?\s+", RegexOptions.IgnoreCase)]
     private static partial Regex Title();
