@@ -22,7 +22,7 @@ public sealed class ClaudeCli(string path) : IClaudeCli
             File.Copy(local, target, overwrite: true);
             File.Delete(local);
         }
-        catch (IOException)
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
         {
             // The stream is a convenience; a share that refuses it must not cost the run's records, so it stays local.
         }

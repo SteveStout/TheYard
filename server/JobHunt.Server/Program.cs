@@ -1,4 +1,3 @@
-using JobHunt.Server.Domain.Shared.Slots;
 using Microsoft.Extensions.Configuration;
 
 string local = Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? string.Empty, ".config/jobhunt-server/appsettings.local.json");
@@ -33,23 +32,17 @@ using System.Runtime.InteropServices.PosixSignalRegistration term = System.Runti
 switch (args.FirstOrDefault())
 {
     case "run":
-        Lane? only = null;
-        int named = Array.IndexOf(args, "--lane");
-        if (named >= 0)
+        if (RunOptions.Parse(args) is not { } options)
         {
-            only = named + 1 < args.Length ? RunSlot.Parse(args[named + 1]) : null;
-            if (only is null)
-            {
-                Console.Error.WriteLine("--lane takes invites, messages or apply");
-                return 2;
-            }
+            Console.Error.WriteLine("run takes --dry-run and --lane invites|messages|apply, and nothing else");
+            return 2;
         }
         var lanes = new RunLanes(
             share,
             new RunGuards(new JDriveMount(share), new FileRunLock(share, time), desktop, time),
-            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, config), new LaneRunner(share, claude, new SiteUsage(config, http), config, time), new InviteRecount(share, claude, config)),
+            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, helpers, config), new LaneRunner(share, claude, new SiteUsage(config, http), config, time), new InviteRecount(share, claude, config)),
             config);
-        (int exit, string output) = await lanes.ExecuteAsync(new RunOptions(args.Contains("--dry-run"), only), stop.Token);
+        (int exit, string output) = await lanes.ExecuteAsync(options, stop.Token);
         Console.WriteLine(output);
         return exit;
     case "probe":

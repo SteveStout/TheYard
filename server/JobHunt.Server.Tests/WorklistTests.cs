@@ -225,4 +225,15 @@ public sealed class WorklistTests
         Assert.Equal(9, lines[1].Split('\t').Length);
         Assert.Contains("\tinvite\t", lines[1], StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("I am in process for the role. ")]
+    [InlineData("Looking forward to our conversation on Tuesday. ")]
+    [InlineData("I meet Clinton Corbin on Tuesday. ")]
+    [InlineData("Ahead of the interview. ")]
+    [InlineData("Would a call help. ")]
+    public void A_text_that_names_a_live_process_waits_for_his_yes(string line)
+    {
+        Assert.Contains(TextCheck.Problems(line + Good, invite: true), problem => problem.Contains("live process", StringComparison.Ordinal));
+    }
 }

@@ -3,7 +3,33 @@ namespace JobHunt.Server.Application.Features.Run;
 /// <summary>What the command line asked of a run.</summary>
 /// <param name="Dry">True for --dry-run.</param>
 /// <param name="Only">The one lane --lane named, or null for all three.</param>
-public sealed record RunOptions(bool Dry, Lane? Only);
+public sealed record RunOptions(bool Dry, Lane? Only)
+{
+    /// <summary>The options a command line asks for, or null when it holds anything this program does not know.</summary>
+    /// <param name="arguments">The arguments, the verb first.</param>
+    public static RunOptions? Parse(IReadOnlyList<string> arguments)
+    {
+        bool dry = false;
+        Lane? only = null;
+        for (int i = 1; i < arguments.Count; i++)
+        {
+            if (arguments[i] == "--dry-run")
+            {
+                dry = true;
+            }
+            else if (arguments[i] == "--lane" && i + 1 < arguments.Count && RunSlot.Parse(arguments[i + 1]) is { } lane)
+            {
+                only = lane;
+                i++;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        return new RunOptions(dry, only);
+    }
+}
 
 /// <summary>The checks that stand between the timer and a browser: the mount, the lock, the desktop and the clock.</summary>
 /// <param name="Mount">The share's mount.</param>
@@ -54,7 +80,14 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             return (0, $"{RegistryRows.Lane}: another run holds the lock; this one did nothing.");
         }
         var lanes = RunSlot.Order.Where(lane => options.Only is null || options.Only == lane).Where(lane => config.For(lane).Enabled).ToList();
-        await share.WriteNewAsync(RegistryRows.Path(started, "registry"), RegistryRows.Live(started, dry, string.Join(", ", lanes.Select(RunSlot.Word))), ct);
+        try
+        {
+            await share.WriteNewAsync(RegistryRows.Path(started, "registry"), RegistryRows.Live(started, dry, string.Join(", ", lanes.Select(RunSlot.Word))), ct);
+        }
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+        {
+            return (1, $"{RegistryRows.Lane} stopped before anything ran: the registry row would not write: {failure.Message}");
+        }
 
         var reports = new List<LaneReport>();
         string? broke = null;

@@ -16,8 +16,8 @@ public sealed record LaneStart(Lane Lane, DateOnly Day, bool Dry, OutreachCounts
 /// Runs one lane: writes the worklist, starts the model, cuts the usage, holds what the model says to its evidence and
 /// writes the records. The model never writes a record; it writes only in its own folder, and everything a merger reads
 /// comes from here. A send with a thin claim is still recorded, marked UNVERIFIED. Every send in progress.tsv, the line
-/// the lane doc makes the model keep after every send, counts whether or not the result names it, so a timeout cannot
-/// lose one. The records are written before the usage is reported, and on a token nothing cancels: a report that hangs
+/// the lane doc makes the model keep after every send, counts whether or not the result names it and whatever the result
+/// calls it, so neither a timeout nor a change of heart can lose one. The records are written before the usage is reported, and on a token nothing cancels: a report that hangs
 /// or a service that is stopping must never cost a row, because an unrecorded send goes out again tomorrow.
 /// </summary>
 /// <param name="share">The share.</param>
@@ -93,11 +93,6 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             lines.Add($"{list.Blockers.Count} postings on the day's blockers list: {folder}/APPLY-BLOCKERS-{start.Day:yyyy-MM-dd}.md");
         }
 
-        if (start.Lane == Lane.Apply)
-        {
-            await WriteResumeAsync(folder, ct);
-        }
-
         LaneResult? result = null;
         IReadOnlyList<SendRecord> sends = [];
         bool cutShort = false;
@@ -122,15 +117,20 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             await ReportUsageAsync(run, start, folder, began, lines, finish);
         }
         var report = new LaneReport(start.Lane, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, list.Rows, list.Dropped, result, sends, lines, null, cutShort);
-        await share.WriteAsync($"{folder}/DONE.md", DoneNote.Render(report), CancellationToken.None);
-        return report;
+        return await FinishAsync(report, folder, CancellationToken.None);
     }
 
-    private async Task WriteResumeAsync(string folder, CancellationToken ct)
+    private async Task<LaneReport> FinishAsync(LaneReport report, string folder, CancellationToken ct)
     {
-        var resumes = await share.ListAsync(string.Empty, "Steven_Stout_Resume_*.pdf", ct);
-        string newest = resumes.Select(file => file.Path).OrderDescending(StringComparer.Ordinal).FirstOrDefault() ?? string.Empty;
-        await share.WriteAsync($"{folder}/resume.txt", newest.Length == 0 ? string.Empty : share.Full(newest) + "\n", ct);
+        try
+        {
+            await share.WriteAsync($"{folder}/DONE.md", DoneNote.Render(report), ct);
+            return report;
+        }
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+        {
+            return report with { Lines = [.. report.Lines, $"DEFECT: DONE.md not written: {failure.Message}"] };
+        }
     }
 
     private string RunFolder(LaneStart start, LaneConfig lane) => RunSlot.RunFolder(start.Day, start.Lane, lane.Model, start.Dry);
@@ -144,12 +144,13 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             lines.Add("The model gave no structured result; progress.tsv read instead, and every send in it stands UNVERIFIED.");
             return progress.Count == 0 ? null : new LaneResult(progress, start.LiveCount, "none", null, null);
         }
-        var missing = progress.Where(row => result.Rows.All(reported => reported.Row != row.Row)).ToList();
+        var missing = progress.Where(row => !result.Rows.Any(reported => reported.Row == row.Row && reported.Outcome == "sent")).ToList();
         if (missing.Count > 0)
         {
-            lines.Add($"{missing.Count} sends in progress.tsv were not in the result; they stand UNVERIFIED.");
+            lines.Add($"{missing.Count} sends in progress.tsv were not reported as sent; they stand UNVERIFIED.");
         }
-        return result with { Rows = [.. result.Rows, .. missing], LiveInviteCount = start.LiveCount ?? result.LiveInviteCount };
+        var kept = result.Rows.Where(reported => missing.All(row => row.Row != reported.Row));
+        return result with { Rows = [.. kept, .. missing], LiveInviteCount = start.LiveCount ?? result.LiveInviteCount };
     }
 
     private async Task ReportUsageAsync(ClaudeRun run, LaneStart start, string folder, DateTimeOffset began, List<string> lines, CancellationToken ct)
@@ -180,10 +181,11 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         var rows = new List<RowResult>();
         foreach (string line in (await share.ReadAsync($"{folder}/progress.tsv", ct)).Split('\n'))
         {
-            string[] cells = line.TrimEnd('\r').Split('\t');
-            if (cells.Length >= 2 && cells[1] == "sent" && int.TryParse(cells[0], out int row) && list.Rows.Any(r => r.Row == row))
+            Match sent = ProgressLine().Match(line.TrimEnd('\r'));
+            if (sent.Success && int.TryParse(sent.Groups["row"].Value, out int row) && list.Rows.Any(r => r.Row == row) && rows.All(r => r.Row != row))
             {
-                rows.Add(new RowResult(row, cells[1], "from progress.tsv", cells.Length > 2 && cells[2].Length > 0 ? cells[2] : null, null, null, null));
+                string person = sent.Groups["person"].Value.Trim();
+                rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));
             }
         }
         return rows;
@@ -192,12 +194,12 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     private async Task<IReadOnlyList<SendRecord>> RecordAsync(LaneStart start, string folder, string model, Worklist list, LaneResult? result, List<string> lines, CancellationToken ct)
     {
         var sends = new List<SendRecord>();
-        foreach (RowResult claimed in (result?.Rows ?? []).Where(row => row.Outcome == "sent"))
+        foreach (RowResult claimed in (result?.Rows ?? []).Where(row => row.Outcome == "sent").DistinctBy(row => row.Row))
         {
             WorkRow? row = list.Rows.FirstOrDefault(r => r.Row == claimed.Row);
             if (row is null)
             {
-                lines.Add($"The model reported row {claimed.Row}, which is not on the worklist.");
+                lines.Add($"DEFECT: the model reported a send on row {claimed.Row}, which is not on the worklist ({claimed.Person} {claimed.ProfileUrl}). No record written, read the page.");
                 continue;
             }
             if (start.Dry)
@@ -207,7 +209,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             }
             RowResult named = claimed.Person is { Length: > 0 } ? claimed : claimed with { Person = row.Person };
             string text = row.Action == WorkAction.Apply ? string.Empty : EvidenceCheck.Filled(list.Texts[row.Row], named.Person);
-            var missing = EvidenceCheck.Missing(row.Action, text, named);
+            var missing = EvidenceCheck.Missing(row.Action, text, named).Concat(EvidenceCheck.WrongPerson(row, named) is { } wrong ? [wrong] : []).ToList();
             string shot = await CopyShotAsync(folder, row.Row, named.Evidence?.Screenshot, lines, ct);
             var record = new SendRecord(row, named, text, missing, model, shot);
             sends.Add(record);
@@ -226,7 +228,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             await share.WriteNewAsync(path, TrackerRowFile.Line(record, at), ct);
             lines.Add($"Row written and read back: {path}");
         }
-        catch (IOException failure)
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
         {
             lines.Add($"TRACKER ROW NOT WRITTEN for row {record.Row.Row} ({what}): {failure.Message}. Write it by hand from this note.");
         }
@@ -244,43 +246,16 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             await share.CopyInAsync(from, relative, ct);
             return relative;
         }
-        catch (IOException failure)
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
         {
             lines.Add($"Screenshot for row {row} not copied: {failure.Message}");
             return from;
         }
     }
 
+    [GeneratedRegex(@"^\s*(?<row>\d+)(?:\s|<TAB>)+sent(?:(?:\s|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
+    private static partial Regex ProgressLine();
+
     [GeneratedRegex(@"^/tmp/claude-chrome-screenshots-[\w-]+/[\w.-]+\.(jpg|jpeg|png)$")]
     private static partial Regex Shot();
-}
-
-/// <summary>The day's APPLY-BLOCKERS list, in the existing shape: what stuck, and the one thing that clears it.</summary>
-public static class Blockers
-{
-    /// <summary>The whole file.</summary>
-    /// <param name="day">The Central day.</param>
-    /// <param name="postings">The postings behind a wall.</param>
-    public static string Render(DateOnly day, IReadOnlyList<Posting> postings)
-    {
-        var lines = new List<string>
-        {
-            "> RULES FIRST: read systemRules.md before acting on this file (MASTER RULE: if stuck or a tech glitch happens, retry, then reread the .md rules).",
-            string.Empty,
-            $"# APPLY-BLOCKERS {day:yyyy-MM-dd} ({RegistryRows.Lane})",
-            string.Empty,
-            "Each one: open the link, click Apply, sign in or create the account, stop on the first form page, say \"fill <company>\".",
-            string.Empty,
-        };
-        int number = 0;
-        foreach (Posting posting in postings)
-        {
-            lines.Add($"## {++number}. {posting.Company}, {posting.Role}");
-            lines.Add($"- Where it stuck: {(posting.Board.Length > 0 ? posting.Board : "not a form this lane may use")}.");
-            lines.Add($"- Link: {posting.Link}");
-            lines.Add($"- Source: {posting.Source}");
-            lines.Add(string.Empty);
-        }
-        return string.Join('\n', lines);
-    }
 }

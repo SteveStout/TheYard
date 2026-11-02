@@ -56,6 +56,7 @@ public static partial class TrackerRowFile
         AddWhen(parts, evidence?.Confirmation, "Confirmation: {0}.");
         AddWhen(parts, record.Text, "Text sent: {0}");
         AddWhen(parts, record.Row.Code, "Code {0}.");
+        AddWhen(parts, record.Row.Resume is { } resume ? $"headline \"{resume.Headline}\", {Path.GetFileName(resume.Path)} SHA-256 {resume.Sha}" : null, "Resume {0}.");
         AddWhen(parts, record.Screenshot, "Screenshot {0}.");
         parts.Add($"Source {record.Row.Source}.");
         return string.Join(' ', parts);

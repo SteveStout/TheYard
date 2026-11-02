@@ -17,5 +17,6 @@
     <Using Include="JobHunt.Server.Domain.Shared.Records" />
     <Using Include="JobHunt.Server.Domain.Shared.Registry" />
     <Using Include="JobHunt.Server.Domain.Shared.Slots" />
+    <Using Include="JobHunt.Server.Domain.Shared.Worklists" />
   </ItemGroup>
 </Project>

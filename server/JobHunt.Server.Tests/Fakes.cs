@@ -126,6 +126,20 @@ internal sealed class CountingMinter : ICodeMinter
     }
 }
 
+/// <summary>A resume builder that records what it was asked and answers a fixed build.</summary>
+internal sealed class FakeResumes : IResumeBuilder
+{
+    public List<string> Asked { get; } = [];
+
+    public string? Failure { get; set; }
+
+    public Task<ResumeBuild> BuildAsync(string title, string company, string folder, CancellationToken ct)
+    {
+        Asked.Add($"{title}|{company}|{folder}");
+        return Task.FromResult(new ResumeBuild($"{folder}/StevenStoutResume_2026-10-29.pdf", title.ToUpperInvariant(), "abc123", Failure));
+    }
+}
+
 /// <summary>A proofread that passes everything but what it is told to fail.</summary>
 internal sealed class FakeProse(params string[] failing) : IProseCheck
 {
@@ -198,6 +212,8 @@ internal sealed class Morning
 
     public CountingMinter Minter { get; } = new();
 
+    public FakeResumes Resumes { get; } = new();
+
     public KeptUsage Usage { get; } = new();
 
     public FixedTime Time { get; } = new(At);
@@ -216,7 +232,7 @@ internal sealed class Morning
         new(
             Share,
             new RunGuards(mount ?? new FakeMount(), runLock ?? new FakeLock(), desktop ?? new FakeDesktop(), Time),
-            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Config), new LaneRunner(Share, Claude, Usage, Config, Time), new InviteRecount(Share, Claude, Config)),
+            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, Claude, Usage, Config, Time), new InviteRecount(Share, Claude, Config)),
             Config);
 
     public IEnumerable<string> TrackerRows() => Share.Files.Keys.Where(path => path.StartsWith("inbox/tracker-inbox/", StringComparison.Ordinal));

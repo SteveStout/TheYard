@@ -2,6 +2,13 @@ using System.Text;
 
 namespace JobHunt.Server.Domain.Shared.Worklists;
 
+/// <summary>One application's resume: the send copy, the headline it carries and its SHA-256, or why it did not build.</summary>
+/// <param name="Path">The send copy's real path.</param>
+/// <param name="Headline">The headline used.</param>
+/// <param name="Sha">The send copy's SHA-256.</param>
+/// <param name="Failure">Why the build stopped, or null.</param>
+public sealed record ResumeBuild(string Path, string Headline, string Sha, string? Failure = null);
+
 /// <summary>What a worklist row asks a lane to do.</summary>
 public enum WorkAction
 {
@@ -25,7 +32,9 @@ public enum WorkAction
 /// <param name="Url">The profile or posting URL, empty when the lane finds it.</param>
 /// <param name="Source">file:line or Count.</param>
 /// <param name="Avoid">People already on the tracker at this company, whom a lane picking a name must not pick.</param>
-public sealed record WorkRow(int Row, string Person, string Company, WorkAction Action, string TextFile, string Code, string Url, string Source, string Avoid = "");
+/// <param name="Role">An application's posting title as the source has it.</param>
+/// <param name="Resume">An application's tailored resume.</param>
+public sealed record WorkRow(int Row, string Person, string Company, WorkAction Action, string TextFile, string Code, string Url, string Source, string Avoid = "", string Role = "", ResumeBuild? Resume = null);
 
 /// <summary>A candidate left out of a worklist, and why.</summary>
 /// <param name="What">The person or company.</param>
@@ -36,7 +45,7 @@ public sealed record Dropped(string What, string Reason);
 public static class WorklistTsv
 {
     /// <summary>The header line.</summary>
-    public const string Header = "row\tperson\tcompany\taction\ttext_file\tcode\turl\tsource\tavoid";
+    public const string Header = "row\tperson\tcompany\taction\ttext_file\tcode\turl\tsource\tavoid\trole\tresume";
 
     /// <summary>The whole file.</summary>
     /// <param name="rows">The rows.</param>
@@ -45,7 +54,7 @@ public static class WorklistTsv
         var text = new StringBuilder(Header).Append('\n');
         foreach (WorkRow row in rows)
         {
-            text.AppendJoin('\t', row.Row, Cell(row.Person), Cell(row.Company), row.Action.ToString().ToLowerInvariant(), Cell(row.TextFile), Cell(row.Code), Cell(row.Url), Cell(row.Source), Cell(row.Avoid)).Append('\n');
+            text.AppendJoin('\t', row.Row, Cell(row.Person), Cell(row.Company), row.Action.ToString().ToLowerInvariant(), Cell(row.TextFile), Cell(row.Code), Cell(row.Url), Cell(row.Source), Cell(row.Avoid), Cell(row.Role), Cell(row.Resume?.Path ?? string.Empty)).Append('\n');
         }
         return text.ToString();
     }

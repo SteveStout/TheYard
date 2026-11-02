@@ -9,7 +9,8 @@ namespace JobHunt.Server.Application.Features.Run;
 /// <param name="Text">The drafted text, empty for an application.</param>
 /// <param name="Url">The profile or posting URL.</param>
 /// <param name="Source">Where it came from.</param>
-public sealed record Candidate(string Person, string Company, WorkAction Action, string Text, string Url, string Source);
+/// <param name="Role">An application's posting title.</param>
+public sealed record Candidate(string Person, string Company, WorkAction Action, string Text, string Url, string Source, string Role = "");
 
 /// <summary>A lane's worklist: the rows, their texts, and what the gates left out.</summary>
 /// <param name="Rows">The rows, cut to the day's room.</param>
@@ -21,13 +22,16 @@ public sealed record Worklist(IReadOnlyList<WorkRow> Rows, IReadOnlyDictionary<i
 /// <summary>
 /// Builds a lane's worklist from what is already drafted. Every text runs through the short checks and the proofread;
 /// one that fails is dropped with a line and never fixed. The cut to the day's room happens before any code is minted,
-/// so a row the lane will not reach spends nothing. A dry run mints nothing and carries a placeholder code.
+/// so a row the lane will not reach spends nothing. A dry run mints nothing and carries a placeholder code. A text that
+/// speaks of an application the tracker says is over waits for a person, and every application gets its own resume build
+/// with the posting's title as its headline, a dry run's too, so a morning's first build is not its first proof.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="minter">make_ref.py.</param>
 /// <param name="prose">check_aiisms.py.</param>
+/// <param name="resumes">build_tailored_resume.py.</param>
 /// <param name="config">The settings.</param>
-public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IProseCheck prose, ServerConfig config)
+public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IProseCheck prose, IResumeBuilder resumes, ServerConfig config)
 {
     private const string DryCode = "dryrun";
     private const int NewestQueueDays = 4;
@@ -132,7 +136,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             }
             else
             {
-                candidates.Add(new Candidate(string.Empty, posting.Company, WorkAction.Apply, string.Empty, posting.Link, $"{posting.Source}, {posting.Role}"));
+                candidates.Add(new Candidate(string.Empty, posting.Company, WorkAction.Apply, string.Empty, posting.Link, $"{posting.Source}, {posting.Role}", posting.Role));
             }
         }
         int room = dry ? config.DryRows : config.MostApplications;
@@ -195,10 +199,21 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
                 code = minted;
             }
             int number = rows.Count + 1;
+            ResumeBuild? resume = null;
+            if (candidate.Action == WorkAction.Apply)
+            {
+                string folder = share.Full($"{RunSlot.RunFolder(reads.Day, Lane.Apply, config.For(Lane.Apply).Model, dry)}/resumes/{number:00}");
+                resume = await resumes.BuildAsync(candidate.Role, candidate.Company, folder, ct);
+                if (resume.Failure is { } failure)
+                {
+                    dropped.Add(new Dropped($"{candidate.Company}, {candidate.Role}", $"the resume did not build, stays queued: {failure}"));
+                    continue;
+                }
+            }
             string text = candidate.Text.Replace("[code]", code, StringComparison.Ordinal);
             string file = candidate.Action == WorkAction.Apply ? string.Empty : $"texts/{number:00}.txt";
             string avoid = candidate.Person.Length == 0 && candidate.Action == WorkAction.Invite ? string.Join("; ", reads.Gate.KnownAt(candidate.Company)) : string.Empty;
-            rows.Add(new WorkRow(number, candidate.Person, candidate.Company, candidate.Action, file, code, candidate.Url, candidate.Source, avoid));
+            rows.Add(new WorkRow(number, candidate.Person, candidate.Company, candidate.Action, file, code, candidate.Url, candidate.Source, avoid, candidate.Role, resume));
             texts[number] = text;
         }
         return new Worklist(rows, texts, dropped, []);
@@ -218,6 +233,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         if (code.Length > 0 && reads.Rows.Any(row => row.Length >= 7 && row[6].Contains(code, StringComparison.Ordinal)))
         {
             return $"code {code} already on a tracker row";
+        }
+        if (reads.Gate.ClosedReq(candidate.Company, candidate.Text) is { } closed)
+        {
+            return closed;
         }
         var problems = TextCheck.Problems(candidate.Text, candidate.Action == WorkAction.Invite);
         if (problems.Count > 0)

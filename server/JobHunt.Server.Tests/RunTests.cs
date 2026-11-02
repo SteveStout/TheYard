@@ -206,7 +206,7 @@ public sealed class RunTests
         string tracker = Fixture.Read("tracker.csv") + "1247,Bo Kay,ServiceTitan,LinkedIn,8/24/2026,,SECOND FOLLOW-UP MESSAGE SENT BY CLAUDE\n";
         var morning = new Morning(Quiet, tracker);
         await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
-        Assert.EndsWith("\tBo Kay", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"].Split('\n').Single(line => line.Contains("ServiceTitan", StringComparison.Ordinal)), StringComparison.Ordinal);
+        Assert.Contains("\tBo Kay\t", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"].Split('\n').Single(line => line.Contains("ServiceTitan", StringComparison.Ordinal)), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -579,7 +579,8 @@ public sealed class RunTests
     {
         var header = "\"Count\",Person,Company,Communication,Date,Phone/Email,Notes\n";
         string rows = string.Concat(Enumerable.Range(1, 90).Select(i => $"{i},P{i},C{i},LinkedIn,11/1/2026,,CONNECTION REQUEST SENT by Claude\n"));
-        var morning = new Morning(Quiet, header + rows);
+        const string Applied = "2900,NA,AHEAD (Software Engineering Manager - Foundry),Company Website,10/26/2026,,SUBMITTED by Steve\n2857,NA,ServiceTitan,Workday,10/19/2026,,\"SUBMITTED: Senior Staff Software Engineer, req JR110561\"\n";
+        var morning = new Morning(Quiet, header + rows + Applied);
         await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
         Assert.Empty(morning.Claude.Requests);
         Assert.Contains("over the day's room", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
@@ -630,7 +631,40 @@ public sealed class RunTests
         Assert.DoesNotContain("Steneral", list, StringComparison.Ordinal);
         string blockers = morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/APPLY-BLOCKERS-2026-11-03.md"];
         Assert.Contains("Acme Corp", blockers, StringComparison.Ordinal);
-        Assert.Contains("Steven_Stout_Resume_2026-10-29.pdf", morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/resume.txt"], StringComparison.Ordinal);
+        Assert.Contains("StevenStoutResume_2026-10-29.pdf", list, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Every_application_gets_its_own_build_and_a_tracker_row_that_says_which()
+    {
+        var morning = new Morning(request => Answer(Result("""{"row":1,"outcome":"sent","reason":null,"person":null,"title":null,"profile_url":null,"evidence":{"pending":null,"toast":null,"read_back":null,"confirmation":"Thanks for applying","screenshot":"/tmp/x.jpg"}}""")));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.NotEmpty(morning.Resumes.Asked);
+        Assert.Contains("/mnt/j/nightly/2026-11-03/0600-apply-sonnet-5-5/resumes/01", morning.Resumes.Asked[0], StringComparison.Ordinal);
+        string row = morning.Share.Files[morning.TrackerRows().First()];
+        Assert.Contains("SHA-256 abc123", row, StringComparison.Ordinal);
+        Assert.Contains("headline", row, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_resume_that_will_not_build_keeps_its_row_off_the_list_and_says_why()
+    {
+        var morning = new Morning(Quiet);
+        morning.Resumes.Failure = "STOP. The headline does not sit whole on one line.";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        string done = morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/DONE.md"];
+        Assert.Contains("the resume did not build", done, StringComparison.Ordinal);
+        Assert.Single(morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/worklist.tsv"].TrimEnd().Split('\n'));
+    }
+
+    [Fact]
+    public async Task A_block_on_a_closed_req_never_reaches_the_worklist()
+    {
+        string tracker = Fixture.Read("tracker.csv") + "3401,NA,AHEAD,Lever,10/30/2026,,\"REJECTION, generic, the email names no role.\"\n";
+        var morning = new Morning(Quiet, tracker);
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.DoesNotContain("AHEAD", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"], StringComparison.Ordinal);
+        Assert.Contains("closed req", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -641,5 +675,89 @@ public sealed class RunTests
         Assert.Contains("No card", await new LastCard(share, time).ExecuteAsync(default), StringComparison.Ordinal);
         share.Files["nightly/2026-11-01/0600-card.md"] = "the card";
         Assert.Contains("the card", await new LastCard(share, time).ExecuteAsync(default), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_send_in_progress_the_result_calls_failed_is_still_recorded()
+    {
+        const string Progress = "nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv";
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files[Progress] = "1\tsent\tSam Roe\n";
+            return Answer(Result("""{"row":1,"outcome":"failed","reason":"no toast","person":null,"title":null,"profile_url":null,"evidence":null}"""));
+        });
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("UNVERIFIED", morning.Share.Files[Assert.Single(morning.TrackerRows())], StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("1 sent Sam Roe\n")]
+    [InlineData("1<TAB>sent<TAB>Sam Roe\n")]
+    public async Task A_progress_line_a_small_model_wrote_loosely_still_counts(string line)
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = line;
+            return new ClaudeRun(137, true, null);
+        });
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Single(morning.TrackerRows());
+    }
+
+    [Fact]
+    public async Task A_row_reported_twice_is_one_tracker_row()
+    {
+        string once = Row(1, "sent", "Sam Roe", Evidence);
+        var morning = new Morning(request => IsRecount(request) ? Quiet(request) : Answer(Result(once + "," + once)));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Single(morning.TrackerRows());
+    }
+
+    [Fact]
+    public async Task A_send_the_worklist_never_held_reaches_the_card_and_closes_LinkedIn()
+    {
+        var morning = new Morning(request => IsRecount(request) ? Quiet(request) : Answer(Result(Row(77, "sent", "Jo Stranger", Evidence))));
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("DEFECT", output, StringComparison.Ordinal);
+        Assert.Contains("Jo Stranger", output, StringComparison.Ordinal);
+        Assert.Contains("nightly/2026-11-03/0600-linkedin-closed.md", morning.Share.Files.Keys);
+    }
+
+    [Fact]
+    public async Task A_run_cut_short_says_so_on_the_card()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "1\tsent\tSam Roe\n";
+            return new ClaudeRun(137, true, null);
+        });
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("cut short", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_registry_row_that_will_not_write_stops_the_run_with_a_line()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files[RegistryRows.Path(Morning.At, "registry")] = "already there";
+        (int exit, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.Equal(1, exit);
+        Assert.Contains("registry", output, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
     }
 }

@@ -346,4 +346,74 @@ public sealed class AdapterTests : IDisposable
             return Task.FromResult(new HttpResponseMessage(status));
         }
     }
+
+    [Fact]
+    public async Task A_young_lock_from_a_process_that_is_gone_is_replaced_so_the_next_run_can_say_what_happened()
+    {
+        var share = new ShareFolder(folder);
+        await share.WriteAsync("nightly/2026-11-03/0600.lock", $"999999\t{Morning.At.AddMinutes(-5).ToUnixTimeSeconds()}\n", default);
+        await using IAsyncDisposable? taken = await new FileRunLock(share, new FixedTime(Morning.At)).TakeAsync("nightly/2026-11-03", default);
+        Assert.NotNull(taken);
+    }
+
+    [Fact]
+    public async Task A_lock_the_share_will_not_let_go_of_does_not_crash_the_close()
+    {
+        var share = new ShareFolder(folder);
+        IAsyncDisposable? taken = await new FileRunLock(share, new FixedTime(Morning.At)).TakeAsync("nightly/2026-11-03", default);
+        string held = Path.Combine(folder, "nightly/2026-11-03/0600.lock");
+        File.Delete(held);
+        Directory.CreateDirectory(held);
+        await taken!.DisposeAsync();
+    }
+
+    [Theory]
+    [InlineData(new[] { "run" }, false, null)]
+    [InlineData(new[] { "run", "--dry-run" }, true, null)]
+    [InlineData(new[] { "run", "--lane", "apply", "--dry-run" }, true, Lane.Apply)]
+    public void The_command_line_parses(string[] arguments, bool dry, Lane? lane)
+    {
+        Assert.Equal(new RunOptions(dry, lane), RunOptions.Parse(arguments));
+    }
+
+    [Theory]
+    [InlineData("run", "--dryrun")]
+    [InlineData("run", "--dry_run")]
+    [InlineData("run", "dry")]
+    [InlineData("run", "--lane")]
+    [InlineData("run", "--lane", "everything")]
+    public void A_mistyped_flag_never_falls_through_to_a_live_run(params string[] arguments)
+    {
+        Assert.Null(RunOptions.Parse(arguments));
+    }
+
+    [Fact]
+    public void Nothing_but_the_browser_and_the_run_folder_is_left_open_to_a_lane()
+    {
+        var arguments = ClaudeArguments.For(new LaneConfig(), Lane.Apply, Share, RunDir, dry: false);
+        foreach (string tool in new[] { "Workflow", "Skill", "SendMessage", "PushNotification", "ScheduleWakeup", "CronDelete", "NotebookEdit", "mcp__claude-in-chrome__shortcuts_execute", "mcp__claude-in-chrome__gif_creator" })
+        {
+            Assert.Contains(tool, arguments);
+        }
+        Assert.Contains($"Read(//{Share.TrimStart('/')}/standard-answers.md)", arguments);
+        Assert.Contains($"Read(//{Share.TrimStart('/')}/targeting-criteria.md)", arguments);
+    }
+
+    [Fact]
+    public async Task A_tailored_resume_comes_back_with_its_path_headline_and_hash()
+    {
+        string script = Path.Combine(folder, "build_tailored_resume.py");
+        await File.WriteAllTextAsync(script, "echo \"headline      : STAFF ENGINEER\"\necho \"send copy     : /out/StevenStoutResume_2026-10-29.pdf\"\necho \"sha256        : abc\"\n");
+        ResumeBuild built = await new ShareHelpers("/bin/sh", new ShareFolder(folder)).BuildAsync("Staff Engineer", "Acme", "/out", default);
+        Assert.Equal(new ResumeBuild("/out/StevenStoutResume_2026-10-29.pdf", "STAFF ENGINEER", "abc"), built);
+    }
+
+    [Fact]
+    public async Task A_resume_that_will_not_build_says_why()
+    {
+        string script = Path.Combine(folder, "build_tailored_resume.py");
+        await File.WriteAllTextAsync(script, "echo \"STOP. The headline does not sit whole on one line.\"\nexit 1\n");
+        ResumeBuild built = await new ShareHelpers("/bin/sh", new ShareFolder(folder)).BuildAsync("Staff Engineer", "Acme", "/out", default);
+        Assert.Contains("one line", built.Failure, StringComparison.Ordinal);
+    }
 }

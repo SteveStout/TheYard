@@ -39,12 +39,14 @@ public sealed record LaneReport(
     public bool Clean => Held is null && !CutShort && Answer is not null && Sends.Count > 0 && Verified == Sends.Count && Answer.StopCondition == "none" && !NoRecount;
 
     /// <summary>
-    /// True when the LinkedIn work of the day must end: a stop condition, a row the model called blocked, a browser that
-    /// stopped answering, or rows it was given and no result. Failing closed is the point: a run that ended with no answer
+    /// True when the LinkedIn work of the day must end: a stop condition, a row the model called blocked, a send on a row the
+    /// worklist never held, a browser that stopped answering, or rows it was given and no result. Failing closed is the point: a run that ended with no answer
     /// may have ended on a checkpoint.
     /// </summary>
     public bool ClosesLinkedIn =>
-        CutShort || Answer is null ? Rows.Count > 0 : Answer.StopCondition != "none" || Answer.Rows.Any(row => row.Outcome == "blocked") || Answer.Rows.Count < Rows.Count;
+        CutShort || Answer is null ? Rows.Count > 0 : Answer.StopCondition != "none" || Answer.Rows.Any(row => row.Outcome == "blocked" || OffTheList(row)) || Answer.Rows.Count < Rows.Count;
+
+    private bool OffTheList(RowResult row) => row.Outcome == "sent" && Rows.All(listed => listed.Row != row.Row);
 
     /// <summary>True when invites went out with no live count read first: the sent page governs, so that is a defect.</summary>
     public bool NoRecount => Lane == Lane.Invites && Sends.Count > 0 && Answer?.LiveInviteCount is null;

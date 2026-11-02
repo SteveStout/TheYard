@@ -4,8 +4,9 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 
 /// <summary>
 /// The OUTREACH IS SHORT checks a drafted text must pass before a lane may paste it: no em dash, sixty words or fewer,
-/// under 300 characters for an invite note, one tagged link and nothing else linked, one no-oriented question. A text
-/// that fails is dropped with its reasons; the program never edits one. The [code] and [First name] placeholders count
+/// under 300 characters for an invite note, one tagged link and nothing else linked, one no-oriented question, and no
+/// word of a live process, because anything specific to one is held for his yes. A text that fails is dropped with its
+/// reasons; the program never edits one. The [code] and [First name] placeholders count
 /// as they stand, which is at least as long as what fills them.
 /// </summary>
 public static partial class TextCheck
@@ -49,6 +50,10 @@ public static partial class TextCheck
         {
             problems.Add($"{questions} questions, no no-oriented ask");
         }
+        if (LiveProcess().IsMatch(prose) || Meets().IsMatch(prose))
+        {
+            problems.Add("names a live process");
+        }
         return problems;
     }
 
@@ -66,6 +71,12 @@ public static partial class TextCheck
 
     [GeneratedRegex(@"https?://|www\.|\b[\w-]+\.(com|biz|io|net|org)\b", RegexOptions.IgnoreCase)]
     private static partial Regex Url();
+
+    [GeneratedRegex(@"\b(in process|interview\w*|phone screen|recruiter screen|our (call|conversation|chat)|a call|scheduled?|looking forward)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex LiveProcess();
+
+    [GeneratedRegex(@"\b[Mm]eet(ing)? (with )?[A-Z]")]
+    private static partial Regex Meets();
 
     [GeneratedRegex(@"bad (idea|time)|against|ridiculous|opposed", RegexOptions.IgnoreCase)]
     private static partial Regex NoOriented();

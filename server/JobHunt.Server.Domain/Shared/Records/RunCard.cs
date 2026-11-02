@@ -63,6 +63,10 @@ public static class RunCard
         {
             line.Append(", no result from the model, read DONE.md");
         }
+        if (report.CutShort && report.Answer is not null)
+        {
+            line.Append(", cut short, read DONE.md");
+        }
         return line.Append($", {report.Dropped.Count} left out").ToString();
     }
 }

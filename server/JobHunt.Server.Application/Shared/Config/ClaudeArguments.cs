@@ -17,7 +17,12 @@ public static class ClaudeArguments
 
     private static readonly string[] Acting = ["computer", "form_input"];
 
-    private static readonly string[] Refused = ["Bash", "Task", "Agent", "WebFetch", "WebSearch", "CronCreate", "RemoteTrigger", Chrome + "browser_batch", Chrome + "javascript_tool"];
+    private static readonly string[] Refused =
+    [
+        "Bash", "Task", "Agent", "WebFetch", "WebSearch", "CronCreate", "CronDelete", "CronList", "RemoteTrigger", "Workflow", "Skill", "SendMessage", "PushNotification", "ScheduleWakeup",
+        "NotebookEdit", "EnterWorktree", "ExitWorktree", "DesignSync", Chrome + "browser_batch", Chrome + "javascript_tool", Chrome + "shortcuts_execute", Chrome + "shortcuts_list", Chrome + "gif_creator",
+        Chrome + "upload_image", Chrome + "read_network_requests", Chrome + "read_console_messages", Chrome + "select_browser", Chrome + "switch_browser",
+    ];
 
     /// <summary>The argument list.</summary>
     /// <param name="config">The lane's settings.</param>
@@ -97,6 +102,11 @@ public static class ClaudeArguments
             $"Edit({Rooted(runFolder)}/**)",
             $"Write({Rooted(runFolder)}/**)",
         };
+        if (lane == Lane.Apply)
+        {
+            tools.Add($"Read({Rooted(share)}/standard-answers.md)");
+            tools.Add($"Read({Rooted(share)}/targeting-criteria.md)");
+        }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
         if (!dry)
         {

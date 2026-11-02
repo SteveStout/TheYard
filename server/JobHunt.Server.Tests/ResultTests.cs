@@ -382,4 +382,23 @@ public sealed class ResultTests
         Assert.Equal("invites-dry", document.RootElement.GetProperty("mode").GetString());
         Assert.Equal("0600", document.RootElement.GetProperty("slot").GetString());
     }
+
+    private static WorkRow Named(string person, string avoid = "") => new(1, person, "Acme", WorkAction.Invite, "texts/01.txt", "abc123", string.Empty, "q:1", avoid);
+
+    [Theory]
+    [InlineData("Pat Lee", "Pat Lee", true)]
+    [InlineData("Pat Lee", "pat  lee", true)]
+    [InlineData("Pat Lee", "Pat Lee, MBA", true)]
+    [InlineData("Pat Lee", "Mallory Other", false)]
+    public void A_named_row_is_held_to_its_name(string worklist, string reported, bool same)
+    {
+        Assert.Equal(same, EvidenceCheck.WrongPerson(Named(worklist), Sent(null) with { Person = reported }) is null);
+    }
+
+    [Fact]
+    public void A_name_the_lane_picked_is_held_to_the_avoid_column()
+    {
+        Assert.NotNull(EvidenceCheck.WrongPerson(Named(string.Empty, "Eddie Salas; Sam Roe"), Sent(null) with { Person = "Sam Roe" }));
+        Assert.Null(EvidenceCheck.WrongPerson(Named(string.Empty, "Eddie Salas; Sam Roe"), Sent(null) with { Person = "New Person" }));
+    }
 }

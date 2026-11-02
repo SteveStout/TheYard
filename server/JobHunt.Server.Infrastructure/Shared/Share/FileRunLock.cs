@@ -6,8 +6,9 @@ namespace JobHunt.Server.Infrastructure.Shared.Share;
 
 /// <summary>
 /// One run at a time: a lock file in the day's folder holding the process id and the start. A lock younger than Rule 19's
-/// four hours turns the new run away. An older one means a run past the ceiling, which is killed and replaced, and only
-/// when the process id still names this program.
+/// four hours turns the new run away while its process lives. A lock whose process is gone is a crash, and it is replaced
+/// so the next run can read what the crash left and say so, rather than do nothing in silence. An older one means a run
+/// past the ceiling, which is killed and replaced, and only when the process id still names this program.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="time">The clock.</param>
@@ -45,15 +46,29 @@ public sealed class FileRunLock(IShare share, TimeProvider time) : IRunLock
         {
             return false;
         }
+        if (!int.TryParse(cells[0], CultureInfo.InvariantCulture, out int pid) || !Running(pid))
+        {
+            return true;
+        }
         if (time.GetUtcNow() - DateTimeOffset.FromUnixTimeSeconds(since) < Ceiling)
         {
             return false;
         }
-        if (int.TryParse(cells[0], CultureInfo.InvariantCulture, out int pid))
-        {
-            Stop(pid);
-        }
+        Stop(pid);
         return true;
+    }
+
+    private static bool Running(int pid)
+    {
+        try
+        {
+            using Process old = Process.GetProcessById(pid);
+            return pid == Environment.ProcessId || old.ProcessName.StartsWith(ProcessName, StringComparison.Ordinal);
+        }
+        catch (Exception failure) when (failure is ArgumentException or InvalidOperationException or Win32Exception)
+        {
+            return false;
+        }
     }
 
     private static void Stop(int pid)
@@ -77,7 +92,14 @@ public sealed class FileRunLock(IShare share, TimeProvider time) : IRunLock
         /// <summary>Frees the lock.</summary>
         public ValueTask DisposeAsync()
         {
-            File.Delete(full);
+            try
+            {
+                File.Delete(full);
+            }
+            catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+            {
+                // A share that will not free the lock must not cost the close: the next run reads this lock as a crash.
+            }
             return ValueTask.CompletedTask;
         }
     }

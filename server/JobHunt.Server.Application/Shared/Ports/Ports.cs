@@ -125,6 +125,17 @@ public interface ICodeMinter
     Task<string?> MintAsync(string person, string company, CancellationToken ct);
 }
 
+/// <summary>build_tailored_resume.py, the one place a resume gets a posting's title as its headline.</summary>
+public interface IResumeBuilder
+{
+    /// <summary>The build for one application; a build that stopped carries its reason in Failure and no file is attached.</summary>
+    /// <param name="title">The posting's title.</param>
+    /// <param name="company">The company.</param>
+    /// <param name="folder">The real path of the folder the build goes in.</param>
+    /// <param name="ct">Stops the build.</param>
+    Task<ResumeBuild> BuildAsync(string title, string company, string folder, CancellationToken ct);
+}
+
 /// <summary>check_aiisms.py, the proofread gate.</summary>
 public interface IProseCheck
 {

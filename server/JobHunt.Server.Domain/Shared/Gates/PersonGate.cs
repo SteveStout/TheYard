@@ -85,6 +85,11 @@ public sealed partial class PersonGate
     public string? Message(string person, string company) =>
         Outreach(person, company) ?? (Touched(person, TrackerKinds.IsMessage) ? "Rule 25: already messaged" : null);
 
+    /// <summary>Why this text may not go because the application it speaks of is over or not on file, or null.</summary>
+    /// <param name="company">The company.</param>
+    /// <param name="text">The drafted text.</param>
+    public string? ClosedReq(string company, string text) => ClosedReqs.Why(company, text, rows);
+
     /// <summary>Why this company may not get an application, or null.</summary>
     /// <param name="company">The company.</param>
     /// <param name="link">The posting's link, to catch the same posting applied to already.</param>
@@ -108,10 +113,10 @@ public sealed partial class PersonGate
         return Applied(company, link, role) ? "already applied" : null;
     }
 
-    /// <summary>The people the tracker has on a LinkedIn row at this company, for a lane that picks a name itself.</summary>
+    /// <summary>The people the tracker has on any row at this company, for a lane that picks a name itself.</summary>
     /// <param name="company">The company.</param>
     public IReadOnlyList<string> KnownAt(string company) =>
-        [.. rows.Where(row => row.Length >= 7 && TrackerKinds.IsLinkedIn(row) && ApplicationCap.Same(row[2], company) && Name(row[1]).Length > 0 && Name(row[1]) != "na")
+        [.. rows.Where(row => row.Length >= 7 && ApplicationCap.Same(row[2], company) && Name(row[1]).Length > 0 && Name(row[1]) != "na" && !ApplicationCap.Same(row[1], company))
             .Select(row => row[1].Trim()).Distinct(StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>The company the tracker has for a person, empty when it has none.</summary>
