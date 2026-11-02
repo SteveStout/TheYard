@@ -60,7 +60,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             string day = RunSlot.DayFolder(start.Day.AddDays(-back));
             foreach (string folder in await share.FoldersAsync(day, $"{RunSlot.Hour}-{RunSlot.Word(start.Lane)}-*", ct))
             {
-                if (!folder.EndsWith("-dry", StringComparison.Ordinal) && await share.ExistsAsync($"{folder}/progress.tsv", ct) && !await share.ExistsAsync($"{folder}/DONE.md", ct))
+                if (!folder.EndsWith("-dry", StringComparison.Ordinal) && await share.ExistsAsync($"{folder}/progress.tsv", ct) && !await FinishedAsync(folder, ct))
                 {
                     return $"an earlier run left {folder}/progress.tsv and no DONE note: sends with no records. Write their rows, then rename that file, before this lane runs again";
                 }
@@ -68,6 +68,9 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         }
         return null;
     }
+
+    private async Task<bool> FinishedAsync(string folder, CancellationToken ct) =>
+        await share.ExistsAsync($"{folder}/DONE.md", ct) && !(await share.ReadAsync($"{folder}/DONE.md", ct)).Contains("\nHELD: ", StringComparison.Ordinal);
 
     /// <summary>Runs the lane to its end and writes its records.</summary>
     /// <param name="start">The lane.</param>

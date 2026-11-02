@@ -333,6 +333,34 @@ public sealed class RunTests
     }
 
     [Fact]
+    public async Task A_crash_beside_an_earlier_hold_is_still_a_crash()
+    {
+        var morning = new Morning(Quiet);
+        const string Folder = "nightly/2026-11-03/0600-apply-sonnet-5-5";
+        morning.Share.Files[$"{Folder}/DONE.md"] = "# DONE\n\nHELD: reach1103 LIVE\n";
+        morning.Share.Files[$"{Folder}/progress.tsv"] = "1\tsent\tx\n";
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Contains("sends with no records", output, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
+    }
+
+    [Fact]
+    public async Task A_stop_the_apply_lane_meets_on_LinkedIn_closes_it_for_the_day()
+    {
+        var morning = new Morning(request => IsLane(request, Lane.Apply) ? Answer(Result(string.Empty, "checkpoint")) : Quiet(request));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Contains("nightly/2026-11-03/0600-linkedin-closed.md", morning.Share.Files.Keys);
+    }
+
+    [Fact]
+    public async Task A_dry_run_never_closes_the_day_s_live_work()
+    {
+        var morning = new Morning(_ => Answer(Result(string.Empty, "captcha")));
+        await morning.Lanes().ExecuteAsync(new RunOptions(true, null), default);
+        Assert.DoesNotContain("nightly/2026-11-03/0600-linkedin-closed.md", morning.Share.Files.Keys);
+    }
+
+    [Fact]
     public async Task A_dry_crash_holds_nothing()
     {
         var morning = new Morning(Quiet);

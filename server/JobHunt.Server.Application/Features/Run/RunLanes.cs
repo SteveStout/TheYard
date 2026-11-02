@@ -109,7 +109,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 Recount recount = await work.Recounter.ReadAsync(start, ceilings!, before.InviteRoom(ceilings!), ct);
                 if (recount.Held is not null)
                 {
-                    linkedInStop ??= await CloseLinkedInAsync(day, recount.Stop, ct);
+                    linkedInStop ??= await CloseLinkedInAsync(day, recount.Stop, dry, ct);
                     reports.Add(await work.Runner.HoldAsync(start with { Lines = [.. start.Lines, .. recount.Lines] }, recount.Held, CancellationToken.None));
                     continue;
                 }
@@ -119,16 +119,16 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             Worklist list = await WorklistAsync(lane, reads!, ceilings!, before!, reports, invitesRoom, linkedIn, dry, ct);
             LaneReport report = await work.Runner.RunAsync(start, list, ct);
             reports.Add(report);
-            if (RunSlot.OnLinkedIn(lane) && report.ClosesLinkedIn)
+            if ((RunSlot.OnLinkedIn(lane) && report.ClosesLinkedIn) || report.Answer?.StopsLinkedIn == true)
             {
-                linkedInStop ??= await CloseLinkedInAsync(day, $"{RunSlot.Word(lane)} lane did not finish clean, read its DONE note", CancellationToken.None);
+                linkedInStop ??= await CloseLinkedInAsync(day, $"{RunSlot.Word(lane)} lane did not finish clean, read its DONE note", dry, CancellationToken.None);
             }
         }
     }
 
-    private async Task<string?> CloseLinkedInAsync(DateOnly day, string? stop, CancellationToken ct)
+    private async Task<string?> CloseLinkedInAsync(DateOnly day, string? stop, bool dry, CancellationToken ct)
     {
-        if (stop is not null)
+        if (stop is not null && !dry)
         {
             await share.WriteAsync(RunSlot.LinkedInClosed(day), stop + "\n", ct);
         }
@@ -183,7 +183,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 await share.WriteAsync(path, card, ct);
             }
         }
-        catch (IOException failure)
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
         {
             card += $"The card was not written: {failure.Message}\n";
         }
@@ -192,7 +192,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             DateTimeOffset now = guards.Time.GetUtcNow();
             await share.WriteNewAsync(RegistryRows.Path(now, "close"), RegistryRows.Closed(now, started, card), ct);
         }
-        catch (IOException failure)
+        catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
         {
             card += $"The close row was not written: {failure.Message}\n";
         }
