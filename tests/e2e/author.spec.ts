@@ -25,7 +25,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
   // blocks, a closing line, and what colleagues say standing aside.
   await expect(wide.locator('.author-panel')).toHaveCount(5);
   await expect(wide.getByRole('heading', { name: 'How I lead', exact: true })).toBeVisible();
-  // The ten recommendations in full, read from /api/recommendations into a column on the right of
+  // The twelve recommendations in full, read from /api/recommendations into a column on the right of
   // every other panel, running as far down the page as there are quotations.
   const said = wide.locator('.author-side');
   // The heading is the link to where they were written, and no prose stands under it.
@@ -36,10 +36,10 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     'https://www.linkedin.com/in/stevenwstout/details/recommendations/'
   );
   await expect(said.locator('> p')).toHaveCount(0);
-  await expect(said.locator('blockquote')).toHaveCount(10);
-  await expect(said.locator('blockquote').first()).toContainText('pleasure of working with Steve');
-  await expect(said).toContainText('Sarah Sebestyen');
-  await expect(said.getByRole('link', { name: 'Sarah Sebestyen' })).toHaveAttribute(
+  await expect(said.locator('blockquote')).toHaveCount(12);
+  await expect(said.locator('blockquote').first()).toContainText('Lead Engineer during my time');
+  await expect(said).toContainText('Henry Crans');
+  await expect(said.getByRole('link', { name: 'Henry Crans' })).toHaveAttribute(
     'href',
     /linkedin\.com\/in\//
   );
@@ -102,7 +102,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers thre
     .boundingBox())!;
   expect(saidBox.y).toBeGreaterThan(introBox.y + introBox.height - 1);
   expect(leadBox.y).toBeGreaterThan(saidBox.y + saidBox.height - 1);
-  await expect(doc.locator('.author-side blockquote')).toHaveCount(10);
+  await expect(doc.locator('.author-side blockquote')).toHaveCount(12);
 
   // Three ways to reach him, each a full finger-sized target, none of them an email address or a form.
   const buttons = doc.locator('.author-intro .author-button');

@@ -27,7 +27,7 @@ export const RECOMMENDATIONS_SOURCE =
 export const RECOMMENDATIONS_URL = '/api/recommendations';
 
 /** How many blank places the column draws before the answer arrives, so nothing moves when it does. */
-export const RECOMMENDATION_PLACES = 10;
+export const RECOMMENDATION_PLACES = 12;
 
 const text = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 const paragraphs = (value: unknown): value is string[] =>

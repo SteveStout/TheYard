@@ -19,11 +19,11 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
         JsonSerializer.Deserialize<RecommendationsReply>(File.ReadAllText(FilePath), RecommendationsFile.Format)!;
 
     [Fact]
-    public void The_file_is_in_shape_and_holds_the_ten_on_his_profile()
+    public void The_file_is_in_shape_and_holds_the_twelve_on_his_profile()
     {
         var reply = Reply();
         Assert.Empty(RecommendationsFile.Problems(reply));
-        Assert.Equal(10, reply.Recommendations.Count);
+        Assert.Equal(12, reply.Recommendations.Count);
     }
 
     /// <summary>
