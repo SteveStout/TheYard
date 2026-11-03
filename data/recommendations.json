@@ -1,7 +1,29 @@
 {
-  "readme": "One entry per person, shown in this order. Every entry has the same seven fields: name and title as LinkedIn shows them, profile as the address of their LinkedIn page, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields, then move the count the site states (ten, in RecommendationsTests and the About Steven document); the gate checks the shape.",
+  "readme": "One entry per person, shown in this order. Every entry has the same seven fields: name and title as LinkedIn shows them, profile as the address of their LinkedIn page, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields, then move the count the site states (twelve, in RecommendationsTests and the About Steven document); the gate checks the shape.",
   "source": "https://www.linkedin.com/in/stevenwstout/details/recommendations/",
   "recommendations": [
+    {
+      "name": "Henry Crans",
+      "title": "Senior Software Engineer",
+      "profile": "https://www.linkedin.com/in/henry-crans-82a46019/",
+      "relationship": "Steven was senior to Henry but did not manage Henry directly",
+      "when": "October 2026",
+      "paragraphs": [
+        "Steven was the Lead Engineer during my time at Storee Construction. During that time I witnessed his expertise in numbers of areas including data structures and sql server configuration to optimize performance. He is strong in dotnet development and javascript. He is incredibly thorough in documentation and code reviews as well."
+      ],
+      "pull": "He is incredibly thorough in documentation and code reviews as well."
+    },
+    {
+      "name": "Khushbu Shah",
+      "title": "Staff .Net Engineer",
+      "profile": "https://www.linkedin.com/in/khushbushah003/",
+      "relationship": "Khushbu worked with Steven on the same team",
+      "when": "October 2026",
+      "paragraphs": [
+        "Steve is amazing at handling workload, timelines, presentation and knowledge transfer. I had learned a lot and wish to learn lot more from him. His mentorship helped me become a better developer."
+      ],
+      "pull": "His mentorship helped me become a better developer."
+    },
     {
       "name": "Sarah Sebestyen",
       "title": "AI Developer at Hunter Engineering Company",

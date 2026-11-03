@@ -8,7 +8,7 @@ namespace TheYard.Api.Features.Docs;
 /// One recommendation as LinkedIn shows it, in the one shape every entry of
 /// data/recommendations.json has. Adding a recommendation is adding one more
 /// object to that file with these seven fields, and moving the count the tests
-/// hold (ten, the number on his profile); the shape, the reader and the pages
+/// hold (twelve, the number on his profile); the shape, the reader and the pages
 /// do not change.
 /// </summary>
 /// <param name="Name">The writer's name, as LinkedIn shows it.</param>

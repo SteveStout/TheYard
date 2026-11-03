@@ -120,7 +120,7 @@ for (const viewport of [
         /^\d of \d stores up$/
       );
 
-      // What colleagues say: his ten LinkedIn recommendations, each one whole and credited, read
+      // What colleagues say: his twelve LinkedIn recommendations, each one whole and credited, read
       // from /api/recommendations into a column of the page itself, with nothing to click through
       // to. Wide, the column stands to the right of everything else and runs as far down as there
       // are quotations; narrow, it follows the featured tiles.
@@ -152,8 +152,8 @@ for (const viewport of [
       expect(area.card).toBeLessThanOrEqual(1);
       expect(Math.abs(area.card - area.cardRight)).toBeLessThanOrEqual(1);
 
-      await expect(said.locator('blockquote')).toHaveCount(10);
-      await expect(said.locator('li').first()).toContainText('Sarah Sebestyen');
+      await expect(said.locator('blockquote')).toHaveCount(12);
+      await expect(said.locator('li').first()).toContainText('Henry Crans');
       const column = said.getByRole('region', {
         name: /What colleagues say: \d+ recommendations, in full/,
       });
@@ -180,15 +180,15 @@ for (const viewport of [
       // Whole, not a sentence of each: the first one carries words from past its opening line, and
       // the credit under it says how the two worked together and when.
       await expect(said.locator('blockquote').first()).toContainText(
-        'His technical expertise and practical approach'
+        'He is strong in dotnet development and javascript.'
       );
-      await expect(said.locator('li').first()).toContainText(/November 2024\./);
+      await expect(said.locator('li').first()).toContainText(/October 2026\./);
       await expect(said.getByRole('button')).toHaveCount(0);
       // Every name opens the page of the person who wrote it, in a tab of its own. Counted inside
-      // the quotations: the heading over them is a link too, to where all ten were written.
+      // the quotations: the heading over them is a link too, to where all twelve were written.
       const writers = said.locator('li').getByRole('link');
-      await expect(writers).toHaveCount(10);
-      await expect(writers.first()).toHaveText('Sarah Sebestyen');
+      await expect(writers).toHaveCount(12);
+      await expect(writers.first()).toHaveText('Henry Crans');
       await expect(writers.first()).toHaveAttribute('href', /linkedin\.com\/in\//);
       await expect(writers.first()).toHaveAttribute('target', '_blank');
 

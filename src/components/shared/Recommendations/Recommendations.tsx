@@ -7,7 +7,7 @@
  * draws them, the same way on every page that shows them. Every one of them
  * stands in the page, one under the next, with no scroll of its own and nothing
  * to click through to: a reader on the way past the page reads them all, and
- * the page keeps the only scroll bar on the screen. Ten blank places stand in
+ * the page keeps the only scroll bar on the screen. Twelve blank places stand in
  * the column from the first paint, so nothing moves when the answer arrives,
  * and an answer that does not come, or is not the shape, is said out loud
  * rather than drawn as an empty column.
