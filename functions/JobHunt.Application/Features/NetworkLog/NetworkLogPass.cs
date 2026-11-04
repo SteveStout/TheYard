@@ -67,6 +67,12 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
             await TakeAsync(thread, known, now, tally, ct);
         }
         tally.LinkedIn = await IngestLinkedInAsync(now, tally, ct);
+        var topics = await new TopicImport(rows, share).RunAsync(DateOnly.FromDateTime(CentralClock.Local(now)), ct);
+        if (topics.Refused.Count > 0)
+        {
+            await share.EnsureFolderAsync(NetworkFiles.Folder, ct);
+            await share.AppendAsync(NetworkFiles.TopicsRefused, TrackerCsvText.Encode(string.Concat(topics.Refused.Select(r => $"{CentralClock.Local(now):yyyy-MM-dd} {r}\n"))), ct);
+        }
         var open = await rows.OpenAsync(ct);
         if (mode == NetworkMode.On)
         {
@@ -88,7 +94,7 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         }
         var week = (await rows.StartsAsync(ct)).Count(at => IsoWeek.Of(DateOnly.FromDateTime(CentralClock.Local(at))) == IsoWeek.Of(DateOnly.FromDateTime(local)));
         int seconds = (int)time.GetElapsedTime(started).TotalSeconds;
-        var extra = new List<(string, int)> { ("linkedin", tally.LinkedIn), ("backfill", first ? 1 : 0) };
+        var extra = new List<(string, int)> { ("topics", topics.Applied), ("linkedin", tally.LinkedIn), ("backfill", first ? 1 : 0) };
         if (tally.Cut > 0)
         {
             extra.Add(("cut", tally.Cut));

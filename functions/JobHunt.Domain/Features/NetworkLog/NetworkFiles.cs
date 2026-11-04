@@ -33,6 +33,9 @@ public static class NetworkFiles
     /// <summary>The rows waiting on a TopicLine, rewritten whole each pass.</summary>
     public const string TopicsNeeded = "networklog/topics-needed.tsv";
 
+    /// <summary>The TopicLines the rule refused, a line each with the check.</summary>
+    public const string TopicsRefused = "networklog/topics-refused.log";
+
     /// <summary>The shadow's would-drafts, one file a Monday.</summary>
     public const string WouldDrafts = "networklog/would-drafts";
 
