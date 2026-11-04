@@ -35,8 +35,9 @@ public sealed partial class CampaignSqlTests
             var table = CreateTable().Match(sql);
             if (!table.Success)
             {
-                // The tracker's tables sit beside the campaign's under the jobhunt schema (ADR-118, the addendum of 1.0.4.72).
-                Assert.True(sql.Contains("CREATE TABLE [jobhunt].[", StringComparison.Ordinal), path + " has no CREATE TABLE [campaign].[...] or [jobhunt].[...]");
+                // The tracker's tables sit beside the campaign's under the jobhunt schema (ADR-118, the addendum of 1.0.4.72),
+                // and the network log's under network, which NetworkSqlTests holds.
+                Assert.True(sql.Contains("CREATE TABLE [jobhunt].[", StringComparison.Ordinal) || sql.Contains("CREATE TABLE [network].[", StringComparison.Ordinal), path + " has no CREATE TABLE [campaign].[...], [jobhunt].[...] or [network].[...]");
                 continue;
             }
             var columns = Column().Matches(sql).Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
@@ -154,7 +155,7 @@ public sealed partial class CampaignSqlTests
         {
             Assert.Contains(column, tables["EmailsSent"]);
         }
-        Assert.Equal(6, Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Database", "Views"), "*.sql").Count());
+        Assert.Equal(7, Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Database", "Views"), "*.sql").Count());
         // The card schema holds counts only: no view in it names a column that holds a person, a company, a subject or a code (an address is only counted, in a filter).
         foreach (string view in Directory.EnumerateFiles(Path.Combine(Root(), "functions", "JobHunt.Database", "Views"), "Card*.sql"))
         {

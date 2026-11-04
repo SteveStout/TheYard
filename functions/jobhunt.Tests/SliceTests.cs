@@ -6,7 +6,7 @@ namespace JobHunt.Functions.Tests;
 // #region function-slice-tests
 /// <summary>
 /// The job hunt's Function cut into vertical slices (ADR-107, the addendum of 1.0.4.75): each ring keeps a slice under
-/// Features/&lt;Slice&gt;/ (Ats, Campaign, Card, Leads, Merge, Sheet, Triage) and what more than one slice uses under
+/// Features/&lt;Slice&gt;/ (Ats, Campaign, Card, Leads, Merge, NetworkLog, Sheet, Triage) and what more than one slice uses under
 /// Shared/&lt;Concern&gt;/. A slice uses only its own types and the shared ones in any ring, and shared code uses no
 /// slice: tests/rules/SliceRule.cs, read from the compiled rings.
 /// </summary>
