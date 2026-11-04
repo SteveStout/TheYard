@@ -857,4 +857,42 @@ public sealed class RunTests
         Assert.Contains("tracker row", output, StringComparison.Ordinal);
         Assert.Empty(morning.Claude.Requests);
     }
+
+    [Fact]
+    public async Task A_defect_in_an_earlier_note_holds_the_lane_however_old_it_is()
+    {
+        var morning = new Morning(Quiet);
+        morning.Share.Files["nightly/2026-10-20/0600-invites-sonnet-5-5/DONE.md"] = "# DONE\n- DEFECT: progress.tsv line not read, read the page: Row 3 sent Jane\n";
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("nightly/2026-10-20/0600-invites-sonnet-5-5", output, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
+    }
+
+    [Fact]
+    public async Task A_row_that_half_wrote_is_not_written_twice_and_holds_the_lane()
+    {
+        var morning = new Morning(request => IsRecount(request) ? Quiet(request) : Answer(Result(Row(1, "sent", "Sam Roe", Evidence))));
+        morning.Share.PartialSpool = true;
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Single(morning.TrackerRows());
+        Assert.Contains("TRACKER ROW NOT WRITTEN", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_tracker_row_carries_the_time_of_the_send()
+    {
+        var morning = new Morning(request => IsRecount(request) ? Quiet(request) : Answer(Result(Row(1, "sent", "Sam Roe", Evidence))));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("06:00 Central", morning.Share.Files[Assert.Single(morning.TrackerRows())], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task One_person_written_two_ways_is_one_message_a_morning()
+    {
+        const string Text = "Lou,\n\nThanks for connecting. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to take a look?\n\nThanks,\nSteve";
+        var morning = new Morning(Quiet);
+        morning.Share.Files["linkedin-proof/QUEUE-qa-2026-11-04.md"] = $"### 1. Lou Grant, Northwind Widgets: MESSAGE\n\n```\n{Text}\n```\n\n### 2. Dr. Lou Grant, Northwind Widgets: MESSAGE\n\n```\n{Text}\n```\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Messages), default);
+        Assert.Contains("already on this worklist", morning.Share.Files["nightly/2026-11-03/0600-messages-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
+    }
 }

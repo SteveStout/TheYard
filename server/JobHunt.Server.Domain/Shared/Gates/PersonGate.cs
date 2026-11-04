@@ -173,7 +173,7 @@ public sealed partial class PersonGate
         string id = PostingId().Matches(link).Select(m => m.Value).LastOrDefault() ?? link.TrimEnd('/');
         string title = ClosedReqs.Normal(TitleEnd().Split(role)[0]);
         return rows.Any(row => row.Length >= 7 && ((id.Length > 0 && row[6].Contains(id, StringComparison.OrdinalIgnoreCase))
-            || (title.Length > 0 && TrackerRows.IsApplication(row) && ApplicationCap.Same(row[2], company) && $" {ClosedReqs.Normal(row[2] + " " + row[6])} ".Contains($" {title} ", StringComparison.Ordinal))));
+            || (title.Length > 0 && (TrackerRows.IsApplication(row) || !TrackerKinds.IsLinkedIn(row)) && ApplicationCap.Same(row[2], company) && $" {ClosedReqs.Normal(row[2] + " " + row[6])} ".Contains($" {title} ", StringComparison.Ordinal))));
     }
 
     /// <summary>A person's name however the tracker wrote it: no title, no parenthesis, no initial, nothing after a comma.</summary>

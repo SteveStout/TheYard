@@ -20,7 +20,15 @@ public static partial class ProgressFile
             Match sent = Line().Match(line);
             if (sent.Success && int.TryParse(sent.Groups["row"].Value, out int row))
             {
-                if (rows.All(known => known.Row != row))
+                string said = sent.Groups["person"].Value.Trim();
+                if (rows.FirstOrDefault(known => known.Row == row) is { } first)
+                {
+                    if (PersonGate.Name(first.Person ?? string.Empty) != PersonGate.Name(said))
+                    {
+                        unread.Add(line.Trim());
+                    }
+                }
+                else
                 {
                     string person = sent.Groups["person"].Value.Trim();
                     rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));

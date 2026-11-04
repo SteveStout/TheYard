@@ -45,6 +45,22 @@ public static partial class ReplyQueue
     /// <param name="company">The company.</param>
     public static string DraftName(string company) => $"li-followup-{NotLetter().Replace(company.ToLowerInvariant().Split(' ')[0], string.Empty)}.txt";
 
+    /// <summary>Who an item is: the person the queue named, or else the one tracker person at the company with that first name.</summary>
+    /// <param name="named">The person the queue named, empty when it named only the company.</param>
+    /// <param name="first">The first name the draft greets.</param>
+    /// <param name="company">The company.</param>
+    /// <param name="rows">Tracker rows.</param>
+    public static string? WhoIs(string named, string first, string company, IReadOnlyList<string[]> rows)
+    {
+        if (named.Length > 0)
+        {
+            return named;
+        }
+        var matches = rows.Where(row => row.Length >= 7 && ApplicationCap.Same(row[2], company) && row[1].StartsWith(first + " ", StringComparison.OrdinalIgnoreCase))
+            .Select(row => row[1].Trim()).DistinctBy(PersonGate.Name).ToList();
+        return first.Length > 0 && matches.Count == 1 ? matches[0] : null;
+    }
+
     /// <summary>A draft's body: the file with its OBJECTIVE and FILES READ lines cut.</summary>
     /// <param name="draft">The draft file's text.</param>
     public static string Body(string draft) =>

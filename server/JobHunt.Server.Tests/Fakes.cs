@@ -25,6 +25,8 @@ internal sealed class MemoryShare : IShare
 
     public int RefuseSpool { get; set; }
 
+    public bool PartialSpool { get; set; }
+
     public string Root => "/mnt/j";
 
     public string Full(string relative) => $"{Root}/{relative}";
@@ -70,6 +72,11 @@ internal sealed class MemoryShare : IShare
         {
             RefuseSpool--;
             throw new IOException($"{relative} refused");
+        }
+        if (PartialSpool && relative.StartsWith("inbox/tracker-inbox/", StringComparison.Ordinal))
+        {
+            Files[relative] = text[..(text.Length / 2)];
+            throw new IOException($"{relative} did not read back as written");
         }
         if (!Files.TryAdd(Allowed(relative), text))
         {

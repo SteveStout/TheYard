@@ -27,9 +27,8 @@ public sealed record LaneStart(Lane Lane, DateOnly Day, bool Dry, OutreachCounts
 /// <param name="time">The clock.</param>
 public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSink usage, ServerConfig config, TimeProvider time)
 {
-    private const int CrashDays = 7;
     private const int RowAttempts = 3;
-    private const int Spacing = 1000;
+    private const int Spacing = 100;
     private const string NotWritten = "TRACKER ROW NOT WRITTEN";
 
     /// <summary>
@@ -51,26 +50,25 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     }
 
     /// <summary>
-    /// Why a lane may not start because an earlier run of it died or lost a row, today or in the week before: a progress
-    /// file with no DONE note, or a note saying a row never wrote, is a send with no record, and a person has to read it
-    /// before the same worklist is built again.
+    /// Why a lane may not start because an earlier run of it died, lost a row or left a defect, on any day: a progress file
+    /// with no DONE note, or a note with a defect or an unwritten row, may be a send with no record, and a person has to
+    /// settle it before the same worklist is built again. The hold never runs out on its own.
     /// </summary>
     /// <param name="start">The lane.</param>
     /// <param name="ct">Stops the read.</param>
     public async Task<string?> CrashedAsync(LaneStart start, CancellationToken ct)
     {
-        for (int back = 0; back <= CrashDays; back++)
+        foreach (string day in await share.FoldersAsync("nightly", "20*", ct))
         {
-            string day = RunSlot.DayFolder(start.Day.AddDays(-back));
             foreach (string folder in await share.FoldersAsync(day, $"{RunSlot.Hour}-{RunSlot.Word(start.Lane)}-*", ct))
             {
                 if (folder.EndsWith("-dry", StringComparison.Ordinal))
                 {
                     continue;
                 }
-                if (await share.ExistsAsync($"{folder}/DONE.md", ct) && (await share.ReadAsync($"{folder}/DONE.md", ct)).Contains(NotWritten, StringComparison.Ordinal))
+                if (await share.ExistsAsync($"{folder}/DONE.md", ct) && Unsettled().IsMatch(await share.ReadAsync($"{folder}/DONE.md", ct)))
                 {
-                    return $"{folder}/DONE.md says a tracker row was not written: a send with no record. Write the row, then take that line out of the note, before this lane runs again";
+                    return $"{folder}/DONE.md carries a defect line or an unwritten tracker row, which may be a send with no record. Settle it, then take that line out of the note, before this lane runs again";
                 }
                 if (await share.ExistsAsync($"{folder}/progress.tsv", ct) && !await FinishedAsync(folder, ct))
                 {
@@ -227,7 +225,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         string what = record.Reported.Person is { Length: > 0 } person ? person : record.Row.Company;
         for (int attempt = 1; ; attempt++)
         {
-            DateTimeOffset at = time.GetUtcNow().AddSeconds(order + (attempt * Spacing));
+            DateTimeOffset at = time.GetUtcNow().AddSeconds(order + ((attempt - 1) * Spacing));
             string path = $"inbox/tracker-inbox/{TrackerRowFile.Name(at, what)}";
             try
             {
@@ -237,6 +235,11 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             }
             catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
             {
+                if (await share.ExistsAsync(path, CancellationToken.None))
+                {
+                    lines.Add($"{NotWritten} cleanly for row {record.Row.Row} ({what}): {path} holds what reached the share, {failure.Message}. Read it and fix it by hand from this note.");
+                    return;
+                }
                 if (attempt == RowAttempts)
                 {
                     lines.Add($"{NotWritten} for row {record.Row.Row} ({what}): {failure.Message}. Write it by hand from this note.");
@@ -264,6 +267,9 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             return from;
         }
     }
+
+    [GeneratedRegex(@"DEFECT:|TRACKER ROW NOT WRITTEN")]
+    private static partial Regex Unsettled();
 
     [GeneratedRegex(@"^/tmp/claude-chrome-screenshots-[\w-]+/[\w.-]+\.(jpg|jpeg|png)$")]
     private static partial Regex Shot();

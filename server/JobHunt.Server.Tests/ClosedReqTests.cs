@@ -194,4 +194,40 @@ public sealed class ClosedReqTests
         var gate = new PersonGate(new GateSources(rows, Fixture.Read("limits.md"), Fixture.Read("rules.md"), Fixture.Read("responders.md"), []), new DateOnly(2026, 11, 2));
         Assert.Equal("already applied", gate.Apply("PerfectServe", "https://job-boards.greenhouse.io/perfectserve/jobs/5826519004", "Senior Software Engineer, .NET - US Remote"));
     }
+
+    [Fact]
+    public void Job_shaped_wording_is_held()
+    {
+        Assert.Contains("cannot read", ClosedReqs.Why("Aledade", "I submitted my resume for the Senior Software Engineer II, Risk job at Aledade.", Rows), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_early_row_that_names_only_the_title_is_already_applied()
+    {
+        string[][] rows = [Row("30", "Alkami", "Greenhouse", "6/20/2026", "Staff Software Engineer")];
+        var gate = new PersonGate(new GateSources(rows, Fixture.Read("limits.md"), Fixture.Read("rules.md"), Fixture.Read("responders.md"), []), new DateOnly(2026, 11, 2));
+        Assert.Equal("already applied", gate.Apply("Alkami", "https://jobs.lever.co/alkami/new", "Staff Software Engineer"));
+    }
+
+    [Fact]
+    public void A_named_reply_item_keeps_its_name_and_an_unnamed_one_needs_one_match()
+    {
+        string[][] rows =
+        [
+            [ "502", "Ann Moore", "Fei", "LinkedIn", "9/1/2026", "", "CONNECTION REQUEST SENT" ],
+            [ "683", "Ann Dolan", "Fei", "LinkedIn", "9/2/2026", "", "CONNECTION REQUEST SENT" ],
+            [ "700", "Bo Lane", "Fei", "LinkedIn", "9/2/2026", "", "CONNECTION REQUEST SENT" ],
+        ];
+        Assert.Equal("Ann Dolan", ReplyQueue.WhoIs("Ann Dolan", "Ann", "Fei", rows));
+        Assert.Null(ReplyQueue.WhoIs(string.Empty, "Ann", "Fei", rows));
+        Assert.Equal("Bo Lane", ReplyQueue.WhoIs(string.Empty, "Bo", "Fei", rows));
+    }
+
+    [Fact]
+    public void A_second_send_on_one_row_with_another_name_is_not_dropped_silently()
+    {
+        (var rows, var unread) = ProgressFile.Read("3\tsent\tJane Roe\n3\tsent\tJohn Doe\n");
+        Assert.Single(rows);
+        Assert.Single(unread);
+    }
 }

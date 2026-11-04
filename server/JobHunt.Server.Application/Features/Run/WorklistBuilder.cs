@@ -80,10 +80,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
                     dropped.Add(new Dropped(name, $"the draft greets {first}"));
                     continue;
                 }
-                string? person = FullName(reads, first, company);
+                string? person = ReplyQueue.WhoIs(item.Person, first, company, reads.Rows);
                 if (person is null)
                 {
-                    dropped.Add(new Dropped(name, $"the draft greets {first}, and no tracker row at {company} gives a full name to check Rule 25 by"));
+                    dropped.Add(new Dropped(name, $"the draft greets {first}, and no one tracker person at {company} by that name gives a full name to check Rule 25 by"));
                     continue;
                 }
                 candidates.Add(new Candidate(person, company, WorkAction.Message, body, Profile(reads, person, company), $"{item.Source}, {path}"));
@@ -171,7 +171,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             {
                 dropped.Add(new Dropped(what, reason));
             }
-            else if (candidate.Person.Length > 0 && kept.Any(other => other.Person.Equals(candidate.Person, StringComparison.OrdinalIgnoreCase)))
+            else if (candidate.Person.Length > 0 && kept.Any(other => PersonGate.Name(other.Person) == PersonGate.Name(candidate.Person)))
             {
                 dropped.Add(new Dropped(what, "already on this worklist"));
             }
@@ -248,12 +248,6 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         }
         return await prose.CleanAsync(candidate.Text, ct) ? null : "text failed check_aiisms.py";
     }
-
-    private static string? FullName(DayReads reads, string first, string company) =>
-        first.Length == 0
-            ? null
-            : reads.Rows.Where(row => row.Length >= 7 && ApplicationCap.Same(row[2], company) && row[1].StartsWith(first + " ", StringComparison.OrdinalIgnoreCase))
-                .Select(row => row[1].Trim()).FirstOrDefault();
 
     private static string Profile(DayReads reads, string person, string company) =>
         reads.Rows.Where(row => row.Length >= 7 && string.Equals(row[1].Trim(), person, StringComparison.OrdinalIgnoreCase) && ApplicationCap.Same(row[2], company))
