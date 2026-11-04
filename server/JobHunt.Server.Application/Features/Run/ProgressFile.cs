@@ -34,7 +34,7 @@ public static partial class ProgressFile
                     rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));
                 }
             }
-            else if (line.Trim().Length > 0 && !Header().IsMatch(line))
+            else if (line.Trim().Length > 0 && !Header().IsMatch(line) && !NotASend().IsMatch(line))
             {
                 unread.Add(line.Trim());
             }
@@ -45,6 +45,9 @@ public static partial class ProgressFile
     [GeneratedRegex(@"^\s*(?<row>\d+)(?:[\s|,:;]|<TAB>)+(?:sent|submitted|applied|invited|messaged)(?:(?:[\s|,:;]|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
     private static partial Regex Line();
 
-    [GeneratedRegex(@"^\s*row(\t|<TAB>)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s*row[\w ]*?(\t|<TAB>|,|\|)\D*$|^\s*`{3}", RegexOptions.IgnoreCase)]
     private static partial Regex Header();
+
+    [GeneratedRegex(@"^\s*\d+(?:[\s|,:;]|<TAB>)+(skipped|failed|blocked)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex NotASend();
 }

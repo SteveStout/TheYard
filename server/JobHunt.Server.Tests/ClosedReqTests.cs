@@ -255,4 +255,17 @@ public sealed class ClosedReqTests
         Assert.Equal(["Ashleigh Kibe", "Paul Shearer"], ReplyQueue.Items(Queue).Select(item => item.Person));
         Assert.Equal(["C"], ReplyQueue.Unread(Queue));
     }
+
+    [Theory]
+    [InlineData("row_number\tstatus\tperson\n")]
+    [InlineData("row,status,person\n")]
+    [InlineData("```\n")]
+    [InlineData("2\tskipped\tPat Lee\n")]
+    [InlineData("3 failed no toast\n")]
+    public void A_header_a_fence_or_a_row_that_did_not_send_holds_nothing(string text)
+    {
+        (var rows, var unread) = ProgressFile.Read(text);
+        Assert.Empty(rows);
+        Assert.Empty(unread);
+    }
 }

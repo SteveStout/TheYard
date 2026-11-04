@@ -918,4 +918,18 @@ public sealed class RunTests
         await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
         Assert.StartsWith("NA,", morning.Share.Files[Assert.Single(morning.TrackerRows())], StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task A_leader_the_lane_would_pick_never_rides_beside_a_named_invite_at_the_same_company()
+    {
+        const string Named = "Kim,\n\nYour platform work at Northwind is close to what I built. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve";
+        string unnamed = Named.Replace("Kim,", "[First name],", StringComparison.Ordinal);
+        var morning = new Morning(Quiet);
+        morning.Share.Files["linkedin-proof/QUEUE-qa-2026-11-04.md"] = $"### 1. Kim Park, Northwind Widgets: CONNECTION REQUEST\n\n```\n{Named}\n```\n\n### 2. Northwind Widgets: CONNECTION REQUEST to the engineering leader\n\n```\n{unnamed}\n```\n\n### 3. Northwind Widgets: CONNECTION REQUEST to the recruiter\n\n```\n{unnamed}\n```\n";
+        morning.Share.Files["linkedin-proof/QUEUE-qb-2026-11-04.md"] = $"### 1. Northwind Gadgets: CONNECTION REQUEST to the engineering leader\n\n```\n{unnamed}\n```\n\n### 2. Kim Lane, Northwind Gadgets: CONNECTION REQUEST\n\n```\n{Named}\n```\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        string list = morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"];
+        Assert.Single(list.Split('\n'), line => line.Contains("Northwind Widgets", StringComparison.Ordinal));
+        Assert.Single(list.Split('\n'), line => line.Contains("Northwind Gadgets", StringComparison.Ordinal));
+    }
 }

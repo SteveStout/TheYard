@@ -172,8 +172,8 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             {
                 dropped.Add(new Dropped(what, reason));
             }
-            else if (kept.Any(other => candidate.Person.Length > 0 ? PersonGate.Name(other.Person) == PersonGate.Name(candidate.Person)
-                : candidate.Action == WorkAction.Invite && other.Action == WorkAction.Invite && ApplicationCap.Same(other.Company, candidate.Company)))
+            else if (kept.Any(other => (candidate.Person.Length > 0 && PersonGate.Name(other.Person) == PersonGate.Name(candidate.Person))
+                || (candidate.Action == WorkAction.Invite && other.Action == WorkAction.Invite && (candidate.Person.Length == 0 || other.Person.Length == 0) && ApplicationCap.Same(other.Company, candidate.Company))))
             {
                 dropped.Add(new Dropped(what, "already on this worklist"));
             }
