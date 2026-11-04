@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The machine lanes' adapters: the share, the Claude CLI, the two Python helpers, the desktop and the site.
+       References Application and Domain and never the host. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JobHunt.Server.Application\JobHunt.Server.Application.csproj" />
+    <ProjectReference Include="..\JobHunt.Server.Domain\JobHunt.Server.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="JobHunt.Server.Application.Shared.Config" />
+    <Using Include="JobHunt.Server.Application.Shared.Ports" />
+    <Using Include="JobHunt.Server.Domain.Shared.Records" />
+    <Using Include="JobHunt.Server.Domain.Shared.Registry" />
+    <Using Include="JobHunt.Server.Domain.Shared.Slots" />
+    <Using Include="JobHunt.Server.Domain.Shared.Worklists" />
+  </ItemGroup>
+</Project>

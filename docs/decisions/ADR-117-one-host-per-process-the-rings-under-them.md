@@ -59,3 +59,8 @@ The Domain wrote Gmail's search syntax: the tracking systems' sweep (`in:inbox f
 The composer is [`functions/JobHunt.Infrastructure/Features/Ats/GmailQuery.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/JobHunt.Infrastructure/Features/Ats/GmailQuery.cs), and the search it reads is [`functions/JobHunt.Application/Shared/Mail/MailSearch.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/JobHunt.Application/Shared/Mail/MailSearch.cs).
 
 `RingTests.Nothing_in_Domain_or_Application_writes_a_mail_search` holds it: no code line under Domain or Application writes `from:`, `subject:`, `in:inbox` or `newer_than:`. It was red on 1.0.4.68 with only its file applied, naming ten lines across eight files. `GmailQueryTests` holds every search the Function sends, nine of them, to the string it sent at 1.0.4.66 character for character, so Gmail sees nothing new. The test fakes answer the search object, and the inbox pass's fake reads the string the adapter would send.
+
+## Addendum, 2026-11-02 (1.0.4.132): the machine lanes take the same rings
+
+A third process joined the two, `server/JobHunt.Server`, on the same three rings and the same direction: `JobHunt.Server.Domain` references nothing of its own process, `JobHunt.Server.Application` references Domain only, `JobHunt.Server.Infrastructure` references both and never the host. Nothing in Domain or Application reads the disk, the network, the clock or the environment. `RingTests` in `server/JobHunt.Server.Tests` holds it, and ADR-119's addendum of the same version says why the process exists and what crosses into it.
+

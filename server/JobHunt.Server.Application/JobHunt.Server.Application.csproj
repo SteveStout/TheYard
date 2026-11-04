@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The machine lanes' use cases and their ports: references Domain only. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JobHunt.Server.Domain\JobHunt.Server.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="JobHunt.Domain.Shared.Applications" />
+    <Using Include="JobHunt.Domain.Shared.Tracker" />
+    <Using Include="JobHunt.Server.Application.Shared.Config" />
+    <Using Include="JobHunt.Server.Application.Shared.Ports" />
+    <Using Include="JobHunt.Server.Domain.Shared.Gates" />
+    <Using Include="JobHunt.Server.Domain.Shared.Records" />
+    <Using Include="JobHunt.Server.Domain.Shared.Registry" />
+    <Using Include="JobHunt.Server.Domain.Shared.Results" />
+    <Using Include="JobHunt.Server.Domain.Shared.Slots" />
+    <Using Include="JobHunt.Server.Domain.Shared.Worklists" />
+  </ItemGroup>
+</Project>

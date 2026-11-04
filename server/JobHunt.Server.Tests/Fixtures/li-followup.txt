@@ -1,0 +1,13 @@
+OBJECTIVE: "I should be have 2-3 interviews a week" (Steve, 2026-10-26 09:58 CDT, systemRules.md RULE 58)
+FILES READ: Job_Hunt_Tracker.csv Count 2854 and the invite row (csv.reader)
+
+Pat,
+
+Thanks for connecting; I appreciate it.
+
+I applied on Monday, October 19 for the Remote Manager, Software Engineering (Greenhouse 8238640) role. The posting asks this manager to champion AI-driven development across .NET teams. At Storee I hired and led a four-person team and cut release cycle time in half, and I have used Claude Code to ship to production.
+
+I would value any advice you have on getting in front of the hiring team.
+
+Thanks,
+Steve
