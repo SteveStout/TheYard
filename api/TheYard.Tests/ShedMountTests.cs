@@ -101,7 +101,11 @@ public sealed class ShedMountTests
             // a Yard name.
             var onShed = await Send(client, HttpMethod.Post, "/api/files/upload", Shed, Upload());
             string shedSaid = await onShed.Content.ReadAsStringAsync();
-            Assert.True(onShed.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.RequestEntityTooLarge, $"{(int)onShed.StatusCode}: {shedSaid}");
+            // A 500 here is The Shed throwing past its own handler, so the message carries what the
+            // mount recorded of it, and a failure names its cause rather than only its status.
+            Assert.True(
+                onShed.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.RequestEntityTooLarge,
+                $"{(int)onShed.StatusCode}: {shedSaid}; the error record holds: {WhatTheShedThrew(api)}");
             Assert.Contains("body length limit 2097152 exceeded", shedSaid, StringComparison.Ordinal);
             var onYard = await Send(client, HttpMethod.Post, "/api/files/upload", Yard, Upload());
             Assert.NotEqual(HttpStatusCode.RequestEntityTooLarge, onYard.StatusCode);
@@ -137,6 +141,14 @@ public sealed class ShedMountTests
         Assert.False(stoppedWhenTheYardBeganStopping, "The Shed was stopped before TheYard began stopping, which is before the drain");
         Assert.True(shedStop.Stopped, "The Shed was never stopped");
     }
+
+    /// <summary>
+    /// What The Shed threw past its own handler, as the mount wrote it in TheYard's error record:
+    /// the status, the path, the exception's type and its frames, so a failed assertion names a cause.
+    /// </summary>
+    private static string WhatTheShedThrew(WebApplicationFactory<Program> api) =>
+        string.Join("; ", api.Services.GetRequiredService<ErrorRings>().Server.Snapshot()
+            .Select(entry => $"{entry.Status} {entry.Path}: {entry.Message} at {string.Join(" < ", entry.Frames)}"));
 
     /// <summary>Whether The Shed's own host has stopped, written by a hosted service inside it.</summary>
     private sealed class StopRecord
