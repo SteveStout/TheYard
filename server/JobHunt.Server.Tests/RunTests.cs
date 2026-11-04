@@ -982,4 +982,21 @@ public sealed class RunTests
         await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
         Assert.DoesNotContain("Northwind", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"], StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task A_progress_name_and_a_result_name_that_share_only_a_company_prefix_still_differ()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "1\tsent\tAcme, John Doe\n";
+            return Answer(Result(Row(1, "sent", "Acme, Jane Roe", Evidence)));
+        });
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("John Doe", output, StringComparison.Ordinal);
+    }
 }

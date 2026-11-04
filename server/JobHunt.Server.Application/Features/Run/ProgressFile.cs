@@ -42,7 +42,9 @@ public static partial class ProgressFile
         return (rows, unread);
     }
 
-    private static string Plain(string? person) => Space().Replace(person ?? string.Empty, " ").Trim().ToLowerInvariant();
+    /// <summary>A name as written, lower-cased with its spaces collapsed, so a comma or a title never hides a second name.</summary>
+    /// <param name="person">The name.</param>
+    public static string Plain(string? person) => Space().Replace(person ?? string.Empty, " ").Trim().ToLowerInvariant();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Space();

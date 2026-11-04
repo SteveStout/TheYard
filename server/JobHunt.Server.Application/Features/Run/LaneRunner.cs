@@ -156,7 +156,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         }
         foreach (RowResult written in progress.Where(row => row.Person is { Length: > 0 }))
         {
-            if (result.Rows.FirstOrDefault(reported => reported.Row == written.Row && reported.Outcome == "sent") is { Person: { Length: > 0 } said } && PersonGate.Name(said) != PersonGate.Name(written.Person!))
+            if (result.Rows.FirstOrDefault(reported => reported.Row == written.Row && reported.Outcome == "sent") is { Person: { Length: > 0 } said } && ProgressFile.Plain(said) != ProgressFile.Plain(written.Person))
             {
                 lines.Add($"DEFECT: progress.tsv names {written.Person} on row {written.Row} and the result names {said}; read the page");
             }
