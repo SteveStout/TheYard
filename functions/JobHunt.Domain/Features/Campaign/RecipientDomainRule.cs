@@ -8,13 +8,8 @@ namespace JobHunt.Domain.Features.Campaign;
 /// </summary>
 public static class RecipientDomainRule
 {
-    /// <summary>The personal mail domains, keyed the way CompanyKey keys them.</summary>
-    public static readonly IReadOnlySet<string> Personal = new HashSet<string>(StringComparer.Ordinal)
-    {
-        "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "outlook.com", "hotmail.com", "live.com", "msn.com",
-        "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com", "gmx.com", "mail.com",
-        "yandex.com", "comcast.net", "att.net", "sbcglobal.net", "verizon.net", "charter.net", "cox.net",
-    };
+    /// <summary>The personal mail domains (PersonalDomains.All), keyed the way CompanyKey keys them.</summary>
+    public static readonly IReadOnlySet<string> Personal = PersonalDomains.All;
 
     /// <summary>Allowed, or held with the reason: no address, a malformed one, a personal domain, MX not read or not found.</summary>
     public static CampaignVerdict Check(string? address, bool? mxFound)

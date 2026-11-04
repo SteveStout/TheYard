@@ -20,7 +20,7 @@ public sealed class GmailSender(IHttpClientFactory http, GoogleCredentials googl
     public async Task<SentMail> SendAsync(OutgoingMail mail, CancellationToken ct)
     {
         _client ??= await google.ClientAsync(http, ct);
-        string raw = Base64Url(Encoding.UTF8.GetBytes(Mime(mail, "yard-" + Guid.NewGuid().ToString("N"))));
+        string raw = MimeText.Base64Url(Encoding.UTF8.GetBytes(Mime(mail, "yard-" + Guid.NewGuid().ToString("N"))));
         using var answer = await _client.PostAsync($"{Api}/messages/send", JsonContent.Create(new { raw }), ct);
         answer.EnsureSuccessStatusCode();
         using var sent = JsonDocument.Parse(await answer.Content.ReadAsStringAsync(ct));
@@ -42,20 +42,11 @@ public sealed class GmailSender(IHttpClientFactory http, GoogleCredentials googl
     /// <summary>The message as RFC 5322 text: To, Subject (encoded when not ASCII), and the two bodies.</summary>
     public static string Mime(OutgoingMail mail, string boundary)
     {
-        static string Part(string type, string body) =>
-            $"Content-Type: {type}; charset=\"UTF-8\"\r\nContent-Transfer-Encoding: base64\r\n\r\n"
-            + string.Join("\r\n", Convert.ToBase64String(Encoding.UTF8.GetBytes(body.Replace("\r\n", "\n", StringComparison.Ordinal).Replace("\n", "\r\n", StringComparison.Ordinal))).Chunk(76).Select(c => new string(c)))
-            + "\r\n";
         if (mail.To.IndexOfAny(['\r', '\n', ',', ';']) >= 0 || mail.Subject.IndexOfAny(['\r', '\n']) >= 0)
         {
             throw new ArgumentException("a header with a line break or a second address", nameof(mail));
         }
-        string subject = mail.Subject.All(c => c < 128) ? mail.Subject : $"=?UTF-8?B?{Convert.ToBase64String(Encoding.UTF8.GetBytes(mail.Subject))}?=";
-        return $"To: {mail.To}\r\nSubject: {subject}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n"
-            + $"--{boundary}\r\n" + Part("text/plain", mail.Text)
-            + $"--{boundary}\r\n" + Part("text/html", mail.Html)
-            + $"--{boundary}--\r\n";
+        return $"To: {mail.To}\r\nSubject: {MimeText.Subject(mail.Subject)}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n"
+            + MimeText.Alternative(boundary, mail.Text, mail.Html);
     }
-
-    private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }

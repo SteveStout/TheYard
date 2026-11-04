@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace JobHunt.Domain.Features.Campaign;
+namespace JobHunt.Domain.Shared.Writing;
 
 /// <summary>
 /// The model's voice, as words and phrases: S1_WORDS and S1_PHRASES of ai_tells_five_signs.py in the job-hunt

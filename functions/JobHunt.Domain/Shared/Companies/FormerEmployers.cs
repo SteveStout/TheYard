@@ -1,4 +1,4 @@
-namespace JobHunt.Domain.Features.Campaign;
+namespace JobHunt.Domain.Shared.Companies;
 
 /// <summary>
 /// The five places the applicant has worked, which the campaign never writes to. They are listed here rather
