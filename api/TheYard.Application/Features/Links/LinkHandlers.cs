@@ -3,6 +3,7 @@
 // the open the page reports for itself. Each takes its port by constructor and is tested with a
 // fake and no host.
 using TheYard.Application.Shared;
+using TheYard.Application.Shared.Links;
 
 namespace TheYard.Application.Features.Links;
 

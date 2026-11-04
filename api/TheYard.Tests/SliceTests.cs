@@ -270,6 +270,7 @@ public sealed class SliceTests
         ["KeepWarm"] = "keeps the sites warm between visits",
         ["KeepWarmAtRoll"] = "warms both names after a roll",
         ["LinkOpenCollector"] = "keeps tagged-link opens off the request path",
+        ["ReviewReachCollector"] = "keeps the review route's reach off the request path, folded and written once a minute",
         ["LogCollector"] = "keeps the log off the request path",
         ["MachineRecorder"] = "keeps each finished minute of the machine's samples",
         ["MachineSampler"] = "samples the container's machine",

@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInTheBrowser } from './useFirstLoad';
+import { linkCode } from '../lib/links';
+import { request } from '../lib/request';
 import {
   emptyProgress,
   markReached,
   moveTo,
+  newlyReached,
+  reachBody,
   readProgress,
   writeProgress,
   type ReviewProgress,
@@ -21,6 +25,24 @@ function browserStorage(): StorageLike | null {
 }
 
 /**
+ * Tells the API a stop was reached (ADR: Ten minutes, seven stops, the addendum on the reach rows), in the
+ * background: a send that fails is let go and never blocks the page, and keepalive lets one sent as a stop's
+ * link is followed finish after the page has gone.
+ */
+function report(stop: number, code: string | null): void {
+  void request(
+    '/api/review/reached',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reachBody(stop, code)),
+      keepalive: true,
+    },
+    { background: true }
+  ).catch(() => {});
+}
+
+/**
  * The reviewer's place on the route (ADR: Ten minutes, seven stops), kept on this browser. The
  * page is drawn on the server at the first stop, and hydrated at the first stop too, so the two
  * agree; once the page is in the browser the kept place is what shows, and every move is kept.
@@ -32,9 +54,17 @@ export function useReviewProgress() {
   const kept = inBrowser ? readProgress(browserStorage()) : emptyProgress();
   const progress = moved?.progress ?? kept;
   const finished = moved?.finished ?? kept.reached.length === REVIEW_STOPS.length;
+  // The code the page opened on, read during the first render, before the address bar is rewritten.
+  const [code] = useState(() =>
+    typeof window === 'undefined' ? null : linkCode(window.location.search)
+  );
+  // The route opened: stop 0, once for this page.
+  useEffect(() => report(0, code), [code]);
 
-  // Every move but the last Mark done puts a stop back on screen, so the route is not finished.
+  // Every move but the last Mark done puts a stop back on screen, so the route is not finished. A stop
+  // reached for the first time on this browser is reported once; the reached set is what is kept.
   const keep = (next: ReviewProgress, done = false) => {
+    for (const stop of newlyReached(progress, next)) report(stop, code);
     setMoved({ progress: next, finished: done });
     writeProgress(browserStorage(), next);
   };

@@ -88,3 +88,7 @@ The fetcher list in `LinkOpens.IsOne` counted six more machines as people: Masto
 The page reports its own open under the view it opened on, and there is a third: the review route, `/?view=review` (ADR: Ten minutes, seven stops). `TaggedRequests.PageViews` is the home page, About Steven and `/review`, and the page's one report on load carries `path=/review` when the route is what opened (`pageOpenReport(search, path)` in `src/lib/links.ts`), read during the first render as the home page's is.
 
 The route has a short door, `GET /review`, a permanent redirect to the view that carries the link's query. The door is not an open in its own right: `IsSent` leaves `/review` out, so a visit through `/review?r=<code>` counts once, from the page it lands on, not twice. `LinkHandlerTests.The_page_reports_three_views_and_the_review_door_is_counted_once_by_the_page_it_opens` holds it.
+
+## Addendum, 2026-11-03 (1.0.4.131): what a code is, shared
+
+What stopped being true: "The rule (what a code is, which requests count, how opens fold) and the port are in the Application ring, `Features/Links`." What a code is, `LinkCodes`, now sits in `api/TheYard.Application/Shared/Links/LinkCodes.cs`, because the review route's reach reads it too (ADR: Ten minutes, seven stops, the addendum of 1.0.4.131) and one slice may not use another (ADR-107, rule 1). The type, its name and its rule are unchanged; which requests count and how opens fold stay in the Links slice.
