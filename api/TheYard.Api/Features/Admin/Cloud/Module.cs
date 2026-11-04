@@ -3,7 +3,7 @@ using TheYard.Application.Features.Admin.Cloud;
 namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>
-/// The eleven resource cards under Cloud infrastructure (ADR: One frame for every resource): one
+/// The twelve resource cards under Cloud infrastructure (ADR: One frame for every resource): one
 /// reader of Azure Monitor, one of Netlify and one of GitHub, the resource groups' lists each card
 /// finds its resource in (the nightly Function's group is its own, ADR: The Nightly Function on the
 /// Admin tab), a keep per card, the nightly run log and its cache, the one recorder, the one cached reader the endpoint answers from,
@@ -66,7 +66,15 @@ public sealed class Module : IModule
                     ? (found.Id, (string?)null)
                     : null,
                 campaignDatabase);
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign).Select(card => (card, KeepOf(card)))];
+            // The network log's card reads the same database's card schema the same way (ADR-124).
+            var network = new NetworkSource(
+                new SqlNetworkCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
+                cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
+                async cancellation => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), ResourceCatalog.SqlType, "/" + campaignDatabase) is { } found
+                    ? (found.Id, (string?)null)
+                    : null,
+                campaignDatabase);
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with
