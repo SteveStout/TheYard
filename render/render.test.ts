@@ -5,6 +5,11 @@ import renderSource from './render.ts?raw';
 import serverSource from './server.mjs?raw';
 import { cutAtRoot, ROOT_END, ROOT_START } from './page';
 import { createRenderer, EDGE_RULE, EDGE_VARY, RENDERED_HEADER } from './render';
+import { REVIEW_STOPS } from '../src/lib/reviewStops';
+
+/** Text as React writes it into HTML: the five characters an attribute or a text node escapes. */
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#x27;');
 
 // #region a-fake-api
 const API = 'https://api.example';
@@ -149,6 +154,34 @@ describe('the rendering service', () => {
     // A document's address draws no band, so it asks nothing of the pulse.
     const doc = await page('?doc=readme');
     expect(doc.asked.some((read) => read.url.startsWith(`${API}/api/pulse`))).toBe(false);
+  });
+
+  it('draws the review route whole on the server from its one list, and reads nothing for it (ADR: Ten minutes, seven stops)', async () => {
+    const { response, html, asked } = await page('?view=review');
+    expect(response.status).toBe(200);
+    expect(response.headers.get(RENDERED_HEADER)).toBe('drawn');
+    expect(html).toContain('Ten minutes, seven stops');
+    for (const stop of REVIEW_STOPS) expect(html).toContain(escapeHtml(stop.title));
+    // The stop showing Do this on a page drawn for nobody is the first.
+    expect(html).toContain(escapeHtml(REVIEW_STOPS[0].doThis));
+    // The rail's row sits directly under Home.
+    const home = html.indexOf('>Home<');
+    const review = html.indexOf('>Review in ten minutes<');
+    const blog = html.indexOf('>Blog<');
+    expect(home).toBeGreaterThan(-1);
+    expect(review).toBeGreaterThan(home);
+    expect(blog).toBeGreaterThan(review);
+    // Nothing but the version is read for it: no pulse, no list, no document.
+    const paths = asked.map((read) => read.url.slice(API.length).split('?')[0]);
+    expect(paths.filter((path) => path !== '/' && path !== '/api/version')).toEqual([]);
+  });
+
+  it('draws both banners on the landing page, the resume first', async () => {
+    const { html } = await page('');
+    const resume = html.indexOf('data-testid="landing-banner-resume"');
+    const review = html.indexOf('data-testid="landing-banner-review"');
+    expect(resume).toBeGreaterThan(-1);
+    expect(review).toBeGreaterThan(resume);
   });
 
   it('answers 503 when the API does not answer, the one case with no page to send', async () => {

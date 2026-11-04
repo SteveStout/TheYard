@@ -60,7 +60,8 @@ function inTime<T>(work: Promise<T | null>): Promise<T | null> {
  * filters on any address that opens the inventory, which a vehicle's does too,
  * because the vehicle draws over the list; the vehicle on ?vehicle=; the
  * document, rendered here with the same code the browser uses, on ?doc=.
- * Admin and the account page draw in the browser behind the frame drawn here.
+ * Admin and the account page draw in the browser behind the frame drawn here; the review
+ * route is drawn from its own list and needs no read at all.
  * @param search the address's query, without its "?"
  * @param cookie the visitor's Cookie header, or null
  * @param apiOrigin the API this page is read from
@@ -83,7 +84,8 @@ export async function loadFirst(
   const doc = first.docKey ? DOCS[first.docKey] : null;
   // The bare address is the landing page, whose band draws the first screen's reading: read here, a crawler and a
   // link preview see the figures rather than the word the band shows before its first read.
-  const landing = !needsListing && !doc && !first.admin && !first.account && !first.blog;
+  const landing =
+    !needsListing && !doc && !first.admin && !first.account && !first.blog && !first.review;
 
   const [account, build, page, facets, vehicle, markdown, pulse] = await Promise.all([
     // Nobody signed in sends no cookie, and needs no read to say so.

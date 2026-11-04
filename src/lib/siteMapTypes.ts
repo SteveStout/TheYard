@@ -28,6 +28,7 @@ export type MenuVariant =
 /** The tile and row icons, drawn in SheetIcons.tsx on the same 20 by 20 grid as the row icons. */
 export type NavIcon =
   | 'home'
+  | 'review'
   | 'blog'
   | 'inventory'
   | 'architecture'
@@ -81,7 +82,7 @@ export type SiteSection = {
  * is opened by useNavigation (useAddressBar owns the address bar); a link is one of LINKS.
  */
 export type SiteAction = {
-  key: 'home' | 'blog' | 'inventory' | 'account' | 'admin' | 'resume' | 'repo';
+  key: 'home' | 'review' | 'blog' | 'inventory' | 'account' | 'admin' | 'resume' | 'repo';
   /** The label when nobody is signed in; the account row shows the address instead. */
   label: string;
   icon: NavIcon;
@@ -89,6 +90,8 @@ export type SiteAction = {
   featured?: boolean;
   /** Where it sits among the large tiles, low first; the map's own order breaks a tie. */
   featuredRank?: number;
+  /** A large tile drawn as a banner under the photo tiles: the resume and the review route. */
+  banner?: boolean;
   /** A pinned row at the foot of the sidebar. */
   inRail: boolean;
   /** A tile on the landing page. */

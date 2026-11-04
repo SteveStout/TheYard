@@ -3,6 +3,7 @@
 // request here when it has finished, with the time it took (Shared/Wiring/RequestPipeline.cs).
 
 using TheYard.Application.Features.Links;
+using TheYard.Application.Shared.Links;
 
 namespace TheYard.Api.Shared.Activity;
 

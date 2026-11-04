@@ -10,9 +10,12 @@ describe('tagged links', () => {
     expect(linkCode('')).toBeNull();
   });
 
-  it('reports the page open once, for a code, under the home view', () => {
-    expect(pageOpenReport('?r=k7f2qa')).toBe('/api/links/open?r=k7f2qa&path=/');
-    expect(pageOpenReport('?view=inventory')).toBeNull();
+  it('reports the page open once, for a code, under the page view it opened on', () => {
+    expect(pageOpenReport('?r=k7f2qa', '/')).toBe('/api/links/open?r=k7f2qa&path=/');
+    expect(pageOpenReport('?view=review&r=k7f2qa', '/review')).toBe(
+      '/api/links/open?r=k7f2qa&path=/review'
+    );
+    expect(pageOpenReport('?view=inventory', '/')).toBeNull();
   });
 
   it('prints a row s paths busiest first and an open as a UTC minute', () => {

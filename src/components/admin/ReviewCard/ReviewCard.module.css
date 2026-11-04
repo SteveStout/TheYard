@@ -1,0 +1,8 @@
+/**
+ * Does:      Gives the review route card's bars their one series colour, the first series' teal, never a status colour.
+ * Does not:  Draw the bars, the track or the counts (PathBars and ActivityCard.module.css do) or the card's frame.
+ * Used by:   ReviewCard.tsx.
+ */
+.reach {
+  color: var(--color-series-1);
+}

@@ -1,4 +1,5 @@
 using TheYard.Application.Features.Links;
+using TheYard.Application.Shared.Links;
 
 namespace TheYard.Tests;
 
@@ -92,6 +93,24 @@ public sealed class LinkHandlerTests
         // A pass-through the site refused is a guess, not a link anyone sent: a 404 never counts, a 302 does.
         Assert.Null(TaggedRequests.OpenOf("GET", "/api/go/nope", "k7f2qa", null, chrome, Noon, "sql", 404));
         Assert.NotNull(TaggedRequests.OpenOf("GET", "/api/go/github", "k7f2qa", null, chrome, Noon, "sql", 302));
+    }
+
+    /// <summary>
+    /// Three page views a page reports its own open under: the home page, About Steven and the
+    /// review route (ADR: Ten minutes, seven stops). The route's short door, /review, answers a
+    /// redirect to the view with the code on it, so the door itself is not an open: the page it
+    /// lands on reports one, and a visit counts once.
+    /// </summary>
+    [Fact]
+    public async Task The_page_reports_three_views_and_the_review_door_is_counted_once_by_the_page_it_opens()
+    {
+        Assert.Equal(["/", "/about", "/review"], TaggedRequests.PageViews);
+        const string chrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0";
+        var review = TaggedRequests.OpenOf("GET", TaggedRequests.PageReport, "zzrev1", "/review", chrome, Noon, "sql");
+        Assert.Equal(new LinkOpen(Noon, "zzrev1", "/review", "sql"), review);
+        Assert.Null(TaggedRequests.OpenOf("GET", "/review", "zzrev1", null, chrome, Noon, "sql", 301));
+        Assert.False(TaggedRequests.IsSent("/review"));
+        Assert.True(await new ReportPageOpenHandler().HandleAsync(new ReportPageOpenCommand("zzrev1", "/review"), CancellationToken.None));
     }
 
     /// <summary>

@@ -11,10 +11,13 @@ export function linkCode(search: string): string | null {
   return code !== null && /^[a-z0-9]{6}$/.test(code) ? code : null;
 }
 
-/** The report the page sends once for its own open, or null when the address carries no code. */
-export function pageOpenReport(search: string): string | null {
+/**
+ * The report the page sends once for its own open, or null when the address carries no code.
+ * @param path the page view the open is kept under: "/" for the home page, "/review" for the review route
+ */
+export function pageOpenReport(search: string, path: string): string | null {
   const code = linkCode(search);
-  return code === null ? null : `/api/links/open?r=${code}&path=/`;
+  return code === null ? null : `/api/links/open?r=${code}&path=${path}`;
 }
 
 /** One code's row on the card, as the API answers it. */

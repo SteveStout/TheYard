@@ -152,6 +152,8 @@ const apiProxy = {
   '/blog/images': 'http://localhost:5210',
   // And the resume at its own address (ResumeDoor.cs), exactly /resume with or without its query.
   '^/resume(\\?.*)?$': 'http://localhost:5210',
+  // And the review route's short door (DocumentationEndpoints.cs), a redirect to /?view=review.
+  '^/review(\\?.*)?$': 'http://localhost:5210',
 };
 
 export default defineConfig({

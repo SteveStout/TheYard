@@ -192,10 +192,39 @@ for (const viewport of [
       await expect(writers.first()).toHaveAttribute('href', /linkedin\.com\/in\//);
       await expect(writers.first()).toHaveAttribute('target', '_blank');
 
-      // The resume is a large tile, and it opens the PDF this site serves.
-      const resume = page.getByTestId('landing-tile-resume');
+      // Under Inventory and Author, two banners, the resume first (ADR: Ten minutes, seven stops):
+      // the resume opens the PDF this site serves in a tab of its own, and the review route opens
+      // its view in place.
+      const banners = await page
+        .locator('[data-testid^="landing-banner-"]')
+        .evaluateAll((items) =>
+          items.map((item) => item.getAttribute('data-testid')!.replace('landing-banner-', ''))
+        );
+      expect(banners).toEqual(['resume', 'review']);
+      const resume = page.getByTestId('landing-banner-resume');
       await expect(resume).toHaveAttribute('href', /resume/);
       await expect(resume).toHaveAttribute('target', '_blank');
+      const review = page.getByTestId('landing-banner-review');
+      await expect(review).toHaveAttribute('href', '/?view=review');
+      await expect(review).not.toHaveAttribute('target', '_blank');
+      const bannerBoxes = await page
+        .locator('[data-testid^="landing-banner-"]')
+        .evaluateAll((items) => items.map((item) => item.getBoundingClientRect().toJSON()));
+      const featuredBottom = await page
+        .locator('ul[aria-label="Start here"]')
+        .evaluate((list) => list.getBoundingClientRect().bottom);
+      for (const box of bannerBoxes) {
+        expect(box.top).toBeGreaterThanOrEqual(featuredBottom);
+        expect(box.height).toBeGreaterThanOrEqual(44);
+      }
+      if (viewport.width >= 1024) {
+        // One row of two on a desk.
+        expect(Math.abs(bannerBoxes[0].top - bannerBoxes[1].top)).toBeLessThanOrEqual(1);
+        expect(bannerBoxes[1].left).toBeGreaterThan(bannerBoxes[0].right);
+      } else {
+        // Stacked on a phone, the resume above.
+        expect(bannerBoxes[1].top).toBeGreaterThan(bannerBoxes[0].bottom);
+      }
 
       // Every tile a full touch target, and nothing wider than the screen.
       await expect(async () => {
@@ -209,9 +238,9 @@ for (const viewport of [
         expect(overflow).toBe(0);
       }).toPass();
 
-      // The left column runs on one set of columns: on a desk the featured row and the strip
-      // share three, read off the boxes rather than the stylesheet, so the third of each ends on
-      // the same x. The groups stand under both columns in a band the page's width (2026-10-23):
+      // The left column runs on one width: on a desk the two featured tiles share what the strip's
+      // three share, read off the boxes rather than the stylesheet, so the second tile and the
+      // third figure end on the same x, and so does the second banner. The groups stand under both columns in a band the page's width (2026-10-23):
       // three across, the third ending where the quotations column ends. On a phone the featured
       // tiles stack one per row and the strip stays two across.
       const rights = async (selector: string) =>
@@ -230,8 +259,10 @@ for (const viewport of [
       const wideBox = (await page.getByTestId('landing-wide').boundingBox())!;
       const leadBox = (await page.locator('ul[aria-label="Start here"]').boundingBox())!;
       if (viewport.width >= 1024) {
-        expect(new Set(featuredRights.slice(0, 3)).size).toBe(3);
-        expect(Math.abs(stripRights[2] - featuredRights[2])).toBeLessThanOrEqual(1);
+        expect(featuredRights).toHaveLength(2);
+        expect(new Set(featuredRights).size).toBe(2);
+        expect(Math.abs(stripRights[2] - featuredRights[1])).toBeLessThanOrEqual(1);
+        expect(Math.abs(stripRights[2] - Math.round(bannerBoxes[1].right))).toBeLessThanOrEqual(1);
         expect(new Set(groupRights.slice(0, 3)).size).toBe(3);
         expect(Math.abs(groupRights[2] - pageRight)).toBeLessThanOrEqual(1);
         // The band starts under both columns: below the last quotation, from the left column's

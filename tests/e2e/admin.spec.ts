@@ -1748,3 +1748,81 @@ test('the Azure card says the certificate and the storage, or why neither is rea
     timeout: 30_000,
   });
 });
+
+// #region review-card
+// The review route's card (ADR: Ten minutes, seven stops, the addendum on the reach rows), drawn from a
+// made-up funnel the test answers so the layout is checked whatever the local store holds, then against
+// the real route for its shape.
+const FUNNEL = {
+  available: true,
+  window: '30d',
+  opened: 41,
+  reached_by_stop: [41, 33, 27, 19, 14, 11, 9, 8],
+  by_code: [
+    { code: 'zzrev1', stop: 7, minutes: 11, last_day: '2026-11-04' },
+    { code: 'zzrev2', stop: 0, minutes: 0, last_day: '2026-11-03' },
+  ],
+  counted_from: '2026-11-04',
+  source: 'kept in this process’s memory until it restarts',
+};
+
+test('the review route card draws eight bars, four windows, the codes and the day it started counting, with nothing red', async ({
+  page,
+}) => {
+  const asked: string[] = [];
+  await page.route('**/api/admin/review?**', async (route) => {
+    asked.push(new URL(route.request().url()).searchParams.get('window') ?? '');
+    await route.fulfill({ json: FUNNEL });
+  });
+  await openTheYard(page, '/?view=admin&card=review');
+  const card = page.getByTestId('review-card');
+  await expect(card.getByRole('heading', { name: 'Review route, how far they got' })).toBeVisible();
+  for (let place = 0; place < 8; place += 1) {
+    await expect(card.getByTestId(`review-bar-${place}`)).toHaveCount(1);
+  }
+  await expect(card.getByTestId('review-bar-0')).toContainText('Opened /review');
+  await expect(card.getByTestId('review-bar-7')).toContainText('7 The resume');
+  await expect(
+    card.getByRole('group', { name: 'Window for the review route card' }).getByRole('button')
+  ).toHaveText(['24 h', '7 d', '30 d', '90 d']);
+  const table = card.getByTestId('review-codes');
+  await expect(table).toContainText('r=zzrev1');
+  await expect(table).toContainText('Stop 7, The resume');
+  await expect(table).toContainText('Opened, left');
+  await expect(card.getByTestId('review-counted')).toHaveText(
+    'Counting from 2026-11-04, the day version B shipped.'
+  );
+  await expect(card).toContainText('A code says which link was sent, never who received it.');
+  await card.getByTestId('review-window-90d').click();
+  await expect.poll(() => asked.at(-1)).toBe('90d');
+  // Nothing on the card is in the danger colour.
+  const red = await card.evaluate((root) => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--color-danger)';
+    document.body.append(probe);
+    const danger = getComputedStyle(probe).color;
+    probe.remove();
+    return Array.from(root.querySelectorAll<HTMLElement | SVGElement>('*')).filter((element) => {
+      const style = getComputedStyle(element);
+      return [style.color, style.backgroundColor, style.fill, style.borderTopColor].includes(
+        danger
+      );
+    }).length;
+  });
+  expect(red).toBe(0);
+});
+
+test('the review route card reads the real route: eight places and a window it names', async ({
+  request,
+}) => {
+  const answer = await request.get('http://localhost:5210/api/admin/review?window=24h');
+  expect(answer.status()).toBe(200);
+  const funnel = (await answer.json()) as typeof FUNNEL;
+  expect(funnel.window).toBe('24h');
+  expect(funnel.reached_by_stop).toHaveLength(8);
+  const refused = await request.post('http://localhost:5210/api/review/reached', {
+    data: { stop: 8, r: 'zzrev1' },
+  });
+  expect(refused.status()).toBe(400);
+});
+// #endregion review-card

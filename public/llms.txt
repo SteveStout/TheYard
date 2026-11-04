@@ -12,6 +12,7 @@
 
 ## Start here
 
+- [Review in ten minutes](https://theyard.stevenstout.biz/?view=review): seven live stops, ending at the resume
 - [README](https://theyard.stevenstout.biz/api/docs/readme): what the site is, how it is tested, and how to run it
 - [Start here](https://theyard.stevenstout.biz/api/docs/start-here): the short tour
 - [Architecture](https://theyard.stevenstout.biz/api/docs/architecture): the onion, the two stores, the frontend

@@ -1,28 +1,13 @@
 // Tagged links (ADR: Tagged links, who opened what): a link the operator sends out carries an
 // opaque six-character code, the site records that the code was opened and on which path, and
 // the code alone ever reaches a row. Who the code was sent to lives off the site, in the operator's
-// own lookup; the Admin tab shows codes, never names. This file is the whole rule: what a code
-// is, what an open carries, how opens fold into one row a code a day, and the port they are kept
-// through.
+// own lookup; the Admin tab shows codes, never names. This file is the whole rule but what a code
+// is (LinkCodes, in the Application ring's Shared/Links, because the review route reads it too):
+// what an open carries, how opens fold into one row a code a day, and the port they are kept through.
 using System.Text.RegularExpressions;
+using TheYard.Application.Shared.Links;
 
 namespace TheYard.Application.Features.Links;
-
-// #region link-codes
-/// <summary>What a code is: six lower-case letters or digits, the shape make_ref.py mints and nothing a person could be named by.</summary>
-public static partial class LinkCodes
-{
-    /// <summary>The query key a tagged link carries the code under.</summary>
-    public const string QueryKey = "r";
-
-    /// <summary>True for a string that is a code.</summary>
-    /// <param name="value">The query value, or null.</param>
-    public static bool IsOne(string? value) => value is not null && Shape().IsMatch(value);
-
-    [GeneratedRegex("^[a-z0-9]{6}$")]
-    private static partial Regex Shape();
-}
-// #endregion link-codes
 
 // #region link-previews
 /// <summary>
@@ -67,15 +52,22 @@ public static class TaggedRequests
     /// <summary>The path the page reports its own open on.</summary>
     public const string PageReport = "/api/links/open";
 
-    /// <summary>The views the page may report: the home page and About Steven.</summary>
-    public static readonly IReadOnlyList<string> PageViews = ["/", "/about"];
+    /// <summary>The views the page may report: the home page, About Steven and the review route.</summary>
+    public static readonly IReadOnlyList<string> PageViews = ["/", "/about", ReviewView];
+
+    /// <summary>
+    /// The review route's page view, and its short door: /review answers a redirect to the view
+    /// with the code carried, and the page it lands on reports the open, so the door is not one.
+    /// </summary>
+    public const string ReviewView = "/review";
 
     /// <summary>The paths a sent link may name beside the page's views: the resume behind its door and the pass-throughs.</summary>
     public static readonly IReadOnlyList<string> SentPrefixes = ["/resume", "/api/go/"];
 
     /// <summary>Whether a path is one a sent link names, so a code on any other request (a cache-buster, a guess) is not an open.</summary>
     /// <param name="path">The request's path, with no query.</param>
-    public static bool IsSent(string path) => PageViews.Contains(path, StringComparer.Ordinal)
+    public static bool IsSent(string path) =>
+        (PageViews.Contains(path, StringComparer.Ordinal) && !string.Equals(path, ReviewView, StringComparison.Ordinal))
         || SentPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.Ordinal));
 
     /// <summary>The open this request is, or null when it is not one.</summary>

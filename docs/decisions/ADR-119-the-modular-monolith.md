@@ -63,9 +63,9 @@ A record over the four that describe the structure, not a change to any of them:
 
 Decision 2 named the Admin module's three sub-slices, Cloud, Plan and Operations. From 1.0.4.82 there are four: Foreman, with its own `Module.cs` in the host and its own folder in Application (ADR: The Foreman, a place to start). The prompt for it drew a second Functions app with an identity and a Cosmos DB container of its own; it is a module of the site instead, because every reading it makes is one the site already makes, and Decision 1 holds: still one deployable per process. In the inner rings the four are four slices, so the Foreman's Application folder declares its own records for the failures it cites rather than using the incidents card's, and the host's Foreman adapter, inside the one Admin slice, maps one to the other.
 
-## Addendum, 2026-11-02 (1.0.4.130): a third process, the machine lanes
+## Addendum, 2026-11-02 (1.0.4.132): a third process, the machine lanes
 
-Decision 1 and Decision 5 named two processes. From 1.0.4.130 there are three. The site cannot drive a browser and neither can a GitHub runner, and the job hunt's LinkedIn sends and applications need a Chrome with a signed-in session, which exists on one box, WickedAwsome. So the third process runs there: `server/JobHunt.Server`, a .NET console program a systemd user timer starts at 06:00 America/Chicago. It is not a service, it holds no database, and it shares nothing with the site or the Function at run time; it reads the job-hunt share and writes the same two inboxes every other lane writes.
+Decision 1 and Decision 5 named two processes. From 1.0.4.132 there are three. The site cannot drive a browser and neither can a GitHub runner, and the job hunt's LinkedIn sends and applications need a Chrome with a signed-in session, which exists on one box, WickedAwsome. So the third process runs there: `server/JobHunt.Server`, a .NET console program a systemd user timer starts at 06:00 America/Chicago. It is not a service, it holds no database, and it shares nothing with the site or the Function at run time; it reads the job-hunt share and writes the same two inboxes every other lane writes.
 
 The rule is the same and the test now names three.
 
