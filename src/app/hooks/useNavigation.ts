@@ -1,5 +1,6 @@
 /**
- * Does:      Opens and closes each view (home, the blog, the inventory, a vehicle, Admin, Account, a document), moves focus to what opened, and says it to screen readers.
+ * Does:      Opens and closes each view (home, the blog, the review route, the inventory, a vehicle, Admin, Account, a
+ *            document), moves focus to what opened, and says it to screen readers.
  * Does not:  Write the address bar itself (it asks useAddressBar.ts), fetch the list, or draw anything.
  * Used by:   App.tsx, Shell.tsx.
  */
@@ -13,6 +14,8 @@ import type { DocKey } from '../../library/documents';
 import type { Address, BackTo } from './useAddressBar';
 import { useBlogNavigation } from './useBlogNavigation';
 import type { LoadState } from './useInventory';
+import { useReviewNavigation } from './useReviewNavigation';
+import { announcementOf, viewKeyOf } from '../viewNames';
 
 export type Navigation = ReturnType<typeof useNavigation>;
 
@@ -41,7 +44,15 @@ export function useNavigation(address: Address, loadState: LoadState) {
     setOpenDocKey,
     blogOpen,
     setBlogOpen,
+    reviewOpen,
+    setReviewOpen,
   } = address;
+  // The two pages that cover the rest, the blog and the review route, closed together by every other view.
+  const closePages = () => {
+    setBlogOpen(false);
+    setReviewOpen(false);
+  };
+  const view = { ...address, loadState };
 
   // #region focus
   // A single-page app swaps the view without changing the document, so the
@@ -51,15 +62,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
   // the region that just changed is the standard repair, and it is why <main>
   // carries tabIndex={-1}: focusable by script, never by Tab. It is found by
   // its id (MAIN_ID, which Shell.tsx gives it), the same id the skip link names.
-  const viewKey = adminOpen
-    ? 'admin'
-    : blogOpen
-      ? `blog:${address.blogPost ?? ''}`
-      : accountOpen
-        ? 'account'
-        : selectedVehicle
-          ? `vehicle:${selectedVehicle.id}`
-          : 'list';
+  const viewKey = viewKeyOf(view);
   const lastView = useRef(viewKey);
   useEffect(() => {
     if (lastView.current === viewKey) return;
@@ -84,7 +87,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     params.set('vehicle', vehicle.id);
     address.push({ viaTile: true }, params);
-    setBlogOpen(false);
+    closePages();
     setInventoryOpen(true);
     setSelectedVehicle(vehicle);
   };
@@ -116,11 +119,19 @@ export function useNavigation(address: Address, loadState: LoadState) {
     // the reader left it. Admin counts as a view switch too.
     window.scrollTo(
       0,
-      selectedVehicle || adminOpen || accountOpen || blogOpen || !inventoryOpen
+      selectedVehicle || adminOpen || accountOpen || blogOpen || reviewOpen || !inventoryOpen
         ? 0
         : listScrollY.current
     );
-  }, [selectedVehicle, adminOpen, accountOpen, inventoryOpen, blogOpen, address.blogPost]);
+  }, [
+    selectedVehicle,
+    adminOpen,
+    accountOpen,
+    inventoryOpen,
+    blogOpen,
+    reviewOpen,
+    address.blogPost,
+  ]);
 
   // #region open-inventory
   // The same shape as Admin and Account: a view at its own address, pushed so
@@ -129,7 +140,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     if (!opensInventory(params)) params.set('view', 'inventory');
     address.push({ viaInventory: true }, params);
-    setBlogOpen(false);
+    closePages();
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(false);
@@ -145,7 +156,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'admin');
     address.push({ viaAdmin: true, from: openedFrom() }, params);
-    setBlogOpen(false);
+    closePages();
     setSelectedVehicle(null);
     setAccountOpen(false);
     setAdminCard(DEFAULT_CARD);
@@ -212,7 +223,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
     const params = filtersToSearchParams(filters, sort);
     params.set('view', 'account');
     address.push({ viaAccount: true, from: openedFrom() }, params);
-    setBlogOpen(false);
+    closePages();
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(true);
@@ -245,7 +256,7 @@ export function useNavigation(address: Address, loadState: LoadState) {
    */
   const goHome = () => {
     address.push({ viaHome: true }, null);
-    setBlogOpen(false);
+    closePages();
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(false);
@@ -253,33 +264,22 @@ export function useNavigation(address: Address, loadState: LoadState) {
   };
 
   // #region announcement
-  // Focus says where you are; this says what you arrived at, since a focused container is announced
-  // unevenly. The match count is left to the filter bar's own status line: one live region says it once.
-  const announcement = adminOpen
-    ? 'Admin panel'
-    : blogOpen
-      ? 'Blog'
-      : accountOpen
-        ? 'Account'
-        : selectedVehicle
-          ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}, vehicle detail`
-          : !inventoryOpen
-            ? 'The Yard, home'
-            : loadState === 'loading'
-              ? 'Loading inventory'
-              : loadState === 'error'
-                ? 'The inventory API could not be reached'
-                : 'Vehicle inventory';
+  const announcement = announcementOf(view);
   // #endregion announcement
 
-  const blog = useBlogNavigation(address, () => {
+  // The blog and the review route each cover the rest: opening one closes the vehicle, Admin, Account and the other.
+  const closeForPage = () => {
+    closePages();
     setSelectedVehicle(null);
     setAdminOpen(false);
     setAccountOpen(false);
-  });
+  };
+  const blog = useBlogNavigation(address, closeForPage);
+  const review = useReviewNavigation(address, closeForPage);
 
   return {
     ...blog,
+    ...review,
     announcement,
     backTo,
     goHome,

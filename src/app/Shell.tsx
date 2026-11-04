@@ -46,6 +46,7 @@ export function Shell({
     adminOpen: boolean;
     accountOpen: boolean;
     blogOpen: boolean;
+    reviewOpen: boolean;
     openDocKey: DocKey | null;
   };
   accountEmail: string | null;
@@ -76,6 +77,8 @@ export function Shell({
         onDrawerClose={rail.closeDrawer}
         onHome={go.goHome}
         homeOpen={views.homeShowing}
+        reviewOpen={views.reviewOpen}
+        onOpenReview={go.openReview}
         blogOpen={views.blogOpen}
         onOpenBlog={() => go.openBlog()}
         blogBadge={blogNew ? 'NEW POST' : null}

@@ -7,10 +7,12 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useFirstLoad, useInTheBrowser } from '../hooks/useFirstLoad';
 import { useNow } from '../hooks/useNow';
 import { pageOpenReport } from '../lib/links';
+import { REVIEW_REPORT_PATH } from '../lib/reviewStops';
 import { prefetchWhenIdle } from '../lib/prefetch';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { Landing } from '../components/landing/Landing';
 import { BlogPage } from '../components/blog/BlogPage';
+import { ReviewPage } from '../components/review/ReviewPage';
 import { VehicleDetail } from '../components/vehicle/VehicleDetail';
 import { useAccount } from './hooks/useAccount';
 import { useAddressBar } from './hooks/useAddressBar';
@@ -62,9 +64,12 @@ export default function App() {
   // service, so the API hears of the open only from this one report, sent once, on load
   // (ADR: Tagged links, who opened what). The code is all it carries.
   // The address is read during the first render, because the address-bar mirror above rewrites
-  // it in its own effect, before this one would run, and the code goes with the rewrite.
+  // it in its own effect, before this one would run, and the code goes with the rewrite. The review
+  // route is its own page view, kept under its own path (ADR: Ten minutes, seven stops).
   const [openReport] = useState(() =>
-    typeof window === 'undefined' ? null : pageOpenReport(window.location.search)
+    typeof window === 'undefined'
+      ? null
+      : pageOpenReport(window.location.search, address.reviewOpen ? REVIEW_REPORT_PATH : '/')
   );
   useEffect(() => {
     if (openReport !== null)
@@ -72,7 +77,7 @@ export default function App() {
   }, [openReport]);
   // #endregion tagged-open
 
-  // One view at a time, in this order: Admin, Account, the blog, the landing page, then
+  // One view at a time, in this order: Admin, Account, the blog, the review route, the landing page, then
   // the inventory (loading, unreachable, a vehicle, or the list).
   return (
     <Shell
@@ -117,6 +122,8 @@ export default function App() {
           onOpenPost={(slug) => go.openBlog(slug)}
           onAllPosts={go.closeBlogPost}
         />
+      ) : address.reviewOpen ? (
+        <ReviewPage />
       ) : !address.inventoryOpen ? (
         <Landing
           accountLabel={account.email ?? 'Sign in'}
@@ -125,6 +132,7 @@ export default function App() {
           onOpenAdmin={go.openAdmin}
           onOpenDoc={go.openDocument}
           onOpenBlog={go.openBlog}
+          onOpenReview={go.openReview}
         />
       ) : inventory.loadState === 'loading' ? (
         <InventoryLoading />

@@ -12,7 +12,7 @@ import type { SiteAction, SiteGroupKey, SiteSection } from './siteMapTypes';
 export type LandingTile =
   { kind: 'section'; section: SiteSection } | { kind: 'action'; action: SiteAction };
 
-/** A large tile's place in the top row: Inventory, Author, then the resume. */
+/** A large tile's place: Inventory and Author in the top row, then the resume and the review route as banners. */
 function rankOf(tile: LandingTile): number {
   const rank = tile.kind === 'section' ? tile.section.featuredRank : tile.action.featuredRank;
   return rank ?? Number.MAX_SAFE_INTEGER;
@@ -24,13 +24,15 @@ export function sectionsIn(group: SiteGroupKey, map = SITE_MAP): SiteSection[] {
 }
 
 /**
- * The landing page, read off the map: the large tiles (actions first, then
- * sections, each in map order); then every other section under its group's
- * heading, in group order; then the other actions. `grid` is the same tiles
+ * The landing page, read off the map: the large tiles with a photograph
+ * (actions first, then sections, each in map order); the large tiles drawn as
+ * banners under them, by rank; then every other section under its group's
+ * heading, in group order; then the other actions. `grid` is the small tiles
  * as one list, in the order the page draws them.
  */
 export function landingTiles(map = SITE_MAP): {
   featured: LandingTile[];
+  banners: LandingTile[];
   groups: { key: SiteGroupKey; label: string; tiles: LandingTile[] }[];
   rest: LandingTile[];
   grid: LandingTile[];
@@ -45,11 +47,16 @@ export function landingTiles(map = SITE_MAP): {
       .map(asSection),
   })).filter((group) => group.tiles.length > 0);
   const rest = actions.filter((a) => !a.featured).map(asAction);
+  const byRank = (a: LandingTile, b: LandingTile) => rankOf(a) - rankOf(b);
   return {
     featured: [
-      ...actions.filter((a) => a.featured).map(asAction),
+      ...actions.filter((a) => a.featured && !a.banner).map(asAction),
       ...map.sections.filter((s) => s.featured).map(asSection),
-    ].sort((a, b) => rankOf(a) - rankOf(b)),
+    ].sort(byRank),
+    banners: actions
+      .filter((a) => a.featured && a.banner)
+      .map(asAction)
+      .sort(byRank),
     groups,
     rest,
     grid: [...groups.flatMap((group) => group.tiles), ...rest],

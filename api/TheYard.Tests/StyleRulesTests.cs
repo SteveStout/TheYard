@@ -396,6 +396,8 @@ public class StyleRulesTests
         ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
         ["src/components/blog/BlogPage/BlogPage.module.css"] = "the Blog title's underline, the same trim as the Admin title's",
+        ["src/components/review/ReviewPage/ReviewPage.module.css"] = "the review route's title underline, the same trim as the Blog title's",
+        ["src/components/landing/LandingBanners/LandingBanners.module.css"] = "the ring round each banner's icon, the landing tiles' own trim",
         ["src/components/blog/BlogPostCard/BlogPostCard.module.css"] = "the ring round the author's initials, as the approved preview draws it",
         ["src/components/admin/shared/card.module.css"] = "the ring round the chosen window button",
         ["src/library/DocProse.module.css"] = "a document title's underline, the tick on a heading's rule",

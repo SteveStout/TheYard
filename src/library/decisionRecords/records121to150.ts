@@ -24,4 +24,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '122',
   },
+  adrReviewRoute: {
+    title: 'ADR: Ten minutes, seven stops',
+    menuLabel: 'ADR: Ten minutes, seven stops',
+    url: '/api/docs/adr-ten-minutes-seven-stops',
+    kind: 'adr',
+    number: '123',
+  },
 } as const satisfies Record<string, RecordEntry>;

@@ -1,26 +1,22 @@
 import { useEffect, useState } from 'react';
 import { INTRO } from '../../../lib/intro';
-import {
-  HEALTH_WORDS,
-  landingHealth,
-  storesUp,
-  type LandingHealth,
-} from '../../../lib/landingHealth';
+import { landingHealth, storesUp, type LandingHealth } from '../../../lib/landingHealth';
 import {
   proofFigures,
   ringReading,
   type ProofFigure,
   type TestSummary,
 } from '../../../lib/landingProof';
-import { landingTiles, type LandingTile } from '../../../lib/siteMap';
+import { landingTiles, type LandingTile as LandingTileEntry } from '../../../lib/siteMap';
 import type { DocKey } from '../../../library/documents';
-import { LINKS, MENUS } from '../../../library/sections';
+import { MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
 import { Ring } from '../../shared/Ring';
-import { NavGlyph } from '../../shared/SheetIcons';
 import { PulseBand } from '../PulseBand';
 import { TechStack } from '../TechStack';
 import { LatestPosts } from '../LatestPosts';
+import { LandingBanners } from '../LandingBanners';
+import { LandingTile } from '../LandingTile';
 import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
 import { Recommendations } from '../../shared/Recommendations';
 import styles from './Landing.module.css';
@@ -30,15 +26,13 @@ import { request } from '../../../lib/request';
  * The landing page: what the address opens with no query. A tile per
  * place the sidebar goes, drawn from the same site map the sidebar is drawn
  * from (src/lib/siteMap.ts), so the two cannot list different things. The
- * large tiles are the map's featured entries, Inventory, Author and the
- * resume, three across with the badge on top; under them the evidence strip reads the gate's
+ * large tiles are the map's featured entries, Inventory and Author with the badge on top, and
+ * under them two banners, the resume and the review route; then the evidence strip reads the gate's
  * counts from /api/tests/summary, then the blog's Latest posts, then the Tech stack table the
  * build generated from the repository; What colleagues say in a column of its own on the right, every recommendation in full from
  * /api/recommendations (too narrow for two, it follows). Under both columns, the page's full width, every other section under its group's
  * heading, as the sidebar groups them, then Sign in, Admin and GitHub. The Admin tile's health dot is read from /api/health, the band under the title from /api/pulse.
- *
- * A section's tile opens what its sidebar section opens first: its first document
- * in the dialog, or its first link in a new tab when it has none (API Reference, Diagrams).
+ * One tile is drawn by LandingTile, the banners by LandingBanners.
  */
 /** The two figures that are a share of a whole, and so carry a ring (the operator's look). */
 const RINGED = ['tests', 'stores'];
@@ -58,6 +52,7 @@ export function Landing({
   onOpenAdmin,
   onOpenDoc,
   onOpenBlog,
+  onOpenReview,
 }: {
   accountLabel: string;
   onOpenInventory: () => void;
@@ -65,8 +60,9 @@ export function Landing({
   onOpenAdmin: () => void;
   onOpenDoc: (key: DocKey) => void;
   onOpenBlog: (slug: string | null) => void;
+  onOpenReview: () => void;
 }) {
-  const { featured, groups, rest } = landingTiles();
+  const { featured, banners, groups, rest } = landingTiles();
   const [health, setHealth] = useState<LandingHealth>('reading');
   const [stores, setStores] = useState<{ up: number; of: number } | null>(null);
   const [summary, setSummary] = useState<TestSummary | null>(null);
@@ -93,104 +89,17 @@ export function Landing({
   // The record count is the sidebar's own list, so the strip cannot claim records the site does not open.
   const proof = proofFigures(summary, MENUS.records.items.length);
 
-  const tile = (entry: LandingTile, large: boolean) => {
-    const className = large ? `${styles.big} op-glass` : `${styles.tile} op-glass`;
-    const badge = large ? `${styles.badge} ${styles.badgeBig}` : styles.badge;
-    const name = entry.kind === 'section' ? entry.section.menu : entry.action.key;
-    const icon = entry.kind === 'section' ? entry.section.icon : entry.action.icon;
-    const title =
-      entry.kind === 'section'
-        ? MENUS[entry.section.menu].label
-        : entry.action.key === 'account'
-          ? accountLabel
-          : entry.action.label;
-    const blurb = entry.kind === 'section' ? entry.section.blurb : entry.action.blurb;
-    const photo = entry.kind === 'section' ? entry.section.badgePhoto : entry.action.badgePhoto;
-    const isAdmin = entry.kind === 'action' && entry.action.key === 'admin';
-    const body = (
-      <>
-        <span className={photo ? `${badge} ${styles.badgePhoto}` : badge}>
-          {photo ? (
-            <img
-              className={styles.badgeImage}
-              src={photo.src}
-              srcSet={photo.srcSet}
-              sizes={large ? '(max-width: 639.98px) 64px, 88px' : '64px'}
-              width={88}
-              height={88}
-              alt=""
-              title={photo.credit}
-              decoding="async"
-            />
-          ) : (
-            <NavGlyph icon={icon} size={large ? 40 : 30} />
-          )}
-        </span>
-        <span className={styles.text}>
-          <span className={styles.title}>{title}</span>
-          <span className={styles.blurb}>{blurb}</span>
-          {isAdmin && (
-            <span className={styles.health} data-testid="landing-admin-health" data-state={health}>
-              <span className={styles.dot} aria-hidden="true" />
-              {HEALTH_WORDS[health].word}
-            </span>
-          )}
-        </span>
-      </>
-    );
-    const testId = `landing-tile-${name}`;
-    const tone = isAdmin ? HEALTH_WORDS[health].tone : undefined;
-
-    // A link out: the resume or the repository, or a section with only links.
-    const href =
-      entry.kind === 'action'
-        ? entry.action.key === 'resume' || entry.action.key === 'repo'
-          ? LINKS[entry.action.key].href
-          : null
-        : MENUS[entry.section.menu].items.length === 0
-          ? (MENUS[entry.section.menu].links?.[0]?.href ?? null)
-          : null;
-    if (href) {
-      return (
-        <li key={name}>
-          <a
-            className={className}
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            data-testid={testId}
-            data-tone={tone}
-          >
-            {body}
-          </a>
-        </li>
-      );
-    }
-
-    const open = () => {
-      if (entry.kind === 'section') {
-        const first = MENUS[entry.section.menu].items[0];
-        if (first) onOpenDoc(first.key);
-        return;
-      }
-      if (entry.action.key === 'inventory') onOpenInventory();
-      if (entry.action.key === 'account') onOpenAccount();
-      if (entry.action.key === 'admin') onOpenAdmin();
-    };
-    return (
-      <li key={name}>
-        <button
-          type="button"
-          className={className}
-          onClick={open}
-          data-testid={testId}
-          data-tone={tone}
-        >
-          {body}
-        </button>
-      </li>
-    );
-  };
+  const opens = { onOpenInventory, onOpenAccount, onOpenAdmin, onOpenDoc };
+  const tile = (entry: LandingTileEntry, large: boolean) => (
+    <LandingTile
+      key={entry.kind === 'section' ? entry.section.menu : entry.action.key}
+      entry={entry}
+      large={large}
+      accountLabel={accountLabel}
+      health={health}
+      open={opens}
+    />
+  );
 
   return (
     <section className={styles.landing} aria-labelledby="landing-title" data-testid="landing">
@@ -206,6 +115,7 @@ export function Landing({
           <ul className={styles.featured} aria-label="Start here">
             {featured.map((entry) => tile(entry, true))}
           </ul>
+          <LandingBanners banners={banners} onOpenReview={onOpenReview} />
         </div>
         <aside
           className={`${styles.side} op-glass`}

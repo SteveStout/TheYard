@@ -144,7 +144,22 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       inRail: true,
       onLanding: false,
     },
-    // Directly under Home: every LinkedIn post kept in full. The home page's Latest posts band is its tile.
+    // #region review-action
+    // Directly under Home: the site in ten minutes, seven live stops ending at the resume
+    // (ADR: Ten minutes, seven stops). On the landing page it is the banner beside the resume's.
+    {
+      key: 'review',
+      label: 'Review in ten minutes',
+      icon: 'review',
+      blurb: 'Seven stops, each one live, ending at the resume.',
+      featured: true,
+      featuredRank: 4,
+      banner: true,
+      inRail: true,
+      onLanding: true,
+    },
+    // #endregion review-action
+    // Third: every LinkedIn post kept in full. The home page's Latest posts band is its tile.
     {
       key: 'blog',
       label: 'Blog',
@@ -196,6 +211,8 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       blurb: 'Twelve years of full stack .NET on one page, opens as a PDF.',
       featured: true,
       featuredRank: 3,
+      // Under Inventory and Author, beside the review route's banner, the resume first.
+      banner: true,
       inRail: true,
       onLanding: true,
     },

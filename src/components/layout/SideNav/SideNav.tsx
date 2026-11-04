@@ -38,6 +38,10 @@ export type SideNavProps = {
   onHome: () => void;
   /** The landing page is what shows: the Home row reads as current. */
   homeOpen: boolean;
+  /** The review route is the view: its row, under Home, reads as current. */
+  reviewOpen: boolean;
+  /** Opens the review route. */
+  onOpenReview: () => void;
   /** The blog is the view: the Blog row reads as current. */
   blogOpen: boolean;
   /** Opens the blog. */
@@ -183,6 +187,8 @@ function NavContent({
   onToggleCollapsed,
   onHome,
   homeOpen,
+  reviewOpen,
+  onOpenReview,
   blogOpen,
   onOpenBlog,
   blogBadge,
@@ -253,6 +259,7 @@ function NavContent({
           iconsOnly={iconsOnly}
           views={{
             home: { current: homeOpen, open: onHome },
+            review: { current: reviewOpen, open: onOpenReview },
             blog: { current: blogOpen, open: onOpenBlog },
             inventory: { current: inventoryOpen, open: onOpenInventory },
             account: { current: accountOpen, open: onOpenAccount },

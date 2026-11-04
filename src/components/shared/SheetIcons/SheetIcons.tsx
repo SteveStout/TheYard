@@ -66,6 +66,9 @@ export function RowIcon({ kind, className }: { kind: RowKind; className?: string
  */
 const NAV_PATHS: Record<NavIcon, string> = {
   home: 'M3.5 9.5 10 4l6.5 5.5M5.5 8v7.5a1 1 0 0 0 1 1h2.5v-4.5h2v4.5h2.5a1 1 0 0 0 1-1V8',
+  // Three stops on a line, the last one filled: the route ends at the resume.
+  review:
+    'M2 10a2 2 0 1 0 4 0 2 2 0 1 0-4 0zM6 10h2M8 10a2 2 0 1 0 4 0 2 2 0 1 0-4 0zM12 10h2M14 10a2 2 0 1 0 4 0 2 2 0 1 0-4 0zM15.4 10a.6.6 0 1 0 1.2 0 .6.6 0 1 0-1.2 0z',
   blog: 'M5 3.5h7l3 3v10H5zM12 3.5v3h3M7.5 9.5h5M7.5 12h5M7.5 14.5h3',
   inventory:
     'M3.5 12.5v-2l1.8-4a1.5 1.5 0 0 1 1.4-1h6.6a1.5 1.5 0 0 1 1.4 1l1.8 4v2a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM3.5 10.5h13M6 15.5v-2M14 15.5v-2',
