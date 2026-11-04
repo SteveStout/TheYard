@@ -49,7 +49,7 @@ public sealed class NetworkLogMergeTests
         Assert.Equal(T0.AddDays(6), merged.LastOutboundAt);
         Assert.Equal("Platform role", merged.LastSubject);
         Assert.Equal(Channel.Email, merged.LastChannel);
-        Assert.Equal(["t2", "t1"], merged.ThreadIds);
+        Assert.Equal(["t1", "t2"], merged.ThreadIds);
         Assert.Equal(7, merged.Id);
     }
 
@@ -61,6 +61,7 @@ public sealed class NetworkLogMergeTests
         Assert.Equal(T0.AddDays(6), merged.LastOutboundAt);
         Assert.Equal("Coffee", merged.LastSubject);
         Assert.Equal(Channel.LinkedIn, merged.LastChannel);
+        Assert.Equal(["t2", "t1"], merged.ThreadIds);
     }
 
     [Theory]

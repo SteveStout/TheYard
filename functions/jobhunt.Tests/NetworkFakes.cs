@@ -103,6 +103,9 @@ public static class NetworkFakes
         /// <summary>The drafts it holds.</summary>
         public HashSet<string> Existing { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>When true, a draft written is not held, so its read back fails.</summary>
+        public bool Forget { get; set; }
+
         /// <summary>The drafts asked after.</summary>
         public List<string> Asked { get; } = [];
 
@@ -118,7 +121,10 @@ public static class NetworkFakes
         {
             Written.Add(draft);
             string id = $"r-{Written.Count}";
-            Existing.Add(id);
+            if (!Forget)
+            {
+                Existing.Add(id);
+            }
             return Task.FromResult((id, $"m-{Written.Count}"));
         }
 

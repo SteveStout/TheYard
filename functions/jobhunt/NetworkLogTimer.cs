@@ -67,12 +67,12 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
                 run.Came("blocked", "no_table");
                 return;
             }
-            if (Held(today, now) is { } held)
+            string modeName = mode == NetworkMode.On ? "on" : "shadow";
+            if (Held(today, modeName, now) is { } held)
             {
                 run.Came("unchanged", held);
                 return;
             }
-            string modeName = mode == NetworkMode.On ? "on" : "shadow";
             await database.StartPassAsync(day, modeName, now, ct);
             IDraftWriter drafts = mode == NetworkMode.On ? new GmailDrafts(http, google) : new NoDraftWriter();
             var result = await new NetworkLogPass(database, new GmailThreads(http, google), drafts, store, time).RunAsync(mode, await database.OpenThreadIdsAsync(ct), ct);
@@ -93,11 +93,16 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
         }
     }
 
-    /// <summary>Why the day's pass does not run now, or null when it should: already finished, or still running.</summary>
-    public static string? Held(PassRow? today, DateTimeOffset now) => today switch
+    /// <summary>
+    /// Why the day's pass does not run now, or null when it should: already finished in this mode, or still running.
+    /// A day finished in shadow runs once more when the switch reads `on`, so a Monday flipped after the 6 o'clock pass
+    /// builds its real drafts the next hour; the ingest is idempotent, and a row is drafted only once.
+    /// </summary>
+    public static string? Held(PassRow? today, string mode, DateTimeOffset now) => today switch
     {
         null => null,
-        { FinishedAt: not null } => "already_ran",
+        { FinishedAt: not null } when today.Mode == mode => "already_ran",
+        { FinishedAt: not null } => null,
         _ when now - today.StartedAt < Crashed => "running",
         _ => null,
     };
