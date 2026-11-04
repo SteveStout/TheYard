@@ -1,6 +1,6 @@
 /**
  * Does:      Reads the address the page opened on into the views it names: the filters, the sort, the vehicle, the Admin
- *            card, the document and the reset token.
+ *            card, the document, the blog, the review route and the reset token.
  * Does not:  Keep any of them or write the address bar (useAddressBar.ts does both).
  * Used by:   useAddressBar.ts, loaders.ts.
  */
@@ -35,6 +35,8 @@ export function readFirstAddress(search: string) {
     /** The blog, ?view=blog, and one post on it, ?view=blog&post=solid-in-five-real-files. */
     blog: params.get('view') === 'blog',
     blogPost: blogPostFrom(params),
+    /** The review route, ?view=review (ADR: Ten minutes, seven stops). */
+    review: params.get('view') === 'review',
     /** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
     card,
     pin: pinFromAddress(params.get('pin')),

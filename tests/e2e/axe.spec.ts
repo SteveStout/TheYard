@@ -141,6 +141,17 @@ test.describe('WCAG 2.1 AA, on every view', () => {
     expect(await violations(page)).toEqual([]);
   });
 
+  // The review route (ADR: Ten minutes, seven stops): three states of a stop on one page, the ring and the pills.
+  test('the review route', async ({ page }) => {
+    await openTheYard(page, '/?view=review');
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Ten minutes, seven stops' })
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Next stop' }).click();
+    await expect(page.getByTestId('review-do-this')).toHaveCount(1);
+    expect(await violations(page)).toEqual([]);
+  });
+
   test('the account view, signed out', async ({ page }) => {
     await openTheYard(page, '/?view=account');
     await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();

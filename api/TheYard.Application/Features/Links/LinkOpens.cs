@@ -67,15 +67,22 @@ public static class TaggedRequests
     /// <summary>The path the page reports its own open on.</summary>
     public const string PageReport = "/api/links/open";
 
-    /// <summary>The views the page may report: the home page and About Steven.</summary>
-    public static readonly IReadOnlyList<string> PageViews = ["/", "/about"];
+    /// <summary>The views the page may report: the home page, About Steven and the review route.</summary>
+    public static readonly IReadOnlyList<string> PageViews = ["/", "/about", ReviewView];
+
+    /// <summary>
+    /// The review route's page view, and its short door: /review answers a redirect to the view
+    /// with the code carried, and the page it lands on reports the open, so the door is not one.
+    /// </summary>
+    public const string ReviewView = "/review";
 
     /// <summary>The paths a sent link may name beside the page's views: the resume behind its door and the pass-throughs.</summary>
     public static readonly IReadOnlyList<string> SentPrefixes = ["/resume", "/api/go/"];
 
     /// <summary>Whether a path is one a sent link names, so a code on any other request (a cache-buster, a guess) is not an open.</summary>
     /// <param name="path">The request's path, with no query.</param>
-    public static bool IsSent(string path) => PageViews.Contains(path, StringComparer.Ordinal)
+    public static bool IsSent(string path) =>
+        (PageViews.Contains(path, StringComparer.Ordinal) && !string.Equals(path, ReviewView, StringComparison.Ordinal))
         || SentPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.Ordinal));
 
     /// <summary>The open this request is, or null when it is not one.</summary>

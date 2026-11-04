@@ -1,0 +1,34 @@
+/**
+ * Does:      Lays out the finish panel: its heading, the line on what the sidebar still holds, and its two actions.
+ * Does not:  Draw the panel's glass, rule or brackets (panels.css does) or the pills (ReviewPage.module.css does).
+ * Used by:   ReviewFinish.tsx.
+ */
+.finish {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.finish:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.heading {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.words {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

@@ -3,12 +3,12 @@
  *            page under both, the featured tiles, the section tiles under their group headings, each tile's badge,
  *            and the place of the quotations column.
  * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
- * Used by:   Landing.tsx.
+ * Used by:   Landing.tsx, LandingTile.tsx, LandingBanners.tsx.
  */
 /* The landing page: glass tiles with a round teal icon on a gold ring, the
-   three featured tiles large at the top, the sections under their group
+   two featured tiles large at the top, the sections under their group
    headings below them. Every value is a token. Tiles are glass without the blur
-   (a blur is paid for by the pixel, and there are eighteen); the three large
+   (a blur is paid for by the pixel, and there are eighteen); the two large
    tiles take the blur, as the intro strip does.
 
    The left column runs on one set of three columns, row after row: the featured
@@ -283,6 +283,12 @@
   .grid:has(> li:nth-child(4):last-child) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  /* Inventory and Author, the two photographs, share the strip's width half and half; the
+     banners under them do the same (LandingBanners.module.css). */
+  .featured {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Beside the quotations the left column is narrower than the page: about 550 px
@@ -309,6 +315,10 @@
     }
 
     .grid:has(> li:nth-child(4):last-child) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .featured {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
@@ -420,7 +430,7 @@
 
 .big {
   /* Stacked, as the section tiles are: the 88 px badge on top, the title and its line centred
-     under it. The three sit in one grid row, which stretches each to the tallest, and the
+     under it. The two sit in one grid row, which stretches each to the tallest, and the
      shared minimum keeps them one height even when every line wraps to the same count. */
   display: flex;
   flex-direction: column;

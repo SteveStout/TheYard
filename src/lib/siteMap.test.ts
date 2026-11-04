@@ -81,11 +81,13 @@ describe('the site map', () => {
   });
 
   it('draws the landing page from the same map: Inventory and Author large, then the groups, then the actions', () => {
-    const { featured, groups, rest, grid } = landingTiles();
+    const { featured, banners, groups, rest, grid } = landingTiles();
     const name = (tile: (typeof grid)[number]) =>
       tile.kind === 'section' ? tile.section.menu : tile.action.key;
-    // Inventory, Author, then the resume: the order a visitor reads them in (1.0.2.0).
-    expect(featured.map(name)).toEqual(['inventory', 'author', 'resume']);
+    // Inventory and Author, the two photographs; under them the two banners, the resume first
+    // (ADR: Ten minutes, seven stops).
+    expect(featured.map(name)).toEqual(['inventory', 'author']);
+    expect(banners.map(name)).toEqual(['resume', 'review']);
     expect(groups.map((group) => [group.label, group.tiles.map(name)])).toEqual([
       [
         'How it is built',
@@ -96,9 +98,19 @@ describe('the site map', () => {
     ]);
     // Sign in, Admin and GitHub last.
     expect(rest.map(name)).toEqual(['account', 'admin', 'repo']);
-    // The resume is a large tile now, not a sidebar row only (Steve, 2026-09-22).
+    // The resume is large on the landing page, not a sidebar row only, and drawn as a banner.
     const resume = SITE_MAP.actions.find((action) => action.key === 'resume')!;
-    expect([resume.featured, resume.onLanding, resume.inRail]).toEqual([true, true, true]);
+    expect([resume.featured, resume.banner, resume.onLanding, resume.inRail]).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
+    // Exactly two banners: the resume and the review route.
+    expect(SITE_MAP.actions.filter((action) => action.banner).map((action) => action.key)).toEqual([
+      'review',
+      'resume',
+    ]);
     expect(grid.map(name)).toEqual([
       ...MENU_ORDER.filter((menu) => menu !== 'author'),
       'account',
@@ -111,11 +123,20 @@ describe('the site map', () => {
       featured.map(
         (tile) => (tile.kind === 'section' ? tile.section.badgePhoto : tile.action.badgePhoto)?.src
       )
-    ).toEqual([
-      '/api/images/badges/inventory-176.jpg',
-      '/api/images/badges/steve-176.jpg',
-      undefined,
-    ]);
+    ).toEqual(['/api/images/badges/inventory-176.jpg', '/api/images/badges/steve-176.jpg']);
+  });
+
+  it('puts the review route directly under Home in the rail, so the Blog row is third', () => {
+    const rail = SITE_MAP.actions.filter((action) => action.inRail).map((action) => action.key);
+    expect(rail.slice(0, 3)).toEqual(['home', 'review', 'blog']);
+    const review = SITE_MAP.actions.find((action) => action.key === 'review')!;
+    expect(review).toMatchObject({
+      label: 'Review in ten minutes',
+      icon: 'review',
+      featured: true,
+      banner: true,
+      onLanding: true,
+    });
   });
 
   it('follows the map when the map changes, which is the point of it', () => {

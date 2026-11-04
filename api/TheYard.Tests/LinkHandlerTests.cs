@@ -95,6 +95,24 @@ public sealed class LinkHandlerTests
     }
 
     /// <summary>
+    /// Three page views a page reports its own open under: the home page, About Steven and the
+    /// review route (ADR: Ten minutes, seven stops). The route's short door, /review, answers a
+    /// redirect to the view with the code on it, so the door itself is not an open: the page it
+    /// lands on reports one, and a visit counts once.
+    /// </summary>
+    [Fact]
+    public async Task The_page_reports_three_views_and_the_review_door_is_counted_once_by_the_page_it_opens()
+    {
+        Assert.Equal(["/", "/about", "/review"], TaggedRequests.PageViews);
+        const string chrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0";
+        var review = TaggedRequests.OpenOf("GET", TaggedRequests.PageReport, "zzrev1", "/review", chrome, Noon, "sql");
+        Assert.Equal(new LinkOpen(Noon, "zzrev1", "/review", "sql"), review);
+        Assert.Null(TaggedRequests.OpenOf("GET", "/review", "zzrev1", null, chrome, Noon, "sql", 301));
+        Assert.False(TaggedRequests.IsSent("/review"));
+        Assert.True(await new ReportPageOpenHandler().HandleAsync(new ReportPageOpenCommand("zzrev1", "/review"), CancellationToken.None));
+    }
+
+    /// <summary>
     /// The document store's partial updates for one day's delta: every count by increment, a path
     /// as one JSON pointer step, a new path only while the row has room, and ten operations a patch.
     /// The live account runs them only on the site; the activity container has no test copy.

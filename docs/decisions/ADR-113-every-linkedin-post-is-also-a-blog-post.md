@@ -91,3 +91,7 @@ The body is a small Markdown: a line of one to three hashes is a heading, a line
 A link in the body is a way out of the post, so a click on it is kept the way the two actions already were: `click` with `body:` and the host it went to, as decision 3 named, never the address. `blogBody.test.ts` holds the reading: plain text whole, a heading, a list and a paragraph apart, bold, code and a link read, and a `javascript:` address refused.
 
 What a post should carry, written for the page: the date of what it answers rather than "yesterday", the reference as a link in the sentence that uses it, and a References list at the end with the source, the code and the record, so the page stands on its own after the LinkedIn post has scrolled away.
+
+## Addendum, 2026-11-03 (1.0.4.130): the Blog row is third
+
+What stopped being true on this day: the Blog row is no longer directly under Home. The review route (ADR: Ten minutes, seven stops) takes the row under Home, so the rail reads Home, Review in ten minutes, Blog. The row, its NEW POST and the home page's Latest posts band are otherwise as above; `blog.spec.ts` holds the new order.

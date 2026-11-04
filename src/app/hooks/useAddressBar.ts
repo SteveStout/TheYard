@@ -2,7 +2,7 @@
  * Does:      Holds the open view (the page, the vehicle, the Admin card, the document, the filters and sort)
  *            and keeps the address bar in step with it, both ways: the first-load reads, deep links, Back and Forward.
  * Does not:  Decide when a view opens (useNavigation.ts does), fetch the vehicle list, or draw anything.
- * Used by:   App.tsx, useNavigation.ts, useBlogNavigation.ts, useInventory.ts, useOpenVehicle.ts.
+ * Used by:   App.tsx, useNavigation.ts, useBlogNavigation.ts, useReviewNavigation.ts, useInventory.ts, useOpenVehicle.ts.
  */
 import { useEffect, useRef, useState } from 'react';
 import { fetchVehicleById } from '../../lib/data';
@@ -41,6 +41,7 @@ export type HistoryEntry = {
   viaAccount?: boolean;
   viaDoc?: boolean;
   viaBlog?: boolean;
+  viaReview?: boolean;
   viaHome?: boolean;
   from?: BackTo;
   benchDepth?: number;
@@ -79,6 +80,8 @@ export function useAddressBar() {
   /** The blog (ADR: Every LinkedIn post is also a blog post), ?view=blog, and the post open on it. */
   const [blogOpen, setBlogOpen] = useState(first.blog);
   const [blogPost, setBlogPost] = useState<string | null>(first.blogPost);
+  /** The review route (ADR: Ten minutes, seven stops), ?view=review. */
+  const [reviewOpen, setReviewOpen] = useState(first.review);
 
   // #region url-mirror
   // Mirror the current view into the address bar: the filter GET parameters
@@ -92,7 +95,8 @@ export function useAddressBar() {
     if (deepLinkPending.current) return;
     // The landing page carries no filters: they belong to the inventory, and an
     // address with one in it opens the inventory (opensInventory).
-    const onLanding = !inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen && !blogOpen;
+    const onLanding =
+      !inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen && !blogOpen && !reviewOpen;
     const params = onLanding ? new URLSearchParams() : filtersToSearchParams(filters, sort);
     if (selectedVehicle) params.set('vehicle', selectedVehicle.id);
     const listOnly = inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen;
@@ -106,6 +110,7 @@ export function useAddressBar() {
     if (accountOpen) params.set('view', 'account');
     if (blogOpen) params.set('view', 'blog');
     if (blogOpen && blogPost !== null) params.set('post', blogPost);
+    if (reviewOpen) params.set('view', 'review');
     if (openDocKey) params.set('doc', docSlug(openDocKey));
     const query = params.toString();
     window.history.replaceState(
@@ -125,6 +130,7 @@ export function useAddressBar() {
     inventoryOpen,
     blogOpen,
     blogPost,
+    reviewOpen,
   ]);
   // #endregion url-mirror
 
@@ -175,6 +181,7 @@ export function useAddressBar() {
       setAccountOpen(params.get('view') === 'account');
       setBlogOpen(params.get('view') === 'blog');
       setBlogPost(blogPostFrom(params));
+      setReviewOpen(params.get('view') === 'review');
       setInventoryOpen(opensInventory(params));
       setOpenDocKey(docKeyForSlug(params.get('doc')));
       const vehicleId = params.get('vehicle');
@@ -194,7 +201,8 @@ export function useAddressBar() {
 
   // Where the reader is looking, worked out once for everything that asks:
   // nothing covers the page when no vehicle, Admin, Account or document is open.
-  const nothingCovers = !adminOpen && !accountOpen && !blogOpen && !selectedVehicle && !openDocKey;
+  const nothingCovers =
+    !adminOpen && !accountOpen && !blogOpen && !reviewOpen && !selectedVehicle && !openDocKey;
   /** The landing page is what shows. */
   const homeShowing = !inventoryOpen && nothingCovers;
   /** The inventory list is what shows. */
@@ -248,6 +256,8 @@ export function useAddressBar() {
     setBlogOpen,
     blogPost,
     setBlogPost,
+    reviewOpen,
+    setReviewOpen,
     homeShowing,
     listShowing,
     /** True while a ?vehicle= link from the first load is still being looked up. */

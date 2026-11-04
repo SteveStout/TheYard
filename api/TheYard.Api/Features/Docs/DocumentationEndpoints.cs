@@ -94,6 +94,12 @@ public static class DocumentationEndpoints
             .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
         #endregion resume-address
 
+        #region review-address
+        // The review route's short door (ADR: Ten minutes, seven stops): a permanent redirect to the
+        // view, carrying the link's query, so /review?r=<code> on a card reaches the page that reports it.
+        app.MapGet("/review", ReviewAtItsAddress).ExcludeFromDescription();
+        #endregion review-address
+
         return app;
     }
 
@@ -162,6 +168,15 @@ public static class DocumentationEndpoints
 
     private static PhysicalFileHttpResult Resume(HostPaths paths) =>
         TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");
+
+    /// <summary>The redirect to /?view=review with every other part of the request's query kept, in its order.</summary>
+    private static RedirectHttpResult ReviewAtItsAddress(HttpRequest request)
+    {
+        var kept = request.Query
+            .Where(pair => !string.Equals(pair.Key, "view", StringComparison.Ordinal))
+            .SelectMany(pair => pair.Value.Select(value => $"{Uri.EscapeDataString(pair.Key)}={Uri.EscapeDataString(value ?? "")}"));
+        return TypedResults.Redirect(string.Join("&", kept.Prepend("/?view=review")), permanent: true);
+    }
 
     private static PhysicalFileHttpResult ResumeAtItsAddress(HttpContext http, HostPaths paths, string? src)
     {
