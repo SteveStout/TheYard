@@ -790,6 +790,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-network-log-drafts-steve-sends</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/incidents</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

@@ -472,12 +472,19 @@ public sealed class CloudReadersTests
         var claude = new ClaudeSource(UsageLog(), TimeProvider.System);
         var storage = new StorageSource(azure, jobHunt, Nightly, new CostsInMemory(), new BlobListing("client-1", configured: true));
         var campaign = new CampaignSource(new Counts(CampaignRead()), _ => Task.FromResult<string?>(RecordedCloud.FunctionHost), _ => Task.FromResult<(string, string?)?>((RecordedCloud.Sql, "tenant-1")), "campaign-db");
+        var network = new NetworkSource(new NetworkCounts(new NetworkCountsRead(true, null, [(new DateOnly(2026, 10, 26), 2)], new Dictionary<string, int>(StringComparer.Ordinal) { ["Open"] = 3, ["Drafted"] = 1 })),
+            _ => Task.FromResult<string?>(RecordedCloud.FunctionHost), _ => Task.FromResult<(string, string?)?>((RecordedCloud.Sql, "tenant-1")), "campaign-db");
         var cards = ResourceCatalog.Cards(azure, directory, edge ?? new NetlifyEdge("netlify-token", "theyard-edge", new Uri("https://stevenstout.biz")), (7, "StandingPerVehicle"), Names,
-                sqlSite: null, nightly: nightly, planHour: null, claude: claude, storage: storage, blobLines: new BlobLines(1_000_000_000, 1_800_000_000, 24_000), campaign: campaign)
+                sqlSite: null, nightly: nightly, planHour: null, claude: claude, storage: storage, blobLines: new BlobLines(1_000_000_000, 1_800_000_000, 24_000), campaign: campaign, network: network)
             .Select(card => (card, (IResourceHistory)new MemoryResourceHistory("no document store in the test")))
             .ToList();
         var recorder = new CloudRecorder(cards, Build, TimeProvider.System, NullLogger<CloudRecorder>.Instance);
         return (new CloudReader(cards, recorder, (_, _) => Task.FromResult<double?>(1.5), TimeProvider.System), recorder, cards);
+    }
+
+    private sealed class NetworkCounts(NetworkCountsRead read) : INetworkCounts
+    {
+        public Task<NetworkCountsRead> ReadAsync(CancellationToken cancellation) => Task.FromResult(read);
     }
 
     /// <summary>The catalogue built here holds every key the host's does, so a card added is a card held.</summary>
@@ -487,7 +494,7 @@ public sealed class CloudReadersTests
         var (_, _, cards) = Cards();
 
         Assert.Equal(
-            ["sqldb", "cosmosdb", "registry", "insights", "share", "blob", "mail", "edge", "nightly", "claude", "campaign"],
+            ["sqldb", "cosmosdb", "registry", "insights", "share", "blob", "mail", "edge", "nightly", "claude", "campaign", "network"],
             cards.Select(entry => entry.Card.Key));
     }
 

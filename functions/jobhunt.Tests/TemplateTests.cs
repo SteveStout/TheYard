@@ -146,6 +146,19 @@ public sealed partial class TemplateTests
         Assert.Contains(Settings().GetValueOrDefault("EMAIL_CAMPAIGN") ?? "", new[] { "shadow", "on" });
     }
 
+    [Fact]
+    public void A_silent_network_pass_emails_Steve_once_a_day_after_the_six_o_clock_hour()
+    {
+        // Checked hourly, it can fire only in the 13:00 UTC hour, after 6 AM Central under either clock.
+        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
+        Assert.Contains("name: 'alert-jobhunt-network-silent'", bicep, StringComparison.Ordinal);
+        Assert.Contains("name == \"NetworkLogPass\"", bicep, StringComparison.Ordinal);
+        Assert.Contains("where hour == 13 and runs == 0", bicep, StringComparison.Ordinal);
+        Assert.Contains("[Function(\"NetworkLogPass\")]", File.ReadAllText(Path.Combine(Root(), "functions", "jobhunt", "NetworkLogTimer.cs")), StringComparison.Ordinal);
+        Assert.Contains(Settings().GetValueOrDefault("NETWORK_LOG") ?? "", new[] { "shadow", "on" });
+        Assert.Equal("off", Settings().GetValueOrDefault("NETWORK_LOG_ANY_HOUR"));
+    }
+
     /// <summary>The app settings the template lists, by name: each a one-line { name: 'X', value: ... } entry.</summary>
     [Fact]
     public void The_share_is_transaction_optimized_because_its_bill_is_its_transactions()

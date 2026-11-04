@@ -31,4 +31,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '123',
   },
+  adrNetworkLog: {
+    title: 'ADR: The network log drafts, Steve sends',
+    menuLabel: 'ADR: The network log drafts, Steve sends',
+    url: '/api/docs/adr-the-network-log-drafts-steve-sends',
+    kind: 'adr',
+    number: '124',
+  },
 } as const satisfies Record<string, RecordEntry>;

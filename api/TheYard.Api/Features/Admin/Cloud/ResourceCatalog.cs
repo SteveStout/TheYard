@@ -22,7 +22,8 @@ public static class ResourceCatalog
     /// <param name="storage">The job hunt's storage account's reader for the share and blob cards; null leaves both out, which only a test that builds the catalogue by hand does.</param>
     /// <param name="blobLines">The lines the blob card is read against, from configuration.</param>
     /// <param name="campaign">The email campaign's reads for its card; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null, CampaignSource? campaign = null)
+    /// <param name="network">The network log's reads for its card; null leaves the card out, as for the campaign.</param>
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null, CampaignSource? campaign = null, NetworkSource? network = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -175,6 +176,14 @@ public static class ResourceCatalog
             CampaignSource source = campaign;
             cards.Add(new("campaign", "plan", source.Database, CampaignSource.Readings, source.MinutesAsync, source.HourAsync, CampaignCard.View,
                 SpecSource: "functions/JobHunt.Database and the Function's settings", KindPrefix: "campaign-"));
+        }
+        if (network is not null)
+        {
+            // After the campaign: the network log (ADR: The network log drafts, Steve sends), its minutes the drafts
+            // waiting from the same database's card schema, kept under kinds of its own like the campaign's.
+            NetworkSource source = network;
+            cards.Add(new("network", "plan", source.Database, NetworkSource.Readings, source.MinutesAsync, source.HourAsync, NetworkCard.View,
+                SpecSource: "functions/JobHunt.Database and the Function's settings", KindPrefix: "network-"));
         }
         return cards;
     }
