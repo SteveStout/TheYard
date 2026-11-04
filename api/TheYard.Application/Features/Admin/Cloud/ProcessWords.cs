@@ -124,6 +124,11 @@ public static class ProcessWords
                 Add("sent", n => $"{n} sent");
                 Add("held", n => $"{n} held");
                 break;
+            case "NetworkLogPass":
+                Add("threads", n => $"{Plural(n, "thread")} read");
+                Add("upserted", n => $"{n} logged");
+                Add("drafted", n => $"{n} drafted");
+                break;
             case "MergerHealth":
                 Add("waiting", n => $"{n} waiting");
                 Add("past_5", n => $"{n} past 5 min");

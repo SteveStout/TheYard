@@ -77,7 +77,7 @@ public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<Me
         informational?.IndexOf('+', StringComparison.Ordinal) is int plus and >= 0 && plus < informational.Length - 1 ? informational[(plus + 1)..] : null;
 
     /// <summary>The processes' switches, by name, as the app's settings hold them: names and words only, never another setting.</summary>
-    public static readonly IReadOnlyList<string> SwitchNames = ["ATS_SWEEP", "LEADS", "LEADS_LIST", "TRIAGE", "REPLY_ON_HUMAN", "MERGER", "APPENDS", "TRACKER_SQL", "NIGHTLY_ANY_HOUR", "SHEET_MIRROR", "DAILY_CARD", "EMAIL_CAMPAIGN"];
+    public static readonly IReadOnlyList<string> SwitchNames = ["ATS_SWEEP", "LEADS", "LEADS_LIST", "TRIAGE", "REPLY_ON_HUMAN", "MERGER", "APPENDS", "TRACKER_SQL", "NIGHTLY_ANY_HOUR", "SHEET_MIRROR", "DAILY_CARD", "EMAIL_CAMPAIGN", "NETWORK_LOG", "NETWORK_LOG_ANY_HOUR"];
 
     /// <summary>Each switch's value, "off" when it is not set; a value that is not one plain word reads "set".</summary>
     public static IReadOnlyDictionary<string, string> Switches() => SwitchNames.ToDictionary(

@@ -153,6 +153,11 @@ What is not built: the mockup's per-process extras that come from somewhere othe
 The Function gains `CampaignSend` (ADR: The campaign sends, the model writes rows), hourly on the hour in UTC and acting in the 8 o'clock hour Central only, so the card gains its seventh section, "The email campaign", between the daily card and the health route, with its switch `EMAIL_CAMPAIGN` as the section's chip and its run line's counts as its sentence: leads open, eligible, written in shadow or sent, held. The counts only: no company, person or address reaches the run line, the card or the history. The next run reads the next 8 AM Central under either clock, and the health route's switch list carries `EMAIL_CAMPAIGN` so the card shows its word.
 
 
+## Addendum, 2026-11-04 (1.0.4.133): the eighth process, the network log
+
+The Function gains `NetworkLogPass` (functions/jobhunt/NetworkLogTimer.cs), hourly on the hour in UTC and acting once a Central day in the 6 o'clock hour Central, so the card gains its eighth section, "The network log", between the email campaign and the health route, with `NETWORK_LOG` as its chip and `NETWORK_LOG_ANY_HOUR` beside it, and its run line's counts as its sentence: threads read, logged, drafted. Counts only: no person, company, address or subject reaches the run line, the card or the history. The next run reads the next 6 AM Central under either clock, and the health route's switch list carries both switches.
+
+
 ## Addendum, 2026-10-26 (1.0.4.91): the Merger's sentence names the tracker's SQL copy
 
 ProcessWords' table for the Merger gains three counts the Merger has written since 1.0.4.74 (ADR: The tracker merger runs in Azure, the addendum of 1.0.4.91): `tracker_sql_written` ("the SQL copy in step" at 0, "N rows copied" above it), `tracker_sql_parity` ("parity same" at 1, "PARITY DIFFERENT" at 0) and `tracker_sql_failed` ("copy failed, retried next pass"). The runs query lists a Merger pass that carried a parity count, a failed copy or a copy of more than nothing, and the newest-run read adds one row, `MergerParity`, the newest Merger pass that checked parity, which the section's tone reads. A process section's tone can now be `warning` as well as good, info and off; the Merger is the only section that uses it.
