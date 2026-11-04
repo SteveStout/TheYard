@@ -4,8 +4,8 @@ namespace JobHunt.Server.Application.Features.Run;
 
 /// <summary>
 /// Reads the progress.tsv a lane keeps, the record of a send that survives a kill. It is read loosely, because a small
-/// model writes it, and a line it cannot read that speaks of a send is handed back, because a send nobody can read is
-/// worse than a send nobody wrote down.
+/// model writes it, and any line it cannot read is handed back, because a send nobody can read is worse than a send
+/// nobody wrote down.
 /// </summary>
 public static partial class ProgressFile
 {
@@ -34,7 +34,7 @@ public static partial class ProgressFile
                     rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));
                 }
             }
-            else if (line.Contains("sent", StringComparison.OrdinalIgnoreCase) && !Header().IsMatch(line))
+            else if (line.Trim().Length > 0 && !Header().IsMatch(line))
             {
                 unread.Add(line.Trim());
             }
@@ -42,7 +42,7 @@ public static partial class ProgressFile
         return (rows, unread);
     }
 
-    [GeneratedRegex(@"^\s*(?<row>\d+)(?:[\s|,:;]|<TAB>)+sent(?:(?:[\s|,:;]|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s*(?<row>\d+)(?:[\s|,:;]|<TAB>)+(?:sent|submitted|applied|invited|messaged)(?:(?:[\s|,:;]|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
     private static partial Regex Line();
 
     [GeneratedRegex(@"^\s*row(\t|<TAB>)", RegexOptions.IgnoreCase)]

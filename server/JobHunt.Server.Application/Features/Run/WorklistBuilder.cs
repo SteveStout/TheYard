@@ -62,6 +62,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         if (await NewestReplyQueueAsync(reads.Day, ct) is { } newest)
         {
             string queue = await share.ReadAsync(newest, ct);
+            dropped.AddRange(ReplyQueue.Unread(queue).Select(section => new Dropped($"{newest} section {section}", "holds text this program could not read as items; read it by hand")));
             string? drafts = ReplyQueue.DraftFolder(queue);
             foreach (ReplyItem item in ReplyQueue.Items(queue))
             {
@@ -171,7 +172,8 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             {
                 dropped.Add(new Dropped(what, reason));
             }
-            else if (candidate.Person.Length > 0 && kept.Any(other => PersonGate.Name(other.Person) == PersonGate.Name(candidate.Person)))
+            else if (kept.Any(other => candidate.Person.Length > 0 ? PersonGate.Name(other.Person) == PersonGate.Name(candidate.Person)
+                : candidate.Action == WorkAction.Invite && other.Action == WorkAction.Invite && ApplicationCap.Same(other.Company, candidate.Company)))
             {
                 dropped.Add(new Dropped(what, "already on this worklist"));
             }

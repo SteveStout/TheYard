@@ -230,4 +230,29 @@ public sealed class ClosedReqTests
         Assert.Single(rows);
         Assert.Single(unread);
     }
+
+    [Theory]
+    [InlineData("1\tsubmitted\tAcme\n")]
+    [InlineData("1\tapplied\tAcme\n")]
+    [InlineData("1\tinvited\tPat Lee\n")]
+    public void Another_verb_for_a_send_still_counts_as_one(string text)
+    {
+        Assert.Single(ProgressFile.Read(text).Rows);
+    }
+
+    [Fact]
+    public void Any_line_that_is_not_a_send_is_handed_back()
+    {
+        (var rows, var unread) = ProgressFile.Read("row\tsent\tperson\n\n1 done Acme\n");
+        Assert.Empty(rows);
+        Assert.Equal(["1 done Acme"], unread);
+    }
+
+    [Fact]
+    public void A_numbered_accept_list_is_read_and_a_section_it_cannot_read_is_named()
+    {
+        const string Queue = "## B. Accepts\n1. **Ashleigh Kibe**, NEW.\n2. **Paul Shearer**, carried.\n\n## C. RULE 58 follow-up windows\nRe-derived: PowerPlan 3130, AHEAD 3139.\n\n## D. Not owed\n";
+        Assert.Equal(["Ashleigh Kibe", "Paul Shearer"], ReplyQueue.Items(Queue).Select(item => item.Person));
+        Assert.Equal(["C"], ReplyQueue.Unread(Queue));
+    }
 }

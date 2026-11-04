@@ -209,7 +209,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
                 lines.Add($"DEFECT: a dry run reported row {claimed.Row} as sent; no record written, read the page.");
                 continue;
             }
-            RowResult named = claimed.Person is { Length: > 0 } ? claimed : claimed with { Person = row.Person };
+            RowResult named = row.Action == WorkAction.Apply ? claimed with { Person = null } : claimed.Person is { Length: > 0 } ? claimed : claimed with { Person = row.Person };
             string text = row.Action == WorkAction.Apply ? string.Empty : EvidenceCheck.Filled(list.Texts[row.Row], named.Person);
             var missing = EvidenceCheck.Missing(row.Action, text, named).Concat(EvidenceCheck.WrongPerson(row, named) is { } wrong ? [wrong] : []).ToList();
             string shot = await CopyShotAsync(folder, row.Row, named.Evidence?.Screenshot, lines, ct);

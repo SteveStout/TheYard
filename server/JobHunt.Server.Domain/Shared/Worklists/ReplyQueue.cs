@@ -36,6 +36,22 @@ public static partial class ReplyQueue
         return items;
     }
 
+    /// <summary>The sections, B or C, that hold text and gave no item, so a change in the queue's shape is said, not missed.</summary>
+    /// <param name="queue">linkedin-queue.md.</param>
+    public static IReadOnlyList<string> Unread(string queue)
+    {
+        var unread = new List<string>();
+        if (Section(queue, "B").Split('\n').Skip(1).Any(line => line.Trim().Length > 0) && !Accept().IsMatch(Section(queue, "B")))
+        {
+            unread.Add("B");
+        }
+        if (Section(queue, "C").Split('\n').Skip(1).Any(line => line.Trim().Length > 0) && !Window().IsMatch(Section(queue, "C")))
+        {
+            unread.Add("C");
+        }
+        return unread;
+    }
+
     /// <summary>The folder section C says holds its drafts, relative to the share, or null.</summary>
     /// <param name="queue">linkedin-queue.md.</param>
     public static string? DraftFolder(string queue) =>
@@ -81,7 +97,7 @@ public static partial class ReplyQueue
         return end < 0 ? queue[at..] : queue[at..end];
     }
 
-    [GeneratedRegex(@"(?m)^- \*\*([^*]+)\*\*")]
+    [GeneratedRegex(@"(?m)^(?:- |\d+\. )\*\*([^*]+)\*\*")]
     private static partial Regex Accept();
 
     [GeneratedRegex(@"(?m)^- Day \d+ \([^)]*\):\s*(.+)$")]

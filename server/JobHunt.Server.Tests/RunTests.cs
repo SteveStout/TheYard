@@ -895,4 +895,27 @@ public sealed class RunTests
         await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Messages), default);
         Assert.Contains("already on this worklist", morning.Share.Files["nightly/2026-11-03/0600-messages-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Two_leaders_at_one_company_are_never_invited_the_same_morning()
+    {
+        const string Text = "[First name],\n\nYour platform work at Northwind is close to what I built. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve";
+        var morning = new Morning(Quiet);
+        morning.Share.Files["linkedin-proof/QUEUE-qa-2026-11-04.md"] = $"### 1. Northwind Widgets: CONNECTION REQUEST to the engineering leader\n\n```\n{Text}\n```\n\n### 2. Northwind Widgets: CONNECTION REQUEST to the recruiter\n\n```\n{Text}\n```\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("already on this worklist", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_application_recovered_from_progress_keeps_the_company_out_of_the_person_column()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            morning.Share.Files["nightly/2026-11-03/0600-apply-sonnet-5-5/progress.tsv"] = "1\tsent\tAcme Dental\n";
+            return new ClaudeRun(137, true, null);
+        });
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.StartsWith("NA,", morning.Share.Files[Assert.Single(morning.TrackerRows())], StringComparison.Ordinal);
+    }
 }
