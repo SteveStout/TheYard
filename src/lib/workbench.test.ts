@@ -22,7 +22,7 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
 
   it('has every card once, under one of the six questions, in the order the slugs are listed', () => {
     expect(BENCH_CARDS.map((card) => card.slug)).toEqual([...CARD_SLUGS]);
-    expect(new Set(CARD_SLUGS).size).toBe(39);
+    expect(new Set(CARD_SLUGS).size).toBe(40);
     // The review route's card sits under the desk question, right after Who opened what.
     expect(BENCH_CARDS.filter((card) => card.question === 'desk').map((card) => card.slug)).toEqual(
       ['activity', 'links', 'review', 'blog', 'operator', 'reset']
@@ -48,6 +48,7 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
       'nightly',
       'claude',
       'campaign',
+      'network',
     ]);
     // The rail's groups never interleave: a question's cards sit together, in the questions' order.
     const order = BENCH_CARDS.map((card) => questions.indexOf(card.question));
@@ -89,7 +90,7 @@ describe('the workbench (ADR: The Admin tab, as a product, the addendum on the w
   });
 
   it('finds cards by every word typed, in the name, the slug or the question', () => {
-    expect(findCards('').length).toBe(39);
+    expect(findCards('').length).toBe(40);
     expect(findCards('timing').map((card) => card.slug)).toEqual(['timing']);
     expect(findCards('SQL').map((card) => card.slug)).toContain('sql');
     expect(findCards('what broke').map((card) => card.slug)).toEqual([
