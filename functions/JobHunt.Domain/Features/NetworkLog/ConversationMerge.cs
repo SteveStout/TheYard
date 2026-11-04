@@ -60,7 +60,7 @@ public static class ConversationMerge
             CompanyKey = stored.CompanyKey ?? read.CompanyKey,
             Email = stored.Email ?? read.Email,
             ProfileUrl = stored.ProfileUrl ?? read.ProfileUrl,
-            ThreadIds = [.. read.ThreadIds.Concat(stored.ThreadIds).Distinct(StringComparer.Ordinal).Take(20)],
+            ThreadIds = [.. (newer ? read.ThreadIds.Concat(stored.ThreadIds) : stored.ThreadIds.Concat(read.ThreadIds)).Distinct(StringComparer.Ordinal).Take(20)],
             FirstTwoWayAt = read.FirstTwoWayAt < stored.FirstTwoWayAt ? read.FirstTwoWayAt : stored.FirstTwoWayAt,
             LastInboundAt = lastIn,
             LastOutboundAt = lastOut,

@@ -72,7 +72,7 @@ public sealed class NetworkLogPassTests : IDisposable
         var pat = rows.Store["pat@acme.com"];
         Assert.Equal(Monday.AddDays(-30), pat.FirstTwoWayAt);
         Assert.Equal(Monday.AddDays(-2), pat.LastOutboundAt);
-        Assert.Equal(["t1", "t0"], pat.ThreadIds);
+        Assert.Equal(["t0", "t1"], pat.ThreadIds);
     }
 
     [Fact]
@@ -178,10 +178,12 @@ public sealed class NetworkLogPassTests : IDisposable
     public void A_day_runs_once_and_a_crashed_pass_is_run_again()
     {
         var now = Monday;
-        Assert.Null(NetworkLogTimer.Held(null, now));
-        Assert.Equal("already_ran", NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "shadow", now.AddHours(-5), now.AddHours(-5)), now));
-        Assert.Equal("running", NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "shadow", now.AddMinutes(-30), null), now));
-        Assert.Null(NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "shadow", now.AddHours(-3), null), now));
+        Assert.Null(NetworkLogTimer.Held(null, "shadow", now));
+        Assert.Equal("already_ran", NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "shadow", now.AddHours(-5), now.AddHours(-5)), "shadow", now));
+        Assert.Null(NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "shadow", now.AddHours(-5), now.AddHours(-5)), "on", now));
+        Assert.Equal("already_ran", NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "on", now.AddHours(-1), now.AddHours(-1)), "on", now));
+        Assert.Equal("running", NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "shadow", now.AddMinutes(-30), null), "shadow", now));
+        Assert.Null(NetworkLogTimer.Held(new PassRow(new DateOnly(2026, 11, 9), "shadow", now.AddHours(-3), null), "shadow", now));
         Assert.True(CentralClock.IsNetworkHour(new DateTimeOffset(2026, 11, 9, 12, 0, 0, TimeSpan.Zero)));
         Assert.True(CentralClock.IsNetworkHour(new DateTimeOffset(2026, 10, 26, 11, 30, 0, TimeSpan.Zero)));
         Assert.False(CentralClock.IsNetworkHour(new DateTimeOffset(2026, 11, 9, 11, 0, 0, TimeSpan.Zero)));

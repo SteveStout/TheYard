@@ -90,11 +90,13 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         var local = CentralClock.Local(now);
         if (local.DayOfWeek == DayOfWeek.Monday)
         {
-            await WouldDraftAsync(DateOnly.FromDateTime(local), open, now, tally, ct);
+            var monday = await new MondayDrafts(rows, gmail, drafts, share).RunAsync(mode, DateOnly.FromDateTime(local), open, now, ct);
+            (tally.Due, tally.Drafted, tally.RenderFailed) = (monday.Due, monday.Drafted, monday.RenderFailed);
         }
         var week = (await rows.StartsAsync(ct)).Count(at => IsoWeek.Of(DateOnly.FromDateTime(CentralClock.Local(at))) == IsoWeek.Of(DateOnly.FromDateTime(local)));
         int seconds = (int)time.GetElapsedTime(started).TotalSeconds;
         var extra = new List<(string, int)> { ("topics", topics.Applied), ("linkedin", tally.LinkedIn), ("backfill", first ? 1 : 0) };
+        extra.Add(("render_failed", tally.RenderFailed));
         if (tally.Cut > 0)
         {
             extra.Add(("cut", tally.Cut));
@@ -202,20 +204,6 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         return read;
     }
 
-    private async Task WouldDraftAsync(DateOnly monday, IReadOnlyList<Conversation> open, DateTimeOffset now, Tally tally, CancellationToken ct)
-    {
-        var batch = DueRule.Batch(open, now);
-        tally.Due = batch.Count;
-        var rendered = batch.Select(row =>
-        {
-            var draft = DraftTemplate.Render(row.FirstName, row.TopicLine ?? "", row.LastSubject ?? "");
-            return (row, draft, DraftTemplate.Check(draft));
-        }).ToList();
-        tally.Drafted = rendered.Count(r => r.Item3.Count == 0);
-        await share.EnsureFolderAsync(NetworkFiles.WouldDrafts, ct);
-        await share.WriteAsync(NetworkFiles.WouldDraftsPath(monday), TrackerCsvText.Encode(NetworkFiles.WouldDraftsText(monday, rendered)), ct);
-    }
-
     private async Task<string> TextAsync(string path, CancellationToken ct) =>
         await share.ExistsAsync(path, ct) ? TrackerCsvText.Decode(await share.ReadAsync(path, ct)) : string.Empty;
 
@@ -242,6 +230,9 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
 
         /// <summary>Drafts, or would-drafts, that passed their checks.</summary>
         public int Drafted { get; set; }
+
+        /// <summary>Due rows whose render failed a check.</summary>
+        public int RenderFailed { get; set; }
 
         /// <summary>LinkedIn spool rows read.</summary>
         public int LinkedIn { get; set; }
