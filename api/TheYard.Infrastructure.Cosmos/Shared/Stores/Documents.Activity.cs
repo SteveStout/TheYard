@@ -1,6 +1,7 @@
-// The two document shapes of the activity container: one store's requests in one UTC hour, and
-// one visitor token on one store on one day, both partitioned on the day. One file per
-// container, so what a container holds is one short file to open.
+// The document shapes of the activity container: one store's requests in one UTC hour, one
+// visitor token on one store on one day, one tagged code's opens on one day, and one visitor's
+// reach along the review route on one day, all partitioned on the day. One file per container,
+// so what a container holds is one short file to open.
 namespace TheYard.Infrastructure.Cosmos.Shared.Stores;
 
 // #region documents
@@ -136,3 +137,43 @@ public sealed class LinkOpenDocument
 }
 // #endregion link-open-document
 // #endregion documents
+
+/// <summary>
+/// One visitor's reach along the review route on one UTC day (ADR: Ten minutes, seven stops, the
+/// addendum on the reach rows): the fourth kind in the activity container, partitioned on the day
+/// like the link opens, with no expiry. The visitor is the stable keyed hash, never an address.
+/// </summary>
+public sealed class ReviewDocument
+{
+    /// <summary>The value of <see cref="Kind"/> on every reach document, which is how a query tells them from the rest.</summary>
+    public const string KindName = "review";
+
+    /// <summary>review:{day}:{hash}. Unique within the day partition.</summary>
+    public string Id { get; set; } = "";
+
+    /// <summary>Always <see cref="KindName"/> (<c>kind</c>).</summary>
+    public string Kind { get; set; } = KindName;
+
+    /// <summary>The UTC day, and the partition key (<c>day</c>).</summary>
+    public string Day { get; set; } = "";
+
+    /// <summary>The visitor's stable keyed hash (<c>hash</c>).</summary>
+    public string Hash { get; set; } = "";
+
+    /// <summary>The highest stop reached that day, 0 for opened (<c>stop</c>).</summary>
+    public int Stop { get; set; }
+
+    /// <summary>The first tagged code seen that day, or null (<c>code</c>).</summary>
+    public string? Code { get; set; }
+
+    /// <summary>The first report that day (<c>first_seen</c>).</summary>
+    public DateTimeOffset FirstSeen { get; set; }
+
+    /// <summary>The last report that day (<c>last_seen</c>).</summary>
+    public DateTimeOffset LastSeen { get; set; }
+
+    /// <summary>The id for a visitor on a day.</summary>
+    /// <param name="day">The UTC day.</param>
+    /// <param name="hash">The visitor's hash.</param>
+    public static string IdFor(string day, string hash) => $"review:{day}:{hash}";
+}

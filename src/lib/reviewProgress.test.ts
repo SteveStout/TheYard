@@ -4,6 +4,8 @@ import {
   emptyProgress,
   markReached,
   moveTo,
+  newlyReached,
+  reachBody,
   readProgress,
   REACHED_KEY,
   writeProgress,
@@ -69,5 +71,21 @@ describe('the review place, kept on the browser (ADR: Ten minutes, seven stops)'
     expect(once.reached).toEqual([2]);
     expect(markReached(once, 2)).toBe(once);
     expect(markReached(once, 9)).toBe(once);
+  });
+
+  it('builds the report the page sends: the stop, and the code only when it is one', () => {
+    expect(reachBody(0, 'zzrev1')).toEqual({ stop: 0, r: 'zzrev1' });
+    expect(reachBody(3, null)).toEqual({ stop: 3 });
+    expect(reachBody(3, 'Steve')).toEqual({ stop: 3 });
+  });
+
+  it('names the stops a move reached for the first time, each once, numbered as the route numbers them', () => {
+    expect(newlyReached({ current: 0, reached: [] }, { current: 1, reached: [0] })).toEqual([1]);
+    expect(newlyReached({ current: 1, reached: [0] }, { current: 2, reached: [0, 1] })).toEqual([
+      2,
+    ]);
+    expect(newlyReached({ current: 2, reached: [0, 1] }, { current: 1, reached: [0, 1] })).toEqual(
+      []
+    );
   });
 });

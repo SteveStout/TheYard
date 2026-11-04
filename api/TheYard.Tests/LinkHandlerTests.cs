@@ -1,4 +1,5 @@
 using TheYard.Application.Features.Links;
+using TheYard.Application.Shared.Links;
 
 namespace TheYard.Tests;
 

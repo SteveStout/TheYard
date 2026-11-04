@@ -4,6 +4,7 @@
  * own storage. Pure functions over anything shaped like Storage, every read and every write in a
  * try, because a private window throws and the page must work without a place kept. No React in here.
  */
+import { linkCode } from './links';
 import { REVIEW_STOPS } from './reviewStops';
 
 /** The key the current stop is kept under, its index from 0. */
@@ -72,4 +73,15 @@ export function moveTo(progress: ReviewProgress, index: number): ReviewProgress 
 export function markReached(progress: ReviewProgress, index: number): ReviewProgress {
   if (!isStop(index) || progress.reached.includes(index)) return progress;
   return { ...progress, reached: [...progress.reached, index].sort(byIndex) };
+}
+
+/** What the page sends to POST /api/review/reached: the stop (0 is opened, then 1 to 7), and the code only when it is one. */
+export function reachBody(stop: number, code: string | null): { stop: number; r?: string } {
+  const r = code === null ? null : linkCode(`?r=${encodeURIComponent(code)}`);
+  return r === null ? { stop } : { stop, r };
+}
+
+/** The stops a move reached for the first time, numbered as the route numbers them (1 to 7), each reported once. */
+export function newlyReached(before: ReviewProgress, after: ReviewProgress): number[] {
+  return after.reached.filter((index) => !before.reached.includes(index)).map((index) => index + 1);
 }

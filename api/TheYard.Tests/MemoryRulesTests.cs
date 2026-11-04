@@ -111,6 +111,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.Features.Accounts.MemoryResetLinks._kept"] = "reset links, each expiring in an hour and swept on every mint",
         ["TheYard.Application.Features.Visitors.MemoryVisitorStore._visitors"] = "the visitors of a site with no document store: one per stable hash, every person and scanner who has visited since the process started",
         ["TheYard.Application.Features.Links.MemoryLinkOpens._days"] = "one per tagged code per day it was opened; the operator sends a few dozen codes a week, and the site keeps none of this without a document store",
+        ["TheYard.Application.Features.Review.MemoryReviewStore._rows"] = "one per visitor per day on the review route, of a site with no document store, gone with the process",
         ["TheYard.Api.Features.Links.ConfiguredLinkTargets._targets"] = "the pass-through addresses configuration names, two, read once at startup",
         ["TheYard.Infrastructure.Cosmos.Shared.Auction.CosmosVehicleCatalogue._makeBySeedId"] = "the seed's two hundred ids and their makes",
         ["TheYard.Infrastructure.Cosmos.Shared.Stores.CosmosStore._physicalPartitions"] = "one per container, read at startup",

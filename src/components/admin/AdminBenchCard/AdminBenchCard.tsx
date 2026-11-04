@@ -12,45 +12,13 @@ import styles from '../AdminPanel/AdminPanel.module.css';
 import cardStyles from '../shared/card.module.css';
 import type { ErrorEntry, Fetched, Health, Machines } from '../shared/types';
 import { Absent } from '../shared/common';
+import { CARD_CHUNKS } from './cardChunks';
 
 // #region lazy-cards
-/**
- * Each card is its own code chunk. `lazy` means the card's code is not in the
- * Admin tab's own chunk, so the tab itself stays small: just the strip, the
- * rail and the strip's reads. Once the tab has mounted and the browser is
- * idle, every card's chunk is fetched ahead of the click (src/lib/prefetch.ts),
- * so choosing a card waits on its data and not on its code.
- */
-export const CARD_CHUNKS = {
-  OverviewCard: () => import('../OverviewCard/OverviewCard'),
-  HealthCard: () => import('../HealthCard/HealthCard'),
-  AzureCard: () => import('../AzureCard/AzureCard'),
-  PagesCard: () => import('../PagesCard/PagesCard'),
-  TestsCard: () => import('../TestsCard/TestsCard'),
-  TrafficSection: () => import('../TrafficCard/TrafficCard'),
-  TelemetryCard: () => import('../TelemetryCard/TelemetryCard'),
-  TimingCard: () => import('../TimingCard/TimingCard'),
-  BackendsCard: () => import('../BackendsCard/BackendsCard'),
-  ProofCard: () => import('../ProofCard/ProofCard'),
-  SpendCard: () => import('../SpendCard/SpendCard'),
-  MachinesCard: () => import('../MachinesCard/MachinesCard'),
-  FollowsCard: () => import('../FollowsCard/FollowsCard'),
-  PlanCard: () => import('../PlanCard/PlanCard'),
-  CloudResourceCard: () => import('../CloudResourceCard/CloudResourceCard'),
-  ExperimentCard: () => import('../ExperimentCard/ExperimentCard'),
-  SqlCard: () => import('../SqlCard/SqlCard'),
-  StoreCard: () => import('../StoreCard/StoreCard'),
-  IncidentsCard: () => import('../IncidentsCard/IncidentsCard'),
-  ForemanCard: () => import('../ForemanCard/ForemanCard'),
-  ErrorsCard: () => import('../ErrorsCard/ErrorsCard'),
-  LogCard: () => import('../LogCard/LogCard'),
-  KeptLogsCard: () => import('../KeptLogsCard/KeptLogsCard'),
-  ActivityCard: () => import('../ActivityCard/ActivityCard'),
-  LinksCard: () => import('../LinksCard/LinksCard'),
-  BlogCard: () => import('../BlogCard/BlogCard'),
-  OperatorCard: () => import('../OperatorCard/OperatorCard'),
-  ResetLinkCard: () => import('../ResetLinkCard/ResetLinkCard'),
-};
+// Each card is its own code chunk (cardChunks.ts). `lazy` means the card's code is not in the
+// Admin tab's own chunk, so the tab itself stays small: just the strip, the rail and the strip's
+// reads. Once the tab has mounted and the browser is idle, every card's chunk is fetched ahead of
+// the click (src/lib/prefetch.ts), so choosing a card waits on its data and not on its code.
 /** The Overview, its code fetched the first time it is drawn. */
 const OverviewCard = lazy(CARD_CHUNKS.OverviewCard);
 /** The Health card, its code fetched the first time it is drawn. */
@@ -99,6 +67,8 @@ const KeptLogsCard = lazy(CARD_CHUNKS.KeptLogsCard);
 const ActivityCard = lazy(CARD_CHUNKS.ActivityCard);
 /** The Who opened what card, its code fetched the first time it is drawn. */
 const LinksCard = lazy(CARD_CHUNKS.LinksCard);
+/** The review route card, its code fetched the first time it is drawn. */
+const ReviewCard = lazy(CARD_CHUNKS.ReviewCard);
 /** Blog analytics, its code fetched the first time it is drawn. */
 const BlogCard = lazy(CARD_CHUNKS.BlogCard);
 /** The Operator card, its code fetched the first time it is drawn. */
@@ -260,6 +230,8 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
         );
       case 'links':
         return <LinksCard tick={tick} />;
+      case 'review':
+        return <ReviewCard tick={tick} />;
       case 'blog':
         return <BlogCard tick={tick} />;
       case 'operator':
