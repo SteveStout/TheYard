@@ -285,4 +285,16 @@ public sealed class ClosedReqTests
     {
         Assert.Single(ProgressFile.Read(text).Unread);
     }
+
+    [Fact]
+    public void A_second_name_on_one_row_is_handed_back_whatever_comes_before_a_comma()
+    {
+        Assert.Single(ProgressFile.Read("3\tsent\tAcme, Jane Roe\n3\tsent\tAcme, John Doe\n").Unread);
+    }
+
+    [Fact]
+    public void A_bare_carriage_return_still_ends_a_line()
+    {
+        Assert.Equal(2, ProgressFile.Read("1\tsent\tJane Doe\r2\tsent\tBob Roe").Rows.Count);
+    }
 }

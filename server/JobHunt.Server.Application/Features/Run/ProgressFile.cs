@@ -15,7 +15,7 @@ public static partial class ProgressFile
     {
         var rows = new List<RowResult>();
         var unread = new List<string>();
-        foreach (string line in text.Split('\n').Select(line => line.TrimEnd('\r')))
+        foreach (string line in text.Split(['\n', '\r']))
         {
             Match sent = Line().Match(line);
             if (sent.Success && int.TryParse(sent.Groups["row"].Value, out int row))
@@ -23,7 +23,7 @@ public static partial class ProgressFile
                 string said = sent.Groups["person"].Value.Trim();
                 if (rows.FirstOrDefault(known => known.Row == row) is { } first)
                 {
-                    if (PersonGate.Name(first.Person ?? string.Empty) != PersonGate.Name(said))
+                    if (Plain(first.Person) != Plain(said))
                     {
                         unread.Add(line.Trim());
                     }
@@ -41,6 +41,11 @@ public static partial class ProgressFile
         }
         return (rows, unread);
     }
+
+    private static string Plain(string? person) => Space().Replace(person ?? string.Empty, " ").Trim().ToLowerInvariant();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Space();
 
     [GeneratedRegex(@"^\s*(?:row\s*)?(?<row>\d+)(?:[\s|,:;]|<TAB>)+(?:sent|submitted|applied|invited|messaged)(?:(?:[\s|,:;]|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
     private static partial Regex Line();

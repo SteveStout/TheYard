@@ -44,9 +44,11 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     /// <param name="ct">Stops the build.</param>
     public async Task<Worklist> InvitesAsync(DayReads reads, int room, bool dry, CancellationToken ct)
     {
-        var candidates = reads.Queues.Where(block => block.Action == WorkAction.Invite)
-            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.Ordinal) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, string.Empty, block.Source));
-        return await FinishAsync(candidates, reads, candidate => reads.Gate.Invite(candidate.Person, candidate.Company), room, dry, ct);
+        var blocks = reads.Queues.Where(block => block.Action == WorkAction.Invite).ToList();
+        var heading = blocks.ToDictionary(block => block.Source, block => block.Person, StringComparer.Ordinal);
+        var candidates = blocks
+            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.OrdinalIgnoreCase) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, string.Empty, block.Source));
+        return await FinishAsync(candidates, reads, candidate => reads.Gate.Invite(candidate.Person, candidate.Company) ?? HeadingGate(reads, candidate, heading), room, dry, ct);
     }
 
     /// <summary>The message worklist.</summary>
@@ -251,6 +253,11 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         }
         return await prose.CleanAsync(candidate.Text, ct) ? null : "text failed check_aiisms.py";
     }
+
+    private static string? HeadingGate(DayReads reads, Candidate candidate, IReadOnlyDictionary<string, string> heading) =>
+        candidate.Person.Length == 0 && heading.TryGetValue(candidate.Source, out string? named) && named.Length > 0 && reads.Gate.Invite(named, candidate.Company) is { } why
+            ? $"the heading names {named}: {why}"
+            : null;
 
     private static string Profile(DayReads reads, string person, string company) =>
         reads.Rows.Where(row => row.Length >= 7 && string.Equals(row[1].Trim(), person, StringComparison.OrdinalIgnoreCase) && ApplicationCap.Same(row[2], company))

@@ -943,4 +943,43 @@ public sealed class RunTests
         string[] rows = [.. morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"].Split('\n').Where(line => line.Contains("Northwind", StringComparison.Ordinal))];
         Assert.Equal("", Assert.Single(rows).Split('\t')[1]);
     }
+
+    [Fact]
+    public async Task A_progress_name_that_differs_from_the_result_on_the_same_row_holds_the_lane()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (IsRecount(request))
+            {
+                return Quiet(request);
+            }
+            morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/progress.tsv"] = "1\tsent\tJohn Other\n";
+            return Answer(Result(Row(1, "sent", "Sam Roe", Evidence)));
+        });
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.Contains("John Other", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_placeholder_in_any_case_leaves_the_name_to_the_lane()
+    {
+        const string Text = "[First Name],\n\nYour platform work at Northwind is close to what I built. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve";
+        var morning = new Morning(Quiet);
+        morning.Share.Files["linkedin-proof/QUEUE-qa-2026-11-04.md"] = $"### 1. VP Eng, Northwind Widgets: CONNECTION REQUEST\n\n```\n{Text}\n```\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        string row = morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"].Split('\n').Single(line => line.Contains("Northwind", StringComparison.Ordinal));
+        Assert.Equal("", row.Split('\t')[1]);
+    }
+
+    [Fact]
+    public async Task A_heading_name_already_invited_holds_its_placeholder_block()
+    {
+        const string Text = "[First name],\n\nYour platform work at Northwind is close to what I built. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve";
+        string tracker = Fixture.Read("tracker.csv") + "3500,Jane Quill,Beta Corp,LinkedIn,6/1/2026,,CONNECTION REQUEST SENT by Claude.\n";
+        var morning = new Morning(Quiet, tracker);
+        morning.Share.Files["linkedin-proof/QUEUE-qa-2026-11-04.md"] = $"### 1. Jane Quill, Northwind Widgets: CONNECTION REQUEST\n\n```\n{Text}\n```\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.DoesNotContain("Northwind", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"], StringComparison.Ordinal);
+    }
 }

@@ -154,6 +154,13 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             lines.Add("The model gave no structured result; progress.tsv read instead, and every send in it stands UNVERIFIED.");
             return progress.Count == 0 ? null : new LaneResult(progress, start.LiveCount, "none", null, null);
         }
+        foreach (RowResult written in progress.Where(row => row.Person is { Length: > 0 }))
+        {
+            if (result.Rows.FirstOrDefault(reported => reported.Row == written.Row && reported.Outcome == "sent") is { Person: { Length: > 0 } said } && PersonGate.Name(said) != PersonGate.Name(written.Person!))
+            {
+                lines.Add($"DEFECT: progress.tsv names {written.Person} on row {written.Row} and the result names {said}; read the page");
+            }
+        }
         var missing = progress.Where(row => !result.Rows.Any(reported => reported.Row == row.Row && reported.Outcome == "sent")).ToList();
         if (missing.Count > 0)
         {
