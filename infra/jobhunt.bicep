@@ -260,6 +260,11 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // Steve's Gmail, at most ten a day with a three, five, ten start; anything else is off. 'on' is Steve's
         // switch after seven mornings of shadow, never a deploy's.
         { name: 'EMAIL_CAMPAIGN', value: 'shadow' }
+        // The network log (functions/jobhunt/NetworkLogTimer.cs), in the 6 o'clock hour Central: 'shadow' logs every
+        // two-way conversation and writes the Monday would-drafts to the share; 'on' writes Gmail drafts under
+        // Follow-up/Ready and never sends; anything else is off. NETWORK_LOG_ANY_HOUR 'on' lets a pass run outside the hour.
+        { name: 'NETWORK_LOG', value: 'shadow' }
+        { name: 'NETWORK_LOG_ANY_HOUR', value: 'off' }
         { name: 'CAMPAIGN_SQL', value: campaignSql }
       ]
     }

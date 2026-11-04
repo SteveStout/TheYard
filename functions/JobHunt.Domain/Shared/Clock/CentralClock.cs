@@ -27,6 +27,12 @@ public static class CentralClock
     /// </summary>
     public static bool IsCampaignHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 8;
 
+    /// <summary>
+    /// The network log's hour: the 6 o'clock hour in Central, asked as a local hour for the same reason as the
+    /// campaign's, so the daily pass lands before the morning and before the 8 AM send on both sides of the clock change.
+    /// </summary>
+    public static bool IsNetworkHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 6;
+
     /// <summary>The run this hour starts, or null when the hour is not a slot.</summary>
     public static string? Slot(DateTimeOffset utcNow) => NightlySlots.Slot(utcNow);
 }

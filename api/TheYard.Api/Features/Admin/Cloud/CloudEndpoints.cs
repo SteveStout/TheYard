@@ -21,12 +21,12 @@ public static class CloudEndpoints
         // #endregion resource-endpoint
         // #region process-runs-endpoint
         // Public like the card: a run's when, how long, what it came to and its counts, nothing the card and
-        // the Function's own health route do not already show. A name not among the seven is a 404 problem, so
+        // the Function's own health route do not already show. A name not among the eight is a 404 problem, so
         // the route cannot be asked to read anything the processes' table does not name.
         app.MapGet("/api/admin/cloud/nightly/runs/{process}", Runs)
             .WithName("GetProcessRuns")
             .WithTags("Admin")
-            .WithSummary("One page of one of the job hunt Function's seven processes' runs, newest first, for 24h, 7d or 30d");
+            .WithSummary("One page of one of the job hunt Function's eight processes' runs, newest first, for 24h, 7d or 30d");
         // #endregion process-runs-endpoint
         // #region nightly-run-endpoint
         // One run of the nightly workflow, posted by the workflow that ran it (ADR: The Nightly
@@ -59,7 +59,7 @@ public static class CloudEndpoints
     private static async Task<Results<Ok<ProcessRunsPage>, ProblemHttpResult>> Runs(string process, string? window, int? page, ReadProcessRunsHandler handler, CancellationToken cancellation) =>
         await handler.HandleAsync(new ReadProcessRunsQuery(process, window, page), cancellation) is { } runs
             ? TypedResults.Ok(runs)
-            : TypedResults.Problem(detail: "The job hunt's Function has no process by that name; the seven are AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend and MergerHealth.", statusCode: 404, title: "No such process");
+            : TypedResults.Problem(detail: "The job hunt's Function has no process by that name; the eight are AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend, NetworkLogPass and MergerHealth.", statusCode: 404, title: "No such process");
 
     private static async Task<Ok<IncidentsReport>> Incidents(ReadIncidentsHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadIncidentsQuery(), cancellation));
