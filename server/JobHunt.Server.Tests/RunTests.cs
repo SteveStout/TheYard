@@ -932,4 +932,15 @@ public sealed class RunTests
         Assert.Single(list.Split('\n'), line => line.Contains("Northwind Widgets", StringComparison.Ordinal));
         Assert.Single(list.Split('\n'), line => line.Contains("Northwind Gadgets", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public async Task A_heading_that_names_a_role_and_not_a_person_is_still_a_row_the_lane_names()
+    {
+        const string Text = "[First name],\n\nYour platform work at Northwind is close to what I built. My work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve";
+        var morning = new Morning(Quiet);
+        morning.Share.Files["linkedin-proof/QUEUE-qa-2026-11-04.md"] = $"### 1. Engineering leader, Northwind Widgets: CONNECTION REQUEST\n\n```\n{Text}\n```\n\n### 2. Recruiter, Northwind Widgets: CONNECTION REQUEST\n\n```\n{Text}\n```\n";
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        string[] rows = [.. morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"].Split('\n').Where(line => line.Contains("Northwind", StringComparison.Ordinal))];
+        Assert.Equal("", Assert.Single(rows).Split('\t')[1]);
+    }
 }

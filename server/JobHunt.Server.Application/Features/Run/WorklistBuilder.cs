@@ -34,6 +34,7 @@ public sealed record Worklist(IReadOnlyList<WorkRow> Rows, IReadOnlyDictionary<i
 public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IProseCheck prose, IResumeBuilder resumes, ServerConfig config)
 {
     private const string DryCode = "dryrun";
+    private const string Placeholder = "[First name]";
     private const int NewestQueueDays = 4;
 
     /// <summary>The invite worklist.</summary>
@@ -44,7 +45,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     public async Task<Worklist> InvitesAsync(DayReads reads, int room, bool dry, CancellationToken ct)
     {
         var candidates = reads.Queues.Where(block => block.Action == WorkAction.Invite)
-            .Select(block => new Candidate(block.Person, block.Company, WorkAction.Invite, block.Text, string.Empty, block.Source));
+            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.Ordinal) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, string.Empty, block.Source));
         return await FinishAsync(candidates, reads, candidate => reads.Gate.Invite(candidate.Person, candidate.Company), room, dry, ct);
     }
 

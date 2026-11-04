@@ -260,12 +260,29 @@ public sealed class ClosedReqTests
     [InlineData("row_number\tstatus\tperson\n")]
     [InlineData("row,status,person\n")]
     [InlineData("```\n")]
-    [InlineData("2\tskipped\tPat Lee\n")]
-    [InlineData("3 failed no toast\n")]
-    public void A_header_a_fence_or_a_row_that_did_not_send_holds_nothing(string text)
+    public void A_header_or_a_fence_holds_nothing(string text)
     {
         (var rows, var unread) = ProgressFile.Read(text);
         Assert.Empty(rows);
         Assert.Empty(unread);
+    }
+
+    [Theory]
+    [InlineData("row 3\tsent\tKim Park\n")]
+    [InlineData("Row 3, sent, Kim Park\n")]
+    [InlineData("row3 | sent | Acme\n")]
+    public void A_send_line_that_says_row_before_its_number_is_a_send(string text)
+    {
+        Assert.Single(ProgressFile.Read(text).Rows);
+    }
+
+    [Theory]
+    [InlineData("3\tfailed\tKim Park (click landed)\n")]
+    [InlineData("2\tskipped\tPat Lee\n")]
+    [InlineData("row one was sent to Jane\n")]
+    [InlineData("row three\tsent\tKim Park\n")]
+    public void Any_line_that_is_not_a_clean_send_is_handed_back(string text)
+    {
+        Assert.Single(ProgressFile.Read(text).Unread);
     }
 }
