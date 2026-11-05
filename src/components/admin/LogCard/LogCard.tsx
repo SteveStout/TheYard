@@ -6,7 +6,7 @@ import { More } from '../shared/More';
 import { CardState } from '../shared/CardState';
 import { Fragment } from 'react';
 import { type CardWindow, stampFor } from '../../../lib/keptCards';
-import { dottedParts } from '../../../lib/tableFit';
+import { addressParts, dottedParts } from '../../../lib/tableFit';
 import styles from '../shared/card.module.css';
 import type { LogEntry } from '../shared/types';
 import { useRead, useKeptWindow, failed, About } from '../shared/common';
@@ -30,9 +30,16 @@ const logColumns = (window_: CardWindow): Column<LogEntry>[] => [
   },
   {
     name: 'Message',
+    // A message may carry a token longer than the column (an address, a stack frame): it breaks at its own
+    // punctuation, and the words stay whole.
     cell: (entry) => (
       <>
-        {entry.message}
+        {addressParts(entry.message).map((part, at) => (
+          <Fragment key={at}>
+            {at > 0 && <wbr />}
+            {part}
+          </Fragment>
+        ))}
         {entry.exception === null ? null : (
           <span className={styles.muted}> ({entry.exception})</span>
         )}
