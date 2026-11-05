@@ -25,7 +25,7 @@ public class ResumeAddressTests(WebApplicationFactory<Program> factory)
         var disposition = response.Content.Headers.ContentDisposition;
         Assert.NotNull(disposition);
         Assert.Equal("inline", disposition.DispositionType);
-        Assert.Equal("StevenStoutResume_2026-10-24.pdf", disposition.FileName?.Trim('"'));
+        Assert.Equal("StevenStoutResume_2026-11-05.pdf", disposition.FileName?.Trim('"'));
     }
 
     [Fact]
