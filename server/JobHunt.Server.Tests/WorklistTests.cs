@@ -236,4 +236,45 @@ public sealed class WorklistTests
     {
         Assert.Contains(TextCheck.Problems(line + Good, invite: true), problem => problem.Contains("live process", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void The_night_s_jobs_file_gives_its_ready_rows_and_no_row_of_any_other_table()
+    {
+        var rows = ApplyBoards.Confirmed("JOBS-2026-11-06.md", Fixture.Read("jobs.md"));
+        Assert.Equal(["Northwind", "Contoso"], rows.Select(row => row.Company));
+        Assert.Equal(["https://job-boards.greenhouse.io/northwind/jobs/7001", "https://jobs.lever.co/contoso/aa11"], rows.Select(row => row.Link));
+        Assert.Equal(["greenhouse", "lever"], rows.Select(row => row.Board));
+        Assert.All(rows, row => Assert.True(ApplyBoards.Reachable(row), row.Link));
+    }
+
+    [Fact]
+    public async Task A_jobs_file_beside_a_sweep_is_read_and_the_same_link_is_worked_once()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        morning.Share.Files.Remove("APPLY-SWEEP-2026-10-28-ainative.md");
+        morning.Share.Files["APPLY-SWEEP-2026-11-05-x.md"] = "## CONFIRMED LIVE\n| Company | Role | Link |\n|---|---|---|\n| Northwind | Principal Engineer, .NET Platform | https://job-boards.greenhouse.io/northwind/jobs/7001 |\n";
+        morning.Share.Files["JOBS-2026-11-06.md"] = Fixture.Read("jobs.md");
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        Assert.Single(list.Rows, row => row.Url == "https://job-boards.greenhouse.io/northwind/jobs/7001");
+        Assert.Contains(list.Rows, row => row.Url == "https://jobs.lever.co/contoso/aa11");
+        Assert.DoesNotContain(list.Rows, row => row.Url.Contains("fabrikam", StringComparison.Ordinal) || row.Url.Contains("tailspin", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_jobs_row_with_no_link_is_dropped_with_its_reason()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        morning.Share.Files["JOBS-2026-11-06.md"] = "## READY TO APPLY\n| # | Company | Role | Link | Board | Band | Posted | Notes |\n|---|---|---|---|---|---|---|---|\n| 1 | Northwind | Staff Engineer |  | greenhouse | RANGE Q FIRST | 2026-11-05 | |\n";
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        var dropped = Assert.Single(list.Dropped, d => d.What == "Northwind, Staff Engineer");
+        Assert.Equal("no link in the row (JOBS-2026-11-06.md:4), nothing to apply to", dropped.Reason);
+    }
 }

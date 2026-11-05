@@ -105,7 +105,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     public async Task<Worklist> ApplyAsync(DayReads reads, string? linkedInClosed, bool dry, CancellationToken ct)
     {
         var postings = new List<Posting>();
-        foreach (string pattern in new[] { "APPLY-SWEEP-*.md", "priority-jobs-*.md" })
+        foreach (string pattern in new[] { "APPLY-SWEEP-*.md", "priority-jobs-*.md", "JOBS-*.md" })
         {
             foreach (ShareFile file in (await share.ListAsync(string.Empty, pattern, ct)).Where(file => reads.Day.DayNumber - DateOnly.FromDateTime(file.Changed.UtcDateTime).DayNumber <= ApplyBoards.NewestDays))
             {
@@ -117,7 +117,11 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         var dropped = new List<Dropped>();
         var blockers = new List<Posting>();
         var candidates = new List<Candidate>();
-        foreach (Posting posting in postings.DistinctBy(posting => posting.Link))
+        foreach (Posting posting in postings.Where(posting => posting.Link.Trim().Length == 0))
+        {
+            dropped.Add(new Dropped($"{posting.Company}, {posting.Role}", $"no link in the row ({posting.Source}), nothing to apply to"));
+        }
+        foreach (Posting posting in postings.Where(posting => posting.Link.Trim().Length > 0).DistinctBy(posting => posting.Link))
         {
             string what = $"{posting.Company}, {posting.Role}";
             if (reads.Gate.Apply(posting.Company, posting.Link, posting.Role) is { } reason)
