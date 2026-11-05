@@ -55,6 +55,10 @@ def read_once(name, site, route, kind):
         for key in ("read_age_seconds", "tone", "cadence_seconds", "unread_after_seconds", "available"):
             if key in card:
                 line[key] = card[key]
+        # A view built for this read carries an as_of_ms inside the read's own seconds; a cached one is older, so
+        # the summary can tell a slow cache hit from a rebuild.
+        if isinstance(card.get("as_of_ms"), int):
+            line["built"] = time.time() * 1000 - card["as_of_ms"] < (seconds + 2) * 1000
         line["flagged"] = flagged(card)
     return line
 
@@ -96,9 +100,11 @@ def summary(args):
                 continue
             if args.since and line.get("at", "") < args.since:
                 continue
-            g = groups.setdefault((line["name"], line["route"]), {"status": {}, "cold": [], "warm": [], "unread": 0, "flags": {}})
+            g = groups.setdefault((line["name"], line["route"]), {"status": {}, "cold": [], "warm": [], "unread": 0, "flags": {}, "hit": [], "build": []})
             g["status"][line["status"]] = g["status"].get(line["status"], 0) + 1
             g[line.get("kind", "cold")].append(line["seconds"])
+            if "built" in line:
+                g["build" if line["built"] else "hit"].append(line["seconds"])
             if line.get("tone") == "unread":
                 g["unread"] += 1
             for text in line.get("flagged") or []:
@@ -109,6 +115,10 @@ def summary(args):
         warm = "/".join(str(pct(g["warm"], p)) for p in (50, 95, 100))
         statuses = ",".join(f"{k}x{v}" for k, v in sorted(g["status"].items()))
         print(f"{name:15} {route:30} {statuses:14} {cold:22} {warm:22} {g['unread']}")
+        if g["hit"] or g["build"]:
+            hit = "/".join(str(pct(g["hit"], p)) for p in (50, 95, 100))
+            build = "/".join(str(pct(g["build"], p)) for p in (50, 95, 100))
+            print(f"{'':15}   cached {len(g['hit'])} reads p50/p95/max {hit} · built {len(g['build'])} reads p50/p95/max {build}")
         for text, n in sorted(g["flags"].items()):
             print(f"{'':15}   flagged {n}x {text}")
     return 0
