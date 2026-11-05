@@ -127,6 +127,21 @@ public sealed class PostingsTests
         Assert.Equal(((int?)120000, (int?)150000), PostingSeed.Band("$120,000 - $150,000"));
     }
 
+    [Theory]
+    [InlineData("&lt;p&gt;Build &amp;amp; ship C#&lt;/p&gt;", "Build & ship C#")]
+    [InlineData("<div><p>Lead the  .NET\nplatform</p></div>", "Lead the .NET platform")]
+    [InlineData(null, "")]
+    public void A_board_s_description_is_kept_as_plain_text(string? html, string text) => Assert.Equal(text, PostingRules.Plain(html));
+
+    [Fact]
+    public void A_posting_s_hash_moves_with_its_text_and_its_band_source_says_ats_only_when_there_is_a_band()
+    {
+        var posting = BoardScan.Of("lever", "acme", Job("1", "Lead Engineer", 200000));
+        Assert.Equal(64, posting.ContentHash.Length);
+        Assert.NotEqual(posting.ContentHash, (posting with { Text = "other" }).ContentHash);
+        Assert.Equal(("ats", (string?)null), (posting.CompSource, BoardScan.Of("lever", "acme", Job("2", "Lead Engineer", null)).CompSource));
+    }
+
     private static BoardPosting Job(string id, string title, int? max) =>
         new(title, "text of " + title, new DateOnly(2026, 11, 1)) { Id = id, Url = "https://x/" + id, Location = "Remote", CompMin = max is null ? null : max - 40000, CompMax = max, CompCurrency = max is null ? null : "USD" };
 

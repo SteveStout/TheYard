@@ -161,7 +161,7 @@ file name.
 
 | shape | count |
 | --- | --- |
-| the Function's use cases | 23 |
+| the Function's use cases | 24 |
 | of them that only read | 2 |
 
 Read back by the Function's `CqrsTests` on every build, so these two cannot go stale either.
