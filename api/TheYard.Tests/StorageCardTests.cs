@@ -72,6 +72,28 @@ public sealed class StorageCardTests
         Assert.Equal("the alert's line is not read", empty.Dials[0].Absolute);
     }
 
+    /// <summary>
+    /// Every caller the hour's split names, not two of them: on 5 November the readout named SAS and the account key
+    /// beside 17,275 transactions in the hour and accounted for 69, so about 17,000 an hour carried a name the card
+    /// never printed. The line lists each value Azure returned with its count, the biggest first, and the walking row
+    /// says the same split.
+    /// </summary>
+    [Fact]
+    public void The_share_names_every_caller_the_hour_s_split_returns_with_its_count_the_biggest_first()
+    {
+        var facts = ShareFacts();
+        facts["auth_hour"] = "AccountKey=69;SAS=0;Unnamed=17206";
+        var card = ShareCard.View(Inputs(100, facts));
+
+        var line = card.Readout.Lines.Single(l => l.Label == "Every caller this hour");
+        Assert.Equal("Unnamed 17,206 · the account key (the job hunt's Function) 69 · SAS (the laptop's mount and the chats) 0", line.Value);
+        Assert.Equal("Azure Monitor, transactions by authentication", line.Source);
+        Assert.Contains("this clock hour Unnamed 17,206 · the account key (the job hunt's Function) 69 · SAS (the laptop's mount and the chats) 0 transactions", card.Rows[2].Detail[0].Text, StringComparison.Ordinal);
+
+        facts["auth_hour"] = "";
+        Assert.Equal("not read", ShareCard.View(Inputs(100, facts)).Readout.Lines.Single(l => l.Label == "Every caller this hour").Value);
+    }
+
     [Fact]
     public void An_hour_kept_before_the_bill_was_read_says_not_read_on_both_cards_never_a_day_that_cost_nothing()
     {
@@ -155,7 +177,7 @@ public sealed class StorageCardTests
 
         Assert.Equal((answer, tone), (walked.Answer, walked.Tone));
         Assert.Contains("amber over 7,000 an hour", walked.Detail[0].Text, StringComparison.Ordinal);
-        Assert.Contains("by SAS (the laptop's mount and the chats) 1,569 and by the account key (the job hunt's Function) 3,594", walked.Detail[0].Text, StringComparison.Ordinal);
+        Assert.Contains("this clock hour the account key (the job hunt's Function) 3,594 · SAS (the laptop's mount and the chats) 1,569 transactions", walked.Detail[0].Text, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -43,7 +43,11 @@ public sealed partial class CardFrameTests
         var registry = AcrCard.View(Inputs(new Dictionary<string, double?> { ["pulls"] = 10, ["pulls_ok"] = 8, ["pushes"] = 1 }, new Dictionary<string, string?>()));
         var pulled = registry.Rows.Single(r => r.Key == "pulled");
         Assert.Equal("warning", pulled.Tone);
+        // The answer names the failed pulls the tone judged, not the total beside a warning.
+        Assert.Equal("2 of 10 pulls failed", pulled.Answer);
         Assert.Contains("2 failed", pulled.Detail[0].Text, StringComparison.Ordinal);
+        var clean = AcrCard.View(Inputs(new Dictionary<string, double?> { ["pulls"] = 10, ["pulls_ok"] = 10 }, new Dictionary<string, string?>())).Rows.Single(r => r.Key == "pulled");
+        Assert.Equal(("10 pulls", "good"), (clean.Answer, clean.Tone));
     }
 
     [Fact]

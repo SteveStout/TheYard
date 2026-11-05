@@ -107,6 +107,9 @@ public sealed class CampaignCardTests
         var silentNoLeads = CampaignCard.View(Inputs(Facts("on", "2026-10-24,10,0,0,0", withAddress: "0"), sent: 0));
 
         Assert.Equal("alarm", bounced.Rows[0].Tone);
+        // A red answer names what made it red, never the sent count alone beside an alarm.
+        Assert.Equal("2 bounces today, 4 sent", bounced.Rows[0].Answer);
+        Assert.Equal("none sent by 9 AM, 4 ready", silent.Rows[0].Answer);
         Assert.Contains("2 bounces today: held in shadow until a person clears campaign/switch.log", bounced.Rows[0].Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal("alarm", silent.Rows[0].Tone);
         Assert.Contains("none sent by 9 AM with 4 ready", silent.Rows[0].Detail[0].Text, StringComparison.Ordinal);
