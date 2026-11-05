@@ -52,6 +52,10 @@ export type CloudReport = {
   thresholds: CloudChip[];
   /** How often the tab reads the card, in seconds. */
   refresh_seconds: number;
+  /** How often the card's source is read, in seconds: 60 or 3,600. Optional, so an older body still draws. */
+  cadence_seconds?: number;
+  /** How old the newest reading may be before the card reads unread, in seconds. */
+  unread_after_seconds?: number;
   chart: {
     title: string;
     /** Each series, with its own amber and red line when it has one, and each point its bucket's peak. */
@@ -142,6 +146,26 @@ export function portalSentence(href: string | null, long = false): string {
 
 export function cardToneWord(tone: CardTone): string {
   return tone === 'unread' ? 'not read' : tone;
+}
+
+/** Seconds as the cadence line says them: whole hours as "h", whole minutes as "min", else seconds. */
+function span(seconds: number): string {
+  if (seconds >= 3600 && seconds % 3600 === 0) return `${seconds / 3600} h`;
+  if (seconds >= 60 && seconds % 60 === 0) return `${seconds / 60} min`;
+  return `${seconds} s`;
+}
+
+/**
+ * The quiet line under the dials, from the cadence the server judges with: "read every minute, unread
+ * after 3 min", or "read every hour, unread after 3 h"; null when the body carries neither field.
+ */
+export function cadenceLine(
+  report: Pick<CloudReport, 'cadence_seconds' | 'unread_after_seconds'>
+): string | null {
+  const { cadence_seconds: cadence, unread_after_seconds: unread } = report;
+  if (cadence === undefined || unread === undefined) return null;
+  const every = cadence === 60 ? 'minute' : cadence === 3600 ? 'hour' : span(cadence);
+  return `read every ${every}, unread after ${span(unread)}`;
 }
 
 /** A chart's legend as chips: the server's sentence split at its middle dots. */

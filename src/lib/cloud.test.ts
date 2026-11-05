@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   angleOf,
   arcPath,
+  cadenceLine,
   cardToneWord,
   dayMarks,
   detailJoint,
@@ -114,5 +115,27 @@ describe("a row's detail line", () => {
     expect(detailJoint('kept in ', 'Cosmos DB')).toBe('');
     expect(detailJoint('no restart · 3 deploys in the window', ' · a blip at 12:01')).toBe('');
     expect(detailJoint('the plan', ', read every minute')).toBe('');
+  });
+});
+
+describe('the cadence line under the dials', () => {
+  it('says a minute card is read every minute and unread after three', () => {
+    expect(cadenceLine({ cadence_seconds: 60, unread_after_seconds: 180 })).toBe(
+      'read every minute, unread after 3 min'
+    );
+  });
+  it('says an hourly card is read every hour and unread after three hours', () => {
+    expect(cadenceLine({ cadence_seconds: 3600, unread_after_seconds: 10800 })).toBe(
+      'read every hour, unread after 3 h'
+    );
+  });
+  it('names any other cadence in its own unit', () => {
+    expect(cadenceLine({ cadence_seconds: 15, unread_after_seconds: 45 })).toBe(
+      'read every 15 s, unread after 45 s'
+    );
+  });
+  it('draws nothing for a body from before the cadence was on the wire', () => {
+    expect(cadenceLine({})).toBeNull();
+    expect(cadenceLine({ cadence_seconds: 60 })).toBeNull();
   });
 });

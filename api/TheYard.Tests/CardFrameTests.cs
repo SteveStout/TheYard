@@ -83,7 +83,7 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
     public async Task Every_card_answers_the_same_slots_and_every_line_and_row_names_its_source()
     {
         using var client = factory.CreateClient();
-        string[] slots = ["title", "resource", "tone", "spec", "spec_source", "headline", "dials", "sparks", "thresholds", "chart", "rows", "readout", "as_of_ms", "read_age_seconds", "refresh_seconds"];
+        string[] slots = ["title", "resource", "tone", "spec", "spec_source", "headline", "dials", "sparks", "thresholds", "chart", "rows", "readout", "as_of_ms", "read_age_seconds", "refresh_seconds", "cadence_seconds", "unread_after_seconds"];
         var cards = factory.Services.GetRequiredService<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>();
         Assert.NotEmpty(cards);
         foreach (string route in (string[])["/api/admin/plan", .. cards.Select(entry => $"/api/admin/cloud/{entry.Card.Key}")])
@@ -96,6 +96,36 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
             Assert.All(root.GetProperty("readout").GetProperty("lines").EnumerateArray(), line => Assert.False(string.IsNullOrEmpty(line.GetProperty("source").GetString()), $"{route}: {line.GetProperty("label")} names no source"));
             Assert.All(root.GetProperty("rows").EnumerateArray(), row => Assert.False(string.IsNullOrEmpty(row.GetProperty("source").GetString()), $"{route}: {row.GetProperty("key")} names no source"));
         }
+    }
+
+    /// <summary>
+    /// The cadence the tone rule judges with is the one the wire carries: a minute for a card read every
+    /// minute and an hour for an hourly one, read from the catalogue's own flag, and the unread line three
+    /// of those reads, so the page draws the rule the server applies and never a second copy of it.
+    /// </summary>
+    [Fact]
+    public async Task Every_card_says_how_often_it_is_read_and_when_it_reads_unread()
+    {
+        using var client = factory.CreateClient();
+        var cards = factory.Services.GetRequiredService<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>();
+        foreach (var (route, hourly) in (IEnumerable<(string, bool)>)[("/api/admin/plan", false), .. cards.Select(entry => ($"/api/admin/cloud/{entry.Card.Key}", entry.Card.Hourly))])
+        {
+            using var card = JsonDocument.Parse(await client.GetStringAsync(route));
+            int cadence = hourly ? 3_600 : 60;
+            Assert.Equal(cadence, card.RootElement.GetProperty("cadence_seconds").GetInt32());
+            Assert.Equal(CardTones.ReadsBeforeUnread * cadence, card.RootElement.GetProperty("unread_after_seconds").GetInt32());
+        }
+        Assert.Contains(cards, entry => entry.Card.Hourly);
+    }
+
+    [Fact]
+    public void The_cadence_on_the_wire_is_the_one_the_tone_rule_reads()
+    {
+        var report = new CloudReport("24h", ["1h", "24h"], true, null, 0, 200, "SQL", null, null, [], [], new CloudChart("", [], [], 90, "", 0), [], new CloudReadout("The database", null, "", [], ""));
+        var minute = CardFrame.Complete(report, null);
+        Assert.Equal((60, 180, "unread"), (minute.CadenceSeconds, minute.UnreadAfterSeconds, minute.Tone));
+        var hourly = CardFrame.Complete(report, null, hourly: true);
+        Assert.Equal((3_600, 10_800, "fine"), (hourly.CadenceSeconds, hourly.UnreadAfterSeconds, hourly.Tone));
     }
 
     [GeneratedRegex(@"export const REFRESH_MS = ([0-9_]+);")]
