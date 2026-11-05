@@ -30,6 +30,8 @@ const logColumns = (window_: CardWindow): Column<LogEntry>[] => [
   },
   {
     name: 'Message',
+    // A message may carry a token longer than the column (a URL, a stack frame), which breaks inside the cell.
+    className: styles.message,
     cell: (entry) => (
       <>
         {entry.message}

@@ -67,6 +67,12 @@
   overflow-wrap: anywhere;
 }
 
+/* A log line's message breaks a token longer than its column (a URL in a browser error, a stack frame) rather than
+   widen the table past its card; words still wrap between themselves first. */
+.message {
+  overflow-wrap: anywhere;
+}
+
 .cardTitle {
   margin: 0;
   font-size: var(--card-title-size);
