@@ -9,7 +9,8 @@ namespace JobHunt.Functions.Tests;
 /// one that fails with its reason, RULE 72's lines read from one constant class, the alert rows read from a real
 /// leads file, the candidates file's shape (supply line, header, the passed rows, every failure at its foot), an
 /// alert dropped for the posting the scan read tonight, the alert leads alone while the postings tables are not
-/// published, the share's CSV when the tracker's SQL copy does not answer, the picker's hour and its statements' columns.
+/// published, the share's CSV when the tracker's SQL copy does not answer, the picker's hour, its statements' columns
+/// and the jobs mode in nightly.yml.
 /// </summary>
 public sealed partial class JobsTests
 {
@@ -289,6 +290,18 @@ public sealed partial class JobsTests
 
         Assert.Equal((2, 2), (result.Alerts, result.Passed));
         Assert.DoesNotContain("Older Co", scratch.Text(result.Path), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Nightly_yml_runs_the_jobs_lane_on_Opus_with_the_web_and_its_own_lane_file()
+    {
+        string yaml = File.ReadAllText(Path.Combine(Root(), ".github", "workflows", "nightly.yml"));
+        Assert.Contains("types: [nightly, bookkeeping, triage, leads, jobs]", yaml, StringComparison.Ordinal);
+        Assert.Contains("options: [reply, bookkeeping, triage, leads, jobs]", yaml, StringComparison.Ordinal);
+        Assert.Contains("jobs) mode=jobs ;;", yaml, StringComparison.Ordinal);
+        Assert.Contains("elif [ \"$mode\" = \"jobs\" ]; then model=\"${JOBS_MODEL:-claude-opus-5-5}\"", yaml, StringComparison.Ordinal);
+        Assert.Contains("jobs) lane=JOBS-LANE.md ;;", yaml, StringComparison.Ordinal);
+        Assert.Contains("if [ \"$mode\" = \"jobs\" ]; then tools=\"Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch\"; turns=80; minutes=40; lanename=\"Azure Functions, jobs lane\"; fi", yaml, StringComparison.Ordinal);
     }
 
     private static readonly DateTimeOffset Night = new(2026, 11, 6, 8, 0, 0, TimeSpan.Zero);
