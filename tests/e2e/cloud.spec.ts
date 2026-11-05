@@ -234,6 +234,10 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
     );
     await expect(card.getByTestId('cloud-readout')).toBeVisible();
     await expect(card.getByTestId('cloud-note')).toBeVisible();
+    // Under the dials, how often the card is read and when it reads unread, in the server's cadence.
+    await expect(card.getByTestId('cloud-cadence')).toHaveText(
+      /^read every (minute|hour), unread after 3 (min|h)$/
+    );
     // And every card, not the plan alone, reads at full width below its dials.
     await expectFullWidthBelowDials(card);
   }

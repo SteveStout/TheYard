@@ -2,6 +2,7 @@
 // fills the same frame with its own numbers, so the page draws one layout seven times instead of
 // holding seven copies of it.
 using System.ComponentModel;
+using TheYard.Domain.Shared.Cards;
 
 namespace TheYard.Application.Shared.Cards;
 
@@ -52,6 +53,12 @@ public sealed record CloudReport(
 
     /// <summary>How often the tab reads the card, in seconds; the retry line counts down from it.</summary>
     public int RefreshSeconds { get; init; } = CardFrame.RefreshSeconds;
+
+    /// <summary>How often the card's source is read, in seconds: 60 for a card read every minute, 3,600 for an hourly one; the cadence the tone rule judges the read age with.</summary>
+    public int CadenceSeconds { get; init; } = CardFrame.MinuteCadence;
+
+    /// <summary>How old the newest reading may be before the card reads unread: three of its reads (CardTones.ReadsBeforeUnread).</summary>
+    public int UnreadAfterSeconds { get; init; } = CardTones.ReadsBeforeUnread * CardFrame.MinuteCadence;
 
     /// <summary>What the resource is, in a paragraph read from its own code, with where it was read; null on every card but the nightly Function's.</summary>
     public CloudDescription? Description { get; init; }
