@@ -86,7 +86,8 @@ internal static class CampaignSql
         """;
 
     internal const string Boards = """
-        SELECT c.[Id], c.[BoardKind], c.[BoardToken] FROM [campaign].[Companies] c WHERE c.[BoardKind] IS NOT NULL AND c.[BoardToken] IS NOT NULL AND c.[DoNotEmail] = 0
+        SELECT c.[Id], c.[BoardKind], c.[BoardToken], c.[Key] FROM [campaign].[Companies] c WHERE c.[BoardKind] IS NOT NULL AND c.[BoardToken] IS NOT NULL AND c.[DoNotEmail] = 0
+        ORDER BY c.[ScannedAt]
         """;
 
     internal const string Scanned = """

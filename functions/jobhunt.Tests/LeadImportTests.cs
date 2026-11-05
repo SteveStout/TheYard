@@ -164,7 +164,7 @@ public sealed class LeadImportTests
         Assert.Equal(new BoardPosting("Senior .NET Engineer", "", new DateOnly(2026, 10, 9)), greenhouse.Single());
         Assert.Equal(("Staff Engineer, C#", (DateOnly?)new DateOnly(2026, 10, 24)), (lever.Single().Title, lever.Single().Posted));
         Assert.Equal(new DateOnly(2026, 10, 22), ashby.Single().Posted);
-        Assert.Equal("https://boards-api.greenhouse.io/v1/boards/acme/jobs", PublicBoardReader.Address("greenhouse", "acme"));
+        Assert.Equal("https://boards-api.greenhouse.io/v1/boards/acme/jobs?content=true&pay_transparency=true", PublicBoardReader.Address("greenhouse", "acme"));
         Assert.Throws<ArgumentOutOfRangeException>(() => PublicBoardReader.Address("workday", "acme"));
     }
 

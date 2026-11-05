@@ -35,6 +35,7 @@
     <Using Include="JobHunt.Domain.Shared.Companies" />
     <Using Include="JobHunt.Domain.Shared.Writing" />
     <Using Include="JobHunt.Domain.Shared.Applications" />
+    <Using Include="JobHunt.Domain.Shared.Postings" />
     <Using Include="JobHunt.Application.Shared.Mail" />
     <Using Include="JobHunt.Application.Shared.Store" />
     <Using Include="JobHunt.Application.Shared.Runs" />
