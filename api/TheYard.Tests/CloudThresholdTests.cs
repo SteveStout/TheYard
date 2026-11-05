@@ -105,6 +105,11 @@ public class CloudThresholdTests
         var unweighed = CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 3 })).Rows.Single(r => r.Key == "throttling");
         Assert.Equal("warning", unweighed.Tone);
         Assert.Equal("3 throttled, no requests read to weigh them against", unweighed.Answer);
+
+        // No throttle at all is the throughput's own tone, read or not; requests read as zero are not weighed against.
+        Assert.Equal("good", CosmosCard.ThrottleTone(0, null, PlanTone.Good));
+        var zero = CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 3, ["requests"] = 0 })).Rows.Single(r => r.Key == "throttling");
+        Assert.Equal("3 throttled, no requests read to weigh them against", zero.Answer);
         Assert.Contains("not read yet", unweighed.Detail[1].Text, StringComparison.Ordinal);
     }
 

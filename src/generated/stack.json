@@ -305,6 +305,17 @@
             "label": "package.json",
             "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
           }
+        },
+        {
+          "tech": "Stryker mutation testing",
+          "note": null,
+          "where": "a shipping machine, over the threshold files; never in the gate",
+          "version": "10.1",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
         }
       ]
     },
