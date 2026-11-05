@@ -82,7 +82,9 @@ public static class AcrCard
         var rows = new List<CloudRow>
         {
             Holds(inputs),
-            new("pulled", "Who pulled?", pulls is null ? "not read yet" : $"{pulls.Value.ToString("N0", CultureInfo.InvariantCulture)} pulls",
+            new("pulled", "Who pulled?", pulls is null ? "not read yet"
+                : ok is { } done && done < pulls ? string.Create(CultureInfo.InvariantCulture, $"{pulls.Value - done:N0} of {pulls.Value:N0} pulls failed")
+                : $"{pulls.Value.ToString("N0", CultureInfo.InvariantCulture)} pulls",
                 [new($"{ResourceView.Number(ok)} succeeded · {ResourceView.Number(pulls is { } all && ok is { } fine ? all - fine : null)} failed · {ResourceView.Number(pushes)} pushes in the window · pulled with the site's identity", null)],
                 pulls is > 0 && ok is { } good && good < pulls ? "warning" : "good"),
             new("stale", "What is stale?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "untagged")} untagged manifests",
