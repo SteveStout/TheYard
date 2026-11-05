@@ -63,7 +63,7 @@ public sealed class Module : IModule
                 new SqlCampaignCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
                 cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
                 async cancellation => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), ResourceCatalog.SqlType, "/" + campaignDatabase) is { } found
-                    ? (found.Id, (string?)null)
+                    ? (found.Id, await azure.TenantAsync(cancellation))
                     : null,
                 campaignDatabase);
             // The network log's card reads the same database's card schema the same way (ADR-124).
@@ -71,9 +71,10 @@ public sealed class Module : IModule
                 new SqlNetworkCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
                 cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
                 async cancellation => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), ResourceCatalog.SqlType, "/" + campaignDatabase) is { } found
-                    ? (found.Id, (string?)null)
+                    ? (found.Id, await azure.TenantAsync(cancellation))
                     : null,
-                campaignDatabase);
+                campaignDatabase,
+                nightlyNames.FunctionPath(subscription));
             return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network).Select(card => (card, KeepOf(card)))];
         });
 

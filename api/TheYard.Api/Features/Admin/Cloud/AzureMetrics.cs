@@ -149,6 +149,9 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
         return (await GetAsync(token, $"{resourceId}?api-version={apiVersion}", cancellation), PlanReader.TenantOf(token));
     }
 
+    /// <summary>The tenant the reader's token was issued in, for a portal link to a resource found by name rather than read by record.</summary>
+    public async Task<string?> TenantAsync(CancellationToken cancellation) => PlanReader.TenantOf(await Token(cancellation));
+
     /// <summary>The resource's Activity Log between two moments, classified.</summary>
     public async Task<IReadOnlyList<PlanEvent>> EventsAsync(string resourceId, DateTimeOffset from, DateTimeOffset to, CancellationToken cancellation)
     {

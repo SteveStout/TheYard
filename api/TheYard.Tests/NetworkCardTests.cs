@@ -81,6 +81,38 @@ public sealed class NetworkCardTests
         Assert.All(card.Rows, row => Assert.False(string.IsNullOrEmpty(row.Source), row.Key));
     }
 
+    private const string Tenant = "2b518869-fa47-447e-a87b-ab15138fd835";
+
+    private const string Database = "/subscriptions/s/resourceGroups/RG-THEYARD-SS/providers/Microsoft.Sql/servers/sql-theyard-ss-westus3/databases/sqldb-theyard-ss-basic";
+
+    private const string FunctionApp = "/subscriptions/s/resourceGroups/RG-JOBHUNT-SS/providers/Microsoft.Web/sites/func-jobhunt-ss";
+
+    [Fact]
+    public async Task Every_resource_the_card_names_carries_its_portal_link_from_the_API()
+    {
+        var read = new NetworkCountsRead(true, null, [(new DateOnly(2026, 11, 2), 3)], new Dictionary<string, int>(StringComparer.Ordinal) { ["Open"] = 12 });
+        var hour = await new NetworkSource(new Fixed(read), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>((Database, Tenant)), "sqldb-theyard-ss-basic", FunctionApp)
+            .HourAsync(Nine.AddHours(-1), Nine, CancellationToken.None);
+        var inputs = Inputs(Facts("shadow")) with { Hours = [hour] };
+        var card = NetworkCard.View(inputs);
+
+        Assert.Equal(new CloudLink("sqldb-theyard-ss-basic", $"https://portal.azure.com/#@{Tenant}/resource{Database}"), card.Resource);
+        var links = card.Rows.SelectMany(r => r.Detail).Where(l => l.Href is not null).ToList();
+        Assert.Contains(new CloudLink("func-jobhunt-ss", $"https://portal.azure.com/#@{Tenant}/resource{FunctionApp}"), links);
+        var named = new List<string>();
+        foreach (var piece in card.Rows.SelectMany(r => r.Detail).Where(l => l.Href is null).Select(l => l.Text)
+            .Concat(card.Readout.Lines.Select(l => l.Value)).Append(card.Spec ?? ""))
+        {
+            named.AddRange(new[] { "sqldb-", "sql-theyard", "func-jobhunt", "alert-jobhunt" }.Where(name => piece.Contains(name, StringComparison.Ordinal)));
+        }
+        Assert.Empty(named);
+
+        var unread = await new NetworkSource(new Fixed(NetworkCountsRead.Unread("the network schema is not published yet")), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>((Database, Tenant)), "db", FunctionApp)
+            .HourAsync(Nine.AddHours(-1), Nine, CancellationToken.None);
+        var unreadCard = NetworkCard.View(Inputs(null) with { Hours = [unread] });
+        Assert.NotNull(unreadCard.Resource?.Href);
+    }
+
     [Fact]
     public async Task The_source_reads_the_minute_and_the_hour_from_the_view()
     {
