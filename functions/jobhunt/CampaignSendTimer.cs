@@ -5,8 +5,9 @@ namespace JobHunt.Functions;
 
 // #region summary
 /// <summary>
-/// Sends the hiring-manager emails at 8 AM Central, seven days a week: every open lead through the campaign's
-/// rules, the ones that pass ranked, and at most ten a day from the approved templates. In shadow it writes
+/// Sends the hiring-manager emails at 8 AM Central, seven days a week: the week's applications with a named person made
+/// Track A leads first, then every open lead through the campaign's rules, the ones that pass ranked, Track A first, and
+/// at most ten a day from the approved templates. In shadow it writes
 /// what it would send and calls no mail service.
 /// </summary>
 // #endregion summary
@@ -58,10 +59,12 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
             var database = new SqlCampaignStore(sql);
             // The board scan runs in the 1 o'clock hour (BoardScanTimer); the send ranks Track B by what it wrote.
             const string scan = "scanned 01:00";
+            // Track A first in the hour: the week's applications with a named person become leads before the send ranks them.
+            string trackA = await new TrackAFeed(store, new SqlTrackABook(sql), new DohMxCheck(http), time).RunAsync(ct);
             var result = await new CampaignSend(database, database, sender, store, time).RunAsync(mode, ct);
             var local = CentralClock.Local(time.GetUtcNow());
             await store.EnsureFolderAsync("campaign", ct);
-            await store.AppendAsync(CampaignSend.PassLog, TrackerCsvText.Encode($"{local:yyyy-MM-dd HH:mm:ss} scan: {scan} | {result.Line}\r\n"), ct);
+            await store.AppendAsync(CampaignSend.PassLog, TrackerCsvText.Encode($"{local:yyyy-MM-dd HH:mm:ss} scan: {scan} | {trackA} | {result.Line}\r\n"), ct);
             log.LogInformation("campaign pass: {Line}", result.Line);
             var day = DateOnly.FromDateTime(local);
             string report = $"{CampaignReport.Folder}/{day:yyyy-MM-dd}.md";

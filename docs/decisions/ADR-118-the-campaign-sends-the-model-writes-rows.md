@@ -199,3 +199,14 @@ The scan ran first in the 8 o'clock hour, after Steve was awake, and kept one da
 - **The watchlist grows from the share.** A lane that cannot write SQL lists the boards it found in `campaign/boards-inbox/<yyyyMMdd-HHmm>-boards.tsv`; the Function, still the one writer of `campaign.Companies`, adds each board once, deduped on its kind and token, skips and counts Workday, iCIMS and other kinds, stops at four hundred companies with a board (about 4 % of the free grant a month), and moves the file to `merged/` with one log line.
 
 `PostingsTests` and `PostingsSqlTests` hold it.
+
+## Addendum, 2026-11-05 (1.0.4.145): Track A sends first; the finder behind the port
+
+Track A, the email after an application, had sent nothing: 91 campaign emails by 5 November, every one Track B, and no named human reply. Nothing turned an application into a Track A lead unless the lead run happened to find one, and Template A v1 was a long cold note with five links. From this version:
+
+- **Template A v2 is the one A the send selects.** Approved 28 October, the text in J:\mentor\email-templates\TEMPLATE-A-posted-v2.md with its 5 November layout: the greeting on its own line, one point a line, one link, `{SiteLink}`, an anchor in the HTML body and the bare tagged address in the plain one. `CampaignTemplate.CurrentFor` gives A v2 and B v1; A v1 stays in the code so what it sent can be read back, and nothing selects it. WhatTheyDo is checked only when the template says it, which A v2 does not.
+- **The week's applications become Track A leads.** `TrackAFeed` runs in the 8 o'clock hour before the send: every application in the tracker from the last seven days, at a company with no Track A lead in that window, becomes one Track A lead when the night's jobs lane named a person for it on a public page and wrote them to `nightly/track-a-contacts-<date>.tsv` with the code make_ref.py minted. AppliedAt and AppliedCount come from the tracker row. A second pass writes nothing more.
+- **A named person's address, or none.** An address is written only when a public page showed it on the company's own domain; a shared mailbox (info@, careers@ and the rest) is never a Track A address, and the send holds a Track A lead with none as `Track A: no named address`. The row waits for the finder behind `IAddressFinder`: HunterFinder when HUNTER_KEY holds a key, under its monthly cap, and no finder otherwise. No code path guesses an address.
+- **Track A sends first.** The day's order is Track A, the oldest application first, then Track B by the LinkedIn order and Strength. The cap, the ramp, the 30-day rule (A and B counted together), the live-thread rule, the former employers and do-not-email are unchanged. Shadow writes its rows and calls no mail service.
+
+`TrackATests` and `CampaignSendTests` hold it.

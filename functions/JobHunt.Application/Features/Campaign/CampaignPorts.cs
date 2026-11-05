@@ -259,3 +259,16 @@ public sealed record EmailRecord
     public string? GmailThreadId { get; init; }
     public string? RfcMessageId { get; init; }
 }
+
+/// <summary>What the Track A feed reads and writes in the campaign's tables.</summary>
+public interface ITrackABook
+{
+    /// <summary>The keys of the companies with a Track A lead applied to since <paramref name="since"/>.</summary>
+    Task<IReadOnlyList<string>> TrackAKeysAsync(DateTimeOffset since, CancellationToken ct);
+
+    /// <summary>The company's id, the company written first when the book does not hold it.</summary>
+    Task<int> CompanyIdAsync(SpoolCompany company, string run, DateTimeOffset at, CancellationToken ct);
+
+    /// <summary>Writes a lead, as the lead import does.</summary>
+    Task SaveLeadAsync(int companyId, SpoolLead lead, bool? mx, int strength, string inputsHash, string run, DateTimeOffset at, CancellationToken ct);
+}

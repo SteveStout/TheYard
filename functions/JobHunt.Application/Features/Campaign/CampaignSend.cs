@@ -45,8 +45,9 @@ public sealed record CampaignPassResult(string Came, int Open, int Eligible, int
 /// The send (ADR-118): every open lead through the rules in the review's order, the ones that pass ranked, and
 /// as many as today's cap allows written (shadow) or sent (on). The order: the former employer, do-not-email,
 /// an address with its public source, MX found, a business domain, the do-not-apply list and the 30 days, a
-/// live thread, Track A within seven days of the application, no blank, WhatTheyDo, no tell in the rendered
-/// email; then the cap and the ramp, the LinkedIn order and Strength. Idempotent by the log: a second firing
+/// live thread, a Track A lead's address a named person's and not a general mailbox, Track A within seven days of
+/// the application, no blank, WhatTheyDo when the template says it, no tell in the rendered email; then the cap and
+/// the ramp, and the order: Track A first by its oldest application, then the LinkedIn order and Strength. Idempotent by the log: a second firing
 /// on the same Central day finds the day's count already at the cap. A held lead's reason is counted; a lead
 /// whose own words fail (a blank, WhatTheyDo, a tell) is marked Blocked for the next lead run.
 /// </summary>
@@ -102,7 +103,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
             }
             int strength = Strength.Score(Inputs(lead), today, lead.StrengthStep);
             int linkedIn = LinkedInOrder.Rank(lead.LinkedInAcceptedAt, lead.LinkedInInviteSentAt, now);
-            ready.Add((lead, email!, new RankedLead(lead.Id, linkedIn, strength, lead.CreatedAt)));
+            ready.Add((lead, email!, new RankedLead(lead.Id, linkedIn, strength, lead.CreatedAt) { Track = lead.Track, AppliedAt = lead.AppliedAt }));
         }
 
         int written = 0;
@@ -183,7 +184,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         }
         if (string.IsNullOrWhiteSpace(lead.ContactEmail))
         {
-            return (CampaignVerdict.Hold("no address: no public source yet, finder none"), null, false);
+            return (CampaignVerdict.Hold(lead.Track == 'A' ? TrackAFeed.NoNamedAddress : "no address: no public source yet, finder none"), null, false);
         }
         if (string.IsNullOrWhiteSpace(lead.EmailSource) || !lead.EmailSource.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
@@ -208,6 +209,10 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         {
             return (thread, null, false);
         }
+        if (lead.Track == 'A' && (LeadSpool.IsCompanyMailbox(lead.ContactTitle) || TrackAFeed.IsGeneralMailbox(lead.ContactEmail)))
+        {
+            return (CampaignVerdict.Hold(TrackAFeed.NoNamedAddress), null, false);
+        }
         if (lead.Track == 'A')
         {
             var applied = AppliedWhen.Check(lead.AppliedAt, now);
@@ -223,7 +228,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         {
             return (CampaignVerdict.Hold("blank: " + string.Join(", ", email.Blanks)), null, true);
         }
-        if (WhatTheyDoRule.Check(lead.WhatTheyDo, company.Names) is { } what)
+        if (template.Text.Contains("{WhatTheyDo}", StringComparison.Ordinal) && WhatTheyDoRule.Check(lead.WhatTheyDo, company.Names) is { } what)
         {
             return (CampaignVerdict.Hold(what), null, true);
         }
