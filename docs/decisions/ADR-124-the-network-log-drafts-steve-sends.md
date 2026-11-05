@@ -33,7 +33,19 @@ NetworkLogRulesTests, NetworkLogFollowUpTests, NetworkLogMergeTests, NetworkTopi
 ## Not done in these versions, and why
 
 - **The LinkedIn half of the reading and the sending.** The 6 AM program owns the only signed-in LinkedIn on the box and lives on another lane's branch until it reaches main. The Function already ingests its spool and keeps LinkedIn rows; the program's network step and the Monday LinkedIn queue are their own version when the program is on main.
-- **The optional blog line.** The only minter of tagged codes is the share's make_ref.py; a second minter in C# would be a second source of codes, so v1 drafts carry no blog line and the row keeps the two columns for it.
+- **The optional blog line.** The only minter of tagged codes is the share's make_ref.py; a second minter in C# would be a second source of codes, so v1 drafts carry no blog line and the row keeps the two columns for it. The addendum of 1.0.4.137 adds it with the 4 AM lane as the minter.
+
+## Addendum, 2026-11-05 (1.0.4.137): the post line, minted by the lane
+
+The brief's optional line, ` Since then I wrote up <post title>: <tagged link>`, goes into FOLLOWUP-v1 after the TopicLine, still FOLLOWUP-v1, because with no post named it renders word for word as before. Steve's call D7, option (b), is the yes for this one line.
+
+1. **The lane picks the post and mints the code; the Function mints nothing.** `topics-needed.tsv` gains `Needs`, `DueOn` and `LastOutbound`: a row is listed for its TopicLine as before, and also from three days before it is due until it goes stale when it is an Open email row with no post named (`BlogLine.Needed`). For such a row the 4 AM lane picks a post from `GET /api/blog/posts` published after `LastOutbound`, mints its code with `make_ref.py --channel Email --lane netlog`, and writes `PersonKey`, the clause (empty when it already has one), the slug and the code. No post newer than Steve's last message means no slug and no code.
+2. **The import stores a post once.** `TopicImport` holds the slug to the feed's shape and the code to make_ref's six characters (`BlogLine.Fails`), stores the first that pass in `BlogSlug` and `RefCode`, and refuses the rest into `topics-refused.log`. A stored post is not replaced: its code is already in the link-token spool under that person.
+3. **The line is checked at the draft, not trusted from the row.** A Monday with a due row naming a post reads the feed once (`BlogFeed`); the line goes in only when the post is on the feed and went out after Steve's last message (`BlogLine.For`). The link is the post's address with the row's code, an anchor in the HTML part. Its `?` is not counted as the draft's question. A draft whose line fails a check goes out without the line, and a feed that does not answer names no post.
+4. **The pass line** gains `posts=<n>` (stored this pass) and `named=<n>` (drafts naming one).
+5. **The card's names are links, from the API.** The network card's header named `sqldb-theyard-ss-basic` with no link, and so did the campaign card's: both found the database's resource id but passed no tenant, and a portal URL needs one. Both now take the tenant the reader's token was issued in (`AzureMetrics.TenantAsync`), the same tenant-qualified shape `PlanView.Portal` gives every other card. The network card also names `func-jobhunt-ss`, the Function that runs the pass, linked the same way, and its readout no longer repeats the database's name as plain text. The page renders whatever href the API sends; it builds none.
+
+Held by NetworkBlogLineTests; its row is in ADR-075's table.
 
 ## Where it sits
 

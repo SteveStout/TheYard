@@ -73,7 +73,7 @@ public static class NetworkCard
                 new("The switch", mode, mode == "on" ? "good" : "info"),
                 new("Next pass", Next(inputs.Now), "info"),
                 new("The window", $"21 to 45 days after the last exchange, at most {MondayCap} a Monday; nothing sends, Steve presses Send", "info"),
-                new("The database", $"{ResourceView.Fact(inputs, "database")}, Basic", "info"),
+                new("The database", "Azure SQL Basic, the site's own, linked in the card's header", "info"),
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
             ],
@@ -100,12 +100,20 @@ public static class NetworkCard
         {
             return new CloudRow("logging", "Is it logging?", "not read yet", [new("conversations started a week and the switch", null)], "info");
         }
+        var function = Function(inputs);
         int thisWeek = weeks.Where(w => w.Monday == monday).Sum(w => w.Started);
         string answer = mode is "on" or "shadow" ? $"{thisWeek} started this week" : $"Off ({mode})";
         string last = string.Join(", ", Enumerable.Range(1, 4).Select(i => weeks.Where(w => w.Monday == monday.AddDays(-7 * i)).Sum(w => w.Started).ToString(CultureInfo.InvariantCulture)));
         return new CloudRow("logging", "Is it logging?", answer,
-            [new($"the switch is {mode} · once a day in the 6 AM hour Central · the four weeks before, newest first: {last}", null)], mode is "on" or "shadow" ? "good" : "info");
+            [new($"the switch is {mode} · once a day in the 6 AM hour Central · the four weeks before, newest first: {last}", null), .. function is null ? Array.Empty<CloudLink>() : [function]],
+            mode is "on" or "shadow" ? "good" : "info");
     }
+
+    /// <summary>The Function that runs the pass, by name, linked to its portal page; null when its id was not kept.</summary>
+    public static CloudLink? Function(ResourceCardInputs inputs) =>
+        ResourceView.Latest(inputs) is { } hour && hour.Facts.GetValueOrDefault("function") is { Length: > 0 } id
+            ? new CloudLink(PlanReader.NameOf(id), PlanView.Portal(hour.TenantId, id))
+            : null;
 
     /// <summary>Where the follow-ups stand: the rows by state.</summary>
     public static CloudRow FollowUps(ResourceCardInputs inputs)

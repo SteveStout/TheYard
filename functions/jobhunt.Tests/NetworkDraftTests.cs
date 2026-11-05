@@ -41,7 +41,7 @@ public sealed class NetworkDraftTests : IDisposable
             new ThreadMessage("Steven Stout <stevenstout11@gmail.com>", Monday.AddDays(-25), true, false, "", "pat@acme.com", "<s1@gmail.com>")]);
         gmail.Threads["t-2"] = new ThreadSummary("t-2", "Coffee", []);
         var drafts = new NetworkFakes.Drafts();
-        return (new MondayDrafts(rows, gmail, drafts, new FolderMergeStore(_root)), rows, drafts);
+        return (new MondayDrafts(rows, gmail, drafts, new FolderMergeStore(_root), new NetworkFakes.Blog()), rows, drafts);
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class NetworkDraftTests : IDisposable
     {
         var rows = new NetworkFakes.Rows();
         await rows.UpsertAsync(Due("pat@acme.com", 1), Monday, CancellationToken.None);
-        var build = new MondayDrafts(rows, new NetworkFakes.Gmail(), new NoDraftWriter(), new FolderMergeStore(_root));
+        var build = new MondayDrafts(rows, new NetworkFakes.Gmail(), new NoDraftWriter(), new FolderMergeStore(_root), new NetworkFakes.Blog());
         var result = await build.RunAsync(NetworkMode.Shadow, new DateOnly(2026, 11, 9), await rows.OpenAsync(CancellationToken.None), Monday, CancellationToken.None);
         Assert.Equal((1, 1), (result.Due, result.Drafted));
         Assert.Contains("## pat@acme.com", File.ReadAllText(Path.Combine(_root, "networklog", "would-drafts", "2026-11-09.md")), StringComparison.Ordinal);

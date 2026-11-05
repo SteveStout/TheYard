@@ -12,7 +12,8 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <param name="host">The Function's host name, for its health route's switches; null when it cannot be read.</param>
 /// <param name="resource">The database's resource id and tenant, for the header's portal link; null when the directory does not hold it.</param>
 /// <param name="database">The database the network schema lives in, by its name in configuration.</param>
-public sealed class NetworkSource(INetworkCounts counts, Func<CancellationToken, Task<string?>> host, Func<CancellationToken, Task<(string Id, string? Tenant)?>> resource, string database)
+/// <param name="function">The Function app's resource id, which runs the pass, for its portal link on the card.</param>
+public sealed class NetworkSource(INetworkCounts counts, Func<CancellationToken, Task<string?>> host, Func<CancellationToken, Task<(string Id, string? Tenant)?>> resource, string database, string? function = null)
 {
     /// <summary>The database, its name on the bill.</summary>
     public string Database => database;
@@ -50,6 +51,7 @@ public sealed class NetworkSource(INetworkCounts counts, Func<CancellationToken,
         var read = await counts.ReadAsync(cancellation);
         var facts = new Dictionary<string, string?>(StringComparer.Ordinal);
         var (id, tenant) = await resource(cancellation) ?? ("", null);
+        facts["function"] = function;
         if (!read.Read)
         {
             facts[ResourceView.MissingFact] = read.Note;

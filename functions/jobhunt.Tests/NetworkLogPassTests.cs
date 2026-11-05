@@ -105,9 +105,10 @@ public sealed class NetworkLogPassTests : IDisposable
         Assert.Contains("It's been a few weeks since we talked about the platform consolidation on .NET 10.", would, StringComparison.Ordinal);
         Assert.DoesNotContain("sam@globex.com", would, StringComparison.Ordinal);
         string topics = Read("networklog/topics-needed.tsv");
-        Assert.StartsWith("PersonKey\tChannel\tThreadIds\tFirstName\tCompany\tLastSubject\tTextPath\n", topics, StringComparison.Ordinal);
+        Assert.StartsWith("PersonKey\tChannel\tThreadIds\tFirstName\tCompany\tLastSubject\tTextPath\tNeeds\tDueOn\tLastOutbound\n", topics, StringComparison.Ordinal);
         Assert.Contains("sam@globex.com\tEmail\tt9\tSam\t", topics, StringComparison.Ordinal);
-        Assert.DoesNotContain("pat@acme.com", topics, StringComparison.Ordinal);
+        Assert.Contains("\ttopic post\t", topics.Split('\n').Single(l => l.StartsWith("sam@globex.com", StringComparison.Ordinal)), StringComparison.Ordinal);
+        Assert.Contains("\tpost\t", topics.Split('\n').Single(l => l.StartsWith("pat@acme.com", StringComparison.Ordinal)), StringComparison.Ordinal);
     }
 
     [Fact]

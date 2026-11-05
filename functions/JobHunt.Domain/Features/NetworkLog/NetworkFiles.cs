@@ -53,14 +53,26 @@ public static class NetworkFiles
         return text.Append(CultureInfo.InvariantCulture, $" seconds={p.Seconds} conversations started this ISO week: {p.StartedThisWeek}").ToString();
     }
 
-    /// <summary>The TopicLine export: a header and one row per Open row with no TopicLine, tabs and line breaks taken out of every field.</summary>
-    public static string TopicsNeededText(IEnumerable<Conversation> rows)
+    /// <summary>
+    /// The 4 AM lane's export: a header and one row per Open row with no TopicLine, or within a few days of due with no
+    /// post named yet; Needs says which (topic, post, or both), DueOn the Central day it is owed, and LastOutbound when
+    /// Steve last wrote, so a post picked is newer than that. Tabs and line breaks are taken out of every field.
+    /// </summary>
+    public static string TopicsNeededText(IEnumerable<Conversation> rows, DateTimeOffset now)
     {
-        var text = new StringBuilder("PersonKey\tChannel\tThreadIds\tFirstName\tCompany\tLastSubject\tTextPath\n");
-        foreach (var row in rows.Where(r => r.State == ConversationState.Open && string.IsNullOrWhiteSpace(r.TopicLine)).OrderBy(r => r.PersonKey, StringComparer.Ordinal))
+        var text = new StringBuilder("PersonKey\tChannel\tThreadIds\tFirstName\tCompany\tLastSubject\tTextPath\tNeeds\tDueOn\tLastOutbound\n");
+        foreach (var row in rows.Where(r => r.State == ConversationState.Open).OrderBy(r => r.PersonKey, StringComparer.Ordinal))
         {
+            bool topic = string.IsNullOrWhiteSpace(row.TopicLine), post = BlogLine.Needed(row, now);
+            if (!topic && !post)
+            {
+                continue;
+            }
             string textPath = row.Channel == Channel.LinkedIn && row.ThreadIds.Count > 0 ? $"{LinkedInInbox}/text/{row.ThreadIds[0]}.txt" : "";
-            string[] fields = [row.PersonKey, row.Channel.ToString(), string.Join(' ', row.ThreadIds), row.FirstName, row.Company ?? "", row.LastSubject ?? "", textPath];
+            string needs = topic && post ? "topic post" : topic ? "topic" : "post";
+            string due = row.LastExchangeAt is { } last ? CentralClock.Local(last.AddDays(DueRule.Days)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
+            string sent = row.LastOutboundAt?.ToString("o", CultureInfo.InvariantCulture) ?? "";
+            string[] fields = [row.PersonKey, row.Channel.ToString(), string.Join(' ', row.ThreadIds), row.FirstName, row.Company ?? "", row.LastSubject ?? "", textPath, needs, due, sent];
             text.Append(string.Join('\t', fields.Select(Clean))).Append('\n');
         }
         return text.ToString();
