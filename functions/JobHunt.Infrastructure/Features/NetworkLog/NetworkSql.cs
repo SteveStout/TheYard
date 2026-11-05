@@ -40,6 +40,8 @@ internal static class NetworkSql
 
     internal const string SetTopic = "UPDATE [network].[Conversations] SET [TopicLine] = @topic, [TopicSource] = @source, [UpdatedAt] = SYSDATETIMEOFFSET() WHERE [Id] = @id;";
 
+    internal const string SetBlogLine = "UPDATE [network].[Conversations] SET [BlogSlug] = @slug, [RefCode] = @code, [UpdatedAt] = SYSDATETIMEOFFSET() WHERE [Id] = @id;";
+
     internal const string SetDraft = "UPDATE [network].[Conversations] SET [State] = 'Drafted', [DraftId] = @draft, [DraftChannel] = @channel, [DraftedAt] = @at, [UpdatedAt] = @at WHERE [Id] = @id;";
 
     internal const string Pass = "SELECT p.[CentralDay], p.[Mode], p.[StartedAt], p.[FinishedAt] FROM [network].[Passes] p WHERE p.[CentralDay] = @day;";

@@ -80,6 +80,10 @@ public sealed class SqlConversationStore(string connectionString) : IConversatio
         ExecuteAsync(NetworkSql.SetTopic, ct, ("@id", id), ("@topic", Clip(topicLine, 200)), ("@source", Clip(source, 300)));
 
     /// <inheritdoc />
+    public Task SetBlogLineAsync(long id, string blogSlug, string refCode, CancellationToken ct) =>
+        ExecuteAsync(NetworkSql.SetBlogLine, ct, ("@id", id), ("@slug", Clip(blogSlug, 200)), ("@code", Clip(refCode, 6)));
+
+    /// <inheritdoc />
     public Task SetDraftAsync(long id, string draftId, Channel channel, DateTimeOffset at, CancellationToken ct) =>
         ExecuteAsync(NetworkSql.SetDraft, ct, ("@id", id), ("@draft", Clip(draftId, 128)), ("@channel", channel.ToString()), ("@at", at));
 

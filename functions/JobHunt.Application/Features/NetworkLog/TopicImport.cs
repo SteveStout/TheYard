@@ -3,13 +3,15 @@ namespace JobHunt.Application.Features.NetworkLog;
 /// <summary>What one import of the 4 AM lane's TopicLines did.</summary>
 /// <param name="Applied">Lines stored on their rows.</param>
 /// <param name="Refused">Lines that failed the rule, each with its key and the check.</param>
-public sealed record TopicImportResult(int Applied, IReadOnlyList<string> Refused);
+/// <param name="Posts">Posts and codes stored on their rows.</param>
+public sealed record TopicImportResult(int Applied, IReadOnlyList<string> Refused, int Posts = 0);
 
 /// <summary>
 /// The 4 AM lane's TopicLines into their rows: the lane cannot write SQL, so it writes networklog-topics.tsv in its
 /// own run folder and this reads the last three Central days of them, oldest first, so the newest line for a person
 /// wins. A line already stored from the same file, or a row whose line came from a newer file, is left as it is, so a
-/// re-read changes nothing and a later file can correct an earlier one.
+/// re-read changes nothing and a later file can correct an earlier one. A post's slug and code are stored once, the
+/// first that pass, since the code was minted for that row and is already in the link-token spool.
 /// </summary>
 public sealed class TopicImport(IConversationStore rows, IMergeStore share)
 {
@@ -35,27 +37,37 @@ public sealed class TopicImport(IConversationStore rows, IMergeStore share)
                 }
             }
         }
-        int applied = 0;
+        int applied = 0, posts = 0;
         var refused = new List<string>();
-        foreach (var topic in topics.GroupBy(t => t.PersonKey, StringComparer.Ordinal).Select(g => g.Last()))
+        foreach (var group in topics.GroupBy(t => t.PersonKey, StringComparer.Ordinal))
         {
-            if (await rows.FindAsync(topic.PersonKey, ct) is not { } row)
+            if (await rows.FindAsync(group.Key, ct) is not { } row)
             {
-                refused.Add($"{topic.PersonKey}: no such row");
+                refused.Add($"{group.Key}: no such row");
                 continue;
             }
-            if (row.TopicSource is { } had && string.CompareOrdinal(had, topic.Source) >= 0)
+            if (group.LastOrDefault(t => t.TopicLine.Length > 0) is { } topic && (row.TopicSource is not { } had || string.CompareOrdinal(had, topic.Source) < 0))
             {
-                continue;
+                if (TopicLineRule.Fails(topic.TopicLine, row.LastSubject) is { } check)
+                {
+                    refused.Add($"{topic.PersonKey}: {check}");
+                }
+                else
+                {
+                    await rows.SetTopicAsync(row.Id, topic.TopicLine.TrimEnd('.'), topic.Source, ct);
+                    applied++;
+                }
             }
-            if (TopicLineRule.Fails(topic.TopicLine, row.LastSubject) is { } check)
+            if (row.BlogSlug is null && row.RefCode is null && group.FirstOrDefault(t => t.BlogSlug is not null && BlogLine.Fails(t.BlogSlug, t.RefCode) is null) is { } post)
             {
-                refused.Add($"{topic.PersonKey}: {check}");
-                continue;
+                await rows.SetBlogLineAsync(row.Id, post.BlogSlug!, post.RefCode!, ct);
+                posts++;
             }
-            await rows.SetTopicAsync(row.Id, topic.TopicLine.TrimEnd('.'), topic.Source, ct);
-            applied++;
+            else if (row.BlogSlug is null && group.LastOrDefault(t => t.BlogSlug is not null) is { } bad)
+            {
+                refused.Add($"{bad.PersonKey}: {BlogLine.Fails(bad.BlogSlug, bad.RefCode)}");
+            }
         }
-        return new TopicImportResult(applied, refused);
+        return new TopicImportResult(applied, refused, posts);
     }
 }

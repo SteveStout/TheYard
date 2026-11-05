@@ -64,7 +64,7 @@ public sealed partial class NetworkSqlTests
             }
         }
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
-        Assert.Equal(12, Statements().Count());
+        Assert.Equal(13, Statements().Count());
         Assert.Contains("FROM [campaign].[EmailsSent] e WHERE e.[Shadow] = 0 AND e.[ReplyReceivedAt] IS NULL", Statements().Single(s => s.Name == "CampaignOpenThreads").Sql, StringComparison.Ordinal);
     }
 

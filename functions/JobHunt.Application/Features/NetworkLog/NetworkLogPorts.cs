@@ -54,6 +54,9 @@ public interface IConversationStore : IConversationReader
     /// <summary>Stores a row's TopicLine and the file it came from.</summary>
     Task SetTopicAsync(long id, string topicLine, string source, CancellationToken ct);
 
+    /// <summary>Stores the post a row's follow-up names and the code minted for its link.</summary>
+    Task SetBlogLineAsync(long id, string blogSlug, string refCode, CancellationToken ct);
+
     /// <summary>Marks a row Drafted with the draft's id and channel.</summary>
     Task SetDraftAsync(long id, string draftId, Channel channel, DateTimeOffset at, CancellationToken ct);
 
@@ -108,4 +111,11 @@ public interface ICampaignOwnership
 {
     /// <summary>The Gmail thread ids of the campaign's open sends.</summary>
     Task<IReadOnlySet<string>> OpenThreadIdsAsync(CancellationToken ct);
+}
+
+/// <summary>The blog's posts, read so a follow-up names a post only when it is on the blog and newer than Steve's last message.</summary>
+public interface IBlogPosts
+{
+    /// <summary>Every published post; empty when the feed cannot be read, so no draft names a post it could not check.</summary>
+    Task<IReadOnlyList<BlogPost>> PostsAsync(CancellationToken ct);
 }

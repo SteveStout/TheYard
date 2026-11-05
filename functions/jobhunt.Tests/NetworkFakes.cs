@@ -44,6 +44,8 @@ public static class NetworkFakes
 
         public Task SetTopicAsync(long id, string topicLine, string source, CancellationToken ct) => Change(id, r => r with { TopicLine = topicLine, TopicSource = source });
 
+        public Task SetBlogLineAsync(long id, string blogSlug, string refCode, CancellationToken ct) => Change(id, r => r with { BlogSlug = blogSlug, RefCode = refCode });
+
         public Task SetDraftAsync(long id, string draftId, Channel channel, DateTimeOffset at, CancellationToken ct) =>
             Change(id, r => r with { State = ConversationState.Drafted, DraftId = draftId, DraftChannel = channel, DraftedAt = at });
 
@@ -138,6 +140,19 @@ public static class NetworkFakes
         {
             Asked.Add(draftId);
             return Task.FromResult(Existing.Contains(draftId));
+        }
+    }
+
+    /// <summary>The blog's feed as a list it is handed, counting its reads.</summary>
+    public sealed class Blog(params BlogPost[] posts) : IBlogPosts
+    {
+        /// <summary>How many times the feed was read.</summary>
+        public int Reads { get; private set; }
+
+        public Task<IReadOnlyList<BlogPost>> PostsAsync(CancellationToken ct)
+        {
+            Reads++;
+            return Task.FromResult<IReadOnlyList<BlogPost>>(posts);
         }
     }
 }

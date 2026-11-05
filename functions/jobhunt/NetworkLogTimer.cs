@@ -75,7 +75,7 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
             }
             await database.StartPassAsync(day, modeName, now, ct);
             IDraftWriter drafts = mode == NetworkMode.On ? new GmailDrafts(http, google) : new NoDraftWriter();
-            var result = await new NetworkLogPass(database, new GmailThreads(http, google), drafts, store, time).RunAsync(mode, await database.OpenThreadIdsAsync(ct), ct);
+            var result = await new NetworkLogPass(database, new GmailThreads(http, google), drafts, store, time) { Posts = new BlogFeed(http) }.RunAsync(mode, await database.OpenThreadIdsAsync(ct), ct);
             await store.AppendAsync(NetworkFiles.PassLog, TrackerCsvText.Encode(result.Line + "\n"), ct);
             await database.FinishPassAsync(day, time.GetUtcNow(), result.Counts, ct);
             log.LogInformation("network pass: {Line}", result.Line);

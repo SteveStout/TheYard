@@ -28,6 +28,9 @@ public sealed record NetworkPassResult(string Line, PassCounts Counts, int Cut);
 /// </summary>
 public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReader gmail, IDraftWriter drafts, IMergeStore share, TimeProvider time)
 {
+    /// <summary>The blog's feed, read on a Monday when a due row names a post; with none set no draft names one.</summary>
+    public IBlogPosts Posts { get; init; } = NoPosts.Instance;
+
     /// <summary>The daily window in days.</summary>
     public const int DailyDays = 2;
 
@@ -86,17 +89,19 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         }
         open = await rows.OpenAsync(ct);
         await share.EnsureFolderAsync(NetworkFiles.Folder, ct);
-        await share.WriteAsync(NetworkFiles.TopicsNeeded, TrackerCsvText.Encode(NetworkFiles.TopicsNeededText(open)), ct);
+        await share.WriteAsync(NetworkFiles.TopicsNeeded, TrackerCsvText.Encode(NetworkFiles.TopicsNeededText(open, now)), ct);
         var local = CentralClock.Local(now);
         if (local.DayOfWeek == DayOfWeek.Monday)
         {
-            var monday = await new MondayDrafts(rows, gmail, drafts, share).RunAsync(mode, DateOnly.FromDateTime(local), open, now, ct);
-            (tally.Due, tally.Drafted, tally.RenderFailed) = (monday.Due, monday.Drafted, monday.RenderFailed);
+            var monday = await new MondayDrafts(rows, gmail, drafts, share, Posts).RunAsync(mode, DateOnly.FromDateTime(local), open, now, ct);
+            (tally.Due, tally.Drafted, tally.RenderFailed, tally.Posts) = (monday.Due, monday.Drafted, monday.RenderFailed, monday.Posts);
         }
         var week = (await rows.StartsAsync(ct)).Count(at => IsoWeek.Of(DateOnly.FromDateTime(CentralClock.Local(at))) == IsoWeek.Of(DateOnly.FromDateTime(local)));
         int seconds = (int)time.GetElapsedTime(started).TotalSeconds;
         var extra = new List<(string, int)> { ("topics", topics.Applied), ("linkedin", tally.LinkedIn), ("backfill", first ? 1 : 0) };
         extra.Add(("render_failed", tally.RenderFailed));
+        extra.Add(("posts", topics.Posts));
+        extra.Add(("named", tally.Posts));
         if (tally.Cut > 0)
         {
             extra.Add(("cut", tally.Cut));
@@ -207,6 +212,16 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
     private async Task<string> TextAsync(string path, CancellationToken ct) =>
         await share.ExistsAsync(path, ct) ? TrackerCsvText.Decode(await share.ReadAsync(path, ct)) : string.Empty;
 
+    /// <summary>The feed a pass gets when it is handed none: no posts, so no draft names one.</summary>
+    private sealed class NoPosts : IBlogPosts
+    {
+        /// <summary>The one instance.</summary>
+        public static readonly NoPosts Instance = new();
+
+        /// <inheritdoc />
+        public Task<IReadOnlyList<BlogPost>> PostsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<BlogPost>>([]);
+    }
+
     [GeneratedRegex(@"^(Invitation|Updated invitation|Accepted|Declined|Tentatively accepted):|invited you to", RegexOptions.IgnoreCase)]
     private static partial Regex Invitation();
 
@@ -233,6 +248,9 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
 
         /// <summary>Due rows whose render failed a check.</summary>
         public int RenderFailed { get; set; }
+
+        /// <summary>Drafts, or would-drafts, that name a post.</summary>
+        public int Posts { get; set; }
 
         /// <summary>LinkedIn spool rows read.</summary>
         public int LinkedIn { get; set; }
