@@ -1,4 +1,4 @@
-"""admin_probe.py [--out <file>] [--warm] [--sites first|both] | --summary <file> [--since <iso>]. Reads every Admin card route
+"""admin_probe.py [--out <file>] [--warm] [--sites first|second|both|alternate] | --summary <file> [--since <iso>]. Reads every Admin card route
 on both names, read only, and writes one JSON line a read: the name, the route, the status, the seconds, the card's
 read age, tone, cadence and unread line, and the text of every dial, row and readout line whose tone is not a resting
 one. With --warm it reads each route a second time five seconds after the first, so a cold read (the first in a quiet
@@ -65,7 +65,11 @@ def read_once(name, site, route, kind):
 
 def probe(args):
     """One pass over every route on the chosen names, cold then (with --warm) warm."""
-    names = ["theyard"] if args.sites == "first" else list(SITES)
+    if args.sites == "alternate":
+        # One name a tick, by the quarter hour, so a timer every fifteen minutes reads each name every half hour.
+        names = [list(SITES)[int(time.time() // 900) % 2]]
+    else:
+        names = {"first": ["theyard"], "second": ["theyard-cosmos"]}.get(args.sites, list(SITES))
     lines = []
     for name in names:
         for route in ROUTES:
@@ -129,7 +133,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.split(".")[0])
     parser.add_argument("--out")
     parser.add_argument("--warm", action="store_true")
-    parser.add_argument("--sites", choices=["first", "both"], default="both")
+    parser.add_argument("--sites", choices=["first", "second", "both", "alternate"], default="both")
     parser.add_argument("--summary")
     parser.add_argument("--since")
     args = parser.parse_args()
