@@ -795,6 +795,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-nightly-picker-code-gates-and-the-model-ranks</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/incidents</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
