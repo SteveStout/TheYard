@@ -38,4 +38,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '124',
   },
+  adrNightlyPicker: {
+    title: 'ADR: The nightly picker, code gates and the model ranks',
+    menuLabel: 'ADR: The nightly picker, code gates and the model ranks',
+    url: '/api/docs/adr-the-nightly-picker-code-gates-and-the-model-ranks',
+    kind: 'adr',
+    number: '125',
+  },
 } as const satisfies Record<string, RecordEntry>;

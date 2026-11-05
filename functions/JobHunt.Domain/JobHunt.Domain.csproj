@@ -21,6 +21,7 @@
     <Using Include="JobHunt.Domain.Features.Card" />
     <Using Include="JobHunt.Domain.Features.Campaign" />
     <Using Include="JobHunt.Domain.Features.NetworkLog" />
+    <Using Include="JobHunt.Domain.Features.Jobs" />
     <Using Include="TheYard.Domain.Features.Admin" />
     <Using Include="JobHunt.Domain.Shared.Tracker" />
     <Using Include="JobHunt.Domain.Shared.Clock" />
@@ -29,5 +30,6 @@
     <Using Include="JobHunt.Domain.Shared.Writing" />
     <Using Include="JobHunt.Domain.Shared.Applications" />
     <Using Include="JobHunt.Domain.Shared.Postings" />
+    <Using Include="JobHunt.Domain.Shared.Pay" />
   </ItemGroup>
 </Project>

@@ -155,6 +155,7 @@ public static class DocumentationCatalog
         ["adr-the-numbers-that-may-only-fall"] = "docs/decisions/ADR-122-the-numbers-that-may-only-fall.md",
         ["adr-ten-minutes-seven-stops"] = "docs/decisions/ADR-123-ten-minutes-seven-stops.md",
         ["adr-the-network-log-drafts-steve-sends"] = "docs/decisions/ADR-124-the-network-log-drafts-steve-sends.md",
+        ["adr-the-nightly-picker-code-gates-and-the-model-ranks"] = "docs/decisions/ADR-125-the-nightly-picker-code-gates-and-the-model-ranks.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",

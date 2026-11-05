@@ -5,18 +5,22 @@ namespace JobHunt.Functions;
 
 // #region summary
 /// <summary>
-/// Dispatches the two GitHub runs. At 4:00 AM Central: the share snapshot, the night's opening bookend, then the
-/// reply lane. Every other four hours: the records run, which opens and closes its own bookend.
+/// Dispatches the GitHub runs. At 2:00 AM Central: the night's picker writes the candidates file, then the jobs
+/// lane. At 4:00 AM Central: the share snapshot, the night's opening bookend, then the reply lane. Every other four
+/// hours: the records run, which opens and closes its own bookend.
 /// </summary>
 // #endregion summary
 /// <remarks>
 /// The job hunt's clock, every hour on the hour (UTC). At 4:00 AM Central: the share snapshot,
 /// the night's opening bookend, then the reply lane. Every other four hours: the records run,
 /// which opens and closes its own bookend. NIGHTLY_ANY_HOUR=on lets a hand run through as the
-/// 4:00 AM slot; it is off otherwise.
+/// 4:00 AM slot; it is off otherwise. The 2 o'clock hour is not a slot: the picker (JobsPick) reads the postings and
+/// the tracker over CAMPAIGN_SQL, or the alert leads and the share's CSV without it, writes
+/// nightly/jobs-candidates-&lt;date&gt;.tsv and one line to nightly/jobs-pick.log, then the jobs lane is dispatched.
 /// </remarks>
-public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch dispatch, ILogger<Nightly> log)
+public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch dispatch, JobsHour jobs, ILogger<Nightly> log)
 {
+    /// <summary>One firing: the jobs hour, a slot, or nothing.</summary>
     [Function("Nightly")]
     public async Task RunAsync([TimerTrigger("0 0 * * * *")] TimerInfo timer, CancellationToken ct)
     {
@@ -25,6 +29,14 @@ public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch di
         try
         {
             bool anyHour = string.Equals(Environment.GetEnvironmentVariable("NIGHTLY_ANY_HOUR"), "on", StringComparison.OrdinalIgnoreCase);
+            if (!anyHour && CentralClock.IsJobsHour(now))
+            {
+                string picked = await jobs.PickAsync(ct);
+                string sent = await dispatch.RunAsync(JobsFiles.Event, CentralClock.Local(now), ct);
+                log.LogInformation("jobs: {Picked} | {Sent}", picked, sent);
+                run.Count("dispatched", Dispatch.Delivered(sent) ? 1 : 0).Came("success", JobsFiles.Event);
+                return;
+            }
             string? slot = anyHour ? CentralClock.Reply : CentralClock.Slot(now);
             if (slot is null)
             {

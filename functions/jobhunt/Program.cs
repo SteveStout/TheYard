@@ -24,6 +24,7 @@ var host = new HostBuilder()
         services.AddSingleton<ShareSnapshot>();
         services.AddSingleton<Bookend>();
         services.AddSingleton<Dispatch>();
+        services.AddSingleton<JobsHour>();
         services.AddSingleton<IMergeStore>(sp => new ShareMergeStore(
             sp.GetRequiredService<ShareClient>(), Environment.GetEnvironmentVariable("MERGER_ROOT") ?? string.Empty));
         services.AddSingleton(TimeProvider.System);
