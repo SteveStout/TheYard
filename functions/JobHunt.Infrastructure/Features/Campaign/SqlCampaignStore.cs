@@ -54,7 +54,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
         var boards = new List<BoardCompany>();
         while (await reader.ReadAsync(ct))
         {
-            boards.Add(new BoardCompany(reader.GetInt32(0), reader.GetString(1), reader.GetString(2)));
+            boards.Add(new BoardCompany(reader.GetInt32(0), reader.GetString(1), reader.GetString(2)) { Key = reader.GetString(3) });
         }
         return boards;
     }

@@ -56,9 +56,8 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
                 ? GoogleCredentials.FromEnvironment() is { } google ? new GmailSender(http, google) : throw new InvalidOperationException("EMAIL_CAMPAIGN is on and the Google settings are not set")
                 : new NoSender();
             var database = new SqlCampaignStore(sql);
-            // The daily board scan first in the hour (the review, F6): once a day, before the send ranks Track B by it.
-            // A scan that fails is written to the pass log and the send still runs, on the postings it already had.
-            string scan = await GuardedScanAsync(token => new BoardScan(database, new PublicBoardReader(http), time).RunAsync(token), time, log, ct);
+            // The board scan runs in the 1 o'clock hour (BoardScanTimer); the send ranks Track B by what it wrote.
+            const string scan = "scanned 01:00";
             var result = await new CampaignSend(database, database, sender, store, time).RunAsync(mode, ct);
             var local = CentralClock.Local(time.GetUtcNow());
             await store.EnsureFolderAsync("campaign", ct);

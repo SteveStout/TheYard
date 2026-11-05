@@ -23,7 +23,11 @@ public interface ICompanyBook
 }
 
 /// <summary>A company with its public board.</summary>
-public sealed record BoardCompany(int Id, string Kind, string Token);
+public sealed record BoardCompany(int Id, string Kind, string Token)
+{
+    /// <summary>The company's key (the registrable domain), carried onto the postings its board answers.</summary>
+    public string? Key { get; init; }
+}
 
 /// <summary>A domain's MX records, asked of a public resolver: true found, false none, null not answered.</summary>
 public interface IMxCheck
@@ -33,7 +37,80 @@ public interface IMxCheck
 }
 
 /// <summary>One posting on a company's public board, as the scan reads it.</summary>
-public sealed record BoardPosting(string Title, string Text, DateOnly? Posted);
+public sealed record BoardPosting(string Title, string Text, DateOnly? Posted)
+{
+    /// <summary>The board's own id for the posting.</summary>
+    public string Id { get; init; } = "";
+
+    /// <summary>The posting's public address.</summary>
+    public string Url { get; init; } = "";
+
+    /// <summary>The location as the board writes it.</summary>
+    public string Location { get; init; } = "";
+
+    /// <summary>The board's workplace field (remote, hybrid, onsite), when it has one.</summary>
+    public string? Workplace { get; init; }
+
+    /// <summary>The board's remote flag, when it has one.</summary>
+    public bool? IsRemote { get; init; }
+
+    /// <summary>The published band's low end a year, or null when the board published none.</summary>
+    public int? CompMin { get; init; }
+
+    /// <summary>The published band's high end a year, or null.</summary>
+    public int? CompMax { get; init; }
+
+    /// <summary>The band's currency.</summary>
+    public string? CompCurrency { get; init; }
+
+    /// <summary>The band's interval as the board wrote it.</summary>
+    public string? CompInterval { get; init; }
+}
+
+/// <summary>
+/// The postings the board scan keeps (jobhunt.Postings and its three tables): one row a posting keyed by its board
+/// and its board's id, a change row for every compared field that moved, a description on first sight and on a
+/// changed hash only. The Function is the only writer; nothing here deletes.
+/// </summary>
+public interface IPostingBook
+{
+    /// <summary>True when the postings tables exist in the database (a schema not yet published answers false).</summary>
+    Task<bool> ReadyAsync(CancellationToken ct);
+
+    /// <summary>How many posting rows there are, so the first pass can seed once.</summary>
+    Task<int> CountAsync(CancellationToken ct);
+
+    /// <summary>The board's rows that are open, or closed since <paramref name="closedSince"/>.</summary>
+    Task<IReadOnlyList<StoredPosting>> BoardAsync(string source, string token, DateTimeOffset closedSince, CancellationToken ct);
+
+    /// <summary>A posting seen for the first time; answers its key.</summary>
+    Task<long> AddAsync(Posting posting, string? companyKey, DateTimeOffset seenAt, CancellationToken ct);
+
+    /// <summary>A posting seen again with something changed: every field written, LastSeenAt moved, ClosedAt cleared.</summary>
+    Task UpdateAsync(long key, Posting posting, DateTimeOffset at, CancellationToken ct);
+
+    /// <summary>Postings seen again unchanged: LastSeenAt moved, ClosedAt cleared.</summary>
+    Task SeenAsync(IReadOnlyList<long> keys, DateTimeOffset at, CancellationToken ct);
+
+    /// <summary>Postings a scan no longer sees: ClosedAt set.</summary>
+    Task CloseAsync(IReadOnlyList<long> keys, DateTimeOffset at, CancellationToken ct);
+
+    /// <summary>One changed field, or a re-post link (Field repost_of).</summary>
+    Task ChangeAsync(long key, string field, string? oldValue, string? newValue, DateTimeOffset at, CancellationToken ct);
+
+    /// <summary>A description, on first sight or a new hash.</summary>
+    Task DescribeAsync(long key, string hash, string text, DateTimeOffset at, CancellationToken ct);
+}
+
+/// <summary>The watchlist: the companies with a board the daily scan reads, grown from the boards inbox.</summary>
+public interface IWatchlist
+{
+    /// <summary>How many companies have a board.</summary>
+    Task<int> BoardCountAsync(CancellationToken ct);
+
+    /// <summary>Adds the board to its company (made when new, given the board when it had none); false when the board is already on a company or the company has another.</summary>
+    Task<bool> AddBoardAsync(BoardRow row, string run, DateTimeOffset at, CancellationToken ct);
+}
 
 /// <summary>A company's public job board: Greenhouse, Lever or Ashby, keyless JSON, one request a company.</summary>
 public interface IBoardReader

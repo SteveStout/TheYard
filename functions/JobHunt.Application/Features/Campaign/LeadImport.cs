@@ -95,37 +95,3 @@ public sealed class LeadImport(IMergeStore store, ICompanyBook companies, ILeadS
         await store.AppendAsync(Log, TrackerCsvText.Encode($"{CentralClock.Local(time.GetUtcNow()):yyyy-MM-dd HH:mm:ss} {folder}: {line}\r\n"), ct);
     }
 }
-
-/// <summary>
-/// The daily board scan (ADR-118, Decision 5; the review, F6): once a day, first in the 8 o'clock hour, one request
-/// per company with a public board, keyless JSON, and the newest posting whose title names .NET written back to the
-/// company with the time it looked. Track B ranks by that date. About 2 % of the Function's free grant a month at
-/// two hundred companies; hourly would be 72 %, so it is daily.
-/// </summary>
-public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeProvider time)
-{
-    /// <summary>Scans every board once and answers the part's line: counts only.</summary>
-    public async Task<string> RunAsync(CancellationToken ct)
-    {
-        var all = await companies.BoardsAsync(ct);
-        int answered = 0, dotNet = 0, postings = 0;
-        foreach (var company in all)
-        {
-            var read = await boards.PostingsAsync(company.Kind, company.Token, ct);
-            if (read is null)
-            {
-                continue;
-            }
-            answered++;
-            postings += read.Count;
-            var newest = read.Where(p => IsDotNet(p.Title)).OrderByDescending(p => p.Posted ?? DateOnly.MinValue).FirstOrDefault();
-            dotNet += read.Count(p => IsDotNet(p.Title));
-            await companies.MarkScannedAsync(company.Id, newest?.Posted ?? (newest is null ? null : DateOnly.FromDateTime(CentralClock.Local(time.GetUtcNow()))), newest?.Title, time.GetUtcNow(), ct);
-        }
-        return $"{all.Count} boards, {answered} answered, {postings} postings, {dotNet} .NET";
-    }
-
-    /// <summary>Whether a posting's title names .NET or C#: the scan's count and the recency date read titles only.</summary>
-    public static bool IsDotNet(string title) =>
-        title.Contains(".NET", StringComparison.OrdinalIgnoreCase) || title.Contains("C#", StringComparison.Ordinal) || title.Contains("dotnet", StringComparison.OrdinalIgnoreCase);
-}

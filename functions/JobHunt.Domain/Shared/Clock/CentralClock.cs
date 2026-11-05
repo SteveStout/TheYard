@@ -28,6 +28,12 @@ public static class CentralClock
     public static bool IsCampaignHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 8;
 
     /// <summary>
+    /// The board scan's hour: the 1 o'clock hour in Central, asked as a local hour for the campaign's reason, so the
+    /// night's postings are read before the 2 o'clock picker ranks them and long before the 8 AM send.
+    /// </summary>
+    public static bool IsScanHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 1;
+
+    /// <summary>
     /// The network log's hour: the 6 o'clock hour in Central, asked as a local hour for the same reason as the
     /// campaign's, so the daily pass lands before the morning and before the 8 AM send on both sides of the clock change.
     /// </summary>
