@@ -6,7 +6,9 @@ namespace JobHunt.Domain.Features.Leads;
 /// The requisitions in a LinkedIn job alert (jobalerts-noreply@linkedin.com), read from its plain text:
 /// each block between the dashed rules is the title, the company, the location and any tags, then
 /// "View job:" and the link. The link is cut to its job id, so the tracking parameters never reach a file.
-/// A block that does not read that way is skipped and counted, never guessed.
+/// A block that does not read that way is skipped and counted, never guessed. The digest's own header ("Your job
+/// alert for lead dotnet developer in United States") sits on the line above the first job with no link on it, and
+/// is skipped and counted by <see cref="DigestHeaders"/>, never read as the job's first line.
 /// </summary>
 public static partial class LinkedInAlert
 {
@@ -28,6 +30,7 @@ public static partial class LinkedInAlert
             var lines = block[..view.Index].Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
             // The alert's own header sits above the first job in the first block; the job is the last lines before View job.
             int start = lines.FindLastIndex(l => l.Contains("http", StringComparison.Ordinal) || l.EndsWith(':')) + 1;
+            start = Math.Max(start, lines.FindLastIndex(l => Header().IsMatch(l)) + 1);
             var job = lines.Skip(start).Where(l => !Tag().IsMatch(l)).ToList();
             if (job.Count < 3)
             {
@@ -38,6 +41,12 @@ public static partial class LinkedInAlert
         }
         return (leads, unread);
     }
+
+    /// <summary>How many digest header lines ("Your job alert for ...") the text holds: each one skipped, none read as a job.</summary>
+    public static int DigestHeaders(string text) => (text ?? string.Empty).Split('\n').Count(l => Header().IsMatch(l.Trim()));
+
+    [GeneratedRegex(@"^Your job alert for\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Header();
 
     [GeneratedRegex(@"\n-{10,}\s*\n")]
     private static partial Regex Rule();

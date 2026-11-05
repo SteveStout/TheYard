@@ -71,6 +71,7 @@ public sealed class LeadsHarvest(IMergeStore store, IInbox inbox, TimeProvider t
             : [];
         Unscored = [.. judged.Where(j => j.Failed is null && !scored.Contains(j.Lead.Link)).Select(j => j.Lead.Link)];
         int unread = alerts.Sum(a => a.Unread);
+        int headers = alerts.Sum(a => LinkedInAlert.DigestHeaders(a.Message.Lines.Length > 0 ? a.Message.Lines : a.Message.Text));
         var text = new StringBuilder();
         text.Append(CultureInfo.InvariantCulture, $"# {local:yyyy-MM-dd HH:mm:ss} Central, {(on ? "on" : "shadow")}, {alerts.Count} alerts, {judged.Count} requisitions, {judged.Count(j => j.Failed is null)} pass\r\n");
         text.Append("Pass\tCompany\tTitle\tLocation\tBand\tLink\tGmail id\tWhy not\r\n");
@@ -80,7 +81,7 @@ public sealed class LeadsHarvest(IMergeStore store, IInbox inbox, TimeProvider t
         }
         await store.EnsureFolderAsync(Folder, ct);
         await store.WriteAsync($"{Folder}/last-pass.tsv", TrackerCsvText.Encode(text.ToString()), ct);
-        string line = $"{(on ? "ON" : "SHADOW")} alerts {alerts.Count}, requisitions {judged.Count}, pass {judged.Count(j => j.Failed is null)}, blocks unread {unread}";
+        string line = $"{(on ? "ON" : "SHADOW")} alerts {alerts.Count}, requisitions {judged.Count}, pass {judged.Count(j => j.Failed is null)}, blocks unread {unread}, digest headers skipped {headers}";
         if (on)
         {
             var ready = alerts.Where(a => a.Ready).ToList();
