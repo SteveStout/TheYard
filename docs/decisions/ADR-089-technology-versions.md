@@ -58,6 +58,8 @@ Every "latest stable" below was read live on 2026-10-03 from nuget.org, the npm 
 | vitest | 5.0.3 | 5.0.3 | |
 | @playwright/test | 1.63.0 | 1.63.0 | |
 | @axe-core/playwright | 4.13.0 | 4.13.0 | |
+| @stryker-mutator/core | 10.1.1 | 10.1.1 | |
+| @stryker-mutator/vitest-runner | 10.1.1 | 10.1.1 | |
 | @types/react | 19.3.0 | 19.3.0 | |
 | @types/react-dom | 19.3.0 | 19.3.0 | |
 | oxlint | 1.86.0 | 1.86.0 | |
