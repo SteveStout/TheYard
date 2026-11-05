@@ -41,7 +41,9 @@ public sealed class StorageCardTests
 
     [Theory]
     [InlineData(100, "good")]
+    [InlineData(9_990.0 / 60, "good")]
     [InlineData(10_000.0 / 60, "warning")]
+    [InlineData(19_990.0 / 60, "warning")]
     [InlineData(20_000.0 / 60, "alarm")]
     public void The_share_is_fine_under_half_the_alert_s_line_amber_from_half_and_red_at_the_line(double perMinute, string tone)
     {
@@ -165,8 +167,19 @@ public sealed class StorageCardTests
     }
 
     [Theory]
+    [InlineData(79.9, "good")]
+    [InlineData(80, "warning")]
+    [InlineData(99.9, "warning")]
+    [InlineData(100, "alarm")]
+    public void The_blob_egress_dial_turns_at_eighty_per_cent_of_the_free_allowance_and_red_past_it(double gb, string tone) =>
+        Assert.Equal(tone, BlobCard.EgressDial(gb * 1e9).Tone);
+
+    [Theory]
     [InlineData(2_500, "No", "good")]
+    [InlineData(7_000, "No", "good")]
+    [InlineData(7_020, "Yes", "warning")]
     [InlineData(9_000, "Yes", "warning")]
+    [InlineData(19_980, "Yes", "warning")]
     [InlineData(20_000, "Yes", "alarm")]
     public void Walking_is_judged_in_listings_an_hour_against_money_and_the_alert_s_line(double listingsAnHour, string answer, string tone)
     {

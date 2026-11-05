@@ -371,3 +371,8 @@ it from here is the ratchet's count at zero, which catches the next behaviour ty
 arrives but cannot say which suite should have named it. Giving it a rule body is a job of its own,
 because the rule would need the same comment stripper in C# and the two would have to be held the
 same deliberately; it is on the list rather than in this commit.
+
+## Addendum, 2026-11-05 (VERSION_R3): the mutation runs are a local gate
+
+From this version the threshold files carry a mutation run each side of the stack, run on a shipping machine and never in the gate, where the runner's minutes and the i3's would both be spent on files that change rarely: `.config/dotnet-tools.json` pins dotnet-stryker and `stryker-config.json` mutates `CloudThresholds.cs`, `PlanThresholds.cs`, `ShareCard.cs`, `CosmosCard.cs` and `CardTone.cs` against `api/TheYard.Tests`; `@stryker-mutator/core` and `@stryker-mutator/vitest-runner` are dev dependencies and `stryker.config.json` mutates `src/lib/ranges.ts` and `src/lib/cloud.ts` against the Vitest suite. Their reports stay on the machine that ran them (`reports/`, `StrykerOutput/`, ignored); each surviving mutant is killed by a test in the same version or written up with its reason in the lane's DONE note.
+

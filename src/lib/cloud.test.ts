@@ -8,6 +8,7 @@ import {
   detailJoint,
   legendChips,
   linePath,
+  pointAt,
   newestValue,
   portalSentence,
   railGlance,
@@ -137,5 +138,73 @@ describe('the cadence line under the dials', () => {
   it('draws nothing for a body from before the cadence was on the wire', () => {
     expect(cadenceLine({})).toBeNull();
     expect(cadenceLine({ cadence_seconds: 60 })).toBeNull();
+  });
+});
+
+// Each case below kills a mutant the mutation run left alive (ADR-122, the addendum on the local mutation runs):
+// a boundary nudged, an operator flipped or a default turned over that no older case could tell apart.
+describe('the frame arithmetic, held where the mutation run found it loose', () => {
+  it('says a cadence in whole hours, whole minutes, or seconds, and needs both fields', () => {
+    expect(cadenceLine({ cadence_seconds: 7200, unread_after_seconds: 3660 })).toBe(
+      'read every 2 h, unread after 61 min'
+    );
+    expect(cadenceLine({ cadence_seconds: 120, unread_after_seconds: 90 })).toBe(
+      'read every 2 min, unread after 90 s'
+    );
+    expect(cadenceLine({ cadence_seconds: 30, unread_after_seconds: 59 })).toBe(
+      'read every 30 s, unread after 59 s'
+    );
+    expect(cadenceLine({ unread_after_seconds: 180 })).toBeNull();
+    expect(cadenceLine({ cadence_seconds: 15, unread_after_seconds: 3600 })).toBe(
+      'read every 15 s, unread after 1 h'
+    );
+    expect(cadenceLine({ cadence_seconds: 15, unread_after_seconds: 60 })).toBe(
+      'read every 15 s, unread after 1 min'
+    );
+    expect(cadenceLine({ cadence_seconds: 15, unread_after_seconds: 0 })).toBe(
+      'read every 15 s, unread after 0 s'
+    );
+  });
+
+  it('names the warning tone and keeps the short portal sentence unless the long one is asked for', () => {
+    expect(toneWord('warning')).toBe('watch');
+    expect(portalSentence('https://portal.azure.com/#@t/resource/x')).toBe(
+      'opens in the Azure portal; your sign-in, not the site\u2019s'
+    );
+    expect(portalSentence('https://portal.azure.com/#@t/resource/x', true)).toBe(
+      '(opens the Azure portal in a new tab, with your own Azure sign-in)'
+    );
+  });
+
+  it('finds the newest reading even when it is the first, and trims and drops empty chips', () => {
+    expect(newestValue([5, null])).toBe(5);
+    expect(newestValue([5])).toBe(5);
+    expect(legendChips(' teal CPU  \u00b7 green memory ')).toEqual(['teal CPU', 'green memory']);
+    expect(valueLines('a, , b')).toEqual(['a', 'b']);
+    expect(valueLines('')).toEqual([]);
+  });
+
+  it('places a point on its circle by the angle, and draws the long way round only past half the ring', () => {
+    const right = pointAt(10, 20, 5, 0);
+    const down = pointAt(10, 20, 5, 90);
+    expect([right.x, right.y]).toEqual([15, 20]);
+    expect(down.x).toBeCloseTo(10, 9);
+    expect(down.y).toBeCloseTo(25, 9);
+    expect(arcPath(100, 100, 50, 0, 50)).toContain(' 0 0 1 ');
+    expect(arcPath(100, 100, 50, 0, 51)).toContain(' 0 1 1 ');
+    expect(ticks()[1].percent).toBe(2.5);
+  });
+
+  it('puts an instant on the window, and a window with no width at its left edge', () => {
+    expect(xOf(7, 2, 12, 100)).toBe(50);
+    expect(xOf(7, 12, 12, 100)).toBe(0);
+    expect(
+      linePath([
+        { x: 0, y: 1 },
+        { x: 1, y: null },
+        { x: 2, y: 3 },
+        { x: 3, y: 4 },
+      ])
+    ).toBe('M 0.0 1.0 M 2.0 3.0 L 3.0 4.0');
   });
 });

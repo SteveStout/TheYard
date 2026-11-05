@@ -27,3 +27,8 @@ TestResults/
 
 # The .NET suite output CI keeps so a red run can name the test that failed.
 dotnet-output.txt
+
+# The mutation runs are local (ADR-122 addendum); their reports stay on the machine that ran them.
+reports/
+.stryker-tmp/
+StrykerOutput/

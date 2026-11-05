@@ -1,0 +1,26 @@
+{
+  "stryker-config": {
+    "test-projects": [
+      "TheYard.Tests.csproj"
+    ],
+    "test-case-filter": "Store!=cosmos&(FullyQualifiedName~Cloud|FullyQualifiedName~Card|FullyQualifiedName~PlanThreshold|FullyQualifiedName~PlanView|FullyQualifiedName~Storage)",
+    "mutate": [
+      "**/Features/Admin/Cloud/CloudThresholds.cs",
+      "**/Features/Admin/Cloud/ShareCard.cs",
+      "**/Features/Admin/Cloud/CosmosCard.cs",
+      "**/Shared/History/PlanThresholds.cs",
+      "**/Shared/Cards/CardTone.cs"
+    ],
+    "coverage-analysis": "perTest",
+    "reporters": [
+      "progress",
+      "json",
+      "html"
+    ],
+    "thresholds": {
+      "high": 90,
+      "low": 75,
+      "break": 0
+    }
+  }
+}

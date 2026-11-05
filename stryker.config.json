@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "mutate": [
+    "src/lib/ranges.ts",
+    "src/lib/cloud.ts"
+  ],
+  "vitest": {
+    "related": false
+  },
+  "reporters": [
+    "progress",
+    "json",
+    "html"
+  ],
+  "coverageAnalysis": "perTest",
+  "thresholds": {
+    "high": 90,
+    "low": 75,
+    "break": null
+  },
+  "tsconfigFile": "stryker-no-tsconfig.json",
+  "disableTypeChecks": false
+}
