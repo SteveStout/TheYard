@@ -143,3 +143,7 @@ The check is test code beside the onion in tests/e2e/axe.spec.ts, and the fix is
 ## Addendum, 2026-10-03: a code block can be reached from the keyboard
 
 The check went red on the CI runner, on the README open in its dialog: "scrollable-region-focusable" on one code block. A block whose line is wider than the dialog scrolls sideways, and a region that scrolls has to be reachable from the keyboard, or a reader without a mouse cannot see the end of the line. It passed on the build machine because its fonts made the same line fit. Every code block a document renders now carries `tabindex="0"`, the same thing every table's scroller already carried (`src/lib/markdown.ts`, region code-renderer), and a Vitest case holds it.
+
+## Addendum, 2026-11-05 (1.0.4.146): every Cloud infrastructure card, at a desk and a phone
+
+The scans named the Overview, the timing card, the activity card and the nightly card; the cards under Cloud infrastructure were drawn in the same frame and scanned in none. From this version `axe.spec.ts` walks the plan and every card in `CLOUD_RESOURCES` at 1,280 and at 375 wide against the same tags and the same bar, zero violations, one test a width, so a card added to the rail is scanned without a line here. The site draws one colour scheme, so there is no dark pass. `mobile.spec.ts` holds the same cards at 375: the page never scrolls sideways, and a table wider than the phone sits in a box that scrolls it inside itself.

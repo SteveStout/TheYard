@@ -1491,6 +1491,34 @@ test('the store and the log never scroll sideways on a desk: a table too wide fo
       }),
     })
   );
+  // The log in the shape that pushed it sideways on 5 November, in a twenty-times run where the local log had filled
+  // with them: a browser error whose message carries a seventy-character address with nowhere to break, beside a
+  // framework category and a statement. Stubbed, so the test holds the hardest line every run rather than whatever
+  // the log happens to hold when it runs.
+  const at = new Date().toISOString();
+  await page.route('**/api/admin/logs', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          at,
+          level: 'Error',
+          category: 'TheYard.Browser',
+          message:
+            'TypeError: Failed to fetch dynamically imported module: http://localhost:5173/src/components/admin/ErrorsCard/ErrorsCard.tsx?t=1793892707162',
+          exception: null,
+        },
+        {
+          at,
+          level: 'Information',
+          category: 'Microsoft.EntityFrameworkCore.Database.Command',
+          message:
+            'Executed DbCommand (0ms) [Parameters=[], CommandType=\'Text\', CommandTimeout=\'30\']\nSELECT "p"."Id", "p"."ReferrerHost" FROM "PostView" AS "p"',
+          exception: null,
+        },
+      ]),
+    })
+  );
   for (const width of [768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const card of ['store', 'log']) {

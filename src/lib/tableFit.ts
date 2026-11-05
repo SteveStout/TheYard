@@ -41,3 +41,20 @@ export function stacksAt(boxWidth: number, wide: number, narrow = 0): boolean {
 export function dottedParts(name: string): string[] {
   return name.split(/(?<=\.)/);
 }
+
+/** A token longer than this many characters has no word break a column can use: an address, a stack frame. */
+export const LONG_TOKEN = 24;
+
+/**
+ * A sentence in the pieces a line may break between: words as they are, and a
+ * token longer than LONG_TOKEN (an address, a path) split after each slash,
+ * dot, question mark, ampersand or equals sign, so a narrow column breaks a
+ * long address at its own punctuation and never inside a word. The pieces join
+ * back to the sentence.
+ */
+export function addressParts(text: string): string[] {
+  return text
+    .split(/(\s+)/)
+    .flatMap((token) => (token.length > LONG_TOKEN ? token.split(/(?<=[/.?&=])/) : [token]))
+    .filter((part) => part.length > 0);
+}
