@@ -14,8 +14,7 @@
     "coverage-analysis": "perTest",
     "reporters": [
       "progress",
-      "json",
-      "html"
+      "json"
     ],
     "thresholds": {
       "high": 90,

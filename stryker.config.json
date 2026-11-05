@@ -10,8 +10,7 @@
   },
   "reporters": [
     "progress",
-    "json",
-    "html"
+    "json"
   ],
   "coverageAnalysis": "perTest",
   "thresholds": {
