@@ -23,6 +23,7 @@ public static class ShareCard
         ["Last write seen"] = CardFrame.KeptMinutes,
         ["Who mounts it"] = "Azure Monitor, transactions by authentication",
         ["Who reads it on a timer"] = "Azure Monitor, transactions by authentication",
+        ["Every caller this hour"] = "Azure Monitor, transactions by authentication",
         ["The alert"] = "Azure Monitor alert rule",
         ["Cost"] = CardFrame.TheBill,
         ["Live read"] = CardFrame.ThisProcess,
@@ -90,6 +91,7 @@ public static class ShareCard
                 new("Last write seen", LastWrite(inputs), "info"),
                 new("Who mounts it", auth.TryGetValue("SAS", out double sas) ? $"the laptop's mount and the chats, by SAS: {sas:N0} {since}" : "not read", "info"),
                 new("Who reads it on a timer", auth.TryGetValue("AccountKey", out double key) ? $"the job hunt's Function, by the account key: {key:N0} {since}" : "not read", "info"),
+                new("Every caller this hour", auth.Count == 0 ? "not read" : Callers(auth), "info"),
                 new("The alert", line is { } a ? $"{a.ToString("N0", CultureInfo.InvariantCulture)} transactions an hour, to his phone ({(ResourceView.Fact(inputs, "alert_enabled", "") == "true" ? "on" : "off")})" : "not read", "info"),
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
@@ -159,7 +161,7 @@ public static class ShareCard
         double red = alertLine ?? WalkingListings.Red;
         string tone = now.Value >= red ? "alarm" : now.Value > WalkingListings.Amber ? "warning" : "good";
         string split = auth.Count == 0 ? "who made them is not read"
-            : string.Create(CultureInfo.InvariantCulture, $"this clock hour by SAS (the laptop's mount and the chats) {auth.GetValueOrDefault("SAS"):N0} and by the account key (the job hunt's Function) {auth.GetValueOrDefault("AccountKey"):N0} transactions");
+            : $"this clock hour {Callers(auth)} transactions";
         return new CloudRow("walking", "Is anything walking it?", tone == "good" ? "No" : "Yes",
             [new(string.Create(CultureInfo.InvariantCulture, $"listings this hour {now.Value:N0} against a median busy hour of {(busy is { } b ? b.ToString("N0", CultureInfo.InvariantCulture) : "not read")} this week · amber over {WalkingListings.Amber:N0} an hour, about a quarter of a dollar a day · red at the alert's {red:N0} · {split}"), null)],
             tone);
@@ -173,6 +175,23 @@ public static class ShareCard
     /// <param name="hour">The start of the clock hour under way.</param>
     public static string AuthHour(IReadOnlyDictionary<string, IReadOnlyDictionary<DateTimeOffset, double>> byAuth, DateTimeOffset hour) =>
         string.Join(';', byAuth.Select(pair => $"{pair.Key}={pair.Value.Where(p => p.Key >= hour).Sum(p => p.Value).ToString("0", CultureInfo.InvariantCulture)}"));
+
+    /// <summary>
+    /// Every value of the hour's split by authentication with its count, the biggest first, each known one named for
+    /// the caller that uses it and any other by the name Azure gave it, so no transaction goes unnamed on the card.
+    /// </summary>
+    /// <param name="auth">Transactions in the clock hour under way, by authentication.</param>
+    public static string Callers(IReadOnlyDictionary<string, double> auth) =>
+        string.Join(" · ", auth.OrderByDescending(pair => pair.Value).ThenBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => string.Create(CultureInfo.InvariantCulture, $"{CallerName(pair.Key)} {pair.Value:N0}")));
+
+    /// <summary>The caller a split value belongs to, by what this card knows uses it; any other value is its own name.</summary>
+    private static string CallerName(string authentication) => authentication switch
+    {
+        "AccountKey" => "the account key (the job hunt's Function)",
+        "SAS" => "SAS (the laptop's mount and the chats)",
+        _ => authentication,
+    };
 
     /// <summary>What is on it: the files and bytes Azure counts.</summary>
     private static CloudRow OnIt(ResourceCardInputs inputs)
