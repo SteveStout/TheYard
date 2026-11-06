@@ -240,11 +240,13 @@ public sealed class WorklistTests
     [Fact]
     public void The_night_s_jobs_file_gives_its_ready_rows_and_no_row_of_any_other_table()
     {
+        // The jobs lane's own file of 6 November 2026, copied from the share as it wrote it: one READY TO APPLY row,
+        // and NEEDS STEVE, UNCONFIRMED, FLAG and SKIPPED rows that the apply lane must never read.
         var rows = ApplyBoards.Confirmed("JOBS-2026-11-06.md", Fixture.Read("jobs.md"));
-        Assert.Equal(["Northwind", "Contoso"], rows.Select(row => row.Company));
-        Assert.Equal(["https://job-boards.greenhouse.io/northwind/jobs/7001", "https://jobs.lever.co/contoso/aa11"], rows.Select(row => row.Link));
-        Assert.Equal(["greenhouse", "lever"], rows.Select(row => row.Board));
-        Assert.All(rows, row => Assert.True(ApplyBoards.Reachable(row), row.Link));
+        var row = Assert.Single(rows);
+        Assert.Equal(("Temporal Technologies", "https://jobs.ashbyhq.com/temporal/dfa01032-82b4-443f-bfdc-1a20bd976b9c", "ashby"), (row.Company, row.Link, row.Board));
+        Assert.True(ApplyBoards.Reachable(row), row.Link);
+        Assert.DoesNotContain(rows, r => r.Company is "Twin Health" or "MillerKnoll" or "Pearson" or "Unite Us");
     }
 
     [Fact]
@@ -252,16 +254,16 @@ public sealed class WorklistTests
     {
         var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
         morning.Share.Files.Remove("APPLY-SWEEP-2026-10-28-ainative.md");
-        morning.Share.Files["APPLY-SWEEP-2026-11-05-x.md"] = "## CONFIRMED LIVE\n| Company | Role | Link |\n|---|---|---|\n| Northwind | Principal Engineer, .NET Platform | https://job-boards.greenhouse.io/northwind/jobs/7001 |\n";
+        morning.Share.Files["APPLY-SWEEP-2026-11-05-x.md"] = "## CONFIRMED LIVE\n| Company | Role | Link |\n|---|---|---|\n| Temporal Technologies | Senior Staff Software Engineer - Builder Platform | https://jobs.ashbyhq.com/temporal/dfa01032-82b4-443f-bfdc-1a20bd976b9c |\n| Northwind | Principal Engineer | https://jobs.lever.co/northwind/a |\n";
         morning.Share.Files["JOBS-2026-11-06.md"] = Fixture.Read("jobs.md");
         var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
         var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
 
         var list = await builder.ApplyAsync(reads, null, false, default);
 
-        Assert.Single(list.Rows, row => row.Url == "https://job-boards.greenhouse.io/northwind/jobs/7001");
-        Assert.Contains(list.Rows, row => row.Url == "https://jobs.lever.co/contoso/aa11");
-        Assert.DoesNotContain(list.Rows, row => row.Url.Contains("fabrikam", StringComparison.Ordinal) || row.Url.Contains("tailspin", StringComparison.Ordinal));
+        Assert.Single(list.Rows, row => row.Url == "https://jobs.ashbyhq.com/temporal/dfa01032-82b4-443f-bfdc-1a20bd976b9c");
+        Assert.Contains(list.Rows, row => row.Url == "https://jobs.lever.co/northwind/a");
+        Assert.DoesNotContain(list.Rows, row => row.Url.Contains("twinhealth", StringComparison.Ordinal) || row.Url.Contains("theladders", StringComparison.Ordinal) || row.Url.Contains("4486544412", StringComparison.Ordinal));
     }
 
     [Fact]
