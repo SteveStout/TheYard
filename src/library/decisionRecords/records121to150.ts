@@ -52,4 +52,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '126',
   },
+  adrBoxReportsItself: {
+    title: 'ADR: The box reports itself',
+    menuLabel: 'ADR: The box reports itself',
+    url: '/api/docs/adr-the-box-reports-itself',
+    kind: 'adr',
+    number: '127',
+  },
 } as const satisfies Record<string, RecordEntry>;

@@ -3,7 +3,7 @@ using TheYard.Application.Features.Admin.Cloud;
 namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>
-/// The twelve resource cards under Cloud infrastructure (ADR: One frame for every resource): one
+/// The thirteen resource cards under Cloud infrastructure (ADR: One frame for every resource): one
 /// reader of Azure Monitor, one of Netlify and one of GitHub, the resource groups' lists each card
 /// finds its resource in (the nightly Function's group is its own, ADR: The Nightly Function on the
 /// Admin tab), a keep per card, the nightly run log and its cache, the one recorder, the one cached reader the endpoint answers from,
@@ -76,7 +76,9 @@ public sealed class Module : IModule
                     : null,
                 campaignDatabase,
                 new NetworkPasses(nightlyNames.FunctionPath(subscription), provider.GetRequiredService<IProcessRunsReader>()));
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network).Select(card => (card, KeepOf(card)))];
+            // The box that supports the job hunt reads what its agent posted into this process (ADR: The box reports itself).
+            var box = new BoxSource(provider.GetRequiredService<IBoxSnapshots>(), provider.GetRequiredService<IBoxLive>(), provider.GetRequiredService<HostStart>(), TimeProvider.System);
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network, box).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with
@@ -123,11 +125,18 @@ public sealed class Module : IModule
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
         services.AddScoped<ReadCloudCardHandler>();
         services.AddScoped<ReadProcessRunsHandler>();
-        // The one write in this slice: the nightly workflow posting the run it was, which the card's
+        // The box's snapshots and its live ring, held in this process: one process serves both names, so both read them.
+        services.AddSingleton<IBoxSnapshots, MemoryBoxSnapshots>();
+        services.AddSingleton<IBoxLive, MemoryBoxLive>();
+        // The two writes in this slice: the box's posts, held in memory (ADR: The box reports itself), and below the
+        // nightly workflow posting the run it was, which the card's
         // reader then prefers over a read of GitHub (ADR: The Nightly Function on the Admin tab). It
         // writes the same log the hourly read upserts into, keyed on GitHub's id, so the pushed copy
         // and the read copy are one document.
         services.AddScoped(provider => new KeepNightlyRunHandler(provider.GetRequiredService<INightlyRunLog>(), TimeProvider.System));
+        services.AddScoped(provider => new KeepBoxSnapshotHandler(provider.GetRequiredService<IBoxSnapshots>(), TimeProvider.System));
+        services.AddScoped(provider => new PushBoxSampleHandler(provider.GetRequiredService<IBoxLive>(), TimeProvider.System));
+        services.AddScoped(provider => new ReadBoxLiveHandler(provider.GetRequiredService<IBoxLive>(), TimeProvider.System));
         // What broke: the incidents the docs keep and the failures the same workspace kept (ADR-120).
         services.AddSingleton<IIncidentsReader>(provider =>
         {

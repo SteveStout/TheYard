@@ -74,6 +74,7 @@ export const BENCH_CARDS: BenchCard[] = [
   card('claude', 'Claude usage', 'cloud'),
   card('campaign', 'The email campaign', 'cloud'),
   card('network', 'The network log', 'cloud'),
+  card('box', 'WickedAwsome', 'cloud'),
   card('incidents', 'Incidents, and what broke this week', 'broke'),
   card('foreman', 'The Foreman, a place to start', 'broke'),
   card('errors', 'Recent errors', 'broke'),

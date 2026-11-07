@@ -56,6 +56,17 @@ public sealed class RequestRecorder(
             || (path.StartsWith("/api/admin/", StringComparison.Ordinal)
                 && !path.StartsWith("/api/admin/selftest/", StringComparison.Ordinal)));
 
+    /// <summary>Where the box that supports the job hunt posts its readings (ADR: The box reports itself).</summary>
+    public const string BoxPrefix = "/api/admin/cloud/box/";
+
+    /// <summary>
+    /// Whether a request is the box talking to the site: a post under <see cref="BoxPrefix"/> that was accepted. Its agent
+    /// posts every two seconds, so left in it would push every real request out of the ring inside minutes; a refused one
+    /// (401, 400) stays in, because the operator's key was tried against it.
+    /// </summary>
+    public static bool IsBoxPost(string method, string path, int status) =>
+        HttpMethods.IsPost(method) && path.StartsWith(BoxPrefix, StringComparison.Ordinal) && status is >= 200 and < 300;
+
     /// <summary>
     /// Whether a request is the operator's: it presents the operator's key, or carries the cookie presenting it set.
     /// </summary>
@@ -101,7 +112,7 @@ public sealed class RequestRecorder(
         string path = context.Items.TryGetValue(ResumeDoor.ItemKey, out var door) && door is string doorPath
             ? doorPath
             : context.Request.Path.HasValue ? context.Request.Path.Value! : "/";
-        if (IsObservabilityRead(context.Request.Method, path))
+        if (IsObservabilityRead(context.Request.Method, path) || IsBoxPost(context.Request.Method, path, context.Response.StatusCode))
         {
             return;
         }

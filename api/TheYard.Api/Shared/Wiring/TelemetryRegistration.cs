@@ -1,4 +1,5 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
+using OpenTelemetry.Instrumentation.AspNetCore;
 
 namespace TheYard.Api.Shared.Wiring;
 
@@ -28,6 +29,10 @@ public static class TelemetryRegistration
             {
                 options.ConnectionString = telemetryConnection;
             });
+            // The box's agent posts every two seconds, forty-three thousand requests a day, which would spend most of
+            // the component's daily cap on itself (ADR: The box reports itself): its routes are left out of the
+            // request telemetry, the distro's documented way, and every other path is kept.
+            builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options => options.Filter = context => Traced(context.Request.Path));
         }
         // The component's app id is public (it is not a key) and is what the Admin
         // tab queries with the container's managed identity.
@@ -42,4 +47,9 @@ public static class TelemetryRegistration
         builder.Services.AddSingleton(new TelemetryReader(source, enabled: telemetryOn, TimeProvider.System));
         #endregion telemetry
     }
+
+    /// <summary>Whether a request's path reaches the request telemetry: every path but the box's routes.</summary>
+    /// <param name="path">The request's path.</param>
+    public static bool Traced(PathString path) =>
+        !(path.HasValue && path.Value!.StartsWith(RequestRecorder.BoxPrefix, StringComparison.Ordinal));
 }

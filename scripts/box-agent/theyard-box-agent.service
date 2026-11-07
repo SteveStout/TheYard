@@ -1,0 +1,15 @@
+# The box reports itself (ADR: The box reports itself): the agent as a user unit, started at boot through lingering,
+# restarted when it stops, at a lower priority than the job hunt's own work. The key is read from a file at run time.
+[Unit]
+Description=TheYard box agent: posts this box's readings to the Admin tab's WickedAwsome card
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.local/bin/theyard_box_agent.py
+Restart=always
+RestartSec=5
+Nice=10
+
+[Install]
+WantedBy=default.target
