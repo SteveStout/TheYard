@@ -32,7 +32,16 @@ public static class CostRegistration
         var status = new CostStatus();
         builder.Services.AddSingleton(reader);
         builder.Services.AddSingleton(status);
-        builder.Services.AddSingleton(new CostHistoryReader(history, reader, status, TimeProvider.System));
+        // The rules on the meters are read with the same identity, beside the bill, and held the same way,
+        // from the two groups configuration names: the site's own and the job hunt's.
+        var rules = new AlertRules(
+            AzureIds.SubscriptionId(builder.Configuration),
+            AzureIds.ClientId(builder.Configuration),
+            configured: identity.OnAppService,
+            groups: [.. new[] { builder.Configuration["Azure:Resources:Group"], builder.Configuration["Nightly:Group"] }.OfType<string>().Where(group => group.Length > 0)],
+            identity: identity);
+        builder.Services.AddSingleton(rules);
+        builder.Services.AddSingleton(new CostHistoryReader(history, reader, status, TimeProvider.System, rules));
         // One read and what it leaves behind, then the schedule that runs it: the recorder holds
         // only the waits, so it is handed the keeping rather than everything the keeping needs.
         builder.Services.AddSingleton(services => new CostKeeping(
@@ -43,7 +52,9 @@ public static class CostRegistration
             services.GetRequiredService<ILogger<CostKeeping>>()));
         builder.Services.AddSingleton(services => new CostRecorder(
             services.GetRequiredService<CostKeeping>(),
-            CostRecorder.FirstReadAfter(builder.Configuration["Store:Default"])));
+            CostRecorder.FirstReadAfter(builder.Configuration["Store:Default"]),
+            rules,
+            TimeProvider.System));
         builder.Services.AddHostedService(services => services.GetRequiredService<CostRecorder>());
         // #endregion cost-wiring
     }

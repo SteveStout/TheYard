@@ -31,6 +31,32 @@ export type CostKind = {
   monthly: number;
 };
 
+/** One day as the spike rule reads it, beside the median of the finished week before it (DaySpike.cs). */
+export type SpikeDay = {
+  day: string;
+  cost: number;
+  partial: boolean;
+  /** The median of up to seven finished days before it; null when none is kept. */
+  median: number | null;
+  /** How many finished days that median is taken over. */
+  days: number;
+  /** The day's cost over that median, to one place. */
+  multiple: number | null;
+  /** The resource with the biggest line that day, and what it cost. */
+  biggest: string | null;
+  biggest_cost: number;
+};
+
+/** One meter that can run away and the rule that watches it (MeterRows.cs). */
+export type MeterRow = {
+  meter: string;
+  watches: string;
+  rule: string;
+  /** exists, off, not set or not read yet. */
+  state: string;
+  line: string;
+};
+
 /** GET /api/admin/costs, as the server writes it (api/TheYard.Api/Shared/CostReadings/CostReport.cs). */
 export type CostReport = {
   window: CostWindow;
@@ -53,6 +79,10 @@ export type CostReport = {
   yesterday_day?: string | null;
   /** What that day cost. */
   yesterday_cost?: number | null;
+  /** The judged day and the seven before it, newest first; optional so an older answer draws "not read yet". */
+  spike_days?: SpikeDay[];
+  /** Every meter that can run away and its rule; optional for the same reason. */
+  meters?: MeterRow[];
   window_total: number;
   rate_days: number;
   month_days: number;

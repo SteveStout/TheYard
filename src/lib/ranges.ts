@@ -27,8 +27,17 @@ export type Range = {
 };
 
 // #region ranges
-/** The owner's monthly budget for the whole subscription: over it the cost reads red ("Red at this is over 50$", in his words). */
-export const MONTHLY_BUDGET_DOLLARS = 50;
+/** The owner's monthly budget for the whole subscription: over it the cost reads red. */
+export const MONTHLY_BUDGET_DOLLARS = 60;
+
+/** Ten dollars under the budget, the amber line the owner named, rather than a share of it. */
+export const BUDGET_AMBER_DOLLARS = MONTHLY_BUDGET_DOLLARS - 10;
+
+/** A day costs this many times the week's median before it reads as a spike. */
+export const SPIKE_MULTIPLE = 3;
+
+/** And never less than this, so a cheap week does not flag an ordinary day. */
+export const SPIKE_FLOOR_DOLLARS = 5;
 
 /** Every judged number, by key. A share is written from 0 to 1 and said as a percentage. */
 export const RANGES = {
@@ -76,12 +85,12 @@ export const RANGES = {
     source: 'the same lines as an answer a visitor waits for',
   },
   cost: {
-    name: 'The month, forecast',
+    name: "The month, at yesterday's rate",
     unit: '$',
-    amber: MONTHLY_BUDGET_DOLLARS * 0.8,
+    amber: BUDGET_AMBER_DOLLARS,
     red: MONTHLY_BUDGET_DOLLARS,
     source:
-      "Steve's budget: red over $50 a month; amber from $40, or when Azure forecasts more than the month's own pace",
+      "Steve's budget, 11/4: \"adjust it up 10$ then as we've added more resources\"; red at $60, amber $10 under it, graded on what is being spent, never on Azure's forecast",
   },
   clientErrorsHour: {
     name: 'Turned away (4xx) in the hour',
@@ -140,22 +149,30 @@ export function rangeWords(key: RangeKey): string {
   return `amber ${way} ${say(range.amber)}, red ${way} ${say(range.red)}`;
 }
 
+/** One day as the spike rule reads it: what it cost and the median of the finished week before it. */
+export type SpikeReading = { cost: number; median: number | null };
+
+/** The line a day must pass to be a spike: three times the week's median, and never under the floor. */
+export function spikeLine(median: number | null): number {
+  return Math.max(SPIKE_MULTIPLE * (median ?? 0), SPIKE_FLOOR_DOLLARS);
+}
+
+/** A day over its spike line is red; every other day is fine. */
+export function spikeTone(day: SpikeReading): RangeTone {
+  return day.cost > spikeLine(day.median) ? 'bad' : 'good';
+}
+
 /**
- * The month's cost judged against the budget: red when the forecast, or what
- * has been spent already, passes the budget; amber from 80% of it, or when
- * Azure forecasts more than the month's own pace so far would reach (the bill
- * is speeding up); good otherwise. Null when there is nothing to judge.
+ * The month's cost judged on what is being spent: a spike on the newest two days (the last finished
+ * day and the one Azure is still adding to) is red whatever the month reads; otherwise the budget's
+ * lines over the larger of the month so far and the month at yesterday's rate. Azure's forecast is
+ * not an input: it replays old incidents into days that have not happened.
  */
 export function costTone(
   monthToDate: number,
-  forecast: number | null,
-  dayOfMonth: number,
-  daysInMonth: number
+  monthAtYesterday: number | null | undefined,
+  spikeDays: readonly SpikeReading[] = []
 ): RangeTone {
-  const expected = forecast ?? monthToDate;
-  const worst = Math.max(expected, monthToDate);
-  const pace = dayOfMonth <= 0 ? monthToDate : (monthToDate / dayOfMonth) * daysInMonth;
-  const tone = toneOf('cost', worst);
-  if (tone !== 'good') return tone;
-  return forecast !== null && forecast > pace * 1.1 ? 'warn' : 'good';
+  if (spikeDays.slice(0, 2).some((day) => spikeTone(day) === 'bad')) return 'bad';
+  return toneOf('cost', Math.max(monthToDate, monthAtYesterday ?? monthToDate));
 }

@@ -10,7 +10,15 @@
  */
 
 // spend/costReport.ts: the cost answer's shape, as the server writes it
-export type { CostKind, CostPoint, CostReport, CostSlice, CostWindow } from './spend/costReport';
+export type {
+  CostKind,
+  CostPoint,
+  CostReport,
+  CostSlice,
+  CostWindow,
+  MeterRow,
+  SpikeDay,
+} from './spend/costReport';
 // spend/costWords.ts: the cost window, money, days and months in words, and the headline
 export { costWindowFor, dayShort, dayWords, headline, money, monthWords } from './spend/costWords';
 // spend/spendLine.ts: the running total and the forecast as paths, with the axis
@@ -21,3 +29,13 @@ export type { DonutArc } from './spend/spendDonut';
 export { donutArcs } from './spend/spendDonut';
 // spend/spendBars.ts: the bars by type, and the sentences under the resource and type pictures
 export { monthReading, rateWords, resourcesWords, typeBars } from './spend/spendBars';
+// spend/spendSpike.ts: the eight days against their spike lines, and the meters' tones
+export type { SpikeBar } from './spend/spendSpike';
+export {
+  meterTone,
+  metersTone,
+  multipleWords,
+  spikeBars,
+  spikeRuleWords,
+  spikeSentence,
+} from './spend/spendSpike';
