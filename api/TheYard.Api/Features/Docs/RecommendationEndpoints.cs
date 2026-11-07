@@ -19,7 +19,7 @@ public static class RecommendationEndpoints
             .WithName("GetRecommendations")
             .WithTags("Documents")
             .WithSummary("The recommendations colleagues wrote on LinkedIn, in the order the site shows them")
-            .WithDescription("Every entry has the same seven fields: the writer's name and title, the address of their own LinkedIn page, how they worked with Steve, the month, the recommendation as paragraphs, and the one sentence a short place quotes. They come from one file, data/recommendations.json, the one place to add or adjust one; the gate holds the file to the shape and to the count the site states.")
+            .WithDescription("Every entry has the same seven fields: the writer's name and title, the address of their own LinkedIn page, how they worked with Steve, the month, the recommendation as paragraphs, and the one sentence a short place quotes. They come from one file, data/recommendations.json, the one place to add or adjust one; the gate holds the file to the shape. The count, the years and the groups by relationship are derived from the file, never stated.")
             .Produces<RecommendationsReply>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
@@ -48,6 +48,6 @@ public static class RecommendationEndpoints
                 title: "Recommendations out of shape");
         }
 
-        return Results.Json(reply, RecommendationsFile.Format);
+        return Results.Json(reply.WithFacts(), RecommendationsFile.Format);
     }
 }

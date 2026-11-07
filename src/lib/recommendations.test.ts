@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { recommendationsFrom } from './recommendations';
+import data from '../../data/recommendations.json';
+import {
+  RECOMMENDATION_PLACES,
+  recommendationsAnswerFrom,
+  recommendationsFrom,
+} from './recommendations';
 
 const sarah = {
   name: 'Sarah Sebestyen',
@@ -37,5 +42,45 @@ describe('an answer from /api/recommendations', () => {
 
   it('reads an empty list as an empty list: empty is valid, null is the error', () => {
     expect(recommendationsFrom({ recommendations: [] })).toEqual([]);
+  });
+});
+
+describe('the derived facts on the answer', () => {
+  const fourteen = Array.from({ length: 14 }, (_, index) => ({
+    ...sarah,
+    name: `Person ${index + 1}`,
+  }));
+  const groups = [
+    {
+      key: 'led',
+      title: 'People he was senior to',
+      lead: 'The view.',
+      names: fourteen.map((p) => p.name),
+    },
+  ];
+
+  it('reads the count, the years and the groups as the API sends them, fourteen entries read as fourteen', () => {
+    const read = recommendationsAnswerFrom({
+      recommendations: fourteen,
+      count: 14,
+      from: '2023',
+      to: '2026',
+      groups,
+    });
+    expect(read?.count).toBe(14);
+    expect(read?.entries).toHaveLength(14);
+    expect(read?.groups[0].names).toHaveLength(14);
+    expect([read?.from, read?.to]).toEqual(['2023', '2026']);
+  });
+
+  it('is null when the facts are missing or out of shape', () => {
+    expect(recommendationsAnswerFrom({ recommendations: fourteen })).toBeNull();
+    expect(
+      recommendationsAnswerFrom({ recommendations: fourteen, count: 14, groups: [{ key: 'led' }] })
+    ).toBeNull();
+  });
+
+  it('draws one blank place per entry in the file, never a typed number', () => {
+    expect(RECOMMENDATION_PLACES).toBe(data.recommendations.length);
   });
 });

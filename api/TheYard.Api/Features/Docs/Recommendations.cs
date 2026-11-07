@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using TheYard.Domain.Features.Docs;
 
 namespace TheYard.Api.Features.Docs;
 
@@ -7,9 +8,9 @@ namespace TheYard.Api.Features.Docs;
 /// <summary>
 /// One recommendation as LinkedIn shows it, in the one shape every entry of
 /// data/recommendations.json has. Adding a recommendation is adding one more
-/// object to that file with these seven fields, and moving the count the tests
-/// hold (twelve, the number on his profile); the shape, the reader and the pages
-/// do not change.
+/// object to that file with these seven fields; the count, the years and the
+/// groups are worked out from the file (RecommendationFacts), so nothing else
+/// changes and no page states a number.
 /// </summary>
 /// <param name="Name">The writer's name, as LinkedIn shows it.</param>
 /// <param name="Title">The writer's title when they wrote it, as LinkedIn shows it.</param>
@@ -27,10 +28,29 @@ public sealed record Recommendation(
     IReadOnlyList<string> Paragraphs,
     string Pull);
 
-/// <summary>What /api/recommendations answers: where the words came from, and every recommendation in the order the file lists them.</summary>
+/// <summary>What /api/recommendations answers: where the words came from, every recommendation in the order the file lists them, and the facts worked out from them.</summary>
 /// <param name="Source">The public page the recommendations were copied from.</param>
 /// <param name="Recommendations">Every recommendation, in the order they are shown.</param>
-public sealed record RecommendationsReply(string Source, IReadOnlyList<Recommendation> Recommendations);
+/// <param name="Count">How many there are; zero in the file itself, which states no count.</param>
+/// <param name="From">The earliest year one is dated, as words; null in the file itself.</param>
+/// <param name="To">The latest year, as words; null in the file itself.</param>
+/// <param name="Groups">Who wrote them, by LinkedIn's relationship line, in the pages' order; null in the file itself.</param>
+public sealed record RecommendationsReply(
+    string Source,
+    IReadOnlyList<Recommendation> Recommendations,
+    int Count = 0,
+    string? From = null,
+    string? To = null,
+    IReadOnlyList<RecommendationGroup>? Groups = null)
+{
+    /// <summary>The facts of these entries, worked out once.</summary>
+    public RecommendationFacts Facts() => RecommendationFacts.Of([.. Recommendations.Select(entry => (entry.Name, entry.Relationship, entry.When))]);
+
+    /// <summary>The reply with its derived facts filled in, the shape the endpoint answers.</summary>
+    public RecommendationsReply WithFacts() => Facts() is var facts
+        ? this with { Count = facts.Count, From = facts.From, To = facts.To, Groups = facts.Groups }
+        : this;
+}
 // #endregion recommendation-shape
 
 // #region recommendations-file
@@ -135,6 +155,10 @@ public static partial class RecommendationsFile
             if (string.IsNullOrWhiteSpace(entry.Relationship))
             {
                 problems.Add($"{who}: relationship is blank");
+            }
+            else if (RecommendationFacts.GroupOf(entry.Relationship) is null)
+            {
+                problems.Add($"{who}: no group for relationship '{entry.Relationship}'");
             }
 
             if (entry.When is null || !MonthAndYear().IsMatch(entry.When))
