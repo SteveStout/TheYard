@@ -40,6 +40,30 @@ public sealed class NetworkGmailTests
     }
 
     [Fact]
+    public async Task Gmail_s_quota_403_is_waited_out_and_a_refusal_fails_with_its_reason()
+    {
+        var gmail = new ScriptedGmail();
+        gmail.On("GET", "/threads/t1?format=metadata", """{"error":{"code":403,"errors":[{"reason":"userRateLimitExceeded"}],"status":"PERMISSION_DENIED"}}""", HttpStatusCode.Forbidden);
+        gmail.On("GET", "/threads/t1?format=metadata", """{"id":"t1","messages":[]}""");
+        Assert.Equal("t1", (await new GmailThreads(gmail, Google).ReadSummaryAsync("t1", CancellationToken.None)).ThreadId);
+
+        var refused = new ScriptedGmail();
+        refused.On("GET", "/threads/t2?format=metadata", """{"error":{"code":403,"errors":[{"reason":"insufficientPermissions"}],"status":"PERMISSION_DENIED"}}""", HttpStatusCode.Forbidden);
+        var failed = await Assert.ThrowsAsync<HttpRequestException>(() => new GmailThreads(refused, Google).ReadSummaryAsync("t2", CancellationToken.None));
+        Assert.Equal(HttpStatusCode.Forbidden, failed.StatusCode);
+        Assert.Contains("403 (insufficientPermissions) after 1 tries", failed.Message, StringComparison.Ordinal);
+        Assert.Single(refused.Requests, r => r.Contains("/threads/t2", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("""{"error":{"errors":[{"reason":"rateLimitExceeded"}]}}""", "rateLimitExceeded")]
+    [InlineData("""{"error":{"status":"PERMISSION_DENIED"}}""", "PERMISSION_DENIED")]
+    [InlineData("", null)]
+    [InlineData("not json", null)]
+    public void Gmail_s_reason_word_is_read_from_its_error_body(string body, string? reason) =>
+        Assert.Equal(reason, GmailThreads.Reason(body));
+
+    [Fact]
     public async Task An_invite_s_calendar_part_is_found_however_deep_it_sits()
     {
         var gmail = new ScriptedGmail();

@@ -3,6 +3,7 @@
 // started a week for five weeks; whether the pass is logging, where the follow-ups stand and what it costs. Counts
 // only: never a name, a company, an address, a subject or a code.
 using System.Globalization;
+using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 
@@ -23,7 +24,7 @@ public static class NetworkCard
 
     private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["logging"] = "the card schema's Network view, conversations by the week they started",
+        ["logging"] = "the card schema's Network view, conversations by the week they started · the Function's run history in Application Insights, the newest pass",
         ["follow-ups"] = "the card schema's Network view, rows by state",
         ["silences"] = "the card schema's Network view, rows by state",
         ["cost"] = CardFrame.TheBill,
@@ -93,20 +94,68 @@ public static class NetworkCard
         return CardFrame.Sourced(report, Sources);
     }
 
-    /// <summary>Is it logging: this week's new conversations, the switch, and the weeks before.</summary>
+    /// <summary>The process whose newest run the logging row reads.</summary>
+    public const string PassProcess = "NetworkLogPass";
+
+    /// <summary>The hour's fact holding what the newest listed pass came to: one of the run line's outcomes.</summary>
+    public const string PassFact = "pass";
+
+    /// <summary>The hour's fact holding when the newest listed pass started, UTC, round-trip.</summary>
+    public const string PassAtFact = "pass_at";
+
+    /// <summary>The hour's fact holding the newest pass in words, as the run history says it.</summary>
+    public const string PassCameFact = "pass_came";
+
+    /// <summary>The hour's fact holding why the run history was not read; null when it was.</summary>
+    public const string PassNoteFact = "pass_note";
+
+    /// <summary>How long after a pass the next one is overdue: a day and the hour it may run late in.</summary>
+    public static readonly TimeSpan PassDue = TimeSpan.FromHours(25);
+
+    /// <summary>Is it logging: what the newest pass came to, this week's new conversations, the switch, and the weeks before.</summary>
     public static CloudRow Logging(ResourceCardInputs inputs, IReadOnlyList<(DateOnly Monday, int Started)> weeks, DateOnly monday, string mode)
     {
-        if (ResourceView.Latest(inputs) is null)
+        if (ResourceView.Latest(inputs) is not { } hour)
         {
             return new CloudRow("logging", "Is it logging?", "not read yet", [new("conversations started a week and the switch", null)], "info");
         }
         var function = Function(inputs);
         int thisWeek = weeks.Where(w => w.Monday == monday).Sum(w => w.Started);
-        string answer = mode is "on" or "shadow" ? $"{thisWeek} started this week" : $"Off ({mode})";
         string last = string.Join(", ", Enumerable.Range(1, 4).Select(i => weeks.Where(w => w.Monday == monday.AddDays(-7 * i)).Sum(w => w.Started).ToString(CultureInfo.InvariantCulture)));
-        return new CloudRow("logging", "Is it logging?", answer,
-            [new($"the switch is {mode} · once a day in the 6 AM hour Central · the four weeks before, newest first: {last}", null), .. function is null ? Array.Empty<CloudLink>() : [function]],
-            mode is "on" or "shadow" ? "good" : "info");
+        var (answer, pass, tone) = mode is "on" or "shadow" ? Pass(hour.Facts, inputs.Now, thisWeek) : ($"Off ({mode})", null, "info");
+        CloudLink[] lines = pass is null
+            ? [new($"the switch is {mode} · once a day in the 6 AM hour Central · the four weeks before, newest first: {last}", null)]
+            : [new($"the switch is {mode} · once a day in the 6 AM hour Central · the four weeks before, newest first: {last}", null), new(pass, null)];
+        return new CloudRow("logging", "Is it logging?", answer, [.. lines, .. function is null ? Array.Empty<CloudLink>() : [function]], tone);
+    }
+
+    /// <summary>The row's answer, its pass line and its tone from the newest pass: a failed pass is alarm, a blocked or late one or none for a day is warning, a pass that came through is good, and an unread history is info.</summary>
+    /// <param name="facts">The hour's facts.</param>
+    /// <param name="now">The read's time.</param>
+    /// <param name="thisWeek">Conversations started this week.</param>
+    public static (string Answer, string? Line, string Tone) Pass(IReadOnlyDictionary<string, string?> facts, DateTimeOffset now, int thisWeek)
+    {
+        string started = $"{thisWeek} started this week";
+        if (facts.GetValueOrDefault(PassNoteFact) is { Length: > 0 } || !facts.ContainsKey(PassNoteFact))
+        {
+            return (started, $"the last pass was not read: {facts.GetValueOrDefault(PassNoteFact) ?? "no run history kept this hour"}", "info");
+        }
+        if (facts.GetValueOrDefault(PassFact) is not { Length: > 0 } outcome
+            || !DateTimeOffset.TryParse(facts.GetValueOrDefault(PassAtFact), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+        {
+            return ($"no pass in {NetworkPasses.Window.TotalDays:0} days", "the Function's run history lists no pass in the window", "warning");
+        }
+        string came = facts.GetValueOrDefault(PassCameFact) ?? outcome;
+        string when = $"{ProcessWords.Day(at)} {ProcessWords.Clock(at)} Central";
+        string line = $"the last pass: {came}, {when}";
+        return outcome switch
+        {
+            "failed" => ("the last pass failed", line, "alarm"),
+            "blocked" or "late" => (came, line, "warning"),
+            _ when now - at > PassDue => ($"no pass since {when}", line, "warning"),
+            "success" or "unchanged" or "planned" => (started, line, "good"),
+            _ => (came, line, "info"),
+        };
     }
 
     /// <summary>The Function that runs the pass, by name, linked to its portal page; null when its id was not kept.</summary>

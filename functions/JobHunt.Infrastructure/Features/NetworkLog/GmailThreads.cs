@@ -7,8 +7,9 @@ namespace JobHunt.Infrastructure.Features.NetworkLog;
 /// <summary>
 /// The network log's Gmail reads with the nightly lane's token (gmail.modify, ADR-JOBHUNT-001): users.threads.list
 /// for the window, users.threads.get as metadata for the senders, times, labels and the opening words, and as full
-/// only for an invite's calendar part. The search syntax is written here and nowhere else. A rate answer (429) or a
-/// server error is waited out three times before the pass fails.
+/// only for an invite's calendar part. The search syntax is written here and nowhere else. A rate answer, a 429 or the
+/// 403 Gmail gives a user over its per-second quota (rateLimitExceeded, userRateLimitExceeded), or a server error is
+/// waited out five times with a doubling wait before the pass fails; a failure names Gmail's own reason word.
 /// </summary>
 public sealed class GmailThreads(IHttpClientFactory http, GoogleCredentials google) : IThreadReader
 {
@@ -93,19 +94,56 @@ public sealed class GmailThreads(IHttpClientFactory http, GoogleCredentials goog
             ? headers.EnumerateArray().Where(h => string.Equals(h.GetProperty("name").GetString(), name, StringComparison.OrdinalIgnoreCase)).Select(h => h.GetProperty("value").GetString() ?? "").FirstOrDefault() ?? ""
             : "";
 
+    /// <summary>How many times a rate answer or a server error is waited out before the read fails.</summary>
+    public const int Retries = 5;
+
+    /// <summary>The reason words Gmail puts on a 403 that means slow down, not refused.</summary>
+    public static readonly IReadOnlySet<string> RateReasons = new HashSet<string>(["rateLimitExceeded", "userRateLimitExceeded"], StringComparer.Ordinal);
+
     private async Task<JsonDocument> GetAsync(string url, CancellationToken ct)
     {
         _client ??= await google.ClientAsync(http, ct);
         for (int attempt = 1; ; attempt++)
         {
             using var answer = await _client.GetAsync(url, ct);
-            if ((answer.StatusCode == HttpStatusCode.TooManyRequests || (int)answer.StatusCode >= 500) && attempt <= 3)
+            string body = await answer.Content.ReadAsStringAsync(ct);
+            if (answer.IsSuccessStatusCode)
             {
-                await Task.Delay(TimeSpan.FromSeconds(2 * attempt), ct);
+                return JsonDocument.Parse(body);
+            }
+            string? reason = Reason(body);
+            bool rate = answer.StatusCode == HttpStatusCode.TooManyRequests || (int)answer.StatusCode >= 500
+                || (answer.StatusCode == HttpStatusCode.Forbidden && reason is not null && RateReasons.Contains(reason));
+            if (rate && attempt <= Retries)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), ct);
                 continue;
             }
-            answer.EnsureSuccessStatusCode();
-            return JsonDocument.Parse(await answer.Content.ReadAsStringAsync(ct));
+            throw new HttpRequestException($"Gmail answered {(int)answer.StatusCode} ({reason ?? "no reason given"}) after {attempt} tries", null, answer.StatusCode);
+        }
+    }
+
+    /// <summary>Gmail's reason word from an error body (error.errors[0].reason, else error.status); null when the body has none.</summary>
+    /// <param name="body">The error answer's body.</param>
+    public static string? Reason(string body)
+    {
+        try
+        {
+            using var json = JsonDocument.Parse(body);
+            if (!json.RootElement.TryGetProperty("error", out var error) || error.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+            if (error.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array && errors.GetArrayLength() > 0
+                && errors[0].TryGetProperty("reason", out var reason) && reason.GetString() is { Length: > 0 } word)
+            {
+                return word;
+            }
+            return error.TryGetProperty("status", out var status) ? status.GetString() : null;
+        }
+        catch (JsonException)
+        {
+            return null;
         }
     }
 }

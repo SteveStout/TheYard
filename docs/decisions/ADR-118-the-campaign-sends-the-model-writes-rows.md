@@ -210,3 +210,7 @@ Track A, the email after an application, had sent nothing: 91 campaign emails by
 - **Track A sends first.** The day's order is Track A, the oldest application first, then Track B by the LinkedIn order and Strength. The cap, the ramp, the 30-day rule (A and B counted together), the live-thread rule, the former employers and do-not-email are unchanged. Shadow writes its rows and calls no mail service.
 
 `TrackATests` and `CampaignSendTests` hold it.
+
+## Addendum, 2026-11-07 (1.0.4.148): the network schema joins the Function's grants
+
+From this version the `network` schema joins the three the Function's user may read and write (ADR: The network log drafts, Steve sends, the addendum of this date). It was published on 5 November without its grant, and the laptop file `Grant-NetworkSchema.vbs` grants SELECT, INSERT, UPDATE and DELETE on it and reads them back as that user.

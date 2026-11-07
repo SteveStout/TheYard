@@ -147,13 +147,16 @@ public sealed partial class TemplateTests
     }
 
     [Fact]
-    public void A_silent_network_pass_emails_Steve_once_a_day_after_the_six_o_clock_hour()
+    public void A_silent_or_failed_network_pass_emails_Steve_once_a_day_after_the_six_o_clock_hour()
     {
-        // Checked hourly, it can fire only in the 13:00 UTC hour, after 6 AM Central under either clock.
+        // Checked hourly, it can fire only in the 13:00 UTC hour, after 6 AM Central under either clock; a pass that
+        // ran and threw trips it as surely as one that never ran.
         string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
         Assert.Contains("name: 'alert-jobhunt-network-silent'", bicep, StringComparison.Ordinal);
         Assert.Contains("name == \"NetworkLogPass\"", bicep, StringComparison.Ordinal);
-        Assert.Contains("where hour == 13 and runs == 0", bicep, StringComparison.Ordinal);
+        Assert.Contains("name == \"NetworkLogPass\" and success == false | count", bicep, StringComparison.Ordinal);
+        Assert.Contains("where hour == 13 and (runs == 0 or failed > 0)", bicep, StringComparison.Ordinal);
+        Assert.Contains("did not run, or failed, at 6 AM Central", bicep, StringComparison.Ordinal);
         Assert.Contains("[Function(\"NetworkLogPass\")]", File.ReadAllText(Path.Combine(Root(), "functions", "jobhunt", "NetworkLogTimer.cs")), StringComparison.Ordinal);
         Assert.Contains(Settings().GetValueOrDefault("NETWORK_LOG") ?? "", new[] { "shadow", "on" });
         Assert.Equal("off", Settings().GetValueOrDefault("NETWORK_LOG_ANY_HOUR"));
