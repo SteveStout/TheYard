@@ -117,3 +117,12 @@ Seven distinct records, and none is the address its own stop opens: stop 4 alrea
 ## Addendum, 2026-11-07 (1.0.4.151): the last stop opens the PDF itself
 
 /resume became a door in this version (ADR: The resume has an address, the addendum of this date): a browser asking for it gets a band that links back to this route. A reader at stop 7 has walked the route already, so the stop opens `/resume?pdf=1`, the PDF itself, and is not sent round again.
+
+## Addendum, 2026-11-07 (1.0.4.154): who vouches for it, beside the route
+
+Until this version the route was one column and its last stop was "The resume". From this version:
+
+1. **The last stop is "The resume, and who vouches for it".** It says the six stops above are the evidence for the resume's claims and the recommendations page is who saw it first hand, with no number in the sentence, and it carries a second link, "The recommendations", beside its own Open. A stop may carry more links than its address (`links` in the one list), each the site's own.
+2. **A rail beside the stops.** At a wide desk (1280 pixels and up, the nearest step of the site's width scale to the mockup's 1180) the page is two columns: the stops at their 720 pixels and a 332-pixel rail holding the person the route is about, with his links, and every recommendation's pull sentence, each with "Read the whole thing" to its card on the recommendations page. Under that width the rail folds: the person's links under the lede, the quotes after the finish panel. The quotes are read from /api/recommendations in the browser, the same answer the landing column reads, so the stops still draw whole on the server and read nothing.
+
+The route stays seven stops. `review.spec.ts` holds the rail at 1440 and the fold at 390; `reviewStops.test.ts` the last stop's title, its link and its unnumbered sentence.

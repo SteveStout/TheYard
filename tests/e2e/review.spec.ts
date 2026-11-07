@@ -167,3 +167,32 @@ test('the short door /review is a permanent redirect that keeps the code', async
   expect(response.headers()['location']).toBe('/?view=review&r=zzrev1');
 });
 // #endregion review
+
+test('at a wide desk the rail stands beside the stops with every pull quote the API answers, and at 390 it folds into the column', async ({
+  page,
+}) => {
+  const answer = (await (await page.request.get('/api/recommendations')).json()) as {
+    recommendations: { name: string }[];
+  };
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  const quotes = page.getByTestId('review-quotes');
+  await expect(quotes.getByRole('listitem')).toHaveCount(answer.recommendations.length);
+  const more = quotes.getByRole('link', { name: /Read the whole thing/ });
+  await expect(more.first()).toHaveAttribute('href', /^\/\?view=recommendations#[a-z0-9-]+$/);
+  const rail = await page.getByTestId('review-rail').boundingBox();
+  const stops = await page.getByRole('list', { name: 'The seven stops' }).boundingBox();
+  expect(rail!.x).toBeGreaterThan(stops!.x + stops!.width - 1);
+  // The phone, opened at its own width as every phone test here is.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=review');
+  await expect(quotes.getByRole('listitem')).toHaveCount(answer.recommendations.length);
+  const finish = await page.getByTestId('review-finish').boundingBox();
+  const folded = await quotes.boundingBox();
+  expect(folded!.y).toBeGreaterThan(finish!.y);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(sideways).toBeLessThanOrEqual(0);
+});

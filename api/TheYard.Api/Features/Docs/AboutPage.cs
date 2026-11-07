@@ -64,9 +64,10 @@ public static class AboutPage
     /// <summary>
     /// The same page with <paramref name="leadImage"/> as the picture beside How I
     /// lead, or none when it is null, and <paramref name="face"/> as the style line that
-    /// declares the site's face from its own file (SiteFace), or none for the fallback face.
+    /// declares the site's face from its own file (SiteFace), or none for the fallback face, and
+    /// <paramref name="vouches"/> as the list of what colleagues said (AboutRecommendations), or none.
     /// </summary>
-    public static string Render(string siteUrl, string? leadImage, string face = "")
+    public static string Render(string siteUrl, string? leadImage, string face = "", string vouches = "")
     {
         string site = siteUrl.TrimEnd('/');
         string canonical = site + "/about";
@@ -151,6 +152,12 @@ public static class AboutPage
               .workshop-image { flex: 0 0 160px; margin: 0; }
               .workshop-image img { display: block; width: 100%; height: auto; border: 1px solid rgba(16, 73, 90, 0.18); border-radius: 8px; }
               @media (max-width: 639.98px) { .workshop-row { flex-direction: column; align-items: flex-start; } .workshop-image { flex-basis: auto; width: 160px; } }
+              .vouches h2 { margin-top: 24px; }
+              .vouch-list { margin: 0; padding: 0; list-style: none; }
+              .vouch-list li { margin: 0 0 16px; }
+              .vouch-list blockquote { margin: 0 0 4px; padding-left: 12px; border-left: 3px solid #b8923f; }
+              .vouch-list blockquote p, .vouch-list .who { margin: 0; }
+              .vouch-list .who { font-size: 14px; }
               footer { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; font-size: 13px; color: #4a4e57; }
             </style>
             </head>
@@ -179,10 +186,13 @@ public static class AboutPage
             <figure class="workshop-image"><img src="{{e(WorkshopImage)}}" alt="{{e(WorkshopImageAlt)}}" width="600" height="600" loading="lazy"></figure>
             </div>
             </section>
+            {{vouches}}
             <ul class="links">
               <li><a href="{{e(Profiles[0])}}" rel="me">LinkedIn</a></li>
               <li><a href="{{e(Profiles[1])}}" rel="me">TheYard on GitHub</a></li>
               <li><a href="/api/docs/resume">Resume (PDF)</a></li>
+              <li><a href="/?view=recommendations">Recommendations</a></li>
+              <li><a href="/?view=review">Check my work</a></li>
             </ul>
             </article>
             </main>

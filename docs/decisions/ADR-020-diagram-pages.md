@@ -166,3 +166,7 @@ The About page opened in Segoe UI on Windows and in whatever the system had else
 
 ```live path=api/TheYard.Api/Features/Docs/SiteFace.cs region=find
 ```
+
+## Addendum, 2026-11-07 (1.0.4.154): /about lists who vouches for him
+
+The server-drawn page at /about gains one section above its links: every recommendation in data/recommendations.json by its writer's name, title and pull sentence, each linking to its card on the recommendations page, under a count RecommendationFacts works out from the file (ADR: The recommendations have a page). Its links gain "Recommendations" and "Check my work". `AboutRecommendationsTests` holds the names, the card links and the count.

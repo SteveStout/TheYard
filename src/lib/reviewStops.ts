@@ -17,6 +17,8 @@ export type ReviewStop = {
   doThis: string;
   /** The decision record behind the stop, a catalogue slug, opened at /?doc=<slug>. */
   record: string;
+  /** More places the stop opens beside its own address, each the site's own, drawn as pills after Open. */
+  links?: readonly { label: string; href: string }[];
 };
 
 /** The address the route is served at, a view like every other. */
@@ -92,12 +94,14 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
   },
   {
     key: 'resume',
-    title: 'The resume',
+    title: 'The resume, and who vouches for it',
     address: '/resume?pdf=1',
     minutes: 1,
-    shows: 'Two pages. The six stops above are the evidence for what it claims.',
+    shows:
+      'Two pages. The six stops above are the evidence for what it claims; the recommendations page is who saw it first hand.',
     doThis: 'Open the PDF. The top line is the title the site was built to prove.',
     record: 'adr-the-resume-has-an-address',
+    links: [{ label: 'The recommendations', href: '/?view=recommendations' }],
   },
 ];
 // #endregion review-stops
