@@ -102,6 +102,11 @@ export function ReviewStop({
         >
           {current ? 'Open this stop' : 'Open'}
         </a>
+        {stop.links?.map((link) => (
+          <a key={link.href} className={pills.secondary} href={link.href} onClick={onOpened}>
+            {link.label}
+          </a>
+        ))}
         {current && (
           <button type="button" className={pills.secondary} onClick={onMarkDone}>
             Mark done

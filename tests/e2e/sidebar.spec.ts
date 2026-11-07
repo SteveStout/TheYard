@@ -164,6 +164,12 @@ test.describe('the docked rail', () => {
     const html = await served.text();
     expect(html).toContain('<h1>Steven Stout</h1>');
     expect(html).toContain('"@type":"Person"');
+    // And it lists what colleagues said, the count read from the API, never typed (ADR: The recommendations have a page).
+    const said = (await (await page.request.get('/api/recommendations')).json()) as {
+      count: number;
+    };
+    expect(html).toContain(`${said.count} people who worked with me`);
+    expect(html).toContain('<a href="/?view=recommendations">Recommendations</a>');
   });
 
   test('the rail collapses to icons, keeps its names, and remembers the choice', async ({

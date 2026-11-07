@@ -4,7 +4,7 @@ import { CARD_SLUGS } from './workbench';
 import { minutesLeft, REVIEW_ADDRESS, REVIEW_REPORT_PATH, REVIEW_STOPS } from './reviewStops';
 
 /** The views the app routes by ?view=, the ones a stop may name. */
-const VIEWS = ['inventory', 'admin', 'account', 'blog', 'review'];
+const VIEWS = ['inventory', 'admin', 'account', 'blog', 'review', 'recommendations'];
 
 /** True when the site serves the address: the home page, a view, an Admin card, a document, or the resume itself. */
 function served(address: string): boolean {
@@ -47,6 +47,7 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     for (const stop of REVIEW_STOPS) {
       expect(stop.address.startsWith('/'), stop.address).toBe(true);
       expect(served(stop.address), stop.address).toBe(true);
+      for (const link of stop.links ?? []) expect(served(link.href), link.href).toBe(true);
     }
     expect(REVIEW_STOPS.map((stop) => stop.address)).toEqual([
       '/',
@@ -84,5 +85,12 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
   it('names its own address and the path a tagged open of it is kept under', () => {
     expect(REVIEW_ADDRESS).toBe('/?view=review');
     expect(REVIEW_REPORT_PATH).toBe('/review');
+  });
+
+  it('ends at the resume and who vouches for it, with the recommendations page beside the PDF', () => {
+    const last = REVIEW_STOPS[REVIEW_STOPS.length - 1];
+    expect(last.title).toBe('The resume, and who vouches for it');
+    expect(last.links?.map((link) => link.href)).toEqual(['/?view=recommendations']);
+    expect(last.shows).not.toMatch(/\d/);
   });
 });

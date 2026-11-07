@@ -1,0 +1,94 @@
+/**
+ * Does:      Lays out the review route's rail: the person panel with its links as pills, then the pull quotes, each on the
+ *            shared glass with the writer under it and a link to the whole recommendation; at a wide desk one column
+ *            beside the stops, under that its two parts fold into the page's own column.
+ * Does not:  Place the rail beside the stops (ReviewPage.module.css does), draw a panel's glass or the pills.
+ * Used by:   ReviewRail.tsx.
+ */
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.person,
+.quote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.heading {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.line,
+.who,
+.words p {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.links,
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list {
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.quotes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.words {
+  margin: 0;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+}
+
+.more:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Under a wide desk the rail is not a column of its own: its two parts take their places in the page's column. */
+@media (max-width: 1279.98px) {
+  .rail {
+    display: contents;
+  }
+
+  /* The person panel keeps its place under the lede; the quotes go after the finish. */
+  .quotes {
+    order: 1;
+  }
+}
