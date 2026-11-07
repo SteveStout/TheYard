@@ -10,7 +10,7 @@
  */
 import { clockLabel } from './machineChart';
 import { costTone, MONTHLY_BUDGET_DOLLARS, rangeWords } from './ranges';
-import { money, monthWords } from './spend';
+import { dayShort, money, monthWords, spikeRuleWords, spikeSentence, type SpikeDay } from './spend';
 import type { StatTile, TileTone } from './statTiles';
 import { uptimeWords } from './statTiles';
 
@@ -43,6 +43,14 @@ export type OverviewReadings = {
     month_days: number;
     month_to_date: number;
     forecast_month: number | null;
+    /** The month if every day left costs what the last finished day did, and that day and its cost. */
+    month_at_yesterday?: number | null;
+    yesterday_day?: string | null;
+    yesterday_cost?: number | null;
+    /** Azure's own forecast, shown beside the grade and never deciding it. */
+    azure_forecast_month?: number | null;
+    /** The newest days beside the week before each, newest first. */
+    spike_days?: SpikeDay[];
     currency: string;
     /** Why there is no bill, in the cost reader's words, such as a throttled read or a missing role. */
     note?: string | null;
@@ -103,10 +111,10 @@ function fastRow({ tiles }: OverviewReadings): OverviewRow {
   };
 }
 
-/** Cost: the month so far against the owner's budget, and what Azure forecasts. */
+/** Cost: the month graded on what is being spent, at yesterday's rate, with Azure's forecast beside it. */
 function costRow({ cost }: OverviewReadings): OverviewRow {
   const question = 'Is it costing anything?';
-  const range = `the month against the $${MONTHLY_BUDGET_DOLLARS} budget: ${rangeWords('cost')}`;
+  const range = `the month at yesterday's rate against the $${MONTHLY_BUDGET_DOLLARS} budget: ${rangeWords('cost')}; ${spikeRuleWords()}`;
   if (cost === null) {
     return { key: 'cost', question, value: '…', detail: 'not read yet', range, tone: 'waiting' };
   }
@@ -121,20 +129,25 @@ function costRow({ cost }: OverviewReadings): OverviewRow {
       tone: 'plain',
     };
   }
-  // The pace runs to the newest day on the bill, not to today: Azure reports a day late.
-  const day = cost.newest_day === null ? 0 : Number(cost.newest_day.slice(8, 10));
-  const days = cost.month_days;
+  const atRate =
+    cost.month_at_yesterday === null || cost.month_at_yesterday === undefined
+      ? "; no finished day yet for yesterday's rate"
+      : `; at yesterday's rate ${money(cost.month_at_yesterday, cost.currency)}` +
+        (cost.yesterday_day && cost.yesterday_cost !== null && cost.yesterday_cost !== undefined
+          ? ` (${dayShort(cost.yesterday_day)} cost ${money(cost.yesterday_cost, cost.currency)})`
+          : '');
+  const azure =
+    cost.azure_forecast_month === null || cost.azure_forecast_month === undefined
+      ? ''
+      : ` · Azure's forecast ${money(cost.azure_forecast_month, cost.currency)}`;
+  const spike = spikeSentence(cost.spike_days);
   return {
     key: 'cost',
     question,
     value: money(cost.month_to_date, cost.currency),
-    detail:
-      `${monthWords(cost.month)} so far` +
-      (cost.forecast_month === null
-        ? '; no forecast yet'
-        : `; forecast ${money(cost.forecast_month, cost.currency)}`),
+    detail: `${monthWords(cost.month)} so far${atRate}${azure}${spike === null ? '' : ` · ${spike}`}`,
     range,
-    tone: costTone(cost.month_to_date, cost.forecast_month, day, days),
+    tone: costTone(cost.month_to_date, cost.month_at_yesterday, cost.spike_days),
   };
 }
 

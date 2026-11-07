@@ -4,6 +4,7 @@
 // beside it:
 //   CostWire.cs - CostReport, CostPoint, CostSlice, CostKind: the records the wire carries
 //   YesterdayRate.cs - the month if every day left costs what the last finished day did
+//   DaySpike.cs - the days the spike rule reads; AlertRules.cs and MeterRows.cs - the rules on the meters
 using System.Globalization;
 
 namespace TheYard.Api.Shared.CostReadings;
@@ -117,7 +118,8 @@ public static class CostView
             azureForecastMonth,
             yesterday?.Month,
             yesterday?.Day,
-            yesterday?.Cost);
+            yesterday?.Cost)
+        { SpikeDays = DaySpike.For(kept.Days, newest, partial) };
     }
 
     /// <summary>
@@ -201,7 +203,7 @@ public static class CostView
 /// Admin tab is a page somebody leaves open, and the read under it changes
 /// once an hour (ADR: What Azure charges).
 /// </summary>
-public sealed class CostHistoryReader(ICostHistory history, CostReader reader, CostStatus status, TimeProvider clock)
+public sealed class CostHistoryReader(ICostHistory history, CostReader reader, CostStatus status, TimeProvider clock, AlertRules? rules = null)
 {
     /// <summary>The lock around the cache.</summary>
     private readonly object _gate = new();
@@ -238,6 +240,8 @@ public sealed class CostHistoryReader(ICostHistory history, CostReader reader, C
                 : CostKept.Empty;
             view = CostView.Build(name, kept, now, availability, status.Snapshot());
         }
+
+        view = view with { Meters = MeterRows.From(rules?.Latest) };
 
         lock (_gate)
         {

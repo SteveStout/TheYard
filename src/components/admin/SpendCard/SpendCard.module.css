@@ -1,9 +1,9 @@
 /**
- * Does:      Lays out the cost card's three pictures side by side, and gives the forecast its dashes and the donut
- *            its tones.
+ * Does:      Lays out the cost card's pictures side by side, and gives the forecast its dashes, the donut its tones
+ *            and the spike chart its bars and lines.
  * Does not:  Draw the card, its title or its quiet text (card.module.css does), or the axes, lines and legend the
  *            other charts share (charts.module.css does).
- * Used by:   SpendCard.tsx.
+ * Used by:   SpendCard.tsx, SpendSpike.tsx, SpendMeters.tsx.
  */
 /* The cost card (ADR: What Azure charges): three pictures that wrap onto one another on a narrow screen. */
 .parts {
@@ -94,4 +94,30 @@
 .legendName {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+/* The spike chart: a bar a day in the series colour, red past its own line, the day still being added to lighter. */
+.spike {
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  display: block;
+}
+
+.spikeBar {
+  fill: var(--color-series-1);
+}
+
+.spikePartial {
+  fill: color-mix(in srgb, var(--color-series-1) 55%, var(--color-surface));
+}
+
+.spikeBad {
+  fill: var(--color-danger);
+}
+
+.spikeLine {
+  stroke: var(--color-text);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
 }
