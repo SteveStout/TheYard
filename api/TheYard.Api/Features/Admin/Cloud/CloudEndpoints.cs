@@ -6,7 +6,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <summary>The resource cards' route, a window of one resource from its keep, the nightly card's run histories, and the one address a card is fed through.</summary>
 public static class CloudEndpoints
 {
-    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
+    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
     public static IEndpointRouteBuilder MapCloudEndpoints(this IEndpointRouteBuilder app)
     {
         // #region resource-endpoint
@@ -17,7 +17,7 @@ public static class CloudEndpoints
         app.MapGet("/api/admin/cloud/{key}", Card)
             .WithName("GetResourceCard")
             .WithTags("Admin")
-            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude, campaign or network, for 24h, 7d or 30d");
+            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude, campaign, network or box, for 24h, 7d or 30d");
         // #endregion resource-endpoint
         // #region process-runs-endpoint
         // Public like the card: a run's when, how long, what it came to and its counts, nothing the card and
@@ -45,6 +45,29 @@ public static class CloudEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
         // #endregion nightly-run-endpoint
+        // #region box-endpoints
+        // The box that supports the job hunt (ADR: The box reports itself): its agent posts a snapshot a minute and a
+        // live sample every two seconds behind the operator's key, and the card's live panels read the ring back,
+        // anonymous like every card. The two writes declare each status they answer, like the nightly run's.
+        app.MapPost("/api/admin/cloud/box/snapshot", BoxRoutes.SnapshotPost)
+            .WithName("PostBoxSnapshot")
+            .WithTags("Admin")
+            .WithSummary("Hold one snapshot of the box, behind the operator's key")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+        app.MapPost("/api/admin/cloud/box/live", BoxRoutes.LivePost)
+            .WithName("PostBoxLiveSample")
+            .WithTags("Admin")
+            .WithSummary("Add one live sample of the box to the ring, behind the operator's key")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+        app.MapGet("/api/admin/cloud/box/live", BoxRoutes.LiveGet)
+            .WithName("GetBoxLive")
+            .WithTags("Admin")
+            .WithSummary("The box's last minute of live samples and how long it has been silent");
+        // #endregion box-endpoints
         // #region incidents-endpoint
         // Public like the cards: the incidents are public pages, and a failure is named by its type and where it
         // happened, never by its message, which can carry what a visitor sent.

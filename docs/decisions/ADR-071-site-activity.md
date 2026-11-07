@@ -562,3 +562,7 @@ Steve proposed a section of the documentation on site traffic, like the one for 
 ## Addendum, 2026-10-23 (1.0.4.41): one hash that does not rotate, for one count
 
 The daily token stays as it is, and nothing this record keeps changes. Beside it, from 1.0.4.41, each request that is not the site reading itself carries a second keyed hash, of the address and the user agent with no day in it, which goes to one place only: the record of the people who have visited (ADR: People who have visited, counted once). It is never written to an activity row, so the line this record draws holds: no address, no agent, no account is kept, and the activity rows still cannot follow anyone past a day. Who a visitor was is now one Domain rule, `VisitorKinds.Of`, read by `ActivityWho` and by the count alike.
+
+## Addendum, 2026-11-07 (1.0.4.156): the box's posts are not visitors
+
+Until this version every write under /api/admin/ was filed as a request. From it, a post under /api/admin/cloud/box/ that was accepted stays out of the request ring and the activity card: the box's agent posts every two seconds, and left in it would push every real request out of the ring within minutes. A refused post (401 or 400) is still filed, because the operator's key was tried against it (ADR: The box reports itself).

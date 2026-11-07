@@ -214,7 +214,7 @@ test("Memory against traffic draws in the shell's shape: the verdict beside the 
 /**
  * The resource cards after the plan (ADR: One frame for every resource): each opens from its
  * address in the same frame as the plan, with its own key in the rail, two dials, four questions
- * (five on the nightly card) and a readout, and a local run with nothing kept says so in a sentence.
+ * (five on the nightly card, eight on the box's) and a readout, and a local run with nothing kept says so in a sentence.
  */
 test('every resource under Cloud infrastructure draws in the one frame', async ({ page }) => {
   // One test walks every card, so its time grows with the list: fifteen seconds a card, not a fixed
@@ -227,10 +227,11 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
     const card = page.getByTestId(`${slug}-card`);
     await expect(card.getByTestId('cloud-dial-left')).toBeVisible({ timeout: 30_000 });
     await expect(card.getByTestId('cloud-dial-right')).toBeVisible();
-    // Four questions on every card, and a fifth on the nightly card: whether the tracker merger is
-    // keeping up (ADR: The tracker merger runs in Azure).
+    // Four questions on every card, a fifth on the nightly card: whether the tracker merger is
+    // keeping up (ADR: The tracker merger runs in Azure); and eight on the box's, one a resource the box has and
+    // whether it is reporting at all (ADR: The box reports itself).
     await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(
-      slug === 'nightly' ? 5 : 4
+      slug === 'nightly' ? 5 : slug === 'box' ? 8 : 4
     );
     await expect(card.getByTestId('cloud-readout')).toBeVisible();
     await expect(card.getByTestId('cloud-note')).toBeVisible();

@@ -96,5 +96,23 @@ public static class CloudThresholds
 
     /// <summary>Azure Functions pricing page, Flex Consumption on-demand free grant, per subscription: executions a month.</summary>
     public const double FreeGrantExecutions = 250_000;
+
+    /// <summary>
+    /// The box: all four cores, amber at 70 per cent and red at 90, held fifteen minutes like every dial. Source: the box's
+    /// own number; the local gate takes the i3 to 100 per cent for about eight minutes, which stays under the hold.
+    /// </summary>
+    public static readonly (double Amber, double Red) BoxCpu = (70, 90);
+
+    /// <summary>The box: memory of its 32 GB, amber at 85 and red at 95. Source: the box's own number, with the headroom it has.</summary>
+    public static readonly (double Amber, double Red) BoxMemory = (85, 95);
+
+    /// <summary>The box: any file system, amber at 80 per cent full and red at 90. Source: the box's own number.</summary>
+    public static readonly (double Amber, double Red) BoxFileSystem = (80, 90);
+
+    /// <summary>The box: each GPU's memory, amber at 85 and red at 95. Source: the box's own number.</summary>
+    public static readonly (double Amber, double Red) BoxGpuMemory = (85, 95);
+
+    /// <summary>The box: a temperature reads amber this many degrees under its sensor's own high mark, and red at the mark.</summary>
+    public const double BoxTemperatureUnder = 10;
 }
 // #endregion cloud-thresholds

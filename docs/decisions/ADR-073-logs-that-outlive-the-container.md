@@ -292,3 +292,7 @@ are doing).
 [`api/TheYard.Api/Shared/Observability/ErrorRing.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Observability/ErrorRing.cs)
 beside `Observability.cs`, split off by job (ADR: Observability, the addendum of 2026-10-29).
 What each ring hands on, and what it leaves out, is unchanged.
+
+## Addendum, 2026-11-07 (1.0.4.156): the box's accepted posts are not kept
+
+From this version an accepted post under /api/admin/cloud/box/ never reaches the kept log, for the reason the activity record's addendum of the same day gives; a refused one is kept as before (ADR: The box reports itself).

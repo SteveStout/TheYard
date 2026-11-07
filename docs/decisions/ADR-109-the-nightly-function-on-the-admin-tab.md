@@ -198,3 +198,7 @@ Until this version the run log was filled one way: once an hour the card's reade
 **One thing this version did not change, found while reading it.** `GitHubRuns.LaneOf` names two lanes, `nightly` and `bookkeeping`, and the workflow has since gained two dispatch types, `triage` and `leads`. A run of either reads "not named" on the card, and it did before this version too. Both paths agree about it (`NightlyCardTests.A_dry_run_by_hand_and_a_dispatch_the_lane_table_does_not_name_read_the_same_either_way` holds that), so the push changed nothing here; naming the two new lanes would change what the card shows and belongs in a version of its own.
 
 The tests: `NightlyCardTests` gains the push's cases (the reader preferring the log, a due slot with nothing pushed falling back, the daily reconcile, the posted run equal to the read run, the rules, the handler with a fake log and no host, the row's line and the workflow's step), and `AdminEndpointsNightlyRunTests` holds the route through the host at each status it declares.
+
+## Addendum, 2026-11-07 (1.0.4.156): the second write in the Cloud slice
+
+From this version the nightly run's push is one of two writes in the Cloud slice: the box that supports the job hunt posts its snapshot and its live samples the same way, behind the operator's key, read only after the key is checked (ADR: The box reports itself).
