@@ -47,6 +47,7 @@ const MachinesCard = lazy(CARD_CHUNKS.MachinesCard);
 const FollowsCard = lazy(CARD_CHUNKS.FollowsCard);
 const PlanCard = lazy(CARD_CHUNKS.PlanCard);
 const CloudResourceCard = lazy(CARD_CHUNKS.CloudResourceCard);
+const BoxCard = lazy(CARD_CHUNKS.BoxCard);
 /** The Experiment card, its code fetched the first time it is drawn. */
 const ExperimentCard = lazy(CARD_CHUNKS.ExperimentCard);
 /** The SQL card, its code fetched the first time it is drawn. */
@@ -189,10 +190,18 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
       case 'claude':
       case 'campaign':
       case 'network':
-      case 'box':
         return (
           <CloudResourceCard
             resource={slug}
+            title={benchCard(slug).name}
+            tick={tick}
+            window={machineWindow}
+            toolbar={toolbar(`on the ${benchCard(slug).name} card`, `${slug}-window`)}
+          />
+        );
+      case 'box':
+        return (
+          <BoxCard
             title={benchCard(slug).name}
             tick={tick}
             window={machineWindow}
