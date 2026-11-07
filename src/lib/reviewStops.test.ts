@@ -63,6 +63,15 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     expect(served('https://github.com/SteveStout/TheYard/actions')).toBe(false);
   });
 
+  it("names a decision record behind every stop: one the catalogue serves, seven distinct, none the stop's own address", () => {
+    const records = REVIEW_STOPS.map((stop) => stop.record);
+    expect(new Set(records).size).toBe(7);
+    for (const stop of REVIEW_STOPS) {
+      expect(served(`/?doc=${stop.record}`), stop.key).toBe(true);
+      expect(stop.address, stop.key).not.toBe(`/?doc=${stop.record}`);
+    }
+  });
+
   it('writes every line as a sentence that ends in a full stop', () => {
     for (const stop of REVIEW_STOPS) {
       expect(stop.shows, stop.key).toMatch(/\.$/);
