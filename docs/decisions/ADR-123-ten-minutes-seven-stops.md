@@ -113,3 +113,7 @@ From this version each stop draws one more line under what it shows, "Why it is 
 | The resume | ADR: The resume has an address |
 
 Seven distinct records, and none is the address its own stop opens: stop 4 already is the rules a change has to pass, so its line names the ratchet that is the reason for them. The records are the one thing on the site no other candidate has, and a reader with ten minutes reaches them only if each sits beside the thing it explains. The route stays seven stops; a second list would be a second tour.
+
+## Addendum, 2026-11-07 (1.0.4.151): the last stop opens the PDF itself
+
+/resume became a door in this version (ADR: The resume has an address, the addendum of this date): a browser asking for it gets a band that links back to this route. A reader at stop 7 has walked the route already, so the stop opens `/resume?pdf=1`, the PDF itself, and is not sent round again.

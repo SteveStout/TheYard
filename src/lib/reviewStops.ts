@@ -10,7 +10,7 @@
 export type ReviewStop = {
   key: 'first-screen' | 'room' | 'spend' | 'decision' | 'gate' | 'stores' | 'resume';
   title: string;
-  /** The address the stop opens, always the site's own ("/", "/?view=inventory", "/resume"). */
+  /** The address the stop opens, always the site's own ("/", "/?view=inventory", "/resume?pdf=1"). */
   address: string;
   minutes: number;
   shows: string;
@@ -93,7 +93,7 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
   {
     key: 'resume',
     title: 'The resume',
-    address: '/resume',
+    address: '/resume?pdf=1',
     minutes: 1,
     shows: 'Two pages. The six stops above are the evidence for what it claims.',
     doThis: 'Open the PDF. The top line is the title the site was built to prove.',
