@@ -66,7 +66,8 @@ public sealed class Module : IModule
                     ? (found.Id, await azure.TenantAsync(cancellation))
                     : null,
                 campaignDatabase);
-            // The network log's card reads the same database's card schema the same way (ADR-124).
+            // The network log's card reads the same database's card schema the same way (ADR-124), and the
+            // Function's run history for what the newest pass came to.
             var network = new NetworkSource(
                 new SqlNetworkCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
                 cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
@@ -74,7 +75,7 @@ public sealed class Module : IModule
                     ? (found.Id, await azure.TenantAsync(cancellation))
                     : null,
                 campaignDatabase,
-                nightlyNames.FunctionPath(subscription));
+                new NetworkPasses(nightlyNames.FunctionPath(subscription), provider.GetRequiredService<IProcessRunsReader>()));
             return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network).Select(card => (card, KeepOf(card)))];
         });
 

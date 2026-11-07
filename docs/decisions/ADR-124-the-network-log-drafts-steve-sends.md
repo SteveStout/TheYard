@@ -47,6 +47,18 @@ The brief's optional line, ` Since then I wrote up <post title>: <tagged link>`,
 
 Held by NetworkBlogLineTests; its row is in ADR-075's table.
 
+## Addendum, 2026-11-07 (1.0.4.148): the card reads the pass, and the alert counts a failure
+
+Until this version the card's first row, "Is it logging?", took its tone from the switch alone: shadow or on read good, whatever the pass came to. And the silent-pass alert counted invocations, so a pass that ran and threw counted as a pass. Both stopped being true on the two mornings this caught. The 6 AM passes of Friday 6 November and Saturday 7 November both came to `failed, SqlException` ("threw before it counted anything", 6.8 s and 6.3 s in the run history), the card said good both days, and the alert stayed quiet.
+
+What was missing was a grant. The 5 November publish made `network.Conversations`, `network.Passes` and `card.Network` and granted the Function's user nothing on the `network` schema, so its first read, `PassAsync`, was refused. The laptop file `Grant-NetworkSchema.vbs` proves the refusal as that user, grants SELECT, INSERT, UPDATE and DELETE on the schema, reads the four rows back from `sys.database_permissions` and proves the read again, all in its own log.
+
+1. **The row reads the newest pass.** The card's hourly read also keeps the newest pass the run history lists (the same Application Insights rows `/api/admin/cloud/nightly/runs/NetworkLogPass` answers) as the hour's facts, the way the nightly card keeps its runs. A failed pass reads alarm, "the last pass failed", with what it came to. A blocked or late pass reads warning in its own words. No pass for 25 hours while the switch is on or shadow reads warning, "no pass since" its day and time. A pass that came through reads good with this week's count. A history that was not read reads info and says why. The switch off reads "Off" as before.
+2. **The alert trips on either.** The query counts the invocations and the failed ones over the three hours before the 13:00 UTC hour, and fires when there were none or any failed: "The network log did not run, or failed, at 6 AM Central".
+3. **A new schema ships with its grant.** A schema added to the site's database is published with its GRANT to the Function's user in the same file, and the grant is read back as that user before the lane closes.
+
+Held by NetworkPassTests and TemplateTests; their rows are in ADR-075's table.
+
 ## Where it sits
 
 A feature slice in each of the Function's rings and a card in the site's Admin module, with the shared concerns the campaign now reads from too. Separation of duties is the principle: the model reads and summarises, code decides and writes, a person sends. It cost a schema, an hourly timer and one sign-in. What would change it: Steve saying `send` for email, which would be a new record, not an addendum.

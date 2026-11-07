@@ -1,7 +1,9 @@
 // What the network card reads (ADR-124): the card schema's Network view, counts
 // only, once a minute for the drafts waiting and once an hour for the weeks and the states; the switch from the
-// Function's health route, the same read the nightly and campaign cards make. Nothing here can read a name: the
-// site's database user may select from the card schema alone.
+// Function's health route, the same read the nightly and campaign cards make; and the newest pass the Function's run
+// history lists, kept as the hour's facts the way the nightly card keeps its runs, so the logging row says what the
+// pass came to and not only what the switch says. Nothing here can read a name: the site's database user may select
+// from the card schema alone.
 using System.Globalization;
 using TheYard.Application.Features.Admin.Cloud;
 
@@ -12,9 +14,10 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <param name="host">The Function's host name, for its health route's switches; null when it cannot be read.</param>
 /// <param name="resource">The database's resource id and tenant, for the header's portal link; null when the directory does not hold it.</param>
 /// <param name="database">The database the network schema lives in, by its name in configuration.</param>
-/// <param name="function">The Function app's resource id, which runs the pass, for its portal link on the card.</param>
-public sealed class NetworkSource(INetworkCounts counts, Func<CancellationToken, Task<string?>> host, Func<CancellationToken, Task<(string Id, string? Tenant)?>> resource, string database, string? function = null)
+/// <param name="passes">The Function that runs the pass and its run history; null where neither is read, and the card then says the pass was not read.</param>
+public sealed class NetworkSource(INetworkCounts counts, Func<CancellationToken, Task<string?>> host, Func<CancellationToken, Task<(string Id, string? Tenant)?>> resource, string database, NetworkPasses? passes = null)
 {
+
     /// <summary>The database, its name on the bill.</summary>
     public string Database => database;
 
@@ -51,7 +54,11 @@ public sealed class NetworkSource(INetworkCounts counts, Func<CancellationToken,
         var read = await counts.ReadAsync(cancellation);
         var facts = new Dictionary<string, string?>(StringComparer.Ordinal);
         var (id, tenant) = await resource(cancellation) ?? ("", null);
-        facts["function"] = function;
+        facts["function"] = passes?.Function;
+        foreach (var (key, value) in await (passes ?? NetworkPasses.None).PassAsync(cancellation))
+        {
+            facts[key] = value;
+        }
         if (!read.Read)
         {
             facts[ResourceView.MissingFact] = read.Note;

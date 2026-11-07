@@ -33,6 +33,10 @@ public sealed class NetworkCardTests
         ["stopped"] = "1",
         ["closed"] = "40",
         ["database"] = "sqldb-theyard-ss-basic",
+        [NetworkCard.PassNoteFact] = null,
+        [NetworkCard.PassFact] = "success",
+        [NetworkCard.PassAtFact] = "2026-11-04T12:00:01.0000000+00:00",
+        [NetworkCard.PassCameFact] = "success",
     };
 
     [Fact]
@@ -55,6 +59,7 @@ public sealed class NetworkCardTests
         Assert.Equal("5", card.Dials[1].Big);
         var logging = card.Rows.Single(r => r.Key == "logging");
         Assert.Equal("3 started this week", logging.Answer);
+        Assert.Equal("good", logging.Tone);
         Assert.Contains("newest first: 6, 4, 4, 2", logging.Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal("5 drafted, waiting for Steve", card.Rows.Single(r => r.Key == "follow-ups").Answer);
         Assert.Equal("2 quiet after a follow-up", card.Rows.Single(r => r.Key == "silences").Answer);
@@ -91,7 +96,7 @@ public sealed class NetworkCardTests
     public async Task Every_resource_the_card_names_carries_its_portal_link_from_the_API()
     {
         var read = new NetworkCountsRead(true, null, [(new DateOnly(2026, 11, 2), 3)], new Dictionary<string, int>(StringComparer.Ordinal) { ["Open"] = 12 });
-        var hour = await new NetworkSource(new Fixed(read), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>((Database, Tenant)), "sqldb-theyard-ss-basic", FunctionApp)
+        var hour = await new NetworkSource(new Fixed(read), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>((Database, Tenant)), "sqldb-theyard-ss-basic", new NetworkPasses(FunctionApp, null))
             .HourAsync(Nine.AddHours(-1), Nine, CancellationToken.None);
         var inputs = Inputs(Facts("shadow")) with { Hours = [hour] };
         var card = NetworkCard.View(inputs);
@@ -107,7 +112,7 @@ public sealed class NetworkCardTests
         }
         Assert.Empty(named);
 
-        var unread = await new NetworkSource(new Fixed(NetworkCountsRead.Unread("the network schema is not published yet")), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>((Database, Tenant)), "db", FunctionApp)
+        var unread = await new NetworkSource(new Fixed(NetworkCountsRead.Unread("the network schema is not published yet")), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>((Database, Tenant)), "db", new NetworkPasses(FunctionApp, null))
             .HourAsync(Nine.AddHours(-1), Nine, CancellationToken.None);
         var unreadCard = NetworkCard.View(Inputs(null) with { Hours = [unread] });
         Assert.NotNull(unreadCard.Resource?.Href);
