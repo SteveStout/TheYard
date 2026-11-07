@@ -19,6 +19,7 @@ export const CARD_CHUNKS = {
   FollowsCard: () => import('../FollowsCard/FollowsCard'),
   PlanCard: () => import('../PlanCard/PlanCard'),
   CloudResourceCard: () => import('../CloudResourceCard/CloudResourceCard'),
+  BoxCard: () => import('../BoxCard/BoxCard'),
   ExperimentCard: () => import('../ExperimentCard/ExperimentCard'),
   SqlCard: () => import('../SqlCard/SqlCard'),
   StoreCard: () => import('../StoreCard/StoreCard'),

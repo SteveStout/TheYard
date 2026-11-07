@@ -315,3 +315,7 @@ One change to what a card says. The share's split by authentication is part of i
 ## Addendum, 2026-11-07 (1.0.4.156): a card may ask more than four questions
 
 The frame's four rows are its minimum, not its count. The box that supports the job hunt (ADR: The box reports itself) has seven resources a person would ask about, each core, the memory and swap, the network, the disks and the array, the GPUs, the temperatures and the services, and an eighth row, whether the box is reporting at all, which carries its red rule so the card's tone and its rail dot can turn red at three minutes of silence. Each row keeps the frame's shape: a question, an answer, a tone, a source and a table.
+
+## Addendum, 2026-11-07 (1.0.4.157): a card may hand the frame a live block
+
+From this version CardShell takes one optional slot, a card's own live block, drawn across the card between the lead block and the chart; only the box's card hands one, its four live panels (ADR: The box reports itself, the addendum on the live panels).

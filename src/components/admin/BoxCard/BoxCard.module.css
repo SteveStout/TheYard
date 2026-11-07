@@ -1,0 +1,95 @@
+/**
+ * Does:      Lays out the box's four live panels: two across at a desk's width and one column on a phone, each a glass
+ *            panel with its title line, its sixty-second chart, its axis words and its legend, the lines in the series
+ *            colours, and the blue line that says no live sample has come.
+ * Does not:  Draw the card's frame, dials, chart or rows (CardShell does) or decide a figure (the server does).
+ * Used by:   BoxLivePanels.tsx.
+ */
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.panel {
+  margin: 0;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.panelTitle {
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.figures {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke);
+}
+
+.series1 {
+  color: var(--color-series-1);
+}
+
+.series2 {
+  color: var(--color-series-2);
+}
+
+.series3 {
+  color: var(--color-series-3);
+}
+
+.series4 {
+  color: var(--color-text);
+}
+
+.axis,
+.legend {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text);
+  font-size: var(--text-xs);
+}
+
+.stale {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+}
+
+/* A phone: one panel a row, so each chart keeps its width. */
+@media (max-width: 639.98px) {
+  .panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
