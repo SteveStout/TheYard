@@ -1,6 +1,7 @@
 /**
  * Does:      Lays out one stop: its head (the state mark, the title, the minutes), what it shows, the Do this line on the
- *            current stop, the stop's actions and its address; the mark green with a tick when done, a ring when not.
+ *            current stop, the decision record behind it, the stop's actions and its address; the mark green with a
+ *            tick when done, a ring when not.
  * Does not:  Draw the panel's glass, rule or brackets (panels.css does) or the pills (ReviewPage.module.css does).
  * Used by:   ReviewStop.tsx.
  */
@@ -120,6 +121,19 @@
   color: var(--color-text-muted);
   font-size: var(--text-xs);
   overflow-wrap: anywhere;
+}
+
+.record {
+  margin: 0;
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+/* A thumb tall, like every other control on the route, without a pill's weight. */
+.record a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
 }
 
 .code {

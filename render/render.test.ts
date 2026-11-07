@@ -164,6 +164,9 @@ describe('the rendering service', () => {
     expect(html).toContain('without taking my word for any of it');
     expect(html).not.toContain('Nothing here is a pitch');
     for (const stop of REVIEW_STOPS) expect(html).toContain(escapeHtml(stop.title));
+    // Each stop names its decision record, one link a stop, read from the list and not from the API.
+    for (const stop of REVIEW_STOPS) expect(html).toContain(`href="/?doc=${stop.record}"`);
+    expect(html.match(/href="\/\?doc=adr-/g)?.length).toBeGreaterThanOrEqual(7);
     // The stop showing Do this on a page drawn for nobody is the first.
     expect(html).toContain(escapeHtml(REVIEW_STOPS[0].doThis));
     // The rail's row sits directly under Home.
