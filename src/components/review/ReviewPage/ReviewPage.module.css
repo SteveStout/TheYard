@@ -2,7 +2,7 @@
  * Does:      Lays out the review route as one column at the page's reading measure, its title on the gold bar, and holds
  *            the route's two pills: the filled one for the move to make and the outlined one beside it.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a stop (ReviewStop.module.css does).
- * Used by:   ReviewPage.tsx, ReviewProgress.tsx, ReviewStop.tsx, ReviewFinish.tsx.
+ * Used by:   ReviewPage.tsx, ReviewProgress.tsx, ReviewStop.tsx, ReviewFinish.tsx, ReviewRail.tsx.
  */
 .page {
   display: flex;
@@ -11,6 +11,28 @@
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
+}
+
+/* A wide desk: the stops at their reading measure, the rail beside them spanning every row, the last row taking any
+   height the rail has over the stops so the stops never spread apart. */
+@media (min-width: 1280px) {
+  .page {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) 332px;
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: var(--space-5);
+    align-items: start;
+    max-width: calc(720px + 332px + var(--space-5));
+  }
+
+  .page > :not([data-testid='review-rail']) {
+    grid-column: 1;
+  }
+
+  .page > [data-testid='review-rail'] {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
 }
 
 .head {

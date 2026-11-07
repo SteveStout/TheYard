@@ -167,7 +167,8 @@ public static class DocumentationEndpoints
     {
         // The Yard name the request arrived on, then Site:Url, then the request's own address.
         string site = hosts.LinkOrigin(http);
-        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot)), "text/html; charset=utf-8");
+        var reply = File.Exists(paths.RecommendationsPath) ? RecommendationsFile.Of(paths.RecommendationsPath) : null;
+        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply)), "text/html; charset=utf-8");
     }
 
     private static ContentHttpResult Bicep(HostPaths paths) =>

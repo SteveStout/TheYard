@@ -1,8 +1,8 @@
 /**
  * Does:      Draws the review route at ?view=review (ADR: Ten minutes, seven stops): the title and lede, where the
- *            reviewer is, the seven stops from the one list in their three states, and the finish panel.
- * Does not:  Hold the stops (reviewStops.ts does) or the place (useReviewProgress.ts keeps it on the browser); it reads
- *            nothing from the API, so the server draws it whole.
+ *            reviewer is, the seven stops from the one list in their three states, the finish panel, and the rail.
+ * Does not:  Hold the stops (reviewStops.ts does) or the place (useReviewProgress.ts keeps it on the browser); the stops
+ *            read nothing from the API, so the server draws them whole, and the rail's quotes arrive in the browser.
  * Used by:   App.tsx.
  */
 import { useRef } from 'react';
@@ -10,6 +10,7 @@ import { useReviewProgress } from '../../../hooks/useReviewProgress';
 import { REVIEW_STOPS } from '../../../lib/reviewStops';
 import { ReviewFinish } from '../ReviewFinish';
 import { ReviewProgress } from '../ReviewProgress';
+import { ReviewRail } from '../ReviewRail';
 import { ReviewStop, type StopState } from '../ReviewStop';
 import styles from './ReviewPage.module.css';
 
@@ -47,6 +48,7 @@ export function ReviewPage() {
           number on it is read live.
         </p>
       </header>
+      <ReviewRail />
       <ReviewProgress
         current={current}
         reached={reached.length}
