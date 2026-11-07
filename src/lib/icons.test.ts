@@ -72,7 +72,7 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   'ActivityCard.module.css': ['.bandEdge', '.bandLabel', '.crosshair line', '.crossDot'],
   // The cost card (ADR: What Azure charges): the ringed dot on the newest day, and the
   // hairline of the card's ground between the donut's slices. Drawings, not icons.
-  'SpendCard.module.css': ['.newest', '.arc'],
+  'SpendCard.module.css': ['.newest', '.arc', '.spikeLine'],
   'Ring.module.css': ['.tick', '.tickMajor'],
   // The Cloud infrastructure frame (ADR: The App Service plan, read every minute; ADR: One frame for
   // every resource, the addendum on how a card draws time): the sparkline, each panel's grid, its

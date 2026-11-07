@@ -53,6 +53,12 @@ public sealed record CostReport(
     string? YesterdayDay = null,
     double? YesterdayCost = null)
 {
+    /// <summary>The judged day and the seven before it, newest first, each beside the median of the week before it; empty, never null.</summary>
+    public IReadOnlyList<SpikeDay> SpikeDays { get; init; } = [];
+
+    /// <summary>Every meter that can run away and the rule that watches it; empty, never null.</summary>
+    public IReadOnlyList<MeterRow> Meters { get; init; } = [];
+
     /// <summary>An answer with nothing to draw and the reason why.</summary>
     public static CostReport Absent(string window, string note, string currency, long? readAtMs) =>
         new(window, CostWindows.Names, false, note, currency, readAtMs, null, false, null, 0, null, 0, 0, 0, [], [], [], []);

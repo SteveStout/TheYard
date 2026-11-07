@@ -195,7 +195,7 @@ public class ConstructorWidthTests
     [InlineData("RingReadings", 4, "api/TheYard.Api/Features/Admin/Operations/OperationsReadings.cs")]
     [InlineData("MachineCardReadings", 5, "api/TheYard.Api/Features/Admin/Operations/MachineCardReadings.cs")]
     [InlineData("CostKeeping", 5, "api/TheYard.Api/Shared/CostReadings/CostKeeping.cs")]
-    [InlineData("CostRecorder", 2, "api/TheYard.Api/Shared/CostReadings/CostRecorder.cs")]
+    [InlineData("CostRecorder", 4, "api/TheYard.Api/Shared/CostReadings/CostRecorder.cs")]
     // The three that were waiting on a split before they could be handed a clock, and the parts
     // split off them. Each of the three reads a clock now, so each is one parameter wider than it
     // was and still under the line, which is what the split bought.
