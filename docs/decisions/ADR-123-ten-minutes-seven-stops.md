@@ -97,3 +97,19 @@ What stopped being true: the page's title "Ten minutes, seven stops", its lede, 
 3. The last stop says two pages, which is what the locked resume is (the resume record's addendum of 1.0.4.146).
 
 Why: on 6 November the route had been opened by 18 people in seven days and 2 of them went past its first screen (GET /api/admin/review?window=7d, read 13:42 CST). The page described the tour; a reader deciding whether to spend an interview on me needs to know what checking it gets them. The words stay evidence, not pitch: every stop is still one live thing to look at.
+
+## Addendum, 2026-11-07 (1.0.4.150): every stop names the decision behind it
+
+From this version each stop draws one more line under what it shows, "Why it is built this way:", with the decision record behind the stop as a link by its sidebar title, read from the catalogue and never typed. It opens in the same tab like every stop link, and opening it counts as opening the stop.
+
+| Stop | The record behind it |
+| --- | --- |
+| The first screen | ADR: One reading for the first screen |
+| Bid in the room | ADR: The store does the work |
+| What Azure charges | ADR: What Azure charges |
+| One decision, with its code | ADR: The numbers that may only fall |
+| The gate that shipped this version | ADR: The five-minute gate |
+| One codebase, two stores | ADR: Measuring both stores |
+| The resume | ADR: The resume has an address |
+
+Seven distinct records, and none is the address its own stop opens: stop 4 already is the rules a change has to pass, so its line names the ratchet that is the reason for them. The records are the one thing on the site no other candidate has, and a reader with ten minutes reaches them only if each sits beside the thing it explains. The route stays seven stops; a second list would be a second tour.

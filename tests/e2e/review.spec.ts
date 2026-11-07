@@ -91,11 +91,28 @@ test('every stop opens the site’s own address, and the stop on screen is the o
     await expect(link).toHaveAttribute('href', entry.address);
     await expect(link).not.toHaveAttribute('target', '_blank');
   }
+  for (const [index, entry] of REVIEW_STOPS.entries()) {
+    const record = stop(page, index).getByTestId('review-record').getByRole('link');
+    await expect(record).toHaveAttribute('href', `/?doc=${entry.record}`);
+    await expect(record).not.toHaveAttribute('target', '_blank');
+  }
   await stop(page, 3)
     .getByRole('button', { name: /One decision/ })
     .click();
   await expect(page.getByTestId('review-do-this')).toHaveCount(1);
   await expect(stop(page, 3).getByTestId('review-do-this')).toBeVisible();
+});
+
+test('a stop’s decision record opens its document, and Back returns to the route', async ({
+  page,
+}) => {
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  await stop(page, 1).getByTestId('review-record').getByRole('link').click();
+  await expect(page).toHaveURL(new RegExp(`\\?doc=${REVIEW_STOPS[1].record}$`));
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId('review-page')).toBeVisible();
 });
 
 test('at 390 nothing scrolls sideways, every control is a thumb tall, and every panel is the glass', async ({
