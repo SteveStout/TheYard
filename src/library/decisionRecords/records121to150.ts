@@ -45,4 +45,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '125',
   },
+  adrRecommendationsPage: {
+    title: 'ADR: The recommendations have a page',
+    menuLabel: 'ADR: The recommendations have a page',
+    url: '/api/docs/adr-the-recommendations-have-a-page',
+    kind: 'adr',
+    number: '126',
+  },
 } as const satisfies Record<string, RecordEntry>;

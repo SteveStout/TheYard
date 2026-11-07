@@ -1,6 +1,6 @@
 /**
- * Does:      Opens and closes each view (home, the blog, the review route, the inventory, a vehicle, Admin, Account, a
- *            document), moves focus to what opened, and says it to screen readers.
+ * Does:      Opens and closes each view (home, the blog, the review route, the recommendations, the inventory, a vehicle,
+ *            Admin, Account, a document), moves focus to what opened, and says it to screen readers.
  * Does not:  Write the address bar itself (it asks useAddressBar.ts), fetch the list, or draw anything.
  * Used by:   App.tsx, Shell.tsx.
  */
@@ -42,16 +42,9 @@ export function useNavigation(address: Address, loadState: LoadState) {
     setInventoryOpen,
     openDocKey,
     setOpenDocKey,
-    blogOpen,
-    setBlogOpen,
-    reviewOpen,
-    setReviewOpen,
+    page,
+    closePages,
   } = address;
-  // The two pages that cover the rest, the blog and the review route, closed together by every other view.
-  const closePages = () => {
-    setBlogOpen(false);
-    setReviewOpen(false);
-  };
   const view = { ...address, loadState };
 
   // #region focus
@@ -119,19 +112,11 @@ export function useNavigation(address: Address, loadState: LoadState) {
     // the reader left it. Admin counts as a view switch too.
     window.scrollTo(
       0,
-      selectedVehicle || adminOpen || accountOpen || blogOpen || reviewOpen || !inventoryOpen
+      selectedVehicle || adminOpen || accountOpen || page || !inventoryOpen
         ? 0
         : listScrollY.current
     );
-  }, [
-    selectedVehicle,
-    adminOpen,
-    accountOpen,
-    inventoryOpen,
-    blogOpen,
-    reviewOpen,
-    address.blogPost,
-  ]);
+  }, [selectedVehicle, adminOpen, accountOpen, inventoryOpen, page, address.blogPost]);
 
   // #region open-inventory
   // The same shape as Admin and Account: a view at its own address, pushed so

@@ -28,6 +28,8 @@ export type FirstLoad = {
   doc: { key: string; html: string } | null;
   /** The first screen's reading (/api/pulse) on the bare address, as it answered, or null; absent on a page drawn before it was read. */
   pulse?: unknown;
+  /** /api/recommendations as it answered, on ?view=recommendations, or null; absent on a page drawn before it was read. */
+  recommendations?: unknown;
 };
 
 /** Holds the first load for the page's first draw; null on a page drawn in the browser. */
