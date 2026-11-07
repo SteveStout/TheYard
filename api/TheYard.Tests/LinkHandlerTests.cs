@@ -102,9 +102,9 @@ public sealed class LinkHandlerTests
     /// lands on reports one, and a visit counts once.
     /// </summary>
     [Fact]
-    public async Task The_page_reports_three_views_and_the_review_door_is_counted_once_by_the_page_it_opens()
+    public async Task The_page_reports_four_views_and_the_review_door_is_counted_once_by_the_page_it_opens()
     {
-        Assert.Equal(["/", "/about", "/review"], TaggedRequests.PageViews);
+        Assert.Equal(["/", "/about", "/review", "/recommendations"], TaggedRequests.PageViews);
         const string chrome = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130.0";
         var review = TaggedRequests.OpenOf("GET", TaggedRequests.PageReport, "zzrev1", "/review", chrome, Noon, "sql");
         Assert.Equal(new LinkOpen(Noon, "zzrev1", "/review", "sql"), review);

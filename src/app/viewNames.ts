@@ -12,6 +12,7 @@ export type ViewOnScreen = {
   blogOpen: boolean;
   blogPost: string | null;
   reviewOpen: boolean;
+  recommendationsOpen: boolean;
   accountOpen: boolean;
   inventoryOpen: boolean;
   selectedVehicle: Vehicle | null;
@@ -23,6 +24,7 @@ export function viewKeyOf(view: ViewOnScreen): string {
   if (view.adminOpen) return 'admin';
   if (view.blogOpen) return `blog:${view.blogPost ?? ''}`;
   if (view.reviewOpen) return 'review';
+  if (view.recommendationsOpen) return 'recommendations';
   if (view.accountOpen) return 'account';
   if (view.selectedVehicle) return `vehicle:${view.selectedVehicle.id}`;
   return 'list';
@@ -36,6 +38,7 @@ export function announcementOf(view: ViewOnScreen): string {
   if (view.adminOpen) return 'Admin panel';
   if (view.blogOpen) return 'Blog';
   if (view.reviewOpen) return 'Check my work in ten minutes';
+  if (view.recommendationsOpen) return 'The people who worked with Steven';
   if (view.accountOpen) return 'Account';
   const vehicle = view.selectedVehicle;
   if (vehicle) return `${vehicle.year} ${vehicle.make} ${vehicle.model}, vehicle detail`;

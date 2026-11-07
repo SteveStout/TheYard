@@ -8,11 +8,13 @@ import { useFirstLoad, useInTheBrowser } from '../hooks/useFirstLoad';
 import { useNow } from '../hooks/useNow';
 import { pageOpenReport } from '../lib/links';
 import { REVIEW_REPORT_PATH } from '../lib/reviewStops';
+import { RECOMMENDATIONS_REPORT_PATH } from '../lib/recommendationsPage';
 import { prefetchWhenIdle } from '../lib/prefetch';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { Landing } from '../components/landing/Landing';
 import { BlogPage } from '../components/blog/BlogPage';
 import { ReviewPage } from '../components/review/ReviewPage';
+import { RecommendationsPage } from '../components/recommendations/RecommendationsPage';
 import { VehicleDetail } from '../components/vehicle/VehicleDetail';
 import { useAccount } from './hooks/useAccount';
 import { useAddressBar } from './hooks/useAddressBar';
@@ -69,7 +71,14 @@ export default function App() {
   const [openReport] = useState(() =>
     typeof window === 'undefined'
       ? null
-      : pageOpenReport(window.location.search, address.reviewOpen ? REVIEW_REPORT_PATH : '/')
+      : pageOpenReport(
+          window.location.search,
+          address.reviewOpen
+            ? REVIEW_REPORT_PATH
+            : address.recommendationsOpen
+              ? RECOMMENDATIONS_REPORT_PATH
+              : '/'
+        )
   );
   useEffect(() => {
     if (openReport !== null)
@@ -77,8 +86,8 @@ export default function App() {
   }, [openReport]);
   // #endregion tagged-open
 
-  // One view at a time, in this order: Admin, Account, the blog, the review route, the landing page, then
-  // the inventory (loading, unreachable, a vehicle, or the list).
+  // One view at a time, in this order: Admin, Account, the blog, the review route, the recommendations, the
+  // landing page, then the inventory (loading, unreachable, a vehicle, or the list).
   return (
     <Shell
       rail={rail}
@@ -124,6 +133,8 @@ export default function App() {
         />
       ) : address.reviewOpen ? (
         <ReviewPage />
+      ) : address.recommendationsOpen ? (
+        <RecommendationsPage />
       ) : !address.inventoryOpen ? (
         <Landing
           accountLabel={account.email ?? 'Sign in'}

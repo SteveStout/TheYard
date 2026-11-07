@@ -154,6 +154,8 @@ const apiProxy = {
   '^/resume(\\?.*)?$': 'http://localhost:5210',
   // And the review route's short door (DocumentationEndpoints.cs), a redirect to /?view=review.
   '^/review(\\?.*)?$': 'http://localhost:5210',
+  // And the recommendations page's short door, the same shape.
+  '^/recommendations(\\?.*)?$': 'http://localhost:5210',
 };
 
 export default defineConfig({

@@ -28,6 +28,7 @@ public static class ServedAddresses
     [
         new("/", "The app", "page"),
         new("/review", "The review route, by its short door", "page"),
+        new("/recommendations", "The recommendations page, by its short door", "page"),
         new("/robots.txt", "robots.txt", "file"),
         new("/sitemap.xml", "sitemap.xml", "file"),
         new("/og.png", "The preview card", "file"),

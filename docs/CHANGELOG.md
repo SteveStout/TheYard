@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.4.153** (2026-11-07): The recommendations have a page of their own at /?view=recommendations, with a short door at /recommendations that keeps a tagged link's code: every recommendation word for word, grouped by where the writer stood, each name linking to the writer's profile, drawn whole on the server and reached from the sidebar and the landing page.
 - **1.0.4.152** (2026-11-07): The thirteenth recommendation is on the site, and nothing states the count: how many there are, the years they span and who wrote them, grouped by where the writer stood, are worked out from the one file and answered by /api/recommendations.
 - **1.0.4.151** (2026-11-07): /resume in a browser opens the resume under one band that links to the ten-minute review route; every other caller still gets the PDF, byte for byte, and ?pdf=1 asks for the file itself.
 - **1.0.4.150** (2026-11-07): The review route's seven stops each name the decision record behind them, one click from the thing it explains.
