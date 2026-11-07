@@ -23,7 +23,8 @@ export type MenuVariant =
   | 'records'
   | 'incidents'
   | 'changelog'
-  | 'author';
+  | 'author'
+  | 'recommendations';
 
 /** The tile and row icons, drawn in SheetIcons.tsx on the same 20 by 20 grid as the row icons. */
 export type NavIcon =

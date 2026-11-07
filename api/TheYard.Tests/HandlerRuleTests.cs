@@ -37,6 +37,7 @@ public sealed class HandlerRuleTests(WebApplicationFactory<Program> factory) : I
         ["DocumentationEndpoints.Resume"] = "a file the host serves from the repository",
         ["DocumentationEndpoints.ResumeAtItsAddress"] = "a file the host serves from the repository",
         ["DocumentationEndpoints.ReviewAtItsAddress"] = "a redirect to the app's own view, carrying the link's query",
+        ["DocumentationEndpoints.RecommendationsAtItsAddress"] = "a redirect to the app's own view, carrying the link's query",
         ["RecommendationEndpoints.Read"] = "a file the host serves from the repository",
         ["HealthEndpoints.Version"] = "the build the host is",
         ["HealthEndpoints.Liveness"] = "the process answering",

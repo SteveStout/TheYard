@@ -134,6 +134,12 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
         srcSet: '/api/images/badges/steve-176.webp 176w, /api/images/badges/steve-264.webp 264w',
       },
     },
+    {
+      menu: 'recommendations',
+      icon: 'author',
+      group: 'who',
+      blurb: 'What the people who worked with him wrote, every word, checkable on LinkedIn.',
+    },
   ],
   actions: [
     {

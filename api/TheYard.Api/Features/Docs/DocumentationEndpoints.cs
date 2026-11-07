@@ -103,6 +103,8 @@ public static class DocumentationEndpoints
         // The review route's short door (ADR: Ten minutes, seven stops): a permanent redirect to the
         // view, carrying the link's query, so /review?r=<code> on a card reaches the page that reports it.
         app.MapGet("/review", ReviewAtItsAddress).ExcludeFromDescription();
+        // The recommendations page's short door (ADR: The recommendations have a page), the same shape.
+        app.MapGet("/recommendations", RecommendationsAtItsAddress).ExcludeFromDescription();
         #endregion review-address
 
         return app;
@@ -174,13 +176,19 @@ public static class DocumentationEndpoints
     private static PhysicalFileHttpResult Resume(HostPaths paths) =>
         TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");
 
-    /// <summary>The redirect to /?view=review with every other part of the request's query kept, in its order.</summary>
-    private static RedirectHttpResult ReviewAtItsAddress(HttpRequest request)
+    /// <summary>The review route's short door: /review to /?view=review.</summary>
+    private static RedirectHttpResult ReviewAtItsAddress(HttpRequest request) => ViewAtItsAddress(request, "review");
+
+    /// <summary>The recommendations page's short door: /recommendations to /?view=recommendations.</summary>
+    private static RedirectHttpResult RecommendationsAtItsAddress(HttpRequest request) => ViewAtItsAddress(request, "recommendations");
+
+    /// <summary>The redirect to /?view=<paramref name="view"/> with every other part of the request's query kept, in its order.</summary>
+    private static RedirectHttpResult ViewAtItsAddress(HttpRequest request, string view)
     {
         var kept = request.Query
             .Where(pair => !string.Equals(pair.Key, "view", StringComparison.Ordinal))
             .SelectMany(pair => pair.Value.Select(value => $"{Uri.EscapeDataString(pair.Key)}={Uri.EscapeDataString(value ?? "")}"));
-        return TypedResults.Redirect(string.Join("&", kept.Prepend("/?view=review")), permanent: true);
+        return TypedResults.Redirect(string.Join("&", kept.Prepend($"/?view={view}")), permanent: true);
     }
 
     private static Results<ContentHttpResult, PhysicalFileHttpResult> ResumeAtItsAddress(HttpContext http, HostPaths paths, string? src, string? r, string? pdf)
