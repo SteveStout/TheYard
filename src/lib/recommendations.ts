@@ -1,8 +1,9 @@
 /**
- * Does:      Names the shape /api/recommendations answers and reads an answer into it, so both pages that show what colleagues say draw from one wire.
- * Does not:  Fetch (the component does, with the page's own fetch) or draw anything.
+ * Does:      Names the shape /api/recommendations answers and reads an answer into it, the entries and the facts the API works out from them, so every page that shows what colleagues say draws from one wire.
+ * Does not:  Fetch (the component does, with the page's own fetch), work out a count or a group, or draw anything.
  * Used by:   Recommendations.tsx, recommendations.test.ts.
  */
+import file from '../../data/recommendations.json';
 
 /** One recommendation as the endpoint answers it: the six fields every entry of data/recommendations.json has. */
 export type Recommendation = {
@@ -26,8 +27,20 @@ export const RECOMMENDATIONS_SOURCE =
 /** Where the words come from on the site: the one endpoint, read by the landing page's column and by About Steven's. */
 export const RECOMMENDATIONS_URL = '/api/recommendations';
 
-/** How many blank places the column draws before the answer arrives, so nothing moves when it does. */
-export const RECOMMENDATION_PLACES = 12;
+/** How many blank places the column draws before the answer arrives, so nothing moves when it does: one per entry in the file. */
+export const RECOMMENDATION_PLACES = file.recommendations.length;
+
+/** One group of writers as the API answers it: who they were to Steven, in the pages' order. */
+export type RecommendationGroup = { key: string; title: string; lead: string; names: string[] };
+
+/** The whole answer: the entries and the facts the API works out from them, never stated anywhere. */
+export type RecommendationsAnswer = {
+  entries: Recommendation[];
+  count: number;
+  from: string;
+  to: string;
+  groups: RecommendationGroup[];
+};
 
 const text = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
 const paragraphs = (value: unknown): value is string[] =>
@@ -72,3 +85,30 @@ export function recommendationsFrom(answer: unknown): Recommendation[] | null {
   return entries;
 }
 // #endregion recommendations-from
+
+const group = (value: unknown): value is RecommendationGroup => {
+  if (typeof value !== 'object' || value === null) return false;
+  const g = value as Record<string, unknown>;
+  return (
+    text(g.key) && text(g.title) && text(g.lead) && Array.isArray(g.names) && g.names.every(text)
+  );
+};
+
+/**
+ * The entries and the derived facts in an answer, or null when either is not the endpoint's shape. The count,
+ * the years and the groups are read as the API sends them; nothing here counts or groups.
+ */
+export function recommendationsAnswerFrom(answer: unknown): RecommendationsAnswer | null {
+  const entries = recommendationsFrom(answer);
+  if (entries === null) return null;
+  const facts = answer as { count?: unknown; from?: unknown; to?: unknown; groups?: unknown };
+  if (typeof facts.count !== 'number' || !Array.isArray(facts.groups) || !facts.groups.every(group))
+    return null;
+  return {
+    entries,
+    count: facts.count,
+    from: typeof facts.from === 'string' ? facts.from : '',
+    to: typeof facts.to === 'string' ? facts.to : '',
+    groups: facts.groups,
+  };
+}

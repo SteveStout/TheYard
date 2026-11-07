@@ -1,7 +1,18 @@
 {
-  "readme": "One entry per person, shown in this order. Every entry has the same seven fields: name and title as LinkedIn shows them, profile as the address of their LinkedIn page, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the six fields, then move the count the site states (twelve, in RecommendationsTests and the About Steven document); the gate checks the shape.",
+  "readme": "One entry per person, shown in this order. Every entry has the same seven fields: name and title as LinkedIn shows them, profile as the address of their LinkedIn page, relationship in LinkedIn's words, when as the month and year in words, paragraphs as the recommendation word for word, and pull as one sentence of it quoted where there is room for one line. Nothing is reworded: a recommendation is the writer's, so the site quotes it or leaves it out. To add one, copy an entry and fill the seven fields. Nothing states the count: the count, the years and the groups by relationship are worked out from this file, and the gate checks the shape and that every relationship belongs to a group.",
   "source": "https://www.linkedin.com/in/stevenwstout/details/recommendations/",
   "recommendations": [
+    {
+      "name": "Cliff True",
+      "title": "System Administrator IV at JMARK Business Solutions, Inc.",
+      "profile": "https://www.linkedin.com/in/cliff-true/",
+      "relationship": "Cliff worked with Steven but they were at different companies",
+      "when": "November 2026",
+      "paragraphs": [
+        "I worked with Steven on Azure based VMs for a barely documented system. Steven and I collaborated with his part of the programming and I provided SQL administration and Windows server related items. Together we worked through several complex issues while discovering the inherited system. Steven documented the findings at a high standard so we did not need to rediscover anything again."
+      ],
+      "pull": "Steven documented the findings at a high standard so we did not need to rediscover anything again."
+    },
     {
       "name": "Henry Crans",
       "title": "Senior Software Engineer",

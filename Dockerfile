@@ -18,6 +18,8 @@ COPY tsconfig.app.json ./
 COPY tsconfig.node.json ./
 COPY vite.config.ts ./
 COPY src ./src
+# The recommendations file too: the page draws one blank place per entry in it, read at build time.
+COPY data/recommendations.json ./data/recommendations.json
 # Vite copies everything in public/ to the root of the built site untouched, so
 # this is where robots.txt, sitemap.xml and the link preview image come from.
 # It is easy to leave out, and leaving it out fails in the one place nobody

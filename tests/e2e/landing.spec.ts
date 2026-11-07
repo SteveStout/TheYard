@@ -1,6 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openTheYard } from './app';
 import { landingTiles, MENU_ORDER, SITE_GROUPS } from '../../src/lib/siteMap';
+import data from '../../data/recommendations.json' with { type: 'json' };
+
+/** The recommendations as the file holds them: the count and the first entry are read, never typed. */
+const WRITERS = data.recommendations;
+const FIRST = WRITERS[0];
 
 /**
  * The landing page (1.0.1.0): a bare address opens it, and it is drawn from the
@@ -120,7 +125,7 @@ for (const viewport of [
         /^\d of \d stores up$/
       );
 
-      // What colleagues say: his twelve LinkedIn recommendations, each one whole and credited, read
+      // What colleagues say: every one of his LinkedIn recommendations, each one whole and credited, read
       // from /api/recommendations into a column of the page itself, with nothing to click through
       // to. Wide, the column stands to the right of everything else and runs as far down as there
       // are quotations; narrow, it follows the featured tiles.
@@ -152,8 +157,8 @@ for (const viewport of [
       expect(area.card).toBeLessThanOrEqual(1);
       expect(Math.abs(area.card - area.cardRight)).toBeLessThanOrEqual(1);
 
-      await expect(said.locator('blockquote')).toHaveCount(12);
-      await expect(said.locator('li').first()).toContainText('Henry Crans');
+      await expect(said.locator('blockquote')).toHaveCount(WRITERS.length);
+      await expect(said.locator('li').first()).toContainText(FIRST.name);
       const column = said.getByRole('region', {
         name: /What colleagues say: \d+ recommendations, in full/,
       });
@@ -180,15 +185,15 @@ for (const viewport of [
       // Whole, not a sentence of each: the first one carries words from past its opening line, and
       // the credit under it says how the two worked together and when.
       await expect(said.locator('blockquote').first()).toContainText(
-        'He is strong in dotnet development and javascript.'
+        FIRST.paragraphs[FIRST.paragraphs.length - 1].slice(-40)
       );
-      await expect(said.locator('li').first()).toContainText(/October 2026\./);
+      await expect(said.locator('li').first()).toContainText(`${FIRST.when}.`);
       await expect(said.getByRole('button')).toHaveCount(0);
       // Every name opens the page of the person who wrote it, in a tab of its own. Counted inside
-      // the quotations: the heading over them is a link too, to where all twelve were written.
+      // the quotations: the heading over them is a link too, to where every one was written.
       const writers = said.locator('li').getByRole('link');
-      await expect(writers).toHaveCount(12);
-      await expect(writers.first()).toHaveText('Henry Crans');
+      await expect(writers).toHaveCount(WRITERS.length);
+      await expect(writers.first()).toHaveText(FIRST.name);
       await expect(writers.first()).toHaveAttribute('href', /linkedin\.com\/in\//);
       await expect(writers.first()).toHaveAttribute('target', '_blank');
 

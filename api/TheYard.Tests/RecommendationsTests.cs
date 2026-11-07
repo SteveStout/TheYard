@@ -19,11 +19,20 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
         JsonSerializer.Deserialize<RecommendationsReply>(File.ReadAllText(FilePath), RecommendationsFile.Format)!;
 
     [Fact]
-    public void The_file_is_in_shape_and_holds_the_twelve_on_his_profile()
+    public void Every_entry_is_in_shape_and_every_relationship_belongs_to_a_group()
     {
         var reply = Reply();
         Assert.Empty(RecommendationsFile.Problems(reply));
-        Assert.Equal(12, reply.Recommendations.Count);
+        Assert.NotEmpty(reply.Recommendations);
+        Assert.All(reply.Recommendations, entry => Assert.NotNull(TheYard.Domain.Features.Docs.RecommendationFacts.GroupOf(entry.Relationship)));
+    }
+
+    [Fact]
+    public void A_relationship_no_group_knows_is_named_as_a_problem()
+    {
+        var reply = Reply();
+        var odd = reply with { Recommendations = [reply.Recommendations[0] with { Relationship = "Test sat near Steven" }] };
+        Assert.Contains($"{reply.Recommendations[0].Name}: no group for relationship 'Test sat near Steven'", RecommendationsFile.Problems(odd));
     }
 
     /// <summary>
@@ -91,6 +100,14 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
         // The wire is snake_case, as every other answer here.
         Assert.True(document.RootElement.GetProperty("recommendations")[0].TryGetProperty("paragraphs", out _));
         Assert.False(document.RootElement.TryGetProperty("Recommendations", out _));
+        // The derived facts ride beside the entries, worked out from the file and never stated in it.
+        var facts = Reply().Facts();
+        Assert.Equal(Reply().Recommendations.Count, document.RootElement.GetProperty("count").GetInt32());
+        Assert.Equal(facts.From, document.RootElement.GetProperty("from").GetString());
+        Assert.Equal(facts.To, document.RootElement.GetProperty("to").GetString());
+        var groups = document.RootElement.GetProperty("groups").EnumerateArray().ToList();
+        Assert.Equal(facts.Groups.Select(g => g.Key), groups.Select(g => g.GetProperty("key").GetString()));
+        Assert.Equal(Reply().Recommendations.Count, groups.Sum(g => g.GetProperty("names").GetArrayLength()));
     }
 
     /// <summary>The check catches the slips an edit can make, so the gate fails for the right reason and says which entry.</summary>
