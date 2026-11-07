@@ -87,3 +87,13 @@ What differed from the plan, and why: the reading port hands out rows (`RowsSinc
 ```
 
 `ReviewFoldingTests` holds the rule, `ReviewHandlerTests` the command, the query over the memory keeper, the four windows and the collector's fold, `ReviewEndpointTests` the 204, the 400 problem, a lower stop leaving the row where it was and a scanner never counted, and `CosmosReviewStoreTests` the same rule against the real account in the gate's live pass. `admin.spec.ts` draws the card.
+
+## Addendum, 2026-11-07 (1.0.4.149): the page says what it is for
+
+What stopped being true: the page's title "Ten minutes, seven stops", its lede, the rail's "Review in ten minutes", the banner's "Seven stops, each one live, ending at the resume." and the last stop's "One page.". The record keeps its title, which is its name.
+
+1. The page's title is "Check my work in ten minutes", and so is the screen reader's announcement. The rail row and the landing banner read "Check my work".
+2. The lede says what a reader leaves with: how I design, how I test and how I decide, without taking my word for any of it.
+3. The last stop says two pages, which is what the locked resume is (the resume record's addendum of 1.0.4.146).
+
+Why: on 6 November the route had been opened by 18 people in seven days and 2 of them went past its first screen (GET /api/admin/review?window=7d, read 13:42 CST). The page described the tour; a reader deciding whether to spend an interview on me needs to know what checking it gets them. The words stay evidence, not pitch: every stop is still one live thing to look at.

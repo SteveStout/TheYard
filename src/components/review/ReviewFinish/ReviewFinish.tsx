@@ -28,12 +28,12 @@ export const ReviewFinish = forwardRef<
       data-state={finished ? 'finished' : 'open'}
     >
       <h2 id="review-finish" className={styles.heading}>
-        That is the site
+        That is the work
       </h2>
       <p className={styles.words}>
-        Seven stops, about ten minutes, every one of them live. The sidebar holds the rest:{' '}
-        {MENUS.records.items.length} decision records, {DIAGRAMS.length} diagrams, the incidents and
-        the changelog, for whoever wants to keep going.
+        Seven stops, about ten minutes, every one of them live. The reasoning behind all of it is in
+        the sidebar: {MENUS.records.items.length} decision records, {DIAGRAMS.length} diagrams, the
+        incidents and the changelog.
       </p>
       <div className={styles.actions}>
         <a className={pills.primary} href="/">

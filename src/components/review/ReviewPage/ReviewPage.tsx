@@ -39,12 +39,12 @@ export function ReviewPage() {
       <header className={styles.head}>
         <p className={styles.eyebrow}>Review</p>
         <h1 id="review-title" className={styles.title}>
-          Ten minutes, seven stops
+          Check my work in ten minutes
         </h1>
         <p className={styles.lede}>
-          The site in the order a reviewer asks about it. Each stop is one live thing to look at and
-          one line on what it shows. Nothing here is a pitch: every number is read from the running
-          system.
+          Seven stops, ten minutes. By the end you will know how I design, how I test and how I
+          decide, without taking my word for any of it. Every stop is the running system, and every
+          number on it is read live.
         </p>
       </header>
       <ReviewProgress
