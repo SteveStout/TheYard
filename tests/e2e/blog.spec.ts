@@ -89,7 +89,7 @@ test('the Blog row sits third, under Home and the review route, and says NEW POS
   const rows = await rail.locator('button, a').allInnerTexts();
   const home = rows.findIndex((text) => text.trim() === 'Home');
   // Third since the review route took the row under Home (ADR: Ten minutes, seven stops).
-  expect(rows[home + 1]).toBe('Review in ten minutes');
+  expect(rows[home + 1]).toBe('Check my work');
   expect(rows[home + 2]).toContain('Blog');
   await expect(rail.getByTestId('rail-new-post')).toHaveText('NEW POST');
   await rail.getByRole('button', { name: /Blog/ }).click();

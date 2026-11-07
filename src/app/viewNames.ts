@@ -35,7 +35,7 @@ export function viewKeyOf(view: ViewOnScreen): string {
 export function announcementOf(view: ViewOnScreen): string {
   if (view.adminOpen) return 'Admin panel';
   if (view.blogOpen) return 'Blog';
-  if (view.reviewOpen) return 'Ten minutes, seven stops';
+  if (view.reviewOpen) return 'Check my work in ten minutes';
   if (view.accountOpen) return 'Account';
   const vehicle = view.selectedVehicle;
   if (vehicle) return `${vehicle.year} ${vehicle.make} ${vehicle.model}, vehicle detail`;

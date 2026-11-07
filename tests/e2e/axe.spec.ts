@@ -146,7 +146,7 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   test('the review route', async ({ page }) => {
     await openTheYard(page, '/?view=review');
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Ten minutes, seven stops' })
+      page.getByRole('heading', { level: 1, name: 'Check my work in ten minutes' })
     ).toBeVisible();
     await page.getByRole('button', { name: 'Next stop' }).click();
     await expect(page.getByTestId('review-do-this')).toHaveCount(1);

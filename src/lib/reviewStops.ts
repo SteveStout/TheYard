@@ -86,7 +86,7 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
     title: 'The resume',
     address: '/resume',
     minutes: 1,
-    shows: 'One page. Everything above is what it claims.',
+    shows: 'Two pages. The six stops above are the evidence for what it claims.',
     doThis: 'Open the PDF. The top line is the title the site was built to prove.',
   },
 ];

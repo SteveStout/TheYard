@@ -131,7 +131,7 @@ describe('the site map', () => {
     expect(rail.slice(0, 3)).toEqual(['home', 'review', 'blog']);
     const review = SITE_MAP.actions.find((action) => action.key === 'review')!;
     expect(review).toMatchObject({
-      label: 'Review in ten minutes',
+      label: 'Check my work',
       icon: 'review',
       featured: true,
       banner: true,

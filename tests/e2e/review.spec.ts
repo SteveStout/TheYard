@@ -31,13 +31,13 @@ test('the rail row under Home opens the review route', async ({ page }) => {
   const rows = (await rail.locator('button, a').allInnerTexts()).map((text) => text.trim());
   const home = rows.indexOf('Home');
   expect(home).toBeGreaterThan(-1);
-  expect(rows[home + 1]).toBe('Review in ten minutes');
+  expect(rows[home + 1]).toBe('Check my work');
   expect(rows[home + 2]).toContain('Blog');
-  await rail.getByRole('button', { name: 'Review in ten minutes' }).click();
+  await rail.getByRole('button', { name: 'Check my work' }).click();
   await expect(page).toHaveURL(/\?view=review$/);
-  await expect(page.getByTestId('view-announcement')).toHaveText('Ten minutes, seven stops');
+  await expect(page.getByTestId('view-announcement')).toHaveText('Check my work in ten minutes');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Ten minutes, seven stops' })
+    page.getByRole('heading', { level: 1, name: 'Check my work in ten minutes' })
   ).toBeVisible();
   await page.goBack();
   await expect(page.getByTestId('landing')).toBeVisible();
@@ -77,7 +77,7 @@ test('Mark done on the last stop ends at the finish panel', async ({ page }) => 
   await expect(finish).toHaveAttribute('data-state', 'finished');
   await expect(finish).toBeInViewport();
   await expect(finish).toBeFocused();
-  await expect(finish).toContainText('That is the site');
+  await expect(finish).toContainText('That is the work');
   await expect(last).toHaveAttribute('data-state', 'done');
 });
 

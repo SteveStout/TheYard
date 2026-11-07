@@ -160,13 +160,15 @@ describe('the rendering service', () => {
     const { response, html, asked } = await page('?view=review');
     expect(response.status).toBe(200);
     expect(response.headers.get(RENDERED_HEADER)).toBe('drawn');
-    expect(html).toContain('Ten minutes, seven stops');
+    expect(html).toContain('Check my work in ten minutes');
+    expect(html).toContain('without taking my word for any of it');
+    expect(html).not.toContain('Nothing here is a pitch');
     for (const stop of REVIEW_STOPS) expect(html).toContain(escapeHtml(stop.title));
     // The stop showing Do this on a page drawn for nobody is the first.
     expect(html).toContain(escapeHtml(REVIEW_STOPS[0].doThis));
     // The rail's row sits directly under Home.
     const home = html.indexOf('>Home<');
-    const review = html.indexOf('>Review in ten minutes<');
+    const review = html.indexOf('>Check my work<');
     const blog = html.indexOf('>Blog<');
     expect(home).toBeGreaterThan(-1);
     expect(review).toBeGreaterThan(home);
