@@ -153,6 +153,16 @@ test.describe('WCAG 2.1 AA, on every view', () => {
     expect(await violations(page)).toEqual([]);
   });
 
+  // The resume's door (ADR: The resume has an address): the band and the embedded PDF, at a desk and a phone.
+  for (const width of [1280, 390]) {
+    test(`the resume's door at ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/resume?src=email');
+      await expect(page.getByTestId('resume-band')).toBeVisible();
+      expect(await violations(page)).toEqual([]);
+    });
+  }
+
   test('the account view, signed out', async ({ page }) => {
     await openTheYard(page, '/?view=account');
     await expect(page.getByRole('heading', { name: 'Sign in to bid' })).toBeVisible();

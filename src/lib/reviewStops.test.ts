@@ -6,9 +6,9 @@ import { minutesLeft, REVIEW_ADDRESS, REVIEW_REPORT_PATH, REVIEW_STOPS } from '.
 /** The views the app routes by ?view=, the ones a stop may name. */
 const VIEWS = ['inventory', 'admin', 'account', 'blog', 'review'];
 
-/** True when the site serves the address: the home page, a view, an Admin card, a document, or the resume's door. */
+/** True when the site serves the address: the home page, a view, an Admin card, a document, or the resume itself. */
 function served(address: string): boolean {
-  if (address === '/' || address === '/resume') return true;
+  if (address === '/' || address === '/resume' || address === '/resume?pdf=1') return true;
   if (!address.startsWith('/?')) return false;
   const params = new URLSearchParams(address.slice(2));
   const view = params.get('view');
@@ -55,7 +55,7 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
       '/?doc=adr-rules',
       '/?view=admin&card=tests',
       '/?doc=sql-vs-cosmos',
-      '/resume',
+      '/resume?pdf=1',
     ]);
     // The check itself refuses what is not served.
     expect(served('/?view=admin&card=nope')).toBe(false);

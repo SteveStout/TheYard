@@ -84,14 +84,19 @@ public static class DocumentationEndpoints
         // The resume at an address a person can type and a link can carry (ADR: The resume has an
         // address): the same file as /api/docs/resume, inline, under his name and the lock's date.
         // The door in ?src= becomes one allowed word for the activity hook; the query is dropped.
+        // A browser that asks for a page gets the door: the route's link above the same PDF (ADR: The
+        // resume has an address, the addendum on the door); ?pdf=1 and every other caller get the file.
         app.MapGet("/resume", ResumeAtItsAddress)
             .WithName("GetResumeAtItsAddress")
             .WithTags("Documents")
-            .WithSummary("The resume, inline, at an address a link can carry")
+            .WithSummary("The resume at an address a link can carry: the door page for a browser, the PDF for everything else")
             .WithDescription("The same PDF as /api/docs/resume, opened in the browser under the author's name. "
+                + "A request whose Accept header lists text/html gets the door instead: one band linking to the review route, the link's code kept, and the same PDF embedded below it. "
+                + "?pdf=1 asks for the PDF itself whatever the caller accepts; paste /resume?pdf=1 into a field that wants a document file. "
                 + "An optional ?src= names the door the link was handed out through (linkedin, application, email, signature, post); "
                 + "it is counted and never stored, and any other value counts as other.")
-            .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
+            .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf")
+            .Produces<string>(StatusCodes.Status200OK, "text/html");
         #endregion resume-address
 
         #region review-address
@@ -178,10 +183,18 @@ public static class DocumentationEndpoints
         return TypedResults.Redirect(string.Join("&", kept.Prepend("/?view=review")), permanent: true);
     }
 
-    private static PhysicalFileHttpResult ResumeAtItsAddress(HttpContext http, HostPaths paths, string? src)
+    private static Results<ContentHttpResult, PhysicalFileHttpResult> ResumeAtItsAddress(HttpContext http, HostPaths paths, string? src, string? r, string? pdf)
     {
         http.Items[ResumeDoor.ItemKey] = ResumeDoor.PathFor(src);
+        if (pdf is null && AsksForAPage(http.Request))
+        {
+            return TypedResults.Content(ResumePage.Html(ResumeDoor.Of(src), r, SiteFace.StyleFor(paths.AssetsRoot)), "text/html; charset=utf-8");
+        }
         http.Response.Headers.ContentDisposition = $"inline; filename=\"{ResumeDoor.FileName}\"";
         return TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");
     }
+
+    /// <summary>True when the request's Accept header lists text/html, which browsers send and almost nothing that wants a PDF does.</summary>
+    private static bool AsksForAPage(HttpRequest request) =>
+        request.Headers.Accept.Any(value => value is not null && value.Contains("text/html", StringComparison.OrdinalIgnoreCase));
 }

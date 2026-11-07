@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.4.151** (2026-11-07): /resume in a browser opens the resume under one band that links to the ten-minute review route; every other caller still gets the PDF, byte for byte, and ?pdf=1 asks for the file itself.
 - **1.0.4.150** (2026-11-07): The review route's seven stops each name the decision record behind them, one click from the thing it explains.
 - **1.0.4.149** (2026-11-07): The review route says what it is for: check my work in ten minutes, how I design, test and decide, read live, and its last stop says the resume is two pages.
 - **1.0.4.148** (2026-11-07): The network log's card reads each pass's outcome and its alert counts a failed pass, after two mornings failed on a missing schema grant; and the pass waits out Gmail's per-second quota instead of failing on its first 403, naming Gmail's reason when it does fail.

@@ -36,3 +36,24 @@ test('a resume opened through a door is counted on the activity card by its door
     'Resume opens, by door'
   );
 });
+
+test('a browser that opens /resume gets the door: the band leads to the review route, and at 390 the PDF is a pill and nothing scrolls sideways (ADR: The resume has an address)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/resume?src=email');
+  const band = page.getByTestId('resume-band');
+  await expect(band).toContainText('you can check it in ten minutes');
+  await expect(page.locator('iframe')).toHaveAttribute('src', '/resume?pdf=1&src=email');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('iframe')).toBeHidden();
+  await expect(band.getByRole('link', { name: 'Open the PDF on its own' })).toBeVisible();
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(sideways).toBeLessThanOrEqual(0);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await band.getByRole('link', { name: 'Check my work in ten minutes' }).click();
+  await expect(page).toHaveURL(/\?view=review/);
+  await expect(page.getByTestId('review-page')).toBeVisible();
+});
