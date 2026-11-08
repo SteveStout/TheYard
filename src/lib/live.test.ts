@@ -34,17 +34,21 @@ describe('a card live line (ADR: Live dials where the source allows)', () => {
   it('says the source, the grain and the newest reading with its age', () => {
     expect(newest(report())?.values.dtu).toBe(14.06);
     expect(liveWords(report(), NOW)).toBe(
-      "live, every 15 s, the database's own view: dtu 14.1 · cpu not read, 5 s ago"
+      "live: the database's own view: dtu 14.1 · cpu not read, 5 s ago"
+    );
+    expect(liveWords(report({ source: null }), NOW)).toBe(
+      'live: every 15 s: dtu 14.1 · cpu not read, 5 s ago'
     );
   });
 
   it('says why there is no reading, and what it waits for', () => {
     expect(liveWords(null, NOW)).toBe('live: not read yet');
     expect(liveWords(report({ available: false, note: 'this card has no live source' }), NOW)).toBe(
-      'no live source: this card has no live source'
+      'this card has no live source'
     );
+    expect(liveWords(report({ available: false, note: null }), NOW)).toBe('no live source');
     expect(liveWords(report({ samples: [] }), NOW)).toBe(
-      "live, every 15 s, the database's own view: the first sample is on its way"
+      "live: the database's own view: the first sample is on its way"
     );
     expect(newest(report({ samples: [] }))).toBeNull();
   });

@@ -1,7 +1,8 @@
 // The plan card's live source (ADR: Live dials where the source allows, the addendum on the plan's /proc fork): this
 // instance's memory and processor read from its own /proc every two seconds while the card is open. Memory is what the
 // kernel says is not available of what it has; the processor is the busy share of every core since the last read.
-// Whether these track Azure Monitor's minutes for the plan is the fork's 30-minute compare, written in the record.
+// The fork's 30-minute compare against Azure Monitor's minutes for the plan failed on the processor, so the line says
+// it is this container's own view; the dials keep the plan's minutes.
 using System.Globalization;
 
 namespace TheYard.Api.Features.Admin.Cloud;
@@ -20,7 +21,7 @@ public sealed class ProcLiveSource(string root = "/proc") : TheYard.Application.
     public int GrainSeconds => 2;
 
     /// <inheritdoc />
-    public string Source => "this instance, /proc, 2 s";
+    public string Source => "this container's own /proc, 2 s, not the plan's minute";
 
     /// <inheritdoc />
     public string? Absent => File.Exists(Path.Combine(root, "meminfo")) ? null : "this process runs where there is no /proc to read";

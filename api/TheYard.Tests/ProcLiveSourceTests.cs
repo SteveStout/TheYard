@@ -31,7 +31,7 @@ public sealed class ProcLiveSourceTests : IDisposable
         Stat(user: 1300, idle: 9700);
         var second = await source.SampleAsync(Nine.AddSeconds(2), CancellationToken.None);
 
-        Assert.Equal(("plan", 2, "this instance, /proc, 2 s"), (source.Key, source.GrainSeconds, source.Source));
+        Assert.Equal(("plan", 2, "this container's own /proc, 2 s, not the plan's minute"), (source.Key, source.GrainSeconds, source.Source));
         Assert.Null(source.Absent);
         Assert.Equal(40.0, first!.Values["memory"]);
         Assert.Null(first.Values["cpu"]);

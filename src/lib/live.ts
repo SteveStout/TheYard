@@ -54,9 +54,9 @@ export function newest(report: LiveReport | null): LiveSample | null {
 /** The card's live line: what it reads and how often, then the newest reading, or why there is none. */
 export function liveWords(report: LiveReport | null, nowMs: number): string {
   if (report === null) return 'live: not read yet';
-  if (!report.available) return `no live source: ${report.note ?? 'none'}`;
+  if (!report.available) return report.note ?? 'no live source';
   const sample = newest(report);
-  const head = `live, every ${report.grain_seconds} s, ${report.source ?? 'its source'}`;
+  const head = `live: ${report.source ?? `every ${report.grain_seconds} s`}`;
   if (sample === null) return `${head}: the first sample is on its way`;
   const age = Math.max(0, Math.round((nowMs - Date.parse(sample.at)) / 1000));
   const figures = Object.entries(sample.values)
