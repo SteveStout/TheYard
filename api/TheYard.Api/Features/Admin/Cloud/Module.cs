@@ -140,6 +140,9 @@ public sealed class Module : IModule
             var relational = provider.GetRequiredService<RelationalContexts>();
             return new SqlLiveSource(cancellation => ResourceStats.ReadAsync(relational.Quiet, "the relational store", SqlLiveSource.Rows, cancellation), () => relational.Quiet is not null);
         });
+        services.AddSingleton<ILiveSource>(provider => new CosmosChargeSource(
+            provider.GetRequiredService<StoreRingBuffer>().Snapshot,
+            () => provider.GetRequiredService<DocumentStore>().Store is not null));
         services.AddSingleton<LiveLease>();
         services.AddScoped(provider => new ReadLiveHandler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System));
         services.AddSingleton(provider => new LiveSampler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System, provider.GetRequiredService<ILogger<LiveSampler>>()));
