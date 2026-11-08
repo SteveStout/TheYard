@@ -3,6 +3,7 @@
 // samples. In this process's memory, like the usage log's: a roll empties them, the agent refills them,
 // and the kept minutes in the plan container are the record. One process serves both names, so both read
 // the same ring.
+using TheYard.Application.Shared.Live;
 using TheYard.Data;
 
 namespace TheYard.Application.Features.Admin.Cloud;
@@ -85,52 +86,21 @@ public sealed class MemoryBoxSnapshots : IBoxSnapshots
     }
 }
 
-/// <summary>The live samples in this process's memory, a ring of sixty: two minutes at one every two seconds.</summary>
+/// <summary>The live samples in this process's memory, a ring of sixty: two minutes at one every two seconds, held in the one ring type every live reading uses.</summary>
 public sealed class MemoryBoxLive : IBoxLive
 {
     /// <summary>How many samples the ring holds.</summary>
     public const int Size = 60;
 
-    private readonly object _gate = new();
-    private readonly Queue<BoxLiveSample> _ring = new();
+    private readonly LiveRing<BoxLiveSample> _ring = new(Size, sample => sample.At);
 
     /// <inheritdoc />
-    public DateTimeOffset? NewestAt
-    {
-        get
-        {
-            lock (_gate)
-            {
-                return _ring.Count == 0 ? null : _ring.Max(sample => sample.At);
-            }
-        }
-    }
+    public DateTimeOffset? NewestAt => _ring.NewestAt;
 
     /// <inheritdoc />
-    public void Push(BoxLiveSample sample)
-    {
-        lock (_gate)
-        {
-            _ring.Enqueue(sample);
-            while (_ring.Count > Size)
-            {
-                _ring.Dequeue();
-            }
-        }
-    }
+    public void Push(BoxLiveSample sample) => _ring.Push(sample);
 
     /// <inheritdoc />
-    public IReadOnlyList<BoxLiveSample> Last(TimeSpan span)
-    {
-        lock (_gate)
-        {
-            if (_ring.Count == 0)
-            {
-                return [];
-            }
-            var newest = _ring.Max(sample => sample.At);
-            return [.. _ring.Where(sample => sample.At >= newest - span).OrderBy(sample => sample.At)];
-        }
-    }
+    public IReadOnlyList<BoxLiveSample> Last(TimeSpan span) => _ring.Last(span);
 }
 // #endregion box-ports

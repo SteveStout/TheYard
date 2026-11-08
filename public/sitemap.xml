@@ -810,6 +810,11 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-live-dials-where-the-source-allows</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/incidents</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

@@ -9,6 +9,7 @@ import type { MachineWindow } from '../../../lib/machineChart';
 import { useRead } from '../shared/common';
 import { CardShell } from '../CardShell';
 import { planWindow } from '../PlanCard/PlanCard';
+import { LivePanel } from '../LivePanel';
 
 export default function CloudResourceCard({
   resource,
@@ -27,5 +28,13 @@ export default function CloudResourceCard({
     `/api/admin/cloud/${resource}?window=${planWindow(window)}`,
     tick
   );
-  return <CardShell report={report} title={title} testId={`${resource}-card`} toolbar={toolbar} />;
+  return (
+    <CardShell
+      report={report}
+      title={title}
+      testId={`${resource}-card`}
+      toolbar={toolbar}
+      live={<LivePanel card={resource} />}
+    />
+  );
 }
