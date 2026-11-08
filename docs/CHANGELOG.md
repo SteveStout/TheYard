@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.4.161** (2026-11-07): The Azure SQL card's live line reads the database's own fifteen-second view while it is open, DTU as the greatest of its processor, data IO and log write shares; the nightly picker's card now reads its line of the Function's bill.
 - **1.0.4.160** (2026-11-07): The App Service plan's card reads this instance's own memory and processor from /proc every two seconds while it is open, on its live line under the dials.
 - **1.0.4.159** (2026-11-07): Every card under Cloud infrastructure gets a live route and a live line under its dials, run only while somebody looks and at the source's own grain; this version lays the pattern and moves the WickedAwsome ring onto it, and the cards that can read faster than a minute get their sources next.
 - **1.0.4.158** (2026-11-07): The nightly picker gets a card under Cloud infrastructure: whether the 2 AM pick and the 1 AM board scan ran, how many alert leads passed the gates and why the boards' postings were blocked, read from the Function's own run lines an hour apart.

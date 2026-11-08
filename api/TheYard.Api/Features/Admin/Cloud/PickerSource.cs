@@ -32,6 +32,9 @@ public sealed partial class PickerSource(AzureMetrics azure, string workspaceId,
         | project Kind, At = TimeGenerated, Line = Message, TookMs, Ok
         """;
 
+    /// <summary>The Function's name, which the card's line of the bill is matched on.</summary>
+    public string Function => role;
+
     /// <summary>The query with the Function's role in place.</summary>
     public string Query => Kusto.Replace("__ROLE__", role.Replace("'", "''", StringComparison.Ordinal), StringComparison.Ordinal);
 

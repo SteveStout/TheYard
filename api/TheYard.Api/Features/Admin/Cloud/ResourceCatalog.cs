@@ -198,7 +198,7 @@ public static class ResourceCatalog
             // After the box: the nightly picker (ADR-125), its night read from the workspace once an hour, since its
             // facts change once a night, and kept in the plan container under kinds of its own like the box's.
             PickerSource source = picker;
-            cards.Add(new("picker", "plan", "The nightly picker", PickerSource.Readings, source.MinutesAsync, source.HourAsync, PickerCard.View,
+            cards.Add(new("picker", "plan", source.Function, PickerSource.Readings, source.MinutesAsync, source.HourAsync, PickerCard.View,
                 Hourly: true, SpecSource: "the Function's run lines in Application Insights", KindPrefix: "picker-"));
         }
         return cards;

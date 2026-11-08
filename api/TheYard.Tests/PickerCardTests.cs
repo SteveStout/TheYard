@@ -51,6 +51,7 @@ public sealed class PickerCardTests
         Assert.Null(facts["pick_failed"]);
         Assert.False(facts.ContainsKey("other_line"));
         Assert.Contains("'func-jobhunt-ss'", new PickerSource(null!, "/w", "func-jobhunt-ss").Query, StringComparison.Ordinal);
+        Assert.Equal("func-jobhunt-ss", new PickerSource(null!, "/w", "func-jobhunt-ss").Function);
     }
 
     [Fact]
