@@ -59,4 +59,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '127',
   },
+  adrLiveDials: {
+    title: 'ADR: Live dials where the source allows',
+    menuLabel: 'ADR: Live dials where the source allows',
+    url: '/api/docs/adr-live-dials-where-the-source-allows',
+    kind: 'adr',
+    number: '128',
+  },
 } as const satisfies Record<string, RecordEntry>;

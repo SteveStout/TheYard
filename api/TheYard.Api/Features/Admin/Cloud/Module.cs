@@ -1,4 +1,5 @@
 using TheYard.Application.Features.Admin.Cloud;
+using TheYard.Application.Shared.Live;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 
@@ -130,6 +131,13 @@ public sealed class Module : IModule
         // The box's snapshots and its live ring, held in this process: one process serves both names, so both read them.
         services.AddSingleton<IBoxSnapshots, MemoryBoxSnapshots>();
         services.AddSingleton<IBoxLive, MemoryBoxLive>();
+        // Every card's live source, its ring and the lease that runs it only while somebody looks (ADR: Live dials where
+        // the source allows); the sources themselves are registered beside the cards they serve.
+        services.AddSingleton<LiveRings>();
+        services.AddSingleton<LiveLease>();
+        services.AddScoped(provider => new ReadLiveHandler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System));
+        services.AddSingleton(provider => new LiveSampler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System, provider.GetRequiredService<ILogger<LiveSampler>>()));
+        services.AddHostedService(provider => provider.GetRequiredService<LiveSampler>());
         // The two writes in this slice: the box's posts, held in memory (ADR: The box reports itself), and below the
         // nightly workflow posting the run it was, which the card's
         // reader then prefers over a read of GitHub (ADR: The Nightly Function on the Admin tab). It

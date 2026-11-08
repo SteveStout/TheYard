@@ -32,7 +32,7 @@ public static class TelemetryRegistration
             // The box's agent posts every two seconds, forty-three thousand requests a day, which would spend most of
             // the component's daily cap on itself (ADR: The box reports itself): its routes are left out of the
             // request telemetry, the distro's documented way, and every other path is kept.
-            builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options => options.Filter = context => Traced(context.Request.Path));
+            builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options => options.Filter = context => Traced(context.Request.Path, context.Request.Headers.UserAgent.ToString()));
         }
         // The component's app id is public (it is not a key) and is what the Admin
         // tab queries with the container's managed identity.
@@ -48,8 +48,19 @@ public static class TelemetryRegistration
         #endregion telemetry
     }
 
-    /// <summary>Whether a request's path reaches the request telemetry: every path but the box's routes.</summary>
+    /// <summary>
+    /// Whether a request reaches the request telemetry: every request but the box's routes, every card's live route
+    /// (polled every few seconds while a card is open), and the site's own self-reads (the keep-warm loop and the
+    /// nightly self-read, which carry the self-read tag), none of which is a visitor.
+    /// </summary>
     /// <param name="path">The request's path.</param>
-    public static bool Traced(PathString path) =>
-        !(path.HasValue && path.Value!.StartsWith(RequestRecorder.BoxPrefix, StringComparison.Ordinal));
+    /// <param name="userAgent">The request's user agent, empty when it sent none.</param>
+    public static bool Traced(PathString path, string? userAgent = null) =>
+        !(path.HasValue && (path.Value!.StartsWith(RequestRecorder.BoxPrefix, StringComparison.Ordinal) || IsLive(path.Value)))
+        && !(userAgent ?? "").Contains(Hits.SelfTag, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A live route: /api/admin/cloud/{key}/live or /api/admin/plan/live.</summary>
+    public static bool IsLive(string path) =>
+        path == "/api/admin/plan/live"
+        || (path.StartsWith("/api/admin/cloud/", StringComparison.Ordinal) && path.EndsWith("/live", StringComparison.Ordinal) && path.Count(c => c == '/') == 5);
 }

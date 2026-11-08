@@ -67,6 +67,13 @@ public static class CloudEndpoints
             .WithName("GetBoxLive")
             .WithTags("Admin")
             .WithSummary("The box's last minute of live samples and how long it has been silent");
+        // Every card's live ring (ADR: Live dials where the source allows): a read leases the card's source for a minute,
+        // anonymous like the card itself, and a card with no live source answers available false with its sentence.
+        // The box keeps its own route above, which the literal path wins over this one.
+        app.MapGet("/api/admin/cloud/{key}/live", Live)
+            .WithName("GetCardLive")
+            .WithTags("Admin")
+            .WithSummary("One card's live ring: its source, its grain and the last ten minutes, or why it has none");
         // #endregion box-endpoints
         // #region incidents-endpoint
         // Public like the cards: the incidents are public pages, and a failure is named by its type and where it
@@ -83,6 +90,12 @@ public static class CloudEndpoints
         await handler.HandleAsync(new ReadProcessRunsQuery(process, window, page), cancellation) is { } runs
             ? TypedResults.Ok(runs)
             : TypedResults.Problem(detail: "The job hunt's Function has no process by that name; the eight are AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend, NetworkLogPass and MergerHealth.", statusCode: 404, title: "No such process");
+
+    private static async Task<IResult> Live(string key, ReadLiveHandler handler, CancellationToken cancellation) =>
+        Results.Json(await handler.HandleAsync(new ReadLiveQuery(key), cancellation), LiveWire);
+
+    /// <summary>The live wire, snake_case like every Admin read.</summary>
+    private static readonly System.Text.Json.JsonSerializerOptions LiveWire = new() { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower };
 
     private static async Task<Ok<IncidentsReport>> Incidents(ReadIncidentsHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadIncidentsQuery(), cancellation));

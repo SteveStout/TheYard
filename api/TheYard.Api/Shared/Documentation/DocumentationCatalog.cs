@@ -158,6 +158,7 @@ public static class DocumentationCatalog
         ["adr-the-nightly-picker-code-gates-and-the-model-ranks"] = "docs/decisions/ADR-125-the-nightly-picker-code-gates-and-the-model-ranks.md",
         ["adr-the-recommendations-have-a-page"] = "docs/decisions/ADR-126-the-recommendations-have-a-page.md",
         ["adr-the-box-reports-itself"] = "docs/decisions/ADR-127-the-box-reports-itself.md",
+        ["adr-live-dials-where-the-source-allows"] = "docs/decisions/ADR-128-live-dials-where-the-source-allows.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
