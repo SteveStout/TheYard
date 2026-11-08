@@ -323,3 +323,7 @@ From this version CardShell takes one optional slot, a card's own live block, dr
 ## Addendum, 2026-11-07 (1.0.4.158): the picker's card
 
 The nightly picker's card (ADR-125, the addendum on the picker's card) is the fourteenth under Cloud infrastructure, in the same frame with four rows, read once an hour like the edge's and Application Insights'.
+
+## Addendum, 2026-11-07 (1.0.4.159): every card has a live line
+
+From this version every card hands the frame a live line under its dials (ADR: Live dials where the source allows): the source's reading at its own grain while the card is open, or one sentence saying the card has no live source. The tones are unchanged: they still come from the kept minutes and the fifteen-minute hold.
