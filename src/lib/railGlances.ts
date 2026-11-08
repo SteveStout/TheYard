@@ -111,7 +111,8 @@ export const GLANCED: readonly Glanced[] = [
       slug !== 'claude' &&
       slug !== 'campaign' &&
       slug !== 'network' &&
-      slug !== 'box'
+      slug !== 'box' &&
+      slug !== 'picker'
   ).map((slug) => ({
     slug,
     route: `/api/admin/cloud/${slug}?window=24h`,
@@ -155,6 +156,11 @@ export const GLANCED: readonly Glanced[] = [
   {
     slug: 'box',
     route: '/api/admin/cloud/box?window=24h',
+    glance: (a) => railGlance(a as CloudReport),
+  },
+  {
+    slug: 'picker',
+    route: '/api/admin/cloud/picker?window=24h',
     glance: (a) => railGlance(a as CloudReport),
   },
 ];

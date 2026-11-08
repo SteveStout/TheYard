@@ -14,7 +14,7 @@ namespace TheYard.Tests;
 public sealed class CardContractTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
 {
     /// <summary>Every key the rail draws under Cloud infrastructure, in its order; a card added is red until it is here.</summary>
-    private static readonly string[] KeyList = ["sqldb", "cosmosdb", "registry", "insights", "share", "blob", "mail", "edge", "nightly", "claude", "campaign", "network", "box"];
+    private static readonly string[] KeyList = ["sqldb", "cosmosdb", "registry", "insights", "share", "blob", "mail", "edge", "nightly", "claude", "campaign", "network", "box", "picker"];
 
     /// <summary>The keys as the theory's rows.</summary>
     public static readonly TheoryData<string> Keys = new(KeyList);
