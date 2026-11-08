@@ -3,7 +3,7 @@ using TheYard.Application.Features.Admin.Cloud;
 namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>
-/// The thirteen resource cards under Cloud infrastructure (ADR: One frame for every resource): one
+/// The fourteen resource cards under Cloud infrastructure (ADR: One frame for every resource): one
 /// reader of Azure Monitor, one of Netlify and one of GitHub, the resource groups' lists each card
 /// finds its resource in (the nightly Function's group is its own, ADR: The Nightly Function on the
 /// Admin tab), a keep per card, the nightly run log and its cache, the one recorder, the one cached reader the endpoint answers from,
@@ -78,7 +78,9 @@ public sealed class Module : IModule
                 new NetworkPasses(nightlyNames.FunctionPath(subscription), provider.GetRequiredService<IProcessRunsReader>()));
             // The box that supports the job hunt reads what its agent posted into this process (ADR: The box reports itself).
             var box = new BoxSource(provider.GetRequiredService<IBoxSnapshots>(), provider.GetRequiredService<IBoxLive>(), provider.GetRequiredService<HostStart>(), TimeProvider.System);
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network, box).Select(card => (card, KeepOf(card)))];
+            // The nightly picker reads the Function's run lines from the workspace both components send to (ADR-125).
+            var picker = new PickerSource(azure, $"{names.GroupPath(subscription)}/providers/Microsoft.OperationalInsights/workspaces/{names.Insights}", nightlyNames.Function);
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network, box, picker).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with

@@ -23,7 +23,7 @@ public static class ResourceCatalog
     /// <param name="blobLines">The lines the blob card is read against, from configuration.</param>
     /// <param name="campaign">The email campaign's reads for its card; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
     /// <param name="network">The network log's reads for its card; null leaves the card out, as for the campaign.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null, CampaignSource? campaign = null, NetworkSource? network = null, BoxSource? box = null)
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null, CampaignSource? campaign = null, NetworkSource? network = null, BoxSource? box = null, PickerSource? picker = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -192,6 +192,14 @@ public static class ResourceCatalog
             BoxSource source = box;
             cards.Add(new("box", "plan", BoxCard.Title, BoxSource.Readings, source.MinutesAsync, source.HourAsync, inputs => BoxCard.View(inputs, source),
                 SpecSource: "the box's own snapshot", KindPrefix: "box-"));
+        }
+        if (picker is not null)
+        {
+            // After the box: the nightly picker (ADR-125), its night read from the workspace once an hour, since its
+            // facts change once a night, and kept in the plan container under kinds of its own like the box's.
+            PickerSource source = picker;
+            cards.Add(new("picker", "plan", "The nightly picker", PickerSource.Readings, source.MinutesAsync, source.HourAsync, PickerCard.View,
+                Hourly: true, SpecSource: "the Function's run lines in Application Insights", KindPrefix: "picker-"));
         }
         return cards;
     }

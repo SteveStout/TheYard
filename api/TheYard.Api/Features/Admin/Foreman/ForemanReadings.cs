@@ -19,7 +19,7 @@ public sealed class ForemanReadings(ICloudCards cards, IIncidentsReader incident
     [
         ("sqldb", "Azure SQL Database"), ("cosmosdb", "Cosmos DB"), ("registry", "Container Registry"), ("insights", "Application Insights"),
         ("share", "The job-hunt share"), ("blob", "The blob service"), ("mail", "Communication Services"), ("edge", "The Netlify edge"),
-        ("nightly", "The Nightly Function"), ("claude", "Claude usage"), ("campaign", "The email campaign"), ("network", "The network log"), ("box", "WickedAwsome"),
+        ("nightly", "The Nightly Function"), ("claude", "Claude usage"), ("campaign", "The email campaign"), ("network", "The network log"), ("box", "WickedAwsome"), ("picker", "The nightly picker"),
     ];
 
     public async Task<IReadOnlyList<ForemanCard>> CardsAsync(CancellationToken cancellation)

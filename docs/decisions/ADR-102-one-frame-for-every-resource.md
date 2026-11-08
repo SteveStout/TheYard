@@ -319,3 +319,7 @@ The frame's four rows are its minimum, not its count. The box that supports the 
 ## Addendum, 2026-11-07 (1.0.4.157): a card may hand the frame a live block
 
 From this version CardShell takes one optional slot, a card's own live block, drawn across the card between the lead block and the chart; only the box's card hands one, its four live panels (ADR: The box reports itself, the addendum on the live panels).
+
+## Addendum, 2026-11-07 (1.0.4.158): the picker's card
+
+The nightly picker's card (ADR-125, the addendum on the picker's card) is the fourteenth under Cloud infrastructure, in the same frame with four rows, read once an hour like the edge's and Application Insights'.
