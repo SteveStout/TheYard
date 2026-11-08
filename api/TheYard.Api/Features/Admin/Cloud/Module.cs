@@ -134,6 +134,7 @@ public sealed class Module : IModule
         // Every card's live source, its ring and the lease that runs it only while somebody looks (ADR: Live dials where
         // the source allows); the sources themselves are registered beside the cards they serve.
         services.AddSingleton<LiveRings>();
+        services.AddSingleton<ILiveSource>(new ProcLiveSource());
         services.AddSingleton<LiveLease>();
         services.AddScoped(provider => new ReadLiveHandler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System));
         services.AddSingleton(provider => new LiveSampler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System, provider.GetRequiredService<ILogger<LiveSampler>>()));
