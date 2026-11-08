@@ -135,6 +135,11 @@ public sealed class Module : IModule
         // the source allows); the sources themselves are registered beside the cards they serve.
         services.AddSingleton<LiveRings>();
         services.AddSingleton<ILiveSource>(new ProcLiveSource());
+        services.AddSingleton<ILiveSource>(provider =>
+        {
+            var relational = provider.GetRequiredService<RelationalContexts>();
+            return new SqlLiveSource(cancellation => ResourceStats.ReadAsync(relational.Quiet, "the relational store", SqlLiveSource.Rows, cancellation), () => relational.Quiet is not null);
+        });
         services.AddSingleton<LiveLease>();
         services.AddScoped(provider => new ReadLiveHandler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System));
         services.AddSingleton(provider => new LiveSampler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System, provider.GetRequiredService<ILogger<LiveSampler>>()));

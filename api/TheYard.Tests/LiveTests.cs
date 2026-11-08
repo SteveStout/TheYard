@@ -185,12 +185,15 @@ public sealed class LiveRouteTests(WebApplicationFactory<Program> factory) : ICl
     public async Task Every_card_has_a_live_route_that_answers_200_and_the_box_keeps_its_own()
     {
         var client = factory.CreateClient();
+        using var edge = JsonDocument.Parse(await client.GetStringAsync("/api/admin/cloud/edge/live"));
         using var sql = JsonDocument.Parse(await client.GetStringAsync("/api/admin/cloud/sqldb/live"));
         using var box = JsonDocument.Parse(await client.GetStringAsync("/api/admin/cloud/box/live"));
 
-        Assert.False(sql.RootElement.GetProperty("available").GetBoolean());
-        Assert.Equal(ReadLiveHandler.NoSource, sql.RootElement.GetProperty("note").GetString());
-        Assert.Equal(JsonValueKind.Array, sql.RootElement.GetProperty("samples").ValueKind);
+        Assert.False(edge.RootElement.GetProperty("available").GetBoolean());
+        Assert.Equal(ReadLiveHandler.NoSource, edge.RootElement.GetProperty("note").GetString());
+        Assert.Equal(JsonValueKind.Array, edge.RootElement.GetProperty("samples").ValueKind);
+        Assert.Equal(15, sql.RootElement.GetProperty("grain_seconds").GetInt32());
+        Assert.StartsWith("the database's own view", sql.RootElement.GetProperty("source").GetString(), StringComparison.Ordinal);
         Assert.Equal(2, box.RootElement.GetProperty("cadence_seconds").GetInt32());
     }
 }
