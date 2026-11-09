@@ -13,11 +13,11 @@
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Tracker\TrackerCsvText.cs" Link="Linked\TrackerCsvText.cs" />
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Tracker\TrackerRows.cs" Link="Linked\TrackerRows.cs" />
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Applications\ApplicationCap.cs" Link="Linked\ApplicationCap.cs" />
-    <Compile Include="..\..\functions\JobHunt.Domain\Features\Campaign\CompanyKey.cs" Link="Linked\CompanyKey.cs" />
-    <Compile Include="..\..\functions\JobHunt.Domain\Features\Campaign\FormerEmployers.cs" Link="Linked\FormerEmployers.cs" />
+    <Compile Include="..\..\functions\JobHunt.Domain\Shared\Companies\CompanyKey.cs" Link="Linked\CompanyKey.cs" />
+    <Compile Include="..\..\functions\JobHunt.Domain\Shared\Companies\FormerEmployers.cs" Link="Linked\FormerEmployers.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Using Include="JobHunt.Domain.Features.Campaign" />
+    <Using Include="JobHunt.Domain.Shared.Companies" />
     <Using Include="JobHunt.Domain.Shared.Applications" />
     <Using Include="JobHunt.Domain.Shared.Tracker" />
     <Using Include="JobHunt.Server.Domain.Shared.Gates" />

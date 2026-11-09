@@ -43,9 +43,9 @@ public sealed class ModularMonolithTests
         string root = Repo.Root();
         Assert.Equal(
             [
-                "functions/JobHunt.Domain/Features/Campaign/CompanyKey.cs",
-                "functions/JobHunt.Domain/Features/Campaign/FormerEmployers.cs",
                 "functions/JobHunt.Domain/Shared/Applications/ApplicationCap.cs",
+                "functions/JobHunt.Domain/Shared/Companies/CompanyKey.cs",
+                "functions/JobHunt.Domain/Shared/Companies/FormerEmployers.cs",
                 "functions/JobHunt.Domain/Shared/Tracker/TrackerCsvText.cs",
                 "functions/JobHunt.Domain/Shared/Tracker/TrackerRows.cs",
             ],
