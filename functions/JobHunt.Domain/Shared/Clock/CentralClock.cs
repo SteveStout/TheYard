@@ -54,6 +54,12 @@ public static class CentralClock
     /// </summary>
     public static bool IsReplyRetryHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 5;
 
+    /// <summary>
+    /// The morning card's hour: the 7 o'clock hour in Central, after the 6 AM run has applied and written its essays
+    /// and before the 8 AM campaign, asked as a local hour so the card lands at 7:30 on both sides of the clock change.
+    /// </summary>
+    public static bool IsTodayHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 7;
+
     /// <summary>The run this hour starts, or null when the hour is not a slot.</summary>
     public static string? Slot(DateTimeOffset utcNow) => NightlySlots.Slot(utcNow);
 }
