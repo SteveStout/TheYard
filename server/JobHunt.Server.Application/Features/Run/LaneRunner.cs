@@ -117,13 +117,18 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
                 ClaudeArguments.For(lane, start.Lane, share.Root, runFolder, start.Dry),
                 runFolder,
                 $"{runFolder}/stream.jsonl",
-                TimeSpan.FromMinutes(lane.TimeoutMinutes));
+                TimeSpan.FromMinutes(lane.TimeoutMinutes),
+                start.Lane == Lane.Apply && !start.Dry ? folder : null);
             ClaudeRun run = await claude.RunAsync(request, ct);
             lines.Add($"claude -p exit {run.ExitCode}{(run.TimedOut ? ", killed at the wall-clock limit or by a stop" : string.Empty)}.");
             CancellationToken finish = CancellationToken.None;
             cutShort = run.TimedOut || LaneResult.FromLine(run.ResultLine) is null;
             result = await ReadResultAsync(run, start, folder, list, lines, finish);
             sends = await RecordAsync(start, folder, lane.Model, list, result, lines, finish);
+            if (start.Lane == Lane.Apply)
+            {
+                await ApplyAfterword.WriteAsync(share, start, folder, list, result, sends, lines, finish);
+            }
             await ReportUsageAsync(run, start, folder, began, lines, finish);
         }
         var report = new LaneReport(start.Lane, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, list.Rows, list.Dropped, result, sends, lines, null, cutShort);

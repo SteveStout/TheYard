@@ -228,6 +228,8 @@ internal sealed class Morning
 
     public FakeResumes Resumes { get; } = new();
 
+    public FakeProse Prose { get; set; } = new();
+
     public KeptUsage Usage { get; } = new();
 
     public FixedTime Time { get; } = new(At);
@@ -246,7 +248,7 @@ internal sealed class Morning
         new(
             Share,
             new RunGuards(mount ?? new FakeMount(), runLock ?? new FakeLock(), desktop ?? new FakeDesktop(), Time),
-            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, Claude, Usage, Config, Time), new InviteRecount(Share, Claude, Config)),
+            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, new EssayDesk(Share, Prose, Claude), Usage, Config, Time), new InviteRecount(Share, Claude, Config)),
             Config);
 
     public IEnumerable<string> TrackerRows() => Share.Files.Keys.Where(path => path.StartsWith("inbox/tracker-inbox/", StringComparison.Ordinal));

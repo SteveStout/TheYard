@@ -98,7 +98,8 @@ public interface IDesktop
 /// <param name="WorkingFolder">Where it runs.</param>
 /// <param name="StreamFile">The real path the stream is kept at.</param>
 /// <param name="Timeout">The wall-clock limit.</param>
-public sealed record ClaudeRequest(IReadOnlyList<string> Arguments, string WorkingFolder, string StreamFile, TimeSpan Timeout);
+/// <param name="Essays">A live apply run's folder on the share, whose essays the essay desk answers while the model runs; null for every other run.</param>
+public sealed record ClaudeRequest(IReadOnlyList<string> Arguments, string WorkingFolder, string StreamFile, TimeSpan Timeout, string? Essays = null);
 
 /// <summary>How a model run ended.</summary>
 /// <param name="ExitCode">The process's exit code.</param>

@@ -40,7 +40,7 @@ switch (args.FirstOrDefault())
         var lanes = new RunLanes(
             share,
             new RunGuards(new JDriveMount(share), new FileRunLock(share, time), desktop, time),
-            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, helpers, config), new LaneRunner(share, claude, new SiteUsage(config, http), config, time), new InviteRecount(share, claude, config)),
+            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, helpers, config), new LaneRunner(share, new EssayDesk(share, helpers, claude), new SiteUsage(config, http), config, time), new InviteRecount(share, claude, config)),
             config);
         (int exit, string output) = await lanes.ExecuteAsync(options, stop.Token);
         Console.WriteLine(output);

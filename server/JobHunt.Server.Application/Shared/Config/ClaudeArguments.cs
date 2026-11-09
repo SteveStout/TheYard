@@ -108,6 +108,8 @@ public static class ClaudeArguments
         {
             tools.Add($"Read({Rooted(share)}/standard-answers.md)");
             tools.Add($"Read({Rooted(share)}/targeting-criteria.md)");
+            tools.Add($"Read({Rooted(share)}/EVIDENCE-BANK.md)");
+            tools.Add($"Read({Rooted(share)}/writing-samples.md)");
         }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
         if (!dry)
