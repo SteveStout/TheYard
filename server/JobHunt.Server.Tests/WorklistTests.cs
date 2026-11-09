@@ -279,4 +279,37 @@ public sealed class WorklistTests
         var dropped = Assert.Single(list.Dropped, d => d.What == "Northwind, Staff Engineer");
         Assert.Equal("no link in the row (JOBS-2026-11-06.md:4), nothing to apply to", dropped.Reason);
     }
+
+    [Fact]
+    public async Task A_posting_two_nights_name_takes_the_newest_night_s_title_and_comes_first()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        const string Row = "| 1 | MOXFIVE | {0} | https://jobs.ashbyhq.com/moxfive/eaa48261-4ebf-401e-bba4-a5c9b254b83c/application | ashby | PASS | 2026-11-06 | |\n";
+        const string Head = "## READY TO APPLY\n| # | Company | Role | Link | Board | Band | Posted | Notes |\n|---|---|---|---|---|---|---|---|\n";
+        morning.Share.Files["JOBS-2026-11-01.md"] = Head + string.Format(System.Globalization.CultureInfo.InvariantCulture, Row, "Staff Engineer (Remote)");
+        morning.Share.Files["JOBS-2026-11-02.md"] = Head + string.Format(System.Globalization.CultureInfo.InvariantCulture, Row, "Staff Engineer");
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        Assert.Equal("Staff Engineer", list.Rows[0].Role);
+        Assert.StartsWith("JOBS-2026-11-02.md", list.Rows[0].Source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_row_the_board_dated_past_21_days_is_dropped_and_a_fresh_one_carries_its_date_to_the_lane()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        morning.Share.Files["JOBS-2026-11-02.md"] = "## READY TO APPLY\n| # | Company | Role | Link | Board | Band | Posted | Notes |\n|---|---|---|---|---|---|---|---|\n"
+            + "| 1 | Northwind | Staff Engineer | https://jobs.lever.co/northwind/old | lever | PASS | 2026-10-01 (Lever) | |\n"
+            + "| 2 | Fabrikam | Staff Engineer | https://jobs.lever.co/fabrikam/new | lever | PASS | 2026-11-01 (Lever) | |\n";
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        Assert.StartsWith("skipped: age 33 days (posted 2026-10-01", Assert.Single(list.Dropped, d => d.What == "Northwind, Staff Engineer").Reason, StringComparison.Ordinal);
+        Assert.EndsWith(", posted 2026-11-01", Assert.Single(list.Rows, row => row.Company == "Fabrikam").Source, StringComparison.Ordinal);
+    }
 }

@@ -24,7 +24,9 @@ public sealed record Worklist(IReadOnlyList<WorkRow> Rows, IReadOnlyDictionary<i
 /// one that fails is dropped with a line and never fixed. The cut to the day's room happens before any code is minted,
 /// so a row the lane will not reach spends nothing. A dry run mints nothing and carries a placeholder code. A text that
 /// speaks of an application the tracker says is over waits for a person, and every application gets its own resume build
-/// with the posting's title as its headline, a dry run's too, so a morning's first build is not its first proof.
+/// with the posting's title as its headline, a dry run's too, so a morning's first build is not its first proof. The
+/// night's JOBS files are read before the older sweeps and the newest file first, so a posting two files both name
+/// takes its title from the newest reading of the board.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="minter">make_ref.py.</param>
@@ -105,9 +107,9 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     public async Task<Worklist> ApplyAsync(DayReads reads, string? linkedInClosed, bool dry, CancellationToken ct)
     {
         var postings = new List<Posting>();
-        foreach (string pattern in new[] { "APPLY-SWEEP-*.md", "priority-jobs-*.md", "JOBS-*.md" })
+        foreach (string pattern in new[] { "JOBS-*.md", "priority-jobs-*.md", "APPLY-SWEEP-*.md" })
         {
-            foreach (ShareFile file in (await share.ListAsync(string.Empty, pattern, ct)).Where(file => reads.Day.DayNumber - DateOnly.FromDateTime(file.Changed.UtcDateTime).DayNumber <= ApplyBoards.NewestDays))
+            foreach (ShareFile file in (await share.ListAsync(string.Empty, pattern, ct)).Where(file => reads.Day.DayNumber - DateOnly.FromDateTime(file.Changed.UtcDateTime).DayNumber <= ApplyBoards.NewestDays).OrderByDescending(file => file.Path, StringComparer.Ordinal))
             {
                 postings.AddRange(ApplyBoards.Confirmed(file.Path, await share.ReadAsync(file.Path, ct)));
             }
@@ -132,6 +134,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             {
                 dropped.Add(new Dropped(what, $"on LinkedIn, and LinkedIn is closed today: {linkedInClosed}"));
             }
+            else if (ApplyBoards.Age(posting, reads.Day) is > ApplyBoards.NewestDays and int age)
+            {
+                dropped.Add(new Dropped(what, $"skipped: age {age} days (posted {posting.Posted[..10]}, {posting.Source})"));
+            }
             else if (!ApplyBoards.Reachable(posting))
             {
                 blockers.Add(posting);
@@ -143,7 +149,8 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             }
             else
             {
-                candidates.Add(new Candidate(string.Empty, posting.Company, WorkAction.Apply, string.Empty, posting.Link, $"{posting.Source}, {posting.Role}", posting.Role));
+                string posted = ApplyBoards.Age(posting, reads.Day) is null ? string.Empty : $", posted {posting.Posted[..10]}";
+                candidates.Add(new Candidate(string.Empty, posting.Company, WorkAction.Apply, string.Empty, posting.Link, $"{posting.Source}, {posting.Role}{posted}", posting.Role));
             }
         }
         int room = dry ? config.DryRows : config.MostApplications;

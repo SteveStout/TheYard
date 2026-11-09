@@ -8,7 +8,8 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 /// <param name="Link">The posting's link.</param>
 /// <param name="Board">What the source says about the board.</param>
 /// <param name="Source">file:line.</param>
-public sealed record Posting(string Company, string Role, string Link, string Board, string Source);
+/// <param name="Posted">The posted date the source read off the board, empty when it gives none.</param>
+public sealed record Posting(string Company, string Role, string Link, string Board, string Source, string Posted = "");
 
 /// <summary>
 /// Reads the postings the apply lane may work: the CONFIRMED LIVE and READY TO APPLY tables of the newest sweeps, and
@@ -43,7 +44,7 @@ public static partial class ApplyBoards
                 continue;
             }
             string[] names = Cells(lines[header]);
-            int company = Array.IndexOf(names, "Company"), role = Array.IndexOf(names, "Role"), board = Array.IndexOf(names, "Board"), link = Array.IndexOf(names, "Link");
+            int company = Array.IndexOf(names, "Company"), role = Array.IndexOf(names, "Role"), board = Array.IndexOf(names, "Board"), link = Array.IndexOf(names, "Link"), posted = Array.IndexOf(names, "Posted");
             if (company < 0 || role < 0 || link < 0)
             {
                 continue;
@@ -53,7 +54,7 @@ public static partial class ApplyBoards
                 string[] cells = Cells(lines[j]);
                 if (cells.Length > link && !lines[j].Contains("DROPPED", StringComparison.OrdinalIgnoreCase))
                 {
-                    postings.Add(new Posting(Parenthesis().Replace(cells[company], string.Empty).Trim(), cells[role], cells[link], board >= 0 && cells.Length > board ? cells[board] : string.Empty, $"{name}:{j + 1}"));
+                    postings.Add(new Posting(Parenthesis().Replace(cells[company], string.Empty).Trim(), cells[role], cells[link], board >= 0 && cells.Length > board ? cells[board] : string.Empty, $"{name}:{j + 1}", posted >= 0 && cells.Length > posted ? cells[posted] : string.Empty));
                 }
             }
         }
@@ -82,6 +83,12 @@ public static partial class ApplyBoards
         }
         return postings;
     }
+
+    /// <summary>The posting's age in days on the given day, or null when its source gives no date it can read.</summary>
+    /// <param name="posting">The posting.</param>
+    /// <param name="today">The Central day.</param>
+    public static int? Age(Posting posting, DateOnly today) =>
+        posting.Posted.Length >= 10 && DateOnly.TryParseExact(posting.Posted[..10], "yyyy-MM-dd", out DateOnly posted) ? today.DayNumber - posted.DayNumber : null;
 
     /// <summary>True when the posting takes an application with no account.</summary>
     /// <param name="posting">The posting.</param>
