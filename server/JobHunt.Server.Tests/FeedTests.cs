@@ -127,6 +127,28 @@ public sealed class FeedTests
     }
 
     [Fact]
+    public async Task A_block_written_before_its_hold_is_not_sent()
+    {
+        var morning = new Morning(_ => new ClaudeRun(0, false, ResultLine.Empty));
+        morning.Share.Files["linkedin-proof/QUEUE-hotmgr-2026-11-03.md"] =
+            "### 1. Kim Hot, Delta (VP). Code [code].\n\n```\nKim,\n\nMy work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve\n```\n";
+        morning.Share.Files[FeedLane.HoldFile] = "- Kim Hot, Delta, held after the block was written\n";
+        DayReads reads = await new DayReader(morning.Share).ReadAsync(Today, default);
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        Worklist list = await builder.InvitesAsync(reads, 10, dry: true, default);
+        Assert.DoesNotContain(list.Rows, row => row.Person == "Kim Hot");
+        Assert.Contains(list.Dropped, dropped => dropped.What.StartsWith("Kim Hot", StringComparison.Ordinal) && dropped.Reason.Contains("held for Steve", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Apply_in_any_form_is_held()
+    {
+        Assert.True(ClosedReqs.Mentions("Would it be a bad idea to connect before I apply?"));
+        Assert.True(ClosedReqs.Mentions("Every applicant gets one."));
+        Assert.False(ClosedReqs.Mentions("Your platform work caught my eye."));
+    }
+
+    [Fact]
     public void An_unnamed_row_is_one_a_company()
     {
         FeedCut cut = FeedQueue.Cut([Candidate(string.Empty, "Gamma"), Candidate(string.Empty, "Gamma Inc")], Gate(), [], FeedHolds.None);

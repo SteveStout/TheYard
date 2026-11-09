@@ -7,7 +7,8 @@ namespace JobHunt.Server.Application.Features.Run;
 /// <param name="Conventions">CONVENTIONS.md.</param>
 /// <param name="Gate">The person and company gates.</param>
 /// <param name="Queues">The open blocks of every queue.</param>
-public sealed record DayReads(DateOnly Day, IReadOnlyList<string[]> Rows, string Limits, string Conventions, PersonGate Gate, IReadOnlyList<QueueBlock> Queues);
+/// <param name="Holds">The people and companies linkedin-proof/FEED-HOLD.md holds for Steve, which no lane queues or sends to.</param>
+public sealed record DayReads(DateOnly Day, IReadOnlyList<string[]> Rows, string Limits, string Conventions, PersonGate Gate, IReadOnlyList<QueueBlock> Queues, FeedHolds Holds);
 
 /// <summary>Reads the shared files the gates need. A file that will not read stops the lanes that need it, loudly.</summary>
 /// <param name="share">The share.</param>
@@ -46,6 +47,7 @@ public sealed class DayReader(IShare share)
             agencies.AddRange(QueueBlocks.Agencies(text));
         }
         var gate = new PersonGate(new GateSources(rows, limits, rules, responders, agencies), day);
-        return new DayReads(day, rows, limits, conventions, gate, blocks);
+        FeedHolds holds = await share.ExistsAsync(FeedLane.HoldFile, ct) ? FeedHold.Read(await share.ReadAsync(FeedLane.HoldFile, ct)) : FeedHolds.None;
+        return new DayReads(day, rows, limits, conventions, gate, blocks, holds);
     }
 }

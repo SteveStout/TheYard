@@ -51,7 +51,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         var heading = blocks.ToDictionary(block => block.Source, block => block.Person, StringComparer.Ordinal);
         var candidates = blocks
             .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.OrdinalIgnoreCase) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, block.Url, block.Source));
-        return await FinishAsync(candidates, reads, candidate => reads.Gate.Invite(candidate.Person, candidate.Company) ?? HeadingGate(reads, candidate, heading), room, dry, ct);
+        return await FinishAsync(candidates, reads, candidate => Held(reads, candidate) ?? reads.Gate.Invite(candidate.Person, candidate.Company) ?? HeadingGate(reads, candidate, heading), room, dry, ct);
     }
 
     /// <summary>The message worklist.</summary>
@@ -96,7 +96,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
                 candidates.Add(new Candidate(person, company, WorkAction.Message, body, Profile(reads, person, company), $"{item.Source}, {path}"));
             }
         }
-        Worklist list = await FinishAsync(candidates, reads, candidate => reads.Gate.Message(candidate.Person, candidate.Company), room, dry, ct);
+        Worklist list = await FinishAsync(candidates, reads, candidate => Held(reads, candidate) ?? reads.Gate.Message(candidate.Person, candidate.Company), room, dry, ct);
         return list with { Dropped = [.. dropped, .. list.Dropped] };
     }
 
@@ -265,6 +265,9 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         }
         return await prose.CleanAsync(candidate.Text, ct) ? null : "text failed check_aiisms.py";
     }
+
+    private static string? Held(DayReads reads, Candidate candidate) =>
+        reads.Holds.Holds(candidate.Person, candidate.Company) ? "held for Steve's yes (linkedin-proof/FEED-HOLD.md)" : null;
 
     private static string? HeadingGate(DayReads reads, Candidate candidate, IReadOnlyDictionary<string, string> heading) =>
         candidate.Person.Length == 0 && heading.TryGetValue(candidate.Source, out string? named) && named.Length > 0 && reads.Gate.Invite(named, candidate.Company) is { } why

@@ -38,6 +38,13 @@ public sealed record FeedHolds(IReadOnlyList<string> People, IReadOnlyList<strin
 {
     /// <summary>Nothing held.</summary>
     public static FeedHolds None { get; } = new([], []);
+
+    /// <summary>True when the person, or anyone at the company, is held.</summary>
+    /// <param name="person">The person, empty for an unnamed row.</param>
+    /// <param name="company">The company.</param>
+    public bool Holds(string person, string company) =>
+        People.Any(name => person.Length > 0 && PersonGate.Name(name) == PersonGate.Name(person))
+        || Companies.Any(held => ApplicationCap.Same(held, company));
 }
 
 /// <summary>Reads linkedin-proof/FEED-HOLD.md: "- Person, Company" holds a person, "- Company: Name" holds a company.</summary>
@@ -99,8 +106,7 @@ public static partial class FeedQueue
         {
             FeedCandidate candidate = Clean(raw);
             string what = candidate.Person!.Length > 0 ? $"{candidate.Person}, {candidate.Company}" : candidate.Company!;
-            string? reason = held.People.Any(name => candidate.Person!.Length > 0 && PersonGate.Name(name) == PersonGate.Name(candidate.Person))
-                || held.Companies.Any(company => ApplicationCap.Same(company, candidate.Company!))
+            string? reason = held.Holds(candidate.Person!, candidate.Company!)
                 ? "held for Steve's yes (linkedin-proof/FEED-HOLD.md)"
                 : Reason(candidate, gate, open, kept);
             if (reason is null)

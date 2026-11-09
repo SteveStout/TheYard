@@ -53,8 +53,7 @@ public sealed class FeedLane(IShare share, FeedTools tools, ServerConfig config,
         string candidatesPath = $"{folder}/candidates.json";
         IReadOnlyList<FeedCandidate> candidates = await share.ExistsAsync(candidatesPath, finish) ? FeedQueue.Parse(await share.ReadAsync(candidatesPath, finish)) : [];
         lines.Add($"{candidates.Count} candidates read from {candidatesPath}.");
-        FeedHolds held = await share.ExistsAsync(HoldFile, finish) ? FeedHold.Read(await share.ReadAsync(HoldFile, finish)) : FeedHolds.None;
-        FeedCut cut = FeedQueue.Cut(candidates, reads.Gate, reads.Queues, held);
+        FeedCut cut = FeedQueue.Cut(candidates, reads.Gate, reads.Queues, reads.Holds);
         var dropped = new List<Dropped>(cut.Dropped);
         var kept = new List<FeedCandidate>();
         foreach (FeedCandidate candidate in cut.Kept)
