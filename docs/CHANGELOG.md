@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.4.163** (2026-11-09): The box's test runner lives in the repository as scripts/yard-test.sh and skips a suite whose folder the branch does not carry, saying "skipped: server/ not on this branch" instead of printing a red that blocks nothing.
 - **1.0.4.162** (2026-11-07): The Cosmos DB card's live line shows this process's own requests to the account every five seconds while it is open: request units a second, how many requests, and how many were throttled; every live line now says its source once; the plan's line now says it is this container's own view, after its thirty-minute compare with the plan's minutes failed on the processor.
 - **1.0.4.161** (2026-11-07): The Azure SQL card's live line reads the database's own fifteen-second view while it is open, DTU as the greatest of its processor, data IO and log write shares; the nightly picker's card now reads its line of the Function's bill.
 - **1.0.4.160** (2026-11-07): The App Service plan's card reads this instance's own memory and processor from /proc every two seconds while it is open, on its live line under the dials.
