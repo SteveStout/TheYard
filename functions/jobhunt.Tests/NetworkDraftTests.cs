@@ -90,13 +90,15 @@ public sealed class NetworkDraftTests : IDisposable
     }
 
     [Fact]
-    public async Task A_row_last_heard_on_LinkedIn_is_not_drafted_in_Gmail()
+    public async Task A_row_last_heard_on_LinkedIn_is_queued_for_Steve_and_not_drafted_in_Gmail()
     {
         var (build, rows, drafts) = Build();
         await rows.UpsertAsync(Due("pat@acme.com", 1) with { LastChannel = Channel.LinkedIn }, Monday, CancellationToken.None);
         var result = await build.RunAsync(NetworkMode.On, new DateOnly(2026, 11, 9), await rows.OpenAsync(CancellationToken.None), Monday, CancellationToken.None);
-        Assert.Equal((1, 0), (result.Due, result.Drafted));
+        Assert.Equal((1, 1), (result.Due, result.Drafted));
         Assert.Empty(drafts.Written);
+        Assert.True(File.Exists(Path.Combine(_root, "networklog/linkedin-queue-2026-11-09.md")));
+        Assert.Equal(ConversationState.Open, rows.Store["pat@acme.com"].State);
     }
 
     [Fact]

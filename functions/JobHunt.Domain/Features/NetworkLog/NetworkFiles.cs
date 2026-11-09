@@ -91,6 +91,26 @@ public static class NetworkFiles
         return text.ToString();
     }
 
+    /// <summary>
+    /// A Monday's LinkedIn follow-ups in the reply queue's format 2, every item under section A with its draft's path and
+    /// a note of the last exchange and the profile, so the morning card shows each in full for Steve's send.
+    /// </summary>
+    public static string LinkedInQueueText(DateOnly monday, IEnumerable<Conversation> rows)
+    {
+        var text = new StringBuilder("<!-- reply-queue: 2 -->\n").Append(CultureInfo.InvariantCulture, $"# LinkedIn follow-ups for Monday {monday:yyyy-MM-dd} (the network log, {DraftTemplate.Version}; typed in the thread only on Steve's send)\n\n## A. Warm follow-ups on LinkedIn, 21 days after the last exchange\n\n");
+        foreach (var row in rows.Where(r => r.ThreadIds.Count > 0))
+        {
+            string name = row.FullName.Replace('*', ' ').Replace('|', ' ').Trim();
+            string company = (row.Company ?? "").Replace('|', ' ').Trim();
+            text.Append(CultureInfo.InvariantCulture, $"- **{name}** | {(company.Length > 0 ? company : "-")} | thread: linkedin {row.ThreadIds[0]} | draft: {LinkedInDraftPath(monday, row.ThreadIds[0])}\n");
+            text.Append(CultureInfo.InvariantCulture, $"Note: last exchange {row.LastExchangeAt?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "unknown"} on LinkedIn; profile {row.ProfileUrl ?? "not read"}\n");
+        }
+        return text.ToString();
+    }
+
+    /// <summary>A LinkedIn follow-up's draft text for a Monday, by its thread.</summary>
+    public static string LinkedInDraftPath(DateOnly monday, string threadId) => $"{FollowUpQueue.Texts(monday)}/{threadId}.txt";
+
     /// <summary>The would-drafts file of a Monday.</summary>
     public static string WouldDraftsPath(DateOnly monday) => $"{WouldDrafts}/{monday:yyyy-MM-dd}.md";
 
