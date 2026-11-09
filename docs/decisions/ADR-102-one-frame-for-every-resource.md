@@ -327,3 +327,11 @@ The nightly picker's card (ADR-125, the addendum on the picker's card) is the fo
 ## Addendum, 2026-11-07 (1.0.4.159): every card has a live line
 
 From this version every card hands the frame a live line under its dials (ADR: Live dials where the source allows): the source's reading at its own grain while the card is open, or one sentence saying the card has no live source. The tones are unchanged: they still come from the kept minutes and the fifteen-minute hold.
+
+## Addendum, 2026-11-09 (1.0.4.164): the request never waits on Azure for a view already built
+
+The Admin soak's early read on 7 November, at 21:33 Central, split every Cloud card's reads in two: the ones its one-minute cache answered, at 0.3 s or under, and the ones it rebuilt, at 2 to 15 s, because a lapsed cache made the request build the view itself, the live read first when the kept minute was stale, then the month, the bill and, for the nightly card, the Function's workspace. Application Insights put the cards' p95 at 1.5 to 8.3 s over the same hours. Nothing was failing; the request was simply doing the reader's work.
+
+From this version `CloudReader` keeps the view it built and answers with it while it is under two minutes old, the line under the three minutes after which a minute card reads unread. Past one minute the request still answers at once and a new view is built behind it, one build a window at a time, under two minutes and the host's stopping; a build that fails keeps the view that answered. `CloudKeeper`, a hosted service, builds again once a minute every window somebody asked for in the last hour, so the next request, the page's or the soak's, finds a view already built. A window nobody asks for drops out after the hour, so nothing is read for a page nobody opens. Only the first read of a window after a start, with nothing built yet, waits for its build.
+
+`CloudKeepingTests` hold it with the build parked on a gate the test opens: a view a minute old answers before the gate opens and its next lands after; a view at two minutes is not served; the keeper builds a window asked for this hour and drops one asked for over an hour ago; the hosted keeper builds without a request.

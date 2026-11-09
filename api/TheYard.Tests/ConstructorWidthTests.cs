@@ -177,7 +177,7 @@ public class ConstructorWidthTests
     [InlineData("RequestRecorder", 8, "api/TheYard.Api/Shared/Activity/RequestRecorder.cs")]
     [InlineData("MachineRecorder", 7, "api/TheYard.Api/Shared/MachineReadings/MachineRecorder.cs")]
     [InlineData("PulseReader", 7, "api/TheYard.Api/Shared/Instance/Pulse.cs")]
-    [InlineData("CloudReader", 6, "api/TheYard.Api/Features/Admin/Cloud/CloudReader.cs")]
+    [InlineData("CloudReader", 7, "api/TheYard.Api/Features/Admin/Cloud/CloudReader.cs")]
     public void A_wrapped_parameter_list_is_read_to_its_closing_bracket(string type, int handed, string path)
     {
         Assert.Equal(handed, HandedTo(type, path.Split('/')).Count);

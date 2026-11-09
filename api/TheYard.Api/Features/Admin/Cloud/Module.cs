@@ -124,8 +124,11 @@ public sealed class Module : IModule
             (name, cancellation) => PlanCost.ForResourceAsync(provider.GetRequiredService<ICostHistory>(), name, TimeProvider.System, cancellation),
             TimeProvider.System,
             sqlName ?? "the SQL site",
-            provider.GetRequiredService<NightlyProcesses>()));
+            provider.GetRequiredService<NightlyProcesses>(),
+            provider.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping));
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
+        // The windows somebody asked for, built again each minute behind the route, so no request waits on Azure.
+        services.AddHostedService(provider => new CloudKeeper(provider.GetRequiredService<CloudReader>(), TimeProvider.System, provider.GetRequiredService<ILogger<CloudKeeper>>()));
         services.AddScoped<ReadCloudCardHandler>();
         services.AddScoped<ReadProcessRunsHandler>();
         // The box's snapshots and its live ring, held in this process: one process serves both names, so both read them.

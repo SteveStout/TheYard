@@ -262,6 +262,7 @@ public sealed class SliceTests
     {
         ["ActivityCollector"] = "keeps the visitor counts off the request path",
         ["CatalogueWarm"] = "warms each store's catalogue once at start",
+        ["CloudKeeper"] = "builds each Cloud card somebody opened in the last hour behind the route, once a minute",
         ["CloudRecorder"] = "reads and keeps the resource cards' minutes and hours",
         ["LiveSampler"] = "runs each live source while its card is open, at the source's own grain",
         ["CostRecorder"] = "reads Cost Management once an hour and keeps the answer",
