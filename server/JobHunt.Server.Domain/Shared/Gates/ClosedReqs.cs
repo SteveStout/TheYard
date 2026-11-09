@@ -79,7 +79,7 @@ public static partial class ClosedReqs
     [GeneratedRegex(@"\b(?:applied(?:\s+on\s+[^.]*?)?\s+(?:for|to)|in process for)\s+the\s+(?:Remote\s+)?(?<role>\S.*?)\s+role\b", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
     private static partial Regex Claim();
 
-    [GeneratedRegex(@"\b(applied|applying|application|submitted|resume|cv|in process|role|job|req|requisition|position|opening)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(applied|applying|applications?|submitted|resumes?|cvs?|in process|roles?|jobs?|reqs?|requisitions?|positions?|openings?)\b", RegexOptions.IgnoreCase)]
     private static partial Regex Speaks();
 
     [GeneratedRegex(@"\(([^)]+)\)")]

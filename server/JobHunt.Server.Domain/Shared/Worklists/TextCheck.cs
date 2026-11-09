@@ -72,7 +72,7 @@ public static partial class TextCheck
     [GeneratedRegex(@"https?://|www\.|\b[\w-]+\.(com|biz|io|net|org)\b", RegexOptions.IgnoreCase)]
     private static partial Regex Url();
 
-    [GeneratedRegex(@"\b(in process|interview\w*|phone screen|recruiter screen|our (call|conversation|chat)|a call|scheduled?|looking forward)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(in process|interview\w*|phone screen|recruiter screen|our (call|conversation|chat)|a call|schedul(?:e|ed|ing)|looking forward)\b", RegexOptions.IgnoreCase)]
     private static partial Regex LiveProcess();
 
     [GeneratedRegex(@"\b[Mm]eet(ing)? (with )?[A-Z]")]

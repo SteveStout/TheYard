@@ -393,7 +393,7 @@ public sealed class ResultTests
         Assert.Equal("WickedAwsome, 6 AM lanes", document.RootElement.GetProperty("lane").GetString());
         Assert.Equal(29847, document.RootElement.GetProperty("tokens_out").GetInt64());
         Assert.Equal("invites-dry", document.RootElement.GetProperty("mode").GetString());
-        Assert.Equal("0600", document.RootElement.GetProperty("slot").GetString());
+        Assert.Equal("06:00", document.RootElement.GetProperty("slot").GetString());
     }
 
     private static WorkRow Named(string person, string avoid = "") => new(1, person, "Acme", WorkAction.Invite, "texts/01.txt", "abc123", string.Empty, "q:1", avoid);

@@ -78,6 +78,23 @@ public sealed class FeedTests
         Assert.Contains("QUEUE-old.md:9", Why("Ola Queued"), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("Your platform roles caught my eye.")]
+    [InlineData("Your open positions caught my eye.")]
+    [InlineData("Happy to work around your scheduling.")]
+    public void A_plural_or_another_form_of_a_held_word_is_held_too(string line)
+    {
+        FeedCut cut = FeedQueue.Cut([Candidate("Lou Fine", "Gamma", text: Note.Replace("Your platform work caught my eye.", line, StringComparison.Ordinal))], Gate(), [], FeedHolds.None);
+        Assert.Empty(cut.Kept);
+    }
+
+    [Fact]
+    public void A_person_on_any_tracker_row_at_the_company_is_never_queued_again()
+    {
+        FeedCut cut = FeedQueue.Cut([Candidate("Ann Example", "AccuLynx", action: "message")], Gate(), [], FeedHolds.None);
+        Assert.Contains("Rule 25", Assert.Single(cut.Dropped).Reason, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void An_unnamed_row_is_one_a_company()
     {
@@ -162,6 +179,7 @@ public sealed class FeedTests
         Assert.DoesNotContain(dry, tool => tool.EndsWith("__computer", StringComparison.Ordinal));
         Assert.Contains("Read(//mnt/j/PRIORITY-BOARD.md)", live);
         Assert.Contains("candidates.json", live[1], StringComparison.Ordinal);
+        Assert.Contains("Glob", live);
     }
 
     [Fact]

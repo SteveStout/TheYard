@@ -46,7 +46,7 @@ public static class UsageCut
             ["wall_ms"] = usage?["duration_ms"]?.GetValue<long>() ?? 0,
             ["cost_usd"] = usage?["total_cost_usd"]?.DeepClone(),
             ["run"] = runId,
-            ["slot"] = RunSlot.Hour,
+            ["slot"] = $"{RunSlot.Hour[..2]}:{RunSlot.Hour[2..]}",
             ["mode"] = RunSlot.Word(report.Lane) + (report.Dry ? "-dry" : string.Empty),
             ["at"] = report.Started.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
         };

@@ -130,6 +130,7 @@ public static class ClaudeArguments
         if (lane == Lane.Feed)
         {
             tools.AddRange(FeedReads.Select(path => $"Read({Rooted(share)}/{path})"));
+            tools.Add("Glob");
         }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
         if (!dry && lane == Lane.Feed)
