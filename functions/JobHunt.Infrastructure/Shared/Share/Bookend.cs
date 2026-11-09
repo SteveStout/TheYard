@@ -1,5 +1,6 @@
 using System.Text;
 using Azure.Storage.Files.Shares;
+using Azure.Storage.Files.Shares.Models;
 using Microsoft.Extensions.Logging;
 
 namespace JobHunt.Infrastructure.Shared.Share;
@@ -7,7 +8,8 @@ namespace JobHunt.Infrastructure.Shared.Share;
 /// <summary>
 /// The opening numbers of the night's bookend, written to nightly\bookend-yyyy-MM-dd.md on the
 /// share. The CSV is counted here. The inbox and the Sheet are counted by the nightly lane
-/// until the Gmail and Sheets credentials exist as settings; each line says which.
+/// until the Gmail and Sheets credentials exist as settings; each line says which. It also reads whether the
+/// night's reply run wrote its queue, which the 5 o'clock hour asks before it dispatches the reply lane again.
 /// </summary>
 public sealed class Bookend(ShareClient share, ILogger<Bookend> log)
 {
@@ -35,6 +37,27 @@ public sealed class Bookend(ShareClient share, ILogger<Bookend> log)
         await file.UploadAsync(stream, cancellationToken: ct);
         log.LogInformation("bookend opened, CSV rows {Rows}", rows);
         return rows;
+    }
+
+    /// <summary>The day's reply run folders under nightly/&lt;date&gt;/, each with whether it holds linkedin-queue.md.</summary>
+    /// <param name="local">The day, in Central time.</param>
+    /// <param name="ct">Stops the listing.</param>
+    public async Task<IReadOnlyList<(string Folder, bool HasQueue)>> ReplyRunsAsync(DateTime local, CancellationToken ct)
+    {
+        var day = share.GetDirectoryClient($"nightly/{local:yyyy-MM-dd}");
+        var runs = new List<(string, bool)>();
+        if (!(await day.ExistsAsync(ct)).Value)
+        {
+            return runs;
+        }
+        await foreach (ShareFileItem item in day.GetFilesAndDirectoriesAsync(cancellationToken: ct))
+        {
+            if (item.IsDirectory && ReplyRetry.IsRun(item.Name))
+            {
+                runs.Add((item.Name, (await day.GetSubdirectoryClient(item.Name).GetFileClient(ReplyRetry.Queue).ExistsAsync(ct)).Value));
+            }
+        }
+        return runs;
     }
 
     private async Task<string> CsvRowsAsync(CancellationToken ct)

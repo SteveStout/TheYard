@@ -17,6 +17,8 @@ namespace JobHunt.Functions;
 /// 4:00 AM slot; it is off otherwise. The 2 o'clock hour is not a slot: the picker (JobsPick) reads the postings and
 /// the tracker over CAMPAIGN_SQL, or the alert leads and the share's CSV without it, writes
 /// nightly/jobs-candidates-&lt;date&gt;.tsv and one line to nightly/jobs-pick.log, then the jobs lane is dispatched.
+/// The 5 o'clock hour is not a slot either: when no reply run of the day wrote linkedin-queue.md, it dispatches the
+/// reply lane once more (ReplyRetry), and otherwise it is the plain "not a slot" hour it always was.
 /// </remarks>
 public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch dispatch, JobsHour jobs, ILogger<Nightly> log)
 {
@@ -35,6 +37,13 @@ public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch di
                 string sent = await dispatch.RunAsync(JobsFiles.Event, CentralClock.Local(now), ct);
                 log.LogInformation("jobs: {Picked} | {Sent}", picked, sent);
                 run.Count("dispatched", Dispatch.Delivered(sent) ? 1 : 0).Came("success", JobsFiles.Event);
+                return;
+            }
+            if (!anyHour && CentralClock.IsReplyRetryHour(now) && ReplyRetry.Needed(await bookend.ReplyRunsAsync(CentralClock.Local(now), ct)))
+            {
+                string again = await dispatch.RunAsync(CentralClock.Reply, CentralClock.Local(now), ct);
+                log.LogInformation("reply retry: no linkedin-queue.md today | {Sent}", again);
+                run.Count("dispatched", Dispatch.Delivered(again) ? 1 : 0).Came("success", "reply_retry");
                 return;
             }
             string? slot = anyHour ? CentralClock.Reply : CentralClock.Slot(now);

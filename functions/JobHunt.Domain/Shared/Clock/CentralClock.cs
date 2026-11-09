@@ -46,6 +46,14 @@ public static class CentralClock
     /// </summary>
     public static bool IsNetworkHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 6;
 
+    /// <summary>
+    /// The reply lane's second chance: the 5 o'clock hour in Central. When the 4 AM run left no linkedin-queue.md for
+    /// the day (the runner's own setup can fail before the lane begins, and then nothing runs), this hour
+    /// dispatches it once more, so the 6 AM messages lane still has a queue to read. Not a slot in NightlySlots, for
+    /// the picker's reason: the clock's own work in an hour the table does not name.
+    /// </summary>
+    public static bool IsReplyRetryHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 5;
+
     /// <summary>The run this hour starts, or null when the hour is not a slot.</summary>
     public static string? Slot(DateTimeOffset utcNow) => NightlySlots.Slot(utcNow);
 }
