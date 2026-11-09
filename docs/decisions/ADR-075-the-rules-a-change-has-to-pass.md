@@ -201,6 +201,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The Azure SQL Database card's DTU dial reads good, information within five of amber, warning from amber and alarm from red, each held fifteen minutes, and fourteen minutes are not judged; data space reads against the database's own cap; a deadlock is red; nothing read says so; every row and line is sourced | ADR: One frame for every resource | SqlCardTests |
 | The edge's retire row is information before its date and counts the days, and a warning on it and after it that names the date; the credits dial is judged on its newest hourly reading alone; a certificate inside two weeks and a failed deploy are each a warning | ADR: One frame for every resource | EdgeCardTests |
 | The container's own sampler keeps an hour at fifteen seconds (240 samples) in the host, drops its oldest sample when full, keeps one when asked for none, and reads the runtime's own limit and processors | ADR: What the machines are doing | ContainerSamplerTests |
+| A Cloud card's request answers from a view under two minutes old and builds the next behind it past one minute; a view at two minutes is not served; the keeper builds each window asked for in the last hour once a minute and drops the rest | ADR: One frame for every resource, the addendum of 1.0.4.164 | CloudKeepingTests |
 
 ## How the table is read
 
