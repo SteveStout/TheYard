@@ -11,3 +11,6 @@ docs/images
 *.md
 *.csproj
 *.slnx
+server/**/bin
+server/**/obj
+server/JobHunt.Server.Tests/Fixtures

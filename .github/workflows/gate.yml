@@ -134,7 +134,7 @@ jobs:
           r="$RAW/dotnet.result"; : > "$r"
           t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
           if [ "$FORMAT_NEEDED" = 1 ]; then
-            read code s < <(t bash -c 'dotnet format api/TheYard.slnx --verify-no-changes --no-restore > "$RAW/format.txt" 2>&1')
+            read code s < <(t bash -c 'dotnet format api/TheYard.slnx --verify-no-changes --no-restore > "$RAW/format.txt" 2>&1 && dotnet format server/JobHunt.Server.slnx --verify-no-changes >> "$RAW/format.txt" 2>&1')
             echo "format=$code" >> "$r"; echo "format_s=$s" >> "$r"
           else echo "format=skipped" >> "$r"; echo "format_s=0" >> "$r"; fi
           read code s < <(t bash -c 'dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug > "$RAW/sqlproj.txt" 2>&1 && dotnet build functions/JobHunt.Database/JobHunt.Database.sqlproj -c Debug >> "$RAW/sqlproj.txt" 2>&1')
@@ -142,6 +142,9 @@ jobs:
           # The job hunt's Function's own suite, so a version that breaks it never reaches main.
           read code s < <(t bash -c 'dotnet test functions/jobhunt.Tests > "$RAW/functions.txt" 2>&1')
           echo "functions=$code" >> "$r"; echo "functions_s=$s" >> "$r"
+          # The machine lanes' own suite, the third process (ADR-119, the addendum on the third process).
+          read code s < <(t bash -c 'dotnet test server/JobHunt.Server.Tests > "$RAW/server.txt" 2>&1')
+          echo "server=$code" >> "$r"; echo "server_s=$s" >> "$r"
           # #region both-stores
           read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-sqlite.trx" --results-directory "$RAW/trx" > "$RAW/xunit-sqlite.txt" 2>&1')
           echo "xunit=$code" >> "$r"; echo "xunit_s=$s" >> "$r"
@@ -233,7 +236,7 @@ jobs:
           val() { { grep -E "^$2=" "$RAW/$1" 2>/dev/null || true; } | head -n 1 | cut -d= -f2; }
           for k in prettier lint tsc vitest browser; do [ "$(val node.result $k)" = 0 ] || red="$red $k"; done
           v=$(val node.result browser_cosmos); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red browser_cosmos"
-          for k in sqlproj functions xunit live; do [ "$(val dotnet.result $k)" = 0 ] || red="$red $k"; done
+          for k in sqlproj functions server xunit live; do [ "$(val dotnet.result $k)" = 0 ] || red="$red $k"; done
           for k in format oncosmos; do v=$(val dotnet.result $k); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red $k"; done
           [ "$(val rest.result emdash)" = 0 ] || red="$red emdash"
           [ "$(val rest.result quality)" = 0 ] || red="$red quality"
@@ -254,7 +257,7 @@ jobs:
             if is_red warnings && [ -s "$RAW/build.txt" ]; then
               { grep -E ': warning ' "$RAW/build.txt" || true; } | head -n 8 | lines build.txt
             fi
-            for pair in functions:functions.txt xunit:xunit-sqlite.txt live:xunit-live.txt oncosmos:xunit-cosmos.txt; do
+            for pair in functions:functions.txt server:server.txt xunit:xunit-sqlite.txt live:xunit-live.txt oncosmos:xunit-cosmos.txt; do
               f=${pair#*:}; is_red "${pair%%:*}" || continue
               [ -f "$RAW/$f" ] || continue; { grep -E '^\s*Failed |Error Message' "$RAW/$f" || true; } | head -n 8 | lines "$f"
             done

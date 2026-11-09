@@ -35,6 +35,7 @@ check() {
 }
 
 check format dotnet format api/TheYard.slnx --verify-no-changes
+check format-server dotnet format server/JobHunt.Server.slnx --verify-no-changes
 check prettier npm run format:check
 check lint npm run lint
 check tsc npx tsc -b

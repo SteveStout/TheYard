@@ -52,7 +52,7 @@ def is_test(f):
     return "Tests" in s or ".Tests" in s or "/tests/" in s or s.startswith("tests/")
 
 
-CS_ALL = files("*.cs", ["api", "functions", "samples/theshed"])
+CS_ALL = files("*.cs", ["api", "functions", "server", "samples/theshed"])
 CS_PROD = [f for f in CS_ALL if not is_test(f) and "Experiment" not in rel(f)]
 CS_TEST = [f for f in CS_ALL if is_test(f)]
 TS_PROD = [f for f in files("*.ts", ["src"]) + files("*.tsx", ["src"]) if ".test." not in f.name]
@@ -66,6 +66,8 @@ def area(f):
     s = rel(f)
     if s.startswith("functions/"):
         return "functions"
+    if s.startswith("server/"):
+        return "server"
     if s.startswith("samples/"):
         return "theshed"
     parts = s.split("/")
@@ -234,7 +236,7 @@ R["comment_hygiene"] = {"counts": dict(hyg), "samples": dict(hyg_samples)}
 
 # ---------- onion: project references ----------
 refs = {}
-for proj in files("*.csproj", ["api", "functions"]):
+for proj in files("*.csproj", ["api", "functions", "server"]):
     if is_test(proj):
         continue
     t = proj.read_text(encoding="utf-8", errors="replace")
