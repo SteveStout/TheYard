@@ -143,3 +143,9 @@ The budget keeps its three notices at the new amount, the forecast one included;
 
 ```live path=src/lib/ranges.ts region=ranges
 ```
+
+## Addendum, 2026-11-09 (1.0.4.165): a long type name stays inside the card
+
+On the live bill the cost card ran 3 to 6 px past its edge at a phone and at a desk, and no local run saw it, because a local run reads no bill. The cause was the bill itself. Two of its types have no label in the cost reader, so the card hands their Azure type to the bar's name: "microsoft.insights/scheduledqueryrules" is one word with nowhere to break, and the bar's head would not shrink it.
+
+From this version a bar's name breaks a long token at its own dots and slashes, the cut the log card already makes for an address (tableFit's addressParts), and never inside a word. The bar's ceiling, "4 resources", keeps its width beside it. admin.spec feeds the card the live bill's two unlabelled types and its longest meter rule at 390 and 1,280 px, and holds every element of the card inside its edge and the page from scrolling sideways; without the change a span ran 22.8 px past the card at 390. The card's own scroll width is not read, because it rounds a fraction of a pixel up on every bill, long names or not.
