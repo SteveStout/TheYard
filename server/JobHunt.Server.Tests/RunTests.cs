@@ -90,6 +90,18 @@ public sealed class RunTests
     }
 
     [Fact]
+    public async Task A_screenshot_the_program_could_not_copy_leaves_the_send_unverified()
+    {
+        string made = Evidence.Replace("READBACK", "Sam,\\n\\nI applied for the Remote Software Engineering Manager, Foundry role at AHEAD. My work: theyard.stevenstout.biz/?r=323a34\\n\\nWould it be a bad idea to connect?\\n\\nThanks,\\nSteve", StringComparison.Ordinal)
+            .Replace("/tmp/claude-chrome-screenshots-abc/s.jpg", "/home/somewhere/s.jpg", StringComparison.Ordinal);
+        var morning = new Morning(request => IsLane(request, Lane.Invites) ? Answer(Result(Row(1, "sent", "Sam Roe", made))) : Quiet(request));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        string row = morning.Share.Files[Assert.Single(morning.TrackerRows())];
+        Assert.Contains("UNVERIFIED", row, StringComparison.Ordinal);
+        Assert.Contains("screenshot not copied into the run folder", row, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task A_thin_claim_is_still_recorded_and_marked()
     {
         var morning = new Morning(request => IsLane(request, Lane.Invites) ? Answer(Result(Row(1, "sent", "Sam Roe", "null"))) : Quiet(request));

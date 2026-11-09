@@ -17,7 +17,7 @@ public sealed record LaneStart(Lane Lane, DateOnly Day, bool Dry, OutreachCounts
 /// writes the records. The model never writes a record; it writes only in its own folder, and everything a merger reads
 /// comes from here. A send with a thin claim is still recorded, marked UNVERIFIED. Every send in progress.tsv, the line
 /// the lane doc makes the model keep after every send, counts whether or not the result names it and whatever the result
-/// calls it, so neither a timeout nor a change of heart can lose one. The records are written before the usage is reported, and on a token nothing cancels: a report that hangs
+/// calls it, so neither a timeout nor a change of heart can lose one. A screenshot the program could not copy into the run folder is no proof, so that send stands UNVERIFIED. The records are written before the usage is reported, and on a token nothing cancels: a report that hangs
 /// or a service that is stopping must never cost a row, because an unrecorded send goes out again tomorrow.
 /// </summary>
 /// <param name="share">The share.</param>
@@ -225,6 +225,10 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             string text = row.Action == WorkAction.Apply ? string.Empty : EvidenceCheck.Filled(list.Texts[row.Row], named.Person);
             var missing = EvidenceCheck.Missing(row.Action, text, named).Concat(EvidenceCheck.WrongPerson(row, named) is { } wrong ? [wrong] : []).ToList();
             string shot = await CopyShotAsync(folder, row.Row, named.Evidence?.Screenshot, lines, ct);
+            if (shot.Length > 0 && !shot.StartsWith($"{folder}/shots/", StringComparison.Ordinal))
+            {
+                missing.Add("screenshot not copied into the run folder");
+            }
             var record = new SendRecord(row, named, text, missing, model, shot);
             sends.Add(record);
             await WriteRowAsync(record, sends.Count, lines, ct);
