@@ -85,33 +85,9 @@ public sealed class DailyCardSource(IMergeStore store, IHttpClientFactory http, 
 
     private async Task<int> CountAsync(string folder, CancellationToken ct) => (await store.ListFilesAsync(folder, ct)).Count;
 
-    /// <summary>The next seven days' calls, or why they were not read: no Google settings, or no calendar scope on the token.</summary>
-    private async Task<IReadOnlyList<string>> WeekAsync(DateTimeOffset now, CancellationToken ct)
-    {
-        if (GoogleCredentials.FromEnvironment() is not { } google)
-        {
-            return ["Interviews: not read, the Function holds no Google settings"];
-        }
-        try
-        {
-            using var client = await google.ClientAsync(http, ct);
-            string from = Uri.EscapeDataString(now.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
-            string to = Uri.EscapeDataString(now.AddDays(7).ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
-            using var answer = await client.GetAsync($"https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin={from}&timeMax={to}&maxResults=100", ct);
-            if (answer.StatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized)
-            {
-                return ["Interviews: not read, the token holds no calendar scope yet (one consent click, on the AUTOMATE card)"];
-            }
-            answer.EnsureSuccessStatusCode();
-            using var json = JsonDocument.Parse(await answer.Content.ReadAsStringAsync(ct));
-            var lines = CalendarWeek.Lines(json.RootElement);
-            return lines.Count == 0 ? ["No interview or call on the calendar in the next seven days (Google Calendar, primary)"] : [.. lines.Select(line => line + " (Google Calendar)")];
-        }
-        catch (Exception ex) when (!ct.IsCancellationRequested)
-        {
-            return [$"Interviews: not read ({ex.GetType().Name})"];
-        }
-    }
+    /// <summary>The next seven days' calls, or why they were not read.</summary>
+    private Task<IReadOnlyList<string>> WeekAsync(DateTimeOffset now, CancellationToken ct) =>
+        CalendarWeek.ReadAsync(http, now, 7, "No interview or call on the calendar in the next seven days (Google Calendar, primary)", ct);
 
     private async Task<string> CiAsync(CancellationToken ct)
     {

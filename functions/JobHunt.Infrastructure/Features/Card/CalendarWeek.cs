@@ -14,6 +14,42 @@ namespace JobHunt.Infrastructure.Features.Card;
 /// </summary>
 public static partial class CalendarWeek
 {
+    /// <summary>
+    /// The calls in the days ahead of now as card lines, each naming Google Calendar, or one line saying why they were
+    /// not read: no Google settings, no calendar scope on the token, or the error's type.
+    /// </summary>
+    /// <param name="http">The client factory.</param>
+    /// <param name="now">From when.</param>
+    /// <param name="days">How many days ahead.</param>
+    /// <param name="none">The line when the calendar holds no call.</param>
+    /// <param name="ct">Cancels the read.</param>
+    public static async Task<IReadOnlyList<string>> ReadAsync(IHttpClientFactory http, DateTimeOffset now, int days, string none, CancellationToken ct)
+    {
+        if (GoogleCredentials.FromEnvironment() is not { } google)
+        {
+            return ["Interviews: not read, the Function holds no Google settings"];
+        }
+        try
+        {
+            using var client = await google.ClientAsync(http, ct);
+            string from = Uri.EscapeDataString(now.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
+            string to = Uri.EscapeDataString(now.AddDays(days).ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture));
+            using var answer = await client.GetAsync($"https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin={from}&timeMax={to}&maxResults=100", ct);
+            if (answer.StatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized)
+            {
+                return ["Interviews: not read, the token holds no calendar scope yet (one consent click, on the AUTOMATE card)"];
+            }
+            answer.EnsureSuccessStatusCode();
+            using var json = JsonDocument.Parse(await answer.Content.ReadAsStringAsync(ct));
+            var lines = Lines(json.RootElement);
+            return lines.Count == 0 ? [none] : [.. lines.Select(line => line + " (Google Calendar)")];
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            return [$"Interviews: not read ({ex.GetType().Name})"];
+        }
+    }
+
     /// <summary>The card's lines for the events Google Calendar answered, soonest first.</summary>
     /// <param name="events">The events.list answer (singleEvents, ordered by start time).</param>
     public static IReadOnlyList<string> Lines(JsonElement events)
