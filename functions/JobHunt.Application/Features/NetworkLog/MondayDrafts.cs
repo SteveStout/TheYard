@@ -13,7 +13,8 @@ public sealed record MondayResult(int Due, int Drafted, int RenderFailed, IReadO
 /// would-drafts in shadow, and in `on` written as Gmail drafts into each row's own thread under Follow-up/Ready,
 /// to the address the person wrote from, each read back before the row is marked Drafted. Nothing sends: the draft
 /// port has no send, and a row is Drafted only once its DraftId is stored, so a second build the same Monday drafts
-/// nothing twice. A row whose newest exchange was on LinkedIn waits for the LinkedIn queue. A row holding a post and
+/// nothing twice. A row whose newest exchange was on LinkedIn goes to the week's LinkedIn queue under section A, its
+/// text beside it, for Steve's send; nothing types it into a thread without that. A row holding a post and
 /// its code names the post when the blog's feed shows it went out after Steve's last message; a draft whose post line
 /// fails a check is written without it.
 /// </summary>
@@ -60,17 +61,43 @@ public sealed class MondayDrafts(IConversationStore rows, IThreadReader gmail, I
             await rows.SetDraftAsync(row.Id, draftId, Channel.Email, now, ct);
             written++;
         }
+        written += await LinkedInAsync(monday, [.. rendered.Where(r => r.Item3.Count == 0 && r.row.LastChannel == Channel.LinkedIn && r.row.ThreadIds.Count > 0).Select(r => (r.row, r.Item2))], ct);
         return new MondayResult(batch.Count, written, failed.Count, failed, named);
+    }
+
+    /// <summary>
+    /// The LinkedIn rows' follow-ups as the week's queue under section A, each draft's text beside it, for Steve's send.
+    /// The rows stay Open: his send moves their last exchange on the next LinkedIn read, and one he leaves is due again
+    /// the next Monday until it goes stale.
+    /// </summary>
+    private async Task<int> LinkedInAsync(DateOnly monday, IReadOnlyList<(Conversation Row, FollowUpDraft Draft)> due, CancellationToken ct)
+    {
+        if (due.Count == 0)
+        {
+            return 0;
+        }
+        await share.EnsureFolderAsync("networklog/texts", ct);
+        await share.EnsureFolderAsync(FollowUpQueue.Texts(monday), ct);
+        foreach (var (row, draft) in due)
+        {
+            await share.WriteAsync(NetworkFiles.LinkedInDraftPath(monday, row.ThreadIds[0]), TrackerCsvText.Encode(draft.Text), ct);
+        }
+        await share.WriteAsync(FollowUpQueue.Path(monday), TrackerCsvText.Encode(NetworkFiles.LinkedInQueueText(monday, due.Select(d => d.Row))), ct);
+        return due.Count;
     }
 
     private static (Conversation row, FollowUpDraft draft, IReadOnlyList<string> checks) Render(Conversation row, IReadOnlyList<BlogPost> posts)
     {
         var plain = DraftTemplate.Render(row.FirstName, row.TopicLine ?? "", row.LastSubject ?? "");
         if (BlogLine.For(row, posts) is { } post && DraftTemplate.Render(row.FirstName, row.TopicLine ?? "", row.LastSubject ?? "", post) is var named
-            && DraftTemplate.Check(named).Count == 0)
+            && Checks(row, named).Count == 0)
         {
             return (row, named, []);
         }
-        return (row, plain, DraftTemplate.Check(plain));
+        return (row, plain, Checks(row, plain));
     }
+
+    /// <summary>The template's checks, less the subject's for a LinkedIn row: a LinkedIn message has no subject line.</summary>
+    private static IReadOnlyList<string> Checks(Conversation row, FollowUpDraft draft) =>
+        row.LastChannel == Channel.LinkedIn ? [.. DraftTemplate.Check(draft).Where(c => c != "subject")] : DraftTemplate.Check(draft);
 }

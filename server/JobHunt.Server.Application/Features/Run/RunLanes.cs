@@ -44,11 +44,14 @@ public sealed record RunGuards(IMount Mount, IRunLock Lock, IDesktop Desktop, Ti
 /// <param name="Runner">The lanes.</param>
 /// <param name="Recounter">The live invite count.</param>
 /// <param name="Feed">The hot-manager feed, the morning's first lane.</param>
-public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRunner Runner, InviteRecount Recounter, FeedLane Feed);
+/// <param name="Network">The network log's LinkedIn half, after the messages lane.</param>
+public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRunner Runner, InviteRecount Recounter, FeedLane Feed, NetworkLane Network);
 
 /// <summary>
 /// The morning: mount, lock, registry, then the lanes in order, the feed first and the queues read again after it so the
-/// invites lane works what the feed just wrote, then the card and the close row. The feed reads LinkedIn and sends
+/// invites lane works what the feed just wrote, the network lane after the messages lane, then the card and the close
+/// row. The network lane reads LinkedIn Messaging and sends nothing, but it is a drive: a second driver or the day's stop
+/// file holds it like a sending lane, and only a hard stop it met closes LinkedIn for the day. The feed reads LinkedIn and sends
 /// nothing: it waits on the day's LinkedIn stop file, never on another driver, and only a hard stop it met on the page
 /// (a checkpoint, a CAPTCHA, a sign-in, a restriction, the weekly limit) closes LinkedIn for the day. LinkedIn fails
 /// closed: a stop condition, a blocked row, a run that gave no result, or another lane LIVE ends the LinkedIn work of the
@@ -133,7 +136,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             string? linkedIn = linkedInStop ?? await SecondDriverAsync(ct);
             string? held = closed
                 ?? (ct.IsCancellationRequested ? "the service was stopped" : null)
-                ?? (RunSlot.OnLinkedIn(lane) ? linkedIn : lane == Lane.Feed ? linkedInStop : null)
+                ?? (RunSlot.OnLinkedIn(lane) || lane == Lane.Network ? linkedIn : lane == Lane.Feed ? linkedInStop : null)
                 ?? await work.Runner.CrashedAsync(start, ct);
             if (held is not null)
             {
@@ -149,6 +152,16 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                     linkedInStop ??= await CloseLinkedInAsync(day, $"the feed lane met {stopped.StopCondition}: {stopped.StopDetail}", dry, CancellationToken.None);
                 }
                 reads = await work.Reader.ReadAsync(day, ct);
+                continue;
+            }
+            if (lane == Lane.Network)
+            {
+                LaneReport read = await work.Network.RunAsync(start, ct);
+                reports.Add(read);
+                if (read.Answer is { StopsLinkedIn: true } stopped)
+                {
+                    linkedInStop ??= await CloseLinkedInAsync(day, $"the network lane met {stopped.StopCondition}: {stopped.StopDetail}", dry, CancellationToken.None);
+                }
                 continue;
             }
             int invitesRoom = 0;

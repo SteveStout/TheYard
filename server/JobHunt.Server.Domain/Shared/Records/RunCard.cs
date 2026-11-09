@@ -45,6 +45,10 @@ public static class RunCard
         {
             return $"{word}: {report.Queued} queued{(report.Dry ? " in its run folder only" : string.Empty)}, {report.Dropped.Count} left out by the gates{(report.CutShort ? ", cut short, read its DONE note" : string.Empty)}";
         }
+        if (report.Lane == Lane.Network)
+        {
+            return $"{word}: {report.Queued} two-way threads {(report.Dry ? "checked in its run folder only" : "spooled for the network log")}, {report.Dropped.Count} left out{(report.CutShort ? ", cut short, read its DONE note" : string.Empty)}";
+        }
         if (report.Dry)
         {
             int read = report.Answer?.Rows.Count ?? 0;
