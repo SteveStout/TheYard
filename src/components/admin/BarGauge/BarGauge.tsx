@@ -2,10 +2,12 @@
  * A horizontal meter: a share of a ceiling as a filled bar, with its name, its
  * ceiling and its reading in words, read to a screen reader as one meter. The
  * share comes from gaugeMeter in src/lib/gauge.ts. Its own component because
- * the machines and spend cards use it with no chart around it.
+ * the machines and spend cards use it with no chart around it. A long name
+ * breaks at its own punctuation, never inside a word, so the head fits a phone.
  */
-import type { CSSProperties } from 'react';
+import { type CSSProperties, Fragment } from 'react';
 import { gaugeMeter } from '../../../lib/gauge';
+import { addressParts } from '../../../lib/tableFit';
 import styles from '../charts/charts.module.css';
 
 // #region bar-gauge
@@ -51,7 +53,13 @@ export function BarGauge({
     <div className={styles.gauge} data-testid={testId} data-tone={tone}>
       <div className={styles.gaugeHead}>
         <span className={styles.gaugeName} id={nameId}>
-          {name}
+          {/* A name the bill hands as its type ("microsoft.insights/scheduledqueryrules") breaks at its own dots and slashes. */}
+          {addressParts(name).map((part, at) => (
+            <Fragment key={at}>
+              {at > 0 && <wbr />}
+              {part}
+            </Fragment>
+          ))}
         </span>
         <span className={styles.gaugeCeiling}>{ceiling}</span>
       </div>

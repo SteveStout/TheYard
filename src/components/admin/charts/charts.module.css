@@ -112,6 +112,7 @@
 /* The gauge's title is in capitals; its ceiling is a reading with a unit
    ("1,000 / s free"), so it keeps its own case. */
 .gaugeCeiling {
+  flex-shrink: 0;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
   text-transform: none;
