@@ -85,7 +85,16 @@ async function turnOffThePrefetch(page: Page): Promise<void> {
 export async function openTheYard(page: Page, path = '/?view=inventory'): Promise<void> {
   await hideTheGround(page);
   await turnOffThePrefetch(page);
-  await page.goto(path);
+  // A navigation the dev server cut short is asked for once more. The likely cause: Vite bundles a
+  // dependency the first time any page imports it and then reloads every open page, so a goto in
+  // flight at that moment in another worker ends net::ERR_ABORTED before the app has a chance to load (author.spec's
+  // first goto on CI on main 42385697729, attempt 1). Any other failure is still the test's.
+  try {
+    await page.goto(path);
+  } catch (error) {
+    if (!String(error).includes('net::ERR_ABORTED')) throw error;
+    await page.goto(path);
+  }
   const announcement = page.getByTestId('view-announcement');
   // Present at all: React has mounted and rendered a view. Thirty-five seconds, not
   // twenty: the gate for 1.0.0.173 had one test on each store still unmounted at twenty,

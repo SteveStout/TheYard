@@ -120,16 +120,23 @@ test('a Retry click is a person asking, and it still locks while the answer is s
   const retry = page.getByRole('button', { name: 'Retry' });
   await expect(retry).toBeVisible();
   await page.unroute(KIA);
+  // The answer is held until the test has seen the lock, so the lock is read while the answer is
+  // slow by construction, not by a clock: with a 1.5 s delay and a 1.2 s budget the read raced the
+  // answer, and a loaded box once drew the lock after the budget (B6, 11/7). How soon the lock
+  // shows is held by the first test in this file and by WorkingLock.test.ts.
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
   await page.route(KIA, async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await held;
     await route.continue();
   });
   const answered = page.waitForResponse(KIA, { timeout: 30_000 });
   await retry.click();
   const lock = page.getByTestId('working-lock');
-  await expect(lock).toHaveAttribute('data-locked', 'true', { timeout: 1_200 });
+  await expect(lock).toHaveAttribute('data-locked', 'true', { timeout: 10_000 });
+  release();
   await answered;
-  await expect(lock).toHaveAttribute('data-locked', 'false', { timeout: 2_000 });
+  await expect(lock).toHaveAttribute('data-locked', 'false', { timeout: 5_000 });
 });
 test('a request that hangs is given up at twenty seconds, the lock lets go and the error shows', async ({
   page,

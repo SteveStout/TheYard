@@ -154,13 +154,16 @@ async function everyPage(
           }
         } else {
           // The API reference draws itself from a script of its own, which on a cold phone took
-          // longer than a second and a half.
+          // longer than a second and a half, and on a loaded box at 390 once longer than thirty
+          // seconds (wicked1104, 11/7): the script is the package's whole bundle, parsed on the
+          // box's processor, so the wait is the pass's own budget, not a guess at the box's speed.
+          // A page that never draws still reads "no panel" below.
           await tab
             .waitForFunction(
               () => document.querySelector('.op-glass, .scalar-card') !== null,
               null,
               {
-                timeout: 30_000,
+                timeout: 90_000,
               }
             )
             .catch(() => undefined);

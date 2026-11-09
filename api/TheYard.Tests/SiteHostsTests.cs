@@ -13,6 +13,7 @@ namespace TheYard.Tests;
 /// still wins, a name the process does not know is no name at all, and The Shed's name reaches
 /// The Shed's own application in the same process.
 /// </summary>
+[Collection(ShedHosts.Name)]
 public class SiteHostsTests
 {
     private static readonly SiteHosts Three = new([new Site("theyard.example", "sql"), new Site("theyard-cosmos.example", "cosmos"), new Site("theshed.example", null)]);

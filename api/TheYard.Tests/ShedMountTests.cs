@@ -17,6 +17,7 @@ namespace TheYard.Tests;
 /// Shed's own builder through the addition this host hands it (ShedBuilderAddition), the way a
 /// deploy's settings would.
 /// </summary>
+[Collection(ShedHosts.Name)]
 public sealed class ShedMountTests
 {
     private const string Shed = "theshed.example";
