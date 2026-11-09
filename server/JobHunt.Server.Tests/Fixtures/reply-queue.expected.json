@@ -1,0 +1,13 @@
+{
+  "unread": [],
+  "lines": [
+    {"section": "A", "person": "Lee Markum", "company": "", "reference": "thread: linkedin 2-NThkYTRkYmMtMTA3Yy01YWNmLWIwMTYtMGM3NGRkM2M3NjJjXzAxMg==", "draft": "", "held": "text not read (a LinkedIn notice carries no text; the network lane's LinkedIn pass saves it)"},
+    {"section": "A", "person": "Dan Chinnici", "company": "TechPartners", "reference": "thread: gmail 19a2b3c4d5e6f708", "draft": "nightly/2026-11-09/0400-reply-opus-5-5/drafts/gmail-dan-chinnici-techpartners-checkin.txt", "held": ""},
+    {"section": "B", "person": "Bill Dunaway", "company": "Clayco", "reference": "Count 3055", "draft": "nightly/2026-11-09/0400-reply-opus-5-5/drafts/li-followup-clayco.txt", "held": ""},
+    {"section": "B", "person": "Steve Odell", "company": "WellSky", "reference": "Count 3406", "draft": "", "held": "WellSky closed by Steve 11/4 (Count 3412); a follow-up waits on his yes"},
+    {"section": "B", "person": "John Grabanski", "company": "", "reference": "", "draft": "", "held": "no tracker row names him; the invite's purpose is unread"},
+    {"section": "C", "person": "", "company": "AccuLynx", "reference": "Count 3093", "draft": "nightly/2026-11-09/0400-reply-opus-5-5/drafts/li-followup-acculynx.txt", "held": ""},
+    {"section": "C", "person": "", "company": "Endpoint Clinical", "reference": "Count 1574", "draft": "", "held": "no accepted invitee at Endpoint Clinical"},
+    {"section": "E", "person": "Allen Kadilis", "company": "LINQ", "reference": "Count 3492", "draft": "nightly/2026-11-09/0400-reply-opus-5-5/drafts/rejection-ask-linq.txt", "held": ""}
+  ]
+}

@@ -68,6 +68,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         if (await NewestReplyQueueAsync(reads.Day, ct) is { } newest)
         {
             string queue = await share.ReadAsync(newest, ct);
+            if (ReplyQueueTwo.Is(queue))
+            {
+                return await MessagesTwoAsync(newest, queue, reads, candidates, room, dry, ct);
+            }
             dropped.AddRange(ReplyQueue.Unread(queue).Select(section => new Dropped($"{newest} section {section}", "holds text this program could not read as items; read it by hand")));
             string? drafts = ReplyQueue.DraftFolder(queue);
             foreach (ReplyItem item in ReplyQueue.Items(queue))
@@ -164,7 +168,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         for (int back = 0; back < NewestQueueDays; back++)
         {
             string folder = RunSlot.DayFolder(day.AddDays(-back));
-            foreach (string run in (await share.FoldersAsync(folder, "0400-reply-*", ct)).OrderDescending(StringComparer.Ordinal))
+            foreach (string run in (await share.FoldersAsync(folder, "*-reply-*", ct)).Where(run => !run.EndsWith("-dry", StringComparison.Ordinal)).OrderDescending(StringComparer.Ordinal))
             {
                 if (await share.ExistsAsync($"{run}/linkedin-queue.md", ct))
                 {
