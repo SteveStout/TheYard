@@ -43,10 +43,13 @@ public sealed record RunGuards(IMount Mount, IRunLock Lock, IDesktop Desktop, Ti
 /// <param name="Builder">The worklists.</param>
 /// <param name="Runner">The lanes.</param>
 /// <param name="Recounter">The live invite count.</param>
-public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRunner Runner, InviteRecount Recounter);
+/// <param name="Feed">The hot-manager feed, the morning's first lane.</param>
+public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRunner Runner, InviteRecount Recounter, FeedLane Feed);
 
 /// <summary>
-/// The morning: mount, lock, registry, then the three lanes in order, then the card and the close row. LinkedIn fails
+/// The morning: mount, lock, registry, then the lanes in order, the feed first and the queues read again after it so the
+/// invites lane works what the feed just wrote, then the card and the close row. The feed reads LinkedIn and sends
+/// nothing: it waits on the day's LinkedIn stop file, never on another driver, and a stop in it closes nothing. LinkedIn fails
 /// closed: a stop condition, a blocked row, a run that gave no result, or another lane LIVE ends the LinkedIn work of the
 /// day, and that includes the apply lane's rows on linkedin.com, because they are a drive too. The registry is read
 /// again before each lane. A LinkedIn stop is a file for the day, so a hard stop for the day stays one through any later
@@ -99,7 +102,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         {
             broke = $"DEFECT: the run stopped early: {failure.Message}. Read the DONE notes before any lane runs again.";
         }
-        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, reports.Count < RunSlot.Order.Count), CancellationToken.None));
+        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, options.Only is not null || reports.Count < lanes.Count), CancellationToken.None));
     }
 
     private async Task WorkAsync(IReadOnlyList<Lane> lanes, DateOnly day, bool dry, List<LaneReport> reports, CancellationToken ct)
@@ -129,11 +132,17 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             string? linkedIn = linkedInStop ?? await SecondDriverAsync(ct);
             string? held = closed
                 ?? (ct.IsCancellationRequested ? "the service was stopped" : null)
-                ?? (RunSlot.OnLinkedIn(lane) ? linkedIn : null)
+                ?? (RunSlot.OnLinkedIn(lane) ? linkedIn : lane == Lane.Feed ? linkedInStop : null)
                 ?? await work.Runner.CrashedAsync(start, ct);
             if (held is not null)
             {
                 reports.Add(await work.Runner.HoldAsync(start, held, CancellationToken.None));
+                continue;
+            }
+            if (lane == Lane.Feed)
+            {
+                reports.Add(await work.Feed.RunAsync(start, reads!, ct));
+                reads = await work.Reader.ReadAsync(day, ct);
                 continue;
             }
             int invitesRoom = 0;

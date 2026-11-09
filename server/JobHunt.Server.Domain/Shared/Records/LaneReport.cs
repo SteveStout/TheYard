@@ -32,6 +32,9 @@ public sealed record LaneReport(
     string? Held,
     bool CutShort = false)
 {
+    /// <summary>The blocks the feed lane queued, zero for every other lane.</summary>
+    public int Queued { get; init; }
+
     /// <summary>Sends that passed their evidence.</summary>
     public int Verified => Sends.Count(send => send.Missing.Count == 0);
 

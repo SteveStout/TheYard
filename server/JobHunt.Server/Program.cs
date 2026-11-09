@@ -34,13 +34,14 @@ switch (args.FirstOrDefault())
     case "run":
         if (RunOptions.Parse(args) is not { } options)
         {
-            Console.Error.WriteLine("run takes --dry-run and --lane invites|messages|apply, and nothing else");
+            Console.Error.WriteLine("run takes --dry-run and --lane feed|invites|messages|apply, and nothing else");
             return 2;
         }
+        var siteUsage = new SiteUsage(config, http);
         var lanes = new RunLanes(
             share,
             new RunGuards(new JDriveMount(share), new FileRunLock(share, time), desktop, time),
-            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, helpers, config), new LaneRunner(share, new EssayDesk(share, helpers, claude), new SiteUsage(config, http), config, time), new InviteRecount(share, claude, config)),
+            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, helpers, config), new LaneRunner(share, new EssayDesk(share, helpers, claude), siteUsage, config, time), new InviteRecount(share, claude, config), new FeedLane(share, new FeedTools(claude, helpers, new UsageReport(share, siteUsage, config, time)), config, time)),
             config);
         (int exit, string output) = await lanes.ExecuteAsync(options, stop.Token);
         Console.WriteLine(output);
@@ -53,6 +54,6 @@ switch (args.FirstOrDefault())
         Console.WriteLine(await new LastCard(share, time).ExecuteAsync(stop.Token));
         return 0;
     default:
-        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane invites|messages|apply] | probe | status");
+        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane feed|invites|messages|apply] | probe | status");
         return 2;
 }

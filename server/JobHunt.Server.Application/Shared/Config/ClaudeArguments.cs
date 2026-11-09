@@ -11,14 +11,24 @@ namespace JobHunt.Server.Application.Shared.Config;
 /// computer's Chrome connected the extension answers nothing until a browser is selected, so every run may select one;
 /// the lane doc says it is this box's and no other. switch_browser stays refused: it pages every Chrome for a click.
 /// The apply lane may write anywhere in its run folder but the essay desk's verdicts, which only the program writes.
+/// The feed reads the share's inputs it ranks from and LinkedIn, and live it gets `computer` for scrolling and
+/// screenshots only; no form tool, so it can fill nothing and send nothing.
 /// </summary>
 public static class ClaudeArguments
 {
     private const string Chrome = "mcp__claude-in-chrome__";
 
+    private const string RecountTurns = "80";
+
     private static readonly string[] Reading = ["list_connected_browsers", "select_browser", "tabs_context_mcp", "tabs_create_mcp", "tabs_close_mcp", "navigate", "read_page", "get_page_text", "find"];
 
     private static readonly string[] Acting = ["computer", "form_input"];
+
+    private static readonly string[] FeedReads =
+    [
+        "PRIORITY-BOARD.md", "Job_Hunt_Tracker.csv", "inbox/tracker-inbox/**", "staging/apply-*/OUTREACH-DRAFTS.md", "MANAGER-DIRECT-LANE.md",
+        "INBOUND-HIDDEN-2026-10-08.md", "linkedin-proof/QUEUE-*.md", "linkedin-proof/FEED-HOLD.md", "CONVENTIONS.md", "targeting-criteria.md",
+    ];
 
     private static readonly string[] Refused =
     [
@@ -71,10 +81,10 @@ public static class ClaudeArguments
     {
         var arguments = new List<string>
         {
-            "-p", $"Read {share}/nightly/{RunSlot.Doc(Lane.Invites)} and do its section Recount and nothing else. DRY_RUN={dry.ToString().ToLowerInvariant()}. Send nothing, click no button, return rows empty.",
+            "-p", $"Read {share}/nightly/{RunSlot.Doc(Lane.Invites)} and do its section Recount and nothing else. JOBHUNT={share}. DRY_RUN={dry.ToString().ToLowerInvariant()}. Send nothing, click no button, return rows empty.",
             "--model", config.Model,
             "--effort", config.Effort,
-            "--max-turns", "40",
+            "--max-turns", RecountTurns,
             "--output-format", "stream-json",
             "--verbose",
             "--json-schema", LaneResultSchema.Json,
@@ -83,6 +93,7 @@ public static class ClaudeArguments
             "--add-dir", share,
             "--allowedTools",
             $"Read({Rooted(share)}/nightly/{RunSlot.Doc(Lane.Invites)})",
+            $"Read({Rooted(share)}/systemRules.md)",
         };
         arguments.AddRange(Reading.Select(tool => Chrome + tool));
         if (!dry)
@@ -116,8 +127,16 @@ public static class ClaudeArguments
             tools.Add($"Read({Rooted(share)}/EVIDENCE-BANK.md)");
             tools.Add($"Read({Rooted(share)}/writing-samples.md)");
         }
+        if (lane == Lane.Feed)
+        {
+            tools.AddRange(FeedReads.Select(path => $"Read({Rooted(share)}/{path})"));
+        }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
-        if (!dry)
+        if (!dry && lane == Lane.Feed)
+        {
+            tools.Add(Chrome + "computer");
+        }
+        else if (!dry)
         {
             tools.AddRange(Acting.Select(tool => Chrome + tool));
             if (lane == Lane.Apply)
@@ -134,7 +153,9 @@ public static class ClaudeArguments
     /// <param name="runFolder">The run folder's real path.</param>
     /// <param name="dry">True for a dry run.</param>
     public static string Prompt(Lane lane, string share, string runFolder, bool dry) =>
-        $"Read {share}/nightly/{RunSlot.Doc(lane)} and follow it. JOBHUNT={share}. RUN_DIR={runFolder}. Worklist at {runFolder}/worklist.tsv. DRY_RUN={dry.ToString().ToLowerInvariant()}."
+        $"Read {share}/nightly/{RunSlot.Doc(lane)} and follow it. JOBHUNT={share}. RUN_DIR={runFolder}. "
+        + (lane == Lane.Feed ? $"Candidates go to {runFolder}/candidates.json." : $"Worklist at {runFolder}/worklist.tsv.")
+        + $" DRY_RUN={dry.ToString().ToLowerInvariant()}."
         + (dry ? " Dry run: read pages only, no click, no fill, no send; your tool list holds no click." : string.Empty);
 
     private static string Rooted(string absolute) => "//" + absolute.TrimStart('/');

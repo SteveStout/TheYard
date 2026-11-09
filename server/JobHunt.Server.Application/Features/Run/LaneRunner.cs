@@ -129,7 +129,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             {
                 await ApplyAfterword.WriteAsync(share, start, folder, list, result, sends, lines, finish);
             }
-            await ReportUsageAsync(run, start, folder, began, lines, finish);
+            await new UsageReport(share, usage, config, time).WriteAsync(run, start, folder, began, lines, finish);
         }
         var report = new LaneReport(start.Lane, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, list.Rows, list.Dropped, result, sends, lines, null, cutShort);
         return await FinishAsync(report, folder, CancellationToken.None);
@@ -173,25 +173,6 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         }
         var kept = result.Rows.Where(reported => missing.All(row => row.Row != reported.Row));
         return result with { Rows = [.. kept, .. missing], LiveInviteCount = start.LiveCount ?? result.LiveInviteCount };
-    }
-
-    private async Task ReportUsageAsync(ClaudeRun run, LaneStart start, string folder, DateTimeOffset began, List<string> lines, CancellationToken ct)
-    {
-        if (run.ResultLine is not { } line)
-        {
-            return;
-        }
-        try
-        {
-            string cut = UsageCut.Json(line);
-            await share.WriteAsync($"{folder}/usage.json", cut, ct);
-            var interim = new LaneReport(start.Lane, config.For(start.Lane).Model, start.Dry, began, time.GetUtcNow(), start.Before, [], [], null, [], [], null);
-            lines.Add(await usage.ReportAsync(UsageCut.Document(cut, interim, RegistryRows.Lane + began.ToUnixTimeSeconds()), ct));
-        }
-        catch (Exception failure) when (failure is IOException or JsonException)
-        {
-            lines.Add($"usage not written: {failure.Message}");
-        }
     }
 
     private async Task<IReadOnlyList<RowResult>> ProgressAsync(string folder, List<string> lines, CancellationToken ct)

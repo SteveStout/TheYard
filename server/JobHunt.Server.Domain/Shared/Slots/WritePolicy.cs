@@ -1,8 +1,8 @@
 namespace JobHunt.Server.Domain.Shared.Slots;
 
 /// <summary>
-/// Where the program may write on the share: a run folder or the day's folder under nightly/, the runs table, and
-/// the two merger inboxes it spools to. Everything else is refused before the disk is touched, so a tracker, a
+/// Where the program may write on the share: a run folder or the day's folder under nightly/, the runs table, the
+/// two merger inboxes it spools to, and the feed's one queue file a day in linkedin-proof/. Everything else is refused before the disk is touched, so a tracker, a
 /// state.md or a failure-log.md can never be written whole by this process, whatever a later change asks of it.
 /// </summary>
 public static class WritePolicy
@@ -12,6 +12,7 @@ public static class WritePolicy
 
     private const string Tracker = "inbox/tracker-inbox/";
     private const string Registry = "inbox/append-inbox/state.md/";
+    private const string FeedQueue = "linkedin-proof/QUEUE-hotmgr-";
 
     /// <summary>True when the program may write this path.</summary>
     /// <param name="relative">The path relative to the share's root, with forward slashes.</param>
@@ -33,6 +34,10 @@ public static class WritePolicy
         if (path.StartsWith(Registry, StringComparison.Ordinal))
         {
             return path.EndsWith(".md", StringComparison.Ordinal) && !path[Registry.Length..].Contains('/');
+        }
+        if (path.StartsWith(FeedQueue, StringComparison.Ordinal))
+        {
+            return DateOnly.TryParseExact(path[FeedQueue.Length..].Replace(".md", string.Empty, StringComparison.Ordinal), "yyyy-MM-dd", out _) && path.EndsWith(".md", StringComparison.Ordinal);
         }
         return IsDayFolder(path);
     }

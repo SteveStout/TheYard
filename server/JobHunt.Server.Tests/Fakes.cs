@@ -238,18 +238,21 @@ internal sealed class Morning
     {
         Lanes = new Dictionary<string, LaneConfig>
         {
+            ["feed"] = new() { Model = "claude-opus-5-5", Effort = "high", Enabled = false },
             ["invites"] = new() { TargetModel = "claude-haiku-5-5" },
             ["messages"] = new(),
             ["apply"] = new() { Effort = "medium" },
         },
     };
 
-    public RunLanes Lanes(IMount? mount = null, IRunLock? runLock = null, IDesktop? desktop = null) =>
-        new(
+    public RunLanes Lanes(IMount? mount = null, IRunLock? runLock = null, IDesktop? desktop = null)
+    {
+        return new(
             Share,
             new RunGuards(mount ?? new FakeMount(), runLock ?? new FakeLock(), desktop ?? new FakeDesktop(), Time),
-            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, new EssayDesk(Share, Prose, Claude), Usage, Config, Time), new InviteRecount(Share, Claude, Config)),
+            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, new EssayDesk(Share, Prose, Claude), Usage, Config, Time), new InviteRecount(Share, Claude, Config), new FeedLane(Share, new FeedTools(Claude, Prose, new UsageReport(Share, Usage, Config, Time)), Config, Time)),
             Config);
+    }
 
     public IEnumerable<string> TrackerRows() => Share.Files.Keys.Where(path => path.StartsWith("inbox/tracker-inbox/", StringComparison.Ordinal));
 }

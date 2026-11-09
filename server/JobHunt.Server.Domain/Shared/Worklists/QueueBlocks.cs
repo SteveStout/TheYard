@@ -9,10 +9,13 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 /// <param name="Action">The action its heading names.</param>
 /// <param name="Text">The fenced text, as drafted.</param>
 /// <param name="Source">file:line of the heading.</param>
-public sealed record QueueBlock(int Number, string Person, string Company, WorkAction Action, string Text, string Source);
+/// <param name="Hot">The block's "- Hot:" bucket, A to E, and E when it has none.</param>
+/// <param name="Url">The block's "- Profile:" address, empty when it has none.</param>
+public sealed record QueueBlock(int Number, string Person, string Company, WorkAction Action, string Text, string Source, string Hot = "E", string Url = "");
 
 /// <summary>
-/// Reads the invite and message blocks of linkedin-proof/QUEUE-*.md and leaves out every block the file or its status
+/// Reads the invite and message blocks of linkedin-proof/QUEUE-*.md, with the bucket and the profile address the feed
+/// writes under each heading, and leaves out every block the file or its status
 /// file says is finished. A block is open only when nothing says otherwise and its status, if it has one, says NOT SENT;
 /// anything held, dropped, replaced, pending or sent stays out, because a block wrongly left out waits a day and a block
 /// wrongly let in is a second touch.
@@ -92,13 +95,18 @@ public static partial class QueueBlocks
             string[] parts = [.. who.Split(',').Select(part => part.Trim())];
             bool named = parts.Length > 1;
             string text = string.Join('\n', lines[(open + 1)..close].Select(line => line.TrimEnd('\r'))).Trim();
+            string[] meta = lines[(i + 1)..open];
+            string hot = meta.Select(line => HotLine().Match(line)).FirstOrDefault(match => match.Success)?.Groups[1].Value.ToUpperInvariant() ?? "E";
+            string url = meta.Select(line => ProfileLine().Match(line)).FirstOrDefault(match => match.Success)?.Groups[1].Value ?? string.Empty;
             blocks.Add(new QueueBlock(
                 int.Parse(heading.Groups[1].Value),
                 named ? parts[0] : string.Empty,
                 FirstWords(parts[^1]),
                 title.Contains("MESSAGE", StringComparison.Ordinal) ? WorkAction.Message : WorkAction.Invite,
                 text,
-                $"{name}:{i + 1}"));
+                $"{name}:{i + 1}",
+                hot,
+                url));
         }
         return blocks;
     }
@@ -128,6 +136,12 @@ public static partial class QueueBlocks
 
     [GeneratedRegex(@"^###\s+(\d+)\.\s+(.+)$")]
     private static partial Regex Heading();
+
+    [GeneratedRegex(@"^- Hot:\s*([A-Ea-e])\b")]
+    private static partial Regex HotLine();
+
+    [GeneratedRegex(@"^- Profile:\s*(https://www\.linkedin\.com/in/[\w%-]+/?)\s*$")]
+    private static partial Regex ProfileLine();
 
     [GeneratedRegex(@"^([^:(]+?)(?:\s+\(|:|$)")]
     private static partial Regex Who();

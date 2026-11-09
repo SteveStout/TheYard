@@ -2,9 +2,12 @@ using System.Globalization;
 
 namespace JobHunt.Server.Domain.Shared.Slots;
 
-/// <summary>The three browser lanes, in the order the run works them.</summary>
+/// <summary>The browser lanes, in the order the run works them.</summary>
 public enum Lane
 {
+    /// <summary>The hot-manager feed: reads LinkedIn and the share, writes the day's queue, sends nothing.</summary>
+    Feed,
+
     /// <summary>LinkedIn connection requests.</summary>
     Invites,
 
@@ -26,7 +29,7 @@ public static class RunSlot
     public const string Hour = "0600";
 
     /// <summary>The lanes in run order.</summary>
-    public static readonly IReadOnlyList<Lane> Order = [Lane.Invites, Lane.Messages, Lane.Apply];
+    public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Invites, Lane.Messages, Lane.Apply];
 
     private static readonly TimeZoneInfo Central = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
 
@@ -34,6 +37,7 @@ public static class RunSlot
     /// <param name="lane">The lane.</param>
     public static string Word(Lane lane) => lane switch
     {
+        Lane.Feed => "feed",
         Lane.Invites => "invites",
         Lane.Messages => "messages",
         _ => "apply",
@@ -43,12 +47,16 @@ public static class RunSlot
     /// <param name="lane">The lane.</param>
     public static string Doc(Lane lane) => lane switch
     {
+        Lane.Feed => "FEED-LANE.md",
         Lane.Invites => "LINKEDIN-INVITES-LANE.md",
         Lane.Messages => "LINKEDIN-MESSAGES-LANE.md",
         _ => "APPLY-LANE.md",
     };
 
-    /// <summary>True for a lane that drives LinkedIn, the two a second driver or a stop condition closes.</summary>
+    /// <summary>
+    /// True for a lane that sends on LinkedIn, the two a second driver or a stop condition closes. The feed reads the site
+    /// and sends nothing, so a stop in it never closes the day; the invites lane's own gates still hold.
+    /// </summary>
     /// <param name="lane">The lane.</param>
     public static bool OnLinkedIn(Lane lane) => lane is Lane.Invites or Lane.Messages;
 

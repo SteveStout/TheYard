@@ -41,6 +41,10 @@ public static class RunCard
         {
             return $"{word}: held, {report.Held}";
         }
+        if (report.Lane == Lane.Feed)
+        {
+            return $"{word}: {report.Queued} queued{(report.Dry ? " in its run folder only" : string.Empty)}, {report.Dropped.Count} left out by the gates{(report.CutShort ? ", cut short, read its DONE note" : string.Empty)}";
+        }
         if (report.Dry)
         {
             int read = report.Answer?.Rows.Count ?? 0;

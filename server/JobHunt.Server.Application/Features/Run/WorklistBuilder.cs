@@ -26,7 +26,8 @@ public sealed record Worklist(IReadOnlyList<WorkRow> Rows, IReadOnlyDictionary<i
 /// speaks of an application the tracker says is over waits for a person, and every application gets its own resume build
 /// with the posting's title as its headline, a dry run's too, so a morning's first build is not its first proof. The
 /// night's JOBS files are read before the older sweeps and the newest file first, so a posting two files both name
-/// takes its title from the newest reading of the board.
+/// takes its title from the newest reading of the board. Invites are cut hottest first (HotRank), and a queue block's
+/// profile address is the fallback when the tracker holds none for that person.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="minter">make_ref.py.</param>
@@ -46,10 +47,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     /// <param name="ct">Stops the build.</param>
     public async Task<Worklist> InvitesAsync(DayReads reads, int room, bool dry, CancellationToken ct)
     {
-        var blocks = reads.Queues.Where(block => block.Action == WorkAction.Invite).ToList();
+        var blocks = HotRank.Order(reads.Queues.Where(block => block.Action == WorkAction.Invite), reads.Rows, reads.Day);
         var heading = blocks.ToDictionary(block => block.Source, block => block.Person, StringComparer.Ordinal);
         var candidates = blocks
-            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.OrdinalIgnoreCase) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, string.Empty, block.Source));
+            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.OrdinalIgnoreCase) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, block.Url, block.Source));
         return await FinishAsync(candidates, reads, candidate => reads.Gate.Invite(candidate.Person, candidate.Company) ?? HeadingGate(reads, candidate, heading), room, dry, ct);
     }
 
@@ -62,7 +63,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     {
         var dropped = new List<Dropped>();
         var candidates = reads.Queues.Where(block => block.Action == WorkAction.Message)
-            .Select(block => new Candidate(block.Person, block.Company, WorkAction.Message, block.Text, Profile(reads, block.Person, block.Company), block.Source))
+            .Select(block => new Candidate(block.Person, block.Company, WorkAction.Message, block.Text, Profile(reads, block.Person, block.Company) is { Length: > 0 } tracked ? tracked : block.Url, block.Source))
             .ToList();
         if (await NewestReplyQueueAsync(reads.Day, ct) is { } newest)
         {
