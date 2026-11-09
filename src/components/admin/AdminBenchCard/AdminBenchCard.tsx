@@ -70,6 +70,8 @@ const ActivityCard = lazy(CARD_CHUNKS.ActivityCard);
 const LinksCard = lazy(CARD_CHUNKS.LinksCard);
 /** The review route card, its code fetched the first time it is drawn. */
 const ReviewCard = lazy(CARD_CHUNKS.ReviewCard);
+/** The job hunt funnel, its code fetched the first time it is drawn. */
+const FunnelCard = lazy(CARD_CHUNKS.FunnelCard);
 /** Blog analytics, its code fetched the first time it is drawn. */
 const BlogCard = lazy(CARD_CHUNKS.BlogCard);
 /** The Operator card, its code fetched the first time it is drawn. */
@@ -244,6 +246,8 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
         return <LinksCard tick={tick} />;
       case 'review':
         return <ReviewCard tick={tick} />;
+      case 'funnel':
+        return <FunnelCard tick={tick} />;
       case 'blog':
         return <BlogCard tick={tick} />;
       case 'operator':

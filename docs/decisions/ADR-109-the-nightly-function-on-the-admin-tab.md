@@ -202,3 +202,15 @@ The tests: `NightlyCardTests` gains the push's cases (the reader preferring the 
 ## Addendum, 2026-11-07 (1.0.4.156): the second write in the Cloud slice
 
 From this version the nightly run's push is one of two writes in the Cloud slice: the box that supports the job hunt posts its snapshot and its live samples the same way, behind the operator's key, read only after the key is checked (ADR: The box reports itself).
+
+## Addendum, 2026-11-09 (1.0.4.170): the funnel
+
+The job hunt's measure is first calls, two to three a week, and nothing on the Admin tab counted the steps that lead to one. From this version a card under the desk question, "The job hunt funnel", reads one line the Function writes and adds it up over the window the pills choose. It shows six counts, from postings scanned down to first calls booked, and each step's share of the step before it. The card's tone is the newest seven days' calls booked. Two or more is fine and one is worth a look. None needs attention. With no line in the week, or a newest line three days old, the card is not judged.
+
+The line is the contract between the Function and the card, and the Function does not write it yet: autohunt1109's rung 6 adds it. It is a run line in the shape every process of the Function already writes (RunLine.Text), once a Central day, after that day's counts are known:
+
+    process:Funnel outcome=success took_ms=<ms> started=<UTC start> detail=<the Central day, yyyy-MM-dd> scanned=<n> ready=<n> applied=<n> reached=<n> replied=<n> booked=<n>
+
+`detail` is the day the counts belong to, so a line written after midnight still lands on its own day, and a day written twice counts once, its later line. A count the line leaves out reads as zero. "Reached" is every person the hunt touched that day, by any channel. "Replied" counts replies from a person, never a system. The weekly line on TODAY.md is the sum of seven of these. Until the first line arrives the card says "the Function has not written a funnel line in the last seven days", and off Azure it says the funnel is not read here.
+
+The route is GET /api/admin/funnel?window=24h|7d|30d. It reads the lines from the workspace the Function's Application Insights sends to, by the Function's app name as its cloud role, the same read as the run histories. A workspace that refuses is the card's unread with its reason, never the route's 500. FunnelRules in the Domain holds the sum and the grade. FunnelTests hold the parser to a line in the RunLine shape and the handler to a fake reader; FunnelEndpointTests boot the route off Azure, and admin.spec draws the card on a report in the route's shape.

@@ -84,6 +84,7 @@ export const BENCH_CARDS: BenchCard[] = [
   card('activity', 'Site activity', 'desk'),
   card('links', 'Who opened what', 'desk'),
   card('review', 'Review route, how far they got', 'desk'),
+  card('funnel', 'The job hunt funnel', 'desk'),
   card('blog', 'Blog analytics', 'desk'),
   card('operator', 'Operator', 'desk'),
   card('reset', 'Reset a password', 'desk', 'reset-link-card'),

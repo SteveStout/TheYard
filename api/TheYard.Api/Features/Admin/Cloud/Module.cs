@@ -100,6 +100,10 @@ public sealed class Module : IModule
         // The Function's runs, from the workspace both Application Insights components send to, by its app name
         // as its cloud role; the six sections and the run histories read them (ADR-109, the six processes).
         string workspace = $"{names.GroupPath(subscription)}/providers/Microsoft.OperationalInsights/workspaces/{names.Insights}";
+        // The funnel's daily line, from the same workspace and role (ADR-109, the addendum on the funnel).
+        services.AddSingleton<IFunnelReader>(provider =>
+            new InsightsFunnel(new AzureMetrics(clientId, configured: provider.GetRequiredService<HostIdentity>().OnAppService, identity: provider.GetRequiredService<HostIdentity>()), workspace, nightlyNames.Function));
+        services.AddScoped<ReadFunnelHandler>();
         services.AddSingleton<IProcessRunsReader>(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
