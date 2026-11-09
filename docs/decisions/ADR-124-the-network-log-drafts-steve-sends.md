@@ -60,6 +60,16 @@ What was missing was a grant. The 5 November publish made `network.Conversations
 
 Held by NetworkPassTests, NetworkGmailTests and TemplateTests; their rows are in ADR-075's table.
 
+## Addendum, 2026-11-09 (1.0.4.173): reads under the quota, a backfill that resumes, and the Monday after a flip
+
+The first pass that ran whole, at 06:00 Central on 8 November, read 1,092 threads in 7 minutes 20 seconds, stopped at its 7-minute budget with 319 left, and the run log called it late. Its trace in Application Insights accounts for the time: 1,242 thread reads that took 148 seconds of call time between them, 149 answered with Gmail's quota 403, and about 382 seconds spent in the doubling waits behind those 403s, which hold all four reads of a chunk. Four reads at once ran about 33 a second, and a thread read costs 10 of the 250 quota units a second Gmail allows one user. The threads it never reached were the oldest, last touched before 16 October, which is the 21 to 45 days a follow-up is owed in.
+
+1. **Every Gmail read waits for its slot.** GmailThreads spaces its requests 50 milliseconds apart, 20 a second and 200 units, under the quota instead of against it. The 403 is still waited out as before, should Gmail answer one.
+2. **A backfill that stops resumes.** When the first pass runs out of time or its list meets the 1,500-thread cap, it writes the point it reached to `networklog/backfill-before.txt` on the share: one second past the oldest newest-message among the threads it read. Each later pass reads its two days and, while the file holds a time, the 120-day window before that point as well, moves the point back, and writes `done` once a read comes back whole. A read that got no further keeps its point when cut and ends the backfill when only capped, so it never loops. The pass line counts the threads asked for that way as `resumed=`.
+3. **A Monday flipped to on drafts the same day.** Decision D8 of the build plan said a Monday whose shadow pass had run would build its real drafts at the next hour once the switch read on; the hour check stopped that unless the any-hour switch was also on. A Monday pass now runs outside the 6 o'clock hour when the switch reads on and the day's pass finished in shadow, once.
+
+Held by NetworkBackfillTests, NetworkGmailTests and NetworkSqlTests; their row is in ADR-075's table.
+
 ## Where it sits
 
 A feature slice in each of the Function's rings and a card in the site's Admin module, with the shared concerns the campaign now reads from too. Separation of duties is the principle: the model reads and summarises, code decides and writes, a person sends. It cost a schema, an hourly timer and one sign-in. What would change it: Steve saying `send` for email, which would be a new record, not an addendum.

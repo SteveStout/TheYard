@@ -52,7 +52,11 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         long started = time.GetTimestamp();
         var now = time.GetUtcNow();
         bool first = (await rows.StartsAsync(ct)).Count == 0;
-        var ids = (await gmail.FindThreadIdsAsync(new ThreadSearch(first ? BackfillDays : DailyDays, MaxThreads), ct)).Where(id => !campaignThreads.Contains(id)).ToList();
+        DateTimeOffset? resume = first ? null : BackfillRule.Read(await TextAsync(BackfillRule.Path, ct));
+        var window = await gmail.FindThreadIdsAsync(new ThreadSearch(first ? BackfillDays : DailyDays, MaxThreads), ct);
+        var older = resume is { } before ? await gmail.FindThreadIdsAsync(new ThreadSearch(BackfillDays, MaxThreads) { Before = before }, ct) : [];
+        var backfill = (first ? window : older).ToHashSet(StringComparer.Ordinal);
+        var ids = window.Concat(older).Distinct(StringComparer.Ordinal).Where(id => !campaignThreads.Contains(id)).ToList();
         var known = WarmContactRule.Known(await TextAsync("Job_Hunt_Tracker.csv", ct), await TextAsync("responders.md", ct));
         var tally = new Tally();
         var summaries = new List<ThreadSummary>();
@@ -68,6 +72,13 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         foreach (var thread in summaries)
         {
             await TakeAsync(thread, known, now, tally, ct);
+        }
+        if (first || resume is not null)
+        {
+            bool capped = (first ? window.Count : older.Count) >= MaxThreads;
+            var next = BackfillRule.Next(tally.Cut > 0, capped, summaries.Where(t => backfill.Contains(t.ThreadId)), resume);
+            await share.EnsureFolderAsync(NetworkFiles.Folder, ct);
+            await share.WriteAsync(BackfillRule.Path, TrackerCsvText.Encode(BackfillRule.Text(next, now)), ct);
         }
         tally.LinkedIn = await IngestLinkedInAsync(now, tally, ct);
         var topics = await new TopicImport(rows, share).RunAsync(DateOnly.FromDateTime(CentralClock.Local(now)), ct);
@@ -99,6 +110,10 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         var week = (await rows.StartsAsync(ct)).Count(at => IsoWeek.Of(DateOnly.FromDateTime(CentralClock.Local(at))) == IsoWeek.Of(DateOnly.FromDateTime(local)));
         int seconds = (int)time.GetElapsedTime(started).TotalSeconds;
         var extra = new List<(string, int)> { ("topics", topics.Applied), ("linkedin", tally.LinkedIn), ("backfill", first ? 1 : 0) };
+        if (resume is not null)
+        {
+            extra.Add(("resumed", older.Count));
+        }
         extra.Add(("render_failed", tally.RenderFailed));
         extra.Add(("posts", topics.Posts));
         extra.Add(("named", tally.Posts));
