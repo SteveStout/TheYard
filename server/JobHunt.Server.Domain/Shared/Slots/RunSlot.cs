@@ -14,6 +14,9 @@ public enum Lane
     /// <summary>LinkedIn messages to new connections.</summary>
     Messages,
 
+    /// <summary>The network log's LinkedIn half: reads every two-way thread and saves its text, sends nothing.</summary>
+    Network,
+
     /// <summary>Job applications in Chrome.</summary>
     Apply,
 }
@@ -29,7 +32,7 @@ public static class RunSlot
     public const string Hour = "0600";
 
     /// <summary>The lanes in run order.</summary>
-    public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Invites, Lane.Messages, Lane.Apply];
+    public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply];
 
     private static readonly TimeZoneInfo Central = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
 
@@ -40,6 +43,7 @@ public static class RunSlot
         Lane.Feed => "feed",
         Lane.Invites => "invites",
         Lane.Messages => "messages",
+        Lane.Network => "network",
         _ => "apply",
     };
 
@@ -50,12 +54,13 @@ public static class RunSlot
         Lane.Feed => "FEED-LANE.md",
         Lane.Invites => "LINKEDIN-INVITES-LANE.md",
         Lane.Messages => "LINKEDIN-MESSAGES-LANE.md",
+        Lane.Network => "LINKEDIN-NETWORK-LANE.md",
         _ => "APPLY-LANE.md",
     };
 
     /// <summary>
-    /// True for a lane that sends on LinkedIn, the two a second driver or a stop condition closes. The feed reads the site
-    /// and sends nothing, so a stop in it never closes the day; the invites lane's own gates still hold.
+    /// True for a lane that sends on LinkedIn, the two a second driver or a stop condition closes. The feed and the network
+    /// lane read the site and send nothing, so a stop in them never closes the day; the invites lane's own gates still hold.
     /// </summary>
     /// <param name="lane">The lane.</param>
     public static bool OnLinkedIn(Lane lane) => lane is Lane.Invites or Lane.Messages;

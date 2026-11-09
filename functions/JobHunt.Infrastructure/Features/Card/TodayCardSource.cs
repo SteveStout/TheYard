@@ -3,7 +3,8 @@ using System.Text.RegularExpressions;
 namespace JobHunt.Infrastructure.Features.Card;
 
 /// <summary>
-/// Reads what the morning card is drawn from: the newest real reply run's queue of the day and every draft it or the
+/// Reads what the morning card is drawn from: the newest real reply run's queue of the day, the week's LinkedIn
+/// follow-ups from the network log after it, and every draft they or the
 /// carried rejection reads name (with the DO-NOT-SEND note and the .gate.md beside each), the dispatcher's STATUS.md,
 /// LEFT-FOR-STEVE.md, ANSWERED.md, WALLS.md and DECISION.md, the day's APPLY-ESSAYS file, TODAY.md as it stands, and
 /// the next 72 hours of the calendar with each call's must-answers line from its company's NOTES file. A file that is
@@ -32,6 +33,11 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
         string? run = TodayParts.NewestRun(runs);
         string? queuePath = run is null ? null : $"{day}/{run}/{ReplyRetry.Queue}";
         string queue = queuePath is null ? string.Empty : await TextAsync(queuePath, ct);
+        string followUps = await TextAsync(FollowUpQueue.Path(FollowUpQueue.Monday(DateOnly.FromDateTime(local))), ct);
+        if (followUps.Length > 0)
+        {
+            queue = queue.Length > 0 ? queue + "\n" + followUps : followUps;
+        }
         string previous = await TextAsync(TodayCard.Path, ct);
         var drafts = new Dictionary<string, string>(StringComparer.Ordinal);
         var doNotSend = new HashSet<string>(StringComparer.Ordinal);

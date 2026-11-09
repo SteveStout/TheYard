@@ -241,6 +241,7 @@ internal sealed class Morning
             ["feed"] = new() { Model = "claude-opus-5-5", Effort = "high", Enabled = false },
             ["invites"] = new() { TargetModel = "claude-haiku-5-5" },
             ["messages"] = new(),
+            ["network"] = new() { Enabled = false },
             ["apply"] = new() { Effort = "medium" },
         },
     };
@@ -250,7 +251,7 @@ internal sealed class Morning
         return new(
             Share,
             new RunGuards(mount ?? new FakeMount(), runLock ?? new FakeLock(), desktop ?? new FakeDesktop(), Time),
-            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, new EssayDesk(Share, Prose, Claude), Usage, Config, Time), new InviteRecount(Share, Claude, Config), new FeedLane(Share, new FeedTools(Claude, Prose, new UsageReport(Share, Usage, Config, Time)), Config, Time)),
+            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, new EssayDesk(Share, Prose, Claude), Usage, Config, Time), new InviteRecount(Share, Claude, Config), new FeedLane(Share, new FeedTools(Claude, Prose, new UsageReport(Share, Usage, Config, Time)), Config, Time), new NetworkLane(Share, new NetworkTools(Claude, new UsageReport(Share, Usage, Config, Time)), Config, Time)),
             Config);
     }
 

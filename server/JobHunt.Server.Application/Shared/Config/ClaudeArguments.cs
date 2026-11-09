@@ -12,7 +12,8 @@ namespace JobHunt.Server.Application.Shared.Config;
 /// the lane doc says it is this box's and no other. switch_browser stays refused: it pages every Chrome for a click.
 /// The apply lane may write anywhere in its run folder but the essay desk's verdicts, which only the program writes.
 /// The feed reads the share's inputs it ranks from and LinkedIn, and live it gets `computer` for scrolling and
-/// screenshots only; no form tool, so it can fill nothing and send nothing.
+/// screenshots only; no form tool, so it can fill nothing and send nothing. The network lane reads LinkedIn Messaging
+/// the same way, with nothing of the share's but its run folder and its lane doc.
 /// </summary>
 public static class ClaudeArguments
 {
@@ -134,7 +135,7 @@ public static class ClaudeArguments
             tools.Add("Grep");
         }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
-        if (!dry && lane == Lane.Feed)
+        if (!dry && lane is Lane.Feed or Lane.Network)
         {
             tools.Add(Chrome + "computer");
         }
@@ -156,7 +157,12 @@ public static class ClaudeArguments
     /// <param name="dry">True for a dry run.</param>
     public static string Prompt(Lane lane, string share, string runFolder, bool dry) =>
         $"Read {share}/nightly/{RunSlot.Doc(lane)} and follow it. JOBHUNT={share}. RUN_DIR={runFolder}. "
-        + (lane == Lane.Feed ? $"Candidates go to {runFolder}/candidates.json." : $"Worklist at {runFolder}/worklist.tsv.")
+        + (lane switch
+        {
+            Lane.Feed => $"Candidates go to {runFolder}/candidates.json.",
+            Lane.Network => $"High-water mark in {runFolder}/high-water.txt. Threads go to {runFolder}/network-threads.tsv and {runFolder}/threads/.",
+            _ => $"Worklist at {runFolder}/worklist.tsv.",
+        })
         + $" DRY_RUN={dry.ToString().ToLowerInvariant()}."
         + (dry ? " Dry run: read pages only, no click, no fill, no send; your tool list holds no click." : string.Empty);
 

@@ -70,6 +70,14 @@ The first pass that ran whole, at 06:00 Central on 8 November, read 1,092 thread
 
 Held by NetworkBackfillTests, NetworkGmailTests and NetworkSqlTests; their row is in ADR-075's table.
 
+## Addendum, 2026-11-09 (1.0.4.174): LinkedIn in, and LinkedIn follow-ups out for Steve's send
+
+The email half has logged threads since 8 November; the LinkedIn half had a spool the pass read and nothing writing it. The 6 AM program's network lane (ADR-119, the addendum of this version) now writes it each morning: every LinkedIn thread where both sides wrote, as a row in `networklog/linkedin-inbox/` and its text under `networklog/linkedin-inbox/text/`, which is the path the TopicLine export already names for a LinkedIn row. The daily pass logs them beside the email rows and joins a person's two channels by name and company, as before.
+
+Out: on a Monday in on, a due row whose newest exchange was on LinkedIn is no longer left waiting. Its FOLLOWUP-v1 text goes to `networklog/texts/<monday>/<thread>.txt`, and the week's queue, `networklog/linkedin-queue-<monday>.md`, lists it in the reply queue's format 2 under section A with the thread and the profile. Section A is Steve's, so the messages lane never sends it; the morning card reads the week's queue beside the day's reply queue and shows each text in full, typed in the thread only on his send (PLAN-AUTOHUNT section 2, the 11/5 rule, which the build plan's earlier default of a standing-permission send gave way to). The row stays Open: his send moves its last exchange on the next LinkedIn read, and one he leaves is due again the next Monday until it goes stale. A LinkedIn message has no subject line, so the subject check is not run on a LinkedIn row. The queue's path lives in the shared `FollowUpQueue`, because the network log writes it and the card reads it.
+
+Held by NetworkLinkedInQueueTests and NetworkDraftTests, whose rows are in ADR-075's table, and by NetworkLaneTests in the machine lanes, whose rule ADR-119's addendum of this version states, because ADR-075's table cannot yet cite a machine-lane test.
+
 ## Where it sits
 
 A feature slice in each of the Function's rings and a card in the site's Admin module, with the shared concerns the campaign now reads from too. Separation of duties is the principle: the model reads and summarises, code decides and writes, a person sends. It cost a schema, an hourly timer and one sign-in. What would change it: Steve saying `send` for email, which would be a new record, not an addendum.
