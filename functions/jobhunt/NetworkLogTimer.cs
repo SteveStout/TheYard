@@ -12,7 +12,7 @@ namespace JobHunt.Functions;
 // #endregion summary
 /// <remarks>
 /// Every hour on the hour (UTC); acts only in the 6 o'clock hour Central (CentralClock.IsNetworkHour), or at any hour
-/// while NETWORK_LOG_ANY_HOUR is "on". NETWORK_LOG picks the mode: "shadow", "on", anything else off. CAMPAIGN_SQL is
+/// while NETWORK_LOG_ANY_HOUR is "on", or at any hour of a Monday whose pass ran in shadow before the switch read "on". NETWORK_LOG picks the mode: "shadow", "on", anything else off. CAMPAIGN_SQL is
 /// the database the network schema lives in; without it the pass is blocked, and without the schema it is blocked
 /// with no_table, one line on the share saying so. A day counts as run once its network.Passes row has FinishedAt; a
 /// row begun two hours ago with none is a crashed pass, and the hour runs it again.
@@ -37,7 +37,8 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
                 return;
             }
             bool anyHour = string.Equals(Environment.GetEnvironmentVariable("NETWORK_LOG_ANY_HOUR"), "on", StringComparison.OrdinalIgnoreCase);
-            if (!anyHour && !CentralClock.IsNetworkHour(now))
+            bool hour = anyHour || CentralClock.IsNetworkHour(now);
+            if (!hour && !(mode == NetworkMode.On && CentralClock.Local(now).DayOfWeek == DayOfWeek.Monday))
             {
                 run.Came("unchanged", "not_the_hour");
                 return;
@@ -73,9 +74,14 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
                 run.Came("unchanged", held);
                 return;
             }
+            if (!hour && !Flipped(today, modeName))
+            {
+                run.Came("unchanged", "not_the_hour");
+                return;
+            }
             await database.StartPassAsync(day, modeName, now, ct);
             IDraftWriter drafts = mode == NetworkMode.On ? new GmailDrafts(http, google) : new NoDraftWriter();
-            var result = await new NetworkLogPass(database, new GmailThreads(http, google), drafts, store, time) { Posts = new BlogFeed(http) }.RunAsync(mode, await database.OpenThreadIdsAsync(ct), ct);
+            var result = await new NetworkLogPass(database, new GmailThreads(http, google, time), drafts, store, time) { Posts = new BlogFeed(http) }.RunAsync(mode, await database.OpenThreadIdsAsync(ct), ct);
             await store.AppendAsync(NetworkFiles.PassLog, TrackerCsvText.Encode(result.Line + "\n"), ct);
             await database.FinishPassAsync(day, time.GetUtcNow(), result.Counts, ct);
             log.LogInformation("network pass: {Line}", result.Line);
@@ -106,6 +112,12 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
         _ when now - today.StartedAt < Crashed => "running",
         _ => null,
     };
+
+    /// <summary>
+    /// Whether a Monday pass runs outside the 6 o'clock hour: only when the switch reads `on` and the day's pass finished
+    /// in shadow, so a Monday flipped after the shadow pass builds its drafts at the next hour, once.
+    /// </summary>
+    public static bool Flipped(PassRow? today, string mode) => mode == "on" && today is { FinishedAt: not null, Mode: "shadow" };
 
     /// <summary>The switch's value as a mode: "on" and "shadow", any case, and everything else off.</summary>
     public static NetworkMode Mode(string? value) => (value ?? "").Trim().ToLowerInvariant() switch

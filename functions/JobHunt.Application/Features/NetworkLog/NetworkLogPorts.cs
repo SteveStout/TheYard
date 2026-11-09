@@ -3,7 +3,11 @@ namespace JobHunt.Application.Features.NetworkLog;
 /// <summary>Which threads a pass reads: those touched in the last days, at most a number of them, never chats.</summary>
 /// <param name="NewerThanDays">The window in days.</param>
 /// <param name="Max">The most thread ids returned.</param>
-public sealed record ThreadSearch(int NewerThanDays, int Max);
+public sealed record ThreadSearch(int NewerThanDays, int Max)
+{
+    /// <summary>Only threads with a message before this time, for a backfill that resumes where it stopped; null for no bound.</summary>
+    public DateTimeOffset? Before { get; init; }
+}
 
 /// <summary>One pass's row in network.Passes.</summary>
 /// <param name="CentralDay">The Central day the pass counts for.</param>

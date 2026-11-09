@@ -69,7 +69,7 @@ public static class NetworkFakes
         }
     }
 
-    /// <summary>Gmail as threads by id; every search answers every thread, newest first, and is recorded.</summary>
+    /// <summary>Gmail as threads by id; every search answers every thread (before its point, when it has one), newest first, and is recorded.</summary>
     public sealed class Gmail : IThreadReader
     {
         /// <summary>The threads by id.</summary>
@@ -87,7 +87,7 @@ public static class NetworkFakes
         public Task<IReadOnlyList<string>> FindThreadIdsAsync(ThreadSearch search, CancellationToken ct)
         {
             Searches.Add(search);
-            return Task.FromResult<IReadOnlyList<string>>([.. Threads.Values.OrderByDescending(t => t.Messages.Max(m => m.At)).Select(t => t.ThreadId).Take(search.Max)]);
+            return Task.FromResult<IReadOnlyList<string>>([.. Threads.Values.Where(t => search.Before is not { } before || t.Messages.Any(m => m.At < before)).OrderByDescending(t => t.Messages.Max(m => m.At)).Select(t => t.ThreadId).Take(search.Max)]);
         }
 
         public Task<ThreadSummary> ReadSummaryAsync(string threadId, CancellationToken ct) => Task.FromResult(Threads[threadId]);

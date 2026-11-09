@@ -113,6 +113,7 @@ public sealed partial class NetworkSqlTests
         Assert.NotNull(TwoWayRule.Read(thread));
         Assert.Equal("newer_than:2d -in:chats", GmailThreads.Query(new ThreadSearch(2, 500)));
         Assert.Equal("newer_than:120d -in:chats", GmailThreads.Query(new ThreadSearch(120, 1500)));
+        Assert.Equal("newer_than:120d before:1792195200 -in:chats", GmailThreads.Query(new ThreadSearch(120, 1500) { Before = new DateTimeOffset(2026, 10, 17, 0, 0, 0, TimeSpan.Zero) }));
     }
 
     [Fact]
