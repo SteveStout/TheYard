@@ -3,10 +3,11 @@ using System.Text.RegularExpressions;
 namespace JobHunt.Server.Domain.Shared.Results;
 
 /// <summary>
-/// Holds a claimed send to its evidence. The model's word is not a verification: an invite needs Pending, a toast
-/// naming the person and the note read back; a message needs the sent bubble read back with its link and its blank
-/// lines; an application needs the confirmation page. Each also needs a saved screenshot. A claim that fails is still
-/// recorded, marked UNVERIFIED, because a send that happened and went unrecorded is how a second touch goes out.
+/// Holds a claimed send to its evidence. The model's word is not a verification: an invite needs Pending and the note
+/// read back; a message needs the sent bubble read back with its link and its blank lines; an application needs the
+/// confirmation page. Each also needs a saved screenshot. An invite's toast lasts seconds, so it is recorded on the row
+/// when the lane saw it and is never needed; the person a send names is still held to the row. A claim that fails is
+/// still recorded, marked UNVERIFIED, because a send that happened and went unrecorded is how a second touch goes out.
 /// </summary>
 public static partial class EvidenceCheck
 {
@@ -28,11 +29,6 @@ public static partial class EvidenceCheck
                 if (evidence?.Pending != true)
                 {
                     missing.Add("button not read as Pending");
-                }
-                string first = (result.Person ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
-                if (first.Length == 0 || evidence?.Toast?.Contains(first, StringComparison.OrdinalIgnoreCase) != true)
-                {
-                    missing.Add("toast did not name the person");
                 }
                 if (!Same(expected, evidence?.ReadBack))
                 {

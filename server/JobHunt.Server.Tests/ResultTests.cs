@@ -160,17 +160,30 @@ public sealed class ResultTests
     }
 
     [Fact]
-    public void The_model_s_word_is_not_a_verification()
+    public void An_invite_stands_on_pending_note_and_screenshot_with_no_toast()
     {
-        var missing = EvidenceCheck.Missing(WorkAction.Invite, Note, Sent(null));
-        Assert.Equal(4, missing.Count);
+        Assert.Empty(EvidenceCheck.Missing(WorkAction.Invite, Note, Sent(new RowEvidence(true, null, Note, null, "/tmp/x.jpg"))));
     }
 
     [Fact]
-    public void A_toast_for_someone_else_and_an_edited_note_both_fail()
+    public void A_send_with_no_toast_to_someone_else_still_does_not_stand()
+    {
+        RowResult result = Sent(new RowEvidence(true, null, Note, null, "/tmp/x.jpg"), "Sam Ray");
+        Assert.Equal("reported Sam Ray, the worklist names Pat Lee", EvidenceCheck.WrongPerson(Row(WorkAction.Invite), result));
+    }
+
+    [Fact]
+    public void The_model_s_word_is_not_a_verification()
+    {
+        var missing = EvidenceCheck.Missing(WorkAction.Invite, Note, Sent(null));
+        Assert.Equal(["no screenshot", "button not read as Pending", "note read back differs from the worklist text"], missing);
+    }
+
+    [Fact]
+    public void An_edited_note_fails_whatever_the_toast_says()
     {
         var missing = EvidenceCheck.Missing(WorkAction.Invite, Note, Sent(new RowEvidence(true, "Invitation sent to Sam.", Note + " extra", null, "/tmp/x.jpg")));
-        Assert.Equal(["toast did not name the person", "note read back differs from the worklist text"], missing);
+        Assert.Equal(["note read back differs from the worklist text"], missing);
     }
 
     [Fact]
