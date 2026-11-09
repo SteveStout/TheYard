@@ -31,16 +31,29 @@ public sealed record FeedCandidate(
     [property: JsonPropertyName("text")] string? Text,
     [property: JsonPropertyName("action")] string? Action);
 
-/// <summary>Reads linkedin-proof/FEED-HOLD.md: one "- Person, Company" line for each person a decision of Steve's holds.</summary>
+/// <summary>The people and companies a decision of Steve's holds out of the feed.</summary>
+/// <param name="People">Held people's names.</param>
+/// <param name="Companies">Held companies: every row there, named or not.</param>
+public sealed record FeedHolds(IReadOnlyList<string> People, IReadOnlyList<string> Companies)
+{
+    /// <summary>Nothing held.</summary>
+    public static FeedHolds None { get; } = new([], []);
+}
+
+/// <summary>Reads linkedin-proof/FEED-HOLD.md: "- Person, Company" holds a person, "- Company: Name" holds a company.</summary>
 public static partial class FeedHold
 {
-    /// <summary>The held people's names.</summary>
+    /// <summary>What the file holds.</summary>
     /// <param name="text">The file's text.</param>
-    public static IReadOnlyList<string> Names(string text) =>
-        [.. HoldLine().Matches(text).Select(match => match.Groups[1].Value.Trim()).Where(name => name.Length > 0)];
+    public static FeedHolds Read(string text) => new(
+        [.. PersonLine().Matches(text).Select(match => match.Groups[1].Value.Trim()).Where(name => name.Length > 0 && !name.StartsWith("Company:", StringComparison.Ordinal))],
+        [.. CompanyLine().Matches(text).Select(match => match.Groups[1].Value.Trim()).Where(name => name.Length > 0)]);
 
     [GeneratedRegex(@"(?m)^- ([^,\r\n]+),")]
-    private static partial Regex HoldLine();
+    private static partial Regex PersonLine();
+
+    [GeneratedRegex(@"(?m)^- Company:\s*([^,\r\n]+)")]
+    private static partial Regex CompanyLine();
 }
 
 /// <summary>What the feed keeps, in queue order, and what it leaves out with the gate's reason.</summary>
@@ -77,8 +90,8 @@ public static partial class FeedQueue
     /// <param name="candidates">The model's candidates, in its order.</param>
     /// <param name="gate">The person and company gates.</param>
     /// <param name="open">The open blocks of every queue already on the share.</param>
-    /// <param name="held">People who wait on Steve's yes (FeedHold), never queued by the feed.</param>
-    public static FeedCut Cut(IReadOnlyList<FeedCandidate> candidates, PersonGate gate, IReadOnlyList<QueueBlock> open, IReadOnlyList<string> held)
+    /// <param name="held">People and companies that wait on Steve's yes (FeedHold), never queued by the feed.</param>
+    public static FeedCut Cut(IReadOnlyList<FeedCandidate> candidates, PersonGate gate, IReadOnlyList<QueueBlock> open, FeedHolds held)
     {
         var kept = new List<FeedCandidate>();
         var dropped = new List<Dropped>();
@@ -86,7 +99,8 @@ public static partial class FeedQueue
         {
             FeedCandidate candidate = Clean(raw);
             string what = candidate.Person!.Length > 0 ? $"{candidate.Person}, {candidate.Company}" : candidate.Company!;
-            string? reason = held.Any(name => candidate.Person.Length > 0 && PersonGate.Name(name) == PersonGate.Name(candidate.Person))
+            string? reason = held.People.Any(name => candidate.Person!.Length > 0 && PersonGate.Name(name) == PersonGate.Name(candidate.Person))
+                || held.Companies.Any(company => ApplicationCap.Same(company, candidate.Company!))
                 ? "held for Steve's yes (linkedin-proof/FEED-HOLD.md)"
                 : Reason(candidate, gate, open, kept);
             if (reason is null)
@@ -191,10 +205,10 @@ public static partial class FeedQueue
     {
         string hot = (raw.Hot ?? string.Empty).Trim().ToUpperInvariant();
         return new FeedCandidate(
-            Name(raw.Person),
+            Name(Suffix().Replace(raw.Person ?? string.Empty, string.Empty)),
             Name(raw.Company),
             Name(raw.Seat),
-            Profile().IsMatch(raw.ProfileUrl?.Trim() ?? string.Empty) ? raw.ProfileUrl!.Trim() : string.Empty,
+            Profile().Match(raw.ProfileUrl?.Trim() ?? string.Empty) is { Success: true } profile ? profile.Groups["page"].Value : string.Empty,
             hot.Length == 1 && "ABCDE".Contains(hot, StringComparison.Ordinal) ? hot : "E",
             Line(raw.Why),
             Line(raw.CommonPoint) is { Length: > 0 } point ? point : "none found",
@@ -214,6 +228,9 @@ public static partial class FeedQueue
     [GeneratedRegex(@"\s+")]
     private static partial Regex Space();
 
-    [GeneratedRegex(@"^https://www\.linkedin\.com/in/[\w%-]+/?$")]
+    [GeneratedRegex(@"^(?<page>https://www\.linkedin\.com/in/[\w%-]+/?)(?:[?#].*)?$")]
     private static partial Regex Profile();
+
+    [GeneratedRegex(@"\s*\([^)]*\)|,.*$")]
+    private static partial Regex Suffix();
 }

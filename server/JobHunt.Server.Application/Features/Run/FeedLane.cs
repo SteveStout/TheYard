@@ -13,7 +13,7 @@ public sealed record FeedTools(IClaudeCli Claude, IProseCheck Prose, UsageReport
 /// candidates.json in its run folder; the program holds every candidate to the gates (FeedQueue), proofreads each text
 /// with check_aiisms.py, and writes the day's queue, which the invites and messages lanes read next. A live run writes
 /// linkedin-proof/QUEUE-hotmgr-&lt;day&gt;.md and never over one already there; a dry run writes the same file into its run
-/// folder only. The feed mints nothing, sends nothing and writes no tracker row. A person named in
+/// folder only. The feed mints nothing, sends nothing and writes no tracker row. A person or company named in
 /// linkedin-proof/FEED-HOLD.md waits on Steve and is never queued by the feed.
 /// </summary>
 /// <param name="share">The share.</param>
@@ -53,7 +53,7 @@ public sealed class FeedLane(IShare share, FeedTools tools, ServerConfig config,
         string candidatesPath = $"{folder}/candidates.json";
         IReadOnlyList<FeedCandidate> candidates = await share.ExistsAsync(candidatesPath, finish) ? FeedQueue.Parse(await share.ReadAsync(candidatesPath, finish)) : [];
         lines.Add($"{candidates.Count} candidates read from {candidatesPath}.");
-        IReadOnlyList<string> held = await share.ExistsAsync(HoldFile, finish) ? FeedHold.Names(await share.ReadAsync(HoldFile, finish)) : [];
+        FeedHolds held = await share.ExistsAsync(HoldFile, finish) ? FeedHold.Read(await share.ReadAsync(HoldFile, finish)) : FeedHolds.None;
         FeedCut cut = FeedQueue.Cut(candidates, reads.Gate, reads.Queues, held);
         var dropped = new List<Dropped>(cut.Dropped);
         var kept = new List<FeedCandidate>();

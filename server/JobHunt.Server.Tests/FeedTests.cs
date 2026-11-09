@@ -67,7 +67,7 @@ public sealed class FeedTests
             Candidate("Held Lead", "Theta"),
             Candidate("Ola Queued", "Iota"),
         ];
-        FeedCut cut = FeedQueue.Cut(candidates, Gate(), [new QueueBlock(4, "Ola Queued", "Iota", WorkAction.Invite, Note, "QUEUE-old.md:9")], ["Held Lead"]);
+        FeedCut cut = FeedQueue.Cut(candidates, Gate(), [new QueueBlock(4, "Ola Queued", "Iota", WorkAction.Invite, Note, "QUEUE-old.md:9")], FeedHold.Read("- Held Lead, Theta\n"));
         Assert.Equal(["Kim Hot", "Lou Fine"], cut.Kept.Select(kept => kept.Person));
         string Why(string who) => Assert.Single(cut.Dropped, dropped => dropped.What.StartsWith(who, StringComparison.Ordinal)).Reason;
         Assert.Contains("application", Why("Rae Role"), StringComparison.Ordinal);
@@ -81,7 +81,7 @@ public sealed class FeedTests
     [Fact]
     public void An_unnamed_row_is_one_a_company()
     {
-        FeedCut cut = FeedQueue.Cut([Candidate(string.Empty, "Gamma"), Candidate(string.Empty, "Gamma Inc")], Gate(), [], []);
+        FeedCut cut = FeedQueue.Cut([Candidate(string.Empty, "Gamma"), Candidate(string.Empty, "Gamma Inc")], Gate(), [], FeedHolds.None);
         Assert.Single(cut.Kept);
         Assert.Equal("already on this feed", Assert.Single(cut.Dropped).Reason);
     }
@@ -90,7 +90,7 @@ public sealed class FeedTests
     public void The_rendered_queue_reads_back_whole()
     {
         var kept = new[] { Candidate("Kim Hot", "Delta, Inc.", "A"), Candidate("Mo Msg", "Eta", "B", "message"), Candidate(string.Empty, "Gamma", "C") };
-        FeedCut cut = FeedQueue.Cut(kept, Gate(), [], []);
+        FeedCut cut = FeedQueue.Cut(kept, Gate(), [], FeedHolds.None);
         string queue = FeedQueue.Render(Today, new DateTime(2026, 11, 3, 6, 4, 0), FeedFolder, cut.Kept);
         var blocks = QueueBlocks.Open("QUEUE-hotmgr-2026-11-03.md", queue, []);
         Assert.Equal(["Kim Hot", "Mo Msg", string.Empty], blocks.Select(block => block.Person));
@@ -105,7 +105,41 @@ public sealed class FeedTests
     [Fact]
     public void The_hold_file_names_its_people()
     {
-        Assert.Equal(["Jeff Loveless", "Eric Sugden"], FeedHold.Names("# held\n- Jeff Loveless, Phreesia, decision 3\n- Eric Sugden, Elite Technology\n"));
+        FeedHolds holds = FeedHold.Read("# held\n- Jeff Loveless, Phreesia, decision 3\n- Eric Sugden, Elite Technology\n- Company: SHI International, his skip\n");
+        Assert.Equal(["Jeff Loveless", "Eric Sugden"], holds.People);
+        Assert.Equal(["SHI International"], holds.Companies);
+    }
+
+    [Fact]
+    public void A_held_company_holds_every_row_there_and_a_suffix_does_not_slip_a_name_past_the_hold()
+    {
+        FeedHolds holds = FeedHold.Read("- Nish Modi, EarnIn, decision 3\n- Company: SHI International, his 9/28 skip\n");
+        FeedCut cut = FeedQueue.Cut(
+            [Candidate(string.Empty, "SHI International"), Candidate("Ann Other", "SHI"), Candidate("Nish Modi (He/Him)", "EarnIn"), Candidate("Lou Fine, PhD", "Gamma")],
+            Gate(),
+            [],
+            holds);
+        Assert.Equal(["Lou Fine"], cut.Kept.Select(kept => kept.Person));
+        Assert.All(cut.Dropped, dropped => Assert.Contains("held for Steve", dropped.Reason, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_profile_address_with_a_query_keeps_its_profile()
+    {
+        FeedCut cut = FeedQueue.Cut([Candidate("Mo Msg", "Eta", action: "message", url: "https://www.linkedin.com/in/mo-msg/?miniProfileUrn=urn%3Ali%3Afs#x")], Gate(), [], FeedHolds.None);
+        Assert.Equal("https://www.linkedin.com/in/mo-msg/", Assert.Single(cut.Kept).ProfileUrl);
+    }
+
+    [Fact]
+    public async Task A_checkpoint_the_feed_meets_closes_LinkedIn_for_the_day()
+    {
+        var morning = new Morning(request => request.Arguments[1].Contains("FEED-LANE.md", StringComparison.Ordinal)
+            ? new ClaudeRun(0, false, ResultLine.With("""{"rows":[],"live_invite_count":null,"stop_condition":"checkpoint","stop_detail":"Let's do a quick security check","stop_screenshot":null}"""))
+            : new ClaudeRun(0, false, ResultLine.Empty));
+        morning.Config.Lanes["feed"].Enabled = true;
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+        Assert.True(morning.Share.Files.ContainsKey(RunSlot.LinkedInClosed(Today)));
+        Assert.Contains("invites: held", output, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -49,7 +49,8 @@ public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRun
 /// <summary>
 /// The morning: mount, lock, registry, then the lanes in order, the feed first and the queues read again after it so the
 /// invites lane works what the feed just wrote, then the card and the close row. The feed reads LinkedIn and sends
-/// nothing: it waits on the day's LinkedIn stop file, never on another driver, and a stop in it closes nothing. LinkedIn fails
+/// nothing: it waits on the day's LinkedIn stop file, never on another driver, and only a hard stop it met on the page
+/// (a checkpoint, a CAPTCHA, a sign-in, a restriction, the weekly limit) closes LinkedIn for the day. LinkedIn fails
 /// closed: a stop condition, a blocked row, a run that gave no result, or another lane LIVE ends the LinkedIn work of the
 /// day, and that includes the apply lane's rows on linkedin.com, because they are a drive too. The registry is read
 /// again before each lane. A LinkedIn stop is a file for the day, so a hard stop for the day stays one through any later
@@ -141,7 +142,12 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             }
             if (lane == Lane.Feed)
             {
-                reports.Add(await work.Feed.RunAsync(start, reads!, ct));
+                LaneReport fed = await work.Feed.RunAsync(start, reads!, ct);
+                reports.Add(fed);
+                if (fed.Answer is { StopsLinkedIn: true } stopped)
+                {
+                    linkedInStop ??= await CloseLinkedInAsync(day, $"the feed lane met {stopped.StopCondition}: {stopped.StopDetail}", dry, CancellationToken.None);
+                }
                 reads = await work.Reader.ReadAsync(day, ct);
                 continue;
             }
