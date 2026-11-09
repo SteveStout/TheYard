@@ -43,8 +43,8 @@ public static class EdgeCard
     /// <param name="inputs">The card's inputs.</param>
     /// <param name="configured">Whether the Netlify token is set.</param>
     /// <param name="project">The Netlify project's name, from configuration (Azure:Resources:Edge).</param>
-    /// <param name="retires">When the edge is meant to retire, from configuration (Edge:Retires): the registrar transfer that moves the domain off it.</param>
-    public static CloudReport View(ResourceCardInputs inputs, bool configured, string project, DateOnly retires)
+    /// <param name="retires">When the edge is meant to retire, from configuration (Edge:Retires): the registrar transfer that moves the domain off it; null when no date is set and the edge stays.</param>
+    public static CloudReport View(ResourceCardInputs inputs, bool configured, string project, DateOnly? retires)
     {
         string? admin = ProjectUrl(inputs);
         // What the last hour actually scored, as the reader wrote it, never a list typed here.
@@ -62,7 +62,6 @@ public static class EdgeCard
             ResourceView.Dial(inputs, "credits", "Credits, this cycle", NetlifyEdge.FreeCredits, Credits, v => v is { } c ? $"{c.ToString("0", CultureInfo.InvariantCulture)} of {NetlifyEdge.FreeCredits:0}" : "not read", hourly: true),
             ResourceView.Dial(inputs, "cache_hit", "Cache hits", 100, (100 - Misses.Amber, 100 - Misses.Red), v => v is { } h ? $"{h.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", percentReading: true, hourly: true) with { Percent = hit, Big = PlanView.Percent(hit), Absolute = hit is { } dialShare ? $"{dialShare.ToString("0", CultureInfo.InvariantCulture)} % of {sampledCount} cacheable" : "not sampled yet", Tone = CloudTones.Of(missTone) },
         };
-        int daysLeft = retires.DayNumber - DateOnly.FromDateTime(inputs.Now.UtcDateTime).DayNumber;
         string? cert = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("cert_expires");
         bool certSoon = DateTimeOffset.TryParse(cert, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var expires) && expires - inputs.Now < TimeSpan.FromDays(14);
         // The date a reader reads, not the timestamp Netlify sends.
@@ -82,10 +81,7 @@ public static class EdgeCard
                     new(ResourceView.Fact(inputs, "sample_note", "") is { Length: > 0 } note ? note : ResourceView.Fact(inputs, "cache_status", "per-address status not read yet"), null),
                     new("the page and /api are asked only to name who answered; neither may be kept, so neither is scored", null)],
                 CloudTones.Of(missTone)),
-            new("needed", "Is it still needed?", daysLeft > 0 ? $"until {retires.ToString("MMM d", CultureInfo.InvariantCulture)}, {daysLeft} days" : "past its date; retire it",
-                [new(daysLeft > 0 ? "the registrar transfer moves the domain straight to Azure, and then this card retires with the edge"
-                    : $"the edge is past its date, {retires.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}: the registrar transfer should have moved the domain to Azure", null)],
-                daysLeft > 0 ? "info" : "warning"),
+            Needed(retires, inputs.Now),
         };
         var readout = new CloudReadout(
             "The edge",
@@ -101,7 +97,7 @@ public static class EdgeCard
                 new("Certificate", ResourceView.Fact(inputs, "cert_names"), "info"),
                 new("Expires", expiresOn, certSoon ? "warning" : "info"),
                 new("Builds", $"{ResourceView.Fact(inputs, "deploys_live", "0")} live · {ResourceView.Fact(inputs, "deploys_skipped", "0")} skipped · {ResourceView.Fact(inputs, "deploys_failed", "0")} failed", ResourceView.Fact(inputs, "deploys_failed", "0") != "0" ? "warning" : "info"),
-                new("Retires", retires.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), "info"),
+                new("Retires", retires is { } date ? date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "not set, the edge stays", "info"),
                 new("Cost", "not on the Azure bill; Netlify bills in credits", "info"),
                 ResourceView.LiveRead(inputs),
             ],
@@ -121,6 +117,26 @@ public static class EdgeCard
             rows,
             readout), Sources);
     }
+    /// <summary>
+    /// Whether the edge is still needed: with no retirement date set it stays, as information; before its date it counts
+    /// the days, as information; on its date and after, a warning that names the date.
+    /// </summary>
+    /// <param name="retires">The retirement date from configuration, or null when none is set.</param>
+    /// <param name="now">The card's clock.</param>
+    public static CloudRow Needed(DateOnly? retires, DateTimeOffset now)
+    {
+        if (retires is not { } date)
+        {
+            return new("needed", "Is it still needed?", "the edge stays",
+                [new("no retirement date is set: the registrar transfer to Azure is off, because Front Door would cost more than the edge's free plan", null)], "info");
+        }
+        int daysLeft = date.DayNumber - DateOnly.FromDateTime(now.UtcDateTime).DayNumber;
+        return new("needed", "Is it still needed?", daysLeft > 0 ? $"until {date.ToString("MMM d", CultureInfo.InvariantCulture)}, {daysLeft} days" : "past its date; retire it",
+            [new(daysLeft > 0 ? "the registrar transfer moves the domain straight to Azure, and then this card retires with the edge"
+                : $"the edge is past its date, {date.ToString("MMM d, yyyy", CultureInfo.InvariantCulture)}: the registrar transfer should have moved the domain to Azure", null)],
+            daysLeft > 0 ? "info" : "warning");
+    }
+
     /// <summary>The cache sparkline with its newest value the dial's sample, so the two read one figure; unchanged before a sample.</summary>
     /// <param name="spark">The sparkline as the kept minutes give it.</param>
     /// <param name="hit">The newest hour's share, the dial's.</param>

@@ -17,8 +17,8 @@ namespace TheYard.Api.Shared.Resources;
 /// <param name="Mail">The Communication Services resource.</param>
 /// <param name="Edge">The Netlify project in front of the sites.</param>
 /// <param name="PublicSite">The public address the edge serves.</param>
-/// <param name="EdgeRetires">When the edge is meant to retire (Edge:Retires).</param>
-public sealed record AzureResources(string Group, string Site, string SqlDatabase, string Cosmos, string Registry, string Insights, string Mail, string Edge, Uri PublicSite, DateOnly EdgeRetires)
+/// <param name="EdgeRetires">When the edge is meant to retire (Edge:Retires); null when no date is set and the edge stays.</param>
+public sealed record AzureResources(string Group, string Site, string SqlDatabase, string Cosmos, string Registry, string Insights, string Mail, string Edge, Uri PublicSite, DateOnly? EdgeRetires)
 {
     /// <summary>
     /// The names as configuration gives them; a missing one stops the host with its key named. The
@@ -29,8 +29,8 @@ public sealed record AzureResources(string Group, string Site, string SqlDatabas
     {
         var section = configuration.GetSection("Azure:Resources");
         string Named(string key) => section[key] is { Length: > 0 } value ? value : throw new InvalidOperationException($"Azure:Resources:{key} is not configured.");
-        string retires = configuration["Edge:Retires"] ?? throw new InvalidOperationException("Edge:Retires is not configured.");
-        return new(configuration["WEBSITE_RESOURCE_GROUP"] is { Length: > 0 } group ? group : Named("Group"), Named("Site"), Named("SqlDatabase"), Named("Cosmos"), Named("Registry"), Named("Insights"), Named("Mail"), Named("Edge"), new Uri(Named("PublicSite")), DateOnly.Parse(retires, System.Globalization.CultureInfo.InvariantCulture));
+        DateOnly? retires = configuration["Edge:Retires"] is { Length: > 0 } date ? DateOnly.Parse(date, System.Globalization.CultureInfo.InvariantCulture) : null;
+        return new(configuration["WEBSITE_RESOURCE_GROUP"] is { Length: > 0 } group ? group : Named("Group"), Named("Site"), Named("SqlDatabase"), Named("Cosmos"), Named("Registry"), Named("Insights"), Named("Mail"), Named("Edge"), new Uri(Named("PublicSite")), retires);
     }
 
     /// <summary>The resource group's path in a subscription.</summary>

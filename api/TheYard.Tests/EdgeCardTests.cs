@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using TheYard.Api.Features.Admin.Cloud;
 
 namespace TheYard.Tests;
@@ -5,8 +6,9 @@ namespace TheYard.Tests;
 /// <summary>
 /// The Netlify edge card (ADR: One frame for every resource) on its own: the retire row before its date, on it and
 /// after it; the credits dial judged on its newest hourly reading, as an hourly card is; a certificate inside two
-/// weeks and a failed deploy each a warning. Edge:Retires is required configuration (AzureResources.cs), so there is
-/// no card without a date to hold; CardFrameTests.Rows held the past-date row alone before this class.
+/// weeks and a failed deploy each a warning. Edge:Retires is optional from 1.0.4.167: with no date the row reads "the
+/// edge stays" as information, because the transfer to Azure is off; CardFrameTests.Rows held the past-date row alone
+/// before this class.
 /// </summary>
 public sealed class EdgeCardTests
 {
@@ -53,6 +55,38 @@ public sealed class EdgeCardTests
         Assert.Equal(("past its date; retire it", "warning"), (after.Answer, after.Tone));
         Assert.Contains("past its date, Oct 30, 2026", after.Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal("info", Needed(new DateOnly(2026, 11, 6)).Tone);
+    }
+
+    [Fact]
+    public void With_no_date_set_the_edge_stays_as_information_and_the_readout_says_so()
+    {
+        var card = EdgeCard.View(Inputs([49]), true, "theyard-edge", retires: null);
+        var row = card.Rows.Single(r => r.Key == "needed");
+
+        Assert.Equal(("the edge stays", "info"), (row.Answer, row.Tone));
+        Assert.Contains("the registrar transfer to Azure is off", row.Detail[0].Text, StringComparison.Ordinal);
+        Assert.Equal("not set, the edge stays", card.Readout.Lines.Single(line => line.Label == "Retires").Value);
+    }
+
+    [Fact]
+    public void Configuration_without_a_retirement_date_starts_the_host_and_reads_no_date()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Azure:Resources:Group"] = "RG-TEST",
+            ["Azure:Resources:Site"] = "app-test",
+            ["Azure:Resources:SqlDatabase"] = "sqldb-test",
+            ["Azure:Resources:Cosmos"] = "cosmos-test",
+            ["Azure:Resources:Registry"] = "crtest",
+            ["Azure:Resources:Insights"] = "log-test",
+            ["Azure:Resources:Mail"] = "acs-test",
+            ["Azure:Resources:Edge"] = "edge-test",
+            ["Azure:Resources:PublicSite"] = "https://yard.example/",
+        }).Build();
+
+        Assert.Null(AzureResources.From(configuration).EdgeRetires);
+        configuration["Edge:Retires"] = "2026-11-20";
+        Assert.Equal(new DateOnly(2026, 11, 20), AzureResources.From(configuration).EdgeRetires);
     }
 
     [Theory]
