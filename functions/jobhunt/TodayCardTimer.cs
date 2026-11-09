@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -43,7 +44,7 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
                 run.Came("unchanged", "mailed_already");
                 return;
             }
-            string line = await WriteAsync(store, new TodayCardSource(store, http, time), mode == "on" ? Sender() : null, time, "07:30", ct);
+            string line = await WriteAsync(store, new TodayCardSource(store, http, time), mode == "on" ? Sender() : null, time, "07:30", ct, LabelsAsync);
             run.Count("written", 1).Count("mailed", mode == "on" ? 1 : 0).Came("success", mode);
             log.LogInformation("today card: {Line}", line);
         }
@@ -67,7 +68,7 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
         var run = new RunLine("TodayCardHandRun", time.GetUtcNow());
         try
         {
-            string line = await WriteAsync(store, new TodayCardSource(store, http, time), Sender(), time, "hand run", ct);
+            string line = await WriteAsync(store, new TodayCardSource(store, http, time), Sender(), time, "hand run", ct, LabelsAsync);
             run.Count("written", 1).Count("mailed", 1).Came("success", "hand");
             var response = request.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
@@ -87,10 +88,11 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
     }
 
     /// <summary>
-    /// Draws the card, replaces TODAY.md whole, mails it when a sender is given, and logs one line; the line is the
-    /// answer. A mail that fails after the write leaves the card written and its log line saying so, then throws.
+    /// Draws the card, replaces TODAY.md whole, mails it when a sender is given, reads the sent message's Gmail labels
+    /// back when a reader is given (SENT is the Sent folder, INBOX is his inbox receiving it), and logs one line; the
+    /// line is the answer. A mail that fails after the write leaves the card written and its log line saying so, then throws.
     /// </summary>
-    public static async Task<string> WriteAsync(IMergeStore store, TodayCardSource source, IMailSender? sender, TimeProvider time, string kind, CancellationToken ct)
+    public static async Task<string> WriteAsync(IMergeStore store, TodayCardSource source, IMailSender? sender, TimeProvider time, string kind, CancellationToken ct, Func<string, CancellationToken, Task<string>>? labels = null)
     {
         var inputs = await source.ReadAsync(ct);
         string card = TodayCard.Render(inputs);
@@ -109,6 +111,10 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
             {
                 var sent = await sender.SendAsync(new OutgoingMail(TodayMail.To, TodayCard.Subject(inputs.At), card, TodayMail.Html(card)), ct);
                 line = $"{head}, mailed to {TodayMail.To}, gmail {sent.MessageId} thread {sent.ThreadId}";
+                if (labels is not null)
+                {
+                    line += ", labels " + await labels(sent.MessageId, ct);
+                }
             }
             catch (Exception ex) when (!ct.IsCancellationRequested)
             {
@@ -139,6 +145,21 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
         "write" => "write",
         _ => "on",
     };
+
+    /// <summary>The sent message's label ids as Gmail holds them, read with the same token, or why they were not read.</summary>
+    private async Task<string> LabelsAsync(string id, CancellationToken ct)
+    {
+        try
+        {
+            using var client = await GoogleCredentials.FromEnvironment()!.ClientAsync(http, ct);
+            using var json = JsonDocument.Parse(await client.GetStringAsync($"https://gmail.googleapis.com/gmail/v1/users/me/messages/{id}?format=minimal", ct));
+            return string.Join(",", json.RootElement.GetProperty("labelIds").EnumerateArray().Select(l => l.GetString()).Order(StringComparer.Ordinal));
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            return $"not read ({ex.GetType().Name})";
+        }
+    }
 
     private IMailSender Sender() =>
         GoogleCredentials.FromEnvironment() is { } google ? new GmailSender(http, google) : throw new InvalidOperationException("the Google settings are not set, so the card cannot be mailed");

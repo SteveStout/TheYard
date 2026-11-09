@@ -189,7 +189,7 @@ public sealed class TodayCardTests
         var time = new FixedTime(new DateTimeOffset(2026, 11, 10, 13, 30, 4, TimeSpan.Zero));
         var source = new TodayCardSource(scratch.Store, new NoHttp(), time);
 
-        string line = await TodayCardTimer.WriteAsync(scratch.Store, source, sender, time, "07:30", CancellationToken.None);
+        string line = await TodayCardTimer.WriteAsync(scratch.Store, source, sender, time, "07:30", CancellationToken.None, (id, _) => Task.FromResult(id == "m1" ? "INBOX,SENT,UNREAD" : "wrong id"));
 
         string card = File.ReadAllText(Path.Combine(scratch.Root, "TODAY.md"));
         Assert.StartsWith(TodayCard.RulesFirst, card, StringComparison.Ordinal);
@@ -201,7 +201,7 @@ public sealed class TodayCardTests
         Assert.Equal("stevenstout11@gmail.com", mail.To);
         Assert.Equal("TODAY, Tue 11/10", mail.Subject);
         Assert.Equal(card, mail.Text);
-        Assert.Equal("2026-11-10 07:30:04 07:30: written " + new FileInfo(Path.Combine(scratch.Root, "TODAY.md")).Length + " B, " + TodayCard.Minutes(card) + " min, mailed to stevenstout11@gmail.com, gmail m1 thread t1", line);
+        Assert.Equal("2026-11-10 07:30:04 07:30: written " + new FileInfo(Path.Combine(scratch.Root, "TODAY.md")).Length + " B, " + TodayCard.Minutes(card) + " min, mailed to stevenstout11@gmail.com, gmail m1 thread t1, labels INBOX,SENT,UNREAD", line);
         Assert.True(await TodayCardTimer.MailedTodayAsync(scratch.Store, new DateTime(2026, 11, 10, 7, 45, 0), CancellationToken.None));
         Assert.False(await TodayCardTimer.MailedTodayAsync(scratch.Store, new DateTime(2026, 11, 11, 7, 30, 0), CancellationToken.None));
     }
