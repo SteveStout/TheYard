@@ -134,8 +134,10 @@ public sealed partial class CampaignTextTests
         Assert.Equal(13, Strength.Score(best, Today, 1));
         Assert.Equal(-8, Strength.Score(worst, Today, -1));
         Assert.True(Strength.Score(ghost, Today, 1) < Strength.Score(worst, Today, -1), "a ghost score of 3 drops below every 0 to 2");
-        Assert.Equal(1, Strength.Score(best with { BandTop = 160_000 }, Today) - Strength.Score(best with { BandTop = null }, Today));
-        Assert.Equal(-2, Strength.Score(best with { BandTop = 150_000 }, Today) - Strength.Score(best with { BandTop = null }, Today));
+        // The band's lines are RULE 72's, read from PayFloor: $180,000 scores 2, $170,000 to $179,999 scores 1, under it minus 2.
+        Assert.Equal(1, Strength.Score(best with { BandTop = 175_000 }, Today) - Strength.Score(best with { BandTop = null }, Today));
+        Assert.Equal(-2, Strength.Score(best with { BandTop = 160_000 }, Today) - Strength.Score(best with { BandTop = null }, Today));
+        Assert.Equal((PayFloor.Flag, PayFloor.Pass), (Strength.Floor, Strength.Line));
         Assert.Equal(-6, Strength.Score(best with { Remote = RemoteStance.Onsite }, Today) - Strength.Score(best, Today));
         Assert.Equal(-2, Strength.Score(best with { FirstSeen = Today.AddDays(-61) }, Today) - Strength.Score(best, Today));
         Assert.Equal(-1, Strength.Score(best with { LastDotNetPostingAt = Today.AddDays(-31) }, Today) - Strength.Score(best, Today));

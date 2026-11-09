@@ -3,7 +3,9 @@ import {
   COLUMN_ROOM_PX,
   NARROW_ROOM_PX,
   STACK_FROM_COLUMNS,
+  addressParts,
   dottedParts,
+  LONG_TOKEN,
   stacksAt,
 } from './tableFit';
 
@@ -44,5 +46,31 @@ describe('a dotted name', () => {
 
   it('keeps a name with no dot whole', () => {
     expect(dottedParts('Information')).toEqual(['Information']);
+  });
+});
+
+describe('a long address in a sentence', () => {
+  it('breaks after its own punctuation and leaves the words whole', () => {
+    const line =
+      'TypeError: Failed to fetch dynamically imported module: http://localhost:5173/src/components/admin/ErrorsCard/ErrorsCard.tsx';
+    const parts = addressParts(line);
+    expect(parts.join('')).toBe(line);
+    expect(parts).toContain('Failed');
+    expect(parts).toContain('ErrorsCard/');
+    expect(Math.max(...parts.map((part) => part.length))).toBeLessThanOrEqual(LONG_TOKEN);
+  });
+
+  it('leaves a sentence of ordinary words as its words and spaces', () => {
+    expect(addressParts("Executed DbCommand (0ms) [Parameters=[], CommandType='Text']")).toEqual([
+      'Executed',
+      ' ',
+      'DbCommand',
+      ' ',
+      '(0ms)',
+      ' ',
+      '[Parameters=[],',
+      ' ',
+      "CommandType='Text']",
+    ]);
   });
 });

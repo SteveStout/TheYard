@@ -152,3 +152,7 @@ Telemetry is a host concern and stays in the host Api, where Composition/Telemet
 - [`api/TheYard.Tests/TelemetryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/TelemetryTests.cs): the off path, the shape of every answer, and the endpoint.
 - [`tests/e2e/admin.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/admin.spec.ts): the card rendering its not-configured state in a browser.
 - [`docs/decisions/ADR-010-observability.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-010-observability.md) and [`docs/decisions/ADR-023-error-handling.md`](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-023-error-handling.md): the Admin tab and the error path this extends.
+
+## Addendum, 2026-11-07 (1.0.4.156): the box's routes are left out of the request telemetry
+
+Until this version every request reached Application Insights. From it, every request under /api/admin/cloud/box/ is left out of the request telemetry through the distro's own filter (`AspNetCoreTraceInstrumentationOptions.Filter`, set in TelemetryRegistration.cs): the box's agent posts about forty-three thousand times a day, which would spend most of the component's 0.1 GB daily cap on itself (ADR: The box reports itself). Every other path is kept.

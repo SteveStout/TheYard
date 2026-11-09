@@ -31,13 +31,13 @@ test('the rail row under Home opens the review route', async ({ page }) => {
   const rows = (await rail.locator('button, a').allInnerTexts()).map((text) => text.trim());
   const home = rows.indexOf('Home');
   expect(home).toBeGreaterThan(-1);
-  expect(rows[home + 1]).toBe('Review in ten minutes');
+  expect(rows[home + 1]).toBe('Check my work');
   expect(rows[home + 2]).toContain('Blog');
-  await rail.getByRole('button', { name: 'Review in ten minutes' }).click();
+  await rail.getByRole('button', { name: 'Check my work' }).click();
   await expect(page).toHaveURL(/\?view=review$/);
-  await expect(page.getByTestId('view-announcement')).toHaveText('Ten minutes, seven stops');
+  await expect(page.getByTestId('view-announcement')).toHaveText('Check my work in ten minutes');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Ten minutes, seven stops' })
+    page.getByRole('heading', { level: 1, name: 'Check my work in ten minutes' })
   ).toBeVisible();
   await page.goBack();
   await expect(page.getByTestId('landing')).toBeVisible();
@@ -77,7 +77,7 @@ test('Mark done on the last stop ends at the finish panel', async ({ page }) => 
   await expect(finish).toHaveAttribute('data-state', 'finished');
   await expect(finish).toBeInViewport();
   await expect(finish).toBeFocused();
-  await expect(finish).toContainText('That is the site');
+  await expect(finish).toContainText('That is the work');
   await expect(last).toHaveAttribute('data-state', 'done');
 });
 
@@ -91,11 +91,28 @@ test('every stop opens the site’s own address, and the stop on screen is the o
     await expect(link).toHaveAttribute('href', entry.address);
     await expect(link).not.toHaveAttribute('target', '_blank');
   }
+  for (const [index, entry] of REVIEW_STOPS.entries()) {
+    const record = stop(page, index).getByTestId('review-record').getByRole('link');
+    await expect(record).toHaveAttribute('href', `/?doc=${entry.record}`);
+    await expect(record).not.toHaveAttribute('target', '_blank');
+  }
   await stop(page, 3)
     .getByRole('button', { name: /One decision/ })
     .click();
   await expect(page.getByTestId('review-do-this')).toHaveCount(1);
   await expect(stop(page, 3).getByTestId('review-do-this')).toBeVisible();
+});
+
+test('a stop’s decision record opens its document, and Back returns to the route', async ({
+  page,
+}) => {
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  await stop(page, 1).getByTestId('review-record').getByRole('link').click();
+  await expect(page).toHaveURL(new RegExp(`\\?doc=${REVIEW_STOPS[1].record}$`));
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId('review-page')).toBeVisible();
 });
 
 test('at 390 nothing scrolls sideways, every control is a thumb tall, and every panel is the glass', async ({
@@ -150,3 +167,32 @@ test('the short door /review is a permanent redirect that keeps the code', async
   expect(response.headers()['location']).toBe('/?view=review&r=zzrev1');
 });
 // #endregion review
+
+test('at a wide desk the rail stands beside the stops with every pull quote the API answers, and at 390 it folds into the column', async ({
+  page,
+}) => {
+  const answer = (await (await page.request.get('/api/recommendations')).json()) as {
+    recommendations: { name: string }[];
+  };
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  const quotes = page.getByTestId('review-quotes');
+  await expect(quotes.getByRole('listitem')).toHaveCount(answer.recommendations.length);
+  const more = quotes.getByRole('link', { name: /Read the whole thing/ });
+  await expect(more.first()).toHaveAttribute('href', /^\/\?view=recommendations#[a-z0-9-]+$/);
+  const rail = await page.getByTestId('review-rail').boundingBox();
+  const stops = await page.getByRole('list', { name: 'The seven stops' }).boundingBox();
+  expect(rail!.x).toBeGreaterThan(stops!.x + stops!.width - 1);
+  // The phone, opened at its own width as every phone test here is.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=review');
+  await expect(quotes.getByRole('listitem')).toHaveCount(answer.recommendations.length);
+  const finish = await page.getByTestId('review-finish').boundingBox();
+  const folded = await quotes.boundingBox();
+  expect(folded!.y).toBeGreaterThan(finish!.y);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(sideways).toBeLessThanOrEqual(0);
+});

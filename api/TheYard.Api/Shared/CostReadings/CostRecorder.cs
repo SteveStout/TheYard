@@ -13,11 +13,14 @@ namespace TheYard.Api.Shared.CostReadings;
 ///
 /// <para>This type is the schedule and nothing else: the wait after start, the wait after each
 /// answer, and the loop between them. The read itself and everything it leaves behind are
-/// <see cref="CostKeeping"/>, which is why this is handed two things rather than six.</para>
+/// <see cref="CostKeeping"/>, which is why this is handed four things rather than six: the keeping, the wait, and the
+/// rules on the meters with the clock their read is stamped with.</para>
 /// </summary>
 /// <param name="keeping">One read of the bill, kept, with its failures already written down.</param>
 /// <param name="firstReadAfter">How long after the start the first read waits (see <see cref="FirstReadAfter"/>).</param>
-public sealed class CostRecorder(CostKeeping keeping, TimeSpan firstReadAfter) : BackgroundService
+/// <param name="rules">The rules on the meters, read beside the bill; null where nothing reads them.</param>
+/// <param name="clock">The clock a read of the rules is stamped with.</param>
+public sealed class CostRecorder(CostKeeping keeping, TimeSpan firstReadAfter, AlertRules? rules = null, TimeProvider? clock = null) : BackgroundService
 {
     /// <summary>How often the bill is read.</summary>
     public static readonly TimeSpan Every = TimeSpan.FromHours(1);
@@ -91,7 +94,30 @@ public sealed class CostRecorder(CostKeeping keeping, TimeSpan firstReadAfter) :
                 return;
             }
 
+            await RefreshRulesAsync(stopping);
             await Task.Delay(WaitAfter(outcome, keeping.RetryAfter), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
+        }
+    }
+
+    /// <summary>
+    /// The rules on the meters, read beside the bill. A read that throws keeps the last good answer: the rules
+    /// change seldom, and a card that blanked them for one slow answer would say less than it knows.
+    /// </summary>
+    /// <param name="stopping">The host's stopping token.</param>
+    public async Task RefreshRulesAsync(CancellationToken stopping)
+    {
+        if (rules is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await rules.RefreshAsync((clock ?? TimeProvider.System).GetUtcNow(), stopping);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException && !stopping.IsCancellationRequested)
+        {
+            // The rules stay as last read; the bill's own status line says how the bill went.
         }
     }
 }

@@ -61,9 +61,9 @@ public sealed class CampaignSendTests
     }
 
     [Theory]
-    [InlineData('A', "A-v1")]
-    [InlineData('B', "B-v1")]
-    public void F12_each_approved_template_renders_byte_for_byte(char track, string fixture)
+    [InlineData('A', "A-v2", 1)]
+    [InlineData('B', "B-v1", 5)]
+    public void F12_each_approved_template_renders_byte_for_byte(char track, string fixture, int links)
     {
         var email = TemplateRender.Render(CampaignTemplate.For(track), TemplateRender.Values(Lead(track), Eight), TemplateRender.Optional);
         Assert.True(email.Complete, string.Join(", ", email.Blanks));
@@ -71,7 +71,7 @@ public sealed class CampaignSendTests
         Assert.Equal(Fixture(fixture + ".txt"), email.Text);
         Assert.Equal(Fixture(fixture + ".html"), email.Html);
         Assert.DoesNotContain("**", email.Text, StringComparison.Ordinal);
-        Assert.Equal(5, System.Text.RegularExpressions.Regex.Matches(email.Html!, "href=\"[^\"]+\\?[^\"]*r=abc123\"").Count);
+        Assert.Equal(links, System.Text.RegularExpressions.Regex.Matches(email.Html!, "href=\"[^\"]+\\?[^\"]*r=abc123\"").Count);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class CampaignSendTests
         {
             Assert.All(TemplateFill.Variables(template.Text), variable => Assert.True(values.ContainsKey(variable), $"{template.Id}-{template.Version} names {{{variable}}}"));
         }
-        Assert.Equal(["A", "B"], CampaignTemplate.All.Where(t => t.Version == CampaignTemplate.Current).Select(t => t.Id).Order());
+        Assert.Equal(["A", "B"], CampaignTemplate.All.Where(t => t.Version == CampaignTemplate.CurrentFor(t.Id[0])).Select(t => t.Id).Order());
         var blank = TemplateRender.Render(CampaignTemplate.For('B'), TemplateRender.Values(Lead(edit: b => b.WhatTheyDo = " "), Eight), TemplateRender.Optional);
         Assert.False(blank.Complete);
         Assert.Equal(["WhatTheyDo"], blank.Blanks);
@@ -356,12 +356,15 @@ public sealed class CampaignSendTests
             Lead(company: "Twice", key: "twice.com"),
             Lead(company: "Twice", key: "twice.com"),
             Lead('A', company: "Today", key: "today.com"),
+            Lead('A', company: "Mailbox", key: "mailbox.com", edit: b => b.ContactEmail = "info@mailbox.com"),
         };
         var (send, db, mail) = Pass(leads, master);
 
         var result = await send.RunAsync(CampaignMode.Shadow, CancellationToken.None);
 
-        Assert.Equal(["today.com", "twice.com"], db.Emails.Select(e => e.Key).Order());
+        // Template A v2 says "I just applied", true for the whole seven days, so yesterday's application is written too.
+        Assert.Equal(["today.com", "twice.com", "yesterday.com"], db.Emails.Select(e => e.Key).Order());
+        Assert.Equal(1, result.Held["Track A"]);
         Assert.Equal(1, result.Held["former employer"]);
         Assert.Equal(1, result.Held["no address"]);
         Assert.Equal(1, result.Held["no source"]);
@@ -370,7 +373,6 @@ public sealed class CampaignSendTests
         Assert.Equal(1, result.Held["live thread, Count 3001"]);
         Assert.Equal(1, result.Held["do not email"]);
         Assert.Equal(1, result.Held["WhatTheyDo"]);
-        Assert.Equal(1, result.Held["template A v1 says applied today"]);
         Assert.Equal(1, result.Held["applied 2026-10-15, outside 7 days"]);
         Assert.Equal(1, result.Held["30-day rule"]);
         Assert.Equal(["WhatTheyDo: a tell (robust)"], db.Blocked.Values);
@@ -402,7 +404,7 @@ public sealed class CampaignSendTests
         public override DateTimeOffset GetUtcNow() => now;
     }
 
-    private sealed class CountingSender : IMailSender
+    internal sealed class CountingSender : IMailSender
     {
         public int Calls { get; private set; }
 
@@ -413,7 +415,7 @@ public sealed class CampaignSendTests
         }
     }
 
-    private sealed class MemoryCampaign(List<LeadRecord> leads) : ILeadStore, IEmailLog
+    internal sealed class MemoryCampaign(List<LeadRecord> leads) : ILeadStore, IEmailLog
     {
         public List<EmailRecord> Emails { get; } = [];
 

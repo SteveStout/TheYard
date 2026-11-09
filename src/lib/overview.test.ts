@@ -33,6 +33,10 @@ const base: OverviewReadings = {
     month_days: 31,
     month_to_date: 13.62,
     forecast_month: 35.49,
+    month_at_yesterday: 47.3,
+    yesterday_day: '2026-10-13',
+    yesterday_cost: 1.59,
+    azure_forecast_month: 73.77,
     currency: 'USD',
   },
   tiles: [tile('speed', 'under 1 ms', 'good'), tile('errors', '0', 'good')],
@@ -70,14 +74,37 @@ describe('overviewRows', () => {
     expect(failing.tone).toBe('bad');
   });
 
-  it('holds the month to the $50 budget', () => {
+  it("grades the month at yesterday's rate against the $60 budget, Azure's forecast beside it", () => {
     const cost = overviewRows(base)[2];
     expect(cost.value).toBe('$13.62');
-    expect(cost.detail).toContain('$35.49');
-    expect(cost.range).toContain('$50');
-    expect(cost.tone).toBe('warn');
-    const over = overviewRows({ ...base, cost: { ...base.cost!, forecast_month: 55 } })[2];
+    expect(cost.detail).toBe(
+      "October so far; at yesterday's rate $47.30 (13 Oct cost $1.59) · Azure's forecast $73.77"
+    );
+    expect(cost.range).toBe(
+      "the month at yesterday's rate against the $60 budget: amber at $50, red at $60; red on any day over 3x the median of the week before it (never under $5.00)"
+    );
+    expect(cost.tone).toBe('good');
+    const near = overviewRows({ ...base, cost: { ...base.cost!, month_at_yesterday: 52 } })[2];
+    expect(near.tone).toBe('warn');
+    const over = overviewRows({ ...base, cost: { ...base.cost!, month_at_yesterday: 61 } })[2];
     expect(over.tone).toBe('bad');
+    const spike = {
+      day: '2026-10-13',
+      cost: 25.74,
+      partial: false,
+      median: 1.47,
+      days: 7,
+      multiple: 17.5,
+      biggest: 'stjobhuntss',
+      biggest_cost: 24.99,
+    };
+    const spiked = overviewRows({ ...base, cost: { ...base.cost!, spike_days: [spike] } })[2];
+    expect(spiked.tone).toBe('bad');
+    expect(spiked.detail).toContain(
+      "· spike: 13 Oct $25.74, 17.5x the week's median $1.47, driven by stjobhuntss"
+    );
+    const first = overviewRows({ ...base, cost: { ...base.cost!, month_at_yesterday: null } })[2];
+    expect(first.detail).toContain("no finished day yet for yesterday's rate");
     const none = overviewRows({ ...base, cost: { ...base.cost!, available: false } })[2];
     expect(none.tone).toBe('plain');
     expect(none.detail).toBe('this site does not read the bill');

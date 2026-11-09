@@ -23,6 +23,12 @@ public static class CardFrame
     /// <summary>The source of a figure read back from the minutes this site kept, a thirty-day 95th or the like.</summary>
     public const string KeptMinutes = "kept minutes";
 
+    /// <summary>How often a card read every minute is read, in seconds.</summary>
+    public const int MinuteCadence = 60;
+
+    /// <summary>How often an hourly card is read, in seconds.</summary>
+    public const int HourCadence = 3_600;
+
     /// <summary>
     /// The report with its tone (the dials' and the rows'), headline and threshold chips filled in.
     /// Sources are the card's own: nothing here fills one in, so a line that names none reaches the
@@ -30,7 +36,7 @@ public static class CardFrame
     /// </summary>
     /// <param name="report">The card's own report.</param>
     /// <param name="specSource">Where the spec line was read.</param>
-    /// <param name="hourly">True when the card's source is read once an hour; its tones are then not held for minutes, and its reading may be an hour old before it is unread.</param>
+    /// <param name="hourly">True when the card's source is read once an hour; its tones are then not held for minutes, and its reading may be three hours old before it is unread. The cadence it gives is the one the wire carries.</param>
     public static CloudReport Complete(CloudReport report, string? specSource, bool hourly = false)
     {
         // The dials' held tones and the rows' own: a row that reads warning or alarm (a throttled
@@ -40,7 +46,8 @@ public static class CardFrame
         // A row that is not read says so and never colours the card: only what was read lifts it. A
         // dial keeps its tone, because a dial whose newest minute is missing still holds the tone its
         // sustained minutes earned (CloudTones.Dial), and that is a reading, not a gap.
-        var tone = CardTones.Of(report.Dials.Select(dial => Level(dial.Tone)).Concat(report.Rows.Select(row => Level(Unread(row.Answer) ? "info" : row.Tone))), report.ReadAgeSeconds, hourly ? 3_600 : 60);
+        int cadence = hourly ? HourCadence : MinuteCadence;
+        var tone = CardTones.Of(report.Dials.Select(dial => Level(dial.Tone)).Concat(report.Rows.Select(row => Level(Unread(row.Answer) ? "info" : row.Tone))), report.ReadAgeSeconds, cadence);
         bool held = !hourly;
         var first = report.Dials.Count > 0 ? report.Dials[0] : null;
         return report with
@@ -49,6 +56,8 @@ public static class CardFrame
             SpecSource = specSource,
             Headline = first is null || first.Percent is null ? null : first.Big,
             Thresholds = Chips(report.Dials, held),
+            CadenceSeconds = cadence,
+            UnreadAfterSeconds = CardTones.ReadsBeforeUnread * cadence,
         };
     }
 

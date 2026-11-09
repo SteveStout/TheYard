@@ -117,7 +117,10 @@ public static class CampaignCard
         // wrote nothing is a silent morning whatever the switch read, since the hour is read before eight, not at it.
         bool lateWithNone = past9 && (atPass == "on" || day.Shadow == 0);
         string tone = bounces >= Trip || lateWithNone ? "alarm" : "good";
-        string answer = mode == "on" ? $"{day.Sent} sent today" : mode is "shadow" ? $"Shadow: {day.Shadow} written today" : $"Off ({mode})";
+        // A red answer says what made it red; the sent count alone beside an alarm would read as a good morning.
+        string answer = bounces >= Trip ? $"{bounces} bounces today, {day.Sent} sent"
+            : lateWithNone ? $"none sent by 9 AM, {ready} ready"
+            : mode == "on" ? $"{day.Sent} sent today" : mode is "shadow" ? $"Shadow: {day.Shadow} written today" : $"Off ({mode})";
         string why = bounces >= Trip ? $" · {bounces} bounces today: held in shadow until a person clears campaign/switch.log"
             : lateWithNone ? $" · none sent by 9 AM with {ready} ready"
             : past9 ? $" · the switch was {atPass} at the 8 AM pass; the first sends come at the next one" : "";

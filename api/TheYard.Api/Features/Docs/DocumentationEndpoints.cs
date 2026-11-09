@@ -84,20 +84,27 @@ public static class DocumentationEndpoints
         // The resume at an address a person can type and a link can carry (ADR: The resume has an
         // address): the same file as /api/docs/resume, inline, under his name and the lock's date.
         // The door in ?src= becomes one allowed word for the activity hook; the query is dropped.
+        // A browser that asks for a page gets the door: the route's link above the same PDF (ADR: The
+        // resume has an address, the addendum on the door); ?pdf=1 and every other caller get the file.
         app.MapGet("/resume", ResumeAtItsAddress)
             .WithName("GetResumeAtItsAddress")
             .WithTags("Documents")
-            .WithSummary("The resume, inline, at an address a link can carry")
+            .WithSummary("The resume at an address a link can carry: the door page for a browser, the PDF for everything else")
             .WithDescription("The same PDF as /api/docs/resume, opened in the browser under the author's name. "
+                + "A request whose Accept header lists text/html gets the door instead: one band linking to the review route, the link's code kept, and the same PDF embedded below it. "
+                + "?pdf=1 asks for the PDF itself whatever the caller accepts; paste /resume?pdf=1 into a field that wants a document file. "
                 + "An optional ?src= names the door the link was handed out through (linkedin, application, email, signature, post); "
                 + "it is counted and never stored, and any other value counts as other.")
-            .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf");
+            .Produces<byte[]>(StatusCodes.Status200OK, "application/pdf")
+            .Produces<string>(StatusCodes.Status200OK, "text/html");
         #endregion resume-address
 
         #region review-address
         // The review route's short door (ADR: Ten minutes, seven stops): a permanent redirect to the
         // view, carrying the link's query, so /review?r=<code> on a card reaches the page that reports it.
         app.MapGet("/review", ReviewAtItsAddress).ExcludeFromDescription();
+        // The recommendations page's short door (ADR: The recommendations have a page), the same shape.
+        app.MapGet("/recommendations", RecommendationsAtItsAddress).ExcludeFromDescription();
         #endregion review-address
 
         return app;
@@ -160,7 +167,8 @@ public static class DocumentationEndpoints
     {
         // The Yard name the request arrived on, then Site:Url, then the request's own address.
         string site = hosts.LinkOrigin(http);
-        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot)), "text/html; charset=utf-8");
+        var reply = File.Exists(paths.RecommendationsPath) ? RecommendationsFile.Of(paths.RecommendationsPath) : null;
+        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply)), "text/html; charset=utf-8");
     }
 
     private static ContentHttpResult Bicep(HostPaths paths) =>
@@ -169,19 +177,33 @@ public static class DocumentationEndpoints
     private static PhysicalFileHttpResult Resume(HostPaths paths) =>
         TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");
 
-    /// <summary>The redirect to /?view=review with every other part of the request's query kept, in its order.</summary>
-    private static RedirectHttpResult ReviewAtItsAddress(HttpRequest request)
+    /// <summary>The review route's short door: /review to /?view=review.</summary>
+    private static RedirectHttpResult ReviewAtItsAddress(HttpRequest request) => ViewAtItsAddress(request, "review");
+
+    /// <summary>The recommendations page's short door: /recommendations to /?view=recommendations.</summary>
+    private static RedirectHttpResult RecommendationsAtItsAddress(HttpRequest request) => ViewAtItsAddress(request, "recommendations");
+
+    /// <summary>The redirect to /?view=<paramref name="view"/> with every other part of the request's query kept, in its order.</summary>
+    private static RedirectHttpResult ViewAtItsAddress(HttpRequest request, string view)
     {
         var kept = request.Query
             .Where(pair => !string.Equals(pair.Key, "view", StringComparison.Ordinal))
             .SelectMany(pair => pair.Value.Select(value => $"{Uri.EscapeDataString(pair.Key)}={Uri.EscapeDataString(value ?? "")}"));
-        return TypedResults.Redirect(string.Join("&", kept.Prepend("/?view=review")), permanent: true);
+        return TypedResults.Redirect(string.Join("&", kept.Prepend($"/?view={view}")), permanent: true);
     }
 
-    private static PhysicalFileHttpResult ResumeAtItsAddress(HttpContext http, HostPaths paths, string? src)
+    private static Results<ContentHttpResult, PhysicalFileHttpResult> ResumeAtItsAddress(HttpContext http, HostPaths paths, string? src, string? r, string? pdf)
     {
         http.Items[ResumeDoor.ItemKey] = ResumeDoor.PathFor(src);
+        if (pdf is null && AsksForAPage(http.Request))
+        {
+            return TypedResults.Content(ResumePage.Html(ResumeDoor.Of(src), r, SiteFace.StyleFor(paths.AssetsRoot)), "text/html; charset=utf-8");
+        }
         http.Response.Headers.ContentDisposition = $"inline; filename=\"{ResumeDoor.FileName}\"";
         return TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");
     }
+
+    /// <summary>True when the request's Accept header lists text/html, which browsers send and almost nothing that wants a PDF does.</summary>
+    private static bool AsksForAPage(HttpRequest request) =>
+        request.Headers.Accept.Any(value => value is not null && value.Contains("text/html", StringComparison.OrdinalIgnoreCase));
 }

@@ -94,7 +94,11 @@ public static class CosmosCard
             ResourceView.Dial(inputs, "storage_gb", "Storage", storageLimit, Storage, v => v is { } g ? $"{g.ToString("0.00", CultureInfo.InvariantCulture)} of {storageWords}" : "not read"),
         };
         var (throttled, siteRequests, testsThrottled) = SiteThrottling(inputs);
-        string throttleShare = throttled is { } t && siteRequests is > 0 ? $"{(t / siteRequests.Value * 100).ToString("0.00", CultureInfo.InvariantCulture)} % of the site's requests" : "no requests read";
+        // The answer leads with the share the tone judges, then the count it came from, so the row never prints a
+        // count beside a tone that judged a different number.
+        string throttleAnswer = throttled is not { } t ? "not read yet"
+            : siteRequests is > 0 ? string.Create(CultureInfo.InvariantCulture, $"{(t / siteRequests.Value * 100).ToString("0.00", CultureInfo.InvariantCulture)} % of the site's requests ({t:N0} of {siteRequests.Value:N0})")
+            : string.Create(CultureInfo.InvariantCulture, $"{t:N0} throttled, no requests read to weigh them against");
         static double SiteOf(ResourceBucket b) => Math.Max(0, (b.Sums.GetValueOrDefault("throttled") ?? 0) - (b.Sums.GetValueOrDefault("throttled_tests") ?? 0));
         var throttles = inputs.Buckets.Where(b => SiteOf(b) > 0)
             .Select(b => new CloudMark(b.At.ToUnixTimeMilliseconds(), "count", $"{SiteOf(b):0} of the site's requests throttled (429)"));
@@ -105,8 +109,8 @@ public static class CosmosCard
         {
             new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "container_count")} containers",
                 [], "good") { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("container_rows"), "Container", "Type", "Kept for") },
-            new("throttling", "Is it throttling?", throttled is null ? "not read yet" : $"{throttled.Value.ToString("N0", CultureInfo.InvariantCulture)} throttled",
-                [new($"the site's 429s in the window, {throttleShare}, retried by the SDK · amber at {ThrottledAmberShare * 100:0} % · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null),
+            new("throttling", "Is it throttling?", throttleAnswer,
+                [new($"the site's 429s in the window, retried by the SDK · amber at {ThrottledAmberShare * 100:0} % · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null),
                     new(testsThrottled is { } tt ? $"the live tests' copies (tests-*) were throttled {ResourceView.Number(tt)} more times on the same shared throughput, counted apart" : "the live tests' copies (tests-*): not read yet, so every throttle above is counted as the site's", null)],
                 throttleTone),
             new("keeping", "What is it keeping?", ResourceView.Now(inputs, "documents") is { } docs ? $"{docs.ToString("N0", CultureInfo.InvariantCulture)} documents" : "not read yet",

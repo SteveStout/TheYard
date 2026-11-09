@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { TILE_KEYS } from '../../src/lib/statTiles';
+import { CLOUD_RESOURCES } from '../../src/lib/workbench';
 import { openTheYard, openAllSections, openSection } from './app';
 
 /**
@@ -623,3 +624,41 @@ test('on a phone the Admin tab opens on its tiles, with the paragraph under them
     )
     .toBe(true);
 });
+
+// #region cloud-rail-phone
+/**
+ * Every card under Cloud infrastructure on a phone: the page never scrolls sideways, and every table a card draws is
+ * as narrow as the phone or sits in a box that scrolls it inside itself, so a wide table never widens the page.
+ */
+test('on a phone every Cloud card fits the screen and every table scrolls inside its card', async ({
+  page,
+}) => {
+  test.setTimeout(20_000 * (CLOUD_RESOURCES.length + 1));
+  for (const slug of ['plan', ...CLOUD_RESOURCES]) {
+    await openTheYard(page, `/?view=admin&card=${slug}`);
+    await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', slug);
+    await expect(page.getByTestId('cloud-lead').first()).toBeVisible({ timeout: 30_000 });
+    const loose = await page.evaluate(() => {
+      const wide = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+      const unboxed = [
+        ...document.querySelectorAll(
+          '[data-testid="cloud-rest"] table, [data-testid="cloud-lead"] table'
+        ),
+      ].filter((table) => {
+        if (table.getBoundingClientRect().width <= window.innerWidth) return false;
+        for (let box = table.parentElement; box !== null; box = box.parentElement) {
+          const overflow = getComputedStyle(box).overflowX;
+          if (
+            (overflow === 'auto' || overflow === 'scroll') &&
+            box.clientWidth <= window.innerWidth
+          )
+            return false;
+        }
+        return true;
+      }).length;
+      return { wide, unboxed };
+    });
+    expect([slug, loose]).toEqual([slug, { wide: 0, unboxed: 0 }]);
+  }
+});
+// #endregion cloud-rail-phone

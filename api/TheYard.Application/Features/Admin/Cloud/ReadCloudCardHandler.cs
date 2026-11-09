@@ -11,7 +11,7 @@ namespace TheYard.Application.Features.Admin.Cloud;
 public interface ICloudCards
 {
     /// <summary>Whether a card by this key exists. The keys below are the catalogue's own, held to it by a test rather than kept by hand.</summary>
-    /// <param name="key">sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude or campaign.</param>
+    /// <param name="key">sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude, campaign, network, box or picker.</param>
     bool Knows(string key);
 
     /// <summary>The card's report for the window.</summary>

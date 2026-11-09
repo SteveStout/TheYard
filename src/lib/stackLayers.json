@@ -281,7 +281,7 @@
       },
       {
         "tech": "Stryker mutation testing",
-        "where": "GitHub Actions runners",
+        "where": "a shipping machine, over the threshold files; never in the gate",
         "version": {
           "npm": "@stryker-mutator/core"
         },

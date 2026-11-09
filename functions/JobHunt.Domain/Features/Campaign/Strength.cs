@@ -38,7 +38,7 @@ public sealed record StrengthInputs(
 /// remote 3, St. Louis hybrid 1, unknown 0, onsite minus 3;
 /// .NET evidence rows 1 each up to 3;
 /// a posted role (Track A) 2;
-/// the band's top at $170,000 or more 2, at the $155,000 floor or more 1, unpublished 0, below the floor minus 2;
+/// the band's top at PayFloor.Pass ($180,000) or more 2, at PayFloor.Flag ($170,000) or more 1, unpublished 0, below it minus 2;
 /// ghost score 0 nothing, 1 or 2 minus 1, 3 or more minus 25 (the 10/24 fragment: 3 or more drops below every
 /// lead scoring 0 to 2, whatever its pay; every other lead scores minus 8 to 13, so minus 25 puts it under all of them);
 /// first seen in the last 7 days 1, more than 60 days ago minus 1;
@@ -46,17 +46,17 @@ public sealed record StrengthInputs(
 /// </summary>
 public static class Strength
 {
-    /// <summary>The permanent floor (targeting-criteria.md, 9/15).</summary>
-    public const int Floor = 155_000;
+    /// <summary>The flag line a band must reach to score at all (PayFloor, RULE 72).</summary>
+    public const int Floor = PayFloor.Flag;
 
-    /// <summary>The total-comp line (targeting-criteria.md, 9/16).</summary>
-    public const int Line = 170_000;
+    /// <summary>The pass line a band scores its full points at (PayFloor, RULE 72).</summary>
+    public const int Line = PayFloor.Pass;
 
     /// <summary>The ghost score of 3 or more: larger than the whole range the other points span.</summary>
     public const int GhostPenalty = -25;
 
     /// <summary>The formula's version, in the hash, so a change to the points re-ranks every lead once.</summary>
-    public const string Version = "1";
+    public const string Version = "2";
 
     /// <summary>The score on a Central day, with the model's step clamped to plus or minus one.</summary>
     public static int Score(StrengthInputs inputs, DateOnly today, int modelStep = 0)

@@ -2,8 +2,9 @@
  * Does:      Draws every card under Cloud infrastructure from its report, in one frame (ADR: The onion cut into
  *            vertical slices, the CardShell; ADR: One frame for every resource): a lead block (the header, the sub
  *            line, the two dial panels as the approved canvas draws them, each with its name, its thresholds named
- *            on the dial, one quiet hold line and its sixty minutes) with the readout beside it, then the chart, the
- *            processes and the rows across the card's full width. The parts are in the folders beside it:
+ *            on the dial, one quiet hold line and its sixty minutes, and the quiet line under them saying how often
+ *            the card is read and when it reads unread) with the readout beside it, then a card's own live block
+ *            when it hands one, the chart, the processes and the rows across the card's full width. The parts are in the folders beside it:
  *              CloudDial      a dial, now, each threshold named on it by a leader line
  *              CloudChart     the window, one panel a series against its own lines, the rolls on the time axis
  *              CloudRows      the four questions, each naming its source
@@ -12,10 +13,11 @@
  * Does not:  Read a route (each card reads its own and hands the answer here), or decide a figure, a tone or a source:
  *            every one comes from the server, and a slot the card has no data for is left out.
  * Used by:   src/components/admin/PlanCard/PlanCard.tsx, src/components/admin/CloudResourceCard/CloudResourceCard.tsx,
- *            through index.ts.
+ *            src/components/admin/BoxCard/BoxCard.tsx, through index.ts.
  */
 import { type ReactNode, useEffect, useState } from 'react';
 import {
+  cadenceLine,
   cardToneWord,
   linePath,
   newestValue,
@@ -127,11 +129,14 @@ export function CardShell({
   title,
   testId,
   toolbar,
+  live,
 }: {
   report: Fetched<CloudReport>;
   title: string;
   testId: string;
   toolbar: ReactNode;
+  /** A card's own live block, drawn across the card above the chart; only the box's card hands one. */
+  live?: ReactNode;
 }) {
   if (report === null || report === 'failed') {
     return (
@@ -144,6 +149,7 @@ export function CardShell({
   const hold = holdLine(report.thresholds);
   const sparks = sparksFor(report.dials.slice(0, 2), report.sparks);
   const instances = report.readout.lines.find((line) => line.key === 'instances');
+  const cadence = cadenceLine(report);
   return (
     <div className={styles.frame} data-testid={testId} data-tone={report.tone}>
       <article className={`${areas.card} op-glass`}>
@@ -203,6 +209,11 @@ export function CardShell({
               />
             ))}
           </div>
+          {cadence !== null && (
+            <p className={styles.quiet} data-testid="cloud-cadence">
+              {cadence}
+            </p>
+          )}
           {sparks.rest.length > 0 && (
             <div className={styles.sparks}>
               {sparks.rest.map((spark) => (
@@ -215,6 +226,7 @@ export function CardShell({
           <CloudReadout readout={report.readout} />
         </div>
         <div className={areas.rest} data-testid="cloud-rest">
+          {live}
           <CloudChart chart={report.chart} endMs={report.as_of_ms} toolbar={toolbar} />
           <CloudProcesses processes={report.processes ?? []} />
           <CloudRows rows={report.rows} />

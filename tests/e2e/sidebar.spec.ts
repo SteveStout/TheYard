@@ -164,6 +164,12 @@ test.describe('the docked rail', () => {
     const html = await served.text();
     expect(html).toContain('<h1>Steven Stout</h1>');
     expect(html).toContain('"@type":"Person"');
+    // And it lists what colleagues said, the count read from the API, never typed (ADR: The recommendations have a page).
+    const said = (await (await page.request.get('/api/recommendations')).json()) as {
+      count: number;
+    };
+    expect(html).toContain(`${said.count} people who worked with me`);
+    expect(html).toContain('<a href="/?view=recommendations">Recommendations</a>');
   });
 
   test('the rail collapses to icons, keeps its names, and remembers the choice', async ({
@@ -196,13 +202,13 @@ test.describe('the docked rail', () => {
     const rail = page.getByTestId('side-rail');
     const sections = rail.locator('details');
 
-    // Seventeen headings and nothing else: the rail arrives as a table of contents
+    // Eighteen headings and nothing else: the rail arrives as a table of contents
     // rather than as a hundred rows (ADR: The sidebar, the addendum on
     // collapsing every section; the twelfth is the API reference, 1.0.0.137,
     // the thirteenth is Style, 1.0.0.170, the fourteenth is Author, 1.0.0.171,
     // the fifteenth is Site traffic, 1.0.3.48, the sixteenth is The Shed, 1.0.3.140,
-    // and the seventeenth is Incidents, 1.0.4.78).
-    await expect(sections).toHaveCount(17);
+    // the seventeenth is Incidents, 1.0.4.78, and the eighteenth is Recommendations).
+    await expect(sections).toHaveCount(18);
     await expect(rail.locator('details[open]')).toHaveCount(0);
     await expect(rail.getByRole('button', { name: 'Hosting overview' })).toHaveCount(0);
 

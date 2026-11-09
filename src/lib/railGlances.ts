@@ -106,7 +106,13 @@ export const GLANCED: readonly Glanced[] = [
     glance: (a) => railGlance(a as CloudReport),
   },
   ...CLOUD_RESOURCES.filter(
-    (slug) => slug !== 'nightly' && slug !== 'claude' && slug !== 'campaign'
+    (slug) =>
+      slug !== 'nightly' &&
+      slug !== 'claude' &&
+      slug !== 'campaign' &&
+      slug !== 'network' &&
+      slug !== 'box' &&
+      slug !== 'picker'
   ).map((slug) => ({
     slug,
     route: `/api/admin/cloud/${slug}?window=24h`,
@@ -140,6 +146,21 @@ export const GLANCED: readonly Glanced[] = [
   {
     slug: 'campaign',
     route: '/api/admin/cloud/campaign?window=24h',
+    glance: (a) => railGlance(a as CloudReport),
+  },
+  {
+    slug: 'network',
+    route: '/api/admin/cloud/network?window=24h',
+    glance: (a) => railGlance(a as CloudReport),
+  },
+  {
+    slug: 'box',
+    route: '/api/admin/cloud/box?window=24h',
+    glance: (a) => railGlance(a as CloudReport),
+  },
+  {
+    slug: 'picker',
+    route: '/api/admin/cloud/picker?window=24h',
     glance: (a) => railGlance(a as CloudReport),
   },
 ];

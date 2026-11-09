@@ -134,6 +134,12 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
         srcSet: '/api/images/badges/steve-176.webp 176w, /api/images/badges/steve-264.webp 264w',
       },
     },
+    {
+      menu: 'recommendations',
+      icon: 'author',
+      group: 'who',
+      blurb: 'What the people who worked with him wrote, every word, checkable on LinkedIn.',
+    },
   ],
   actions: [
     {
@@ -145,13 +151,14 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       onLanding: false,
     },
     // #region review-action
-    // Directly under Home: the site in ten minutes, seven live stops ending at the resume
+    // Directly under Home: check my work in ten minutes, seven live stops ending at the resume
     // (ADR: Ten minutes, seven stops). On the landing page it is the banner beside the resume's.
     {
       key: 'review',
-      label: 'Review in ten minutes',
+      label: 'Check my work',
       icon: 'review',
-      blurb: 'Seven stops, each one live, ending at the resume.',
+      blurb:
+        'Seven live stops in ten minutes: how I design, test and decide, ending at the resume.',
       featured: true,
       featuredRank: 4,
       banner: true,

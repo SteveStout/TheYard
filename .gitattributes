@@ -22,3 +22,7 @@
 # The tracker shapes fixture holds CRLF breaks and a byte order mark on purpose: the tracker's SQL copy is held to
 # the file byte for byte (PROMPT-JOBHUNT-TRACKER-SQL), so git must not touch its line ends.
 functions/jobhunt.Tests/Fixtures/tracker-shapes.csv binary
+
+# The leads files the inbox pass wrote on 4 and 5 November, copied from the share as written: LeadsFixtureTests
+# re-filters every row and holds the pass counts, so git must not touch their bytes.
+functions/jobhunt.Tests/Fixtures/leads/*.md binary

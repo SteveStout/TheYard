@@ -263,6 +263,7 @@ public sealed class SliceTests
         ["ActivityCollector"] = "keeps the visitor counts off the request path",
         ["CatalogueWarm"] = "warms each store's catalogue once at start",
         ["CloudRecorder"] = "reads and keeps the resource cards' minutes and hours",
+        ["LiveSampler"] = "runs each live source while its card is open, at the source's own grain",
         ["CostRecorder"] = "reads Cost Management once an hour and keeps the answer",
         ["ErrorRingKeeping"] = "keeps the error rings across a restart",
         ["HostedSiteStopper"] = "stops the guest sites with the host",

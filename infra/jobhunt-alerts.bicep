@@ -171,9 +171,51 @@ resource campaignSilent 'Microsoft.Insights/scheduledQueryRules@2023-03-15-previ
     }
   }
 }
+// The network log's daily pass (ADR: The network log drafts, Steve sends): checked hourly, it can fire only in the
+// 13:00 UTC hour, when the 6 o'clock hour Central has passed under either clock (11:00 UTC in daylight time, 12:00 in
+// standard time): no NetworkLogPass invocation in the three hours before is a dead pass, and an invocation that failed
+// is a broken one. The hourly timer is invoked every hour whatever its switch says, so a silence here is the
+// Function, not the switch; a failure is the pass itself, which throws only when the 6 AM hour's work threw.
+resource networkSilent 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
+  name: 'alert-jobhunt-network-silent'
+  location: location
+  tags: tags
+  properties: {
+    displayName: 'The network log did not run, or failed, at 6 AM Central'
+    description: 'No NetworkLogPass invocation in func-jobhunt-ss between 10:00 and 13:00 UTC, or one that failed, checked in the 13:00 UTC hour.'
+    severity: 2
+    enabled: true
+    evaluationFrequency: 'PT1H'
+    windowSize: 'PT3H'
+    scopes: [
+      appInsights.id
+    ]
+    criteria: {
+      allOf: [
+        {
+          query: 'let runs = toscalar(requests | where timestamp > ago(3h) and name == "NetworkLogPass" | count); let failed = toscalar(requests | where timestamp > ago(3h) and name == "NetworkLogPass" and success == false | count); print runs = runs, failed = failed, hour = datetime_part("hour", now()) | where hour == 13 and (runs == 0 or failed > 0)'
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
+        }
+      ]
+    }
+    autoMitigate: true
+    actions: {
+      actionGroups: [
+        alertGroup.id
+      ]
+    }
+  }
+}
 // #endregion jobhunt-alerts
 
 output actionGroupId string = alertGroup.id
 output alertRuleId string = deadFunction.id
 output transactionsAlertId string = shareTransactions.id
 output campaignAlertId string = campaignSilent.id
+output networkAlertId string = networkSilent.id

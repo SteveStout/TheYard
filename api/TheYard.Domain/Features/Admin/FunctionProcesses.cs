@@ -1,4 +1,4 @@
-// The job hunt Function's seven processes as the nightly card names them (ADR-109, the addendum on the six
+// The job hunt Function's eight processes as the nightly card names them (ADR-109, the addendum on the six
 // processes): each one's name in the Function, the title the card gives it, its switches, its timer's
 // schedule and that schedule in words, and when it next runs. One table, held by a test, so the card's
 // words and the Function's cron strings cannot drift apart unnoticed. Pure: the moment goes in, the
@@ -6,8 +6,8 @@
 namespace TheYard.Domain.Features.Admin;
 
 // #region function-processes
-/// <summary>One of the Function's seven processes.</summary>
-/// <param name="Key">Its name in the Function and in Application Insights: AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend or MergerHealth.</param>
+/// <summary>One of the Function's eight processes.</summary>
+/// <param name="Key">Its name in the Function and in Application Insights: AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend, NetworkLogPass or MergerHealth.</param>
 /// <param name="Title">What the card calls it: "The inbox pass".</param>
 /// <param name="Cron">The timer's schedule as the Function writes it (seconds first); null for the health route, which runs on request.</param>
 /// <param name="Schedule">The schedule in words.</param>
@@ -15,10 +15,10 @@ namespace TheYard.Domain.Features.Admin;
 /// <param name="ShowsQuietRuns">Whether its run history lists every run; false lists only the runs that did something, and the rest are counted.</param>
 public sealed record FunctionProcess(string Key, string Title, string? Cron, string Schedule, IReadOnlyList<string> Switches, bool ShowsQuietRuns);
 
-/// <summary>The seven processes in the card's order, and when each next runs.</summary>
+/// <summary>The eight processes in the card's order, and when each next runs.</summary>
 public static class FunctionProcesses
 {
-    /// <summary>The seven, in the order the card draws them.</summary>
+    /// <summary>The eight, in the order the card draws them.</summary>
     public static readonly IReadOnlyList<FunctionProcess> All =
     [
         new("AtsSweep", "The inbox pass", "0 20,50 * * * *", "Every 30 minutes, at 20 and 50 past (UTC and Central alike).", ["ATS_SWEEP", "LEADS", "LEADS_LIST", "TRIAGE", "REPLY_ON_HUMAN"], true),
@@ -27,10 +27,11 @@ public static class FunctionProcesses
         new("SheetMirror", "The Sheet mirror", "0 7,22,37,52 * * * *", "Every 15 minutes, at 7, 22, 37 and 52 past, clear of the merger's minute and the clock's hour.", ["SHEET_MIRROR"], true),
         new("DailyCard", "The daily card", "0 5 * * * *", "Every hour at 5 past; always writes at 6 AM Central.", ["DAILY_CARD"], false),
         new("CampaignSend", "The email campaign", "0 0 * * * *", "Every hour on the hour; acts at 8 AM Central, seven days a week.", ["EMAIL_CAMPAIGN"], false),
+        new("NetworkLogPass", "The network log", "0 0 * * * *", "Every hour on the hour; acts once a day in the 6 AM hour Central.", ["NETWORK_LOG", "NETWORK_LOG_ANY_HOUR"], false),
         new("MergerHealth", "The merger's health", null, "On request; this card asks once a minute.", [], true),
     ];
 
-    /// <summary>The process by its key, or null for a name that is not one of the seven.</summary>
+    /// <summary>The process by its key, or null for a name that is not one of the eight.</summary>
     /// <param name="key">The name from the route, matched exactly.</param>
     public static FunctionProcess? Find(string? key) => All.FirstOrDefault(process => string.Equals(process.Key, key, StringComparison.Ordinal));
 
@@ -40,7 +41,7 @@ public static class FunctionProcesses
     /// hour Central; for the health route, the
     /// card's next minute.
     /// </summary>
-    /// <param name="process">One of the seven.</param>
+    /// <param name="process">One of the eight.</param>
     /// <param name="after">The moment to look from, UTC.</param>
     public static DateTimeOffset Next(FunctionProcess process, DateTimeOffset after)
     {
@@ -48,12 +49,13 @@ public static class FunctionProcesses
         {
             return NightlySlots.Next(after).At;
         }
-        if (process.Key == "CampaignSend")
+        if (process.Key is "CampaignSend" or "NetworkLogPass")
         {
-            // Hourly in UTC like the clock, and acts in the 8 o'clock hour Central only (ADR-118).
+            // Hourly in UTC like the clock, and acts in one hour Central only: 8 for the campaign (ADR-118), 6 for the network log.
+            int acts = process.Key == "CampaignSend" ? 8 : 6;
             for (var hour = Minute(after).AddMinutes(60 - Minute(after).Minute); ; hour = hour.AddHours(1))
             {
-                if (NightlySlots.Local(hour).Hour == 8)
+                if (NightlySlots.Local(hour).Hour == acts)
                 {
                     return hour;
                 }

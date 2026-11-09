@@ -31,6 +31,13 @@ public class PlanThresholdTests
         var spike = Held(95, 14).Prepend(10).ToList();
         Assert.Equal(PlanTone.Good, PlanThresholds.ToneOf(spike, PlanThresholds.Cpu));
         Assert.Equal(PlanTone.Info, PlanThresholds.ToneOf(Held(95, 14), PlanThresholds.Cpu));
+        // Fifteen minutes with one of them not read are not judged, though the other fourteen are over red.
+        Assert.Equal(PlanTone.Info, PlanThresholds.ToneOf([.. Held(95, 14), null], PlanThresholds.Cpu));
+        // A size outside the steps Microsoft lists has no socket limit: B0 below them, P4v3 above.
+        Assert.Null(PlanThresholds.SocketLimitFor("B0"));
+        Assert.Null(PlanThresholds.SocketLimitFor("P4v3"));
+        Assert.Equal(1_920, PlanThresholds.SocketLimitFor("B1"));
+        Assert.Equal(16_256, PlanThresholds.SocketLimitFor("P3v3"));
         Assert.Equal(PlanTone.Alarm, PlanThresholds.ToneOf(Held(20, 15), PlanThresholds.HttpQueue));
         Assert.Equal(PlanTone.Warning, PlanThresholds.SocketsTone(Held(1_152), PlanThresholds.SocketLimitFor("B1")));
         Assert.Equal(PlanTone.Good, PlanThresholds.SocketsTone(Held(1_151), PlanThresholds.SocketLimitFor("B1")));
@@ -54,6 +61,10 @@ public class PlanThresholdTests
         var at = new DateTimeOffset(2026, 10, 18, 12, 0, 0, TimeSpan.Zero);
         Assert.Equal(PlanTone.Alarm, PlanThresholds.AppsTone([new PlanAppState("a", "/a", "Stopped", true, null)]));
         Assert.Equal(PlanTone.Good, PlanThresholds.AppsTone([new PlanAppState("a", "/a", "Running", true, null)]));
+        // The cases the mutation run found loose (ADR-122, the addendum on the local mutation runs): one stopped app
+        // among running ones is red, and no app read is information, not good.
+        Assert.Equal(PlanTone.Alarm, PlanThresholds.AppsTone([new PlanAppState("a", "/a", "Running", true, null), new PlanAppState("b", "/b", "Stopped", true, null)]));
+        Assert.Equal(PlanTone.Info, PlanThresholds.AppsTone([]));
         Assert.Equal(PlanTone.Alarm, PlanThresholds.EventsTone([new PlanEvent(at, "restart", "Restart", "a", Planned: false)]));
         Assert.Equal(PlanTone.Info, PlanThresholds.EventsTone([new PlanEvent(at, "restart", "Restart", "a", Planned: true)]));
     }

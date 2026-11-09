@@ -37,6 +37,8 @@ export function readFirstAddress(search: string) {
     blogPost: blogPostFrom(params),
     /** The review route, ?view=review (ADR: Ten minutes, seven stops). */
     review: params.get('view') === 'review',
+    /** The recommendations page, ?view=recommendations (ADR: The recommendations have a page). */
+    recommendations: params.get('view') === 'recommendations',
     /** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
     card,
     pin: pinFromAddress(params.get('pin')),

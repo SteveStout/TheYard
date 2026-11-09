@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="920" viewBox="0 0 1400 920" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
-  <title>Cloud infrastructure: eleven cards read in the one web app by PlanRecorder and CloudRecorder, kept in seven Cosmos DB containers partitioned on the day for thirty-one days, four of the cards under kinds of their own in the plan container, served by GET /api/admin/plan and GET /api/admin/cloud/{key}, and drawn in one frame, CardShell</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1040" viewBox="0 0 1400 1040" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>Cloud infrastructure: fourteen cards read in the one web app by PlanRecorder and CloudRecorder, kept in seven Cosmos DB containers partitioned on the day for thirty-one days, six of the cards under kinds of their own in the plan container, served by GET /api/admin/plan and GET /api/admin/cloud/{key}, and drawn in one frame, CardShell</title>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
@@ -17,7 +17,7 @@
   </defs>
 
   <rect width="1400" height="860" fill="#e9e6e7"/>
-  <text x="40" y="48" class="heading">Cloud infrastructure: eleven cards, seven containers, one frame</text>
+  <text x="40" y="48" class="heading">Cloud infrastructure: fourteen cards, seven containers, one frame</text>
   <text x="40" y="74" class="caption">Read once a minute (once an hour where the source moves no faster) by the one web app, kept a month, served from the kept copy, drawn the same way every time.</text>
   <rect x="40" y="110" width="330" height="50" rx="8" class="box"/>
   <text x="56" y="131" class="title">App Service plan</text>
@@ -127,6 +127,33 @@
   <text x="896" y="810" class="mono">plan, kinds campaign-*</text>
   <path class="flow" d="M770 440 L876 795"/>
   <path class="flow" d="M1120 795 L1176 440"/>
+  <rect x="40" y="830" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="851" class="title">The network log</text>
+  <text x="56" y="870" class="mono">sqldb-theyard-ss-basic, card.Network</text>
+  <path class="flow" d="M370 855 L516 440"/>
+  <rect x="880" y="830" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="851" class="title">network</text>
+  <text x="896" y="870" class="mono">plan, kinds network-*</text>
+  <path class="flow" d="M770 440 L876 855"/>
+  <path class="flow" d="M1120 855 L1176 440"/>
+  <rect x="40" y="890" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="911" class="title">WickedAwsome</text>
+  <text x="56" y="930" class="mono">the box's agent, pushed, behind the key</text>
+  <path class="flow" d="M370 915 L516 440"/>
+  <rect x="880" y="890" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="911" class="title">box</text>
+  <text x="896" y="930" class="mono">plan, kinds box-*</text>
+  <path class="flow" d="M770 440 L876 915"/>
+  <path class="flow" d="M1120 915 L1176 440"/>
+  <rect x="40" y="950" width="330" height="50" rx="8" class="box"/>
+  <text x="56" y="971" class="title">The nightly picker</text>
+  <text x="56" y="990" class="mono">the Function's run lines, Log Analytics</text>
+  <path class="flow" d="M370 975 L516 440"/>
+  <rect x="880" y="950" width="240" height="50" rx="8" class="keep"/>
+  <text x="896" y="971" class="title">picker</text>
+  <text x="896" y="990" class="mono">plan, kinds picker-*</text>
+  <path class="flow" d="M770 440 L876 975"/>
+  <path class="flow" d="M1120 975 L1176 440"/>
   <rect x="520" y="380" width="250" height="120" rx="8" class="box"/>
   <text x="536" y="406" class="title">The recorders</text>
   <text x="536" y="428" class="mono">PlanRecorder, CloudRecorder</text>

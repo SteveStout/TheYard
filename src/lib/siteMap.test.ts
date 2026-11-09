@@ -21,6 +21,7 @@ const EVERY_SECTION: Record<MenuVariant, true> = {
   incidents: true,
   changelog: true,
   author: true,
+  recommendations: true,
 };
 
 describe('the site map', () => {
@@ -71,6 +72,7 @@ describe('the site map', () => {
       'changelog',
       'about',
       'author',
+      'recommendations',
     ]);
     // A group's sections sit together, so a heading above the first one covers them all.
     const order = SITE_MAP.sections.map((section) =>
@@ -94,7 +96,7 @@ describe('the site map', () => {
         ['architecture', 'apiReference', 'stores', 'diagrams', 'look', 'builtWithAi', 'shed'],
       ],
       ['How it is run', ['performance', 'traffic', 'hosting', 'cicd', 'practices']],
-      ['Who and why', ['records', 'incidents', 'changelog', 'about']],
+      ['Who and why', ['records', 'incidents', 'changelog', 'about', 'recommendations']],
     ]);
     // Sign in, Admin and GitHub last.
     expect(rest.map(name)).toEqual(['account', 'admin', 'repo']);
@@ -117,7 +119,7 @@ describe('the site map', () => {
       'admin',
       'repo',
     ]);
-    expect(grid).toHaveLength(19);
+    expect(grid).toHaveLength(20);
     // The two large tiles carry a photograph in the badge, and nothing else does.
     expect(
       featured.map(
@@ -131,7 +133,7 @@ describe('the site map', () => {
     expect(rail.slice(0, 3)).toEqual(['home', 'review', 'blog']);
     const review = SITE_MAP.actions.find((action) => action.key === 'review')!;
     expect(review).toMatchObject({
-      label: 'Review in ten minutes',
+      label: 'Check my work',
       icon: 'review',
       featured: true,
       banner: true,

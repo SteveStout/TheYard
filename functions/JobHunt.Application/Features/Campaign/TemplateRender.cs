@@ -11,16 +11,17 @@ public sealed record CampaignTemplate(string Id, string Version, string Text)
     public static IReadOnlyList<CampaignTemplate> All { get; } = Load();
 
     /// <summary>
-    /// The version the send renders. Templates are code, not configuration, and change only on an approval,
-    /// which is why a new one arrives as its own files beside the old ones and this single constant moves to
-    /// it: the text that went out can still be read back at the version that sent it, and nothing already
-    /// sent is rewritten by the change.
+    /// The version the send renders for a track: A v2 (approved 10/28, the short post-application email with its one
+    /// link) and B v1. Templates are code, not configuration, and change only on an approval, which is why a new one
+    /// arrives as its own files beside the old ones and this one line moves to it: the text that went out can still be
+    /// read back at the version that sent it, A v1 among them, and nothing already sent is rewritten by the change.
+    /// Nothing selects a version that is not current.
     /// </summary>
-    public const string Current = "v1";
+    public static string CurrentFor(char track) => track == 'A' ? "v2" : "v1";
 
     /// <summary>The current template for a track.</summary>
     public static CampaignTemplate For(char track) =>
-        All.Single(t => t.Id == (track == 'A' ? "A" : "B") && t.Version == Current);
+        All.Single(t => t.Id == (track == 'A' ? "A" : "B") && t.Version == CurrentFor(track));
 
     private static List<CampaignTemplate> Load()
     {
@@ -50,7 +51,8 @@ public sealed record RenderedEmail(string? Subject, string? Text, string? Html, 
 /// adds nothing. The plain body drops the Markdown marks and leaves the links bare; the HTML body is Gmail's
 /// own shape, a div a line with no p and no pre, because Gmail adds its own indentation to those two and the
 /// message arrives broken; Links in bold, so the one part a reader is meant to act on is the part they see
-/// first; and the five links a list of anchors named for what they open, each carrying its ?r= code. A required
+/// first; the five links a list of anchors named for what they open, each carrying its ?r= code; and a line that is
+/// one address alone, as Template A v2's one link is, an anchor in HTML and the bare address in the plain body. A required
 /// blank renders nothing and names the blank.
 /// </summary>
 public static class TemplateRender
@@ -138,6 +140,7 @@ public static class TemplateRender
                 list = false;
             }
             string inner = line.Length == 0 ? "<br>"
+                : line.StartsWith("https://", StringComparison.Ordinal) && !line.Contains(' ', StringComparison.Ordinal) ? "<a href=\"" + WebUtility.HtmlEncode(line) + "\">" + WebUtility.HtmlEncode(line) + "</a>"
                 : line.StartsWith("**", StringComparison.Ordinal) && line.EndsWith("**", StringComparison.Ordinal) && line.Length > 4 ? "<b>" + WebUtility.HtmlEncode(line[2..^2]) + "</b>"
                 : WebUtility.HtmlEncode(line);
             html.Append("<div>").Append(inner).Append("</div>\n");

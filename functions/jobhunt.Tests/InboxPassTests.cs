@@ -77,7 +77,7 @@ public sealed class InboxPassTests
         string line = await new LeadsHarvest(scratch.Store, inbox, new FixedTime(Morning)).RunAsync(false, CancellationToken.None);
         Assert.Empty(inbox.Archived);
         Assert.False(File.Exists(Path.Combine(scratch.Root, "nightly", "leads-2026-10-23.md")));
-        Assert.Equal("SHADOW alerts 1, requisitions 2, pass 1, blocks unread 0", line);
+        Assert.Equal("SHADOW alerts 1, requisitions 2, pass 1, blocks unread 0, digest headers skipped 1", line);
     }
 
     [Fact]

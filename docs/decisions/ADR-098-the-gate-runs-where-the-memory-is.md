@@ -172,3 +172,14 @@ skips and the preflight, and that the secret is never read, printed or put on a 
 the log's line trimmed, the verdict emits it as the log holds it, and the gate's runner was the only machine
 that could see the difference, so the mistake cost a whole gate run instead of a minute. The laptop that ships
 has Git Bash, and a case only the runner can run is a case the push finds out about the expensive way.
+
+## Addendum, 2026-11-09 (1.0.4.163): the box's runner skips a suite the branch does not carry
+
+`yard-test`, the command WickedAwsome runs to test a pushed branch before its gate, lived only on the box, in `~/.local/bin`. It ran four suites, and the third, `server`, ran `dotnet test server/JobHunt.Server.Tests` whether or not the branch had a `server/` folder. `main` has none yet, so every run on `main` printed a red `server` line, and every lane learned to read past it. A red that blocks nothing teaches every reader to look past red, and the next real one is read past with it.
+
+From this version the runner is `scripts/yard-test.sh`, kept in the repository and installed on the box with `install -m 755 scripts/yard-test.sh ~/.local/bin/yard-test`. Each suite names its source folder (`api`, `server`, `src`, `tests/e2e`); a suite whose folder the checked-out commit does not carry prints `SKIP  server  skipped: server/ not on this branch` and does not touch the exit code. A folder that is there runs exactly as before, and a red suite beside a skipped one still fails the run. Once `server/` reaches `main`, the suite runs for real with no change here.
+
+`YardTestScriptTests` runs the script for real in a home of its own: a bare origin, a clone under `repos/TheYard`, and stand-ins for `dotnet`, `npx` and `npm` that write down what they were asked to run. It holds the skip, the control where the folder is there, and the red beside the skip. It skips on Windows, because the script takes its one-at-a-time lock with `flock`, which the laptop's Git Bash does not carry.
+
+- [`scripts/yard-test.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/yard-test.sh): the box's runner.
+- [`api/TheYard.Tests/YardTestScriptTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/YardTestScriptTests.cs): the runner run for real.

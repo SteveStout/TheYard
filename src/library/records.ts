@@ -2,7 +2,7 @@
  * Does:      Lists every decision record the site serves, numbered, as data, joined from its parts in number order.
  * Does not:  Hold any other document, say which sidebar section shows a record, or draw anything.
  * Used by:   documents.ts, sections.ts, sections.test.ts, records001to030.ts, records031to060.ts,
- *            records061to087.ts, records088to120.ts, records121to150.ts.
+ *            records061to087.ts, records088to120.ts, records121to150.ts, ReviewStop.tsx.
  */
 import type { DocEntry } from './documents';
 import { RECORDS_001_TO_030 } from './decisionRecords/records001to030';

@@ -1,4 +1,4 @@
-namespace JobHunt.Domain.Features.Campaign;
+namespace JobHunt.Domain.Shared.Companies;
 
 /// <summary>
 /// A company's key for the 30-day rule (the review, F10): the registrable domain of an address or a host,

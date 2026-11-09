@@ -27,6 +27,8 @@ import chartStyles from '../charts/charts.module.css';
 import styles from './SpendCard.module.css';
 import { About, failed, useRead } from '../shared/common';
 import { BarGauge } from '../charts';
+import { SpendMeters } from './SpendMeters';
+import { SpendSpike } from './SpendSpike';
 
 const TONES = [styles.tone0, styles.tone1, styles.tone2, styles.tone3, styles.tone4];
 
@@ -213,6 +215,8 @@ function SpendBody({ report }: { report: CostReport }) {
           ))}
         </section>
         {/* #endregion spend-types-card */}
+        <SpendSpike report={report} />
+        <SpendMeters report={report} />
       </div>
     </>
   );

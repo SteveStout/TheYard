@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { openTheYard, openSection } from './app';
 import { signIn } from './signIn';
+import { CLOUD_RESOURCES } from '../../src/lib/workbench';
 
 /**
  * The accessibility rules a machine can check (ADR: The accessibility check).
@@ -145,12 +146,22 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   test('the review route', async ({ page }) => {
     await openTheYard(page, '/?view=review');
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Ten minutes, seven stops' })
+      page.getByRole('heading', { level: 1, name: 'Check my work in ten minutes' })
     ).toBeVisible();
     await page.getByRole('button', { name: 'Next stop' }).click();
     await expect(page.getByTestId('review-do-this')).toHaveCount(1);
     expect(await violations(page)).toEqual([]);
   });
+
+  // The resume's door (ADR: The resume has an address): the band and the embedded PDF, at a desk and a phone.
+  for (const width of [1280, 390]) {
+    test(`the resume's door at ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/resume?src=email');
+      await expect(page.getByTestId('resume-band')).toBeVisible();
+      expect(await violations(page)).toEqual([]);
+    });
+  }
 
   test('the account view, signed out', async ({ page }) => {
     await openTheYard(page, '/?view=account');
@@ -176,3 +187,24 @@ test.describe('WCAG 2.1 AA, on every view', () => {
     expect(await violations(page)).toEqual([]);
   });
 });
+
+// #region axe-cloud
+// Every card under Cloud infrastructure, the plan first, at a desk's width and a phone's, against the same tags and
+// the same bar: zero violations. One test a width walks the cards, so a card added to the rail is scanned without a
+// line here. The site draws one colour scheme, so there is no dark pass to add.
+test.describe('WCAG 2.1 AA, on every Cloud infrastructure card', () => {
+  test.slow();
+  for (const width of [1280, 375]) {
+    test(`every Cloud card at ${width} wide`, async ({ page }) => {
+      test.setTimeout(30_000 * (CLOUD_RESOURCES.length + 1));
+      await page.setViewportSize({ width, height: width === 375 ? 812 : 900 });
+      for (const slug of ['plan', ...CLOUD_RESOURCES]) {
+        await openTheYard(page, `/?view=admin&card=${slug}`);
+        await expect(page.getByTestId('bench-open')).toHaveAttribute('data-card', slug);
+        await expect(page.getByTestId('cloud-lead').first()).toBeVisible({ timeout: 30_000 });
+        expect([slug, await violations(page)]).toEqual([slug, []]);
+      }
+    });
+  }
+});
+// #endregion axe-cloud

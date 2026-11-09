@@ -89,9 +89,11 @@ public class CloudThresholdTests
         var sums = new Dictionary<string, double?> { ["throttled"] = 943, ["throttled_tests"] = 825, ["requests"] = 280_000, ["requests_tests"] = 140_000 };
         var view = CardFrame.Complete(CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["container_count"] = "25", ["throughput"] = "1000" }, sums)), "ARM record");
         var row = view.Rows.Single(r => r.Key == "throttling");
-        Assert.Equal("118 throttled", row.Answer);
+        // The answer says the number the tone judged, the share of the site's own requests, before the count, so the
+        // row never reads a hundred throttles and good in one breath.
+        Assert.Equal("0.08 % of the site's requests (118 of 140,000)", row.Answer);
         Assert.Equal("good", row.Tone);
-        Assert.Contains("0.08 % of the site's requests", row.Detail[0].Text, StringComparison.Ordinal);
+        Assert.StartsWith("the site's 429s in the window, retried by the SDK · amber at 1 %", row.Detail[0].Text, StringComparison.Ordinal);
         Assert.Contains("throttled 825 more times", row.Detail[1].Text, StringComparison.Ordinal);
         Assert.Equal("fine", view.Tone);
 
@@ -102,6 +104,12 @@ public class CloudThresholdTests
         // Throttles with no requests read to weigh them against warn, as any 429 did before; tests not read yet say so.
         var unweighed = CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 3 })).Rows.Single(r => r.Key == "throttling");
         Assert.Equal("warning", unweighed.Tone);
+        Assert.Equal("3 throttled, no requests read to weigh them against", unweighed.Answer);
+
+        // No throttle at all is the throughput's own tone, read or not; requests read as zero are not weighed against.
+        Assert.Equal("good", CosmosCard.ThrottleTone(0, null, PlanTone.Good));
+        var zero = CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 3, ["requests"] = 0 })).Rows.Single(r => r.Key == "throttling");
+        Assert.Equal("3 throttled, no requests read to weigh them against", zero.Answer);
         Assert.Contains("not read yet", unweighed.Detail[1].Text, StringComparison.Ordinal);
     }
 

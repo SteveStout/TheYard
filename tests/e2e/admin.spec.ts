@@ -388,7 +388,7 @@ test('?view=admin deep-links straight to the Admin tab, on its first card, the O
     await expect(card.getByTestId(`overview-${row}`)).toHaveCount(1);
     await expect(card.getByTestId(`overview-${row}-range`)).toContainText(/^Normal: .+/);
   }
-  await expect(card.getByTestId('overview-cost-range')).toContainText('$50');
+  await expect(card.getByTestId('overview-cost-range')).toContainText('$60');
   // Up says every check and every page once the health read lands, and when the process started.
   await expect(card.getByTestId('overview-up')).toContainText(/\d+ of \d+ checks/, {
     timeout: 45_000,
@@ -1491,6 +1491,34 @@ test('the store and the log never scroll sideways on a desk: a table too wide fo
       }),
     })
   );
+  // The log in the shape that pushed it sideways on 5 November, in a twenty-times run where the local log had filled
+  // with them: a browser error whose message carries a seventy-character address with nowhere to break, beside a
+  // framework category and a statement. Stubbed, so the test holds the hardest line every run rather than whatever
+  // the log happens to hold when it runs.
+  const at = new Date().toISOString();
+  await page.route('**/api/admin/logs', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          at,
+          level: 'Error',
+          category: 'TheYard.Browser',
+          message:
+            'TypeError: Failed to fetch dynamically imported module: http://localhost:5173/src/components/admin/ErrorsCard/ErrorsCard.tsx?t=1793892707162',
+          exception: null,
+        },
+        {
+          at,
+          level: 'Information',
+          category: 'Microsoft.EntityFrameworkCore.Database.Command',
+          message:
+            'Executed DbCommand (0ms) [Parameters=[], CommandType=\'Text\', CommandTimeout=\'30\']\nSELECT "p"."Id", "p"."ReferrerHost" FROM "PostView" AS "p"',
+          exception: null,
+        },
+      ]),
+    })
+  );
   for (const width of [768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const card of ['store', 'log']) {
@@ -1542,6 +1570,47 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
         month: '2026-09',
         month_to_date: 47.18,
         forecast_month: 49.03,
+        month_at_yesterday: 47.95,
+        yesterday_day: '2026-09-28',
+        yesterday_cost: 0.77,
+        spike_days: [
+          {
+            day: '2026-09-29',
+            cost: 9.85,
+            partial: true,
+            median: 0.77,
+            days: 1,
+            multiple: 12.8,
+            biggest: 'stjobhuntss',
+            biggest_cost: 9,
+          },
+          {
+            day: '2026-09-28',
+            cost: 0.77,
+            partial: false,
+            median: null,
+            days: 0,
+            multiple: null,
+            biggest: 'plan-theyard-ss',
+            biggest_cost: 0.77,
+          },
+        ],
+        meters: [
+          {
+            meter: 'File transactions',
+            watches: 'the job-hunt share',
+            rule: 'alert-jobhunt-share-transactions',
+            state: 'exists',
+            line: 'Transactions over 20,000 in 1 hour',
+          },
+          {
+            meter: 'Blob egress',
+            watches: "the job-hunt account's blobs",
+            rule: 'alert-jobhunt-blob-egress',
+            state: 'not set',
+            line: 'no rule by this name: it waits for its deploy',
+          },
+        ],
         window_total: 1.62,
         rate_days: 1,
         month_days: 30,
@@ -1635,6 +1704,19 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   // The forecast is dashed on the month, where its end is inside the chart.
   await card.getByTestId('spend-window-30d').click();
   await expect(card.getByTestId('spend-forecast')).toBeAttached();
+  // The spike guard: a bar a day oldest first, and the day still being added to past its line reads
+  // in the tile's words, never WARNING.
+  await expect(card.getByTestId('spend-spike-bar')).toHaveCount(2);
+  const spikeTable = card.getByTestId('spend-spike-table');
+  await expect(spikeTable).toContainText('29 Sep (so far)');
+  await expect(spikeTable).toContainText("12.8x 1 day's median $0.77");
+  await expect(spikeTable).toContainText('needs attention');
+  await expect(spikeTable).toContainText('no finished week before it yet');
+  // The meters: a rule that exists reads fine, one that waits says so and is never red.
+  await expect(card.getByTestId('spend-meters-answer')).toHaveText(
+    '1 of 2 meters have a rule that is on; the rest wait'
+  );
+  await expect(card.getByTestId('spend-meters-table')).toContainText('alert-jobhunt-blob-egress');
 });
 // #endregion spend-card
 

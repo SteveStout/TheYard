@@ -9,7 +9,7 @@ namespace TheYard.Tests;
 /// line, at half and at the line; the blob card red when anything is public; every row and line sourced; and
 /// the hourly series and the blob listing read back from recorded answers.
 /// </summary>
-public sealed class StorageCardTests
+public sealed partial class StorageCardTests
 {
     private static readonly DateTimeOffset Noon = new(2026, 10, 24, 15, 0, 0, TimeSpan.Zero);
 
@@ -41,7 +41,9 @@ public sealed class StorageCardTests
 
     [Theory]
     [InlineData(100, "good")]
+    [InlineData(9_990.0 / 60, "good")]
     [InlineData(10_000.0 / 60, "warning")]
+    [InlineData(19_990.0 / 60, "warning")]
     [InlineData(20_000.0 / 60, "alarm")]
     public void The_share_is_fine_under_half_the_alert_s_line_amber_from_half_and_red_at_the_line(double perMinute, string tone)
     {
@@ -69,6 +71,7 @@ public sealed class StorageCardTests
         var empty = ShareCard.View(Inputs(100, new Dictionary<string, string?>(), minutes: 0));
         Assert.Equal("not on the bill yet", empty.Rows[1].Answer);
         Assert.Equal("not read yet", empty.Rows[2].Answer);
+        Assert.Equal("not read yet", empty.Rows[0].Answer);
         Assert.Equal("the alert's line is not read", empty.Dials[0].Absolute);
     }
 
@@ -143,8 +146,19 @@ public sealed class StorageCardTests
     }
 
     [Theory]
+    [InlineData(79.9, "good")]
+    [InlineData(80, "warning")]
+    [InlineData(99.9, "warning")]
+    [InlineData(100, "alarm")]
+    public void The_blob_egress_dial_turns_at_eighty_per_cent_of_the_free_allowance_and_red_past_it(double gb, string tone) =>
+        Assert.Equal(tone, BlobCard.EgressDial(gb * 1e9).Tone);
+
+    [Theory]
     [InlineData(2_500, "No", "good")]
+    [InlineData(7_000, "No", "good")]
+    [InlineData(7_020, "Yes", "warning")]
     [InlineData(9_000, "Yes", "warning")]
+    [InlineData(19_980, "Yes", "warning")]
     [InlineData(20_000, "Yes", "alarm")]
     public void Walking_is_judged_in_listings_an_hour_against_money_and_the_alert_s_line(double listingsAnHour, string answer, string tone)
     {
@@ -155,20 +169,7 @@ public sealed class StorageCardTests
 
         Assert.Equal((answer, tone), (walked.Answer, walked.Tone));
         Assert.Contains("amber over 7,000 an hour", walked.Detail[0].Text, StringComparison.Ordinal);
-        Assert.Contains("by SAS (the laptop's mount and the chats) 1,569 and by the account key (the job hunt's Function) 3,594", walked.Detail[0].Text, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void The_split_by_caller_is_the_clock_hour_under_way_and_never_two_hours_added()
-    {
-        var hour = new DateTimeOffset(2026, 10, 25, 22, 0, 0, TimeSpan.Zero);
-        var byAuth = new Dictionary<string, IReadOnlyDictionary<DateTimeOffset, double>>(StringComparer.Ordinal)
-        {
-            ["SAS"] = new Dictionary<DateTimeOffset, double> { [hour.AddHours(-1)] = 2_000, [hour] = 1_569 },
-            ["AccountKey"] = new Dictionary<DateTimeOffset, double> { [hour.AddHours(-1)] = 6_625, [hour] = 3_594 },
-        };
-
-        Assert.Equal("SAS=1569;AccountKey=3594", ShareCard.AuthHour(byAuth, hour));
+        Assert.Contains("this clock hour the account key (the job hunt's Function) 3,594 · SAS (the laptop's mount and the chats) 1,569 transactions", walked.Detail[0].Text, StringComparison.Ordinal);
     }
 
     [Fact]

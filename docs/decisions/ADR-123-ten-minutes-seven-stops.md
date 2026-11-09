@@ -87,3 +87,42 @@ What differed from the plan, and why: the reading port hands out rows (`RowsSinc
 ```
 
 `ReviewFoldingTests` holds the rule, `ReviewHandlerTests` the command, the query over the memory keeper, the four windows and the collector's fold, `ReviewEndpointTests` the 204, the 400 problem, a lower stop leaving the row where it was and a scanner never counted, and `CosmosReviewStoreTests` the same rule against the real account in the gate's live pass. `admin.spec.ts` draws the card.
+
+## Addendum, 2026-11-07 (1.0.4.149): the page says what it is for
+
+What stopped being true: the page's title "Ten minutes, seven stops", its lede, the rail's "Review in ten minutes", the banner's "Seven stops, each one live, ending at the resume." and the last stop's "One page.". The record keeps its title, which is its name.
+
+1. The page's title is "Check my work in ten minutes", and so is the screen reader's announcement. The rail row and the landing banner read "Check my work".
+2. The lede says what a reader leaves with: how I design, how I test and how I decide, without taking my word for any of it.
+3. The last stop says two pages, which is what the locked resume is (the resume record's addendum of 1.0.4.146).
+
+Why: on 6 November the route had been opened by 18 people in seven days and 2 of them went past its first screen (GET /api/admin/review?window=7d, read 13:42 CST). The page described the tour; a reader deciding whether to spend an interview on me needs to know what checking it gets them. The words stay evidence, not pitch: every stop is still one live thing to look at.
+
+## Addendum, 2026-11-07 (1.0.4.150): every stop names the decision behind it
+
+From this version each stop draws one more line under what it shows, "Why it is built this way:", with the decision record behind the stop as a link by its sidebar title, read from the catalogue and never typed. It opens in the same tab like every stop link, and opening it counts as opening the stop.
+
+| Stop | The record behind it |
+| --- | --- |
+| The first screen | ADR: One reading for the first screen |
+| Bid in the room | ADR: The store does the work |
+| What Azure charges | ADR: What Azure charges |
+| One decision, with its code | ADR: The numbers that may only fall |
+| The gate that shipped this version | ADR: The five-minute gate |
+| One codebase, two stores | ADR: Measuring both stores |
+| The resume | ADR: The resume has an address |
+
+Seven distinct records, and none is the address its own stop opens: stop 4 already is the rules a change has to pass, so its line names the ratchet that is the reason for them. The records are the one thing on the site no other candidate has, and a reader with ten minutes reaches them only if each sits beside the thing it explains. The route stays seven stops; a second list would be a second tour.
+
+## Addendum, 2026-11-07 (1.0.4.151): the last stop opens the PDF itself
+
+/resume became a door in this version (ADR: The resume has an address, the addendum of this date): a browser asking for it gets a band that links back to this route. A reader at stop 7 has walked the route already, so the stop opens `/resume?pdf=1`, the PDF itself, and is not sent round again.
+
+## Addendum, 2026-11-07 (1.0.4.154): who vouches for it, beside the route
+
+Until this version the route was one column and its last stop was "The resume". From this version:
+
+1. **The last stop is "The resume, and who vouches for it".** It says the six stops above are the evidence for the resume's claims and the recommendations page is who saw it first hand, with no number in the sentence, and it carries a second link, "The recommendations", beside its own Open. A stop may carry more links than its address (`links` in the one list), each the site's own.
+2. **A rail beside the stops.** At a wide desk (1280 pixels and up, the nearest step of the site's width scale to the mockup's 1180) the page is two columns: the stops at their 720 pixels and a 332-pixel rail holding the person the route is about, with his links, and every recommendation's pull sentence, each with "Read the whole thing" to its card on the recommendations page. Under that width the rail folds: the person's links under the lede, the quotes after the finish panel. The quotes are read from /api/recommendations in the browser, the same answer the landing column reads, so the stops still draw whole on the server and read nothing.
+
+The route stays seven stops. `review.spec.ts` holds the rail at 1440 and the fold at 390; `reviewStops.test.ts` the last stop's title, its link and its unnumbered sentence.

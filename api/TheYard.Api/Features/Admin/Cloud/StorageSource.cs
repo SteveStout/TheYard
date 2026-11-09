@@ -76,6 +76,8 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
             var clockHour = new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, 0, 0, TimeSpan.Zero);
             facts["auth_hour"] = ShareCard.AuthHour(byAuth, clockHour);
             facts["auth_since"] = clockHour.ToString("HH:mm", CultureInfo.InvariantCulture);
+            facts["auth_last_hour"] = ShareCard.AuthWindow(byAuth, clockHour.AddHours(-1), clockHour);
+            facts["auth_last_from"] = clockHour.AddHours(-1).ToString("o", CultureInfo.InvariantCulture);
         }, cancellation);
         await Try(facts, "hourly", async () =>
         {

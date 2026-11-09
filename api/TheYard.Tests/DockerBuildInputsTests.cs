@@ -31,6 +31,8 @@ public class DockerBuildInputsTests
         "src",
         // Vite's publicDir: copied verbatim to the root of the built site.
         "public",
+        // The recommendations file: the column draws one blank place per entry in it, read at build time.
+        "data",
     ];
 
     [Fact]

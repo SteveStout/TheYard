@@ -17,6 +17,8 @@ COPY package*.json ./
 RUN npm ci
 COPY vite.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json ./
 COPY src ./src
+# The recommendations file too: the page draws one blank place per entry in it, read at build time.
+COPY data/recommendations.json ./data/recommendations.json
 COPY render ./render
 RUN npx vite build --config render/vite.config.ts
 # #endregion build

@@ -90,6 +90,13 @@ export const MENUS: Record<
     label: 'Author',
     items: [{ key: 'author' }],
   },
+  // The recommendations page (ADR: The recommendations have a page): a view, not a document, so the
+  // section is one link to it.
+  recommendations: {
+    label: 'Recommendations',
+    items: [],
+    links: [{ label: 'Every recommendation, in full', href: '/?view=recommendations' }],
+  },
   // #region architecture-menu
   architecture: {
     label: 'App Architecture',

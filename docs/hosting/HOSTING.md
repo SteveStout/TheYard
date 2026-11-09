@@ -224,6 +224,17 @@ When the subscription allows Front Door it is one parameter, and the domain
 layer means the public URL does not change in the switch, as it did not
 change in this one.
 
+## The box agent
+
+WickedAwsome, the Linux box that runs the job hunt's 6 AM program, reports itself to the Admin tab's WickedAwsome card (ADR: The box reports itself). Its agent is `scripts/box-agent/theyard_box_agent.py`, Python's standard library only, run by the user unit `theyard-box-agent.service` under the box owner's account with lingering on, so it runs with no one signed in and no window.
+
+- **Install:** `bash scripts/box-agent/install.sh` copies the script to `~/.local/bin`, the unit to `~/.config/systemd/user`, writes the site's address to `~/.config/theyard/site`, and enables the unit when the key file is there; it then posts once and prints the two answers.
+- **The key file:** `~/.config/theyard/admin-key`, the web app's `Admin__Key`, mode 600, in a folder of mode 700. The agent refuses to start when the file is readable by anyone else or shorter than sixteen characters, and never prints or logs it.
+- **What it sends:** every two seconds a live sample to `POST /api/admin/cloud/box/live`, every thirtieth tick a snapshot to `POST /api/admin/cloud/box/snapshot`, on one kept-open HTTPS connection to the web app's own name, not through the edge.
+- **A dry run:** `python3 ~/.local/bin/theyard_box_agent.py --dry-run` prints one snapshot and one sample as JSON and posts nothing; `--once` posts one of each and prints the two statuses.
+- **What a roll does:** the site holds the samples and the newest snapshot in memory, so a roll empties them for the two to five minutes nothing listens. The agent backs off (2, 4, 8, 16, 32, then 60 s), keeps its last sixty snapshots, and posts them when the site answers; the card's three-minute rule counts from the new process's start, so the roll never reads as the box being down.
+- **Its journal:** `journalctl --user -u theyard-box-agent` holds one line when the state changes (posting, backing off, back) and one summary every ten minutes, never a line a post.
+
 ## Files
 
 - [`infra/main.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/main.bicep) and [`infra/appservice.bicep`](https://github.com/SteveStout/TheYard/blob/main/infra/appservice.bicep): what runs, the plan and

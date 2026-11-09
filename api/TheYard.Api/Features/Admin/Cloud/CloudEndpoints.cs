@@ -6,7 +6,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <summary>The resource cards' route, a window of one resource from its keep, the nightly card's run histories, and the one address a card is fed through.</summary>
 public static class CloudEndpoints
 {
-    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
+    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
     public static IEndpointRouteBuilder MapCloudEndpoints(this IEndpointRouteBuilder app)
     {
         // #region resource-endpoint
@@ -17,16 +17,16 @@ public static class CloudEndpoints
         app.MapGet("/api/admin/cloud/{key}", Card)
             .WithName("GetResourceCard")
             .WithTags("Admin")
-            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude or campaign, for 24h, 7d or 30d");
+            .WithSummary("One resource under Cloud infrastructure: sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude, campaign, network, box or picker, for 24h, 7d or 30d");
         // #endregion resource-endpoint
         // #region process-runs-endpoint
         // Public like the card: a run's when, how long, what it came to and its counts, nothing the card and
-        // the Function's own health route do not already show. A name not among the seven is a 404 problem, so
+        // the Function's own health route do not already show. A name not among the eight is a 404 problem, so
         // the route cannot be asked to read anything the processes' table does not name.
         app.MapGet("/api/admin/cloud/nightly/runs/{process}", Runs)
             .WithName("GetProcessRuns")
             .WithTags("Admin")
-            .WithSummary("One page of one of the job hunt Function's seven processes' runs, newest first, for 24h, 7d or 30d");
+            .WithSummary("One page of one of the job hunt Function's eight processes' runs, newest first, for 24h, 7d or 30d");
         // #endregion process-runs-endpoint
         // #region nightly-run-endpoint
         // One run of the nightly workflow, posted by the workflow that ran it (ADR: The Nightly
@@ -45,6 +45,36 @@ public static class CloudEndpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status503ServiceUnavailable);
         // #endregion nightly-run-endpoint
+        // #region box-endpoints
+        // The box that supports the job hunt (ADR: The box reports itself): its agent posts a snapshot a minute and a
+        // live sample every two seconds behind the operator's key, and the card's live panels read the ring back,
+        // anonymous like every card. The two writes declare each status they answer, like the nightly run's.
+        app.MapPost("/api/admin/cloud/box/snapshot", BoxRoutes.SnapshotPost)
+            .WithName("PostBoxSnapshot")
+            .WithTags("Admin")
+            .WithSummary("Hold one snapshot of the box, behind the operator's key")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+        app.MapPost("/api/admin/cloud/box/live", BoxRoutes.LivePost)
+            .WithName("PostBoxLiveSample")
+            .WithTags("Admin")
+            .WithSummary("Add one live sample of the box to the ring, behind the operator's key")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized);
+        app.MapGet("/api/admin/cloud/box/live", BoxRoutes.LiveGet)
+            .WithName("GetBoxLive")
+            .WithTags("Admin")
+            .WithSummary("The box's last minute of live samples and how long it has been silent");
+        // Every card's live ring (ADR: Live dials where the source allows): a read leases the card's source for a minute,
+        // anonymous like the card itself, and a card with no live source answers available false with its sentence.
+        // The box keeps its own route above, which the literal path wins over this one.
+        app.MapGet("/api/admin/cloud/{key}/live", Live)
+            .WithName("GetCardLive")
+            .WithTags("Admin")
+            .WithSummary("One card's live ring: its source, its grain and the last ten minutes, or why it has none");
+        // #endregion box-endpoints
         // #region incidents-endpoint
         // Public like the cards: the incidents are public pages, and a failure is named by its type and where it
         // happened, never by its message, which can carry what a visitor sent.
@@ -59,7 +89,13 @@ public static class CloudEndpoints
     private static async Task<Results<Ok<ProcessRunsPage>, ProblemHttpResult>> Runs(string process, string? window, int? page, ReadProcessRunsHandler handler, CancellationToken cancellation) =>
         await handler.HandleAsync(new ReadProcessRunsQuery(process, window, page), cancellation) is { } runs
             ? TypedResults.Ok(runs)
-            : TypedResults.Problem(detail: "The job hunt's Function has no process by that name; the seven are AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend and MergerHealth.", statusCode: 404, title: "No such process");
+            : TypedResults.Problem(detail: "The job hunt's Function has no process by that name; the eight are AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend, NetworkLogPass and MergerHealth.", statusCode: 404, title: "No such process");
+
+    private static async Task<IResult> Live(string key, ReadLiveHandler handler, CancellationToken cancellation) =>
+        Results.Json(await handler.HandleAsync(new ReadLiveQuery(key), cancellation), LiveWire);
+
+    /// <summary>The live wire, snake_case like every Admin read.</summary>
+    private static readonly System.Text.Json.JsonSerializerOptions LiveWire = new() { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower };
 
     private static async Task<Ok<IncidentsReport>> Incidents(ReadIncidentsHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadIncidentsQuery(), cancellation));

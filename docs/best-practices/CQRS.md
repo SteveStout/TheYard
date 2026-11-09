@@ -123,9 +123,9 @@ Read back by `CqrsTests` on every build, so a number here cannot go stale.
 
 | shape | count |
 | --- | --- |
-| queries | 40 |
-| commands | 20 |
-| handlers | 60 |
+| queries | 42 |
+| commands | 22 |
+| handlers | 64 |
 | services | 0 |
 
 ## The Function finds its read-only use cases rather than being told them
@@ -161,7 +161,7 @@ file name.
 
 | shape | count |
 | --- | --- |
-| the Function's use cases | 18 |
+| the Function's use cases | 25 |
 | of them that only read | 2 |
 
 Read back by the Function's `CqrsTests` on every build, so these two cannot go stale either.

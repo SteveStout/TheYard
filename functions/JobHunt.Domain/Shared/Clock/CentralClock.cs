@@ -27,6 +27,25 @@ public static class CentralClock
     /// </summary>
     public static bool IsCampaignHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 8;
 
+    /// <summary>
+    /// The board scan's hour: the 1 o'clock hour in Central, asked as a local hour for the campaign's reason, so the
+    /// night's postings are read before the 2 o'clock picker ranks them and long before the 8 AM send.
+    /// </summary>
+    public static bool IsScanHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 1;
+
+    /// <summary>
+    /// The night's picker's hour: the 2 o'clock hour in Central, after the 1 AM scan and before the 4 AM reply lane, so
+    /// the jobs file is on the share well before 5 AM. Not a slot in NightlySlots: the Admin card judges a month of
+    /// firings against that table, and the picker is the clock's own work in an hour the table does not name.
+    /// </summary>
+    public static bool IsJobsHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 2;
+
+    /// <summary>
+    /// The network log's hour: the 6 o'clock hour in Central, asked as a local hour for the same reason as the
+    /// campaign's, so the daily pass lands before the morning and before the 8 AM send on both sides of the clock change.
+    /// </summary>
+    public static bool IsNetworkHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 6;
+
     /// <summary>The run this hour starts, or null when the hour is not a slot.</summary>
     public static string? Slot(DateTimeOffset utcNow) => NightlySlots.Slot(utcNow);
 }

@@ -1,16 +1,24 @@
 /**
  * Does:      Draws one stop on the route in one of three states: done (a green disc with a tick), current (the only one
- *            showing "Do this", Open this stop and Mark done) or next (its number in a ring and a small Open).
+ *            showing "Do this", Open this stop and Mark done) or next (its number in a ring and a small Open),
+ *            and the decision record behind it, by its sidebar title.
  * Does not:  Decide which state a stop is in or keep anything (ReviewPage.tsx and useReviewProgress.ts do).
  * Used by:   ReviewPage.tsx.
  */
 import { ICON } from '../../../lib/icons';
 import type { ReviewStop as Stop } from '../../../lib/reviewStops';
+import { RECORDS } from '../../../library/records';
 import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewStop.module.css';
 
 /** What a stop is to the reviewer right now. */
 export type StopState = 'done' | 'current' | 'next';
+
+/** The sidebar title of the record a stop names, read from the catalogue, never typed. */
+function recordTitle(slug: string): string {
+  const url = `/api/docs/${slug}`;
+  return Object.values(RECORDS).find((record) => record.url === url)?.menuLabel ?? slug;
+}
 
 export function ReviewStop({
   stop,
@@ -74,6 +82,12 @@ export function ReviewStop({
       </h2>
       <p className={styles.label}>What this shows</p>
       <p className={styles.shows}>{stop.shows}</p>
+      <p className={styles.record} data-testid="review-record">
+        Why it is built this way:{' '}
+        <a href={`/?doc=${stop.record}`} onClick={onOpened}>
+          {recordTitle(stop.record)}
+        </a>
+      </p>
       {current && (
         <p className={styles.doThis} data-testid="review-do-this">
           <strong>Do this:</strong> {stop.doThis}
@@ -88,6 +102,11 @@ export function ReviewStop({
         >
           {current ? 'Open this stop' : 'Open'}
         </a>
+        {stop.links?.map((link) => (
+          <a key={link.href} className={pills.secondary} href={link.href} onClick={onOpened}>
+            {link.label}
+          </a>
+        ))}
         {current && (
           <button type="button" className={pills.secondary} onClick={onMarkDone}>
             Mark done

@@ -1,9 +1,10 @@
 using TheYard.Application.Features.Admin.Cloud;
+using TheYard.Application.Shared.Live;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>
-/// The eleven resource cards under Cloud infrastructure (ADR: One frame for every resource): one
+/// The fourteen resource cards under Cloud infrastructure (ADR: One frame for every resource): one
 /// reader of Azure Monitor, one of Netlify and one of GitHub, the resource groups' lists each card
 /// finds its resource in (the nightly Function's group is its own, ADR: The Nightly Function on the
 /// Admin tab), a keep per card, the nightly run log and its cache, the one recorder, the one cached reader the endpoint answers from,
@@ -63,10 +64,24 @@ public sealed class Module : IModule
                 new SqlCampaignCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
                 cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
                 async cancellation => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), ResourceCatalog.SqlType, "/" + campaignDatabase) is { } found
-                    ? (found.Id, (string?)null)
+                    ? (found.Id, await azure.TenantAsync(cancellation))
                     : null,
                 campaignDatabase);
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign).Select(card => (card, KeepOf(card)))];
+            // The network log's card reads the same database's card schema the same way (ADR-124), and the
+            // Function's run history for what the newest pass came to.
+            var network = new NetworkSource(
+                new SqlNetworkCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
+                cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
+                async cancellation => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), ResourceCatalog.SqlType, "/" + campaignDatabase) is { } found
+                    ? (found.Id, await azure.TenantAsync(cancellation))
+                    : null,
+                campaignDatabase,
+                new NetworkPasses(nightlyNames.FunctionPath(subscription), provider.GetRequiredService<IProcessRunsReader>()));
+            // The box that supports the job hunt reads what its agent posted into this process (ADR: The box reports itself).
+            var box = new BoxSource(provider.GetRequiredService<IBoxSnapshots>(), provider.GetRequiredService<IBoxLive>(), provider.GetRequiredService<HostStart>(), TimeProvider.System);
+            // The nightly picker reads the Function's run lines from the workspace both components send to (ADR-125).
+            var picker = new PickerSource(azure, $"{names.GroupPath(subscription)}/providers/Microsoft.OperationalInsights/workspaces/{names.Insights}", nightlyNames.Function);
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network, box, picker).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with
@@ -113,11 +128,34 @@ public sealed class Module : IModule
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
         services.AddScoped<ReadCloudCardHandler>();
         services.AddScoped<ReadProcessRunsHandler>();
-        // The one write in this slice: the nightly workflow posting the run it was, which the card's
+        // The box's snapshots and its live ring, held in this process: one process serves both names, so both read them.
+        services.AddSingleton<IBoxSnapshots, MemoryBoxSnapshots>();
+        services.AddSingleton<IBoxLive, MemoryBoxLive>();
+        // Every card's live source, its ring and the lease that runs it only while somebody looks (ADR: Live dials where
+        // the source allows); the sources themselves are registered beside the cards they serve.
+        services.AddSingleton<LiveRings>();
+        services.AddSingleton<ILiveSource>(new ProcLiveSource());
+        services.AddSingleton<ILiveSource>(provider =>
+        {
+            var relational = provider.GetRequiredService<RelationalContexts>();
+            return new SqlLiveSource(cancellation => ResourceStats.ReadAsync(relational.Quiet, "the relational store", SqlLiveSource.Rows, cancellation), () => relational.Quiet is not null);
+        });
+        services.AddSingleton<ILiveSource>(provider => new CosmosChargeSource(
+            provider.GetRequiredService<StoreRingBuffer>().Snapshot,
+            () => provider.GetRequiredService<DocumentStore>().Store is not null));
+        services.AddSingleton<LiveLease>();
+        services.AddScoped(provider => new ReadLiveHandler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System));
+        services.AddSingleton(provider => new LiveSampler(provider.GetServices<ILiveSource>(), provider.GetRequiredService<LiveRings>(), provider.GetRequiredService<LiveLease>(), TimeProvider.System, provider.GetRequiredService<ILogger<LiveSampler>>()));
+        services.AddHostedService(provider => provider.GetRequiredService<LiveSampler>());
+        // The two writes in this slice: the box's posts, held in memory (ADR: The box reports itself), and below the
+        // nightly workflow posting the run it was, which the card's
         // reader then prefers over a read of GitHub (ADR: The Nightly Function on the Admin tab). It
         // writes the same log the hourly read upserts into, keyed on GitHub's id, so the pushed copy
         // and the read copy are one document.
         services.AddScoped(provider => new KeepNightlyRunHandler(provider.GetRequiredService<INightlyRunLog>(), TimeProvider.System));
+        services.AddScoped(provider => new KeepBoxSnapshotHandler(provider.GetRequiredService<IBoxSnapshots>(), TimeProvider.System));
+        services.AddScoped(provider => new PushBoxSampleHandler(provider.GetRequiredService<IBoxLive>(), TimeProvider.System));
+        services.AddScoped(provider => new ReadBoxLiveHandler(provider.GetRequiredService<IBoxLive>(), TimeProvider.System));
         // What broke: the incidents the docs keep and the failures the same workspace kept (ADR-120).
         services.AddSingleton<IIncidentsReader>(provider =>
         {

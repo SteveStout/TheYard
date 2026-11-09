@@ -168,9 +168,13 @@ public sealed class ProcessRunsTests
             .SelectMany(file => Regex.Matches(File.ReadAllText(file), "\\[Function\\(\"(?<name>\\w+)\"\\)\\][\\s\\S]{0,200}?TimerTrigger\\(\"(?<cron>[^\"]+)\"\\)").Select(m => (m.Groups["name"].Value, m.Groups["cron"].Value)))
             .ToDictionary(pair => pair.Item1, pair => pair.Item2);
 
-        Assert.Equal(6, crons.Count);
+        // Eight timers: the board scan's, at 1 AM, has no row in the card's table yet, so each of the table's seven timed rows is checked against them.
+        Assert.Equal(8, crons.Count);
         Assert.All(FunctionProcesses.All.Where(p => p.Cron is not null), process => Assert.Equal(crons[process.Key], process.Cron));
-        Assert.Equal(7, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
+        Assert.Equal(8, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
+        // The network log acts in the 6 o'clock hour Central: 12:00 UTC in November, 11:00 UTC in October.
+        Assert.Equal(new DateTime(2026, 11, 5, 12, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("NetworkLogPass")!, new DateTimeOffset(2026, 11, 4, 17, 45, 0, TimeSpan.Zero)).UtcDateTime);
+        Assert.Equal(new DateTime(2026, 10, 27, 11, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("NetworkLogPass")!, new DateTimeOffset(2026, 10, 26, 11, 30, 0, TimeSpan.Zero)).UtcDateTime);
 
         var at = new DateTimeOffset(2026, 10, 24, 16, 43, 10, TimeSpan.Zero);
         Assert.Equal(at.Date.AddHours(16).AddMinutes(50), FunctionProcesses.Next(FunctionProcesses.Find("AtsSweep")!, at).UtcDateTime);
@@ -217,7 +221,7 @@ public sealed class ProcessRunsTests
 
         var sections = ProcessSections.Build(fold, switches, key => $"{key} does its work.", key => $"https://all/{key}", Noon);
 
-        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The email campaign", "The merger's health"], sections.Select(s => s.Name));
+        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The email campaign", "The network log", "The merger's health"], sections.Select(s => s.Name));
         var inbox = sections[0];
         Assert.Equal(("good", "on", "fine"), (inbox.Tone, inbox.Switches[0].Value, inbox.Switches[0].Tone));
         Assert.Equal(("shadow", "info"), (inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Value, inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Tone));
@@ -232,7 +236,9 @@ public sealed class ProcessRunsTests
         Assert.Equal("info", sections[3].Tone);
         Assert.Equal(["EMAIL_CAMPAIGN off"], sections[5].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.Equal("off", sections[5].Tone);
-        Assert.Equal(["always on"], sections[6].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal(["NETWORK_LOG off", "NETWORK_LOG_ANY_HOUR off"], sections[6].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal("off", sections[6].Tone);
+        Assert.Equal(["always on"], sections[7].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.All(sections, section => Assert.All(section.Figures, figure => Assert.False(string.IsNullOrEmpty(figure.Source))));
 
         var unread = ProcessSections.Build(ProcessFold.Unread("Application Insights answered 403"), null, _ => "", _ => null, Noon);

@@ -10,7 +10,7 @@
     },
     {
       "figure": "Azure",
-      "words": "6 Bicep files"
+      "words": "8 Bicep files"
     },
     {
       "figure": "9",
@@ -217,7 +217,7 @@
           "tech": "Bicep for every resource it deploys",
           "note": null,
           "where": "Deployed from the repository",
-          "version": "6 Bicep files",
+          "version": "8 Bicep files",
           "style": "service",
           "proof": {
             "label": "infra/",
@@ -300,6 +300,17 @@
           "note": null,
           "where": "GitHub Actions runners",
           "version": "1.86 and 3.9",
+          "style": "version",
+          "proof": {
+            "label": "package.json",
+            "href": "https://github.com/SteveStout/TheYard/blob/main/package.json"
+          }
+        },
+        {
+          "tech": "Stryker mutation testing",
+          "note": null,
+          "where": "a shipping machine, over the threshold files; never in the gate",
+          "version": "10.1",
           "style": "version",
           "proof": {
             "label": "package.json",

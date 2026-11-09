@@ -28,7 +28,7 @@ export function LandingBanners({
   return (
     <ul
       className={styles.banners}
-      aria-label="The resume, and the site in ten minutes"
+      aria-label="The resume, and my work to check in ten minutes"
       data-testid="landing-banners"
     >
       {banners.map((entry) => {

@@ -790,6 +790,31 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-network-log-drafts-steve-sends</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-nightly-picker-code-gates-and-the-model-ranks</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-recommendations-have-a-page</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-the-box-reports-itself</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://theyard.stevenstout.biz/api/docs/adr-live-dials-where-the-source-allows</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://theyard.stevenstout.biz/api/docs/incidents</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

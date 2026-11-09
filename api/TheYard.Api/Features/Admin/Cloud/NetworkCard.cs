@@ -1,0 +1,221 @@
+// The network log's card (ADR-124): conversations started this week against the
+// four weeks before, and the follow-up drafts waiting, on the dials; drafts waiting for sixty minutes; conversations
+// started a week for five weeks; whether the pass is logging, where the follow-ups stand and what it costs. Counts
+// only: never a name, a company, an address, a subject or a code.
+using System.Globalization;
+using TheYard.Application.Features.Admin.Cloud;
+
+namespace TheYard.Api.Features.Admin.Cloud;
+
+/// <summary>The network log's card.</summary>
+public static class NetworkCard
+{
+    /// <summary>The most follow-ups one Monday drafts; the Function's DueRule.MondayCap, held equal by NetworkCardTests.</summary>
+    public const int MondayCap = 15;
+
+    /// <summary>The states a row can be in, in the order the card says them; the Function's ConversationState.</summary>
+    public static readonly IReadOnlyList<string> States = ["Open", "Drafted", "Quiet", "Stopped", "Closed"];
+
+    /// <summary>The week dial: a busy week is good news, so it never goes amber.</summary>
+    public static readonly (double Amber, double Red) WeekLevels = (1000, 1001);
+
+    /// <summary>The drafts dial: amber at a full Monday still waiting, never red.</summary>
+    public static readonly (double Amber, double Red) DraftLevels = (100, 101);
+
+    private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["logging"] = "the card schema's Network view, conversations by the week they started · the Function's run history in Application Insights, the newest pass",
+        ["follow-ups"] = "the card schema's Network view, rows by state",
+        ["silences"] = "the card schema's Network view, rows by state",
+        ["cost"] = CardFrame.TheBill,
+        ["The switch"] = "the Function's health route",
+        ["Next pass"] = "the Function's CentralClock",
+        ["The window"] = "the Function's DueRule",
+        ["The database"] = "functions/JobHunt.Database/JobHunt.Database.sqlproj",
+        ["Cost"] = CardFrame.TheBill,
+        ["Live read"] = CardFrame.ThisProcess,
+    };
+
+    /// <summary>The Monday the ISO week of a Central day starts on.</summary>
+    /// <param name="day">The Central day.</param>
+    public static DateOnly Monday(DateOnly day) => day.AddDays(-(((int)day.DayOfWeek + 6) % 7));
+
+    /// <summary>The weeks fact back as weeks.</summary>
+    /// <param name="fact">"2026-11-02,4;2026-10-26,7".</param>
+    public static IReadOnlyList<(DateOnly Monday, int Started)> Weeks(string? fact) =>
+        [.. (fact ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(row => row.Split(','))
+            .Where(c => c.Length == 2 && DateOnly.TryParseExact(c[0], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+            .Select(c => (DateOnly.ParseExact(c[0], "yyyy-MM-dd", CultureInfo.InvariantCulture), Int(c[1])))];
+
+    /// <summary>Draws the card.</summary>
+    /// <param name="inputs">The kept minutes and hours.</param>
+    public static CloudReport View(ResourceCardInputs inputs)
+    {
+        var weeks = Weeks(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("weeks"));
+        var monday = Monday(DateOnly.FromDateTime(NightlySlots.Local(inputs.Now)));
+        int thisWeek = weeks.Where(w => w.Monday == monday).Sum(w => w.Started);
+        var before = Enumerable.Range(1, 4).Select(i => weeks.Where(w => w.Monday == monday.AddDays(-7 * i)).Sum(w => w.Started)).ToList();
+        double average = before.Average();
+        string mode = ResourceView.Fact(inputs, "switch", "not read");
+        double? drafted = ResourceView.Now(inputs, "drafted");
+        var dials = new[]
+        {
+            new CloudDial("Started this week", average > 0 ? 100.0 * thisWeek / average : null, ResourceView.Latest(inputs) is null ? "not read" : thisWeek.ToString(CultureInfo.InvariantCulture),
+                $"against {average.ToString("0.#", CultureInfo.InvariantCulture)} a week over the four before", WeekLevels.Amber, WeekLevels.Red, null, null, "good"),
+            new CloudDial("Drafts waiting", ResourceView.Share(drafted, MondayCap), ResourceView.Number(drafted), $"of at most {MondayCap} a Monday, under Follow-up/Ready", DraftLevels.Amber, DraftLevels.Red, null, null, drafted is null ? "info" : "good"),
+        };
+        var rows = new List<CloudRow> { Logging(inputs, weeks, monday, mode), FollowUps(inputs), Silences(inputs), CostRow(inputs) };
+        var readout = new CloudReadout(
+            "The network log, now",
+            ResourceView.Uptime(inputs),
+            $"read, {CloudTones.WindowWords(inputs.Window)}",
+            [
+                new("The switch", mode, mode == "on" ? "good" : "info"),
+                new("Next pass", Next(inputs.Now), "info"),
+                new("The window", $"21 to 45 days after the last exchange, at most {MondayCap} a Monday; nothing sends, Steve presses Send", "info"),
+                new("The database", "Azure SQL Basic, the site's own, linked in the card's header", "info"),
+                ResourceView.Cost(inputs),
+                ResourceView.LiveRead(inputs),
+            ],
+            "Counts only: the card never shows a name, a company, an address, a subject or a link code. The drafts are FOLLOWUP-v1, filled by code.");
+        var report = new CloudReport(
+            inputs.Window, PlanView.Windows, inputs.Availability.Available && (inputs.LastHour.Count > 0 || inputs.Hours.Count > 0),
+            ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "minute")),
+            inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
+            "The network log",
+            "Azure Functions, 6 AM Central, once a day · Azure SQL Basic",
+            ResourceView.Resource(inputs),
+            dials,
+            [ResourceView.Spark(inputs, "drafted", "Drafts waiting, 60 min", MondayCap), ResourceView.Spark(inputs, "open", "Open, 60 min", null)],
+            Chart(weeks, monday),
+            rows,
+            readout);
+        return CardFrame.Sourced(report, Sources);
+    }
+
+    /// <summary>The process whose newest run the logging row reads.</summary>
+    public const string PassProcess = "NetworkLogPass";
+
+    /// <summary>The hour's fact holding what the newest listed pass came to: one of the run line's outcomes.</summary>
+    public const string PassFact = "pass";
+
+    /// <summary>The hour's fact holding when the newest listed pass started, UTC, round-trip.</summary>
+    public const string PassAtFact = "pass_at";
+
+    /// <summary>The hour's fact holding the newest pass in words, as the run history says it.</summary>
+    public const string PassCameFact = "pass_came";
+
+    /// <summary>The hour's fact holding why the run history was not read; null when it was.</summary>
+    public const string PassNoteFact = "pass_note";
+
+    /// <summary>How long after a pass the next one is overdue: a day and the hour it may run late in.</summary>
+    public static readonly TimeSpan PassDue = TimeSpan.FromHours(25);
+
+    /// <summary>Is it logging: what the newest pass came to, this week's new conversations, the switch, and the weeks before.</summary>
+    public static CloudRow Logging(ResourceCardInputs inputs, IReadOnlyList<(DateOnly Monday, int Started)> weeks, DateOnly monday, string mode)
+    {
+        if (ResourceView.Latest(inputs) is not { } hour)
+        {
+            return new CloudRow("logging", "Is it logging?", "not read yet", [new("conversations started a week and the switch", null)], "info");
+        }
+        var function = Function(inputs);
+        int thisWeek = weeks.Where(w => w.Monday == monday).Sum(w => w.Started);
+        string last = string.Join(", ", Enumerable.Range(1, 4).Select(i => weeks.Where(w => w.Monday == monday.AddDays(-7 * i)).Sum(w => w.Started).ToString(CultureInfo.InvariantCulture)));
+        var (answer, pass, tone) = mode is "on" or "shadow" ? Pass(hour.Facts, inputs.Now, thisWeek) : ($"Off ({mode})", null, "info");
+        CloudLink[] lines = pass is null
+            ? [new($"the switch is {mode} · once a day in the 6 AM hour Central · the four weeks before, newest first: {last}", null)]
+            : [new($"the switch is {mode} · once a day in the 6 AM hour Central · the four weeks before, newest first: {last}", null), new(pass, null)];
+        return new CloudRow("logging", "Is it logging?", answer, [.. lines, .. function is null ? Array.Empty<CloudLink>() : [function]], tone);
+    }
+
+    /// <summary>The row's answer, its pass line and its tone from the newest pass: a failed pass is alarm, a blocked or late one or none for a day is warning, a pass that came through is good, and an unread history is info.</summary>
+    /// <param name="facts">The hour's facts.</param>
+    /// <param name="now">The read's time.</param>
+    /// <param name="thisWeek">Conversations started this week.</param>
+    public static (string Answer, string? Line, string Tone) Pass(IReadOnlyDictionary<string, string?> facts, DateTimeOffset now, int thisWeek)
+    {
+        string started = $"{thisWeek} started this week";
+        if (facts.GetValueOrDefault(PassNoteFact) is { Length: > 0 } || !facts.ContainsKey(PassNoteFact))
+        {
+            return (started, $"the last pass was not read: {facts.GetValueOrDefault(PassNoteFact) ?? "no run history kept this hour"}", "info");
+        }
+        if (facts.GetValueOrDefault(PassFact) is not { Length: > 0 } outcome
+            || !DateTimeOffset.TryParse(facts.GetValueOrDefault(PassAtFact), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+        {
+            return ($"no pass in {NetworkPasses.Window.TotalDays:0} days", "the Function's run history lists no pass in the window", "warning");
+        }
+        string came = facts.GetValueOrDefault(PassCameFact) ?? outcome;
+        string when = $"{ProcessWords.Day(at)} {ProcessWords.Clock(at)} Central";
+        string line = $"the last pass: {came}, {when}";
+        return outcome switch
+        {
+            "failed" => ("the last pass failed", line, "alarm"),
+            "blocked" or "late" => (came, line, "warning"),
+            _ when now - at > PassDue => ($"no pass since {when}", line, "warning"),
+            "success" or "unchanged" or "planned" => (started, line, "good"),
+            _ => (came, line, "info"),
+        };
+    }
+
+    /// <summary>The Function that runs the pass, by name, linked to its portal page; null when its id was not kept.</summary>
+    public static CloudLink? Function(ResourceCardInputs inputs) =>
+        ResourceView.Latest(inputs) is { } hour && hour.Facts.GetValueOrDefault("function") is { Length: > 0 } id
+            ? new CloudLink(PlanReader.NameOf(id), PlanView.Portal(hour.TenantId, id))
+            : null;
+
+    /// <summary>Where the follow-ups stand: the rows by state.</summary>
+    public static CloudRow FollowUps(ResourceCardInputs inputs)
+    {
+        string open = ResourceView.Fact(inputs, "open", "");
+        if (open == "")
+        {
+            return new CloudRow("follow-ups", "Where do the follow-ups stand?", "not read yet", [new("open, drafted, quiet, stopped and closed", null)], "info");
+        }
+        return new CloudRow("follow-ups", "Where do the follow-ups stand?", $"{ResourceView.Fact(inputs, "drafted", "0")} drafted, waiting for Steve",
+            [new($"{open} open: two-way, waiting for 21 days of silence and a TopicLine · drafts go into the person's own thread under Follow-up/Ready, at most {MondayCap} a Monday", null)], "info");
+    }
+
+    /// <summary>Who has gone quiet: the rows never drafted again, by why.</summary>
+    public static CloudRow Silences(ResourceCardInputs inputs)
+    {
+        string quiet = ResourceView.Fact(inputs, "quiet", "");
+        if (quiet == "")
+        {
+            return new CloudRow("silences", "Who has gone quiet?", "not read yet", [new("quiet, stopped and closed", null)], "info");
+        }
+        return new CloudRow("silences", "Who has gone quiet?", $"{quiet} quiet after a follow-up",
+            [new($"never drafted again until they write · {ResourceView.Fact(inputs, "stopped", "0")} asked to stop · {ResourceView.Fact(inputs, "closed", "0")} closed: older than 45 days at the first read, bounced, or a draft Steve deleted", null)], "info");
+    }
+
+    /// <summary>What it costs: nothing of its own; its tables live in the site's Basic database, already on the Azure SQL card.</summary>
+    private static CloudRow CostRow(ResourceCardInputs inputs) =>
+        new("cost", "Is it costing anything?", "nothing of its own this month",
+            [new((inputs.CostMonth is { } dollars ? $"shares the site's Basic database, already on the bill (${dollars.ToString("0.00", CultureInfo.InvariantCulture)} this month on the Azure SQL card)" : "shares the site's Basic database, already on the bill on the Azure SQL card")
+                + " · one Function run a day inside its free grant · Gmail reads and drafts inside its free limit", null)], "info");
+
+    /// <summary>Conversations started a week, five weeks.</summary>
+    private static CloudChart Chart(IReadOnlyList<(DateOnly Monday, int Started)> weeks, DateOnly monday)
+    {
+        var window = Enumerable.Range(0, 5).Select(i => monday.AddDays(7 * (i - 4))).ToList();
+        long Ms(DateOnly day) => new DateTimeOffset(day.ToDateTime(new TimeOnly(12, 0)), TimeSpan.Zero).ToUnixTimeMilliseconds();
+        int top = Math.Max(1, window.Max(d => weeks.Where(w => w.Monday == d).Sum(w => w.Started)));
+        var points = window.Select(d => new CloudPoint(Ms(d), 100.0 * weeks.Where(w => w.Monday == d).Sum(w => w.Started) / top)).ToList();
+        return new CloudChart("Conversations started a week, five weeks", [new("Started", points)], [], 101,
+            $"teal conversations whose first two-way exchange fell in the ISO week, scaled to the busiest week ({top})", Ms(window[0]));
+    }
+
+    /// <summary>The next 6 o'clock hour Central, in words.</summary>
+    /// <param name="now">The moment, UTC.</param>
+    public static string Next(DateTimeOffset now)
+    {
+        var hour = new DateTimeOffset(now.UtcDateTime.Year, now.UtcDateTime.Month, now.UtcDateTime.Day, now.UtcDateTime.Hour, 0, 0, TimeSpan.Zero).AddHours(1);
+        while (NightlySlots.Local(hour).Hour != 6)
+        {
+            hour = hour.AddHours(1);
+        }
+        return NightlySlots.Local(hour).ToString("ddd d MMM", CultureInfo.InvariantCulture) + ", 6:00 AM Central";
+    }
+
+    private static int Int(string text) => int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? value : 0;
+}
