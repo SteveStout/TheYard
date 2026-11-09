@@ -1549,6 +1549,124 @@ test('the store and the log never scroll sideways on a desk: a table too wide fo
   }
 });
 
+// #region spend-bill
+/** The cost card's fixed answer in the endpoint's shape: two reported days, the newest still partial, and one forecast day. */
+const spendBill = {
+  window: '30d',
+  windows: ['24h', '7d', '30d'],
+  available: true,
+  note: null,
+  currency: 'USD',
+  read_at_ms: 1_790_000_000_000,
+  newest_day: '2026-09-29',
+  newest_partial: true,
+  month: '2026-09',
+  month_to_date: 47.18,
+  forecast_month: 49.03,
+  month_at_yesterday: 47.95,
+  yesterday_day: '2026-09-28',
+  yesterday_cost: 0.77,
+  spike_days: [
+    {
+      day: '2026-09-29',
+      cost: 9.85,
+      partial: true,
+      median: 0.77,
+      days: 1,
+      multiple: 12.8,
+      biggest: 'stjobhuntss',
+      biggest_cost: 9,
+    },
+    {
+      day: '2026-09-28',
+      cost: 0.77,
+      partial: false,
+      median: null,
+      days: 0,
+      multiple: null,
+      biggest: 'plan-theyard-ss',
+      biggest_cost: 0.77,
+    },
+  ],
+  meters: [
+    {
+      meter: 'File transactions',
+      watches: 'the job-hunt share',
+      rule: 'alert-jobhunt-share-transactions',
+      state: 'exists',
+      line: 'Transactions over 20,000 in 1 hour',
+    },
+    {
+      meter: 'Blob egress',
+      watches: "the job-hunt account's blobs",
+      rule: 'alert-jobhunt-blob-egress',
+      state: 'not set',
+      line: 'no rule by this name: it waits for its deploy',
+    },
+  ],
+  window_total: 1.62,
+  rate_days: 1,
+  month_days: 30,
+  days: [
+    { day: '2026-09-28', cost: 0.77, total: 0.77, partial: false },
+    { day: '2026-09-29', cost: 0.85, total: 1.62, partial: true },
+  ],
+  forecast: [{ day: '2026-09-30', cost: 1.62, total: 3.24, partial: false }],
+  resources: [
+    {
+      name: 'plan-theyard-ss',
+      type: 'microsoft.web/serverfarms',
+      cost: 0.82,
+      monthly: 23.1,
+      share: 50.6,
+      count: 1,
+    },
+    {
+      name: 'crtheyardss',
+      type: 'microsoft.containerregistry/registries',
+      cost: 0.33,
+      monthly: 9.9,
+      share: 20.4,
+      count: 1,
+    },
+    {
+      name: 'sqldb-theyard-ss-basic',
+      type: 'microsoft.sql/servers/databases',
+      cost: 0.32,
+      monthly: 9.6,
+      share: 19.8,
+      count: 1,
+    },
+    {
+      name: 'cosmos-theyard-ss',
+      type: 'microsoft.documentdb/databaseaccounts',
+      cost: 0.1,
+      monthly: 3,
+      share: 6.2,
+      count: 1,
+    },
+    { name: 'Others', type: 'others', cost: 0.05, monthly: 1.5, share: 3.1, count: 3 },
+  ],
+  // The costliest type first, as the server orders them.
+  types: [
+    {
+      type: 'microsoft.web/serverfarms',
+      label: 'App Service plans',
+      resources: 1,
+      cost: 0.82,
+      monthly: 23.1,
+    },
+    {
+      type: 'microsoft.web/sites',
+      label: 'App Service apps',
+      resources: 3,
+      cost: 0,
+      monthly: 0,
+    },
+  ],
+};
+// #endregion spend-bill
+
 // #region spend-card
 test('the cost card draws the spend with its forecast, the cost by resource and the resources by type (ADR: What Azure charges)', async ({
   page,
@@ -1556,123 +1674,7 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   // A local run is not on Azure and reads no bill, so the card is held to a fixed answer in the
   // endpoint's shape: two reported days, the newest still partial, and one forecast day.
   await page.route('**/api/admin/costs?*', (route) =>
-    route.fulfill({
-      contentType: 'application/json',
-      body: JSON.stringify({
-        window: '30d',
-        windows: ['24h', '7d', '30d'],
-        available: true,
-        note: null,
-        currency: 'USD',
-        read_at_ms: 1_790_000_000_000,
-        newest_day: '2026-09-29',
-        newest_partial: true,
-        month: '2026-09',
-        month_to_date: 47.18,
-        forecast_month: 49.03,
-        month_at_yesterday: 47.95,
-        yesterday_day: '2026-09-28',
-        yesterday_cost: 0.77,
-        spike_days: [
-          {
-            day: '2026-09-29',
-            cost: 9.85,
-            partial: true,
-            median: 0.77,
-            days: 1,
-            multiple: 12.8,
-            biggest: 'stjobhuntss',
-            biggest_cost: 9,
-          },
-          {
-            day: '2026-09-28',
-            cost: 0.77,
-            partial: false,
-            median: null,
-            days: 0,
-            multiple: null,
-            biggest: 'plan-theyard-ss',
-            biggest_cost: 0.77,
-          },
-        ],
-        meters: [
-          {
-            meter: 'File transactions',
-            watches: 'the job-hunt share',
-            rule: 'alert-jobhunt-share-transactions',
-            state: 'exists',
-            line: 'Transactions over 20,000 in 1 hour',
-          },
-          {
-            meter: 'Blob egress',
-            watches: "the job-hunt account's blobs",
-            rule: 'alert-jobhunt-blob-egress',
-            state: 'not set',
-            line: 'no rule by this name: it waits for its deploy',
-          },
-        ],
-        window_total: 1.62,
-        rate_days: 1,
-        month_days: 30,
-        days: [
-          { day: '2026-09-28', cost: 0.77, total: 0.77, partial: false },
-          { day: '2026-09-29', cost: 0.85, total: 1.62, partial: true },
-        ],
-        forecast: [{ day: '2026-09-30', cost: 1.62, total: 3.24, partial: false }],
-        resources: [
-          {
-            name: 'plan-theyard-ss',
-            type: 'microsoft.web/serverfarms',
-            cost: 0.82,
-            monthly: 23.1,
-            share: 50.6,
-            count: 1,
-          },
-          {
-            name: 'crtheyardss',
-            type: 'microsoft.containerregistry/registries',
-            cost: 0.33,
-            monthly: 9.9,
-            share: 20.4,
-            count: 1,
-          },
-          {
-            name: 'sqldb-theyard-ss-basic',
-            type: 'microsoft.sql/servers/databases',
-            cost: 0.32,
-            monthly: 9.6,
-            share: 19.8,
-            count: 1,
-          },
-          {
-            name: 'cosmos-theyard-ss',
-            type: 'microsoft.documentdb/databaseaccounts',
-            cost: 0.1,
-            monthly: 3,
-            share: 6.2,
-            count: 1,
-          },
-          { name: 'Others', type: 'others', cost: 0.05, monthly: 1.5, share: 3.1, count: 3 },
-        ],
-        // The costliest type first, as the server orders them.
-        types: [
-          {
-            type: 'microsoft.web/serverfarms',
-            label: 'App Service plans',
-            resources: 1,
-            cost: 0.82,
-            monthly: 23.1,
-          },
-          {
-            type: 'microsoft.web/sites',
-            label: 'App Service apps',
-            resources: 3,
-            cost: 0,
-            monthly: 0,
-          },
-        ],
-      }),
-    })
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(spendBill) })
   );
   await openTheYard(page, '/?view=admin&card=spend');
   const card = page.getByTestId('spend-card');
@@ -1719,6 +1721,77 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   await expect(card.getByTestId('spend-meters-table')).toContainText('alert-jobhunt-blob-egress');
 });
 // #endregion spend-card
+
+/**
+ * The cost card on the live bill's own names: two alert types the server has no label for, so it hands their ARM
+ * type, one long word with nowhere to break, and the meters' longest rule names. The card ran 3 to 6 px past its
+ * edge on the live bill at a phone and a desk and no local run saw it, because a local run reads no bill.
+ */
+test("the cost card fits a phone and a desk with the live bill's long type and meter names", async ({
+  page,
+}) => {
+  const bill = {
+    ...spendBill,
+    types: [
+      ...spendBill.types,
+      {
+        type: 'microsoft.insights/scheduledqueryrules',
+        label: 'microsoft.insights/scheduledqueryrules',
+        resources: 4,
+        cost: 0,
+        monthly: 0,
+      },
+      {
+        type: 'microsoft.insights/metricalerts',
+        label: 'microsoft.insights/metricalerts',
+        resources: 6,
+        cost: 0,
+        monthly: 0,
+      },
+    ],
+    meters: [
+      ...spendBill.meters,
+      {
+        meter: 'Function executions',
+        watches: "the job hunt's Function app",
+        rule: 'alert-jobhunt-function-executions',
+        state: 'exists',
+        line: 'OnDemandFunctionExecutionCount over 1,000 in 1 hour',
+      },
+    ],
+  };
+  await page.route('**/api/admin/costs?*', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify(bill) })
+  );
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await openTheYard(page, '/?view=admin&card=spend');
+    const card = page.getByTestId('spend-card');
+    await expect(
+      card.getByTestId(/^spend-type-\d+$/).filter({ hasText: 'scheduledqueryrules' })
+    ).toContainText('4 resources', { timeout: 60_000 });
+    await expect(card.getByTestId('spend-meters-table')).toContainText(
+      'alert-jobhunt-function-executions'
+    );
+    // Nothing in the card reaches past its edge, and the page does not scroll sideways, at both widths. The card's
+    // own scrollWidth is not read: it rounds a fraction of a pixel up on every bill, long names or not.
+    const past = await card.evaluate((node) => {
+      const edge =
+        node.getBoundingClientRect().right - parseFloat(getComputedStyle(node).borderRightWidth);
+      return [...node.querySelectorAll('*')]
+        .filter((part) => part.getBoundingClientRect().right > edge + 0.5)
+        .map(
+          (part) =>
+            `${part.tagName} ${part.getAttribute('data-testid') ?? ''} by ${(part.getBoundingClientRect().right - edge).toFixed(1)} px`
+        );
+    });
+    expect(past, `at ${width} px`).toEqual([]);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1),
+      `the page scrolls sideways at ${width} px`
+    ).toBe(false);
+  }
+});
 
 test('a week or a month names its Mondays and Fridays and washes its weekends, on the activity chart and the kept machine charts (1.0.3.127)', async ({
   page,
