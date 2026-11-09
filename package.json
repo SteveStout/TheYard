@@ -26,8 +26,8 @@
     "lint": "oxlint --deny-warnings",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"render/**/*.{ts,mjs}\" \"tests/**/*.ts\" \"*.ts\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"render/**/*.{ts,mjs}\" \"tests/**/*.ts\" \"*.ts\" \"scripts/**/*.mjs\"",
-    "format:api": "dotnet format api/TheYard.slnx",
-    "format:api:check": "dotnet format api/TheYard.slnx --verify-no-changes"
+    "format:api": "dotnet format api/TheYard.slnx && dotnet format server/JobHunt.Server.slnx",
+    "format:api:check": "dotnet format api/TheYard.slnx --verify-no-changes && dotnet format server/JobHunt.Server.slnx --verify-no-changes"
   },
   "dependencies": {
     "highlight.js": "^11.12.0",

@@ -1,0 +1,12 @@
+# Every day at 06:00 America/Chicago, whatever the box's own zone is. Persistent runs a morning missed
+# while the box was off at the next boot.
+[Unit]
+Description=JobHunt 6 AM lanes, daily at 06:00 Central
+
+[Timer]
+OnCalendar=*-*-* 06:00:00 America/Chicago
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
