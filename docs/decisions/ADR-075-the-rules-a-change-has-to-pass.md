@@ -201,6 +201,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The Azure SQL Database card's DTU dial reads good, information within five of amber, warning from amber and alarm from red, each held fifteen minutes, and fourteen minutes are not judged; data space reads against the database's own cap; a deadlock is red; nothing read says so; every row and line is sourced | ADR: One frame for every resource | SqlCardTests |
 | The edge's retire row is information before its date and counts the days, and a warning on it and after it that names the date; the credits dial is judged on its newest hourly reading alone; a certificate inside two weeks and a failed deploy are each a warning | ADR: One frame for every resource | EdgeCardTests |
 | With no Edge:Retires set the edge's retire row reads "the edge stays" as information and the readout says the date is not set; the host starts without the setting | ADR-102, the addendum of 1.0.4.167 | EdgeCardTests |
+| Every test class that starts TheYard with The Shed mounted runs in the ShedHosts collection, one after the other | ADR-075, the addendum of 1.0.4.168 | ShedHostsTests |
 | The container's own sampler keeps an hour at fifteen seconds (240 samples) in the host, drops its oldest sample when full, keeps one when asked for none, and reads the runtime's own limit and processors | ADR: What the machines are doing | ContainerSamplerTests |
 | A Cloud card's request answers from a view under two minutes old and builds the next behind it past one minute; a view at two minutes is not served; the keeper builds each window asked for in the last hour once a minute and drops the rest | ADR-102, the addendum of 1.0.4.164 | CloudKeepingTests |
 
@@ -379,3 +380,12 @@ body, linked into both suites, so the job hunt's own projects can be named the s
 instalment lands. It asks exactly what `.github/quality.py` asks, which is the point of it, and
 `MemberSummaryTests` also reads a count of the declarations it scanned, because a scan that read
 nothing would otherwise pass for a scan that found nothing.
+
+## Addendum, 2026-11-09 (1.0.4.168): four tests that passed on a rerun, each fixed at its cause or given its reason
+
+Four tests had each gone red once and green on a rerun between 5 and 7 November, and each lane that met one read past it. A red that a rerun turns green still costs the next reader a run, and teaches that a red can be waited out.
+
+- **SiteHostsTests against ShedMountTests.** On CI on main for 1.0.4.139, SiteHostsTests' host failed to start on The Shed's Files options check, the check ShedMountTests trips on purpose, while ShedMountTests was starting a host of its own. Both classes start TheYard with The Shed mounted, and they now run in one xUnit collection, ShedHosts, one after the other. ShedHostsTests holds every class that mounts The Shed to that collection, so a new one cannot race them.
+- **working.spec, the Retry lock.** The test asked to see the lock inside 1.2 s while the routed answer was due at 1.5 s, so a loaded box could miss the window. The answer is now held until the test has seen the lock, so the lock is read while the answer is slow by construction; it passed 20 times of 20 on four workers at once. How soon the lock shows stays with the first test in that file and WorkingLock.test.ts.
+- **author.spec's first navigation.** It ended net::ERR_ABORTED once on CI on main (1.0.4.148, attempt 1). The likely cause is the dev server reloading every open page after it bundles a dependency it found late, which cuts short a navigation in flight in another worker. openTheYard now asks for an aborted navigation once more; any other failure is still the test's.
+- **The API reference at 390 px (coverage.spec).** Its panel is drawn by the reference's own script, the package's whole bundle parsed on the box's processor, and on a loaded box at 390 it once took longer than the 30 s the pass waited. This one is not made deterministic: the wait is now 90 s inside the pass's 12-minute budget, and a page that never draws still reads "no panel".
