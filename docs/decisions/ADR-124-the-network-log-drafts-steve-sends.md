@@ -76,7 +76,7 @@ The email half has logged threads since 8 November; the LinkedIn half had a spoo
 
 Out: on a Monday in on, a due row whose newest exchange was on LinkedIn is no longer left waiting. Its FOLLOWUP-v1 text goes to `networklog/texts/<monday>/<thread>.txt`, and the week's queue, `networklog/linkedin-queue-<monday>.md`, lists it in the reply queue's format 2 under section A with the thread and the profile. Section A is Steve's, so the messages lane never sends it; the morning card reads the week's queue beside the day's reply queue and shows each text in full, typed in the thread only on his send (PLAN-AUTOHUNT section 2, the 11/5 rule, which the build plan's earlier default of a standing-permission send gave way to). The row stays Open: his send moves its last exchange on the next LinkedIn read, and one he leaves is due again the next Monday until it goes stale. A LinkedIn message has no subject line, so the subject check is not run on a LinkedIn row. The queue's path lives in the shared `FollowUpQueue`, because the network log writes it and the card reads it.
 
-Held by NetworkLinkedInQueueTests and NetworkDraftTests here, and NetworkLaneTests in the machine lanes; their rows are in ADR-075's table.
+Held by NetworkLinkedInQueueTests and NetworkDraftTests, whose rows are in ADR-075's table, and by NetworkLaneTests in the machine lanes, whose rule ADR-119's addendum of this version states, because ADR-075's table cannot yet cite a machine-lane test.
 
 ## Where it sits
 
