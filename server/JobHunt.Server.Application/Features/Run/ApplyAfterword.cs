@@ -29,6 +29,18 @@ public static partial class ApplyAfterword
     /// <param name="ct">Stops the writes.</param>
     public static async Task WriteAsync(IShare share, LaneStart start, string folder, Worklist list, LaneResult? result, IReadOnlyList<SendRecord> sends, List<string> lines, CancellationToken ct)
     {
+        try
+        {
+            await AllAsync(share, start, folder, list, result, sends, lines, ct);
+        }
+        catch (Exception failure) when (failure is not OutOfMemoryException)
+        {
+            lines.Add($"DEFECT: the apply afterword stopped: {failure.Message}. Read the essays folder and planted.md by hand, then take this line out of the note.");
+        }
+    }
+
+    private static async Task AllAsync(IShare share, LaneStart start, string folder, Worklist list, LaneResult? result, IReadOnlyList<SendRecord> sends, List<string> lines, CancellationToken ct)
+    {
         if (await share.ExistsAsync($"{folder}/{Planted}", ct))
         {
             lines.AddRange((await share.ReadAsync($"{folder}/{Planted}", ct)).Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0)
@@ -39,7 +51,7 @@ public static partial class ApplyAfterword
             .Where(found => found.Row is not null)
             .Select(found => new Posting(found.Row!.Company, found.Row.Role, found.Row.Url, found.Reason!, found.Row.Source))
             .ToList();
-        if (walled.Count > 0)
+        if (walled.Count > 0 && !start.Dry)
         {
             await share.WriteAsync($"{folder}/APPLY-BLOCKERS-{start.Day:yyyy-MM-dd}.md", Blockers.Render(start.Day, [.. list.Blockers, .. walled]), ct);
             lines.Add($"{walled.Count} postings the lane found behind a wall, a signature or a covenant added to the day's blockers list");
@@ -60,7 +72,9 @@ public static partial class ApplyAfterword
             foreach (ShareFile file in essays.Where(file => Path.GetFileName(file.Path).StartsWith($"{send.Row.Row:00}-", StringComparison.Ordinal)).OrderBy(file => Attempt(file.Path)))
             {
                 string verdict = Path.ChangeExtension(file.Path, ".verdict");
-                answered.Add((BankedText.Parse(await share.ReadAsync(file.Path, ct)), await share.ExistsAsync(verdict, ct) ? (await share.ReadAsync(verdict, ct)).Trim() : "never answered"));
+                Essay essay = BankedText.Parse(await share.ReadAsync(file.Path, ct));
+                string said = await share.ExistsAsync(verdict, ct) ? (await share.ReadAsync(verdict, ct)).Trim() : "never answered";
+                answered.Add((essay, said == EssayDesk.Passed(essay.Answer) ? EssayDesk.Clean : said.StartsWith(EssayDesk.Clean, StringComparison.Ordinal) ? "the answer changed after its verdict, or the verdict is not the desk's" : said));
             }
             var last = answered.GroupBy(pair => pair.Essay.Question, StringComparer.Ordinal).Select(group => group.Last()).ToList();
             if (last.Count == 0)
@@ -95,6 +109,6 @@ public static partial class ApplyAfterword
     private static int Attempt(string path) =>
         int.TryParse(Path.GetFileNameWithoutExtension(path).Split('-').LastOrDefault(), out int attempt) ? attempt : 0;
 
-    [GeneratedRegex(@"account wall|sign[ -_]?in|password|signature|covenant|arbitration|non-?compete|\bNDA\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"account wall|\bsign[- _]?in\b|password|signature|covenant|arbitration|non-?compete|\bNDA\b", RegexOptions.IgnoreCase)]
     private static partial Regex Wall();
 }

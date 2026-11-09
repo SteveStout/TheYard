@@ -19,7 +19,7 @@ public sealed class EssayTests
 
     private const string Sent = """{"row":1,"outcome":"sent","reason":null,"person":null,"title":null,"profile_url":null,"evidence":{"pending":null,"toast":null,"read_back":null,"confirmation":"Thanks for applying","screenshot":"/tmp/x.jpg"}}""";
 
-    private static readonly IReadOnlyList<string> Banks = [BankedText.Plain(Bank)];
+    private static readonly IReadOnlySet<string> Banks = BankedText.BankSentences(Bank).ToHashSet(StringComparer.Ordinal);
 
     private static string Essay(string answer, string question = "Describe a recent project.") => $"QUESTION: {question}\nANSWER:\n{answer}\nEND\n";
 
@@ -41,6 +41,22 @@ public sealed class EssayTests
     }
 
     [Fact]
+    public void A_fragment_of_a_banked_sentence_a_note_about_him_or_no_sentence_at_all_is_not_banked()
+    {
+        Assert.Equal(["a four-person team."], BankedText.Unbanked("a four-person team.", Banks));
+        Assert.Single(BankedText.Unbanked("I owned it end to end. I hired and led", Banks));
+        Assert.Single(BankedText.Unbanked("**", Banks));
+        var notes = BankedText.BankSentences("He gave the fact, not the story.\n").ToHashSet(StringComparer.Ordinal);
+        Assert.Single(BankedText.Unbanked("He gave the fact, not the story.", notes));
+    }
+
+    [Fact]
+    public void A_heading_never_joins_the_sentence_under_it()
+    {
+        Assert.Contains("At Storee Construction I architected and built the .NET 9 platform that runs project management and field operations for the business.", Banks);
+    }
+
+    [Fact]
     public void A_file_reads_its_question_and_answer_and_is_finished_only_at_END()
     {
         Essay essay = BankedText.Parse(Essay("I owned it end to end."));
@@ -54,7 +70,7 @@ public sealed class EssayTests
     public async Task The_desk_passes_banked_clean_text_and_refuses_new_text_or_a_failed_proofread()
     {
         var share = new MemoryShare();
-        Assert.Equal(EssayDesk.Clean, await new EssayDesk(share, new FakeProse(), new ScriptedClaude(_ => new(0, false, null))).JudgeAsync(Essay("I owned it end to end."), Banks, default));
+        Assert.Equal(EssayDesk.Passed("I owned it end to end."), await new EssayDesk(share, new FakeProse(), new ScriptedClaude(_ => new(0, false, null))).JudgeAsync(Essay("I owned it end to end."), Banks, default));
         Assert.StartsWith("refused: 1 sentences", await new EssayDesk(share, new FakeProse(), new ScriptedClaude(_ => new(0, false, null))).JudgeAsync(Essay("I owned it end to end. I invented Azure."), Banks, default), StringComparison.Ordinal);
         Assert.Contains("check_aiisms.py", await new EssayDesk(share, new FakeProse("owned"), new ScriptedClaude(_ => new(0, false, null))).JudgeAsync(Essay("I owned it end to end."), Banks, default), StringComparison.Ordinal);
         Assert.StartsWith("refused: no answer", await new EssayDesk(share, new FakeProse(), new ScriptedClaude(_ => new(0, false, null))).JudgeAsync("QUESTION: q\nEND\n", Banks, default), StringComparison.Ordinal);
@@ -94,7 +110,7 @@ public sealed class EssayTests
         morning.Share.Files["standard-answers.md"] = Bank;
         await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
 
-        Assert.Equal("clean\n", morning.Share.Files[$"{Folder}/essays/01-1.verdict"]);
+        Assert.Equal(EssayDesk.Passed("I owned it end to end.") + "\n", morning.Share.Files[$"{Folder}/essays/01-1.verdict"]);
         string essays = morning.Share.Files[ApplyAfterword.EssaysPath(new DateOnly(2026, 11, 3))];
         Assert.Contains("**Describe a recent project.**", essays, StringComparison.Ordinal);
         Assert.Contains("I owned it end to end.", essays, StringComparison.Ordinal);
@@ -116,6 +132,46 @@ public sealed class EssayTests
         string done = morning.Share.Files[$"{Folder}/DONE.md"];
         Assert.Contains("DEFECT: row 1", done, StringComparison.Ordinal);
         Assert.DoesNotContain("I owned it end to end.", morning.Share.Files[ApplyAfterword.EssaysPath(new DateOnly(2026, 11, 3))], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_verdict_the_desk_did_not_write_or_an_answer_changed_after_it_is_a_defect()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            morning.Share.Files[$"{request.Essays}/essays/01-1.md"] = Essay("I led a team of forty.");
+            morning.Share.Files[$"{request.Essays}/essays/01-1.verdict"] = "clean\n";
+            return Answer(Sent);
+        });
+        morning.Share.Files["standard-answers.md"] = Bank;
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Contains("the verdict is not the desk's", morning.Share.Files[$"{Folder}/DONE.md"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_afterword_that_cannot_write_is_a_defect_line_and_the_note_still_writes()
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            morning.Share.Files[$"{request.Essays}/essays/01-1.md"] = Essay("I owned it end to end.");
+            return Answer(Sent);
+        });
+        morning.Share.Files["standard-answers.md"] = Bank;
+        morning.Share.Refused = ApplyAfterword.EssaysPath(new DateOnly(2026, 11, 3));
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Apply), default);
+        Assert.Contains("DEFECT: the apply afterword stopped", morning.Share.Files[$"{Folder}/DONE.md"], StringComparison.Ordinal);
+        Assert.NotEmpty(morning.TrackerRows());
+    }
+
+    [Fact]
+    public void The_lane_may_not_write_a_verdict()
+    {
+        var arguments = ClaudeArguments.For(new LaneConfig(), Lane.Apply, "/home/vincent/J", "/home/vincent/J/nightly/x", false);
+        int refused = arguments.ToList().IndexOf("--disallowedTools");
+        Assert.Contains("Write(//home/vincent/J/nightly/x/essays/*.verdict)", arguments.Skip(refused));
+        Assert.Contains("Edit(//home/vincent/J/nightly/x/essays/*.verdict)", arguments.Skip(refused));
     }
 
     [Fact]

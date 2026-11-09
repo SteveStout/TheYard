@@ -10,6 +10,7 @@ namespace JobHunt.Server.Application.Shared.Config;
 /// the refused list names what the allowed list already leaves out, so nothing rests on one list alone. With a second
 /// computer's Chrome connected the extension answers nothing until a browser is selected, so every run may select one;
 /// the lane doc says it is this box's and no other. switch_browser stays refused: it pages every Chrome for a click.
+/// The apply lane may write anywhere in its run folder but the essay desk's verdicts, which only the program writes.
 /// </summary>
 public static class ClaudeArguments
 {
@@ -51,6 +52,10 @@ public static class ClaudeArguments
         arguments.AddRange(Allowed(lane, share, runFolder, dry));
         arguments.Add("--disallowedTools");
         arguments.AddRange(Refused);
+        if (lane == Lane.Apply)
+        {
+            arguments.AddRange(new[] { "Write", "Edit" }.Select(tool => $"{tool}({Rooted(runFolder)}/essays/*.verdict)"));
+        }
         return arguments;
     }
 
