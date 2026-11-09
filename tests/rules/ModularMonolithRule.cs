@@ -6,10 +6,20 @@ namespace TheYard.Rules;
 /// <summary>
 /// The modular monolith's rules (ADR-119), one body compiled into both test projects by a link: each process is
 /// one deployable cut into modules, the modules are the vertical slices, a slice names no other slice, and the
-/// two processes share rings and linked source files, never a project or a deployable.
+/// processes share rings and linked source files, never a project or a deployable.
 /// </summary>
 public static partial class ModularMonolithRule
 {
+    /// <summary>The folder of each process: the site, the job hunt's Function and the machine lanes.</summary>
+    public static readonly IReadOnlyList<string> Processes = ["api", "functions", "server"];
+
+    /// <summary>Every project reference from any process to any other, each pair of <see cref="Processes"/> read both ways.</summary>
+    /// <param name="repoRoot">The repository's root.</param>
+    public static List<string> AcrossProcesses(string repoRoot) =>
+        [.. Processes
+            .SelectMany(from => Processes.Where(to => to != from).Select(to => (from, to)))
+            .SelectMany(pair => ProjectReferencesAcross(Path.Combine(repoRoot, pair.from), Path.Combine(repoRoot, pair.to), repoRoot))];
+
     /// <summary>The projects under a folder that deploy on their own: a web host, an executable or a Functions app.</summary>
     /// <param name="folder">A process's folder (api or functions).</param>
     /// <param name="repoRoot">The repository's root, for the paths returned.</param>

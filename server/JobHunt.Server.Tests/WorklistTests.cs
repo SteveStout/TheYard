@@ -1,0 +1,315 @@
+namespace JobHunt.Server.Tests;
+
+/// <summary>The queue, reply and apply parsers and the short-text checks, over fixtures cut from the real files.</summary>
+public sealed class WorklistTests
+{
+    private const string Good = "Pat,\n\nI applied for the role at Acme. My work: theyard.stevenstout.biz/?r=abc123\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve";
+
+    private static IReadOnlyList<QueueBlock> Open() =>
+        QueueBlocks.Open("QUEUE-linuxreach-2026-10-27-0858.md", Fixture.Read("queue.md"), [Fixture.Read("queue-status.md")]);
+
+    [Fact]
+    public void A_good_text_has_no_problems()
+    {
+        Assert.Empty(TextCheck.Problems(Good, invite: true));
+    }
+
+    [Fact]
+    public void A_placeholder_text_counts_as_it_stands()
+    {
+        Assert.Empty(TextCheck.Problems("[First name],\n\nMy work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to connect?\n\nThanks,\nSteve", invite: true));
+    }
+
+    [Theory]
+    [InlineData("\u2014 ", "em dash")]
+    [InlineData("See https://example.com ", "other links")]
+    public void A_text_with_a_tell_fails_by_name(string prefix, string reason)
+    {
+        Assert.Contains(TextCheck.Problems(prefix + Good, invite: true), problem => problem.Contains(reason, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Too_many_words_and_too_many_characters_fail()
+    {
+        string long_ = Good + string.Concat(Enumerable.Repeat(" word", 60));
+        Assert.Contains(TextCheck.Problems(long_, invite: false), problem => problem.EndsWith("words", StringComparison.Ordinal));
+        Assert.Contains(TextCheck.Problems(Good + new string('x', 300), invite: true), problem => problem.EndsWith("characters", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_message_may_run_past_the_invite_cap()
+    {
+        Assert.DoesNotContain(TextCheck.Problems(Good + new string('x', 300), invite: false), problem => problem.EndsWith("characters", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_text_needs_its_one_link_and_its_one_no_oriented_question()
+    {
+        Assert.NotEmpty(TextCheck.Problems("Pat,\n\nWould it be a bad idea to connect?", invite: true));
+        Assert.NotEmpty(TextCheck.Problems("Pat, my work: theyard.stevenstout.biz/?r=abc123 and thanks.", invite: true));
+        Assert.NotEmpty(TextCheck.Problems("Pat, theyard.stevenstout.biz/?r=abc123 what do you think about the role?", invite: true));
+    }
+
+    [Fact]
+    public void The_real_long_follow_up_draft_fails_and_is_never_fixed()
+    {
+        string body = ReplyQueue.Body(Fixture.Read("li-followup.txt"));
+        Assert.StartsWith("Pat,", body, StringComparison.Ordinal);
+        Assert.NotEmpty(TextCheck.Problems(body, invite: false));
+    }
+
+    [Fact]
+    public void A_code_is_read_from_its_link_and_a_placeholder_has_none()
+    {
+        Assert.Equal("abc123", TextCheck.Code(Good));
+        Assert.Equal(string.Empty, TextCheck.Code("theyard.stevenstout.biz/?r=[code]"));
+    }
+
+    [Fact]
+    public void Only_what_nothing_closed_stays_open()
+    {
+        Assert.Equal([9, 10], Open().Select(block => block.Number));
+    }
+
+    [Fact]
+    public void A_sent_held_dropped_replaced_or_pending_block_stays_out()
+    {
+        var numbers = Open().Select(block => block.Number).ToList();
+        Assert.DoesNotContain(1, numbers);
+        Assert.DoesNotContain(2, numbers);
+        Assert.DoesNotContain(5, numbers);
+        Assert.DoesNotContain(6, numbers);
+        Assert.DoesNotContain(7, numbers);
+        Assert.DoesNotContain(8, numbers);
+        Assert.DoesNotContain(11, numbers);
+        Assert.DoesNotContain(13, numbers);
+    }
+
+    [Fact]
+    public void With_no_status_file_the_queue_s_own_lines_still_close_its_blocks()
+    {
+        var numbers = QueueBlocks.Open("q.md", Fixture.Read("queue.md"), []).Select(block => block.Number).ToList();
+        Assert.Equal([5, 6, 8, 9, 10, 11, 13], numbers);
+    }
+
+    [Fact]
+    public void A_line_about_someone_not_in_the_queue_closes_no_block()
+    {
+        Assert.DoesNotContain("14", string.Join(",", QueueBlocks.Open("q.md", Fixture.Read("queue.md"), []).Select(b => b.Number)), StringComparison.Ordinal);
+        Assert.Contains(Open(), block => block.Number == 10);
+    }
+
+    [Fact]
+    public void A_status_file_s_ready_text_replaces_the_placeholder_block()
+    {
+        QueueBlock block = Open().Single(b => b.Number == 9);
+        Assert.Equal("Sam Roe", block.Person);
+        Assert.Equal("AHEAD", block.Company);
+        Assert.Equal("323a34", TextCheck.Code(block.Text));
+        Assert.StartsWith("Sam,", block.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_placeholder_block_keeps_its_company_and_no_person()
+    {
+        QueueBlock block = Open().Single(b => b.Number == 10);
+        Assert.Equal(string.Empty, block.Person);
+        Assert.Equal("ServiceTitan", block.Company);
+        Assert.Equal(WorkAction.Invite, block.Action);
+        Assert.Contains("[First name]", block.Text, StringComparison.Ordinal);
+        Assert.EndsWith(":109", block.Source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Headings_with_a_title_and_a_message_read_right()
+    {
+        QueueBlock message = QueueBlocks.Open("q.md", "### 2. Sam Roe, Sr. Director of Engineering, LINQ: MESSAGE ONLY IF ACCEPTED (invite)\n```\nSam,\n```\n", []).Single();
+        Assert.Equal("Sam Roe", message.Person);
+        Assert.Equal("LINQ", message.Company);
+        Assert.Equal(WorkAction.Message, message.Action);
+    }
+
+    [Fact]
+    public void A_heading_with_no_fence_is_no_block()
+    {
+        Assert.Empty(QueueBlocks.Open("q.md", "### 2. Sam Roe, LINQ: CONNECTION REQUEST\nno text\n### 3. Next\n", []));
+    }
+
+    [Theory]
+    [InlineData("NOT SENT. Already shows pending on the search.", false)]
+    [InlineData("DRAFTED, NOT SENT: VP of Engineering, 2nd degree, not pending.", true)]
+    public void Pending_in_any_case_closes_a_block_and_not_pending_does_not(string state, bool open)
+    {
+        string queue = "### 4. Acme: CONNECTION REQUEST\n```\nHi\n```\n";
+        string status = $"| 4 | Acme | {state} |\n";
+        Assert.Equal(open, QueueBlocks.Open("q.md", queue, [status]).Count == 1);
+    }
+
+    [Fact]
+    public void A_status_file_names_its_queue()
+    {
+        Assert.Equal("QUEUE-linuxreach-2026-10-27-0858.md", QueueBlocks.StatusOf(Fixture.Read("queue-status.md")));
+        Assert.Null(QueueBlocks.StatusOf(Fixture.Read("queue.md")));
+    }
+
+    [Fact]
+    public void The_agency_list_comes_from_the_skipped_section()
+    {
+        Assert.Equal(["Timberline", "Accelerated Search", "Talently", "Conexess"], QueueBlocks.Agencies(Fixture.Read("queue.md")));
+    }
+
+    [Fact]
+    public void The_reply_queue_gives_accepts_and_windows_and_never_inbound()
+    {
+        var items = ReplyQueue.Items(Fixture.Read("linkedin-queue.md"));
+        Assert.Contains(items, item => item.Person == "Sam Roe");
+        Assert.DoesNotContain(items, item => item.Person == "Pat Lee");
+        Assert.Contains(items, item => item is { Company: "AccuLynx", Source: "linkedin-queue.md C, Count 3093" });
+        Assert.Contains(items, item => item.Company == "People In AI");
+        Assert.Contains(items, item => item.Company == "World Wide Technology");
+    }
+
+    [Fact]
+    public void The_drafts_folder_and_names_are_read()
+    {
+        Assert.Equal("nightly/2026-10-27/0400-reply-opus-5-5/drafts", ReplyQueue.DraftFolder(Fixture.Read("linkedin-queue.md")));
+        Assert.Equal("li-followup-worldwide.txt", ReplyQueue.DraftName("WorldWide Technology"));
+    }
+
+    [Fact]
+    public void A_draft_s_greeting_gives_the_first_name()
+    {
+        Assert.Equal("Pat", ReplyQueue.Greeted(ReplyQueue.Body(Fixture.Read("li-followup.txt"))));
+    }
+
+    [Fact]
+    public void A_sweep_gives_its_confirmed_rows_and_not_its_unconfirmed_ones()
+    {
+        var postings = ApplyBoards.Confirmed("sweep.md", Fixture.Read("sweep.md"));
+        Assert.Equal(["Acme Dental", "Acme Corp"], postings.Select(posting => posting.Company));
+        Assert.EndsWith(":7", postings[0].Source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_sweep_row_marked_dropped_never_reaches_the_lane()
+    {
+        string sweep = "### CONFIRMED LIVE\n| Company | Role | Board | Link |\n|---|---|---|---|\n| Acme | Lead (DROPPED 12:3x) | Greenhouse | https://job-boards.greenhouse.io/a/jobs/1 |\n";
+        Assert.Empty(ApplyBoards.Confirmed("s.md", sweep));
+    }
+
+    [Fact]
+    public void Only_a_no_account_form_is_reachable()
+    {
+        var postings = ApplyBoards.Confirmed("sweep.md", Fixture.Read("sweep.md"));
+        Assert.True(ApplyBoards.Reachable(postings[0]));
+        Assert.False(ApplyBoards.Reachable(postings[1]));
+        Assert.True(ApplyBoards.Reachable(new Posting("A", "B", "https://www.linkedin.com/jobs/view/1/", string.Empty, "s")));
+        Assert.False(ApplyBoards.Reachable(new Posting("A", "B", "https://www.theladders.com/jobs/x", string.Empty, "s")));
+        Assert.False(ApplyBoards.Reachable(new Posting("A", "B", "https://jobs.lever.co/a/1", "Workday redirect", "s")));
+    }
+
+    [Fact]
+    public void Scored_leads_need_the_score_the_name_and_the_age()
+    {
+        var postings = ApplyBoards.Scored(Fixture.Read("scored.tsv"), Fixture.Read("leads.md"), new DateOnly(2026, 11, 2));
+        Assert.Equal(["Steneral Consulting", "Acme Hiring"], postings.Select(posting => posting.Company));
+        Assert.Equal("leads/scored.tsv:1", postings[0].Source);
+    }
+
+    [Fact]
+    public void A_worklist_file_is_one_line_a_row_with_no_stray_tabs()
+    {
+        string text = WorklistTsv.Render([new WorkRow(1, "Pat\tLee", "Acme", WorkAction.Invite, "texts/01.txt", "abc123", string.Empty, "q.md:3", "Sam Roe")]);
+        string[] lines = text.TrimEnd().Split('\n');
+        Assert.Equal(WorklistTsv.Header, lines[0]);
+        Assert.Equal(9, lines[1].Split('\t').Length);
+        Assert.Contains("\tinvite\t", lines[1], StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("I am in process for the role. ")]
+    [InlineData("Looking forward to our conversation on Tuesday. ")]
+    [InlineData("I meet Clinton Corbin on Tuesday. ")]
+    [InlineData("Ahead of the interview. ")]
+    [InlineData("Would a call help. ")]
+    public void A_text_that_names_a_live_process_waits_for_his_yes(string line)
+    {
+        Assert.Contains(TextCheck.Problems(line + Good, invite: true), problem => problem.Contains("live process", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void The_night_s_jobs_file_gives_its_ready_rows_and_no_row_of_any_other_table()
+    {
+        // The jobs lane's own file of 6 November 2026, copied from the share as it wrote it: one READY TO APPLY row,
+        // and NEEDS STEVE, UNCONFIRMED, FLAG and SKIPPED rows that the apply lane must never read.
+        var rows = ApplyBoards.Confirmed("JOBS-2026-11-06.md", Fixture.Read("jobs.md"));
+        var row = Assert.Single(rows);
+        Assert.Equal(("Temporal Technologies", "https://jobs.ashbyhq.com/temporal/dfa01032-82b4-443f-bfdc-1a20bd976b9c", "ashby"), (row.Company, row.Link, row.Board));
+        Assert.True(ApplyBoards.Reachable(row), row.Link);
+        Assert.DoesNotContain(rows, r => r.Company is "Twin Health" or "MillerKnoll" or "Pearson" or "Unite Us");
+    }
+
+    [Fact]
+    public async Task A_jobs_file_beside_a_sweep_is_read_and_the_same_link_is_worked_once()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        morning.Share.Files.Remove("APPLY-SWEEP-2026-10-28-ainative.md");
+        morning.Share.Files["APPLY-SWEEP-2026-11-05-x.md"] = "## CONFIRMED LIVE\n| Company | Role | Link |\n|---|---|---|\n| Temporal Technologies | Senior Staff Software Engineer - Builder Platform | https://jobs.ashbyhq.com/temporal/dfa01032-82b4-443f-bfdc-1a20bd976b9c |\n| Northwind | Principal Engineer | https://jobs.lever.co/northwind/a |\n";
+        morning.Share.Files["JOBS-2026-11-06.md"] = Fixture.Read("jobs.md");
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        Assert.Single(list.Rows, row => row.Url == "https://jobs.ashbyhq.com/temporal/dfa01032-82b4-443f-bfdc-1a20bd976b9c");
+        Assert.Contains(list.Rows, row => row.Url == "https://jobs.lever.co/northwind/a");
+        Assert.DoesNotContain(list.Rows, row => row.Url.Contains("twinhealth", StringComparison.Ordinal) || row.Url.Contains("theladders", StringComparison.Ordinal) || row.Url.Contains("4486544412", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_jobs_row_with_no_link_is_dropped_with_its_reason()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        morning.Share.Files["JOBS-2026-11-06.md"] = "## READY TO APPLY\n| # | Company | Role | Link | Board | Band | Posted | Notes |\n|---|---|---|---|---|---|---|---|\n| 1 | Northwind | Staff Engineer |  | greenhouse | RANGE Q FIRST | 2026-11-05 | |\n";
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        var dropped = Assert.Single(list.Dropped, d => d.What == "Northwind, Staff Engineer");
+        Assert.Equal("no link in the row (JOBS-2026-11-06.md:4), nothing to apply to", dropped.Reason);
+    }
+
+    [Fact]
+    public async Task A_posting_two_nights_name_takes_the_newest_night_s_title_and_comes_first()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        const string Row = "| 1 | MOXFIVE | {0} | https://jobs.ashbyhq.com/moxfive/eaa48261-4ebf-401e-bba4-a5c9b254b83c/application | ashby | PASS | 2026-11-06 | |\n";
+        const string Head = "## READY TO APPLY\n| # | Company | Role | Link | Board | Band | Posted | Notes |\n|---|---|---|---|---|---|---|---|\n";
+        morning.Share.Files["JOBS-2026-11-01.md"] = Head + string.Format(System.Globalization.CultureInfo.InvariantCulture, Row, "Staff Engineer (Remote)");
+        morning.Share.Files["JOBS-2026-11-02.md"] = Head + string.Format(System.Globalization.CultureInfo.InvariantCulture, Row, "Staff Engineer");
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        Assert.Equal("Staff Engineer", list.Rows[0].Role);
+        Assert.StartsWith("JOBS-2026-11-02.md", list.Rows[0].Source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_row_the_board_dated_past_21_days_is_dropped_and_a_fresh_one_carries_its_date_to_the_lane()
+    {
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
+        morning.Share.Files["JOBS-2026-11-02.md"] = "## READY TO APPLY\n| # | Company | Role | Link | Board | Band | Posted | Notes |\n|---|---|---|---|---|---|---|---|\n"
+            + "| 1 | Northwind | Staff Engineer | https://jobs.lever.co/northwind/old | lever | PASS | 2026-10-01 (Lever) | |\n"
+            + "| 2 | Fabrikam | Staff Engineer | https://jobs.lever.co/fabrikam/new | lever | PASS | 2026-11-01 (Lever) | |\n";
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        Assert.StartsWith("skipped: age 33 days (posted 2026-10-01", Assert.Single(list.Dropped, d => d.What == "Northwind, Staff Engineer").Reason, StringComparison.Ordinal);
+        Assert.EndsWith(", posted 2026-11-01", Assert.Single(list.Rows, row => row.Company == "Fabrikam").Source, StringComparison.Ordinal);
+    }
+}

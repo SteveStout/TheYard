@@ -1,0 +1,19 @@
+# The machine lanes' morning run (ADR-119, the addendum on the third process). Installed by
+# server/publish-to-wickedawsome.sh. DISPLAY and XAUTHORITY are the auto-login desktop's, read off the
+# running session, because the Chrome the lanes drive lives there.
+[Unit]
+Description=JobHunt 6 AM lanes: LinkedIn invites, LinkedIn messages, applications
+After=default.target jdrive.service
+Wants=jdrive.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/jobhunt-server/JobHunt.Server run
+WorkingDirectory=%h/.local/share/jobhunt-server
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
+Environment=TZ=America/Chicago
+Environment=DOTNET_ROOT=/usr/lib/dotnet
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+TimeoutStartSec=4h

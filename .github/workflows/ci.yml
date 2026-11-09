@@ -239,6 +239,21 @@ jobs:
         run: dotnet test functions/jobhunt.Tests --logger 'console;verbosity=normal'
   # #endregion functions-job
 
+  # #region server-job
+  # The machine lanes and their tests (server/JobHunt.Server, server/JobHunt.Server.Tests): the third
+  # process, deployed by hand on the box that has the browser, so this is the only place a runner builds
+  # it (ADR-119, the addendum on the third process). Every test here is pure or works on a temp folder;
+  # nothing starts a browser, a model or the share.
+  server:
+    needs: style
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/dotnet
+      - name: Run the machine lanes' tests
+        run: dotnet test server/JobHunt.Server.Tests --logger 'console;verbosity=normal'
+  # #endregion server-job
+
   # #region database-job
   # The database is compiled like everything else. api/TheYard.Database is the
   # authority for the SQL Server schema (ADR: Data first, and the database in

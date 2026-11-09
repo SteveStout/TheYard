@@ -69,7 +69,15 @@ public class MachineFreeWorkflowsTests
     {
         string gate = Workflow("gate.yml");
         Assert.Contains("dotnet test functions/jobhunt.Tests", gate, StringComparison.Ordinal);
-        Assert.Contains("for k in sqlproj functions xunit live;", gate, StringComparison.Ordinal);
+        Assert.Contains("for k in sqlproj functions server xunit live;", gate, StringComparison.Ordinal);
+    }
+
+    /// <summary>The machine lanes' suite runs in the gate and in CI, and its red is the run's red.</summary>
+    [Fact]
+    public void The_machine_lanes_suite_runs_in_the_gate_and_in_ci()
+    {
+        Assert.Contains("dotnet test server/JobHunt.Server.Tests", Workflow("gate.yml"), StringComparison.Ordinal);
+        Assert.Contains("dotnet test server/JobHunt.Server.Tests", Workflow("ci.yml"), StringComparison.Ordinal);
     }
     // #endregion the-function
 

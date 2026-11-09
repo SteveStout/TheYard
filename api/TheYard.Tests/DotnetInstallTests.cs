@@ -13,7 +13,7 @@ public sealed class DotnetInstallTests
         File.ReadAllText(Path.Combine([Repo.Root(), .. parts])).ReplaceLineEndings("\n");
 
     [Theory]
-    [InlineData("ci.yml", 5)]
+    [InlineData("ci.yml", 6)]
     [InlineData("gate.yml", 2)]
     public void Every_job_that_needs_dotnet_installs_it_through_the_one_action(string workflow, int jobs)
     {

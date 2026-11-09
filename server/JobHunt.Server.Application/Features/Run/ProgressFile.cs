@@ -1,0 +1,57 @@
+using System.Text.RegularExpressions;
+
+namespace JobHunt.Server.Application.Features.Run;
+
+/// <summary>
+/// Reads the progress.tsv a lane keeps, the record of a send that survives a kill. It is read loosely, because a small
+/// model writes it, and any line it cannot read is handed back, because a send nobody can read is worse than a send
+/// nobody wrote down.
+/// </summary>
+public static partial class ProgressFile
+{
+    /// <summary>The sends in the file, one per row, and the lines that speak of a send and could not be read.</summary>
+    /// <param name="text">The file's text.</param>
+    public static (IReadOnlyList<RowResult> Rows, IReadOnlyList<string> Unread) Read(string text)
+    {
+        var rows = new List<RowResult>();
+        var unread = new List<string>();
+        foreach (string line in text.Split(['\n', '\r']))
+        {
+            Match sent = Line().Match(line);
+            if (sent.Success && int.TryParse(sent.Groups["row"].Value, out int row))
+            {
+                string said = sent.Groups["person"].Value.Trim();
+                if (rows.FirstOrDefault(known => known.Row == row) is { } first)
+                {
+                    if (Plain(first.Person) != Plain(said))
+                    {
+                        unread.Add(line.Trim());
+                    }
+                }
+                else
+                {
+                    string person = sent.Groups["person"].Value.Trim();
+                    rows.Add(new RowResult(row, "sent", "from progress.tsv", person.Length > 0 ? person : null, null, null, null));
+                }
+            }
+            else if (line.Trim().Length > 0 && !Header().IsMatch(line))
+            {
+                unread.Add(line.Trim());
+            }
+        }
+        return (rows, unread);
+    }
+
+    /// <summary>A name as written, lower-cased with its spaces collapsed, so a comma or a title never hides a second name.</summary>
+    /// <param name="person">The name.</param>
+    public static string Plain(string? person) => Space().Replace(person ?? string.Empty, " ").Trim().ToLowerInvariant();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Space();
+
+    [GeneratedRegex(@"^\s*(?:row\s*)?(?<row>\d+)(?:[\s|,:;]|<TAB>)+(?:sent|submitted|applied|invited|messaged)(?:(?:[\s|,:;]|<TAB>)+(?<person>.*))?$", RegexOptions.IgnoreCase)]
+    private static partial Regex Line();
+
+    [GeneratedRegex(@"^\s*(row|row_number|row number|#)(\s*(\t|<TAB>|,|\|)\s*(sent|status|outcome|person|company|name))+\s*$|^\s*`{3}\s*$", RegexOptions.IgnoreCase)]
+    private static partial Regex Header();
+}
