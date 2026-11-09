@@ -79,6 +79,10 @@ public sealed partial class PersonGate
     public string? Invite(string person, string company) =>
         Outreach(person, company) ?? (Touched(person, TrackerKinds.IsInvite) ? "already invited" : Unnamed(person, company));
 
+    /// <summary>True when any tracker row, at any company and on any channel, names this person.</summary>
+    /// <param name="person">The person.</param>
+    public bool OnAnyRow(string person) => Touched(person, _ => true);
+
     /// <summary>Why this person may not get a message, or null.</summary>
     /// <param name="person">The person.</param>
     /// <param name="company">The company.</param>

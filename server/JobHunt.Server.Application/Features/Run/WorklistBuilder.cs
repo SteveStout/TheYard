@@ -245,7 +245,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         {
             return null;
         }
-        if (reads.Rows.Any(row => row.Length >= 7 && row[6].Contains($"Source {candidate.Source}", StringComparison.Ordinal)))
+        if (reads.Rows.Any(row => row.Length >= 7 && Regex.IsMatch(row[6], $@"Source {Regex.Escape(candidate.Source)}(?!\d)")))
         {
             return "this block already went out";
         }

@@ -72,6 +72,10 @@ public static partial class ClosedReqs
     private static bool Cites(string[] row, string[] application) =>
         application[0].Trim().Length > 0 && Regex.IsMatch(row[6], $@"\b{Regex.Escape(application[0].Trim())}\b");
 
+    /// <summary>True when the text uses any word of applying (applied, role, job, resume and the rest), whatever it claims.</summary>
+    /// <param name="text">The drafted text.</param>
+    public static bool Mentions(string text) => Speaks().IsMatch(text);
+
     /// <summary>A title or a note reduced to lower-case words, so two wordings of one title compare.</summary>
     /// <param name="text">The text.</param>
     public static string Normal(string text) => Space().Replace(NotWord().Replace(text.ToLowerInvariant(), " "), " ").Trim();

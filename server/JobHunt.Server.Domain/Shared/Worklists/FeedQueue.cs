@@ -175,9 +175,13 @@ public static partial class FeedQueue
         {
             return "the text must carry ?r=[code]; the program mints the code at send";
         }
-        if (person.Length > 0 && gate.KnownAt(company).Any(known => PersonGate.Name(known) == PersonGate.Name(person)))
+        if (person.Length > 0 && gate.OnAnyRow(person))
         {
-            return $"already on a tracker row at {company}: one touch per person (Rule 25)";
+            return "already on a tracker row, at this company or another: one touch per person (Rule 25)";
+        }
+        if (ClosedReqs.Mentions(text))
+        {
+            return "the text speaks of applying; a note to the reporting line says seat, hire or posting";
         }
         string? gated = invite ? gate.Invite(person, company) : gate.Message(person, company);
         if (gated is not null)

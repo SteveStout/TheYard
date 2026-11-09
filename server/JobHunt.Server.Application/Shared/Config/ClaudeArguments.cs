@@ -131,6 +131,7 @@ public static class ClaudeArguments
         {
             tools.AddRange(FeedReads.Select(path => $"Read({Rooted(share)}/{path})"));
             tools.Add("Glob");
+            tools.Add("Grep");
         }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
         if (!dry && lane == Lane.Feed)

@@ -70,7 +70,7 @@ public sealed class FeedTests
         FeedCut cut = FeedQueue.Cut(candidates, Gate(), [new QueueBlock(4, "Ola Queued", "Iota", WorkAction.Invite, Note, "QUEUE-old.md:9")], FeedHold.Read("- Held Lead, Theta\n"));
         Assert.Equal(["Kim Hot", "Lou Fine"], cut.Kept.Select(kept => kept.Person));
         string Why(string who) => Assert.Single(cut.Dropped, dropped => dropped.What.StartsWith(who, StringComparison.Ordinal)).Reason;
-        Assert.Contains("application", Why("Rae Role"), StringComparison.Ordinal);
+        Assert.Contains("applying", Why("Rae Role"), StringComparison.Ordinal);
         Assert.Equal("already on this feed", Why("Kim Hot"));
         Assert.Contains("?r=[code]", Why("Max Code"), StringComparison.Ordinal);
         Assert.Contains("profile address", Why("Mo Msg"), StringComparison.Ordinal);
@@ -93,6 +93,37 @@ public sealed class FeedTests
     {
         FeedCut cut = FeedQueue.Cut([Candidate("Ann Example", "AccuLynx", action: "message")], Gate(), [], FeedHolds.None);
         Assert.Contains("Rule 25", Assert.Single(cut.Dropped).Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_application_word_is_held_even_where_the_application_is_open()
+    {
+        FeedCut cut = FeedQueue.Cut([Candidate("Lou Fine", "AHEAD", text: Note.Replace("Your platform work caught my eye.", "I applied for the Software Engineering Manager - Foundry role.", StringComparison.Ordinal))], Gate(), [], FeedHolds.None);
+        Assert.Contains("seat, hire or posting", Assert.Single(cut.Dropped).Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_person_the_tracker_has_anywhere_is_one_touch_even_at_a_new_company()
+    {
+        FeedCut cut = FeedQueue.Cut([Candidate("Ann Example", "Brand New Co")], Gate(), [], FeedHolds.None);
+        Assert.Contains("Rule 25", Assert.Single(cut.Dropped).Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_sent_block_s_source_does_not_close_a_block_whose_line_it_begins_with()
+    {
+        var morning = new Morning(_ => new ClaudeRun(0, false, ResultLine.Empty));
+        string block = "### {0}. Cy New{0}, Kappa{0} (VP): MESSAGE\n- Profile: https://www.linkedin.com/in/cy-new{0}\n\n```\nCy,\n\nMy work: theyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to compare notes?\n\nThanks,\nSteve\n```\n\n";
+        morning.Share.Files["linkedin-proof/QUEUE-hotmgr-2026-11-03.md"] = string.Format(System.Globalization.CultureInfo.InvariantCulture, block, 1) + string.Format(System.Globalization.CultureInfo.InvariantCulture, block, 2);
+        DayReads reads = await new DayReader(morning.Share).ReadAsync(Today, default);
+        string late = Assert.Single(reads.Queues, queued => queued.Person == "Cy New2").Source;
+        string early = Assert.Single(reads.Queues, queued => queued.Person == "Cy New1").Source;
+        Assert.StartsWith(early, late, StringComparison.Ordinal);
+        morning.Share.Files["inbox/tracker-inbox/20261102-120000Z-server6am-cy-new2.csv"] = $"Cy New2,Kappa2,LinkedIn,11/2/2026,,\"LINKEDIN MESSAGE SENT. Source {late}.\"\n";
+        reads = await new DayReader(morning.Share).ReadAsync(Today, default);
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        Worklist list = await builder.MessagesAsync(reads, 10, dry: true, default);
+        Assert.Contains(list.Rows, row => row.Person == "Cy New1");
     }
 
     [Fact]
@@ -180,6 +211,7 @@ public sealed class FeedTests
         Assert.Contains("Read(//mnt/j/PRIORITY-BOARD.md)", live);
         Assert.Contains("candidates.json", live[1], StringComparison.Ordinal);
         Assert.Contains("Glob", live);
+        Assert.Contains("Grep", live);
     }
 
     [Fact]
