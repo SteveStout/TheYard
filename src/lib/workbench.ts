@@ -53,6 +53,7 @@ export const CARD_SLUGS = [
   'activity',
   'links',
   'review',
+  'funnel',
   'blog',
   'operator',
   'reset',

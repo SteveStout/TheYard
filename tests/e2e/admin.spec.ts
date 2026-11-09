@@ -1981,3 +1981,47 @@ test('the review route card reads the real route: eight places and a window it n
   expect(refused.status()).toBe(400);
 });
 // #endregion review-card
+
+// #region funnel-card
+/**
+ * The job hunt funnel (ADR: The Nightly Function on the Admin tab, the addendum on the funnel): a local run has no
+ * workspace, so the real route answers unread and says why; the drawn card is held to a report in the route's own
+ * shape, with every number read from it.
+ */
+test('the job hunt funnel card draws the six steps and the week against two to three, from the route', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=funnel');
+  const card = page.getByTestId('funnel-card');
+  await expect(card.getByTestId('funnel-absent')).toContainText('not read here', {
+    timeout: 60_000,
+  });
+  await page.route('**/api/admin/funnel?*', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        window: '7d',
+        available: true,
+        note: null,
+        counts: [212, 14, 9, 18, 2, 1],
+        days: 6,
+        week_booked: 1,
+        week_target: 2,
+        newest_ms: 1_794_200_000_000,
+        tone: 'amber',
+        source: "the Function's daily funnel line (process:Funnel), from Application Insights",
+      }),
+    })
+  );
+  await card.getByTestId('funnel-window-30d').click();
+  await expect(card.getByTestId('funnel-week')).toContainText(
+    '1 call booked in the last 7 days, against 2 to 3 a week'
+  );
+  await expect(card.getByTestId('funnel-week')).toContainText('worth a look');
+  const steps = card.getByTestId('funnel-steps');
+  await expect(steps).toContainText('Postings scanned');
+  await expect(steps).toContainText('212');
+  await expect(steps).toContainText('Calls booked');
+  await expect(card.getByTestId('funnel-days')).toContainText('from 6 days of lines');
+});
+// #endregion funnel-card

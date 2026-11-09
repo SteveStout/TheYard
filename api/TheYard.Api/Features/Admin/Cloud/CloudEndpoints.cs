@@ -6,7 +6,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <summary>The resource cards' route, a window of one resource from its keep, the nightly card's run histories, and the one address a card is fed through.</summary>
 public static class CloudEndpoints
 {
-    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process} and GET /api/admin/incidents.</summary>
+    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process}, GET /api/admin/incidents and GET /api/admin/funnel.</summary>
     public static IEndpointRouteBuilder MapCloudEndpoints(this IEndpointRouteBuilder app)
     {
         // #region resource-endpoint
@@ -83,6 +83,14 @@ public static class CloudEndpoints
             .WithTags("Admin")
             .WithSummary("What broke: every incident the docs keep, and the exceptions and 5xx answers Application Insights kept in the last 7 days");
         // #endregion incidents-endpoint
+        // #region funnel-endpoint
+        // Public like the cards: six counts a day and a tone, nothing that names a company or a person (ADR-109, the
+        // addendum on the funnel). Read from the Function's own line; nothing is typed here.
+        app.MapGet("/api/admin/funnel", Funnel)
+            .WithName("GetFunnel")
+            .WithTags("Admin")
+            .WithSummary("The job hunt's funnel from the Function's daily line: scanned, READY, applied, people reached, replies and calls booked, for 24h, 7d or 30d, graded on the week's calls");
+        // #endregion funnel-endpoint
         return app;
     }
 
@@ -96,6 +104,9 @@ public static class CloudEndpoints
 
     /// <summary>The live wire, snake_case like every Admin read.</summary>
     private static readonly System.Text.Json.JsonSerializerOptions LiveWire = new() { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower };
+
+    private static async Task<Ok<FunnelReport>> Funnel(string? window, ReadFunnelHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadFunnelQuery(window), cancellation));
 
     private static async Task<Ok<IncidentsReport>> Incidents(ReadIncidentsHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadIncidentsQuery(), cancellation));
