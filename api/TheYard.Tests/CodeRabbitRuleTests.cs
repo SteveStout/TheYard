@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace TheYard.Tests;
@@ -106,6 +108,51 @@ public sealed class CodeRabbitRuleTests
         Assert.Equal("false", rows[0].Groups[4].Value);
     }
     // #endregion the-level-is-the-records
+
+    // #region the-log-counts-labels
+    /// <summary>
+    /// The findings log counts a finding by the label in its header and nothing else, so a Minor finding whose text
+    /// says "major" is still one Minor, and a remark with no label is a nitpick.
+    /// </summary>
+    [Fact]
+    public void The_findings_log_counts_each_finding_by_its_header_label_alone()
+    {
+        // The script runs on GitHub's Ubuntu runners and on Linux; a Windows checkout may have no python3.
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        object[] comments =
+        [
+            new { body = "**<picture><img src=\"x/amber-16.svg\" alt=\"\"></picture> Minor** · **Functional Correctness**\n\nNot a major problem." },
+            new { body = "**<picture><img src=\"x/major-16.svg\" alt=\"\"></picture> Major** · **Data Integrity**\n\nA minor detail too." },
+            new { body = "_Potential issue_ | _Critical_\n\nThe older header." },
+            new { body = "A remark with no label that mentions a trivial thing." },
+        ];
+        string file = Path.Combine(Path.GetTempPath(), $"coderabbit-comments-{Guid.NewGuid():N}.json");
+        File.WriteAllText(file, JsonSerializer.Serialize(comments));
+        try
+        {
+            var start = new ProcessStartInfo("python3", $"scripts/coderabbit_review.py count \"{file}\"") { WorkingDirectory = Repo.Root(), RedirectStandardOutput = true, RedirectStandardError = true };
+            using var process = Process.Start(start)!;
+            string output = process.StandardOutput.ReadToEnd();
+            string errors = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            Assert.True(process.ExitCode == 0, errors);
+            using var counted = JsonDocument.Parse(output);
+            JsonElement findings = counted.RootElement.GetProperty("findings");
+            Assert.Equal(1, findings.GetProperty("critical").GetInt32());
+            Assert.Equal(1, findings.GetProperty("major").GetInt32());
+            Assert.Equal(1, findings.GetProperty("minor").GetInt32());
+            Assert.Equal(0, findings.GetProperty("trivial").GetInt32());
+            Assert.Equal(1, findings.GetProperty("nitpick").GetInt32());
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+    // #endregion the-log-counts-labels
 
     [Theory]
     [InlineData("!api/TheYard.Migrations.Sqlite/**/*.cs")]

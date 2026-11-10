@@ -1,11 +1,11 @@
-"""coderabbit_review.py <branch> <sha> <ceiling-seconds> <out.json> | fold <row.json> <log.json>. Waits for CodeRabbit's review of the gate's pull
-request and writes one row of the findings log (ADR-129). Finds the open pull request from <branch>, then waits for the
+"""coderabbit_review.py <branch> <sha> <ceiling-seconds> <out.json> | fold <row.json> <log.json> | count <comments.json>
+| missing <version> <sha> <out.json>. Waits for CodeRabbit's review of the gate's pull request and writes one row of the findings log (ADR-129). Finds the open pull request from <branch>, then waits for the
 newest CodeRabbit check run on <sha> to complete, a skipped one counted as not yet, until <ceiling-seconds> have passed.
 Then reads CodeRabbit's reviews and inline comments on the request and counts the findings by severity. Every gh answer
 is read into a value, and an error or an empty answer is another wait, never a completed review. Writes <out.json>
 whatever happened, with "reviewed" saying which: full, summary only, rate limited, completed with its findings not
-read, or why it was not reviewed; `missing <version> <sha> <out.json>` writes the row for a read that wrote none. At Level 0
-no finding holds a ship, so this always exits 0; the gate's coderabbit job runs it and promote.sh folds the row into
+read, or why it was not reviewed; `missing` writes the row for a read that wrote none, and `count` prints the findings a
+file of inline comments holds, each by its header label. At Level 0 no finding holds a ship, so this always exits 0; the gate's coderabbit job runs it and promote.sh folds the row into
 data/coderabbit-findings.json with `fold`, which replaces a row of the same version rather than adding a second."""
 import json, os, re, subprocess, sys, time, datetime
 
@@ -31,13 +31,16 @@ def gh(path):
     return pages[0] if len(pages) == 1 else pages
 
 
+# The label CodeRabbit writes at the head of a finding: "<picture>...</picture> Minor**" in its current header, or
+# "_Minor_" in the older one. Only the label is read, so a finding whose text mentions another severity is not
+# counted as that one.
+LABEL = re.compile(r"(?:</picture>\s*|_[^_\n]*?)(Critical|Major|Minor|Trivial)(?:\*\*|_)")
+
+
 def severity(body):
-    """The severity CodeRabbit wrote in an inline comment's opening lines, or nitpick when it names none."""
-    head = body[:400].lower()
-    for name in ["critical", "major", "minor", "trivial"]:
-        if name in head:
-            return name
-    return "nitpick"
+    """The severity in an inline comment's header label, or nitpick when the header carries none."""
+    m = LABEL.search(body[:800])
+    return m.group(1).lower() if m else "nitpick"
 
 
 def count(reviews, comments):
@@ -106,6 +109,11 @@ def fold(row_path, log_path):
 def main():
     if sys.argv[1] == "fold":
         fold(sys.argv[2], sys.argv[3])
+        return
+    if sys.argv[1] == "count":
+        with open(sys.argv[2], encoding="utf-8") as f:
+            found, actionable = count([], json.load(f))
+        print(json.dumps({"findings": found, "actionable": actionable}))
         return
     if sys.argv[1] == "missing":
         with open(sys.argv[4], "w", encoding="utf-8") as f:

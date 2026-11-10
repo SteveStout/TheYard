@@ -212,6 +212,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | A Cloud card's request answers from a view under two minutes old and builds the next behind it past one minute; a view at two minutes is not served; the keeper builds each window asked for in the last hour once a minute and drops the rest | ADR-102, the addendum of 1.0.4.164 | CloudKeepingTests |
 | Every rule CodeRabbit is told ends with the record that decided it and that record exists, the rules it is told are the ones ADR-129 lists, and its profile and two switches are the ones ADR-129 names for the current level | ADR-129 | CodeRabbitRuleTests |
 | The gate promotes only after CodeRabbit's review of the gate's pull request is read or its ceiling passed, never holds a ship on a finding at Level 0, folds the review's row into the findings log, and closes the request on main's commit | ADR-129 | PromoteWorkflowTests, PromoteScriptTests |
+| The findings log counts each CodeRabbit finding by the label in its header alone, and a remark with no label as a nitpick | ADR-129, the addendum of 1.0.4.177 | CodeRabbitRuleTests |
 
 ## How the table is read
 
