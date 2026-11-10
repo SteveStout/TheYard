@@ -109,3 +109,8 @@ Outside the rings: the configuration at the repository's root, the job in gate.y
 - [`scripts/gate_pr.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_pr.sh) - opens the request and asks for the review; closes it on main's commit
 - [`scripts/coderabbit_review.py`](https://github.com/SteveStout/TheYard/blob/main/scripts/coderabbit_review.py) - waits for the review and writes the row; folds it into the log
 - [`api/TheYard.Tests/CodeRabbitRuleTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CodeRabbitRuleTests.cs) - the rules and the level held to their records
+
+## Addendum, 2026-11-10 (1.0.4.177): the first finding, fixed
+
+CodeRabbit reviewed 1.0.4.176 on its own gate's pull request (#5): one Minor finding, 777 seconds of review, and the job done 3 minutes before the gate's own checks, so the ship waited for nothing. The finding was right. The log counted a finding's severity by searching its opening text for any of the four words, so a Minor finding that said "major" in its title would have been logged as Major. The count now reads the label in the finding's header alone (`LABEL` in `scripts/coderabbit_review.py`), in the current header and the older one, and a remark with no label is a nitpick. CodeRabbitRuleTests holds it with four headers: a Minor that mentions "major", a Major that mentions "minor", the older Critical header, and no label at all. It is the log's first row with a finding fixed, the kind of row the ladder's evidence is made of.
+
