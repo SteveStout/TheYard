@@ -33,6 +33,10 @@ public sealed class ReadFunnelHandler(IFunnelReader reader, TimeProvider clock) 
 {
     private static readonly TimeSpan Week = TimeSpan.FromDays(7);
 
+    /// <summary>The span a read covered in words: the week, or the 30-day window by its days.</summary>
+    private static string Span(TimeSpan window) =>
+        window > Week ? $"last {window.TotalDays.ToString("0", System.Globalization.CultureInfo.InvariantCulture)} days" : "last seven days";
+
     /// <summary>The window's totals, the week's calls and the card's tone; a reader with nothing to read answers an empty report that says why.</summary>
     /// <param name="query">The window.</param>
     /// <param name="cancellation">The request's cancellation.</param>
@@ -62,7 +66,9 @@ public sealed class ReadFunnelHandler(IFunnelReader reader, TimeProvider clock) 
         var tone = FunnelRules.Grade(week, age);
         if (inWindow.Count == 0 && week.Count == 0)
         {
-            return FunnelReport.Unread(name, reader.Source, "the Function has not written a funnel line in the last seven days");
+            // The note names the span that was read, the window or the week, whichever is longer, so a month with no
+            // line says a month and not a week.
+            return FunnelReport.Unread(name, reader.Source, $"the Function has not written a funnel line in the {Span(length)}");
         }
         var total = FunnelRules.Sum(inWindow);
         return new FunnelReport(
