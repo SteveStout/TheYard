@@ -94,12 +94,16 @@ public sealed class FunnelTests
         Assert.Contains("could not be read (HttpRequestException)", report.Note, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public async Task No_line_in_the_week_says_the_Function_has_not_written_one()
+    [Theory]
+    [InlineData("24h", "the Function has not written a funnel line in the last seven days")]
+    [InlineData("7d", "the Function has not written a funnel line in the last seven days")]
+    [InlineData("30d", "the Function has not written a funnel line in the last 30 days")]
+    [InlineData("1h", "the Function has not written a funnel line in the last seven days")]
+    public async Task No_line_in_the_span_read_says_so_and_names_the_span(string window, string note)
     {
-        var report = await new ReadFunnelHandler(new FakeReader([]), new FixedClock(Now)).HandleAsync(new ReadFunnelQuery("7d"), CancellationToken.None);
+        var report = await new ReadFunnelHandler(new FakeReader([]), new FixedClock(Now)).HandleAsync(new ReadFunnelQuery(window), CancellationToken.None);
 
-        Assert.Equal("the Function has not written a funnel line in the last seven days", report.Note);
+        Assert.Equal(note, report.Note);
     }
     // #endregion the-handler
 
