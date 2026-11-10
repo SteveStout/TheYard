@@ -7,7 +7,8 @@ namespace JobHunt.Infrastructure.Features.Card;
 /// follow-ups from the network log after it, and every draft they or the
 /// carried rejection reads name (with the DO-NOT-SEND note and the .gate.md beside each), the dispatcher's STATUS.md,
 /// LEFT-FOR-STEVE.md, ANSWERED.md, WALLS.md and DECISION.md, the day's APPLY-ESSAYS file, TODAY.md as it stands, and
-/// the next 72 hours of the calendar with each call's must-answers line from its company's NOTES file. A file that is
+/// the next 72 hours of the calendar with each call's must-answers line from its company's NOTES file, and the week's
+/// funnel line from nightly/funnel.log through yesterday. A file that is
 /// not there reads as empty; the card says so where it matters.
 /// </summary>
 public sealed partial class TodayCardSource(IShareReader store, IHttpClientFactory http, TimeProvider time)
@@ -77,7 +78,8 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             essays ? essaysPath : null,
             essays ? await TextAsync(essaysPath, ct) : string.Empty,
             previous,
-            calls);
+            calls,
+            FunnelWeek.Text(await new FunnelSource(store).LogAsync(ct), DateOnly.FromDateTime(local).AddDays(-1)));
     }
 
     /// <summary>
