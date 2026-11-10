@@ -51,12 +51,12 @@ room hammering three cars (ADR-027). Later, three readers with no memory of the 
 junior developer and an architect, reviewed the checkout cold, and every finding got a decision: fixed with
 its version, designed with the version it ships in, or accepted with its reason (ADR-070).
 
-**The bot, last.** CodeRabbit, an AI review bot, reads every version's pull request inside the gate, after my
-tests and quality checks have had their say (ADR-129). It started soft on 10 November: it comments and nothing it
+**The bot, on top.** CodeRabbit, an AI review bot, reads every version's pull request inside the gate, beside the
+tests and quality checks that already decide whether it ships (ADR-129). It started soft on 10 November: it comments and nothing it
 finds holds a release. It gets stricter one step at a time, and only when its log over five ships or more shows
 what it found, what I fixed and what it got wrong; I decide each step. Every rule it is told points at the record
 that made it, and a test fails when one does not. AI reviewing AI's code is still a second opinion, not the first:
-the human gates come first and the bot earns its authority.
+the gates I specified decide, and the bot earns its authority.
 
 **The measurements.** On 3 of 8 paths the two stores answer in the same time. On the other 5 the difference
 is the round trip to the store, 39 ms to Azure SQL Database against 2 ms to Azure Cosmos DB, and taking one

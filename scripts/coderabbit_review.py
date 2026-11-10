@@ -5,13 +5,14 @@ Then reads CodeRabbit's reviews and inline comments on the request and counts th
 is read into a value, and an error or an empty answer is another wait, never a completed review. Writes <out.json>
 whatever happened, with "reviewed" saying which: full, summary only, rate limited, completed with its findings not
 read, or why it was not reviewed; `missing` writes the row for a read that wrote none, and `count` prints the findings a
-file of inline comments holds, each by its header label. At Level 0 no finding holds a ship, so this always exits 0; the gate's coderabbit job runs it and promote.sh folds the row into
+file of inline comments holds, each by its header label, for one commit when a sha follows the file. At Level 0 no finding holds a ship, so this always exits 0; the gate's coderabbit job runs it and promote.sh folds the row into
 data/coderabbit-findings.json with `fold`, which replaces a row of the same version rather than adding a second."""
 import json, os, re, subprocess, sys, time, datetime
 
 BOT = "coderabbitai[bot]"
 SEVERITIES = ["critical", "major", "minor", "trivial", "nitpick"]
 REPO = os.environ.get("GITHUB_REPOSITORY", "SteveStout/TheYard")
+NO_REQUEST_AFTER = 300
 
 
 def gh(path):
@@ -38,18 +39,26 @@ LABEL = re.compile(r"(?:</picture>\s*|_[^_\n]*?)(Critical|Major|Minor|Trivial)(?
 
 
 def severity(body):
-    """The severity in an inline comment's header label, or nitpick when the header carries none."""
-    m = LABEL.search(body[:800])
+    """The severity in an inline comment's header label, or nitpick when the header carries none. The header is the
+    first line that is not blank and not an HTML comment; the remark under it is never read for a label."""
+    header = next((line for line in body.splitlines() if line.strip() and not line.strip().startswith("<!--")), "")
+    m = LABEL.search(header)
     return m.group(1).lower() if m else "nitpick"
 
 
-def count(reviews, comments):
-    """Findings by severity: each inline comment once, plus the nitpicks a review body folds into its own count."""
+def count(reviews, comments, sha=None):
+    """Findings by severity on one commit: each inline comment that opens a thread once (a reply in a thread is not
+    a finding), plus the nitpicks a review body folds into its own count. With <sha>, only that commit's review and
+    comments count, so a second push to the same pull request does not count the first commit's findings again."""
     found = {name: 0 for name in SEVERITIES}
     for c in comments:
+        if c.get("in_reply_to_id") or (sha and c.get("commit_id") not in (None, sha)):
+            continue
         found[severity(c.get("body") or "")] += 1
     actionable = 0
     for r in reviews:
+        if sha and r.get("commit_id") not in (None, sha):
+            continue
         body = r.get("body") or ""
         m = re.search(r"Actionable comments posted:\s*(\d+)", body)
         if m:
@@ -112,7 +121,7 @@ def main():
         return
     if sys.argv[1] == "count":
         with open(sys.argv[2], encoding="utf-8") as f:
-            found, actionable = count([], json.load(f))
+            found, actionable = count([], json.load(f), sys.argv[3] if len(sys.argv) > 3 else None)
         print(json.dumps({"findings": found, "actionable": actionable}))
         return
     if sys.argv[1] == "missing":
@@ -124,6 +133,10 @@ def main():
     start = time.monotonic()
     pr, run = None, None
     while time.monotonic() - start < ceiling:
+        # The machine that ships opens the request right after its push; none after five minutes means it was not
+        # opened, and waiting out the ceiling would only hide that.
+        if pr is None and time.monotonic() - start > NO_REQUEST_AFTER:
+            break
         if pr is None:
             owner = REPO.split("/")[0]
             pulls = gh(f"repos/{REPO}/pulls?state=open&head={owner}:{branch}")
@@ -135,7 +148,7 @@ def main():
             if runs:
                 newest = max(runs, key=lambda r: r.get("started_at") or "")
                 words = ((newest.get("output") or {}).get("title") or "") + " " + ((newest.get("output") or {}).get("summary") or "")
-                if newest.get("status") == "completed" and "skipped" not in words.lower():
+                if newest.get("status") == "completed" and ("skipped" not in words.lower() or "rate limit" in words.lower()):
                     run = newest
                     break
         time.sleep(20)
@@ -158,7 +171,7 @@ def main():
         read_comments = gh(f"repos/{REPO}/pulls/{pr}/comments")
         reviews = [r for r in (read_reviews or []) if (r.get("user") or {}).get("login") == BOT]
         comments = [c for c in (read_comments or []) if (c.get("user") or {}).get("login") == BOT]
-        row["findings"], row["actionable"] = count(reviews, comments)
+        row["findings"], row["actionable"] = count(reviews, comments, sha)
         if read_reviews is None or read_comments is None:
             row["reviewed"] = "completed, findings not read"
         elif "rate limit" in words:
@@ -172,7 +185,8 @@ def main():
         f.write("\n")
     print(json.dumps(row))
     if row["reviewed"].startswith("not reviewed") or row["reviewed"].endswith("not read"):
-        print(f"::notice::CodeRabbit: {row['reviewed']}; Level 0 ships anyway (ADR-129)")
+        kind = "warning" if pr is None else "notice"
+        print(f"::{kind}::CodeRabbit: {row['reviewed']}; Level 0 ships anyway (ADR-129). Open it with scripts/gate_pr.sh open <version> after the push.")
 
 
 if __name__ == "__main__":

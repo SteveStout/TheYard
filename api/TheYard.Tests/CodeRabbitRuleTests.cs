@@ -112,7 +112,8 @@ public sealed class CodeRabbitRuleTests
     // #region the-log-counts-labels
     /// <summary>
     /// The findings log counts a finding by the label in its header and nothing else, so a Minor finding whose text
-    /// says "major" is still one Minor, and a remark with no label is a nitpick.
+    /// says "major" is still one Minor, and a remark with no label is a nitpick. Only the gated commit's findings
+    /// count, and a reply in a finding's thread is not another finding.
     /// </summary>
     [Fact]
     public void The_findings_log_counts_each_finding_by_its_header_label_alone()
@@ -124,16 +125,18 @@ public sealed class CodeRabbitRuleTests
         }
         object[] comments =
         [
-            new { body = "**<picture><img src=\"x/amber-16.svg\" alt=\"\"></picture> Minor** · **Functional Correctness**\n\nNot a major problem." },
+            new { body = "<!-- coderabbit-ai-generated:v1 -->\n\n**<picture><img src=\"x/amber-16.svg\" alt=\"\"></picture> Minor** · **Functional Correctness**\n\nNot a _Major_ problem." },
             new { body = "**<picture><img src=\"x/major-16.svg\" alt=\"\"></picture> Major** · **Data Integrity**\n\nA minor detail too." },
             new { body = "_Potential issue_ | _Critical_\n\nThe older header." },
             new { body = "A remark with no label that mentions a trivial thing." },
+            new { body = "**<picture></picture> Major** · a reply in the thread is not a finding", in_reply_to_id = 7, commit_id = "abc" },
+            new { body = "**<picture></picture> Critical** · on an earlier commit of the same request", commit_id = "old" },
         ];
         string file = Path.Combine(Path.GetTempPath(), $"coderabbit-comments-{Guid.NewGuid():N}.json");
         File.WriteAllText(file, JsonSerializer.Serialize(comments));
         try
         {
-            var start = new ProcessStartInfo("python3", $"scripts/coderabbit_review.py count \"{file}\"") { WorkingDirectory = Repo.Root(), RedirectStandardOutput = true, RedirectStandardError = true };
+            var start = new ProcessStartInfo("python3", $"scripts/coderabbit_review.py count \"{file}\" abc") { WorkingDirectory = Repo.Root(), RedirectStandardOutput = true, RedirectStandardError = true };
             using var process = Process.Start(start)!;
             string output = process.StandardOutput.ReadToEnd();
             string errors = process.StandardError.ReadToEnd();
@@ -153,6 +156,51 @@ public sealed class CodeRabbitRuleTests
         }
     }
     // #endregion the-log-counts-labels
+
+    // #region every-ship-has-one-row
+    /// <summary>
+    /// Every ship has exactly one row: a read that wrote none still gets one that says so, and a re-run of a version
+    /// replaces its row rather than adding a second.
+    /// </summary>
+    [Fact]
+    public void Every_ship_has_one_row_in_the_findings_log_whatever_the_read_did()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-log-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string row = Path.Combine(dir, "row.json");
+            string log = Path.Combine(dir, "log.json");
+            Python(dir, $"missing 1.0.4.900 0123456789abcdef \"{row}\"");
+            Python(dir, $"fold \"{row}\" \"{log}\"");
+            Python(dir, $"fold \"{row}\" \"{log}\"");
+            using var read = JsonDocument.Parse(File.ReadAllText(log));
+            JsonElement rows = read.RootElement.GetProperty("rows");
+            Assert.Equal(1, rows.GetArrayLength());
+            Assert.Equal("1.0.4.900", rows[0].GetProperty("version").GetString());
+            Assert.Equal("01234567", rows[0].GetProperty("sha").GetString());
+            Assert.Equal("not reviewed, the read wrote no row", rows[0].GetProperty("reviewed").GetString());
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    private static void Python(string dir, string args)
+    {
+        var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" {args}") { WorkingDirectory = dir, RedirectStandardOutput = true, RedirectStandardError = true };
+        using var process = Process.Start(start)!;
+        string errors = process.StandardError.ReadToEnd();
+        process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        Assert.True(process.ExitCode == 0, errors);
+    }
+    // #endregion every-ship-has-one-row
 
     [Theory]
     [InlineData("!api/TheYard.Migrations.Sqlite/**/*.cs")]

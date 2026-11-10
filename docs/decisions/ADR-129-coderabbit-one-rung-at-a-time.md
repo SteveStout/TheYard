@@ -114,3 +114,15 @@ Outside the rings: the configuration at the repository's root, the job in gate.y
 
 CodeRabbit reviewed 1.0.4.176 on its own gate's pull request (#5): one Minor finding, 777 seconds of review, and the job done 3 minutes before the gate's own checks, so the ship waited for nothing. The finding was right. The log counted a finding's severity by searching its opening text for any of the four words, so a Minor finding that said "major" in its title would have been logged as Major. The count now reads the label in the finding's header alone (`LABEL` in `scripts/coderabbit_review.py`), in the current header and the older one, and a remark with no label is a nitpick. CodeRabbitRuleTests holds it with four headers: a Minor that mentions "major", a Major that mentions "minor", the older Critical header, and no label at all. It is the log's first row with a finding fixed, the kind of row the ladder's evidence is made of.
 
+## Addendum, 2026-11-10 (1.0.4.178): a cold review of the first two versions
+
+A reviewer with no part in building this read 1.0.4.176 and 1.0.4.177 from three seats (QA, a hiring manager, a staff engineer). Three of its findings were defects and are fixed here:
+
+- **Nothing told a shipper to open the request.** The Shipping section of CLAUDE.md and the preflight's last line now say `bash scripts/gate_pr.sh open <version>` after the push. A ship without a request is still a Level 0 ship, but the job stops looking after five minutes and says so as a warning, where it used to wait out the ceiling behind a notice.
+- **The log counted the request, not the commit.** A second push to the same gate branch would have counted the first commit's findings again, and a reply in a finding's thread counted as a nitpick. The count now takes only the gated commit's review and only comments that open a thread.
+- **The hand promotion's command stopped on a missing row.** It fetched the review's artifact with `&&`, so a read that crashed before writing its row stopped the promotion that exists to write the row for it. The fetch is now allowed to find nothing.
+
+Also changed: the label is read from the header line alone, never the remark under it (the one Minor finding CodeRabbit raised on 1.0.4.177's request, #6); a rate-limited review whose text says "skipped" counts as complete, and the job's timeout is 45 minutes, so the 30-minute ceiling plus its slowest reads cannot time the job out and hold a ship.
+
+Owed before Level 1, from the same review: the log has no column for a finding fixed or answered as wrong, which Decision 6's evidence needs (the session that brings the table derives them from the request's threads until the log carries them); Level 2's "a rule marked blocking" needs a way to tie a finding to the rule it cites before that level is written; and five ships is a small sample, so the table says how many ships it covers.
+

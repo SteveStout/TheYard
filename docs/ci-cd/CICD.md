@@ -46,7 +46,7 @@ the push's CI run. With no such secret the promote job ends GREEN with
 scripts/promote.sh`, moves nothing, and the deploys skip, because a gate that
 found nothing wrong must not send a failure email; a person then promotes the
 run by hand, naming it:
-`gh run download <run> -n gate-raw -D raw && gh run download <run> -n coderabbit-raw -D raw && bash scripts/promote.sh raw <gate seconds> <version> <run>`.
+`gh run download <run> -n gate-raw -D raw && { gh run download <run> -n coderabbit-raw -D raw || true; } && bash scripts/promote.sh raw <gate seconds> <version> <run>`.
 
 **Before the push, run the preflight** (ADR-098, the addendum of 1.0.4.119):
 

@@ -303,7 +303,7 @@ jobs:
   # notice, and the row it writes says so. The row joins data/coderabbit-findings.json in the promote job.
   coderabbit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 45
     permissions:
       contents: read
       checks: read
