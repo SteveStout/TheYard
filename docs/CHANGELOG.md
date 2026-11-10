@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.4.175** (2026-11-09): Once a day, before the morning card, the job hunt's Function counts the day before from its logs and the tracker, from postings scanned down to calls booked, and writes it as the line the Admin tab's funnel card reads; TODAY.md carries the week's sum under its first line, against 2 to 3 calls a week.
 - **1.0.4.174** (2026-11-09): A fifth morning lane reads every LinkedIn conversation where both sides wrote, without opening an unread one, and saves each for the network log beside the email threads, and a Monday's LinkedIn follow-ups now reach the morning card in full for Steve to send himself.
 - **1.0.4.173** (2026-11-09): The network log reads Gmail at a pace under its quota, so a long first read no longer spends most of its time waiting out refusals, a first read that runs out of time picks up where it stopped on the next morning, and a Monday switched on after its shadow pass builds its drafts at the next hour instead of a week later.
 - **1.0.4.172** (2026-11-09): The 58 build-output files that 1.0.4.170 added under server/ by mistake (57 in obj/ folders and one in bin/, no source) are no longer tracked; the .gitignore lines that already ignore server/**/obj/ and server/**/bin/ now hold for them too.
