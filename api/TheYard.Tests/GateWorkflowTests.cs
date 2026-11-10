@@ -28,13 +28,13 @@ public class GateWorkflowTests
         return workflow[start..end];
     }
 
-    /// <summary>The Shed's job, to the promote job after it.</summary>
+    /// <summary>The Shed's job, to CodeRabbit's job after it.</summary>
     private static string ShedJob()
     {
         string workflow = Workflow();
         int start = workflow.IndexOf("\n  shed:\n", StringComparison.Ordinal);
-        int end = workflow.IndexOf("\n  promote:\n", StringComparison.Ordinal);
-        Assert.True(start > 0 && end > start, "gate.yml should hold The Shed's job and then the promote job");
+        int end = workflow.IndexOf("\n  # #region coderabbit-job\n", StringComparison.Ordinal);
+        Assert.True(start > 0 && end > start, "gate.yml should hold The Shed's job and then CodeRabbit's");
         return workflow[start..end];
     }
 

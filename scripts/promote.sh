@@ -4,15 +4,15 @@
 # Does:      Promotes one green gate run onto main (ADR: The gate runs where the memory is, the addendum of
 #            1.0.4.101): checks that the commit is the one the run tested and sits one commit on main, that the
 #            version goes up by one in its fourth number, the locked resume, and the Cloud roles; writes
-#            data/test-results.json and the README's figures from the run's reports in <raw>, folds them into the
-#            commit, and fast-forwards main to it. Never force-pushes. Writes sha, version and functions to
+#            data/test-results.json and the README's figures from the run's reports in <raw>, adds CodeRabbit's row
+#            to data/coderabbit-findings.json, folds them into the commit, and fast-forwards main to it. Never force-pushes. Writes sha, version and functions to
 #            $GITHUB_OUTPUT when it runs in the gate.
 # Does not:  Run a check (the gate did), roll the site (the gate calls Deploy and Deploy Render, or the push does
 #            when a personal token made it), or read, print or pass a token value: a version that changes a
 #            workflow is carried by the secret PROMOTE_TOKEN the promote job checks out with, and where that
 #            secret does not exist this ends green with a notice and moves nothing.
 # Used by:   .github/workflows/gate.yml's promote job, and a person promoting a run by hand, naming the run:
-#            gh run download <run> -n gate-raw -D raw && scripts/promote.sh raw <seconds> <version> <run>
+#            gh run download <run> -n gate-raw -D raw && gh run download <run> -n coderabbit-raw -D raw && scripts/promote.sh raw <seconds> <version> <run>
 set -euo pipefail
 raw=$1
 seconds=$2
@@ -33,6 +33,10 @@ tested=$(gh run view "$run" --json headSha --jq .headSha) || refuse "gate run $r
 [ "$tested" = "$(git rev-parse HEAD)" ] || refuse "gate run $run tested ${tested:0:8} and HEAD is $(git rev-parse --short=8 HEAD)"
 green=$(gh run view "$run" --json jobs --jq '[.jobs[] | select(.name == "gate" or .name == "shed") | select(.conclusion == "success")] | length') || refuse "gate run $run's jobs could not be read"
 [ "$green" = 2 ] || refuse "gate run $run's gate and shed jobs are not both green"
+# The CodeRabbit job ends green at Level 0 whatever the review found; a run that has the job and did not finish it
+# green has not read the review yet (ADR-129). A run from before the job existed has none to wait for.
+review=$(gh run view "$run" --json jobs --jq '[.jobs[] | select(.name == "coderabbit")] | if length == 0 then "none" else .[0].conclusion end') || refuse "gate run $run's jobs could not be read"
+[ "$review" = none ] || [ "$review" = success ] || refuse "gate run $run's coderabbit job is $review, not green"
 git fetch -q origin +refs/heads/main:refs/remotes/origin/main
 [ "$(git rev-parse HEAD~1 2>/dev/null)" = "$(git rev-parse origin/main)" ] || refuse "the gate branch is not one commit on main"
 # #endregion the-tested-commit
@@ -117,9 +121,12 @@ node scripts/test_results.mjs "$raw" "$version" "$seconds"
 # CI on main red on the test that reads it. The reports are the run's, or nothing is promoted.
 node -e 'const r = require("./data/test-results.json"); const bad = r.suites.filter(s => s.failed > 0 || s.skipped > 0); if (bad.length) { console.error(bad.map(s => `${s.id}: ${s.failed} failed, ${s.skipped} skipped`).join("; ")); process.exit(1); }'   || refuse "the results file records a suite this green gate did not have: its reports are another attempt's, so re-run the gate by pushing the branch again rather than re-running the job"
 python3 scripts/readme_results.py
-extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
-[ -z "$extra" ] || refuse "the results touched more than their three files and the version card: $extra"
+# CodeRabbit's row for this ship joins the findings log, the evidence every rung of its ladder is decided on (ADR-129).
+if [ -f "$raw/coderabbit.json" ]; then python3 scripts/coderabbit_review.py fold "$raw/coderabbit.json" data/coderabbit-findings.json; fi
+extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|data/coderabbit-findings\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
+[ -z "$extra" ] || refuse "the results touched more than their four files and the version card: $extra"
 git add data/test-results.json README.md docs/built-with-ai/BUILT-WITH-AI.md docs/images/og.svg public/og.png
+if [ -f data/coderabbit-findings.json ]; then git add data/coderabbit-findings.json; fi
 GIT_COMMITTER_NAME="$(git log -1 --format=%an)" GIT_COMMITTER_EMAIL="$(git log -1 --format=%ae)" git commit -q --amend --no-edit
 sha=$(git rev-parse HEAD)
 echo "the results folded into the commit: ${sha:0:8}"
