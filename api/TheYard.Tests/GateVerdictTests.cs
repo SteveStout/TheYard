@@ -55,7 +55,7 @@ public sealed class GateVerdictTests : IDisposable
         Directory.CreateDirectory(_root);
         Plant("node.result", "prettier=0\nprettier_s=4\nlint=0\nlint_s=9\ntsc=0\ntsc_s=7\nvitest=0\nvitest_s=60\nbrowser=0\nbrowser_s=570\nbrowser_cosmos=skipped\nbrowser_cosmos_s=0\n");
         Plant("dotnet.result", "format=0\nformat_s=20\nsqlproj=0\nsqlproj_s=30\nfunctions=0\nfunctions_s=60\nserver=0\nserver_s=10\nxunit=0\nxunit_s=300\nlive=0\nlive_s=40\noncosmos=skipped\noncosmos_s=0\n");
-        Plant("rest.result", "emdash=0\nquality=0\n");
+        Plant("rest.result", "emdash=0\nquality=0\nfold=0\n");
         Plant("build.result", "warnings=0\n");
         // Every text log holds what it holds on a GREEN run: this is the noise the verdict used to print.
         Plant("prettier.txt", "\n> theyard@0.1.0 format:check\n\nChecking formatting...\nAll matched files use Prettier code style!\n");
@@ -163,6 +163,7 @@ public sealed class GateVerdictTests : IDisposable
     [InlineData("dotnet.result", "xunit=0", "xunit=1", "xunit-sqlite.txt", "  Failed AuthBidTests.A_vehicle_bought_outright_is_sold_to_everybody", "xunit")]
     [InlineData("node.result", "browser=0", "browser=1", "browser-sqlite.txt", "  1) tests/e2e/admin.spec.ts:40:3 planted", "browser")]
     [InlineData("build.result", "warnings=0", "warnings=3", "build.txt", "api/TheYard.Api/Program.cs(9,1): warning CA2016: planted", "warnings")]
+    [InlineData("rest.result", "fold=0", "fold=1", "fold.txt", "browser-2: NO REPORTS", "fold")]
     public void Only_the_log_of_the_check_that_failed_reaches_the_annotations(string result, string was, string now, string log, string line, string check)
     {
         if (NoBash())

@@ -61,6 +61,17 @@ public class TestResultsTests(WebApplicationFactory<Program> factory)
             wrong.Add("version should be 1.0.0.N, the changelog's number for the build the gate tested");
         }
 
+        // The check jobs' own wall clock (ADR-098, the addendum of 1.0.5.4) runs from the run's start to the verdict, so it
+        // is never longer than gateSeconds, which runs on to the promote step. A file from before that version has none.
+        if (root.TryGetProperty("checksSeconds", out JsonElement checks) && checks.ValueKind != JsonValueKind.Null)
+        {
+            int gate = root.GetProperty("gateSeconds").GetInt32();
+            if (checks.GetInt32() <= 0 || checks.GetInt32() > gate)
+            {
+                wrong.Add($"checksSeconds {checks.GetInt32()} should be above zero and at most gateSeconds {gate}");
+            }
+        }
+
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (JsonElement suite in root.GetProperty("suites").EnumerateArray())
         {

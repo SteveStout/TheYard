@@ -134,7 +134,8 @@ other adapter, the same answers. The `if` in the block below is why the second p
 every version: it runs when the version touched the API, the Cosmos infrastructure or the three
 specs that read both stores, and is carried forward from the version that last ran it otherwise.
 Between the two passes sit the seven tests that do need the live account, which are the one set
-written for the second store. From the gate's own workflow:
+written for the second store. From the gate's own workflow, the job that reads the Cosmos DB account (the
+SQLite pass runs beside it in a job of its own since 1.0.5.4):
 
 ```live path=.github/workflows/gate.yml region=both-stores
 ```

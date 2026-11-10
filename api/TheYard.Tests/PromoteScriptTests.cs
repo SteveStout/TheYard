@@ -114,7 +114,7 @@ public sealed class PromoteScriptTests : IDisposable
     private string MainOnOrigin() => Run(_root, "git", "--git-dir origin.git rev-parse main").Output.Trim();
 
     /// <summary>promote.sh as a person runs it, the run's answer given by the stand-in gh.</summary>
-    private (int Code, string Output) Promote(string version, string? tested = null, int green = 2, string card = "", IReadOnlyDictionary<string, string>? env = null)
+    private (int Code, string Output) Promote(string version, string? tested = null, int green = 7, string card = "", IReadOnlyDictionary<string, string>? env = null)
     {
         var values = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -153,7 +153,7 @@ public sealed class PromoteScriptTests : IDisposable
 
     public static TheoryData<string, string> Refusals => new()
     {
-        { "red", "gate and shed jobs are not both green" },
+        { "red", "check jobs are not all green: 6 of the 7 it trusts" },
         { "untested", "tested deadbeef" },
         { "not-on-main", "not one commit on main" },
         { "two-ahead", "not one commit on main" },
@@ -177,7 +177,7 @@ public sealed class PromoteScriptTests : IDisposable
         Main();
         string before = MainOnOrigin();
         string? tested = null;
-        int green = 2;
+        int green = 7;
         string version = "1.0.4.106";
         string card = "";
         var env = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -185,7 +185,7 @@ public sealed class PromoteScriptTests : IDisposable
         {
             case "red":
                 Version(version);
-                green = 1;
+                green = 6;
                 break;
             case "untested":
                 Version(version);

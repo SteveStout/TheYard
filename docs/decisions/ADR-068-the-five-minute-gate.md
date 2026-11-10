@@ -467,3 +467,8 @@ The browser suite runs with `--retries=1` in gate.yml, and `scripts/test_results
 ## Addendum, 2026-10-25 (1.0.4.72): the SDK download cannot turn a good version red
 
 The first gate for 1.0.4.72 (run 40224307813) failed in its first minute without running a check: setup-dotnet resolved `10.0.x` to SDK 10.0.403 and runtime 10.0.14, the download answered 409, and every check after it was reported red. The version was sound; the gate had bet every run on one download. From this version every job in ci.yml and gate.yml gets its SDK through one composite action, `.github/actions/dotnet`: it tries setup-dotnet twice, a minute apart, and if both fail it builds with the runner image's own .NET 10 SDK and names it in a warning; it fails only when the runner has no .NET 10 SDK at all, and says that in one line. `DotnetInstallTests` holds every job to the action and the action to its two tries and its fallback: red on the prior workflows, which called setup-dotnet directly.
+
+## Addendum, 2026-11-10 (1.0.5.4): the design of 10/19 is built
+
+The addendum of 1.0.3.183 worked out that the gate gets under ten minutes as two jobs, one per store, and left it unbuilt. It is built in 1.0.5.4, with one difference: the Cosmos DB passes stay in one job because they share the `tests-` containers, and the SQLite side is three jobs, the browser suite in two shards, because that suite is the longest pass. The record is ADR-098, the addendum of 1.0.5.4.
+

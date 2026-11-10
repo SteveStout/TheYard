@@ -14,7 +14,7 @@ public sealed class DotnetInstallTests
 
     [Theory]
     [InlineData("ci.yml", 6)]
-    [InlineData("gate.yml", 2)]
+    [InlineData("gate.yml", 5)]
     public void Every_job_that_needs_dotnet_installs_it_through_the_one_action(string workflow, int jobs)
     {
         string text = Read(".github", "workflows", workflow);

@@ -80,5 +80,6 @@ if [ -n "$red" ]; then
   exit 1
 fi
 echo "preflight green: none of these four will turn the gate red"
+echo "the full run is the gate's: before the push, run only the suite your change touches (CLAUDE.md, Testing)"
 echo "after the push of gate/<version>: bash scripts/gate_pr.sh open <version>, so CodeRabbit reviews it (ADR-129)"
 # #endregion the-verdict
