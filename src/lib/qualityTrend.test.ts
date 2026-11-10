@@ -26,8 +26,9 @@ describe('the quality trend', () => {
     expect(xs[0]).toBe(TREND_BOX.left);
     expect(xs[3]).toBe(TREND_BOX.width - TREND_BOX.right);
     expect(xs[2] - xs[1]).toBeCloseTo(xs[1] - xs[0], 1);
-    expect(shape.preScan.split(' L').length).toBe(2);
-    expect(shape.measured.startsWith(`M${xs[1]} `)).toBe(true);
+    // The pre-scan's two readings and the step into the scanner's first are dashed; the solid line starts there.
+    expect(shape.preScan.split(' L').length).toBe(3);
+    expect(shape.measured.startsWith(`M${xs[2]} `)).toBe(true);
     expect(shape.marker?.x).toBe(xs[2]);
     expect(shape.points[2].y).toBeLessThan(shape.points[3].y);
     expect(shape.xLabels.map((l) => l.text)).toEqual(['10-15', '1.0.4.178']);

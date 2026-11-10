@@ -25,7 +25,8 @@ for (const width of [1280, 390]) {
       timeout: 30_000,
     });
     await expect(dialog.getByTestId('quality-trend')).toHaveCount(fences, { timeout: 30_000 });
-    await expect(dialog.getByTestId('quality-trend-marker')).toHaveCount(fences);
+    // Every number's chart marks the version it joined the ratchet; the two coverage charts have no such version.
+    await expect(dialog.getByTestId('quality-trend-marker')).toHaveCount(fences - 2);
     await expect(
       dialog.getByRole('heading', { name: 'The rules, and the tests that hold them' })
     ).toBeVisible();

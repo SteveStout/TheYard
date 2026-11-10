@@ -244,6 +244,28 @@ public sealed class PromoteScriptTests : IDisposable
         Assert.Contains(reason, output, StringComparison.Ordinal);
         Assert.Equal(before, MainOnOrigin());
     }
+    /// <summary>In the gate, a move in the first three numbers ends green and moves nothing, even with OWNER_YES set (ADR-130).</summary>
+    [Fact]
+    public void In_the_gate_the_owners_number_ends_green_and_moves_nothing()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        string before = MainOnOrigin();
+        Version("1.0.5.0");
+        string outputs = Path.Combine(_root, "outputs.txt");
+        File.WriteAllText(outputs, "");
+
+        var (code, output) = Promote("1.0.5.0", env: new Dictionary<string, string>(StringComparer.Ordinal) { ["GITHUB_ACTIONS"] = "true", ["GITHUB_OUTPUT"] = outputs, ["OWNER_YES"] = "1.0.5.0" });
+
+        Assert.True(code == 0, output);
+        Assert.Contains("moves the first three numbers: promote it by hand with OWNER_YES=1.0.5.0", output, StringComparison.Ordinal);
+        Assert.Contains("promoted=false", File.ReadAllText(outputs), StringComparison.Ordinal);
+        Assert.Equal(before, MainOnOrigin());
+    }
+
     /// <summary>A move in the first three numbers ships by hand when the person promoting names it as the owner's yes (ADR-130).</summary>
     [Fact]
     public void The_owners_number_moves_by_hand_with_his_yes_named()

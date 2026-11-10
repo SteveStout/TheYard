@@ -80,11 +80,12 @@ public static partial class QualityCounts
             .Where(r => r.GetProperty("coverage").ValueKind == JsonValueKind.Object)
             .Select(r => $"{r.GetProperty("date").GetString()} | {Version(r)} | {Format(r.GetProperty("coverage").GetProperty(which))} | ci"));
 
-    /// <summary>The worst reading of a number that may only fall, and the version or day it was read at.</summary>
+    /// <summary>The worst reading of a number, the highest of one that may only fall and the lowest of one that may only rise, and the version it was read at.</summary>
     private static string Peak(string repoRoot, string key)
     {
-        JsonElement worst = Rows(repoRoot).Where(r => Has(r.GetProperty("numbers"), key))
-            .MaxBy(r => r.GetProperty("numbers").GetProperty(key).GetDouble());
+        var readings = Rows(repoRoot).Where(r => Has(r.GetProperty("numbers"), key)).ToList();
+        Func<JsonElement, double> value = r => r.GetProperty("numbers").GetProperty(key).GetDouble();
+        JsonElement worst = key.EndsWith("higher_is_better", StringComparison.Ordinal) ? readings.MinBy(value) : readings.MaxBy(value);
         string where = Version(worst) is { Length: > 0 } version ? $"at {version}" : $"on {worst.GetProperty("date").GetString()}";
         return $"{Format(worst.GetProperty("numbers").GetProperty(key))} {where}";
     }
