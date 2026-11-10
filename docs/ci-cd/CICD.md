@@ -14,9 +14,14 @@ What that is worth: a developer can merge knowing a failing test stops the chang
 **Continuous integration.** Every test runs once per version, in the ship's
 gate: the ship pushes the version to a `gate/<version>` branch, `gate.yml` runs
 the API suite on both stores, the frontend suite, and a browser suite that
-clicks through the running app the way a person would, on a GitHub runner, and
+clicks through the running app the way a person would, on GitHub's runners, and
 `main` moves only when all of it is green (ADR-098). A change that fails any of
-them never reaches `main`. Every result, test by test, ships with the version and is on
+them never reaches `main`. Since 1.0.5.4 the checks run
+side by side: a job for the .NET side on SQLite, one for every pass on the
+Cosmos DB account, one for the node checks and two for the browser suite, and a
+gate job that folds their reports into one and gives the verdict (ADR-098, the
+addendum of 1.0.5.4). The whole of every suite runs there once; a lane runs only
+the suite its change touches before it pushes. Every result, test by test, ships with the version and is on
 the Admin tab. The same suites then run again on GitHub's runners for every
 push to main, where anybody can read the result without a login, and for a
 pull request from anybody else, which has had no gate. Every one of those jobs
@@ -87,7 +92,7 @@ email names the real failure and not the green checks beside it.
 
 **What promote refuses** (ADR-098, the addendum of 1.0.4.107). Before it
 writes anything, `scripts/promote.sh` reads the named run and refuses unless
-that run tested HEAD, its gate and Shed jobs are both green, its coderabbit job
+that run tested HEAD, its gate, Shed and five check jobs are all green, its coderabbit job
 (where the run has one) is green, HEAD is exactly
 one commit on `main`, and the version goes up by one in its fourth number. The
 gate's two cuts read the whole branch from where it left `main`. Deploy and

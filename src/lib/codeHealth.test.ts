@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeRows, gateTrend } from './codeHealth';
+import { codeRows, gateTrend, verdictSeconds } from './codeHealth';
 
 describe('code health', () => {
   it('reads every number the gate measured, and red on one warning', () => {
@@ -42,5 +42,31 @@ describe('code health', () => {
     ]);
     expect(trend.points.map((point) => point.value)).toEqual([280, 300]);
     expect(trend.amber).toBe(300);
+  });
+
+  it('reads the checks to their verdict, which from 1.0.5.4 stop before promote waits on the review', () => {
+    expect(verdictSeconds({ gateSeconds: 660, checksSeconds: 420 })).toBe(420);
+    expect(verdictSeconds({ gateSeconds: 741 })).toBe(741);
+    expect(verdictSeconds({ gateSeconds: 741, checksSeconds: null })).toBe(741);
+    const trend = gateTrend([
+      {
+        version: 'a',
+        ranAt: '2026-11-10T20:21:00Z',
+        gateSeconds: 741,
+        passed: 1,
+        failed: 0,
+        distJsBytes: null,
+      },
+      {
+        version: 'b',
+        ranAt: '2026-11-11T00:00:00Z',
+        gateSeconds: 660,
+        checksSeconds: 420,
+        passed: 1,
+        failed: 0,
+        distJsBytes: null,
+      },
+    ]);
+    expect(trend.points.map((point) => point.value)).toEqual([741, 420]);
   });
 });

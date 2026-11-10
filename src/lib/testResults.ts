@@ -31,6 +31,8 @@ export type TestResults = {
   version: string;
   ranAt: string;
   gateSeconds: number;
+  /** The check jobs' own wall clock, start to verdict; absent from a file the one-job gate wrote. */
+  checksSeconds?: number | null;
   checks: TestCheck[];
   suites: TestSuite[];
   /** The code's own numbers (src/lib/codeHealth.ts); absent from a file an older gate wrote. */

@@ -34,13 +34,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # #region gate-job
-  gate:
+  # The checks run side by side (ADR-098, the addendum of 1.0.5.4). Until 1.0.5.3 every check ran in one job, one
+  # after another, and the run was the sum of its suites; ADR-068's addendum of 1.0.3.183 worked out that two jobs
+  # would bring it under ten minutes and left it unbuilt. Now four kinds of job start together: the .NET side on
+  # SQLite, everything that reads the Cosmos DB account (in ONE job, because two would share the tests- containers
+  # on it), the node checks, and the browser suite on SQLite in two shards. Each leaves its reports as
+  # raw-<job>-<attempt>, and the gate job folds them into the one gate-raw folder promote.sh, the after-roll and the
+  # Admin tab read, in the shape they read before, and turns the run red or green with the same verdict. Every check
+  # still runs, on the same cuts; only the order of the waiting changed.
+
+  # #region dotnet-job
+  # The .NET side on SQLite: the build with any warning red, dotnet format, the SQL projects, the job hunt's
+  # Function's suite, the machine lanes' suite and xUnit on SQLite.
+  dotnet:
     runs-on: ubuntu-24.04
-    # The federated credential for the Cosmos DB passes is issued to this environment, so a
-    # branch name never has to be registered in Azure.
-    environment: gate
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -51,28 +59,17 @@ jobs:
           cache: npm
       - uses: ./.github/actions/dotnet
       - run: npm ci
-      - run: npx playwright install --with-deps chrome
-
-      # #region two-cuts
-      # What the branch changed decides two things, as on the laptop (ADR: The five-minute gate, the
-      # addendum on the two cuts): whether dotnet format runs, and whether the two passes on Cosmos DB
-      # run or are carried forward from the last version that ran them. The diff is from where the
-      # branch left main, so every commit it would ship is read, however many there are.
       - name: What the branch changed
         run: |
-          mkdir -p "$RUNNER_TEMP/raw/trx" "$RUNNER_TEMP/raw/trx-shed"
+          mkdir -p "$RUNNER_TEMP/raw/trx"
           echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
-          git fetch -q origin +refs/heads/main:refs/remotes/origin/main
-          git diff --name-only "$(git merge-base origin/main HEAD)" HEAD > "$RUNNER_TEMP/raw/touched.txt"
-          cat "$RUNNER_TEMP/raw/touched.txt"
-          if grep -qE '\.(cs|csproj|slnx|editorconfig)$' "$RUNNER_TEMP/raw/touched.txt"; then echo "FORMAT_NEEDED=1" >> "$GITHUB_ENV"; else echo "FORMAT_NEEDED=0" >> "$GITHUB_ENV"; fi
-          if grep -qE '^(api/|infra/cosmos/|tests/e2e/(store-toggle|account|admin)\.spec\.ts$)' "$RUNNER_TEMP/raw/touched.txt"; then echo "COSMOS_NEEDED=1" >> "$GITHUB_ENV"; else echo "COSMOS_NEEDED=0" >> "$GITHUB_ENV"; fi
-      # #endregion two-cuts
+          bash scripts/gate_cuts.sh "$RUNNER_TEMP/raw"
 
       # #region version-card
       # The link preview card names the version, so it is drawn here from the commit's own changelog
       # before any test reads it, and leaves in gate-raw for promote to fold into the commit with the
-      # results: a ship needs no machine to draw it first (ADR-098, the addendum of 1.0.4.105).
+      # results: a ship needs no machine to draw it first (ADR-098, the addendum of 1.0.4.105). The
+      # runner image's own Chrome draws it.
       - name: The version card
         run: |
           node docs/images/og.mjs
@@ -80,15 +77,6 @@ jobs:
           cp docs/images/og.svg public/og.png "$RAW/"
           git status --short -- docs/images/og.svg public/og.png
       # #endregion version-card
-
-      # A login that fails does not stop the run here: the live Cosmos DB tests that need it then
-      # fail on their own, by name, and the verdict below turns the run red.
-      - uses: azure/login@v3
-        continue-on-error: true
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       # #region build
       # Any build warning is red, as on the laptop.
@@ -100,36 +88,12 @@ jobs:
           warnings=$(grep -c ': warning ' "$RAW/build.txt" || true)
           echo "build warnings: $warnings"
           echo "warnings=$warnings" > "$RAW/build.result"
-      - run: npx vite build
-        id: web
-      - run: npx vite build --config render/vite.config.ts
       # #endregion build
 
-      # #region code-numbers
-      # The code's own numbers for CODE HEALTH on the tests card: the page's built size and the
-      # packages with a newer release. Measurements, not checks: nothing here turns the run red
-      # (the build's warnings already do, above), so they go to their own file, code.result. They
-      # run only after the two builds they read passed, the API's and the page's (the rendering
-      # service's build is not measured): a size read off a failed build would say 0 kB, and the
-      # card must say not measured instead (ADR-080).
-      - name: The code's own numbers
-        if: always() && steps.build.outcome == 'success' && steps.web.outcome == 'success'
-        run: |
-          echo "dist_js_bytes=$(cat dist/assets/*.js | wc -c)" >> "$RAW/code.result"
-          echo "dist_css_bytes=$(cat dist/assets/*.css | wc -c)" >> "$RAW/code.result"
-          npm outdated --json > "$RAW/npm-outdated.json" 2>/dev/null || true
-          echo "outdated_npm=$(node -e 'try{console.log(Object.keys(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")||"{}")).length)}catch{console.log(-1)}' "$RAW/npm-outdated.json")" >> "$RAW/code.result"
-          echo "outdated_nuget=$( (dotnet list api/TheYard.slnx package --outdated 2>/dev/null || true) | grep -cE '^\s+> ' || true)" >> "$RAW/code.result"
-          cat "$RAW/code.result"
-      # #endregion code-numbers
-
       # #region dotnet-side
-      # The .NET side: format, the SQL project, xUnit on SQLite, the live Cosmos DB tests, and the
-      # whole suite booted on Cosmos DB when the commit touched what it reads.
+      # The .NET side: format, the SQL project, the two other processes' suites and xUnit on SQLite.
       - name: The .NET side
         if: always()
-        env:
-          COSMOS_ENDPOINT: https://cosmos-theyard-ss.documents.azure.com:443/
         run: |
           r="$RAW/dotnet.result"; : > "$r"
           t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
@@ -145,28 +109,151 @@ jobs:
           # The machine lanes' own suite, the third process (ADR-119, the addendum on the third process).
           read code s < <(t bash -c 'dotnet test server/JobHunt.Server.Tests > "$RAW/server.txt" 2>&1')
           echo "server=$code" >> "$r"; echo "server_s=$s" >> "$r"
-          # #region both-stores
           read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-sqlite.trx" --results-directory "$RAW/trx" > "$RAW/xunit-sqlite.txt" 2>&1')
           echo "xunit=$code" >> "$r"; echo "xunit_s=$s" >> "$r"
-          export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT"
-          read code s < <(t bash -c 'dotnet test api --no-build --filter "Store=cosmos" --logger "trx;LogFileName=xunit-live.trx" --results-directory "$RAW/trx" > "$RAW/xunit-live.txt" 2>&1')
-          echo "live=$code" >> "$r"; echo "live_s=$s" >> "$r"
-          export Cosmos__ContainerPrefix="tests-"
-          if [ "$COSMOS_NEEDED" = 1 ]; then
-            read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-cosmos.trx" --results-directory "$RAW/trx" > "$RAW/xunit-cosmos.txt" 2>&1')
-            echo "oncosmos=$code" >> "$r"; echo "oncosmos_s=$s" >> "$r"
-          else echo "oncosmos=skipped" >> "$r"; echo "oncosmos_s=0" >> "$r"; fi
-          # #endregion both-stores
           cat "$r"
       # #endregion dotnet-side
 
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: raw-dotnet-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/raw/
+      - name: This job's verdict
+        if: always()
+        run: bash scripts/gate_job.sh "$RAW" warnings format sqlproj functions server xunit
+  # #endregion dotnet-job
+
+  # #region cosmos-job
+  # Everything that reads the Cosmos DB account, in this one job and one pass after another: the live Cosmos DB
+  # tests on every run, and, when the commit touched what they read, the whole xUnit suite booted on Cosmos DB and
+  # the three store specs in the browser. The live tests, xUnit on Cosmos DB and the browser pass on Cosmos DB share
+  # the account, and the last two the tests- containers on it, so they are never split across jobs. This is the one
+  # job that signs in to Azure: a sign-in that times out reddens this job's passes and nothing else.
+  cosmos:
+    runs-on: ubuntu-24.04
+    # The federated credential for the Cosmos DB passes is issued to this environment, so a
+    # branch name never has to be registered in Azure.
+    environment: gate
+    timeout-minutes: 30
+    env:
+      COSMOS_ENDPOINT: https://cosmos-theyard-ss.documents.azure.com:443/
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: ./.github/actions/dotnet
+      - run: npm ci
+      - name: What the branch changed
+        run: |
+          mkdir -p "$RUNNER_TEMP/raw/trx"
+          echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
+          bash scripts/gate_cuts.sh "$RUNNER_TEMP/raw"
+      # The suite booted on Cosmos DB reads the card as the SQLite pass does.
+      - name: The version card, for the suite to read
+        run: |
+          node docs/images/og.mjs
+          python3 scripts/strip_c2pa.py docs/images
+      # A login that fails does not stop the run here: the live Cosmos DB tests that need it then
+      # fail on their own, by name, and the verdict turns the run red.
+      - uses: azure/login@v3
+        continue-on-error: true
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # The build's warnings are judged in the dotnet job; this build only has to be there for the passes.
+      - name: dotnet build, for the passes
+        run: dotnet build api/TheYard.slnx -c Debug > "$RAW/cosmos-build.txt" 2>&1 || { tail -n 20 "$RAW/cosmos-build.txt"; exit 1; }
+      - name: The bundle and Chrome, for the store specs
+        if: env.COSMOS_NEEDED == '1'
+        run: |
+          npx playwright install --with-deps chrome
+          npx vite build
+
+      # #region both-stores
+      # The same xUnit suite again, booted on Cosmos DB: the process pointed at the account and the
+      # tests- containers, when the commit touched what it reads; between the live tests that need
+      # the account and the three store specs in the browser.
+      - name: The Cosmos DB passes
+        if: always()
+        run: |
+          d="$RAW/dotnet.result"; n="$RAW/node.result"; : > "$d"; : > "$n"
+          t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
+          export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT"
+          read code s < <(t bash -c 'dotnet test api --no-build --filter "Store=cosmos" --logger "trx;LogFileName=xunit-live.trx" --results-directory "$RAW/trx" > "$RAW/xunit-live.txt" 2>&1')
+          echo "live=$code" >> "$d"; echo "live_s=$s" >> "$d"
+          export Cosmos__ContainerPrefix="tests-"
+          if [ "$COSMOS_NEEDED" = 1 ]; then
+            read code s < <(t bash -c 'dotnet test api --no-build --filter "Store!=cosmos" --logger "trx;LogFileName=xunit-cosmos.trx" --results-directory "$RAW/trx" > "$RAW/xunit-cosmos.txt" 2>&1')
+            echo "oncosmos=$code" >> "$d"; echo "oncosmos_s=$s" >> "$d"
+          else echo "oncosmos=skipped" >> "$d"; echo "oncosmos_s=0" >> "$d"; fi
+          export YARD_API_PREBUILT=1 YARD_WEB_PREVIEW=1
+          export PLAYWRIGHT_JSON_OUTPUT_FILE="$RAW/browser-cosmos.json" PLAYWRIGHT_JSON_OUTPUT_NAME="$RAW/browser-cosmos.json"
+          if [ "$COSMOS_NEEDED" = 1 ]; then
+            read code s < <(t bash -c 'npx playwright test tests/e2e/store-toggle.spec.ts tests/e2e/account.spec.ts tests/e2e/admin.spec.ts --workers=2 --retries=1 --reporter=list,json > "$RAW/browser-cosmos.txt" 2>&1')
+            echo "browser_cosmos=$code" >> "$n"; echo "browser_cosmos_s=$s" >> "$n"
+          else echo "browser_cosmos=skipped" >> "$n"; echo "browser_cosmos_s=0" >> "$n"; fi
+          for port in 5173 5210; do fuser -k "$port/tcp" 2>/dev/null || true; done
+          cat "$d" "$n"
+      # #endregion both-stores
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: raw-cosmos-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/raw/
+      - name: This job's verdict
+        if: always()
+        run: bash scripts/gate_job.sh "$RAW" live oncosmos browser_cosmos
+  # #endregion cosmos-job
+
+  # #region node-job
+  # The node checks: the two bundles and the code's own numbers, Prettier, oxlint, the type check, Vitest, the em
+  # dash scan and the quality ratchet.
+  node:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: ./.github/actions/dotnet
+      - run: npm ci
+      - run: mkdir -p "$RUNNER_TEMP/raw" && echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
+      - run: npx vite build
+        id: web
+      - run: npx vite build --config render/vite.config.ts
+
+      # #region code-numbers
+      # The code's own numbers for CODE HEALTH on the tests card: the page's built size and the
+      # packages with a newer release. Measurements, not checks: nothing here turns the run red
+      # (the build's warnings already do, in the dotnet job), so they go to their own file,
+      # code.result. They run only after the page's build passed: a size read off a failed build
+      # would say 0 kB, and the card must say not measured instead (ADR-080).
+      - name: The code's own numbers
+        if: always() && steps.web.outcome == 'success'
+        run: |
+          echo "dist_js_bytes=$(cat dist/assets/*.js | wc -c)" >> "$RAW/code.result"
+          echo "dist_css_bytes=$(cat dist/assets/*.css | wc -c)" >> "$RAW/code.result"
+          npm outdated --json > "$RAW/npm-outdated.json" 2>/dev/null || true
+          echo "outdated_npm=$(node -e 'try{console.log(Object.keys(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")||"{}")).length)}catch{console.log(-1)}' "$RAW/npm-outdated.json")" >> "$RAW/code.result"
+          echo "outdated_nuget=$( (dotnet list api/TheYard.slnx package --outdated 2>/dev/null || true) | grep -cE '^\s+> ' || true)" >> "$RAW/code.result"
+          cat "$RAW/code.result"
+      # #endregion code-numbers
+
       # #region node-side
-      # The node side: Prettier, oxlint, the type check, Vitest, the browser suite on SQLite against
-      # the bundle just built, and the three store specs on Cosmos DB when the commit touched them.
+      # The node side: Prettier, oxlint, the type check and Vitest. The browser suite is the browser job's.
       - name: The node side
         if: always()
-        env:
-          COSMOS_ENDPOINT: https://cosmos-theyard-ss.documents.azure.com:443/
         run: |
           r="$RAW/node.result"; : > "$r"
           t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
@@ -178,20 +265,6 @@ jobs:
           echo "tsc=$code" >> "$r"; echo "tsc_s=$s" >> "$r"
           read code s < <(t bash -c 'npx vitest run --reporter=default --reporter=json --outputFile.json="$RAW/vitest.json" > "$RAW/vitest.txt" 2>&1')
           echo "vitest=$code" >> "$r"; echo "vitest_s=$s" >> "$r"
-          export YARD_API_PREBUILT=1 YARD_WEB_PREVIEW=1 YARD_RENDER=1
-          export PLAYWRIGHT_JSON_OUTPUT_FILE="$RAW/browser-sqlite.json" PLAYWRIGHT_JSON_OUTPUT_NAME="$RAW/browser-sqlite.json"
-          read code s < <(t bash -c 'npx playwright test --workers=2 --retries=1 --reporter=list,json > "$RAW/browser-sqlite.txt" 2>&1')
-          echo "browser=$code" >> "$r"; echo "browser_s=$s" >> "$r"
-          for port in 5173 5210 5220; do fuser -k "$port/tcp" 2>/dev/null || true; done
-          sleep 3
-          unset YARD_RENDER
-          export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT" Cosmos__ContainerPrefix="tests-"
-          export PLAYWRIGHT_JSON_OUTPUT_FILE="$RAW/browser-cosmos.json" PLAYWRIGHT_JSON_OUTPUT_NAME="$RAW/browser-cosmos.json"
-          if [ "$COSMOS_NEEDED" = 1 ]; then
-            read code s < <(t bash -c 'npx playwright test tests/e2e/store-toggle.spec.ts tests/e2e/account.spec.ts tests/e2e/admin.spec.ts --workers=2 --retries=1 --reporter=list,json > "$RAW/browser-cosmos.txt" 2>&1')
-            echo "browser_cosmos=$code" >> "$r"; echo "browser_cosmos_s=$s" >> "$r"
-          else echo "browser_cosmos=skipped" >> "$r"; echo "browser_cosmos_s=0" >> "$r"; fi
-          for port in 5173 5210 5220; do fuser -k "$port/tcp" 2>/dev/null || true; done
           cat "$r"
       # #endregion node-side
 
@@ -209,8 +282,8 @@ jobs:
       # #region quality-ratchet
       # The quality ratchet, the same command CI runs, so a version cannot reach main with
       # any of its numbers worse than the file says (ADR: The numbers that may only fall).
-      # It reads the checkout and builds nothing, so it costs seconds and runs whatever the
-      # suites above did. Its result joins rest.result, which the verdict reads.
+      # It reads the checkout and builds nothing, so it costs seconds. Its result joins
+      # rest.result, which the verdict reads.
       - name: The quality ratchet
         if: always()
         run: |
@@ -224,11 +297,119 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
+          name: raw-node-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/raw/
+      - name: This job's verdict
+        if: always()
+        run: bash scripts/gate_job.sh "$RAW" prettier lint tsc vitest emdash quality
+  # #endregion node-job
+
+  # #region browser-job
+  # The browser suite on SQLite against the bundle just built, with the rendering service in front of it, in two
+  # shards that split it by spec file. The gate job folds the two shards' reports into the one result the site
+  # reads, and a pass that needed its retry is still written r (ADR-068, the addendum of 1.0.4.24).
+  browser:
+    name: browser ${{ matrix.shard }} of 2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: ./.github/actions/dotnet
+      - run: npm ci
+      - run: npx playwright install --with-deps chrome
+      - run: mkdir -p "$RUNNER_TEMP/raw" && echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
+      # The API and the two bundles the suite serves; the build's warnings are the dotnet job's to judge.
+      - run: dotnet build api/TheYard.Api -c Debug > "$RAW/api-build.txt" 2>&1 || { tail -n 20 "$RAW/api-build.txt"; exit 1; }
+      - run: npx vite build
+      - run: npx vite build --config render/vite.config.ts
+      - name: The browser suite on SQLite, one shard
+        if: always()
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          r="$RAW/node.result"; : > "$r"
+          t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
+          export YARD_API_PREBUILT=1 YARD_WEB_PREVIEW=1 YARD_RENDER=1
+          export PLAYWRIGHT_JSON_OUTPUT_FILE="$RAW/browser-sqlite.json" PLAYWRIGHT_JSON_OUTPUT_NAME="$RAW/browser-sqlite.json"
+          read code s < <(t bash -c 'npx playwright test --shard="$SHARD/2" --workers=2 --retries=1 --reporter=list,json > "$RAW/browser-sqlite.txt" 2>&1')
+          echo "browser=$code" >> "$r"; echo "browser_s=$s" >> "$r"
+          for port in 5173 5210 5220; do fuser -k "$port/tcp" 2>/dev/null || true; done
+          cat "$r"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: raw-browser-${{ matrix.shard }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/raw/
+      - name: This job's verdict
+        if: always()
+        run: bash scripts/gate_job.sh "$RAW" browser
+  # #endregion browser-job
+
+  # #region gate-job
+  # The gate itself: every check job's reports folded into gate-raw, and the verdict on them. It runs whatever the
+  # check jobs did, so a job that died before it wrote its reports reads red here by name instead of leaving a
+  # verdict that never ran.
+  gate:
+    needs: [dotnet, cosmos, node, browser]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          pattern: raw-*
+          path: ${{ runner.temp }}/jobs
+
+      # #region the-fold
+      # Each job's newest attempt only: a job re-run green replaces its red attempt, and one that was not re-run keeps
+      # the attempt it ran in (at 1.0.4.122 a re-run went green and the fold took the first attempt's reports). Each
+      # check job also judges its own keys and fails on a red one, so "re-run failed jobs" runs it again.
+      - name: The fold
+        if: always()
+        env:
+          # How each check job ended in this attempt: one that did not succeed is red here whatever its reports say.
+          GATE_NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
+          python3 scripts/gate_fold.py "$RUNNER_TEMP/jobs" "$RUNNER_TEMP/raw" "$GITHUB_RUN_ATTEMPT" dotnet cosmos node browser-1 browser-2
+      # #endregion the-fold
+
+      # The checks' own wall clock, from the run's start to here, beside gateSeconds, which promote measures to its
+      # own step and so also counts the wait on CodeRabbit (ADR-098, the addendum of 1.0.5.4).
+      - name: The checks' own wall clock
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          started=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at) &&
+            echo "checks_s=$(( $(date +%s) - $(date -d "$started" +%s) ))" > "$RAW/checks.result" || true
+          cat "$RAW/checks.result" 2>/dev/null || echo "the checks' wall clock was not read"
+
+      # Overwritten on a re-run, so the one gate-raw promote and a person promoting by hand download is this attempt's.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
           name: gate-raw
           path: ${{ runner.temp }}/raw/
+          overwrite: true
 
       # #region verdict
-      # Red is any pass that is not 0, except the two that the cuts above may skip.
+      # Red is any pass that is not 0, except the two that the cuts above may skip, and a fold that is missing a job.
       - name: The verdict
         if: always()
         run: |
@@ -240,6 +421,7 @@ jobs:
           for k in format oncosmos; do v=$(val dotnet.result $k); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red $k"; done
           [ "$(val rest.result emdash)" = 0 ] || red="$red emdash"
           [ "$(val rest.result quality)" = 0 ] || red="$red quality"
+          [ "$(val rest.result fold)" = 0 ] || red="$red fold"
           [ "$(val build.result warnings)" = 0 ] || red="$red warnings"
           # A log's tail is printed only when that log's OWN check is red. Every red run used to print the
           # last twelve lines of all seven text logs, so "All matched files use Prettier code style!" landed
@@ -250,7 +432,7 @@ jobs:
           lines() { while IFS= read -r line; do printf '::error::%s: %s\n' "$1" "$(printf '%s' "$line" | cut -c1-300)"; done; }
           if [ -n "$red" ]; then
             echo "::error::red:$red"
-            for pair in prettier:prettier.txt lint:lint.txt tsc:tsc.txt format:format.txt sqlproj:sqlproj.txt emdash:emdash.txt quality:quality.txt; do
+            for pair in prettier:prettier.txt lint:lint.txt tsc:tsc.txt format:format.txt sqlproj:sqlproj.txt emdash:emdash.txt quality:quality.txt fold:fold.txt; do
               f=${pair#*:}; is_red "${pair%%:*}" || continue
               if [ -s "$RAW/$f" ]; then tail -n 12 "$RAW/$f" | lines "$f"; fi
             done

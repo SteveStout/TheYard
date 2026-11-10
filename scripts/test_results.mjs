@@ -55,6 +55,12 @@ const node = results('node.result');
 const dotnet = results('dotnet.result');
 const build = results('build.result');
 const measured = results('code.result');
+// The check jobs' own wall clock, from the run's start to the verdict, beside gateSeconds, which runs to the
+// promote step and so also counts the wait on CodeRabbit (ADR-098, the addendum of 1.0.5.4). Null when the
+// gate did not measure it, as before that version.
+const timed = results('checks.result');
+const checksSeconds =
+  timed.checks_s === undefined || timed.checks_s === '' ? null : Number(timed.checks_s);
 const seconds = (side, key) => Number(side[`${key}_s`] ?? 0);
 
 const readJson = (file) => {
@@ -261,6 +267,7 @@ const history = [
           version: before.version,
           ranAt: before.ranAt,
           gateSeconds: before.gateSeconds,
+          checksSeconds: before.checksSeconds ?? null,
           ...summed(before.suites ?? []),
           distJsBytes: before.code?.distJsBytes ?? null,
         },
@@ -275,6 +282,7 @@ const lines = [
   `  "version": ${JSON.stringify(version)},`,
   `  "ranAt": ${JSON.stringify(new Date().toISOString())},`,
   `  "gateSeconds": ${Number(gateSeconds ?? 0)},`,
+  `  "checksSeconds": ${JSON.stringify(checksSeconds)},`,
   `  "checks": ${JSON.stringify(checks)},`,
   `  "code": ${JSON.stringify(code)},`,
   `  "history": ${JSON.stringify(history)},`,

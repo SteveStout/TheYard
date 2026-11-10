@@ -127,6 +127,11 @@ whether the secret `PROMOTE_TOKEN` will carry it; a version that changes a workf
 is promoted by hand after a green gate, which the preflight prints the command for (ADR-098, the addendum
 of 1.0.4.119). The browser suite and the two passes on Cosmos DB are the gate's, on its 16 GB runner.
 
+**One full run, the gate's.** While you work, run only the suite your change touches (on the box,
+`yard-test <branch> api|server|web|e2e`; elsewhere the one command below for that suite). The whole of
+every suite runs once per version, in the gate, side by side on GitHub's runners (ADR-098, the addendum
+of 1.0.5.4); running all of it again before the push only pays for the same answer twice.
+
 ## Testing
 
 - `dotnet test` - xUnit. Domain with fixed clocks, Application with hand-written fakes at the ports
@@ -134,7 +139,9 @@ of 1.0.4.119). The browser suite and the two passes on Cosmos DB are the gate's,
   `WebApplicationFactory`.
 - `npm test` - Vitest, presentation logic only.
 - `npx playwright test` - end-to-end, launches both servers itself.
-- **All three must pass before any commit that changes behavior.**
+- **Before a commit, run the suite your change touches; the gate runs all three, on both stores, before
+  anything ships (Shipping, above).** A change to the API runs `dotnet test`, a change to the page runs
+  `npm test` and the specs that open it, and none of them is skipped by the gate.
 
 ## Commands
 

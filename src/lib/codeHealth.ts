@@ -21,6 +21,8 @@ export type GateSummary = {
   version: string;
   ranAt: string;
   gateSeconds: number;
+  /** The check jobs' own wall clock; absent from a gate that ran every check in one job. */
+  checksSeconds?: number | null;
   passed: number;
   failed: number;
   distJsBytes: number | null;
@@ -31,6 +33,19 @@ export type CodeRow = { key: string; label: string; value: string; tone: RangeTo
 
 const kb = (bytes: number) =>
   `${(bytes / 1024).toLocaleString('en-US', { maximumFractionDigits: 1 })} kB`;
+
+/**
+ * The gate's seconds from the run's start to its verdict: the check jobs' own wall clock where the gate measured
+ * it, and gateSeconds where it did not, which was the one-job gate, whose promote step came straight after the
+ * verdict. With the checks side by side, promote also waits on CodeRabbit, so gateSeconds runs on past the verdict
+ * (ADR-098, the addendum on the checks side by side).
+ */
+export function verdictSeconds(gate: {
+  gateSeconds: number;
+  checksSeconds?: number | null;
+}): number {
+  return gate.checksSeconds ?? gate.gateSeconds;
+}
 
 // #region code-rows
 /** The rows the section draws; a number the gate did not measure says so rather than reading as zero. */
@@ -85,7 +100,7 @@ export function gateTrend(history: GateSummary[] | undefined): {
   amber: number;
 } {
   return {
-    points: (history ?? []).map((gate) => ({ at: gate.ranAt, value: gate.gateSeconds })),
+    points: (history ?? []).map((gate) => ({ at: gate.ranAt, value: verdictSeconds(gate) })),
     amber: RANGES.gateSeconds.amber,
   };
 }

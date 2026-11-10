@@ -4,7 +4,12 @@
  * with a newer release, each with its tone, and the last gates behind More.
  * The rows come from src/lib/codeHealth.ts; this draws them.
  */
-import { codeRows, type CodeNumbers, type GateSummary } from '../../../lib/codeHealth';
+import {
+  codeRows,
+  verdictSeconds,
+  type CodeNumbers,
+  type GateSummary,
+} from '../../../lib/codeHealth';
 import cardStyles from '../shared/card.module.css';
 import { TONE_WORDS, tonePill } from '../shared/common';
 import { More } from '../shared/More';
@@ -45,7 +50,7 @@ export function CodeHealthSection({
               {
                 name: 'Seconds',
                 num: true,
-                cell: (gate) => gate.gateSeconds.toLocaleString('en-US'),
+                cell: (gate) => verdictSeconds(gate).toLocaleString('en-US'),
               },
               { name: 'Passed', num: true, cell: (gate) => gate.passed.toLocaleString('en-US') },
               { name: 'Failed', num: true, cell: (gate) => gate.failed.toLocaleString('en-US') },

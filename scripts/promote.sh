@@ -33,8 +33,11 @@ versions() { sed -n 's/^- \*\*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9
 [ -n "$run" ] || refuse "name the gate run this promotes: scripts/promote.sh <raw> <seconds> <version> <run>"
 tested=$(gh run view "$run" --json headSha --jq .headSha) || refuse "gate run $run could not be read"
 [ "$tested" = "$(git rev-parse HEAD)" ] || refuse "gate run $run tested ${tested:0:8} and HEAD is $(git rev-parse --short=8 HEAD)"
-green=$(gh run view "$run" --json jobs --jq '[.jobs[] | select(.name == "gate" or .name == "shed") | select(.conclusion == "success")] | length') || refuse "gate run $run's jobs could not be read"
-[ "$green" = 2 ] || refuse "gate run $run's gate and shed jobs are not both green"
+# The jobs it trusts, by name: the gate's verdict, The Shed, and the check jobs the verdict folds, which run side by
+# side since 1.0.5.4 (ADR-098, the addendum of that version). Every one green, or nothing is promoted.
+checks='["gate","shed","dotnet","cosmos","node","browser 1 of 2","browser 2 of 2"]'
+green=$(gh run view "$run" --json jobs --jq "[.jobs[] | select(.name as \$n | $checks | index(\$n)) | select(.conclusion == \"success\")] | length") || refuse "gate run $run's jobs could not be read"
+[ "$green" = 7 ] || refuse "gate run $run's check jobs are not all green: $green of the 7 it trusts"
 # The CodeRabbit job ends green at Level 0 whatever the review found; a run that has the job and did not finish it
 # green has not read the review yet (ADR-129). A run from before the job existed has none to wait for.
 review=$(gh run view "$run" --json jobs --jq '[.jobs[] | select(.name == "coderabbit")] | if length == 0 then "none" else .[0].conclusion end') || refuse "gate run $run's jobs could not be read"

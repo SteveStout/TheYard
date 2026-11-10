@@ -22,6 +22,7 @@ import type { Fetched } from '../shared/types';
 import { About } from '../shared/common';
 import { type Column, DataTable } from '../DataTable';
 import { formatDateTime } from '../../../lib/format';
+import { verdictSeconds } from '../../../lib/codeHealth';
 import { request } from '../../../lib/request';
 
 /** A suite: its name and mark, then what passed, failed and was skipped, and how long it took. */
@@ -124,7 +125,7 @@ export default function TestsCard() {
           <TestsSummary results={results} />
           <CodeHealthSection
             code={results.code}
-            gateSeconds={results.gateSeconds}
+            gateSeconds={verdictSeconds(results)}
             history={results.history}
           />
           <p className={cardStyles.muted} data-testid="tests-checks">
@@ -220,8 +221,9 @@ function TestsSummary({ results }: { results: TestResults }) {
           {sums.passed.toLocaleString()} of {sums.tests.toLocaleString()} tests passed
         </strong>
         {extra.length > 0 ? `, ${extra.join(', ')}` : ''}, for {results.version} in the ship&rsquo;s
-        gate at {formatDateTime(results.ranAt)}, {results.gateSeconds} s from the first check to the
-        last.
+        gate at {formatDateTime(results.ranAt)}, {verdictSeconds(results)} s from the first check to
+        the last
+        {results.checksSeconds != null && `, and ${results.gateSeconds} s to its promotion`}.
         {reruns > 0 &&
           ` ${reruns.toLocaleString()} of these runs repeat tests on the second store, so the landing page, which counts each test once, shows ${(sums.tests - reruns).toLocaleString()}.`}
       </p>
