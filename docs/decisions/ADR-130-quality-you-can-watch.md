@@ -68,3 +68,15 @@ Outside the rings for the data and the script (data/ and scripts/ beside the res
 
 Two corrections in this version. CodeRabbit's one finding on 1.0.5.0's request (#8) was right: a row the promote failed to write left the history's newest row two versions behind, and the next version's gate would have gone red on it. The test now allows an earlier newest row, a gap, and refuses only one ahead of the changelog. And the history was measured again by the scanner that counts the fifteenth number (ADR-122, the addendum of 1.0.5.1), so every row from 1.0.4.115 carries it.
 
+## Addendum, 2026-11-10 (1.0.5.2): one instrument from end to end, and what a cold review found
+
+A reviewer with no part in the build read 1.0.5.0 and 1.0.5.1 from three seats. What stopped being true, and what changed:
+
+- **The pre-scan rows are gone.** Decision 1 kept two hand-counted readings from before the scanner existed. The scanner runs on those trees too, so the history now measures the last version of each day from 15 October to the ratchet, then every version, all with today's scanner; the slip is measured the same way as the turn, and nothing is dashed. Rows before 1.0.4.115 carry no limits, because the ratchet file did not exist.
+- **The page opens with one table.** The hiring-manager seat read the page in about ninety seconds to its first chart and said the case needs a then, worst and now in one place; each number's reading on 15 October, its worst version and today's, and the limit now, all live.
+- **Four statements said more than the data.** "Nothing on this page is typed in" (dates and the coverage floor are typed, named in the test); "the tests fail if it says anything the data does not" (they fail if a live number cannot be read or the prose types a count of its own); "the code doubled" (no number behind it on the page); and "each payment lowers its limit" said of the XML documentation figure, which is not a ratchet number. Each now says only what holds.
+- **Each chart marks the version its number joined the ratchet**: 1.0.4.115 for fourteen, 1.0.5.1 for the React headers, and none for the two coverage lines, which have a floor and no ratchet version. The worst of a number that may only rise is its lowest reading.
+- **The owner's number in the gate.** promote.sh now ignores OWNER_YES inside the gate, so no environment there can promote a move in the first three numbers, and a test holds the gate's notice path; the comment no longer claims the script checks the record for the yes, which it cannot read.
+
+Left for a later version, from the same review: the rules column counts each test class's results, not the tests that hold that one rule; four versions have no coverage reading (CI did not finish green for 1.0.4.122, .132, .137 and .148) and the page does not yet say why; a row appended by promote records the commit before the results are folded in.
+

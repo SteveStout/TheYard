@@ -9,8 +9,8 @@ namespace TheYard.Tests;
 /// The quality history and the page that draws it (ADR-130, Quality you can watch).
 ///
 /// <para>A page that says quality held is only worth what its numbers are worth. So the history is held to the
-/// scanner: it starts at the version the ratchet went in, runs in version order with every number the ratchet
-/// names, and its newest row is what <c>.github/quality.py</c> reads at HEAD once that version has its row. And the
+/// scanner: it starts on 15 October, before the ratchet went in, so the slip is measured the same way as the turn,
+/// runs in version order with every number the ratchet names, holds no limit before the ratchet existed, and its newest row is what <c>.github/quality.py</c> reads at HEAD once that version has its row. And the
 /// page is held to the data: every live number on it expands from a file the build carries, and the prose types no
 /// number of its own but the dates, the file cap and the coverage floor, each named below with why.</para>
 /// </summary>
@@ -30,14 +30,16 @@ public sealed partial class QualityHistoryTests
 
     // #region the-history
     [Fact]
-    public void The_history_starts_at_the_ratchet_and_runs_in_version_order_with_every_number()
+    public void The_history_starts_before_the_ratchet_and_runs_in_version_order_with_every_number()
     {
         JsonElement history = History();
         Assert.Equal("1.0.4.115", history.GetProperty("first_ratchet_version").GetString());
-        var rows = history.GetProperty("rows").EnumerateArray().ToList();
-        Assert.All(rows.TakeWhile(r => r.GetProperty("source").GetString() == "pre-scan"), r => Assert.Equal(JsonValueKind.Null, r.GetProperty("version").ValueKind));
         var measured = Measured();
-        Assert.Equal("1.0.4.115", measured[0].GetProperty("version").GetString());
+        Assert.Equal(history.GetProperty("rows").GetArrayLength(), measured.Count);
+        Assert.Equal("2026-10-15", measured[0].GetProperty("date").GetString());
+        int first = measured.FindIndex(r => r.GetProperty("version").GetString() == "1.0.4.115");
+        Assert.True(first > 0, "the history should hold the days before the ratchet and then 1.0.4.115");
+        Assert.All(measured.Take(first), r => Assert.Equal(JsonValueKind.Null, r.GetProperty("limits").ValueKind));
         var versions = measured.Select(r => Version.Parse(r.GetProperty("version").GetString()!)).ToList();
         Assert.Equal(versions.Order(), versions);
         Assert.Equal(versions.Count, versions.Distinct().Count());

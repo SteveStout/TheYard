@@ -56,12 +56,14 @@ if [ "${top%.*}" = "${below%.*}" ]; then
   moved="the fourth number only"
 else
   # The first three numbers are the owner's (ADR-130). A move in them ships only by hand, from a machine where the
-  # person promoting names the version as OWNER_YES and the version's own record carries the owner's yes; it goes
-  # up by one in its third number and starts the fourth again at 0. The gate never takes one on its own: it ends
-  # green with a notice, as it does for a version that changes a workflow, so green code sends no failure email.
+  # person promoting names the version as OWNER_YES; the owner's yes itself is written in the version's record by
+  # whoever makes it, and this script cannot read it, so it checks only that the person named the version. It goes
+  # up by one in its third number and starts the fourth again at 0. The gate never takes one on its own, whatever
+  # its environment says: it ends green with a notice, as it does for a version that changes a workflow, so green
+  # code sends no failure email.
   IFS=. read -r a b c _ <<< "$below"
-  [ "$top" = "$a.$b.$((c + 1)).0" ] || refuse "the version moved past its fourth number, $below to $top, and not to $a.$b.$((c + 1)).0: the first three numbers are Steve's, and each moves by one"
-  if [ "${OWNER_YES:-}" != "$top" ]; then
+  [ "$top" = "$a.$b.$((c + 1)).0" ] || refuse "the version moved past its fourth number, $below to $top, and not to $a.$b.$((c + 1)).0: the first three numbers are Steve's, and the third moves by one"
+  if [ -n "${GITHUB_ACTIONS:-}" ] || [ "${OWNER_YES:-}" != "$top" ]; then
     if [ -n "${GITHUB_ACTIONS:-}" ]; then
       echo "::notice::$top moves the first three numbers: promote it by hand with OWNER_YES=$top scripts/promote.sh"
       if [ -n "${GITHUB_OUTPUT:-}" ]; then { echo "promoted=false"; echo "by_push=false"; } >> "$GITHUB_OUTPUT"; fi

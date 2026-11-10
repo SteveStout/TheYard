@@ -1,9 +1,9 @@
 """quality_history.py rebuild | append <version> | coverage. The quality history (ADR-130, Quality you can watch):
-data/quality-history.json, one row per shipped version from the first ratchet commit (1.0.4.115) on, plus the two
-rows the pre-scan measured before quality.py existed. Every row is measured by the scanner this checkout carries,
-.github/quality.py, so the whole history is read by one instrument; each row also keeps the limits the ratchet file
-held at that version, which is what the gate enforced then. `rebuild` measures every version commit on main from a
-clean export of its tree; `append` measures this checkout as <version> and replaces a row of the same version, which
+data/quality-history.json: before the ratchet went in (1.0.4.115), the last version of each day from 15 October, so
+the slip that brought it in is drawn; from it on, every shipped version. Every row is measured by the scanner this
+checkout carries, .github/quality.py, over that version's own tree, so the whole history is read by one instrument;
+each row also keeps the limits the ratchet file held at that version, which is what the gate enforced then, and none
+before it. `rebuild` measures those version commits on main from a clean export of each tree; `append` measures this checkout as <version> and replaces a row of the same version, which
 promote.sh runs on every ship; `coverage` fills a row's coverage from the coverage notice CI on main wrote for that
 version's commit, where CI has run. Needs git, and gh for coverage; a read that fails leaves the field null and
 never stops a ship."""
@@ -14,26 +14,12 @@ LOG = os.path.join(ROOT, "data", "quality-history.json")
 SCANNER = os.path.join(ROOT, ".github", "quality.py")
 REPO = os.environ.get("GITHUB_REPOSITORY", "SteveStout/TheYard")
 FIRST = "1.0.4.115"
-ABOUT = ("One row per shipped version: the fourteen numbers of the quality ratchet, measured by this checkout's "
-         ".github/quality.py, the limits the ratchet file held at that version, the thin spots, and line and branch "
-         "coverage from CI on main. Rows marked pre-scan were measured before the scanner existed (ADR-130).")
+SINCE = "2026-10-15"
+ABOUT = ("One row per shipped version from the ratchet's first version on, and the last version of each day before it "
+         "from 15 October: the numbers of the quality ratchet, measured by this checkout's .github/quality.py over that "
+         "version's tree, the limits the ratchet file held then (none before it), the thin spots, and line and branch "
+         "coverage from CI on main (ADR-130).")
 
-# #region pre-scan
-# The two readings from before the scanner existed, read from the pre-scan of 29 October (its 10/15 and 10/22
-# columns). They name nine of the fourteen numbers; the rest were not counted then and stay null.
-PRE_SCAN = [
-    {"version": None, "date": "2026-10-15", "source": "pre-scan", "numbers": {
-        "undocumented_declarations": 239, "wide_service_classes": 0, "async_without_cancellation": 50,
-        "clock_outside_composition": 46, "history_or_name_comments": 2, "files_within_10_of_cap": 3,
-        "behavior_types_never_named_in_a_test": 6, "test_to_prod_ratio_higher_is_better": 0.83,
-        "dotnet_tests_higher_is_better": 928}},
-    {"version": None, "date": "2026-10-22", "source": "pre-scan", "numbers": {
-        "undocumented_declarations": 348, "wide_service_classes": 2, "async_without_cancellation": 104,
-        "clock_outside_composition": 53, "history_or_name_comments": 7, "files_within_10_of_cap": 6,
-        "behavior_types_never_named_in_a_test": 7, "test_to_prod_ratio_higher_is_better": 0.78,
-        "dotnet_tests_higher_is_better": 1514}},
-]
-# #endregion pre-scan
 
 
 def git(*args):
@@ -61,8 +47,9 @@ def limits_at(ref):
 
 
 def versions_on_main():
-    """Every version commit on main from the first ratchet commit on, oldest first: (version, sha, date)."""
-    found, started = [], False
+    """The version commits the history measures, oldest first, (version, sha, date): before the first ratchet
+    version, the last of each day from SINCE; from it on, every one."""
+    before, after, started = {}, [], False
     for line in git("log", "--reverse", "--first-parent", "--format=%H %cI %s", "origin/main").splitlines():
         sha, when, subject = line.split(" ", 2)
         m = re.match(r"TheYard (\d+\.\d+\.\d+\.\d+): ", subject)
@@ -70,8 +57,10 @@ def versions_on_main():
             continue
         started = started or m.group(1) == FIRST
         if started:
-            found.append((m.group(1), sha, when))
-    return found
+            after.append((m.group(1), sha, when))
+        elif when[:10] >= SINCE:
+            before[when[:10]] = (m.group(1), sha, when)
+    return [before[day] for day in sorted(before)] + after
 
 
 def coverage_of(sha):
@@ -102,7 +91,7 @@ def load():
     if os.path.exists(LOG):
         with open(LOG, encoding="utf-8") as f:
             return json.load(f)
-    return {"about": ABOUT, "first_ratchet_version": FIRST, "rows": list(PRE_SCAN)}
+    return {"about": ABOUT, "first_ratchet_version": FIRST, "rows": []}
 
 
 def save(log):
@@ -118,7 +107,7 @@ def row(version, sha, when, numbers, thin, limits):
 
 
 def rebuild():
-    log = {"about": ABOUT, "first_ratchet_version": FIRST, "rows": list(PRE_SCAN)}
+    log = {"about": ABOUT, "first_ratchet_version": FIRST, "rows": []}
     for version, sha, when in versions_on_main():
         with tempfile.TemporaryDirectory() as tree:
             archive = subprocess.run(["git", "-C", ROOT, "archive", sha], capture_output=True, check=True).stdout

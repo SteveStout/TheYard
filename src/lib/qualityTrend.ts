@@ -65,8 +65,10 @@ export function trendGeometry(data: QualityTrendData, box: TrendBox = TREND_BOX)
   const last = at[at.length - 1];
   return {
     points: at,
-    measured: path(at.slice(Math.max(lastPre, 0))),
-    preScan: lastPre > 0 ? path(at.slice(0, lastPre + 1)) : '',
+    measured: path(at.slice(lastPre + 1)),
+    // The step from another instrument's last reading to the scanner's first is dashed too: it is the two
+    // instruments meeting, not the code moving.
+    preScan: lastPre >= 0 ? path(at.slice(0, lastPre + 2)) : '',
     marker: marked ? { x: marked.x, y: marked.y, label: `${data.marker}, the ratchet` } : null,
     yLabels: [
       { y: box.top + tall, text: format(low) },
