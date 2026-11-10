@@ -1,11 +1,14 @@
 """coderabbit_review.py <branch> <sha> <ceiling-seconds> <out.json> | fold <row.json> <log.json> | count <comments.json>
-| missing <version> <sha> <out.json>. Waits for CodeRabbit's review of the gate's pull request and writes one row of the findings log (ADR-129). Finds the open pull request from <branch>, then waits for the
+| missing <version> <sha> <out.json> | recount <version> <branch> <sha> <log.json>. Waits for CodeRabbit's review of the gate's pull request and writes one row of the findings log (ADR-129). Finds the open pull request from <branch>, then waits for the
 newest CodeRabbit check run on <sha> to complete, a skipped one counted as not yet, until <ceiling-seconds> have passed.
-Then reads CodeRabbit's reviews and inline comments on the request and counts the findings by severity. Every gh answer
+Then reads CodeRabbit's reviews and inline comments on every request that carried the commit, because a branch pushed again
+opens a second request and CodeRabbit does not review a commit twice, and counts the findings by severity on the request
+that holds the review. Every gh answer
 is read into a value, and an error or an empty answer is another wait, never a completed review. Writes <out.json>
 whatever happened, with "reviewed" saying which: full, summary only, rate limited, completed with its findings not
 read, or why it was not reviewed; `missing` writes the row for a read that wrote none, and `count` prints the findings a
-file of inline comments holds, each by its header label, for one commit when a sha follows the file. At Level 0 no finding holds a ship, so this always exits 0; the gate's coderabbit job runs it and promote.sh folds the row into
+file of inline comments holds, each by its header label, for one commit when a sha follows the file; `recount` reads a
+version's commit again across every request that carried it and rewrites that row's findings. At Level 0 no finding holds a ship, so this always exits 0; the gate's coderabbit job runs it and promote.sh folds the row into
 data/coderabbit-findings.json with `fold`, which replaces a row of the same version rather than adding a second."""
 import json, os, re, subprocess, sys, time, datetime
 
@@ -69,6 +72,36 @@ def count(reviews, comments, sha=None):
     return found, actionable
 
 
+def carried(branch, sha, pr=None):
+    """Every request from <branch> whose head is <sha>, closed ones included, and <pr>: when a gate branch is deleted and
+    pushed again its request closes, a new one opens on the same commit, and CodeRabbit's review stays on the first."""
+    owner = REPO.split("/")[0]
+    pulls = gh(f"repos/{REPO}/pulls?state=all&head={owner}:{branch}") or []
+    found = {p["number"] for p in pulls if (p.get("head") or {}).get("sha", "").startswith(sha)}
+    if pr is not None:
+        found.add(pr)
+    return sorted(found)
+
+
+def read_review(numbers, sha):
+    """The commit's findings from the request that holds its review: each request is counted on its own and the one with
+    the most findings is the review, so a review summary mirrored onto a second request is never counted twice. None when
+    any request could not be read."""
+    best = None
+    for number in numbers:
+        read_reviews = gh(f"repos/{REPO}/pulls/{number}/reviews")
+        read_comments = gh(f"repos/{REPO}/pulls/{number}/comments")
+        if read_reviews is None or read_comments is None:
+            return None
+        reviews = [r for r in read_reviews if (r.get("user") or {}).get("login") == BOT]
+        comments = [c for c in read_comments if (c.get("user") or {}).get("login") == BOT]
+        found, actionable = count(reviews, comments, sha)
+        here = (sum(found.values()), actionable, bool(reviews or comments), number, found)
+        if best is None or here[:3] > best[:3]:
+            best = here
+    return best
+
+
 def level():
     """The ladder's current level, read from the record that names it; None when the record cannot be read."""
     folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "docs", "decisions")
@@ -124,6 +157,24 @@ def main():
             found, actionable = count([], json.load(f), sys.argv[3] if len(sys.argv) > 3 else None)
         print(json.dumps({"findings": found, "actionable": actionable}))
         return
+    if sys.argv[1] == "recount":
+        version, branch, sha, log_path = sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+        with open(log_path, encoding="utf-8") as f:
+            log = json.load(f)
+        row = next(r for r in log["rows"] if r.get("version") == version)
+        numbers = carried(branch, sha, row.get("pr"))
+        best = read_review(numbers, sha)
+        if best is None:
+            sys.exit(f"recount: the requests {numbers} for {version} could not be read")
+        row["prs"] = numbers
+        row["findings"], row["actionable"] = best[4], best[1]
+        if best[2]:
+            row["pr"], row["reviewed"] = best[3], "full"
+        with open(log_path, "w", encoding="utf-8") as f:
+            json.dump(log, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        print(f"recount: {version} on {numbers}, {row['findings']}, actionable {row['actionable']}")
+        return
     if sys.argv[1] == "missing":
         with open(sys.argv[4], "w", encoding="utf-8") as f:
             json.dump(empty_row(sys.argv[2], sys.argv[3], "not reviewed, the read wrote no row"), f, indent=2)
@@ -167,19 +218,20 @@ def main():
             ended = datetime.datetime.strptime(run["completed_at"], fmt)
             row["review_seconds"] = int((ended - began).total_seconds())
         words = (((run.get("output") or {}).get("title") or "") + " " + ((run.get("output") or {}).get("summary") or "")).lower()
-        read_reviews = gh(f"repos/{REPO}/pulls/{pr}/reviews")
-        read_comments = gh(f"repos/{REPO}/pulls/{pr}/comments")
-        reviews = [r for r in (read_reviews or []) if (r.get("user") or {}).get("login") == BOT]
-        comments = [c for c in (read_comments or []) if (c.get("user") or {}).get("login") == BOT]
-        row["findings"], row["actionable"] = count(reviews, comments, sha)
-        if read_reviews is None or read_comments is None:
+        numbers = carried(branch, sha, pr)
+        row["prs"] = numbers
+        best = read_review(numbers, sha)
+        if best is None:
             row["reviewed"] = "completed, findings not read"
-        elif "rate limit" in words:
-            row["reviewed"] = "rate limited"
-        elif reviews or comments or "review completed" in words:
-            row["reviewed"] = "full"
         else:
-            row["reviewed"] = "summary only"
+            row["findings"], row["actionable"] = best[4], best[1]
+            row["pr"] = best[3] if best[2] else pr
+            if "rate limit" in words:
+                row["reviewed"] = "rate limited"
+            elif best[2] or "review completed" in words:
+                row["reviewed"] = "full"
+            else:
+                row["reviewed"] = "summary only"
     with open(out, "w", encoding="utf-8") as f:
         json.dump(row, f, indent=2)
         f.write("\n")
