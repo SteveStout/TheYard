@@ -48,7 +48,9 @@ public sealed partial class QualityHistoryTests
 
     /// <summary>
     /// The newest row is what the scanner reads at HEAD. A version's row is written by promote.sh as it ships, so on
-    /// the gate branch the newest row may still be the version below; from main on, it is this one, and equal.
+    /// the gate branch the newest row is an earlier version's; from main on, it is this one, and equal. A row the
+    /// promote failed to write is a gap in the history, never a red gate for the version after it, so an earlier
+    /// newest row is allowed and a later one is not.
     /// </summary>
     [Fact]
     public void The_newest_row_is_what_the_scanner_reads_at_head()
@@ -60,7 +62,7 @@ public sealed partial class QualityHistoryTests
         string[] top = ChangelogVersions();
         JsonElement newest = Measured()[^1];
         string version = newest.GetProperty("version").GetString()!;
-        Assert.Contains(version, top);
+        Assert.True(Version.Parse(version) <= Version.Parse(top[0]), $"the history's newest row, {version}, is ahead of the changelog's top line, {top[0]}");
         if (version != top[0])
         {
             return;
