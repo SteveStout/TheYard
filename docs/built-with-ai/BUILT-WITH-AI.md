@@ -37,7 +37,7 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 2098 xUnit tests, 637 Vitest tests at 1.0.5.5 and 209 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 2099 xUnit tests, 637 Vitest tests at 1.0.5.6 and 209 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. A push that fails the gate does not roll.
 
@@ -51,9 +51,9 @@ room hammering three cars (ADR-027). Later, three readers with no memory of the 
 junior developer and an architect, reviewed the checkout cold, and every finding got a decision: fixed with
 its version, designed with the version it ships in, or accepted with its reason (ADR-070).
 
-**The bot, on top.** CodeRabbit, an AI review bot, reads every version's pull request inside the gate, beside the
+**The bot, on top.** CodeRabbit, an AI review bot, is asked to read every version's pull request inside the gate, beside the
 tests and quality checks that already decide whether it ships (ADR-129). It started soft on 10 November: it comments and nothing it
-finds holds a release. It gets stricter one step at a time, and only when its log over five ships or more shows
+finds holds a release, and a version it did not get to (no request, a review that ran out of time) is logged as not reviewed. It gets stricter one step at a time, and only when its log over five ships or more shows
 what it found, what I fixed and what it got wrong; I decide each step. Every rule it is told points at the record
 that made it, and a test fails when one does not. AI reviewing AI's code is still a second opinion, not the first:
 the gates I specified decide, and the bot earns its authority.

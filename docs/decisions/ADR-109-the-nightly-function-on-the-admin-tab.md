@@ -229,3 +229,6 @@ The run line carries the six counts the card reads, and the breakdown behind rea
 
 The funnel card's route always reads at least the week, so the tone has a week to grade, and reads the window when it is longer. When neither held a line, the note said "in the last seven days" for every window, so the 30-day window said a week when it had read a month. The note now names the span read: the last seven days for the hour, the day and the week, and the last 30 days for the month. FunnelTests holds all four windows. The first timer-written line, 07:30:04 CST on 10 November for 9 November, was read on both names the same day: the route answers that day's later line (the timer's, replied 1) over the hand run's of the evening before, one day counted once, as section 1 of the funnel line's shape says.
 
+## Addendum, 2026-11-10 (1.0.5.6): the funnel card has no hour window
+
+What stopped being true: the addendum of 1.0.5.3 says the empty note names "the last seven days for the hour, the day and the week". The card has no hour window: the route reads its window with CardWindows.Of, which answers the day for anything but 24h, 7d and 30d, so a request for an hour is read, counted and reported as the day. The note it shows then is the day's, the last seven days, and FunnelTests' hour case holds exactly that. CodeRabbit found it on #11.

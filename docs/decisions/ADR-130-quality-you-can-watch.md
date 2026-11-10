@@ -80,3 +80,8 @@ A reviewer with no part in the build read 1.0.5.0 and 1.0.5.1 from three seats. 
 
 Left for a later version, from the same review: the rules column counts each test class's results, not the tests that hold that one rule; four versions have no coverage reading (CI did not finish green for 1.0.4.122, .132, .137 and .148) and the page does not yet say why; a row appended by promote records the commit before the results are folded in.
 
+## Addendum, 2026-11-10 (1.0.5.6): the coverage gaps, counted right
+
+What stopped being true: the addendum of 1.0.5.2 says four versions have no coverage reading. The history holds seven measured rows with none: the four whose CI on main did not finish green (1.0.4.122, .132, .137 and .148), two more from before the ratchet, 1.0.3.179 on 18 October and 1.0.3.186 on 19 October, and the newest row, which promote writes before its own CI on main has run and which the next version's pass fills in. CodeRabbit found the miscount on #10. The page still does not say why a reading is missing; that stays for a later version.
+
+The same review's other finding there, that "Limit now" should be read from the ratchet file and not the history, is answered and not changed: the site serves data/ and not .github/, and every row promote writes is measured on the promoted tree, so the newest row's limits are the ratchet file the version shipped with (1.0.5.3's row reads 3,477, as its ratchet did). Only a build between two versions can show a limit the file has already moved past.

@@ -1,6 +1,6 @@
 """coderabbit_review.py <branch> <sha> <ceiling-seconds> <out.json>
                      | fold <row.json> <log.json>
-                     | count <comments.json> [<sha>]
+                     | count <comments.json> [<sha> [<reviews.json>]]
                      | missing <version> <sha> <out.json>
                      | recount <version> <branch> <sha> <log.json>
 Waits for CodeRabbit's review of the gate's pull request and writes one row of the findings log (ADR-129). Finds the open pull request from <branch>, then waits for the
@@ -53,10 +53,30 @@ def severity(body):
     return m.group(1).lower() if m else "nitpick"
 
 
+OUTSIDE = re.compile(r"Outside diff range comments \((\d+)\)")
+HEADER = re.compile(r"^\*\*<picture>.*?</picture>\s*(Critical|Major|Minor|Trivial)\*\*")
+
+
+def outside(body):
+    """The findings CodeRabbit puts in the review body because GitHub cannot post them on a line outside the diff,
+    each by the label in its own header, and any the section counts but no header names as nitpicks."""
+    m = OUTSIDE.search(body)
+    if not m:
+        return []
+    quoted = []
+    for line in body[m.end():].splitlines()[1:]:
+        if not line.startswith(">"):
+            break
+        quoted.append(line[1:].strip())
+    labels = [h.group(1).lower() for h in (HEADER.match(line) for line in quoted) if h]
+    return labels + ["nitpick"] * max(0, int(m.group(1)) - len(labels))
+
+
 def count(reviews, comments, sha=None):
     """Findings by severity on one commit: each inline comment that opens a thread once (a reply in a thread is not
-    a finding), plus the nitpicks a review body folds into its own count. With <sha>, only that commit's review and
-    comments count, so a second push to the same pull request does not count the first commit's findings again."""
+    a finding), the findings a review body carries from outside the diff, and the nitpicks a review body folds into
+    its own count, in either of the two ways CodeRabbit has written that count. With <sha>, only that commit's review
+    and comments count, so a second push to the same pull request does not count the first commit's findings again."""
     found = {name: 0 for name in SEVERITIES}
     for c in comments:
         if c.get("in_reply_to_id") or (sha and c.get("commit_id") not in (None, sha)):
@@ -70,9 +90,11 @@ def count(reviews, comments, sha=None):
         m = re.search(r"Actionable comments posted:\s*(\d+)", body)
         if m:
             actionable += int(m.group(1))
-        n = re.search(r"Nitpick comments \((\d+)\)", body)
+        n = re.search(r"Nitpick comments(?: \((\d+)\)|:\s*(\d+))", body)
         if n:
-            found["nitpick"] += int(n.group(1))
+            found["nitpick"] += int(n.group(1) or n.group(2))
+        for label in outside(body):
+            found[label] += 1
     return found, actionable
 
 
@@ -158,7 +180,12 @@ def main():
         return
     if sys.argv[1] == "count":
         with open(sys.argv[2], encoding="utf-8") as f:
-            found, actionable = count([], json.load(f), sys.argv[3] if len(sys.argv) > 3 else None)
+            comments = json.load(f)
+        reviews = []
+        if len(sys.argv) > 4:
+            with open(sys.argv[4], encoding="utf-8") as f:
+                reviews = json.load(f)
+        found, actionable = count(reviews, comments, sys.argv[3] if len(sys.argv) > 3 else None)
         print(json.dumps({"findings": found, "actionable": actionable}))
         return
     if sys.argv[1] == "recount":
