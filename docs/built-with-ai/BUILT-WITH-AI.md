@@ -41,7 +41,7 @@ The choices a tool cannot make, each with its record.
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. A push that fails the gate does not roll.
 
-**The records.** One hundred and twenty-eight decision records, each carrying the decision, the trade-off and the number behind
+**The records.** One hundred and twenty-nine decision records, each carrying the decision, the trade-off and the number behind
 it, with a Files section pointing at the code it governs. Code shown in a record is read from the running build, so a
 record cannot drift from the code it describes.
 
@@ -50,6 +50,13 @@ below the going rate, a lost update on concurrent bids, a poll erasing a just-pl
 room hammering three cars (ADR-027). Later, three readers with no memory of the project, an interviewer, a
 junior developer and an architect, reviewed the checkout cold, and every finding got a decision: fixed with
 its version, designed with the version it ships in, or accepted with its reason (ADR-070).
+
+**The bot, last.** CodeRabbit, an AI review bot, reads every version's pull request inside the gate, after my
+tests and quality checks have had their say (ADR-129). It started soft on 10 November: it comments and nothing it
+finds holds a release. It gets stricter one step at a time, and only when its log over five ships or more shows
+what it found, what I fixed and what it got wrong; I decide each step. Every rule it is told points at the record
+that made it, and a test fails when one does not. AI reviewing AI's code is still a second opinion, not the first:
+the human gates come first and the bot earns its authority.
 
 **The measurements.** On 3 of 8 paths the two stores answer in the same time. On the other 5 the difference
 is the round trip to the store, 39 ms to Azure SQL Database against 2 ms to Azure Cosmos DB, and taking one

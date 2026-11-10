@@ -1,0 +1,72 @@
+# CodeRabbit, the last reviewer on every ship (ADR-129, CodeRabbit, one rung at a time).
+#
+# Level 0 of the ladder: the review runs on every gate's pull request and is read before main moves,
+# but no finding holds a ship. Moving up a level is the owner's call on the findings log's evidence
+# (data/coderabbit-findings.json), never a lane's. This file is the one place the level lives: nothing
+# is set in CodeRabbit's web app, and a committed file outranks the repository's settings there.
+#
+# Every path instruction ends with the record that decided it, as (ADR-NNN), and CodeRabbitRuleTests
+# fails when one cites no record, cites one that does not exist, or when the level below and the
+# level ADR-129 names as current disagree.
+# yaml-language-server: $schema=https://www.coderabbit.ai/integrations/schema.v2.json
+language: en-US
+reviews:
+  # #region the-level
+  # Level 0: balanced feedback, no request for changes, a review that stops on an error ends neutral.
+  profile: chill
+  auto_approvals:
+    enabled: false
+  fail_commit_status: false
+  # #endregion the-level
+  high_level_summary: true
+  poem: false
+  in_progress_fortune: false
+  auto_review:
+    enabled: true
+  # #region path-filters
+  # Generated or binary: nothing a reviewer can act on.
+  path_filters:
+    - "!api/TheYard.Migrations.Sqlite/**/*.cs"
+    - "!data/test-results.json"
+    - "!data/coderabbit-findings.json"
+    - "!**/package-lock.json"
+    - "!docs/images/og.svg"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.webp"
+    - "!**/*.gif"
+    - "!**/*.ico"
+  # #endregion path-filters
+  # #region path-instructions
+  path_instructions:
+    - path: "**/*.cs"
+      instructions: >-
+        Every async method takes a CancellationToken and passes it to every call that accepts one; the
+        one exception is a framework override whose signature this codebase does not own (ADR-122).
+    - path: "**/*"
+      instructions: >-
+        No em dash (U+2014) anywhere in code, comments, documents or data; use a comma, a colon or two
+        sentences (ADR-028).
+    - path: "**/*.{cs,ts,tsx}"
+      instructions: >-
+        A comment says what the code does, how, or why. It never leans on a date, a version number, a
+        named review or a person to stand in for its reason (ADR-074).
+    - path: "api/**/*.cs"
+      instructions: >-
+        Dependencies point inward: Data and Domain use nothing outside the base class library, Application
+        uses only Domain and Data, Domain never reads a file, the network or the clock, and endpoints reach
+        the auction only through Application (ADR-088).
+    - path: "api/**/Features/**/*.cs"
+      instructions: >-
+        A type under Features/<Slice>/ uses only its own slice and the Shared concerns, in any ring, and
+        never another slice's type (ADR-107).
+    - path: "api/TheYard.Application/**/*.cs"
+      instructions: >-
+        Every request is a sealed <Verb><Noun>Query or <Verb><Noun>Command with exactly one handler named
+        for it, and a query handler is handed no store and no port that can write (ADR-115).
+    - path: "{api,src,functions}/**/*.{cs,ts,tsx}"
+      instructions: >-
+        No production C# or TypeScript file runs past 300 lines, and no C# type does counted across its
+        partial files; a longer one is split by job, never into more partial files (ADR-075).
+  # #endregion path-instructions

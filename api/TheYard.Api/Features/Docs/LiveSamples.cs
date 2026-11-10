@@ -27,7 +27,7 @@ public static partial class LiveSamples
     public static readonly string[] AllowedRoots = ["src/", "api/", "infra/", ".github/", "tests/", "edge/", "scripts/", "render/", ".vscode/", "samples/theshed/tests/", "functions/jobhunt/"];
 
     /// <summary>The single files at the repo root a live block may read: the ones the records decide (ADR-017).</summary>
-    public static readonly string[] AllowedFiles = ["Dockerfile", "netlify.toml", "playwright.config.ts", "vite.config.ts", "package.json", "index.html", "tsconfig.json", "tsconfig.app.json", "tsconfig.node.json", ".editorconfig"];
+    public static readonly string[] AllowedFiles = ["Dockerfile", "netlify.toml", "playwright.config.ts", "vite.config.ts", "package.json", "index.html", "tsconfig.json", "tsconfig.app.json", "tsconfig.node.json", ".editorconfig", ".coderabbit.yaml"];
 
     /// <summary>
     /// A relative path is allowed when it is plain (letters, digits, dot, dash,

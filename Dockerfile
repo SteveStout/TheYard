@@ -130,6 +130,8 @@ COPY --chown=app:app src ./src
 COPY --chown=app:app .github/workflows ./.github/workflows
 # The quality scanner, whose ratchet block ADR-122 shows live.
 COPY --chown=app:app .github/quality.py ./.github/
+# CodeRabbit's configuration, whose level ADR-129 shows live.
+COPY --chown=app:app .coderabbit.yaml ./
 COPY --chown=app:app .vscode ./.vscode
 COPY --chown=app:app api/TheYard.slnx ./api/
 COPY --chown=app:app api/TheYard.Api/*.cs api/TheYard.Api/*.csproj ./api/TheYard.Api/
