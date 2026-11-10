@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.4.178** (2026-11-10): The CodeRabbit log counts only the findings on the commit that ships and never a reply in a thread, a ship whose pull request was never opened is warned within five minutes instead of after thirty, and the shipping instructions now say to open it.
 - **1.0.4.177** (2026-11-10): The log of what CodeRabbit finds counts each finding by the severity CodeRabbit labelled it, the one finding CodeRabbit raised on the version that brought it in.
 - **1.0.4.176** (2026-11-10): CodeRabbit now reviews every version before it goes live, starting gentle: the gate opens a pull request for each ship and reads the review before main moves, nothing it finds stops a release yet, and each step up in strictness is decided on a log of what it found, with every rule it checks pointing at the decision that made it.
 - **1.0.4.175** (2026-11-09): Once a day, before the morning card, the job hunt's Function counts the day before from its logs and the tracker, from postings scanned down to calls booked, and writes it as the line the Admin tab's funnel card reads; TODAY.md carries the week's sum under its first line, against 2 to 3 calls a week.
