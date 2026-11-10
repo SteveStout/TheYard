@@ -60,7 +60,7 @@ elif git diff --name-only origin/main -- .github/workflows | grep -q .; then
   else
     echo "  PROMOTE_TOKEN does not exist: the promote job will end green with its notice and move nothing."
     echo "  Promote this one by hand once the gate is green:"
-    echo "    gh run download <run> -n gate-raw -D raw && { gh run download <run> -n coderabbit-raw -D raw || true; } && bash scripts/promote.sh raw <gate seconds> <version> <run>"
+    echo "    raw=\$(mktemp -d) && gh run download <run> -n gate-raw -D \"\$raw\" && { gh run download <run> -n coderabbit-raw -D \"\$raw\" || rm -f \"\$raw/coderabbit.json\"; } && bash scripts/promote.sh \"\$raw\" <gate seconds> <version> <run>"
   fi
 else
   echo "this version changes no workflow: the promote job pushes main itself"

@@ -14,7 +14,9 @@
 #            workflow is carried by the secret PROMOTE_TOKEN the promote job checks out with, and where that
 #            secret does not exist this ends green with a notice and moves nothing.
 # Used by:   .github/workflows/gate.yml's promote job, and a person promoting a run by hand, naming the run:
-#            gh run download <run> -n gate-raw -D raw && { gh run download <run> -n coderabbit-raw -D raw || true; } && scripts/promote.sh raw <seconds> <version> <run>
+#            raw=$(mktemp -d) && gh run download <run> -n gate-raw -D "$raw" && { gh run download <run> -n coderabbit-raw -D "$raw" || rm -f "$raw/coderabbit.json"; } && scripts/promote.sh "$raw" <seconds> <version> <run>
+#            A fresh folder outside the worktree each time: a reused one can hold another run's coderabbit.json, which
+#            this would fold as this version's row, and a folder inside the worktree is a file the results check refuses.
 set -euo pipefail
 raw=$1
 seconds=$2

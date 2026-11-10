@@ -7,7 +7,7 @@ before it. `rebuild` measures those version commits on main from a clean export 
 promote.sh runs on every ship; `coverage` fills a row's coverage from the coverage notice CI on main wrote for that
 version's commit, where CI has run. Needs git, and gh for coverage; a read that fails leaves the field null and
 never stops a ship."""
-import datetime, json, os, re, subprocess, sys, tempfile
+import datetime, json, os, re, subprocess, sys, tempfile, time
 
 ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip()
 LOG = os.path.join(ROOT, "data", "quality-history.json")
@@ -131,8 +131,11 @@ def append(version):
     print(f"quality history: {version} measured, {len(log['rows'])} rows")
 
 
-def fill_coverage(log):
-    """Coverage for each measured row that has none yet, from CI on main for that version's commit on main."""
+def fill_coverage(log, budget_seconds=120):
+    """Coverage for each measured row that has none yet, from CI on main for that version's commit on main. Every
+    read has its own minute, and the whole pass stops after <budget_seconds>, so rows that never had a green CI
+    cannot hold the promote job; a row left empty is read again on the next version's pass."""
+    deadline = time.monotonic() + budget_seconds
     subjects = {}
     try:
         for line in git("log", "--first-parent", "--format=%H %s", "origin/main", "-n", "400").splitlines():
@@ -143,6 +146,9 @@ def fill_coverage(log):
     except subprocess.CalledProcessError:
         return
     for entry in log["rows"]:
+        if time.monotonic() > deadline:
+            print(f"coverage: stopped after {budget_seconds} s, the rest is read on the next pass")
+            break
         if entry.get("source") == "quality.py" and entry.get("coverage") is None and entry.get("version") in subjects:
             entry["coverage"] = coverage_of(subjects[entry["version"]])
 

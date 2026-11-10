@@ -76,6 +76,7 @@ RULES = [
             "Endpoints never reach a store or the service container, reach the auction only through Application, the host never queries a database itself, and services are registered only in the composition root",
             "Domain never reads a file, calls the network or reads the system clock or a random number itself, and Application never reads a file or calls the network",
             "Data has no behaviour (accessors, constructors and what the compiler writes for a record only), Data and Domain read neither the disk, the network nor the machine (a clock, a process, a type found by name), and an adapter neither uses the web beyond Identity nor decides on money",
+            "An endpoint class is any type that maps a route, whatever its name; the host queries neither SQLite nor any System.Data.Common connection itself; and a route delegate or a handler takes its settings, never IConfiguration",
         ],
         "scope": "The site's six onion projects only; tests, the migrations and the Experiment tool are out of scope.",
     },
@@ -94,7 +95,7 @@ RULES = [
         "test": "CqrsTests",
         "path": "{api/TheYard.Application,functions/JobHunt.Application}/**/*.cs",
         "clauses": [
-            "Every request is a sealed `<Verb><Noun>Query` or `<Verb><Noun>Command` with exactly one handler implementing IQueryHandler or ICommandHandler and named for it; a query handler takes no store and no writer",
+            "Every request is a sealed `<Verb><Noun>Query` or `<Verb><Noun>Command` with exactly one handler implementing IQueryHandler or ICommandHandler and named for it; a query handler takes no store and no writer; nothing in the Application ring's root or slices is named *Service",
             "A query handler is handed no port that can write: no constructor parameter among this codebase's types has a member, counting every inherited interface, whose name starts with Keep, Write, Save, Upsert, Delete, Add, Remove, Record, Put or Set",
             "a use case that only reads is handed the reading half of a split port",
         ],

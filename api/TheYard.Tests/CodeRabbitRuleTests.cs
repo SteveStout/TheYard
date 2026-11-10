@@ -219,6 +219,38 @@ public sealed class CodeRabbitRuleTests
             File.Delete(file);
         }
     }
+    /// <summary>
+    /// A review body carries findings too: the ones GitHub cannot post on a line outside the diff, each with its own
+    /// header label, and the nitpicks, counted as "Nitpick comments (N)" in CodeRabbit's older body and "Nitpick
+    /// comments: N" in its newer one. Both are counted (#7's outside-diff Major and #8's two nitpicks were not).
+    /// </summary>
+    [Fact]
+    public void A_review_body_s_outside_diff_findings_and_its_nitpicks_are_counted_in_either_format()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string body = "**Actionable comments posted: 1**\n\n> [!CAUTION]\n> Some comments are outside the diff.\n>\n> **Outside diff range comments (1)**\n>\n> <details>\n> <summary><strong><picture></picture> Major</strong> keep it outside</summary>\n>\n> `scripts/promote.sh:128`\n> **<picture><img src=\"x/major-16.svg\" alt=\"\"></picture> Major** \u00b7 **Functional Correctness**\n>\n> **Keep downloaded artifacts outside the worktree.**\n\n<details>\n<summary> Nitpick comments: 2</summary>\n";
+        string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-body-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "comments.json"), "[]");
+            File.WriteAllText(Path.Combine(dir, "reviews.json"), JsonSerializer.Serialize(new[] { new { commit_id = "abc", body } }));
+            var (code, output) = Script(new ProcessStartInfo("python3", $"scripts/coderabbit_review.py count \"{Path.Combine(dir, "comments.json")}\" abc \"{Path.Combine(dir, "reviews.json")}\"") { WorkingDirectory = Repo.Root() });
+            Assert.True(code == 0, output);
+            using var counted = JsonDocument.Parse(output);
+            JsonElement findings = counted.RootElement.GetProperty("findings");
+            Assert.Equal(1, findings.GetProperty("major").GetInt32());
+            Assert.Equal(2, findings.GetProperty("nitpick").GetInt32());
+            Assert.Equal(1, counted.RootElement.GetProperty("actionable").GetInt32());
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
     // #endregion the-log-counts-labels
 
     // #region every-ship-has-one-row

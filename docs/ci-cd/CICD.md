@@ -51,7 +51,7 @@ the push's CI run. With no such secret the promote job ends GREEN with
 scripts/promote.sh`, moves nothing, and the deploys skip, because a gate that
 found nothing wrong must not send a failure email; a person then promotes the
 run by hand, naming it:
-`gh run download <run> -n gate-raw -D raw && { gh run download <run> -n coderabbit-raw -D raw || true; } && bash scripts/promote.sh raw <gate seconds> <version> <run>`.
+`raw=$(mktemp -d) && gh run download <run> -n gate-raw -D "$raw" && { gh run download <run> -n coderabbit-raw -D "$raw" || rm -f "$raw/coderabbit.json"; } && bash scripts/promote.sh "$raw" <gate seconds> <version> <run>`.
 
 **Before the push, run the preflight** (ADR-098, the addendum of 1.0.4.119):
 
@@ -73,7 +73,7 @@ preflight is never pushed.**
 moves the third number by one and starts the fourth at 0, its record carries
 the owner's yes, and it ships by hand only: the gate's promote job ends green
 with a notice and moves nothing, and the person promoting names it,
-`OWNER_YES=<version> bash scripts/promote.sh raw <gate seconds> <version> <run>`.
+`OWNER_YES=<version> bash scripts/promote.sh "$raw" <gate seconds> <version> <run>`, with `raw` downloaded as above.
 
 **CodeRabbit reads every ship** (ADR-129, CodeRabbit, one rung at a time). Right
 after the push of `gate/<version>`, the machine that ships runs
