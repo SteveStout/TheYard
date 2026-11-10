@@ -130,6 +130,8 @@ COPY --chown=app:app src ./src
 COPY --chown=app:app .github/workflows ./.github/workflows
 # The quality scanner, whose ratchet block ADR-122 shows live.
 COPY --chown=app:app .github/quality.py ./.github/
+# The ratchet's limits, which the Quality page shows whole (ADR-130).
+COPY --chown=app:app .github/quality-ratchet.json ./.github/
 # CodeRabbit's configuration, whose level ADR-129 shows live.
 COPY --chown=app:app .coderabbit.yaml ./
 COPY --chown=app:app .vscode ./.vscode

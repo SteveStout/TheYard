@@ -36,6 +36,11 @@ ADR: The React configuration, explained, and ADR: The tests, explained. They
 exist because generated configuration is the easiest place for a project to
 carry things nobody can account for.
 
+**Did quality hold while the attention was elsewhere?**
+Fourteen numbers about the code's shape may only get better, every version is
+measured, and the whole history is public, the two weeks they got worse
+included: [Quality you can watch](https://theyard.stevenstout.biz/?doc=quality).
+
 **Do the documents track the code, or drift from it?**
 Code shown in a record is read from the build, never pasted. A fence marked
 `live` names a file and a `#region`, and the API expands it from the working
@@ -112,7 +117,7 @@ is keyed by vehicle id rather than by reference. The explanations are written
 down, which means they can be checked against me in a conversation. A document
 that could not survive that question would be worse than no document.
 
-**"One hundred and twenty-nine decision records is documentation theatre."**
+**"One hundred and thirty decision records is documentation theatre."**
 It would be, if they all said yes. Several of them exist to record a rejection,
 a deviation, or a mistake: the Mermaid runtime that was measured and removed,
 the linter that could not run, the naming convention that was not adopted, the

@@ -34,6 +34,7 @@ public class DocsFolderTests
         ["traffic"] = "site-traffic",
         ["hosting"] = "hosting",
         ["builtWithAi"] = "built-with-ai",
+        ["quality"] = "quality",
         ["cicd"] = "ci-cd",
         ["practices"] = "best-practices",
         ["records"] = "decisions",

@@ -194,6 +194,12 @@ export const PAGES = {
     url: '/api/docs/built-with-ai',
     kind: 'overview',
   },
+  quality: {
+    title: 'Quality you can watch',
+    menuLabel: 'Quality you can watch',
+    url: '/api/docs/quality',
+    kind: 'overview',
+  },
   infrastructureOverview: {
     title: 'Infrastructure overview',
     menuLabel: 'Infrastructure overview',

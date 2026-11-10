@@ -5,7 +5,9 @@
 #            1.0.4.101): checks that the commit is the one the run tested and sits one commit on main, that the
 #            version goes up by one in its fourth number, the locked resume, and the Cloud roles; writes
 #            data/test-results.json and the README's figures from the run's reports in <raw>, adds CodeRabbit's row
-#            to data/coderabbit-findings.json, folds them into the commit, and fast-forwards main to it. Never force-pushes. Writes sha, version and functions to
+#            to data/coderabbit-findings.json and this version's row to data/quality-history.json, folds them into the
+#            commit, and fast-forwards main to it. A version that moves the first three numbers is promoted only by
+#            hand, with OWNER_YES naming it. Never force-pushes. Writes sha, version and functions to
 #            $GITHUB_OUTPUT when it runs in the gate.
 # Does not:  Run a check (the gate did), roll the site (the gate calls Deploy and Deploy Render, or the push does
 #            when a personal token made it), or read, print or pass a token value: a version that changes a
@@ -43,18 +45,36 @@ git fetch -q origin +refs/heads/main:refs/remotes/origin/main
 
 # #region the-version
 # The branch names the changelog's top line, the line moved up by exactly one in its fourth number (the first three
-# are the owner's), and it sits directly on the version main holds.
+# are the owner's, below), and it sits directly on the version main holds.
 top=$(versions < docs/CHANGELOG.md | sed -n 1p)
 below=$(versions < docs/CHANGELOG.md | sed -n 2p)
 [ "$top" = "$version" ] || refuse "the branch names $version and the changelog's top line is $top"
 [ "$top" != "$below" ] || refuse "the changelog's top line is still $below: a version ships with its own line"
-[ "${top%.*}" = "${below%.*}" ] || refuse "the version moved past its fourth number, $below to $top: the first three numbers are Steve's, and that version ships from a machine with his yes"
 [ "$(printf '%s\n%s\n' "$below" "$top" | sort -V | tail -1)" = "$top" ] || refuse "the version goes down, $below to $top"
-[ "${top##*.}" -eq $((${below##*.} + 1)) ] || refuse "the version skips, $below to $top: the fourth number moves by one"
+if [ "${top%.*}" = "${below%.*}" ]; then
+  [ "${top##*.}" -eq $((${below##*.} + 1)) ] || refuse "the version skips, $below to $top: the fourth number moves by one"
+  moved="the fourth number only"
+else
+  # The first three numbers are the owner's (ADR-130). A move in them ships only by hand, from a machine where the
+  # person promoting names the version as OWNER_YES and the version's own record carries the owner's yes; it goes
+  # up by one in its third number and starts the fourth again at 0. The gate never takes one on its own: it ends
+  # green with a notice, as it does for a version that changes a workflow, so green code sends no failure email.
+  IFS=. read -r a b c _ <<< "$below"
+  [ "$top" = "$a.$b.$((c + 1)).0" ] || refuse "the version moved past its fourth number, $below to $top, and not to $a.$b.$((c + 1)).0: the first three numbers are Steve's, and each moves by one"
+  if [ "${OWNER_YES:-}" != "$top" ]; then
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+      echo "::notice::$top moves the first three numbers: promote it by hand with OWNER_YES=$top scripts/promote.sh"
+      if [ -n "${GITHUB_OUTPUT:-}" ]; then { echo "promoted=false"; echo "by_push=false"; } >> "$GITHUB_OUTPUT"; fi
+      exit 0
+    fi
+    refuse "the version moved past its fourth number, $below to $top: the first three numbers are Steve's, and that version ships from a machine with his yes (OWNER_YES=$top)"
+  fi
+  moved="the first three numbers, with the owner's yes"
+fi
 git fetch -q origin +refs/heads/main:refs/remotes/origin/main
 on_main=$(git show origin/main:docs/CHANGELOG.md | versions | sed -n 1p)
 [ "$on_main" = "$below" ] || refuse "main is on $on_main and $version sits on $below"
-echo "version $below to $version, the fourth number only"
+echo "version $below to $version, $moved"
 # #endregion the-version
 
 # The resume the site serves is the one locked on 5 November (RESUME-LOCK-2026-11-05.md).
@@ -122,13 +142,16 @@ node scripts/test_results.mjs "$raw" "$version" "$seconds"
 node -e 'const r = require("./data/test-results.json"); const bad = r.suites.filter(s => s.failed > 0 || s.skipped > 0); if (bad.length) { console.error(bad.map(s => `${s.id}: ${s.failed} failed, ${s.skipped} skipped`).join("; ")); process.exit(1); }'   || refuse "the results file records a suite this green gate did not have: its reports are another attempt's, so re-run the gate by pushing the branch again rather than re-running the job"
 python3 scripts/readme_results.py
 # CodeRabbit's row for this ship joins the findings log, the evidence every rung of its ladder is decided on (ADR-129).
+# The quality history gains this version's row, measured on this tree, the evidence the Quality page draws (ADR-130).
+python3 scripts/quality_history.py append "$version" || echo "::warning::the quality history was not measured for $version"
 # A run whose read wrote no row still gets one, saying so, so the log never skips a ship.
 if [ ! -f "$raw/coderabbit.json" ] && [ "$review" = success ]; then python3 scripts/coderabbit_review.py missing "$version" "$tested" "$raw/coderabbit.json"; fi
 if [ -f "$raw/coderabbit.json" ]; then python3 scripts/coderabbit_review.py fold "$raw/coderabbit.json" data/coderabbit-findings.json; fi
-extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|data/coderabbit-findings\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
-[ -z "$extra" ] || refuse "the results touched more than their four files and the version card: $extra"
+extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|data/coderabbit-findings\.json|data/quality-history\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
+[ -z "$extra" ] || refuse "the results touched more than their five files and the version card: $extra"
 git add data/test-results.json README.md docs/built-with-ai/BUILT-WITH-AI.md docs/images/og.svg public/og.png
 if [ -f data/coderabbit-findings.json ]; then git add data/coderabbit-findings.json; fi
+if [ -f data/quality-history.json ]; then git add data/quality-history.json; fi
 GIT_COMMITTER_NAME="$(git log -1 --format=%an)" GIT_COMMITTER_EMAIL="$(git log -1 --format=%ae)" git commit -q --amend --no-edit
 sha=$(git rev-parse HEAD)
 echo "the results folded into the commit: ${sha:0:8}"

@@ -275,15 +275,15 @@ for (const viewport of [
         expect(wideBox.y).toBeGreaterThanOrEqual(columnBox.y + columnBox.height - 1);
         expect(Math.abs(wideBox.x - leadBox.x)).toBeLessThanOrEqual(1);
         expect(Math.abs(wideBox.x + wideBox.width - pageRight)).toBeLessThanOrEqual(1);
-        // No tile alone on a last row: the seventh tile of How it is built takes the row.
+        // No tile alone on a last row: How it is built's eight tiles end on a row of two.
         const lefts = await page
           .locator('[data-testid="landing-group-built"] li')
           .evaluateAll((items) =>
             items.map((item) => Math.round(item.getBoundingClientRect().left))
           );
-        expect(groupRights).toHaveLength(7);
+        expect(groupRights).toHaveLength(8);
         expect(Math.abs(lefts[6] - lefts[0])).toBeLessThanOrEqual(1);
-        expect(Math.abs(groupRights[6] - pageRight)).toBeLessThanOrEqual(1);
+        expect(Math.abs(lefts[7] - lefts[1])).toBeLessThanOrEqual(1);
       } else {
         expect(new Set(featuredRights).size).toBe(1);
         expect(new Set(stripRights.slice(0, 2)).size).toBe(2);

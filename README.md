@@ -4,6 +4,8 @@ A used-vehicle auction platform I built and run on Azure: browse 100,000 vehicle
 
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz), and the same build on Cosmos DB at [theyard-cosmos.stevenstout.biz](https://theyard-cosmos.stevenstout.biz). The running version and commit: [/api/version](https://theyard.stevenstout.biz/api/version). My resume: [/resume](https://theyard.stevenstout.biz/resume). Start here with ten minutes: [Check my work](https://theyard.stevenstout.biz/?view=review), seven live stops that show how I design, how I test and how I decide, without taking my word for any of it, ending at the resume.
 
+**Quality:** every rule as a test, and the numbers that may only get better, with their whole history, the slip included: [Quality you can watch](https://theyard.stevenstout.biz/?doc=quality).
+
 [![Deploy](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml/badge.svg)](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml)
 
 ## In plain words
@@ -14,15 +16,15 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 2062 xUnit tests, 631 Vitest tests at 1.0.4.178 and 208 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.4.178 hold 5,042 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 2069 xUnit tests, 636 Vitest tests at 1.0.5.0 and 209 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.5.0 hold 5,063 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
-| API | xUnit | 2062 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
-| Frontend | Vitest | 631 at 1.0.4.178 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| API | xUnit | 2069 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
+| Frontend | Vitest | 636 at 1.0.5.0 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
 | End to end | Playwright | 167 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe's eleven scans across nine views at WCAG 2.1 AA. |
 
-**How 5,042 is counted**, from the gate's own results file for 1.0.4.178 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 631 Vitest tests, 2062 xUnit tests on SQLite and the same 2062 booted on Cosmos DB, the 12 that need the live Cosmos DB account, 218 browser runs on SQLite from the 208 declared tests (a loop runs one of them more than once) and 57 of those again on Cosmos DB, which is 5,042. The xUnit and browser counts above are read from the source; a test written after 1.0.4.178 first runs in the gate of the version that ships it. A browser test that passes only on Playwright's one retry is written 'r', never a pass, and a file holding one is refused, so every run counted here passed the first time.
+**How 5,063 is counted**, from the gate's own results file for 1.0.5.0 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 636 Vitest tests, 2069 xUnit tests on SQLite and the same 2069 booted on Cosmos DB, the 12 that need the live Cosmos DB account, 220 browser runs on SQLite from the 209 declared tests (a loop runs one of them more than once) and 57 of those again on Cosmos DB, which is 5,063. The xUnit and browser counts above are read from the source; a test written after 1.0.5.0 first runs in the gate of the version that ships it. A browser test that passes only on Playwright's one retry is written 'r', never a pass, and a file holding one is refused, so every run counted here passed the first time.
 
 **The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The ship pushes the version to a `gate/<version>` branch and [`gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml) runs the gate there, on a GitHub runner; `main` moves only when it is green ([ADR-098](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-098-the-gate-runs-where-the-memory-is.md)): format, lint and type checks, the SQL project, xUnit on SQLite, the eight live Cosmos DB tests, and then Vitest and the browser suite, one side after the other. Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) builds the image and rolls the one web app that serves both sites and The Shed, and [`deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml) rolls the rendering service, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites again on GitHub's runners for every push to main, beside the deploy and without holding it up, and for a pull request, which has had no gate.
 
@@ -30,7 +32,7 @@ The suites hold 2062 xUnit tests, 631 Vitest tests at 1.0.4.178 and 208 Playwrig
 
 ## Architecture and decisions
 
-One hundred and twenty-nine decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Six to read first:
+One hundred and thirty decision records carry the trade-off and the number behind each choice. A decision record (ADR) is one short document per decision: the context, what was decided, what it cost, and an addendum when it stopped being true. Six to read first:
 
 - [ADR-088, onion and SOLID, how this codebase holds them](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-088-onion-and-solid.md): the rings, the ten tests that fail the gate when a dependency points outward, and what is kept simple on purpose.
 - [ADR-075, the rules a change has to pass](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-075-the-rules-a-change-has-to-pass.md): every standing rule beside the test that holds it.
@@ -78,7 +80,7 @@ A failing suite prints everything it printed, then the summary, and the command 
 
 Built by one engineer, with AI drafting against my tests and records. I specify every test before the AI writes
 the first draft of the code against it, three suites of tests run once per version inside the one gate before anything rolls (the counts are at the top of this page, held to the suites
-by a test), and one hundred and twenty-nine decision records carry the trade-off and the number behind each choice. What went
+by a test), and one hundred and thirty decision records carry the trade-off and the number behind each choice. What went
 wrong is recorded too. Read how it was governed in
 [Built with AI](https://theyard.stevenstout.biz/?doc=built-with-ai), and what it all runs on, at
 millisecond speeds on free-tier stores and one small container, in
@@ -103,7 +105,7 @@ it has sent and how long the database took.
 
 Everything about how it is built and hosted is served from inside the running app, under
 App Architecture, API Reference, SQL vs Cosmos DB, Performance, Diagrams, Style, Hosting, Built with AI, CI/CD
-and Best Practices in the sidebar. One hundred and twenty-nine decision records explain each choice, and the code samples in them are read from the running build
+and Best Practices in the sidebar. One hundred and thirty decision records explain each choice, and the code samples in them are read from the running build
 rather than pasted, so a record cannot drift from the code it describes. The shape of it:
 
 [![TheYard infrastructure: the request path, the deploy path, and the designed production target](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/infrastructure.png)](https://theyard.stevenstout.biz/api/docs/diagrams/infrastructure)
@@ -329,7 +331,7 @@ walkthrough can happen without leaving it.
   Records, Changelog, About and Author, holding the
   architecture and style pages, the two stores side by side, the data flow,
   infrastructure, entity relationship, two-sites, store comparison and rings diagrams on their
-  own zoomable pages, one hundred and twenty-nine decision records in one numbered index, the Bicep
+  own zoomable pages, one hundred and thirty decision records in one numbered index, the Bicep
   infrastructure, my resume, and How this was built, which says plainly that an AI agent
   wrote most of this and points at the evidence for judging what that produced.
 - **An Admin tab:** timed health checks, the recent-errors list (server and browser
@@ -505,7 +507,7 @@ walkthrough can happen without leaving it.
 
 ## Testing
 
-**API (2062 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
+**API (2069 xUnit tests, separate `TheYard.Tests` project):** one suite per onion layer.
 Domain (photo gallery determinism and make preference, FNV-1a known vectors, auction
 schedule bounds and boundaries, every filter rule, bid rules including increment tiers
 and buy-now precedence), application (`Stock`, `BidBook` and the handlers with in-memory
@@ -524,7 +526,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (631 Vitest tests at 1.0.4.178):** presentation logic only, since the API owns the rules.
+**Frontend (636 Vitest tests at 1.0.5.0):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
@@ -532,7 +534,7 @@ including the two pairs a stylesheet composes that nobody had listed, and the ac
 seam, which translates the wire both ways, shows the server's own sentence when a
 sign-in is refused, and holds no token anywhere. Run with `npm test`.
 
-**End-to-end (208 Playwright tests):** the real stack. The inventory view shows 100 of
+**End-to-end (209 Playwright tests):** the real stack. The inventory view shows 100 of
 100,000, filtering and tile navigation sync the URL both directions (including browser
 Back and deep links), Load More appends a page, every sidebar section and document opens,
 the diagrams open on their own pages, the Admin tab reports on the running system, a

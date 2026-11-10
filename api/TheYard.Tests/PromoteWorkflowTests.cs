@@ -103,7 +103,7 @@ public class PromoteWorkflowTests
         { "the results file", "promote.sh", "node scripts/test_results.mjs \"$raw\" \"$version\" \"$seconds\"" },
         { "the results describe this run and not another attempt", "promote.sh", "the results file records a suite this green gate did not have" },
         { "the README's figures", "promote.sh", "python3 scripts/readme_results.py" },
-        { "the results touch four files only", "promote.sh", "the results touched more than their four files" },
+        { "the results touch five files only", "promote.sh", "the results touched more than their five files" },
         { "the results folded into the gate's commit", "promote.sh", "git commit -q --amend --no-edit" },
         { "four tries at main", "promote.sh", "for try in 1 2 3 4" },
         { "the edge moved after the deploy", "gate.yml", "gh workflow run edge-branch.yml --ref main" },

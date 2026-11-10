@@ -15,6 +15,7 @@ import { highlight, grammarFor } from './highlight';
 import { swatchSheet } from './swatches';
 import { styleSheet as tokenSheet } from './styleSheet';
 import { STYLE_FENCES, styleBlock, type StyleFence } from '../library/styleBlocks';
+import { QUALITY_FENCES, qualityBlock, type QualityFence } from '../library/qualityBlocks';
 
 // #region doc-links
 // Links in a served document lead out of the app (GitHub, a diagram page), so
@@ -90,6 +91,9 @@ marked.use({
       // The Style section's tiles, readouts, glossary and ribbon strip (src/library/styleBlocks.ts).
       if ((STYLE_FENCES as readonly string[]).includes(name))
         return styleBlock(name as StyleFence, text);
+      // The Quality page's trends, a line a number (src/library/qualityBlocks.ts, ADR-130).
+      if ((QUALITY_FENCES as readonly string[]).includes(name))
+        return qualityBlock(name as QualityFence, text);
       const grammar = grammarFor(name);
       const className = grammar ? `hljs language-${grammar}` : 'hljs';
       return `<pre tabindex="0"><code class="${className}">${highlight(text, name)}</code></pre>\n`;

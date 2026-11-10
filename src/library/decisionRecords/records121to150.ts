@@ -73,4 +73,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '129',
   },
+  adrQualityYouCanWatch: {
+    title: 'ADR: Quality you can watch',
+    menuLabel: 'ADR: Quality you can watch',
+    url: '/api/docs/adr-quality-you-can-watch',
+    kind: 'adr',
+    number: '130',
+  },
 } as const satisfies Record<string, RecordEntry>;

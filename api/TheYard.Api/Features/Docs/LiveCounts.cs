@@ -56,6 +56,7 @@ public static partial class LiveCounts
                 "documents" => Number(DocumentationCatalog.Files.Count),
                 "live-blocks" => Number(LiveBlocks(repoRoot).Sum()),
                 "live-documents" => Number(LiveBlocks(repoRoot).Count(blocks => blocks > 0)),
+                _ when QualityCounts.Measures.Contains(kind) => QualityCounts.Measure(kind, path, repoRoot),
                 _ => $"(no live measure named '{measure}')",
             };
         }

@@ -57,6 +57,25 @@
         "trivial": 0,
         "nitpick": 0
       }
+    },
+    {
+      "version": "1.0.5.0",
+      "pr": 8,
+      "sha": "232fe4de",
+      "level": 0,
+      "at": "2026-11-10T17:33:19Z",
+      "waited_seconds": 715,
+      "review_seconds": 676,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 1,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      }
     }
   ]
 }
