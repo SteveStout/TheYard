@@ -18,7 +18,8 @@ namespace JobHunt.Functions;
 /// unset or "on" writes the card and mails it, "write" writes it and mails nothing, "off" does neither. Unset is on
 /// so that a template redeploy that drops the setting cannot silently stop the card. The mail goes to one fixed
 /// address, his own (TodayMail.To), and to nobody else. POST /api/today/hand-run with the function key runs the same
-/// write and mail at any hour, for a hand run. One line a run goes to nightly/today-card.log.
+/// write and mail at any hour, for a hand run. One line a run goes to nightly/today-card.log. Each tick first asks
+/// FunnelTimer for the day before's funnel line, so the card's week line includes it.
 /// </remarks>
 public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, TimeProvider time, ILogger<TodayCardTimer> log)
 {
@@ -30,6 +31,7 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
     public async Task RunAsync([TimerTrigger("0 30 * * * *")] TimerInfo timer, CancellationToken ct)
     {
         var now = time.GetUtcNow();
+        await FunnelTimer.DailyAsync(store, time, log, ct);
         var run = new RunLine("TodayCard", now, [30]);
         try
         {

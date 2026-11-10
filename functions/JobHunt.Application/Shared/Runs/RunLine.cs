@@ -8,7 +8,8 @@ namespace JobHunt.Application.Shared.Runs;
 /// process's name, when it started, how long it took, what it came to in one word, and its counts. Written at
 /// the end of every run, in a finally, so a run that threw still writes its line. It carries counts and names
 /// only, never an address, a message body or a file's contents: a detail is one word of letters, digits and
-/// underscores (a slot's name, a reason, an exception's type), and anything else is dropped.
+/// underscores (a slot's name, a reason, an exception's type) or one day as year, month and day joined by hyphens
+/// (the funnel's day), and anything else is dropped.
 /// </summary>
 public sealed partial class RunLine(string process, DateTimeOffset started, IReadOnlyList<int>? slotMinutes = null)
 {
@@ -93,10 +94,10 @@ public sealed partial class RunLine(string process, DateTimeOffset started, IRea
         return (long)(Started - slot).TotalSeconds;
     }
 
-    /// <summary>A detail kept only when it is one word of letters, digits and underscores, up to sixty.</summary>
+    /// <summary>A detail kept only when it is one word of letters, digits and underscores, up to sixty, or one day written yyyy-MM-dd.</summary>
     public static string? Word(string? detail) => detail is not null && Detailish().IsMatch(detail) ? detail : null;
 
-    [GeneratedRegex(@"^[A-Za-z0-9_]{1,60}$")]
+    [GeneratedRegex(@"^(?:[A-Za-z0-9_]{1,60}|\d{4}-\d{2}-\d{2})$")]
     private static partial Regex Detailish();
 
     [GeneratedRegex(@"^[a-z][a-z0-9_]{0,30}$")]

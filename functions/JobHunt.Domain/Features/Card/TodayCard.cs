@@ -19,6 +19,7 @@ namespace JobHunt.Domain.Features.Card;
 /// <param name="Essays">Its text.</param>
 /// <param name="Previous">TODAY.md as it stood before this card.</param>
 /// <param name="Calls">The next 72 hours' calls, each with its must-answers line.</param>
+/// <param name="Funnel">The week's funnel line (FunnelWeek), or empty when it was not read.</param>
 public sealed record TodayInputs(
     DateTime At,
     string? QueuePath,
@@ -34,7 +35,8 @@ public sealed record TodayInputs(
     string? EssaysPath,
     string Essays,
     string Previous,
-    IReadOnlyList<string> Calls);
+    IReadOnlyList<string> Calls,
+    string Funnel = "");
 
 /// <summary>
 /// The one card Steve reads (PLAN-AUTOHUNT rung 4): J:\TODAY.md, rewritten whole at 7:30 Central by the Function with
@@ -169,6 +171,10 @@ public static class TodayCard
         head.Append(RulesFirst).Append("\n\n");
         head.Append(CultureInfo.InvariantCulture, $"# TODAY, {inputs.At:dddd M/d}\n\n");
         head.Append(CultureInfo.InvariantCulture, $"Written {inputs.At:HH:mm} Central by the job hunt's Function, no model; each heading names the file it was read from. About {minutes} {(minutes == 1 ? "minute" : "minutes")} to read{(fold ? ", the held replies folded to stay near the 15-minute cap" : string.Empty)}{(minutes > CapMinutes ? $", over the {CapMinutes}-minute cap" : string.Empty)}.\n\n");
+        if (inputs.Funnel.Length > 0)
+        {
+            head.Append(inputs.Funnel).Append("\n\n");
+        }
         return head.Append(text).ToString();
     }
 
