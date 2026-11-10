@@ -30,12 +30,12 @@ public class PromoteWorkflowTests
     }
 
     // #region the-order
-    /// <summary>Promote waits for both check jobs; the deploys wait for promote; only promote and the branch's deletion write.</summary>
+    /// <summary>Promote waits for both check jobs and CodeRabbit's read; the deploys wait for promote; only promote and the branch's deletion write.</summary>
     [Fact]
     public void Promote_runs_only_after_both_checks_are_green_and_is_the_one_job_that_moves_main()
     {
         string promote = Job("promote");
-        Assert.Contains("needs: [gate, shed]", promote, StringComparison.Ordinal);
+        Assert.Contains("needs: [gate, shed, coderabbit]", promote, StringComparison.Ordinal);
         Assert.Contains("contents: write", promote, StringComparison.Ordinal);
         Assert.Contains("bash scripts/promote.sh", promote, StringComparison.Ordinal);
         Assert.Contains("needs: promote", Job("deploy"), StringComparison.Ordinal);
@@ -47,6 +47,31 @@ public class PromoteWorkflowTests
         Assert.Contains("\"$GITHUB_RUN_ID\"", promote, StringComparison.Ordinal);
     }
     // #endregion the-order
+
+    // #region the-review
+    /// <summary>
+    /// CodeRabbit's review sits inside the gate (ADR-129): its job only reads and waits with a ceiling, a failed read
+    /// never turns it red at Level 0, promote.sh folds its row into the findings log, and the gate's pull request
+    /// closes on main's commit before the gate branch goes.
+    /// </summary>
+    [Fact]
+    public void The_review_is_read_before_main_moves_and_never_holds_a_ship_at_level_zero()
+    {
+        string review = Job("coderabbit");
+        Assert.Contains("python3 scripts/coderabbit_review.py \"$GITHUB_REF_NAME\" \"$GITHUB_SHA\" 1800", review, StringComparison.Ordinal);
+        Assert.Contains("Level 0 ships anyway", review, StringComparison.Ordinal);
+        Assert.Contains("name: coderabbit-raw", review, StringComparison.Ordinal);
+        Assert.DoesNotContain(": write", review, StringComparison.Ordinal);
+        Assert.Contains("name: coderabbit-raw", Job("promote"), StringComparison.Ordinal);
+        Assert.Contains("python3 scripts/coderabbit_review.py fold \"$raw/coderabbit.json\" data/coderabbit-findings.json", Promote(), StringComparison.Ordinal);
+        Assert.Contains("coderabbit job is $review, not green", Promote(), StringComparison.Ordinal);
+        string afterRoll = Job("after-roll");
+        int close = afterRoll.IndexOf("bash scripts/gate_pr.sh close", StringComparison.Ordinal);
+        int branch = afterRoll.IndexOf("name: The gate branch goes", StringComparison.Ordinal);
+        Assert.True(close > 0 && branch > close, "after-roll should close the gate's pull request before the gate branch goes");
+        Assert.Contains("pull-requests: write", afterRoll, StringComparison.Ordinal);
+    }
+    // #endregion the-review
 
     // #region only-forward
     /// <summary>Main moves only forward: an ancestor check before every push, and never a force.</summary>
@@ -78,7 +103,7 @@ public class PromoteWorkflowTests
         { "the results file", "promote.sh", "node scripts/test_results.mjs \"$raw\" \"$version\" \"$seconds\"" },
         { "the results describe this run and not another attempt", "promote.sh", "the results file records a suite this green gate did not have" },
         { "the README's figures", "promote.sh", "python3 scripts/readme_results.py" },
-        { "the results touch three files only", "promote.sh", "the results touched more than their three files" },
+        { "the results touch four files only", "promote.sh", "the results touched more than their four files" },
         { "the results folded into the gate's commit", "promote.sh", "git commit -q --amend --no-edit" },
         { "four tries at main", "promote.sh", "for try in 1 2 3 4" },
         { "the edge moved after the deploy", "gate.yml", "gh workflow run edge-branch.yml --ref main" },

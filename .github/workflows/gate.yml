@@ -295,11 +295,41 @@ jobs:
           if [ "$x" != 0 ] || [ "$n" != 0 ]; then echo "::error::red: The Shed (xUnit $x, node $n)"; exit 1; fi
   # #endregion shed-job
 
+  # #region coderabbit-job
+  # CodeRabbit, the last reviewer (ADR-129, CodeRabbit, one rung at a time). The machine that ships opens the
+  # gate's pull request and asks for the review right after its push (scripts/gate_pr.sh); this job waits, beside
+  # the gate's own checks, up to 30 minutes, for CodeRabbit's check on the commit to complete, so the review lands before main
+  # moves. At Level 0 no finding holds the ship: a review that does not come inside the ceiling ships anyway with a
+  # notice, and the row it writes says so. The row joins data/coderabbit-findings.json in the promote job.
+  coderabbit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      checks: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: The review, read when it completes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/review"
+          python3 scripts/coderabbit_review.py "$GITHUB_REF_NAME" "$GITHUB_SHA" 1800 "$RUNNER_TEMP/review/coderabbit.json" ||
+            echo "::notice::the CodeRabbit read failed; Level 0 ships anyway (ADR-129)"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coderabbit-raw
+          path: ${{ runner.temp }}/review/
+          if-no-files-found: ignore
+  # #endregion coderabbit-job
+
   # #region promote-job
-  # The run's own promotion: only after the gate and The Shed are both green, and the only job that
-  # may write, to fast-forward main without force.
+  # The run's own promotion: only after the gate and The Shed are both green and CodeRabbit's review has been
+  # read, and the only job that may write, to fast-forward main without force.
   promote:
-    needs: [gate, shed]
+    needs: [gate, shed, coderabbit]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -326,6 +356,11 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: gate-raw
+          path: ${{ runner.temp }}/raw
+      - uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          name: coderabbit-raw
           path: ${{ runner.temp }}/raw
       - name: Promote
         id: promote
@@ -389,6 +424,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -463,6 +499,13 @@ jobs:
           echo "CI on main: https://github.com/$GITHUB_REPOSITORY/actions/runs/$run"
           gh run watch "$run" --exit-status --interval 30 > /dev/null || { echo "::error::CI on main is red for $SHA (run $run)"; exit 1; }
           echo "CI on main: success (run $run)"
+      # The gate's pull request closes on main's commit before its branch goes: promote.sh amended the commit the
+      # request carries, so GitHub never marks it merged (ADR-129).
+      - name: The pull request closes
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/gate_pr.sh close "${{ needs.promote.outputs.version }}" "${{ needs.promote.outputs.sha }}" || echo "::warning::the pull request for $GITHUB_REF_NAME was not closed"
       - name: The gate branch goes
         if: always()
         env:

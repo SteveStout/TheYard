@@ -1,0 +1,24 @@
+{
+  "about": "One row per ship: CodeRabbit's review of the gate's pull request, the evidence for every rung of the ladder (ADR-129).",
+  "rows": [
+    {
+      "version": "1.0.4.176",
+      "pr": 5,
+      "sha": "ba719642",
+      "level": 0,
+      "at": "2026-11-10T15:03:53Z",
+      "waited_seconds": 797,
+      "review_seconds": 777,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 1,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      }
+    }
+  ]
+}

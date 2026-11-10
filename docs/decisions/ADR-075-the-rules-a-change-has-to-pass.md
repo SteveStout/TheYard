@@ -210,6 +210,8 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The Function's funnel line counts one Central day from its logs and each tracker row's opening phrase, a person once a day, never a NO or NOT send; its detail is the day; the share's log sums into the week's line on TODAY.md, each day its latest line and a missing day named | ADR-109, the addendum of 1.0.4.175 | FunnelLineTests |
 | The container's own sampler keeps an hour at fifteen seconds (240 samples) in the host, drops its oldest sample when full, keeps one when asked for none, and reads the runtime's own limit and processors | ADR: What the machines are doing | ContainerSamplerTests |
 | A Cloud card's request answers from a view under two minutes old and builds the next behind it past one minute; a view at two minutes is not served; the keeper builds each window asked for in the last hour once a minute and drops the rest | ADR-102, the addendum of 1.0.4.164 | CloudKeepingTests |
+| Every rule CodeRabbit is told ends with the record that decided it and that record exists, the rules it is told are the ones ADR-129 lists, and its profile and two switches are the ones ADR-129 names for the current level | ADR-129 | CodeRabbitRuleTests |
+| The gate promotes only after CodeRabbit's review of the gate's pull request is read or its ceiling passed, never holds a ship on a finding at Level 0, folds the review's row into the findings log, and closes the request on main's commit | ADR-129 | PromoteWorkflowTests, PromoteScriptTests |
 
 ## How the table is read
 

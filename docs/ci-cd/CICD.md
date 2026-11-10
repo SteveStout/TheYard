@@ -46,7 +46,7 @@ the push's CI run. With no such secret the promote job ends GREEN with
 scripts/promote.sh`, moves nothing, and the deploys skip, because a gate that
 found nothing wrong must not send a failure email; a person then promotes the
 run by hand, naming it:
-`gh run download <run> -n gate-raw -D raw && bash scripts/promote.sh raw <gate seconds> <version> <run>`.
+`gh run download <run> -n gate-raw -D raw && gh run download <run> -n coderabbit-raw -D raw && bash scripts/promote.sh raw <gate seconds> <version> <run>`.
 
 **Before the push, run the preflight** (ADR-098, the addendum of 1.0.4.119):
 
@@ -64,13 +64,25 @@ or the two passes on Cosmos DB: those need the gate's 16 GB runner, which is why
 the gate is there. A check this machine cannot run says UNKNOWN. **A red
 preflight is never pushed.**
 
+**CodeRabbit reads every ship** (ADR-129, CodeRabbit, one rung at a time). Right
+after the push of `gate/<version>`, the machine that ships runs
+`bash scripts/gate_pr.sh open <version>`: a pull request from the gate branch into
+`main`, titled with the commit's subject, and the comment that asks CodeRabbit for
+its review, which a repository under ten stars needs. The gate's `coderabbit` job
+waits beside the checks, up to 30 minutes, for CodeRabbit's check on the commit to
+complete, and promote waits for that job. At Level 0 no finding holds a ship; the
+review's row joins `data/coderabbit-findings.json` with the results, and the
+after-roll job closes the request on `main`'s commit. A version promoted by hand
+closes it with `bash scripts/gate_pr.sh close <version> <main sha>`.
+
 **What a red gate run prints.** Each log belongs to one check, and its tail
 reaches the run's error annotations only when that check is red, so the failure
 email names the real failure and not the green checks beside it.
 
 **What promote refuses** (ADR-098, the addendum of 1.0.4.107). Before it
 writes anything, `scripts/promote.sh` reads the named run and refuses unless
-that run tested HEAD, its gate and Shed jobs are both green, HEAD is exactly
+that run tested HEAD, its gate and Shed jobs are both green, its coderabbit job
+(where the run has one) is green, HEAD is exactly
 one commit on `main`, and the version goes up by one in its fourth number. The
 gate's two cuts read the whole branch from where it left `main`. Deploy and
 Deploy Render refuse a commit that is no longer `main`'s head, and the

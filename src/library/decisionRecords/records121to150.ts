@@ -66,4 +66,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '128',
   },
+  adrCodeRabbit: {
+    title: 'ADR: CodeRabbit, one rung at a time',
+    menuLabel: 'ADR: CodeRabbit, one rung at a time',
+    url: '/api/docs/adr-coderabbit-one-rung-at-a-time',
+    kind: 'adr',
+    number: '129',
+  },
 } as const satisfies Record<string, RecordEntry>;

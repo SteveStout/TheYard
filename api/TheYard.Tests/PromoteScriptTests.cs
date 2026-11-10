@@ -95,7 +95,7 @@ public sealed class PromoteScriptTests : IDisposable
 
         string bin = Path.Combine(_root, "bin");
         Directory.CreateDirectory(bin);
-        File.WriteAllText(Path.Combine(bin, "gh"), "#!/usr/bin/env bash\ncase \"$*\" in *headSha*) echo \"$FAKE_TESTED\";; *jobs*) echo \"$FAKE_GREEN\";; *) exit 1;; esac\n");
+        File.WriteAllText(Path.Combine(bin, "gh"), "#!/usr/bin/env bash\ncase \"$*\" in *headSha*) echo \"$FAKE_TESTED\";; *coderabbit*) echo \"${FAKE_REVIEW:-none}\";; *jobs*) echo \"$FAKE_GREEN\";; *) exit 1;; esac\n");
         File.WriteAllText(Path.Combine(bin, "curl"), "#!/usr/bin/env bash\n[ -n \"$FAKE_CARD\" ] || exit 22\nprintf '%s' \"$FAKE_CARD\"\n");
         File.WriteAllText(Path.Combine(bin, "node"), "#!/usr/bin/env bash\nexit 0\n");
         File.WriteAllText(Path.Combine(bin, "python3"), "#!/usr/bin/env bash\nexit 0\n");
@@ -158,7 +158,8 @@ public sealed class PromoteScriptTests : IDisposable
         { "not-on-main", "not one commit on main" },
         { "two-ahead", "not one commit on main" },
         { "goes-down", "the version goes down" },
-        { "extra-file", "the results touched more than their three files" },
+        { "extra-file", "the results touched more than their four files" },
+        { "review-unread", "coderabbit job is cancelled, not green" },
         { "page-for-a-card", "answered with something that is not JSON" },
     };
 
@@ -177,6 +178,7 @@ public sealed class PromoteScriptTests : IDisposable
         int green = 2;
         string version = "1.0.4.106";
         string card = "";
+        var env = new Dictionary<string, string>(StringComparer.Ordinal);
         switch (shape)
         {
             case "red":
@@ -219,9 +221,13 @@ public sealed class PromoteScriptTests : IDisposable
                 Version(version);
                 card = "<!doctype html><title>Sign in</title>";
                 break;
+            case "review-unread":
+                Version(version);
+                env["FAKE_REVIEW"] = "cancelled";
+                break;
         }
 
-        var (code, output) = Promote(version, tested, green, card);
+        var (code, output) = Promote(version, tested, green, card, env);
 
         Assert.NotEqual(0, code);
         Assert.Contains(reason, output, StringComparison.Ordinal);
