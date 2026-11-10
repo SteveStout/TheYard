@@ -77,9 +77,73 @@ public sealed class CodeRabbitRuleTests
         string ladder = Ladder();
         int start = ladder.IndexOf("### The rules at Level 0", StringComparison.Ordinal);
         Assert.True(start > 0, "ADR-129 should list the rules CodeRabbit is told");
-        var listed = Regex.Matches(ladder[start..], @"^\| [^|]+ \| (ADR-\d{3}) \| \w+ \|$", RegexOptions.Multiline).Select(m => m.Groups[1].Value).Order().ToList();
-        var told = Instructions().Select(i => Regex.Match(i.Text, @"\((ADR-\d{3})\)\.?$").Groups[1].Value).Order().ToList();
-        Assert.Equal(listed, told);
+        var listed = Regex.Matches(ladder[start..], @"^\| [^|]+ \| (ADR-\d{3}) \| \w+ \|$", RegexOptions.Multiline).Select(m => m.Groups[1].Value).ToList();
+        // A row of the ladder's table is a rule, and a rule is the owner's yes: the table stays seven rows. A rule
+        // whose test reads two scopes is told as two instructions, one per scope, so the comparison is of the distinct
+        // records (ADR-129, the addendum of 1.0.5.5).
+        Assert.Equal(7, listed.Count);
+        var told = Instructions().Select(i => Regex.Match(i.Text, @"\((ADR-\d{3})\)\.?$").Groups[1].Value).Distinct().Order().ToList();
+        Assert.Equal(listed.Order().ToList(), told);
+    }
+
+    /// <summary>
+    /// The instructions are written from ADR-075's own rows by scripts/coderabbit_rules.py: each quotes clauses of the
+    /// rows that name its record and its test, word for word, then the scope that test reads. A row that changes and an
+    /// instruction that is edited by hand both fail here, so CodeRabbit can never keep a rule its record has dropped
+    /// (ADR-129, the addendum of 1.0.5.5).
+    /// </summary>
+    [Fact]
+    public void Every_instruction_is_written_from_its_record_s_rows_and_nothing_else()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        var (code, output) = Script(new ProcessStartInfo("python3", "scripts/coderabbit_rules.py") { WorkingDirectory = Repo.Root() });
+        Assert.True(code == 0, output);
+    }
+
+    /// <summary>
+    /// Each instruction's path is the scope its test reads, read from the test itself, so a test that starts or stops
+    /// reading a folder fails here until CodeRabbit is told the same. The three that read compiled assemblies (the onion,
+    /// the slices, the requests) name their projects in the generator and are held by the clause check above.
+    /// </summary>
+    [Fact]
+    public void Every_instruction_s_path_is_the_scope_its_test_reads()
+    {
+        var paths = Instructions().GroupBy(i => Regex.Match(i.Text, @"\((ADR-\d{3})\)\.?$").Groups[1].Value).ToDictionary(g => g.Key, g => g.Select(i => i.Path).ToList());
+
+        // The cancellation count: the ratchet's production C# folders.
+        string scanner = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "quality.py"));
+        Match all = Regex.Match(scanner, @"CS_ALL = files\(""\*\.cs"", \[([^\]]+)\]\)");
+        Assert.True(all.Success, "quality.py should name the C# folders it reads as CS_ALL");
+        string folders = string.Join(',', Regex.Matches(all.Groups[1].Value, @"""([^""]+)""").Select(m => m.Groups[1].Value));
+        Assert.Equal([$"{{{folders}}}/**/*.cs"], paths["ADR-122"]);
+
+        // The 300-line rule: FileShapeTests' folders and kinds, and the two other suites' folders.
+        string shape = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Tests", "FileShapeTests.cs"));
+        Assert.Contains("TooLong(new[] { \"api\", \"src\", \"render\" }", shape, StringComparison.Ordinal);
+        Assert.Contains("Kinds = [\".cs\", \".ts\", \".tsx\"]", shape, StringComparison.Ordinal);
+        Assert.Contains("LengthRule.TooLong", File.ReadAllText(Path.Combine(Repo.Root(), "functions", "jobhunt.Tests", "RingTests.cs")), StringComparison.Ordinal);
+        Assert.Contains("LengthRule.TooLong", File.ReadAllText(Path.Combine(Repo.Root(), "server", "JobHunt.Server.Tests", "RingTests.cs")), StringComparison.Ordinal);
+        Assert.Equal(["{api,src,render,functions,server}/**/*.{cs,ts,tsx}"], paths["ADR-075"]);
+
+        // The comment rule: the site's production folders at full strength and the Function's at the lower one.
+        string comments = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Tests", "ProductionCommentTests.cs"));
+        var site = Regex.Matches(comments, @"Path\.Combine\(""api"", ""(TheYard\.[A-Za-z.]+)""\)").Select(m => "api/" + m.Groups[1].Value).Append("src");
+        Assert.Contains("string[] production = [\"functions\"];", comments, StringComparison.Ordinal);
+        Assert.Contains("Repo.FilesWith(\".cs\", \".ts\", \".tsx\", \".css\")", comments, StringComparison.Ordinal);
+        Assert.Equal([$"{{{string.Join(',', site)}}}/**/*.{{cs,ts,tsx,css}}", "functions/**/*.{cs,ts,tsx,css}"], paths["ADR-074"]);
+
+        // The house voice: every spelling HouseVoiceTests refuses is named.
+        string voice = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Tests", "HouseVoiceTests.cs"));
+        Assert.Contains("(\"&\" + \"mdash;\"", voice, StringComparison.Ordinal);
+        Assert.Contains("(\"&#\" + \"8212;\"", voice, StringComparison.Ordinal);
+        string dash = Instructions().Single(i => i.Text.EndsWith("(ADR-028).", StringComparison.Ordinal)).Text;
+        foreach (string spelling in new[] { "U+2014", "mdash", "8212" })
+        {
+            Assert.Contains(spelling, dash, StringComparison.Ordinal);
+        }
     }
     // #endregion every-rule-has-a-record
 
@@ -191,6 +255,22 @@ public sealed class CodeRabbitRuleTests
         }
     }
 
+    /// <summary>A script run to its end: both streams read at once, so neither pipe can fill and hold the other, and a minute at most.</summary>
+    private static (int Code, string Output) Script(ProcessStartInfo start)
+    {
+        start.RedirectStandardOutput = true;
+        start.RedirectStandardError = true;
+        using var process = Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEndAsync();
+        var errors = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit(TimeSpan.FromMinutes(1)))
+        {
+            process.Kill(entireProcessTree: true);
+            return (-1, "the script did not finish in a minute");
+        }
+        return (process.ExitCode, output.GetAwaiter().GetResult() + errors.GetAwaiter().GetResult());
+    }
+
     private static void Python(string dir, string args)
     {
         var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" {args}") { WorkingDirectory = dir, RedirectStandardOutput = true, RedirectStandardError = true };
@@ -201,6 +281,59 @@ public sealed class CodeRabbitRuleTests
         Assert.True(process.ExitCode == 0, errors);
     }
     // #endregion every-ship-has-one-row
+
+    // #region every-request-that-carried-the-commit
+    /// <summary>
+    /// A commit's review is counted on whichever request carried it (ADR-129, the addendum of 1.0.5.5). When 1.0.5.3's
+    /// gate branch was pushed again, its first request closed holding CodeRabbit's two Minor findings, the second got no
+    /// review of its own because the commit was already reviewed, and the log said "full, no findings". Here a stand-in
+    /// gh answers as GitHub did: two requests on one commit, the findings on the first, the review's summary on both.
+    /// The row counts the two findings once and names both requests.
+    /// </summary>
+    [Fact]
+    public void A_commit_s_review_is_counted_on_whichever_request_carried_it_and_once()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-carried-{Guid.NewGuid():N}");
+        string bin = Path.Combine(dir, "bin");
+        Directory.CreateDirectory(bin);
+        try
+        {
+            const string Sha = "8533b35f2f5bba622e01a1e1573f69908e577255";
+            string Summary = JsonSerializer.Serialize(new[] { new[] { new { user = new { login = "coderabbitai[bot]" }, commit_id = Sha, body = "**Actionable comments posted: 2**" } } });
+            string Minor = "**<picture></picture> Minor** \u00b7 **Correctness**";
+            string Found = JsonSerializer.Serialize(new[] { new[] { new { user = new { login = "coderabbitai[bot]" }, commit_id = Sha, body = Minor }, new { user = new { login = "coderabbitai[bot]" }, commit_id = Sha, body = Minor } } });
+            string Pulls = JsonSerializer.Serialize(new[] { new[] { new { number = 12, head = new { sha = Sha } }, new { number = 11, head = new { sha = Sha } }, new { number = 9, head = new { sha = "0000000000000000000000000000000000000000" } } } });
+            File.WriteAllText(Path.Combine(dir, "pulls.json"), Pulls);
+            File.WriteAllText(Path.Combine(dir, "summary.json"), Summary);
+            File.WriteAllText(Path.Combine(dir, "found.json"), Found);
+            File.WriteAllText(Path.Combine(dir, "none.json"), "[[]]");
+            File.WriteAllText(Path.Combine(bin, "gh"), $"#!/usr/bin/env bash\ncase \"$*\" in *pulls?state=all*) cat \"{dir}/pulls.json\";; */pulls/11/comments*) cat \"{dir}/found.json\";; */pulls/12/comments*) cat \"{dir}/none.json\";; */reviews*) cat \"{dir}/summary.json\";; *) exit 1;; esac\n");
+            File.SetUnixFileMode(Path.Combine(bin, "gh"), UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            string log = Path.Combine(dir, "log.json");
+            File.WriteAllText(log, JsonSerializer.Serialize(new { about = "test", rows = new[] { new { version = "1.0.5.3", pr = 12, sha = "8533b35f", reviewed = "full", actionable = 0, findings = new { critical = 0, major = 0, minor = 0, trivial = 0, nitpick = 0 } } } }));
+
+            var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" recount 1.0.5.3 gate/1.0.5.3 {Sha} \"{log}\"") { WorkingDirectory = dir };
+            start.Environment["PATH"] = bin + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+            var (code, output) = Script(start);
+            Assert.True(code == 0, output);
+
+            using var read = JsonDocument.Parse(File.ReadAllText(log));
+            JsonElement row = read.RootElement.GetProperty("rows")[0];
+            Assert.Equal(2, row.GetProperty("findings").GetProperty("minor").GetInt32());
+            Assert.Equal(2, row.GetProperty("actionable").GetInt32());
+            Assert.Equal(11, row.GetProperty("pr").GetInt32());
+            Assert.Equal([11, 12], row.GetProperty("prs").EnumerateArray().Select(n => n.GetInt32()));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+    // #endregion every-request-that-carried-the-commit
 
     [Theory]
     [InlineData("!api/TheYard.Migrations.Sqlite/**/*.cs")]

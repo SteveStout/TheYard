@@ -117,7 +117,7 @@
     },
     {
       "version": "1.0.5.3",
-      "pr": 12,
+      "pr": 11,
       "sha": "8533b35f",
       "level": 0,
       "at": "2026-11-10T20:09:02Z",
@@ -125,14 +125,18 @@
       "review_seconds": 644,
       "conclusion": "success",
       "reviewed": "full",
-      "actionable": 0,
+      "actionable": 2,
       "findings": {
         "critical": 0,
         "major": 0,
-        "minor": 0,
+        "minor": 2,
         "trivial": 0,
         "nitpick": 0
-      }
+      },
+      "prs": [
+        11,
+        12
+      ]
     },
     {
       "version": "1.0.5.4",
@@ -152,6 +156,28 @@
         "trivial": 0,
         "nitpick": 0
       }
+    },
+    {
+      "version": "1.0.5.5",
+      "pr": 15,
+      "sha": "5388dcf9",
+      "level": 0,
+      "at": "2026-11-10T23:13:33Z",
+      "waited_seconds": 635,
+      "review_seconds": 606,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 0,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 0,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "prs": [
+        15
+      ]
     }
   ]
 }
