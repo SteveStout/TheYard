@@ -126,3 +126,7 @@ Also changed: the label is read from the header line alone, never the remark und
 
 Owed before Level 1, from the same review: the log has no column for a finding fixed or answered as wrong, which Decision 6's evidence needs (the session that brings the table derives them from the request's threads until the log carries them); Level 2's "a rule marked blocking" needs a way to tie a finding to the rule it cites before that level is written; and five ships is a small sample, so the table says how many ships it covers.
 
+## Addendum, 2026-11-10 (1.0.5.1): the second Level 1 candidate has a record
+
+What stopped being true: "no secret, token or key in the tree (no record and no test yet)" under The rules at Level 0. The record exists, ADR-072 (The code is public and the secrets are not). What it lacks is a test: ADR-075 has no row for it. It stays a Level 1 candidate until a secret scan in the gate holds it.
+

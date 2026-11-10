@@ -52,6 +52,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 7,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.76,
     "dotnet_tests_higher_is_better": 2255
    },
@@ -100,6 +101,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 7,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.76,
     "dotnet_tests_higher_is_better": 2263
    },
@@ -148,6 +150,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 6,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.77,
     "dotnet_tests_higher_is_better": 2270
    },
@@ -196,6 +199,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 6,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.77,
     "dotnet_tests_higher_is_better": 2274
    },
@@ -244,6 +248,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 6,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.77,
     "dotnet_tests_higher_is_better": 2288
    },
@@ -292,6 +297,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 6,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.78,
     "dotnet_tests_higher_is_better": 2310
    },
@@ -340,6 +346,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 6,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.78,
     "dotnet_tests_higher_is_better": 2320
    },
@@ -388,6 +395,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.78,
     "dotnet_tests_higher_is_better": 2321
    },
@@ -432,6 +440,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.78,
     "dotnet_tests_higher_is_better": 2321
    },
@@ -480,6 +489,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.78,
     "dotnet_tests_higher_is_better": 2324
    },
@@ -528,6 +538,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 9,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.78,
     "dotnet_tests_higher_is_better": 2338
    },
@@ -576,6 +587,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2358
    },
@@ -624,6 +636,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2361
    },
@@ -672,6 +685,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2361
    },
@@ -720,6 +734,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 323,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2361
    },
@@ -768,6 +783,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 332,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2368
    },
@@ -816,6 +832,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2391
    },
@@ -864,6 +881,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2480
    },
@@ -908,6 +926,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2511
    },
@@ -956,6 +975,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2526
    },
@@ -1004,6 +1024,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2532
    },
@@ -1052,6 +1073,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2538
    },
@@ -1100,6 +1122,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2565
    },
@@ -1144,6 +1167,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2567
    },
@@ -1192,6 +1216,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.79,
     "dotnet_tests_higher_is_better": 2568
    },
@@ -1240,6 +1265,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2614
    },
@@ -1288,6 +1314,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2628
    },
@@ -1336,6 +1363,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2663
    },
@@ -1384,6 +1412,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2722
    },
@@ -1432,6 +1461,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2723
    },
@@ -1480,6 +1510,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2730
    },
@@ -1528,6 +1559,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2730
    },
@@ -1576,6 +1608,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2730
    },
@@ -1624,6 +1657,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2747
    },
@@ -1668,6 +1702,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2747
    },
@@ -1716,6 +1751,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2748
    },
@@ -1764,6 +1800,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2753
    },
@@ -1812,6 +1849,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 336,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2772
    },
@@ -1860,6 +1898,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 338,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2773
    },
@@ -1908,6 +1947,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 340,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2778
    },
@@ -1956,6 +1996,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 343,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2785
    },
@@ -2004,6 +2045,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 343,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2822
    },
@@ -2052,6 +2094,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 347,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2830
    },
@@ -2100,6 +2143,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 347,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2851
    },
@@ -2148,6 +2192,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2874
    },
@@ -2196,6 +2241,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2877
    },
@@ -2244,6 +2290,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2883
    },
@@ -2292,6 +2339,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2885
    },
@@ -2340,6 +2388,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2888
    },
@@ -2388,6 +2437,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2892
    },
@@ -2436,6 +2486,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.8,
     "dotnet_tests_higher_is_better": 2892
    },
@@ -2484,6 +2535,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3350
    },
@@ -2532,6 +2584,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3352
    },
@@ -2580,6 +2633,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3359
    },
@@ -2628,6 +2682,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 350,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3360
    },
@@ -2676,6 +2731,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3373
    },
@@ -2724,6 +2780,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3400
    },
@@ -2772,6 +2829,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3400
    },
@@ -2820,6 +2878,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3408
    },
@@ -2868,6 +2927,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3430
    },
@@ -2916,6 +2976,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3452
    },
@@ -2964,6 +3025,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3465
    },
@@ -3012,6 +3074,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3466
    },
@@ -3060,6 +3123,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 353,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3467
    },
@@ -3093,7 +3157,7 @@
   {
    "version": "1.0.5.0",
    "date": "2026-11-10",
-   "commit": "232fe4de",
+   "commit": "e4710125",
    "source": "quality.py",
    "numbers": {
     "undocumented_declarations": 399,
@@ -3108,6 +3172,7 @@
     "files_over_300": 0,
     "files_within_10_of_cap": 2,
     "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 356,
     "test_to_prod_ratio_higher_is_better": 0.81,
     "dotnet_tests_higher_is_better": 3472
    },
@@ -3130,6 +3195,56 @@
    "thin": {
     "react_files": 419,
     "react_files_without_header": 356,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42866931418
+   }
+  },
+  {
+   "version": "1.0.5.1",
+   "date": "2026-11-10",
+   "commit": "dbe9d825",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 241,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3472
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 241,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3472
+   },
+   "thin": {
+    "react_files": 419,
+    "react_files_without_header": 241,
     "data_xml_docs_pct": 49.0
    },
    "coverage": null

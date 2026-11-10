@@ -536,7 +536,8 @@ for f in CS_PROD:
 # #endregion named-by-a-test
 R["tests"] = {"dotnet_facts_and_theories": facts, "inline_data_rows": rows, "vitest": vit, "playwright": pw,
               "test_loc": test_loc, "prod_loc": prod_loc, "test_to_prod": round(test_loc / max(prod_loc, 1), 2),
-              "behavior_types_never_named_in_a_test": len(untested), "untested_sample": untested[:30]}
+              "behavior_types_never_named_in_a_test": len(untested),
+    "react_files_without_header": len(hdr_missing), "untested_sample": untested[:30]}
 
 # ---------- best-practice documents ----------
 bp = ROOT / "docs/best-practices"
@@ -563,6 +564,7 @@ R["ratchet"] = {
     "files_over_300": sum(d["over_300"] for d in size.values()),
     "files_within_10_of_cap": len(near),
     "behavior_types_never_named_in_a_test": len(untested),
+    "react_files_without_header": len(hdr_missing),
     "test_to_prod_ratio_higher_is_better": R["tests"]["test_to_prod"],
     "dotnet_tests_higher_is_better": facts + rows,
 }

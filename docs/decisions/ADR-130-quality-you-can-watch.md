@@ -57,3 +57,14 @@ Outside the rings for the data and the script (data/ and scripts/ beside the res
 - [`src/lib/qualityTrend.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/qualityTrend.ts), [`src/library/qualityBlocks.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/qualityBlocks.ts) and [`src/components/quality/QualityTrend/`](https://github.com/SteveStout/TheYard/tree/main/src/components/quality/QualityTrend) - the fence and the chart
 - [`scripts/promote.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/promote.sh) - the row on every ship, and the owner's number
 - [`api/TheYard.Tests/QualityHistoryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/QualityHistoryTests.cs) - the history and the page, held to the data
+
+## Addendum, 2026-11-10 (1.0.5.1): the page read live, and the first two corrections
+
+1.0.5.0 rolled at 11:52 CST and the page was read on both names at 1280 and 390 by headless Chrome: eleven charts and eleven gold marks at each width, no sideways scroll, every live number expanded (none left as a note), ready in under 3.4 seconds. The SQL site at a desk and the Cosmos DB site on a phone:
+
+![The Quality page on the SQL site at 1280: the slip and the turn in words above the first two lines, async methods with no CancellationToken falling from 107 at 1.0.4.115 to 1, and declarations with no summary from 549 to 399, each with 1.0.4.115 marked in gold and the pre-scan dashed](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/quality-1280.jpg)
+
+![The Quality page on the Cosmos DB site at 390: the same first line, its labels at the phone's own size](https://raw.githubusercontent.com/SteveStout/TheYard/main/docs/images/quality-390.jpg)
+
+Two corrections in this version. CodeRabbit's one finding on 1.0.5.0's request (#8) was right: a row the promote failed to write left the history's newest row two versions behind, and the next version's gate would have gone red on it. The test now allows an earlier newest row, a gap, and refuses only one ahead of the changelog. And the history was measured again by the scanner that counts the fifteenth number (ADR-122, the addendum of 1.0.5.1), so every row from 1.0.4.115 carries it.
+

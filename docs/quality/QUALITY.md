@@ -1,10 +1,10 @@
 # Quality you can watch
 
-Every rule this codebase lives by is a test, and fourteen numbers about its shape may only get better. This page shows both, read from the build that serves it, including the two weeks the numbers got worse.
+Every rule this codebase lives by is a test, and fifteen numbers about its shape may only get better. This page shows both, read from the build that serves it, including the two weeks the numbers got worse.
 
 ## In plain words
 
-I built this site with AI while most of my attention was elsewhere, and the risk in that is quality slipping while nobody is looking. So the decisions are written down as records, the records that a machine can check are tests, and a scanner counts fourteen things about the code on every version. A version that breaks a rule or makes any of the fourteen worse does not ship.
+I built this site with AI while most of my attention was elsewhere, and the risk in that is quality slipping while nobody is looking. So the decisions are written down as records, the records that a machine can check are tests, and a scanner counts fifteen things about the code on every version. A version that breaks a rule or makes any of them worse does not ship.
 
 Nothing on this page is typed in. Every number is read, when you open it, from files the build writes: the quality history (one row per shipped version, {{live:quality-versions}} so far), the gate's own test results, the rules table and CodeRabbit's log. The tests that hold this page fail if it says anything the data does not.
 
@@ -12,7 +12,7 @@ What that is worth to a team: quality that is measured on every change and can o
 
 ## The slip, and the turn
 
-In the two weeks to 29 October the code doubled, every yes-or-no rule held, and everything nobody was counting got worse. Async methods with no way to cancel them went from {{live:quality-first async_without_cancellation}} on 15 October to {{live:quality-peak async_without_cancellation}}. Declarations with no summary peaked at {{live:quality-peak undocumented_declarations}}. On 29 October, at 1.0.4.115, the ratchet went in ([ADR-122](https://theyard.stevenstout.biz/?doc=adr-the-numbers-that-may-only-fall)): fourteen numbers in one file, read by the gate on every version, each allowed to move only the good way.
+In the two weeks to 29 October the code doubled, every yes-or-no rule held, and everything nobody was counting got worse. Async methods with no way to cancel them went from {{live:quality-first async_without_cancellation}} on 15 October to {{live:quality-peak async_without_cancellation}}. Declarations with no summary peaked at {{live:quality-peak undocumented_declarations}}. On 29 October, at 1.0.4.115, the ratchet went in ([ADR-122](https://theyard.stevenstout.biz/?doc=adr-the-numbers-that-may-only-fall)): fourteen numbers in one file, fifteen since 1.0.5.1, read by the gate on every version, each allowed to move only the good way.
 
 Today the async count is {{live:quality-now async_without_cancellation}} and the undocumented count is {{live:quality-now undocumented_declarations}}. The gold mark on each chart is 1.0.4.115. The dashed start is the pre-scan, counted before the scanner existed; the scanner counts more strictly than the pre-scan did, so where the dashed line steps up into the solid one, part of that step is the two instruments disagreeing rather than the code. Every solid point is the same scanner, today's, read over that version's own tree.
 
@@ -56,6 +56,11 @@ Behaviour types no test names | may only fall | 1.0.4.115
 ```
 
 ```quality-trend
+React files with no header saying what they do | may only fall | 1.0.4.115
+{{live:quality-trend react_files_without_header}}
+```
+
+```quality-trend
 Test lines per production line | may only rise | 1.0.4.115
 {{live:quality-trend test_to_prod_ratio_higher_is_better}}
 ```
@@ -91,7 +96,7 @@ An AI review bot reads every version's pull request inside the gate. It is at le
 
 Named plainly, with the numbers:
 
-- React files with no header comment saying what they do: {{live:quality-thin react_files_without_header}} of {{live:quality-thin react_files}}. The site's own folders, src/app and src/library, already carry one in every file; the components do not yet.
+- React files with no header comment saying what they do: {{live:quality-now react_files_without_header}} of {{live:quality-thin react_files}}. The site's own folders, src/app and src/library, carry one in every file, and so does every component folder's entry since 1.0.5.1; the components themselves and the rest of src/lib do not yet.
 - XML documentation on TheYard.Data, the records every other ring reads: {{live:quality-thin data_xml_docs_pct}} per cent of its declarations.
 - Service classes taking six or more dependencies: {{live:quality-now wide_service_classes}}. Each one is a class doing more than one job.
 

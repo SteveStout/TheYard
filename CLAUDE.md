@@ -94,7 +94,7 @@ split).
 
 ## Quality ratchet
 
-Fourteen counts describe the shape of this codebase and live in `.github/quality-ratchet.json`:
+Fifteen counts describe the shape of this codebase and live in `.github/quality-ratchet.json`:
 declarations with no `///` summary, service classes taking six or more dependencies, async methods
 with no `CancellationToken`, direct clock reads outside a composition root, comments carrying a date
 or a name, files within ten lines of the 300 cap, behaviour types no test names, the outward
