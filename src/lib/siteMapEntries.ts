@@ -60,6 +60,12 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       group: 'built',
       blurb: 'How the site was built with AI, and what that means.',
     },
+    {
+      menu: 'quality',
+      icon: 'quality',
+      group: 'built',
+      blurb: 'The rules as tests, and the numbers that may only get better.',
+    },
     // A second app built the same way, with its own address: the tile opens it in a new tab.
     {
       menu: 'shed',

@@ -1,0 +1,3138 @@
+{
+ "about": "One row per shipped version: the fourteen numbers of the quality ratchet, measured by this checkout's .github/quality.py, the limits the ratchet file held at that version, the thin spots, and line and branch coverage from CI on main. Rows marked pre-scan were measured before the scanner existed (ADR-130).",
+ "first_ratchet_version": "1.0.4.115",
+ "rows": [
+  {
+   "version": null,
+   "date": "2026-10-15",
+   "source": "pre-scan",
+   "numbers": {
+    "undocumented_declarations": 239,
+    "wide_service_classes": 0,
+    "async_without_cancellation": 50,
+    "clock_outside_composition": 46,
+    "history_or_name_comments": 2,
+    "files_within_10_of_cap": 3,
+    "behavior_types_never_named_in_a_test": 6,
+    "test_to_prod_ratio_higher_is_better": 0.83,
+    "dotnet_tests_higher_is_better": 928
+   }
+  },
+  {
+   "version": null,
+   "date": "2026-10-22",
+   "source": "pre-scan",
+   "numbers": {
+    "undocumented_declarations": 348,
+    "wide_service_classes": 2,
+    "async_without_cancellation": 104,
+    "clock_outside_composition": 53,
+    "history_or_name_comments": 7,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 7,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 1514
+   }
+  },
+  {
+   "version": "1.0.4.115",
+   "date": "2026-10-29",
+   "commit": "d509821d",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 549,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 12,
+    "async_without_cancellation": 107,
+    "clock_outside_composition": 57,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 7,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.76,
+    "dotnet_tests_higher_is_better": 2255
+   },
+   "limits": {
+    "undocumented_declarations": 549,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 9,
+    "async_without_cancellation": 113,
+    "clock_outside_composition": 57,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 7,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.76,
+    "dotnet_tests_higher_is_better": 2255
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 82.4,
+    "ci_run": 40905718665
+   }
+  },
+  {
+   "version": "1.0.4.116",
+   "date": "2026-10-29",
+   "commit": "2eec9395",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 545,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 12,
+    "async_without_cancellation": 25,
+    "clock_outside_composition": 57,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 7,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.76,
+    "dotnet_tests_higher_is_better": 2263
+   },
+   "limits": {
+    "undocumented_declarations": 545,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 9,
+    "async_without_cancellation": 33,
+    "clock_outside_composition": 57,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 7,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.76,
+    "dotnet_tests_higher_is_better": 2263
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 82.4,
+    "ci_run": 40922651037
+   }
+  },
+  {
+   "version": "1.0.4.117",
+   "date": "2026-10-29",
+   "commit": "7fbc60b9",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 12,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 57,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.77,
+    "dotnet_tests_higher_is_better": 2270
+   },
+   "limits": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 9,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 57,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.77,
+    "dotnet_tests_higher_is_better": 2270
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 82.3,
+    "ci_run": 40941505318
+   }
+  },
+  {
+   "version": "1.0.4.118",
+   "date": "2026-10-29",
+   "commit": "bc73dc21",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 12,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 45,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.77,
+    "dotnet_tests_higher_is_better": 2274
+   },
+   "limits": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 9,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 45,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.77,
+    "dotnet_tests_higher_is_better": 2274
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 82.4,
+    "ci_run": 40953692485
+   }
+  },
+  {
+   "version": "1.0.4.119",
+   "date": "2026-10-29",
+   "commit": "8fdeaada",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 12,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 45,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.77,
+    "dotnet_tests_higher_is_better": 2288
+   },
+   "limits": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 9,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 45,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.77,
+    "dotnet_tests_higher_is_better": 2288
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 82.4,
+    "ci_run": 40969710736
+   }
+  },
+  {
+   "version": "1.0.4.120",
+   "date": "2026-10-30",
+   "commit": "2131e78a",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 45,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2310
+   },
+   "limits": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 45,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2310
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 82.4,
+    "ci_run": 40981253367
+   }
+  },
+  {
+   "version": "1.0.4.121",
+   "date": "2026-10-30",
+   "commit": "e7139f7e",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2320
+   },
+   "limits": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 6,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2320
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 40990125217
+   }
+  },
+  {
+   "version": "1.0.4.122",
+   "date": "2026-10-30",
+   "commit": "b3e59c9f",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2321
+   },
+   "limits": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2321
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": null
+  },
+  {
+   "version": "1.0.4.123",
+   "date": "2026-10-30",
+   "commit": "44b5544c",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2321
+   },
+   "limits": {
+    "undocumented_declarations": 543,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2321
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 41003726996
+   }
+  },
+  {
+   "version": "1.0.4.124",
+   "date": "2026-10-30",
+   "commit": "915988a7",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 27,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2324
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 17,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2324
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 41012134604
+   }
+  },
+  {
+   "version": "1.0.4.125",
+   "date": "2026-10-30",
+   "commit": "f53ab516",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 9,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2338
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 8,
+    "test_to_prod_ratio_higher_is_better": 0.78,
+    "dotnet_tests_higher_is_better": 2338
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 41020665758
+   }
+  },
+  {
+   "version": "1.0.4.126",
+   "date": "2026-10-30",
+   "commit": "b6ce55a6",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2358
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2358
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.7,
+    "ci_run": 41030860551
+   }
+  },
+  {
+   "version": "1.0.4.127",
+   "date": "2026-10-30",
+   "commit": "3bb33ca6",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2361
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2361
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.7,
+    "ci_run": 41041239397
+   }
+  },
+  {
+   "version": "1.0.4.128",
+   "date": "2026-11-03",
+   "commit": "085b3b48",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2361
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2361
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.7,
+    "ci_run": 41726130383
+   }
+  },
+  {
+   "version": "1.0.4.129",
+   "date": "2026-11-04",
+   "commit": "e577df50",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2361
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2361
+   },
+   "thin": {
+    "react_files": 374,
+    "react_files_without_header": 323,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.7,
+    "ci_run": 41748255899
+   }
+  },
+  {
+   "version": "1.0.4.130",
+   "date": "2026-11-04",
+   "commit": "2d1b7960",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2368
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2368
+   },
+   "thin": {
+    "react_files": 391,
+    "react_files_without_header": 332,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 41766188944
+   }
+  },
+  {
+   "version": "1.0.4.131",
+   "date": "2026-11-04",
+   "commit": "8003063d",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2391
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2391
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.7,
+    "ci_run": 41771606730
+   }
+  },
+  {
+   "version": "1.0.4.132",
+   "date": "2026-11-04",
+   "commit": "90949539",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2480
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2480
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": null
+  },
+  {
+   "version": "1.0.4.133",
+   "date": "2026-11-04",
+   "commit": "565827b9",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2511
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2511
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 41892652162
+   }
+  },
+  {
+   "version": "1.0.4.134",
+   "date": "2026-11-04",
+   "commit": "ec6fa04e",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2526
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2526
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 41897420618
+   }
+  },
+  {
+   "version": "1.0.4.135",
+   "date": "2026-11-04",
+   "commit": "ac1111bf",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2532
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2532
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 41902170373
+   }
+  },
+  {
+   "version": "1.0.4.136",
+   "date": "2026-11-04",
+   "commit": "35ec0913",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2538
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2538
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.5,
+    "ci_run": 41908302807
+   }
+  },
+  {
+   "version": "1.0.4.137",
+   "date": "2026-11-05",
+   "commit": "3f8d94f5",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2565
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2565
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": null
+  },
+  {
+   "version": "1.0.4.138",
+   "date": "2026-11-05",
+   "commit": "05671939",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2567
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2567
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.5,
+    "ci_run": 42067192853
+   }
+  },
+  {
+   "version": "1.0.4.139",
+   "date": "2026-11-05",
+   "commit": "c466ce92",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2568
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.79,
+    "dotnet_tests_higher_is_better": 2568
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.6,
+    "ci_run": 42075813390
+   }
+  },
+  {
+   "version": "1.0.4.140",
+   "date": "2026-11-05",
+   "commit": "e8ae327a",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2614
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2614
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.7,
+    "ci_run": 42096168743
+   }
+  },
+  {
+   "version": "1.0.4.141",
+   "date": "2026-11-05",
+   "commit": "0a23d72c",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2628
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2628
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.7,
+    "ci_run": 42102652073
+   }
+  },
+  {
+   "version": "1.0.4.142",
+   "date": "2026-11-05",
+   "commit": "f357b64c",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2663
+   },
+   "limits": {
+    "undocumented_declarations": 401,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2663
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.7,
+    "ci_run": 42110518249
+   }
+  },
+  {
+   "version": "1.0.4.143",
+   "date": "2026-11-05",
+   "commit": "f24d1e94",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2722
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2722
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.7,
+    "ci_run": 42115718461
+   }
+  },
+  {
+   "version": "1.0.4.144",
+   "date": "2026-11-05",
+   "commit": "593b872c",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2723
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2723
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.8,
+    "ci_run": 42119625957
+   }
+  },
+  {
+   "version": "1.0.4.145",
+   "date": "2026-11-05",
+   "commit": "6f34a4a4",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2730
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2730
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.8,
+    "ci_run": 42123676948
+   }
+  },
+  {
+   "version": "1.0.4.146",
+   "date": "2026-11-06",
+   "commit": "cdadb010",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2730
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2730
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.7,
+    "ci_run": 42227203158
+   }
+  },
+  {
+   "version": "1.0.4.147",
+   "date": "2026-11-07",
+   "commit": "6c20c49c",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2730
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2730
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.8,
+    "ci_run": 42382125590
+   }
+  },
+  {
+   "version": "1.0.4.148",
+   "date": "2026-11-07",
+   "commit": "df12bf2f",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2747
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2747
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": null
+  },
+  {
+   "version": "1.0.4.149",
+   "date": "2026-11-07",
+   "commit": "9306a98e",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2747
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2747
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.8,
+    "ci_run": 42388943271
+   }
+  },
+  {
+   "version": "1.0.4.150",
+   "date": "2026-11-07",
+   "commit": "d65bc6b9",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2748
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2748
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.8,
+    "ci_run": 42391858861
+   }
+  },
+  {
+   "version": "1.0.4.151",
+   "date": "2026-11-07",
+   "commit": "14a71ac7",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2753
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2753
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.8,
+    "ci_run": 42394584594
+   }
+  },
+  {
+   "version": "1.0.4.152",
+   "date": "2026-11-07",
+   "commit": "c6412c96",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2772
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2772
+   },
+   "thin": {
+    "react_files": 395,
+    "react_files_without_header": 336,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.8,
+    "ci_run": 42398211541
+   }
+  },
+  {
+   "version": "1.0.4.153",
+   "date": "2026-11-07",
+   "commit": "d45bc0a0",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2773
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2773
+   },
+   "thin": {
+    "react_files": 399,
+    "react_files_without_header": 338,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.7,
+    "ci_run": 42415929753
+   }
+  },
+  {
+   "version": "1.0.4.154",
+   "date": "2026-11-07",
+   "commit": "e2039cba",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2778
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2778
+   },
+   "thin": {
+    "react_files": 401,
+    "react_files_without_header": 340,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 82.9,
+    "ci_run": 42418942695
+   }
+  },
+  {
+   "version": "1.0.4.155",
+   "date": "2026-11-07",
+   "commit": "e1b3c279",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2785
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2785
+   },
+   "thin": {
+    "react_files": 404,
+    "react_files_without_header": 343,
+    "data_xml_docs_pct": 33.3
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 82.6,
+    "ci_run": 42422414683
+   }
+  },
+  {
+   "version": "1.0.4.156",
+   "date": "2026-11-07",
+   "commit": "08163217",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2822
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2822
+   },
+   "thin": {
+    "react_files": 404,
+    "react_files_without_header": 343,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.8,
+    "ci_run": 42425899682
+   }
+  },
+  {
+   "version": "1.0.4.157",
+   "date": "2026-11-08",
+   "commit": "bafcdbe1",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2830
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2830
+   },
+   "thin": {
+    "react_files": 408,
+    "react_files_without_header": 347,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 82.9,
+    "ci_run": 42428664842
+   }
+  },
+  {
+   "version": "1.0.4.158",
+   "date": "2026-11-08",
+   "commit": "fd2793df",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2851
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2851
+   },
+   "thin": {
+    "react_files": 408,
+    "react_files_without_header": 347,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.0,
+    "ci_run": 42433840856
+   }
+  },
+  {
+   "version": "1.0.4.159",
+   "date": "2026-11-08",
+   "commit": "9e2cee13",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2874
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2874
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.0,
+    "ci_run": 42436504567
+   }
+  },
+  {
+   "version": "1.0.4.160",
+   "date": "2026-11-08",
+   "commit": "8f6a1a8d",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2877
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2877
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 83.1,
+    "ci_run": 42439439561
+   }
+  },
+  {
+   "version": "1.0.4.161",
+   "date": "2026-11-08",
+   "commit": "05995b7d",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2883
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2883
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.0,
+    "ci_run": 42442126976
+   }
+  },
+  {
+   "version": "1.0.4.162",
+   "date": "2026-11-08",
+   "commit": "9f1c934d",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2885
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2885
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.0,
+    "ci_run": 42444631889
+   }
+  },
+  {
+   "version": "1.0.4.163",
+   "date": "2026-11-09",
+   "commit": "c64a02df",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2888
+   },
+   "limits": {
+    "undocumented_declarations": 400,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2888
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.8,
+    "branches": 83.1,
+    "ci_run": 42636207864
+   }
+  },
+  {
+   "version": "1.0.4.164",
+   "date": "2026-11-09",
+   "commit": "e340d4ff",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2892
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2892
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42643964046
+   }
+  },
+  {
+   "version": "1.0.4.165",
+   "date": "2026-11-09",
+   "commit": "16186168",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2892
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.8,
+    "dotnet_tests_higher_is_better": 2892
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42651438594
+   }
+  },
+  {
+   "version": "1.0.4.166",
+   "date": "2026-11-09",
+   "commit": "447ac72e",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3350
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3350
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42656145714
+   }
+  },
+  {
+   "version": "1.0.4.167",
+   "date": "2026-11-09",
+   "commit": "65d8f6f2",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3352
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3352
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42663606659
+   }
+  },
+  {
+   "version": "1.0.4.168",
+   "date": "2026-11-09",
+   "commit": "9a1a19ab",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3359
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3359
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42670567851
+   }
+  },
+  {
+   "version": "1.0.4.169",
+   "date": "2026-11-09",
+   "commit": "d9177668",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3360
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3360
+   },
+   "thin": {
+    "react_files": 412,
+    "react_files_without_header": 350,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42687549001
+   }
+  },
+  {
+   "version": "1.0.4.170",
+   "date": "2026-11-09",
+   "commit": "79659c18",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3373
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3373
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42696106086
+   }
+  },
+  {
+   "version": "1.0.4.171",
+   "date": "2026-11-09",
+   "commit": "e26bd029",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3400
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3400
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42702451398
+   }
+  },
+  {
+   "version": "1.0.4.172",
+   "date": "2026-11-09",
+   "commit": "88856448",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3400
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3400
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42710129297
+   }
+  },
+  {
+   "version": "1.0.4.173",
+   "date": "2026-11-09",
+   "commit": "8b8dbe1b",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3408
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3408
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42715454676
+   }
+  },
+  {
+   "version": "1.0.4.174",
+   "date": "2026-11-09",
+   "commit": "7cd50a24",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3430
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3430
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 83.1,
+    "ci_run": 42720362065
+   }
+  },
+  {
+   "version": "1.0.4.175",
+   "date": "2026-11-10",
+   "commit": "c5f8c480",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3452
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3452
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42732871772
+   }
+  },
+  {
+   "version": "1.0.4.176",
+   "date": "2026-11-10",
+   "commit": "133feb4c",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3465
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3465
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42841455107
+   }
+  },
+  {
+   "version": "1.0.4.177",
+   "date": "2026-11-10",
+   "commit": "9b1d1198",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3466
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3466
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.6,
+    "branches": 83.1,
+    "ci_run": 42847588027
+   }
+  },
+  {
+   "version": "1.0.4.178",
+   "date": "2026-11-10",
+   "commit": "6e4c1d80",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3467
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3467
+   },
+   "thin": {
+    "react_files": 415,
+    "react_files_without_header": 353,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": {
+    "lines": 93.7,
+    "branches": 83.1,
+    "ci_run": 42853898866
+   }
+  },
+  {
+   "version": "1.0.5.0",
+   "date": "2026-11-10",
+   "commit": "89acd886",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3472
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 35,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "test_to_prod_ratio_higher_is_better": 0.81,
+    "dotnet_tests_higher_is_better": 3472
+   },
+   "thin": {
+    "react_files": 419,
+    "react_files_without_header": 356,
+    "data_xml_docs_pct": 49.0
+   },
+   "coverage": null
+  }
+ ]
+}

@@ -376,3 +376,7 @@ same deliberately; it is on the list rather than in this commit.
 
 From this version the threshold files carry a mutation run each side of the stack, run on a shipping machine and never in the gate, where the runner's minutes and the i3's would both be spent on files that change rarely: `.config/dotnet-tools.json` pins dotnet-stryker and `stryker-config.json` mutates `CloudThresholds.cs`, `PlanThresholds.cs`, `ShareCard.cs`, `CosmosCard.cs` and `CardTone.cs` against `api/TheYard.Tests`; `@stryker-mutator/core` and `@stryker-mutator/vitest-runner` are dev dependencies and `stryker.config.json` mutates `src/lib/ranges.ts` and `src/lib/cloud.ts` against the Vitest suite. Their reports stay on the machine that ran them (`reports/`, `StrykerOutput/`, ignored); each surviving mutant is killed by a test in the same version or written up with its reason in the lane's DONE note.
 
+## Addendum, 2026-11-10 (1.0.5.0): the numbers have a history, and it is public
+
+What stopped being true: the numbers lived only in the ratchet file and in each run's log, so how they had moved could be read only by checking out old commits. From this version `data/quality-history.json` holds a row for every shipped version from 1.0.4.115 on, each measured by the scanner this checkout carries over that version's own tree, with the limits this file held then beside it; promote.sh adds a row on every ship. The Quality page draws a line for each number over the whole history, with this record's version marked, and the slip before it drawn as the pre-scan measured it (ADR-130).
+

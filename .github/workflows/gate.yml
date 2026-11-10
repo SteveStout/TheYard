@@ -335,6 +335,8 @@ jobs:
     permissions:
       contents: write
       actions: read
+      # The coverage CI on main wrote for earlier versions, read into the quality history (ADR-130).
+      checks: read
     outputs:
       sha: ${{ steps.promote.outputs.sha }}
       version: ${{ steps.promote.outputs.version }}

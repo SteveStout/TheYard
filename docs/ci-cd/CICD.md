@@ -64,6 +64,12 @@ or the two passes on Cosmos DB: those need the gate's 16 GB runner, which is why
 the gate is there. A check this machine cannot run says UNKNOWN. **A red
 preflight is never pushed.**
 
+**A version that moves the first three numbers** (ADR-130) is the owner's. It
+moves the third number by one and starts the fourth at 0, its record carries
+the owner's yes, and it ships by hand only: the gate's promote job ends green
+with a notice and moves nothing, and the person promoting names it,
+`OWNER_YES=<version> bash scripts/promote.sh raw <gate seconds> <version> <run>`.
+
 **CodeRabbit reads every ship** (ADR-129, CodeRabbit, one rung at a time). Right
 after the push of `gate/<version>`, the machine that ships runs
 `bash scripts/gate_pr.sh open <version>`: a pull request from the gate branch into

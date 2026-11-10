@@ -158,8 +158,10 @@ public sealed class PromoteScriptTests : IDisposable
         { "not-on-main", "not one commit on main" },
         { "two-ahead", "not one commit on main" },
         { "goes-down", "the version goes down" },
-        { "extra-file", "the results touched more than their four files" },
+        { "extra-file", "the results touched more than their five files" },
         { "review-unread", "coderabbit job is cancelled, not green" },
+        { "owners-number-without-a-yes", "ships from a machine with his yes (OWNER_YES=1.0.5.0)" },
+        { "owners-number-skipped", "and not to 1.0.5.0" },
         { "page-for-a-card", "answered with something that is not JSON" },
     };
 
@@ -221,6 +223,15 @@ public sealed class PromoteScriptTests : IDisposable
                 Version(version);
                 card = "<!doctype html><title>Sign in</title>";
                 break;
+            case "owners-number-without-a-yes":
+                Version("1.0.5.0");
+                version = "1.0.5.0";
+                break;
+            case "owners-number-skipped":
+                Version("1.0.6.0");
+                version = "1.0.6.0";
+                env["OWNER_YES"] = "1.0.6.0";
+                break;
             case "review-unread":
                 Version(version);
                 env["FAKE_REVIEW"] = "cancelled";
@@ -232,6 +243,23 @@ public sealed class PromoteScriptTests : IDisposable
         Assert.NotEqual(0, code);
         Assert.Contains(reason, output, StringComparison.Ordinal);
         Assert.Equal(before, MainOnOrigin());
+    }
+    /// <summary>A move in the first three numbers ships by hand when the person promoting names it as the owner's yes (ADR-130).</summary>
+    [Fact]
+    public void The_owners_number_moves_by_hand_with_his_yes_named()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        Version("1.0.5.0");
+
+        var (code, output) = Promote("1.0.5.0", env: new Dictionary<string, string>(StringComparer.Ordinal) { ["OWNER_YES"] = "1.0.5.0" });
+
+        Assert.True(code == 0, output);
+        Assert.Contains("the first three numbers, with the owner's yes", output, StringComparison.Ordinal);
+        Assert.Equal(Git("rev-parse HEAD"), MainOnOrigin());
     }
     // #endregion the-cases
 

@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.0** (2026-11-10): Quality you can watch: a Quality section in the sidebar shows every rule beside the test that holds it, a line for each of the fourteen numbers that may only get better across every version since the ratchet went in (the two weeks they got worse included), coverage from CI on main and CodeRabbit's level and log, every number read from data the build writes.
 - **1.0.4.178** (2026-11-10): The CodeRabbit log counts only the findings on the commit that ships and never a reply in a thread, a ship whose pull request was never opened is warned within five minutes instead of after thirty, and the shipping instructions now say to open it.
 - **1.0.4.177** (2026-11-10): The log of what CodeRabbit finds counts each finding by the severity CodeRabbit labelled it, the one finding CodeRabbit raised on the version that brought it in.
 - **1.0.4.176** (2026-11-10): CodeRabbit now reviews every version before it goes live, starting gentle: the gate opens a pull request for each ship and reads the review before main moves, nothing it finds stops a release yet, and each step up in strictness is decided on a log of what it found, with every rule it checks pointing at the decision that made it.

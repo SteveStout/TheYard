@@ -199,6 +199,14 @@ export const MENUS: Record<
     label: 'Built with AI',
     items: [{ key: 'builtWithAi' }],
   },
+  /**
+   * The evidence that quality held while the attention was elsewhere: the history of the ratchet's numbers, the
+   * rules beside their tests and CodeRabbit's level (ADR-130). A page about evidence, so it sits at the top level.
+   */
+  quality: {
+    label: 'Quality',
+    items: [{ key: 'quality' }],
+  },
   // #region shed-section
   /**
    * The Shed, a file and folder browser in this repository under samples/theshed with its own

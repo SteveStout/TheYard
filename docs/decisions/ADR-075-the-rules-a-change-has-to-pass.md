@@ -213,6 +213,8 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | Every rule CodeRabbit is told ends with the record that decided it and that record exists, the rules it is told are the ones ADR-129 lists, and its profile and two switches are the ones ADR-129 names for the current level | ADR-129 | CodeRabbitRuleTests |
 | The gate promotes only after CodeRabbit's review of the gate's pull request is read or its ceiling passed, never holds a ship on a finding at Level 0, folds the review's row into the findings log, and closes the request on main's commit | ADR-129 | PromoteWorkflowTests, PromoteScriptTests |
 | The findings log counts each CodeRabbit finding by the label in its header alone, and a remark with no label as a nitpick; from 1.0.4.178 only the gated commit's findings and never a reply in a thread, and every ship has exactly one row whatever the read did | ADR-129, the addenda of 1.0.4.177 and 1.0.4.178 | CodeRabbitRuleTests |
+| The quality history starts at the version the ratchet went in, runs in version order with every number the ratchet names, and its newest row is what the scanner reads at HEAD; every number on the Quality page is read live from data the build carries, and the page types none of its own | ADR-130 | QualityHistoryTests |
+| A version that moves the first three numbers ships only by hand, with the person promoting naming it as OWNER_YES, moves the third number by one and starts the fourth at 0; the gate ends green with a notice and moves nothing | ADR-130 | PromoteScriptTests |
 
 ## How the table is read
 

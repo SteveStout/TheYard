@@ -69,6 +69,7 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
       'Seventeen standing rules, each written beside the test that holds it. The code on the page is read from the running build, not pasted in.',
     doThis: 'Scroll to the table; click any file name to land on it in GitHub.',
     record: 'adr-the-numbers-that-may-only-fall',
+    links: [{ label: 'Quality you can watch', href: '/?doc=quality' }],
   },
   {
     key: 'gate',
