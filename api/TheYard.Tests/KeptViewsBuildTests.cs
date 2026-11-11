@@ -78,6 +78,92 @@ public sealed class KeptViewsBuildTests
     }
 
     [Fact]
+    public async Task A_request_never_answers_with_a_refresh_the_keeper_began_after_the_one_it_joined_was_refused()
+    {
+        var clock = new MovableClock(Start);
+        var (first, second) = (Gate(), Gate());
+        var secondBegan = Gate();
+        int refreshes = 0, refusedChecks = 0;
+        Task keeping = Task.CompletedTask;
+        KeptViews<Stamp>? views = null;
+        views = new KeptViews<Stamp>("test", clock, keep: view =>
+        {
+            // The second look at a refused view is the request's own, after its refresh ended: the keeper begins the
+            // next refresh then, before the request takes the gate again.
+            if (!view.Kept && Interlocked.Increment(ref refusedChecks) == 2)
+            {
+                keeping = views!.KeepWatchedAsync(CancellationToken.None);
+            }
+            return view.Kept;
+        });
+        Func<CancellationToken, Task<Stamp>> request = _ => Task.FromResult(new Stamp(clock.Now));
+        Func<CancellationToken, Task<Stamp>> refresh = async cancellation =>
+        {
+            int number = Interlocked.Increment(ref refreshes);
+            if (number == 2)
+            {
+                secondBegan.TrySetResult();
+            }
+            await (number == 1 ? first : second).Task.WaitAsync(cancellation);
+            return new Stamp(clock.Now, Kept: false);
+        };
+        await views.ReadAsync("slot", request, CancellationToken.None, refresh);
+        clock.Now = Start.AddSeconds(90);
+        await views.ReadAsync("slot", request, CancellationToken.None, refresh);
+        clock.Now = Start + KeptViews.Served + TimeSpan.FromSeconds(10);
+
+        var waiting = views.ReadAsync("slot", request, CancellationToken.None, refresh);
+        first.SetResult();
+        await secondBegan.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        second.SetResult();
+        var answered = await waiting;
+        await keeping;
+
+        Assert.True(answered.Kept, "the request answered with a second refresh the route refused");
+    }
+
+    [Fact]
+    public async Task A_second_request_that_joined_a_refused_refresh_answers_the_view_the_first_built_again()
+    {
+        var clock = new MovableClock(Start);
+        var refused = Gate();
+        int requestBuilds = 0, refusedChecks = 0;
+        Task<Stamp>? one = null, two = null;
+        var views = new KeptViews<Stamp>("test", clock, keep: view =>
+        {
+            // The third look at the refused view is the later of the two requests: it resumes only once the other has
+            // built the slot again and answered.
+            if (!view.Kept && Interlocked.Increment(ref refusedChecks) == 3)
+            {
+                SpinWait.SpinUntil(() => one!.IsCompleted || two!.IsCompleted, TimeSpan.FromSeconds(5));
+            }
+            return view.Kept;
+        });
+        Func<CancellationToken, Task<Stamp>> request = _ =>
+        {
+            Interlocked.Increment(ref requestBuilds);
+            return Task.FromResult(new Stamp(clock.Now));
+        };
+        Func<CancellationToken, Task<Stamp>> refresh = async cancellation =>
+        {
+            await refused.Task.WaitAsync(cancellation);
+            return new Stamp(clock.Now, Kept: false);
+        };
+        await views.ReadAsync("slot", request, CancellationToken.None, refresh);
+        clock.Now = Start.AddSeconds(90);
+        await views.ReadAsync("slot", request, CancellationToken.None, refresh);
+        clock.Now = Start + KeptViews.Served + TimeSpan.FromSeconds(10);
+
+        one = views.ReadAsync("slot", request, CancellationToken.None, refresh);
+        two = views.ReadAsync("slot", request, CancellationToken.None, refresh);
+        refused.SetResult();
+        await Task.WhenAll(one, two);
+
+        Assert.Equal(2, requestBuilds);
+        Assert.Equal((await one).At, (await two).At);
+    }
+
+    [Fact]
     public async Task A_later_build_replaces_the_view_the_earlier_one_kept()
     {
         var clock = new MovableClock(Start);

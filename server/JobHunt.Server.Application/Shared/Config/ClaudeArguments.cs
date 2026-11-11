@@ -13,7 +13,8 @@ namespace JobHunt.Server.Application.Shared.Config;
 /// The apply lane may write anywhere in its run folder but the essay desk's verdicts, which only the program writes.
 /// The feed reads the share's inputs it ranks from and LinkedIn, and live it gets `computer` for scrolling and
 /// screenshots only; no form tool, so it can fill nothing and send nothing. The network lane reads LinkedIn Messaging
-/// the same way, with nothing of the share's but its run folder and its lane doc.
+/// the same way, with nothing of the share's but its run folder and its lane doc. A slot run for one caught role tells
+/// the feed so in the prompt and lets it read that role's hand-off and nothing more; the lane doc is unchanged.
 /// </summary>
 public static class ClaudeArguments
 {
@@ -44,11 +45,12 @@ public static class ClaudeArguments
     /// <param name="share">The share's real path.</param>
     /// <param name="runFolder">The run folder's real path.</param>
     /// <param name="dry">True for a dry run.</param>
-    public static IReadOnlyList<string> For(LaneConfig config, Lane lane, string share, string runFolder, bool dry)
+    /// <param name="role">The caught role a slot run's feed works, or null.</param>
+    public static IReadOnlyList<string> For(LaneConfig config, Lane lane, string share, string runFolder, bool dry, RoleHandoff? role = null)
     {
         var arguments = new List<string>
         {
-            "-p", Prompt(lane, share, runFolder, dry),
+            "-p", Prompt(lane, share, runFolder, dry, role),
             "--model", config.Model,
             "--effort", config.Effort,
             "--max-turns", config.MaxTurns.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -60,7 +62,7 @@ public static class ClaudeArguments
             "--add-dir", share,
             "--allowedTools",
         };
-        arguments.AddRange(Allowed(lane, share, runFolder, dry));
+        arguments.AddRange(Allowed(lane, share, runFolder, dry, role));
         arguments.Add("--disallowedTools");
         arguments.AddRange(Refused);
         if (lane == Lane.Apply)
@@ -111,7 +113,8 @@ public static class ClaudeArguments
     /// <param name="share">The share's real path.</param>
     /// <param name="runFolder">The run folder's real path.</param>
     /// <param name="dry">True for a dry run.</param>
-    public static IReadOnlyList<string> Allowed(Lane lane, string share, string runFolder, bool dry)
+    /// <param name="role">The caught role a slot run's feed works, whose hand-off it may read, or null.</param>
+    public static IReadOnlyList<string> Allowed(Lane lane, string share, string runFolder, bool dry, RoleHandoff? role = null)
     {
         var tools = new List<string>
         {
@@ -133,6 +136,10 @@ public static class ClaudeArguments
             tools.AddRange(FeedReads.Select(path => $"Read({Rooted(share)}/{path})"));
             tools.Add("Glob");
             tools.Add("Grep");
+            if (role is not null)
+            {
+                tools.Add($"Read({Rooted(share)}/{role.Path})");
+            }
         }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
         if (!dry && lane is Lane.Feed or Lane.Network)
@@ -155,16 +162,27 @@ public static class ClaudeArguments
     /// <param name="share">The share's real path.</param>
     /// <param name="runFolder">The run folder's real path.</param>
     /// <param name="dry">True for a dry run.</param>
-    public static string Prompt(Lane lane, string share, string runFolder, bool dry) =>
+    /// <param name="role">The caught role a slot run's feed works, or null.</param>
+    public static string Prompt(Lane lane, string share, string runFolder, bool dry, RoleHandoff? role = null) =>
         $"Read {share}/nightly/{RunSlot.Doc(lane)} and follow it. JOBHUNT={share}. RUN_DIR={runFolder}. "
         + (lane switch
         {
+            Lane.Feed when role is not null => $"Candidates go to {runFolder}/candidates.json. {RolePrompt(share, role)}",
             Lane.Feed => $"Candidates go to {runFolder}/candidates.json.",
             Lane.Network => $"High-water mark in {runFolder}/high-water.txt. Threads go to {runFolder}/network-threads.tsv and {runFolder}/threads/.",
             _ => $"Worklist at {runFolder}/worklist.tsv.",
         })
         + $" DRY_RUN={dry.ToString().ToLowerInvariant()}."
         + (dry ? " Dry run: read pages only, no click, no fill, no send; your tool list holds no click." : string.Empty);
+
+    /// <summary>
+    /// What a slot run tells the feed: the one role, read from its hand-off, in place of the ranked inputs; one person at
+    /// that company, bucket A; and for a budget-flagged role the timeline question in place of the no-oriented one.
+    /// </summary>
+    private static string RolePrompt(string share, RoleHandoff role) =>
+        $"POUNCE_ROLE={share}/{role.Path}. This run is for that one caught role only: {role.Company}, {role.Title}, {role.Url}. "
+        + $"The inputs in rank order do not apply: find the one person who owns headcount for that seat at {role.Company}, read the seat live, and write at most one candidate, at {role.Company} and nowhere else, hot A."
+        + (role.Budget ? $" The role went live in the last 21 days of the year: its one question is \"{TextCheck.Timeline}\" in place of the no-oriented ask." : string.Empty);
 
     private static string Rooted(string absolute) => "//" + absolute.TrimStart('/');
 }

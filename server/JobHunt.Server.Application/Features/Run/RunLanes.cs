@@ -1,52 +1,5 @@
 namespace JobHunt.Server.Application.Features.Run;
 
-/// <summary>What the command line asked of a run.</summary>
-/// <param name="Dry">True for --dry-run.</param>
-/// <param name="Only">The one lane --lane named, or null for all three.</param>
-public sealed record RunOptions(bool Dry, Lane? Only)
-{
-    /// <summary>The options a command line asks for, or null when it holds anything this program does not know.</summary>
-    /// <param name="arguments">The arguments, the verb first.</param>
-    public static RunOptions? Parse(IReadOnlyList<string> arguments)
-    {
-        bool dry = false;
-        Lane? only = null;
-        for (int i = 1; i < arguments.Count; i++)
-        {
-            if (arguments[i] == "--dry-run")
-            {
-                dry = true;
-            }
-            else if (arguments[i] == "--lane" && i + 1 < arguments.Count && RunSlot.Parse(arguments[i + 1]) is { } lane)
-            {
-                only = lane;
-                i++;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        return new RunOptions(dry, only);
-    }
-}
-
-/// <summary>The checks that stand between the timer and a browser: the mount, the lock, the desktop and the clock.</summary>
-/// <param name="Mount">The share's mount.</param>
-/// <param name="Lock">The run lock.</param>
-/// <param name="Desktop">The desktop.</param>
-/// <param name="Time">The clock.</param>
-public sealed record RunGuards(IMount Mount, IRunLock Lock, IDesktop Desktop, TimeProvider Time);
-
-/// <summary>The three steps of a lane: what the morning reads, what it builds and what it runs.</summary>
-/// <param name="Reader">The morning's reads.</param>
-/// <param name="Builder">The worklists.</param>
-/// <param name="Runner">The lanes.</param>
-/// <param name="Recounter">The live invite count.</param>
-/// <param name="Feed">The hot-manager feed, the morning's first lane.</param>
-/// <param name="Network">The network log's LinkedIn half, after the messages lane.</param>
-public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRunner Runner, InviteRecount Recounter, FeedLane Feed, NetworkLane Network);
-
 /// <summary>
 /// The morning: mount, lock, registry, then the lanes in order, the feed first and the queues read again after it so the
 /// invites lane works what the feed just wrote, the network lane after the messages lane, then the card and the close
@@ -59,6 +12,9 @@ public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRun
 /// again before each lane. A LinkedIn stop is a file for the day, so a hard stop for the day stays one through any later
 /// run. The invite room is cut from the live count in code, so the pause at 90 is the program's and
 /// not only the model's. A stop from the service holds what has not started, and everything after it still closes.
+/// A slot run works one caught role the same way under the same lock, gates and day's stop file: the feed for that role,
+/// then the invites lane on that role's queue only, its folders and card named for its slot. It never starts from
+/// 05:30 to 07:00 Central, the morning's own window, and a slot whose lane already ran live does not run that lane again.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="guards">The checks.</param>
@@ -77,19 +33,29 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         DateTimeOffset started = guards.Time.GetUtcNow();
         DateOnly day = RunSlot.Day(started);
         bool dry = options.Dry || config.DryRun;
+        if (options.Role is not null && RunSlot.Quiet(started))
+        {
+            return (0, $"{RegistryRows.Lane}: no slot run starts from 05:30 to 07:00 Central; {options.Slot} did nothing.");
+        }
         if (await guards.Mount.FreshAsync(ct) is { } stale)
         {
             return (1, $"{RegistryRows.Lane} stopped before anything ran: {stale}");
+        }
+        RoleHandoff? role = options.Role is { } handoff && await share.ExistsAsync(handoff, ct) ? RoleHandoff.Parse(handoff, await share.ReadAsync(handoff, ct)) : null;
+        if (options.Role is not null && role is null)
+        {
+            return (1, $"{RegistryRows.Lane} stopped before anything ran: the hand-off {options.Role} would not read");
         }
         await using IAsyncDisposable? held = await guards.Lock.TakeAsync(RunSlot.DayFolder(day), ct);
         if (held is null)
         {
             return (0, $"{RegistryRows.Lane}: another run holds the lock; this one did nothing.");
         }
-        var lanes = RunSlot.Order.Where(lane => options.Only is null || options.Only == lane).Where(lane => config.For(lane).Enabled).ToList();
+        var lanes = (role is null ? RunSlot.Order : RunSlot.RoleOrder).Where(lane => options.Only is null || options.Only == lane).Where(lane => config.For(lane).Enabled).ToList();
         try
         {
-            await share.WriteNewAsync(RegistryRows.Path(started, "registry"), RegistryRows.Live(started, dry, string.Join(", ", lanes.Select(RunSlot.Word))), ct);
+            string words = string.Join(", ", lanes.Select(RunSlot.Word)) + (role is null ? string.Empty : $" for slot {options.Slot}");
+            await share.WriteNewAsync(RegistryRows.Path(started, "registry"), RegistryRows.Live(started, dry, words), ct);
         }
         catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
         {
@@ -100,17 +66,18 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         string? broke = null;
         try
         {
-            await WorkAsync(lanes, day, dry, reports, ct);
+            await WorkAsync(lanes, new LaneStart(Lane.Feed, day, dry, null, [], Slot: options.Slot, Role: role), reports, ct);
         }
         catch (Exception failure) when (failure is not OutOfMemoryException)
         {
             broke = $"DEFECT: the run stopped early: {failure.Message}. Read the DONE notes before any lane runs again.";
         }
-        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, options.Only is not null || reports.Count < lanes.Count), CancellationToken.None));
+        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, options.Only is not null || reports.Count < lanes.Count, options.Slot), CancellationToken.None));
     }
 
-    private async Task WorkAsync(IReadOnlyList<Lane> lanes, DateOnly day, bool dry, List<LaneReport> reports, CancellationToken ct)
+    private async Task WorkAsync(IReadOnlyList<Lane> lanes, LaneStart run, List<LaneReport> reports, CancellationToken ct)
     {
+        (DateOnly day, bool dry) = (run.Day, run.Dry);
         DayReads? reads = null;
         Ceilings? ceilings = null;
         string? closed = null;
@@ -127,12 +94,12 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         string? linkedInStop = await share.ExistsAsync(RunSlot.LinkedInClosed(day), ct) ? (await share.ReadAsync(RunSlot.LinkedInClosed(day), ct)).Trim() : null;
         foreach (Lane lane in lanes)
         {
-            if (await AlreadyRanAsync(lane, day, dry, ct))
+            if (await AlreadyRanAsync(lane, run, ct))
             {
                 continue;
             }
             OutreachCounts? before = reads is null ? null : OutreachCounts.From(reads.Rows, day);
-            var start = new LaneStart(lane, day, dry, before, [$"Lane doc nightly/{RunSlot.Doc(lane)}, the tracker, outreach-limits.md, CONVENTIONS.md, systemRules.md and responders.md read this run."]);
+            var start = run with { Lane = lane, Before = before, Lines = [$"Lane doc nightly/{RunSlot.Doc(lane)}, the tracker, outreach-limits.md, CONVENTIONS.md, systemRules.md and responders.md read this run."] };
             string? linkedIn = linkedInStop ?? await SecondDriverAsync(ct);
             string? held = closed
                 ?? (ct.IsCancellationRequested ? "the service was stopped" : null)
@@ -177,7 +144,8 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 invitesRoom = recount.Room;
                 start = start with { Lines = [.. start.Lines, .. recount.Lines], LiveCount = recount.Live };
             }
-            Worklist list = await WorklistAsync(lane, reads!, ceilings!, before!, reports, invitesRoom, linkedIn, dry, ct);
+            DayReads worked = run.Role is null ? reads! : reads! with { Queues = await RoleQueueAsync(reads!, run, ct) };
+            Worklist list = await WorklistAsync(lane, worked, ceilings!, before!, reports, invitesRoom, linkedIn, dry, ct);
             LaneReport report = await work.Runner.RunAsync(start, list, ct);
             reports.Add(report);
             if ((RunSlot.OnLinkedIn(lane) && report.ClosesLinkedIn) || report.Answer?.StopsLinkedIn == true)
@@ -196,10 +164,25 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         return stop;
     }
 
-    private async Task<bool> AlreadyRanAsync(Lane lane, DateOnly day, bool dry, CancellationToken ct)
+    private async Task<bool> AlreadyRanAsync(Lane lane, LaneStart run, CancellationToken ct)
     {
-        string note = $"{RunSlot.RunFolder(day, lane, config.For(lane).Model, false)}/DONE.md";
-        return !dry && await share.ExistsAsync(note, ct) && !(await share.ReadAsync(note, ct)).Contains("\nHELD: ", StringComparison.Ordinal);
+        string note = $"{RunSlot.RunFolder(run.Day, lane, config.For(lane).Model, false, run.Slot)}/DONE.md";
+        return !run.Dry && await share.ExistsAsync(note, ct) && !(await share.ReadAsync(note, ct)).Contains("\nHELD: ", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The open blocks of the caught role's own queue, the only blocks a slot run's invites lane works: read with the rest
+    /// on a live run, and from the dry feed's run folder on a dry one, where the dry feed wrote it.
+    /// </summary>
+    private async Task<IReadOnlyList<QueueBlock>> RoleQueueAsync(DayReads reads, LaneStart run, CancellationToken ct)
+    {
+        string name = FeedLane.QueueName(run.Day, run.Role);
+        if (!run.Dry)
+        {
+            return [.. reads.Queues.Where(block => block.Source.StartsWith(name + ":", StringComparison.Ordinal))];
+        }
+        string path = $"{RunSlot.RunFolder(run.Day, Lane.Feed, config.For(Lane.Feed).Model, true, run.Slot)}/{name}";
+        return await share.ExistsAsync(path, ct) ? QueueBlocks.Open(name, await share.ReadAsync(path, ct), []) : [];
     }
 
     private async Task<string?> SecondDriverAsync(CancellationToken ct)
@@ -233,12 +216,12 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
 
     private async Task<string> CloseAsync(CloseOf run, CancellationToken ct)
     {
-        (IReadOnlyList<LaneReport> reports, DateTimeOffset started, DateOnly day, _, string? broke, bool oneLane) = run;
+        (IReadOnlyList<LaneReport> reports, DateTimeOffset started, DateOnly day, _, string? broke, bool oneLane, string slot) = run;
         string card = $"{RegistryRows.Lane}: the card could not be built.\n";
         try
         {
             card = await CardAsync(run, ct);
-            string path = $"{RunSlot.DayFolder(day)}/{RunSlot.Hour}-card.md";
+            string path = RunSlot.Card(day, slot);
             if ((reports.Count > 0 || broke is not null) && !(oneLane && await share.ExistsAsync(path, ct)))
             {
                 await share.WriteAsync(path, card, ct);
@@ -262,7 +245,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
 
     private async Task<string> CardAsync(CloseOf run, CancellationToken ct)
     {
-        (IReadOnlyList<LaneReport> reports, _, DateOnly day, bool dry, string? broke, _) = run;
+        (IReadOnlyList<LaneReport> reports, _, DateOnly day, bool dry, string? broke, _, _) = run;
         foreach (string line in reports.Select(report => CleanRuns.Line(day, report)).OfType<string>())
         {
             await share.AppendAsync(WritePolicy.RunsTable, line, ct);
@@ -285,5 +268,5 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         return RunCard.Render(day, dry, reports, extra);
     }
 
-    private sealed record CloseOf(IReadOnlyList<LaneReport> Reports, DateTimeOffset Started, DateOnly Day, bool Dry, string? Broke, bool OneLane);
+    private sealed record CloseOf(IReadOnlyList<LaneReport> Reports, DateTimeOffset Started, DateOnly Day, bool Dry, string? Broke, bool OneLane, string Slot);
 }

@@ -10,8 +10,10 @@ namespace JobHunt.Functions;
 /// <summary>
 /// Judges every new posting in code within minutes of the fresh pass finding it, and starts the clock on every role
 /// that passes (pounce1110 step 2b): one PounceTick a quarter hour, five minutes behind the fresh pass, its row in
-/// jobhunt.PounceRoles for each posting judged, its run line process:Pounce, one line on the share's nightly/pounce.log
-/// and, when asked, the seven process:PounceDay lines the Admin tab's card reads. It sends nothing and touches no one.
+/// jobhunt.PounceRoles for each posting judged, its run line process:Pounce, one line on the share's nightly/pounce.log,
+/// for each role that passed a hand-off and a dispatcher item that start the box's program for that one role
+/// (PounceHandoff), and, when asked, the seven process:PounceDay lines the Admin tab's card reads. It sends nothing and
+/// touches no one; the program it hands to sends only behind its own gates, and only when POUNCE_RUN says live.
 /// </summary>
 // #endregion summary
 /// <remarks>
@@ -82,6 +84,7 @@ public sealed class PounceTimer(IMergeStore store, TimeProvider time, ILogger<Po
             Counted(run, tick);
             string line = LogLine(CentralClock.Local(ended), kind, tick);
             await AppendLogAsync(store, log, run, line, ct);
+            await HandOffAsync(store, log, run, tick, PounceHandoff.Mode(Environment.GetEnvironmentVariable("POUNCE_RUN")), ct);
             lines.Add(line);
             foreach (var day in tick.Days)
             {
@@ -122,6 +125,27 @@ public sealed class PounceTimer(IMergeStore store, TimeProvider time, ILogger<Po
         {
             log.LogWarning(ex, "pounce.log not written; the tick's rows are in SQL");
             run.Count("log_failed", 1);
+        }
+    }
+
+    /// <summary>
+    /// Hands each passed role to the box (PounceHandoffs). The role's row is in SQL by then, so a share that does not
+    /// answer fails nothing: the run line keeps handoff_failed=1 and the role waits for the morning's run as before.
+    /// </summary>
+    public static async Task HandOffAsync(IMergeStore store, ILogger log, RunLine run, PounceTickResult tick, string mode, CancellationToken ct)
+    {
+        try
+        {
+            int handed = await PounceHandoffs.WriteAsync(store, tick.Passed, mode, ct);
+            if (handed > 0)
+            {
+                run.Count("handed", handed);
+            }
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning(ex, "pounce hand-off not written; the role waits for the morning's run");
+            run.Count("handoff_failed", 1);
         }
     }
 

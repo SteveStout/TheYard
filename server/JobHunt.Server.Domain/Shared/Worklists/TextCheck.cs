@@ -5,8 +5,10 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 /// <summary>
 /// The OUTREACH IS SHORT checks a drafted text must pass before a lane may paste it: no em dash, sixty words or fewer,
 /// under 300 characters for an invite note, one tagged link and nothing else linked, one no-oriented question, and no
-/// word of a live process, because anything specific to one is held for his yes. A text that fails is dropped with its
-/// reasons; the program never edits one. The [code] and [First name] placeholders count
+/// word of a live process, because anything specific to one is held for his yes. A role that went live in the last 21
+/// days of a year (the pounce's budget flag) may ask the timeline question in place of the no-oriented one, because a
+/// seat opened then is often money that must be spent before the year closes; no other row may. A text that fails is
+/// dropped with its reasons; the program never edits one. The [code] and [First name] placeholders count
 /// as they stand, which is at least as long as what fills them.
 /// </summary>
 public static partial class TextCheck
@@ -17,12 +19,16 @@ public static partial class TextCheck
     /// <summary>An invite note must be shorter than this.</summary>
     public const int InviteCap = 300;
 
+    /// <summary>The one question a budget-flagged row may ask in place of the no-oriented one.</summary>
+    public const string Timeline = "What does your timeline look like for getting someone started?";
+
     private const char EmDash = (char)0x2014;
 
     /// <summary>Every check the text fails, empty when it passes.</summary>
     /// <param name="text">The drafted text.</param>
     /// <param name="invite">True for an invite note.</param>
-    public static IReadOnlyList<string> Problems(string text, bool invite)
+    /// <param name="budget">True for a row whose role carries the budget flag, which may ask <see cref="Timeline"/>.</param>
+    public static IReadOnlyList<string> Problems(string text, bool invite, bool budget = false)
     {
         var problems = new List<string>();
         if (text.Contains(EmDash, StringComparison.Ordinal))
@@ -46,7 +52,7 @@ public static partial class TextCheck
         }
         string prose = Tagged().Replace(text, string.Empty);
         int questions = prose.Count(c => c == '?');
-        if (questions != 1 || !NoOriented().IsMatch(prose))
+        if (questions != 1 || !(NoOriented().IsMatch(prose) || (budget && prose.Contains(Timeline, StringComparison.Ordinal))))
         {
             problems.Add($"{questions} questions, no no-oriented ask");
         }

@@ -772,10 +772,35 @@
         "nitpick": 0
       },
       "critical_at": [],
+      "fixed": 1,
+      "answered_as_wrong": 0,
+      "prs": [
+        39
+      ]
+    },
+    {
+      "version": "1.0.5.29",
+      "pr": 40,
+      "sha": "bee25125",
+      "level": 0,
+      "at": "2026-11-12T01:12:39Z",
+      "waited_seconds": 794,
+      "review_seconds": 786,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 5,
+      "findings": {
+        "critical": 0,
+        "major": 2,
+        "minor": 3,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
       "fixed": null,
       "answered_as_wrong": null,
       "prs": [
-        39
+        40
       ]
     }
   ]

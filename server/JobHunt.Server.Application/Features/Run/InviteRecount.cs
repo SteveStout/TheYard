@@ -29,7 +29,7 @@ public sealed class InviteRecount(IShare share, IClaudeCli claude, ServerConfig 
     public async Task<Recount> ReadAsync(LaneStart start, Ceilings ceilings, int room, CancellationToken ct)
     {
         LaneConfig lane = config.For(start.Lane);
-        string runFolder = share.Full(RunSlot.RunFolder(start.Day, start.Lane, lane.Model, start.Dry));
+        string runFolder = share.Full(RunSlot.RunFolder(start.Day, start.Lane, lane.Model, start.Dry, start.Slot));
         var request = new ClaudeRequest(ClaudeArguments.Recount(lane, share.Root, runFolder, start.Dry), runFolder, $"{runFolder}/recount.jsonl", TimeSpan.FromMinutes(Minutes));
         ClaudeRun run = await claude.RunAsync(request, ct);
         LaneResult? result = LaneResult.FromLine(run.ResultLine);

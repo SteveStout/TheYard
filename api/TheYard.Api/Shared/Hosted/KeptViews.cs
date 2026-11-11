@@ -85,10 +85,12 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
             }
             waiting = Building(slot, build, false);
         }
-        if (waiting.Refresh)
+        while (waiting.Refresh)
         {
-            // The request joined a refresh, which the route may hold to a smaller budget than a request's; one that
-            // failed or was not kept is read again on the request's own budget rather than handed to the request.
+            // The request joined a refresh, which the route may hold to a smaller budget than a request's. A refresh's
+            // view reaches the request only when the route keeps it; one that failed or was refused sends the request
+            // back to the gate, where a view another request built meanwhile answers it, and otherwise it reads the
+            // slot as itself, unless the keeper has begun another refresh, which is judged the same way.
             try
             {
                 var view = await waiting.Task.WaitAsync(cancellation);
@@ -99,10 +101,14 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
             }
             catch (Exception) when (!cancellation.IsCancellationRequested)
             {
-                // Read again below, as the request.
+                // Back to the gate, as the request.
             }
             lock (_gate)
             {
+                if (_cached.TryGetValue(slot, out var built) && clock.GetUtcNow() - built.At < KeptViews.Served)
+                {
+                    return built.View;
+                }
                 waiting = Building(slot, build, false);
             }
         }

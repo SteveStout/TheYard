@@ -73,3 +73,17 @@ Steve's measure, 10 November: minutes from a posting going live to the first mes
 5. **Light on Basic.** The whole tracker is read only on a tick with a fresh posting (RULE 50 and applied-already need it); the touch check reads only the rows written since the oldest open role went live; a quiet tick reads neither.
 
 **What it cannot see.** The tracker holds no hour: `WrittenAt` is when a row reached SQL, minutes after the send, and a row the merger rewrites (a fix, or the positions after a moved-out row) gets a new `WrittenAt`, which the Date guard keeps from reading as a new touch only when the row's day is older than the live day. A touch the tracker never records, a reply by phone, a message sent from another account, is not seen. A board that gives no instant starts the clock at the first sighting, up to fifteen minutes late, and `LiveKnown` says so. 98 of the campaign's 99 sends went to a shared mailbox under a leader's name; the named-address rule counts none of those as a touch, so the clock will read long until the campaign reaches people by name. `PounceRulesTests` and `PounceTickTests` hold it.
+
+## Addendum, 2026-11-11 (1.0.5.29): a role that passes is handed to the box
+
+What stopped being true: the tick's only writes were its rows in `jobhunt.PounceRoles`, its run lines and its line on `nightly/pounce.log`, so a role it passed waited for the next morning's 06:00 run before anyone was found or written to.
+
+From this version each role a tick passes is handed to the box the same tick (`PounceHandoffs`, the hand-off's text in `PounceHandoff`):
+
+1. **The hand-off.** `nightly/pounce/<UTC stamp>-<key>.json` on the share: the posting's key, company, title and address, the band flag, the live instant and whether the board gave it, the budget flag and the instant it passed. It is the contract the box's `RoleHandoff` reads, and both sides' tests pin the same keys.
+2. **The item.** `dispatch/ready/10-pounce-<key>.md`, written under a name the dispatcher does not read and renamed into place, so it never starts from half a file. It is a wrapper: its `Holds:` is empty, because a wrapper that holds the browser holds the program it starts, and the lane, entered and approved lines that the dispatcher copies into registry rows name no browser and no network. It waits out 05:30 to 07:00 Central and a running 6 AM program, starts the program once through `systemd-run --user` with `--slot pounce-<key> --role <hand-off>`, polls for at most 90 minutes, and writes its DONE note beside the hand-off and its CLOSED row.
+3. **The switch.** `POUNCE_RUN`: "off" hands off nothing, "live" starts a live run, anything else, unset included, adds `--dry-run`. It is named out of band like `POUNCE`, because a redeploy that drops it can only take the hand-off back to a dry run.
+4. **A share that does not answer** fails nothing: the role's row is already in SQL, the run line keeps `handoff_failed=1`, and the role waits for the morning as before. A tick that handed off counts `handed`.
+
+The tick itself still sends nothing and touches no one. What it cannot do: the dispatcher runs one item at a time, so an item already running delays this one (its 10 puts it ahead of the items still waiting), and the 60-minute target holds only while nothing long is running. `PounceTickTests` holds it.
+

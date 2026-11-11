@@ -34,7 +34,7 @@ switch (args.FirstOrDefault())
     case "run":
         if (RunOptions.Parse(args) is not { } options)
         {
-            Console.Error.WriteLine("run takes --dry-run and --lane feed|invites|messages|apply, and nothing else");
+            Console.Error.WriteLine("run takes --dry-run, --lane feed|invites|messages|network|apply, and --slot pounce-<key> with --role nightly/pounce/<file>.json together, and nothing else");
             return 2;
         }
         var siteUsage = new SiteUsage(config, http);
@@ -54,6 +54,6 @@ switch (args.FirstOrDefault())
         Console.WriteLine(await new LastCard(share, time).ExecuteAsync(stop.Token));
         return 0;
     default:
-        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane feed|invites|messages|apply] | probe | status");
+        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane feed|invites|messages|network|apply] [--slot pounce-<key> --role nightly/pounce/<file>.json] | probe | status");
         return 2;
 }

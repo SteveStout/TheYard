@@ -35,7 +35,7 @@ public sealed class NetworkLane(IShare share, NetworkTools tools, ServerConfig c
     {
         DateTimeOffset began = time.GetUtcNow();
         LaneConfig lane = config.For(Lane.Network);
-        string folder = RunSlot.RunFolder(start.Day, Lane.Network, lane.Model, start.Dry);
+        string folder = RunSlot.RunFolder(start.Day, Lane.Network, lane.Model, start.Dry, start.Slot);
         string runFolder = share.Full(folder);
         var lines = new List<string>(start.Lines);
         DateTimeOffset? mark = await TimeAsync(WritePolicy.HighWater, ct);

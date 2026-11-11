@@ -9,7 +9,9 @@ namespace JobHunt.Server.Application.Features.Run;
 /// <param name="Before">The tracker's counts at the start.</param>
 /// <param name="Lines">Lines the DONE note carries from the start of the run.</param>
 /// <param name="LiveCount">The live invite count the recount read, which the program holds the lane to.</param>
-public sealed record LaneStart(Lane Lane, DateOnly Day, bool Dry, OutreachCounts? Before, IReadOnlyList<string> Lines, int? LiveCount = null);
+/// <param name="Slot">The slot its folders are named for, the morning's by default.</param>
+/// <param name="Role">The caught role a slot run works, or null for the morning.</param>
+public sealed record LaneStart(Lane Lane, DateOnly Day, bool Dry, OutreachCounts? Before, IReadOnlyList<string> Lines, int? LiveCount = null, string Slot = RunSlot.Hour, RoleHandoff? Role = null);
 
 /// <summary>
 /// Runs one lane: writes the worklist, starts the model, cuts the usage, holds what the model says to its evidence and
@@ -49,9 +51,9 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     }
 
     /// <summary>
-    /// Why a lane may not start because an earlier run of it died, lost a row or left a defect, on any day: a progress file
-    /// with no DONE note, or a note with a defect or an unwritten row, may be a send with no record, and a person has to
-    /// settle it before the same worklist is built again. The hold never runs out on its own.
+    /// Why a lane may not start because an earlier run of it died, lost a row or left a defect, on any day and in any slot:
+    /// a progress file with no DONE note, or a note with a defect or an unwritten row, may be a send with no record, and a
+    /// person has to settle it before the same worklist is built again. The hold never runs out on its own.
     /// </summary>
     /// <param name="start">The lane.</param>
     /// <param name="ct">Stops the read.</param>
@@ -59,7 +61,8 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     {
         foreach (string day in await share.FoldersAsync("nightly", "20*", ct))
         {
-            foreach (string folder in await share.FoldersAsync(day, $"{RunSlot.Hour}-{RunSlot.Word(start.Lane)}-*", ct))
+            var folders = (await share.FoldersAsync(day, $"{RunSlot.Hour}-{RunSlot.Word(start.Lane)}-*", ct)).Concat(await share.FoldersAsync(day, $"{RunSlot.Pounce}*-{RunSlot.Word(start.Lane)}-*", ct));
+            foreach (string folder in folders)
             {
                 if (folder.EndsWith("-dry", StringComparison.Ordinal))
                 {
@@ -147,7 +150,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         }
     }
 
-    private string RunFolder(LaneStart start, LaneConfig lane) => RunSlot.RunFolder(start.Day, start.Lane, lane.Model, start.Dry);
+    private string RunFolder(LaneStart start, LaneConfig lane) => RunSlot.RunFolder(start.Day, start.Lane, lane.Model, start.Dry, start.Slot);
 
     private async Task<LaneResult?> ReadResultAsync(ClaudeRun run, LaneStart start, string folder, Worklist list, List<string> lines, CancellationToken ct)
     {
