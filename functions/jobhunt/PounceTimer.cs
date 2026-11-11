@@ -12,7 +12,8 @@ namespace JobHunt.Functions;
 /// that passes (pounce1110 step 2b): one PounceTick a quarter hour, five minutes behind the fresh pass, its row in
 /// jobhunt.PounceRoles for each posting judged, its run line process:Pounce, one line on the share's nightly/pounce.log,
 /// for each role that passed a hand-off and a dispatcher item that start the box's program for that one role
-/// (PounceHandoff) and a second item that builds its 90-day page in shadow (PouncePage), and, when asked, the seven process:PounceDay lines the Admin tab's card reads. It sends nothing and
+/// (PounceHandoff) and a second item that builds its 90-day page in shadow (PouncePage), and, when asked, the seven process:PounceDay lines the Admin tab's card reads
+/// and the hiring signal's line for the TODAY card (HiringSignals). It sends nothing and
 /// touches no one; the program it hands to sends only behind its own gates, and only when POUNCE_RUN says live.
 /// </summary>
 // #endregion summary
@@ -85,6 +86,10 @@ public sealed class PounceTimer(IMergeStore store, TimeProvider time, ILogger<Po
             string line = LogLine(CentralClock.Local(ended), kind, tick);
             await AppendLogAsync(store, log, run, line, ct);
             await HandOffAsync(store, log, run, tick, PounceHandoff.Mode(Environment.GetEnvironmentVariable("POUNCE_RUN")), ct);
+            if (days)
+            {
+                await SignalAsync(new HiringSignals(store, reader, time), log, run, ct);
+            }
             lines.Add(line);
             foreach (var day in tick.Days)
             {
@@ -146,6 +151,23 @@ public sealed class PounceTimer(IMergeStore store, TimeProvider time, ILogger<Po
         {
             log.LogWarning(ex, "pounce hand-off not written; the role waits for the morning's run");
             run.Count("handoff_failed", 1);
+        }
+    }
+
+    /// <summary>
+    /// Writes the hiring signal's line for the TODAY card on the hour's tick. The tick's rows are in SQL by then, so a read
+    /// or a share that does not answer fails nothing: the run line keeps signal_failed=1 and the card keeps the last line.
+    /// </summary>
+    public static async Task SignalAsync(HiringSignals signals, ILogger log, RunLine run, CancellationToken ct)
+    {
+        try
+        {
+            run.Count("signal_companies", await signals.RunAsync(ct));
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning(ex, "hiring signal not written; the card keeps its last line");
+            run.Count("signal_failed", 1);
         }
     }
 

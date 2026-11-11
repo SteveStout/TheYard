@@ -6,10 +6,11 @@ namespace JobHunt.Infrastructure.Features.Jobs;
 /// <summary>
 /// The picker's reads over the site's database, the connection string the campaign uses (managed identity, no
 /// secret): the postings the scan saw open tonight with their company's name, a description for each one asked
-/// for, the tracker's SQL copy, and for the pounce the postings it has not judged and the tracker rows written since an instant. A band counts only when it is in US dollars a year; an hourly or other-currency
+/// for, the tracker's SQL copy, for the pounce the postings it has not judged and the tracker rows written since an
+/// instant, and for the hiring signal every posting first seen since an instant. A band counts only when it is in US dollars a year; an hourly or other-currency
 /// band reads as none, so the rule that judges it never compares unlike figures. It writes nothing.
 /// </summary>
-public sealed class SqlJobsReader(string connectionString) : IJobsPostings, ITrackerRows
+public sealed class SqlJobsReader(string connectionString) : IJobsPostings, ITrackerRows, IOpenings
 {
     /// <inheritdoc />
     public async Task<bool> ReadyAsync(CancellationToken ct)
@@ -57,6 +58,20 @@ public sealed class SqlJobsReader(string connectionString) : IJobsPostings, ITra
         while (await reader.ReadAsync(ct))
         {
             rows.Add(new TrackerTouch([reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), reader.GetString(4), reader.GetString(5), reader.GetString(6)], reader.GetDateTimeOffset(7)));
+        }
+        return rows;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<(string Company, string Title)>> FirstSeenSinceAsync(DateTimeOffset since, CancellationToken ct)
+    {
+        await using var connection = await ConnectAsync(ct);
+        await using var command = SqlCommands.Build(connection, JobsSql.FirstSeen, ("@since", since));
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var rows = new List<(string, string)>();
+        while (await reader.ReadAsync(ct))
+        {
+            rows.Add((reader.IsDBNull(1) ? reader.GetString(0) : reader.GetString(1).Split(" | ")[0], reader.GetString(2)));
         }
         return rows;
     }

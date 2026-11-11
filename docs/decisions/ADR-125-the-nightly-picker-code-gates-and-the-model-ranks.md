@@ -101,3 +101,11 @@ From this version the hand-off writes a second item beside the wrapper (`PounceP
 6. **One log line a role.** `nightly/pounce/pages.log`: `PAGE <pdf>, code <code>, never attached`, or `NO PAGE` with `no leader`, `red flag` or `gen90` and the reason word for word.
 
 The page ships in shadow whatever `POUNCE_RUN` says, and "off" queues no page with the rest: Steve's ruling on whether the page rides in the follow-up after an open is unanswered in the dispatcher's DECISION.md, so the page is built and logged and never attached or linked in any message. `PounceTickTests` holds it.
+
+## Addendum, @DATE@ (@VER@): one hiring signal beyond postings
+
+What stopped being true: the postings the scans keep were read one posting at a time, by the picker and the pounce, and no reader asked what a company's postings say together. `jobhunt.Postings.FirstSeenAt` had no index, so a read by when a posting was first seen scanned the table (the fresh pass's `FreshAsync` among them).
+
+From this version the pounce's tick at five past each hour also writes the hiring signal (`HiringSignals`, the rule in `HiringSignal`): every posting first seen in the last seven days, open or closed (`SqlJobsReader.FirstSeenSinceAsync`, the company's name from `campaign.Companies` or else the board's token), and the companies among them with three or more engineering seats. A seat is a distinct title the pounce's seat rule passes (`PounceRules.IsSeat`), so a title listed in five cities is one seat, and a sales, product or security opening is none. The line goes to `nightly/hiring-signal.md`, rewritten whole and renamed into place, naming at most eight companies, the most seats first, then the count of the rest. The TODAY card carries it as one line under the funnel's week line (`TodayInputs.Signal`, read from that file). A read or a share that does not answer fails nothing: the tick's run line keeps `signal_failed=1` and the card keeps the last line. `IX_Postings_FirstSeenAt` indexes the column, with the company key, the board's token and the title included, so the read is a seek. `HiringSignalTests` holds it.
+
+It is a signal and not a rule: nothing is ranked, held or sent on it. Whether a company that opens three seats in a week should rank higher in the 2 AM pick or the pounce is the fitgate lane's call and Steve's.

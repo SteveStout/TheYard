@@ -33,3 +33,6 @@ CREATE UNIQUE INDEX [UX_Postings_Board] ON [jobhunt].[Postings] ([Source], [Boar
 GO
 CREATE INDEX [IX_Postings_LastSeenAt] ON [jobhunt].[Postings] ([LastSeenAt]) WHERE [ClosedAt] IS NULL;
 GO
+-- The fresh pass and the hiring signal read postings by when a scan first saw them, open or closed.
+CREATE INDEX [IX_Postings_FirstSeenAt] ON [jobhunt].[Postings] ([FirstSeenAt]) INCLUDE ([CompanyKey], [BoardToken], [Title]);
+GO
