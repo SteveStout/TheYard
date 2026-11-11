@@ -42,7 +42,7 @@ public sealed class SqlJobsReader(string connectionString) : IJobsPostings, ITra
         var rows = new List<FreshPosting>();
         while (await reader.ReadAsync(ct))
         {
-            rows.Add(new FreshPosting(reader.GetInt64(0), Role(reader), reader.GetDateTimeOffset(7), reader.IsDBNull(14) ? null : reader.GetDateTimeOffset(14)));
+            rows.Add(new FreshPosting(reader.GetInt64(0), Role(reader), reader.GetDateTimeOffset(7), reader.IsDBNull(14) ? null : reader.GetDateTimeOffset(14), reader.IsDBNull(15) ? null : reader.GetString(15)));
         }
         return rows;
     }

@@ -21,7 +21,8 @@ public interface IJobsPostings
 /// <param name="Candidate">The role, with no text.</param>
 /// <param name="FirstSeenAt">When a scan first saw it.</param>
 /// <param name="PublishedAt">The instant its board says it went up, or null.</param>
-public sealed record FreshPosting(long Key, Candidate Candidate, DateTimeOffset FirstSeenAt, DateTimeOffset? PublishedAt);
+/// <param name="CompanyKey">The campaign's key for its company, the registrable domain, when the scan knows it.</param>
+public sealed record FreshPosting(long Key, Candidate Candidate, DateTimeOffset FirstSeenAt, DateTimeOffset? PublishedAt, string? CompanyKey = null);
 
 /// <summary>The tracker's rows as the SQL copy holds them (jobhunt.Tracker), seven cells each, in file order.</summary>
 public interface ITrackerRows

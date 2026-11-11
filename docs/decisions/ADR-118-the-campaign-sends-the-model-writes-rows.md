@@ -249,3 +249,17 @@ RULE 73 (11/8) aims the first message at the leader one level above the seat and
 - **What does not move.** Every rule before the template (the former employers, the address and its source, the 30 days, the live thread, the seven days, the cap and the ramp) runs as before. A lead the book already held under another run keeps that run and v2, the safe default. The one-email-after-an-unanswered-invite rule offered beside v3 (item B) was not approved and is not built.
 
 `LeaderTemplateTests` holds it.
+
+## Addendum, 2026-11-11 (1.0.5.32): a caught role's leader is looked up, and the email waits in shadow
+
+What stopped being true: "With a key it would ask only for a lead whose public pages gave none" (the addendum of 1.0.4.103). The finder is now asked for one more kind of person, the leader the pounce's slot run named for a role caught within the hour.
+
+From this version, in the same quarter-hour firing as the pounce's follow-ups (`PounceFollowUpTimer`), `PounceEmails` reads every hand-off of the last day under `nightly/pounce/` and the leader its feed named, the first block's heading of `QUEUE-pounce-<day>-<key>.md` (live in `linkedin-proof/`, or the dry feed's copy in its run folder):
+
+1. **The domain.** The hand-off now carries `company_key`, the campaign's key for the posting's company, when the scan knows it. A role with none is settled as "no company domain known".
+2. **One email a company a month stays.** A company that had a real send (`Shadow = 0`) in the last 30 days gets no lookup.
+3. **One lookup a role, the campaign's count.** The finder is asked once for the leader on that domain, and the call is counted in the same `campaign/finder/<finder>-<month>.txt` the campaign's finder pass keeps, so the free plan's 50 a month hold across both legs. A spent month leaves the role waiting and asks nothing. With no `HUNTER_KEY` nothing is asked.
+4. **The person's own address.** HunterFinder keeps only an answer scored 70 or more, verified, with a public https page. The pounce keeps it only when it is also on the company's domain and carries the leader's own name (`PounceRules.IsNamedAddress`: a part of the name of three letters or more, never info@, careers@ or another shared box under a leader's name). 98 of the campaign's 99 emails went to a shared mailbox; this leg cannot.
+5. **Shadow, whatever POUNCE_RUN says.** A kept address is written to `nightly/pounce/emails/<key>.md` with the words SHADOW and "Nothing was sent", and one line goes to `nightly/pounce/emails.log`. The pass is handed no mail port. "off" reads and writes nothing.
+
+What it does not do yet: no pounce email is written or sent. The model writing the row's fields and the Function rendering and sending them is the rest of this leg, and it waits on Steve's email ruling in `J:\dispatch\DECISION.md` and on a pounce template he has seen once. `PounceEmailTests` holds it.
