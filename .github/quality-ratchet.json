@@ -13,5 +13,5 @@
  "behavior_types_never_named_in_a_test": 0,
  "react_files_without_header": 241,
  "test_to_prod_ratio_higher_is_better": 0.83,
- "dotnet_tests_higher_is_better": 3658
+ "dotnet_tests_higher_is_better": 3673
 }

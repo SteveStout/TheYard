@@ -1,0 +1,11 @@
+Pat,
+
+Good morning! I just applied for the Remote Staff Software Engineer opening on your team.
+
+I build .NET on Azure with AI in the loop, and TheYard shows how:
+
+https://theyard.stevenstout.biz/?r=abc123
+
+Who on your team should I talk to about the Staff Software Engineer role?
+
+Steve

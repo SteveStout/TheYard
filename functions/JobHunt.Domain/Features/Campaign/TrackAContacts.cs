@@ -13,6 +13,13 @@ public static partial class TrackAContacts
     /// <summary>The columns, in order.</summary>
     public static readonly IReadOnlyList<string> Columns = ["Company", "CompanyKey", "RoleTitle", "PostingUrl", "FirstName", "ContactName", "ContactTitle", "NamePage", "ContactEmail", "EmailSource", "RefCode", "ResumeLink", "SiteLink", "GitHubLink", "LinkedInLink", "AboutLink", "ProofKey"];
 
+    /// <summary>
+    /// The one cell a row may carry after the seventeen: the lane that wrote it. The leaders lane writes its name there
+    /// (leaders.py add), so the send can tell its leader one level above the seat from the jobs lane's person; a row
+    /// without it reads as before.
+    /// </summary>
+    public const string LaneColumn = "Lane";
+
     /// <summary>The file for a Central day.</summary>
     public static string File(DateOnly day) => $"nightly/track-a-contacts-{day:yyyy-MM-dd}.tsv";
 
@@ -35,7 +42,10 @@ public static partial class TrackAContacts
             }
             string? Cell(int i) => c[i].Length == 0 ? null : c[i];
             rows.Add(new TrackAContact(c[0], c[1].ToLowerInvariant(), Cell(2), Cell(3), c[4], c[5], c[6], c[7], Cell(8), Cell(9), Cell(10),
-                Cell(12) is null || Cell(10) is null ? null : new SpoolLinks(c[11], c[12], c[13], c[14], c[15]), Cell(16)));
+                Cell(12) is null || Cell(10) is null ? null : new SpoolLinks(c[11], c[12], c[13], c[14], c[15]), Cell(16))
+            {
+                Lane = c.Length > Columns.Count ? Cell(Columns.Count) : null,
+            });
         }
         return (rows, unread);
     }
@@ -70,4 +80,8 @@ public static partial class TrackAContacts
 /// <param name="Links">The five tagged links, or null.</param>
 /// <param name="ProofKey">reliability, platform, leadership or ai, or null.</param>
 public sealed record TrackAContact(string Company, string CompanyKey, string? RoleTitle, string? PostingUrl, string FirstName, string ContactName, string ContactTitle,
-    string NamePage, string? ContactEmail, string? EmailSource, string? RefCode, SpoolLinks? Links, string? ProofKey);
+    string NamePage, string? ContactEmail, string? EmailSource, string? RefCode, SpoolLinks? Links, string? ProofKey)
+{
+    /// <summary>The lane that wrote the row, from its Lane cell, or null when the row has none.</summary>
+    public string? Lane { get; init; }
+}
