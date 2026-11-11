@@ -383,8 +383,8 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
     public async Task The_held_read_is_replaced_whole_by_the_next_and_read_back_from_a_day()
     {
         var held = new CostsInMemory();
-        await held.KeepAsync([new CostDay("2026-09-28", "a", "other", 1, "USD"), new CostDay("2026-09-29", "a", "other", 2, "USD")], [], CancellationToken.None);
-        await held.KeepAsync([new CostDay("2026-09-29", "a", "other", 2.5, "USD")], [new CostForecastDay("2026-09-30", 1, "USD")], CancellationToken.None);
+        await held.KeepAsync([new CostDay("2026-09-28", "a", "other", 1, "USD"), new CostDay("2026-09-29", "a", "other", 2, "USD")], [], DateTimeOffset.UnixEpoch, CancellationToken.None);
+        await held.KeepAsync([new CostDay("2026-09-29", "a", "other", 2.5, "USD")], [new CostForecastDay("2026-09-30", 1, "USD")], DateTimeOffset.UnixEpoch.AddHours(1), CancellationToken.None);
 
         var read = await held.ReadAsync("2026-09-29", CancellationToken.None);
 
@@ -413,7 +413,7 @@ public class CostTests(WebApplicationFactory<Program> factory) : IClassFixture<W
         public Task<CostHistoryAvailability> AvailabilityAsync(CancellationToken cancellation) =>
             Task.FromResult(new CostHistoryAvailability(true, "kept in a test"));
 
-        public Task KeepAsync(IReadOnlyList<CostDay> days, IReadOnlyList<CostForecastDay> forecast, CancellationToken cancellation)
+        public Task KeepAsync(IReadOnlyList<CostDay> days, IReadOnlyList<CostForecastDay> forecast, DateTimeOffset readAt, CancellationToken cancellation)
         {
             Keeps++;
             return Task.CompletedTask;

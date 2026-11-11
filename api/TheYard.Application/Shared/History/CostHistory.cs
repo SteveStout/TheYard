@@ -3,11 +3,11 @@ namespace TheYard.Application.Shared.History;
 // What Azure charges for this site (ADR: What Azure charges). Azure Cost
 // Management answers by the day, a day late, and is rate limited, so a page
 // request never asks it: a recorder reads it once an hour and holds the answer
-// behind this port, and the Admin tab reads it from there. Azure keeps the
-// bill, so the site does not keep a second copy of it: the port holds the last
-// read, and a roll costs one read half a minute after the start. The dollar
-// figure then sits on the same tab as the millisecond figure, which is the
-// point of the cards.
+// behind this port, and the Admin tab reads it from there. The last read is kept
+// where a roll cannot lose it, so a new process starts with the last bill and does
+// not ask again while that read is under an hour old (ADR: What Azure charges, the
+// addendum on keeping the read). The dollar figure then sits on the same tab as
+// the millisecond figure, which is the point of the cards.
 
 // #region cost-day
 /// <summary>
@@ -34,10 +34,11 @@ public sealed record CostDay(string Day, string Resource, string Type, double Co
 /// <param name="Billed">True for a day the forecast counts as already billed; false for a day it forecasts.</param>
 public sealed record CostForecastDay(string Day, double Cost, string Currency, bool Billed = false);
 
-/// <summary>The last read: the charges by resource by day, and the forecast for the days still to come.</summary>
+/// <summary>The last read: the charges by resource by day, the forecast for the days still to come, and when it was read.</summary>
 /// <param name="Days">One row per resource per day, oldest first.</param>
 /// <param name="Forecast">One row per forecast day, oldest first.</param>
-public sealed record CostKept(IReadOnlyList<CostDay> Days, IReadOnlyList<CostForecastDay> Forecast)
+/// <param name="ReadAt">When Cost Management answered with these, or null when nothing has been kept.</param>
+public sealed record CostKept(IReadOnlyList<CostDay> Days, IReadOnlyList<CostForecastDay> Forecast, DateTimeOffset? ReadAt = null)
 {
     /// <summary>Nothing held yet.</summary>
     public static readonly CostKept Empty = new([], []);
@@ -56,18 +57,15 @@ public interface ICostHistory
     Task<CostHistoryAvailability> AvailabilityAsync(CancellationToken cancellation);
 
     /// <summary>Holds a read, replacing the last: a read is thirty-five whole days and a fresh forecast, so the newer read is the whole truth, revisions included.</summary>
-    Task KeepAsync(IReadOnlyList<CostDay> days, IReadOnlyList<CostForecastDay> forecast, CancellationToken cancellation);
+    Task KeepAsync(IReadOnlyList<CostDay> days, IReadOnlyList<CostForecastDay> forecast, DateTimeOffset readAt, CancellationToken cancellation);
 
     /// <summary>Every day held from <paramref name="fromDay"/> on, and every forecast day held, oldest first.</summary>
     Task<CostKept> ReadAsync(string fromDay, CancellationToken cancellation);
 }
 
 /// <summary>
-/// The last read, held in this process. Azure Cost Management is the record of
-/// the bill and keeps it for as long as the subscription exists, so a copy in a
-/// database here would be a second source of truth that could only drift from
-/// the first. What a roll loses is one hour's read, and the recorder takes it
-/// again half a minute after the start.
+/// The last read, held in this process: what a local run and the tests use, and the copy the kept history
+/// answers from between its reads of the kept row. On its own it loses the read at every roll.
 /// </summary>
 public sealed class CostsInMemory : ICostHistory
 {
@@ -76,10 +74,10 @@ public sealed class CostsInMemory : ICostHistory
     public Task<CostHistoryAvailability> AvailabilityAsync(CancellationToken cancellation) =>
         Task.FromResult(new CostHistoryAvailability(true, "held in this site's memory from the last hour's read; Azure keeps the bill itself"));
 
-    public Task KeepAsync(IReadOnlyList<CostDay> days, IReadOnlyList<CostForecastDay> forecast, CancellationToken cancellation)
+    public Task KeepAsync(IReadOnlyList<CostDay> days, IReadOnlyList<CostForecastDay> forecast, DateTimeOffset readAt, CancellationToken cancellation)
     {
         // One reference swap, so a reader sees the last read or this one and never half of each.
-        Volatile.Write(ref _held, new CostKept(days.ToArray(), forecast.ToArray()));
+        Volatile.Write(ref _held, new CostKept(days.ToArray(), forecast.ToArray(), readAt));
         return Task.CompletedTask;
     }
 
@@ -88,7 +86,8 @@ public sealed class CostsInMemory : ICostHistory
         var held = Volatile.Read(ref _held);
         return Task.FromResult(new CostKept(
             held.Days.Where(day => string.CompareOrdinal(day.Day, fromDay) >= 0).OrderBy(day => day.Day, StringComparer.Ordinal).ToArray(),
-            held.Forecast.OrderBy(day => day.Day, StringComparer.Ordinal).ToArray()));
+            held.Forecast.OrderBy(day => day.Day, StringComparer.Ordinal).ToArray(),
+            held.ReadAt));
     }
 }
 // #endregion cost-port

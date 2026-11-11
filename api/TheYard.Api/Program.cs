@@ -24,7 +24,7 @@ builder.AddTheYardActivity(stores.Backends, stores.Document, stores.Relational);
 builder.AddTheYardApi(build);                                                      // Shared/Wiring/ApiRegistration.cs
 builder.AddTheYardTelemetry(identity);                                             // Shared/Wiring/TelemetryRegistration.cs
 builder.AddTheYardAdmin(stores.Relational, build, identity);                       // Shared/Wiring/AdminRegistration.cs
-builder.AddTheYardCosts(identity);                                                 // Shared/Wiring/CostRegistration.cs
+builder.AddTheYardCosts(identity, stores.Relational);                              // Shared/Wiring/CostRegistration.cs
 builder.AddTheYardUsage();                                                         // Shared/Wiring/UsageRegistration.cs
 
 var modules = Modules.InThisHost();                                                // Shared/Wiring/Modules.cs, every Features/*/Module.cs

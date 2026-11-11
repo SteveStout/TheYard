@@ -6,6 +6,7 @@
 //   CatalogueModel.cs  the Catalogue table, the hundred thousand the store pages, and its words
 //   BlogModel.cs       the blog's five tables
 //   ActivityModel.cs   the activity counters
+//   CostModel.cs       the kept bill
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -276,6 +277,7 @@ public sealed class YardDbContext(DbContextOptions<YardDbContext> options)
         });
 
         ActivityModel.Configure(model);
+        CostModel.Configure(model);
 
         StandingsModel.ConfigureStandings(model);
         CatalogueModel.ConfigureCatalogue(model, sqlServer);
