@@ -6,7 +6,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <summary>The resource cards' route, a window of one resource from its keep, the nightly card's run histories, and the one address a card is fed through.</summary>
 public static class CloudEndpoints
 {
-    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process}, GET /api/admin/incidents and GET /api/admin/funnel.</summary>
+    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process}, GET /api/admin/incidents, GET /api/admin/funnel and GET /api/admin/pounce.</summary>
     public static IEndpointRouteBuilder MapCloudEndpoints(this IEndpointRouteBuilder app)
     {
         // #region resource-endpoint
@@ -91,6 +91,14 @@ public static class CloudEndpoints
             .WithTags("Admin")
             .WithSummary("The job hunt's funnel from the Function's daily line: scanned, READY, applied, people reached, replies and calls booked, for 24h, 7d or 30d, graded on the week's calls");
         // #endregion funnel-endpoint
+        // #region pounce-endpoint
+        // Public like the funnel: six counts a Central day and a judgement, nothing that names a company, a title or a
+        // person (ADR-109, the addendum on time to first touch). Read from the Function's own lines; nothing is typed here.
+        app.MapGet("/api/admin/pounce", Pounce)
+            .WithName("GetPounce")
+            .WithTags("Admin")
+            .WithSummary("Time to first touch from the Function's PounceDay lines: for each of the last seven Central days, roles caught, touched, the median and worst minutes to the first message, and the ones still waiting, against 60 minutes");
+        // #endregion pounce-endpoint
         return app;
     }
 
@@ -107,6 +115,9 @@ public static class CloudEndpoints
 
     private static async Task<Ok<FunnelReport>> Funnel(string? window, ReadFunnelHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadFunnelQuery(window), cancellation));
+
+    private static async Task<Ok<PounceReport>> Pounce(ReadPounceHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadPounceQuery(), cancellation));
 
     private static async Task<Ok<IncidentsReport>> Incidents(ReadIncidentsHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadIncidentsQuery(), cancellation));
