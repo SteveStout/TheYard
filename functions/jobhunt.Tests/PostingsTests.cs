@@ -40,6 +40,33 @@ public sealed class PostingsTests
     }
 
     [Fact]
+    public void Each_feed_keeps_the_instant_its_board_says_the_posting_went_up_and_null_when_it_gives_none()
+    {
+        var greenhouse = PublicBoardReader.Read("greenhouse", """{"jobs":[{"id":1,"title":"Staff Engineer","first_published":"2026-11-10T13:38:40-05:00","updated_at":"2026-11-10T20:00:00-05:00"},{"id":2,"title":"Lead Engineer","updated_at":"2026-11-10T20:00:00-05:00"}]}""");
+        var lever = PublicBoardReader.Read("lever", """[{"id":"a","text":"Lead Engineer","createdAt":1794344400000},{"id":"b","text":"Staff Engineer"}]""");
+        var ashby = PublicBoardReader.Read("ashby", """{"jobs":[{"id":"x","title":"Principal Engineer","publishedAt":"2026-11-10T18:05:00.250+00:00"},{"id":"y","title":"Staff Engineer"}]}""");
+
+        Assert.Equal(new DateTimeOffset(2026, 11, 10, 18, 38, 40, TimeSpan.Zero), greenhouse[0].PublishedAt);
+        Assert.Equal(TimeSpan.FromHours(-5), greenhouse[0].PublishedAt!.Value.Offset);
+        // Greenhouse's updated_at still dates the day when first_published is missing, and is never the instant.
+        Assert.Equal((new DateOnly(2026, 11, 11), (DateTimeOffset?)null), (greenhouse[1].Posted, greenhouse[1].PublishedAt));
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1794344400000), lever[0].PublishedAt);
+        Assert.Null(lever[1].PublishedAt);
+        Assert.Equal(new DateTimeOffset(2026, 11, 10, 18, 5, 0, 250, TimeSpan.Zero), ashby[0].PublishedAt);
+        Assert.Null(ashby[1].PublishedAt);
+        Assert.Equal(lever[0].PublishedAt, BoardScan.Of("lever", "acme", lever[0]).PublishedAt);
+    }
+
+    [Fact]
+    public void Greenhouse_has_a_light_list_without_descriptions_and_the_other_two_do_not()
+    {
+        Assert.Equal("https://boards-api.greenhouse.io/v1/boards/acme/jobs", PublicBoardReader.LightAddress("greenhouse", "acme"));
+        Assert.Contains("content=true", PublicBoardReader.Address("greenhouse", "acme"), StringComparison.Ordinal);
+        Assert.Null(PublicBoardReader.LightAddress("lever", "acme"));
+        Assert.Null(PublicBoardReader.LightAddress("ashby", "acme"));
+    }
+
+    [Fact]
     public async Task Two_scans_in_a_row_make_no_second_row_and_a_moved_field_is_one_change_row()
     {
         var book = new Postings();
@@ -52,6 +79,7 @@ public sealed class PostingsTests
         Assert.EndsWith("postings_seen 2, postings_new 2, postings_changed 0, postings_closed 0, postings_failed 0", first, StringComparison.Ordinal);
         Assert.EndsWith("postings_seen 2, postings_new 0, postings_changed 0, postings_closed 0, postings_failed 0", second, StringComparison.Ordinal);
         Assert.Equal(2, book.Rows.Count);
+        Assert.Equal(0, book.Duplicates);
         Assert.Equal(2, book.Rows.Select(r => (r.Posting.Source, r.Posting.BoardToken, r.Posting.PostingId)).Distinct().Count());
         Assert.All(book.Rows, r => Assert.Equal(Night.AddDays(1), r.LastSeen));
         Assert.Equal("acme.com", book.Rows[0].CompanyKey);
@@ -194,16 +222,40 @@ public sealed class PostingsTests
             Task.FromResult<IReadOnlyList<StoredPosting>>([.. Rows.Where(r => r.Posting.Source == source && r.Posting.BoardToken == token && (r.Closed is null || r.Closed >= closedSince))
                 .Select(r => new StoredPosting(r.Key, r.Posting.PostingId, r.Posting.Title, r.Posting.Level, r.Posting.RemoteStance, r.Posting.CompMin, r.Posting.CompMax, r.Posting.ContentHash, r.Closed))]);
 
-        public Task<long> AddAsync(Posting posting, string? companyKey, DateTimeOffset seenAt, CancellationToken ct)
+        /// <summary>Rows another scan writes just after this book answers KnownAsync, so the next insert of one meets the unique key.</summary>
+        public List<Posting> WrittenAfterKnown { get; } = [];
+
+        /// <summary>Inserts the unique key refused.</summary>
+        public int Duplicates { get; private set; }
+
+        /// <summary>Updates, sightings and closes: every write that is not a new row.</summary>
+        public int Touches { get; private set; }
+
+        public Task<IReadOnlySet<string>> KnownAsync(CancellationToken ct)
         {
-            Assert.DoesNotContain(Rows, r => (r.Posting.Source, r.Posting.BoardToken, r.Posting.PostingId) == (posting.Source, posting.BoardToken, posting.PostingId));
-            var row = new Row(Rows.Count + 1L, posting, companyKey) { LastSeen = seenAt };
+            IReadOnlySet<string> known = Rows.Select(r => Posting.Known(r.Posting.Source, r.Posting.BoardToken, r.Posting.PostingId)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var posting in WrittenAfterKnown)
+            {
+                Rows.Add(new Row(Rows.Count + 1L, posting, null));
+            }
+            return Task.FromResult(known);
+        }
+
+        public Task<long?> AddAsync(Posting posting, string? companyKey, DateTimeOffset seenAt, CancellationToken ct)
+        {
+            if (Rows.Any(r => (r.Posting.Source, r.Posting.BoardToken, r.Posting.PostingId) == (posting.Source, posting.BoardToken, posting.PostingId)))
+            {
+                Duplicates++;
+                return Task.FromResult<long?>(null);
+            }
+            var row = new Row(Rows.Count + 1L, posting, companyKey) { LastSeen = seenAt, FirstSeen = seenAt };
             Rows.Add(row);
-            return Task.FromResult(row.Key);
+            return Task.FromResult<long?>(row.Key);
         }
 
         public Task UpdateAsync(long key, Posting posting, DateTimeOffset at, CancellationToken ct)
         {
+            Touches++;
             var row = Rows.Single(r => r.Key == key);
             (row.Posting, row.LastSeen, row.Closed) = (posting, at, null);
             return Task.CompletedTask;
@@ -211,6 +263,7 @@ public sealed class PostingsTests
 
         public Task SeenAsync(IReadOnlyList<long> keys, DateTimeOffset at, CancellationToken ct)
         {
+            Touches++;
             foreach (var row in Rows.Where(r => keys.Contains(r.Key)))
             {
                 (row.LastSeen, row.Closed) = (at, null);
@@ -220,6 +273,7 @@ public sealed class PostingsTests
 
         public Task CloseAsync(IReadOnlyList<long> keys, DateTimeOffset at, CancellationToken ct)
         {
+            Touches++;
             foreach (var row in Rows.Where(r => keys.Contains(r.Key) && r.Closed is null))
             {
                 row.Closed = at;
@@ -248,6 +302,8 @@ public sealed class PostingsTests
             public string? CompanyKey { get; } = companyKey;
 
             public DateTimeOffset LastSeen { get; set; }
+
+            public DateTimeOffset FirstSeen { get; init; }
 
             public DateTimeOffset? Closed { get; set; }
         }

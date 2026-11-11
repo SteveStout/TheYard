@@ -21,11 +21,15 @@ internal static class PostingsSql
         FROM [jobhunt].[Postings] p WHERE p.[Source] = @source AND p.[BoardToken] = @token AND (p.[ClosedAt] IS NULL OR p.[ClosedAt] >= @since)
         """;
 
+    internal const string Known = """
+        SELECT p.[Source], p.[BoardToken], p.[PostingId] FROM [jobhunt].[Postings] p
+        """;
+
     internal const string Add = """
         INSERT INTO [jobhunt].[Postings] ([Source], [BoardToken], [PostingId], [CompanyKey], [Title], [Level], [RemoteStance], [Location], [CompMin], [CompMax],
-            [CompCurrency], [CompInterval], [CompSource], [Url], [PostedAt], [FirstSeenAt], [LastSeenAt], [ContentHash])
+            [CompCurrency], [CompInterval], [CompSource], [Url], [PostedAt], [PublishedAt], [FirstSeenAt], [LastSeenAt], [ContentHash])
         OUTPUT INSERTED.[Id]
-        VALUES (@source, @token, @id, @company, @title, @level, @stance, @location, @min, @max, @currency, @interval, @compSource, @url, @posted, @at, @at, @hash)
+        VALUES (@source, @token, @id, @company, @title, @level, @stance, @location, @min, @max, @currency, @interval, @compSource, @url, @posted, @published, @at, @at, @hash)
         """;
 
     internal const string Update = """

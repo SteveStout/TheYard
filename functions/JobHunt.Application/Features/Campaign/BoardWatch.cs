@@ -73,8 +73,10 @@ public sealed class PostingsSeed(IShareReader share, IPostingBook postings)
         var (rows, unread) = PostingSeed.Parse(TrackerCsvText.Decode(await share.ReadAsync(PostingSeed.File, ct)));
         foreach (var posting in rows)
         {
-            long key = await postings.AddAsync(posting, null, file.LastWritten, ct);
-            await postings.DescribeAsync(key, posting.ContentHash, posting.Text, file.LastWritten, ct);
+            if (await postings.AddAsync(posting, null, file.LastWritten, ct) is { } key)
+            {
+                await postings.DescribeAsync(key, posting.ContentHash, posting.Text, file.LastWritten, ct);
+            }
         }
         return $"seed: {rows.Count} postings from {PostingSeed.File}, {unread} lines unread";
     }

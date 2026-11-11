@@ -37,6 +37,12 @@ public sealed record Posting(string Source, string BoardToken, string PostingId,
     /// <summary>The band's interval as the board wrote it ("year", "1 YEAR", "per-year-salary"), or null.</summary>
     public string? CompInterval { get; init; }
 
+    /// <summary>
+    /// The instant the board says it went up, when the board gives one: Greenhouse's first_published, Lever's createdAt,
+    /// Ashby's publishedAt. Minutes to first sight are counted from it, which the day in <see cref="Posted"/> cannot do.
+    /// </summary>
+    public DateTimeOffset? PublishedAt { get; init; }
+
     /// <summary>The description as plain text; hashed for ContentHash and stored only when the hash is new.</summary>
     public string Text { get; init; } = "";
 
@@ -45,6 +51,9 @@ public sealed record Posting(string Source, string BoardToken, string PostingId,
 
     /// <summary>Lower-case hex SHA-256 of the description's UTF-8 bytes.</summary>
     public string ContentHash => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Text)));
+
+    /// <summary>A row's identity as one string, its board and the board's id, the way the table's unique key reads it.</summary>
+    public static string Known(string source, string boardToken, string postingId) => $"{source}|{boardToken}|{postingId}";
 }
 
 /// <summary>A posting row as the store holds it, for the scan to compare against.</summary>

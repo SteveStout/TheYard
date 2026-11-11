@@ -67,14 +67,14 @@ public sealed partial class PostingsSqlTests
             }
         }
         Assert.True(wrong.Count == 0, string.Join(Environment.NewLine, wrong));
-        Assert.Equal(11, Statements().Count());
+        Assert.Equal(12, Statements().Count());
         Assert.DoesNotContain(Statements(), s => s.Sql.Contains("DELETE", StringComparison.OrdinalIgnoreCase) || s.Sql.Contains("TRUNCATE", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
     public void The_four_tables_carry_the_columns_the_postings_prompt_names()
     {
-        Assert.Superset(new HashSet<string>(["Source", "BoardToken", "PostingId", "CompanyKey", "Title", "Level", "RemoteStance", "Location", "CompMin", "CompMax", "CompCurrency", "CompInterval", "CompSource", "Url", "FirstSeenAt", "LastSeenAt", "ClosedAt", "ContentHash"]), Columns("Postings"));
+        Assert.Superset(new HashSet<string>(["Source", "BoardToken", "PostingId", "CompanyKey", "Title", "Level", "RemoteStance", "Location", "CompMin", "CompMax", "CompCurrency", "CompInterval", "CompSource", "Url", "FirstSeenAt", "LastSeenAt", "ClosedAt", "ContentHash", "PublishedAt"]), Columns("Postings"));
         Assert.Superset(new HashSet<string>(["PostingKey", "Hash", "Text", "SeenAt"]), Columns("PostingDescriptions"));
         Assert.Superset(new HashSet<string>(["PostingKey", "Field", "OldValue", "NewValue", "ChangedAt"]), Columns("PostingChanges"));
         Assert.Superset(new HashSet<string>(["PostingKey", "Kind", "Value", "Source", "WrittenAt"]), Columns("PostingNotes"));

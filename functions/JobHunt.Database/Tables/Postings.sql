@@ -23,6 +23,7 @@ CREATE TABLE [jobhunt].[Postings] (
     [LastSeenAt]    datetimeoffset NOT NULL,
     [ClosedAt]      datetimeoffset NULL,
     [ContentHash]   char(64)       NOT NULL,  -- lower-case hex SHA-256 of the description's text
+    [PublishedAt]   datetimeoffset NULL,      -- the instant the board says it went up, when the board gives one
     CONSTRAINT [PK_Postings] PRIMARY KEY ([Id]),
     CONSTRAINT [CK_Postings_Source] CHECK ([Source] IN ('greenhouse', 'lever', 'ashby')),
     CONSTRAINT [CK_Postings_RemoteStance] CHECK ([RemoteStance] IN ('Unknown', 'Remote', 'Hybrid', 'Onsite'))

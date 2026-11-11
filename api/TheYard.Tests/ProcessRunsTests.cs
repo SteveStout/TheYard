@@ -168,8 +168,8 @@ public sealed class ProcessRunsTests
             .SelectMany(file => Regex.Matches(File.ReadAllText(file), "\\[Function\\(\"(?<name>\\w+)\"\\)\\][\\s\\S]{0,200}?TimerTrigger\\(\"(?<cron>[^\"]+)\"\\)").Select(m => (m.Groups["name"].Value, m.Groups["cron"].Value)))
             .ToDictionary(pair => pair.Item1, pair => pair.Item2);
 
-        // Nine timers: the board scan's, at 1 AM, and the morning card's, at 7:30, have no row in the card's table yet, so each of the table's seven timed rows is checked against them.
-        Assert.Equal(9, crons.Count);
+        // Ten timers: the board scan's, at 1 AM, the morning card's, at 7:30, and the fresh pass's, every quarter hour, have no row in the card's table yet, so each of the table's seven timed rows is checked against them.
+        Assert.Equal(10, crons.Count);
         Assert.All(FunctionProcesses.All.Where(p => p.Cron is not null), process => Assert.Equal(crons[process.Key], process.Cron));
         Assert.Equal(8, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
         // The network log acts in the 6 o'clock hour Central: 12:00 UTC in November, 11:00 UTC in October.
