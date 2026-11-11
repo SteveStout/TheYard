@@ -364,6 +364,12 @@ public sealed class CodeRabbitRuleTests
             JsonElement still = read.RootElement.GetProperty("rows")[0];
             Assert.Equal("full", still.GetProperty("reviewed").GetString());
             Assert.Equal(1, still.GetProperty("fixed").GetInt32());
+
+            // Nor does a re-run that was rate limited and read nothing (CodeRabbit on #19).
+            File.WriteAllText(row, JsonSerializer.Serialize(new { version = "1.0.4.900", pr = 9, sha = "01234567", reviewed = "rate limited", actionable = 0, findings = new { critical = 0, major = 0, minor = 0, trivial = 0, nitpick = 0 }, @fixed = (int?)null, answered_as_wrong = (int?)null }));
+            Python(dir, $"fold \"{row}\" \"{path}\"");
+            using var after = JsonDocument.Parse(File.ReadAllText(path));
+            Assert.Equal("full", after.RootElement.GetProperty("rows")[0].GetProperty("reviewed").GetString());
         }
         finally
         {

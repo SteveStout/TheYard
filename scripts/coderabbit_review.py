@@ -184,6 +184,13 @@ def empty_row(version, sha, reviewed):
     }
 
 
+def unread(row):
+    """A row whose read found nothing to count: no review, findings not read, or a rate-limited review with none."""
+    said = row.get("reviewed") or ""
+    empty = sum((row.get("findings") or {}).values()) == 0
+    return said.startswith("not reviewed") or said.endswith("not read") or (said == "rate limited" and empty)
+
+
 def fold(row_path, log_path):
     """One ship's row into the findings log, newest last; a re-run of a version replaces its row, except that a re-run
     which could not read a review never replaces one that was read, and what became of the findings is kept with the
@@ -195,7 +202,6 @@ def fold(row_path, log_path):
         with open(log_path, encoding="utf-8") as f:
             log = json.load(f)
     kept = next((r for r in log["rows"] if r.get("version") == row.get("version")), None)
-    unread = lambda r: (r.get("reviewed") or "").startswith("not reviewed") or (r.get("reviewed") or "").endswith("not read")
     if kept is not None and unread(row) and not unread(kept):
         print(f"findings log: {row.get('version')} keeps its read review; this read says {row.get('reviewed')}")
         return

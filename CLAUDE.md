@@ -142,7 +142,8 @@ of 1.0.5.4); running all of it again before the push only pays for the same answ
 - **Before a commit, run the suite your change touches; the gate runs all three before anything ships
   (Shipping, above).** A change to the API runs `dotnet test`, a change to the page runs `npm test` and the
   specs that open it. The gate runs the API suite on both stores, and carries the two Cosmos DB passes forward
-  from the last version that ran them when nothing they read changed (ADR-068, the two cuts).
+  from the last version that ran them when the branch changed nothing under `api/` or `infra/cosmos/` and none of
+  the three store specs (scripts/gate_cuts.sh; ADR-068, the two cuts).
 
 ## Commands
 

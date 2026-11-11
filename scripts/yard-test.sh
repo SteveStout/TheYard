@@ -24,7 +24,7 @@ git -C "$REPO" fetch -q origin "$BRANCH" || { echo "FAIL: branch '$BRANCH' not f
 SHA="$(git -C "$REPO" rev-parse FETCH_HEAD)"   # FETCH_HEAD is per-worktree, so pin the commit here
 [ -d "$WT" ] || git -C "$REPO" worktree add -q --detach "$WT" "$SHA" || { echo "FAIL: worktree add"; exit 2; }
 # Build output a branch tracked is restored first, so a checkout to a branch that ignores it is not refused.
-cd "$WT" && { git checkout -q -- ':(glob)**/obj/**' ':(glob)**/bin/**' 2>/dev/null || true; } \
+cd "$WT" && { git checkout -q -- ':(glob)**/obj/**' 2>/dev/null || true; } && { git checkout -q -- ':(glob)**/bin/**' 2>/dev/null || true; } \
   && git checkout -q --detach "$SHA" && git clean -qfdx -e node_modules || { echo "FAIL: could not prepare $WT"; exit 2; }
 echo "Testing $BRANCH @ $(git log -1 --format='%h %s')"
 

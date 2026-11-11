@@ -219,3 +219,5 @@ What it costs: five runners' setup where there was one, each checking out, insta
 The review wait and the request script are held too: `GateReviewWaitTests` runs `scripts/coderabbit_review.py`'s wait and `scripts/gate_pr.sh` against a stand-in gh, for a completed review, no request, a review that never completes inside the ceiling and a skipped check, and for opening, reusing and closing the request, which the cold review of 1.0.4.176 and 1.0.4.177 asked for.
 
 Correction, 1.0.5.8: the addendum of 1.0.5.4 gives the one gate job's duration as its measure (882 seconds median), and then 1,116 seconds at 1.0.5.2 and 741 at 1.0.5.3, which are gateSeconds, the run's start to the promote step. Those two ships' gate jobs ran 1,083 and 723 seconds.
+
+From CodeRabbit on #19, in 1.0.5.10: the restore runs once for `obj` and once for `bin`, so a branch that tracks only one of them still has it restored.
