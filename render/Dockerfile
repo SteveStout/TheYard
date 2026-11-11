@@ -19,6 +19,10 @@ COPY vite.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json ./
 COPY src ./src
 # The recommendations file too: the page draws one blank place per entry in it, read at build time.
 COPY data/recommendations.json ./data/recommendations.json
+# The hook on each page and the quality history its landing chart is drawn from, both read at build time, so the
+# first screen draws with no read (ADR-132).
+COPY data/hooks.json ./data/hooks.json
+COPY data/quality-history.json ./data/quality-history.json
 COPY render ./render
 RUN npx vite build --config render/vite.config.ts
 # #endregion build

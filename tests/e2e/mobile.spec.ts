@@ -146,7 +146,12 @@ test('Admin is reachable from the drawer and the footer still renders', async ({
     .getByRole('banner')
     .getByRole('button', { name: /The Yard/ })
     .click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+    })
+  ).toBeVisible();
 });
 
 test('the phone header has its own decision record, reachable from the drawer', async ({
@@ -296,7 +301,8 @@ test('the landing page says what this is and who built it, and the inventory car
   const landing = page.getByTestId('landing');
   await expect(landing).toBeVisible();
   await expect(landing).toContainText('Steven Stout');
-  const lede = await landing.locator('p').first().boundingBox();
+  // The hook took the welcome card's place (ADR-132): its sentence is the page's heading, on the first screen.
+  const lede = await landing.getByRole('heading', { level: 1 }).boundingBox();
   expect((lede?.y ?? 9999) + (lede?.height ?? 0)).toBeLessThanOrEqual(812);
   await openTheYard(page);
   await expect(page.getByTestId('intro-strip')).toHaveCount(0);

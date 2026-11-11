@@ -56,7 +56,9 @@ test('the bare address arrives with the landing page already drawn in its HTML',
     return;
   }
   expect(root).toContain('data-drawn="landing"');
-  expect(root).toContain('Welcome to The Yard');
+  expect(root).toContain(
+    'Fifteen quality numbers are measured on every version and none may get worse.'
+  );
   expect(root).toContain('data-testid="landing-tile-inventory"');
   // Drawn with nothing fetched: the API is asked nothing while the site is built.
   expect(root).toContain('data-state="reading"');
@@ -135,7 +137,10 @@ async function drawnAddresses(page: Page): Promise<Array<{ path: string; carries
   const list = await (await page.request.get('/api/vehicles?view=inventory')).json();
   const vehicle = list.vehicles[0] as { id: string; vin: string };
   return [
-    { path: '/', carries: 'Welcome to The Yard' },
+    {
+      path: '/',
+      carries: 'Fifteen quality numbers are measured on every version and none may get worse.',
+    },
     { path: '/?view=inventory', carries: 'data-testid="result-count"' },
     { path: `/?vehicle=${vehicle.id}`, carries: vehicle.vin },
     { path: '/?doc=readme', carries: 'In plain words' },
