@@ -7,7 +7,7 @@
  */
 
 // Sizes a chart's drawing box to the width its svg actually gets.
-export { useFittedBox } from './useFittedBox';
+export { useFittedBox } from '../../shared/charts/useFittedBox';
 
 // The box that shows a slot's values under the pointer, and how far below the plot's top it sits.
 export { ChartReadout, READOUT_DROP } from '../ChartReadout';
@@ -16,7 +16,7 @@ export { ChartReadout, READOUT_DROP } from '../ChartReadout';
 export { MachineChart } from '../MachineChart';
 
 // The instrument-style frame: graduation ticks and corner brackets.
-export { PlotFrame } from '../PlotFrame';
+export { PlotFrame } from '../../shared/PlotFrame';
 
 // A share of a ceiling as a horizontal meter.
 export { BarGauge } from '../BarGauge';

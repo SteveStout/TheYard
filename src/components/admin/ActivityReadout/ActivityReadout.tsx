@@ -5,7 +5,7 @@
  */
 import { labelFor } from '../../../lib/activity';
 import styles from '../ActivityCard/ActivityCard.module.css';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 
 /** One line of the readout: its key, colour class, name, its own value, and its top on the axis. */
 export type ActivityReading = {

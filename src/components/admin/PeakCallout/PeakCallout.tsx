@@ -5,7 +5,7 @@
  * the machine chart reads as the plot and its lines, with the trim beside it.
  */
 import type { calloutFor } from '../../../lib/machineChart';
-import styles from '../charts/charts.module.css';
+import styles from '../../shared/charts/charts.module.css';
 
 /** Draws the peak callout: a dot, a leader line and a label, all placed by calloutFor. */
 export function PeakCallout({

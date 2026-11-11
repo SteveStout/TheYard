@@ -6,7 +6,7 @@
  */
 import { MACHINE_CHART, readoutLine } from '../../../lib/machineChart';
 import type { PlotBox } from '../../../lib/plotFrame';
-import styles from '../charts/charts.module.css';
+import styles from '../../shared/charts/charts.module.css';
 
 // #region chart-readout
 /** How far the readout box sits below the plot's top, so it never covers the axis unit. */

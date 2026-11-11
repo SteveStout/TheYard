@@ -13,7 +13,7 @@ import {
   type ActivityWho,
 } from '../../../lib/activity';
 import styles from '../ActivityCard/ActivityCard.module.css';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 import cardStyles from '../shared/card.module.css';
 import { kindTone } from '../ActivityCard/activitySeriesLook';
 import { ActivityPlot } from '../ActivityPlot';

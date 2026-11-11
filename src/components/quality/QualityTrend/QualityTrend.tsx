@@ -6,9 +6,9 @@
  */
 import { plotFrame } from '../../../lib/plotFrame';
 import { TREND_BOX, trendGeometry, type QualityTrendData } from '../../../lib/qualityTrend';
-import { PlotFrame } from '../../admin/PlotFrame';
-import { useFittedBox } from '../../admin/charts/useFittedBox';
-import styles from '../../admin/charts/charts.module.css';
+import { PlotFrame } from '../../shared/PlotFrame';
+import { useFittedBox } from '../../shared/charts/useFittedBox';
+import styles from '../../shared/charts/charts.module.css';
 
 /** The line for one number, with its frame, its two end labels and the marked version. */
 export function QualityTrend({ data }: { data: QualityTrendData }) {

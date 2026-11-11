@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): The chart frame the Quality page and the Admin tab both draw with moved out of the Admin tab's folder into a shared one, as CodeRabbit asked on #8; nothing a visitor sees changed.
 - **@VER@** (@DATE@): A link to the review route, the blog, a post, About Steven or the Quality page now previews in a message with that page's own title, description and address, where all five previewed as the auction platform's landing page.
 - **@VER@** (@DATE@): On a phone the blog and its posts hold still while they load, where they jumped by four to six times the layout shift Google counts as good, and the resume door no longer says the resume is below when a phone has nothing below.
 - **@VER@** (@DATE@): Every answer says in a Server-Timing header how many milliseconds the app spent on it, and a drawn page how long it waited for its frame, so a slow first visit can be split between the wire and the site.

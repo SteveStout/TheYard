@@ -6,7 +6,7 @@ import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
 import { documentStoreLine, percentileWords, sqlLine, timingWindow } from '../../../lib/metrics';
 import { millisecondsWords } from '../../../lib/statTiles';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 import cardStyles from '../shared/card.module.css';
 import type { EndpointTiming, Metrics } from '../shared/types';
 import { useRead, failed } from '../shared/common';
