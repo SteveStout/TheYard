@@ -226,3 +226,14 @@ Until this version a posting was first seen in the 1 o'clock hour Central, so on
 - **The column was published alone.** The DACPAC's script against the live database also dropped and re-added fifteen CHECK constraints and altered `card.Network`, drift older than this version. Only the `ALTER TABLE ... ADD [PublishedAt]` it generated was applied, and it was read back as the Function's user.
 
 `FreshScanTests` and `PostingsTests` hold it.
+
+## Addendum, 2026-11-11 (1.0.5.26): "management" is a rung only after "engineering", and an Ashby posting keeps every place
+
+What stopped being true: `PostingLevel` read the word "management" anywhere in a title as the Manager level, and an Ashby posting's location was the board's first location name and nothing else.
+
+Read from `jobhunt.PounceRoles` and the boards on 11 November, while finding why the pounce passed 3 of 83 postings overnight and that morning:
+
+- **The level.** "Identity & Access Management (IAM) Engineer" (Backblaze) and "Senior IT Engineer, Identity and Access Management" (1Password) were read as Manager on 10 November and failed the night's gate as "level Manager, not an engineering title". "Management" there names the seat's subject, as in Product Management or Asset Management, not its rung. From this version only "engineering management" is a Manager word beside "manager" and "engineering manager"; the two titles read Mid and Senior. The stored level is compared on every scan, so the first 1 AM scan after this version writes one `Level` change row for each open posting it moves: 98 were open with Manager read from "management" alone when this was written.
+- **The place.** Inovalon names the first location of four Ashby postings "BU: Pharmacy", a business unit, and lists Hyderabad only under `secondaryLocations`, which the reader never read; the pounce's reason read "hybrid outside St. Louis: BU: Pharmacy". The verdict was right, all four are in Hyderabad, but the reason hid the place, and a hybrid seat whose St. Louis office was a secondary location would have failed the same way. From this version the reader joins the first name and every secondary name with "; ", the shape Greenhouse already writes for a posting listed in several places (619 of 11,041 Greenhouse rows). The location is not a compared field, so rows already stored keep what they hold; new rows get every place. No fit rule changed: the remote read, the hybrid rule and the seat lists read the same words as before.
+
+`PostingsTests` holds both.
