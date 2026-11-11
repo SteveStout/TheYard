@@ -72,7 +72,8 @@ public static partial class JobsGates
         string note = recent.Count == 0 ? "no applications in 60 days" : $"{recent.Count} in 60 days (Counts {string.Join(", ", recent.Select(r => r.Count))})";
         string? failed = Staffing().IsMatch(c.Company) ? "staffing firm placing an unnamed client"
             : FormerEmployers.Of(c.Company, null) is not null ? "former employer"
-            : remote.StartsWith("not remote", StringComparison.Ordinal) || remote.StartsWith("hybrid outside", StringComparison.Ordinal) || remote == "onsite" ? remote
+            : remote.StartsWith("not remote", StringComparison.Ordinal) || remote.StartsWith("hybrid outside", StringComparison.Ordinal) || remote == "onsite"
+                || remote.StartsWith(NamedStates, StringComparison.Ordinal) ? remote
             : days > MaxDays ? $"posted {days} days ago"
             : LevelFailure(c)
             ?? (flag == "SKIP" ? $"band tops at ${c.BandMax!.Value.ToString("N0", CultureInfo.InvariantCulture)}, under ${PayFloor.Flag.ToString("N0", CultureInfo.InvariantCulture)}" : null)
@@ -82,12 +83,38 @@ public static partial class JobsGates
         return new Verdict(c, failed, flag, remote, stack, note, days);
     }
 
-    /// <summary>What the remote gate reads (D7).</summary>
+    /// <summary>
+    /// The picker's key for one role: the company's letters and digits, the title's base and its level, so a role
+    /// listed twice (two cities, a board and an alert) is one role. The pounce's duplicate check reads the same key.
+    /// </summary>
+    public static string Same(Candidate c) =>
+        new string([.. c.Company.ToLowerInvariant().Where(char.IsLetterOrDigit)]) + "|" + PostingLevel.Base(c.Title) + "|" + c.Level;
+
+    /// <summary>The remote read of a posting whose text names the states a hire must live in, Missouri not among them.</summary>
+    public const string NamedStates = "remote in named states, Missouri not among them: ";
+
+    /// <summary>The remote read of a bare country whose posting, read in full, never says remote; passed on as a flag, like a hybrid of unknown days.</summary>
+    public const string CountryOnly = "country only, remote unsaid";
+
+    /// <summary>
+    /// What the remote gate reads (D7). A text that names five or more states a hire must live in, after a cue such as
+    /// "reside in" or "following states", and leaves Missouri out fails wherever the location points; a location that
+    /// is only a country, on a posting whose stance is not Remote and whose title and text never say remote, reads as
+    /// country only once the text has been read, and as remote on a first pass with no text.
+    /// </summary>
     public static string RemoteRead(Candidate c)
     {
         string where = c.Location ?? string.Empty;
+        if (StatesWithoutMissouri(c.Text) is { } states)
+        {
+            return NamedStates + states;
+        }
         bool stl = StLouis().IsMatch(where);
         bool oneDay = OneDay().IsMatch(c.Text) || OneDay().IsMatch(where);
+        if (c.RemoteStance != "Remote" && Country().IsMatch(where.Trim()) && !RemoteWord().IsMatch(where) && c.Text.Length > 0 && !SaysRemote().IsMatch(c.Title + " " + c.Text))
+        {
+            return CountryOnly;
+        }
         if (c.RemoteStance == "Remote" || RemoteWord().IsMatch(where) || Country().IsMatch(where.Trim()) || RemoteWord().IsMatch(c.Title))
         {
             return "remote";
@@ -103,6 +130,31 @@ public static partial class JobsGates
             _ => "not remote: " + where,
         };
     }
+
+    /// <summary>
+    /// The state codes, comma separated, when the text names five or more US states in one run with a cue in the 200
+    /// characters before it and Missouri is not one of them; else null. A code may carry a footnote star ("*IL"), as
+    /// the board's own text of NinjaOne's postings writes one.
+    /// </summary>
+    public static string? StatesWithoutMissouri(string text)
+    {
+        foreach (Match run in StateRun().Matches(text ?? string.Empty))
+        {
+            var codes = StateCode().Matches(run.Value).Select(m => m.Value).ToList();
+            if (codes.Count >= 5 && codes.All(States.Contains) && !codes.Contains("MO") && StateCue().IsMatch(text![Math.Max(0, run.Index - 200)..run.Index]))
+            {
+                return string.Join(", ", codes);
+            }
+        }
+        return null;
+    }
+
+    private static readonly HashSet<string> States = new(StringComparer.Ordinal)
+    {
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS",
+        "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
+        "WI", "WY", "DC",
+    };
 
     /// <summary>What the stack gate reads: dotnet, azure, ai lead, unread (an alert with no text) or none.</summary>
     public static string StackRead(Candidate c)
@@ -145,6 +197,18 @@ public static partial class JobsGates
 
     [GeneratedRegex(@"^(United States( of America)?|US|USA|U\.S\.|Anywhere in (the )?(US|USA|United States))$", RegexOptions.IgnoreCase)]
     private static partial Regex Country();
+
+    [GeneratedRegex(@"\bremote\b|\bwork from home\b|\bwork from anywhere\b|\bdistributed team\b|\bfully distributed\b", RegexOptions.IgnoreCase)]
+    private static partial Regex SaysRemote();
+
+    [GeneratedRegex(@"\b[A-Z]{2}\b(?:\s*,\s*(?:and\s+)?|\s+and\s+)(?:\*?\b[A-Z]{2}\b(?:\s*,\s*(?:and\s+)?|\s+and\s+)){3,}\*?\b[A-Z]{2}\b")]
+    private static partial Regex StateRun();
+
+    [GeneratedRegex(@"\b[A-Z]{2}\b")]
+    private static partial Regex StateCode();
+
+    [GeneratedRegex(@"resid|located|locat|eligible|following states|states?:|hire in|work from|based in|live in", RegexOptions.IgnoreCase)]
+    private static partial Regex StateCue();
 
     [GeneratedRegex(@"(?<![A-Za-z])(C#|\.NET|dotnet|ASP\.NET|C Sharp)(?![A-Za-z])", RegexOptions.IgnoreCase)]
     private static partial Regex DotNet();

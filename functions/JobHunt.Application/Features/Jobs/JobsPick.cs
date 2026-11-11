@@ -41,11 +41,11 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
                 alerts.AddRange(JobsFiles.AlertRows(TrackerCsvText.Decode(await store.ReadAsync(JobsFiles.Leads(day), ct))));
             }
         }
-        var seen = feed.Select(f => Same(f.Candidate)).ToHashSet(StringComparer.Ordinal);
-        var alertVerdicts = alerts.DistinctBy(a => a.Url).Where(a => !seen.Contains(Same(a))).Select(a => JobsGates.Judge(a, master, list, today)).ToList();
+        var seen = feed.Select(f => JobsGates.Same(f.Candidate)).ToHashSet(StringComparer.Ordinal);
+        var alertVerdicts = alerts.DistinctBy(a => a.Url).Where(a => !seen.Contains(JobsGates.Same(a))).Select(a => JobsGates.Judge(a, master, list, today)).ToList();
 
         var all = feedVerdicts.Concat(alertVerdicts).ToList();
-        var passed = all.Where(v => v.Failed is null).DistinctBy(v => Same(v.Candidate))
+        var passed = all.Where(v => v.Failed is null).DistinctBy(v => JobsGates.Same(v.Candidate))
             .OrderBy(v => v.Candidate.Confirmed == "feed" ? 0 : 1).ThenBy(v => v.DaysOld).ToList();
         var failed = all.Where(v => v.Failed is not null).ToList();
         int boards = feed.Select(f => f.Candidate.Source + "|" + f.Candidate.Company).Distinct(StringComparer.Ordinal).Count();
@@ -74,7 +74,4 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
 
     private static List<string[]> Applications(IEnumerable<string[]> rows) =>
         [.. rows.Where(row => row.Length >= 7 && int.TryParse(row[0].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out _))];
-
-    private static string Same(Candidate c) =>
-        new string([.. c.Company.ToLowerInvariant().Where(char.IsLetterOrDigit)]) + "|" + PostingLevel.Base(c.Title) + "|" + c.Level;
 }
