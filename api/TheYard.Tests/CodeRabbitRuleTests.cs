@@ -222,7 +222,8 @@ public sealed class CodeRabbitRuleTests
     /// <summary>
     /// A review body carries findings too: the ones GitHub cannot post on a line outside the diff, each with its own
     /// header label, and the nitpicks, counted as "Nitpick comments (N)" in CodeRabbit's older body and "Nitpick
-    /// comments: N" in its newer one. Both are counted (#7's outside-diff Major and #8's two nitpicks were not).
+    /// comments: N" in its newer one, which labels each item. Both are counted, a labelled item by its label (#7's outside-diff
+    /// Major and #8's two Trivial nitpicks were not counted at first).
     /// </summary>
     [Fact]
     public void A_review_body_s_outside_diff_findings_and_its_nitpicks_are_counted_in_either_format()
@@ -231,7 +232,7 @@ public sealed class CodeRabbitRuleTests
         {
             return;
         }
-        string body = "**Actionable comments posted: 1**\n\n> [!CAUTION]\n> Some comments are outside the diff.\n>\n> **Outside diff range comments (1)**\n>\n> <details>\n> <summary><strong><picture></picture> Major</strong> keep it outside</summary>\n>\n> `scripts/promote.sh:128`\n> **<picture><img src=\"x/major-16.svg\" alt=\"\"></picture> Major** \u00b7 **Functional Correctness**\n>\n> **Keep downloaded artifacts outside the worktree.**\n\n<details>\n<summary> Nitpick comments: 2</summary>\n";
+        string body = "**Actionable comments posted: 1**\n\n> [!CAUTION]\n> Some comments are outside the diff.\n>\n> **Outside diff range comments (1)**\n>\n> <details>\n> <summary><strong><picture></picture> Major</strong> keep it outside</summary>\n>\n> `scripts/promote.sh:128`\n> **<picture><img src=\"x/major-16.svg\" alt=\"\"></picture> Major** \u00b7 **Functional Correctness**\n>\n> **Keep downloaded artifacts outside the worktree.**\n\n<details>\n<summary> Nitpick comments: 2</summary>\n`9-11`: **<picture><img src=\"x/neutral-16.svg\" alt=\"\"></picture> Trivial** \u00b7 **Maintainability**\n\n<summary> Review info</summary>\n";
         string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-body-{Guid.NewGuid():N}");
         Directory.CreateDirectory(dir);
         try
@@ -243,7 +244,9 @@ public sealed class CodeRabbitRuleTests
             using var counted = JsonDocument.Parse(output);
             JsonElement findings = counted.RootElement.GetProperty("findings");
             Assert.Equal(1, findings.GetProperty("major").GetInt32());
-            Assert.Equal(2, findings.GetProperty("nitpick").GetInt32());
+            // The newer body labels each nitpick: one here says Trivial, and the one the count names with no header is a nitpick.
+            Assert.Equal(1, findings.GetProperty("trivial").GetInt32());
+            Assert.Equal(1, findings.GetProperty("nitpick").GetInt32());
             Assert.Equal(1, counted.RootElement.GetProperty("actionable").GetInt32());
         }
         finally
@@ -353,6 +356,14 @@ public sealed class CodeRabbitRuleTests
             var (code, output) = Script(new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" dispose 1.0.4.900 1 0 \"{path}\"") { WorkingDirectory = dir });
             Assert.True(code != 0, output);
             Assert.Contains("cannot be", output, StringComparison.Ordinal);
+
+            // A re-run that could not read its review never replaces one that was read (CodeRabbit on #17).
+            File.WriteAllText(path, JsonSerializer.Serialize(new { about = "test", rows = new[] { new { version = "1.0.4.900", pr = 9, sha = "01234567", reviewed = "full", actionable = 1, findings = new { critical = 0, major = 0, minor = 1, trivial = 0, nitpick = 0 }, @fixed = 1, answered_as_wrong = 0 } } }));
+            Python(dir, $"fold \"{row}\" \"{path}\"");
+            using var read = JsonDocument.Parse(File.ReadAllText(path));
+            JsonElement still = read.RootElement.GetProperty("rows")[0];
+            Assert.Equal("full", still.GetProperty("reviewed").GetString());
+            Assert.Equal(1, still.GetProperty("fixed").GetInt32());
         }
         finally
         {

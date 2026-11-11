@@ -211,3 +211,11 @@ What it costs: five runners' setup where there was one, each checking out, insta
 - [`scripts/gate_cuts.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_cuts.sh): the two cuts.
 - [`scripts/gate_job.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_job.sh): each check job's own verdict.
 - [`scripts/promote.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/promote.sh): the seven jobs it trusts.
+
+## Addendum, 2026-11-10 (1.0.5.8): yard-test's lock is never held by a child that outlives it
+
+`scripts/yard-test.sh` takes its one-at-a-time lock as its own descriptor 9. Every command it ran inherited that descriptor, and a dotnet build leaves the Roslyn compile server running after the build, holding it: on 9 November a run waited 13 minutes behind a server 28 minutes old until `dotnet build-server shutdown --vbcscompiler` freed it (the failure log's entry of that day). Each command that starts a child now closes descriptor 9 for it (`9>&-`), the suites and npm ci alike, and the lock stays the script's own. Before its checkout the script also restores the build output a branch tracked, so a checkout to a branch that ignores it is not refused, as one was the same evening. `YardTestScriptTests` leaves a child running from a stand-in suite and takes the lock the moment the run ends; on the script before this version that case is red. The box's copy is installed from the repository with `install -m 755 scripts/yard-test.sh ~/.local/bin/yard-test` and read back with `cmp`.
+
+The review wait and the request script are held too: `GateReviewWaitTests` runs `scripts/coderabbit_review.py`'s wait and `scripts/gate_pr.sh` against a stand-in gh, for a completed review, no request, a review that never completes inside the ceiling and a skipped check, and for opening, reusing and closing the request, which the cold review of 1.0.4.176 and 1.0.4.177 asked for.
+
+Correction, 1.0.5.8: the addendum of 1.0.5.4 gives the one gate job's duration as its measure (882 seconds median), and then 1,116 seconds at 1.0.5.2 and 741 at 1.0.5.3, which are gateSeconds, the run's start to the promote step. Those two ships' gate jobs ran 1,083 and 723 seconds.

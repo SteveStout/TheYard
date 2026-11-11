@@ -36,6 +36,9 @@ rewrite("README.md", [
     (r"the gate's results for \d+\.\d+\.\d+\.\d+ hold [\d,]+ test runs", f"the gate's results for {ver} hold {total:,} test runs"),
     (r"\| Vitest \| \d+ at \d+\.\d+\.\d+\.\d+ \|", f"| Vitest | {n('vitest')} at {ver} |"),
     (r"(?m)^\*\*How [\d,]+ is counted\*\*.*$", para.replace("\\", "\\\\")),
+    # The two figures the gate's paragraph and the suite table state, so neither is left behind when a suite grows.
+    (r"the \d+ live Cosmos DB tests", f"the {n('xunit-live')} live Cosmos DB tests"),
+    (r"(\| End to end \| Playwright \| )\d+( declared \|)", lambda m: f"{m.group(1)}{declared}{m.group(2)}"),
 ])
 # The review of the architecture, finding 5: once PublicFaceTests holds the README's xUnit number to this
 # file (The_test_count_in_the_readme_is_the_gate_s_count), every place the README and Built with AI state it is written here

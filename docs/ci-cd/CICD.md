@@ -75,7 +75,7 @@ the owner's yes, and it ships by hand only: the gate's promote job ends green
 with a notice and moves nothing, and the person promoting names it,
 `OWNER_YES=<version> bash scripts/promote.sh "$raw" <gate seconds> <version> <run>`, with `raw` downloaded as above.
 
-**CodeRabbit reads every ship** (ADR-129, CodeRabbit, one rung at a time). Right
+**CodeRabbit is asked to read every ship** (ADR-129, CodeRabbit, one rung at a time); a ship it does not get to is logged as not reviewed. Right
 after the push of `gate/<version>`, the machine that ships runs
 `bash scripts/gate_pr.sh open <version>`: a pull request from the gate branch into
 `main`, titled with the commit's subject, and the comment that asks CodeRabbit for

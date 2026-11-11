@@ -20,7 +20,10 @@ import json, os, re, subprocess, sys, time, datetime
 BOT = "coderabbitai[bot]"
 SEVERITIES = ["critical", "major", "minor", "trivial", "nitpick"]
 REPO = os.environ.get("GITHUB_REPOSITORY", "SteveStout/TheYard")
-NO_REQUEST_AFTER = 300
+# Five minutes with no request means none was opened; a read every 20 seconds. Both can be shortened by the
+# environment, which only the tests that run the wait for real do.
+NO_REQUEST_AFTER = int(os.environ.get("CODERABBIT_NO_REQUEST_AFTER", "300"))
+POLL_SECONDS = float(os.environ.get("CODERABBIT_POLL_SECONDS", "20"))
 
 
 def gh(path):
@@ -73,6 +76,26 @@ def outside(body):
     return labels + ["nitpick"] * max(0, int(m.group(1)) - len(labels))
 
 
+ITEM = re.compile(r"^`[^`]+`: \*\*<picture>.*?</picture>\s*(Critical|Major|Minor|Trivial)\*\*", re.M)
+SECTION_END = re.compile(r"Additional comments|Prompt to fix all|Review info|Outside diff range|Duplicate comments")
+
+
+def nitpicks(body):
+    """The nitpick section of a review body: in the older body only its count, "Nitpick comments (N)", which are all
+    nitpicks; in the newer, "Nitpick comments: N", each item under its own header label, and any the count names
+    that no header does as nitpicks."""
+    older = re.search(r"Nitpick comments \((\d+)\)", body)
+    if older:
+        return ["nitpick"] * int(older.group(1))
+    newer = re.search(r"Nitpick comments:\s*(\d+)", body)
+    if not newer:
+        return []
+    rest = body[newer.end():]
+    end = SECTION_END.search(rest)
+    labels = [m.group(1).lower() for m in ITEM.finditer(rest[: end.start()] if end else rest)][: int(newer.group(1))]
+    return labels + ["nitpick"] * (int(newer.group(1)) - len(labels))
+
+
 def count(reviews, comments, sha=None):
     """Findings by severity on one commit: each inline comment that opens a thread once (a reply in a thread is not
     a finding), the findings a review body carries from outside the diff, and the nitpicks a review body folds into
@@ -91,10 +114,7 @@ def count(reviews, comments, sha=None):
         m = re.search(r"Actionable comments posted:\s*(\d+)", body)
         if m:
             actionable += int(m.group(1))
-        n = re.search(r"Nitpick comments(?: \((\d+)\)|:\s*(\d+))", body)
-        if n:
-            found["nitpick"] += int(n.group(1) or n.group(2))
-        for label in outside(body):
+        for label in nitpicks(body) + outside(body):
             found[label] += 1
     return found, actionable
 
@@ -165,7 +185,9 @@ def empty_row(version, sha, reviewed):
 
 
 def fold(row_path, log_path):
-    """One ship's row into the findings log, newest last; a re-run of a version replaces its row."""
+    """One ship's row into the findings log, newest last; a re-run of a version replaces its row, except that a re-run
+    which could not read a review never replaces one that was read, and what became of the findings is kept with the
+    findings it counts. Outcomes that no longer fit the row's findings are set back to null, to be read again."""
     with open(row_path, encoding="utf-8") as f:
         row = json.load(f)
     log = {"about": "One row per ship: CodeRabbit's review of the gate's pull request, the evidence for every rung of the ladder (ADR-129).", "rows": []}
@@ -173,9 +195,16 @@ def fold(row_path, log_path):
         with open(log_path, encoding="utf-8") as f:
             log = json.load(f)
     kept = next((r for r in log["rows"] if r.get("version") == row.get("version")), None)
+    unread = lambda r: (r.get("reviewed") or "").startswith("not reviewed") or (r.get("reviewed") or "").endswith("not read")
+    if kept is not None and unread(row) and not unread(kept):
+        print(f"findings log: {row.get('version')} keeps its read review; this read says {row.get('reviewed')}")
+        return
     for key in ("fixed", "answered_as_wrong"):
         if kept is not None and row.get(key) is None and kept.get(key) is not None:
             row[key] = kept[key]
+    if (row.get("fixed") or 0) + (row.get("answered_as_wrong") or 0) > sum(row["findings"].values()):
+        print(f"::warning::findings log: {row.get('version')}'s outcomes no longer fit its findings; set back to null to be read again")
+        row["fixed"] = row["answered_as_wrong"] = None
     log["rows"] = [r for r in log["rows"] if r.get("version") != row.get("version")] + [row]
     with open(log_path, "w", encoding="utf-8") as f:
         json.dump(log, f, indent=2, ensure_ascii=False)
@@ -228,6 +257,9 @@ def main():
         best = read_review(numbers, sha)
         if best is None:
             sys.exit(f"recount: the requests {numbers} for {version} could not be read")
+        decided = (row.get("fixed") or 0) + (row.get("answered_as_wrong") or 0)
+        if decided > sum(best[4].values()):
+            sys.exit(f"recount: {version} now reads {sum(best[4].values())} findings and holds {decided} outcomes; set them again with dispose first")
         row["prs"] = numbers
         row["findings"], row["actionable"] = best[4], best[1]
         if best[2]:
@@ -264,7 +296,7 @@ def main():
                 if newest.get("status") == "completed" and ("skipped" not in words.lower() or "rate limit" in words.lower()):
                     run = newest
                     break
-        time.sleep(20)
+        time.sleep(POLL_SECONDS)
     row = empty_row(branch.removeprefix("gate/"), sha, None)
     row["pr"] = pr
     row["waited_seconds"] = int(time.monotonic() - start)

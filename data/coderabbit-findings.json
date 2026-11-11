@@ -88,8 +88,8 @@
         "critical": 0,
         "major": 0,
         "minor": 1,
-        "trivial": 0,
-        "nitpick": 2
+        "trivial": 2,
+        "nitpick": 0
       },
       "prs": [
         8
@@ -233,8 +233,8 @@
         "critical": 0,
         "major": 0,
         "minor": 1,
-        "trivial": 0,
-        "nitpick": 1
+        "trivial": 1,
+        "nitpick": 0
       },
       "prs": [
         16
@@ -260,10 +260,34 @@
         "trivial": 0,
         "nitpick": 0
       },
+      "fixed": 1,
+      "answered_as_wrong": 0,
+      "prs": [
+        18
+      ]
+    },
+    {
+      "version": "1.0.5.8",
+      "pr": 19,
+      "sha": "f9e38586",
+      "level": 0,
+      "at": "2026-11-11T01:17:37Z",
+      "waited_seconds": 774,
+      "review_seconds": 758,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 3,
+      "findings": {
+        "critical": 0,
+        "major": 1,
+        "minor": 2,
+        "trivial": 0,
+        "nitpick": 0
+      },
       "fixed": null,
       "answered_as_wrong": null,
       "prs": [
-        18
+        19
       ]
     }
   ]
