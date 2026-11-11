@@ -2095,3 +2095,70 @@ test('the time to first touch card draws one row a day against 60 minutes, from 
   await expect(days.locator('tbody tr')).toHaveCount(7);
 });
 // #endregion pounce-card
+
+// #region channels-card
+/**
+ * The funnel by channel (ADR: The Nightly Function on the Admin tab, the addendum on the funnel by channel): a local run
+ * has no job hunt database, so the real route answers unread and says why; the drawn card is held to two weeks in the
+ * route's own shape, newest first, with only the channels that moved, each reply rate read from its counts.
+ */
+test('the funnel by channel card draws the channels of each week from the route', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=channels');
+  const card = page.getByTestId('channels-card');
+  await expect(card.getByTestId('channels-absent')).toContainText('only Azure holds', {
+    timeout: 60_000,
+  });
+  await expect(card.getByTestId('channels-measure')).toContainText(
+    'pounce, hotmgr, the email campaign'
+  );
+  const cell = (channel: string, touches = 0, replies = 0, rooms = 0) => ({
+    channel,
+    touches,
+    replies,
+    rooms,
+  });
+  const channels = [
+    'pounce',
+    'hotmgr',
+    'email campaign',
+    'old contacts',
+    'applications',
+    'recruiters',
+  ];
+  const body = JSON.stringify({
+    available: true,
+    note: 'opens and the highest rung are not counted here yet',
+    channels,
+    weeks: [
+      {
+        week: '2026-11-09',
+        channels: [
+          cell('pounce', 1),
+          cell('hotmgr', 40, 2),
+          cell('email campaign'),
+          cell('old contacts'),
+          cell('applications', 5, 0, 1),
+          cell('recruiters', 3, 1),
+        ],
+      },
+      { week: '2026-11-02', channels: channels.map((name) => cell(name)) },
+    ],
+    source: "the card schema's Channels view, from the tracker's rows",
+  });
+  await page.route('**/api/admin/channels', (route) =>
+    route.fulfill({ contentType: 'application/json', body })
+  );
+  await page.reload();
+  const weeks = card.getByTestId('channels-weeks');
+  await expect(weeks).toContainText('2026-11-09', { timeout: 60_000 });
+  await expect(weeks.locator('tbody tr')).toHaveCount(5);
+  await expect(weeks).toContainText('hotmgr');
+  await expect(weeks).toContainText('5 %');
+  await expect(weeks).toContainText('33 %');
+  await expect(card.getByTestId('channels-source')).toContainText(
+    'Not here yet: opens and the highest rung'
+  );
+});
+// #endregion channels-card

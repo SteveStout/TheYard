@@ -6,7 +6,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <summary>The resource cards' route, a window of one resource from its keep, the nightly card's run histories, and the one address a card is fed through.</summary>
 public static class CloudEndpoints
 {
-    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process}, GET /api/admin/incidents, GET /api/admin/funnel and GET /api/admin/pounce.</summary>
+    /// <summary>Maps GET /api/admin/cloud/{key}, POST /api/admin/cloud/nightly/run, the box's two posts and its live read, GET /api/admin/cloud/nightly/runs/{process}, GET /api/admin/incidents, GET /api/admin/funnel, GET /api/admin/pounce and GET /api/admin/channels.</summary>
     public static IEndpointRouteBuilder MapCloudEndpoints(this IEndpointRouteBuilder app)
     {
         // #region resource-endpoint
@@ -99,6 +99,14 @@ public static class CloudEndpoints
             .WithTags("Admin")
             .WithSummary("Time to first touch from the Function's PounceDay lines: for each of the last seven Central days, roles caught, touched, the median and worst minutes to the first message, and the ones still waiting, against 60 minutes");
         // #endregion pounce-endpoint
+        // #region channels-endpoint
+        // Public like the funnel: counts a channel a week, nothing that names a company, a title or a person (ADR-109,
+        // the addendum on the funnel by channel). Read by the owner alone: no message ever links the Admin tab.
+        app.MapGet("/api/admin/channels", Channels)
+            .WithName("GetChannels")
+            .WithTags("Admin")
+            .WithSummary("The job hunt's funnel by channel from the card schema's Channels view: for each week, newest first, the touches, replies and rooms booked of pounce, hotmgr, the email campaign, old contacts, applications and recruiters");
+        // #endregion channels-endpoint
         return app;
     }
 
@@ -118,6 +126,9 @@ public static class CloudEndpoints
 
     private static async Task<Ok<PounceReport>> Pounce(ReadPounceHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadPounceQuery(), cancellation));
+
+    private static async Task<Ok<ChannelsReport>> Channels(ReadChannelsHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadChannelsQuery(), cancellation));
 
     private static async Task<Ok<IncidentsReport>> Incidents(ReadIncidentsHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadIncidentsQuery(), cancellation));
