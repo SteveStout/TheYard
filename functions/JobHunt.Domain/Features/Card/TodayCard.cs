@@ -20,6 +20,7 @@ namespace JobHunt.Domain.Features.Card;
 /// <param name="Previous">TODAY.md as it stood before this card.</param>
 /// <param name="Calls">The next 72 hours' calls, each with its must-answers line.</param>
 /// <param name="Funnel">The week's funnel line (FunnelWeek), or empty when it was not read.</param>
+/// <param name="Signal">The hiring signal's line, read from nightly/hiring-signal.md, or empty.</param>
 public sealed record TodayInputs(
     DateTime At,
     string? QueuePath,
@@ -36,7 +37,11 @@ public sealed record TodayInputs(
     string Essays,
     string Previous,
     IReadOnlyList<string> Calls,
-    string Funnel = "");
+    string Funnel = "")
+{
+    /// <summary>The hiring signal's line, or empty.</summary>
+    public string Signal { get; init; } = "";
+}
 
 /// <summary>
 /// The one card Steve reads (PLAN-AUTOHUNT rung 4): J:\TODAY.md, rewritten whole at 7:30 Central by the Function with
@@ -50,6 +55,9 @@ public static class TodayCard
 {
     /// <summary>The card on the share.</summary>
     public const string Path = "TODAY.md";
+
+    /// <summary>The hiring signal's one line, which the pounce's hourly tick writes (HiringSignal.Path).</summary>
+    public const string SignalPath = "nightly/hiring-signal.md";
 
     /// <summary>The minutes of his time the card may take.</summary>
     public const int CapMinutes = 15;
@@ -174,6 +182,10 @@ public static class TodayCard
         if (inputs.Funnel.Length > 0)
         {
             head.Append(inputs.Funnel).Append("\n\n");
+        }
+        if (inputs.Signal.Length > 0)
+        {
+            head.Append(inputs.Signal).Append("\n\n");
         }
         return head.Append(text).ToString();
     }

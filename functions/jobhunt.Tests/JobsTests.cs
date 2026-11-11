@@ -216,7 +216,7 @@ public sealed partial class JobsTests
             .GetFields(BindingFlags.NonPublic | BindingFlags.Static).Where(f => f.IsLiteral).Select(f => (string)f.GetRawConstantValue()!).ToList();
         var wrong = statements.SelectMany(sql => Qualified().Matches(sql)).Where(m => !tables[aliases[m.Groups[1].Value]].Contains(m.Groups[2].Value)).Select(m => m.Value).ToList();
         Assert.True(wrong.Count == 0, string.Join(", ", wrong));
-        Assert.Equal(4, statements.Count);
+        Assert.Equal(5, statements.Count);
         Assert.All(statements, sql => Assert.DoesNotMatch(@"\b(INSERT|UPDATE|DELETE|MERGE|TRUNCATE)\b", sql));
         Assert.True(SqlJobsReader.Yearly("per-year-salary") && SqlJobsReader.Yearly("1 YEAR") && !SqlJobsReader.Yearly("per-hour-wage"));
     }
