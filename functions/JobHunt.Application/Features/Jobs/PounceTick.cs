@@ -78,7 +78,7 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
             }
             var (live, known) = PounceClock.LiveAt(f.PublishedAt, f.FirstSeenAt);
             failed = failed is { Length: > 300 } ? failed[..300] : failed;
-            judged.Add((new PounceRole(f.Key, candidate.Company, live, known, f.FirstSeenAt, now, failed, verdict.BandFlag, PounceClock.BudgetFlag(live, today)), candidate.Title, candidate.Url));
+            judged.Add((new PounceRole(f.Key, candidate.Company, live, known, f.FirstSeenAt, now, failed, verdict.BandFlag, PounceClock.BudgetFlag(live, today), f.CompanyKey), candidate.Title, candidate.Url));
         }
         return judged;
     }

@@ -15,7 +15,8 @@ namespace JobHunt.Domain.Features.Jobs;
 /// <param name="LiveKnown">True when the board gave that instant.</param>
 /// <param name="Budget">Went live in the last 21 days of a year not yet ended.</param>
 /// <param name="PassedAt">When the tick passed it.</param>
-public sealed record CaughtRole(long Key, string Company, string Title, string Url, string BandFlag, DateTimeOffset LiveAt, bool LiveKnown, bool Budget, DateTimeOffset PassedAt);
+/// <param name="CompanyKey">The company's registrable domain when the scan knows it, which the email leg looks the leader up on.</param>
+public sealed record CaughtRole(long Key, string Company, string Title, string Url, string BandFlag, DateTimeOffset LiveAt, bool LiveKnown, bool Budget, DateTimeOffset PassedAt, string? CompanyKey = null);
 
 /// <summary>
 /// What the pounce hands the box for a role it passed, so the program runs for that one role within the hour instead of
@@ -75,6 +76,10 @@ public static class PounceHandoff
             json.WriteBoolean("live_known", role.LiveKnown);
             json.WriteBoolean("budget", role.Budget);
             json.WriteString("passed_at", Iso(role.PassedAt));
+            if (role.CompanyKey is { Length: > 0 } domain)
+            {
+                json.WriteString("company_key", domain);
+            }
             json.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.ToArray());

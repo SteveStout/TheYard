@@ -9,7 +9,7 @@ internal static class PounceSql
 
     internal const string Fresh = """
         SELECT p.[Id], p.[Source], p.[BoardToken], c.[Names], p.[Title], p.[Url], p.[PostedAt], p.[FirstSeenAt], p.[Location], p.[RemoteStance],
-            p.[CompMin], p.[CompMax], p.[CompCurrency], p.[CompInterval], p.[PublishedAt]
+            p.[CompMin], p.[CompMax], p.[CompCurrency], p.[CompInterval], p.[PublishedAt], p.[CompanyKey]
         FROM [jobhunt].[Postings] p LEFT JOIN [campaign].[Companies] c ON c.[Key] = p.[CompanyKey]
         WHERE p.[FirstSeenAt] >= @since AND NOT EXISTS (SELECT 1 FROM [jobhunt].[PounceRoles] r WHERE r.[PostingKey] = p.[Id])
         """;

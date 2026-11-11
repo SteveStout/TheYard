@@ -11,7 +11,9 @@ namespace JobHunt.Functions;
 /// dispatcher for each code that reached rung 2 or was opened twice (PounceFollowUps): one per person per role, none for
 /// a person who replied, its run line process:PounceFollowUp and one line on nightly/pounce/followups.log for each it
 /// found. It sends nothing itself; the item sends only when POUNCE_RUN says live, only on LinkedIn, and only to a leader
-/// who accepted the request.
+/// who accepted the request. Then, in the same firing, the email leg of each caught role in shadow (PounceEmails): the
+/// leader the feed named looked up once with Hunter when HUNTER_KEY holds a key, kept only with the leader's own name,
+/// and written down, never sent.
 /// </summary>
 // #endregion summary
 /// <remarks>
@@ -43,6 +45,12 @@ public sealed class PounceFollowUpTimer(IMergeStore store, IHttpClientFactory ht
                 ? new FollowUpPass(0, 0, 0, 0, 0, 0, "switch_off")
                 : await new PounceFollowUps(store, new SiteVisits(http), new SqlJobsReader(sql!), time).RunAsync(mode, ct);
             Counted(run, pass);
+            if (mode != PounceHandoff.Off)
+            {
+                ILeaderFinder? finder = HunterFinder.FromSetting(Environment.GetEnvironmentVariable(HunterFinder.Setting), http) is { } hunter ? new FinderLeaders(hunter) : null;
+                var emails = await new PounceEmails(store, finder, new SqlPounceBook(sql!), time, HunterFinder.MonthCap).RunAsync(mode, ct);
+                run.Count("email_roles", emails.Roles).Count("email_asked", emails.Asked).Count("email_kept", emails.Kept).Count("email_refused", emails.Refused);
+            }
         }
         catch (Exception ex)
         {
@@ -90,6 +98,17 @@ public sealed class PounceFollowUpTimer(IMergeStore store, IHttpClientFactory ht
     }
 
     private async Task<string> TextAsync(string path, CancellationToken ct) => TrackerCsvText.Decode(await store.ReadAsync(path, ct));
+
+    /// <summary>The campaign's finder as the pounce's email leg asks it: the same key, the same score and page rules.</summary>
+    private sealed class FinderLeaders(IAddressFinder finder) : ILeaderFinder
+    {
+        /// <inheritdoc />
+        public string Name => finder.Name;
+
+        /// <inheritdoc />
+        public async Task<LeaderAddress?> FindAsync(string fullName, string domain, CancellationToken ct) =>
+            await finder.FindAsync(fullName, domain, ct) is { } found ? new LeaderAddress(found.Address, found.SourceUrl) : null;
+    }
 
     /// <summary>Two answers opens_report.py saved, read as the site would answer them now.</summary>
     private sealed class SavedVisits(string links, string? review) : ISiteVisits

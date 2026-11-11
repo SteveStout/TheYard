@@ -23,7 +23,7 @@ public static class PounceHandoffs
         await store.EnsureFolderAsync(PounceHandoff.Ready, ct);
         foreach (var (role, title, url) in passed)
         {
-            var caught = new CaughtRole(role.Key, role.Company, title, url, role.BandFlag, role.LiveAt, role.LiveKnown, role.BudgetFlag, role.JudgedAt);
+            var caught = new CaughtRole(role.Key, role.Company, title, url, role.BandFlag, role.LiveAt, role.LiveKnown, role.BudgetFlag, role.JudgedAt, role.CompanyKey);
             await store.WriteAsync(PounceHandoff.Path(caught), TrackerCsvText.Encode(PounceHandoff.Json(caught)), ct);
             await PlaceAsync(store, $"{PounceHandoff.Ready}/.pounce-{role.Key}.tmp", PounceHandoff.Item(caught, mode), PounceHandoff.ReadyPath(caught), ct);
             await PlaceAsync(store, $"{PounceHandoff.Ready}/.pounce90-{role.Key}.tmp", PouncePage.Item(caught), PouncePage.ReadyPath(caught), ct);

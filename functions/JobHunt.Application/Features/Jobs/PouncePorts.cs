@@ -45,7 +45,8 @@ public sealed record OpenRole(long Key, string Company, DateTimeOffset LiveAt);
 /// <param name="Failed">The first reason it failed, or null when it passed.</param>
 /// <param name="BandFlag">PASS, FLAG, SKIP or NONE.</param>
 /// <param name="BudgetFlag">Went live in the last 21 days of a year not yet ended.</param>
-public sealed record PounceRole(long Key, string Company, DateTimeOffset LiveAt, bool LiveKnown, DateTimeOffset FirstSeenAt, DateTimeOffset JudgedAt, string? Failed, string BandFlag, bool BudgetFlag)
+/// <param name="CompanyKey">The company's registrable domain when the scan knows it; carried to the hand-off, never stored.</param>
+public sealed record PounceRole(long Key, string Company, DateTimeOffset LiveAt, bool LiveKnown, DateTimeOffset FirstSeenAt, DateTimeOffset JudgedAt, string? Failed, string BandFlag, bool BudgetFlag, string? CompanyKey = null)
 {
     /// <summary>True when every gate passed it.</summary>
     public bool Passed => Failed is null;
