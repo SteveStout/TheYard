@@ -433,6 +433,30 @@
       "prs": [
         25
       ]
+    },
+    {
+      "version": "1.0.5.15",
+      "pr": 26,
+      "sha": "c375ad08",
+      "level": 0,
+      "at": "2026-11-11T06:07:02Z",
+      "waited_seconds": 815,
+      "review_seconds": 859,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 2,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 2,
+        "trivial": 1,
+        "nitpick": 0
+      },
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        26
+      ]
     }
   ]
 }

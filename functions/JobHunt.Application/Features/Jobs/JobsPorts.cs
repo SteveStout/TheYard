@@ -11,13 +11,26 @@ public interface IJobsPostings
 
     /// <summary>The newest description text of each posting asked for.</summary>
     Task<IReadOnlyDictionary<long, string>> TextsAsync(IReadOnlyList<long> keys, CancellationToken ct);
+
+    /// <summary>The postings first seen since <paramref name="seenSince"/> that the pounce has not judged, with no description text.</summary>
+    Task<IReadOnlyList<FreshPosting>> FreshAsync(DateTimeOffset seenSince, CancellationToken ct);
 }
+
+/// <summary>A posting the pounce has not judged yet.</summary>
+/// <param name="Key">jobhunt.Postings.Id.</param>
+/// <param name="Candidate">The role, with no text.</param>
+/// <param name="FirstSeenAt">When a scan first saw it.</param>
+/// <param name="PublishedAt">The instant its board says it went up, or null.</param>
+public sealed record FreshPosting(long Key, Candidate Candidate, DateTimeOffset FirstSeenAt, DateTimeOffset? PublishedAt);
 
 /// <summary>The tracker's rows as the SQL copy holds them (jobhunt.Tracker), seven cells each, in file order.</summary>
 public interface ITrackerRows
 {
     /// <summary>Every row under the header.</summary>
     Task<IReadOnlyList<string[]>> RowsAsync(CancellationToken ct);
+
+    /// <summary>The rows written to SQL at or after <paramref name="since"/>, each with its instant.</summary>
+    Task<IReadOnlyList<TrackerTouch>> SinceAsync(DateTimeOffset since, CancellationToken ct);
 }
 
 /// <summary>What one picker pass found.</summary>

@@ -75,7 +75,7 @@ public static partial class FunnelCount
             {
                 continue;
             }
-            if (Channel(notes, row[3]) is { } channel)
+            if (TrackerRows.Channel(notes, row[3]) is { } channel)
             {
                 touched.TryAdd(person, channel);
             }
@@ -94,23 +94,6 @@ public static partial class FunnelCount
         long Touched(string channel) => touched.Values.Count(c => c == channel);
         return new FunnelDay(day, Scanned(inputs.PassLog, day), Ready(inputs.Jobs), applied, Touched("invites"), Touched("inmails"), Touched("campaign"),
             Touched("messages"), Touched("emails"), TodayParts.Lines(inputs.Leaders).Count(l => l.StartsWith("## ", StringComparison.Ordinal)), replied.Count, booked);
-    }
-
-    /// <summary>The channel a row's opening phrase sent on, or null when the row is not a send to a person.</summary>
-    /// <param name="notes">The Notes cell, leading space removed.</param>
-    /// <param name="communication">The row's Communication cell.</param>
-    public static string? Channel(string notes, string communication)
-    {
-        if (Sent().Match(notes) is not { Success: true } sent || Refused().IsMatch(sent.Value))
-        {
-            return null;
-        }
-        string phrase = sent.Value;
-        return phrase.Contains("CONNECTION REQUEST", StringComparison.Ordinal) ? "invites"
-            : phrase.Contains("INMAIL", StringComparison.Ordinal) ? "inmails"
-            : phrase.Contains("CAMPAIGN", StringComparison.Ordinal) ? "campaign"
-            : communication.Trim().StartsWith("LinkedIn", StringComparison.OrdinalIgnoreCase) ? "messages"
-            : "emails";
     }
 
     /// <summary>A tracker Date cell as a day: M/d/yyyy, MM/dd/yyyy or yyyy-MM-dd; null for anything else.</summary>
@@ -175,12 +158,6 @@ public static partial class FunnelCount
 
     [GeneratedRegex(@"^(?:INTERVIEW BOOKED|CALL BOOKED|SCREEN BOOKED|BOOKED|(?:ROUND \d+ )?INTERVIEW SCHEDULED)\b")]
     private static partial Regex Booked();
-
-    [GeneratedRegex(@"^(?:[A-Z][A-Z\-]*[ ,]+){0,8}?SENT\b")]
-    private static partial Regex Sent();
-
-    [GeneratedRegex(@"\b(?:NO|NOT|DECLINE)\b")]
-    private static partial Regex Refused();
 
     [GeneratedRegex(@"^INBOUND\b")]
     private static partial Regex Inbound();
