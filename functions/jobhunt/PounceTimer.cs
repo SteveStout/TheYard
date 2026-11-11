@@ -81,12 +81,11 @@ public sealed class PounceTimer(IMergeStore store, TimeProvider time, ILogger<Po
             run.Came("success", CentralClock.Local(run.Started).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             Counted(run, tick);
             string line = LogLine(CentralClock.Local(ended), kind, tick);
-            await store.EnsureFolderAsync("nightly", ct);
-            await store.AppendAsync(Log, TrackerCsvText.Encode(line + "\n"), ct);
+            await AppendLogAsync(store, log, run, line, ct);
             lines.Add(line);
             foreach (var day in tick.Days)
             {
-                var dayRun = new RunLine("PounceDay", ended).Came("success", day.Day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+                var dayRun = new RunLine("PounceDay", time.GetUtcNow()).Came("success", day.Day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
                 foreach (var (name, value) in day.Named)
                 {
                     dayRun.Count(name, value);
@@ -105,6 +104,24 @@ public sealed class PounceTimer(IMergeStore store, TimeProvider time, ILogger<Po
         finally
         {
             RunLines.Write(log, run, time.GetUtcNow());
+        }
+    }
+
+    /// <summary>
+    /// Appends the tick's line to the share's log. The log is a report and the tick's rows are in SQL by then, so a share
+    /// that does not answer fails nothing: the run line keeps log_failed=1 and the day lines are still written.
+    /// </summary>
+    public static async Task AppendLogAsync(IMergeStore store, ILogger log, RunLine run, string line, CancellationToken ct)
+    {
+        try
+        {
+            await store.EnsureFolderAsync("nightly", ct);
+            await store.AppendAsync(Log, TrackerCsvText.Encode(line + "\n"), ct);
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            log.LogWarning(ex, "pounce.log not written; the tick's rows are in SQL");
+            run.Count("log_failed", 1);
         }
     }
 

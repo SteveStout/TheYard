@@ -124,6 +124,43 @@ public sealed partial class PounceTickTests
     }
 
     [Fact]
+    public async Task A_share_that_does_not_answer_fails_no_tick_and_the_run_line_says_the_log_was_not_written()
+    {
+        using var scratch = new Scratch();
+        var run = new RunLine("Pounce", Now);
+        var log = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        await PounceTimer.AppendLogAsync(new Down(), log, run, "a line", CancellationToken.None);
+        Assert.Equal(("success", 1L), (run.Outcome, run.Counts["log_failed"]));
+        var written = new RunLine("Pounce", Now);
+        await PounceTimer.AppendLogAsync(scratch.Store, log, written, "a line", CancellationToken.None);
+        Assert.Equal("a line\n", scratch.Text(PounceTimer.Log));
+        Assert.False(written.Counts.ContainsKey("log_failed"));
+    }
+
+    [Fact]
+    public async Task A_tracker_row_with_no_numbered_Count_is_not_an_application_to_the_pounce_as_to_the_picker()
+    {
+        using var scratch = new Scratch();
+        var postings = new Postings();
+        postings.Add(1, Role(), Now.AddMinutes(-20), null, "C# on .NET");
+        var book = new Book(postings);
+        var tracker = new Tracker
+        {
+            Rows =
+            {
+                new[] { "NA", "NA", "Acme", "Greenhouse", "11/10/2026", "", "SUBMITTED: Principal Software Engineer" },
+                new[] { "12", "NA", "Globex", "Greenhouse", "11/10/2026", "", "SUBMITTED: Principal Software Engineer" },
+            },
+        };
+        postings.Add(2, Role(company: "Globex"), Now.AddMinutes(-20), null, "C# on .NET");
+
+        await new PounceTick(scratch.Store, postings, tracker, book, new Fixed(Now)).RunAsync(false, CancellationToken.None);
+
+        Assert.Null(book.Rows[1].Role.Failed);
+        Assert.Equal("applied already, Count 12", book.Rows[2].Role.Failed);
+    }
+
+    [Fact]
     public async Task The_timer_with_no_database_is_blocked_and_says_so()
     {
         Assert.True(string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CAMPAIGN_SQL")), "the test host has no database setting");
@@ -207,6 +244,8 @@ public sealed partial class PounceTickTests
     {
         public List<TrackerTouch> Since { get; } = [];
 
+        public List<string[]> Rows { get; } = [];
+
         public int WholeReads { get; private set; }
 
         public int SinceReads { get; private set; }
@@ -214,7 +253,7 @@ public sealed partial class PounceTickTests
         public Task<IReadOnlyList<string[]>> RowsAsync(CancellationToken ct)
         {
             WholeReads++;
-            return Task.FromResult<IReadOnlyList<string[]>>([]);
+            return Task.FromResult<IReadOnlyList<string[]>>(Rows);
         }
 
         public Task<IReadOnlyList<TrackerTouch>> SinceAsync(DateTimeOffset since, CancellationToken ct)
@@ -222,6 +261,29 @@ public sealed partial class PounceTickTests
             SinceReads++;
             return Task.FromResult<IReadOnlyList<TrackerTouch>>([.. Since.Where(r => r.WrittenAt >= since)]);
         }
+    }
+
+    private sealed class Down : IMergeStore
+    {
+        public Task EnsureFolderAsync(string folder, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task WriteAsync(string path, byte[] bytes, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task ReplaceAsync(string tempPath, string path, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task MoveAsync(string path, string destination, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task AppendAsync(string path, byte[] bytes, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task<bool> ExistsAsync(string path, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task<byte[]> ReadAsync(string path, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task<MergeEntry?> StatAsync(string path, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task<IReadOnlyList<MergeEntry>> ListFilesAsync(string folder, CancellationToken ct) => throw new IOException("the share did not answer");
+
+        public Task<IReadOnlyList<string>> ListFoldersAsync(string folder, CancellationToken ct) => throw new IOException("the share did not answer");
     }
 
     private sealed class Book(Postings postings) : IPounceBook

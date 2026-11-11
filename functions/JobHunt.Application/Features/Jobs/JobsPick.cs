@@ -72,6 +72,7 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
         }
     }
 
-    private static List<string[]> Applications(IEnumerable<string[]> rows) =>
+    /// <summary>The tracker rows both the picker and the pounce judge against: seven cells and a numbered Count.</summary>
+    internal static List<string[]> Applications(IEnumerable<string[]> rows) =>
         [.. rows.Where(row => row.Length >= 7 && int.TryParse(row[0].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out _))];
 }

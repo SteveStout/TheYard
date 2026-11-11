@@ -481,6 +481,30 @@
       "prs": [
         27
       ]
+    },
+    {
+      "version": "1.0.5.17",
+      "pr": 28,
+      "sha": "5c63481a",
+      "level": 0,
+      "at": "2026-11-11T08:33:29Z",
+      "waited_seconds": 777,
+      "review_seconds": 754,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 0,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 0,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        28
+      ]
     }
   ]
 }
