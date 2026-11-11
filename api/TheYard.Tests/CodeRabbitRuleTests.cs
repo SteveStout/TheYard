@@ -540,7 +540,10 @@ public sealed class CodeRabbitRuleTests
             using var read = JsonDocument.Parse(File.ReadAllText(log));
             JsonElement row = read.RootElement.GetProperty("rows")[0];
             Assert.Equal(1, row.GetProperty("findings").GetProperty("critical").GetInt32());
-            Assert.Equal("api/Held.cs", Assert.Single(row.GetProperty("critical_at").EnumerateArray()).GetProperty("path").GetString());
+            JsonElement held = Assert.Single(row.GetProperty("critical_at").EnumerateArray());
+            Assert.Equal("api/Held.cs", held.GetProperty("path").GetString());
+            // The place names the request it was found on, so the hold points at the right one (CodeRabbit on #33).
+            Assert.Equal(12, held.GetProperty("pr").GetInt32());
         }
         finally
         {

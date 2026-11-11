@@ -80,4 +80,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '130',
   },
+  adrLibraryDocsAtThePinnedVersion: {
+    title: 'ADR: Library docs at the pinned version',
+    menuLabel: 'ADR: Library docs at the pinned version',
+    url: '/api/docs/adr-library-docs-at-the-pinned-version',
+    kind: 'adr',
+    number: '131',
+  },
 } as const satisfies Record<string, RecordEntry>;

@@ -155,6 +155,8 @@ def read_review(numbers, sha):
         reviews = [r for r in read_reviews if (r.get("user") or {}).get("login") == BOT]
         comments = [c for c in read_comments if (c.get("user") or {}).get("login") == BOT]
         found, actionable, places = count(reviews, comments, sha)
+        # Each Critical names the request it was found on, which a carried Critical's row number would not.
+        places = [{**place, "pr": number} for place in places]
         here = (sum(found.values()), actionable, bool(reviews or comments), number, found, places)
         if best is None or here[:3] > best[:3]:
             best = here
