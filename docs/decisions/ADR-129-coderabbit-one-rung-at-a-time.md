@@ -194,3 +194,8 @@ What stopped being true: Decision 2, "Level 0 never holds a ship", and the ladde
 | 1.0.5.20 | #31 | Minor: keep the reorder date in step with the day the version rolls out | Answered as wrong: 1.0.5.20 rolled out on 11 November, the date the code holds |
 
 The gate's own notice still says Level 0 ships anyway; it is corrected in the next version that changes the gate's workflow.
+
+Corrections, 1.0.5.22, from CodeRabbit's review of 1.0.5.21 (#32), all three agreed with:
+- "A held version is fixed in a new commit on its own gate branch" would refuse at promote, which takes a gate branch one commit on main and no more. The fix is amended into the held gate commit, or squashed into it, and the branch pushed again under the same number.
+- A whole severity header is now what names a finding's severity in a review body. 1.0.5.21 read any quoted line that opened in bold or italics, so a finding's bold title holding a severity word ("Preserve _Minor_ metadata.") counted as a second finding and, inside the section's count, could crowd a Critical out, letting a ship through that should have held.
+- A Critical another request found for the same commit is kept. The count still comes from the one request that read the most, so a summary mirrored onto a second request is not counted twice, but a Critical on any request that carried the commit holds the promote.

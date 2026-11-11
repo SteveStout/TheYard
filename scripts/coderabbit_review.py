@@ -58,13 +58,17 @@ def severity(body):
 
 
 OUTSIDE = re.compile(r"Outside diff range comments \((\d+)\)")
+# A whole severity header, in the current form or the older italic one; a bold title holding a severity word is neither.
+HEADER = re.compile(
+    r"^(?:\*\*<picture>.*?</picture>\s*(Critical|Major|Minor|Trivial)\*\*|_[^_\n]*_\s*\|\s*_(Critical|Major|Minor|Trivial)_)"
+)
 
 
 def outside(body):
     """The findings CodeRabbit puts in the review body because GitHub cannot post them on a line outside the diff,
     each by the label in its own header, and any the section counts but no header names as nitpicks. A header is a
-    quoted line that opens in bold or italics, read with the label rule an inline comment's header is read with, so
-    the older italic label counts as surely as the current one and a remark under a header is never read."""
+    quoted line that is a whole severity header, current or older, so a remark or a title that holds a severity word
+    is never read as one."""
     m = OUTSIDE.search(body)
     if not m:
         return []
@@ -73,8 +77,8 @@ def outside(body):
         if not line.startswith(">"):
             break
         quoted.append(line[1:].strip())
-    found = (LABEL.search(line) for line in quoted if line.startswith(("**", "_")))
-    labels = [h.group(1).lower() for h in found if h][: int(m.group(1))]
+    found = (HEADER.match(line) for line in quoted)
+    labels = [(h.group(1) or h.group(2)).lower() for h in found if h][: int(m.group(1))]
     return labels + ["nitpick"] * max(0, int(m.group(1)) - len(labels))
 
 
@@ -142,6 +146,7 @@ def read_review(numbers, sha):
     the most findings is the review, so a review summary mirrored onto a second request is never counted twice. None when
     any request could not be read."""
     best = None
+    held = (0, [])
     for number in numbers:
         read_reviews = gh(f"repos/{REPO}/pulls/{number}/reviews")
         read_comments = gh(f"repos/{REPO}/pulls/{number}/comments")
@@ -153,6 +158,11 @@ def read_review(numbers, sha):
         here = (sum(found.values()), actionable, bool(reviews or comments), number, found, places)
         if best is None or here[:3] > best[:3]:
             best = here
+        if found["critical"] > held[0]:
+            held = (found["critical"], places)
+    # The count comes from one request, but a Critical another request found for the same commit is never dropped.
+    if best is not None and held[0] > best[4]["critical"]:
+        best = best[:4] + ({**best[4], "critical": held[0]}, held[1])
     return best
 
 

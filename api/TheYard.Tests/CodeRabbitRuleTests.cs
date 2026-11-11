@@ -291,6 +291,37 @@ public sealed class CodeRabbitRuleTests
             Directory.Delete(dir, recursive: true);
         }
     }
+    /// <summary>
+    /// Only a whole severity header names a finding's severity: a bold title that happens to hold a severity word, such as
+    /// "Preserve _Minor_ metadata.", is not a second finding, so it cannot crowd a Critical out of the section's count
+    /// (CodeRabbit on #32).
+    /// </summary>
+    [Fact]
+    public void A_finding_title_that_names_a_severity_is_not_counted_as_one()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string body = "**Actionable comments posted: 0**\n\n> **Outside diff range comments (2)**\n>\n> `a.py:1`\n> **<picture></picture> Minor** \u00b7 **Data**\n>\n> **Preserve _Minor_ metadata.**\n>\n> `b.py:2`\n> **<picture></picture> Critical** \u00b7 **Security**\n>\n> **Hold the release.**\n\n<summary> Review info</summary>\n";
+        string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-title-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "comments.json"), "[]");
+            File.WriteAllText(Path.Combine(dir, "reviews.json"), JsonSerializer.Serialize(new[] { new { commit_id = "abc", body } }));
+            var (code, output) = Script(new ProcessStartInfo("python3", $"scripts/coderabbit_review.py count \"{Path.Combine(dir, "comments.json")}\" abc \"{Path.Combine(dir, "reviews.json")}\"") { WorkingDirectory = Repo.Root() });
+            Assert.True(code == 0, output);
+            using var counted = JsonDocument.Parse(output);
+            JsonElement findings = counted.RootElement.GetProperty("findings");
+            Assert.Equal(1, findings.GetProperty("minor").GetInt32());
+            Assert.Equal(1, findings.GetProperty("critical").GetInt32());
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
     // #endregion the-log-counts-labels
 
     // #region every-ship-has-one-row
@@ -466,6 +497,50 @@ public sealed class CodeRabbitRuleTests
             Assert.Equal(2, row.GetProperty("actionable").GetInt32());
             Assert.Equal(11, row.GetProperty("pr").GetInt32());
             Assert.Equal([11, 12], row.GetProperty("prs").EnumerateArray().Select(n => n.GetInt32()));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+    /// <summary>
+    /// A Critical found on any request that carried the commit is kept, even when another request read more findings
+    /// for the same commit: the count still comes from one request, but the hold never loses a Critical (CodeRabbit on #32).
+    /// </summary>
+    [Fact]
+    public void A_critical_on_any_request_that_carried_the_commit_is_kept()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-critical-{Guid.NewGuid():N}");
+        string bin = Path.Combine(dir, "bin");
+        Directory.CreateDirectory(bin);
+        try
+        {
+            const string Sha = "8533b35f2f5bba622e01a1e1573f69908e577255";
+            string bot(string body, string? path = null) => JsonSerializer.Serialize(new { user = new { login = "coderabbitai[bot]" }, commit_id = Sha, body, path, line = 7 });
+            string Minor = "**<picture></picture> Minor** \u00b7 **Correctness**";
+            string Critical = "**<picture></picture> Critical** \u00b7 **Security**";
+            File.WriteAllText(Path.Combine(dir, "pulls.json"), JsonSerializer.Serialize(new[] { new[] { new { number = 12, head = new { sha = Sha } }, new { number = 11, head = new { sha = Sha } } } }));
+            File.WriteAllText(Path.Combine(dir, "summary.json"), "[[]]");
+            File.WriteAllText(Path.Combine(dir, "two.json"), $"[[{bot(Minor, "a.cs")},{bot(Minor, "b.cs")}]]");
+            File.WriteAllText(Path.Combine(dir, "one.json"), $"[[{bot(Critical, "api/Held.cs")}]]");
+            File.WriteAllText(Path.Combine(bin, "gh"), $"#!/usr/bin/env bash\ncase \"$*\" in *pulls?state=all*) cat \"{dir}/pulls.json\";; */pulls/11/comments*) cat \"{dir}/two.json\";; */pulls/12/comments*) cat \"{dir}/one.json\";; */reviews*) cat \"{dir}/summary.json\";; *) exit 1;; esac\n");
+            File.SetUnixFileMode(Path.Combine(bin, "gh"), UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+            string log = Path.Combine(dir, "log.json");
+            File.WriteAllText(log, JsonSerializer.Serialize(new { about = "test", rows = new[] { new { version = "1.0.5.3", pr = 12, sha = "8533b35f", reviewed = "full", actionable = 0, findings = new { critical = 0, major = 0, minor = 0, trivial = 0, nitpick = 0 } } } }));
+
+            var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" recount 1.0.5.3 gate/1.0.5.3 {Sha} \"{log}\"") { WorkingDirectory = dir };
+            start.Environment["PATH"] = bin + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+            var (code, output) = Script(start);
+            Assert.True(code == 0, output);
+
+            using var read = JsonDocument.Parse(File.ReadAllText(log));
+            JsonElement row = read.RootElement.GetProperty("rows")[0];
+            Assert.Equal(1, row.GetProperty("findings").GetProperty("critical").GetInt32());
+            Assert.Equal("api/Held.cs", Assert.Single(row.GetProperty("critical_at").EnumerateArray()).GetProperty("path").GetString());
         }
         finally
         {
