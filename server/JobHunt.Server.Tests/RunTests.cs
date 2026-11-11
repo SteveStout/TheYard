@@ -499,9 +499,9 @@ public sealed class RunTests
     public async Task A_lane_row_still_in_the_spool_holds_LinkedIn()
     {
         var morning = new Morning(Quiet);
-        morning.Share.Files["inbox/append-inbox/state.md/20261103-115500Z-reach1103-registry.md"] = "## LANE: reach1103 (Chrome). LinkedIn invites. | IN PROGRESS |";
+        morning.Share.Files["inbox/append-inbox/state.md/20261103-115500Z-reach1103-registry.md"] = "## LANE: reach1103 LIVE. Holds: chrome, linkedin. | IN PROGRESS |";
         (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
-        Assert.Contains("reach1103 LIVE on LinkedIn", output, StringComparison.Ordinal);
+        Assert.Contains("a hold on LinkedIn or Chrome by reach1103", output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -512,8 +512,8 @@ public sealed class RunTests
         morning.Share.Files["state.md"] = "## LANE: reach1103 (Claude in Chrome). LinkedIn invites. | IN PROGRESS |\n<!-- AID:20261103-113000Z-reach1103-registry -->\n";
         (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
 
-        Assert.Contains("invites: held, reach1103 LIVE on LinkedIn", output, StringComparison.Ordinal);
-        Assert.Contains("messages: held, reach1103 LIVE on LinkedIn", output, StringComparison.Ordinal);
+        Assert.Contains("invites: held, a hold on LinkedIn or Chrome by reach1103", output, StringComparison.Ordinal);
+        Assert.Contains("messages: held, a hold on LinkedIn or Chrome by reach1103", output, StringComparison.Ordinal);
         Assert.Contains(morning.Claude.Requests, request => IsLane(request, Lane.Apply));
         Assert.DoesNotContain(morning.Claude.Requests, request => IsLane(request, Lane.Invites));
     }
