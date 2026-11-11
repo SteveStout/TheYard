@@ -55,9 +55,8 @@ public sealed class CostKeeping(
         }
 
         var today = DateOnly.FromDateTime(now.UtcDateTime);
-        // A read under an hour old is the hour's read, wherever it was taken: a process that has just rolled, or the
-        // slot beside it, answers from it and spends none of Cost Management's allowance (ADR: What Azure charges, the
-        // addendum on keeping the read).
+        // A read under an hour old is the hour's read, wherever it was taken: a process that has just rolled answers from
+        // it and spends none of Cost Management's allowance (ADR: What Azure charges, the addendum on keeping the read).
         var kept = await history.ReadAsync(now.AddDays(-(CostWindows.ReadDays - 1)).UtcDay, cancellation);
         if (kept.ReadAt is { } keptAt && kept.Days.Count > 0 && now - keptAt < CostRecorder.Every)
         {

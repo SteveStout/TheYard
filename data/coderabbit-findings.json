@@ -409,6 +409,30 @@
       "prs": [
         24
       ]
+    },
+    {
+      "version": "1.0.5.14",
+      "pr": 25,
+      "sha": "09fa9ffb",
+      "level": 0,
+      "at": "2026-11-11T05:25:29Z",
+      "waited_seconds": 413,
+      "review_seconds": 402,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 1,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        25
+      ]
     }
   ]
 }
