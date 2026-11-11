@@ -8,8 +8,14 @@ import { createRenderer, EDGE_RULE, EDGE_VARY, RENDERED_HEADER } from './render'
 import { REVIEW_STOPS } from '../src/lib/reviewStops';
 
 /** Text as React writes it into HTML: the five characters an attribute or a text node escapes. */
+// As React's server render escapes text: the five characters it rewrites, a double quote among them.
 const escapeHtml = (text: string) =>
-  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#x27;');
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 
 // #region a-fake-api
 const API = 'https://api.example';

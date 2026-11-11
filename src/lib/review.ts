@@ -65,3 +65,13 @@ export function countedLine(countedFrom: string | null): string {
     ? 'Nothing is counted yet: the first visitor to open the route starts the count.'
     : `Counting from ${countedFrom}, the day version B shipped.`;
 }
+
+/**
+ * The day the stops were reordered, when Quality you can watch became stop 1 and One decision, with its code
+ * folded into it. Reach is kept by stop number, so a visit counted before this day shows under the new order's
+ * names; the card says so rather than relabel the kept rows.
+ */
+export const REVIEW_REORDERED = '2026-11-11';
+
+/** The line under the counting line, naming the day the order changed. */
+export const REORDERED_LINE = `The stops were reordered on ${REVIEW_REORDERED}, when Quality you can watch became stop 1. Reach before that day was counted against the earlier order.`;

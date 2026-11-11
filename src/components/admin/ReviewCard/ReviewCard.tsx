@@ -9,6 +9,7 @@ import {
   countedLine,
   funnelBars,
   reachedWords,
+  REORDERED_LINE,
   REVIEW_WINDOWS,
   tookWords,
   windowLabel,
@@ -99,6 +100,9 @@ export default function ReviewCard({ tick }: { tick: number }) {
           )}
           <p className={styles.muted} data-testid="review-counted">
             {countedLine(funnel.counted_from)}
+          </p>
+          <p className={styles.muted} data-testid="review-reordered">
+            {REORDERED_LINE}
           </p>
         </>
       )}

@@ -3,6 +3,8 @@ import {
   countedLine,
   funnelBars,
   reachedWords,
+  REORDERED_LINE,
+  REVIEW_REORDERED,
   REVIEW_WINDOWS,
   tookWords,
   windowLabel,
@@ -19,10 +21,10 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
     expect(bars).toHaveLength(8);
     expect(bars.map((bar) => bar.name)).toEqual([
       'Opened /review',
-      '1 The first screen',
-      '2 Bid in the room',
-      '3 What Azure charges',
-      '4 One decision, with its code',
+      '1 Quality you can watch',
+      '2 The first screen',
+      '3 Bid in the room',
+      '4 What Azure charges',
       '5 The gate that shipped this version',
       '6 One codebase, two stores',
       '7 The resume, and who vouches for it',
@@ -38,7 +40,7 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
 
   it('says how far a code got and how long it took, in the card’s words', () => {
     expect(reachedWords(7)).toBe('Stop 7, The resume, and who vouches for it');
-    expect(reachedWords(2)).toBe('Stop 2, Bid in the room');
+    expect(reachedWords(2)).toBe('Stop 2, The first screen');
     expect(reachedWords(0)).toBe('Opened, left');
     expect(reachedWords(9)).toBe('Opened, left');
     expect(tookWords(0)).toBe('under 1 min');
@@ -48,5 +50,12 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
   it('names the day counting began and never reads a bare count as all time', () => {
     expect(countedLine('2026-11-04')).toBe('Counting from 2026-11-04, the day version B shipped.');
     expect(countedLine(null)).not.toMatch(/all time/);
+  });
+
+  it('names the day the stops were reordered, so reach counted before it is read against the earlier order', () => {
+    expect(REVIEW_REORDERED).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(REORDERED_LINE).toContain(`reordered on ${REVIEW_REORDERED}`);
+    expect(REORDERED_LINE).toContain('Quality you can watch became stop 1');
+    expect(REORDERED_LINE).toContain('counted against the earlier order');
   });
 });

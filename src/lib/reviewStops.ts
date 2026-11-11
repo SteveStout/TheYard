@@ -2,13 +2,13 @@
  * The review route (ADR: Ten minutes, seven stops): the one list the page at ?view=review draws,
  * the server and the browser alike. Seven stops in the order a reviewer asks about the site, each
  * one live thing to look at, one line on what it shows and one thing to do. Every address is the
- * site's own, every stop names the decision record behind it, and the only way out is the GitHub
- * link on stop 5's card. No React in here.
+ * site's own and every stop names the decision record behind it, so the route never leaves the
+ * site. No React in here.
  */
 
 /** One stop on the route. */
 export type ReviewStop = {
-  key: 'first-screen' | 'room' | 'spend' | 'decision' | 'gate' | 'stores' | 'resume';
+  key: 'quality' | 'first-screen' | 'room' | 'spend' | 'gate' | 'stores' | 'resume';
   title: string;
   /** The address the stop opens, always the site's own ("/", "/?view=inventory", "/resume?pdf=1"). */
   address: string;
@@ -29,6 +29,17 @@ export const REVIEW_REPORT_PATH = '/review';
 
 // #region review-stops
 export const REVIEW_STOPS: readonly ReviewStop[] = [
+  {
+    key: 'quality',
+    title: 'Quality you can watch',
+    address: '/?doc=quality',
+    minutes: 2,
+    shows:
+      'Built with AI, measured on every version. Two weeks of slip in October, the ratchet that turned it, and every number since, read live from the build.',
+    doThis: 'Look at the first chart, then scroll to "The slip, and the turn".',
+    record: 'adr-the-numbers-that-may-only-fall',
+    links: [{ label: 'The rules and the tests that hold them', href: '/?doc=adr-rules' }],
+  },
   {
     key: 'first-screen',
     title: 'The first screen',
@@ -57,19 +68,8 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
     minutes: 1,
     shows:
       "The bill by resource and the month's forecast, read from Azure once an hour and shown in public. The whole platform runs on one small plan.",
-    doThis: 'Open the cost card. Every resource name links to its place in Azure.',
+    doThis: 'Open the cost card and read the bill by resource.',
     record: 'adr-azure-costs',
-  },
-  {
-    key: 'decision',
-    title: 'One decision, with its code',
-    address: '/?doc=adr-rules',
-    minutes: 2,
-    shows:
-      'Seventeen standing rules, each written beside the test that holds it. The code on the page is read from the running build, not pasted in.',
-    doThis: 'Scroll to the table; click any file name to land on it in GitHub.',
-    record: 'adr-the-numbers-that-may-only-fall',
-    links: [{ label: 'Quality you can watch', href: '/?doc=quality' }],
   },
   {
     key: 'gate',
@@ -77,9 +77,8 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
     address: '/?view=admin&card=tests',
     minutes: 1,
     shows:
-      'Every push through one gate: xUnit, Vitest, Playwright with axe, and the architecture rules, on both stores, then a blue-green roll with no downtime.',
-    doThis:
-      'Read the suites and their times for the build you are looking at. The link on the card opens the run on GitHub.',
+      'Every push through one gate: xUnit, Vitest, Playwright with axe and the architecture rules, on both stores, with CodeRabbit reviewing the pull request, then a roll in place that is read back on both names before the run ends.',
+    doThis: 'Read the suites and their times for the build you are looking at.',
     record: 'adr-five-minute-gate',
   },
   {
