@@ -24,6 +24,9 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
     /// </summary>
     public static readonly TimeSpan RequestCap = TimeSpan.FromSeconds(15);
 
+    /// <summary>The first and last instants a DateTimeOffset holds, as epoch milliseconds: the range a Lever createdAt is read in.</summary>
+    private static readonly long EarliestMs = DateTimeOffset.MinValue.ToUnixTimeMilliseconds(), LatestMs = DateTimeOffset.MaxValue.ToUnixTimeMilliseconds();
+
     /// <summary>How long one board may take to answer; the tests set it shorter.</summary>
     public TimeSpan Timeout { get; init; } = RequestCap;
 
@@ -113,8 +116,9 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
         var salary = job.TryGetProperty("salaryRange", out var range) && range.ValueKind == JsonValueKind.Object ? range : default;
         bool paid = salary.ValueKind == JsonValueKind.Object && Number(salary, "max") is not null;
         var categories = job.TryGetProperty("categories", out var c) && c.ValueKind == JsonValueKind.Object ? c : default;
+        // A number outside the years 1 to 9999 is no instant; read as none rather than thrown, so one posting cannot stop the scan.
         DateTimeOffset? created = job.TryGetProperty("createdAt", out var ms) && ms.ValueKind == JsonValueKind.Number && ms.TryGetInt64(out long epoch)
-            ? DateTimeOffset.FromUnixTimeMilliseconds(epoch) : null;
+            && epoch >= EarliestMs && epoch <= LatestMs ? DateTimeOffset.FromUnixTimeMilliseconds(epoch) : null;
         return new BoardPosting(Text(job, "text"), Text(job, "descriptionPlain"), created is { } at ? DateOnly.FromDateTime(at.UtcDateTime) : null)
         {
             Id = Id(job, "id"),

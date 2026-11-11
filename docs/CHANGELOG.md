@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.13** (2026-11-10): A Lever posting whose creation time is a number outside the calendar is now read as having no time instead of stopping the board scan and the fresh pass, the one finding CodeRabbit left on 1.0.5.11.
 - **1.0.5.12** (2026-11-10): The Azure bill on the first screen and the Admin tab survives a roll: the last read is kept in the database, a new process shows it at once and does not ask Azure again while it is under an hour old, and a refused read shows the last bill with the time it was read instead of "unread".
 - **1.0.5.11** (2026-11-10): Every job board on the watchlist is now read every 15 minutes for postings not yet stored, and each new one is added with the moment its board says it went up, so a new posting is in the database within 15 minutes of going live while the 1 AM scan keeps everything else.
 - **1.0.5.10** (2026-11-10): CodeRabbit's three findings on 1.0.5.8 are fixed: the testing rules name exactly when the Cosmos DB passes are carried forward, a rate-limited re-read never replaces a review that was read, and the box's test runner restores each kind of tracked build output on its own.
