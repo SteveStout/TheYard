@@ -5,7 +5,8 @@ namespace JobHunt.Domain.Shared.Postings;
 /// <summary>
 /// The level a posting's title names, read by code from the title alone: Principal, Staff, Director, Architect,
 /// Manager, Lead, Senior, Mid or Unknown, the strongest word winning ("Senior Staff" is Staff, "Senior Manager" is
-/// Manager, "Lead Architect" is Architect). The board scan stores it on every posting and the night's picker gates
+/// Manager, "Lead Architect" is Architect). "Management" is a level only as "engineering management": a field named
+/// with it ("Identity and Access Management", "Product Management") is the seat's subject, not its rung. The board scan stores it on every posting and the night's picker gates
 /// on it, so both read one rule. A rank puts the levels on one ladder, so a re-post one rung down is found by
 /// arithmetic and not by a list of pairs.
 /// </summary>
@@ -38,7 +39,7 @@ public static partial class PostingLevel
         if (Word(t, "staff")) { return Staff; }
         if (Word(t, "director|head of|vp|vice president")) { return Director; }
         if (Word(t, "architect")) { return Architect; }
-        if (Word(t, "manager|engineering manager|management")) { return Manager; }
+        if (Word(t, "manager|engineering manager|engineering management")) { return Manager; }
         if (Word(t, "lead|tech lead|team lead")) { return Lead; }
         if (Word(t, "senior|sr|snr")) { return Senior; }
         if (Word(t, "mid|intermediate|ii|iii|2|3") || Word(t, "engineer|developer")) { return Mid; }

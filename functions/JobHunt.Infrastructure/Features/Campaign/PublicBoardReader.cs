@@ -143,7 +143,7 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
         {
             Id = Id(job, "id"),
             Url = Text(job, "jobUrl"),
-            Location = Text(job, "location"),
+            Location = Places(job),
             Workplace = Text(job, "workplaceType") is { Length: > 0 } w ? w : null,
             IsRemote = job.TryGetProperty("isRemote", out var remote) && remote.ValueKind is JsonValueKind.True or JsonValueKind.False ? remote.GetBoolean() : null,
             CompMin = paid ? Whole(Number(salary, "minValue")) : null,
@@ -152,6 +152,21 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
             CompInterval = paid ? Text(salary, "interval") : null,
             PublishedAt = Instant(Text(job, "publishedAt")),
         };
+    }
+
+    /// <summary>
+    /// Ashby's location name, then each secondary location's name, joined the way Greenhouse writes a posting listed in
+    /// several places. A company may name its first location for a business unit ("BU: Pharmacy") and list the city only
+    /// as a secondary one, so the first name alone can hide where the seat is.
+    /// </summary>
+    private static string Places(JsonElement job)
+    {
+        var names = new List<string> { Text(job, "location") };
+        if (job.TryGetProperty("secondaryLocations", out var more) && more.ValueKind == JsonValueKind.Array)
+        {
+            names.AddRange(more.EnumerateArray().Where(place => place.ValueKind == JsonValueKind.Object).Select(place => Text(place, "location")));
+        }
+        return string.Join("; ", names.Select(name => name.Trim()).Where(name => name.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase));
     }
 
     private static string Text(JsonElement job, string name) => job.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : "";

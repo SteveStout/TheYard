@@ -23,6 +23,10 @@ public sealed class PostingsTests
     [InlineData("Sr. Software Engineer", "Senior")]
     [InlineData("Software Engineer II", "Mid")]
     [InlineData("Product Designer", "Unknown")]
+    [InlineData("Identity & Access Management (IAM) Engineer", "Mid")]
+    [InlineData("Senior IT Engineer, Identity and Access Management", "Senior")]
+    [InlineData("Director, Engineering Management", "Director")]
+    [InlineData("Software Engineering Management Lead", "Manager")]
     public void A_title_reads_as_its_level(string title, string level) => Assert.Equal(level, PostingLevel.Of(title));
 
     [Fact]
@@ -37,6 +41,15 @@ public sealed class PostingsTests
         Assert.Equal(("6ed76ce8", 170000, 210000, "per-year-salary", "remote"), (lever[0].Id, lever[0].CompMin, lever[0].CompMax, lever[0].CompInterval, lever[0].Workplace));
         Assert.Equal(("34413f8d", 211400, 290600, "Hybrid"), (ashby[0].Id, ashby[0].CompMin, ashby[0].CompMax, BoardScan.Of("ashby", "ramp", ashby[0]).RemoteStance));
         Assert.Equal("Remote", BoardScan.Of("greenhouse", "gitlab", greenhouse[0]).RemoteStance);
+    }
+
+    [Fact]
+    public void An_ashby_posting_keeps_every_place_its_board_lists_and_not_only_the_first_name()
+    {
+        var ashby = PublicBoardReader.Read("ashby", """{"jobs":[{"id":"e7bc","title":"Senior Software Development Engineer","location":"BU: Pharmacy","secondaryLocations":[{"location":"Hyderabad","address":{"postalAddress":{"addressCountry":"India"}}}],"isRemote":true,"workplaceType":"Hybrid"},{"id":"a1","title":"Staff Engineer","location":"Remote - US","secondaryLocations":[]},{"id":"b2","title":"Lead Engineer","location":"Remote - US"}]}""");
+
+        Assert.Equal(["BU: Pharmacy; Hyderabad", "Remote - US", "Remote - US"], ashby.Select(posting => posting.Location));
+        Assert.Equal("Hybrid", BoardScan.Of("ashby", "inovalon", ashby[0]).RemoteStance);
     }
 
     [Fact]
