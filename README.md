@@ -1,10 +1,10 @@
 # TheYard
 
+AI made me fast, and for two weeks it let the code slip where no test was looking. I built a ratchet, fifteen numbers about the code that no version may make worse, and put CodeRabbit inside the gate as a second reviewer that comments on every version and holds none yet. The whole history is public, slip included: [Quality you can watch](https://theyard.stevenstout.biz/?doc=quality).
+
 A used-vehicle auction platform I built and run on Azure: browse 100,000 vehicles, open one, and bid against a simulated room of other bidders.
 
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz), and the same build on Cosmos DB at [theyard-cosmos.stevenstout.biz](https://theyard-cosmos.stevenstout.biz). The running version and commit: [/api/version](https://theyard.stevenstout.biz/api/version). My resume: [/resume](https://theyard.stevenstout.biz/resume). Start here with ten minutes: [Check my work](https://theyard.stevenstout.biz/?view=review), seven live stops that show how I design, how I test and how I decide, without taking my word for any of it, ending at the resume.
-
-**Quality:** every rule as a test, and the numbers that may only get better, with their whole history, the slip included: [Quality you can watch](https://theyard.stevenstout.biz/?doc=quality).
 
 [![Deploy](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml/badge.svg)](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml)
 
