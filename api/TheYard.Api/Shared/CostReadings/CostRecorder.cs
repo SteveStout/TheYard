@@ -95,7 +95,7 @@ public sealed class CostRecorder(CostKeeping keeping, TimeSpan firstReadAfter, A
             }
 
             await RefreshRulesAsync(stopping);
-            await Task.Delay(WaitAfter(outcome, keeping.RetryAfter), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
+            await Task.Delay(keeping.KeptFor ?? WaitAfter(outcome, keeping.RetryAfter), stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         }
     }
 

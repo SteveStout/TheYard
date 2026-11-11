@@ -692,6 +692,27 @@ namespace TheYard.Migrations.Sqlite
                     b.ToTable("PostView", (string)null);
                 });
 
+            modelBuilder.Entity("TheYard.Infrastructure.Shared.History.CostReadRow", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Days")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Forecast")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("ReadAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CostReads", (string)null);
+                });
+
             modelBuilder.Entity("TheYard.Infrastructure.StandingRow", b =>
                 {
                     b.Property<string>("VehicleId")

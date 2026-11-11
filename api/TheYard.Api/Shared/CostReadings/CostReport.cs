@@ -34,7 +34,9 @@ public static class CostView
         string first = now.AddDays(-(length - 1)).UtcDay;
         string month = CostWindows.MonthOf(today);
         string currency = kept.Days.FirstOrDefault()?.Currency ?? kept.Forecast.FirstOrDefault()?.Currency ?? "USD";
-        long? readAt = last.At?.ToUnixTimeMilliseconds();
+        // The time the shown bill was read: the kept read's, so a refused read beside a kept bill says how old the bill
+        // is; the last try's when nothing is kept.
+        long? readAt = (kept.Days.Count > 0 ? kept.ReadAt ?? last.At : last.At)?.ToUnixTimeMilliseconds();
 
         if (!availability.Available || kept.Days.Count == 0)
         {

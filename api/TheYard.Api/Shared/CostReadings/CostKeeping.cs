@@ -30,6 +30,12 @@ public sealed class CostKeeping(
     /// <summary>The wait the last read asked for, so the loop sleeps as long as the refusal named.</summary>
     public TimeSpan? RetryAfter { get; private set; }
 
+    /// <summary>
+    /// When the kept read was under an hour old and no read was made, how long until it is an hour old, so the loop
+    /// waits that long and not a whole hour; null after a read.
+    /// </summary>
+    public TimeSpan? KeptFor { get; private set; }
+
     /// <summary>One read, kept; says how it went.</summary>
     /// <param name="cancellation">The read's cancellation.</param>
     public async Task<CostOutcome> RecordOnceAsync(CancellationToken cancellation)
@@ -49,10 +55,21 @@ public sealed class CostKeeping(
         }
 
         var today = DateOnly.FromDateTime(now.UtcDateTime);
+        // A read under an hour old is the hour's read, wherever it was taken: a process that has just rolled, or the
+        // slot beside it, answers from it and spends none of Cost Management's allowance (ADR: What Azure charges, the
+        // addendum on keeping the read).
+        var kept = await history.ReadAsync(now.AddDays(-(CostWindows.ReadDays - 1)).UtcDay, cancellation);
+        if (kept.ReadAt is { } keptAt && kept.Days.Count > 0 && now - keptAt < CostRecorder.Every)
+        {
+            status.Set(keptAt, true, null);
+            (RetryAfter, KeptFor) = (null, keptAt + CostRecorder.Every - now);
+            return CostOutcome.Read;
+        }
+        KeptFor = null;
         var read = await reader.ReadAsync(today.AddDays(-(CostWindows.ReadDays - 1)), today, cancellation);
         if (read.Outcome == CostOutcome.Read)
         {
-            await history.KeepAsync(read.Days, read.Forecast, cancellation);
+            await history.KeepAsync(read.Days, read.Forecast, now, cancellation);
         }
 
         status.Set(now, read.Outcome == CostOutcome.Read, read.Note);
