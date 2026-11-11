@@ -116,7 +116,7 @@ public sealed partial class PounceTickTests
     public void The_log_line_names_each_passed_role_with_its_live_and_seen_times_on_the_Central_clock()
     {
         var role = new PounceRole(1, "Acme", Now.AddMinutes(-31), true, Now.AddMinutes(-20), Now, null, "PASS", true);
-        var tick = new PounceTickResult(3, [(role, "Staff Engineer | Payments\tTeam")], 2, 0, 1, 0, []);
+        var tick = new PounceTickResult(3, [(role, "Staff Engineer | Payments\tTeam", "https://x/1")], 2, 0, 1, 0, []);
         Assert.Equal("2026-11-11 10:05:00 pounce: 3 fresh, 1 passed, 2 dropped, 0 touched, 1 waiting, 0 late; Acme | Staff Engineer Payments Team | live 2026-11-11 09:34 | seen 2026-11-11 09:45",
             PounceTimer.LogLine(CentralClock.Local(Now), "pounce", tick));
         var run = PounceTimer.Counted(new RunLine("Pounce", Now), tick);

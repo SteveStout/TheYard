@@ -98,7 +98,8 @@ public static partial class FeedQueue
     /// <param name="gate">The person and company gates.</param>
     /// <param name="open">The open blocks of every queue already on the share.</param>
     /// <param name="held">People and companies that wait on Steve's yes (FeedHold), never queued by the feed.</param>
-    public static FeedCut Cut(IReadOnlyList<FeedCandidate> candidates, PersonGate gate, IReadOnlyList<QueueBlock> open, FeedHolds held)
+    /// <param name="budget">True for a caught role with the budget flag, whose text may ask the timeline question.</param>
+    public static FeedCut Cut(IReadOnlyList<FeedCandidate> candidates, PersonGate gate, IReadOnlyList<QueueBlock> open, FeedHolds held, bool budget = false)
     {
         var kept = new List<FeedCandidate>();
         var dropped = new List<Dropped>();
@@ -108,7 +109,7 @@ public static partial class FeedQueue
             string what = candidate.Person!.Length > 0 ? $"{candidate.Person}, {candidate.Company}" : candidate.Company!;
             string? reason = held.Holds(candidate.Person!, candidate.Company!)
                 ? "held for Steve's yes (linkedin-proof/FEED-HOLD.md)"
-                : Reason(candidate, gate, open, kept);
+                : Reason(candidate, gate, open, kept, budget);
             if (reason is null)
             {
                 kept.Add(candidate);
@@ -126,12 +127,14 @@ public static partial class FeedQueue
     /// <param name="written">When it was written, Central.</param>
     /// <param name="runFolder">The feed's run folder, named in the header.</param>
     /// <param name="kept">The kept candidates, in queue order.</param>
-    public static string Render(DateOnly day, DateTime written, string runFolder, IReadOnlyList<FeedCandidate> kept)
+    /// <param name="role">For a caught role, its queue's name and title words; null for the morning's feed.</param>
+    /// <param name="budget">True when every block carries the budget line.</param>
+    public static string Render(DateOnly day, DateTime written, string runFolder, IReadOnlyList<FeedCandidate> kept, string? role = null, bool budget = false)
     {
         var queue = new StringBuilder();
         queue.AppendLine("> RULES FIRST: read systemRules.md before acting on this file (MASTER RULE: if stuck or a tech glitch happens, retry, then reread the .md rules).");
         queue.AppendLine();
-        queue.AppendLine(string.Create(CultureInfo.InvariantCulture, $"# QUEUE-hotmgr-{day:yyyy-MM-dd}: the hot-manager feed, {day:ddd M/d}"));
+        queue.AppendLine(role is null ? string.Create(CultureInfo.InvariantCulture, $"# QUEUE-hotmgr-{day:yyyy-MM-dd}: the hot-manager feed, {day:ddd M/d}") : $"# {role}");
         queue.AppendLine();
         queue.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Written {written:HH:mm} Central by JobHunt.Server's feed lane from {runFolder}/candidates.json. Every block passed the person gate, the short checks, the closed-req gate and check_aiisms.py before it was written; the program mints each code at send. Hottest first."));
         for (int i = 0; i < kept.Count; i++)
@@ -149,6 +152,10 @@ public static partial class FeedQueue
             queue.AppendLine($"- Why: {block.Why}");
             queue.AppendLine($"- Common point: {block.CommonPoint} ({block.CommonSource})");
             queue.AppendLine($"- Band: {block.Band}");
+            if (budget)
+            {
+                queue.AppendLine("- Budget: yes");
+            }
             queue.AppendLine();
             queue.AppendLine("```");
             queue.AppendLine(block.Text);
@@ -157,7 +164,7 @@ public static partial class FeedQueue
         return queue.ToString();
     }
 
-    private static string? Reason(FeedCandidate candidate, PersonGate gate, IReadOnlyList<QueueBlock> open, List<FeedCandidate> kept)
+    private static string? Reason(FeedCandidate candidate, PersonGate gate, IReadOnlyList<QueueBlock> open, List<FeedCandidate> kept, bool budget)
     {
         bool invite = candidate.Action == "invite";
         string person = candidate.Person!, company = candidate.Company!, text = candidate.Text!;
@@ -194,7 +201,7 @@ public static partial class FeedQueue
         {
             return gated;
         }
-        var problems = TextCheck.Problems(text, invite);
+        var problems = TextCheck.Problems(text, invite, budget);
         if (problems.Count > 0)
         {
             return "text failed: " + string.Join(", ", problems);

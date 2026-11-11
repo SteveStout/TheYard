@@ -2,7 +2,8 @@ namespace JobHunt.Server.Domain.Shared.Slots;
 
 /// <summary>
 /// Where the program may write on the share: a run folder or the day's folder under nightly/, the runs table, the
-/// two merger inboxes it spools to, the feed's one queue file a day in linkedin-proof/, and the network log's LinkedIn
+/// two merger inboxes it spools to, the feed's one queue file a day in linkedin-proof/ and one for each caught role it
+/// ran for, and the network log's LinkedIn
 /// spool: its TSV files and thread texts under networklog/linkedin-inbox/, its high-water mark and its backlog floor. Everything else is refused before the disk is touched, so a tracker, a
 /// state.md or a failure-log.md can never be written whole by this process, whatever a later change asks of it.
 /// </summary>
@@ -14,6 +15,7 @@ public static class WritePolicy
     private const string Tracker = "inbox/tracker-inbox/";
     private const string Registry = "inbox/append-inbox/state.md/";
     private const string FeedQueue = "linkedin-proof/QUEUE-hotmgr-";
+    private const string RoleQueue = "linkedin-proof/QUEUE-pounce-";
 
     /// <summary>Where the network lane's TSV files go for the Function to read.</summary>
     public const string LinkedInInbox = "networklog/linkedin-inbox/";
@@ -59,6 +61,11 @@ public static class WritePolicy
         if (path.StartsWith(FeedQueue, StringComparison.Ordinal))
         {
             return DateOnly.TryParseExact(path[FeedQueue.Length..].Replace(".md", string.Empty, StringComparison.Ordinal), "yyyy-MM-dd", out _) && path.EndsWith(".md", StringComparison.Ordinal);
+        }
+        if (path.StartsWith(RoleQueue, StringComparison.Ordinal) && path.EndsWith(".md", StringComparison.Ordinal) && path.Length > RoleQueue.Length + 14)
+        {
+            string rest = path[RoleQueue.Length..^3];
+            return DateOnly.TryParseExact(rest[..10], "yyyy-MM-dd", out _) && rest[10] == '-' && rest.Length > 11 && rest[11..].All(char.IsAsciiDigit);
         }
         return IsDayFolder(path);
     }

@@ -11,11 +11,12 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 /// <param name="Source">file:line of the heading.</param>
 /// <param name="Hot">The block's "- Hot:" bucket, A to E, and E when it has none.</param>
 /// <param name="Url">The block's "- Profile:" address, empty when it has none.</param>
-public sealed record QueueBlock(int Number, string Person, string Company, WorkAction Action, string Text, string Source, string Hot = "E", string Url = "");
+/// <param name="Budget">True when the block carries "- Budget: yes", which lets its text ask the timeline question.</param>
+public sealed record QueueBlock(int Number, string Person, string Company, WorkAction Action, string Text, string Source, string Hot = "E", string Url = "", bool Budget = false);
 
 /// <summary>
-/// Reads the invite and message blocks of linkedin-proof/QUEUE-*.md, with the bucket and the profile address the feed
-/// writes under each heading, and leaves out every block the file or its status
+/// Reads the invite and message blocks of linkedin-proof/QUEUE-*.md, with the bucket, the profile address and the
+/// budget line the feed writes under each heading, and leaves out every block the file or its status
 /// file says is finished. A block is open only when nothing says otherwise and its status, if it has one, says NOT SENT;
 /// anything held, dropped, replaced, pending or sent stays out, because a block wrongly left out waits a day and a block
 /// wrongly let in is a second touch.
@@ -106,7 +107,8 @@ public static partial class QueueBlocks
                 text,
                 $"{name}:{i + 1}",
                 hot,
-                url));
+                url,
+                meta.Any(line => line.TrimEnd('\r') == "- Budget: yes")));
         }
         return blocks;
     }

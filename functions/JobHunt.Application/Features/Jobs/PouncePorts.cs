@@ -53,10 +53,10 @@ public sealed record PounceRole(long Key, string Company, DateTimeOffset LiveAt,
 
 /// <summary>What one tick did.</summary>
 /// <param name="Fresh">Postings judged.</param>
-/// <param name="Passed">The roles that passed, each with its title.</param>
+/// <param name="Passed">The roles that passed, each with its title and the posting's address.</param>
 /// <param name="Dropped">Postings that failed a gate.</param>
 /// <param name="Touched">Roles whose first touch this tick found.</param>
 /// <param name="Waiting">Passed roles inside the watch still untouched.</param>
 /// <param name="Late">Passed roles first seen more than 30 minutes after going live.</param>
 /// <param name="Days">The day lines, newest first, or empty on a tick that wrote none.</param>
-public sealed record PounceTickResult(int Fresh, IReadOnlyList<(PounceRole Role, string Title)> Passed, int Dropped, int Touched, int Waiting, int Late, IReadOnlyList<PounceDay> Days);
+public sealed record PounceTickResult(int Fresh, IReadOnlyList<(PounceRole Role, string Title, string Url)> Passed, int Dropped, int Touched, int Waiting, int Late, IReadOnlyList<PounceDay> Days);

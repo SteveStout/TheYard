@@ -22,17 +22,30 @@ public enum Lane
 }
 
 /// <summary>
-/// What a lane is called on the share, and where its run folder goes: nightly/&lt;date&gt;/0600-&lt;lane&gt;-&lt;model short&gt;,
-/// the shape nightly.yml names its own folders in, with -dry on the end of a dry run. Central time decides the
-/// date, because a run at six in the morning belongs to the day it is read on.
+/// What a lane is called on the share, and where its run folder goes: nightly/&lt;date&gt;/&lt;slot&gt;-&lt;lane&gt;-&lt;model short&gt;,
+/// the shape nightly.yml names its own folders in, with -dry on the end of a dry run. The slot is the morning's 0600,
+/// or pounce-&lt;posting key&gt; for a run the pounce started for one caught role. Central time decides the date, because a
+/// run at six in the morning belongs to the day it is read on.
 /// </summary>
 public static class RunSlot
 {
-    /// <summary>The slot's four digits in a folder's name.</summary>
+    /// <summary>The morning's slot, its four digits in a folder's name.</summary>
     public const string Hour = "0600";
+
+    /// <summary>The start of a slot that runs the program for one caught role; the posting's key follows it.</summary>
+    public const string Pounce = "pounce-";
 
     /// <summary>The lanes in run order.</summary>
     public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply];
+
+    /// <summary>
+    /// The lanes a run for one caught role works: the feed finds the leader and writes the role's queue, and the invites
+    /// lane sends it. A message block it queues waits for the morning's messages lane.
+    /// </summary>
+    public static readonly IReadOnlyList<Lane> RoleOrder = [Lane.Feed, Lane.Invites];
+
+    /// <summary>Where the morning's run sits, Central: no slot run starts from its start to its end.</summary>
+    public static readonly (TimeSpan From, TimeSpan To) Morning = (new(5, 30, 0), new(7, 0, 0));
 
     private static readonly TimeZoneInfo Central = TimeZoneInfo.FindSystemTimeZoneById("America/Chicago");
 
@@ -92,8 +105,23 @@ public static class RunSlot
     /// <param name="lane">The lane.</param>
     /// <param name="model">The model id.</param>
     /// <param name="dry">True for a dry run.</param>
-    public static string RunFolder(DateOnly day, Lane lane, string model, bool dry) =>
-        $"{DayFolder(day)}/{Hour}-{Word(lane)}-{ModelShort(model)}{(dry ? "-dry" : string.Empty)}";
+    /// <param name="slot">The slot, the morning's by default.</param>
+    public static string RunFolder(DateOnly day, Lane lane, string model, bool dry, string slot = Hour) =>
+        $"{DayFolder(day)}/{slot}-{Word(lane)}-{ModelShort(model)}{(dry ? "-dry" : string.Empty)}";
+
+    /// <summary>A slot's card, relative to the share's root.</summary>
+    /// <param name="day">The Central day.</param>
+    /// <param name="slot">The slot.</param>
+    public static string Card(DateOnly day, string slot) => $"{DayFolder(day)}/{slot}-card.md";
+
+    /// <summary>True for the morning's slot or pounce- and a posting key of digits, the only names a folder may carry.</summary>
+    /// <param name="slot">A slot name from the command line.</param>
+    public static bool IsSlot(string slot) =>
+        slot == Hour || (slot.StartsWith(Pounce, StringComparison.Ordinal) && slot.Length is > 7 and <= 26 && slot[Pounce.Length..].All(char.IsAsciiDigit));
+
+    /// <summary>True from 05:30 to 07:00 Central, when the morning's run owns the browser and no slot run starts.</summary>
+    /// <param name="utc">The instant.</param>
+    public static bool Quiet(DateTimeOffset utc) => Local(utc).TimeOfDay >= Morning.From && Local(utc).TimeOfDay < Morning.To;
 
     /// <summary>The file that says LinkedIn is closed for the day, which every later run that day reads.</summary>
     /// <param name="day">The Central day.</param>

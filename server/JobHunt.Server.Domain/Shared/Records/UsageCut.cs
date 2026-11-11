@@ -31,7 +31,8 @@ public static class UsageCut
     /// <param name="usageJson">usage.json.</param>
     /// <param name="report">The lane's report.</param>
     /// <param name="runId">The run's id.</param>
-    public static string Document(string usageJson, LaneReport report, string runId)
+    /// <param name="slot">The run's slot: the morning's reads 06:00, and a slot run for one role the Central time it started.</param>
+    public static string Document(string usageJson, LaneReport report, string runId, string slot = RunSlot.Hour)
     {
         JsonNode? usage = JsonNode.Parse(usageJson);
         var document = new JsonObject
@@ -46,7 +47,7 @@ public static class UsageCut
             ["wall_ms"] = usage?["duration_ms"]?.GetValue<long>() ?? 0,
             ["cost_usd"] = usage?["total_cost_usd"]?.DeepClone(),
             ["run"] = runId,
-            ["slot"] = $"{RunSlot.Hour[..2]}:{RunSlot.Hour[2..]}",
+            ["slot"] = slot == RunSlot.Hour ? $"{RunSlot.Hour[..2]}:{RunSlot.Hour[2..]}" : RunSlot.Local(report.Started).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture),
             ["mode"] = RunSlot.Word(report.Lane) + (report.Dry ? "-dry" : string.Empty),
             ["at"] = report.Started.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
         };

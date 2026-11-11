@@ -10,7 +10,8 @@ namespace JobHunt.Server.Application.Features.Run;
 /// <param name="Url">The profile or posting URL.</param>
 /// <param name="Source">Where it came from.</param>
 /// <param name="Role">An application's posting title.</param>
-public sealed record Candidate(string Person, string Company, WorkAction Action, string Text, string Url, string Source, string Role = "");
+/// <param name="Budget">True when its queue block carries the budget line, so its text may ask the timeline question.</param>
+public sealed record Candidate(string Person, string Company, WorkAction Action, string Text, string Url, string Source, string Role = "", bool Budget = false);
 
 /// <summary>A lane's worklist: the rows, their texts, and what the gates left out.</summary>
 /// <param name="Rows">The rows, cut to the day's room.</param>
@@ -50,7 +51,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         var blocks = HotRank.Order(reads.Queues.Where(block => block.Action == WorkAction.Invite), reads.Rows, reads.Day);
         var heading = blocks.ToDictionary(block => block.Source, block => block.Person, StringComparer.Ordinal);
         var candidates = blocks
-            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.OrdinalIgnoreCase) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, block.Url, block.Source));
+            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.OrdinalIgnoreCase) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, block.Url, block.Source, Budget: block.Budget));
         return await FinishAsync(candidates, reads, candidate => Held(reads, candidate) ?? reads.Gate.Invite(candidate.Person, candidate.Company) ?? HeadingGate(reads, candidate, heading), room, dry, ct);
     }
 
@@ -63,7 +64,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     {
         var dropped = new List<Dropped>();
         var candidates = reads.Queues.Where(block => block.Action == WorkAction.Message)
-            .Select(block => new Candidate(block.Person, block.Company, WorkAction.Message, block.Text, Profile(reads, block.Person, block.Company) is { Length: > 0 } tracked ? tracked : block.Url, block.Source))
+            .Select(block => new Candidate(block.Person, block.Company, WorkAction.Message, block.Text, Profile(reads, block.Person, block.Company) is { Length: > 0 } tracked ? tracked : block.Url, block.Source, Budget: block.Budget))
             .ToList();
         if (await NewestReplyQueueAsync(reads.Day, ct) is { } newest)
         {
@@ -258,7 +259,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         {
             return $"code {code} already on a tracker row";
         }
-        var problems = TextCheck.Problems(candidate.Text, candidate.Action == WorkAction.Invite);
+        var problems = TextCheck.Problems(candidate.Text, candidate.Action == WorkAction.Invite, candidate.Budget);
         if (problems.Count > 0)
         {
             return "text failed: " + string.Join(", ", problems);

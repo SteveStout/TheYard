@@ -46,7 +46,7 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
             }
         }
 
-        var passed = judged.Where(j => j.Role.Passed).Select(j => (j.Role, j.Title)).ToList();
+        var passed = judged.Where(j => j.Role.Passed).Select(j => (j.Role, j.Title, j.Url)).ToList();
         IReadOnlyList<PounceDay> lines = [];
         if (days || passed.Count > 0 || touched > 0)
         {
@@ -57,7 +57,7 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
         return new PounceTickResult(judged.Count, passed, judged.Count - passed.Count, touched, open.Count - touched, late, lines);
     }
 
-    private async Task<List<(PounceRole Role, string Title)>> JudgeAsync(IReadOnlyList<FreshPosting> fresh, DateTimeOffset now, DateOnly today, CancellationToken ct)
+    private async Task<List<(PounceRole Role, string Title, string Url)>> JudgeAsync(IReadOnlyList<FreshPosting> fresh, DateTimeOffset now, DateOnly today, CancellationToken ct)
     {
         var master = JobsPick.Applications(await tracker.RowsAsync(ct));
         var list = ApplicationCap.DoNotApplyList(await TextAsync("systemRules.md", ct));
@@ -66,7 +66,7 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
         var recent = (await book.PassedSinceAsync(now - TimeSpan.FromDays(PounceRules.DuplicateDays), ct))
             .Select(p => JobsGates.Same(new Candidate("", p.Company, p.Title, "", "", null, "", "", null, "", "")))
             .ToHashSet(StringComparer.Ordinal);
-        var judged = new List<(PounceRole, string)>();
+        var judged = new List<(PounceRole, string, string)>();
         foreach (var f in fresh)
         {
             var candidate = f.Candidate with { Text = texts.TryGetValue(f.Key, out var text) ? text : "" };
@@ -78,7 +78,7 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
             }
             var (live, known) = PounceClock.LiveAt(f.PublishedAt, f.FirstSeenAt);
             failed = failed is { Length: > 300 } ? failed[..300] : failed;
-            judged.Add((new PounceRole(f.Key, candidate.Company, live, known, f.FirstSeenAt, now, failed, verdict.BandFlag, PounceClock.BudgetFlag(live, today)), candidate.Title));
+            judged.Add((new PounceRole(f.Key, candidate.Company, live, known, f.FirstSeenAt, now, failed, verdict.BandFlag, PounceClock.BudgetFlag(live, today)), candidate.Title, candidate.Url));
         }
         return judged;
     }
