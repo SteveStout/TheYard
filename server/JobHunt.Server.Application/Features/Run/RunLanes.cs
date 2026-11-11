@@ -13,7 +13,8 @@ namespace JobHunt.Server.Application.Features.Run;
 /// run. The invite room is cut from the live count in code, so the pause at 90 is the program's and
 /// not only the model's. A stop from the service holds what has not started, and everything after it still closes.
 /// A slot run works one caught role the same way under the same lock, gates and day's stop file: the feed for that role,
-/// then the invites lane on that role's queue only, its folders and card named for its slot. It never starts from
+/// then the invites lane on that role's queue only, then the apply lane on that role's posting only, its folders and card
+/// named for its slot. It never starts from
 /// 05:30 to 07:00 Central, the morning's own window, and a slot whose lane already ran live does not run that lane again.
 /// </summary>
 /// <param name="share">The share.</param>
@@ -144,7 +145,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 invitesRoom = recount.Room;
                 start = start with { Lines = [.. start.Lines, .. recount.Lines], LiveCount = recount.Live };
             }
-            DayReads worked = run.Role is null ? reads! : reads! with { Queues = await RoleQueueAsync(reads!, run, ct), Slot = run.Slot };
+            DayReads worked = run.Role is null ? reads! : reads! with { Queues = await RoleQueueAsync(reads!, run, ct), Slot = run.Slot, Role = run.Role };
             Worklist list = await WorklistAsync(lane, worked, ceilings!, before!, reports, invitesRoom, linkedIn, dry, ct);
             LaneReport report = await work.Runner.RunAsync(start, list, ct);
             reports.Add(report);

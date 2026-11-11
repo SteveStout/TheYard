@@ -112,15 +112,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     /// <param name="ct">Stops the build.</param>
     public async Task<Worklist> ApplyAsync(DayReads reads, string? linkedInClosed, bool dry, CancellationToken ct)
     {
-        var postings = new List<Posting>();
-        foreach (string pattern in new[] { "JOBS-*.md", "priority-jobs-*.md", "APPLY-SWEEP-*.md" })
-        {
-            foreach (ShareFile file in (await share.ListAsync(string.Empty, pattern, ct)).Where(file => reads.Day.DayNumber - DateOnly.FromDateTime(file.Changed.UtcDateTime).DayNumber <= ApplyBoards.NewestDays).OrderByDescending(file => file.Path, StringComparer.Ordinal))
-            {
-                postings.AddRange(ApplyBoards.Confirmed(file.Path, await share.ReadAsync(file.Path, ct)));
-            }
-        }
-        postings.AddRange(ApplyBoards.Scored(await share.ReadAsync("leads/scored.tsv", ct), await share.ReadAsync("nightly/LEADS.md", ct), reads.Day));
+        var postings = reads.Role is { } role ? [new Posting(role.Company, role.Title, role.Url, string.Empty, role.Path)] : await ApplyPostings.ReadAsync(share, reads.Day, ct);
 
         var dropped = new List<Dropped>();
         var blockers = new List<Posting>();

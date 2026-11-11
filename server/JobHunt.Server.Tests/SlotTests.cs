@@ -25,7 +25,7 @@ public sealed class SlotTests
         + $"{{\"person\":\"Lee Off\",\"company\":\"Other Co\",\"seat\":\"CTO\",\"profile_url\":\"https://www.linkedin.com/in/leeoff\",\"hot\":\"A\",\"why\":\"x\",\"common_point\":\"\",\"common_source\":\"\",\"band\":\"\",\"text\":{System.Text.Json.JsonSerializer.Serialize(NoOriented.Replace("Kim", "Lee", StringComparison.Ordinal))},\"action\":\"invite\"}}"
         + "]}";
 
-    private static Morning RoleMorning(string text, bool budget = false, bool dry = false)
+    private static Morning RoleMorning(string text, bool budget = false, bool dry = false, string? applyRow = null)
     {
         Morning morning = null!;
         morning = new Morning(request =>
@@ -33,6 +33,10 @@ public sealed class SlotTests
             if (request.Arguments[1].Contains("FEED-LANE.md", StringComparison.Ordinal))
             {
                 morning.Share.Files[$"nightly/2026-11-03/{Slot}-feed-opus-5-5{(dry ? "-dry" : string.Empty)}/candidates.json"] = Candidates(text);
+            }
+            if (applyRow is not null && request.Arguments[1].Contains("APPLY-LANE.md", StringComparison.Ordinal))
+            {
+                return new ClaudeRun(0, false, ResultLine.With($$"""{"rows":[{{applyRow}}],"live_invite_count":null,"stop_condition":"none","stop_detail":null,"stop_screenshot":null}"""));
             }
             return new ClaudeRun(0, false, ResultLine.Empty);
         });
@@ -112,7 +116,7 @@ public sealed class SlotTests
         Assert.Contains("Kim Hot\tZephyr Labs", worklist[1], StringComparison.Ordinal);
         Assert.True(morning.Share.Files.ContainsKey($"nightly/2026-11-03/{Slot}-card.md"));
         Assert.False(morning.Share.Files.ContainsKey("nightly/2026-11-03/0600-card.md"));
-        Assert.DoesNotContain(morning.Share.Files.Keys, path => path.Contains("-messages-", StringComparison.Ordinal) || path.Contains("-apply-", StringComparison.Ordinal));
+        Assert.DoesNotContain(morning.Share.Files.Keys, path => path.Contains("-messages-", StringComparison.Ordinal) || path.Contains("-network-", StringComparison.Ordinal));
         Assert.Contains("feed: 1 queued", output, StringComparison.Ordinal);
         Assert.All(morning.Usage.Documents, document => Assert.Contains("\"slot\":\"10:00\"", document, StringComparison.Ordinal));
         Assert.NotEmpty(morning.Usage.Documents);
@@ -190,5 +194,37 @@ public sealed class SlotTests
         await morning.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
         Assert.Equal(["Kim Hot|Zephyr Labs"], morning.Minter.Asked);
         Assert.Equal([Slot], morning.Minter.Lanes);
+    }
+
+    [Fact]
+    public async Task A_slot_run_applies_to_its_one_role_after_the_invites_and_reads_no_other_list()
+    {
+        Assert.Equal([Lane.Feed, Lane.Invites, Lane.Apply], RunSlot.RoleOrder);
+        Morning morning = RoleMorning(NoOriented);
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+
+        string[] worklist = morning.Share.Files[$"nightly/2026-11-03/{Slot}-apply-sonnet-5-5/worklist.tsv"].TrimEnd().Split('\n');
+        Assert.Equal(2, worklist.Length);
+        Assert.Contains("Zephyr Labs", worklist[1], StringComparison.Ordinal);
+        Assert.Contains("https://job-boards.greenhouse.io/zephyr/jobs/1", worklist[1], StringComparison.Ordinal);
+        string prompt = morning.Claude.Requests.Last(request => request.Arguments[1].Contains("APPLY-LANE.md", StringComparison.Ordinal)).Arguments[1];
+        Assert.Contains("Zephyr Labs, Staff Software Engineer - Web", prompt, StringComparison.Ordinal);
+        Assert.Contains("\"needs Steve:\"", prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain("needs Steve", ClaudeArguments.Prompt(Lane.Apply, "/mnt/j", "/mnt/j/nightly/x", false), StringComparison.Ordinal);
+        Assert.Contains(await ApplyPostings.ReadAsync(morning.Share, Today, default), posting => posting.Source.StartsWith("APPLY-SWEEP-2026-10-28", StringComparison.Ordinal));
+        Assert.DoesNotContain(worklist, line => line.Contains("APPLY-SWEEP", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_form_on_the_caught_role_that_needs_Steve_goes_on_the_blockers_list_with_its_exact_control()
+    {
+        const string Row = """{"row":1,"outcome":"blocked","reason":"needs Steve: the required field \"Desired start date\" has no banked answer","person":null,"title":null,"profile_url":"https://job-boards.greenhouse.io/zephyr/jobs/1","evidence":null}""";
+        Morning morning = RoleMorning(NoOriented, applyRow: Row);
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+
+        string blockers = morning.Share.Files[$"nightly/2026-11-03/{Slot}-apply-sonnet-5-5/APPLY-BLOCKERS-2026-11-03.md"];
+        Assert.Contains("## 1. Zephyr Labs, Staff Software Engineer - Web", blockers, StringComparison.Ordinal);
+        Assert.Contains("- The control: the required field \"Desired start date\" has no banked answer", blockers, StringComparison.Ordinal);
+        Assert.DoesNotContain("The control", Blockers.Render(Today, [new Posting("Acme", "Staff Engineer", "https://acme.example/jobs/1", "Workday", "JOBS.md:3")]), StringComparison.Ordinal);
     }
 }

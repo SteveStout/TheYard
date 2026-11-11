@@ -116,7 +116,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
         {
             string runFolder = share.Full(folder);
             var request = new ClaudeRequest(
-                ClaudeArguments.For(lane, start.Lane, share.Root, runFolder, start.Dry),
+                ClaudeArguments.For(lane, start.Lane, share.Root, runFolder, start.Dry, start.Role),
                 runFolder,
                 $"{runFolder}/stream.jsonl",
                 TimeSpan.FromMinutes(lane.TimeoutMinutes),
