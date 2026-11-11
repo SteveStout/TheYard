@@ -45,7 +45,13 @@ public sealed class JobsHour(IMergeStore store, TimeProvider time, ILogger<JobsH
         /// <summary>No descriptions.</summary>
         public Task<IReadOnlyDictionary<long, string>> TextsAsync(IReadOnlyList<long> keys, CancellationToken ct) => Task.FromResult<IReadOnlyDictionary<long, string>>(new Dictionary<long, string>());
 
+        /// <summary>No postings to judge.</summary>
+        public Task<IReadOnlyList<FreshPosting>> FreshAsync(DateTimeOffset seenSince, CancellationToken ct) => Task.FromResult<IReadOnlyList<FreshPosting>>([]);
+
         /// <summary>No copy to read: the picker falls back to the share's CSV.</summary>
         public Task<IReadOnlyList<string[]>> RowsAsync(CancellationToken ct) => throw new InvalidOperationException("CAMPAIGN_SQL is not set");
+
+        /// <summary>No copy to read.</summary>
+        public Task<IReadOnlyList<TrackerTouch>> SinceAsync(DateTimeOffset since, CancellationToken ct) => throw new InvalidOperationException("CAMPAIGN_SQL is not set");
     }
 }

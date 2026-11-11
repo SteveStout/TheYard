@@ -67,12 +67,12 @@ public sealed class FunnelLineTests
     [Fact]
     public void A_send_that_was_not_one_is_never_a_touch_and_the_channel_is_read_off_the_phrase()
     {
-        Assert.Null(FunnelCount.Channel("STATUS: SILENT 60+ DAYS, NO MESSAGE SENT.", "Phone"));
-        Assert.Null(FunnelCount.Channel("DECLINE SENT BY CLAUDE", "Email"));
-        Assert.Null(FunnelCount.Channel("Message sent in prose, not a type", "LinkedIn"));
-        Assert.Equal("invites", FunnelCount.Channel("MANAGER OUTREACH, SCOPED CONNECTION REQUEST SENT BY CLAUDE", "LinkedIn"));
-        Assert.Equal("messages", FunnelCount.Channel("FOLLOW-UP MESSAGE SENT by a lane", "LinkedIn"));
-        Assert.Equal("emails", FunnelCount.Channel("EMAIL SENT BY STEVE HIMSELF", "Email"));
+        Assert.Null(TrackerRows.Channel("STATUS: SILENT 60+ DAYS, NO MESSAGE SENT.", "Phone"));
+        Assert.Null(TrackerRows.Channel("DECLINE SENT BY CLAUDE", "Email"));
+        Assert.Null(TrackerRows.Channel("Message sent in prose, not a type", "LinkedIn"));
+        Assert.Equal("invites", TrackerRows.Channel("MANAGER OUTREACH, SCOPED CONNECTION REQUEST SENT BY CLAUDE", "LinkedIn"));
+        Assert.Equal("messages", TrackerRows.Channel("FOLLOW-UP MESSAGE SENT by a lane", "LinkedIn"));
+        Assert.Equal("emails", TrackerRows.Channel("EMAIL SENT BY STEVE HIMSELF", "Email"));
     }
 
     [Fact]

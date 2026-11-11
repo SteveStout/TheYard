@@ -69,7 +69,7 @@ public sealed partial class JobsTests
 
     [Theory]
     [InlineData("Remote, US", "Unknown", "remote")]
-    [InlineData("United States", "Unknown", "remote")]
+    [InlineData("United States", "Unknown", "country only, remote unsaid")]
     [InlineData("St. Louis, MO", "Hybrid", "hybrid, days unknown")]
     [InlineData("Clayton, MO (Hybrid, one day a week)", "Hybrid", "St. Louis hybrid, 1 day")]
     [InlineData("Chicago, IL", "Hybrid", "hybrid outside St. Louis: Chicago, IL")]
@@ -342,11 +342,15 @@ public sealed partial class JobsTests
             AskedTexts.AddRange(keys.Where(Texts.ContainsKey));
             return Task.FromResult<IReadOnlyDictionary<long, string>>(Texts.Where(t => keys.Contains(t.Key)).ToDictionary(t => t.Key, t => t.Value));
         }
+
+        public Task<IReadOnlyList<FreshPosting>> FreshAsync(DateTimeOffset seenSince, CancellationToken ct) => Task.FromResult<IReadOnlyList<FreshPosting>>([]);
     }
 
     private sealed class Tracker(IReadOnlyList<string[]>? rows) : ITrackerRows
     {
         public Task<IReadOnlyList<string[]>> RowsAsync(CancellationToken ct) => rows is null ? throw new InvalidOperationException("no copy") : Task.FromResult(rows);
+
+        public Task<IReadOnlyList<TrackerTouch>> SinceAsync(DateTimeOffset since, CancellationToken ct) => Task.FromResult<IReadOnlyList<TrackerTouch>>([]);
     }
 
     [GeneratedRegex(@"^\s*\[(\w+)\]", RegexOptions.Multiline)]
