@@ -1,10 +1,10 @@
 # TheYard
 
+AI made me fast, and for two weeks it let the code slip where no test was looking. I built a ratchet, fifteen numbers about the code that no version may make worse, and put CodeRabbit inside the gate as a second reviewer that comments on every version and holds none yet. The whole history is public, slip included: [Quality you can watch](https://theyard.stevenstout.biz/?doc=quality).
+
 A used-vehicle auction platform I built and run on Azure: browse 100,000 vehicles, open one, and bid against a simulated room of other bidders.
 
 **Live:** [theyard.stevenstout.biz](https://theyard.stevenstout.biz), and the same build on Cosmos DB at [theyard-cosmos.stevenstout.biz](https://theyard-cosmos.stevenstout.biz). The running version and commit: [/api/version](https://theyard.stevenstout.biz/api/version). My resume: [/resume](https://theyard.stevenstout.biz/resume). Start here with ten minutes: [Check my work](https://theyard.stevenstout.biz/?view=review), seven live stops that show how I design, how I test and how I decide, without taking my word for any of it, ending at the resume.
-
-**Quality:** every rule as a test, and the numbers that may only get better, with their whole history, the slip included: [Quality you can watch](https://theyard.stevenstout.biz/?doc=quality).
 
 [![Deploy](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml/badge.svg)](https://github.com/SteveStout/TheYard/actions/workflows/deploy.yml)
 
@@ -16,15 +16,15 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 2114 xUnit tests, 637 Vitest tests at 1.0.5.17 and 209 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.5.17 hold 5,154 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 2114 xUnit tests, 637 Vitest tests at 1.0.5.18 and 209 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.5.18 hold 5,154 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
 | API | xUnit | 2114 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
-| Frontend | Vitest | 637 at 1.0.5.17 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
+| Frontend | Vitest | 637 at 1.0.5.18 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
 | End to end | Playwright | 209 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe's eleven scans across nine views at WCAG 2.1 AA. |
 
-**How 5,154 is counted**, from the gate's own results file for 1.0.5.17 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 637 Vitest tests, 2114 xUnit tests on SQLite and the same 2114 booted on Cosmos DB, carried forward from 1.0.5.15, the 12 that need the live Cosmos DB account, 220 browser runs on SQLite from the 209 declared tests (a loop runs one of them more than once) and 57 of those again on Cosmos DB, carried forward from 1.0.5.15, which is 5,154. The xUnit and browser counts above are read from the source; a test written after 1.0.5.17 first runs in the gate of the version that ships it. A browser test that passes only on Playwright's one retry is written 'r', never a pass, and a file holding one is refused, so every run counted here passed the first time.
+**How 5,154 is counted**, from the gate's own results file for 1.0.5.18 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 637 Vitest tests, 2114 xUnit tests on SQLite and the same 2114 booted on Cosmos DB, carried forward from 1.0.5.15, the 12 that need the live Cosmos DB account, 220 browser runs on SQLite from the 209 declared tests (a loop runs one of them more than once) and 57 of those again on Cosmos DB, carried forward from 1.0.5.15, which is 5,154. The xUnit and browser counts above are read from the source; a test written after 1.0.5.18 first runs in the gate of the version that ships it. A browser test that passes only on Playwright's one retry is written 'r', never a pass, and a file holding one is refused, so every run counted here passed the first time.
 
 **The rule.** Nothing reaches `main` without a green gate, and a red test stops the push. The ship pushes the version to a `gate/<version>` branch and [`gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml) runs the gate there, on GitHub's runners; `main` moves only when it is green ([ADR-098](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-098-the-gate-runs-where-the-memory-is.md)): format, lint and type checks, the SQL project, xUnit on SQLite, the 12 live Cosmos DB tests, Vitest and the browser suite in two halves, each kind in a job of its own and all of them at once, and then one job that folds their reports and gives the verdict. CodeRabbit reviews the gate's pull request beside them, and the quality ratchet refuses a version that makes any of its fifteen numbers worse ([Quality you can watch](https://theyard.stevenstout.biz/?doc=quality)). Two passes run only when something they read changed: xUnit booted on Cosmos DB and the three store-dependent browser specs run when a change touches `api/`, `infra/cosmos/` or one of those specs, and otherwise the results file carries them forward from the version whose gate ran them, marked with that version ([ADR-068](https://github.com/SteveStout/TheYard/blob/main/docs/decisions/ADR-068-the-five-minute-gate.md), the addendum of 22 September). The push is the deploy: [`deploy.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy.yml) builds the image and rolls the one web app that serves both sites and The Shed, and [`deploy-render.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/deploy-render.yml) rolls the rendering service, and each checks the version, `/readyz` and the store before it finishes. [`ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml) runs the same suites again on GitHub's runners for every push to main, beside the deploy and without holding it up, and for a pull request, which has had no gate.
 
@@ -526,7 +526,7 @@ other, restarts the application and signs the first one back in to find their bi
 they left it, while checking that the token never appears in a response body and that a
 wrong password says exactly what an unknown address says. Run with `npm run test:api`.
 
-**Frontend (637 Vitest tests at 1.0.5.17):** presentation logic only, since the API owns the rules.
+**Frontend (637 Vitest tests at 1.0.5.18):** presentation logic only, since the API owns the rules.
 Status recomputation from server windows, reserve states, formatting and countdowns, URL
 and filter round-tripping, query-parameter mapping, the request cache (TTL, per key,
 forced bypass, no caching of failures), the palette's contrast against WCAG AA,
