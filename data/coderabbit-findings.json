@@ -88,8 +88,8 @@
         "critical": 0,
         "major": 0,
         "minor": 1,
-        "trivial": 0,
-        "nitpick": 2
+        "trivial": 2,
+        "nitpick": 0
       },
       "prs": [
         8
@@ -233,8 +233,8 @@
         "critical": 0,
         "major": 0,
         "minor": 1,
-        "trivial": 0,
-        "nitpick": 1
+        "trivial": 1,
+        "nitpick": 0
       },
       "prs": [
         16
@@ -260,8 +260,8 @@
         "trivial": 0,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         18
       ]

@@ -156,5 +156,48 @@ public sealed class YardTestScriptTests : IDisposable
         Assert.Contains("skipped: server/ not on this branch", output, StringComparison.Ordinal);
         Assert.Contains("FAIL  api", output, StringComparison.Ordinal);
     }
+    /// <summary>
+    /// The lock is free the moment a run ends, even when a suite left a child running. A dotnet build leaves the Roslyn
+    /// compile server behind, and when that child inherited the lock's descriptor the next run waited on it for 13
+    /// minutes (the failure log's entry of 9 November). Here the stand-in dotnet leaves a sleeping child behind, and a
+    /// second taker of the lock must get it at once.
+    /// </summary>
+    [Fact]
+    public void A_child_a_suite_leaves_running_never_holds_the_lock()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        string bin = Path.Combine(_home, ".local", "bin");
+        File.WriteAllText(Path.Combine(bin, "dotnet"), "#!/usr/bin/env bash\nsleep 30 &\necho $! >> \"$HOME/children.pid\"\necho 'Passed!'\n");
+        Assert.Equal(0, Run(bin, "chmod", "+x dotnet").Code);
+        try
+        {
+            var (code, output) = YardTest("api");
+            Assert.True(code == 0, output);
+
+            string lockFile = Path.Combine(_home, "repos", "test-logs", ".lock");
+            var (free, said) = Run(_home, "flock", $"-n \"{lockFile}\" true");
+            Assert.True(free == 0, $"the lock was still held after the run ended: {said}");
+            foreach (string line in File.ReadAllLines(Path.Combine(Repo.Root(), "scripts", "yard-test.sh")).Where(l => l.Contains("\"$@\"", StringComparison.Ordinal) || l.Contains("npm ci", StringComparison.Ordinal)))
+            {
+                Assert.Contains("9>&-", line, StringComparison.Ordinal);
+            }
+        }
+        finally
+        {
+            // Only the children this case started, by the ids the stand-in wrote down.
+            string ids = Path.Combine(_home, "children.pid");
+            if (File.Exists(ids))
+            {
+                foreach (string id in File.ReadAllLines(ids).Where(line => line.Length > 0))
+                {
+                    Run(_home, "kill", id);
+                }
+            }
+        }
+    }
     // #endregion the-cases
 }
