@@ -3,6 +3,7 @@
                      | count <comments.json> [<sha> [<reviews.json>]]
                      | missing <version> <sha> <out.json>
                      | recount <version> <branch> <sha> <log.json>
+                     | dispose <version> <fixed> <answered-as-wrong> <log.json>
 Waits for CodeRabbit's review of the gate's pull request and writes one row of the findings log (ADR-129). Finds the open pull request from <branch>, then waits for the
 newest CodeRabbit check run on <sha> to complete, a skipped one counted as not yet, until <ceiling-seconds> have passed.
 Then reads CodeRabbit's reviews and inline comments on every request that carried the commit, because a branch pushed again
@@ -156,6 +157,10 @@ def empty_row(version, sha, reviewed):
         "reviewed": reviewed,
         "actionable": 0,
         "findings": {name: 0 for name in SEVERITIES},
+        # What became of the findings, read from the request's threads and the next versions once they are answered;
+        # null until then, never a guess (ADR-129, the addendum of 1.0.5.7).
+        "fixed": None,
+        "answered_as_wrong": None,
     }
 
 
@@ -167,6 +172,10 @@ def fold(row_path, log_path):
     if os.path.exists(log_path):
         with open(log_path, encoding="utf-8") as f:
             log = json.load(f)
+    kept = next((r for r in log["rows"] if r.get("version") == row.get("version")), None)
+    for key in ("fixed", "answered_as_wrong"):
+        if kept is not None and row.get(key) is None and kept.get(key) is not None:
+            row[key] = kept[key]
     log["rows"] = [r for r in log["rows"] if r.get("version") != row.get("version")] + [row]
     with open(log_path, "w", encoding="utf-8") as f:
         json.dump(log, f, indent=2, ensure_ascii=False)
@@ -187,6 +196,24 @@ def main():
                 reviews = json.load(f)
         found, actionable = count(reviews, comments, sys.argv[3] if len(sys.argv) > 3 else None)
         print(json.dumps({"findings": found, "actionable": actionable}))
+        return
+    if sys.argv[1] == "dispose":
+        if len(sys.argv) != 6:
+            sys.exit("usage: coderabbit_review.py dispose <version> <fixed> <answered-as-wrong> <log.json>")
+        version, fixed, wrong, log_path = sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
+        with open(log_path, encoding="utf-8") as f:
+            log = json.load(f)
+        row = next((r for r in log["rows"] if r.get("version") == version), None)
+        if row is None:
+            sys.exit(f"dispose: {log_path} has no row for {version}")
+        total = sum(row["findings"].values())
+        if fixed < 0 or wrong < 0 or fixed + wrong > total:
+            sys.exit(f"dispose: {version} has {total} findings, so {fixed} fixed and {wrong} answered as wrong cannot be")
+        row["fixed"], row["answered_as_wrong"] = fixed, wrong
+        with open(log_path, "w", encoding="utf-8") as f:
+            json.dump(log, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        print(f"dispose: {version}, {fixed} fixed and {wrong} answered as wrong of {total}")
         return
     if sys.argv[1] == "recount":
         if len(sys.argv) != 6:

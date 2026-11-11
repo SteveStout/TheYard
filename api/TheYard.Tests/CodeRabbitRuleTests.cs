@@ -312,6 +312,53 @@ public sealed class CodeRabbitRuleTests
         process.WaitForExit();
         Assert.True(process.ExitCode == 0, errors);
     }
+    /// <summary>
+    /// Every row says what became of its findings, fixed or answered as wrong, which ADR-129's Decision 6 decides each
+    /// step of the ladder on; a count not read yet is null, never a guess, and the two never add up to more than the
+    /// row found. A version re-run keeps what was already read, and an impossible count is refused.
+    /// </summary>
+    [Fact]
+    public void Every_row_says_what_became_of_its_findings_and_never_more_than_it_found()
+    {
+        using var log = JsonDocument.Parse(File.ReadAllText(Repo.DataFile("coderabbit-findings.json")));
+        foreach (JsonElement row in log.RootElement.GetProperty("rows").EnumerateArray())
+        {
+            string version = row.GetProperty("version").GetString()!;
+            int total = row.GetProperty("findings").EnumerateObject().Sum(f => f.Value.GetInt32());
+            Assert.True(row.TryGetProperty("fixed", out JsonElement fixedCount), $"{version} should carry fixed");
+            Assert.True(row.TryGetProperty("answered_as_wrong", out JsonElement wrong), $"{version} should carry answered_as_wrong");
+            if (fixedCount.ValueKind == JsonValueKind.Number && wrong.ValueKind == JsonValueKind.Number)
+            {
+                Assert.True(fixedCount.GetInt32() + wrong.GetInt32() <= total, $"{version}: {fixedCount} fixed and {wrong} wrong of {total} findings");
+            }
+        }
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-dispose-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string row = Path.Combine(dir, "row.json");
+            string path = Path.Combine(dir, "log.json");
+            Python(dir, $"missing 1.0.4.900 0123456789abcdef \"{row}\"");
+            Python(dir, $"fold \"{row}\" \"{path}\"");
+            Python(dir, $"dispose 1.0.4.900 0 0 \"{path}\"");
+            Python(dir, $"fold \"{row}\" \"{path}\"");
+            using (var kept = JsonDocument.Parse(File.ReadAllText(path)))
+            {
+                Assert.Equal(0, kept.RootElement.GetProperty("rows")[0].GetProperty("fixed").GetInt32());
+            }
+            var (code, output) = Script(new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" dispose 1.0.4.900 1 0 \"{path}\"") { WorkingDirectory = dir });
+            Assert.True(code != 0, output);
+            Assert.Contains("cannot be", output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
     // #endregion every-ship-has-one-row
 
     // #region every-request-that-carried-the-commit

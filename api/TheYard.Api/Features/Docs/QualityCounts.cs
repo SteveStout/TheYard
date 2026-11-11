@@ -152,7 +152,7 @@ public static partial class QualityCounts
     private static string Findings(string repoRoot)
     {
         using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "data", "coderabbit-findings.json")));
-        var table = new StringBuilder("| Version | Pull request | Reviewed | Findings | Review minutes |\n| --- | --- | --- | --- | ---: |\n");
+        var table = new StringBuilder("| Version | Pull request | Reviewed | Findings | Fixed | Wrong | Minutes |\n| --- | --- | --- | --- | ---: | ---: | ---: |\n");
         foreach (JsonElement row in document.RootElement.GetProperty("rows").EnumerateArray())
         {
             JsonElement found = row.GetProperty("findings");
@@ -160,10 +160,14 @@ public static partial class QualityCounts
             string minutes = row.GetProperty("review_seconds").ValueKind == JsonValueKind.Number ? (row.GetProperty("review_seconds").GetInt32() / 60.0).ToString("0.0", CultureInfo.InvariantCulture) : "";
             string[] named = [.. found.EnumerateObject().Where(f => f.Value.GetInt32() > 0).Select(f => $"{f.Value.GetInt32()} {f.Name}")];
             string findings = named.Length == 0 ? "none" : string.Join(", ", named);
-            table.Append(CultureInfo.InvariantCulture, $"| {row.GetProperty("version").GetString()} | {pr} | {row.GetProperty("reviewed").GetString()} | {findings} | {minutes} |\n");
+            table.Append(CultureInfo.InvariantCulture, $"| {row.GetProperty("version").GetString()} | {pr} | {row.GetProperty("reviewed").GetString()} | {findings} | {Counted(row, "fixed")} | {Counted(row, "answered_as_wrong")} | {minutes} |\n");
         }
         return table.ToString().TrimEnd();
     }
+
+    /// <summary>A disposition count as the log holds it, and an empty cell where it has not been read yet.</summary>
+    private static string Counted(JsonElement row, string key) =>
+        row.TryGetProperty(key, out JsonElement value) && value.ValueKind == JsonValueKind.Number ? value.GetInt32().ToString(CultureInfo.InvariantCulture) : "";
 
     [GeneratedRegex(@"\b[A-Z][A-Za-z]*Tests\b")]
     private static partial Regex TestClass();

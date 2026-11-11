@@ -232,3 +232,6 @@ The funnel card's route always reads at least the week, so the tone has a week t
 ## Addendum, 2026-11-10 (1.0.5.6): the funnel card has no hour window
 
 What stopped being true: the addendum of 1.0.5.3 says the empty note names "the last seven days for the hour, the day and the week". The card has no hour window: the route reads its window with CardWindows.Of, which answers the day for anything but 24h, 7d and 30d, so a request for an hour is read, counted and reported as the day. The note it shows then is the day's, the last seven days, and FunnelTests' hour case holds exactly that. CodeRabbit found it on #11.
+
+Correction, 1.0.5.7: the paragraph above says an hour request is "read, counted and reported as the day". It is counted and reported as the day; the route still reads the last seven days to grade the tone, as it does for every window. CodeRabbit found the slip on #16.
+
