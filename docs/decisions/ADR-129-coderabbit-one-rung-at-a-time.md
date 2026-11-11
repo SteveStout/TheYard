@@ -168,3 +168,29 @@ So the ceiling's basis, restated: the review no longer waits beside a longer gat
 Corrections, 1.0.5.8, from a cold read of tonight's versions: the 416, 410 and 564 seconds above are the gate job's own end, from `gh run view --json jobs`; the results file's checksSeconds, which the tests card shows, is measured at the fold a few seconds earlier and reads 411, 407 and 558. The 31 to 38 minutes was the whole run's range in round figures: measured, 1,842 to 2,338 seconds, 30.7 to 39.0 minutes. The open finding on #16 is labelled Trivial by CodeRabbit inside its nitpick section, and the log now counts such an item by its label (the trivial column, where it counted the section as nitpicks): 1.0.5.0's two and 1.0.5.6's one are trivial, no count changes. It stays open: kept as it is for the reason given above, not answered as wrong. The log also never lets a re-run that could not read its review replace one that was read, and `recount` refuses to write a row whose outcomes no longer fit its findings (CodeRabbit on #17 and #18).
 
 Also from CodeRabbit on #19, in 1.0.5.10: a re-run whose review was rate limited and read nothing is treated as unread, so it never replaces a review that was read either.
+
+## Addendum, 2026-11-11 (1.0.5.21): a Critical finding holds the promote
+
+What stopped being true: Decision 2, "Level 0 never holds a ship", and the ladder's "Nothing" in the rows for Levels 0 and 1, for a Critical finding. Steve answered on 11 November that a Critical finding holds the promote, his yes under Decision 6. The four levels keep their numbers and the level above stays 0, so the log's level column reads the same across this change and the ladder's tests still hold four levels.
+
+**Where the hold lives.** `scripts/promote.sh` reads the run's review row before it writes anything. When the row says the review was read and counts a Critical finding, promote refuses, and its error names the pull request and the file and line of each Critical on a line; a Critical carried in the review body has no line and is named as in the review body. A Major, a Minor, a Trivial or a nitpick holds nothing. A review that never came inside the ceiling, a row whose findings were not read, or no row at all ships with its notice, as before. No workflow changes for it, so the gate promotes this version itself. The row gains `critical_at`, the place of each Critical on a line, which `count` reads from the comment's own file and line. PromoteScriptTests runs the script: a planted Critical holds; a Major, a Minor, a review that never came, a row not read and no row at all ship.
+
+**A held version.** It is fixed in a new commit on its own gate branch, under the same number. No lane overrides a hold. When the lane judges the Critical wrong, the call is the owner's: the lane leaves the branch and writes the finding and its reason for him.
+
+**Two counting fixes.** A rate-limited re-read that still reports actionable comments read something, so it is no longer treated as unread and can replace an earlier row (CodeRabbit on #21). An outside-diff finding keeps its severity under the older italic header as well as the current one: the body's quoted header lines are read with the same label rule as an inline comment's header (CodeRabbit on #16). CodeRabbitRuleTests holds both.
+
+**What became of seven rows' findings,** each read from its pull request's threads and the code at this version:
+
+| Version | Request | Finding | Outcome |
+| --- | --- | --- | --- |
+| 1.0.5.6 | #16 | Minor: the hour request's read span | Fixed in 1.0.5.7, the correction under ADR-109's addendum of 1.0.5.3 |
+| 1.0.5.6 | #16 | Trivial: the outside-diff header anchor | Fixed in this version |
+| 1.0.5.10 | #21 | Minor: keep a rate-limited re-read that reports actionable comments | Fixed in this version |
+| 1.0.5.11 | #22 | Minor: a Lever creation time outside the calendar stops the scan | Fixed in 1.0.5.13 |
+| 1.0.5.14 | #25 | Minor: qualify the one read an hour | Fixed in 1.0.5.16 |
+| 1.0.5.15 | #26 | Two Minor: the tracker rows the pounce reads, and a log append that fails a recorded tick | Fixed in 1.0.5.17 |
+| 1.0.5.15 | #26 | Trivial: a plan's name in the pounce tick's summary | Still open: the Function's code is another lane's |
+| 1.0.5.16 | #27 | Minor: one sentence before the chart | Answered as wrong: the four-sentence opening is the owner's approved text, which changes only on his word; the record that said one sentence was corrected in 1.0.5.18 |
+| 1.0.5.20 | #31 | Minor: keep the reorder date in step with the day the version rolls out | Answered as wrong: 1.0.5.20 rolled out on 11 November, the date the code holds |
+
+The gate's own notice still says Level 0 ships anyway; it is corrected in the next version that changes the gate's workflow.

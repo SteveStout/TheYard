@@ -177,7 +177,8 @@ public sealed class CodeRabbitRuleTests
     /// <summary>
     /// The findings log counts a finding by the label in its header and nothing else, so a Minor finding whose text
     /// says "major" is still one Minor, and a remark with no label is a nitpick. Only the gated commit's findings
-    /// count, and a reply in a finding's thread is not another finding.
+    /// count, and a reply in a finding's thread is not another finding. Each Critical on a line is kept with its file
+    /// and line.
     /// </summary>
     [Fact]
     public void The_findings_log_counts_each_finding_by_its_header_label_alone()
@@ -191,7 +192,7 @@ public sealed class CodeRabbitRuleTests
         [
             new { body = "<!-- coderabbit-ai-generated:v1 -->\n\n**<picture><img src=\"x/amber-16.svg\" alt=\"\"></picture> Minor** · **Functional Correctness**\n\nNot a _Major_ problem." },
             new { body = "**<picture><img src=\"x/major-16.svg\" alt=\"\"></picture> Major** · **Data Integrity**\n\nA minor detail too." },
-            new { body = "_Potential issue_ | _Critical_\n\nThe older header." },
+            new { body = "_Potential issue_ | _Critical_\n\nThe older header.", path = "api/Any.cs", line = 12 },
             new { body = "A remark with no label that mentions a trivial thing." },
             new { body = "**<picture></picture> Major** · a reply in the thread is not a finding", in_reply_to_id = 7, commit_id = "abc" },
             new { body = "**<picture></picture> Critical** · on an earlier commit of the same request", commit_id = "old" },
@@ -213,6 +214,10 @@ public sealed class CodeRabbitRuleTests
             Assert.Equal(1, findings.GetProperty("minor").GetInt32());
             Assert.Equal(0, findings.GetProperty("trivial").GetInt32());
             Assert.Equal(1, findings.GetProperty("nitpick").GetInt32());
+            // Where each Critical sits, so a hold can name it (ADR-129, the addendum of 1.0.5.21).
+            JsonElement at = Assert.Single(counted.RootElement.GetProperty("critical_at").EnumerateArray());
+            Assert.Equal("api/Any.cs", at.GetProperty("path").GetString());
+            Assert.Equal(12, at.GetProperty("line").GetInt32());
         }
         finally
         {
@@ -248,6 +253,38 @@ public sealed class CodeRabbitRuleTests
             Assert.Equal(1, findings.GetProperty("trivial").GetInt32());
             Assert.Equal(1, findings.GetProperty("nitpick").GetInt32());
             Assert.Equal(1, counted.RootElement.GetProperty("actionable").GetInt32());
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+    /// <summary>
+    /// An outside-diff finding keeps its severity whichever header CodeRabbit wrote it under, the older italic label
+    /// as well as the current one: the body's quoted lines are read with the same label rule as an inline comment's
+    /// header, so a Minor written "_Minor_" is not counted as a nitpick (CodeRabbit on #16).
+    /// </summary>
+    [Fact]
+    public void An_outside_diff_finding_under_the_older_header_keeps_its_severity()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string body = "**Actionable comments posted: 1**\n\n> **Outside diff range comments (1)**\n>\n> `scripts/promote.sh:128`\n> _\u26a0\ufe0f Potential issue_ | _Minor_\n>\n> A remark that mentions a _Major_ risk.\n\n<summary> Review info</summary>\n";
+        string dir = Path.Combine(Path.GetTempPath(), $"coderabbit-older-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "comments.json"), "[]");
+            File.WriteAllText(Path.Combine(dir, "reviews.json"), JsonSerializer.Serialize(new[] { new { commit_id = "abc", body } }));
+            var (code, output) = Script(new ProcessStartInfo("python3", $"scripts/coderabbit_review.py count \"{Path.Combine(dir, "comments.json")}\" abc \"{Path.Combine(dir, "reviews.json")}\"") { WorkingDirectory = Repo.Root() });
+            Assert.True(code == 0, output);
+            using var counted = JsonDocument.Parse(output);
+            JsonElement findings = counted.RootElement.GetProperty("findings");
+            Assert.Equal(1, findings.GetProperty("minor").GetInt32());
+            Assert.Equal(0, findings.GetProperty("major").GetInt32());
+            Assert.Equal(0, findings.GetProperty("nitpick").GetInt32());
         }
         finally
         {
@@ -370,6 +407,12 @@ public sealed class CodeRabbitRuleTests
             Python(dir, $"fold \"{row}\" \"{path}\"");
             using var after = JsonDocument.Parse(File.ReadAllText(path));
             Assert.Equal("full", after.RootElement.GetProperty("rows")[0].GetProperty("reviewed").GetString());
+
+            // A rate-limited re-read that still reports actionable comments did read something, so it is kept (CodeRabbit on #21).
+            File.WriteAllText(row, JsonSerializer.Serialize(new { version = "1.0.4.900", pr = 9, sha = "01234567", reviewed = "rate limited", actionable = 1, findings = new { critical = 0, major = 0, minor = 0, trivial = 0, nitpick = 0 }, @fixed = (int?)null, answered_as_wrong = (int?)null }));
+            Python(dir, $"fold \"{row}\" \"{path}\"");
+            using var counted = JsonDocument.Parse(File.ReadAllText(path));
+            Assert.Equal("rate limited", counted.RootElement.GetProperty("rows")[0].GetProperty("reviewed").GetString());
         }
         finally
         {
