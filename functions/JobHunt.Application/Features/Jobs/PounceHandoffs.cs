@@ -1,9 +1,10 @@
 namespace JobHunt.Application.Features.Jobs;
 
 /// <summary>
-/// Writes the hand-off and the dispatcher item for each role a tick passed (PounceHandoff): the JSON first, so the item
-/// never names a file that is not there, then the item under a name the dispatcher does not read and renamed into
-/// place in one step, so it never starts from half a file. The mode "off" writes nothing.
+/// Writes the hand-off and the dispatcher items for each role a tick passed: the JSON first, so no item names a file
+/// that is not there, then the wrapper that starts the first touch (PounceHandoff), then the item that builds the role's
+/// 90-day page in shadow (PouncePage), each under a name the dispatcher does not read and renamed into place in one step,
+/// so neither starts from half a file. The mode "off" writes nothing.
 /// </summary>
 public static class PounceHandoffs
 {
@@ -24,10 +25,15 @@ public static class PounceHandoffs
         {
             var caught = new CaughtRole(role.Key, role.Company, title, url, role.BandFlag, role.LiveAt, role.LiveKnown, role.BudgetFlag, role.JudgedAt);
             await store.WriteAsync(PounceHandoff.Path(caught), TrackerCsvText.Encode(PounceHandoff.Json(caught)), ct);
-            string temp = $"{PounceHandoff.Ready}/.pounce-{role.Key}.tmp";
-            await store.WriteAsync(temp, TrackerCsvText.Encode(PounceHandoff.Item(caught, mode)), ct);
-            await store.ReplaceAsync(temp, PounceHandoff.ReadyPath(caught), ct);
+            await PlaceAsync(store, $"{PounceHandoff.Ready}/.pounce-{role.Key}.tmp", PounceHandoff.Item(caught, mode), PounceHandoff.ReadyPath(caught), ct);
+            await PlaceAsync(store, $"{PounceHandoff.Ready}/.pounce90-{role.Key}.tmp", PouncePage.Item(caught), PouncePage.ReadyPath(caught), ct);
         }
         return passed.Count;
+    }
+
+    private static async Task PlaceAsync(IMergeStore store, string temp, string text, string path, CancellationToken ct)
+    {
+        await store.WriteAsync(temp, TrackerCsvText.Encode(text), ct);
+        await store.ReplaceAsync(temp, path, ct);
     }
 }

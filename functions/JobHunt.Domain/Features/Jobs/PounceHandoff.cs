@@ -120,9 +120,11 @@ public static class PounceHandoff
         return item.ToString();
     }
 
-    private static string Stamp(CaughtRole role) => role.PassedAt.UtcDateTime.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "Z";
+    /// <summary>The instant the role passed, UTC, as the hand-off's file and every file beside it begin.</summary>
+    public static string Stamp(CaughtRole role) => role.PassedAt.UtcDateTime.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture) + "Z";
 
     private static string Iso(DateTimeOffset at) => at.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture);
 
-    private static string Central(DateTimeOffset at) => CentralClock.Local(at).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+    /// <summary>An instant on the Central clock, to the minute, as the items print it.</summary>
+    public static string Central(DateTimeOffset at) => CentralClock.Local(at).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 }

@@ -802,6 +802,31 @@
       "prs": [
         40
       ]
+    },
+    {
+      "version": "1.0.5.30",
+      "pr": 41,
+      "sha": "d13921f1",
+      "level": 0,
+      "at": "2026-11-12T01:52:36Z",
+      "waited_seconds": 489,
+      "review_seconds": 464,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 2,
+      "findings": {
+        "critical": 0,
+        "major": 1,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        41
+      ]
     }
   ]
 }

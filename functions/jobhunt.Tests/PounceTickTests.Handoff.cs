@@ -31,7 +31,7 @@ public sealed partial class PounceTickTests
         Assert.DoesNotContain(header.Where(line => !line.StartsWith("Needs:", StringComparison.Ordinal)), line => Holding().IsMatch(line));
         Assert.Contains("systemd-run --user --unit=pounce-12786 --collect", item, StringComparison.Ordinal);
         Assert.Contains("run --slot pounce-12786 --role nightly/pounce/20261111-160500Z-12786.json --dry-run\n", item, StringComparison.Ordinal);
-        Assert.Single(Directory.GetFiles(Path.Combine(scratch.Root, "dispatch", "ready")));
+        Assert.Single(Directory.GetFiles(Path.Combine(scratch.Root, "dispatch", "ready"), "10-*"));
         Assert.DoesNotContain((char)0x2014, item);
     }
 

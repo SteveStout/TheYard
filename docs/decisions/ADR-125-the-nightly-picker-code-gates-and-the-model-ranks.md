@@ -87,3 +87,17 @@ From this version each role a tick passes is handed to the box the same tick (`P
 
 The tick itself still sends nothing and touches no one. What it cannot do: the dispatcher runs one item at a time, so an item already running delays this one (its 10 puts it ahead of the items still waiting), and the 60-minute target holds only while nothing long is running. `PounceTickTests` holds it.
 
+## Addendum, 2026-11-11 (1.0.5.30): the 90-day page is built while the first note is in flight
+
+What stopped being true: each role a tick passes got one dispatcher item, the wrapper that starts its first touch, and nothing built the role's 90-day page; gen90.py ran only when a lane was asked by hand, and no tracker row since 1 September shows a page sent.
+
+From this version the hand-off writes a second item beside the wrapper (`PouncePage`, written by `PounceHandoffs` after the wrapper, the same way, under a name the dispatcher does not read and renamed into place):
+
+1. **The item.** `dispatch/ready/20-pounce90-<key>.md`, on Sonnet, so the dispatcher's Opus hours never hold it. Its `Holds:` is empty and it opens no browser.
+2. **Never ahead of the first touch.** The dispatcher runs one item at a time, first eligible by its number. The page item's 20 sorts after every wrapper's 10, and it needs what a wrapper needs (`chrome, jdrive`), so it is never eligible while a wrapper waits on the browser. A wrapper that lands while a page is being built is seen at the item's three checks (before it reads the queue, the posting and the spec): the item copies itself to `nightly/pounce/requeue/` as a follow-on and stops, and the dispatcher puts it back in ready behind the wrapper. Nothing in it touches the 60-minute clock, which stops at the first touch.
+3. **The leader the feed named.** The first block of the role's queue, `QUEUE-pounce-<day>-<key>.md`, live in `linkedin-proof/` or dry in the feed's run folder. With no leader there is no page.
+4. **The spec, red flag scan first.** The item saves the posting word for word and writes the spec's `redflag_scan` before anything else. gen90.py does not write a spec and fails one with no scan, so the item writes both. A scan that finds a flag ends the item: no page, and the flags go to Steve.
+5. **gen90.py once.** For the leader, on LinkedIn, with the role marked "shadow, never attached" on the code it mints. A failed check is never retried or argued around: no page.
+6. **One log line a role.** `nightly/pounce/pages.log`: `PAGE <pdf>, code <code>, never attached`, or `NO PAGE` with `no leader`, `red flag` or `gen90` and the reason word for word.
+
+The page ships in shadow whatever `POUNCE_RUN` says, and "off" queues no page with the rest: Steve's ruling on whether the page rides in the follow-up after an open is unanswered in the dispatcher's DECISION.md, so the page is built and logged and never attached or linked in any message. `PounceTickTests` holds it.
