@@ -7,7 +7,7 @@ namespace TheYard.Infrastructure.Shared.History;
 /// The last read of the bill, held in this process and kept in the relational store (ADR: What Azure charges, the
 /// addendum on keeping the read). The process answers from its own copy while that copy is under an hour old; past
 /// that, or with nothing held, it reads the kept row, which is how a process that has just rolled starts with the last
-/// bill and how the slot that did not read answers from the one that did. A read is written to both, and a store that
+/// bill. A read is written to both, and a store that
 /// is not there yet costs nothing but the copy across a roll.
 /// </summary>
 /// <param name="contexts">The relational store's quiet context factory, or null while the store is not attached.</param>

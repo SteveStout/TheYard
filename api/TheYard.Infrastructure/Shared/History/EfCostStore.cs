@@ -5,8 +5,8 @@ using TheYard.Application.Shared.History;
 namespace TheYard.Infrastructure.Shared.History;
 
 /// <summary>
-/// The last read of the bill kept in the relational store, one row, so a roll does not lose it and the slot that did not
-/// read can answer from the one that did (ADR: What Azure charges, the addendum on keeping the read).
+/// The last read of the bill kept in the relational store, one row, so a roll does not lose it (ADR: What Azure charges,
+/// the addendum on keeping the read).
 ///
 /// <para>The table is published by a person, like every other table on SQL Server (ADR: Data first, and the database in
 /// source control), so this store asks whether it is there and keeps nothing until it is; on SQLite the migration makes

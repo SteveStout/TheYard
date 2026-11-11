@@ -7,8 +7,8 @@ namespace TheYard.Tests;
 
 /// <summary>
 /// The bill kept across rolls (ADR: What Azure charges, the addendum on keeping the read). Until this version the last
-/// read was held in memory only, so every blue-green roll started with no bill: the card read "unread" until the new
-/// process's first read landed, and with many rolls on two slots Cost Management answered 429 and the card stayed
+/// read was held in memory only, so every roll started with no bill: the card read "unread" until the new
+/// process's first read landed, and with many rolls in a day Cost Management answered 429 and the card stayed
 /// unread for an hour. These cases build the history the way the site does (<see cref="CostRegistration.KeptHistory"/>)
 /// over a real SQLite store, start a "new process" with nothing in its memory, and read what the card would show.
 /// </summary>
