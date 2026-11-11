@@ -38,8 +38,11 @@ public sealed class LibraryDocsTests
     /// <summary>The key's prefix, written in two halves so this file is not a match for itself.</summary>
     private static readonly Regex Key = new("ctx7" + "sk-[A-Za-z0-9_-]{20,}", RegexOptions.CultureInvariant);
 
-    /// <summary>The folders the samples walk never enters: what a build or an install writes, which no reader of the repository reads.</summary>
-    private static readonly string[] Pruned = ["node_modules", "bin", "obj"];
+    /// <summary>
+    /// The folders the samples walk never enters: what a build, an install or Visual Studio writes, which no reader of the
+    /// repository reads, and where the editor can hold a file open that a read would fail on.
+    /// </summary>
+    private static readonly string[] Pruned = ["node_modules", "bin", "obj", ".vs"];
 
     /// <summary>Every text file a reader can read, the samples and the served files included, which the shared walk leaves out.</summary>
     private static List<string> Scanned() => [.. Repo.FilesWith(Text), .. Samples(Path.Combine(Repo.Root(), "samples"))];
@@ -107,9 +110,39 @@ public sealed class LibraryDocsTests
         Assert.Contains("samples/theshed/Dockerfile", scanned);
         Assert.Contains("samples/theshed/sample-home/reports/visitors.csv", scanned);
         Assert.Contains("samples/theshed/sample-home/reports/2026/q1.csv", scanned);
-        Assert.DoesNotContain(scanned, path => path.EndsWith(".pdf", StringComparison.Ordinal) || path.EndsWith(".woff2", StringComparison.Ordinal));
         Assert.DoesNotContain(scanned, path => path.StartsWith("samples/", StringComparison.Ordinal)
             && path.Split('/').Any(part => Pruned.Contains(part, StringComparer.Ordinal)));
+    }
+
+    /// <summary>
+    /// Over a folder this test writes: a file is read by what it holds, not its name, so a PDF written as plain text is
+    /// read and a binary file is not; and nothing under what a build, an install or Visual Studio writes is opened, so a
+    /// file the editor holds open cannot fail the walk (CodeRabbit on 1.0.5.25).
+    /// </summary>
+    [Fact]
+    public void The_samples_walk_reads_by_content_and_prunes_what_a_build_or_the_editor_writes()
+    {
+        string root = Directory.CreateTempSubdirectory("samples-walk-").FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "notes.txt"), "plain");
+            File.WriteAllText(Path.Combine(root, "plain.pdf"), "%PDF-1.4 written as text");
+            File.WriteAllBytes(Path.Combine(root, "font.woff2"), [0x77, 0x4F, 0x46, 0x32, 0x00, 0x01]);
+            File.WriteAllBytes(Path.Combine(root, "latin1.bin"), [0x63, 0x61, 0x66, 0xE9]);
+            foreach (string written in new[] { ".vs", "bin", "obj", "node_modules" })
+            {
+                Directory.CreateDirectory(Path.Combine(root, written, "inner"));
+                File.WriteAllText(Path.Combine(root, written, "inner", "held.txt"), "written by a tool");
+            }
+
+            string[] read = [.. Samples(root).Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')).Order(StringComparer.Ordinal)];
+
+            Assert.Equal(["notes.txt", "plain.pdf"], read);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     /// <summary>No file a reader of this repository can read holds a Context7 key.</summary>

@@ -54,8 +54,8 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
     /// <summary>Each slot asked for, with how to build it and when it was last asked.</summary>
     private readonly Dictionary<string, (Func<CancellationToken, Task<TView>> Build, DateTimeOffset Asked)> _watched = new(StringComparer.Ordinal);
 
-    /// <summary>Every build under way, one a slot, shared by the requests that wait on it, the refresh behind an answer and the keeper.</summary>
-    private readonly Dictionary<string, Task<TView>> _building = new(StringComparer.Ordinal);
+    /// <summary>Every build under way, one a slot, shared by the requests that wait on it, the refresh behind an answer and the keeper, with whether it was begun as a refresh.</summary>
+    private readonly Dictionary<string, (Task<TView> Task, bool Refresh)> _building = new(StringComparer.Ordinal);
 
     /// <inheritdoc/>
     public string Name => name;
@@ -71,7 +71,7 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
     public async Task<TView> ReadAsync(string slot, Func<CancellationToken, Task<TView>> build, CancellationToken cancellation, Func<CancellationToken, Task<TView>>? refresh = null)
     {
         var now = clock.GetUtcNow();
-        Task<TView> waiting;
+        (Task<TView> Task, bool Refresh) waiting;
         lock (_gate)
         {
             _watched[slot] = (refresh ?? build, now);
@@ -79,13 +79,34 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
             {
                 if (now - hit.At >= KeptViews.Behind)
                 {
-                    _ = Building(slot, refresh ?? build);
+                    _ = Building(slot, refresh ?? build, true);
                 }
                 return hit.View;
             }
-            waiting = Building(slot, build);
+            waiting = Building(slot, build, false);
         }
-        return await waiting.WaitAsync(cancellation);
+        if (waiting.Refresh)
+        {
+            // The request joined a refresh, which the route may hold to a smaller budget than a request's; one that
+            // failed or was not kept is read again on the request's own budget rather than handed to the request.
+            try
+            {
+                var view = await waiting.Task.WaitAsync(cancellation);
+                if (keep is null || keep(view))
+                {
+                    return view;
+                }
+            }
+            catch (Exception) when (!cancellation.IsCancellationRequested)
+            {
+                // Read again below, as the request.
+            }
+            lock (_gate)
+            {
+                waiting = Building(slot, build, false);
+            }
+        }
+        return await waiting.Task.WaitAsync(cancellation);
     }
 
     /// <inheritdoc/>
@@ -103,13 +124,14 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
             due = [.. _watched.Where(entry => !_cached.TryGetValue(entry.Key, out var hit) || now - hit.At >= KeptViews.Behind)
                 .Select(entry => (entry.Key, entry.Value.Build))];
         }
-        foreach (var (slot, build) in due)
+        // Every due slot's build begins before any is waited on, so one slow window never holds the others past their two minutes.
+        List<Task<TView>> started;
+        lock (_gate)
         {
-            Task<TView> building;
-            lock (_gate)
-            {
-                building = Building(slot, build);
-            }
+            started = [.. due.Select(slot => Building(slot.Slot, slot.Build, true).Task)];
+        }
+        foreach (var building in started)
+        {
             try
             {
                 await building.WaitAsync(cancellation);
@@ -126,28 +148,34 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
     {
         lock (_gate)
         {
-            return Task.WhenAll(_building.Values.Select(task => task.ContinueWith(_ => { }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default)).ToList());
+            return Task.WhenAll(_building.Values.Select(entry => entry.Task.ContinueWith(_ => { }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default)).ToList());
         }
     }
 
     /// <summary>The slot's build under way, or a new one when there is none; called under the gate, so a slot never has two.</summary>
-    private Task<TView> Building(string slot, Func<CancellationToken, Task<TView>> build)
+    /// <param name="slot">The slot.</param>
+    /// <param name="build">How to build it when nothing is under way.</param>
+    /// <param name="refresh">Whether a new build is a refresh, behind an answer or the keeper's.</param>
+    private (Task<TView> Task, bool Refresh) Building(string slot, Func<CancellationToken, Task<TView>> build, bool refresh)
     {
         if (_building.TryGetValue(slot, out var running))
         {
             return running;
         }
-        var started = Task.Run(() => BuildOnceAsync(slot, build), CancellationToken.None);
-        _building[slot] = started;
+        var started = Task.Run(() => BuildOnceAsync(slot, build, stopping), CancellationToken.None);
+        _building[slot] = (started, refresh);
         // A build nobody waits on fails quietly: the view that answered stays until one succeeds.
         _ = started.ContinueWith(task => task.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        return started;
+        return (started, refresh);
     }
 
-    /// <summary>One build of the slot, under two minutes and the host's stopping, gone from the builds under way when it ends.</summary>
-    private async Task<TView> BuildOnceAsync(string slot, Func<CancellationToken, Task<TView>> build)
+    /// <summary>One build of the slot, under two minutes and <paramref name="cancellation"/>, gone from the builds under way when it ends.</summary>
+    /// <param name="slot">The slot.</param>
+    /// <param name="build">How to build it.</param>
+    /// <param name="cancellation">The host's stopping, which ends the build with the two minutes.</param>
+    private async Task<TView> BuildOnceAsync(string slot, Func<CancellationToken, Task<TView>> build, CancellationToken cancellation)
     {
-        using var limit = CancellationTokenSource.CreateLinkedTokenSource(stopping);
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         limit.CancelAfter(KeptViews.Served);
         try
         {
