@@ -75,3 +75,7 @@ From this version a request whose Accept header lists `text/html`, which a brows
 What did not change: the bytes, the hash, the file name, the lock and `?src=`. The door word is recorded the same way on both requests, and the embed's address carries no code, so a tagged open is counted once, on the door's own request. The review route's last stop now opens `/resume?pdf=1`, so a reader who walked the route is not sent back to it.
 
 `ResumeDoorPageTests` holds the door, the PDF query, a value that is not a code and the embed; `resume.spec.ts` the band, the phone and the route link; `axe.spec.ts` the door at both widths. The five tests of `ResumeAddressTests` stand as they were.
+
+## Addendum, @DATE@ (@VER@): the resume of 2026-11-10
+
+What stopped being true: the addendum of 1.0.4.146, which made the 5 November file the one /resume serves. Steve approved the resume of 10 November on that day: Cass Information Systems is labelled a contract, the project showcase's hosting line says App Service, and Storee's platform is .NET 10 in the summary and the first Storee bullet. /resume now serves that file, `StevenStoutResume_2026-11-10.pdf`, 63,956 bytes, SHA-256 a1bf893cdfa93c8bf1aa7a678d3d852058f827ff475bf45d3ee630a9d399c05a, byte for byte the send copy named in the lock, in both copies the build carries. `ResumeDoor.LockDate` names the same day, `resume.sha256` and promote.sh hold the hash, and /about's summary says .NET 10 with the resume, which a new test holds.
