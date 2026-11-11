@@ -38,11 +38,52 @@ public sealed class LibraryDocsTests
     /// <summary>The key's prefix, written in two halves so this file is not a match for itself.</summary>
     private static readonly Regex Key = new("ctx7" + "sk-[A-Za-z0-9_-]{20,}", RegexOptions.CultureInvariant);
 
+    /// <summary>The folders the samples walk never enters: what a build or an install writes, which no reader of the repository reads.</summary>
+    private static readonly string[] Pruned = ["node_modules", "bin", "obj"];
+
     /// <summary>Every text file a reader can read, the samples and the served files included, which the shared walk leaves out.</summary>
-    private static List<string> Scanned() =>
-        [.. Repo.FilesWith(Text), .. Directory.EnumerateFiles(Path.Combine(Repo.Root(), "samples"), "*", SearchOption.AllDirectories)
-            .Where(path => Text.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
-            .Where(path => !path.Split(Path.DirectorySeparatorChar).Any(part => part is "bin" or "obj" or "node_modules"))];
+    private static List<string> Scanned() => [.. Repo.FilesWith(Text), .. Samples(Path.Combine(Repo.Root(), "samples"))];
+
+    /// <summary>
+    /// Every text file under the samples, whatever its name: a Dockerfile or a CSV a sample ships is as readable as a
+    /// .cs file. The walk prunes what a build or an install writes before it descends, and a file is text when its
+    /// bytes are UTF-8 with no zero byte, which a PDF, a font or a picture is not.
+    /// </summary>
+    private static IEnumerable<string> Samples(string folder)
+    {
+        foreach (string path in Directory.EnumerateFiles(folder).Where(IsText))
+        {
+            yield return path;
+        }
+        foreach (string inner in Directory.EnumerateDirectories(folder).Where(path => !Pruned.Contains(Path.GetFileName(path), StringComparer.Ordinal)))
+        {
+            foreach (string path in Samples(inner))
+            {
+                yield return path;
+            }
+        }
+    }
+
+    /// <summary>Strict UTF-8, which throws on the bytes a PDF's streams or a font hold.</summary>
+    private static readonly System.Text.UTF8Encoding Strict = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
+    private static bool IsText(string path)
+    {
+        byte[] bytes = File.ReadAllBytes(path);
+        if (Array.IndexOf(bytes, (byte)0) >= 0)
+        {
+            return false;
+        }
+        try
+        {
+            _ = Strict.GetString(bytes);
+            return true;
+        }
+        catch (System.Text.DecoderFallbackException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>The scan reads the sitemap and the samples too (CodeRabbit on #34).</summary>
     [Fact]
@@ -52,6 +93,23 @@ public sealed class LibraryDocsTests
 
         Assert.Contains("public/sitemap.xml", scanned);
         Assert.Contains(scanned, path => path.StartsWith("samples/", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The samples' text files the extension list does not name are read too, and nothing a build or an install wrote
+    /// is (CodeRabbit on 1.0.5.24).
+    /// </summary>
+    [Fact]
+    public void The_samples_scan_reads_every_text_file_and_prunes_what_a_build_writes()
+    {
+        string[] scanned = [.. Scanned().Select(path => Path.GetRelativePath(Repo.Root(), path).Replace('\\', '/'))];
+
+        Assert.Contains("samples/theshed/Dockerfile", scanned);
+        Assert.Contains("samples/theshed/sample-home/reports/visitors.csv", scanned);
+        Assert.Contains("samples/theshed/sample-home/reports/2026/q1.csv", scanned);
+        Assert.DoesNotContain(scanned, path => path.EndsWith(".pdf", StringComparison.Ordinal) || path.EndsWith(".woff2", StringComparison.Ordinal));
+        Assert.DoesNotContain(scanned, path => path.StartsWith("samples/", StringComparison.Ordinal)
+            && path.Split('/').Any(part => Pruned.Contains(part, StringComparer.Ordinal)));
     }
 
     /// <summary>No file a reader of this repository can read holds a Context7 key.</summary>

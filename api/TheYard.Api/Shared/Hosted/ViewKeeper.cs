@@ -6,7 +6,7 @@ namespace TheYard.Api.Shared.Hosted;
 
 // #region view-keeper
 /// <summary>
-/// Once a minute, builds again each slot every kept route was asked for in the last hour; a slot nobody asks for
+/// Once a minute, on a loop of its own for each route, builds again each slot the route was asked for in the last hour; a slot nobody asks for
 /// drops out after the hour, so nothing is read for a page nobody opens.
 /// </summary>
 /// <param name="views">Each route's kept views.</param>
@@ -16,28 +16,29 @@ public sealed class ViewKeeper(IEnumerable<IKeptViews> views, TimeProvider clock
 {
     private readonly IReadOnlyList<IKeptViews> _views = [.. views];
 
-    /// <summary>The minute loop: every watched slot of every route built, a failure logged by type, until the host stops.</summary>
+    /// <summary>One minute loop a route, each on its own, so a slow route never holds up another's refresh.</summary>
     /// <param name="stoppingToken">The host's stopping.</param>
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
+        Task.WhenAll(_views.Select(kept => Task.Run(() => KeepAsync(kept, stoppingToken), CancellationToken.None)));
+
+    /// <summary>One route's minute loop: every watched slot built, a failure logged by type, until the host stops.</summary>
+    private async Task KeepAsync(IKeptViews kept, CancellationToken stopping)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        while (!stopping.IsCancellationRequested)
         {
-            foreach (var kept in _views)
+            try
             {
-                try
-                {
-                    await kept.KeepWatchedAsync(stoppingToken);
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning("The {Views} could not be kept built ({Exception})", kept.Name, ex.GetType().Name);
-                }
+                await kept.KeepWatchedAsync(stopping);
             }
-            await Task.Delay(TimeSpan.FromMinutes(1), clock, stoppingToken).ContinueWith(_ => { }, TaskScheduler.Default);
+            catch (OperationCanceledException) when (stopping.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("The {Views} could not be kept built ({Exception})", kept.Name, ex.GetType().Name);
+            }
+            await Task.Delay(TimeSpan.FromMinutes(1), clock, stopping).ContinueWith(_ => { }, TaskScheduler.Default);
         }
     }
 }

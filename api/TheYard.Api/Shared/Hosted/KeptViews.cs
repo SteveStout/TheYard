@@ -2,9 +2,10 @@
 // addendum on building behind the request, and the addendum that gave the plan, the Azure card and the runs
 // route the same keeping). A view already built answers the request while it is under two minutes old; past
 // one minute the request still answers at once and the next view is built behind it, one build a slot at a
-// time; and ViewKeeper builds again, once a minute, every slot somebody asked for in the last hour. Only the
-// first read of a slot, with nothing built yet, waits for its build. One mechanism, so every route that keeps
-// its views keeps them the same way.
+// time, shared by every request that waits on it and by the keeper; and ViewKeeper builds again, once a minute,
+// every slot somebody asked for in the last hour. A read waits only when no view under two minutes old is held:
+// the first read of a slot, or one after an hour without requests dropped it. One mechanism, so every route that
+// keeps its views keeps them the same way.
 
 namespace TheYard.Api.Shared.Hosted;
 
@@ -53,8 +54,8 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
     /// <summary>Each slot asked for, with how to build it and when it was last asked.</summary>
     private readonly Dictionary<string, (Func<CancellationToken, Task<TView>> Build, DateTimeOffset Asked)> _watched = new(StringComparer.Ordinal);
 
-    /// <summary>The builds running behind a request, one a slot.</summary>
-    private readonly Dictionary<string, Task> _building = new(StringComparer.Ordinal);
+    /// <summary>Every build under way, one a slot, shared by the requests that wait on it, the refresh behind an answer and the keeper.</summary>
+    private readonly Dictionary<string, Task<TView>> _building = new(StringComparer.Ordinal);
 
     /// <inheritdoc/>
     public string Name => name;
@@ -62,26 +63,29 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
     /// <summary>The clock the views are aged on, which the route's build reads too.</summary>
     public TimeProvider Clock => clock;
 
-    /// <summary>The slot's view: a kept one under two minutes old at once, with its next built behind it past a minute; else a build the request waits on.</summary>
+    /// <summary>The slot's view: a kept one under two minutes old at once, with its next built behind it past a minute; else the slot's one build, which the request waits on.</summary>
     /// <param name="slot">The slot, which names everything the build reads.</param>
-    /// <param name="build">Builds the slot's view.</param>
-    /// <param name="cancellation">The request's cancellation, which ends only a build the request waits on.</param>
-    public async Task<TView> ReadAsync(string slot, Func<CancellationToken, Task<TView>> build, CancellationToken cancellation)
+    /// <param name="build">Builds the slot's view for a request that waits on it.</param>
+    /// <param name="cancellation">The request's cancellation, which ends only its own wait: the build goes on and is kept for the next request.</param>
+    /// <param name="refresh">Builds the slot's view behind an answer and for the keeper; null builds it as <paramref name="build"/> does.</param>
+    public async Task<TView> ReadAsync(string slot, Func<CancellationToken, Task<TView>> build, CancellationToken cancellation, Func<CancellationToken, Task<TView>>? refresh = null)
     {
         var now = clock.GetUtcNow();
+        Task<TView> waiting;
         lock (_gate)
         {
-            _watched[slot] = (build, now);
+            _watched[slot] = (refresh ?? build, now);
             if (_cached.TryGetValue(slot, out var hit) && now - hit.At < KeptViews.Served)
             {
-                if (now - hit.At >= KeptViews.Behind && !_building.ContainsKey(slot))
+                if (now - hit.At >= KeptViews.Behind)
                 {
-                    _building[slot] = Task.Run(() => BuildBehindAsync(slot, build, stopping), CancellationToken.None);
+                    _ = Building(slot, refresh ?? build);
                 }
                 return hit.View;
             }
+            waiting = Building(slot, build);
         }
-        return await BuildAsync(slot, build, cancellation);
+        return await waiting.WaitAsync(cancellation);
     }
 
     /// <inheritdoc/>
@@ -101,9 +105,14 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
         }
         foreach (var (slot, build) in due)
         {
+            Task<TView> building;
+            lock (_gate)
+            {
+                building = Building(slot, build);
+            }
             try
             {
-                await BuildAsync(slot, build, cancellation);
+                await building.WaitAsync(cancellation);
             }
             catch (Exception) when (!cancellation.IsCancellationRequested)
             {
@@ -112,27 +121,37 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
         }
     }
 
-    /// <summary>Every build running behind a request, finished: the tests' way to read what a build behind left.</summary>
+    /// <summary>Every build under way, finished, whether it succeeded or not: the tests' way to read what a build left.</summary>
     public Task BuiltBehind()
     {
         lock (_gate)
         {
-            return Task.WhenAll(_building.Values.ToList());
+            return Task.WhenAll(_building.Values.Select(task => task.ContinueWith(_ => { }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default)).ToList());
         }
     }
 
-    /// <summary>One build behind a request, under two minutes and the host's stopping; a failure keeps the view that answered.</summary>
-    private async Task BuildBehindAsync(string slot, Func<CancellationToken, Task<TView>> build, CancellationToken cancellation)
+    /// <summary>The slot's build under way, or a new one when there is none; called under the gate, so a slot never has two.</summary>
+    private Task<TView> Building(string slot, Func<CancellationToken, Task<TView>> build)
     {
-        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        if (_building.TryGetValue(slot, out var running))
+        {
+            return running;
+        }
+        var started = Task.Run(() => BuildOnceAsync(slot, build), CancellationToken.None);
+        _building[slot] = started;
+        // A build nobody waits on fails quietly: the view that answered stays until one succeeds.
+        _ = started.ContinueWith(task => task.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        return started;
+    }
+
+    /// <summary>One build of the slot, under two minutes and the host's stopping, gone from the builds under way when it ends.</summary>
+    private async Task<TView> BuildOnceAsync(string slot, Func<CancellationToken, Task<TView>> build)
+    {
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(stopping);
         limit.CancelAfter(KeptViews.Served);
         try
         {
-            await BuildAsync(slot, build, limit.Token);
-        }
-        catch (Exception) when (!cancellation.IsCancellationRequested)
-        {
-            // Nobody waits on this build: the view that answered stays until one succeeds.
+            return await BuildAsync(slot, build, limit.Token);
         }
         finally
         {
@@ -143,7 +162,7 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
         }
     }
 
-    /// <summary>The slot built now and, when it is one to keep, held for the next request under the moment its build began.</summary>
+    /// <summary>The slot built now and, when it is one to keep and no newer build has been kept, held for the next request under the moment its build began.</summary>
     private async Task<TView> BuildAsync(string slot, Func<CancellationToken, Task<TView>> build, CancellationToken cancellation)
     {
         var at = clock.GetUtcNow();
@@ -152,7 +171,11 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
         {
             lock (_gate)
             {
-                _cached[slot] = (at, view);
+                // An older build that ends after a newer one never replaces the newer view.
+                if (!_cached.TryGetValue(slot, out var held) || held.At <= at)
+                {
+                    _cached[slot] = (at, view);
+                }
             }
         }
         return view;

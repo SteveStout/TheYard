@@ -97,7 +97,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._month"] = "one per card, seven",
         ["TheYard.Api.Shared.Hosted.KeptViews`1._cached"] = "one per slot asked for in the last hour: a Cloud card's or the plan's window, the Azure card's one view, a runs page; dropped with its slot an hour after the last ask",
         ["TheYard.Api.Shared.Hosted.KeptViews`1._watched"] = "one per slot asked for, dropped an hour after the last ask; the slots are the windows, process names and pages each route already accepts",
-        ["TheYard.Api.Shared.Hosted.KeptViews`1._building"] = "the builds under way behind a request, one a slot, each removed the moment it finishes",
+        ["TheYard.Api.Shared.Hosted.KeptViews`1._building"] = "every build under way, one a slot, shared by the requests and the keeper, each removed the moment it finishes",
         ["TheYard.Api.Shared.Hosted.ViewKeeper._views"] = "one per route that keeps its views, four, fixed at startup",
         ["TheYard.Application.Features.Blog.MemoryBlogImageStore._files"] = "the pictures the tests or the operator put in a process with no container, a handful",
         ["TheYard.Api.Features.Admin.Cloud.ProcessDescriptions._read"] = "one per file of the job hunt Function it reads, eight: the seven processes and its own paragraph",
