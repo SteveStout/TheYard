@@ -20,6 +20,12 @@ internal static class JobsSql
             AND d.[Id] = (SELECT MAX(n.[Id]) FROM [jobhunt].[PostingDescriptions] n WHERE n.[PostingKey] = d.[PostingKey])
         """;
 
+    internal const string FirstSeen = """
+        SELECT p.[BoardToken], c.[Names], p.[Title]
+        FROM [jobhunt].[Postings] p LEFT JOIN [campaign].[Companies] c ON c.[Key] = p.[CompanyKey]
+        WHERE p.[FirstSeenAt] >= @since
+        """;
+
     internal const string Tracker = """
         SELECT t.[Count], t.[Person], t.[Company], t.[Communication], t.[Date], t.[PhoneEmail], t.[Notes] FROM [jobhunt].[Tracker] t ORDER BY t.[Position]
         """;
