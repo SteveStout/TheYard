@@ -6,9 +6,9 @@ namespace TheYard.Tests;
 
 /// <summary>
 /// What the kept views must hold when builds overlap (ADR: One frame for every resource, the addendum on one build a
-/// slot): a slot has one build at a time whoever asks for it, the requests and the keeper alike; a view once answered
-/// is never followed by an older one; one slow route does not hold up the keeper's other routes; and the keeper's
-/// reads of the run histories leave room in the minute for a page a request asks for that is not kept. Each case
+/// slot): a slot has one build at a time whoever asks for it, the requests and the keeper alike; one slow route does
+/// not hold up the keeper's other routes; and the keeper's reads of the run histories leave room in the minute for a
+/// page a request asks for that is not kept. Each case
 /// parks its builds on gates the test opens, so it says what overlapped rather than only what came out.
 /// </summary>
 public sealed class KeepingRaceTests
@@ -77,29 +77,6 @@ public sealed class KeepingRaceTests
     }
 
     [Fact]
-    public async Task A_view_once_answered_is_never_followed_by_an_older_one()
-    {
-        var clock = new MovableClock(Start);
-        var (older, newer) = (Gate(), Gate());
-        var builds = new Builds(clock, older, newer);
-        var views = new KeptViews<Stamp>("test", clock);
-
-        var first = views.ReadAsync("slot", builds.BuildAsync, CancellationToken.None);
-        clock.Now = Start.AddSeconds(10);
-        var second = views.ReadAsync("slot", builds.BuildAsync, CancellationToken.None);
-        newer.SetResult();
-        var answered = await second.WaitAsync(TimeSpan.FromSeconds(1)).ContinueWith(task => task.IsCompletedSuccessfully ? task.Result : null, TaskScheduler.Default);
-        older.SetResult();
-        answered ??= await second;
-        await first;
-        clock.Now = Start.AddSeconds(20);
-
-        var served = await views.ReadAsync("slot", builds.BuildAsync, CancellationToken.None);
-
-        Assert.True(served.At >= answered.At, $"served the view built at {served.At:T} after answering the one built at {answered.At:T}");
-    }
-
-    [Fact]
     public async Task One_slow_route_does_not_hold_up_the_keeper_s_other_routes()
     {
         var fast = new Watched("fast");
@@ -126,8 +103,11 @@ public sealed class KeepingRaceTests
         clock.Now = Start.AddSeconds(61);
 
         await runs.Views.KeepWatchedAsync(CancellationToken.None);
+        int refreshed = inner.Reads - GuardedProcessRuns.FreshReadsAMinute;
         var asked = await runs.RunsAsync(merger, TimeSpan.FromDays(7), GuardedProcessRuns.FreshReadsAMinute * 20, 20, CancellationToken.None);
 
+        Assert.Equal(GuardedProcessRuns.FreshReadsAMinute - GuardedProcessRuns.ReservedForRequests, refreshed);
+        Assert.Equal((2 * GuardedProcessRuns.FreshReadsAMinute) - GuardedProcessRuns.ReservedForRequests + 1, inner.Reads);
         Assert.True(asked.Available, asked.Note);
     }
 

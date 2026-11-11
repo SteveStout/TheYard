@@ -697,8 +697,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 8,
+      "answered_as_wrong": 0,
       "prs": [
         36
       ]
