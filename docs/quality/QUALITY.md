@@ -102,7 +102,7 @@ Branch coverage, per cent | floor 75 |
 
 ## CodeRabbit, the last reviewer
 
-An AI review bot reads every version's pull request inside the gate. It is at level {{live:coderabbit-level}} of four, where it comments and no finding holds a release; each step up is my decision, on this log ([ADR-129](https://theyard.stevenstout.biz/?doc=adr-coderabbit-one-rung-at-a-time)).
+An AI review bot is asked to read every version's pull request inside the gate, and a version it did not get to is logged as not reviewed. It is at level {{live:coderabbit-level}} of four, where it comments and no finding holds a release; each step up is my decision, on this log ([ADR-129](https://theyard.stevenstout.biz/?doc=adr-coderabbit-one-rung-at-a-time)). Fixed and answered as wrong are read from each request's threads and the versions after it; a finding in neither is still open, and an empty cell is one not read yet.
 
 {{live:coderabbit-rows}}
 

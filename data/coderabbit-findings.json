@@ -21,7 +21,9 @@
       },
       "prs": [
         5
-      ]
+      ],
+      "fixed": 1,
+      "answered_as_wrong": 0
     },
     {
       "version": "1.0.4.177",
@@ -43,7 +45,9 @@
       },
       "prs": [
         6
-      ]
+      ],
+      "fixed": 1,
+      "answered_as_wrong": 0
     },
     {
       "version": "1.0.4.178",
@@ -65,7 +69,9 @@
       },
       "prs": [
         7
-      ]
+      ],
+      "fixed": 4,
+      "answered_as_wrong": 0
     },
     {
       "version": "1.0.5.0",
@@ -87,7 +93,9 @@
       },
       "prs": [
         8
-      ]
+      ],
+      "fixed": 2,
+      "answered_as_wrong": 0
     },
     {
       "version": "1.0.5.1",
@@ -109,7 +117,9 @@
       },
       "prs": [
         9
-      ]
+      ],
+      "fixed": 1,
+      "answered_as_wrong": 0
     },
     {
       "version": "1.0.5.2",
@@ -131,7 +141,9 @@
       },
       "prs": [
         10
-      ]
+      ],
+      "fixed": 1,
+      "answered_as_wrong": 1
     },
     {
       "version": "1.0.5.3",
@@ -154,7 +166,9 @@
       "prs": [
         11,
         12
-      ]
+      ],
+      "fixed": 1,
+      "answered_as_wrong": 1
     },
     {
       "version": "1.0.5.4",
@@ -176,7 +190,9 @@
       },
       "prs": [
         13
-      ]
+      ],
+      "fixed": 0,
+      "answered_as_wrong": 0
     },
     {
       "version": "1.0.5.5",
@@ -198,7 +214,9 @@
       },
       "prs": [
         15
-      ]
+      ],
+      "fixed": 0,
+      "answered_as_wrong": 0
     },
     {
       "version": "1.0.5.6",
@@ -220,7 +238,9 @@
       },
       "prs": [
         16
-      ]
+      ],
+      "fixed": 1,
+      "answered_as_wrong": 0
     }
   ]
 }
