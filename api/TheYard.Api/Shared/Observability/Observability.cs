@@ -32,7 +32,8 @@ public sealed record HealthCheckEntry(
 /// The site asking Azure about itself: a management-plane token from its own
 /// user-assigned identity, then a read of its own resource. Degrades to
 /// available=false anywhere that identity does not exist (local dev, tests),
-/// and caches success for 60 seconds.
+/// and keeps a successful read built: under two minutes old it answers at once,
+/// and past one minute the next is built behind the request.
 ///
 /// <para>The resource is whatever <c>Azure:SelfResourceId</c> names, and it can
 /// be one of two kinds. A container group reports a state, a container inside
@@ -41,64 +42,53 @@ public sealed record HealthCheckEntry(
 /// and that is what the card shows for it, saying so rather than drawing a
 /// zero for a restart count it does not have.</para>
 /// </summary>
-public sealed class AzureSelf(string clientId, string resourceId, HostIdentity? identity = null)
+public sealed class AzureSelf(string clientId, string resourceId, HostIdentity? identity, TimeProvider clock, CancellationToken stopping = default)
 {
+    /// <summary>The card's one view as built.</summary>
+    public KeptViews<object> Views { get; } = new("Azure card", clock, stopping);
+
     private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(4));
 
     private static string Trim(string text, int max) =>
         text.Length <= max ? text : text[..max].TrimEnd() + "...";
 
-    private readonly object _gate = new();
-    private object? _cached;
-    private DateTimeOffset _cachedAt;
-
     /// <summary>True when the resource this process was told it is, is a web app rather than a container group.</summary>
     public static bool IsSite(string resourceId) =>
         resourceId.Contains("/providers/Microsoft.Web/sites/", StringComparison.OrdinalIgnoreCase);
 
-    /// <param name="cancellation">Cancelled when the poll that asked has gone; the three reads this makes stop with it.</param>
+    /// <summary>The card's view from <see cref="Views"/>: one under two minutes old at once, with its next built behind it past a minute; available=false when nothing is built and Azure will not answer.</summary>
+    /// <param name="cancellation">Cancelled when the poll that asked has gone; a build the request waits on stops with it.</param>
     public async Task<object> GetStateAsync(CancellationToken cancellation)
     {
-        lock (_gate)
-        {
-            if (_cached is not null && DateTimeOffset.UtcNow - _cachedAt < TimeSpan.FromSeconds(60))
-            {
-                return _cached;
-            }
-        }
         try
         {
-            string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
-            object result;
-            if (IsSite(resourceId))
-            {
-                // The site first, because it names the plan; then its
-                // configuration and the plan side by side. Either of those two
-                // failing costs the card a line, not the card.
-                using var site = await ReadAsync(token, resourceId + "?api-version=2023-12-01", cancellation);
-                string? planId = site.RootElement.GetProperty("properties").TryGetProperty("serverFarmId", out var farm) ? farm.GetString() : null;
-                var configRead = TryReadAsync(token, resourceId + "/config/web?api-version=2023-12-01", cancellation);
-                var planRead = planId is null ? Task.FromResult<JsonDocument?>(null) : TryReadAsync(token, planId + "?api-version=2023-12-01", cancellation);
-                using var config = await configRead;
-                using var plan = await planRead;
-                result = ShapeSite(site.RootElement, config?.RootElement, plan?.RootElement, DateTimeOffset.UtcNow);
-            }
-            else
-            {
-                using var group = await ReadAsync(token, resourceId + "?api-version=2023-05-01", cancellation);
-                result = ShapeGroup(group.RootElement, DateTimeOffset.UtcNow);
-            }
-            lock (_gate)
-            {
-                _cached = result;
-                _cachedAt = DateTimeOffset.UtcNow;
-            }
-            return result;
+            return await Views.ReadAsync("self", BuildAsync, cancellation);
         }
         catch (Exception ex)
         {
             return new { available = false, reason = ex.GetType().Name };
         }
+    }
+
+    /// <summary>Asks Azure now: a token, then the resource, and for a web app its configuration and plan beside it. Throws when the resource cannot be read, so a failure is never kept.</summary>
+    private async Task<object> BuildAsync(CancellationToken cancellation)
+    {
+        string token = await IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
+        if (IsSite(resourceId))
+        {
+            // The site first, because it names the plan; then its
+            // configuration and the plan side by side. Either of those two
+            // failing costs the card a line, not the card.
+            using var site = await ReadAsync(token, resourceId + "?api-version=2023-12-01", cancellation);
+            string? planId = site.RootElement.GetProperty("properties").TryGetProperty("serverFarmId", out var farm) ? farm.GetString() : null;
+            var configRead = TryReadAsync(token, resourceId + "/config/web?api-version=2023-12-01", cancellation);
+            var planRead = planId is null ? Task.FromResult<JsonDocument?>(null) : TryReadAsync(token, planId + "?api-version=2023-12-01", cancellation);
+            using var config = await configRead;
+            using var plan = await planRead;
+            return ShapeSite(site.RootElement, config?.RootElement, plan?.RootElement, clock.GetUtcNow());
+        }
+        using var group = await ReadAsync(token, resourceId + "?api-version=2023-05-01", cancellation);
+        return ShapeGroup(group.RootElement, clock.GetUtcNow());
     }
 
     private static async Task<JsonDocument> ReadAsync(string token, string pathAndQuery, CancellationToken cancellation)

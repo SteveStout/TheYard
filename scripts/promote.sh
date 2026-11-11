@@ -53,8 +53,8 @@ if [ -f "$raw/coderabbit.json" ]; then
     "not reviewed"* | *"not read") ;;
     *)
       if [ "$critical" -gt 0 ]; then
-        where=$(jq -r '[.critical_at[]? | "\(.path):\(.line)" + (if .pr then " on #\(.pr)" else "" end)] | join(", ")' "$raw/coderabbit.json")
-        refuse "a Critical finding holds the promote: CodeRabbit marked $critical Critical on pull request #$(jq -r '.pr' "$raw/coderabbit.json") (${where:-in the review body}); fix it on this gate branch, or leave the call to the owner"
+        where=$(jq -r '[.critical_at[]? | (if .line then "\(.path):\(.line)" else .path end) + (if .pr then " on #\(.pr)" else "" end)] | join(", ")' "$raw/coderabbit.json")
+        refuse "a Critical finding holds the promote: CodeRabbit marked $critical Critical (${where:-in the review body}); fix it on this gate branch, or leave the call to the owner"
       fi
       ;;
   esac

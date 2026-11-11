@@ -34,7 +34,8 @@ public sealed partial class PromoteScriptTests
 
         Assert.NotEqual(0, code);
         Assert.Contains("a Critical finding holds the promote", output, StringComparison.Ordinal);
-        Assert.Contains("pull request #41", output, StringComparison.Ordinal);
+        // The finding names its own request; the row's request is not put on it (CodeRabbit on #34).
+        Assert.DoesNotContain("#41", output, StringComparison.Ordinal);
         Assert.Contains("api/Any.cs:12 on #43", output, StringComparison.Ordinal);
         Assert.Equal(before, MainOnOrigin());
     }

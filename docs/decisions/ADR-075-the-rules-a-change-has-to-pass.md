@@ -216,6 +216,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The findings log counts each CodeRabbit finding by the label in its header alone, and a remark with no label as a nitpick; from 1.0.4.178 only the gated commit's findings and never a reply in a thread, and every ship has exactly one row whatever the read did | ADR-129, the addenda of 1.0.4.177 and 1.0.4.178 | CodeRabbitRuleTests |
 | The quality history starts on 15 October, before the ratchet went in, with no limit before it, runs in version order with every number the ratchet names, and its newest row is what the scanner reads at HEAD (from 1.0.5.2; a newest row behind the changelog is a gap, never a red gate); every number on the Quality page is read live from data the build carries, and the page types none of its own | ADR-130 | QualityHistoryTests |
 | A version that moves the first three numbers ships only by hand, with the person promoting naming it as OWNER_YES, moves the third number by one and starts the fourth at 0; the gate ends green with a notice and moves nothing, whatever its environment holds | ADR-130 | PromoteScriptTests |
+| A session unsure of a library's API at the version this repository pins looks it up first, Microsoft Learn for .NET and Azure and Context7 for the rest, and no file a reader can read holds a Context7 key | ADR-131 | LibraryDocsTests |
 
 ## How the table is read
 

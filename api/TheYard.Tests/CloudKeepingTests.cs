@@ -47,7 +47,7 @@ public sealed class CloudKeepingTests
         Assert.True(read.IsCompleted, "the request waited on the build behind it");
         Assert.Equal(first.AsOfMs, (await read).AsOfMs);
         gate.SetResult();
-        await reader.BuiltBehind();
+        await reader.Views.BuiltBehind();
         Assert.Equal(2, built);
         Assert.Equal(Start.AddSeconds(90).ToUnixTimeMilliseconds(), (await reader.ReadAsync("insights", "24h", CancellationToken.None)).AsOfMs);
     }
@@ -60,7 +60,7 @@ public sealed class CloudKeepingTests
         int built = 0;
         var reader = Reader(clock, gate, () => ++built);
         await reader.ReadAsync("insights", "24h", CancellationToken.None);
-        clock.Now = Start + CloudReader.Served;
+        clock.Now = Start + KeptViews.Served;
 
         var read = reader.ReadAsync("insights", "24h", CancellationToken.None);
 
@@ -79,13 +79,13 @@ public sealed class CloudKeepingTests
         var reader = Reader(clock, gate, () => ++built);
         await reader.ReadAsync("insights", "24h", CancellationToken.None);
 
-        await reader.KeepWatchedAsync(CancellationToken.None);
+        await reader.Views.KeepWatchedAsync(CancellationToken.None);
         Assert.Equal(1, built);
         clock.Now = Start.AddSeconds(61);
-        await reader.KeepWatchedAsync(CancellationToken.None);
+        await reader.Views.KeepWatchedAsync(CancellationToken.None);
         Assert.Equal(2, built);
-        clock.Now = Start + CloudReader.Watched + TimeSpan.FromMinutes(1);
-        await reader.KeepWatchedAsync(CancellationToken.None);
+        clock.Now = Start + KeptViews.Watched + TimeSpan.FromMinutes(1);
+        await reader.Views.KeepWatchedAsync(CancellationToken.None);
 
         Assert.Equal(2, built);
     }
@@ -107,7 +107,7 @@ public sealed class CloudKeepingTests
         }, clock);
         await reader.ReadAsync("insights", "24h", CancellationToken.None);
         clock.Now = Start.AddSeconds(61);
-        using var keeper = new CloudKeeper(reader, clock, Microsoft.Extensions.Logging.Abstractions.NullLogger<CloudKeeper>.Instance);
+        using var keeper = new ViewKeeper([reader.Views], clock, Microsoft.Extensions.Logging.Abstractions.NullLogger<ViewKeeper>.Instance);
 
         await keeper.StartAsync(CancellationToken.None);
         await second.Task.WaitAsync(TimeSpan.FromSeconds(10));

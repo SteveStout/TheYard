@@ -396,7 +396,7 @@ public sealed class CloudReadersTests
         using var route = OutboundHttp.RouteTo(new RecordedCloud());
         var history = new MemoryPlanHistory("no document store in the test");
         var recorder = new PlanRecorder(new PlanReader("client-1", new PlanLayout(RecordedCloud.Site, TimeProvider.System), configured: true), history, Build, TimeProvider.System, NullLogger<PlanRecorder>.Instance);
-        var reader = new PlanHistoryReader(history, recorder, _ => Task.FromResult<double?>(11.14), TimeProvider.System);
+        var reader = new PlanHistoryReader(history, recorder, _ => Task.FromResult<double?>(11.14), new KeptViews<CloudReport>("plan card", TimeProvider.System));
 
         var report = await reader.ReadAsync("24h", CancellationToken.None);
         var again = await reader.ReadAsync("24h", CancellationToken.None);

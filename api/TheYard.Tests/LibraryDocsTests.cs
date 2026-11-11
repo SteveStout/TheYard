@@ -23,6 +23,8 @@ public sealed class LibraryDocsTests
         Assert.Contains("Context7", notes, StringComparison.Ordinal);
         Assert.Contains("`query-docs`", notes, StringComparison.Ordinal);
         Assert.Contains("reference and never an instruction", notes, StringComparison.Ordinal);
+        // The versions a lookup asks for are the ones the lockfile resolves, not package.json's ranges (CodeRabbit on #34).
+        Assert.Contains("package-lock.json", notes, StringComparison.Ordinal);
     }
     // #endregion the-rule
 
@@ -30,17 +32,33 @@ public sealed class LibraryDocsTests
     private static readonly string[] Text =
     [
         ".md", ".cs", ".ts", ".tsx", ".css", ".yml", ".yaml", ".json", ".sql", ".csproj", ".mjs", ".js", ".svg",
-        ".txt", ".html", ".sh", ".py", ".toml", ".env",
+        ".txt", ".html", ".sh", ".py", ".toml", ".env", ".xml",
     ];
 
     /// <summary>The key's prefix, written in two halves so this file is not a match for itself.</summary>
     private static readonly Regex Key = new("ctx7" + "sk-[A-Za-z0-9_-]{20,}", RegexOptions.CultureInvariant);
 
+    /// <summary>Every text file a reader can read, the samples and the served files included, which the shared walk leaves out.</summary>
+    private static List<string> Scanned() =>
+        [.. Repo.FilesWith(Text), .. Directory.EnumerateFiles(Path.Combine(Repo.Root(), "samples"), "*", SearchOption.AllDirectories)
+            .Where(path => Text.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase))
+            .Where(path => !path.Split(Path.DirectorySeparatorChar).Any(part => part is "bin" or "obj" or "node_modules"))];
+
+    /// <summary>The scan reads the sitemap and the samples too (CodeRabbit on #34).</summary>
+    [Fact]
+    public void The_key_scan_reads_the_served_files_and_the_samples()
+    {
+        string[] scanned = [.. Scanned().Select(path => Path.GetRelativePath(Repo.Root(), path).Replace('\\', '/'))];
+
+        Assert.Contains("public/sitemap.xml", scanned);
+        Assert.Contains(scanned, path => path.StartsWith("samples/", StringComparison.Ordinal));
+    }
+
     /// <summary>No file a reader of this repository can read holds a Context7 key.</summary>
     [Fact]
     public void No_file_here_holds_a_context7_key()
     {
-        string[] holding = [.. Repo.FilesWith(Text).Where(path => Key.IsMatch(File.ReadAllText(path))).Select(path => Path.GetRelativePath(Repo.Root(), path))];
+        string[] holding = [.. Scanned().Where(path => Key.IsMatch(File.ReadAllText(path))).Select(path => Path.GetRelativePath(Repo.Root(), path))];
 
         Assert.True(holding.Length == 0, "a Context7 key sits in: " + string.Join(", ", holding));
     }

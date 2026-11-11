@@ -59,9 +59,11 @@ public sealed class Module : IModule
             provider.GetRequiredService<IPlanHistory>(),
             records ? provider.GetRequiredService<PlanRecorder>() : null,
             cancellation => PlanCost.MonthToDateAsync(provider.GetRequiredService<ICostHistory>(), provider.GetRequiredService<PlanReader>(), TimeProvider.System, cancellation),
-            TimeProvider.System,
+            new KeptViews<CloudReport>("plan card", TimeProvider.System, provider.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping),
             recordingSite));
         services.AddSingleton<IPlanCard>(provider => provider.GetRequiredService<PlanHistoryReader>());
+        // The windows somebody asked for, built again each minute behind the route by the one keeper.
+        services.AddSingleton<IKeptViews>(provider => provider.GetRequiredService<PlanHistoryReader>().Views);
         services.AddScoped<ReadPlanHandler>();
         // #endregion plan-wiring
     }
