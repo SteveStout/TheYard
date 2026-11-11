@@ -1,9 +1,12 @@
 /**
  * Does:      Reads the page the API serves (index.html, built with the bundle it names) and the build the API runs, keeps
- *            them for a few seconds, and cuts the page at #root, where a drawn page goes.
+ *            them for a few seconds, and cuts the page at #root, where a drawn page goes; and keeps the published
+ *            posts' titles and summaries the same way, for a post's link preview.
  * Does not:  Draw anything (render.ts does) or read a store: it asks the API what any browser can ask it.
  * Used by:   render.ts, render.test.ts.
  */
+
+import type { PostHead } from './heads';
 
 // #region the-page
 /** The page the API serves, cut where #root's drawing goes, with the build that served it. */
@@ -63,6 +66,30 @@ export function servedPages(read: typeof fetch = fetch) {
       if (answer === null) entry.at = Date.now() - KEEP_MS + KEEP_FAILED_MS;
     });
     return page;
+  };
+}
+
+/**
+ * The published posts' titles and summaries at one API origin, read at most once every fifteen seconds, so a
+ * post's link preview carries its own title (ADR: The public face). Empty when the blog does not answer: the
+ * preview then says what the blog is.
+ */
+export function keptPosts(read: typeof fetch = fetch) {
+  const kept = new Map<string, { at: number; posts: Promise<PostHead[]> }>();
+  return (apiOrigin: string): Promise<PostHead[]> => {
+    const hit = kept.get(apiOrigin);
+    if (hit && Date.now() - hit.at < KEEP_MS) return hit.posts;
+    const posts = read(`${apiOrigin}/api/blog/posts`, {
+      headers: { 'User-Agent': SELF_READ },
+      signal: AbortSignal.timeout(2_000),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { posts?: PostHead[] } | null) =>
+        (body?.posts ?? []).map(({ slug, title, summary }) => ({ slug, title, summary }))
+      )
+      .catch(() => [] as PostHead[]);
+    kept.set(apiOrigin, { at: Date.now(), posts });
+    return posts;
   };
 }
 
