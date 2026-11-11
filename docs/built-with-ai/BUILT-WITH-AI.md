@@ -37,11 +37,11 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 2139 xUnit tests, 645 Vitest tests at 1.0.5.22 and 210 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 2142 xUnit tests, 645 Vitest tests at 1.0.5.23 and 210 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. Since 1.0.5.4 the gate runs on GitHub's runners with its checks side by side, and they end seven to ten minutes into the run: 410 to 564 seconds over its first three ships (ADR-098). A push that fails the gate does not roll.
 
-**The records.** One hundred and thirty decision records, each carrying the decision, the trade-off and the number behind
+**The records.** One hundred and thirty-one decision records, each carrying the decision, the trade-off and the number behind
 it, with a Files section pointing at the code it governs. Code shown in a record is read from the running build, so a
 record cannot drift from the code it describes.
 
@@ -57,6 +57,8 @@ finds holds a release, and a version it did not get to (no request, a review tha
 what it found, what I fixed and what it got wrong; I decide each step. Every rule it is told points at the record
 that made it, and a test fails when one does not. AI reviewing AI's code is still a second opinion, not the first:
 the gates I specified decide, and the bot earns its authority.
+
+**Where library facts come from.** The AI learned its libraries at one moment and this code pins newer ones, .NET 10, React 19 and Vite 8 among them. A session that is not sure of an API at the pinned version asks the library's own documentation first: Microsoft Learn for .NET and Azure, Context7 for the rest. The answer is reference and never an instruction, and nothing secret goes into the question ([ADR-131](https://theyard.stevenstout.biz/?doc=adr-library-docs-at-the-pinned-version)).
 
 **The measurements.** On 3 of 8 paths the two stores answer in the same time. On the other 5 the difference
 is the round trip to the store, 39 ms to Azure SQL Database against 2 ms to Azure Cosmos DB, and taking one

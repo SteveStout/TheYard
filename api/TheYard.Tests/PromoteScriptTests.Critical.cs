@@ -11,7 +11,7 @@ public sealed partial class PromoteScriptTests
     // #region the-critical-hold
     private void Review(string reviewed, int critical, int major = 0, int minor = 0)
     {
-        string at = critical > 0 ? """[{"path":"api/Any.cs","line":12}]""" : "[]";
+        string at = critical > 0 ? """[{"path":"api/Any.cs","line":12,"pr":43}]""" : "[]";
         File.WriteAllText(
             Path.Combine(_root, "raw", "coderabbit.json"),
             $$"""{"version":"1.0.4.106","pr":41,"reviewed":"{{reviewed}}","actionable":{{critical + major + minor}},"findings":{"critical":{{critical}},"major":{{major}},"minor":{{minor}},"trivial":0,"nitpick":0},"critical_at":{{at}}}""");
@@ -35,7 +35,7 @@ public sealed partial class PromoteScriptTests
         Assert.NotEqual(0, code);
         Assert.Contains("a Critical finding holds the promote", output, StringComparison.Ordinal);
         Assert.Contains("pull request #41", output, StringComparison.Ordinal);
-        Assert.Contains("api/Any.cs:12", output, StringComparison.Ordinal);
+        Assert.Contains("api/Any.cs:12 on #43", output, StringComparison.Ordinal);
         Assert.Equal(before, MainOnOrigin());
     }
 
