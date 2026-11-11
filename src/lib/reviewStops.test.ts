@@ -24,10 +24,10 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     expect(REVIEW_STOPS).toHaveLength(7);
     expect(new Set(REVIEW_STOPS.map((stop) => stop.key)).size).toBe(7);
     expect(REVIEW_STOPS.map((stop) => stop.key)).toEqual([
+      'quality',
       'first-screen',
       'room',
       'spend',
-      'decision',
       'gate',
       'stores',
       'resume',
@@ -50,10 +50,10 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
       for (const link of stop.links ?? []) expect(served(link.href), link.href).toBe(true);
     }
     expect(REVIEW_STOPS.map((stop) => stop.address)).toEqual([
+      '/?doc=quality',
       '/',
       '/?view=inventory',
       '/?view=admin&card=spend',
-      '/?doc=adr-rules',
       '/?view=admin&card=tests',
       '/?doc=sql-vs-cosmos',
       '/resume?pdf=1',

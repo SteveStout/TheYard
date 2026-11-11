@@ -126,3 +126,22 @@ Until this version the route was one column and its last stop was "The resume". 
 2. **A rail beside the stops.** At a wide desk (1280 pixels and up, the nearest step of the site's width scale to the mockup's 1180) the page is two columns: the stops at their 720 pixels and a 332-pixel rail holding the person the route is about, with his links, and every recommendation's pull sentence, each with "Read the whole thing" to its card on the recommendations page. Under that width the rail folds: the person's links under the lede, the quotes after the finish panel. The quotes are read from /api/recommendations in the browser, the same answer the landing column reads, so the stops still draw whole on the server and read nothing.
 
 The route stays seven stops. `review.spec.ts` holds the rail at 1440 and the fold at 390; `reviewStops.test.ts` the last stop's title, its link and its unnumbered sentence.
+
+## Addendum, @DATE@ (@VER@): Quality you can watch is stop 1
+
+What stopped being true: the table in the addendum of 1.0.4.150, and its line "stop 4 already is the rules a change has to pass". The route opens on the Quality page now, the one place the site shows code quality held on every version, and "One decision, with its code" folds into it: the rules table it opened is a link on stop 1, "The rules and the tests that hold them", and its record, the numbers that may only fall, is stop 1's record. Still seven stops and ten minutes, so the page's title and lede stay word for word, and the gate is still stop 5. The gate stop now names CodeRabbit reviewing the pull request, true since 1.0.4.176.
+
+| Stop | Minutes | The record behind it |
+| --- | ---: | --- |
+| Quality you can watch | 2 | ADR: The numbers that may only fall |
+| The first screen | 1 | ADR: One reading for the first screen |
+| Bid in the room | 2 | ADR: The store does the work |
+| What Azure charges | 1 | ADR: What Azure charges |
+| The gate that shipped this version | 1 | ADR: The five-minute gate |
+| One codebase, two stores | 2 | ADR: Measuring both stores |
+| The resume, and who vouches for it | 1 | ADR: The resume has an address |
+
+**The Admin card keeps its rows.** Reach is stored by stop number, never by key (the addendum of version B, 1.0.4.131), so a visit counted before this version cannot be relabelled after the fact, and the stored rows are neither rewritten nor dropped. The card "Review route, how far they got" draws its bars under the new titles and says so in one more muted line under its counting line: the day the stops were reordered, and that reach before that day was counted against the earlier order. The day is one named constant in src/lib/review.ts, and review.test.ts holds the line.
+
+**The kept place starts again.** The browser keeps the place as indexes, so a reader who reached stop 1 under the first order would come back with Quality already ticked and be sent past it. Both keys gain a "-2" (theyard-review-stop-2 and theyard-review-reached-2), and every browser starts the new order at stop 1. A returning reader reports stop 1 again, which the server folds as it folds any repeat: a higher stop replaces a lower one, one row a visitor a day.
+

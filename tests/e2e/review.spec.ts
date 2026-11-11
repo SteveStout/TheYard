@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { REVIEW_STOPS } from '../../src/lib/reviewStops';
+import { CURRENT_KEY, REACHED_KEY } from '../../src/lib/reviewProgress';
 import { openTheYard } from './app';
 import { fadedContent, quietWordsOnTheBareGround } from './glass';
 
@@ -12,13 +13,16 @@ import { fadedContent, quietWordsOnTheBareGround } from './glass';
  * under its own path, and its short door keeping the code.
  */
 async function freshRoute(page: Page) {
-  await page.addInitScript(() => {
-    if (sessionStorage.getItem('review-spec-cleared') === null) {
-      localStorage.removeItem('theyard-review-stop');
-      localStorage.removeItem('theyard-review-reached');
-      sessionStorage.setItem('review-spec-cleared', '1');
-    }
-  });
+  await page.addInitScript(
+    ([current, reached]) => {
+      if (sessionStorage.getItem('review-spec-cleared') === null) {
+        localStorage.removeItem(current);
+        localStorage.removeItem(reached);
+        sessionStorage.setItem('review-spec-cleared', '1');
+      }
+    },
+    [CURRENT_KEY, REACHED_KEY]
+  );
 }
 
 const stop = (page: Page, index: number) =>
@@ -96,9 +100,7 @@ test('every stop opens the site’s own address, and the stop on screen is the o
     await expect(record).toHaveAttribute('href', `/?doc=${entry.record}`);
     await expect(record).not.toHaveAttribute('target', '_blank');
   }
-  await stop(page, 3)
-    .getByRole('button', { name: /One decision/ })
-    .click();
+  await stop(page, 3).getByRole('button', { name: REVIEW_STOPS[3].title }).click();
   await expect(page.getByTestId('review-do-this')).toHaveCount(1);
   await expect(stop(page, 3).getByTestId('review-do-this')).toBeVisible();
 });

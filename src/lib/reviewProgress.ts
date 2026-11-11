@@ -7,11 +7,14 @@
 import { linkCode } from './links';
 import { REVIEW_STOPS } from './reviewStops';
 
-/** The key the current stop is kept under, its index from 0. */
-export const CURRENT_KEY = 'theyard-review-stop';
+/**
+ * The key the current stop is kept under, its index from 0. The "-2" is the second order of the stops: a place
+ * kept under the first order's key would tick the new stop 1 for a reader who only saw the old one.
+ */
+export const CURRENT_KEY = 'theyard-review-stop-2';
 
-/** The key the reached stops are kept under, a JSON list of indexes. */
-export const REACHED_KEY = 'theyard-review-reached';
+/** The key the reached stops are kept under, a JSON list of indexes, in the second order like the key above. */
+export const REACHED_KEY = 'theyard-review-reached-2';
 
 /** The two calls of Storage this file makes, so a test can hand it a map and the server hands it nothing. */
 export type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
