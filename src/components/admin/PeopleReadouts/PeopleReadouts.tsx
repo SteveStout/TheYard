@@ -16,7 +16,7 @@ import {
   type PeopleDay,
 } from '../../../lib/people';
 import { DayMarks } from '../DayMarks';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 import styles from './PeopleReadouts.module.css';
 
 /** The chart's box, in viewBox units: room under the plot for the day labels, left of it for the scale. */

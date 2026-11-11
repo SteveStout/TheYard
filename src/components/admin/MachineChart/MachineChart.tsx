@@ -22,9 +22,9 @@ import {
 import { ChartReadout } from '../ChartReadout';
 import { DayMarks } from '../DayMarks';
 import { PeakCallout } from '../PeakCallout';
-import { PlotFrame } from '../PlotFrame';
-import { useFittedBox } from '../charts/useFittedBox';
-import styles from '../charts/charts.module.css';
+import { PlotFrame } from '../../shared/PlotFrame';
+import { useFittedBox } from '../../shared/charts/useFittedBox';
+import styles from '../../shared/charts/charts.module.css';
 import cardStyles from '../shared/card.module.css';
 
 /**

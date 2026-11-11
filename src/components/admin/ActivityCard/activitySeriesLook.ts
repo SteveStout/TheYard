@@ -5,7 +5,7 @@
  */
 import type { ActivityKind, ActivityReport } from '../../../lib/activity';
 import styles from './ActivityCard.module.css';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 
 /** The colour class of a store's line: Cosmos DB, Azure SQL, or everybody together. */
 export function storeTone(store: string): string {

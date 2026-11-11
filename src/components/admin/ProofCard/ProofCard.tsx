@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { pairedBars } from '../../../lib/machineChart';
 import { request } from '../../../lib/request';
 import styles from './ProofCard.module.css';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 import cardStyles from '../shared/card.module.css';
 import type { Fetched, Proof, ProofResult, ProofRow } from '../shared/types';
 import { useRead, About } from '../shared/common';

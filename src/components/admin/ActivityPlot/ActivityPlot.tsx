@@ -30,7 +30,7 @@ import {
 import { plotFrame } from '../../../lib/plotFrame';
 import { DayMarks } from '../DayMarks';
 import styles from '../ActivityCard/ActivityCard.module.css';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 import { PlotFrame, useFittedBox } from '../charts';
 import { kindTone, storeName, storeTone } from '../ActivityCard/activitySeriesLook';
 import { ActivityReadout, type ActivityReading } from '../ActivityReadout';

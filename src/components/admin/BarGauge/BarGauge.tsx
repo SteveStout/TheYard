@@ -8,7 +8,7 @@
 import { type CSSProperties, Fragment } from 'react';
 import { gaugeMeter } from '../../../lib/gauge';
 import { addressParts } from '../../../lib/tableFit';
-import styles from '../charts/charts.module.css';
+import styles from '../../shared/charts/charts.module.css';
 
 // #region bar-gauge
 /**
