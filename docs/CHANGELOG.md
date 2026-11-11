@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.42** (2026-11-12): Every answer says in a Server-Timing header how many milliseconds the app spent on it, and a drawn page how long it waited for its frame, so a slow first visit can be split between the wire and the site.
 - **1.0.5.41** (2026-11-12): /resume serves the resume locked on 10 November, byte for byte the send copy, and About says Storee's platform is .NET 10, as that resume does.
 - **1.0.5.40** (2026-11-12): CodeRabbit's findings on 1.0.5.36 to 1.0.5.38 are fixed: a reply's marker is written whole or not at all, so a pass that stops while writing it can no longer leave a draft that is never placed; in the funnel by channel an application now keeps the old contact or recruiter that reached it, a note that says talent marks a recruiter, one row with no channel no longer hides the whole card, and a card with no week says so; and a leader an earlier build already followed up on one link gets no second follow-up on another link for the same role.
 - **1.0.5.39** (2026-11-12): The morning card now carries one hiring signal beyond single postings, the companies that opened three or more engineering seats in the last seven days by when the scans first saw them, and the postings table has an index on that first sighting so the read stays quick.

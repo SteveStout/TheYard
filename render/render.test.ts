@@ -142,6 +142,11 @@ describe('the rendering service', () => {
     expect(html).toContain(String(vehicle.vin));
   });
 
+  it('says in Server-Timing how long the page itself took to read, by name and milliseconds only (ADR: A rendering service beside the API)', async () => {
+    const { response } = await page('?view=blog');
+    expect(response.headers.get('Server-Timing')).toMatch(/^shell;dur=\d+(\.\d)?$/);
+  });
+
   it('sends the API page as it is while the API runs another build, so the browser draws it', async () => {
     const { response, html } = await page(
       '?view=inventory',

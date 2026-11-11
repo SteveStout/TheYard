@@ -49,7 +49,10 @@ export function createRenderer(
 ): Render {
   const pageAt = servedPages(read);
   return async (url, headers, apiOrigin, store = null) => {
+    const asked = performance.now();
     const page = await pageAt(apiOrigin);
+    // The page's own read is all a header can name: the reads behind the drawing finish after the headers have gone.
+    const timing = `shell;dur=${Math.round((performance.now() - asked) * 10) / 10}`;
     if (!page) {
       return new Response('The API is not answering, so there is no page to send.', {
         status: 503,
@@ -66,7 +69,10 @@ export function createRenderer(
     const search = new URL(url).search.replace(/^\?/, '');
     const cookie = headers.get('cookie');
     const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store);
-    return new Response(streamPage(page, load), { status: 200, headers: pageHeaders(cookie) });
+    return new Response(streamPage(page, load), {
+      status: 200,
+      headers: { ...pageHeaders(cookie), 'Server-Timing': timing },
+    });
   };
 }
 
