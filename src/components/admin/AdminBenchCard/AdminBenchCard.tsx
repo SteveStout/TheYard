@@ -74,6 +74,8 @@ const ReviewCard = lazy(CARD_CHUNKS.ReviewCard);
 const FunnelCard = lazy(CARD_CHUNKS.FunnelCard);
 /** Time to first touch, its code fetched the first time it is drawn. */
 const PounceCard = lazy(CARD_CHUNKS.PounceCard);
+/** The funnel by channel, its code fetched the first time it is drawn. */
+const ChannelsCard = lazy(CARD_CHUNKS.ChannelsCard);
 /** Blog analytics, its code fetched the first time it is drawn. */
 const BlogCard = lazy(CARD_CHUNKS.BlogCard);
 /** The Operator card, its code fetched the first time it is drawn. */
@@ -252,6 +254,8 @@ export function AdminBenchCard(props: AdminBenchCardProps) {
         return <FunnelCard tick={tick} />;
       case 'pounce':
         return <PounceCard tick={tick} />;
+      case 'channels':
+        return <ChannelsCard tick={tick} />;
       case 'blog':
         return <BlogCard tick={tick} />;
       case 'operator':

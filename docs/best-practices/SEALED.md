@@ -209,11 +209,11 @@ Measured on this build:
 
 | shape | count |
 | --- | --- |
-| sealed | 341 |
-| static | 200 |
+| sealed | 343 |
+| static | 201 |
 | abstract | 0 |
 | open | 0 |
-| records | 353 |
+| records | 359 |
 | open records | 0 |
 
 208 of the 344 classes in those six projects are sealed, and the 136 that are not are static, which

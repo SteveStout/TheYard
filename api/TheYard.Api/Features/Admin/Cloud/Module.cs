@@ -108,6 +108,9 @@ public sealed class Module : IModule
         services.AddSingleton<IPounceReader>(provider =>
             new InsightsPounce(new AzureMetrics(clientId, configured: provider.GetRequiredService<HostIdentity>().OnAppService, identity: provider.GetRequiredService<HostIdentity>()), workspace, nightlyNames.Function));
         services.AddScoped<ReadPounceHandler>();
+        // The funnel by channel, from the card schema of the job hunt's database, read as the campaign card reads it.
+        services.AddSingleton<IChannelCounts>(new SqlChannelCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)));
+        services.AddScoped<ReadChannelsHandler>();
         services.AddSingleton(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
