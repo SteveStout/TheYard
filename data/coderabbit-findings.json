@@ -597,10 +597,35 @@
         "nitpick": 0
       },
       "critical_at": [],
+      "fixed": 3,
+      "answered_as_wrong": 0,
+      "prs": [
+        32
+      ]
+    },
+    {
+      "version": "1.0.5.22",
+      "pr": 33,
+      "sha": "ababb671",
+      "level": 0,
+      "at": "2026-11-11T18:55:21Z",
+      "waited_seconds": 408,
+      "review_seconds": 392,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 1,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
       "fixed": null,
       "answered_as_wrong": null,
       "prs": [
-        32
+        33
       ]
     }
   ]
