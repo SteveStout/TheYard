@@ -5825,6 +5825,56 @@
     "react_files_without_header": 241,
     "data_xml_docs_pct": 49.0
    },
+   "coverage": {
+    "lines": 93.9,
+    "branches": 83.1,
+    "ci_run": 43193200164
+   }
+  },
+  {
+   "version": "1.0.5.45",
+   "date": "2026-11-12",
+   "commit": "b851c79b",
+   "source": "quality.py",
+   "numbers": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 31,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 241,
+    "test_to_prod_ratio_higher_is_better": 0.84,
+    "dotnet_tests_higher_is_better": 3789
+   },
+   "limits": {
+    "undocumented_declarations": 399,
+    "onion_outward_refs": 0,
+    "inner_ring_leaks": 0,
+    "cross_slice_usings": 0,
+    "wide_service_classes": 8,
+    "async_without_cancellation": 1,
+    "clock_outside_composition": 31,
+    "history_or_name_comments": 0,
+    "blocking_waits": 0,
+    "files_over_300": 0,
+    "files_within_10_of_cap": 2,
+    "behavior_types_never_named_in_a_test": 0,
+    "react_files_without_header": 241,
+    "test_to_prod_ratio_higher_is_better": 0.84,
+    "dotnet_tests_higher_is_better": 3789
+   },
+   "thin": {
+    "react_files": 425,
+    "react_files_without_header": 241,
+    "data_xml_docs_pct": 49.0
+   },
    "coverage": null
   }
  ]

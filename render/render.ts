@@ -7,7 +7,8 @@
  */
 import { drawForTheService, firstLoadElement } from '../src/app/entry-server';
 import { loadFirst } from './loaders';
-import { servedPages, type ServedPage } from './page';
+import { headFor, withHead } from './heads';
+import { keptPosts, servedPages, type ServedPage } from './page';
 
 // #region the-renderer
 /** The build this service was made from; it draws only for an API running the same one. */
@@ -48,6 +49,7 @@ export function createRenderer(
   read: typeof fetch = fetch
 ): Render {
   const pageAt = servedPages(read);
+  const postsAt = keptPosts(read);
   return async (url, headers, apiOrigin, store = null) => {
     const asked = performance.now();
     const page = await pageAt(apiOrigin);
@@ -67,9 +69,11 @@ export function createRenderer(
       return asServed(page, `other-build ${page.version}`);
     }
     const search = new URL(url).search.replace(/^\?/, '');
+    const head = headFor(search, search.includes('post=') ? await postsAt(apiOrigin) : []);
+    const shell = head ? { ...page, before: withHead(page.before, head) } : page;
     const cookie = headers.get('cookie');
     const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store);
-    return new Response(streamPage(page, load), {
+    return new Response(streamPage(shell, load), {
       status: 200,
       headers: { ...pageHeaders(cookie), 'Server-Timing': timing },
     });

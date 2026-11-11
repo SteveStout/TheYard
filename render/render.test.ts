@@ -147,6 +147,13 @@ describe('the rendering service', () => {
     expect(response.headers.get('Server-Timing')).toMatch(/^shell;dur=\d+(\.\d)?$/);
   });
 
+  it("gives the review route a link preview of its own, and leaves the bare address with the build's (ADR: The public face)", async () => {
+    const review = (await page('?view=review')).html;
+    expect(review).toContain('<title>Check my work in ten minutes | Steven Stout</title>');
+    const bare = (await page('')).html;
+    expect(bare).not.toContain('Check my work in ten minutes | Steven Stout');
+  });
+
   it('sends the API page as it is while the API runs another build, so the browser draws it', async () => {
     const { response, html } = await page(
       '?view=inventory',
