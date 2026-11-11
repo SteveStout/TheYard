@@ -170,6 +170,7 @@ public static class ClaudeArguments
             Lane.Feed when role is not null => $"Candidates go to {runFolder}/candidates.json. {RolePrompt(share, role)}",
             Lane.Feed => $"Candidates go to {runFolder}/candidates.json.",
             Lane.Network => $"High-water mark in {runFolder}/high-water.txt. Threads go to {runFolder}/network-threads.tsv and {runFolder}/threads/.",
+            Lane.Apply when role is not null => $"Worklist at {runFolder}/worklist.tsv. {ApplyRolePrompt(role)}",
             _ => $"Worklist at {runFolder}/worklist.tsv.",
         })
         + $" DRY_RUN={dry.ToString().ToLowerInvariant()}."
@@ -183,6 +184,15 @@ public static class ClaudeArguments
         $"POUNCE_ROLE={share}/{role.Path}. This run is for that one caught role only: {role.Company}, {role.Title}, {role.Url}. "
         + $"The inputs in rank order do not apply: find the one person who owns headcount for that seat at {role.Company}, read the seat live, and write at most one candidate, at {role.Company} and nowhere else, hot A."
         + (role.Budget ? $" The role went live in the last 21 days of the year: its one question is \"{TextCheck.Timeline}\" in place of the no-oriented ask." : string.Empty);
+
+    /// <summary>
+    /// What a slot run tells the apply lane: the one role, and that a form needing Steve is a blocked row whose reason
+    /// names the control he has to answer, word for word, so the blockers list can say exactly what is waiting on him.
+    /// </summary>
+    private static string ApplyRolePrompt(RoleHandoff role) =>
+        $"This run is for one caught role only: {role.Company}, {role.Title}, {role.Url}. Submit only when nothing on the form needs Steve. "
+        + "A sign-in, an account, a signature, a covenant, an arbitration page or a required question no banked answer covers is a blocked row, never a guess: "
+        + "its reason begins \"needs Steve:\" and names the exact control as the page labels it, such as the field \"Desired start date\" or the checkbox \"I agree to the arbitration terms\".";
 
     private static string Rooted(string absolute) => "//" + absolute.TrimStart('/');
 }

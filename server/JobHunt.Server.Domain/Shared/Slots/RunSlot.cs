@@ -39,10 +39,11 @@ public static class RunSlot
     public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply];
 
     /// <summary>
-    /// The lanes a run for one caught role works: the feed finds the leader and writes the role's queue, and the invites
-    /// lane sends it. A message block it queues waits for the morning's messages lane.
+    /// The lanes a run for one caught role works: the feed finds the leader and writes the role's queue, the invites lane
+    /// sends it, and the apply lane applies to that one posting when nothing on its form needs Steve. A message block
+    /// the feed queues waits for the morning's messages lane.
     /// </summary>
-    public static readonly IReadOnlyList<Lane> RoleOrder = [Lane.Feed, Lane.Invites];
+    public static readonly IReadOnlyList<Lane> RoleOrder = [Lane.Feed, Lane.Invites, Lane.Apply];
 
     /// <summary>Where the morning's run sits, Central: no slot run starts from its start to its end.</summary>
     public static readonly (TimeSpan From, TimeSpan To) Morning = (new(5, 30, 0), new(7, 0, 0));

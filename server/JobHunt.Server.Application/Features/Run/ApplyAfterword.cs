@@ -109,6 +109,6 @@ public static partial class ApplyAfterword
     private static int Attempt(string path) =>
         int.TryParse(Path.GetFileNameWithoutExtension(path).Split('-').LastOrDefault(), out int attempt) ? attempt : 0;
 
-    [GeneratedRegex(@"account wall|\bsign[- _]?in\b|password|signature|covenant|arbitration|non-?compete|\bNDA\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"account wall|\bsign[- _]?in\b|password|signature|covenant|arbitration|non-?compete|\bNDA\b|^needs Steve:", RegexOptions.IgnoreCase)]
     private static partial Regex Wall();
 }
