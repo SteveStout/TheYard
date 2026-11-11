@@ -239,6 +239,9 @@ public sealed record LeadRecord
     public string? LinkedInLink { get; init; }
     public string? AboutLink { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>The run that wrote the row; TrackAFeed.IsLeadersRun says whether it was the leaders lane's.</summary>
+    public string? CreatedBy { get; init; }
 }
 
 /// <summary>One logged email as the 30-day rule reads it.</summary>

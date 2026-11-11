@@ -247,6 +247,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
         LinkedInLink = Text(r, "LinkedInLink"),
         AboutLink = Text(r, "AboutLink"),
         CreatedAt = r.GetDateTimeOffset(r.GetOrdinal("CreatedAt")),
+        CreatedBy = Text(r, "CreatedBy"),
     };
 
     private static string? Text(SqlDataReader r, string column) => r.IsDBNull(r.GetOrdinal(column)) ? null : r.GetString(r.GetOrdinal(column));

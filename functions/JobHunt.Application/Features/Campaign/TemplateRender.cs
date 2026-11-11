@@ -15,13 +15,23 @@ public sealed record CampaignTemplate(string Id, string Version, string Text)
     /// link) and B v1. Templates are code, not configuration, and change only on an approval, which is why a new one
     /// arrives as its own files beside the old ones and this one line moves to it: the text that went out can still be
     /// read back at the version that sent it, A v1 among them, and nothing already sent is rewritten by the change.
-    /// Nothing selects a version that is not current.
+    /// Nothing selects a version that is not current, except A v3 for a lead the leaders lane wrote (LeaderVersion).
     /// </summary>
     public static string CurrentFor(char track) => track == 'A' ? "v2" : "v1";
+
+    /// <summary>
+    /// The version a Track A lead gets when the leaders lane named its person, the leader one level above the seat:
+    /// A v3, whose close asks to be sent down to the team (RULE 73 check 2).
+    /// </summary>
+    public const string LeaderVersion = "v3";
 
     /// <summary>The current template for a track.</summary>
     public static CampaignTemplate For(char track) =>
         All.Single(t => t.Id == (track == 'A' ? "A" : "B") && t.Version == CurrentFor(track));
+
+    /// <summary>The template for one lead: A v3 for a Track A lead the leaders lane wrote, else the current one for its track.</summary>
+    public static CampaignTemplate For(LeadRecord lead) =>
+        lead.Track == 'A' && TrackAFeed.IsLeadersRun(lead.CreatedBy) ? All.Single(t => t.Id == "A" && t.Version == LeaderVersion) : For(lead.Track);
 
     private static List<CampaignTemplate> Load()
     {

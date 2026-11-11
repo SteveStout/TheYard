@@ -127,7 +127,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
                 await Task.Delay(Spacing, time, ct);
             }
             SentMail? sent = shadow ? null : await mail.SendAsync(new OutgoingMail(lead.ContactEmail!, email.Subject!, email.Text!, email.Html!), ct);
-            var template = CampaignTemplate.For(lead.Track);
+            var template = CampaignTemplate.For(lead);
             await log.WriteAsync(new EmailRecord
             {
                 LeadId = lead.Id,
@@ -221,7 +221,7 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
                 return (applied, null, false);
             }
         }
-        var template = CampaignTemplate.For(lead.Track);
+        var template = CampaignTemplate.For(lead);
         var values = TemplateRender.Values(lead, now);
         var email = TemplateRender.Render(template, values, TemplateRender.OptionalFor(lead));
         if (!email.Complete)

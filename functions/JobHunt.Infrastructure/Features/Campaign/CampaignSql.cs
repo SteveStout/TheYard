@@ -20,7 +20,7 @@ internal static class CampaignSql
         SELECT l.[Id], l.[Track], l.[Company], l.[RoleTitle], l.[WhatTheyDo], l.[FirstName], l.[ContactName], l.[ContactTitle],
                l.[ContactEmail], l.[EmailSource], l.[MxChecked], l.[Verified], l.[AppliedAt], l.[LinkedInInviteSentAt], l.[LinkedInAcceptedAt],
                l.[ProofKey], l.[FollowUpPostSlug], l.[GhostScore], l.[BandTop], l.[FirstSeen], l.[StrengthStep], l.[RefCode],
-               l.[ResumeLink], l.[SiteLink], l.[GitHubLink], l.[LinkedInLink], l.[AboutLink], l.[CreatedAt],
+               l.[ResumeLink], l.[SiteLink], l.[GitHubLink], l.[LinkedInLink], l.[AboutLink], l.[CreatedAt], l.[CreatedBy],
                c.[Id] AS [CompanyId], c.[Key], c.[ParentKey], c.[Names], c.[RemoteStance], c.[LastDotNetPostingAt], c.[LastDotNetPostingTitle], c.[DoNotEmail],
                (SELECT COUNT(*) FROM [campaign].[CompanyEvidence] v WHERE v.[CompanyId] = c.[Id]) AS [Evidence]
         FROM [campaign].[Leads] l JOIN [campaign].[Companies] c ON c.[Id] = l.[CompanyId]
