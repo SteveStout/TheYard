@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.11** (2026-11-10): Every job board on the watchlist is now read every 15 minutes for postings not yet stored, and each new one is added with the moment its board says it went up, so a new posting is in the database within 15 minutes of going live while the 1 AM scan keeps everything else.
 - **1.0.5.10** (2026-11-10): CodeRabbit's three findings on 1.0.5.8 are fixed: the testing rules name exactly when the Cosmos DB passes are carried forward, a rate-limited re-read never replaces a review that was read, and the box's test runner restores each kind of tracked build output on its own.
 - **1.0.5.9** (2026-11-10): The 6 AM program holds its outreach lanes only for a lane that says it holds the browser, in a Holds clause naming LinkedIn or Chrome that stands until the lane says none or released, closes, or goes four hours quiet, so a row that only mentions LinkedIn no longer holds a morning's sends.
 - **1.0.5.8** (2026-11-10): The box's test runner never leaves its lock held by a build server that outlives it, the review wait and the gate's pull request script are under test, and a cold read of tonight's versions found pages still describing the gate as one job and counting the wrong number of live tests, all now corrected.

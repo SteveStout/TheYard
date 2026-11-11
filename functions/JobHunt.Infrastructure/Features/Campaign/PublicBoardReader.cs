@@ -11,7 +11,10 @@ namespace JobHunt.Infrastructure.Features.Campaign;
 /// pay_input_ranges in cents, Lever's salaryRange, Ashby's Salary component; a board that published no band gives
 /// null, never a figure read out of the text. A board that does not answer is null and the company is left as it
 /// was. Not answering covers a network error, a wait past <see cref="Timeout"/> and a body that is not the board's
-/// JSON (a page of HTML, an error object), so one slow or odd board never stops the scan of the rest.
+/// JSON (a page of HTML, an error object), so one slow or odd board never stops the scan of the rest. Each posting
+/// also carries the instant the board says it went up: Greenhouse's first_published (never updated_at), Lever's
+/// createdAt in epoch milliseconds, Ashby's publishedAt. Greenhouse's list without content and pay is the fresh pass's
+/// light read: about a twentieth of the bytes of the whole boards (7.8 MB against 157 MB for 112 boards).
 /// </summary>
 public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
 {
@@ -33,14 +36,25 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "greenhouse, lever or ashby"),
     };
 
+    /// <summary>The board's list without descriptions, for a board that has one (Greenhouse); null for a board that has none.</summary>
+    public static string? LightAddress(string kind, string token) =>
+        kind == "greenhouse" ? $"https://boards-api.greenhouse.io/v1/boards/{Uri.EscapeDataString(token)}/jobs" : null;
+
     /// <inheritdoc />
-    public async Task<IReadOnlyList<BoardPosting>?> PostingsAsync(string kind, string token, CancellationToken ct)
+    public Task<IReadOnlyList<BoardPosting>?> PostingsAsync(string kind, string token, CancellationToken ct) => FetchAsync(kind, Address(kind, token), ct);
+
+    /// <inheritdoc />
+    public async Task<BoardList?> ListAsync(string kind, string token, CancellationToken ct) => LightAddress(kind, token) is { } light
+        ? await FetchAsync(kind, light, ct) is { } listed ? new BoardList(listed, Whole: false) : null
+        : await PostingsAsync(kind, token, ct) is { } whole ? new BoardList(whole, Whole: true) : null;
+
+    private async Task<IReadOnlyList<BoardPosting>?> FetchAsync(string kind, string address, CancellationToken ct)
     {
         using var cap = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cap.CancelAfter(Timeout);
         try
         {
-            using var answer = await http.CreateClient().GetAsync(Address(kind, token), cap.Token);
+            using var answer = await http.CreateClient().GetAsync(address, cap.Token);
             return answer.IsSuccessStatusCode ? Read(kind, await answer.Content.ReadAsStringAsync(cap.Token)) : null;
         }
         catch (Exception ex) when (DidNotAnswer(ex, ct))
@@ -90,6 +104,7 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
             CompMax = paid ? Cents(Number(pay, "max_cents")) : null,
             CompCurrency = paid ? Text(pay, "currency_type") : null,
             CompInterval = paid ? "year" : null,
+            PublishedAt = Instant(Text(job, "first_published")),
         };
     }
 
@@ -98,8 +113,9 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
         var salary = job.TryGetProperty("salaryRange", out var range) && range.ValueKind == JsonValueKind.Object ? range : default;
         bool paid = salary.ValueKind == JsonValueKind.Object && Number(salary, "max") is not null;
         var categories = job.TryGetProperty("categories", out var c) && c.ValueKind == JsonValueKind.Object ? c : default;
-        return new BoardPosting(Text(job, "text"), Text(job, "descriptionPlain"), job.TryGetProperty("createdAt", out var ms) && ms.ValueKind == JsonValueKind.Number
-            ? DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds(ms.GetInt64()).UtcDateTime) : null)
+        DateTimeOffset? created = job.TryGetProperty("createdAt", out var ms) && ms.ValueKind == JsonValueKind.Number && ms.TryGetInt64(out long epoch)
+            ? DateTimeOffset.FromUnixTimeMilliseconds(epoch) : null;
+        return new BoardPosting(Text(job, "text"), Text(job, "descriptionPlain"), created is { } at ? DateOnly.FromDateTime(at.UtcDateTime) : null)
         {
             Id = Id(job, "id"),
             Url = Text(job, "hostedUrl"),
@@ -109,6 +125,7 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
             CompMax = paid ? Whole(Number(salary, "max")) : null,
             CompCurrency = paid ? Text(salary, "currency") : null,
             CompInterval = paid ? Text(salary, "interval") : null,
+            PublishedAt = created,
         };
     }
 
@@ -129,6 +146,7 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
             CompMax = paid ? Whole(Number(salary, "maxValue")) : null,
             CompCurrency = paid ? Text(salary, "currencyCode") : null,
             CompInterval = paid ? Text(salary, "interval") : null,
+            PublishedAt = Instant(Text(job, "publishedAt")),
         };
     }
 
@@ -147,6 +165,9 @@ public sealed class PublicBoardReader(IHttpClientFactory http) : IBoardReader
     private static int? Cents(decimal? cents) => cents is { } c ? (int)(c / 100) : null;
 
     private static int? Whole(decimal? value) => value is { } v ? (int)v : null;
+
+    private static DateTimeOffset? Instant(string text) =>
+        DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at : null;
 
     private static DateOnly? Day(string text) =>
         DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? DateOnly.FromDateTime(at.UtcDateTime) : null;

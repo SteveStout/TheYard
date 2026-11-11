@@ -88,13 +88,7 @@ public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeP
                 tally.Changed += changes.Count > 0 ? 1 : 0;
                 continue;
             }
-            long key = await postings.AddAsync(posting, company.Key, now, ct);
-            await postings.DescribeAsync(key, posting.ContentHash, posting.Text, now, ct);
-            if (PostingRules.RepostOf(posting, stored, now) is { } original)
-            {
-                await postings.ChangeAsync(key, "repost_of", original.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), key.ToString(System.Globalization.CultureInfo.InvariantCulture), now, ct);
-            }
-            tally.New++;
+            tally.New += await AddNewAsync(postings, company, posting, stored, now, ct) ? 1 : 0;
         }
         if (unchanged.Count > 0)
         {
@@ -108,6 +102,25 @@ public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeP
         }
     }
 
+    /// <summary>
+    /// A posting the table does not hold, added the one way both scans add one: the row, its description, and its
+    /// repost_of note when it replaces one of <paramref name="stored"/> closed in the last 30 days. False, with nothing
+    /// written, when another scan wrote the row first.
+    /// </summary>
+    internal static async Task<bool> AddNewAsync(IPostingBook postings, BoardCompany company, Posting posting, IReadOnlyList<StoredPosting> stored, DateTimeOffset now, CancellationToken ct)
+    {
+        if (await postings.AddAsync(posting, company.Key, now, ct) is not { } key)
+        {
+            return false;
+        }
+        await postings.DescribeAsync(key, posting.ContentHash, posting.Text, now, ct);
+        if (PostingRules.RepostOf(posting, stored, now) is { } original)
+        {
+            await postings.ChangeAsync(key, "repost_of", original.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), key.ToString(System.Globalization.CultureInfo.InvariantCulture), now, ct);
+        }
+        return true;
+    }
+
     /// <summary>A board's answer as a posting row of this board.</summary>
     public static Posting Of(string kind, string token, BoardPosting board) =>
         new(kind, token, board.Id, board.Title, board.Location, board.Url, board.Posted)
@@ -117,6 +130,7 @@ public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeP
             CompMax = board.CompMax,
             CompCurrency = board.CompCurrency,
             CompInterval = board.CompInterval,
+            PublishedAt = board.PublishedAt,
             Text = board.Text,
         };
 
