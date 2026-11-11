@@ -59,7 +59,7 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
 
     private async Task<List<(PounceRole Role, string Title)>> JudgeAsync(IReadOnlyList<FreshPosting> fresh, DateTimeOffset now, DateOnly today, CancellationToken ct)
     {
-        var master = (await tracker.RowsAsync(ct)).Where(row => row.Length >= 7).ToList();
+        var master = JobsPick.Applications(await tracker.RowsAsync(ct));
         var list = ApplicationCap.DoNotApplyList(await TextAsync("systemRules.md", ct));
         var blacklist = PounceRules.Blacklisted(await TextAsync("BLACKLIST.md", ct));
         var texts = await postings.TextsAsync([.. fresh.Select(f => f.Key)], ct);
