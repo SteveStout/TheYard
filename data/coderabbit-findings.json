@@ -548,8 +548,8 @@
         "trivial": 0,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         29
       ]

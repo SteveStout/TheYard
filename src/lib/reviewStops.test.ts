@@ -24,10 +24,10 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     expect(REVIEW_STOPS).toHaveLength(7);
     expect(new Set(REVIEW_STOPS.map((stop) => stop.key)).size).toBe(7);
     expect(REVIEW_STOPS.map((stop) => stop.key)).toEqual([
+      'quality',
       'first-screen',
       'room',
       'spend',
-      'decision',
       'gate',
       'stores',
       'resume',
@@ -50,10 +50,10 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
       for (const link of stop.links ?? []) expect(served(link.href), link.href).toBe(true);
     }
     expect(REVIEW_STOPS.map((stop) => stop.address)).toEqual([
+      '/?doc=quality',
       '/',
       '/?view=inventory',
       '/?view=admin&card=spend',
-      '/?doc=adr-rules',
       '/?view=admin&card=tests',
       '/?doc=sql-vs-cosmos',
       '/resume?pdf=1',
@@ -85,6 +85,22 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
   it('names its own address and the path a tagged open of it is kept under', () => {
     expect(REVIEW_ADDRESS).toBe('/?view=review');
     expect(REVIEW_REPORT_PATH).toBe('/review');
+  });
+
+  it('says only what its cards and a roll do: no link the card lacks, and a roll in place (ADR: Blue-green on a $13 plan, measured and held)', () => {
+    const stop = (key: string) => REVIEW_STOPS.find((each) => each.key === key);
+    expect(stop('spend')?.doThis).toBe('Open the cost card and read the bill by resource.');
+    expect(stop('gate')?.shows).toMatch(
+      /, with CodeRabbit reviewing the pull request, then a roll in place that is read back on both names before the run ends\.$/
+    );
+    expect(stop('gate')?.doThis).toBe(
+      'Read the suites and their times for the build you are looking at.'
+    );
+    for (const each of REVIEW_STOPS) {
+      expect(`${each.shows} ${each.doThis}`, each.key).not.toMatch(
+        /blue-green|no downtime|links to its place|opens the run on GitHub/
+      );
+    }
   });
 
   it('ends at the resume and who vouches for it, with the recommendations page beside the PDF', () => {
