@@ -8,7 +8,8 @@ namespace JobHunt.Server.Application.Features.Run;
 /// <param name="Gate">The person and company gates.</param>
 /// <param name="Queues">The open blocks of every queue.</param>
 /// <param name="Holds">The people and companies linkedin-proof/FEED-HOLD.md holds for Steve, which no lane queues or sends to.</param>
-public sealed record DayReads(DateOnly Day, IReadOnlyList<string[]> Rows, string Limits, string Conventions, PersonGate Gate, IReadOnlyList<QueueBlock> Queues, FeedHolds Holds);
+/// <param name="Slot">The slot the lanes work for: the morning's, or pounce- and the caught role's key, which its codes are minted under.</param>
+public sealed record DayReads(DateOnly Day, IReadOnlyList<string[]> Rows, string Limits, string Conventions, PersonGate Gate, IReadOnlyList<QueueBlock> Queues, FeedHolds Holds, string Slot = RunSlot.Hour);
 
 /// <summary>Reads the shared files the gates need. A file that will not read stops the lanes that need it, loudly.</summary>
 /// <param name="share">The share.</param>

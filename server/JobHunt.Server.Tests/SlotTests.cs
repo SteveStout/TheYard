@@ -182,4 +182,13 @@ public sealed class SlotTests
         Assert.Contains("would not read", lostOutput, StringComparison.Ordinal);
         Assert.Empty(lost.Claude.Requests);
     }
+
+    [Fact]
+    public async Task A_slot_run_mints_each_code_under_its_slot_so_the_follow_up_can_tell_a_pounce_note_s_code()
+    {
+        Morning morning = RoleMorning(NoOriented);
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+        Assert.Equal(["Kim Hot|Zephyr Labs"], morning.Minter.Asked);
+        Assert.Equal([Slot], morning.Minter.Lanes);
+    }
 }

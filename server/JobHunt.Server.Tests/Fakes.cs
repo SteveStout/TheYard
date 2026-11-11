@@ -133,9 +133,12 @@ internal sealed class CountingMinter : ICodeMinter
 
     public string? Code { get; set; } = "abc123";
 
-    public Task<string?> MintAsync(string person, string company, CancellationToken ct)
+    public List<string> Lanes { get; } = [];
+
+    public Task<string?> MintAsync(string person, string company, string lane, CancellationToken ct)
     {
         Asked.Add($"{person}|{company}");
+        Lanes.Add(lane);
         return Task.FromResult(Code);
     }
 }

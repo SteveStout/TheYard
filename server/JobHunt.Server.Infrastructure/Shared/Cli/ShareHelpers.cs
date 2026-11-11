@@ -16,9 +16,9 @@ public sealed partial class ShareHelpers(string python, IShare share) : ICodeMin
     public TimeSpan BuildLimit { get; init; } = TimeSpan.FromMinutes(3);
 
     /// <inheritdoc/>
-    public async Task<string?> MintAsync(string person, string company, CancellationToken ct)
+    public async Task<string?> MintAsync(string person, string company, string lane, CancellationToken ct)
     {
-        (int exit, string output) = await RunAsync(["--person", person, "--company", company, "--channel", "LinkedIn", "--lane", RegistryRows.Lane], null, "make_ref.py", ct);
+        (int exit, string output) = await RunAsync(["--person", person, "--company", company, "--channel", "LinkedIn", "--lane", lane], null, "make_ref.py", ct);
         return exit == 0 && Minted().Match(output) is { Success: true } match ? match.Groups[1].Value : null;
     }
 

@@ -218,10 +218,11 @@ public sealed class AdapterTests : IDisposable
     [Fact]
     public async Task The_helpers_read_the_code_and_the_exit()
     {
-        await File.WriteAllTextAsync(Path.Combine(folder, "make_ref.py"), "echo 'code abc123 for Pat (Acme, LinkedIn) spooled to x'\n");
+        await File.WriteAllTextAsync(Path.Combine(folder, "make_ref.py"), "echo \"$@\" > args.txt\necho 'code abc123 for Pat (Acme, LinkedIn) spooled to x'\n");
         await File.WriteAllTextAsync(Path.Combine(folder, "check_aiisms.py"), "exit 1\n");
         var helpers = new ShareHelpers("/bin/sh", new ShareFolder(folder));
-        Assert.Equal("abc123", await helpers.MintAsync("Pat", "Acme", default));
+        Assert.Equal("abc123", await helpers.MintAsync("Pat", "Acme", "pounce-12786", default));
+        Assert.EndsWith("--channel LinkedIn --lane pounce-12786", (await File.ReadAllTextAsync(Path.Combine(folder, "args.txt"))).Trim(), StringComparison.Ordinal);
         Assert.False(await helpers.CleanAsync("text", default));
     }
 
@@ -229,7 +230,7 @@ public sealed class AdapterTests : IDisposable
     public async Task A_helper_that_fails_mints_nothing()
     {
         await File.WriteAllTextAsync(Path.Combine(folder, "make_ref.py"), "exit 5\n");
-        Assert.Null(await new ShareHelpers("/bin/sh", new ShareFolder(folder)).MintAsync("Pat", "Acme", default));
+        Assert.Null(await new ShareHelpers("/bin/sh", new ShareFolder(folder)).MintAsync("Pat", "Acme", RegistryRows.Lane, default));
     }
 
     [Fact]
