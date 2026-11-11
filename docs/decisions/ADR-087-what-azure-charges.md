@@ -156,7 +156,7 @@ What stopped being true: "Where the read is held. In memory, the last read only 
 
 **The last read is kept in the relational store.** One table, `CostReads`, one row: when the read was answered, its days and its forecast as the cost port's own records in JSON, the same thing the in-memory copy holds and replaced whole the same way. `KeptCosts` holds the read in this process and keeps it in the row (`EfCostStore`); it answers from its own copy while that copy is under an hour old, and past that, or with nothing held, from the row, so a process that has just rolled starts with the last bill. Azure Cost Management is still the record of the bill; the row is the site's last reading of it, as the memory always was, and it lasts as long as the database does instead of as long as the process.
 
-**A roll spends nothing.** Before a read the keeping asks for the kept one: under an hour old, it is this hour's read, the recorder waits out the rest of the hour, and Cost Management is not asked. One read an hour is taken, however many times the site rolls in that hour.
+**A roll spends nothing.** Before a read the keeping asks for the kept one: under an hour old, it is this hour's read, the recorder waits out the rest of the hour, and Cost Management is not asked. One read an hour is taken, however many times the site rolls in that hour, while the row is kept: where the store is not attached or a save fails, the read is held in memory only, as before, and a roll inside the hour reads again.
 
 **A refused read shows the kept bill.** When a read is refused or fails and a bill is kept, the card shows that bill, with the time it was read and the reason the newer read did not come; "unread" is left for when nothing has ever been kept.
 
