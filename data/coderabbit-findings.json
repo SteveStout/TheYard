@@ -284,8 +284,8 @@
         "trivial": 0,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 3,
+      "answered_as_wrong": 0,
       "prs": [
         19
       ]
@@ -308,10 +308,34 @@
         "trivial": 0,
         "nitpick": 0
       },
+      "fixed": 0,
+      "answered_as_wrong": 0,
+      "prs": [
+        20
+      ]
+    },
+    {
+      "version": "1.0.5.10",
+      "pr": 21,
+      "sha": "42640cb5",
+      "level": 0,
+      "at": "2026-11-11T02:30:53Z",
+      "waited_seconds": 613,
+      "review_seconds": 603,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 1,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      },
       "fixed": null,
       "answered_as_wrong": null,
       "prs": [
-        20
+        21
       ]
     }
   ]
