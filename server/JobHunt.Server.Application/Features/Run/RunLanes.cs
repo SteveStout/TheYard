@@ -216,8 +216,8 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 // The merger took it between the list and the read, so the fragment is in state.md now.
             }
         }
-        var live = RegistryTail.LiveOnLinkedIn(tail, guards.Time.GetUtcNow());
-        return live.Count > 0 ? $"{string.Join(", ", live)} LIVE on LinkedIn" : null;
+        var holders = RegistryTail.Holders(tail, guards.Time.GetUtcNow());
+        return holders.Count > 0 ? $"a hold on LinkedIn or Chrome by {string.Join(", ", holders)}" : null;
     }
 
     private Task<Worklist> WorklistAsync(Lane lane, DayReads reads, Ceilings ceilings, OutreachCounts before, IReadOnlyList<LaneReport> reports, int invitesRoom, string? linkedIn, bool dry, CancellationToken ct)

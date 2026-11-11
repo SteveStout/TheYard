@@ -23,24 +23,24 @@ public sealed class ResultTests
     [Fact]
     public void A_lane_with_no_marker_at_all_still_holds_the_gate()
     {
-        string tail = "## LANE: mon1103 working the LinkedIn queue by hand.\n<!-- AID:20261103-113000Z-mon1103-note -->\n";
-        Assert.Equal(["mon1103"], RegistryTail.LiveOnLinkedIn(tail, At));
+        string tail = "## LANE: mon1103 working the queue by hand. Holds: linkedin.\n<!-- AID:20261103-113000Z-mon1103-note -->\n";
+        Assert.Equal(["mon1103"], RegistryTail.Holders(tail, At));
     }
 
     [Fact]
     public void A_note_on_an_open_lane_does_not_close_it_and_a_note_on_a_closed_one_does_not_open_it()
     {
-        string open = "## LANE: rail1103 (LinkedIn). | IN PROGRESS |\n<!-- AID:20261103-113000Z-rail1103-registry -->\n## LANE: rail1103 NOTE sent two.\n<!-- AID:20261103-114000Z-rail1103-note -->\n";
-        Assert.Equal(["rail1103"], RegistryTail.LiveOnLinkedIn(open, At));
+        string open = "## LANE: rail1103 (Holds: linkedin). | IN PROGRESS |\n<!-- AID:20261103-113000Z-rail1103-registry -->\n## LANE: rail1103 NOTE sent two.\n<!-- AID:20261103-114000Z-rail1103-note -->\n";
+        Assert.Equal(["rail1103"], RegistryTail.Holders(open, At));
         string closed = open + "## LANE: rail1103 CLOSED 05:50. | CLOSED |\n<!-- AID:20261103-115000Z-rail1103-close -->\n## LANE: rail1103 NOTE late.\n<!-- AID:20261103-115500Z-rail1103-note -->\n";
-        Assert.Empty(RegistryTail.LiveOnLinkedIn(closed, At));
+        Assert.Empty(RegistryTail.Holders(closed, At));
     }
 
     [Fact]
     public void A_row_still_in_the_spool_reads_like_a_merged_one()
     {
-        string tail = RegistryTail.Stamped("20261103-113000Z-reach1103-registry", "## LANE: reach1103 (LinkedIn). | IN PROGRESS |");
-        Assert.Equal(["reach1103"], RegistryTail.LiveOnLinkedIn(tail, At));
+        string tail = RegistryTail.Stamped("20261103-113000Z-reach1103-registry", "## LANE: reach1103 LIVE. Holds: chrome, linkedin. | IN PROGRESS |");
+        Assert.Equal(["reach1103"], RegistryTail.Holders(tail, At));
     }
 
     [Fact]
@@ -76,42 +76,90 @@ public sealed class ResultTests
     [Fact]
     public void A_closed_lane_does_not_hold_the_gate()
     {
-        Assert.Empty(RegistryTail.LiveOnLinkedIn(Fixture.Read("state-tail.md"), At));
+        Assert.Empty(RegistryTail.Holders(Fixture.Read("state-tail.md"), At));
     }
 
     [Fact]
     public void An_open_LinkedIn_lane_holds_the_gate()
     {
         string tail = "## LANE: reach1103 (Claude in Chrome). Sends LinkedIn invites. | IN PROGRESS |\n<!-- AID:20261103-113000Z-reach1103-registry -->\n";
-        Assert.Equal(["reach1103"], RegistryTail.LiveOnLinkedIn(tail, At));
+        Assert.Equal(["reach1103"], RegistryTail.Holders(tail, At));
     }
 
     [Fact]
     public void An_open_lane_that_never_touches_LinkedIn_does_not_hold_it()
     {
         string tail = "## LANE: books1103 (GitHub Actions). Records only. | IN PROGRESS |\n<!-- AID:20261103-113000Z-books1103-registry -->\n";
-        Assert.Empty(RegistryTail.LiveOnLinkedIn(tail, At));
+        Assert.Empty(RegistryTail.Holders(tail, At));
     }
 
     [Fact]
     public void A_lane_past_the_four_hour_ceiling_no_longer_holds_it()
     {
         string tail = "## LANE: reach1103 (Claude in Chrome). LinkedIn. | IN PROGRESS |\n<!-- AID:20261103-070000Z-reach1103-registry -->\n";
-        Assert.Empty(RegistryTail.LiveOnLinkedIn(tail, At));
+        Assert.Empty(RegistryTail.Holders(tail, At));
     }
 
     [Fact]
     public void A_lane_s_close_row_ends_it_even_if_the_close_says_nothing_of_LinkedIn()
     {
         string tail = "## LANE: reach1103 (Chrome). LinkedIn. | IN PROGRESS |\n<!-- AID:20261103-113000Z-reach1103-registry -->\n\n## LANE: reach1103 CLOSED 05:50. Done. | CLOSED |\n<!-- AID:20261103-115000Z-reach1103-close -->\n";
-        Assert.Empty(RegistryTail.LiveOnLinkedIn(tail, At));
+        Assert.Empty(RegistryTail.Holders(tail, At));
     }
 
     [Fact]
     public void This_process_s_own_row_is_the_lock_s_job()
     {
         string tail = RegistryRows.Live(At, false, "invites") + "<!-- AID:20261103-113000Z-server6am-registry -->\n";
-        Assert.Empty(RegistryTail.LiveOnLinkedIn(tail, At));
+        Assert.Empty(RegistryTail.Holders(tail, At));
+    }
+
+    [Fact]
+    public void A_lane_that_only_mentions_LinkedIn_holds_nothing()
+    {
+        string tail = "## LANE: reply1103-0400 (GitHub Actions). Read 4 LinkedIn invites and 2 connection requests in the inbox. | IN PROGRESS |\n<!-- AID:20261103-113000Z-reply1103-0400-registry -->\n";
+        Assert.Empty(RegistryTail.Holders(tail, At));
+    }
+
+    [Fact]
+    public void A_dispatched_lane_holds_by_its_holds_clause_until_it_says_released()
+    {
+        string live = "## LANE: rungh LIVE from 05:30 (started by dispatch; claude-opus-5-5 at high effort; Holds: chrome, linkedin, J:\\mentor\\hotmgr1104; DONE note J:\\mentor\\H.md). | IN PROGRESS |\n<!-- AID:20261103-113000Z-rungh-registry -->\n";
+        Assert.Equal(["rungh"], RegistryTail.Holders(live, At));
+        string restated = live + "## LANE: rungh NOTE in the gate. Holds: functions-slice, theyard-gate (only for the gate run).\n<!-- AID:20261103-114000Z-rungh-note -->\n";
+        Assert.Equal(["rungh"], RegistryTail.Holders(restated, At));
+        string released = restated + "## LANE: rungh NOTE the browser work is done. Holds released: chrome, linkedin; functions-slice stays.\n<!-- AID:20261103-115000Z-rungh-released -->\n";
+        Assert.Empty(RegistryTail.Holders(released, At));
+    }
+
+    [Fact]
+    public void A_lane_that_names_what_it_holds_is_not_read_for_the_extension_s_name()
+    {
+        string tail = "## LANE: stats1103 (Claude in Chrome read the analytics page). Holds: J:\\ANALYTICS-LEDGER. | IN PROGRESS |\n<!-- AID:20261103-113000Z-stats1103-registry -->\n"
+            + "## LANE: books1103 LIVE (reads LinkedIn mail; Holds: none). | IN PROGRESS |\n<!-- AID:20261103-113100Z-books1103-registry -->\n";
+        Assert.Empty(RegistryTail.Holders(tail, At));
+    }
+
+    [Fact]
+    public void A_chat_lane_s_own_words_for_a_browser_hold_it()
+    {
+        string tail = "## LANE: profile1103 LIVE. Holds: the Laptop Chrome, the LinkedIn profile, the resume of record. Writes: one file. | IN PROGRESS |\n<!-- AID:20261103-113000Z-profile1103-registry -->\n";
+        Assert.Equal(["profile1103"], RegistryTail.Holders(tail, At));
+    }
+
+    [Fact]
+    public void A_hold_let_go_and_taken_again_holds_again()
+    {
+        string tail = "## LANE: reach1103 LIVE. Holds: none. | IN PROGRESS |\n<!-- AID:20261103-113000Z-reach1103-registry -->\n"
+            + "## LANE: reach1103 NOTE sending now. Holds: linkedin.\n<!-- AID:20261103-114000Z-reach1103-note -->\n";
+        Assert.Equal(["reach1103"], RegistryTail.Holders(tail, At));
+    }
+
+    [Fact]
+    public void A_later_clause_in_the_same_row_has_the_last_word()
+    {
+        string tail = "## LANE: reach1103 NOTE took Holds: chrome, linkedin at 05:30; sent three. Holds released: chrome, linkedin. | IN PROGRESS |\n<!-- AID:20261103-113000Z-reach1103-note -->\n";
+        Assert.Empty(RegistryTail.Holders(tail, At));
     }
 
     [Fact]

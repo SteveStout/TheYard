@@ -4,12 +4,15 @@ using System.Text.RegularExpressions;
 namespace JobHunt.Server.Domain.Shared.Registry;
 
 /// <summary>
-/// Reads the tail of state.md for a lane still open on LinkedIn. A lane's rows are fragments, each ending in its
-/// AID stamp; the newest row for a lane says whether it is open. A row older than Rule 19's four hours no longer
-/// holds the gate, because a lane that died without closing would otherwise stop every morning after it. Rows are read
-/// failing closed: a lane is open from its first row until a row says CLOSED, whatever marker its rows carry, because a
-/// third of the real rows carry none. A note on a closed lane does not reopen it unless it says LIVE again. This
-/// process's own lane id is left out: the run lock is what keeps two of its runs apart.
+/// Reads the tail of state.md for a lane that holds LinkedIn or a Chrome now. A lane's rows are fragments, each ending
+/// in its AID stamp. A lane is open from its first row until a row says CLOSED, whatever marker its rows carry, because
+/// a third of the real rows carry none; a note on a closed lane does not reopen it unless it says LIVE again. An open
+/// lane holds the gate when it says so: a "Holds:" clause naming LinkedIn or a Chrome, standing until a later clause
+/// says none or released. The dispatcher reads the same clause, so both sides keep one rule. A lane that never wrote
+/// such a clause holds only when a row names the browser extension. A row that only mentions LinkedIn holds nothing:
+/// read as a driver, a finished lane with no close row held a whole morning's notes on one word. A row older than
+/// Rule 19's four hours no longer holds the gate, because a lane that died without closing would otherwise stop every
+/// morning after it. This process's own lane id is left out: the run lock is what keeps two of its runs apart.
 /// </summary>
 public static partial class RegistryTail
 {
@@ -23,12 +26,12 @@ public static partial class RegistryTail
     /// <param name="text">The fragment.</param>
     public static string Stamped(string stem, string text) => $"{text}\n<!-- AID:{stem} -->\n";
 
-    /// <summary>The ids of the lanes open on LinkedIn now.</summary>
+    /// <summary>The ids of the lanes that hold LinkedIn or a Chrome now.</summary>
     /// <param name="tail">The end of state.md.</param>
     /// <param name="now">The instant.</param>
-    public static IReadOnlyList<string> LiveOnLinkedIn(string tail, DateTimeOffset now)
+    public static IReadOnlyList<string> Holders(string tail, DateTimeOffset now)
     {
-        var newest = new Dictionary<string, (bool Open, bool LinkedIn, DateTimeOffset At)>(StringComparer.Ordinal);
+        var newest = new Dictionary<string, (bool Open, bool? Holds, bool Driver, DateTimeOffset At)>(StringComparer.Ordinal);
         int from = 0;
         foreach (Match stamp in Aid().Matches(tail))
         {
@@ -42,11 +45,26 @@ public static partial class RegistryTail
             string id = lane.Groups["id"].Value;
             bool seen = newest.TryGetValue(id, out var known);
             bool open = !Closed().IsMatch(fragment) && (Open().IsMatch(fragment) || !seen || known.Open);
-            newest[id] = (open, known.LinkedIn || LinkedIn().IsMatch(fragment), at);
+            newest[id] = (open, Said(fragment, known.Holds), known.Driver || Extension().IsMatch(fragment), at);
         }
         return [.. newest
-            .Where(lane => lane.Value.Open && lane.Value.LinkedIn && now - lane.Value.At < Ceiling && !lane.Key.StartsWith(OwnLane, StringComparison.Ordinal))
+            .Where(lane => lane.Value.Open && (lane.Value.Holds ?? lane.Value.Driver) && now - lane.Value.At < Ceiling && !lane.Key.StartsWith(OwnLane, StringComparison.Ordinal))
             .Select(lane => lane.Key)];
+    }
+
+    // What the lane holds after this row. A clause naming LinkedIn or a Chrome sets the hold, a clause saying none or
+    // released lifts it, and a clause naming neither leaves a standing hold alone, because a lane that restates part
+    // of its list has not let the browser go. Clauses are read in order, so a later one in the same row has the last
+    // word. Null until the lane's first clause.
+    private static bool? Said(string fragment, bool? standing)
+    {
+        foreach (Match clause in Clause().Matches(fragment))
+        {
+            string list = clause.Groups["list"].Value;
+            bool lifted = clause.Groups["released"].Success || Lifted().IsMatch(list);
+            standing = !lifted && (Browser().IsMatch(list) || (standing ?? false));
+        }
+        return standing;
     }
 
     private static bool TryStamp(string text, out DateTimeOffset at) =>
@@ -64,6 +82,15 @@ public static partial class RegistryTail
     [GeneratedRegex(@"\|\s*CLOSED\s*\|\s*$|^\s*## LANE: [\w-]+(?: step \d+)? CLOSED", RegexOptions.Multiline)]
     private static partial Regex Closed();
 
-    [GeneratedRegex(@"linkedin|connection request|invite|claude in chrome", RegexOptions.IgnoreCase)]
-    private static partial Regex LinkedIn();
+    [GeneratedRegex(@"\bholds(?<released>\s+released)?:\s*(?<list>[^|;\n]*?)(?=\.(?:\s|$)|[|;\n]|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex Clause();
+
+    [GeneratedRegex(@"^\s*(?:none|nothing)\b|\breleased\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Lifted();
+
+    [GeneratedRegex(@"linkedin|chrome", RegexOptions.IgnoreCase)]
+    private static partial Regex Browser();
+
+    [GeneratedRegex(@"claude in chrome", RegexOptions.IgnoreCase)]
+    private static partial Regex Extension();
 }
