@@ -39,6 +39,15 @@ public static class RequestRecording
         {
             long start = Stopwatch.GetTimestamp();
             recorder.MarkOperator(context); // the operator's key leaves with the operator's cookie (ADR-116)
+            // The app's own time to its first byte, by name and milliseconds only, so a browser or a probe can tell it
+            // from the wire's (ADR: A rendering service beside the API).
+            context.Response.OnStarting(() =>
+            {
+                context.Response.Headers["Server-Timing"] = string.Create(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    $"app;dur={Stopwatch.GetElapsedTime(start).TotalMilliseconds:0.#}");
+                return Task.CompletedTask;
+            });
             try
             {
                 await next();
