@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.46** (2026-11-12): The chart frame the Quality page and the Admin tab both draw with moved out of the Admin tab's folder into a shared one, as CodeRabbit asked on #8; nothing a visitor sees changed.
 - **1.0.5.45** (2026-11-12): A link to the review route, the blog, a post, About Steven or the Quality page now previews in a message with that page's own title, description and address, where all five previewed as the auction platform's landing page.
 - **1.0.5.44** (2026-11-12): On a phone the blog and its posts hold still while they load, where they jumped by four to six times the layout shift Google counts as good, and the resume door no longer says the resume is below when a phone has nothing below.
 - **1.0.5.43** (2026-11-12): A page whose visitor has already left no longer gets an answer from a kept view or a build that finished in that instant; the read stops first, which also ends a test that failed on main one time in a few.

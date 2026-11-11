@@ -23,7 +23,7 @@ import {
 } from '../../../lib/spend';
 import type { MachineWindow } from '../../../lib/machineChart';
 import cardStyles from '../shared/card.module.css';
-import chartStyles from '../charts/charts.module.css';
+import chartStyles from '../../shared/charts/charts.module.css';
 import styles from './SpendCard.module.css';
 import { About, failed, useRead } from '../shared/common';
 import { BarGauge } from '../charts';

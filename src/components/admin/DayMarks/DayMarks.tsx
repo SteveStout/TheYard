@@ -7,7 +7,7 @@
  */
 import { dayAxisLabels, dayMarks, weekendRuns } from '../../../lib/dayMarks';
 import type { PlotBox } from '../../../lib/plotFrame';
-import styles from '../charts/charts.module.css';
+import styles from '../../shared/charts/charts.module.css';
 import dayStyles from './DayMarks.module.css';
 
 /** Draws the weekend wash and the Monday and Friday labels for `slots` across `box`. */
