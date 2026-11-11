@@ -6,7 +6,7 @@
  *            CloudRows.tsx, CodeHealthSection.tsx, ErrorsCard.tsx, ExperimentCard.tsx, ForemanCard.tsx,
  *            FunnelCard.tsx, IncidentsCard.tsx, KeptLogsCard.tsx, LinksCard.tsx, LogCard.tsx,
  *            MachinesContainerSection.tsx, MachinesDocumentSection.tsx, MachinesRelationalSection.tsx, PagesCard.tsx,
- *            ProofCard.tsx, ReviewCard.tsx, SpendMeters.tsx, SpendSpike.tsx, SqlCard.tsx, StoreCard.tsx,
+ *            PounceCard.tsx, ProofCard.tsx, ReviewCard.tsx, SpendMeters.tsx, SpendSpike.tsx, SqlCard.tsx, StoreCard.tsx,
  *            TestsCard.tsx, TimingCard.tsx.
  */
 export * from './DataTable';
