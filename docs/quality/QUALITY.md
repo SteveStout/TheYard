@@ -1,6 +1,13 @@
 # Quality you can watch
 
-Every rule this codebase lives by is a test, and fifteen numbers about its shape may only get better. This page shows both, read from the build that serves it, including the two weeks the numbers got worse.
+AI made me fast. For two weeks in October it also let the code slip where no test was looking, so I built a ratchet. It measures fifteen numbers about the code on every version, and the gate refuses any version that makes one of them worse. This page is the proof, slip included.
+
+```quality-trend
+Async methods with no CancellationToken | may only fall | 1.0.4.115
+{{live:quality-trend async_without_cancellation}}
+```
+
+From {{live:quality-first async_without_cancellation}} on 15 October to a worst of {{live:quality-peak async_without_cancellation}}, and {{live:quality-now async_without_cancellation}} today. The gold mark is the version the ratchet went in.
 
 ## In plain words
 
@@ -32,12 +39,7 @@ Today the async count is {{live:quality-now async_without_cancellation}} and the
 
 ## The numbers over time
 
-One line per number, the whole history.
-
-```quality-trend
-Async methods with no CancellationToken | may only fall | 1.0.4.115
-{{live:quality-trend async_without_cancellation}}
-```
+One line for each of the other numbers, the whole history. The async line is at the top of this page.
 
 ```quality-trend
 Declarations with no summary | may only fall | 1.0.4.115
