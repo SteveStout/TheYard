@@ -92,3 +92,11 @@
     order: 1;
   }
 }
+
+/* A phone: the person panel goes after the finish too, ahead of the quotes, so stop 1 starts on the first screen
+   (ADR-123, the addendum of the hook on every page). */
+@media (max-width: 639.98px) {
+  .person {
+    order: 1;
+  }
+}

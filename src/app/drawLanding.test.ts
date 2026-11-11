@@ -9,7 +9,9 @@ describe('the landing page drawn on a server', () => {
     // page rendered at build time, server rendering as the goal).
     expect(typeof (globalThis as { window?: unknown }).window).toBe('undefined');
     const html = drawLanding();
-    expect(html).toContain('Welcome to The Yard');
+    expect(html).toContain(
+      'Fifteen quality numbers are measured on every version and none may get worse.'
+    );
     // Drawn once, whole, and nothing fetched: no loading state where the figures will go.
     expect(html.length).toBeGreaterThan(10_000);
   });

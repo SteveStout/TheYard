@@ -1,5 +1,5 @@
 /**
- * Does:      Styles the landing page: the hero and its title, the two columns under it, the band the width of the
+ * Does:      Styles the landing page: the two columns under its hook, the band the width of the
  *            page under both, the featured tiles, the section tiles under their group headings, each tile's badge,
  *            and the place of the quotations column.
  * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
@@ -23,7 +23,27 @@
   gap: var(--space-5);
 }
 
-/* Under the hero, two columns: everything the page had on the left, what
+/* The page's title, the hook's sentence (ADR-132), in the title weight Admin, Account and Inventory use. */
+.heading {
+  max-width: 720px;
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--title-weight);
+  line-height: var(--title-line);
+}
+
+/* The welcome card's sentence, who built this and what it is, under the readouts. */
+.who {
+  max-width: 720px;
+  margin: 0 auto;
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  text-align: center;
+}
+
+/* Under the hook, two columns: everything the page had on the left, what
    colleagues say on the right, read before the rest is scrolled past. Until
    the page is wide enough for both, one column in reading order: the featured
    tiles, the column, the rest. */
@@ -104,40 +124,6 @@
     grid-column: 1 / -1;
     grid-row: 3;
   }
-}
-
-.hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  text-align: center;
-  margin-bottom: var(--space-2);
-  /* The title and its sentence sit on the glass the large tiles wear, so the
-     ribbons behind them do not cross the words
-     and the title stays readable. */
-  /* As wide as the rows under it: a 760 px panel over
-     full-width rows read as a different page's header. */
-  align-self: stretch;
-  padding: var(--space-4) var(--space-5);
-}
-
-/* A page's title, with the gold underline, as Admin, Account and Inventory. */
-.heading {
-  padding-bottom: var(--space-1);
-  border-bottom: var(--rule-gold);
-  border-image: var(--gradient-gold) 1;
-  font-size: var(--text-3xl);
-  font-weight: var(--title-weight);
-  line-height: var(--title-line);
-  color: var(--color-heading);
-}
-
-.lede {
-  max-width: 640px;
-  color: var(--color-heading);
-  font-size: var(--text-md);
-  font-weight: var(--weight-medium);
 }
 
 .featured,
@@ -520,10 +506,6 @@
 }
 
 @media (max-width: 639.98px) {
-  .heading {
-    font-size: var(--text-2xl);
-  }
-
   .tile {
     padding: var(--space-4) var(--space-3);
   }

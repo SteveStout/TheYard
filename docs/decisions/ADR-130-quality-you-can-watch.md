@@ -54,7 +54,7 @@ Outside the rings for the data and the script (data/ and scripts/ beside the res
 - [`scripts/quality_history.py`](https://github.com/SteveStout/TheYard/blob/main/scripts/quality_history.py) - rebuild, append, coverage
 - [`docs/quality/QUALITY.md`](https://github.com/SteveStout/TheYard/blob/main/docs/quality/QUALITY.md) - the page
 - [`api/TheYard.Api/Features/Docs/QualityCounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/QualityCounts.cs) - every live number on it
-- [`src/lib/qualityTrend.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/qualityTrend.ts), [`src/library/qualityBlocks.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/qualityBlocks.ts) and [`src/components/quality/QualityTrend/`](https://github.com/SteveStout/TheYard/tree/main/src/components/quality/QualityTrend) - the fence and the chart
+- [`src/lib/qualityTrend.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/qualityTrend.ts), [`src/library/qualityBlocks.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/qualityBlocks.ts) and [`src/components/shared/QualityTrend/`](https://github.com/SteveStout/TheYard/tree/main/src/components/shared/QualityTrend) - the fence and the chart
 - [`scripts/promote.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/promote.sh) - the row on every ship, and the owner's number
 - [`api/TheYard.Tests/QualityHistoryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/QualityHistoryTests.cs) - the history and the page, held to the data
 
@@ -93,3 +93,7 @@ What stopped being true: the page's first sentence, "Every rule this codebase li
 The async chart is drawn once: its fence moved from "The numbers over time" to the top, and that section's lead-in now says the async line is at the top of the page. The page still has twelve trend fences, and the line under the top chart adds three placeholders; QualityHistoryTests holds it to no typed number, and quality.spec counts the fences from the served document and finds a chart for each. The new figure is the first on the page to sit above the first second-level heading, inside the title card; the viewer mounts every figure by its data attribute wherever it sits, and a local run at 1,280 by 900 and at 390 by 844 drew it whole on the first screen.
 
 Corrected in 1.0.5.18: this addendum first said the page opens with one sentence; its opening is one paragraph of four sentences, the text Steve approved, and the chart follows it (CodeRabbit on 1.0.5.16).
+
+## Addendum, @DATE@ (@VER@): the chart moved to shared
+
+What stopped being true: Decision 3 and the Files list put the chart in its own folder under components/quality. The landing's hook now draws this page's first chart too (ADR: A hook on every page), and a component a second section draws lives under components/shared, so the chart moved to components/shared/QualityTrend; the link above names the new place. The page draws it as before, and nothing on it changed.

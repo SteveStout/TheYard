@@ -145,3 +145,6 @@ What stopped being true: the table in the addendum of 1.0.4.150, and its line "s
 
 **The kept place starts again.** The browser keeps the place as indexes, so a reader who reached stop 1 under the first order would come back with Quality already ticked and be sent past it. Both keys gain a "-2" (theyard-review-stop-2 and theyard-review-reached-2), and every browser starts the new order at stop 1. A returning reader reports stop 1 again, which the server folds as it folds any repeat: a higher stop replaces a lower one, one row a visitor a day.
 
+## Addendum, @DATE@ (@VER@): on a phone, stop 1 before the person panel
+
+What stopped being true: the addendum of 1.0.4.154 says that under the wide desk's width the rail folds with the person's links under the lede. On a phone at 390 by 844 that put stop 1 at 909 pixels, below the first screen. From this version, under 640 pixels, the person panel folds after the finish panel, ahead of the quotes, so stop 1's heading and what it shows start on the first screen (ADR: A hook on every page, which names stop 1 the route's hook). From 640 to 1,279 pixels the panel keeps its place under the lede. No stop and no word of the route changed. `hooks.spec.ts` holds stop 1 on the first screen at 390 by 844, and `review.spec.ts` the quotes after the finish as before.

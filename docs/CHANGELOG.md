@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): Every page a reader is sent to opens with one piece of proof on a phone's first screen: the landing the quality sentence and its chart where the welcome card was, About the resume's two lines on releases and being the sole engineer, a blog post its own title, summary and first picture, the resume door the quality sentence and a link to the recommendations, and the review route its first stop.
 - **@VER@** (@DATE@): The chart frame the Quality page and the Admin tab both draw with moved out of the Admin tab's folder into a shared one, as CodeRabbit asked on #8; nothing a visitor sees changed.
 - **@VER@** (@DATE@): A link to the review route, the blog, a post, About Steven or the Quality page now previews in a message with that page's own title, description and address, where all five previewed as the auction platform's landing page.
 - **@VER@** (@DATE@): On a phone the blog and its posts hold still while they load, where they jumped by four to six times the layout shift Google counts as good, and the resume door no longer says the resume is below when a phone has nothing below.

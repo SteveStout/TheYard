@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 // Every component's source outside the Admin tab, read as text by the bundler the way icons.test.ts reads it.
 const outside = import.meta.glob(
-  ['../../**/*.ts', '../../**/*.tsx', '!../../admin/**', '!../../**/*.test.ts', '!../../**/*.test.tsx'],
+  [
+    '../../**/*.ts',
+    '../../**/*.tsx',
+    '!../../admin/**',
+    '!../../**/*.test.ts',
+    '!../../**/*.test.tsx',
+  ],
   { query: '?raw', import: 'default', eager: true }
 ) as Record<string, string>;
 

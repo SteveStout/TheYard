@@ -11,6 +11,9 @@ import { landingTiles, type LandingTile as LandingTileEntry } from '../../../lib
 import type { DocKey } from '../../../library/documents';
 import { MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
+import { Hook } from '../../shared/Hook';
+import { QualityTrend } from '../../shared/QualityTrend';
+import { hookFor, hookTrend } from '../../../lib/pageHooks';
 import { Ring } from '../../shared/Ring';
 import { PulseBand } from '../PulseBand';
 import { TechStack } from '../TechStack';
@@ -23,7 +26,10 @@ import styles from './Landing.module.css';
 import { request } from '../../../lib/request';
 
 /**
- * The landing page: what the address opens with no query. A tile per
+ * The landing page: what the address opens with no query. It opens with its hook (ADR-132): the quality sentence as
+ * the page's heading, the Quality page's first chart drawn from the history the build carries, and a link to that
+ * page, all drawn with no read, the live readouts directly under it (ADR-100), then who built it in one sentence.
+ * Then a tile per
  * place the sidebar goes, drawn from the same site map the sidebar is drawn
  * from (src/lib/siteMap.ts), so the two cannot list different things. The
  * large tiles are the map's featured entries, Inventory and Author with the badge on top, and
@@ -34,6 +40,10 @@ import { request } from '../../../lib/request';
  * heading, as the sidebar groups them, then Sign in, Admin and GitHub. The Admin tile's health dot is read from /api/health, the band under the title from /api/pulse.
  * One tile is drawn by LandingTile, the banners by LandingBanners.
  */
+/** The landing's hook and its chart, read once from the files the build carries. */
+const HOOK = hookFor('landing');
+const HOOK_TREND = hookTrend(HOOK);
+
 /** The two figures that are a share of a whole, and so carry a ring (the operator's look). */
 const RINGED = ['tests', 'stores'];
 
@@ -103,13 +113,24 @@ export function Landing({
 
   return (
     <section className={styles.landing} aria-labelledby="landing-title" data-testid="landing">
-      <header className={`${styles.hero} op-glass`}>
-        <h1 id="landing-title" className={styles.heading}>
-          Welcome to The Yard
-        </h1>
-        <p className={styles.lede}>{INTRO.sentence}</p>
-      </header>
+      <Hook
+        page="landing"
+        lines={HOOK.lines}
+        headingId="landing-title"
+        headingClass={styles.heading}
+        caption={HOOK.chart ? `${HOOK.chart.label}, ${HOOK.chart.direction}` : undefined}
+        figure={HOOK_TREND && <QualityTrend data={HOOK_TREND} />}
+        link={HOOK.link}
+        onLink={(event) => {
+          // A plain click opens the page in the app's window; a modified click keeps the browser's own meaning.
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+          event.preventDefault();
+          onOpenDoc('quality');
+        }}
+      />
       <PulseBand onOpenDoc={onOpenDoc} />
+      {/* Who built it and what it is, the welcome card's sentence, kept under the readouts the hook sits above. */}
+      <p className={styles.who}>{INTRO.sentence}</p>
       <div className={styles.body}>
         <div className={styles.lead}>
           <ul className={styles.featured} aria-label="Start here">
