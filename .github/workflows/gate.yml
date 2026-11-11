@@ -172,7 +172,9 @@ jobs:
       - name: The bundle and Chrome, for the store specs
         if: env.COSMOS_NEEDED == '1'
         run: |
-          npx playwright install --with-deps chrome
+          # When Ubuntu's mirror cannot be reached the install fails on the system fonts alone; the runner's own Chrome
+          # runs the suite then, and the run says so (ADR-098, the addendum of 1.0.5.19).
+          npx playwright install --with-deps chrome || { test -x /opt/google/chrome/chrome && echo "::warning::the Chrome install could not fetch its system packages; the runner's own Chrome runs the suite"; }
           npx vite build
 
       # #region both-stores
@@ -326,7 +328,8 @@ jobs:
           cache: npm
       - uses: ./.github/actions/dotnet
       - run: npm ci
-      - run: npx playwright install --with-deps chrome
+      # Ubuntu's mirror out of reach fails the install on the system fonts alone; the runner's own Chrome runs the suite then (ADR-098, the addendum of 1.0.5.19).
+      - run: npx playwright install --with-deps chrome || { test -x /opt/google/chrome/chrome && echo "::warning::the Chrome install could not fetch its system packages; the runner's own Chrome runs the suite"; }
       - run: mkdir -p "$RUNNER_TEMP/raw" && echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
       # The API and the two bundles the suite serves; the build's warnings are the dotnet job's to judge.
       - run: dotnet build api/TheYard.Api -c Debug > "$RAW/api-build.txt" 2>&1 || { tail -n 20 "$RAW/api-build.txt"; exit 1; }

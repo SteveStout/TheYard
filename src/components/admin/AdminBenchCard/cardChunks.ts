@@ -32,6 +32,7 @@ export const CARD_CHUNKS = {
   LinksCard: () => import('../LinksCard/LinksCard'),
   ReviewCard: () => import('../ReviewCard/ReviewCard'),
   FunnelCard: () => import('../FunnelCard/FunnelCard'),
+  PounceCard: () => import('../PounceCard/PounceCard'),
   BlogCard: () => import('../BlogCard/BlogCard'),
   OperatorCard: () => import('../OperatorCard/OperatorCard'),
   ResetLinkCard: () => import('../ResetLinkCard/ResetLinkCard'),
