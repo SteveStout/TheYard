@@ -12,7 +12,7 @@ namespace JobHunt.Functions;
 /// that passes (pounce1110 step 2b): one PounceTick a quarter hour, five minutes behind the fresh pass, its row in
 /// jobhunt.PounceRoles for each posting judged, its run line process:Pounce, one line on the share's nightly/pounce.log,
 /// for each role that passed a hand-off and a dispatcher item that start the box's program for that one role
-/// (PounceHandoff), and, when asked, the seven process:PounceDay lines the Admin tab's card reads. It sends nothing and
+/// (PounceHandoff) and a second item that builds its 90-day page in shadow (PouncePage), and, when asked, the seven process:PounceDay lines the Admin tab's card reads. It sends nothing and
 /// touches no one; the program it hands to sends only behind its own gates, and only when POUNCE_RUN says live.
 /// </summary>
 // #endregion summary
