@@ -144,7 +144,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 invitesRoom = recount.Room;
                 start = start with { Lines = [.. start.Lines, .. recount.Lines], LiveCount = recount.Live };
             }
-            DayReads worked = run.Role is null ? reads! : reads! with { Queues = await RoleQueueAsync(reads!, run, ct) };
+            DayReads worked = run.Role is null ? reads! : reads! with { Queues = await RoleQueueAsync(reads!, run, ct), Slot = run.Slot };
             Worklist list = await WorklistAsync(lane, worked, ceilings!, before!, reports, invitesRoom, linkedIn, dry, ct);
             LaneReport report = await work.Runner.RunAsync(start, list, ct);
             reports.Add(report);

@@ -131,3 +131,8 @@ The pounce catches a role within minutes of its posting going live (ADR-125, its
 
 What it does not do yet: no live run has been made. The item the Function writes starts a dry run until its setting says live (ADR-125's addendum of this version), and three clean dry runs on real caught roles come before that. `SlotTests` holds it.
 
+## Addendum, 2026-11-11 (1.0.5.31): a slot run's codes carry the slot
+
+What stopped being true: every code the program minted was spooled under the lane `server6am`, the morning's and a slot run's alike, so nothing on the share could tell a pounce note's code from the morning's.
+
+From this version `ICodeMinter.MintAsync` takes the lane its row names. The morning keeps `server6am` (`RegistryRows.Lane`); a slot run for one caught role mints under its slot, `pounce-<key>` (`DayReads.Slot`, set only on the reads a slot run's lanes work from). make_ref.py writes it as given, so the code's row in the spool and in `link-tokens.csv` says which caught role the note was for, and the Function's follow-up pass reads only those (ADR-108's addendum of this version). Nothing else a slot run writes changes. `SlotTests`, `RunTests` and `AdapterTests` hold it.

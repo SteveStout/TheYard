@@ -84,6 +84,7 @@ public sealed class RunTests
         Assert.Contains("Verified.", morning.Share.Files[row], StringComparison.Ordinal);
         Assert.Contains("nightly/2026-11-03/0600-invites-sonnet-5-5/shots/row-01.jpg", morning.Share.Files.Keys);
         Assert.Equal(["Leader at ServiceTitan, name found at send|ServiceTitan"], morning.Minter.Asked);
+        Assert.Equal([RegistryRows.Lane], morning.Minter.Lanes);
         Assert.Contains("1 sent verified of 2", output, StringComparison.Ordinal);
         Assert.Contains("clean", morning.Share.Files[WritePolicy.RunsTable], StringComparison.Ordinal);
         Assert.Contains("theyard.stevenstout.biz/?r=abc123", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/texts/02.txt"], StringComparison.Ordinal);
