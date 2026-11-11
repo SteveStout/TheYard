@@ -10,6 +10,12 @@ namespace JobHunt.Infrastructure.Features.Campaign;
 /// </summary>
 public sealed class SqlPostingBook(string connectionString) : IPostingBook, IWatchlist
 {
+    /// <summary>SQL Server's error for a row a unique constraint already holds.</summary>
+    private const int DuplicateKey = 2627;
+
+    /// <summary>SQL Server's error for a row a unique index already holds.</summary>
+    private const int DuplicateIndex = 2601;
+
     /// <inheritdoc />
     public async Task<bool> ReadyAsync(CancellationToken ct) => Convert.ToInt32(await ScalarAsync(PostingsSql.Ready, ct), CultureInfo.InvariantCulture) == 1;
 
@@ -33,9 +39,34 @@ public sealed class SqlPostingBook(string connectionString) : IPostingBook, IWat
     }
 
     /// <inheritdoc />
-    public async Task<long> AddAsync(Posting posting, string? companyKey, DateTimeOffset seenAt, CancellationToken ct) =>
-        Convert.ToInt64(await ScalarAsync(PostingsSql.Add, ct, [.. Fields(posting), ("@source", posting.Source), ("@token", Clip(posting.BoardToken, 100)), ("@id", Clip(posting.PostingId, 100)),
-            ("@company", companyKey is { } k ? Clip(k, 253) : null), ("@at", seenAt)]), CultureInfo.InvariantCulture);
+    public async Task<IReadOnlySet<string>> KnownAsync(CancellationToken ct)
+    {
+        await using var connection = await ConnectAsync(ct);
+        await using var command = SqlCommands.Build(connection, PostingsSql.Known);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        // Case-blind, as the table's unique key compares under the database's collation.
+        var known = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        while (await reader.ReadAsync(ct))
+        {
+            known.Add(Posting.Known(reader.GetString(0), reader.GetString(1), reader.GetString(2)));
+        }
+        return known;
+    }
+
+    /// <inheritdoc />
+    public async Task<long?> AddAsync(Posting posting, string? companyKey, DateTimeOffset seenAt, CancellationToken ct)
+    {
+        try
+        {
+            return Convert.ToInt64(await ScalarAsync(PostingsSql.Add, ct, [.. Fields(posting), ("@source", posting.Source), ("@token", Clip(posting.BoardToken, 100)), ("@id", Clip(posting.PostingId, 100)),
+                ("@company", companyKey is { } k ? Clip(k, 253) : null), ("@published", posting.PublishedAt), ("@at", seenAt)]), CultureInfo.InvariantCulture);
+        }
+        catch (SqlException ex) when (ex.Number is DuplicateKey or DuplicateIndex)
+        {
+            // UX_Postings_Board already holds this board's id: the other scan wrote the row first.
+            return null;
+        }
+    }
 
     /// <inheritdoc />
     public Task UpdateAsync(long key, Posting posting, DateTimeOffset at, CancellationToken ct) =>

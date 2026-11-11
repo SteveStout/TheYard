@@ -65,6 +65,9 @@ public sealed record BoardPosting(string Title, string Text, DateOnly? Posted)
 
     /// <summary>The band's interval as the board wrote it.</summary>
     public string? CompInterval { get; init; }
+
+    /// <summary>The instant the board says the posting went up, when it gives one (never an update time).</summary>
+    public DateTimeOffset? PublishedAt { get; init; }
 }
 
 /// <summary>
@@ -83,8 +86,11 @@ public interface IPostingBook
     /// <summary>The board's rows that are open, or closed since <paramref name="closedSince"/>.</summary>
     Task<IReadOnlyList<StoredPosting>> BoardAsync(string source, string token, DateTimeOffset closedSince, CancellationToken ct);
 
-    /// <summary>A posting seen for the first time; answers its key.</summary>
-    Task<long> AddAsync(Posting posting, string? companyKey, DateTimeOffset seenAt, CancellationToken ct);
+    /// <summary>Every row's board and id (<see cref="Posting.Known"/>), open or closed, in one read.</summary>
+    Task<IReadOnlySet<string>> KnownAsync(CancellationToken ct);
+
+    /// <summary>A posting seen for the first time; answers its key, or null when another scan wrote its row first.</summary>
+    Task<long?> AddAsync(Posting posting, string? companyKey, DateTimeOffset seenAt, CancellationToken ct);
 
     /// <summary>A posting seen again with something changed: every field written, LastSeenAt moved, ClosedAt cleared.</summary>
     Task UpdateAsync(long key, Posting posting, DateTimeOffset at, CancellationToken ct);
@@ -117,6 +123,10 @@ public interface IBoardReader
 {
     /// <summary>The board's open postings, or null when the board did not answer.</summary>
     Task<IReadOnlyList<BoardPosting>?> PostingsAsync(string kind, string token, CancellationToken ct);
+
+    /// <summary>The board's open postings as cheaply as it lists them; a board with no lighter list answers its whole board.</summary>
+    async Task<BoardList?> ListAsync(string kind, string token, CancellationToken ct) =>
+        await PostingsAsync(kind, token, ct) is { } whole ? new BoardList(whole, Whole: true) : null;
 }
 
 /// <summary>The leads the model wrote, as the send rules read them.</summary>

@@ -18,8 +18,8 @@ public sealed partial class TemplateTests
     /// set out of band and never kept in the repository; NIGHTLY_ANY_HOUR is a hand test of the clock;
     /// the Sheet mirror's Google client, refresh token and Sheet id are secrets or private, set the same way.
     /// </summary>
-    // TODAY_CARD and FUNNEL read unset as on (TodayCardTimer.Mode, FunnelTimer.Mode), so a redeploy that leaves them out cannot stop the morning card or the funnel line.
-    private static readonly string[] OutOfBand = ["MERGER_ROOT", "NIGHTLY_GITHUB_TOKEN", "NIGHTLY_ANY_HOUR", "GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "TRACKER_SHEET_ID", "TODAY_CARD", "FUNNEL"];
+    // TODAY_CARD, FUNNEL and FRESH read unset as on (TodayCardTimer.Mode, FunnelTimer.Mode), so a redeploy that leaves them out cannot stop the morning card, the funnel line or the fresh pass.
+    private static readonly string[] OutOfBand = ["MERGER_ROOT", "NIGHTLY_GITHUB_TOKEN", "NIGHTLY_ANY_HOUR", "GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "TRACKER_SHEET_ID", "TODAY_CARD", "FUNNEL", "FRESH"];
 
     [Fact]
     public void The_template_turns_the_tracker_merger_on()

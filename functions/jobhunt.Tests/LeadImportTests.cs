@@ -161,7 +161,7 @@ public sealed class LeadImportTests
         var lever = PublicBoardReader.Read("lever", "[{\"text\":\"Staff Engineer, C#\",\"createdAt\":1792800000000}]");
         var ashby = PublicBoardReader.Read("ashby", "{\"jobs\":[{\"title\":\"Platform Engineer\",\"publishedAt\":\"2026-10-22T00:00:00.000+00:00\"}]}");
 
-        Assert.Equal(new BoardPosting("Senior .NET Engineer", "", new DateOnly(2026, 10, 9)), greenhouse.Single());
+        Assert.Equal(new BoardPosting("Senior .NET Engineer", "", new DateOnly(2026, 10, 9)) { PublishedAt = new DateTimeOffset(2026, 10, 9, 9, 0, 0, TimeSpan.FromHours(-4)) }, greenhouse.Single());
         Assert.Equal(("Staff Engineer, C#", (DateOnly?)new DateOnly(2026, 10, 24)), (lever.Single().Title, lever.Single().Posted));
         Assert.Equal(new DateOnly(2026, 10, 22), ashby.Single().Posted);
         Assert.Equal("https://boards-api.greenhouse.io/v1/boards/acme/jobs?content=true&pay_transparency=true", PublicBoardReader.Address("greenhouse", "acme"));
