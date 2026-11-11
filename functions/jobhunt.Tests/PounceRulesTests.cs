@@ -79,6 +79,14 @@ public sealed class PounceRulesTests
     }
 
     [Fact]
+    public void The_board_s_own_shape_of_the_list_with_spaces_and_a_footnote_star_is_read_whole()
+    {
+        // jobhunt.PostingDescriptions for NinjaOne's postings, read 23:3x CST 11/10.
+        const string text = "if you are located in the USA and reside in one of the following states - CA , CO , CT , FL , GA , *IL , KS , MA , MD , ME , NJ , NC , NY , OH , OR , TN , TX , VA , and WA . We have physical offices";
+        Assert.Equal("CA, CO, CT, FL, GA, IL, KS, MA, MD, ME, NJ, NC, NY, OH, OR, TN, TX, VA, WA", JobsGates.StatesWithoutMissouri(text));
+    }
+
+    [Fact]
     public void A_list_with_Missouri_passes_and_a_short_or_uncued_list_is_not_a_rule()
     {
         Assert.Null(JobsGates.StatesWithoutMissouri("You must reside in one of the following states: AZ, CO, FL, GA, MO, NC, TX, and VA."));

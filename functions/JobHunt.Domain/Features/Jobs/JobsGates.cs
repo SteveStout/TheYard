@@ -133,7 +133,8 @@ public static partial class JobsGates
 
     /// <summary>
     /// The state codes, comma separated, when the text names five or more US states in one run with a cue in the 200
-    /// characters before it and Missouri is not one of them; else null.
+    /// characters before it and Missouri is not one of them; else null. A code may carry a footnote star ("*IL"), as
+    /// the board's own text of NinjaOne's postings writes one.
     /// </summary>
     public static string? StatesWithoutMissouri(string text)
     {
@@ -200,7 +201,7 @@ public static partial class JobsGates
     [GeneratedRegex(@"\bremote\b|\bwork from home\b|\bwork from anywhere\b|\bdistributed team\b|\bfully distributed\b", RegexOptions.IgnoreCase)]
     private static partial Regex SaysRemote();
 
-    [GeneratedRegex(@"\b[A-Z]{2}\b(?:\s*,\s*(?:and\s+)?|\s+and\s+)(?:\b[A-Z]{2}\b(?:\s*,\s*(?:and\s+)?|\s+and\s+)){3,}\b[A-Z]{2}\b")]
+    [GeneratedRegex(@"\b[A-Z]{2}\b(?:\s*,\s*(?:and\s+)?|\s+and\s+)(?:\*?\b[A-Z]{2}\b(?:\s*,\s*(?:and\s+)?|\s+and\s+)){3,}\*?\b[A-Z]{2}\b")]
     private static partial Regex StateRun();
 
     [GeneratedRegex(@"\b[A-Z]{2}\b")]
