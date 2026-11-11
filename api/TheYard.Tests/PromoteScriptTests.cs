@@ -13,7 +13,7 @@ namespace TheYard.Tests;
 /// stand-ins on the path: the run's answer, a Cloud card that does not answer (or answers a page), and the two results
 /// writers, which this test does not judge.</para>
 /// </summary>
-public sealed class PromoteScriptTests : IDisposable
+public sealed partial class PromoteScriptTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "promote-" + Guid.NewGuid().ToString("N"));
 

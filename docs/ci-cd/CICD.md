@@ -81,7 +81,11 @@ after the push of `gate/<version>`, the machine that ships runs
 `main`, titled with the commit's subject, and the comment that asks CodeRabbit for
 its review, which a repository under ten stars needs. The gate's `coderabbit` job
 waits beside the checks, up to 30 minutes, for CodeRabbit's check on the commit to
-complete, and promote waits for that job. At Level 0 no finding holds a ship; the
+complete, and promote waits for that job. At Level 0 only a Critical finding on a
+review that was read holds a ship: `scripts/promote.sh` reads the run's row before
+it writes anything and refuses, naming the pull request and where each Critical
+sits. A Major or a Minor holds nothing, and a review that never came ships with its
+notice. The
 review's row joins `data/coderabbit-findings.json` with the results, and the
 after-roll job closes the request on `main`'s commit. A version promoted by hand
 closes it with `bash scripts/gate_pr.sh close <version> <main sha>`.

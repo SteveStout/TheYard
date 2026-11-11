@@ -239,7 +239,7 @@
       "prs": [
         16
       ],
-      "fixed": 1,
+      "fixed": 2,
       "answered_as_wrong": 0
     },
     {
@@ -332,8 +332,8 @@
         "trivial": 0,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         21
       ]
@@ -356,8 +356,8 @@
         "trivial": 0,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         22
       ]
@@ -428,8 +428,8 @@
         "trivial": 0,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         25
       ]
@@ -452,8 +452,8 @@
         "trivial": 1,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 2,
+      "answered_as_wrong": 0,
       "prs": [
         26
       ]
@@ -476,8 +476,8 @@
         "trivial": 0,
         "nitpick": 0
       },
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 0,
+      "answered_as_wrong": 1,
       "prs": [
         27
       ]
@@ -572,10 +572,35 @@
         "trivial": 0,
         "nitpick": 0
       },
+      "fixed": 0,
+      "answered_as_wrong": 1,
+      "prs": [
+        31
+      ]
+    },
+    {
+      "version": "1.0.5.21",
+      "pr": 32,
+      "sha": "f27fff5b",
+      "level": 0,
+      "at": "2026-11-11T18:26:09Z",
+      "waited_seconds": 697,
+      "review_seconds": 675,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 3,
+      "findings": {
+        "critical": 0,
+        "major": 2,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
       "fixed": null,
       "answered_as_wrong": null,
       "prs": [
-        31
+        32
       ]
     }
   ]

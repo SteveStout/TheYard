@@ -44,6 +44,21 @@ green=$(gh run view "$run" --json jobs --jq "[.jobs[] | select(.name as \$n | $c
 # green has not read the review yet (ADR-129). A run from before the job existed has none to wait for.
 review=$(gh run view "$run" --json jobs --jq '[.jobs[] | select(.name == "coderabbit")] | if length == 0 then "none" else .[0].conclusion end') || refuse "gate run $run's jobs could not be read"
 [ "$review" = none ] || [ "$review" = success ] || refuse "gate run $run's coderabbit job is $review, not green"
+# A Critical finding on a review that was read holds the promote (ADR-129, the addendum of 1.0.5.21). A review that never
+# came, a row whose findings were not read, or no row at all ships with its notice, as at Level 0.
+if [ -f "$raw/coderabbit.json" ]; then
+  said=$(jq -r '.reviewed // ""' "$raw/coderabbit.json") || refuse "the run's review row could not be read"
+  critical=$(jq -r '.findings.critical // 0' "$raw/coderabbit.json") || refuse "the run's review row could not be read"
+  case "$said" in
+    "not reviewed"* | *"not read") ;;
+    *)
+      if [ "$critical" -gt 0 ]; then
+        where=$(jq -r '[.critical_at[]? | "\(.path):\(.line)"] | join(", ")' "$raw/coderabbit.json")
+        refuse "a Critical finding holds the promote: CodeRabbit marked $critical Critical on pull request #$(jq -r '.pr' "$raw/coderabbit.json") (${where:-in the review body}); fix it on this gate branch, or leave the call to the owner"
+      fi
+      ;;
+  esac
+fi
 git fetch -q origin +refs/heads/main:refs/remotes/origin/main
 [ "$(git rev-parse HEAD~1 2>/dev/null)" = "$(git rev-parse origin/main)" ] || refuse "the gate branch is not one commit on main"
 # #endregion the-tested-commit
