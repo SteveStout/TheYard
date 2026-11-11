@@ -108,11 +108,17 @@ public sealed class Module : IModule
         services.AddSingleton<IPounceReader>(provider =>
             new InsightsPounce(new AzureMetrics(clientId, configured: provider.GetRequiredService<HostIdentity>().OnAppService, identity: provider.GetRequiredService<HostIdentity>()), workspace, nightlyNames.Function));
         services.AddScoped<ReadPounceHandler>();
-        services.AddSingleton<IProcessRunsReader>(provider =>
+        services.AddSingleton(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
-            return new GuardedProcessRuns(new InsightsProcessRuns(new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity), workspace, nightlyNames.Function), TimeProvider.System);
+            return new GuardedProcessRuns(
+                new InsightsProcessRuns(new AzureMetrics(clientId, configured: identity.OnAppService, identity: identity), workspace, nightlyNames.Function),
+                TimeProvider.System,
+                provider.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping);
         });
+        services.AddSingleton<IProcessRunsReader>(provider => provider.GetRequiredService<GuardedProcessRuns>());
+        // The pages somebody asked for, built again each minute behind the route by the one keeper.
+        services.AddSingleton<IKeptViews>(provider => provider.GetRequiredService<GuardedProcessRuns>().Views);
         services.AddSingleton(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
@@ -135,8 +141,8 @@ public sealed class Module : IModule
             provider.GetRequiredService<NightlyProcesses>(),
             provider.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping));
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
-        // The windows somebody asked for, built again each minute behind the route, so no request waits on Azure.
-        services.AddHostedService(provider => new CloudKeeper(provider.GetRequiredService<CloudReader>(), TimeProvider.System, provider.GetRequiredService<ILogger<CloudKeeper>>()));
+        // The windows somebody asked for, built again each minute behind the route by the one keeper, so no request waits on Azure.
+        services.AddSingleton<IKeptViews>(provider => provider.GetRequiredService<CloudReader>().Views);
         services.AddScoped<ReadCloudCardHandler>();
         services.AddScoped<ReadProcessRunsHandler>();
         // The box's snapshots and its live ring, held in this process: one process serves both names, so both read them.

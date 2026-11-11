@@ -157,6 +157,8 @@ def read_review(numbers, sha):
         found, actionable, places = count(reviews, comments, sha)
         # Each Critical names the request it was found on, which a carried Critical's row number would not.
         places = [{**place, "pr": number} for place in places]
+        # A Critical in the review body has no line; it still names the request it was found on.
+        places += [{"path": "the review body", "line": None, "pr": number}] * max(0, found["critical"] - len(places))
         here = (sum(found.values()), actionable, bool(reviews or comments), number, found, places)
         if best is None or here[:3] > best[:3]:
             best = here

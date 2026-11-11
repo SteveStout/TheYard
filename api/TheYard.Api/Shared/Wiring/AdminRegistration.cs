@@ -29,12 +29,17 @@ public static class AdminRegistration
 
         // Identifiers, not secrets: the identity's client id and this web app's ARM path. The
         // template sets the path; the default is the one web app's.
-        var azureSelf = new AzureSelf(
-            AzureIds.ClientId(builder.Configuration),
-            builder.Configuration["Azure:SelfResourceId"]
-                ?? AzureResources.From(builder.Configuration).SitePath(AzureIds.SubscriptionId(builder.Configuration)),
-            identity);
-        builder.Services.AddSingleton(azureSelf);
+        string selfClient = AzureIds.ClientId(builder.Configuration);
+        string selfPath = builder.Configuration["Azure:SelfResourceId"]
+            ?? AzureResources.From(builder.Configuration).SitePath(AzureIds.SubscriptionId(builder.Configuration));
+        builder.Services.AddSingleton(services => new AzureSelf(
+            selfClient,
+            selfPath,
+            identity,
+            TimeProvider.System,
+            services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping));
+        // The card's view, built again each minute behind the route by the one keeper.
+        builder.Services.AddSingleton<IKeptViews>(services => services.GetRequiredService<AzureSelf>().Views);
         // The other container's metrics, read server side with a short patience (ADR: Backends, side by
         // side). Since one web app serves both, no deploy sets Peer:Url: both sites are this process, and the card
         // says so in a sentence (ADR: One web app for every .NET process).

@@ -1,46 +1,39 @@
 // The runs route's guard (ADR-109, the addendum on the six processes, its second pass): the route is public,
-// and each uncached page is two workspace queries through Resource Manager, whose limits the Application
-// Insights card shares. A page is kept two minutes by its process, window and page; and past thirty uncached
-// reads in a minute the route answers that it is busy rather than asking the workspace again, so no loop of
-// addresses can spend the site's identity's query allowance.
+// and each unkept page is two workspace queries through Resource Manager, whose limits the Application
+// Insights card shares. A page is kept by its process, window and page the way the Cloud cards keep their
+// views (ADR: One frame for every resource, the addendum that gave the runs route the same keeping): under two
+// minutes old it answers at once, past one minute the next is read behind the request, and the one keeper reads
+// again each page asked for in the last hour. Every fresh read, the request's, the one behind it and the
+// keeper's, counts against thirty a minute; past them the route answers that it is busy and a page already kept
+// stays, so no loop of addresses can spend the site's identity's query allowance.
 using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 
 // #region guarded-process-runs
-/// <summary>The runs reader with a two-minute keep per page and a cap on fresh reads a minute.</summary>
+/// <summary>The runs reader with each page kept built and a cap on fresh reads a minute.</summary>
 /// <param name="inner">The workspace reader.</param>
 /// <param name="clock">The clock the keep and the minute are counted on.</param>
-public sealed class GuardedProcessRuns(IProcessRunsReader inner, TimeProvider clock) : IProcessRunsReader
+/// <param name="stopping">The host's stopping, which ends a build behind a request.</param>
+public sealed class GuardedProcessRuns(IProcessRunsReader inner, TimeProvider clock, CancellationToken stopping = default) : IProcessRunsReader
 {
+    /// <summary>Each page as read, by process, window and page; a read that is not available is never kept.</summary>
+    public KeptViews<ProcessRunsRead> Views { get; } = new("run histories", clock, stopping, read => read.Available);
+
     /// <summary>How many pages may be read fresh from the workspace in one minute.</summary>
     public const int FreshReadsAMinute = 30;
 
-    /// <summary>How long a page is kept.</summary>
-    public static readonly TimeSpan Keep = TimeSpan.FromMinutes(2);
-
-    private readonly BoundedCache<string, ProcessRunsRead> _pages = new(1000, 16L * 1024 * 1024, Keep, read => 512 + (read.Rows.Count * 512L), clock, StringComparer.Ordinal);
     private readonly object _gate = new();
     private (DateTimeOffset Minute, int Reads) _fresh;
 
-    public async Task<ProcessRunsRead> RunsAsync(FunctionProcess process, TimeSpan window, int skip, int take, CancellationToken cancellation)
-    {
-        string key = $"{process.Key}|{(long)window.TotalMinutes}|{skip}|{take}";
-        if (_pages.TryGet(key, out var held))
-        {
-            return held;
-        }
-        if (!Admit(clock.GetUtcNow()))
-        {
-            return new ProcessRunsRead(false, "busy: the run histories were asked for more than thirty times in the last minute; ask again in a minute", [], ProcessTally.None);
-        }
-        var read = await inner.RunsAsync(process, window, skip, take, cancellation);
-        if (read.Available)
-        {
-            _pages.Set(key, read);
-        }
-        return read;
-    }
+    public Task<ProcessRunsRead> RunsAsync(FunctionProcess process, TimeSpan window, int skip, int take, CancellationToken cancellation) =>
+        Views.ReadAsync($"{process.Key}|{(long)window.TotalMinutes}|{skip}|{take}", build => FreshAsync(process, window, skip, take, build), cancellation);
+
+    /// <summary>One page read from the workspace now, or the busy answer when this minute has had its thirty.</summary>
+    private Task<ProcessRunsRead> FreshAsync(FunctionProcess process, TimeSpan window, int skip, int take, CancellationToken cancellation) =>
+        Admit(clock.GetUtcNow())
+            ? inner.RunsAsync(process, window, skip, take, cancellation)
+            : Task.FromResult(new ProcessRunsRead(false, "busy: the run histories were asked for more than thirty times in the last minute; ask again in a minute", [], ProcessTally.None));
 
     /// <summary>True, and counted, when this minute has room for one more fresh read.</summary>
     public bool Admit(DateTimeOffset now)

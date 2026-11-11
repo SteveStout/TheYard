@@ -152,3 +152,7 @@ the health probe's outcome, the site asking Azure about itself, and an index of 
 token exchange and to all three reads, so a card the Admin tab has stopped drawing stops asking
 Azure about this web app. It caches for sixty seconds either way, so the saving is a connection
 and not a read.
+
+## Addendum, 2026-11-11 (1.0.5.24): the Azure card's view is kept built
+
+What stopped being true: the addendum of 2026-10-29 says `AzureSelf` caches for sixty seconds. A 48-hour probe read `/api/admin/azure` at a cold p95 of 4.3 to 4.5 s, the token and the three reads made on the request each time the minute lapsed. From this version the card's view is kept the way the Cloud cards' are (ADR-102, the addendum of this version): under two minutes old it answers at once, past one minute the next is read behind the request, and one keeper reads it again each minute while somebody has asked in the last hour. A read Azure refuses is answered as available false and never kept, so a refusal never replaces a view the card already has. The poll's cancellation now stops only a read the request waits on.

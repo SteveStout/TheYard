@@ -49,3 +49,5 @@ Beside the gate's other rules on how a change is made: ADR-075's table lists it 
 - [CLAUDE.md](https://github.com/SteveStout/TheYard/blob/main/CLAUDE.md), the section "Library docs, at the version this repository pins".
 - [api/TheYard.Tests/LibraryDocsTests.cs](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/LibraryDocsTests.cs)
 - [docs/built-with-ai/BUILT-WITH-AI.md](https://github.com/SteveStout/TheYard/blob/main/docs/built-with-ai/BUILT-WITH-AI.md), where library facts come from.
+
+Correction, 1.0.5.24: the section above gave `/vitejs/vite/v8.3.5` as Context7's versioned entry; that was the nearest version its listing had, and the version this repository resolves is 8.3.2 (`package-lock.json`, which CLAUDE.md now names because `package.json` holds ranges). And "ADR-075's table lists it with its test" was not true when this record shipped; the row is in now (CodeRabbit on #34).

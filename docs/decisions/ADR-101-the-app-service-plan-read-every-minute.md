@@ -110,3 +110,7 @@ From 1.0.3.194 the card holds no table of plan sizes. Until then `PlanSizes` map
 ## Addendum, 2026-10-21 (1.0.4.24): the socket limit follows the size
 
 The "1,920" outbound sockets this record compares against is the B1 figure. Since 1.0.4.4 the card reads the limit for the plan's own size from the table in `PlanThresholds` (1,920, 3,968, 8,064 for Basic and Standard 1 to 3, and Premium v3's four), so on B2 the line is 3,968.
+
+## Addendum, 2026-11-11 (1.0.5.24): the plan's view is kept built
+
+What stopped being true: the Decision says the server caches the plan's answer a minute. A 48-hour probe found that cache never answered: every one of about 280 reads of `/api/admin/plan` built the view, at a p95 of 7.9 to 13.7 s. From this version the plan's windows are kept the way the Cloud cards' are (ADR-102, the addendum of this version): a view under two minutes old answers at once, past one minute the next is built behind the request, and one keeper builds again each window asked for in the last hour, once a minute. The dials still move once a minute.

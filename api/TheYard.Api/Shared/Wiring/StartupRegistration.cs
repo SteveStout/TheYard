@@ -3,8 +3,8 @@ namespace TheYard.Api.Shared.Wiring;
 /// <summary>
 /// What runs when the host starts, one hosted service per concern, in the order they start: the
 /// stores said out loud, the scratch database's cleanup, the error rings and the start time, the
-/// default catalogue's warm beside the server, the page sweep at the roll and, where it is on,
-/// the keep-warm loop. Hosted services start before the server listens and stop after it has
+/// default catalogue's warm beside the server, the page sweep at the roll, the keeper of every
+/// route's kept views and, where it is on, the keep-warm loop. Hosted services start before the server listens and stop after it has
 /// drained, in the reverse of this order.
 /// </summary>
 public static class StartupRegistration
@@ -28,6 +28,12 @@ public static class StartupRegistration
             services.GetRequiredService<ILogger<CatalogueWarm>>(),
             warmOthers));
         builder.Services.AddHostedService<PageSweepAtRoll>();
+        // One keeper for every route that keeps its views (the Cloud cards, the plan, the Azure card, the runs),
+        // each registered by its slice as an IKeptViews, so none of them waits on Azure past its first read.
+        builder.Services.AddHostedService(services => new ViewKeeper(
+            services.GetServices<IKeptViews>(),
+            TimeProvider.System,
+            services.GetRequiredService<ILogger<ViewKeeper>>()));
         // On where App Service runs the site and off everywhere else, the test host included;
         // KeepWarm:Enabled says otherwise either way (ADR: Kept awake).
         if (builder.Configuration.GetValue("KeepWarm:Enabled", identity.SiteName is not null))

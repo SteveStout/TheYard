@@ -262,7 +262,6 @@ public sealed class SliceTests
     {
         ["ActivityCollector"] = "keeps the visitor counts off the request path",
         ["CatalogueWarm"] = "warms each store's catalogue once at start",
-        ["CloudKeeper"] = "builds each Cloud card somebody opened in the last hour behind the route, once a minute",
         ["CloudRecorder"] = "reads and keeps the resource cards' minutes and hours",
         ["LiveSampler"] = "runs each live source while its card is open, at the source's own grain",
         ["CostRecorder"] = "reads Cost Management once an hour and keeps the answer",
@@ -280,6 +279,7 @@ public sealed class SliceTests
         ["PlanRecorder"] = "reads and keeps the plan card's minutes and hours",
         ["ScratchDatabaseCleanup"] = "deletes the scratch database at stop",
         ["StoreAnnouncement"] = "says which store each site serves at start",
+        ["ViewKeeper"] = "builds each kept view somebody asked for in the last hour behind its route, once a minute: the Cloud cards, the plan, the Azure card and the runs",
         ["StoreSecondChance"] = "asks a store that did not come up again, for a window, and attaches it",
     };
 

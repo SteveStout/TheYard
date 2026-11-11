@@ -544,6 +544,17 @@ public sealed class CodeRabbitRuleTests
             Assert.Equal("api/Held.cs", held.GetProperty("path").GetString());
             // The place names the request it was found on, so the hold points at the right one (CodeRabbit on #33).
             Assert.Equal(12, held.GetProperty("pr").GetInt32());
+
+            // A Critical in a review body has no line, and still names the request it was found on (CodeRabbit on #34).
+            File.WriteAllText(Path.Combine(dir, "one.json"), "[[]]");
+            File.WriteAllText(Path.Combine(dir, "body.json"), JsonSerializer.Serialize(new[] { new[] { new { user = new { login = "coderabbitai[bot]" }, commit_id = Sha, body = "**Actionable comments posted: 1**\n\n> **Outside diff range comments (1)**\n>\n> `x.py:1`\n> **<picture></picture> Critical** \u00b7 **Security**\n" } } }));
+            File.WriteAllText(Path.Combine(bin, "gh"), $"#!/usr/bin/env bash\ncase \"$*\" in *pulls?state=all*) cat \"{dir}/pulls.json\";; */pulls/11/comments*) cat \"{dir}/two.json\";; */pulls/12/comments*) cat \"{dir}/one.json\";; */pulls/12/reviews*) cat \"{dir}/body.json\";; */reviews*) cat \"{dir}/summary.json\";; *) exit 1;; esac\n");
+            File.WriteAllText(log, JsonSerializer.Serialize(new { about = "test", rows = new[] { new { version = "1.0.5.3", pr = 12, sha = "8533b35f", reviewed = "full", actionable = 0, findings = new { critical = 0, major = 0, minor = 0, trivial = 0, nitpick = 0 } } } }));
+            (code, output) = Script(start);
+            Assert.True(code == 0, output);
+            using var body = JsonDocument.Parse(File.ReadAllText(log));
+            JsonElement inBody = Assert.Single(body.RootElement.GetProperty("rows")[0].GetProperty("critical_at").EnumerateArray());
+            Assert.Equal(12, inBody.GetProperty("pr").GetInt32());
         }
         finally
         {
