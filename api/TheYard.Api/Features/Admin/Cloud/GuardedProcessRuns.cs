@@ -5,7 +5,9 @@
 // minutes old it answers at once, past one minute the next is read behind the request, and the one keeper reads
 // again each page asked for in the last hour. Every fresh read, the request's, the one behind it and the
 // keeper's, counts against thirty a minute; past them the route answers that it is busy and a page already kept
-// stays, so no loop of addresses can spend the site's identity's query allowance.
+// stays, so no loop of addresses can spend the site's identity's query allowance. A refresh, behind an answer or
+// the keeper's, may take only twenty of the thirty, so ten are always left for a page a request asks for that is
+// not kept and would otherwise wait for a minute to pass.
 using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Api.Features.Admin.Cloud;
@@ -23,20 +25,29 @@ public sealed class GuardedProcessRuns(IProcessRunsReader inner, TimeProvider cl
     /// <summary>How many pages may be read fresh from the workspace in one minute.</summary>
     public const int FreshReadsAMinute = 30;
 
+    /// <summary>How many of the minute's fresh reads a refresh may never take: they are kept for a page a request waits on.</summary>
+    public const int ReservedForRequests = 10;
+
     private readonly object _gate = new();
     private (DateTimeOffset Minute, int Reads) _fresh;
 
     public Task<ProcessRunsRead> RunsAsync(FunctionProcess process, TimeSpan window, int skip, int take, CancellationToken cancellation) =>
-        Views.ReadAsync($"{process.Key}|{(long)window.TotalMinutes}|{skip}|{take}", build => FreshAsync(process, window, skip, take, build), cancellation);
+        Views.ReadAsync(
+            $"{process.Key}|{(long)window.TotalMinutes}|{skip}|{take}",
+            build => FreshAsync(process, window, skip, take, false, build),
+            cancellation,
+            build => FreshAsync(process, window, skip, take, true, build));
 
-    /// <summary>One page read from the workspace now, or the busy answer when this minute has had its thirty.</summary>
-    private Task<ProcessRunsRead> FreshAsync(FunctionProcess process, TimeSpan window, int skip, int take, CancellationToken cancellation) =>
-        Admit(clock.GetUtcNow())
+    /// <summary>One page read from the workspace now, or the busy answer when this minute has had its thirty, or a refresh its twenty.</summary>
+    private Task<ProcessRunsRead> FreshAsync(FunctionProcess process, TimeSpan window, int skip, int take, bool refresh, CancellationToken cancellation) =>
+        Admit(clock.GetUtcNow(), refresh)
             ? inner.RunsAsync(process, window, skip, take, cancellation)
             : Task.FromResult(new ProcessRunsRead(false, "busy: the run histories were asked for more than thirty times in the last minute; ask again in a minute", [], ProcessTally.None));
 
-    /// <summary>True, and counted, when this minute has room for one more fresh read.</summary>
-    public bool Admit(DateTimeOffset now)
+    /// <summary>True, and counted, when this minute has room for one more fresh read; a refresh finds room only below the reserve.</summary>
+    /// <param name="now">The moment of the read.</param>
+    /// <param name="refresh">Whether the read refreshes a page already asked for, behind an answer or for the keeper.</param>
+    public bool Admit(DateTimeOffset now, bool refresh = false)
     {
         var minute = new DateTimeOffset(now.UtcDateTime.Year, now.UtcDateTime.Month, now.UtcDateTime.Day, now.UtcDateTime.Hour, now.UtcDateTime.Minute, 0, TimeSpan.Zero);
         lock (_gate)
@@ -45,7 +56,7 @@ public sealed class GuardedProcessRuns(IProcessRunsReader inner, TimeProvider cl
             {
                 _fresh = (minute, 0);
             }
-            if (_fresh.Reads >= FreshReadsAMinute)
+            if (_fresh.Reads >= (refresh ? FreshReadsAMinute - ReservedForRequests : FreshReadsAMinute))
             {
                 return false;
             }
