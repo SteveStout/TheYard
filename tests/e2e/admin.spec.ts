@@ -2025,3 +2025,73 @@ test('the job hunt funnel card draws the six steps and the week against two to t
   await expect(card.getByTestId('funnel-days')).toContainText('from 6 days of lines');
 });
 // #endregion funnel-card
+
+// #region pounce-card
+/**
+ * Time to first touch (ADR: The Nightly Function on the Admin tab, the addendum on time to first touch): a local run
+ * has no workspace, so the real route answers seven unread days and says why; the drawn card is held to an empty week
+ * and to a week in the route's own shape, with every number read from it and minutes over 120 printed as hours.
+ */
+test('the time to first touch card draws one row a day against 60 minutes, from the route', async ({
+  page,
+}) => {
+  await openTheYard(page, '/?view=admin&card=pounce');
+  const card = page.getByTestId('pounce-card');
+  await expect(card.getByTestId('pounce-absent')).toContainText('not read here', {
+    timeout: 60_000,
+  });
+  await expect(card.getByTestId('pounce-measure')).toContainText('a median of 60 min or less');
+  const day = (on: string, read: boolean, counts: number[], judgement: string) => ({
+    day: on,
+    read,
+    caught: counts[0],
+    touched: counts[1],
+    median_min: counts[2],
+    worst_min: counts[3],
+    waiting: counts[4],
+    oldest_wait_min: counts[5],
+    judgement,
+  });
+  const week = (days: ReturnType<typeof day>[]) =>
+    JSON.stringify({
+      available: true,
+      note: null,
+      days,
+      target_min: 60,
+      newest_ms: 1_794_388_000_000,
+      read_ms: 1_794_388_100_000,
+      source: "the Function's day lines (process:PounceDay), from Application Insights",
+    });
+  const empty = [
+    '2026-11-11',
+    '2026-11-10',
+    '2026-11-09',
+    '2026-11-08',
+    '2026-11-07',
+    '2026-11-06',
+    '2026-11-05',
+  ];
+  let body = week(empty.map((on) => day(on, false, [0, 0, 0, 0, 0, 0], 'unread')));
+  await page.route('**/api/admin/pounce', (route) =>
+    route.fulfill({ contentType: 'application/json', body })
+  );
+  await page.reload();
+  await expect(card.getByTestId('pounce-empty')).toHaveText('No role has been clocked yet.', {
+    timeout: 60_000,
+  });
+  body = week([
+    day('2026-11-11', true, [3, 2, 41, 75, 1, 185], 'on_target'),
+    day('2026-11-10', true, [1, 1, 3_060, 3_060, 0, 0], 'late'),
+    ...empty.slice(2).map((on) => day(on, false, [0, 0, 0, 0, 0, 0], 'unread')),
+  ]);
+  await page.reload();
+  const days = card.getByTestId('pounce-days');
+  await expect(days).toContainText('2026-11-11', { timeout: 60_000 });
+  await expect(days).toContainText('41 min');
+  await expect(days).toContainText('3 h 5 min');
+  await expect(days).toContainText('2 d 3 h');
+  await expect(days).toContainText('on target');
+  await expect(days).toContainText('late');
+  await expect(days.locator('tbody tr')).toHaveCount(7);
+});
+// #endregion pounce-card

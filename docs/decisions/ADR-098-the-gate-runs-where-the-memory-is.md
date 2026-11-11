@@ -221,3 +221,7 @@ The review wait and the request script are held too: `GateReviewWaitTests` runs 
 Correction, 1.0.5.8: the addendum of 1.0.5.4 gives the one gate job's duration as its measure (882 seconds median), and then 1,116 seconds at 1.0.5.2 and 741 at 1.0.5.3, which are gateSeconds, the run's start to the promote step. Those two ships' gate jobs ran 1,083 and 723 seconds.
 
 From CodeRabbit on #19, in 1.0.5.10: the restore runs once for `obj` and once for `bin`, so a branch that tracks only one of them still has it restored.
+
+## Addendum, 2026-11-11 (1.0.5.19): the suite runs on the runner's own Chrome when Ubuntu's mirror is out of reach
+
+What stopped being true: that a browser job installs its Chrome or fails. On 11 November, from before 09:04 to past 10:49 CST, GitHub's runners could not resolve azure.archive.ubuntu.com, so `npx playwright install --with-deps chrome` failed on nine font packages before any test ran, and four gate runs of this version went red with every check otherwise unreached. The install now runs as before, and only when it fails and the runner already carries Google Chrome (GitHub's Ubuntu image does) does the job go on with that Chrome, saying so in a warning on the run. A day the mirror answers changes nothing. The three places it runs: the two browser jobs and the cosmos job in gate.yml, and the browser job in ci.yml. The owner approved the change the same morning.

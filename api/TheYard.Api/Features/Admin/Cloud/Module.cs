@@ -104,6 +104,10 @@ public sealed class Module : IModule
         services.AddSingleton<IFunnelReader>(provider =>
             new InsightsFunnel(new AzureMetrics(clientId, configured: provider.GetRequiredService<HostIdentity>().OnAppService, identity: provider.GetRequiredService<HostIdentity>()), workspace, nightlyNames.Function));
         services.AddScoped<ReadFunnelHandler>();
+        // Time to first touch, from the same workspace and role (ADR-109, the addendum on time to first touch).
+        services.AddSingleton<IPounceReader>(provider =>
+            new InsightsPounce(new AzureMetrics(clientId, configured: provider.GetRequiredService<HostIdentity>().OnAppService, identity: provider.GetRequiredService<HostIdentity>()), workspace, nightlyNames.Function));
+        services.AddScoped<ReadPounceHandler>();
         services.AddSingleton<IProcessRunsReader>(provider =>
         {
             var identity = provider.GetRequiredService<HostIdentity>();
