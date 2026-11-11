@@ -58,6 +58,17 @@ public sealed class PostingsTests
     }
 
     [Fact]
+    public void A_lever_createdAt_outside_the_calendar_is_no_instant_and_the_rest_of_the_board_still_reads()
+    {
+        var lever = PublicBoardReader.Read("lever", """[{"id":"far","text":"Lead Engineer","createdAt":9223372036854775807},{"id":"before","text":"Staff Engineer","createdAt":-62135596800001},{"id":"ok","text":"Principal Engineer","createdAt":1794344400000}]""");
+
+        Assert.Equal(["far", "before", "ok"], lever.Select(p => p.Id));
+        Assert.Equal(((DateTimeOffset?)null, (DateOnly?)null), (lever[0].PublishedAt, lever[0].Posted));
+        Assert.Null(lever[1].PublishedAt);
+        Assert.Equal(DateTimeOffset.FromUnixTimeMilliseconds(1794344400000), lever[2].PublishedAt);
+    }
+
+    [Fact]
     public void Greenhouse_has_a_light_list_without_descriptions_and_the_other_two_do_not()
     {
         Assert.Equal("https://boards-api.greenhouse.io/v1/boards/acme/jobs", PublicBoardReader.LightAddress("greenhouse", "acme"));
