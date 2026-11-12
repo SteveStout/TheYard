@@ -295,3 +295,21 @@ From this version:
 4. **The alert reads the run line.** `alert-jobhunt-dead-function` in infra/jobhunt-alerts.bicep now also counts a `process:` line with outcome failed or blocked over three hours, one alert instance a process, autoMitigate on; "unchanged" and "planned" never email. No new rule, so no new monthly charge for a rule. Not deployed with this version: replayed over 11/5 to 11/12 it would have sent 17 emails, one to three a day, each a real break, and the rung's own bar is no ordinary day with more than one. It is deployed after the Gmail fix (gmail403-1112) and the campaign's 403 are gone and a fresh replay is quiet.
 
 Run lines are not sampled: 33,070 of 33,070 `process:` lines over eight days carry itemCount 1, one line an invocation, so host.json is unchanged.
+
+## Addendum, 2026-11-12 (@VER@): a lane whose setup died runs once more
+
+What stopped being true: a run the Function started was one attempt at the lane. On 8 November three Nightly runs died within half an hour before their lanes began (the reply run 42469518816 at 10:00Z, a leads run before it and a triage run after it): claude-code-action's setup-bun read "Unexpected HTTP response: 504" and the next step found no bun (exit 127). 1.0.4.168 gave the reply lane a second dispatch from the Function at 5 AM Central; every other mode still lost its run.
+
+From this version nightly.yml's lane step continues on error, and three steps follow it (the `lane-retry` region):
+
+1. **Did the lane begin** runs only when the lane step failed, and says `again=true` only when the step left no execution file, the run folder is still empty, and the failure came within ten minutes of the run's start. A lane that ran and failed on its own writes an execution file or something in its folder, or has run longer than any setup takes, so it is never run twice.
+2. **The lane, once more** has the same inputs as the first and runs only on `again=true`.
+3. **The lane's verdict** is the attempt that ran: the second's outcome when it ran, else the first's. It fails the job when that is not success, and it runs before the run report, so `job.status` there is the lane's. The usage step reads whichever execution file exists.
+
+The job's ceiling is 75 minutes, room for a 55-minute lane after a setup that failed in its first minutes. `NightlyWorkflowTests` holds the shape.
+
+## Addendum, 2026-11-12 (@VER@): a nightly lane that ends closes its row
+
+What stopped being true: a nightly lane's state.md row was closed only by the lane. reply1110-0400 registered at 04:02 on 10 November, wrote its closing block to `nightly/bookend-2026-11-10.md` and no CLOSED row (NIGHTLY-LANE.md's close step names the bookend and DONE.md only), and the 6 AM program's second-driver check read it as open at 06:11 and held invites, messages and network. bookkeeping1111-0800 also has a registration and no close.
+
+From this version nightly.yml closes the row when the lane did not, whatever the run came to (the `lane-close` region, after the run report and before the unmount). The day step names the id the lane registers under, `<mode><MMdd>-<HHMM>` from the run's own date and slot (`reply1110-0400`). The close step reads the state.md spool, its `merged/` folder for the last day and the end of state.md; when a row opens `## LANE: <id>` and none closes it (`## LANE: <id> CLOSED`, or a row of that lane ending `| CLOSED |`, the two forms `RegistryTail` reads), it writes `<UTC stamp>-<id>-close.md` into the spool, aside as a dot file first and renamed in: `## LANE: <id> CLOSED <time> (GitHub Actions run <id> came to <job.status>; nightly.yml wrote this row because the lane wrote none). DONE: <run folder>/DONE.md. Holds: none. | CLOSED |`. A lane that never registered (a dry run, a triage pass) gets no row, and a failed write is a summary line, never a failed run. A lane that registers under another id is not found; the lane files name the id this way today. `NightlyCloseRowTests` runs the step's own script against a scratch share.
