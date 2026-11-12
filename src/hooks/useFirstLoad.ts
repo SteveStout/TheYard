@@ -1,5 +1,6 @@
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import type { Account } from '../lib/auth';
+import type { BlogImage } from '../lib/blog';
 import type { InventoryFacets, VehiclePage } from '../lib/data';
 import type { Vehicle } from '../lib/types';
 
@@ -30,7 +31,12 @@ export type FirstLoad = {
   pulse?: unknown;
   /** /api/recommendations as it answered, on ?view=recommendations, or null; absent on a page drawn before it was read. */
   recommendations?: unknown;
+  /** The post a ?view=blog&post= address names, as much as its hook draws (ADR-132), or null; absent elsewhere. */
+  post?: HookPost | null;
 };
+
+/** What a post's hook draws on the first screen: its title, its summary and its first image. */
+export type HookPost = { slug: string; title: string; summary: string; image: BlogImage | null };
 
 /** Holds the first load for the page's first draw; null on a page drawn in the browser. */
 export const FirstLoadContext = createContext<FirstLoad | null>(null);

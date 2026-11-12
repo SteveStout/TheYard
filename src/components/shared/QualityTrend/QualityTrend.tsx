@@ -6,9 +6,9 @@
  */
 import { plotFrame } from '../../../lib/plotFrame';
 import { TREND_BOX, trendGeometry, type QualityTrendData } from '../../../lib/qualityTrend';
-import { PlotFrame } from '../../shared/PlotFrame';
-import { useFittedBox } from '../../shared/charts/useFittedBox';
-import styles from '../../shared/charts/charts.module.css';
+import { PlotFrame } from '../PlotFrame';
+import { useFittedBox } from '../charts/useFittedBox';
+import styles from '../charts/charts.module.css';
 
 /** The line for one number, with its frame, its two end labels and the marked version. */
 export function QualityTrend({ data }: { data: QualityTrendData }) {
@@ -20,6 +20,10 @@ export function QualityTrend({ data }: { data: QualityTrendData }) {
     <svg
       ref={measure}
       className={styles.chart}
+      // Narrower than its box, the fitted chart is exactly the box's height (fitBox keeps the text's size). The landing
+      // is drawn to HTML at the build before any width is measured, so its first paint has the 640-wide box scaled down,
+      // shorter; holding that height from the first frame keeps the readouts under it still on a phone (ADR-132).
+      style={{ minHeight: `${TREND_BOX.height}px` }}
       viewBox={`0 0 ${box.width} ${box.height}`}
       role="img"
       aria-label={`${data.label}: ${data.points.map((p) => p.value).join(', ')}`}

@@ -28,6 +28,9 @@ public sealed record HostPaths(
     string RepoRoot,
     string AssetsRoot)
 {
+    /// <summary>The hook on each page a reader is sent to, data/hooks.json, beside the dataset (ADR-132, A hook on every page).</summary>
+    public string HooksPath => Path.Combine(Path.GetDirectoryName(DataPath)!, "hooks.json");
+
     /// <summary>Finds every path from the content root the host was started in.</summary>
     public static HostPaths Find(string contentRoot)
     {

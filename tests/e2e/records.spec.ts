@@ -74,7 +74,10 @@ test.describe('a record has an address', () => {
     await expect(page.getByRole('dialog')).toBeHidden();
     // No inventory parameter, so the landing page, as a bare address.
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
+      page.getByRole('heading', {
+        level: 1,
+        name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+      })
     ).toBeVisible();
   });
 });

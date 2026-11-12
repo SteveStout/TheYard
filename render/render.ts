@@ -7,7 +7,9 @@
  */
 import { drawForTheService, firstLoadElement } from '../src/app/entry-server';
 import { loadFirst } from './loaders';
-import { headFor, withHead } from './heads';
+import { headFor, withHead, type PostHead } from './heads';
+import { blogPostFrom } from '../src/app/firstAddress';
+import type { HookPost } from '../src/hooks/useFirstLoad';
 import { keptPosts, servedPages, type ServedPage } from './page';
 
 // #region the-renderer
@@ -69,15 +71,30 @@ export function createRenderer(
       return asServed(page, `other-build ${page.version}`);
     }
     const search = new URL(url).search.replace(/^\?/, '');
-    const head = headFor(search, search.includes('post=') ? await postsAt(apiOrigin) : []);
+    const posts = search.includes('post=') ? await postsAt(apiOrigin) : [];
+    const head = headFor(search, posts);
     const shell = head ? { ...page, before: withHead(page.before, head) } : page;
     const cookie = headers.get('cookie');
-    const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store);
+    // The post an address names goes into the first load from the posts already read for its head, so its hook is
+    // drawn here and the browser asks for nothing to show it (ADR-132).
+    const post = postFor(search, posts);
+    const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store).then((first) =>
+      post ? { ...first, post } : first
+    );
     return new Response(streamPage(shell, load), {
       status: 200,
       headers: { ...pageHeaders(cookie), 'Server-Timing': timing },
     });
   };
+}
+
+/** The post a ?view=blog&post= address names, as its hook draws it, or null when the address names none the blog has. */
+export function postFor(search: string, posts: readonly PostHead[]): HookPost | null {
+  const slug = blogPostFrom(new URLSearchParams(search));
+  const post = slug === null ? undefined : posts.find((each) => each.slug === slug);
+  return post
+    ? { slug: post.slug, title: post.title, summary: post.summary, image: post.image ?? null }
+    : null;
 }
 
 // #region edge-copy
