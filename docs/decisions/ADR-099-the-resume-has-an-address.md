@@ -79,3 +79,7 @@ What did not change: the bytes, the hash, the file name, the lock and `?src=`. T
 ## Addendum, 2026-11-12 (1.0.5.41): the resume of 2026-11-10
 
 What stopped being true: the addendum of 1.0.4.146, which made the 5 November file the one /resume serves. Steve approved the resume of 10 November on that day: Cass Information Systems is labelled a contract, the project showcase's hosting line says App Service, and Storee's platform is .NET 10 in the summary and the first Storee bullet. /resume now serves that file, `StevenStoutResume_2026-11-10.pdf`, 63,956 bytes, SHA-256 a1bf893cdfa93c8bf1aa7a678d3d852058f827ff475bf45d3ee630a9d399c05a, byte for byte the send copy named in the lock, in both copies the build carries. `ResumeDoor.LockDate` names the same day, `resume.sha256` and promote.sh hold the hash, and /about's summary says .NET 10 with the resume, which a new test holds.
+
+## Addendum, 2026-11-12 (1.0.5.44): the door on a phone says only what is there
+
+What stopped being true: the door's band opened "The resume is below." on every screen, and under 640 pixels the embedded resume is hidden, so a phone read that sentence over an empty screen. The sentence now shows only where the resume is drawn below it; on a phone the band says the system is running and can be checked in ten minutes, beside the PDF and the review route, both on the first screen. resume.spec.ts holds it at 390 by 844.

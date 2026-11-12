@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.44** (2026-11-12): On a phone the blog and its posts hold still while they load, where they jumped by four to six times the layout shift Google counts as good, and the resume door no longer says the resume is below when a phone has nothing below.
 - **1.0.5.43** (2026-11-12): A page whose visitor has already left no longer gets an answer from a kept view or a build that finished in that instant; the read stops first, which also ends a test that failed on main one time in a few.
 - **1.0.5.42** (2026-11-12): Every answer says in a Server-Timing header how many milliseconds the app spent on it, and a drawn page how long it waited for its frame, so a slow first visit can be split between the wire and the site.
 - **1.0.5.41** (2026-11-12): /resume serves the resume locked on 10 November, byte for byte the send copy, and About says Storee's platform is .NET 10, as that resume does.

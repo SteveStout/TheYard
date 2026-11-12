@@ -16,8 +16,11 @@ public static class ResumePage
     /// <summary>The query that asks /resume for the PDF itself, whatever the caller accepts.</summary>
     public const string PdfQuery = "pdf";
 
-    /// <summary>The band's sentence.</summary>
-    public const string Band = "The resume is below. The system it describes is running, and you can check it in ten minutes.";
+    /// <summary>The band's opening, shown only where the resume is drawn below it: a phone has no room for the embed.</summary>
+    public const string Below = "The resume is below.";
+
+    /// <summary>The band's sentence, true on every screen.</summary>
+    public const string Band = "The system it describes is running, and you can check it in ten minutes.";
 
     /// <summary>The band's link to the review route.</summary>
     public const string RouteLink = "Check my work in ten minutes";
@@ -59,7 +62,7 @@ public static class ResumePage
               .band a.primary { background: #12677f; color: #ffffff; }
               iframe { flex: 1 1 auto; width: 100%; min-height: 70vh; border: 0; }
               @media (max-width: 639px) {
-                iframe { display: none; }
+                iframe, .below { display: none; }
                 .band a.pdf { background: #12677f; color: #ffffff; }
                 .band a.primary { background: transparent; color: #12677f; }
               }
@@ -67,7 +70,7 @@ public static class ResumePage
             </head>
             <body>
             <header class="band" data-testid="resume-band">
-              <p>{{e(Band)}}</p>
+              <p><span class="below">{{e(Below)}} </span>{{e(Band)}}</p>
               <a class="primary" href="{{e(route)}}">{{e(RouteLink)}}</a>
               <a class="pdf" href="{{e(pdf)}}">{{e(PdfLink)}}</a>
             </header>
