@@ -34,7 +34,8 @@ public enum WorkAction
 /// <param name="Avoid">People already on the tracker at this company, whom a lane picking a name must not pick.</param>
 /// <param name="Role">An application's posting title as the source has it.</param>
 /// <param name="Resume">An application's tailored resume.</param>
-public sealed record WorkRow(int Row, string Person, string Company, WorkAction Action, string TextFile, string Code, string Url, string Source, string Avoid = "", string Role = "", ResumeBuild? Resume = null);
+/// <param name="Expected">The count LinkedIn's counter must show for the note (JobLinkNote.Expected); 0 with no note.</param>
+public sealed record WorkRow(int Row, string Person, string Company, WorkAction Action, string TextFile, string Code, string Url, string Source, string Avoid = "", string Role = "", ResumeBuild? Resume = null, int Expected = 0);
 
 /// <summary>A candidate left out of a worklist, and why.</summary>
 /// <param name="What">The person or company.</param>
@@ -45,7 +46,7 @@ public sealed record Dropped(string What, string Reason);
 public static class WorklistTsv
 {
     /// <summary>The header line.</summary>
-    public const string Header = "row\tperson\tcompany\taction\ttext_file\tcode\turl\tsource\tavoid\trole\tresume";
+    public const string Header = "row\tperson\tcompany\taction\ttext_file\tcode\turl\tsource\tavoid\trole\tresume\texpected";
 
     /// <summary>The whole file.</summary>
     /// <param name="rows">The rows.</param>
@@ -54,7 +55,7 @@ public static class WorklistTsv
         var text = new StringBuilder(Header).Append('\n');
         foreach (WorkRow row in rows)
         {
-            text.AppendJoin('\t', row.Row, Cell(row.Person), Cell(row.Company), row.Action.ToString().ToLowerInvariant(), Cell(row.TextFile), Cell(row.Code), Cell(row.Url), Cell(row.Source), Cell(row.Avoid), Cell(row.Role), Cell(row.Resume?.Path ?? string.Empty)).Append('\n');
+            text.AppendJoin('\t', row.Row, Cell(row.Person), Cell(row.Company), row.Action.ToString().ToLowerInvariant(), Cell(row.TextFile), Cell(row.Code), Cell(row.Url), Cell(row.Source), Cell(row.Avoid), Cell(row.Role), Cell(row.Resume?.Path ?? string.Empty), row.Expected > 0 ? row.Expected.ToString(System.Globalization.CultureInfo.InvariantCulture) : string.Empty).Append('\n');
         }
         return text.ToString();
     }

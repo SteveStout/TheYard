@@ -224,7 +224,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         int invitesSent = reports.Where(report => report.Lane == Lane.Invites).Sum(report => report.Sends.Count);
         return lane switch
         {
-            Lane.Invites => work.Builder.InvitesAsync(reads, invitesRoom, dry, ct),
+            Lane.Invites => work.Links is { } links ? links.ApplyAsync(reads, work.Builder.InvitesAsync(reads, invitesRoom, dry, ct), ct) : work.Builder.InvitesAsync(reads, invitesRoom, dry, ct),
             Lane.Messages => work.Builder.MessagesAsync(reads, before.MessageRoom(ceilings, invitesSent), dry, ct),
             _ => work.Builder.ApplyAsync(reads, linkedIn, dry, ct),
         };
