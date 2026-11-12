@@ -133,6 +133,8 @@ What it does not do yet: no live run has been made. The item the Function writes
 
 Correction, 1.0.5.35: item 4 above says no slot run starts from 05:30 to 07:00 Central. That let a run started at 05:20 hold the run lock at 06:00, when the morning run would answer "another run holds the lock" and work nothing. From this version a role run also refuses to start where its lanes' limits could carry it past 05:30 (feed, recount, invites and, since 1.0.5.33, apply: 40, 8, 40 and 40 minutes on the box, plus five, so about 03:17), and reads that again once it holds the lock, because the wait for the lock counts too. Item 1's checks gain one: a hand-off whose key is not the slot's posting stops the run before the lock, and a key past a 64-bit number reads as no hand-off instead of ending the process. Item 3's feed now drops every candidate at another company before the gates read any, so one cannot crowd out a person of the same name at the role's company, and queues only the first person that passes, though the prompt already asked for one (CodeRabbit on #40).
 
+Correction, 1.0.5.38: the correction above counts the lead back from 05:30 within the same day, so a lead longer than five and a half hours, which only lane limits raised past their defaults reach, made nothing in the evening before quiet, and a run started at 23:30 could still hold the run lock at 05:30. `RunSlot.Quiet` now carries such a lead back past midnight (CodeRabbit on #46).
+
 ## Addendum, 2026-11-11 (1.0.5.31): a slot run's codes carry the slot
 
 What stopped being true: every code the program minted was spooled under the lane `server6am`, the morning's and a slot run's alike, so nothing on the share could tell a pounce note's code from the morning's.

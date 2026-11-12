@@ -78,8 +78,23 @@ public sealed partial class PounceTickTests
         Assert.Contains("\nNot_before: 2026-11-11T07:00 CST\n", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 45, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
         Assert.Contains("\nNot_before: 2026-11-11T07:00 CST\n", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 30, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
         Assert.Contains("\nNot_before: 2026-11-11T07:00 CST\n", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 15, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
-        Assert.DoesNotContain("Not_before:", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 14, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
-        Assert.DoesNotContain("Not_before:", PounceHandoff.Item(caught with { PassedAt = Now }, PounceHandoff.Dry), StringComparison.Ordinal);
+        Assert.DoesNotContain("\nNot_before:", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 14, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
+        Assert.DoesNotContain("\nNot_before:", PounceHandoff.Item(caught with { PassedAt = Now }, PounceHandoff.Dry), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_wrapper_the_dispatcher_starts_inside_the_morning_window_defers_itself_to_seven_and_never_sleeps_it_out()
+    {
+        var caught = new CaughtRole(12786, "Zephyr Labs", "Staff Engineer", "https://x/1", "PASS", Now.AddMinutes(-40), true, false, new DateTimeOffset(2026, 11, 11, 9, 10, 0, TimeSpan.Zero));
+        string item = PounceHandoff.Item(caught, PounceHandoff.Dry);
+        string step1 = item.Split('\n').Single(line => line.StartsWith("1. ", StringComparison.Ordinal));
+        string step2 = item.Split('\n').Single(line => line.StartsWith("2. ", StringComparison.Ordinal));
+
+        Assert.DoesNotContain("sleep", step1, StringComparison.Ordinal);
+        Assert.Contains("TZ=America/Chicago date", step1, StringComparison.Ordinal);
+        Assert.Contains("sed -e '/^Not_before:/d' -e \"0,/^\\$/s/^\\$/Not_before: $(TZ=America/Chicago date +%F)T07:00 CST\\n/\" /mnt/j/dispatch/running/pounce-12786/prompt.md > /mnt/j/nightly/pounce/requeue/10-pounce-12786.md", item, StringComparison.Ordinal);
+        Assert.Contains(@"FOLLOW-ON: J:\nightly\pounce\requeue\10-pounce-12786.md", step2, StringComparison.Ordinal);
+        Assert.Contains("CLOSED row (step 8)", step2, StringComparison.Ordinal);
     }
 
     [System.Text.RegularExpressions.GeneratedRegex(@"linkedin|connection request|invite|claude in chrome|chrome", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]

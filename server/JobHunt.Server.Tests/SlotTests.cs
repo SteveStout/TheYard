@@ -76,6 +76,16 @@ public sealed class SlotTests
     public void No_slot_runs_from_half_past_five_to_seven_Central(int hour, int minute, bool quiet) =>
         Assert.Equal(quiet, RunSlot.Quiet(new DateTimeOffset(2026, 11, 11, hour, minute, 0, TimeSpan.Zero)));
 
+    [Theory]
+    [InlineData(12, 4, 0, false)]
+    [InlineData(12, 4, 30, true)]
+    [InlineData(12, 5, 30, true)]
+    [InlineData(12, 8, 0, true)]
+    [InlineData(12, 13, 0, false)]
+    [InlineData(11, 20, 0, false)]
+    public void A_lead_that_reaches_back_past_midnight_keeps_the_evening_before_quiet(int day, int hour, int minute, bool quiet) =>
+        Assert.Equal(quiet, RunSlot.Quiet(new DateTimeOffset(2026, 11, day, hour, minute, 0, TimeSpan.Zero), TimeSpan.FromHours(7)));
+
     [Fact]
     public void The_command_line_takes_a_slot_and_a_hand_off_together_or_neither()
     {

@@ -61,7 +61,7 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
         foreach (var (followUp, answered) in due)
         {
             string marker = PounceFollowUp.Marker(followUp.Code);
-            if (await store.ExistsAsync(marker, ct))
+            if (await MarkedAsync(marker, followUp.Code, ct))
             {
                 already++;
                 continue;
@@ -108,7 +108,7 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
         foreach (var (followUp, answered) in due)
         {
             string marker = PounceFollowUp.Marker(followUp.Code);
-            bool already = !seen.Add(marker) || await store.ExistsAsync(marker, ct);
+            bool already = !seen.Add(marker) || await MarkedAsync(marker, followUp.Code, ct);
             string did = already ? "already has a follow-up for this role" : answered ? "replied, no follow-up" : "dry follow-up, nothing queued";
             lines.Add(string.Empty);
             lines.Add(PounceFollowUp.LogLine(local, followUp, did, now));
@@ -122,6 +122,10 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
         await store.WriteAsync($"{PounceFollowUp.DryFolder}/{now.UtcDateTime.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}Z.md", TrackerCsvText.Encode(string.Join("\n", lines) + "\n"), ct);
         return lines;
     }
+
+    /// <summary>True when the person has a marker for the role, or the code has the one an earlier build wrote for it.</summary>
+    private async Task<bool> MarkedAsync(string marker, PounceCode code, CancellationToken ct) =>
+        await store.ExistsAsync(marker, ct) || await store.ExistsAsync(PounceFollowUp.LegacyMarker(code), ct);
 
     private async Task<IReadOnlyList<PounceCode>> CodesAsync(CancellationToken ct)
     {

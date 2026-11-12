@@ -176,6 +176,23 @@ public sealed class PounceEmailTests
         Assert.Equal(2, lines.Length);
     }
 
+    [Fact]
+    public async Task A_settled_role_s_log_line_is_recovered_on_a_pass_after_its_hand_off_has_left_the_day()
+    {
+        using var scratch = new Scratch();
+        scratch.Write("nightly/pounce/20261111-160500Z-12786.json", Handoff);
+        EmailRole role = PounceEmail.Read(Handoff)!;
+        DateTimeOffset settled = role.PassedAt.AddHours(23).AddMinutes(55);
+        string line = PounceEmail.LogLine(CentralClock.Local(settled), role, "Dana Whitfield", "refused: one email a company a month");
+        scratch.Write("nightly/pounce/emails/12786.md", PounceEmail.Settled(role, "Dana Whitfield", "one email a company a month", settled) + PounceEmail.LogField + line + "\n");
+        var emails = new PounceEmails(scratch.Store, null, new Sends(), new Fixed(role.PassedAt.AddHours(24).AddMinutes(10)), 50);
+
+        Assert.Equal(new EmailPass(0, 0, 0, 0, 0, 0, 0), await emails.RunAsync(PounceHandoff.Dry, CancellationToken.None));
+        await emails.RunAsync(PounceHandoff.Dry, CancellationToken.None);
+
+        Assert.Equal([line], scratch.Text(PounceEmail.Log).Split('\n', StringSplitOptions.RemoveEmptyEntries));
+    }
+
     private sealed class Fixed(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
