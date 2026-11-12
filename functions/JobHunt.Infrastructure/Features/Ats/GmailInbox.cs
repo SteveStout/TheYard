@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -10,18 +9,26 @@ namespace JobHunt.Infrastructure.Features.Ats;
 /// The inbox through the Gmail REST API with the nightly lane's client (gmail.modify). Four calls:
 /// users.messages.list, users.messages.get (full, for the text), users.threads.get (metadata, the
 /// senders) and users.messages.modify removing INBOX, read back with a second get. No call here
-/// can send, draft, trash or delete.
+/// can send, draft, trash or delete. Every call goes through <see cref="GmailHttp"/>: spaced on the process's one
+/// clock, a rate answer waited out, a failure named by Gmail's reason word.
 /// </summary>
-public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredentials google) : IInbox
+/// <param name="http">The client factory.</param>
+/// <param name="google">The lane's credentials.</param>
+/// <param name="time">The clock a rate answer is waited out on; the system's when none is given.</param>
+public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredentials google, TimeProvider? time = null) : IInbox
 {
-    private const string Api = "https://gmail.googleapis.com/gmail/v1/users/me";
+    private const string Api = GmailHttp.Api;
 
-    private HttpClient? _client;
+    private readonly GmailHttp _gmail = new(http, google, time ?? TimeProvider.System);
 
-    public async Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct)
+    public async Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct) =>
+        [.. (await FindInThreadsAsync(search, max, ct)).Select(found => found.Id)];
+
+    /// <summary>The messages a search finds with the thread of each, as the list call answers them, at no extra read.</summary>
+    public async Task<IReadOnlyList<(string Id, string? ThreadId)>> FindInThreadsAsync(MailSearch search, int max, CancellationToken ct)
     {
         string query = GmailQuery.Compose(search);
-        var ids = new List<string>();
+        var ids = new List<(string Id, string? ThreadId)>();
         string? page = null;
         do
         {
@@ -29,7 +36,7 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
             using var json = await GetAsync(url, ct);
             if (json.RootElement.TryGetProperty("messages", out var messages))
             {
-                ids.AddRange(messages.EnumerateArray().Select(m => m.GetProperty("id").GetString()!));
+                ids.AddRange(messages.EnumerateArray().Select(m => (m.GetProperty("id").GetString()!, m.TryGetProperty("threadId", out var thread) ? thread.GetString() : null)));
             }
             page = json.RootElement.TryGetProperty("nextPageToken", out var next) ? next.GetString() : null;
         }
@@ -63,9 +70,7 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
 
     public async Task<bool> ArchiveAsync(string id, CancellationToken ct)
     {
-        var client = await ClientAsync(ct);
-        using var answer = await client.PostAsync($"{Api}/messages/{id}/modify", JsonContent.Create(new { removeLabelIds = new[] { "INBOX" } }), ct);
-        answer.EnsureSuccessStatusCode();
+        (await _gmail.PostAsync($"{Api}/messages/{id}/modify", new { removeLabelIds = new[] { "INBOX" } }, true, ct)).Dispose();
         using var json = await GetAsync($"{Api}/messages/{id}?format=minimal", ct);
         return !(json.RootElement.TryGetProperty("labelIds", out var labels) && labels.EnumerateArray().Any(l => l.GetString() == "INBOX"));
     }
@@ -138,15 +143,7 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
             ? headers.EnumerateArray().Where(h => string.Equals(h.GetProperty("name").GetString(), name, StringComparison.OrdinalIgnoreCase)).Select(h => h.GetProperty("value").GetString() ?? "").FirstOrDefault() ?? ""
             : "";
 
-    private async Task<JsonDocument> GetAsync(string url, CancellationToken ct)
-    {
-        var client = await ClientAsync(ct);
-        using var answer = await client.GetAsync(url, ct);
-        answer.EnsureSuccessStatusCode();
-        return JsonDocument.Parse(await answer.Content.ReadAsStringAsync(ct));
-    }
-
-    private async Task<HttpClient> ClientAsync(CancellationToken ct) => _client ??= await google.ClientAsync(http, ct);
+    private Task<JsonDocument> GetAsync(string url, CancellationToken ct) => _gmail.GetAsync(url, ct);
 
     [GeneratedRegex(@"<(style|script)[^>]*>.*?</\1>|<[^>]+>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
     private static partial Regex Tags();

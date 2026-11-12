@@ -21,6 +21,13 @@ public interface IInboxReader
     /// <summary>The ids of the messages a search finds, newest first, at most <paramref name="max"/>; the adapter writes the search in its service's syntax.</summary>
     Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct);
 
+    /// <summary>
+    /// The same messages with the thread each sits in, read off the list itself, so a caller can tell a message's
+    /// thread without reading the message. An inbox whose list does not say answers each thread as null.
+    /// </summary>
+    async Task<IReadOnlyList<(string Id, string? ThreadId)>> FindInThreadsAsync(MailSearch search, int max, CancellationToken ct) =>
+        [.. (await FindAsync(search, max, ct)).Select(id => (id, (string?)null))];
+
     /// <summary>One message: its headers, its date and its text.</summary>
     Task<InboxMessage> ReadAsync(string id, CancellationToken ct);
 

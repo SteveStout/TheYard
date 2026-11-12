@@ -168,10 +168,10 @@ public sealed class ProcessRunsTests
             .SelectMany(file => Regex.Matches(File.ReadAllText(file), "\\[Function\\(\"(?<name>\\w+)\"\\)\\][\\s\\S]{0,200}?TimerTrigger\\(\"(?<cron>[^\"]+)\"\\)").Select(m => (m.Groups["name"].Value, m.Groups["cron"].Value)))
             .ToDictionary(pair => pair.Item1, pair => pair.Item2);
 
-        // Thirteen timers: the board scan's, at 1 AM, the morning card's, at 7:30, the fresh pass's, every quarter hour, the pounce's, five minutes behind it, the pounce follow-up's, five minutes behind that, and the reply drafts', every five minutes, have no row in the card's table yet, so each of the table's seven timed rows is checked against them.
+        // Thirteen timers: the board scan's, at 1 AM, the morning card's, at 7:30, the fresh pass's, every quarter hour, the pounce's, five minutes behind it, the pounce follow-up's, five minutes behind that, and the reply drafts', every five minutes from two past, off the sweep's :20 and :50, have no row in the card's table yet, so each of the table's seven timed rows is checked against them.
         Assert.Equal(13, crons.Count);
         Assert.Equal("0 10/15 * * * *", crons["PounceFollowUp"]);
-        Assert.Equal("0 */5 * * * *", crons["ReplyDraft"]);
+        Assert.Equal("0 2-59/5 * * * *", crons["ReplyDraft"]);
         Assert.All(FunctionProcesses.All.Where(p => p.Cron is not null), process => Assert.Equal(crons[process.Key], process.Cron));
         Assert.Equal(8, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
         // The network log acts in the 6 o'clock hour Central: 12:00 UTC in November, 11:00 UTC in October.

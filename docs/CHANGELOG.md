@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.48** (2026-11-12): The job hunt's inbox pass, which had failed every half hour since 04:20 Central on Gmail's per-user quota, gets through again: the five-minute reply step asks Gmail only for its two-hour window, leaves GitHub's mail out, never reads again a message it already marked and no longer fires on the pass's minutes, and every Gmail call the Function makes now shares one pacing clock, waits out a rate answer and names Gmail's reason when it fails; nothing a visitor sees changes.
 - **1.0.5.47** (2026-11-12): The .NET SDK every build uses is now named in one file, global.json, at 10.0.404, after a runner that carried a newer SDK (11.0.100) built with it and stopped this version on a rule that SDK added; the four places that joined a path inside a path now join it once, and nothing a visitor sees changes.
 - **1.0.5.46** (2026-11-12): The chart frame the Quality page and the Admin tab both draw with moved out of the Admin tab's folder into a shared one, as CodeRabbit asked on #8; nothing a visitor sees changed.
 - **1.0.5.45** (2026-11-12): A link to the review route, the blog, a post, About Steven or the Quality page now previews in a message with that page's own title, description and address, where all five previewed as the auction platform's landing page.
