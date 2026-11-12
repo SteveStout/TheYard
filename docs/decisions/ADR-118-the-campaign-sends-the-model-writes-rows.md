@@ -265,3 +265,17 @@ From this version, in the same quarter-hour firing as the pounce's follow-ups (`
 What it does not do yet: no pounce email is written or sent. The model writing the row's fields and the Function rendering and sending them is the rest of this leg, and it waits on Steve's email ruling in `J:\dispatch\DECISION.md` and on a pounce template he has seen once. `PounceEmailTests` holds it.
 
 Correction, 1.0.5.38: the second paragraph says the pass reads every hand-off of the last day. Writing a settled role's line from its marker, when a pass stopped before the line reached `nightly/pounce/emails.log`, was tied to that day too, so a role settled near the end of its day whose line failed never got one. From this version every pass first reads each marker under `nightly/pounce/emails/` whose key has no line on the log, whatever its hand-off's age, and writes the line it carries; the day picks new lookups only (CodeRabbit on #46).
+
+## Addendum, 2026-11-12 (@VER@): a refusal is a wall, is not counted, and an empty month stops the finder
+
+What stopped being true: "the count and that list are written even when a call throws" (line 185 above) holds for a call that timed out or failed in transit, which Hunter may have charged, and no longer for a call Hunter refused. HunterFinder answered null on any status that was not a success, the same value as "no address for this person", so on 11/12 21 calls met HTTP 429 `restricted_account`, read as 21 people with no public address, spent 21 of the month's 50 and locked those leads out of the month. Hunter does not charge a refused call (50 of 50 searches left after those 21, read by chat1112).
+
+From this version:
+
+1. **The finder answers three ways.** An address (found), null (Hunter answered 200 and nothing was kept, or a failure that is not a refusal), or `FinderRefusedException` for 401, 403 and 429 `restricted_account`. A plain 429 `too_many_requests` is a rate limit and stays null.
+2. **A refusal is a wall.** Both Hunter callers (the finder part and the pounce's email leg) ask through `WalledFinder`. A refusal writes one bullet on `dispatch/WALLS.md` (what, the control "sign in at hunter.io and read the account notice", since when) and every lookup stops for 24 hours after the last refusal, with no call. After that one call tries again; the first address found takes the bullet away.
+3. **A refused call is not counted** and its lead is not written to the asked list, so it is asked again once the wall is gone. A lookup the wall stopped before any call is not counted either. The pounce leaves a walled role waiting rather than settling it as "no address".
+4. **The floor.** Ten leads asked in the month with none of them carrying an address in `campaign.Leads` stops the asking, writes one bullet (the control "read one lookup by hand at hunter.io") and asks nothing for 24 hours; after that one lead a pass, and the first address found removes the bullet. The tally adds no writes: asked is the month's asked list, found is read from the table.
+5. **The finder is its own part** of the inbox pass, after the campaign's, so a later failure in the campaign's reads cannot erase what it spent (ADR-109's addendum of this version).
+
+`FinderWallTests` and `AddressSearchTests.A_refused_call_is_not_counted_and_its_lead_is_asked_again` and `Ten_asked_and_none_found_stops_the_asking_with_one_wall_and_a_found_address_clears_it` hold it; `A_call_that_throws_is_still_counted_against_the_cap` stands for the failures Hunter may have charged.

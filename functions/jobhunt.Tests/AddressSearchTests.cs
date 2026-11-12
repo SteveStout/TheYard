@@ -1,3 +1,4 @@
+using JobHunt.Application.Shared.Walls;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;
@@ -57,6 +58,7 @@ public sealed class AddressSearchTests
         Assert.Equal("1\n2\n", File.ReadAllText(Path.Combine(root, "campaign", "finder", "fake-2026-10-asked.txt")));
     }
 
+    // ADR-118 addendum 11/12: a call that throws stays counted (Hunter may have charged it); a refusal does not.
     [Fact]
     public async Task A_call_that_throws_is_still_counted_against_the_cap()
     {
@@ -96,9 +98,60 @@ public sealed class AddressSearchTests
         return (new AddressSearch(book, finder, new Mx(), new FolderMergeStore(root), new FixedTime(Now), cap), root);
     }
 
+    [Fact]
+    public async Task A_refused_call_is_not_counted_and_its_lead_is_asked_again()
+    {
+        var book = new Book(new WaitingLead(1, "acme.com", "Pat Lee"), new WaitingLead(2, "acme.com", "Sam Roe"), new WaitingLead(3, "acme.com", "Jo Ray"));
+        var (search, root) = Search(book, new Finder([]) { Refuses = "Sam Roe" }, 50);
+
+        string line = await search.RunAsync(CancellationToken.None);
+
+        Assert.Equal("fake: 1 asked, 0 found, 0 dropped, 1 of 50 this month, 1 refused (HTTP 429 restricted_account)", line);
+        Assert.Equal("1", File.ReadAllText(Path.Combine(root, "campaign", "finder", "fake-2026-10.txt")));
+        Assert.Equal("1\n", File.ReadAllText(Path.Combine(root, "campaign", "finder", "fake-2026-10-asked.txt")));
+    }
+
+    [Fact]
+    public async Task Ten_asked_and_none_found_stops_the_asking_with_one_wall_and_a_found_address_clears_it()
+    {
+        var leads = Enumerable.Range(1, 14).Select(i => new WaitingLead(i, "acme.com", $"Person {i}")).ToArray();
+        var book = new Book(leads);
+        var finder = new Finder([]);
+        var clock = new Clock(Now);
+        string root = Path.Combine(Path.GetTempPath(), "address-floor-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        AddressSearch Search() => new(book, finder, new Mx(), new FolderMergeStore(root), clock, 50) { FloorControl = "read one lookup by hand at hunter.io" };
+
+        string first = await Search().RunAsync(CancellationToken.None);
+        Assert.StartsWith("fake: 10 asked, 0 found, 0 dropped, 10 of 50 this month, stopped: 10 asked and none found", first, StringComparison.Ordinal);
+        Assert.Equal(10, finder.Calls);
+        string walls = File.ReadAllText(Path.Combine(root, "dispatch", "WALLS.md"));
+        Assert.Contains("read one lookup by hand at hunter.io", walls, StringComparison.Ordinal);
+
+        clock.At = Now.AddHours(23);
+        Assert.Contains("0 asked", await Search().RunAsync(CancellationToken.None), StringComparison.Ordinal);
+        Assert.Equal(10, finder.Calls);
+
+        clock.At = Now.AddHours(25);
+        finder.Answers["Person 11"] = new FoundAddress("p11@acme.com", "https://acme.com/team");
+        Assert.StartsWith("fake: 1 asked, 1 found", await Search().RunAsync(CancellationToken.None), StringComparison.Ordinal);
+        Assert.Equal(11, finder.Calls);
+        Assert.DoesNotContain("wall:fake-empty", File.ReadAllText(Path.Combine(root, "dispatch", "WALLS.md")), StringComparison.Ordinal);
+    }
+
+    private sealed class Clock(DateTimeOffset at) : TimeProvider
+    {
+        public DateTimeOffset At { get; set; } = at;
+
+        public override DateTimeOffset GetUtcNow() => At;
+    }
+
     private sealed class Book(params WaitingLead[] waiting) : IAddressBook
     {
         public List<(long, string, string)> Written { get; } = [];
+
+        public Task<int> WithAddressAsync(IReadOnlyCollection<long> leadIds, CancellationToken ct) =>
+            Task.FromResult(Written.Count(w => leadIds.Contains(w.Item1)));
 
         public Task<IReadOnlyList<WaitingLead>> WaitingAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<WaitingLead>>(waiting);
 
@@ -113,15 +166,20 @@ public sealed class AddressSearchTests
     {
         public string Name => "fake";
 
+        public Dictionary<string, FoundAddress> Answers { get; } = answers;
+
         public int Calls { get; private set; }
 
         public string? Throws { get; init; }
+
+        public string? Refuses { get; init; }
 
         public Task<FoundAddress?> FindAsync(string fullName, string domain, CancellationToken ct)
         {
             Calls++;
             return fullName == Throws ? throw new HttpRequestException("the finder failed")
-                : Task.FromResult(answers.TryGetValue(fullName, out var a) ? a : null);
+                : fullName == Refuses ? throw new FinderRefusedException(Name, "HTTP 429 restricted_account", called: true)
+                : Task.FromResult(Answers.TryGetValue(fullName, out var a) ? a : null);
         }
     }
 

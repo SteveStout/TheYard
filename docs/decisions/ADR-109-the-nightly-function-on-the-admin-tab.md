@@ -276,3 +276,9 @@ Correction, 1.0.5.40: four statements in the 1.0.5.37 addendum did not hold (Cod
 - A read with no week drew the column heads over an empty table. It now says "no touch, reply or room in these weeks", as the other Admin tables say theirs.
 
 `ChannelViewTests`, `ChannelsTests` and the card's browser test hold them.
+
+## Addendum, 2026-11-12 (@VER@): the inbox pass fails on a failed campaign or finder part, and the finder has its counts
+
+What stopped being true: the 1.0.4.53 addendum folds the inbox pass's outcome from four parts (ats, leads, triage, human), so a pass whose campaign part failed came to success. The campaign part answered 403 on 13 to 25 of each day's 48 passes from 10/27 (J:\inbox-pass\pass.log) and the run line said success every time. And the finder's numbers rode inside the campaign part's line, so when a later step of that part threw, the line said only "campaign: FAILED" and the calls it had spent were gone (09:20 CST 11/12: 21 calls, no line).
+
+From this version the finder is its own part, written to pass.log as `| finder: hunter: 3 asked, 1 found, 0 dropped, 7 of 50 this month` (with `, 1 refused (<reason>)` or `, stopped: <why>` when that happened), and `AtsSweepTimer.Fold` reads six parts: a FAILED campaign or finder part comes to `failed` with detail `part_failed` like the other four. The run line carries four more counts when the finder ran: `finder_asked`, `finder_found`, `finder_dropped` and `finder_refused` (0 when none). No outcome word is added; `RunLine.Outcomes` stays six. `RunLineTests.A_failed_campaign_or_finder_part_fails_the_run_and_the_finder_counts_reach_the_run_line` holds it.
