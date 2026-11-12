@@ -138,6 +138,15 @@ public interface IResumeBuilder
     Task<ResumeBuild> BuildAsync(string title, string company, string folder, CancellationToken ct);
 }
 
+/// <summary>A posting's board, asked whether the posting is still up and what it is called today.</summary>
+public interface IPostingCheck
+{
+    /// <summary>The posting's title when its board still lists it, or null when it does not load or the board is not one this reads.</summary>
+    /// <param name="url">The bare posting link, as JobLinkNote.PostingUrl writes it.</param>
+    /// <param name="ct">Stops the read.</param>
+    Task<string?> LiveTitleAsync(string url, CancellationToken ct);
+}
+
 /// <summary>check_aiisms.py, the proofread gate.</summary>
 public interface IProseCheck
 {

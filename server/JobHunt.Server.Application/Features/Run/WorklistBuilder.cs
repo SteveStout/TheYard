@@ -233,7 +233,8 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             string text = candidate.Text.Replace("[code]", code, StringComparison.Ordinal);
             string file = candidate.Action == WorkAction.Apply ? string.Empty : $"texts/{number:00}.txt";
             string avoid = candidate.Person.Length == 0 && candidate.Action == WorkAction.Invite ? string.Join("; ", reads.Gate.KnownAt(candidate.Company)) : string.Empty;
-            rows.Add(new WorkRow(number, candidate.Person, candidate.Company, candidate.Action, file, code, candidate.Url, candidate.Source, avoid, candidate.Role, resume));
+            rows.Add(new WorkRow(number, candidate.Person, candidate.Company, candidate.Action, file, code, candidate.Url, candidate.Source, avoid, candidate.Role, resume,
+                candidate.Action == WorkAction.Apply ? 0 : JobLinkNote.Expected(text)));
             texts[number] = text;
         }
         return new Worklist(rows, texts, dropped, []);
