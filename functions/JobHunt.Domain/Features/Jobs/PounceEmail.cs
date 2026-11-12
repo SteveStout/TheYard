@@ -58,12 +58,13 @@ public static partial class PounceEmail
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("key", out var key) || key.ValueKind != JsonValueKind.Number
+                || !key.TryGetInt64(out long id)
                 || Text(root, "company") is not { Length: > 0 } company
                 || !DateTimeOffset.TryParse(Text(root, "passed_at"), CultureInfo.InvariantCulture, DateTimeStyles.None, out var passed))
             {
                 return null;
             }
-            return new EmailRole(key.GetInt64(), company, Text(root, "company_key") is { Length: > 0 } domain ? domain.ToLowerInvariant() : null, passed);
+            return new EmailRole(id, company, Text(root, "company_key") is { Length: > 0 } domain ? domain.ToLowerInvariant() : null, passed);
         }
         catch (JsonException)
         {
@@ -102,6 +103,14 @@ public static partial class PounceEmail
     /// <summary>The marker's text for a role settled with no address.</summary>
     public static string Settled(EmailRole role, string leader, string reason, DateTimeOffset now) =>
         $"{role.Key} {role.Company} | {leader} | refused: {reason} at {now:O}. Nothing was sent.\n";
+
+    /// <summary>The marker's last line carries the role's log line, so a pass that stopped before the log was written can write it later.</summary>
+    public const string LogField = "log: ";
+
+    /// <summary>The log line a settled role's marker carries, or null for a marker that carries none.</summary>
+    public static string? MarkerLog(string marker) =>
+        marker.Replace("\r", "", StringComparison.Ordinal).Split('\n').LastOrDefault(line => line.StartsWith(LogField, StringComparison.Ordinal)) is { } line
+            ? line[LogField.Length..] : null;
 
     /// <summary>One log line: the Central minute, the role, the leader and what came of it.</summary>
     public static string LogLine(DateTime local, EmailRole role, string leader, string did) =>

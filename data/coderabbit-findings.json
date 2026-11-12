@@ -797,8 +797,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 5,
+      "answered_as_wrong": 0,
       "prs": [
         40
       ]
@@ -822,8 +822,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 2,
+      "answered_as_wrong": 0,
       "prs": [
         41
       ]
@@ -847,8 +847,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         42
       ]
@@ -872,8 +872,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 2,
+      "answered_as_wrong": 0,
       "prs": [
         43
       ]
@@ -897,8 +897,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 2,
+      "answered_as_wrong": 0,
       "prs": [
         44
       ]
@@ -926,6 +926,31 @@
       "answered_as_wrong": null,
       "prs": [
         45
+      ]
+    },
+    {
+      "version": "1.0.5.35",
+      "pr": 46,
+      "sha": "d48aaea7",
+      "level": 0,
+      "at": "2026-11-12T04:27:02Z",
+      "waited_seconds": 692,
+      "review_seconds": 676,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 4,
+      "findings": {
+        "critical": 0,
+        "major": 1,
+        "minor": 3,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        46
       ]
     }
   ]

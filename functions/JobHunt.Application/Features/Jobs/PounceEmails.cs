@@ -64,13 +64,14 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
         int used = await UsedAsync(count, ct);
         IReadOnlyList<EmailTouch>? emailed = null;
         int leaders = 0, asked = 0, kept = 0, refused = 0, already = 0, waiting = 0;
-        var log = new StringBuilder();
+        var log = new LogWriter(store);
         foreach (EmailRole role in roles)
         {
             string marker = PounceEmail.Marker(role.Key);
             if (await store.ExistsAsync(marker, ct))
             {
                 already++;
+                await log.RecoverAsync(TrackerCsvText.Decode(await store.ReadAsync(marker, ct)), ct);
                 continue;
             }
             if (await LeaderAsync(role, ct) is not { } leader)
@@ -97,19 +98,13 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
                 reason = answer is null ? "the finder kept no address" : PounceEmail.Refuse(answer.Address, answer.SourceUrl, leader, role.CompanyKey!);
                 if (reason is null)
                 {
-                    await SettleAsync(marker, PounceEmail.Kept(role, leader, answer!.Address.Trim(), answer.SourceUrl, now), ct);
+                    await SettleAsync(marker, PounceEmail.Kept(role, leader, answer!.Address.Trim(), answer.SourceUrl, now), PounceEmail.LogLine(local, role, leader, $"shadow, kept {answer.Address.Trim()}"), log, ct);
                     kept++;
-                    log.Append(PounceEmail.LogLine(local, role, leader, $"shadow, kept {answer.Address.Trim()}")).Append('\n');
                     continue;
                 }
             }
-            await SettleAsync(marker, PounceEmail.Settled(role, leader, reason, now), ct);
+            await SettleAsync(marker, PounceEmail.Settled(role, leader, reason, now), PounceEmail.LogLine(local, role, leader, $"refused: {reason}"), log, ct);
             refused++;
-            log.Append(PounceEmail.LogLine(local, role, leader, $"refused: {reason}")).Append('\n');
-        }
-        if (log.Length > 0)
-        {
-            await store.AppendAsync(PounceEmail.Log, TrackerCsvText.Encode(log.ToString()), ct);
         }
         return new EmailPass(roles.Count, leaders, asked, kept, refused, already, waiting);
     }
@@ -154,10 +149,41 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
         return null;
     }
 
-    private async Task SettleAsync(string marker, string text, CancellationToken ct)
+    /// <summary>
+    /// The marker first, carrying the role's log line, then that line on the log at once: a later role or a log write that
+    /// fails costs no settled role its line, because the next pass finds the marker and writes the line it carries.
+    /// </summary>
+    private async Task SettleAsync(string marker, string text, string line, LogWriter log, CancellationToken ct)
     {
         await store.EnsureFolderAsync(PounceEmail.Folder, ct);
-        await store.WriteAsync(marker, TrackerCsvText.Encode(text), ct);
+        await store.WriteAsync(marker, TrackerCsvText.Encode(text + PounceEmail.LogField + line + "\n"), ct);
+        await log.AppendAsync(line, ct);
+    }
+
+    /// <summary>The log, read at most once a pass, so a line already on it is never written a second time.</summary>
+    private sealed class LogWriter(IMergeStore store)
+    {
+        private string? _text;
+
+        /// <summary>Writes the line a settled role's marker carries when the log does not hold it yet.</summary>
+        public async Task RecoverAsync(string marker, CancellationToken ct)
+        {
+            if (PounceEmail.MarkerLog(marker) is { } line && !(await TextAsync(ct)).Contains(line + "\n", StringComparison.Ordinal))
+            {
+                await AppendAsync(line, ct);
+            }
+        }
+
+        /// <summary>Appends one line and keeps it in the copy this pass reads.</summary>
+        public async Task AppendAsync(string line, CancellationToken ct)
+        {
+            string text = await TextAsync(ct);
+            await store.AppendAsync(PounceEmail.Log, TrackerCsvText.Encode(line + "\n"), ct);
+            _text = text + line + "\n";
+        }
+
+        private async Task<string> TextAsync(CancellationToken ct) =>
+            _text ??= await store.ExistsAsync(PounceEmail.Log, ct) ? TrackerCsvText.Decode(await store.ReadAsync(PounceEmail.Log, ct)) : string.Empty;
     }
 
     private async Task<int> UsedAsync(string path, CancellationToken ct) =>

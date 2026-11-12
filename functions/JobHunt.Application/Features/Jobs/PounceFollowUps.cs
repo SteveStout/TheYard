@@ -18,13 +18,16 @@ public interface ISiteVisits
 /// <param name="Replied">Due codes whose person had already written back.</param>
 /// <param name="Already">Due codes whose person already has a marker for the role: a follow-up queued or a reply seen.</param>
 /// <param name="Blocked">Why the pass stopped before judging, or null.</param>
-public sealed record FollowUpPass(int Codes, int Opened, int Due, int Queued, int Replied, int Already, string? Blocked = null);
+/// <param name="Unresolved">Due codes minted with no name whose send's row naming the person is not in the tracker yet; they wait.</param>
+public sealed record FollowUpPass(int Codes, int Opened, int Due, int Queued, int Replied, int Already, string? Blocked = null, int Unresolved = 0);
 
 /// <summary>
 /// Reads the opens of every code minted on a pounce note and queues one follow-up item for each that earned it
 /// (PounceFollowUp, FollowUpItem): the marker first, so a pass that dies half way can never queue a second follow-up
 /// for the same person and role, then the item, renamed into place in one step, then one log line. A person the tracker
-/// shows replied gets a marker and no item, so the log says it once. The mode "off" reads and writes nothing. The dry run reads the same and queues nothing: it
+/// shows replied gets a marker and no item, so the log says it once. A code minted with no name stands for the person its
+/// send's tracker row names (PounceFollowUp.Recipient), so two codes for one leader and role share one marker, and waits
+/// for that row before it is judged. The mode "off" reads and writes nothing. The dry run reads the same and queues nothing: it
 /// writes one report of the follow-ups it would queue and the minutes from each first open.
 /// </summary>
 /// <param name="store">The job-hunt share; link-tokens.csv and its spool are only read.</param>
@@ -100,7 +103,7 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
         var (pass, due) = await JudgeAsync(ct);
         DateTimeOffset now = time.GetUtcNow();
         DateTime local = CentralClock.Local(now);
-        var lines = new List<string> { string.Create(CultureInfo.InvariantCulture, $"Follow-up dry run {local:yyyy-MM-dd HH:mm:ss} Central: {pass.Codes} pounce codes, {pass.Opened} opened, {pass.Due} due.{(pass.Blocked is null ? string.Empty : $" Blocked: {pass.Blocked}.")}") };
+        var lines = new List<string> { string.Create(CultureInfo.InvariantCulture, $"Follow-up dry run {local:yyyy-MM-dd HH:mm:ss} Central: {pass.Codes} pounce codes, {pass.Opened} opened, {pass.Due} due.{(pass.Unresolved == 0 ? string.Empty : $" {pass.Unresolved} wait for the send's row that names the person.")}{(pass.Blocked is null ? string.Empty : $" Blocked: {pass.Blocked}.")}") };
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (followUp, answered) in due)
         {
@@ -160,11 +163,12 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
             return (new FollowUpPass(codes.Count, opened.Count, 0, 0, 0, 0), []);
         }
         var touches = await tracker.SinceAsync(due.Min(c => c.Sent), ct);
-        var found = due.Select(c =>
+        var resolved = due.Select(c => PounceFollowUp.Recipient(touches, c)).OfType<PounceCode>().ToList();
+        var found = resolved.Select(c =>
         {
             int rung = PounceFollowUp.Rung(byCode[c.Code]);
             return (new FollowUp(c, byCode[c.Code], rung, PounceFollowUp.Text(c, rung)), PounceFollowUp.Replied(touches, c));
         }).ToList();
-        return (new FollowUpPass(codes.Count, opened.Count, due.Count, 0, 0, 0), found);
+        return (new FollowUpPass(codes.Count, opened.Count, due.Count, 0, 0, 0, Unresolved: due.Count - resolved.Count), found);
     }
 }

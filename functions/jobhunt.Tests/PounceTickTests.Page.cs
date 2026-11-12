@@ -69,4 +69,50 @@ public sealed partial class PounceTickTests
         await PounceHandoffs.WriteAsync(off.Store, [(Caught(), "Staff Engineer", "https://x/1")], PounceHandoff.Off, CancellationToken.None);
         Assert.False(off.Has(PageItem));
     }
+
+    [Fact]
+    public async Task A_page_that_will_not_write_stops_no_first_touch_and_no_other_page()
+    {
+        using var scratch = new Scratch();
+        var store = new PageDown(scratch.Store, ".pounce90-12786.tmp");
+        var handed = await PounceHandoffs.WriteAsync(store, [(Caught(), "Staff Engineer", "https://x/1"), (Caught() with { Key = 12787 }, "Lead Engineer", "https://x/2")], PounceHandoff.Dry, CancellationToken.None);
+
+        Assert.Equal((2, 1), (handed.Items, handed.PagesFailed));
+        Assert.True(scratch.Has("dispatch/ready/10-pounce-12786.md") && scratch.Has("dispatch/ready/10-pounce-12787.md"));
+        Assert.True(scratch.Has("nightly/pounce/20261111-160500Z-12787.json"));
+        Assert.False(scratch.Has(PageItem));
+        Assert.True(scratch.Has("dispatch/ready/20-pounce90-12787.md"));
+    }
+
+    [Fact]
+    public void The_page_item_looks_for_a_first_touch_again_right_before_gen90_runs()
+    {
+        string item = PouncePage.Item(new CaughtRole(12786, "Zephyr Labs", "Staff Engineer", "https://x/1", "PASS", Now, true, false, Now));
+        Assert.Contains("Repeat this check before steps 3, 6 and 7.", item, StringComparison.Ordinal);
+        Assert.Contains("7. Do step 1's check once more, then run gen90.py once:", item, StringComparison.Ordinal);
+    }
+
+    private sealed class PageDown(IMergeStore inner, string refused) : IMergeStore
+    {
+        public Task EnsureFolderAsync(string folder, CancellationToken ct) => inner.EnsureFolderAsync(folder, ct);
+
+        public Task WriteAsync(string path, byte[] bytes, CancellationToken ct) =>
+            path.EndsWith(refused, StringComparison.Ordinal) ? throw new IOException("the share did not answer") : inner.WriteAsync(path, bytes, ct);
+
+        public Task ReplaceAsync(string tempPath, string path, CancellationToken ct) => inner.ReplaceAsync(tempPath, path, ct);
+
+        public Task MoveAsync(string path, string destination, CancellationToken ct) => inner.MoveAsync(path, destination, ct);
+
+        public Task AppendAsync(string path, byte[] bytes, CancellationToken ct) => inner.AppendAsync(path, bytes, ct);
+
+        public Task<bool> ExistsAsync(string path, CancellationToken ct) => inner.ExistsAsync(path, ct);
+
+        public Task<byte[]> ReadAsync(string path, CancellationToken ct) => inner.ReadAsync(path, ct);
+
+        public Task<MergeEntry?> StatAsync(string path, CancellationToken ct) => inner.StatAsync(path, ct);
+
+        public Task<IReadOnlyList<MergeEntry>> ListFilesAsync(string folder, CancellationToken ct) => inner.ListFilesAsync(folder, ct);
+
+        public Task<IReadOnlyList<string>> ListFoldersAsync(string folder, CancellationToken ct) => inner.ListFoldersAsync(folder, ct);
+    }
 }

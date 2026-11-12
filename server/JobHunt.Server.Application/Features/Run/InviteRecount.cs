@@ -19,7 +19,8 @@ public sealed record Recount(int? Live, int Room, string? Held, string? Stop, IR
 /// <param name="config">The settings.</param>
 public sealed class InviteRecount(IShare share, IClaudeCli claude, ServerConfig config)
 {
-    private const int Minutes = 8;
+    /// <summary>The recount's wall-clock limit, in minutes.</summary>
+    public const int Minutes = 8;
 
     /// <summary>Reads the count and cuts the room.</summary>
     /// <param name="start">The lane.</param>

@@ -37,6 +37,14 @@ public static class PounceHandoff
     /// <summary>The item starts a live run behind every gate the 6 AM run has.</summary>
     public const string Live = "live";
 
+    /// <summary>
+    /// Where the item waits for 07:00 Central: the box's run of feed, recount, invites and apply can take 40, 8, 40 and 40
+    /// minutes and five more for its records, so one started after about 03:17 could still hold the run lock at 05:30,
+    /// and the box refuses it. An item passed from 03:15 on carries Not_before 07:00, so the dispatcher holds it and no
+    /// wrapper sleeps through the morning. The box's SlotTests read this line and hold it to the box's own cutoff.
+    /// </summary>
+    public static readonly (TimeSpan From, TimeSpan To) Morning = (new(3, 15, 0), new(7, 0, 0));
+
     /// <summary>The share folder the hand-offs go to.</summary>
     public const string Folder = "nightly/pounce";
 
@@ -103,7 +111,13 @@ public static class PounceHandoff
         item.Append($"Lane: {lane}\nModel: claude-sonnet-5-5\nEffort: low\nHolds:\nNeeds: chrome, jdrive\nStall_minutes: 20\nMax_hours: 2\nScope: jobhunt\n");
         item.Append($"Entered_by: the Function's pounce tick, which passed posting {role.Key} at {Central(role.PassedAt)} Central\n");
         item.Append($"Approved_by: the pounce plan, step 4 ({(live ? "live, POUNCE_RUN is live" : "dry run, POUNCE_RUN is not live")})\n");
-        item.Append($"Done_note: {done}\n\n");
+        item.Append($"Done_note: {done}\n");
+        DateTime passed = CentralClock.Local(role.PassedAt);
+        if (passed.TimeOfDay >= Morning.From && passed.TimeOfDay < Morning.To)
+        {
+            item.Append(CultureInfo.InvariantCulture, $"Not_before: {passed:yyyy-MM-dd}T07:00 CST\n");
+        }
+        item.Append('\n');
         item.Append($"# {lane}: run the program once for one caught role\n\n");
         item.Append("> RULES FIRST: read systemRules.md before acting on this file (MASTER RULE: if stuck or a tech glitch happens, retry, then reread the .md rules).\n\n");
         item.Append("## The role\n\n");
@@ -113,7 +127,7 @@ public static class PounceHandoff
         item.Append("A wrapper. You open no browser, send nothing and write no message. You edit no file but your DONE note and your CLOSED row. The program does the work behind its own gates: the ceilings and the pause at 90, Rule 25, FEED-HOLD, the closed-req gate, check_aiisms.py, verified sends and the run lock.");
         item.Append(live ? "\n\n" : " This is a DRY RUN: the program reads pages and writes its worklists and sends nothing.\n\n");
         item.Append("## Steps (on this box J:\\ is /mnt/j)\n\n");
-        item.Append("1. Run `date`. From 05:30 to 07:00 Central the program refuses a slot run: until 07:00, wait with one `sleep 240` call at a time.\n");
+        item.Append($"1. Run `date`. From {Morning.From:hh\\:mm} to 07:00 Central the program refuses a slot run, because one started then could still hold the run lock when the 6 AM program needs it: until 07:00, wait with one `sleep 240` call at a time.\n");
         item.Append("2. Run `systemctl --user is-active jobhunt-6am.service`. While it prints active or activating, wait with one `sleep 240` call at a time, for at most 60 minutes; if it still runs then, write the DONE note saying so and stop.\n");
         item.Append("3. Start the program once, and only once:\n\n```\n");
         item.Append($"systemd-run --user --unit={lane} --collect -p WorkingDirectory=$HOME/.local/share/jobhunt-server -E DISPLAY=:0 -E XAUTHORITY=$HOME/.Xauthority -E TZ=America/Chicago -E DOTNET_ROOT=/usr/lib/dotnet -E DOTNET_CLI_TELEMETRY_OPTOUT=1 -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin $HOME/.local/share/jobhunt-server/JobHunt.Server run --slot {lane} --role {handoff}{(live ? string.Empty : " --dry-run")}\n");

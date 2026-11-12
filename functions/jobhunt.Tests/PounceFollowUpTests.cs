@@ -43,6 +43,10 @@ public sealed partial class PounceFollowUpTests
         "counted_from":"2026-11-04","source":"kept in Azure Cosmos DB beside the site's activity, with no expiry"}
         """;
 
+    // The row the box writes when the invites lane sends a note whose name it found at send: the name it read, and the code.
+    private static TrackerTouch Sent(string person, string company, string code) =>
+        new(["2", person, company, "LinkedIn", "11/11/2026", "", $"CONNECTION REQUEST SENT by Claude (server6am). Page https://www.linkedin.com/in/maralind. Code {code}. Text: theyard.stevenstout.biz/?r={code}"], Now.AddMinutes(-170));
+
     private static FollowUp Due(string code, string channel = "LinkedIn")
     {
         PounceCode pounce = Assert.Single(PounceFollowUp.Codes(Tokens), c => c.Code == code) with { Channel = channel };
@@ -98,14 +102,14 @@ public sealed partial class PounceFollowUpTests
     {
         using var scratch = new Scratch();
         scratch.Write(PounceFollowUp.Tokens, Tokens);
-        var tracker = new Tracker { Since = { new TrackerTouch(["1", "Omar Haddad", "Quill Systems", "LinkedIn", "11/11/2026", "", "INBOUND REPLY, read on the page"], Now.AddMinutes(-70)) } };
+        var tracker = new Tracker { Since = { new TrackerTouch(["1", "Omar Haddad", "Quill Systems", "LinkedIn", "11/11/2026", "", "INBOUND REPLY, read on the page"], Now.AddMinutes(-70)), Sent("Mara Lind", "Corvid Health", "h7m3zt") } };
         var follow = new PounceFollowUps(scratch.Store, new Visits(), tracker, new Fixed(Now));
 
         var pass = await follow.RunAsync(PounceHandoff.Dry, CancellationToken.None);
 
         Assert.Equal(new FollowUpPass(5, 5, 4, 2, 1, 1), pass);
         Assert.Equal(["15-pouncefollow-h7m3zt.md", "15-pouncefollow-p4k2qa.md"], Directory.GetFiles(Path.Combine(scratch.Root, "dispatch", "ready")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
-        Assert.True(scratch.Has("nightly/pounce/followups/12786-danawhitfield.md") && scratch.Has("nightly/pounce/followups/12801-h7m3zt.md") && scratch.Has("nightly/pounce/followups/12815-omarhaddad.md"));
+        Assert.True(scratch.Has("nightly/pounce/followups/12786-danawhitfield.md") && scratch.Has("nightly/pounce/followups/12801-maralind.md") && scratch.Has("nightly/pounce/followups/12815-omarhaddad.md"));
         string log = scratch.Text(PounceFollowUp.Log);
         Assert.Contains("2026-11-11 10:05:00 follow-up: p4k2qa Dana Whitfield, Zephyr Labs (role 12786, LinkedIn) | rung 1, 2 opens, stop 0 | queued dispatch/ready/15-pouncefollow-p4k2qa.md (dry) | 24 min from the first open", log, StringComparison.Ordinal);
         Assert.Contains("w9d1rc Omar Haddad, Quill Systems (role 12815, LinkedIn) | rung 3, 3 opens, stop 0 | replied, no follow-up | 7 min", log, StringComparison.Ordinal);
@@ -165,7 +169,7 @@ public sealed partial class PounceFollowUpTests
         using var scratch = new Scratch();
         scratch.Write(PounceFollowUp.Tokens, Tokens);
 
-        var lines = await new PounceFollowUps(scratch.Store, new Visits(), new Tracker(), new Fixed(Now)).DryRunAsync(CancellationToken.None);
+        var lines = await new PounceFollowUps(scratch.Store, new Visits(), new Tracker { Since = { Sent("Mara Lind", "Corvid Health", "h7m3zt") } }, new Fixed(Now)).DryRunAsync(CancellationToken.None);
 
         string report = scratch.Text("nightly/pounce/followup-dry/20261111-160500Z.md");
         Assert.Equal(string.Join("\n", lines) + "\n", report);
@@ -190,9 +194,44 @@ public sealed partial class PounceFollowUpTests
         Assert.Equal((2, 2, 2), (pass.Codes, pass.Due, pass.Queued));
     }
 
+    [Fact]
+    public async Task Two_codes_for_one_unnamed_recipient_and_role_resolve_to_the_name_the_send_recorded_and_an_unrecorded_one_waits()
+    {
+        using var scratch = new Scratch();
+        scratch.Write(PounceFollowUp.Tokens, """
+            code,person,company,channel,role,thread,sent,lane
+            h7m3zt,"Leader at Corvid Health, name found at send",Corvid Health,LinkedIn,,,2026-11-11T13:02:00Z,pounce-12801
+            j8c4wp,"Leader at Corvid Health, name found at send",Corvid Health,LinkedIn,,,2026-11-11T13:04:00Z,pounce-12801
+            q5r1nd,"Leader at Basalt, name found at send",Basalt,LinkedIn,,,2026-11-11T13:06:00Z,pounce-12840
+            """);
+        var visits = new Visits
+        {
+            Links = """
+                {"available":true,"note":null,"window":"7d","codes":[
+                {"code":"h7m3zt","first_ms":1794410400000,"last_ms":1794411060000,"opens":2,"days":1,"paths":{"/":2}},
+                {"code":"j8c4wp","first_ms":1794411000000,"last_ms":1794411300000,"opens":2,"days":1,"paths":{"/":2}},
+                {"code":"q5r1nd","first_ms":1794411000000,"last_ms":1794411300000,"opens":2,"days":1,"paths":{"/":2}}],"keys":[]}
+                """,
+        };
+        var tracker = new Tracker { Since = { Sent("Mara Lind", "Corvid Health", "h7m3zt"), Sent("Mara Lind", "Corvid Health", "j8c4wp") } };
+
+        var pass = await new PounceFollowUps(scratch.Store, visits, tracker, new Fixed(Now)).RunAsync(PounceHandoff.Live, CancellationToken.None);
+
+        Assert.Equal(new FollowUpPass(3, 3, 3, 1, 0, 1, Unresolved: 1), pass);
+        Assert.Equal(["12801-maralind.md"], Directory.GetFiles(Path.Combine(scratch.Root, "nightly", "pounce", "followups")).Select(Path.GetFileName));
+        string item = scratch.Text("dispatch/ready/15-pouncefollow-h7m3zt.md");
+        Assert.Contains("Mara, thank you", item, StringComparison.Ordinal);
+        Assert.Contains("tracker's row for Mara Lind at Corvid Health", item, StringComparison.Ordinal);
+        Assert.DoesNotContain("Leader at", item, StringComparison.Ordinal);
+        Assert.Single(Directory.GetFiles(Path.Combine(scratch.Root, "dispatch", "ready")));
+        Assert.Equal(("unresolved", 1L), ("unresolved", PounceFollowUpTimer.Counted(new RunLine("PounceFollowUp", Now), pass).Counts["unresolved"]));
+    }
+
     private sealed class Visits : ISiteVisits
     {
         public bool Down { get; init; }
+
+        public string Links { get; init; } = PounceFollowUpTests.Links;
 
         public int Reads { get; private set; }
 

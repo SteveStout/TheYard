@@ -19,7 +19,7 @@ public sealed partial class PounceTickTests
     public async Task A_passed_role_gets_a_hand_off_and_one_ready_item_that_starts_one_dry_run()
     {
         using var scratch = new Scratch();
-        int written = await PounceHandoffs.WriteAsync(scratch.Store, [(Caught(), "Staff Software Engineer - Web", "https://job-boards.greenhouse.io/zephyr/jobs/1")], PounceHandoff.Dry, CancellationToken.None);
+        int written = (await PounceHandoffs.WriteAsync(scratch.Store, [(Caught(), "Staff Software Engineer - Web", "https://job-boards.greenhouse.io/zephyr/jobs/1")], PounceHandoff.Dry, CancellationToken.None)).Items;
 
         Assert.Equal(1, written);
         Assert.Equal(HandoffJson, scratch.Text("nightly/pounce/20261111-160500Z-12786.json"));
@@ -46,7 +46,7 @@ public sealed partial class PounceTickTests
         Assert.Contains("\"budget\":true", scratch.Text("nightly/pounce/20261111-160500Z-12786.json"), StringComparison.Ordinal);
 
         using var off = new Scratch();
-        Assert.Equal(0, await PounceHandoffs.WriteAsync(off.Store, [(Caught(), "Staff Engineer", "https://x/1")], PounceHandoff.Off, CancellationToken.None));
+        Assert.Equal(0, (await PounceHandoffs.WriteAsync(off.Store, [(Caught(), "Staff Engineer", "https://x/1")], PounceHandoff.Off, CancellationToken.None)).Items);
         Assert.False(off.Has("nightly/pounce/20261111-160500Z-12786.json"));
 
         Assert.Equal((PounceHandoff.Dry, PounceHandoff.Off, PounceHandoff.Live, PounceHandoff.Dry), (PounceHandoff.Mode(null), PounceHandoff.Mode(" Off "), PounceHandoff.Mode("LIVE"), PounceHandoff.Mode("on")));
@@ -67,6 +67,19 @@ public sealed partial class PounceTickTests
         var handed = new RunLine("Pounce", Now);
         await PounceTimer.HandOffAsync(scratch.Store, Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance, handed, tick, PounceHandoff.Dry, CancellationToken.None);
         Assert.Equal(1L, handed.Counts["handed"]);
+    }
+
+    [Fact]
+    public void A_role_passed_where_its_run_could_reach_the_morning_waits_for_seven_and_one_passed_by_day_does_not()
+    {
+        var early = Caught() with { JudgedAt = new DateTimeOffset(2026, 11, 11, 10, 30, 0, TimeSpan.Zero) };
+        var caught = new CaughtRole(early.Key, early.Company, "Staff Engineer", "https://x/1", early.BandFlag, early.LiveAt, early.LiveKnown, early.BudgetFlag, early.JudgedAt);
+        Assert.Contains("\nNot_before: 2026-11-11T07:00 CST\n", PounceHandoff.Item(caught, PounceHandoff.Dry), StringComparison.Ordinal);
+        Assert.Contains("\nNot_before: 2026-11-11T07:00 CST\n", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 45, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
+        Assert.Contains("\nNot_before: 2026-11-11T07:00 CST\n", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 30, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
+        Assert.Contains("\nNot_before: 2026-11-11T07:00 CST\n", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 15, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
+        Assert.DoesNotContain("Not_before:", PounceHandoff.Item(caught with { PassedAt = new DateTimeOffset(2026, 11, 11, 9, 14, 0, TimeSpan.Zero) }, PounceHandoff.Dry), StringComparison.Ordinal);
+        Assert.DoesNotContain("Not_before:", PounceHandoff.Item(caught with { PassedAt = Now }, PounceHandoff.Dry), StringComparison.Ordinal);
     }
 
     [System.Text.RegularExpressions.GeneratedRegex(@"linkedin|connection request|invite|claude in chrome|chrome", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace JobHunt.Server.Application.Features.Run;
@@ -112,7 +113,9 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     /// <param name="ct">Stops the build.</param>
     public async Task<Worklist> ApplyAsync(DayReads reads, string? linkedInClosed, bool dry, CancellationToken ct)
     {
-        var postings = reads.Role is { } role ? [new Posting(role.Company, role.Title, role.Url, string.Empty, role.Path)] : await ApplyPostings.ReadAsync(share, reads.Day, ct);
+        var postings = reads.Role is { } role
+            ? [new Posting(role.Company, role.Title, role.Url, string.Empty, role.Path, RunSlot.Day(role.LiveAt).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))]
+            : await ApplyPostings.ReadAsync(share, reads.Day, ct);
 
         var dropped = new List<Dropped>();
         var blockers = new List<Posting>();
@@ -219,7 +222,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             ResumeBuild? resume = null;
             if (candidate.Action == WorkAction.Apply)
             {
-                string folder = share.Full($"{RunSlot.RunFolder(reads.Day, Lane.Apply, config.For(Lane.Apply).Model, dry)}/resumes/{number:00}");
+                string folder = share.Full($"{RunSlot.RunFolder(reads.Day, Lane.Apply, config.For(Lane.Apply).Model, dry, reads.Slot)}/resumes/{number:00}");
                 resume = await resumes.BuildAsync(candidate.Role, candidate.Company, folder, ct);
                 if (resume.Failure is { } failure)
                 {

@@ -65,7 +65,7 @@ public static class FollowUpItem
         else
         {
             item.Append("This is LIVE, on LinkedIn, inside Steve's standing permission of 22 October for follow-ups to accepted connections. One send at most.\n\n");
-            item.Append($"1. Read his profile address from the tracker's row for {code.Person} at {code.Company} that records the request with code {code.Code}. Open it in a new tab.\n");
+            item.Append($"1. Read his profile address from the tracker's row for {code.Person} at {code.Company} that records the request with code {code.Code} (its Notes carry `Code {code.Code}.`). Open it in a new tab.\n");
             item.Append("2. Not accepted: if the profile does not show him as a 1st-degree connection, send nothing, write the DONE note saying he has not accepted, and stop. A leader who opened his link and has not accepted gets nothing until he does.\n");
             item.Append("3. Written back: open the message thread with him. If he has written anything to Steve, send nothing, write the DONE note saying so, and stop: a reply is answered by a draft for Steve, never from here.\n");
             item.Append("4. Type the follow-up in pieces of 40 to 135 characters, keeping its blank lines; if a screenshot fails, open a fresh tab and go on from the thread. Send it once. Read the thread back and confirm the text is there word for word.\n");

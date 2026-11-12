@@ -94,7 +94,7 @@ public sealed class PounceFollowUpTimer(IMergeStore store, IHttpClientFactory ht
             run.Came(why == "switch_off" ? "unchanged" : "blocked", why);
         }
         return run.Count("codes", pass.Codes).Count("opened", pass.Opened).Count("due", pass.Due)
-            .Count("queued", pass.Queued).Count("replied", pass.Replied).Count("already", pass.Already);
+            .Count("queued", pass.Queued).Count("replied", pass.Replied).Count("already", pass.Already).Count("unresolved", pass.Unresolved);
     }
 
     private async Task<string> TextAsync(string path, CancellationToken ct) => TrackerCsvText.Decode(await store.ReadAsync(path, ct));

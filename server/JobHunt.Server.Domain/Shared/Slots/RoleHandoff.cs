@@ -17,7 +17,10 @@ namespace JobHunt.Server.Domain.Shared.Slots;
 /// <param name="Budget">True when it went live in the last 21 days of a year not yet ended.</param>
 public sealed record RoleHandoff(string Path, long Key, string Company, string Title, string Url, string Band, DateTimeOffset LiveAt, bool Budget)
 {
-    /// <summary>The hand-off a file holds, or null when it is not one: a hand-off with no key, company or live instant is none.</summary>
+    /// <summary>
+    /// The hand-off a file holds, or null when it is not one: a hand-off with no key, a key past a 64-bit number, no
+    /// company or no live instant is none.
+    /// </summary>
     /// <param name="path">The file's path, relative to the share's root.</param>
     /// <param name="json">The file's text.</param>
     public static RoleHandoff? Parse(string path, string json)
@@ -27,14 +30,14 @@ public sealed record RoleHandoff(string Path, long Key, string Company, string T
             using JsonDocument document = JsonDocument.Parse(json);
             JsonElement root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("key", out JsonElement key) || key.ValueKind != JsonValueKind.Number
+                || !root.TryGetProperty("key", out JsonElement key) || key.ValueKind != JsonValueKind.Number || !key.TryGetInt64(out long number)
                 || Text(root, "company") is not { Length: > 0 } company
                 || !DateTimeOffset.TryParse(Text(root, "live_at"), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTimeOffset live))
             {
                 return null;
             }
             bool budget = root.TryGetProperty("budget", out JsonElement flag) && flag.ValueKind == JsonValueKind.True;
-            return new RoleHandoff(path, key.GetInt64(), company, Text(root, "title"), Text(root, "url"), Text(root, "band"), live, budget);
+            return new RoleHandoff(path, number, company, Text(root, "title"), Text(root, "url"), Text(root, "band"), live, budget);
         }
         catch (JsonException)
         {

@@ -130,16 +130,21 @@ public sealed class PounceTimer(IMergeStore store, TimeProvider time, ILogger<Po
 
     /// <summary>
     /// Hands each passed role to the box (PounceHandoffs). The role's row is in SQL by then, so a share that does not
-    /// answer fails nothing: the run line keeps handoff_failed=1 and the role waits for the morning's run as before.
+    /// answer fails nothing: the run line keeps handoff_failed=1 and the role waits for the morning's run as before. A page
+    /// item the share would not take counts page_failed and leaves every first touch as written.
     /// </summary>
     public static async Task HandOffAsync(IMergeStore store, ILogger log, RunLine run, PounceTickResult tick, string mode, CancellationToken ct)
     {
         try
         {
-            int handed = await PounceHandoffs.WriteAsync(store, tick.Passed, mode, ct);
-            if (handed > 0)
+            HandedOff handed = await PounceHandoffs.WriteAsync(store, tick.Passed, mode, ct);
+            if (handed.Items > 0)
             {
-                run.Count("handed", handed);
+                run.Count("handed", handed.Items);
+            }
+            if (handed.PagesFailed > 0)
+            {
+                run.Count("page_failed", handed.PagesFailed);
             }
         }
         catch (Exception ex) when (!ct.IsCancellationRequested)

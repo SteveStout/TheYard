@@ -87,6 +87,8 @@ From this version each role a tick passes is handed to the box the same tick (`P
 
 The tick itself still sends nothing and touches no one. What it cannot do: the dispatcher runs one item at a time, so an item already running delays this one (its 10 puts it ahead of the items still waiting), and the 60-minute target holds only while nothing long is running. `PounceTickTests` holds it.
 
+Correction, 1.0.5.35: item 2 above says the item waits out 05:30 to 07:00 Central. The box now refuses a role run from about 03:17 (feed, recount, invites and apply at 40, 8, 40 and 40 minutes, plus five), where its lanes could still hold the run lock at 05:30, so an item passed from 03:15 to 07:00 Central carries `Not_before: <day>T07:00 CST` and the dispatcher holds it until then; no wrapper sleeps through the morning and no role is started only to be refused (CodeRabbit on #40, the box's half in ADR-119's correction of this version). The two processes share no constant, so the box's `SlotTests` read the Function's `PounceHandoff.Morning` and hold it at or up to 15 minutes before the box's own cutoff, `RunLanes.RoleLead` at its default limits.
+
 ## Addendum, 2026-11-11 (1.0.5.30): the 90-day page is built while the first note is in flight
 
 What stopped being true: each role a tick passes got one dispatcher item, the wrapper that starts its first touch, and nothing built the role's 90-day page; gen90.py ran only when a lane was asked by hand, and no tracker row since 1 September shows a page sent.
@@ -101,3 +103,5 @@ From this version the hand-off writes a second item beside the wrapper (`PounceP
 6. **One log line a role.** `nightly/pounce/pages.log`: `PAGE <pdf>, code <code>, never attached`, or `NO PAGE` with `no leader`, `red flag` or `gen90` and the reason word for word.
 
 The page ships in shadow whatever `POUNCE_RUN` says, and "off" queues no page with the rest: Steve's ruling on whether the page rides in the follow-up after an open is unanswered in the dispatcher's DECISION.md, so the page is built and logged and never attached or linked in any message. `PounceTickTests` holds it.
+
+Correction, 1.0.5.35: the opening of this addendum says the page item is written after the wrapper, and item 2 counts three checks. A share that refused one role's page stopped every later role's hand-off and wrapper in the same tick, so `PounceHandoffs` now places every role's hand-off and wrapper first and the page items after, each page on its own: one that will not write counts `page_failed` on the run line and stops nothing else. The item now checks for a first touch a fourth time, right before gen90.py runs, so a wrapper that lands while the spec is written no longer waits for the page (CodeRabbit on #41).
