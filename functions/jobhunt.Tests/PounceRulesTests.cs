@@ -69,6 +69,37 @@ public sealed class PounceRulesTests
     [InlineData("Implementation Engineer")]
     public void The_twenty_four_the_seat_rule_drops_are_not_seats(string title) => Assert.False(PounceRules.IsSeat(title), title);
 
+    // jhcode1112 1a: real titles from jobhunt.Postings read 11:15 CST 11/12. A bare "engineer" passed every one of these,
+    // so the 11/12 card's hiring signal counted 884 seats at Anduril and put Langan's civil engineers beside them.
+    [Theory]
+    [InlineData("Entry-Level Civil Engineer")]
+    [InlineData("Senior Staff Civil Engineer")]
+    [InlineData("Senior Staff Geotechnical Engineer")]
+    [InlineData("Intern/Co-op - Site/Civil Engineering (Summer 2027)")]
+    [InlineData("Manufacturing Engineer")]
+    [InlineData("Systems Engineer")]
+    [InlineData("Systems Safety Engineer")]
+    [InlineData("Senior Product Sourcing Engineer, Counter Intrusion")]
+    [InlineData("Maritime Technical Operations Engineer")]
+    [InlineData("Controls Engineer")]
+    [InlineData("Landscape Architect")]
+    [InlineData("Project Architect")]
+    public void An_engineer_with_no_software_word_beside_it_is_not_a_seat(string title) => Assert.False(PounceRules.IsSeat(title), title);
+
+    [Theory]
+    [InlineData("Staff Engineer")]
+    [InlineData("Principal Engineer")]
+    [InlineData("Senior Staff Engineer")]
+    [InlineData("Sr. Engineer II")]
+    [InlineData("Lead Architect")]
+    [InlineData("Staff Azure Cloud Engineer")]
+    [InlineData("DevOps Engineer")]
+    [InlineData("Senior Site Reliability Engineer")]
+    [InlineData("Backend Engineer, Payments")]
+    [InlineData("Classified Platform Engineer")]
+    [InlineData("Director of Engineering")]
+    public void A_bare_level_engineer_or_one_with_a_software_word_is_a_seat(string title) => Assert.True(PounceRules.IsSeat(title), title);
+
     [Fact]
     public void NinjaOne_names_states_without_Missouri_and_fails_both_gates_on_them()
     {
