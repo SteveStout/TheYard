@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using JobHunt.Application.Shared.Walls;
 
 namespace JobHunt.Application.Features.Campaign;
 
@@ -47,6 +48,7 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
         var before = await AskedAsync(askedPath, ct);
         var now = new List<long>();
         int found = 0, dropped = 0;
+        string? refused = null;
         try
         {
             foreach (var lead in await book.WaitingAsync(ct))
@@ -60,7 +62,22 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
                     continue;
                 }
                 now.Add(lead.Id);
-                var answer = await finder.FindAsync(lead.ContactName, lead.CompanyKey, ct);
+                FoundAddress? answer;
+                try
+                {
+                    answer = await finder.FindAsync(lead.ContactName, lead.CompanyKey, ct);
+                }
+                catch (FinderRefusedException wall)
+                {
+                    // A lookup the wall stopped before any call spent nothing, so it is neither counted nor locks
+                    // its lead out of the month. A call the finder refused stays counted, as ADR-118 rules.
+                    if (!wall.Called)
+                    {
+                        now.Remove(lead.Id);
+                    }
+                    refused = wall.Reason;
+                    break;
+                }
                 if (answer is null)
                 {
                     continue;
@@ -85,7 +102,8 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
                 await store.WriteAsync(askedPath, Encoding.UTF8.GetBytes(string.Join('\n', before.Concat(now).Select(id => id.ToString(CultureInfo.InvariantCulture))) + "\n"), CancellationToken.None);
             }
         }
-        return $"{finder.Name}: {now.Count} asked, {found} found, {dropped} dropped, {used + now.Count} of {monthCap} this month";
+        string line = $"{finder.Name}: {now.Count} asked, {found} found, {dropped} dropped, {used + now.Count} of {monthCap} this month";
+        return refused is null ? line : $"{line}, refused: {refused}";
     }
 
     /// <summary>Null when a finder's address may be written for the company, or the reason it may not.</summary>
