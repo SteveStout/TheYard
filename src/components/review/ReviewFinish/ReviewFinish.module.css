@@ -1,5 +1,6 @@
 /**
- * Does:      Lays out the finish panel: its heading, the line on what the sidebar still holds, and its two actions.
+ * Does:      Lays out the finish panel: its heading, the line on what the sidebar still holds, its two actions and the
+ *            two ways to reach Steven.
  * Does not:  Draw the panel's glass, rule or brackets (panels.css does) or the pills (ReviewPage.module.css does).
  * Used by:   ReviewFinish.tsx.
  */
@@ -31,4 +32,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+.reach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }

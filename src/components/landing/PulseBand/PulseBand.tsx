@@ -202,7 +202,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
           {pulse === null ? ' ' : buildWords(pulse.version, pulse.commit)}
         </p>
         <p className={styles.detail}>
-          rolled blue and green, with no downtime.{' '}
+          rolled in place by the pipeline, behind one gate.{' '}
           <button
             type="button"
             className={styles.link}
