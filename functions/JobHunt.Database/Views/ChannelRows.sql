@@ -27,7 +27,7 @@ WITH [Read] AS (
                 AND CAST(p.[FirstTouchAt] AT TIME ZONE 'Central Standard Time' AS date) = r.[Day]) THEN 'pounce'
             WHEN r.[Note] LIKE '%CAMPAIGN EMAIL SENT%' THEN 'email campaign'
             WHEN r.[Note] LIKE '%OLD CONTACT%' OR r.[Note] LIKE '%OLD-CONTACT%' OR r.[Note] LIKE '%FORMER COLLEAGUE%' OR r.[Note] LIKE '%REFERRAL%' THEN 'old contacts'
-            WHEN r.[Who] LIKE '%RECRUIT%' OR r.[Who] LIKE '%TALENT%' OR r.[Note] LIKE '%RECRUITER%' THEN 'recruiters'
+            WHEN r.[Who] LIKE '%RECRUIT%' OR r.[Who] LIKE '%TALENT%' OR r.[Note] LIKE '%RECRUITER%' OR r.[Note] LIKE '%TALENT%' THEN 'recruiters'
             WHEN r.[Via] LIKE 'LINKEDIN%' THEN 'hotmgr'
         END AS [Channel]
     FROM [Read] r
@@ -35,7 +35,7 @@ WITH [Read] AS (
 ),
 [Touches] AS (
     SELECT k.[Position], k.[Company], k.[Day],
-        CASE WHEN k.[Kind] = 'application' AND k.[Channel] <> 'pounce' THEN 'applications' ELSE k.[Channel] END AS [Channel]
+        CASE WHEN k.[Kind] = 'application' AND (k.[Channel] IS NULL OR k.[Channel] = 'hotmgr') THEN 'applications' ELSE k.[Channel] END AS [Channel]
     FROM [Kinds] k
     WHERE k.[Kind] = 'application' OR (k.[Kind] = 'sent' AND k.[Channel] IS NOT NULL)
 )

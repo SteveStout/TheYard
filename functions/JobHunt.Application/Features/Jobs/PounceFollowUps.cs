@@ -58,10 +58,11 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
         await store.EnsureFolderAsync(PounceHandoff.Ready, ct);
         int queued = 0, replied = 0, already = 0;
         var log = new StringBuilder();
+        var legacy = await LegacyAsync(due, ct);
         foreach (var (followUp, answered) in due)
         {
             string marker = PounceFollowUp.Marker(followUp.Code);
-            if (await MarkedAsync(marker, followUp.Code, ct))
+            if (legacy.Contains(marker) || await store.ExistsAsync(marker, ct))
             {
                 already++;
                 continue;
@@ -105,10 +106,11 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
         DateTime local = CentralClock.Local(now);
         var lines = new List<string> { string.Create(CultureInfo.InvariantCulture, $"Follow-up dry run {local:yyyy-MM-dd HH:mm:ss} Central: {pass.Codes} pounce codes, {pass.Opened} opened, {pass.Due} due.{(pass.Unresolved == 0 ? string.Empty : $" {pass.Unresolved} wait for the send's row that names the person.")}{(pass.Blocked is null ? string.Empty : $" Blocked: {pass.Blocked}.")}") };
         var seen = new HashSet<string>(StringComparer.Ordinal);
+        var legacy = await LegacyAsync(due, ct);
         foreach (var (followUp, answered) in due)
         {
             string marker = PounceFollowUp.Marker(followUp.Code);
-            bool already = !seen.Add(marker) || await MarkedAsync(marker, followUp.Code, ct);
+            bool already = !seen.Add(marker) || legacy.Contains(marker) || await store.ExistsAsync(marker, ct);
             string did = already ? "already has a follow-up for this role" : answered ? "replied, no follow-up" : "dry follow-up, nothing queued";
             lines.Add(string.Empty);
             lines.Add(PounceFollowUp.LogLine(local, followUp, did, now));
@@ -123,9 +125,23 @@ public sealed class PounceFollowUps(IMergeStore store, ISiteVisits site, ITracke
         return lines;
     }
 
-    /// <summary>True when the person has a marker for the role, or the code has the one an earlier build wrote for it.</summary>
-    private async Task<bool> MarkedAsync(string marker, PounceCode code, CancellationToken ct) =>
-        await store.ExistsAsync(marker, ct) || await store.ExistsAsync(PounceFollowUp.LegacyMarker(code), ct);
+    /// <summary>
+    /// The person-and-role markers that a marker an earlier build wrote under one code's name stands for, read for every
+    /// due code before any is judged, so the code it names and every other code for the same person and role are held
+    /// alike, live and dry, whatever order the codes come in.
+    /// </summary>
+    private async Task<HashSet<string>> LegacyAsync(List<(FollowUp FollowUp, bool Answered)> due, CancellationToken ct)
+    {
+        var held = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (followUp, _) in due)
+        {
+            if (await store.ExistsAsync(PounceFollowUp.LegacyMarker(followUp.Code), ct))
+            {
+                held.Add(PounceFollowUp.Marker(followUp.Code));
+            }
+        }
+        return held;
+    }
 
     private async Task<IReadOnlyList<PounceCode>> CodesAsync(CancellationToken ct)
     {

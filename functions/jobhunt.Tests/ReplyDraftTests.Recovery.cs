@@ -15,7 +15,7 @@ public sealed partial class ReplyDraftTests
     {
         using var scratch = new Scratch();
         scratch.Master(Tracker);
-        var flaky = new FailingReplace(scratch.Store);
+        var flaky = new Interrupted(scratch.Store, replace: path => path == ReplyDraft.ReadyPath("m1"));
 
         await Assert.ThrowsAsync<IOException>(() => new ReplyDrafts(flaky, Mailbox(), null, new Fixed(Now)).RunAsync(CancellationToken.None));
         Assert.True(scratch.Has("inbox-pass/reply-drafts/m1.md"));
@@ -30,6 +30,29 @@ public sealed partial class ReplyDraftTests
         var later = await new ReplyDrafts(scratch.Store, Mailbox(), null, new Fixed(Now.AddMinutes(10))).RunAsync(CancellationToken.None);
         Assert.Equal((0, 1), (later.Queued, later.Already));
         Assert.False(scratch.Has("dispatch/ready/12-replydraft-m1.md"));
+    }
+
+    [Fact]
+    public async Task A_marker_whose_write_stopped_is_written_whole_on_the_next_pass_and_its_draft_is_placed()
+    {
+        using var scratch = new Scratch();
+        scratch.Master(Tracker);
+        var flaky = new Interrupted(scratch.Store, write: path => path.StartsWith(ReplyDraft.Folder + "/", StringComparison.Ordinal) && path.Contains("m1", StringComparison.Ordinal));
+
+        await Assert.ThrowsAsync<IOException>(() => new ReplyDrafts(flaky, Mailbox(), null, new Fixed(Now)).RunAsync(CancellationToken.None));
+        Assert.False(scratch.Has(ReplyDraft.Marker("m1")));
+        Assert.DoesNotContain(ReplyDraft.Ready, ReplyDraft.MarkerTempPath("m1"), StringComparison.Ordinal);
+
+        var next = await new ReplyDrafts(scratch.Store, Mailbox(), null, new Fixed(Now.AddMinutes(5))).RunAsync(CancellationToken.None);
+        Assert.Equal(1, next.Queued);
+        Assert.NotNull(ReplyDraft.ReadMarker(scratch.Text(ReplyDraft.Marker("m1"))));
+        Assert.False(scratch.Has(ReplyDraft.MarkerTempPath("m1")));
+
+        scratch.Write(ReplyDraft.DraftPath("m1"), "Dana,\n\nThursday works.\n\nSteve\n");
+        var writer = new Drafts();
+        var live = await new ReplyDrafts(scratch.Store, Mailbox(), writer, new Fixed(Now.AddMinutes(10))).RunAsync(CancellationToken.None);
+        Assert.Equal(1, live.Placed);
+        Assert.Single(writer.Made);
     }
 
     [Fact]
@@ -72,10 +95,14 @@ public sealed partial class ReplyDraftTests
         Assert.Equal("t1", message.ThreadId);
     }
 
-    /// <summary>The share, whose first rename fails, as a share that stops answering between the write and the rename.</summary>
-    private sealed class FailingReplace(IMergeStore inner) : IMergeStore
+    /// <summary>
+    /// The share stopping part way: the first write a test names creates its file empty and fails, as a share that stops
+    /// between creating a file and filling it, and the first rename it names fails, as one that stops before the rename.
+    /// </summary>
+    private sealed class Interrupted(IMergeStore inner, Func<string, bool>? write = null, Func<string, bool>? replace = null) : IMergeStore
     {
-        private bool _failed;
+        private bool _wrote;
+        private bool _replaced;
 
         public Task<bool> ExistsAsync(string path, CancellationToken ct) => inner.ExistsAsync(path, ct);
 
@@ -89,17 +116,26 @@ public sealed partial class ReplyDraftTests
 
         public Task EnsureFolderAsync(string folder, CancellationToken ct) => inner.EnsureFolderAsync(folder, ct);
 
-        public Task WriteAsync(string path, byte[] bytes, CancellationToken ct) => inner.WriteAsync(path, bytes, ct);
-
         public Task MoveAsync(string path, string destination, CancellationToken ct) => inner.MoveAsync(path, destination, ct);
 
         public Task AppendAsync(string path, byte[] bytes, CancellationToken ct) => inner.AppendAsync(path, bytes, ct);
 
+        public async Task WriteAsync(string path, byte[] bytes, CancellationToken ct)
+        {
+            if (!_wrote && write?.Invoke(path) == true)
+            {
+                _wrote = true;
+                await inner.WriteAsync(path, [], ct);
+                throw new IOException("the share did not answer");
+            }
+            await inner.WriteAsync(path, bytes, ct);
+        }
+
         public Task ReplaceAsync(string tempPath, string path, CancellationToken ct)
         {
-            if (!_failed)
+            if (!_replaced && replace?.Invoke(path) == true)
             {
-                _failed = true;
+                _replaced = true;
                 throw new IOException("the share did not answer");
             }
             return inner.ReplaceAsync(tempPath, path, ct);

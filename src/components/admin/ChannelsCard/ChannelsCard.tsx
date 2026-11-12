@@ -52,6 +52,7 @@ export default function ChannelsCard({ tick }: { tick: number }) {
             rows={channelRows(report)}
             rowKey={(row) => row.key}
             columns={columns}
+            empty="no touch, reply or room in these weeks"
           />
           <p className={styles.muted} data-testid="channels-source">
             {report.note === null ? '' : `Not here yet: ${report.note}. `}Read from {report.source}.
