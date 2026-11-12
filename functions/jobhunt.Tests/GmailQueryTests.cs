@@ -30,4 +30,14 @@ public sealed class GmailQueryTests
         }
         Assert.Equal(BoardAlerts.All.Count, sent.Keys.Count(key => key.StartsWith("in:inbox from:", StringComparison.Ordinal)) - 1);
     }
+
+    [Fact]
+    public void After_is_written_in_Unix_seconds_and_the_senders_left_out_come_last()
+    {
+        var at = new DateTimeOffset(2026, 11, 11, 14, 0, 0, TimeSpan.Zero);
+        Assert.Equal("after:1794405600", GmailQuery.Compose(new MailSearch([], [], After: at)));
+        Assert.Equal("in:inbox -from:github.com", GmailQuery.Compose(new MailSearch([], [], InboxOnly: true, NotFrom: ["github.com"])));
+        Assert.Equal("in:inbox newer_than:1d after:1794405600 -from:me -from:(a.com OR b.com)", GmailQuery.Compose(new MailSearch([], [], true, 1, true, at, ["a.com", "b.com"])));
+        Assert.Equal("in:inbox after:1794405600 -from:me -from:(notifications@github.com OR github.com)", GmailQuery.Compose(ReplyDrafts.SearchAt(at.AddHours(2))));
+    }
 }

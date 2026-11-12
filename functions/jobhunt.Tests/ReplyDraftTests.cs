@@ -134,11 +134,21 @@ public sealed partial class ReplyDraftTests
 
     private sealed class Inbox(params Mail1[] mails) : IInboxReader
     {
+        /// <summary>Every search the pass sent.</summary>
+        public List<MailSearch> Searches { get; } = [];
+
+        /// <summary>Every message the pass read in full.</summary>
+        public List<string> Reads { get; } = [];
+
         public Task<IReadOnlyList<string>> FindAsync(MailSearch search, int max, CancellationToken ct) =>
-            Task.FromResult<IReadOnlyList<string>>([.. mails.Where(m => !m.From.Contains("stevenstout11", StringComparison.Ordinal)).Select(m => m.Id)]);
+            Task.FromResult<IReadOnlyList<string>>([.. Listed(search).Select(m => m.Id)]);
+
+        public Task<IReadOnlyList<(string Id, string? ThreadId)>> FindInThreadsAsync(MailSearch search, int max, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<(string Id, string? ThreadId)>>([.. Listed(search).Select(m => (m.Id, (string?)m.Thread))]);
 
         public Task<InboxMessage> ReadAsync(string id, CancellationToken ct)
         {
+            Reads.Add(id);
             var mail = mails.Single(m => m.Id == id);
             return Task.FromResult(new InboxMessage(mail.Id, mail.Thread, mail.From, mail.Subject, mail.At, mail.Text) { MessageId = mail.MessageId, References = mail.References });
         }
@@ -147,6 +157,12 @@ public sealed partial class ReplyDraftTests
             Task.FromResult<IReadOnlyList<string>>([.. mails.Where(m => m.Thread == threadId).OrderBy(m => m.At).Select(m => m.From)]);
 
         public Task<bool> ThreadHasDraftAsync(string threadId, CancellationToken ct) => Task.FromResult(mails.Any(m => m.Thread == threadId && m.Draft));
+
+        private IEnumerable<Mail1> Listed(MailSearch search)
+        {
+            Searches.Add(search);
+            return mails.Where(m => !m.From.Contains("stevenstout11", StringComparison.Ordinal));
+        }
     }
 
     private sealed class Drafts : IReplyDraftWriter

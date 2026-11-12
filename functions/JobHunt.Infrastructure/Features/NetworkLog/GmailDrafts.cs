@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
@@ -9,15 +7,19 @@ namespace JobHunt.Infrastructure.Features.NetworkLog;
 /// The network log's Gmail writes with the nightly lane's token: users.labels (list, then create when absent),
 /// users.drafts.create into the original thread, users.messages.modify for the label, users.drafts.get for the read
 /// back. Nothing here sends: the class has no call to messages.send or drafts.send, and NetworkLogSliceTests holds
-/// that. Only the `on` path builds it; shadow is handed a writer that refuses.
+/// that. Only the `on` path builds it; shadow is handed a writer that refuses. Every call goes through
+/// <see cref="GmailHttp"/>; a call that makes something is made again only after a rate answer.
 /// </summary>
-public sealed class GmailDrafts(IHttpClientFactory http, GoogleCredentials google) : IDraftWriter
+/// <param name="http">The client factory.</param>
+/// <param name="google">The lane's credentials.</param>
+/// <param name="time">The clock a rate answer is waited out on; the system's when none is given.</param>
+public sealed class GmailDrafts(IHttpClientFactory http, GoogleCredentials google, TimeProvider? time = null) : IDraftWriter
 {
-    private const string Api = "https://gmail.googleapis.com/gmail/v1/users/me";
+    private const string Api = GmailHttp.Api;
 
     private readonly Dictionary<string, string> _labels = new(StringComparer.Ordinal);
 
-    private HttpClient? _client;
+    private readonly GmailHttp _gmail = new(http, google, time ?? TimeProvider.System);
 
     private bool _listed;
 
@@ -28,13 +30,10 @@ public sealed class GmailDrafts(IHttpClientFactory http, GoogleCredentials googl
         {
             return cached;
         }
-        var client = await ClientAsync(ct);
         if (!_listed)
         {
             // One list a pass: every label's id is cached by name, so the second label costs no second list.
-            using var list = await client.GetAsync($"{Api}/labels", ct);
-            list.EnsureSuccessStatusCode();
-            using var json = JsonDocument.Parse(await list.Content.ReadAsStringAsync(ct));
+            using var json = await _gmail.GetAsync($"{Api}/labels", ct);
             foreach (var label in json.RootElement.TryGetProperty("labels", out var labels) ? labels.EnumerateArray() : default)
             {
                 _labels[label.GetProperty("name").GetString()!] = label.GetProperty("id").GetString()!;
@@ -45,42 +44,29 @@ public sealed class GmailDrafts(IHttpClientFactory http, GoogleCredentials googl
                 return listed;
             }
         }
-        using var made = await client.PostAsync($"{Api}/labels", JsonContent.Create(new { name, labelListVisibility = "labelShow", messageListVisibility = "show" }), ct);
-        made.EnsureSuccessStatusCode();
-        using var answer = JsonDocument.Parse(await made.Content.ReadAsStringAsync(ct));
+        using var answer = await _gmail.PostAsync($"{Api}/labels", new { name, labelListVisibility = "labelShow", messageListVisibility = "show" }, false, ct);
         return _labels[name] = answer.RootElement.GetProperty("id").GetString()!;
     }
 
     /// <inheritdoc />
     public async Task<(string DraftId, string MessageId)> CreateDraftAsync(DraftMail draft, CancellationToken ct)
     {
-        var client = await ClientAsync(ct);
         string raw = MimeText.Base64Url(Encoding.UTF8.GetBytes(Mime(draft, "yard-" + Guid.NewGuid().ToString("N"))));
-        using var answer = await client.PostAsync($"{Api}/drafts", JsonContent.Create(new { message = new { raw, threadId = draft.ThreadId } }), ct);
-        answer.EnsureSuccessStatusCode();
-        using var json = JsonDocument.Parse(await answer.Content.ReadAsStringAsync(ct));
+        using var json = await _gmail.PostAsync($"{Api}/drafts", new { message = new { raw, threadId = draft.ThreadId } }, false, ct);
         return (json.RootElement.GetProperty("id").GetString()!, json.RootElement.GetProperty("message").GetProperty("id").GetString()!);
     }
 
     /// <inheritdoc />
     public async Task LabelAsync(string messageId, string labelId, CancellationToken ct)
     {
-        var client = await ClientAsync(ct);
-        using var answer = await client.PostAsync($"{Api}/messages/{messageId}/modify", JsonContent.Create(new { addLabelIds = new[] { labelId } }), ct);
-        answer.EnsureSuccessStatusCode();
+        using var answer = await _gmail.PostAsync($"{Api}/messages/{messageId}/modify", new { addLabelIds = new[] { labelId } }, true, ct);
     }
 
     /// <inheritdoc />
     public async Task<bool> DraftExistsAsync(string draftId, CancellationToken ct)
     {
-        var client = await ClientAsync(ct);
-        using var answer = await client.GetAsync($"{Api}/drafts/{draftId}?format=minimal", ct);
-        if (answer.StatusCode == HttpStatusCode.NotFound)
-        {
-            return false;
-        }
-        answer.EnsureSuccessStatusCode();
-        return true;
+        using var answer = await _gmail.GetOrMissingAsync($"{Api}/drafts/{draftId}?format=minimal", ct);
+        return answer is not null;
     }
 
     /// <summary>
@@ -109,6 +95,4 @@ public sealed class GmailDrafts(IHttpClientFactory http, GoogleCredentials googl
         text.Append(MimeText.Alternative(boundary, draft.Text, draft.Html));
         return text.ToString();
     }
-
-    private async Task<HttpClient> ClientAsync(CancellationToken ct) => _client ??= await google.ClientAsync(http, ct);
 }

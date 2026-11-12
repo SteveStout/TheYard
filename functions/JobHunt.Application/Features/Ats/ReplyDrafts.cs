@@ -41,8 +41,16 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
     /// <summary>The most messages one firing reads.</summary>
     public const int Most = 50;
 
-    /// <summary>The mail this reads: the inbox, the window, nothing Steve sent.</summary>
-    public static MailSearch Search { get; } = new([], [], InboxOnly: true, NewerThanDays: 1, NotFromMe: true);
+    /// <summary>GitHub's mail, every address at the domain: the coding lanes' notifications, never a person on a job thread.</summary>
+    public static IReadOnlyList<string> NotFrom { get; } = ["notifications@github.com", "github.com"];
+
+    /// <summary>
+    /// The mail this reads: the inbox, the window and no older, nothing Steve sent, nothing from GitHub. The search asks for
+    /// the window itself, so a message older than it is never listed, never read and never needs a mark.
+    /// </summary>
+    /// <param name="now">Now.</param>
+    public static MailSearch SearchAt(DateTimeOffset now) =>
+        new([], [], InboxOnly: true, NotFromMe: true, After: now - ReplyDraft.Window, NotFrom: NotFrom);
 
     /// <summary>One pass: queue an item for each waiting message, then place the drafts the items wrote.</summary>
     public async Task<ReplyDraftPass> RunAsync(CancellationToken ct)
@@ -53,28 +61,33 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
         int read = 0, waiting = 0, queued = 0, already = 0, skipped = 0;
         KnownContacts? known = null;
         var threads = new HashSet<string>(StringComparer.Ordinal);
-        foreach (string id in await inbox.FindAsync(Search, Most, ct))
+        foreach (var (id, thread) in await inbox.FindInThreadsAsync(SearchAt(now), Most, ct))
         {
+            // A message an earlier pass skipped or marked is settled by its file, so it is not read again: rereading the
+            // same fifty in full every five minutes is what ran the user's Gmail quota out. It still holds its thread, as
+            // it did when it was read, so an older message in that thread is not queued beside it.
+            bool skippedBefore = await store.ExistsAsync(ReplyDraft.SkippedPath(id), ct);
+            if (skippedBefore || await store.ExistsAsync(ReplyDraft.Marker(id), ct))
+            {
+                bool first = thread is null || threads.Add(thread);
+                if (skippedBefore || !first)
+                {
+                    continue;
+                }
+                if (await store.ExistsAsync(ReplyDraft.TempPath(id), ct))
+                {
+                    await store.ReplaceAsync(ReplyDraft.TempPath(id), ReplyDraft.ReadyPath(id), ct);
+                    queued++;
+                    log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} queued {ReplyDraft.ReadyPath(id)}, finishing a pass that stopped before it\n");
+                    continue;
+                }
+                already++;
+                continue;
+            }
             var message = await inbox.ReadAsync(id, ct);
             read++;
             if (now - message.At > ReplyDraft.Window || !HumanMail.IsPerson(message.Address) || !threads.Add(message.ThreadId))
             {
-                continue;
-            }
-            if (await store.ExistsAsync(ReplyDraft.SkippedPath(message.Id), ct))
-            {
-                continue;
-            }
-            if (await store.ExistsAsync(ReplyDraft.Marker(message.Id), ct))
-            {
-                if (await store.ExistsAsync(ReplyDraft.TempPath(message.Id), ct))
-                {
-                    await store.ReplaceAsync(ReplyDraft.TempPath(message.Id), ReplyDraft.ReadyPath(message.Id), ct);
-                    queued++;
-                    log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} queued {ReplyDraft.ReadyPath(message.Id)}, finishing a pass that stopped before it\n");
-                    continue;
-                }
-                already++;
                 continue;
             }
             if (await inbox.ThreadHasDraftAsync(message.ThreadId, ct)

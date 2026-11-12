@@ -78,6 +78,20 @@ Out: on a Monday in on, a due row whose newest exchange was on LinkedIn is no lo
 
 Held by NetworkLinkedInQueueTests and NetworkDraftTests, whose rows are in ADR-075's table, and by NetworkLaneTests in the machine lanes, whose rule ADR-119's addendum of this version states, because ADR-075's table cannot yet cite a machine-lane test.
 
+## Addendum, 2026-11-12 (1.0.5.48): one slot clock for the whole Function, and every Gmail call waits out a rate answer
+
+What stopped being true: the 1.0.4.173 addendum's "every Gmail read waits for its slot" held for the network log's reads only, and only within one reader. The ATS sweep's inbox (`GmailInbox`), the campaign's sender (`GmailSender`) and the draft writer (`GmailDrafts`) sent their requests unspaced and failed on the first answer that was not a success, and each reader kept its own clock, while the sweep, the reply drafts, the pounce, the campaign and the network log run in one host on one user's Gmail quota. From 04:20 Central on 12 November every part of the sweep failed every half hour on `Response status code does not indicate success: 403 (Forbidden)`, a line that never said which 403 it was.
+
+From this version one class, `GmailHttp` (`functions/JobHunt.Infrastructure/Shared/Google`), sends every Gmail request the Function makes, for all four adapters:
+
+1. **One slot clock for the process.** A static clock spaces every request 50 milliseconds from the one before it, whichever adapter or timer sends it. `GmailThreads` keeps `Spacing`, `Slot`, `Retries`, `RateReasons` and `Reason` as forwards to it.
+2. **A rate answer is waited out, everywhere.** A 429, or a 403 whose reason is `rateLimitExceeded` or `userRateLimitExceeded`, is waited out five times on doubling waits of 2 to 32 seconds, for a POST as for a GET. A server error is waited out the same way only on a call that may be made twice (a read, a label change). A call that makes something (a send, a draft, a label) is made again after a rate answer, which Gmail gives before it does anything, and never after a server error, after which the message may already have gone.
+3. **A failure names itself.** Any other answer, or a rate answer that does not clear, fails as `Gmail answered 403 (rateLimitExceeded) after 6 tries`, and a 403 that refuses (`insufficientPermissions`, `accessNotConfigured`) fails on its first try with that word. The sweep's FAILED line prints the message as it was, so `inbox-pass/pass.log` names the cause.
+
+The reply drafts were not the only caller over the quota. The campaign part's 403 is in `pass.log` 265 times from 27 October 08:20, on 4 to 25 of 48 passes a day, 219 of them at :20, weeks before the reply drafts existed. Its next FAILED line will carry the reason word. The 07:30 card's one label read (`TodayCardTimer`) still calls Gmail directly and reads "not read" on any failure.
+
+Held by GmailHttpTests and NetworkGmailTests; their row is in ADR-075's table.
+
 ## Where it sits
 
 A feature slice in each of the Function's rings and a card in the site's Admin module, with the shared concerns the campaign now reads from too. Separation of duties is the principle: the model reads and summarises, code decides and writes, a person sends. It cost a schema, an hourly timer and one sign-in. What would change it: Steve saying `send` for email, which would be a new record, not an addendum.

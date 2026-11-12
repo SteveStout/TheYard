@@ -12,12 +12,16 @@ namespace JobHunt.Application.Shared.Mail;
 /// <param name="InboxOnly">True to find only mail still in the inbox.</param>
 /// <param name="NewerThanDays">Only mail younger than this many days, or null for any age.</param>
 /// <param name="NotFromMe">True to leave out mail Steve sent.</param>
+/// <param name="After">Only mail that arrived after this instant, or null for any.</param>
+/// <param name="NotFrom">The addresses or domains whose mail is left out; null or none leaves nothing out.</param>
 public sealed record MailSearch(
     IReadOnlyList<string> Senders,
     IReadOnlyList<string> SubjectPhrases,
     bool InboxOnly = false,
     int? NewerThanDays = null,
-    bool NotFromMe = false)
+    bool NotFromMe = false,
+    DateTimeOffset? After = null,
+    IReadOnlyList<string>? NotFrom = null)
 {
     /// <summary>Everything still in the inbox.</summary>
     public static MailSearch WholeInbox { get; } = new([], [], InboxOnly: true);
