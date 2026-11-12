@@ -24,7 +24,8 @@ public static class ProcessWords
         ["switch_off"] = "the switch is off",
         ["not_a_slot"] = "not a slot hour",
         ["part_failed"] = "a part of the pass failed",
-        ["not_the_hour"] = "not the 8 o'clock hour",
+        ["not_the_hour"] = "not its hour",
+        ["mailed_already"] = "mailed already today",
         ["no_database"] = "the database is not set",
     };
 
@@ -69,9 +70,14 @@ public static class ProcessWords
         {
             return run.Outcome == "failed" ? "the request failed; no run line, from before the processes wrote one" : "no run line, from before the processes wrote one: the request row only";
         }
-        if (run.Detail is "switch_off" or "not_a_slot" or "not_the_hour" or "no_database" or "google_token" or "google_settings")
+        if (run.Detail is "switch_off" or "not_a_slot" or "not_the_hour" or "no_database" or "google_token" or "google_settings" or "mailed_already")
         {
-            return Reason(run.Detail, run.Detail) + (run.Detail == "google_token" ? "; the pass skipped its later parts" : "");
+            return run.Detail switch
+            {
+                "not_the_hour" when FunctionProcesses.ActingHour(process) is { } hour => $"not the {hour} o'clock hour",
+                "google_token" => Reason(run.Detail, run.Detail) + "; the pass skipped its later parts",
+                _ => Reason(run.Detail, run.Detail),
+            };
         }
         long? Count(string name) => run.Counts.TryGetValue(name, out long value) ? value : null;
         var parts = new List<string>();
@@ -117,12 +123,26 @@ public static class ProcessWords
             case "DailyCard":
                 Add("written", n => n == 1 ? "the card written" : "unchanged, not written");
                 break;
+            case "TodayCard":
+                Add("written", n => n == 1 ? "the card written" : "not written");
+                Add("mailed", n => n == 1 ? "mailed" : "not mailed");
+                break;
             case "CampaignSend":
                 Add("open", n => $"{Plural(n, "lead")} open");
                 Add("eligible", n => $"{n} eligible");
                 Add("written", n => $"{n} written in shadow");
                 Add("sent", n => $"{n} sent");
                 Add("held", n => $"{n} held");
+                break;
+            case "Funnel":
+                if (DateOnly.TryParseExact(run.Detail, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
+                {
+                    parts.Add("for " + day.ToString("ddd d MMM", CultureInfo.InvariantCulture));
+                }
+                foreach (string name in (string[])["scanned", "ready", "applied", "reached", "replied", "booked"])
+                {
+                    Add(name, n => $"{N(n)} {name}");
+                }
                 break;
             case "NetworkLogPass":
                 Add("threads", n => $"{Plural(n, "thread")} read");
@@ -169,7 +189,7 @@ public static class ProcessWords
     {
         "Merger" => $"{N(tally.Runs)} passes in {words}; the {N(tally.Shown)} that merged something or moved the SQL copy are listed, the rest did neither",
         "Nightly" => $"{N(tally.Shown)} slots in {words}, every one listed; the hours between are counted, not listed",
-        "DailyCard" => $"{N(tally.Runs)} runs in {words}; the {N(tally.Shown)} that wrote the card are listed",
+        "DailyCard" or "TodayCard" => $"{N(tally.Runs)} runs in {words}; the {N(tally.Shown)} that wrote the card are listed",
         "MergerHealth" => $"{N(tally.Runs)} answers in {words}, the slowest {Math.Min(tally.Shown, 20)} first",
         _ => $"{N(tally.Runs)} runs in {words}, the newest {Math.Min(tally.Shown, 20)} first",
     };
@@ -191,7 +211,7 @@ public static class ProcessWords
             "Merger" => $"{N(tally.Runs)} passes · {N(tally.Acted)} merges · {N(failed)} failed",
             "Nightly" => $"{N(tally.Acted)} slots dispatched · {N(tally.Late)} late · {N(failed)} failed",
             "SheetMirror" => $"{N(tally.Planned)} plans · {N(tally.Acted)} appends · {N(failed)} failed or blocked",
-            "DailyCard" => $"{N(tally.Runs)} runs · {N(tally.Acted)} writes · {N(failed)} failed",
+            "DailyCard" or "TodayCard" => $"{N(tally.Runs)} runs · {N(tally.Acted)} writes · {N(failed)} failed",
             "MergerHealth" => $"{N(tally.Runs)} answers · {N(failed)} failed" + (tally.P95Ms is { } p95 ? $" · p95 {Took((long)p95)} on its slowest day" : ""),
             _ => $"{N(Math.Max(0, tally.Runs - tally.Late - failed))} of {N(tally.Runs)} on time · {N(tally.Late)} late · {N(failed)} failed or blocked",
         };

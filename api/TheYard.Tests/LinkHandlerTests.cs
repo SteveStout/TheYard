@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using TheYard.Application.Features.Links;
 using TheYard.Application.Shared.Links;
 
@@ -241,6 +242,16 @@ public sealed class LinkHandlerTests
         Assert.Equal(new Uri("https://github.example/steve"), await handler.HandleAsync(new GoQuery(" GitHub "), CancellationToken.None));
         Assert.Null(await handler.HandleAsync(new GoQuery("linkedin"), CancellationToken.None));
         Assert.Null(await handler.HandleAsync(new GoQuery("../admin"), CancellationToken.None));
+    }
+
+    [Fact]
+    public void The_site_s_settings_name_the_LinkedIn_recommendations_page_beside_the_profile_and_GitHub()
+    {
+        var settings = new ConfigurationBuilder().AddJsonFile(Path.Combine(Repo.Root(), "api", "TheYard.Api", "appsettings.json")).Build();
+        var targets = new TheYard.Api.Features.Links.ConfiguredLinkTargets(settings);
+
+        Assert.Equal(["github", "linkedin", "linkedin-recs"], targets.Keys);
+        Assert.Equal(new Uri("https://www.linkedin.com/in/stevenwstout/details/recommendations/"), targets.For("linkedin-recs"));
     }
 
     [Fact]

@@ -220,6 +220,9 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The quality history starts on 15 October, before the ratchet went in, with no limit before it, runs in version order with every number the ratchet names, and its newest row is what the scanner reads at HEAD (from 1.0.5.2; a newest row behind the changelog is a gap, never a red gate); every number on the Quality page is read live from data the build carries, and the page types none of its own | ADR-130 | QualityHistoryTests |
 | A version that moves the first three numbers ships only by hand, with the person promoting naming it as OWNER_YES, moves the third number by one and starts the fourth at 0; the gate ends green with a notice and moves nothing, whatever its environment holds | ADR-130 | PromoteScriptTests |
 | A session unsure of a library's API at the version this repository pins looks it up first, Microsoft Learn for .NET and Azure and Context7 for the rest, and no file a reader can read holds a Context7 key | ADR: Library docs at the pinned version | LibraryDocsTests |
+| The machine lanes' feed writes only its run folder and one QUEUE-hotmgr file a day, and every candidate passes the person, text and closed-req gates and the feed's hold file before it is queued | ADR-119, the addendum of 1.0.4.166 on the feed lane | FeedTests |
+| The invites worklist is ranked hottest first before it is cut to the day's room, so a row left over is never hotter than a row kept | ADR-119, the addendum of 1.0.4.166 on the feed lane | FeedTests |
+| An invite stands on Pending and its note read back, shown in a screenshot copied into the run folder; the toast is recorded when seen and never required, and a send with no such proof stands unverified | ADR-119, the addendum of 1.0.4.166 on the feed lane | ResultTests, RunTests |
 
 ## How the table is read
 
@@ -405,3 +408,10 @@ Four tests had each gone red once and green on a rerun between 5 and 7 November,
 - **working.spec, the Retry lock.** The test asked to see the lock inside 1.2 s while the routed answer was due at 1.5 s, so a loaded box could miss the window. The answer is now held until the test has seen the lock, so the lock is read while the answer is slow by construction; it passed 20 times of 20 on four workers at once. How soon the lock shows stays with the first test in that file and WorkingLock.test.ts.
 - **author.spec's first navigation.** It ended net::ERR_ABORTED once on CI on main (1.0.4.148, attempt 1). The likely cause is the dev server reloading every open page after it bundles a dependency it found late, which cuts short a navigation in flight in another worker. openTheYard now asks for an aborted navigation once more; any other failure is still the test's.
 - **The API reference at 390 px (coverage.spec).** Its panel is drawn by the reference's own script, the package's whole bundle parsed on the box's processor, and on a loaded box at 390 it once took longer than the 30 s the pass waited. This one is not made deterministic: the wait is now 90 s inside the pass's 12-minute budget, and a page that never draws still reads "no panel".
+
+## Addendum, 2026-11-12 (@VER@): the table names the machine lanes' tests
+
+What stopped being true: "How the table is read" says a row's test is a class in the api assembly, or, by source, in the Function's suite. The third process's suite, `server/JobHunt.Server.Tests`, was in neither, so a row naming one of its classes failed `RuleTableTests` and three rows for the machine lanes' feed were held back and left only in ADR-119's addendum of 1.0.4.166.
+
+From this version `RuleTableTests` reads the machine lanes' test classes from their source the way it reads the Function's, and a test holds that a server class is one a row may name. The three rows are in the table: the feed's writes and gates, the hottest-first cut of the invites worklist (`FeedTests`), and what an invite stands on (`ResultTests`, `RunTests`).
+

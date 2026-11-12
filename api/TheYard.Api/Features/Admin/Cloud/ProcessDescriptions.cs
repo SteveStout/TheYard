@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 namespace TheYard.Api.Features.Admin.Cloud;
 
 // #region process-descriptions
-/// <summary>The eight processes' summaries and the Function's paragraph, read from the repository files in this build.</summary>
+/// <summary>The processes' summaries and the Function's paragraph, read from the repository files in this build.</summary>
 /// <param name="regions">The repository's marked regions, as the live-sample reader renders them.</param>
 public sealed partial class ProcessDescriptions(ICodeRegions regions)
 {
@@ -26,20 +26,22 @@ public sealed partial class ProcessDescriptions(ICodeRegions regions)
         ["Nightly"] = "Nightly.cs",
         ["SheetMirror"] = "SheetMirrorTimer.cs",
         ["DailyCard"] = "DailyCardTimer.cs",
+        ["TodayCard"] = "TodayCardTimer.cs",
+        ["Funnel"] = "FunnelTimer.cs",
         ["CampaignSend"] = "CampaignSendTimer.cs",
         ["NetworkLogPass"] = "NetworkLogTimer.cs",
         ["MergerHealth"] = "MergerWatch.cs",
     };
 
-    /// <summary>Each file's paragraph once read: nine at most, the eight processes and the Function's own.</summary>
+    /// <summary>Each file's paragraph once read: one a process in the table, and the Function's own.</summary>
     private readonly ConcurrentDictionary<string, string> _read = new(StringComparer.Ordinal);
 
     /// <summary>The Function's paragraph: what it is, in one paragraph.</summary>
     public string Function() => _read.GetOrAdd("", _ => Paragraph("Program.cs", "what-it-is"));
 
     /// <summary>One process's summary, by its key.</summary>
-    /// <param name="key">One of the eight.</param>
-    public string For(string key) => Files.TryGetValue(key, out string? file) ? _read.GetOrAdd(key, _ => Paragraph(file, "summary")) : "not one of the seven";
+    /// <param name="key">One of the table's.</param>
+    public string For(string key) => Files.TryGetValue(key, out string? file) ? _read.GetOrAdd(key, _ => Paragraph(file, "summary")) : "not one of the ten";
 
     /// <summary>
     /// One region of one file as a paragraph: the live reader's fenced block with the comment marks, the
