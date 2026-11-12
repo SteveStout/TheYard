@@ -257,7 +257,10 @@ test.describe('the docked rail', () => {
     await rail.getByRole('button', { name: 'The Yard' }).click();
     // Home is the landing page since 1.0.1.0.
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
+      page.getByRole('heading', {
+        level: 1,
+        name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+      })
     ).toBeVisible();
     await expect(page).not.toHaveURL(/view=admin/);
   });

@@ -6,6 +6,7 @@
  * Used by:   render.ts, render.test.ts.
  */
 
+import type { BlogImage } from '../src/lib/blog';
 import type { PostHead } from './heads';
 
 // #region the-page
@@ -70,9 +71,9 @@ export function servedPages(read: typeof fetch = fetch) {
 }
 
 /**
- * The published posts' titles and summaries at one API origin, read at most once every fifteen seconds, so a
- * post's link preview carries its own title (ADR: The public face). Empty when the blog does not answer: the
- * preview then says what the blog is.
+ * The published posts' titles, summaries and first images at one API origin, read at most once every fifteen seconds,
+ * so a post's link preview carries its own title (ADR: The public face) and its hook draws on the first screen with no
+ * read in the browser (ADR-132). Empty when the blog does not answer: the preview then says what the blog is.
  */
 export function keptPosts(read: typeof fetch = fetch) {
   const kept = new Map<string, { at: number; posts: Promise<PostHead[]> }>();
@@ -84,8 +85,13 @@ export function keptPosts(read: typeof fetch = fetch) {
       signal: AbortSignal.timeout(2_000),
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((body: { posts?: PostHead[] } | null) =>
-        (body?.posts ?? []).map(({ slug, title, summary }) => ({ slug, title, summary }))
+      .then((body: { posts?: (PostHead & { images?: BlogImage[] })[] } | null) =>
+        (body?.posts ?? []).map(({ slug, title, summary, images }) => ({
+          slug,
+          title,
+          summary,
+          image: images?.[0] ?? null,
+        }))
       )
       .catch(() => [] as PostHead[]);
     kept.set(apiOrigin, { at: Date.now(), posts });

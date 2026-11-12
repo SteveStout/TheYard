@@ -10,8 +10,10 @@
 /** The address every canonical link is written against. */
 export const SITE = 'https://theyard.stevenstout.biz';
 
-/** What a post lends its preview. */
-export type PostHead = { slug: string; title: string; summary: string };
+import type { BlogImage } from '../src/lib/blog';
+
+/** What a post lends its preview, and its hook's first image (ADR-132). */
+export type PostHead = { slug: string; title: string; summary: string; image?: BlogImage | null };
 
 /** One page's head: its title, a description of 160 characters or fewer, and its own address. */
 export type Head = { title: string; description: string; path: string };

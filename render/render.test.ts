@@ -4,7 +4,7 @@ import pageSource from './page.ts?raw';
 import renderSource from './render.ts?raw';
 import serverSource from './server.mjs?raw';
 import { cutAtRoot, ROOT_END, ROOT_START } from './page';
-import { createRenderer, EDGE_RULE, EDGE_VARY, RENDERED_HEADER } from './render';
+import { createRenderer, EDGE_RULE, EDGE_VARY, postFor, RENDERED_HEADER } from './render';
 import { REVIEW_STOPS } from '../src/lib/reviewStops';
 
 /** Text as React writes it into HTML: the five characters an attribute or a text node escapes. */
@@ -83,6 +83,20 @@ const PULSE = {
   visits_by_day: [61, 70, 58],
 };
 
+/** One published post as /api/blog/posts answers it, with two slides. */
+const POST = {
+  slug: 'a-post-with-a-hook',
+  title: 'A post with a hook',
+  summary: 'The summary its hook draws, with 2 numbers in it.',
+  images: [1, 2].map((position) => ({
+    position,
+    url: `/api/blog/images/slide-${position}.png`,
+    alt_text: `Slide ${position}`,
+    width: 1080,
+    height: 1350,
+  })),
+};
+
 /** Every request the renderer made, with the headers it sent: what the service reaches, and with what. */
 type Asked = { url: string; headers: Record<string, string> };
 
@@ -104,6 +118,7 @@ function fakeApi(build = OWN, broken: string[] = []) {
       return json({ makes: [], body_styles: [], title_statuses: [], provinces: [] });
     if (path === `/api/vehicles/${vehicle.id}`) return json(vehicle);
     if (path === '/api/pulse') return json(PULSE);
+    if (path === '/api/blog/posts') return json({ posts: [POST] });
     if (path === '/api/auth/me')
       return json({ signed_in: true, email: 'reader@example.com', member_since_ms: NOW });
     if (path.startsWith('/api/docs/'))
@@ -152,6 +167,17 @@ describe('the rendering service', () => {
     expect(review).toContain('<title>Check my work in ten minutes | Steven Stout</title>');
     const bare = (await page('')).html;
     expect(bare).not.toContain('Check my work in ten minutes | Steven Stout');
+  });
+
+  it('draws a post address with its hook, the title, summary and first image, from the posts it read for the head (ADR-132)', async () => {
+    const { html } = await page(`?view=blog&post=${POST.slug}`);
+    const hook = html.slice(html.indexOf('data-hook="post"'));
+    expect(hook).toContain(POST.title);
+    expect(hook).toContain(POST.summary);
+    expect(hook).toContain('src="/api/blog/images/slide-1.png"');
+    expect(hook).not.toContain('slide-2.png"');
+    expect(postFor('view=blog&post=no-such-post', [POST])).toBeNull();
+    expect(postFor('view=blog', [POST])).toBeNull();
   });
 
   it('sends the API page as it is while the API runs another build, so the browser draws it', async () => {

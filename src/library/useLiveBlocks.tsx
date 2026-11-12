@@ -11,7 +11,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Ribbons } from '../components/layout/Background/Ribbons';
 import { NavGlyph } from '../components/shared/SheetIcons';
 import { WorkingLockLook } from '../components/shared/WorkingLock';
-import { QualityTrend } from '../components/quality/QualityTrend';
+import { QualityTrend } from '../components/shared/QualityTrend';
 import { parseTrend } from '../lib/qualityTrend';
 import type { NavIcon } from '../lib/siteMap';
 import { DOCS, type DocKey } from './documents';

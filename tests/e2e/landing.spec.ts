@@ -29,10 +29,15 @@ for (const viewport of [
     }) => {
       await openTheYard(page, '/');
       await expect(
-        page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
+        page.getByRole('heading', {
+          level: 1,
+          name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+        })
       ).toBeVisible();
       await expect(page.getByTestId('view-announcement')).toHaveText('The Yard, home');
       await expect(page.getByTestId('landing')).toContainText('Steven Stout');
+      // The hook took the welcome card's place (ADR-132): its sentence is the heading above, its link the Quality page.
+      await expect(page.getByTestId('hook')).toHaveAttribute('data-hook', 'landing');
       await expect(page.getByTestId('landing')).toContainText('built and run by one engineer');
 
       const names = await page
@@ -301,7 +306,12 @@ test('the Inventory tile opens the inventory at its own address, and Back return
   await expect(page.getByRole('heading', { level: 1, name: 'Inventory' })).toBeVisible();
   await expect(page).toHaveURL(/view=inventory/);
   await page.goBack();
-  await expect(page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+    })
+  ).toBeVisible();
 });
 
 test('a section tile opens the first document its sidebar section opens', async ({ page }) => {
@@ -342,7 +352,10 @@ test.describe('the docked rail', () => {
     await expect(rail.locator('[aria-current="page"]')).toHaveText('Inventory');
     await rail.getByRole('button', { name: 'Home', exact: true }).click();
     await expect(
-      page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })
+      page.getByRole('heading', {
+        level: 1,
+        name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+      })
     ).toBeVisible();
     await expect(rail.locator('[aria-current="page"]')).toHaveText('Home');
   });
@@ -363,7 +376,12 @@ test('Admin opened from the landing page says it goes back home, and does', asyn
   const back = page.getByRole('button', { name: 'Back to home' });
   await expect(back).toBeVisible();
   await back.click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Welcome to The Yard' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+    })
+  ).toBeVisible();
   // By its address there is nothing behind it, and the button says where it goes instead.
   await openTheYard(page, '/?view=admin');
   await expect(page.getByRole('button', { name: 'Back to inventory' })).toBeVisible();

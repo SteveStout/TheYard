@@ -9,7 +9,8 @@ namespace TheYard.Api.Features.Docs;
 /// the link's code when it is one, and the same locked PDF embedded below it. Served on the diagram
 /// pages' pattern (ADR-020): one small HTML document with the palette inline, a viewport line and
 /// the site's own font, nothing fetched from another host. Under 640 pixels the embed is hidden and
-/// the PDF's own link is the primary pill, because a phone draws an embedded PDF badly or not at all.
+/// the PDF's own link is the primary pill, because a phone draws an embedded PDF badly or not at all. Above the band
+/// sits the door's hook (ADR-132, A hook on every page), its entry of data/hooks.json.
 /// </summary>
 public static class ResumePage
 {
@@ -31,12 +32,14 @@ public static class ResumePage
     /// <summary>
     /// The door for a visit through <paramref name="door"/> (one of ResumeDoor.Doors, or other), with the route's
     /// link carrying <paramref name="code"/> only when it is a link code, and <paramref name="face"/> as the style
-    /// line that declares the site's face from its own file (SiteFace), or none for the fallback face.
+    /// line that declares the site's face from its own file (SiteFace), or none for the fallback face, and
+    /// <paramref name="hook"/> as the door's hook (PageHooks, ADR-132), the first box on the page, or none.
     /// </summary>
     /// <param name="door">The door word, never the raw query.</param>
     /// <param name="code">The link's r= value, or null.</param>
     /// <param name="face">The site's face, or empty.</param>
-    public static string Html(string door, string? code, string face = "")
+    /// <param name="hook">The hook box, or empty.</param>
+    public static string Html(string door, string? code, string face = "", string hook = "")
     {
         string e(string value) => WebUtility.HtmlEncode(value);
         string route = LinkCodes.IsOne(code) ? $"/review?r={code}" : "/review";
@@ -60,6 +63,9 @@ public static class ResumePage
               .band p { flex: 1 1 320px; margin: 0; font-weight: 600; color: #10495a; }
               .band a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1.5px solid #12677f; border-radius: 999px; text-decoration: none; font-weight: 600; color: #12677f; }
               .band a.primary { background: #12677f; color: #ffffff; }
+              .hook { flex: none; padding: 12px 16px; background: rgba(255, 255, 255, 0.92); border-left: 3px solid #b8923f; }
+              .hook-line { margin: 0 0 4px; font-size: 18px; font-weight: 600; line-height: 1.4; color: #3f3a37; }
+              .hook-link { font-weight: 600; color: #12677f; }
               iframe { flex: 1 1 auto; width: 100%; min-height: 70vh; border: 0; }
               @media (max-width: 639px) {
                 iframe, .below { display: none; }
@@ -69,6 +75,7 @@ public static class ResumePage
             </style>
             </head>
             <body>
+            {{hook}}
             <header class="band" data-testid="resume-band">
               <p><span class="below">{{e(Below)}} </span>{{e(Band)}}</p>
               <a class="primary" href="{{e(route)}}">{{e(RouteLink)}}</a>

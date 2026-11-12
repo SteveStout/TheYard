@@ -1,0 +1,56 @@
+{
+  "about": "The hook on each page a reader is sent to (ADR-132, A hook on every page): one entry a page, what its first screen says before anything else. The React build reads this file for the landing, a blog post, the Quality page and the review route; the API reads it for /about and the resume door. Every line is copied word for word from the source it names, and a count is never typed here: {recommendations} is read from data/recommendations.json when the page is drawn.",
+  "hooks": [
+    {
+      "page": "landing",
+      "path": "/",
+      "lines": ["Fifteen quality numbers are measured on every version and none may get worse."],
+      "source": "Steve's own sentence, section 2b of the showcase text of 10 November, word for word",
+      "chart": { "number": "async_without_cancellation", "label": "Async methods with no CancellationToken", "direction": "may only fall" },
+      "link": { "label": "Every number, on the Quality page", "href": "/?doc=quality" }
+    },
+    {
+      "page": "about",
+      "path": "/about",
+      "lines": [
+        "Sustained 200+ software releases on a live financial platform",
+        "Sole engineer for the last three of five years"
+      ],
+      "source": "The resume of 10 November, the first two bullets under Conway Investment Research, word for word",
+      "chart": null,
+      "link": { "label": "Both lines are from the resume", "href": "/resume" }
+    },
+    {
+      "page": "post",
+      "path": "/?view=blog&post=",
+      "lines": [],
+      "source": "The post itself: its title, its summary and its first image, as the blog answers them",
+      "chart": null,
+      "link": null
+    },
+    {
+      "page": "resume",
+      "path": "/resume",
+      "lines": ["Fifteen quality numbers are measured on every version and none may get worse."],
+      "source": "Steve's own sentence, section 2b of the showcase text of 10 November, word for word",
+      "chart": null,
+      "link": { "label": "Read the {recommendations} recommendations", "href": "/recommendations" }
+    },
+    {
+      "page": "quality",
+      "path": "/?doc=quality",
+      "lines": [],
+      "source": "The page's own first paragraph and first chart, docs/quality/QUALITY.md",
+      "chart": null,
+      "link": null
+    },
+    {
+      "page": "review",
+      "path": "/?view=review",
+      "lines": [],
+      "source": "Stop 1's own content, src/lib/reviewStops.ts",
+      "chart": null,
+      "link": null
+    }
+  ]
+}

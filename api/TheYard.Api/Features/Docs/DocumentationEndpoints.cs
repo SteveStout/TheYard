@@ -168,8 +168,15 @@ public static class DocumentationEndpoints
         // The Yard name the request arrived on, then Site:Url, then the request's own address.
         string site = hosts.LinkOrigin(http);
         var reply = File.Exists(paths.RecommendationsPath) ? RecommendationsFile.Of(paths.RecommendationsPath) : null;
-        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply)), "text/html; charset=utf-8");
+        string hook = PageHooks.Html(PageHooks.Of(paths.HooksPath), "about", HookCounts(reply));
+        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply), hook), "text/html; charset=utf-8");
     }
+
+    /// <summary>The counts a hook's link may name, each read from its own file: none when the file is missing or out of shape.</summary>
+    private static Dictionary<string, int> HookCounts(RecommendationsReply? reply) =>
+        reply is null || RecommendationsFile.Problems(reply).Count > 0
+            ? []
+            : new() { ["recommendations"] = reply.Recommendations.Count };
 
     private static ContentHttpResult Bicep(HostPaths paths) =>
         TypedResults.Text("# infra/main.bicep" + "\n\nWhat runs, as code: one App Service plan, the one web app that serves both sites and The Shed (the module below it) and the rendering service's web app (infra/render.bicep), with Azure Front Door and the origin lock behind a parameter that stays off while the subscription refuses Front Door. Deployed in incremental mode only; the Hosting overview explains both.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "main.bicep")) + "\n```\n\n## infra/appservice.bicep\n\nThe plan and the one web app: the three names it answers to and every setting it carries.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "appservice.bicep")) + "\n```\n", "text/markdown");
@@ -197,7 +204,9 @@ public static class DocumentationEndpoints
         http.Items[ResumeDoor.ItemKey] = ResumeDoor.PathFor(src);
         if (pdf is null && AsksForAPage(http.Request))
         {
-            return TypedResults.Content(ResumePage.Html(ResumeDoor.Of(src), r, SiteFace.StyleFor(paths.AssetsRoot)), "text/html; charset=utf-8");
+            var reply = File.Exists(paths.RecommendationsPath) ? RecommendationsFile.Of(paths.RecommendationsPath) : null;
+            string hook = PageHooks.Html(PageHooks.Of(paths.HooksPath), "resume", HookCounts(reply));
+            return TypedResults.Content(ResumePage.Html(ResumeDoor.Of(src), r, SiteFace.StyleFor(paths.AssetsRoot), hook), "text/html; charset=utf-8");
         }
         http.Response.Headers.ContentDisposition = $"inline; filename=\"{ResumeDoor.FileName}\"";
         return TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");

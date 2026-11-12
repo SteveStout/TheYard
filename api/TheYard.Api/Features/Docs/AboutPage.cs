@@ -65,9 +65,10 @@ public static class AboutPage
     /// The same page with <paramref name="leadImage"/> as the picture beside How I
     /// lead, or none when it is null, and <paramref name="face"/> as the style line that
     /// declares the site's face from its own file (SiteFace), or none for the fallback face, and
-    /// <paramref name="vouches"/> as the list of what colleagues said (AboutRecommendations), or none.
+    /// <paramref name="vouches"/> as the list of what colleagues said (AboutRecommendations), or none, and
+    /// <paramref name="hook"/> as the page's hook (PageHooks, ADR-132), the first box under the title, or none.
     /// </summary>
-    public static string Render(string siteUrl, string? leadImage, string face = "", string vouches = "")
+    public static string Render(string siteUrl, string? leadImage, string face = "", string vouches = "", string hook = "")
     {
         string site = siteUrl.TrimEnd('/');
         string canonical = site + "/about";
@@ -132,6 +133,11 @@ public static class AboutPage
               .op-glass::before { left: -1px; top: -3px; border-width: 3px 0 0 2px; border-top-left-radius: 10px; }
               .op-glass::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 10px; }
               h1 { display: inline-block; margin: 0; padding-bottom: 4px; font-size: 32px; line-height: 1.2; color: #3f3a37; border-bottom: 3px solid #b8923f; border-image: linear-gradient(90deg, #7d582e 0%, #c9a95c 30%, #e6cb7e 50%, #ad8e57 80%, #7d582e 100%) 1; }
+              .hook { position: relative; margin: 0 0 20px; padding: 12px 16px; background: rgba(222, 234, 237, 0.6); border: 1px solid rgba(16, 73, 90, 0.18); border-top: 3px solid #b8923f; border-radius: 8px; }
+              .hook::before { content: ''; position: absolute; left: -1px; top: -3px; width: 18px; height: 18px; border: solid #10495a; border-width: 3px 0 0 2px; border-top-left-radius: 10px; pointer-events: none; }
+              .hook-lines { margin: 0 0 6px; padding: 0; list-style: none; }
+              .hook-lines li { margin: 0 0 4px; font-size: 18px; font-weight: 600; line-height: 1.4; color: #10495a; }
+              .hook-link { font-size: 14px; font-weight: 600; }
               .title { margin: 8px 0 20px; font-size: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #10495a; }
               p { margin: 0 0 16px; }
               a { color: #12677f; }
@@ -166,6 +172,7 @@ public static class AboutPage
             <article class="op-glass">
             <h1>Steven Stout</h1>
             <p class="title">{{e(JobTitle)}}</p>
+            {{hook}}
             <p>A Lead / Staff .NET engineer who owns platform architecture end to end, from REST API design through the deployment pipeline it ships on. Twelve years full stack .NET and seven fully remote. Most recently the first lead-level engineering hire at Storee, where I set the architecture, built the team, and consolidated four applications onto a single .NET 10 platform on Azure without interrupting production releases.</p>
             <p><a href="/">TheYard</a> is a used-vehicle auction platform I built and run on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and on Azure Cosmos DB. It is the working proof of how I build: read <a href="/?doc=performance">how it performs</a>, <a href="https://github.com/SteveStout/TheYard/tree/main/docs">the decision records</a> behind each choice, <a href="/api/reference">the API reference</a>, <a href="https://github.com/SteveStout/TheYard/blob/main/data/test-results.json">the test record</a> of the gate every version passes, and <a href="/?doc=incidents">a postmortem</a> when it breaks.</p>
             <section class="lead" aria-labelledby="how-i-lead">

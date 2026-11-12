@@ -2,7 +2,7 @@
  * Does:      Reads the address the page opened on into the views it names: the filters, the sort, the vehicle, the Admin
  *            card, the document, the blog, the review route and the reset token.
  * Does not:  Keep any of them or write the address bar (useAddressBar.ts does both).
- * Used by:   useAddressBar.ts, loaders.ts.
+ * Used by:   useAddressBar.ts, loaders.ts, render.ts.
  */
 import { filtersFromSearchParams, opensInventory } from '../lib/inventory';
 import { cardFromAddress, pinFromAddress } from '../lib/workbench';
