@@ -55,25 +55,44 @@ resource alertGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   }
 }
 
+// zeroresult1112 rung 2: the run line reads too. A run that wrote outcome=failed or outcome=blocked on its own
+// "process:" line emails, not only a host request that failed, because a pass whose parts failed returns normally
+// (11 inbox passes in a row on 403 from 04:20 CST 11/12 emailed nothing). One alert instance a process (the
+// dimension), so a break that is already firing, such as the Sheet mirror held behind a BANNED row, cannot hide a
+// new one; and the run lines are read over three hours, so a break that fails every other pass is one break, and
+// autoMitigate sends one email for it. Replayed over 11/5 to 11/12 before it was written: 17 emails, one to three
+// a day, every one a real break (the campaign's 403 since 10/27, BoardScan's empty 01:00 scans 11/6 to 11/9, the
+// Sheet's hold, the network pass's SQL and Gmail failures). So it is deployed only once a fresh seven-day replay
+// shows no day with more than one (J:\mentor\ZERORESULT1112-DONE-2026-11-12.md).
 resource deadFunction 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
   name: 'alert-jobhunt-dead-function'
   location: location
   tags: tags
   properties: {
-    displayName: 'A job hunt Function failed, or the Merger stopped'
-    description: 'Any failed invocation of any function in func-jobhunt-ss in the last 30 minutes, or no Merger invocation in the last 10 (it runs every minute).'
+    displayName: 'A job hunt Function failed, a run came to failed or blocked, or the Merger stopped'
+    description: 'Any failed invocation in func-jobhunt-ss in the last 30 minutes, any run line that came to failed or blocked in the last three hours, or no Merger invocation in the last 10 (it runs every minute); one alert a process.'
     severity: 2
     enabled: true
     evaluationFrequency: 'PT10M'
-    windowSize: 'PT30M'
+    windowSize: 'PT3H'
     scopes: [
       appInsights.id
     ]
     criteria: {
       allOf: [
         {
-          query: 'let failed = toscalar(requests | where timestamp > ago(30m) and success == false | count); let merged = toscalar(requests | where timestamp > ago(10m) and name == "Merger" | count); print failed = failed, merged = merged | where failed > 0 or merged == 0'
-          timeAggregation: 'Count'
+          query: 'union (traces | where timestamp > ago(3h) and message startswith "process:" | extend outcome = extract(@"outcome=(\\w+)", 1, message) | where outcome in ("failed", "blocked") | project process = extract(@"process:(\\w+)", 1, message)), (requests | where timestamp > ago(30m) and success == false | project process = name), (requests | where timestamp > ago(10m) | summarize merged = countif(name == "Merger") | where merged == 0 | project process = "Merger") | summarize failures = count() by process'
+          timeAggregation: 'Total'
+          metricMeasureColumn: 'failures'
+          dimensions: [
+            {
+              name: 'process'
+              operator: 'Include'
+              values: [
+                '*'
+              ]
+            }
+          ]
           operator: 'GreaterThan'
           threshold: 0
           failingPeriods: {
