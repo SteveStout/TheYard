@@ -118,6 +118,7 @@ I live in St. Charles, Missouri. It was the first state capital of Missouri and 
 
 If any of this sounds like someone you would want on your team, I would enjoy the conversation.
 
+- [Email Steven](mailto:stevenstout11@gmail.com)
 - [Message me on LinkedIn](https://www.linkedin.com/in/stevenwstout)
 - [Read my resume](https://theyard.stevenstout.biz/api/docs/resume)
 
