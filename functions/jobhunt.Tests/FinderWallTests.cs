@@ -120,7 +120,7 @@ public sealed class FinderWallTests
         string line = await search.RunAsync(CancellationToken.None);
 
         Assert.Equal(0, inner.Calls);
-        Assert.Contains("refused: walled", line, StringComparison.Ordinal);
+        Assert.Contains("stopped: walled until", line, StringComparison.Ordinal);
         Assert.False(File.Exists(Path.Combine(root, "campaign", "finder", "hunter-2026-11-asked.txt")));
     }
 
@@ -153,6 +153,8 @@ public sealed class FinderWallTests
         public Task<IReadOnlyList<WaitingLead>> WaitingAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<WaitingLead>>(waiting);
 
         public Task SetAddressAsync(long leadId, string address, string sourceUrl, bool? mx, DateTimeOffset at, CancellationToken ct) => Task.CompletedTask;
+
+        public Task<int> WithAddressAsync(IReadOnlyCollection<long> leadIds, CancellationToken ct) => Task.FromResult(0);
     }
 
     private sealed class Mx : IMxCheck
