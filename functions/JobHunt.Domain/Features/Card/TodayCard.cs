@@ -9,7 +9,7 @@ namespace JobHunt.Domain.Features.Card;
 /// <param name="Queue">Its text.</param>
 /// <param name="Drafts">Each draft the queue or the carried reads name that exists, by its path from the share's root.</param>
 /// <param name="DoNotSend">The drafts with a DO-NOT-SEND note beside them.</param>
-/// <param name="Gates">Each draft's .gate.md first line, by the draft's path.</param>
+/// <param name="Gates">Each draft's .gate.md text, by the draft's path (TodayReplies.Gate reads it).</param>
 /// <param name="Status">dispatch/STATUS.md.</param>
 /// <param name="LeftForSteve">dispatch/LEFT-FOR-STEVE.md.</param>
 /// <param name="Answered">dispatch/ANSWERED.md.</param>
@@ -49,7 +49,9 @@ public sealed record TodayInputs(
 /// the replies with each draft in full, the calls in the next 72 hours with their must-answers, the lanes, what closed
 /// lanes left for him, the walls (Mondays, or when a human there has replied), one decision, and the rejection reads
 /// carried forward. Anything he has answered (ANSWERED.md) and any draft with a DO-NOT-SEND note beside it is never
-/// shown. Capped at 15 minutes: over it, the held replies fold into one line.
+/// shown. Capped at 15 minutes: over it, the held replies fold into one line. The replies hold only what needs his
+/// word (TodayHandled), oldest first (TodayHistory), each led by its red flag verdict and fit line (TodayReplies); a
+/// decision left for him prints once (TodayLeft), and the proposed lanes are a count and the ones a lane asks a yes on.
 /// </summary>
 public static class TodayCard
 {
@@ -85,31 +87,29 @@ public static class TodayCard
     public static int Minutes(string text) =>
         Math.Max(1, (int)Math.Ceiling(text.Split((char[])[' ', '\n', '\r', '\t'], StringSplitOptions.RemoveEmptyEntries).Length / (double)WordsAMinute));
 
-    /// <summary>Every draft path the card may show: the queue's, and the ones the carried rejection reads name.</summary>
+    /// <summary>Every draft path the card may show: the queue's, the ones its held items keep, and the ones the carried rejection reads name.</summary>
     /// <param name="queue">The reply queue.</param>
     /// <param name="previous">TODAY.md before this card.</param>
     public static IReadOnlyList<string> DraftPaths(string queue, string previous) =>
-        [.. TodayParts.Items(queue).Select(i => i.Draft).Concat(TodayReads.Carried(previous).Select(TodayReads.DraftOf)).Where(p => p.Length > 0).Distinct(StringComparer.Ordinal)];
+        [.. TodayParts.Items(queue).Select(TodayReplies.Kept).Concat(TodayReads.Carried(previous).Select(TodayReads.DraftOf)).Where(p => p.Length > 0).Distinct(StringComparer.Ordinal)];
 
     private static string Draw(TodayInputs inputs, bool fold)
     {
         var answered = TodayParts.Answered(inputs.Answered);
         var items = TodayParts.Items(inputs.Queue).Where(i => Shown(i, inputs, answered)).ToList();
-        var emails = items.Where(i => i.Section == "A" && i.IsEmail && inputs.Drafts.ContainsKey(i.Draft)).ToList();
-        var left = TodayParts.Left(inputs.LeftForSteve, inputs.At).Where(s => s.Closed > inputs.At.AddDays(-1) && s.Closed <= inputs.At).ToList();
+        var everyLeft = TodayParts.Left(inputs.LeftForSteve, inputs.At).Where(s => s.Closed <= inputs.At).ToList();
+        var left = everyLeft.Where(s => s.Closed > inputs.At.AddDays(-1)).ToList();
         var critical = left.SelectMany(s => s.Blocks.Where(Critical).Select(b => (s.Lane, Block: b))).Where(c => !TodayParts.IsAnswered(c.Block, answered)).ToList();
+        var decisions = TodayLeft.Decisions(everyLeft, answered);
         var reads = TodayReads.Rebuild(inputs, items.Where(i => i.Section == "E").ToList(), answered);
         var body = new StringBuilder();
 
         body.Append("## CRITICAL sends\n\n");
-        int n = 0;
-        foreach (var mail in emails)
-        {
-            n++;
-            body.Append(CultureInfo.InvariantCulture, $"{n}. CRITICAL, an email under your name to {mail.Who}, a reply on {mail.Reference}. Full text:\n");
-            Quote(body, inputs.Drafts[mail.Draft]);
-            body.Append(CultureInfo.InvariantCulture, $"   {Gate(inputs, mail.Draft)}Draft: {mail.Draft}. Say \"send\", or edit it.\n");
-        }
+        var sectionA = TodayHistory.Oldest(inputs, [.. items.Where(i => i.Section == "A")]);
+        var handled = sectionA.Where(i => TodayHandled.Is(inputs, i)).ToList();
+        var replies = sectionA.Where(i => !TodayHandled.Is(inputs, i)).ToList();
+        var sends = TodayReplies.Sends(inputs, replies);
+        TodayReplies.Critical(body, inputs, sends);
         foreach (var (lane, block) in critical)
         {
             body.Append(block).Append(CultureInfo.InvariantCulture, $" ({lane})\n");
@@ -119,7 +119,7 @@ public static class TodayCard
         {
             body.Append(CultureInfo.InvariantCulture, $"- {asks} feedback {(asks == 1 ? "ask" : "asks")}, each in full under Rejection reads at the end.\n");
         }
-        if (n == 0 && critical.Count == 0 && asks == 0)
+        if (sends.Count == 0 && critical.Count == 0 && asks == 0)
         {
             body.Append("- None.\n");
         }
@@ -131,17 +131,17 @@ public static class TodayCard
         }
 
         body.Append(CultureInfo.InvariantCulture, $"\n## Replies ({inputs.QueuePath ?? "no reply run of the day wrote a queue"}, section A)\n\n");
-        Replies(body, inputs, items.Where(i => i.Section == "A").ToList(), fold);
+        TodayReplies.Draw(body, inputs, replies, handled, fold);
 
         body.Append("\n## Calls in the next 72 hours (Google Calendar; must-answers from NOTES-<COMPANY>.md)\n\n");
         Bullets(body, inputs.Calls, "No interview or call on the calendar in the next 72 hours.");
 
         body.Append(CultureInfo.InvariantCulture, $"\n## The lanes (dispatch/STATUS.md, {TodayParts.Written(inputs.Status) ?? "no time line"})\n\n");
-        Bullets(body, TodayParts.Lanes(inputs.Status), "Nothing running, held or proposed.");
+        Bullets(body, TodayParts.Lanes(inputs.Status, TodayLeft.Asks(everyLeft, decisions, answered, TodayParts.Proposed(inputs.Status))), "Nothing running, held or proposed.");
 
         body.Append("\n## Left for you by lanes that closed in the last 24 hours (dispatch/LEFT-FOR-STEVE.md)\n\n");
-        var sections = left.Select(s => (s, Blocks: s.Blocks.Where(b => !Critical(b) && !TodayParts.IsAnswered(b, answered)).ToList())).Where(x => x.Blocks.Count > 0).ToList();
-        if (sections.Count == 0)
+        var (sections, closed) = TodayLeft.Shown([.. left.Select(s => (s, (IReadOnlyList<string>)[.. s.Blocks.Where(b => !Critical(b) && !TodayParts.IsAnswered(b, answered))]))], decisions);
+        if (sections.Count == 0 && closed.Count == 0)
         {
             body.Append("- None.\n");
         }
@@ -153,6 +153,10 @@ public static class TodayCard
                 body.Append(block).Append('\n');
             }
             body.Append('\n');
+        }
+        foreach (var decision in closed)
+        {
+            body.Append(CultureInfo.InvariantCulture, $"- Closed as its default after {decision.Cards} cards with no answer: **{decision.Letter}. {decision.Title}** (default: {decision.Default}).\n");
         }
 
         bool monday = inputs.At.DayOfWeek == DayOfWeek.Monday;
@@ -190,38 +194,6 @@ public static class TodayCard
         return head.Append(text).ToString();
     }
 
-    private static void Replies(StringBuilder body, TodayInputs inputs, IReadOnlyList<TodayItem> replies, bool fold)
-    {
-        int mail = 0;
-        var held = replies.Where(r => !inputs.Drafts.ContainsKey(r.Draft)).ToList();
-        foreach (var reply in replies.Where(r => inputs.Drafts.ContainsKey(r.Draft)))
-        {
-            if (reply.IsEmail)
-            {
-                mail++;
-                body.Append(CultureInfo.InvariantCulture, $"- **{reply.Who}**, email: the full text is CRITICAL send {mail} above.\n");
-                continue;
-            }
-            body.Append(CultureInfo.InvariantCulture, $"- **{reply.Who}**, LinkedIn ({reply.Reference}). {Gate(inputs, reply.Draft)}The draft, typed live in the thread for your send once you say \"send\" or edit it:\n");
-            Quote(body, inputs.Drafts[reply.Draft]);
-        }
-        if (fold && held.Count > 0)
-        {
-            body.Append(CultureInfo.InvariantCulture, $"- {held.Count} held {(held.Count == 1 ? "reply" : "replies")} with no draft, each with its reason, in {inputs.QueuePath}.\n");
-        }
-        else
-        {
-            foreach (var reply in held)
-            {
-                body.Append(CultureInfo.InvariantCulture, $"- **{reply.Who}**, held: {(reply.Draft.Length > 0 ? $"the draft {reply.Draft} is not on the share" : reply.Held)}\n");
-            }
-        }
-        if (replies.Count == 0)
-        {
-            body.Append(inputs.QueuePath is null ? "- Not read: no reply run of the day wrote linkedin-queue.md.\n" : "- None in the newest reply queue.\n");
-        }
-    }
-
     private static bool Shown(TodayItem item, TodayInputs inputs, IReadOnlyList<string> answered)
     {
         if (TodayParts.IsAnswered(item.Who + " " + item.Held, answered) || inputs.DoNotSend.Contains(item.Draft))
@@ -236,17 +208,6 @@ public static class TodayCard
     }
 
     private static bool Critical(string block) => block.TrimStart('-', ' ', '*').StartsWith("CRITICAL", StringComparison.Ordinal);
-
-    private static string Gate(TodayInputs inputs, string draft) =>
-        inputs.Gates.TryGetValue(draft, out string? gate) && gate.Length > 0 ? $"Gate: {gate} " : string.Empty;
-
-    private static void Quote(StringBuilder body, string text)
-    {
-        foreach (string line in TodayParts.Lines(text.Trim()))
-        {
-            body.Append("   > ").Append(line).Append('\n');
-        }
-    }
 
     private static void Bullets(StringBuilder body, IReadOnlyList<string> lines, string? none)
     {
