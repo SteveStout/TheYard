@@ -57,7 +57,8 @@ export function BlogPage({
   const list = posts.state === 'ready' ? posts.posts : [];
   const named = slug === null ? null : (list.find((post) => post.slug === slug) ?? null);
   const tags = [...new Set(list.flatMap((post) => post.tags))].slice(0, 6);
-  const shares = sourceShares(stats?.sources ?? []);
+  // Four rows at most, the four sources the site names, so the box has its size before its read answers.
+  const shares = sourceShares(stats?.sources ?? []).slice(0, 4);
 
   return (
     <section className={styles.page} aria-labelledby="blog-title" data-testid="blog-page">
@@ -84,7 +85,10 @@ export function BlogPage({
       </p>
 
       <div className={styles.layout}>
-        <div className={styles.list} data-testid="blog-list">
+        <div
+          className={posts.state === 'loading' ? `${styles.list} ${styles.reading}` : styles.list}
+          data-testid="blog-list"
+        >
           {posts.state === 'loading' && <p className={styles.note}>Reading the posts...</p>}
           {posts.state === 'unavailable' && (
             <p className={styles.note}>The blog cannot be read now. The rest of the site can.</p>
@@ -130,23 +134,25 @@ export function BlogPage({
           </section>
           <section className={`${styles.box} op-glass`} data-testid="blog-sources">
             <h2 className={styles.boxTitle}>Where readers came from</h2>
-            {shares.length === 0 ? (
-              <p className={styles.note}>No reads in the last 30 days yet.</p>
-            ) : (
-              <dl className={styles.sources}>
-                {shares.map((share) => (
-                  <div key={share.source} className={styles.source}>
-                    <dt>{share.label}</dt>
-                    <dd>
-                      <span className={styles.meter} aria-hidden="true">
-                        <i style={{ width: `${share.share}%` }} />
-                      </span>
-                      {share.share}%
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            )}
+            <div className={styles.sourcesBody}>
+              {shares.length === 0 ? (
+                <p className={styles.note}>No reads in the last 30 days yet.</p>
+              ) : (
+                <dl className={styles.sources}>
+                  {shares.map((share) => (
+                    <div key={share.source} className={styles.source}>
+                      <dt>{share.label}</dt>
+                      <dd>
+                        <span className={styles.meter} aria-hidden="true">
+                          <i style={{ width: `${share.share}%` }} />
+                        </span>
+                        {share.share}%
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
           </section>
         </aside>
       </div>

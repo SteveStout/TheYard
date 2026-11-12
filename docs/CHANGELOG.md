@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): On a phone the blog and its posts hold still while they load, where they jumped by four to six times the layout shift Google counts as good, and the resume door no longer says the resume is below when a phone has nothing below.
 - **@VER@** (@DATE@): Every answer says in a Server-Timing header how many milliseconds the app spent on it, and a drawn page how long it waited for its frame, so a slow first visit can be split between the wire and the site.
 - **@VER@** (@DATE@): /resume serves the resume locked on 10 November, byte for byte the send copy, and About says Storee's platform is .NET 10, as that resume does.
 - **1.0.5.34** (2026-11-11): A person who writes back on a job thread, one whose address or company the tracker already knows, now gets a draft reply in Steve's voice queued within five minutes, while a personal thread gets none, with one line about it on his morning card; the draft is put into that Gmail thread only when a setting says live, by code that cannot send, and nothing is ever sent until Steve says send.

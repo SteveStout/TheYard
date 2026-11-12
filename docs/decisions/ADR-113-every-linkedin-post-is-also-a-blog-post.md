@@ -95,3 +95,7 @@ What a post should carry, written for the page: the date of what it answers rath
 ## Addendum, 2026-11-03 (1.0.4.130): the Blog row is third
 
 What stopped being true on this day: the Blog row is no longer directly under Home. The review route (ADR: Ten minutes, seven stops) takes the row under Home, so the rail reads Home, Review in ten minutes, Blog. The row, its NEW POST and the home page's Latest posts band are otherwise as above; `blog.spec.ts` holds the new order.
+
+## Addendum, @DATE@ (@VER@): the blog holds still on a phone
+
+What stopped being true: the blog page drew its frame, then its posts and its sources box as each read answered, so on a phone the page jumped: a layout shift of 0.394 on the blog and 0.666 on a post, read cold at 390 by 844 on 11 November, where Google counts 0.1 as good. While the posts are read, the list now keeps a screen of room, so nothing after it is on the first screen and nothing on the first screen moves when they arrive. The sources box reads an Admin route, so it follows one rule: a public page reads an Admin route only into a box whose size is fixed before the read. It has room for four rows, the four sources the site names, and draws at most four. blog.spec.ts holds both reads back a second and a half on every run and holds the shift at 0.1 or less on the blog and a post, and holds the sources box's height the same before and after its read.

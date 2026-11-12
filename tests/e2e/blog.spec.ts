@@ -145,6 +145,89 @@ test('a read and what the reader does are reported, see more once', async ({ pag
   await expect(page).toHaveURL(/\?view=blog$/);
 });
 
+// #region blog-holds-still
+/**
+ * The blog holds still on a phone while its two reads arrive (ADR-113, the addendum of @VER@): the posts and the
+ * sources box are each held back a second and a half, and the page and a post at 390 by 844 move no more than the
+ * 0.1 of layout shift Google counts as good. Both reads are held on every run, so a page that moves fails every time.
+ */
+for (const address of ['/?view=blog', '/?view=blog&post=a-made-up-second-post']) {
+  test(`${address} holds still at 390 by 844 while its reads arrive`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const held = (json: unknown) => async (route: import('@playwright/test').Route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1_500));
+      await route.fulfill({ json });
+    };
+    await page.route('**/api/blog/posts', held({ posts: POSTS }));
+    await page.route(
+      '**/api/admin/blog',
+      held({
+        kept: null,
+        available: true,
+        posts: [],
+        sources: [
+          { source: 'linkedin', reads: 6 },
+          { source: 'direct', reads: 2 },
+        ],
+      })
+    );
+    await page.addInitScript(() => {
+      (window as unknown as { shift: number }).shift = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as unknown as {
+          value: number;
+          hadRecentInput: boolean;
+        }[]) {
+          if (!entry.hadRecentInput) (window as unknown as { shift: number }).shift += entry.value;
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+
+    await openTheYard(page, address);
+    await expect(page.getByTestId('blog-list').locator('article').first()).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId('blog-sources').locator('dl')).toBeVisible();
+    await page.waitForTimeout(500);
+
+    expect(
+      await page.evaluate(() => (window as unknown as { shift: number }).shift)
+    ).toBeLessThanOrEqual(0.1);
+  });
+}
+test('the sources box, read from an Admin route, has its size before the read answers', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  let answer: () => void = () => {};
+  const answered = new Promise<void>((resolve) => (answer = resolve));
+  await page.route('**/api/blog/posts', (route) => route.fulfill({ json: { posts: POSTS } }));
+  await page.route('**/api/admin/blog', async (route) => {
+    await answered;
+    await route.fulfill({
+      json: {
+        kept: null,
+        available: true,
+        posts: [],
+        sources: [
+          { source: 'linkedin', reads: 6 },
+          { source: 'ref', reads: 3 },
+          { source: 'search', reads: 2 },
+          { source: 'direct', reads: 1 },
+        ],
+      },
+    });
+  });
+  await openTheYard(page, '/?view=blog');
+  const box = page.getByTestId('blog-sources');
+  await expect(box).toBeVisible();
+  const before = (await box.boundingBox())!.height;
+  answer();
+  await expect(box.locator('dl > div')).toHaveCount(4);
+  expect((await box.boundingBox())!.height).toBe(before);
+});
+// #endregion blog-holds-still
+
 test('the blog route answers from the store behind it', async ({ request }) => {
   const answer = await request.get('http://localhost:5210/api/blog/posts');
   expect([200, 503]).toContain(answer.status());
