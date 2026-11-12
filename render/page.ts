@@ -45,6 +45,9 @@ const KEEP_MS = 15_000;
 /** How long a read that failed is kept, so an API that is back is drawn for again at once. */
 const KEEP_FAILED_MS = 2_000;
 
+/** How many API origins' posts are kept at once; the service asks two, and the origin asked longest ago goes first. */
+export const KEPT_ORIGINS = 4;
+
 /** The agent on every read this service makes, so the Site activity card counts them as the site's own. */
 export const SELF_READ = 'TheYard-SelfRead/1 (render)';
 
@@ -79,7 +82,12 @@ export function keptPosts(read: typeof fetch = fetch) {
   const kept = new Map<string, { at: number; posts: Promise<PostHead[]> }>();
   return (apiOrigin: string): Promise<PostHead[]> => {
     const hit = kept.get(apiOrigin);
-    if (hit && Date.now() - hit.at < KEEP_MS) return hit.posts;
+    kept.delete(apiOrigin); // set again below, so the Map's order is the order the origins were last asked in
+    if (hit && Date.now() - hit.at < KEEP_MS) {
+      kept.set(apiOrigin, hit);
+      return hit.posts;
+    }
+    if (kept.size >= KEPT_ORIGINS) kept.delete(kept.keys().next().value!);
     const posts = read(`${apiOrigin}/api/blog/posts`, {
       headers: { 'User-Agent': SELF_READ },
       signal: AbortSignal.timeout(2_000),
