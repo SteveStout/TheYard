@@ -16,8 +16,8 @@ public static partial class RunLines
     /// <summary>The prefix every run line opens with, which the card's query finds them by.</summary>
     public const string Prefix = "process:";
 
-    /// <summary>Writes the run's line once, at its end.</summary>
-    public static void Write(ILogger log, RunLine run, DateTimeOffset ended) => Line(log, run.Text(ended));
+    /// <summary>Writes the run's line once, at its end, after its floor is read (RunFloors).</summary>
+    public static void Write(ILogger log, RunLine run, DateTimeOffset ended) => Line(log, RunFloors.Apply(run).Text(ended));
 
     /// <summary>Keeps each named count a pattern finds in a part's line; a pattern that finds nothing keeps nothing.</summary>
     public static RunLine Counted(RunLine run, string text, params (string Name, string Pattern)[] counts)
