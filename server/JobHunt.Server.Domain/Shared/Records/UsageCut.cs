@@ -32,7 +32,8 @@ public static class UsageCut
     /// <param name="report">The lane's report.</param>
     /// <param name="runId">The run's id.</param>
     /// <param name="slot">The run's slot: the morning's reads 06:00, and a slot run for one role the Central time it started.</param>
-    public static string Document(string usageJson, LaneReport report, string runId, string slot = RunSlot.Hour)
+    /// <param name="exit">The lane's exit code as text, or null for none: the post then has no exit field.</param>
+    public static string Document(string usageJson, LaneReport report, string runId, string slot = RunSlot.Hour, string? exit = null)
     {
         JsonNode? usage = JsonNode.Parse(usageJson);
         var document = new JsonObject
@@ -51,6 +52,10 @@ public static class UsageCut
             ["mode"] = RunSlot.Word(report.Lane) + (report.Dry ? "-dry" : string.Empty),
             ["at"] = report.Started.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
         };
+        if (exit is not null)
+        {
+            document["exit"] = exit;
+        }
         return document.ToJsonString();
     }
 

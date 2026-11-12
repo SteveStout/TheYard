@@ -30,7 +30,7 @@ public sealed class UsageReport(IShare share, IUsageSink usage, ServerConfig con
             string cut = UsageCut.Json(line);
             await share.WriteAsync($"{folder}/usage.json", cut, ct);
             var interim = new LaneReport(start.Lane, config.For(start.Lane).Model, start.Dry, began, time.GetUtcNow(), start.Before, [], [], null, [], [], null);
-            lines.Add(await usage.ReportAsync(UsageCut.Document(cut, interim, RegistryRows.Lane + began.ToUnixTimeSeconds(), start.Slot), ct));
+            lines.Add(await usage.ReportAsync(UsageCut.Document(cut, interim, RegistryRows.Lane + began.ToUnixTimeSeconds(), start.Slot, run.ExitCode.ToString(System.Globalization.CultureInfo.InvariantCulture)), ct));
         }
         catch (Exception failure) when (failure is IOException or JsonException)
         {
