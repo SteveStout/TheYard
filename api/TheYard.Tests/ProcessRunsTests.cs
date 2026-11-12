@@ -79,12 +79,23 @@ public sealed class ProcessRunsTests
         Assert.Null(Run("process:AtsSweep outcome=blocked took_ms=1 started=x detail=someone@example.com").Detail);
         Assert.Equal("blocked, no reason given", ProcessWords.Came(Run("process:AtsSweep outcome=blocked took_ms=1 started=x detail=a.b")));
         Assert.Equal("dispatched the slot", ProcessWords.Sentence("Nightly", Run("process:Nightly outcome=late took_ms=1 started=x detail=75 dispatched=1")));
+        // The one shape besides a word the Function writes: the funnel's day, yyyy-MM-dd, a real day and nothing more.
+        Assert.Equal("2026-11-09", Run("process:Funnel outcome=success took_ms=1 started=x detail=2026-11-09 scanned=1").Detail);
+        Assert.Null(Run("process:Funnel outcome=success took_ms=1 started=x detail=2026-11-9").Detail);
+        Assert.Null(Run("process:Funnel outcome=success took_ms=1 started=x detail=2026-13-09").Detail);
+        Assert.Null(Run("process:Funnel outcome=success took_ms=1 started=x detail=2026-11-09T07").Detail);
+        Assert.Equal("success", ProcessWords.Came(Run("process:Funnel outcome=success took_ms=1 started=x detail=2026-11-09")));
     }
 
     [Fact]
     public async Task A_name_not_among_the_six_is_no_page_and_reads_nothing()
     {
         var fake = new FakeRuns([], ProcessTally.None);
+
+        // The 404's words name every process the route knows, the morning card's among them.
+        Assert.Equal("AtsSweep, Merger, Nightly, SheetMirror, DailyCard, TodayCard, Funnel, CampaignSend, NetworkLogPass and MergerHealth", FunctionProcesses.Named());
+        Assert.NotNull(await new ReadProcessRunsHandler(fake).HandleAsync(new ReadProcessRunsQuery("TodayCard", "24h", 1), CancellationToken.None));
+        fake.Asked.Clear();
 
         Assert.Null(await new ReadProcessRunsHandler(fake).HandleAsync(new ReadProcessRunsQuery("Vault", "7d", 1), CancellationToken.None));
         Assert.Null(await new ReadProcessRunsHandler(fake).HandleAsync(new ReadProcessRunsQuery("atssweep", "7d", 1), CancellationToken.None));
@@ -98,6 +109,8 @@ public sealed class ProcessRunsTests
     [InlineData("process:X outcome=failed took_ms=1 started=x detail=IOException", "failed, IOException", "alarm")]
     [InlineData("process:X outcome=planned took_ms=1 started=x", "planned, acted on nothing", "info")]
     [InlineData("process:X outcome=unchanged took_ms=1 started=x detail=switch_off", "unchanged, the switch is off", "quiet")]
+    [InlineData("process:X outcome=unchanged took_ms=1 started=x detail=not_the_hour", "unchanged, not its hour", "quiet")]
+    [InlineData("process:X outcome=unchanged took_ms=1 started=x detail=mailed_already", "unchanged, mailed already today", "quiet")]
     public void Every_outcome_word_renders_with_its_tone(string line, string came, string tone)
     {
         var run = Run(line);
@@ -119,6 +132,13 @@ public sealed class ProcessRunsTests
     [InlineData("SheetMirror", "process:SheetMirror outcome=planned took_ms=8 started=x master_rows=2996 sheet_rows=2993 would_append=3", "3 rows would append · Sheet 2,993 · tracker 2,996")]
     [InlineData("SheetMirror", "process:SheetMirror outcome=blocked took_ms=8 started=x detail=gate master_rows=2994 sheet_rows=2852 would_append=0", "stopped at a row the gate holds; the rows after it wait · 0 rows would append · Sheet 2,852 · tracker 2,994")]
     [InlineData("DailyCard", "process:DailyCard outcome=unchanged took_ms=8 started=x written=0", "unchanged, not written")]
+    [InlineData("TodayCard", "process:TodayCard outcome=success took_ms=8 started=x detail=on written=1 mailed=1", "the card written · mailed")]
+    [InlineData("TodayCard", "process:TodayCard outcome=success took_ms=8 started=x detail=write written=1 mailed=0", "the card written · not mailed")]
+    [InlineData("TodayCard", "process:TodayCard outcome=unchanged took_ms=8 started=x detail=not_the_hour", "not the 7 o'clock hour")]
+    [InlineData("TodayCard", "process:TodayCard outcome=unchanged took_ms=8 started=x detail=mailed_already", "mailed already today")]
+    [InlineData("CampaignSend", "process:CampaignSend outcome=unchanged took_ms=8 started=x detail=not_the_hour", "not the 8 o'clock hour")]
+    [InlineData("Funnel", "process:Funnel outcome=success took_ms=8 started=x detail=2026-11-09 scanned=812 ready=14 applied=3 reached=9 replied=2 booked=1 invites=4 leaders=2", "for Mon 9 Nov · 812 scanned · 14 ready · 3 applied · 9 reached · 2 replied · 1 booked")]
+    [InlineData("Funnel", "process:Funnel outcome=failed took_ms=8 started=x detail=IOException", "threw before it counted anything")]
     [InlineData("MergerHealth", "process:MergerHealth outcome=success took_ms=8 started=x newest_log_age_s=7440 past_10=0 past_5=0 waiting=0", "0 waiting · 0 past 5 min · 0 past 10 · newest log 2 h 4 min")]
     [InlineData("AtsSweep", "process:AtsSweep outcome=blocked took_ms=8 started=x detail=google_token", "the Google token was refused; the pass skipped its later parts")]
     [InlineData("AtsSweep", null, "no run line, from before the processes wrote one: the request row only")]
@@ -168,12 +188,22 @@ public sealed class ProcessRunsTests
             .SelectMany(file => Regex.Matches(File.ReadAllText(file), "\\[Function\\(\"(?<name>\\w+)\"\\)\\][\\s\\S]{0,200}?TimerTrigger\\(\"(?<cron>[^\"]+)\"\\)").Select(m => (m.Groups["name"].Value, m.Groups["cron"].Value)))
             .ToDictionary(pair => pair.Item1, pair => pair.Item2);
 
-        // Thirteen timers: the board scan's, at 1 AM, the morning card's, at 7:30, the fresh pass's, every quarter hour, the pounce's, five minutes behind it, the pounce follow-up's, five minutes behind that, and the reply drafts', every five minutes from two past, off the sweep's :20 and :50, have no row in the card's table yet, so each of the table's seven timed rows is checked against them.
+        // Thirteen timers: the board scan's, at 1 AM, the fresh pass's, every quarter hour, the pounce's, five minutes behind it, the pounce follow-up's, five minutes behind that, and the reply drafts', every five minutes from two past, off the sweep's :20 and :50, have no row in the card's table yet, so each of the table's eight timed rows is checked against them.
         Assert.Equal(13, crons.Count);
+        Assert.Equal("0 30 * * * *", crons["TodayCard"]);
         Assert.Equal("0 10/15 * * * *", crons["PounceFollowUp"]);
         Assert.Equal("0 2-59/5 * * * *", crons["ReplyDraft"]);
         Assert.All(FunctionProcesses.All.Where(p => p.Cron is not null), process => Assert.Equal(crons[process.Key], process.Cron));
-        Assert.Equal(8, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
+        Assert.Equal(10, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
+        // The funnel has no timer: it rides the morning card's tick, so it has no cron of its own and runs when the card next does.
+        var funnel = FunctionProcesses.Find("Funnel")!;
+        Assert.Null(funnel.Cron);
+        Assert.Equal("TodayCard", FunctionProcesses.Riders["Funnel"]);
+        Assert.Equal(new DateTime(2026, 11, 13, 13, 30, 0), FunctionProcesses.Next(funnel, new DateTimeOffset(2026, 11, 12, 13, 30, 0, TimeSpan.Zero)).UtcDateTime);
+        // The morning card ticks at 30 past every hour and acts in the 7 o'clock hour Central: 12:30 UTC in October, 13:30 UTC from November 1.
+        Assert.Equal(new DateTime(2026, 10, 25, 12, 30, 0), FunctionProcesses.Next(FunctionProcesses.Find("TodayCard")!, new DateTimeOffset(2026, 10, 24, 16, 43, 10, TimeSpan.Zero)).UtcDateTime);
+        Assert.Equal(new DateTime(2026, 11, 13, 13, 30, 0), FunctionProcesses.Next(FunctionProcesses.Find("TodayCard")!, new DateTimeOffset(2026, 11, 12, 13, 30, 0, TimeSpan.Zero)).UtcDateTime);
+        Assert.Equal(new DateTime(2026, 11, 12, 13, 30, 0), FunctionProcesses.Next(FunctionProcesses.Find("TodayCard")!, new DateTimeOffset(2026, 11, 12, 13, 29, 59, TimeSpan.Zero)).UtcDateTime);
         // The network log acts in the 6 o'clock hour Central: 12:00 UTC in November, 11:00 UTC in October.
         Assert.Equal(new DateTime(2026, 11, 5, 12, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("NetworkLogPass")!, new DateTimeOffset(2026, 11, 4, 17, 45, 0, TimeSpan.Zero)).UtcDateTime);
         Assert.Equal(new DateTime(2026, 10, 27, 11, 0, 0), FunctionProcesses.Next(FunctionProcesses.Find("NetworkLogPass")!, new DateTimeOffset(2026, 10, 26, 11, 30, 0, TimeSpan.Zero)).UtcDateTime);
@@ -223,7 +253,7 @@ public sealed class ProcessRunsTests
 
         var sections = ProcessSections.Build(fold, switches, key => $"{key} does its work.", key => $"https://all/{key}", Noon);
 
-        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The email campaign", "The network log", "The merger's health"], sections.Select(s => s.Name));
+        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The morning card", "The funnel", "The email campaign", "The network log", "The merger's health"], sections.Select(s => s.Name));
         var inbox = sections[0];
         Assert.Equal(("good", "on", "fine"), (inbox.Tone, inbox.Switches[0].Value, inbox.Switches[0].Tone));
         Assert.Equal(("shadow", "info"), (inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Value, inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Tone));
@@ -236,11 +266,13 @@ public sealed class ProcessRunsTests
         Assert.Equal("68 of 70 on time · 1 late · 1 failed or blocked", inbox.Figures[2].Text);
         Assert.Equal("12:20 Central", inbox.Figures[3].Text);
         Assert.Equal("info", sections[3].Tone);
-        Assert.Equal(["EMAIL_CAMPAIGN off"], sections[5].Switches.Select(s => $"{s.Name} {s.Value}"));
-        Assert.Equal("off", sections[5].Tone);
-        Assert.Equal(["NETWORK_LOG off", "NETWORK_LOG_ANY_HOUR off"], sections[6].Switches.Select(s => $"{s.Name} {s.Value}"));
-        Assert.Equal("off", sections[6].Tone);
-        Assert.Equal(["always on"], sections[7].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal(["TODAY_CARD off"], sections[5].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal(["FUNNEL off"], sections[6].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal(["EMAIL_CAMPAIGN off"], sections[7].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal("off", sections[7].Tone);
+        Assert.Equal(["NETWORK_LOG off", "NETWORK_LOG_ANY_HOUR off"], sections[8].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal("off", sections[8].Tone);
+        Assert.Equal(["always on"], sections[^1].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.All(sections, section => Assert.All(section.Figures, figure => Assert.False(string.IsNullOrEmpty(figure.Source))));
 
         var unread = ProcessSections.Build(ProcessFold.Unread("Application Insights answered 403"), null, _ => "", _ => null, Noon);
