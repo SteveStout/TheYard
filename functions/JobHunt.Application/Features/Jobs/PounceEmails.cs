@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using JobHunt.Application.Shared.Walls;
 
 namespace JobHunt.Application.Features.Jobs;
 
@@ -67,6 +68,7 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
         int used = await UsedAsync(count, ct);
         IReadOnlyList<EmailTouch>? emailed = null;
         int leaders = 0, asked = 0, kept = 0, refused = 0, already = 0, waiting = 0;
+        bool walled = false;
         foreach (EmailRole role in roles)
         {
             string marker = PounceEmail.Marker(role.Key);
@@ -86,7 +88,7 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
                 : emailed.Any(e => ApplicationCap.Same(e.Company, role.Company) || CompanyKey.Of(e.To) == role.CompanyKey) ? "one email a company a month" : null;
             if (reason is null)
             {
-                if (finder is null || used >= monthCap)
+                if (finder is null || walled || used >= monthCap)
                 {
                     waiting++;
                     continue;
@@ -95,7 +97,25 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
                 asked++;
                 await store.EnsureFolderAsync("campaign/finder", ct);
                 await store.WriteAsync(count, Encoding.UTF8.GetBytes(used.ToString(CultureInfo.InvariantCulture)), ct);
-                var answer = await finder.FindAsync(leader, role.CompanyKey!, ct);
+                LeaderAddress? answer;
+                try
+                {
+                    answer = await finder.FindAsync(leader, role.CompanyKey!, ct);
+                }
+                catch (FinderRefusedException wall)
+                {
+                    // The finder is walled (WALLS.md): the role waits for a later pass instead of settling as "no
+                    // address", and a lookup the wall stopped before any call gives its count back.
+                    walled = true;
+                    if (!wall.Called)
+                    {
+                        asked--;
+                        used--;
+                        await store.WriteAsync(count, Encoding.UTF8.GetBytes(used.ToString(CultureInfo.InvariantCulture)), ct);
+                    }
+                    waiting++;
+                    continue;
+                }
                 reason = answer is null ? "the finder kept no address" : PounceEmail.Refuse(answer.Address, answer.SourceUrl, leader, role.CompanyKey!);
                 if (reason is null)
                 {

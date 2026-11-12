@@ -1,4 +1,5 @@
 using System.Text.Json;
+using JobHunt.Application.Shared.Walls;
 
 namespace JobHunt.Infrastructure.Features.Campaign;
 
@@ -16,6 +17,9 @@ public sealed class HunterFinder(IHttpClientFactory http, string key) : IAddress
 
     /// <summary>Calls a month, the free plan's credits.</summary>
     public const int MonthCap = 50;
+
+    /// <summary>What Steve does when Hunter refuses, as the WALLS.md bullet says it.</summary>
+    public const string Control = "sign in at hunter.io and read the account notice";
 
     /// <summary>The lowest score kept.</summary>
     public const int MinScore = 70;
@@ -46,9 +50,44 @@ public sealed class HunterFinder(IHttpClientFactory http, string key) : IAddress
         try
         {
             using var answer = await http.CreateClient().GetAsync(url, cap.Token);
-            return answer.IsSuccessStatusCode ? Read(await answer.Content.ReadAsStringAsync(cap.Token)) : null;
+            string body = await answer.Content.ReadAsStringAsync(cap.Token);
+            if (answer.IsSuccessStatusCode)
+            {
+                return Read(body);
+            }
+            // A refusal is not "no address": every later call would meet the same answer until Steve clears it.
+            return Refused((int)answer.StatusCode, body) is { } reason ? throw new FinderRefusedException(Name, reason, called: true) : null;
         }
         catch (Exception ex) when (PublicBoardReader.DidNotAnswer(ex, ct))
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// The refusal in Hunter's answer, or null for any other failure: 401 and 403 (the key is not accepted) and
+    /// 429 restricted_account (the account is held). A plain 429 too_many_requests is a rate limit, not a wall.
+    /// </summary>
+    public static string? Refused(int status, string body)
+    {
+        string? id = ErrorId(body);
+        return status switch
+        {
+            401 or 403 => id is null ? $"HTTP {status}" : $"HTTP {status} {id}",
+            429 when id == "restricted_account" => "HTTP 429 restricted_account",
+            _ => null,
+        };
+    }
+
+    private static string? ErrorId(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            return doc.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array && errors.GetArrayLength() > 0
+                && errors[0].TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String ? id.GetString() : null;
+        }
+        catch (JsonException)
         {
             return null;
         }

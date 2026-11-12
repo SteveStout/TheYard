@@ -123,7 +123,7 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         string imported = await new LeadImport(store, database, database, new DohMxCheck(http), time).RunAsync(ct);
         if (HunterFinder.FromSetting(Environment.GetEnvironmentVariable(HunterFinder.Setting), http) is { } hunter)
         {
-            imported += "; " + await new AddressSearch(database, hunter, new DohMxCheck(http), store, time, HunterFinder.MonthCap).RunAsync(ct);
+            imported += "; " + await new AddressSearch(database, new WalledFinder(hunter, store, time, HunterFinder.Control), new DohMxCheck(http), store, time, HunterFinder.MonthCap).RunAsync(ct);
         }
         string read = await new CampaignInbox(inbox, database, database, database, store, time).RunAsync(CentralClock.Local(time.GetUtcNow()).Minute < 30, ct);
         return $"{imported}; {read}";

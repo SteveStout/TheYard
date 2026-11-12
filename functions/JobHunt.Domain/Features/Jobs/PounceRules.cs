@@ -29,8 +29,23 @@ public static partial class PounceRules
             ?? (passed.Contains(JobsGates.Same(c)) ? $"the same role passed in the last {DuplicateDays} days" : null);
     }
 
-    /// <summary>A software engineering, architecture or engineering management seat, and none of the functions ruled out.</summary>
-    public static bool IsSeat(string title) => Seat().IsMatch(title) && !NotSeat().IsMatch(title);
+    /// <summary>
+    /// A software engineering, architecture or engineering management seat, and none of the functions ruled out. An
+    /// engineer, engineering or architect title counts only when it is bare (every other word a level word, "Staff
+    /// Engineer") or carries a software word ("Platform Engineer"), because a bare "engineer" also passed civil,
+    /// manufacturing and systems engineers and filled the hiring signal with them (jhcode1112 1a, 11/12 card).
+    /// </summary>
+    public static bool IsSeat(string title) =>
+        (Seat().IsMatch(title) || Management().IsMatch(title) || (Engineer().IsMatch(title) && (SoftwareWord().IsMatch(title) || IsBare(title))))
+        && !NotSeat().IsMatch(title);
+
+    /// <summary>True when every word of the title besides engineer, engineering and architect is a level word or a numeral.</summary>
+    private static bool IsBare(string title) =>
+        Word().Matches(title.ToLowerInvariant()).Select(m => m.Value)
+            .Where(w => w is not ("engineer" or "engineering" or "architect"))
+            .All(w => LevelWords.Contains(w) || w.All(char.IsAsciiDigit));
+
+    private static readonly HashSet<string> LevelWords = ["staff", "principal", "senior", "sr", "lead", "distinguished", "i", "ii", "iii", "iv", "v", "vi"];
 
     /// <summary>True when the row names a leader seat, read over the Person cell, the Company cell and the first 300 characters of Notes.</summary>
     public static bool IsLeader(string person, string company, string notes) =>
@@ -77,8 +92,22 @@ public static partial class PounceRules
 
     private static string Letters(string text) => new([.. text.ToLowerInvariant().Where(ch => ch is >= 'a' and <= 'z')]);
 
-    [GeneratedRegex(@"\b(software|engineer|engineering|developer|architect|technical lead|tech lead|application development|software development)\b|\.net\b|c#|\bAI\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(software|developer|technical lead|tech lead|application development|software development)\b|\.net\b|c#|\bAI\b", RegexOptions.IgnoreCase)]
     private static partial Regex Seat();
+
+    [GeneratedRegex(@"\b(engineer|engineering|architect)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Engineer();
+
+    [GeneratedRegex(@"\b(software|platform|back[- ]?end|full[- ]?stack|web|applications?|cloud|data platform|site reliability|devops)\b|\.net\b|c#", RegexOptions.IgnoreCase)]
+    private static partial Regex SoftwareWord();
+
+    // His targeting file names these seats outright: Solutions and Technical Architect, Engineering Manager, and the
+    // engineering leaders the leads list aims at.
+    [GeneratedRegex(@"\b((technical|solutions?) architect|engineering manager|manager,? (of )?(software )?engineering|(head|director|vp|vice president) of (software )?engineering)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Management();
+
+    [GeneratedRegex(@"[a-z0-9]+")]
+    private static partial Regex Word();
 
     [GeneratedRegex(@"\b(sales|pre-?sales|solutions? (engineer|consultant)|forward deployed|implementation|customer|support|account manager|engagement|enablement|product (manager|management|designer|design|marketing|owner|analyst)|marketing|designer|creative|recruit\w*|talent|business development|project manager|program manager|scientist|bioinformatics|data (analyst|scientist|science|engineer\w*)|analyst|security|devsecops|iam|identity|compliance|sip|network engineer|hardware|mechanical|electrical|firmware|embedded|qa|quality|test\w*|sdet|it engineer|systems? administrator|help ?desk|finance|accounting|legal|operations manager|revenue)\b", RegexOptions.IgnoreCase)]
     private static partial Regex NotSeat();
