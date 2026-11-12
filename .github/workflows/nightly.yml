@@ -58,7 +58,9 @@ concurrency:
 jobs:
   nightly:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # The longest lane is 55 minutes; a second attempt starts only within ten minutes of the run's start
+    # (Did the lane begin, below), so 75 covers both and the reports.
+    timeout-minutes: 75
     env:
       SHARE: //stjobhuntss.file.core.windows.net/jobhunt
     steps:
@@ -106,6 +108,8 @@ jobs:
             echo "effort_flag=$effort"; echo "turns=$turns"; echo "minutes=$minutes"; echo "tools=$tools"; echo "lanename=$lanename"
             echo "run_dir=nightly/$day/$slot-$mode-$short$suffix"
             echo "slot=${slot:0:2}:${slot:2:2}"; echo "started=$(date -u +%FT%TZ)"
+            # The id the lane registers under in state.md: the mode, the Central month and day, and the slot.
+            echo "lane_id=${mode}${day:5:2}${day:8:2}-${slot}"
           } >> "$GITHUB_OUTPUT"
           echo "$mode on $model at $day $slot (dry run: $dry)" >> "$GITHUB_STEP_SUMMARY"
 
@@ -119,8 +123,17 @@ jobs:
           mkdir -p "/mnt/jobhunt/${{ steps.day.outputs.run_dir }}"
           test -f "/mnt/jobhunt/nightly/${{ steps.day.outputs.lane }}"
 
+      # #region lane-retry
+      # A lane step whose setup dies before the lane begins runs once more, in every mode: when
+      # setup-bun inside claude-code-action reads a 504 from its download, the next step finds no bun
+      # and the run is lost before the lane reads a word (ADR-109's addendum on it). The first step
+      # continues on error; "Did the lane begin" says again only when it failed, left no execution
+      # file, wrote nothing in the run folder, and failed within ten minutes of the run's start, so a
+      # lane that ran and failed on its own is never run twice. The verdict after both is the
+      # attempt that ran, and it is what fails the job.
       - name: The lane
         id: lane
+        continue-on-error: true
         timeout-minutes: ${{ fromJSON(steps.day.outputs.minutes) }}
         uses: anthropics/claude-code-action@v1
         env:
@@ -147,10 +160,69 @@ jobs:
             --add-dir /mnt/jobhunt
             --allowedTools "${{ steps.day.outputs.tools }}"
 
+      - name: Did the lane begin
+        id: began
+        if: steps.lane.outcome == 'failure'
+        env:
+          EXEC: ${{ steps.lane.outputs.execution_file }}
+          JOBHUNT: /mnt/jobhunt
+          RUN_DIR: ${{ steps.day.outputs.run_dir }}
+          STARTED: ${{ steps.day.outputs.started }}
+        run: |
+          again=false
+          took=$(( $(date -u +%s) - $(date -u -d "$STARTED" +%s) ))
+          if { [ -z "$EXEC" ] || [ ! -f "$EXEC" ]; } && [ -z "$(ls -A "$JOBHUNT/$RUN_DIR" 2>/dev/null)" ] && [ "$took" -lt 600 ]; then again=true; fi
+          echo "again=$again" >> "$GITHUB_OUTPUT"
+          echo "the lane step failed after ${took} s with no execution file: once more is $again" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: The lane, once more
+        id: lane_again
+        if: steps.began.outputs.again == 'true'
+        continue-on-error: true
+        timeout-minutes: ${{ fromJSON(steps.day.outputs.minutes) }}
+        uses: anthropics/claude-code-action@v1
+        env:
+          JOBHUNT: /mnt/jobhunt
+          NIGHT: ${{ steps.day.outputs.date }}
+          RUN_DIR: /mnt/jobhunt/${{ steps.day.outputs.run_dir }}
+          MODE: ${{ steps.day.outputs.mode }}
+          DRY_RUN: ${{ steps.day.outputs.dry }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          SHEETS_SERVICE_ACCOUNT: ${{ secrets.SHEETS_SERVICE_ACCOUNT }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # The workflow's own token, so the Claude GitHub App is not needed: the lane reads
+          # and writes the share, never this repository.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Read /mnt/jobhunt/nightly/${{ steps.day.outputs.lane }} and follow it start to finish. Date ${{ steps.day.outputs.date }}; this run's folder is /mnt/jobhunt/${{ steps.day.outputs.run_dir }} (RUN_DIR in the environment); dry run: ${{ steps.day.outputs.dry }}.
+          claude_args: |
+            --model ${{ steps.day.outputs.model }}
+            --max-turns ${{ steps.day.outputs.turns }}
+            ${{ steps.day.outputs.effort_flag }}
+            --add-dir /mnt/jobhunt
+            --allowedTools "${{ steps.day.outputs.tools }}"
+
+      - name: The lane's verdict
+        id: verdict
+        if: always() && steps.lane.outcome != 'skipped'
+        env:
+          FIRST: ${{ steps.lane.outcome }}
+          SECOND: ${{ steps.lane_again.outcome }}
+        run: |
+          came="$FIRST"
+          if [ -n "$SECOND" ] && [ "$SECOND" != "skipped" ]; then came="$SECOND"; fi
+          echo "came=$came" >> "$GITHUB_OUTPUT"
+          echo "the lane came to $came" >> "$GITHUB_STEP_SUMMARY"
+          [ "$came" = "success" ]
+      # #endregion lane-retry
+
       - name: Tokens and wall time
         if: always()
         env:
-          EXEC: ${{ steps.lane.outputs.execution_file }}
+          EXEC: ${{ steps.lane_again.outputs.execution_file || steps.lane.outputs.execution_file }}
         run: |
           out="/mnt/jobhunt/${{ steps.day.outputs.run_dir }}/usage.json"
           if [ -f "$EXEC" ]; then
@@ -163,7 +235,9 @@ jobs:
       # #region usage-report
       # The run's usage.json, posted to the site as one usage document (ADR: Every Claude lane
       # reports its usage): the lane, the model, the mode, the slot, the four token counts, the
-      # wall time, the API-equivalent cost and this run's id, and nothing else from the share. A
+      # wall time, the API-equivalent cost, this run's id and the lane's exit (the conclusion of the
+      # attempt that ran, as the verdict step reads it; no exit field when there is no verdict), and
+      # nothing else from the share. A
       # missing key, a missing usage.json or a refused post writes one line to the summary and
       # never fails the run: the night's work matters more than its report.
       - name: Report the usage to the site
@@ -178,16 +252,19 @@ jobs:
           STARTED: ${{ steps.day.outputs.started }}
           RUN: ${{ github.run_id }}
           LANE: ${{ steps.day.outputs.lanename }}
+          USAGE: /mnt/jobhunt/${{ steps.day.outputs.run_dir }}/usage.json
+          EXIT: ${{ steps.verdict.outputs.came }}
         run: |
-          usage="/mnt/jobhunt/${{ steps.day.outputs.run_dir }}/usage.json"
+          usage="$USAGE"
           if [ -z "$KEY" ]; then echo "usage not reported: THEYARD_ADMIN_KEY is not set" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           if ! jq -e '.usage' "$usage" > /dev/null 2>&1; then echo "usage not reported: no usage in usage.json" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           [ "$DRY" = "true" ] && MODE="$MODE-dry"
-          doc=$(jq -c --arg model "$MODEL" --arg mode "$MODE" --arg slot "$SLOT" --arg at "$STARTED" --arg run "$RUN" --arg lane "${LANE:-Azure Functions, nightly lane}" \
+          doc=$(jq -c --arg model "$MODEL" --arg mode "$MODE" --arg slot "$SLOT" --arg at "$STARTED" --arg run "$RUN" --arg lane "${LANE:-Azure Functions, nightly lane}" --arg exit "$EXIT" \
             '{lane: $lane, kind: "plan", model: $model,
               tokens_in: (.usage.input_tokens // 0), cache_write: (.usage.cache_creation_input_tokens // 0),
               cache_read: (.usage.cache_read_input_tokens // 0), tokens_out: (.usage.output_tokens // 0),
-              wall_ms: (.duration_ms // 0), cost_usd: .total_cost_usd, run: $run, slot: $slot, mode: $mode, at: $at}' "$usage")
+              wall_ms: (.duration_ms // 0), cost_usd: .total_cost_usd, run: $run, slot: $slot, mode: $mode, at: $at}
+              + (if $exit == "" then {} else {exit: $exit} end)' "$usage")
           if ! curl --fail-with-body -sS -X POST "$SITE/api/admin/usage" -H "X-Admin-Key: $KEY" -H 'content-type: application/json' --data "$doc"; then
             echo "usage not reported: the site refused the post" >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -228,6 +305,39 @@ jobs:
             echo "run not reported: the site refused the post" >> "$GITHUB_STEP_SUMMARY"
           fi
       # #endregion nightly-run-report
+
+      # #region lane-close
+      # A lane that registered in state.md is closed there, whatever the run came to. The lane writes
+      # its own CLOSED row through the state.md spool; when it wrote none (a reply lane that closed only
+      # its bookend, a lane that died or timed out), this step writes one, so the 6 AM program's
+      # second-driver check never reads a finished lane as open. It looks for the registration and the
+      # close in the spool, its merged folder (the last day) and the end of state.md, writes the row
+      # aside as a dot file the merger skips, and renames it in. A lane that never registered (a dry
+      # run, a triage pass) gets no row. A failed write is one summary line and never fails the run.
+      - name: Close the lane's row
+        if: always()
+        continue-on-error: true
+        env:
+          JOBHUNT: /mnt/jobhunt
+          RUN_DIR: ${{ steps.day.outputs.run_dir }}
+          LANE_ID: ${{ steps.day.outputs.lane_id }}
+          CAME_TO: ${{ job.status }}
+          RUN: ${{ github.run_id }}
+        run: |
+          spool="$JOBHUNT/inbox/append-inbox/state.md"
+          if [ -z "$LANE_ID" ] || [ ! -d "$JOBHUNT/inbox" ]; then echo "no close row: the share is not mounted or the run has no lane id" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          rows=$( { find "$spool" "$spool/merged" -maxdepth 1 -name '*.md' -mmin -1440 -exec cat {} + 2>/dev/null || true; tail -c 400000 "$JOBHUNT/state.md" 2>/dev/null || true; } | grep -a -F "## LANE: $LANE_ID" || true)
+          if ! printf '%s\n' "$rows" | grep -a -q -E "^## LANE: $LANE_ID( |\$)"; then echo "no close row: $LANE_ID did not register" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          if printf '%s\n' "$rows" | grep -a -q -E "^## LANE: $LANE_ID( step [0-9]+)? CLOSED|\| *CLOSED *\| *$"; then echo "$LANE_ID closed its own row" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          done_note="DONE.md not written"
+          if [ -f "$JOBHUNT/$RUN_DIR/DONE.md" ]; then done_note="DONE: $RUN_DIR/DONE.md"; fi
+          at=$(TZ=America/Chicago date '+%H:%M CST %a %-m/%-d')
+          name="$(date -u +%Y%m%d-%H%M%SZ)-$LANE_ID-close.md"
+          printf '\n## LANE: %s CLOSED %s (GitHub Actions run %s came to %s; nightly.yml wrote this row because the lane wrote none). %s. Holds: none. | CLOSED |\n' \
+            "$LANE_ID" "$at" "$RUN" "$CAME_TO" "$done_note" > "$spool/.$name.tmp"
+          mv "$spool/.$name.tmp" "$spool/$name"
+          echo "closed $LANE_ID: inbox/append-inbox/state.md/$name" >> "$GITHUB_STEP_SUMMARY"
+      # #endregion lane-close
 
       - name: Unmount
         if: always()
