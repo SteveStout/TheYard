@@ -129,4 +129,9 @@ internal static class CampaignSql
         UPDATE [campaign].[Leads] SET [ContactEmail] = @email, [EmailSource] = @source, [MxChecked] = @mx, [MxCheckedAt] = @at, [Verified] = NULL, [UpdatedAt] = @at
         WHERE [Id] = @id AND [ContactEmail] IS NULL
         """;
+
+    internal const string WithAddress = """
+        SELECT COUNT(*) FROM [campaign].[Leads]
+        WHERE [ContactEmail] IS NOT NULL AND [Id] IN (SELECT CAST([value] AS bigint) FROM STRING_SPLIT(@ids, ','))
+        """;
 }
