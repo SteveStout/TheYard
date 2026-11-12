@@ -67,28 +67,10 @@ public static partial class PounceRules
     }
 
     /// <summary>
-    /// The companies BLACKLIST.md blocks whole: each table row whose Person cell opens "ALL OF", its Company cell up to
-    /// the first parenthesis or comma, and every name the Person cell says it includes. A row for one person, or for
-    /// one job and not the company, blocks no company.
+    /// The companies BLACKLIST.md blocks whole, as the one reader (Blacklist) reads them: each company row's company and
+    /// every name it says it includes. A row for one person, or for one job and not the company, blocks no company.
     /// </summary>
-    public static IReadOnlyList<string> Blacklisted(string file)
-    {
-        var names = new List<string>();
-        foreach (string line in file.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith('|')))
-        {
-            string[] cells = line.Trim('|').Split('|').Select(cell => cell.Trim()).ToArray();
-            if (cells.Length < 4 || !cells[1].StartsWith("ALL OF ", StringComparison.Ordinal))
-            {
-                continue;
-            }
-            names.Add(cells[3].Split('(', ',')[0].Trim());
-            if (Includes().Match(cells[1]) is { Success: true } includes)
-            {
-                names.AddRange(Splitter().Split(includes.Groups[1].Value).Select(n => n.Trim()).Where(n => n.Length > 0));
-            }
-        }
-        return [.. names.Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase)];
-    }
+    public static IReadOnlyList<string> Blacklisted(string file) => Blacklist.Read(file).Companies;
 
     private static string Letters(string text) => new([.. text.ToLowerInvariant().Where(ch => ch is >= 'a' and <= 'z')]);
 
@@ -114,10 +96,4 @@ public static partial class PounceRules
 
     [GeneratedRegex(@"\b(S?VP|EVP|vice president|head of|director|CTO|chief \w+ officer|engineering manager|manager,? (of )?(software|engineering)|hiring manager|founder|CEO)\b", RegexOptions.IgnoreCase)]
     private static partial Regex Leader();
-
-    [GeneratedRegex(@"includes ([^;)]+)", RegexOptions.IgnoreCase)]
-    private static partial Regex Includes();
-
-    [GeneratedRegex(@",|\band\b")]
-    private static partial Regex Splitter();
 }
