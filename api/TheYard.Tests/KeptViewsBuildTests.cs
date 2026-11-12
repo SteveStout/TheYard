@@ -212,4 +212,27 @@ public sealed class KeptViewsBuildTests
 
         public override DateTimeOffset GetUtcNow() => Now;
     }
+
+    [Fact]
+    public async Task A_read_whose_request_is_already_cancelled_stops_and_starts_no_build()
+    {
+        // A kept view or a build that ends at once must not answer a request that has already gone: the read stops
+        // first (CloudTimeoutTests' own case failed in CI on 1.0.5.42's main when the build won the race).
+        var clock = new MovableClock(Start);
+        int builds = 0;
+        var views = new KeptViews<Stamp>("test", clock);
+        Task<Stamp> Build(CancellationToken cancellation)
+        {
+            Interlocked.Increment(ref builds);
+            return Task.FromResult(new Stamp(clock.Now));
+        }
+        await views.ReadAsync("kept", Build, CancellationToken.None);
+        using var gone = new CancellationTokenSource();
+        await gone.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => views.ReadAsync("kept", Build, gone.Token));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => views.ReadAsync("empty", Build, gone.Token));
+
+        Assert.Equal(1, builds);
+    }
 }

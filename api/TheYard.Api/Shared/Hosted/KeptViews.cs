@@ -70,6 +70,9 @@ public sealed class KeptViews<TView>(string name, TimeProvider clock, Cancellati
     /// <param name="refresh">Builds the slot's view behind an answer and for the keeper; null builds it as <paramref name="build"/> does.</param>
     public async Task<TView> ReadAsync(string slot, Func<CancellationToken, Task<TView>> build, CancellationToken cancellation, Func<CancellationToken, Task<TView>>? refresh = null)
     {
+        // A request that has already gone gets no answer, kept or built: a fresh view, or a build that ends before the
+        // wait below begins, would otherwise answer it, since a finished task's WaitAsync returns its result.
+        cancellation.ThrowIfCancellationRequested();
         var now = clock.GetUtcNow();
         (Task<TView> Task, bool Refresh) waiting;
         lock (_gate)
