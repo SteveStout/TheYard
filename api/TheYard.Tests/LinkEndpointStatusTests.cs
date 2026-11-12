@@ -38,6 +38,22 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
     }
 
     [Fact]
+    public async Task The_email_key_alone_may_be_a_mailto_and_its_open_is_kept_under_its_path()
+    {
+        // The "Where next" footer's contact line (ladder v7, R7): an email link through a recorded redirect, so the
+        // site counts the open the way it counts GitHub's and LinkedIn's, and no drawn page holds the address.
+        var client = Browser();
+        string code = "e" + Guid.NewGuid().ToString("N")[..5];
+        var email = await client.GetAsync($"/api/go/email?r={code}");
+        Assert.Equal(HttpStatusCode.Found, email.StatusCode);
+        Assert.Equal("mailto:stevenstout11@gmail.com?subject=TheYard", email.Headers.Location!.ToString());
+        await factory.Services.GetRequiredService<LinkOpenCollector>().DrainAsync(CancellationToken.None);
+        using var json = JsonDocument.Parse(await (await client.GetAsync("/api/admin/links?window=7d")).Content.ReadAsStringAsync());
+        var row = json.RootElement.GetProperty("codes").EnumerateArray().Single(entry => entry.GetProperty("code").GetString() == code);
+        Assert.Equal(1, row.GetProperty("paths").GetProperty("/api/go/email").GetInt32());
+    }
+
+    [Fact]
     [Covers("GET", "/api/links/open", 204)]
     [Covers("GET", "/api/links/open", 400)]
     public async Task The_page_s_own_report_is_204_for_a_code_on_a_view_it_has_and_400_otherwise()

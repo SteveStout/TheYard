@@ -195,7 +195,8 @@ public static class AboutPage
             </section>
             {{vouches}}
             <ul class="links">
-              <li><a href="{{e(Profiles[0])}}" rel="me">LinkedIn</a></li>
+              <li><a href="/api/go/email">Email Steven</a></li>
+              <li><a href="{{e(Profiles[0])}}" rel="me">Message me on LinkedIn</a></li>
               <li><a href="{{e(Profiles[1])}}" rel="me">TheYard on GitHub</a></li>
               <li><a href="/api/docs/resume">Resume (PDF)</a></li>
               <li><a href="/?view=recommendations">Recommendations</a></li>

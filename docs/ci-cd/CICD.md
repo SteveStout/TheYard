@@ -241,9 +241,12 @@ groups retired that day; nothing uses it now, and taking it away is a change to 
 
 ## What comes next
 
-Deployment slots for a zero-downtime roll, which the production design under
-Hosting already covers with App Service, and the registrar transfer around
-the end of October that retires the Netlify edge. Neither changes the
+Deployment slots for a roll that never takes the site offline, which the
+production design under Hosting already covers with App Service and ADR-095
+holds off until the cost is worth it, and the registrar transfer that retires
+the Netlify edge, which has not happened: read on 12 November 2026, the
+domain's nameservers are still Wix's and the edge that answers is Netlify, so
+the transfer waits for the owner and carries no date here. Neither changes the
 pipeline: the image and the workflow stay the same, only the target moves.
 
 ## Why it is built in this order
