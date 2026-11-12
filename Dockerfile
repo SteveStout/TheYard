@@ -66,7 +66,7 @@ RUN set -e; \
 # The cost is a larger image and a longer build, which Steve ruled do not count against it (7 October: "we worry more
 # about end performance"). Native AOT was not taken: EF Core, the Cosmos DB SDK and the reflection the JSON and
 # OpenAPI paths use do not support it (ADR: Compiled before it ships).
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api-publish
+FROM mcr.microsoft.com/dotnet/sdk:10.0.404 AS api-publish
 # We use the SDK image here because publishing requires a toolchain that can compile and package the ASP.NET app.
 WORKDIR /src
 
