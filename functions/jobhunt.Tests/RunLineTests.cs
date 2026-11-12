@@ -90,6 +90,18 @@ public sealed class RunLineTests
     }
 
     [Fact]
+    public void The_health_route_reads_the_card_and_funnel_switches_as_on_when_unset()
+    {
+        Assert.Contains("TODAY_CARD", MergerWatch.SwitchNames);
+        Assert.Contains("FUNNEL", MergerWatch.SwitchNames);
+        if (Environment.GetEnvironmentVariable("TODAY_CARD") is null && Environment.GetEnvironmentVariable("FUNNEL") is null)
+        {
+            Assert.Equal("on", MergerWatch.Switches()["TODAY_CARD"]);
+            Assert.Equal("on", MergerWatch.Switches()["FUNNEL"]);
+        }
+    }
+
+    [Fact]
     public async Task A_timer_switched_off_writes_its_run_line_once_under_its_name()
     {
         using var scratch = new Scratch();

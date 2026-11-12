@@ -113,7 +113,7 @@ public static class CloudEndpoints
     private static async Task<Results<Ok<ProcessRunsPage>, ProblemHttpResult>> Runs(string process, string? window, int? page, ReadProcessRunsHandler handler, CancellationToken cancellation) =>
         await handler.HandleAsync(new ReadProcessRunsQuery(process, window, page), cancellation) is { } runs
             ? TypedResults.Ok(runs)
-            : TypedResults.Problem(detail: "The job hunt's Function has no process by that name; the eight are AtsSweep, Merger, Nightly, SheetMirror, DailyCard, CampaignSend, NetworkLogPass and MergerHealth.", statusCode: 404, title: "No such process");
+            : TypedResults.Problem(detail: $"The job hunt's Function has no process by that name; the {FunctionProcesses.All.Count} are {FunctionProcesses.Named()}.", statusCode: 404, title: "No such process");
 
     private static async Task<IResult> Live(string key, ReadLiveHandler handler, CancellationToken cancellation) =>
         Results.Json(await handler.HandleAsync(new ReadLiveQuery(key), cancellation), LiveWire);
