@@ -9,8 +9,9 @@ import { fadedContent, quietWordsOnTheBareGround } from './glass';
  * The review route (ADR: Ten minutes, seven stops): its row in the rail directly under Home, the
  * first stop current on a first arrival, Next stop moving the ring and the place, the place kept
  * across a reload on this browser, Mark done on the last stop ending at the finish panel, the
- * page on the shared glass at a phone's width with nothing sideways, its tagged open reported
- * under its own path, and its short door keeping the code.
+ * page on the shared glass at a phone's width with nothing sideways, the two ways to reach Steven
+ * on the finish panel and About, its tagged open reported under its own path, and its short door
+ * keeping the code.
  */
 async function freshRoute(page: Page) {
   await page.addInitScript(
@@ -83,6 +84,22 @@ test('Mark done on the last stop ends at the finish panel', async ({ page }) => 
   await expect(finish).toBeFocused();
   await expect(finish).toContainText('That is the work');
   await expect(last).toHaveAttribute('data-state', 'done');
+});
+
+test('the finish panel and About both say how to reach Steven, as links', async ({ page }) => {
+  // profile1110-f2: a manager who finished the ten minutes had no link to write to him.
+  const ways = [
+    ['Email Steven', 'mailto:stevenstout11@gmail.com'],
+    ['Message me on LinkedIn', /^https:\/\/www\.linkedin\.com\/in\/stevenwstout\/?$/],
+  ] as const;
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  const reach = page.getByTestId('review-reach');
+  for (const [name, href] of ways)
+    await expect(reach.getByRole('link', { name })).toHaveAttribute('href', href);
+  await page.goto('/about');
+  for (const [name, href] of ways)
+    await expect(page.getByRole('link', { name })).toHaveAttribute('href', href);
 });
 
 test('every stop opens the site’s own address, and the stop on screen is the only one with Do this', async ({
