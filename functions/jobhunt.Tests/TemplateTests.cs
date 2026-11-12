@@ -130,10 +130,27 @@ public sealed partial class TemplateTests
         Assert.Contains("param alertEmail string\n", bicep.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
         Assert.DoesNotContain("@gmail.com", bicep, StringComparison.Ordinal);
         Assert.Contains("evaluationFrequency: 'PT10M'", bicep, StringComparison.Ordinal);
-        Assert.Contains("windowSize: 'PT30M'", bicep, StringComparison.Ordinal);
-        Assert.Contains("success == false", bicep, StringComparison.Ordinal);
+        Assert.Contains("ago(30m) and success == false", bicep, StringComparison.Ordinal);
         Assert.Contains("name == \"Merger\"", bicep, StringComparison.Ordinal);
         Assert.DoesNotContain("appsettings", bicep, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // zeroresult1112 rung 2: a run that wrote failed or blocked on its own line emails, one alert a process, and a
+    // break that fails every other pass is one break over three hours. "unchanged" and "planned" never email.
+    [Fact]
+    public void A_run_line_that_came_to_failed_or_blocked_emails_once_a_process()
+    {
+        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
+        string rule = bicep[bicep.IndexOf("name: 'alert-jobhunt-dead-function'", StringComparison.Ordinal)..];
+        rule = rule[..rule.IndexOf("autoMitigate: true", StringComparison.Ordinal)];
+
+        Assert.Contains("message startswith \"process:\"", rule, StringComparison.Ordinal);
+        Assert.Contains("where outcome in (\"failed\", \"blocked\")", rule, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"unchanged\"", rule, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"planned\"", rule, StringComparison.Ordinal);
+        Assert.Contains("name: 'process'", rule, StringComparison.Ordinal);
+        Assert.Contains("windowSize: 'PT3H'", rule, StringComparison.Ordinal);
+        Assert.Contains("ago(3h)", rule, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -36,14 +36,14 @@ public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch di
                 string picked = await jobs.PickAsync(ct);
                 string sent = await dispatch.RunAsync(JobsFiles.Event, CentralClock.Local(now), ct);
                 log.LogInformation("jobs: {Picked} | {Sent}", picked, sent);
-                run.Count("dispatched", Dispatch.Delivered(sent) ? 1 : 0).Came("success", JobsFiles.Event);
+                Dispatched(run, sent, JobsFiles.Event);
                 return;
             }
             if (!anyHour && CentralClock.IsReplyRetryHour(now) && ReplyRetry.Needed(await bookend.ReplyRunsAsync(CentralClock.Local(now), ct)))
             {
                 string again = await dispatch.RunAsync(CentralClock.Reply, CentralClock.Local(now), ct);
                 log.LogInformation("reply retry: no linkedin-queue.md today | {Sent}", again);
-                run.Count("dispatched", Dispatch.Delivered(again) ? 1 : 0).Came("success", "reply_retry");
+                Dispatched(run, again, "reply_retry");
                 return;
             }
             string? slot = anyHour ? CentralClock.Reply : CentralClock.Slot(now);
@@ -60,7 +60,7 @@ public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch di
                 await bookend.OpenAsync(local, [snap], ct);
             }
             string dispatched = await dispatch.RunAsync(slot, local, ct);
-            run.Count("dispatched", dispatched.EndsWith(" 204", StringComparison.Ordinal) ? 1 : 0).Came("success", RunLines.SlotWord(slot));
+            Dispatched(run, dispatched, RunLines.SlotWord(slot));
         }
         catch (Exception ex)
         {
@@ -72,4 +72,15 @@ public sealed class Nightly(ShareSnapshot snapshot, Bookend bookend, Dispatch di
             RunLines.Write(log, run, DateTimeOffset.UtcNow);
         }
     }
+
+    /// <summary>
+    /// What a dispatch came to on the run line: success with the slot when GitHub took it (204), blocked with
+    /// dispatch_refused when it did not, through Dispatch.Delivered on all three of the clock's lines
+    /// (zeroresult1112: a dispatch that was not delivered recorded dispatched=0 and still came to success).
+    /// A dispatch whose switch is off is unchanged, as every switched-off process is.
+    /// </summary>
+    public static RunLine Dispatched(RunLine run, string dispatchLine, string slot) =>
+        Dispatch.Delivered(dispatchLine) ? run.Count("dispatched", 1).Came("success", slot)
+        : dispatchLine.StartsWith("dispatch off", StringComparison.Ordinal) ? run.Count("dispatched", 0).Came("unchanged", "switch_off")
+        : run.Count("dispatched", 0).Came("blocked", "dispatch_refused");
 }
