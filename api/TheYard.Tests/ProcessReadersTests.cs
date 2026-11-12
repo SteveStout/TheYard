@@ -104,15 +104,23 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
 
         Assert.Contains("let role = 'func-jobhunt-ss';", kusto, StringComparison.Ordinal);
         Assert.Contains("ago(168h)", kusto, StringComparison.Ordinal);
-        Assert.Contains("Name in ('AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'CampaignSend', 'NetworkLogPass', 'MergerHealth')", kusto, StringComparison.Ordinal);
-        Assert.Contains("Process in ('AtsSweep', 'SheetMirror', 'MergerHealth')", kusto, StringComparison.Ordinal);
+        Assert.Contains("Name in ('AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'TodayCard', 'CampaignSend', 'NetworkLogPass', 'MergerHealth')", kusto, StringComparison.Ordinal);
+        // One invocation can write more than one process's line (the morning card's tick writes the funnel's first),
+        // so a request is joined to the line its own process wrote, never to whichever line comes first.
+        Assert.Contains("summarize Line = take_any(Message) by OperationId, Process", kusto, StringComparison.Ordinal);
+        Assert.Contains("join kind=leftouter lines on OperationId, Process", kusto, StringComparison.Ordinal);
+        // The funnel has no request row of its own (it runs inside the morning card's tick and its own hand run), so
+        // its runs are its lines, each standing for its own run.
+        Assert.Contains("| where Process in ('Funnel')", kusto, StringComparison.Ordinal);
+        Assert.Contains("let runs = union requests, riders", kusto, StringComparison.Ordinal);
+        Assert.Contains("Process in ('AtsSweep', 'SheetMirror', 'Funnel', 'MergerHealth')", kusto, StringComparison.Ordinal);
         Assert.Contains("Message startswith 'process:'", kusto, StringComparison.Ordinal);
         Assert.DoesNotContain("__", kusto, StringComparison.Ordinal);
 
         // A Merger pass that moved the tracker's SQL copy is listed beside the ones that merged, and the newest-run
         // read adds the Merger's newest parity check as one more row for the section's tone.
         Assert.Contains("extend Copied = Process == 'Merger' and (Line contains 'tracker_sql_parity=' or Line contains 'tracker_sql_failed='", kusto, StringComparison.Ordinal);
-        Assert.Contains("Listed = Process in ('AtsSweep', 'SheetMirror', 'MergerHealth') or Copied or", kusto, StringComparison.Ordinal);
+        Assert.Contains("Listed = Process in ('AtsSweep', 'SheetMirror', 'Funnel', 'MergerHealth') or Copied or", kusto, StringComparison.Ordinal);
         Assert.Contains("extend Process = 'MergerParity'", InsightsProcessRuns.Newest, StringComparison.Ordinal);
         Assert.StartsWith("union (runs | summarize arg_max(At, TookMs, Ok, Line, OperationId) by Process), ", InsightsProcessRuns.Newest, StringComparison.Ordinal);
     }
@@ -180,6 +188,8 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
         var missing = await client.GetAsync("/api/admin/cloud/nightly/runs/Vault");
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         Assert.Equal("application/problem+json", missing.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await missing.Content.ReadAsStringAsync());
+        Assert.Contains("TodayCard", problem.RootElement.GetProperty("detail").GetString(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -203,7 +213,7 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
 
         using var nightly = JsonDocument.Parse(await client.GetStringAsync("/api/admin/cloud/nightly?window=24h"));
         Assert.StartsWith("The job hunt's clock and its hands.", nightly.RootElement.GetProperty("description").GetProperty("text").GetString(), StringComparison.Ordinal);
-        Assert.Equal(8, nightly.RootElement.GetProperty("processes").GetArrayLength());
+        Assert.Equal(FunctionProcesses.All.Count, nightly.RootElement.GetProperty("processes").GetArrayLength());
 
         using var sql = JsonDocument.Parse(await client.GetStringAsync("/api/admin/cloud/sqldb?window=24h"));
         Assert.Equal(JsonValueKind.Null, sql.RootElement.GetProperty("description").ValueKind);

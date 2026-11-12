@@ -40,7 +40,7 @@ public interface IProcessRunsReader
 /// <param name="At">When the request row says the run started, UTC.</param>
 /// <param name="TookMs">How long the invocation took, in milliseconds.</param>
 /// <param name="Outcome">One of RunLine's six words; for a row with no run line, success or failed from the request.</param>
-/// <param name="Detail">The run line's one word beside the outcome; null for none.</param>
+/// <param name="Detail">The run line's one word beside the outcome, or the one day the funnel writes there; null for none.</param>
 /// <param name="Counts">The run line's counts by name; empty for a row with no run line.</param>
 /// <param name="OperationId">The operation the run's rows share; null when not read.</param>
 /// <param name="HasLine">Whether the process wrote its run line; a row from before the processes wrote one has none.</param>
@@ -76,9 +76,10 @@ public sealed record ProcessRun(DateTimeOffset At, long TookMs, string Outcome, 
             }
             else if (name == "detail")
             {
-                // The writer keeps a detail to one word; the reader holds it to the same rule, so a line
-                // that did not come through RunLine prints nothing it should not.
-                detail = value.Length is > 0 and <= 60 && value.All(c => char.IsAsciiLetterOrDigit(c) || c == '_') ? value : null;
+                // The writer keeps a detail to one word or one yyyy-MM-dd day; the reader holds it to the same rule,
+                // so a line that did not come through RunLine prints nothing it should not.
+                detail = (value.Length is > 0 and <= 60 && value.All(c => char.IsAsciiLetterOrDigit(c) || c == '_'))
+                    || DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _) ? value : null;
             }
             else if (name is not ("took_ms" or "started") && long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long count))
             {

@@ -18,20 +18,27 @@ namespace TheYard.Api.Features.Admin.Cloud;
 public sealed class InsightsProcessRuns(AzureMetrics azure, string workspaceId, string role) : IProcessRunsReader
 {
     /// <summary>
-    /// Every run of the seven in a window: the request row, the run line beside it when the process wrote one, the
-    /// outcome (the line's, or the request's success for a row from before the lines), whether the history lists
-    /// it, and whether it did something. ItemCount is summed for the runs because a sampled row stands for more.
+    /// Every run of the table's processes in a window: the request row, the run line its own process wrote beside it
+    /// when there is one, the outcome (the line's, or the request's success for a row from before the lines), whether
+    /// the history lists it, and whether it did something; a process that rides another's tick has no request row,
+    /// so each of its lines is a run. ItemCount is summed for the runs because a sampled row stands for more.
     /// </summary>
     public const string Runs = """
         let role = '__ROLE__';
         let since = ago(__WINDOW__);
-        let lines = AppTraces
+        let traces = AppTraces
             | where TimeGenerated > since and AppRoleName == role and Message startswith 'process:'
-            | summarize Line = take_any(Message) by OperationId;
-        let runs = AppRequests
+            | extend Process = extract(@'^process:(\w+)', 1, Message);
+        let lines = traces
+            | summarize Line = take_any(Message) by OperationId, Process;
+        let riders = traces
+            | where Process in (__RIDERS__)
+            | project At = TimeGenerated, Process, OperationId, TookMs = todouble(extract(@'took_ms=(\d+)', 1, Message)), Ok = Message !contains 'outcome=failed', Items = ItemCount, Line = Message;
+        let requests = AppRequests
             | where TimeGenerated > since and AppRoleName == role and Name in (__NAMES__)
             | project At = TimeGenerated, Process = Name, OperationId, TookMs = DurationMs, Ok = tostring(Success) =~ 'true', Items = ItemCount
-            | join kind=leftouter lines on OperationId
+            | join kind=leftouter lines on OperationId, Process;
+        let runs = union requests, riders
             | extend Outcome = coalesce(extract(@'outcome=([a-z]+)', 1, Line), iff(Ok, 'success', 'failed'))
             | extend Copied = Process == 'Merger' and (Line contains 'tracker_sql_parity=' or Line contains 'tracker_sql_failed=' or coalesce(toint(extract(@'tracker_sql_written=(\d+)', 1, Line)), 0) > 0)
             | extend Listed = Process in (__QUIET__) or Copied or (Outcome != 'unchanged' and (isnotempty(Line) or Outcome == 'failed'))
@@ -58,7 +65,8 @@ public sealed class InsightsProcessRuns(AzureMetrics azure, string workspaceId, 
     public string Kusto(TimeSpan window, string statement) => Runs
         .Replace("__ROLE__", Quote(role), StringComparison.Ordinal)
         .Replace("__WINDOW__", ((int)Math.Ceiling(window.TotalHours)).ToString(CultureInfo.InvariantCulture) + "h", StringComparison.Ordinal)
-        .Replace("__NAMES__", string.Join(", ", FunctionProcesses.All.Select(p => $"'{p.Key}'")), StringComparison.Ordinal)
+        .Replace("__NAMES__", string.Join(", ", FunctionProcesses.All.Where(p => !FunctionProcesses.Riders.ContainsKey(p.Key)).Select(p => $"'{p.Key}'")), StringComparison.Ordinal)
+        .Replace("__RIDERS__", string.Join(", ", FunctionProcesses.Riders.Keys.Select(key => $"'{key}'")), StringComparison.Ordinal)
         .Replace("__QUIET__", string.Join(", ", FunctionProcesses.All.Where(p => p.ShowsQuietRuns).Select(p => $"'{p.Key}'")), StringComparison.Ordinal)
         + "\n" + statement;
 
