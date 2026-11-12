@@ -8,8 +8,8 @@ namespace JobHunt.Application.Features.Ats;
 /// </summary>
 public interface IReplyDraftWriter
 {
-    /// <summary>Writes the draft into the thread and answers its id.</summary>
-    Task<string> CreateDraftAsync(string threadId, string to, string subject, string text, CancellationToken ct);
+    /// <summary>Writes the draft into the thread, with the reply headers that keep it there, and answers its id.</summary>
+    Task<string> CreateDraftAsync(ThreadReply reply, string text, CancellationToken ct);
 }
 
 /// <summary>What one reply pass did.</summary>
@@ -24,9 +24,12 @@ public sealed record ReplyDraftPass(int Read, int Waiting, int Queued, int Alrea
 /// <summary>
 /// A reply reaches Steve with a draft (ReplyDraft): every firing reads the inbox of the last two hours for a message a
 /// person wrote on a job thread, one whose writer's address or work domain is on a tracker row, that has no draft and
-/// whose newest message is not his, and queues one dispatcher item for each, the marker first so a message gets one
-/// item. A message on any other thread gets no item and no draft, and one log line, once. Then each draft an item has written is put into its thread's Gmail
-/// drafts by a writer that cannot send, once, and only when live; a dry pass leaves the draft on the share.
+/// whose newest message is not his, and queues one dispatcher item for each: the item under a name the dispatcher does
+/// not read, then the marker, then the rename, so a pass that stops part way is finished by the next and a message gets
+/// one item. A message on any other thread gets no item and no draft, and one log line, once. Then each draft an item
+/// has written is put into its thread's Gmail drafts, with the reply headers that keep it there, by a writer that cannot
+/// send, once, and only when live, after the thread is read again: a thread Steve has answered or that holds another
+/// draft since gets no draft, and the written one is marked stale. A dry pass leaves the draft on the share.
 /// </summary>
 /// <param name="store">The job-hunt share.</param>
 /// <param name="inbox">The inbox, read only.</param>
@@ -63,6 +66,13 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
             }
             if (await store.ExistsAsync(ReplyDraft.Marker(message.Id), ct))
             {
+                if (await store.ExistsAsync(ReplyDraft.TempPath(message.Id), ct))
+                {
+                    await store.ReplaceAsync(ReplyDraft.TempPath(message.Id), ReplyDraft.ReadyPath(message.Id), ct);
+                    queued++;
+                    log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} queued {ReplyDraft.ReadyPath(message.Id)}, finishing a pass that stopped before it\n");
+                    continue;
+                }
                 already++;
                 continue;
             }
@@ -80,12 +90,13 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
                 continue;
             }
             waiting++;
-            var reply = new WaitingReply(message.Id, message.ThreadId, message.Address, message.Name, message.Subject, message.At, message.Text);
-            await store.WriteAsync(ReplyDraft.Marker(reply.Id), TrackerCsvText.Encode(ReplyDraft.MarkerText(reply, now)), ct);
-            string temp = $"{ReplyDraft.Ready}/.replydraft-{reply.Id}.tmp";
+            var reply = new WaitingReply(message.Id, message.ThreadId, message.Address, message.Name, message.Subject, message.At, message.Text, message.MessageId, message.References);
+            // The item first, under a name the dispatcher does not read, then the marker, then the rename: a pass that stops
+            // before the marker starts over, and one that stops after it finds the item waiting and renames it, once.
             await store.EnsureFolderAsync(ReplyDraft.Ready, ct);
-            await store.WriteAsync(temp, TrackerCsvText.Encode(ReplyDraft.Item(reply, drafts is not null, now)), ct);
-            await store.ReplaceAsync(temp, ReplyDraft.ReadyPath(reply.Id), ct);
+            await store.WriteAsync(ReplyDraft.TempPath(reply.Id), TrackerCsvText.Encode(ReplyDraft.Item(reply, drafts is not null, now)), ct);
+            await store.WriteAsync(ReplyDraft.Marker(reply.Id), TrackerCsvText.Encode(ReplyDraft.MarkerText(reply, now)), ct);
+            await store.ReplaceAsync(ReplyDraft.TempPath(reply.Id), ReplyDraft.ReadyPath(reply.Id), ct);
             queued++;
             log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} queued {ReplyDraft.ReadyPath(reply.Id)} ({(drafts is null ? "dry" : "live")})\n");
         }
@@ -96,6 +107,12 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
         }
         return new ReplyDraftPass(read, waiting, queued, already, placed, skipped);
     }
+
+    /// <summary>Why a written draft is no longer wanted, read from the thread right before it would be placed, or null.</summary>
+    private async Task<string?> StaleAsync(string thread, CancellationToken ct) =>
+        await inbox.ThreadHasDraftAsync(thread, ct) ? "another draft is in the thread"
+        : await inbox.ThreadNewestSenderAsync(thread, ct) is { } newest && Mail.Address(newest) == HumanMail.Steve ? "Steve has answered the thread"
+        : null;
 
     /// <summary>The addresses and work domains the tracker holds; an absent tracker knows no one, so nothing is a job thread.</summary>
     private async Task<KnownContacts> KnownAsync(CancellationToken ct) =>
@@ -108,13 +125,19 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
         foreach (MergeEntry file in (await store.ListFilesAsync(ReplyDraft.Folder, ct)).Where(f => f.Name.EndsWith(".draft.md", StringComparison.Ordinal)).OrderBy(f => f.Name, StringComparer.Ordinal))
         {
             string id = file.Name[..^".draft.md".Length];
-            if (await store.ExistsAsync(ReplyDraft.PlacedPath(id), ct) || !await store.ExistsAsync(ReplyDraft.Marker(id), ct)
+            if (await store.ExistsAsync(ReplyDraft.PlacedPath(id), ct) || await store.ExistsAsync(ReplyDraft.StalePath(id), ct) || !await store.ExistsAsync(ReplyDraft.Marker(id), ct)
                 || ReplyDraft.ReadMarker(TrackerCsvText.Decode(await store.ReadAsync(ReplyDraft.Marker(id), ct))) is not { } to
                 || ReplyDraft.Body(TrackerCsvText.Decode(await store.ReadAsync(ReplyDraft.DraftPath(id), ct))) is not { } body)
             {
                 continue;
             }
-            string draftId = await writer.CreateDraftAsync(to.Thread, to.To, to.Subject, body, ct);
+            if (await StaleAsync(to.Thread, ct) is { } why)
+            {
+                await store.WriteAsync(ReplyDraft.StalePath(id), TrackerCsvText.Encode($"{why} {now:O}\n"), ct);
+                log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} not placed the draft for {id}: {why}\n");
+                continue;
+            }
+            string draftId = await writer.CreateDraftAsync(to, body, ct);
             await store.WriteAsync(ReplyDraft.PlacedPath(id), TrackerCsvText.Encode($"{draftId} {now:O}\n"), ct);
             log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} placed the draft for {id} in its thread, not sent\n");
             placed++;

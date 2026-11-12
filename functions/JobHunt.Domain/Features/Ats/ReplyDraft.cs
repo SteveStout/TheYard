@@ -9,6 +9,14 @@ namespace JobHunt.Domain.Features.Ats;
 /// <param name="Domains">The work domains of those addresses, personal mail domains left out.</param>
 public sealed record KnownContacts(IReadOnlySet<string> Addresses, IReadOnlySet<string> Domains);
 
+/// <summary>Where a draft goes and what keeps it in the person's thread: Gmail files a draft there only with all five.</summary>
+/// <param name="Thread">The Gmail thread id.</param>
+/// <param name="To">The person's address.</param>
+/// <param name="Subject">Re: and the message's subject.</param>
+/// <param name="InReplyTo">The message's Message-ID, or empty.</param>
+/// <param name="References">The message's References and its Message-ID, or empty.</param>
+public sealed record ThreadReply(string Thread, string To, string Subject, string InReplyTo, string References);
+
 /// <summary>A message a person wrote on a job thread, as the reply pass keeps it for its draft.</summary>
 /// <param name="Id">The Gmail message id.</param>
 /// <param name="ThreadId">The Gmail thread id.</param>
@@ -17,7 +25,9 @@ public sealed record KnownContacts(IReadOnlySet<string> Addresses, IReadOnlySet<
 /// <param name="Subject">The message's subject.</param>
 /// <param name="At">When Gmail received it.</param>
 /// <param name="Text">The body as plain text, which the item drafts the reply to.</param>
-public sealed record WaitingReply(string Id, string ThreadId, string To, string Name, string Subject, DateTimeOffset At, string Text);
+/// <param name="MessageId">Its Message-ID header, or empty.</param>
+/// <param name="References">Its References header, or empty.</param>
+public sealed record WaitingReply(string Id, string ThreadId, string To, string Name, string Subject, DateTimeOffset At, string Text, string MessageId = "", string References = "");
 
 /// <summary>
 /// A reply reaches Steve with a draft: a message a person wrote on a job thread (one whose writer's address, or work
@@ -45,6 +55,12 @@ public static partial class ReplyDraft
 
     /// <summary>The draft text the item writes.</summary>
     public static string DraftPath(string id) => $"{Folder}/{id}.draft.md";
+
+    /// <summary>Written when a draft is no longer wanted because the thread changed before it was placed, holding why.</summary>
+    public static string StalePath(string id) => $"{Folder}/{id}.stale";
+
+    /// <summary>The item, written beside the ready folder first and renamed into it last, so a pass that stopped between can finish it.</summary>
+    public static string TempPath(string id) => $"{Ready}/.replydraft-{id}.tmp";
 
     /// <summary>Written once the draft is in Gmail, holding its draft id.</summary>
     public static string PlacedPath(string id) => $"{Folder}/{id}.placed";
@@ -107,17 +123,17 @@ public static partial class ReplyDraft
     /// message's own text, which the item drafts to, so the item never opens a mailbox.
     /// </summary>
     public static string MarkerText(WaitingReply reply, DateTimeOffset now) =>
-        $"id={reply.Id}\nthread={reply.ThreadId}\nto={reply.To}\nsubject={ReplySubject(reply.Subject)}\nreceived={reply.At:O}\nqueued={now:O}\n---\n"
+        $"id={reply.Id}\nthread={reply.ThreadId}\nto={reply.To}\nsubject={ReplySubject(reply.Subject)}\nin_reply_to={reply.MessageId}\nreferences={$"{reply.References} {reply.MessageId}".Trim()}\nreceived={reply.At:O}\nqueued={now:O}\n---\n"
         + (reply.Text.Length > TextCap ? reply.Text[..TextCap] : reply.Text) + "\n";
 
-    /// <summary>The thread, recipient and subject a marker holds, or null when it does not read.</summary>
-    public static (string Thread, string To, string Subject)? ReadMarker(string text)
+    /// <summary>The thread, recipient, subject and reply headers a marker holds, or null when it does not read.</summary>
+    public static ThreadReply? ReadMarker(string text)
     {
         var fields = text.Replace("\r", "", StringComparison.Ordinal).Split('\n').TakeWhile(line => line != "---")
             .Select(line => line.Split('=', 2)).Where(pair => pair.Length == 2)
             .GroupBy(pair => pair[0], StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First()[1].Trim(), StringComparer.Ordinal);
         return fields.TryGetValue("thread", out var thread) && fields.TryGetValue("to", out var to) && fields.TryGetValue("subject", out var subject)
-            && thread.Length > 0 && to.Contains('@', StringComparison.Ordinal) ? (thread, to, subject) : null;
+            && thread.Length > 0 && to.Contains('@', StringComparison.Ordinal) ? new ThreadReply(thread, to, subject, fields.GetValueOrDefault("in_reply_to", ""), fields.GetValueOrDefault("references", "")) : null;
     }
 
     /// <summary>The draft's body as the item wrote it, trimmed, or null while it is empty.</summary>

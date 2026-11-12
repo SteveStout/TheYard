@@ -40,11 +40,19 @@ public sealed partial class GmailInbox(IHttpClientFactory http, GoogleCredential
     public async Task<InboxMessage> ReadAsync(string id, CancellationToken ct)
     {
         using var json = await GetAsync($"{Api}/messages/{id}?format=full", ct);
-        var root = json.RootElement;
+        return Message(id, json.RootElement);
+    }
+
+    /// <summary>One message out of Gmail's full answer: its headers, its date and its text.</summary>
+    public static InboxMessage Message(string id, JsonElement root)
+    {
         var payload = root.GetProperty("payload");
         long ms = long.Parse(root.GetProperty("internalDate").GetString()!, System.Globalization.CultureInfo.InvariantCulture);
         return new InboxMessage(id, root.GetProperty("threadId").GetString()!, Header(payload, "From"), Header(payload, "Subject"),
-            DateTimeOffset.FromUnixTimeMilliseconds(ms), Text(payload)) { Lines = Lines(payload), Html = Html(payload) };
+            DateTimeOffset.FromUnixTimeMilliseconds(ms), Text(payload))
+        {
+            Lines = Lines(payload), Html = Html(payload), MessageId = Header(payload, "Message-ID"), References = Header(payload, "References"),
+        };
     }
 
     public async Task<IReadOnlyList<string>> ThreadSendersAsync(string threadId, CancellationToken ct)

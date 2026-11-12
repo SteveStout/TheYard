@@ -922,8 +922,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 3,
+      "answered_as_wrong": 0,
       "prs": [
         45
       ]
@@ -951,6 +951,31 @@
       "answered_as_wrong": null,
       "prs": [
         46
+      ]
+    },
+    {
+      "version": "1.0.5.36",
+      "pr": 47,
+      "sha": "b8fa7b00",
+      "level": 0,
+      "at": "2026-11-12T04:58:42Z",
+      "waited_seconds": 548,
+      "review_seconds": 523,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 1,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        47
       ]
     }
   ]

@@ -10,19 +10,22 @@ namespace JobHunt.Functions.Tests;
 /// marker first, that writes the draft to the share and one line on TODAY.md. A live pass puts each written draft into
 /// its thread once with a writer that has no send; a dry pass leaves it on the share. Addresses and names are invented.
 /// </summary>
-public sealed class ReplyDraftTests
+public sealed partial class ReplyDraftTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 11, 16, 0, 0, TimeSpan.Zero);
 
-    private static Inbox Mailbox() => new(
-        new Mail1("m1", "t1", "Dana Whitfield <dana@zephyrlabs.com>", "Re: Staff Software Engineer - Web", Now.AddMinutes(-4), "Thanks Steve, do you have time Thursday?"),
+    private static Inbox Mailbox() => new(Mails());
+
+    private static Mail1[] Mails() => [
+        new Mail1("m1", "t1", "Dana Whitfield <dana@zephyrlabs.com>", "Re: Staff Software Engineer - Web", Now.AddMinutes(-4), "Thanks Steve, do you have time Thursday?") { MessageId = "<dana-1@zephyrlabs.com>", References = "<steve-0@mail.gmail.com>" },
         new Mail1("m0", "t1", "Steve Stout <stevenstout11@gmail.com>", "Staff Software Engineer - Web", Now.AddDays(-1), "Hi Dana"),
         new Mail1("m2", "t2", "Lee Park <lee@arborhealth.com>", "lunch on Friday", Now.AddMinutes(-9), "Want to grab lunch?"),
         new Mail1("m3", "t3", "Omar Haddad <omar@quill.io>", "Interview availability", Now.AddMinutes(-20), "Could we set up a call?") { Draft = true },
         new Mail1("m4", "t4", "LinkedIn <inmail-hit-reply@linkedin.com>", "New role for you", Now.AddMinutes(-3), "x"),
         new Mail1("m5", "t5", "Rita Gomez <rita@oldco.com>", "Your application", Now.AddHours(-3), "We would like to talk"),
         new Mail1("m6", "t6", "Pat Friend <pat.friend@gmail.com>", "Re: Interview tips for your role search", Now.AddMinutes(-6), "Happy to help, call me"),
-        new Mail1("m7", "t6", "Steve Stout <stevenstout11@gmail.com>", "Interview tips for your role search", Now.AddHours(-1), "Any advice?"));
+        new Mail1("m7", "t6", "Steve Stout <stevenstout11@gmail.com>", "Interview tips for your role search", Now.AddHours(-1), "Any advice?"),
+    ];
 
     // The tracker's rows: a leader at Zephyr Labs by address (not Dana's), a recruiter on a personal address, Lee by name only.
     private const string Tracker = "3401,Kim Hot,Zephyr Labs,LinkedIn,11/10/2026,kim.hot@zephyrlabs.com,INVITE SENT\r\n3402,Jane Recruit,Talent Co,Email,11/10/2026,jane.recruits@gmail.com,INBOUND\r\n3403,Lee Park,Arbor Health,LinkedIn,11/9/2026,https://www.linkedin.com/in/leepark,INVITE SENT\r\n";
@@ -56,7 +59,7 @@ public sealed class ReplyDraftTests
         Assert.DoesNotContain("view=admin", item, StringComparison.Ordinal);
         Assert.DoesNotContain((char)0x2014, item);
         string marker = scratch.Text("inbox-pass/reply-drafts/m1.md");
-        Assert.Equal(("t1", "dana@zephyrlabs.com", "Re: Staff Software Engineer - Web"), ReplyDraft.ReadMarker(marker));
+        Assert.Equal(new ThreadReply("t1", "dana@zephyrlabs.com", "Re: Staff Software Engineer - Web", "<dana-1@zephyrlabs.com>", "<steve-0@mail.gmail.com> <dana-1@zephyrlabs.com>"), ReplyDraft.ReadMarker(marker));
         Assert.Contains("---\nThanks Steve, do you have time Thursday?", marker, StringComparison.Ordinal);
         Assert.False(scratch.Has("dispatch/ready/12-replydraft-m2.md"));
         Assert.False(scratch.Has("dispatch/ready/12-replydraft-m3.md"));
@@ -99,7 +102,7 @@ public sealed class ReplyDraftTests
         var writer = new Drafts();
         var live = await new ReplyDrafts(scratch.Store, Mailbox(), writer, new Fixed(Now.AddMinutes(10))).RunAsync(CancellationToken.None);
         Assert.Equal(1, live.Placed);
-        Assert.Equal(["t1|dana@zephyrlabs.com|Re: Staff Software Engineer - Web|Dana,\n\nThursday works. 2 PM Central?\n\nSteve"], writer.Made);
+        Assert.Equal(["t1|dana@zephyrlabs.com|Re: Staff Software Engineer - Web|<dana-1@zephyrlabs.com>|<steve-0@mail.gmail.com> <dana-1@zephyrlabs.com>|Dana,\n\nThursday works. 2 PM Central?\n\nSteve"], writer.Made);
         Assert.StartsWith("r-1 ", scratch.Text("inbox-pass/reply-drafts/m1.placed"), StringComparison.Ordinal);
 
         await new ReplyDrafts(scratch.Store, Mailbox(), writer, new Fixed(Now.AddMinutes(15))).RunAsync(CancellationToken.None);
@@ -123,6 +126,10 @@ public sealed class ReplyDraftTests
     private sealed record Mail1(string Id, string Thread, string From, string Subject, DateTimeOffset At, string Text)
     {
         public bool Draft { get; init; }
+
+        public string MessageId { get; init; } = "";
+
+        public string References { get; init; } = "";
     }
 
     private sealed class Inbox(params Mail1[] mails) : IInboxReader
@@ -133,7 +140,7 @@ public sealed class ReplyDraftTests
         public Task<InboxMessage> ReadAsync(string id, CancellationToken ct)
         {
             var mail = mails.Single(m => m.Id == id);
-            return Task.FromResult(new InboxMessage(mail.Id, mail.Thread, mail.From, mail.Subject, mail.At, mail.Text));
+            return Task.FromResult(new InboxMessage(mail.Id, mail.Thread, mail.From, mail.Subject, mail.At, mail.Text) { MessageId = mail.MessageId, References = mail.References });
         }
 
         public Task<IReadOnlyList<string>> ThreadSendersAsync(string threadId, CancellationToken ct) =>
@@ -146,9 +153,9 @@ public sealed class ReplyDraftTests
     {
         public List<string> Made { get; } = [];
 
-        public Task<string> CreateDraftAsync(string threadId, string to, string subject, string text, CancellationToken ct)
+        public Task<string> CreateDraftAsync(ThreadReply reply, string text, CancellationToken ct)
         {
-            Made.Add($"{threadId}|{to}|{subject}|{text}");
+            Made.Add($"{reply.Thread}|{reply.To}|{reply.Subject}|{reply.InReplyTo}|{reply.References}|{text}");
             return Task.FromResult($"r-{Made.Count}");
         }
     }
