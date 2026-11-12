@@ -143,6 +143,39 @@ public sealed class PounceEmailTests
         Assert.False(waiting.Has("nightly/pounce/emails/12786.md"));
     }
 
+    [Fact]
+    public void A_key_that_is_a_number_but_not_a_whole_long_reads_as_no_hand_off()
+    {
+        Assert.Null(PounceEmail.Read(Handoff.Replace("\"key\":12786", "\"key\":1.5", StringComparison.Ordinal)));
+        Assert.Null(PounceEmail.Read(Handoff.Replace("\"key\":12786", "\"key\":99999999999999999999", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task A_settled_role_s_log_line_is_written_on_a_later_pass_when_its_pass_stopped_short_and_never_twice()
+    {
+        using var scratch = new Scratch();
+        scratch.Write("nightly/pounce/20261111-160500Z-12786.json", Handoff);
+        scratch.Write("linkedin-proof/QUEUE-pounce-2026-11-11-12786.md", Queue);
+        scratch.Write("nightly/pounce/20261111-160600Z-12787.json", Handoff.Replace("12786", "12787", StringComparison.Ordinal).Replace("Zephyr Labs", "Quill Systems", StringComparison.Ordinal).Replace("zephyrlabs.com", "quill.io", StringComparison.Ordinal));
+        scratch.Write("linkedin-proof/QUEUE-pounce-2026-11-11-12787.md", Queue.Replace("12786", "12787", StringComparison.Ordinal).Replace("Dana Whitfield, Zephyr Labs", "Omar Haddad, Quill Systems", StringComparison.Ordinal));
+        var finder = new Finder("dwhitfield@zephyrlabs.com", "https://zephyrlabs.com/team") { FailOn = "quill.io" };
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => new PounceEmails(scratch.Store, finder, new Sends(), new Fixed(Now), 50).RunAsync(PounceHandoff.Dry, CancellationToken.None));
+        Assert.True(scratch.Has("nightly/pounce/emails/12786.md"));
+
+        finder.FailOn = null;
+        var flaky = new FailingAppend(scratch.Store);
+        await Assert.ThrowsAsync<IOException>(() => new PounceEmails(flaky, finder, new Sends(), new Fixed(Now.AddMinutes(15)), 50).RunAsync(PounceHandoff.Dry, CancellationToken.None));
+        Assert.True(scratch.Has("nightly/pounce/emails/12787.md"));
+
+        await new PounceEmails(scratch.Store, finder, new Sends(), new Fixed(Now.AddMinutes(30)), 50).RunAsync(PounceHandoff.Dry, CancellationToken.None);
+        await new PounceEmails(scratch.Store, finder, new Sends(), new Fixed(Now.AddMinutes(45)), 50).RunAsync(PounceHandoff.Dry, CancellationToken.None);
+        string[] lines = scratch.Text(PounceEmail.Log).Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Single(lines, line => line.Contains(" 12786 Zephyr Labs | Dana Whitfield | shadow, kept dwhitfield@zephyrlabs.com", StringComparison.Ordinal));
+        Assert.Single(lines, line => line.Contains(" 12787 Quill Systems | Omar Haddad | refused: not on the company's domain", StringComparison.Ordinal));
+        Assert.Equal(2, lines.Length);
+    }
+
     private sealed class Fixed(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
@@ -152,10 +185,16 @@ public sealed class PounceEmailTests
     {
         public List<string> Asked { get; } = [];
 
+        public string? FailOn { get; set; }
+
         public string Name => "hunter";
 
         public Task<LeaderAddress?> FindAsync(string fullName, string domain, CancellationToken ct)
         {
+            if (domain == FailOn)
+            {
+                throw new HttpRequestException("the finder did not answer");
+            }
             Asked.Add($"{fullName}|{domain}");
             return Task.FromResult<LeaderAddress?>(new LeaderAddress(address, source));
         }
@@ -174,5 +213,39 @@ public sealed class PounceEmailTests
         public Task<IReadOnlyList<(DateTimeOffset Live, DateTimeOffset? Touch)>> CohortAsync(DateTimeOffset liveSince, CancellationToken ct) => Task.FromResult<IReadOnlyList<(DateTimeOffset, DateTimeOffset?)>>([]);
 
         public Task<IReadOnlyList<EmailTouch>> EmailsSinceAsync(DateTimeOffset since, CancellationToken ct) => Task.FromResult<IReadOnlyList<EmailTouch>>([.. All.Where(e => e.SentAt >= since)]);
+    }
+
+    /// <summary>The share, whose first append fails, as a share that stops answering half way through a pass.</summary>
+    private sealed class FailingAppend(IMergeStore inner) : IMergeStore
+    {
+        private bool _failed;
+
+        public Task<bool> ExistsAsync(string path, CancellationToken ct) => inner.ExistsAsync(path, ct);
+
+        public Task<byte[]> ReadAsync(string path, CancellationToken ct) => inner.ReadAsync(path, ct);
+
+        public Task<MergeEntry?> StatAsync(string path, CancellationToken ct) => inner.StatAsync(path, ct);
+
+        public Task<IReadOnlyList<MergeEntry>> ListFilesAsync(string folder, CancellationToken ct) => inner.ListFilesAsync(folder, ct);
+
+        public Task<IReadOnlyList<string>> ListFoldersAsync(string folder, CancellationToken ct) => inner.ListFoldersAsync(folder, ct);
+
+        public Task EnsureFolderAsync(string folder, CancellationToken ct) => inner.EnsureFolderAsync(folder, ct);
+
+        public Task WriteAsync(string path, byte[] bytes, CancellationToken ct) => inner.WriteAsync(path, bytes, ct);
+
+        public Task ReplaceAsync(string tempPath, string path, CancellationToken ct) => inner.ReplaceAsync(tempPath, path, ct);
+
+        public Task MoveAsync(string path, string destination, CancellationToken ct) => inner.MoveAsync(path, destination, ct);
+
+        public Task AppendAsync(string path, byte[] bytes, CancellationToken ct)
+        {
+            if (!_failed)
+            {
+                _failed = true;
+                throw new IOException("the share did not answer");
+            }
+            return inner.AppendAsync(path, bytes, ct);
+        }
     }
 }

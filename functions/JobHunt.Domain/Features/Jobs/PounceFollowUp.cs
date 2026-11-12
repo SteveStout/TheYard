@@ -150,10 +150,28 @@ public static partial class PounceFollowUp
             && Who(t.Cells[1]) == who && Answer().IsMatch(t.Cells[6].TrimStart()));
     }
 
-    /// <summary>The marker that keeps it to one follow-up per person per role: the role's key and the person's letters, or the code for an unnamed note.</summary>
+    /// <summary>
+    /// The code with the person it reached: its own name when make_ref.py was given one, else the name the box's send row
+    /// recorded for it, the tracker row written since the code was minted whose Notes carry the code. Null while no such
+    /// row names a person, so an unnamed note waits for its send's row and never stands for a person by its code.
+    /// </summary>
+    /// <param name="touches">The tracker rows written since the code was minted.</param>
     /// <param name="code">The code and who it went to.</param>
-    public static string Marker(PounceCode code) =>
-        $"{Folder}/{code.Key}-{(FirstName(code.Person) is null ? code.Code : Who(code.Person))}.md";
+    public static PounceCode? Recipient(IEnumerable<TrackerTouch> touches, PounceCode code)
+    {
+        if (FirstName(code.Person) is not null)
+        {
+            return code;
+        }
+        string named = $"Code {code.Code}.", linked = $"r={code.Code}";
+        var row = touches.FirstOrDefault(t => t.WrittenAt >= code.Sent && t.Cells.Count >= 7 && FirstName(t.Cells[1].Trim()) is not null
+            && (t.Cells[6].Contains(named, StringComparison.Ordinal) || t.Cells[6].Contains(linked, StringComparison.Ordinal)));
+        return row is null ? null : code with { Person = row.Cells[1].Trim() };
+    }
+
+    /// <summary>The marker that keeps it to one follow-up per person per role: the role's key and the person's letters, from a resolved recipient.</summary>
+    /// <param name="code">The code, its person resolved (Recipient).</param>
+    public static string Marker(PounceCode code) => $"{Folder}/{code.Key}-{Who(code.Person)}.md";
 
     /// <summary>Whole minutes from the code's first open to the instant given.</summary>
     /// <param name="visit">What the code did.</param>

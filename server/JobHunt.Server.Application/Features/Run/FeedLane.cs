@@ -15,7 +15,8 @@ public sealed record FeedTools(IClaudeCli Claude, IProseCheck Prose, UsageReport
 /// linkedin-proof/QUEUE-hotmgr-&lt;day&gt;.md and never over one already there; a dry run writes the same file into its run
 /// folder only. The feed mints nothing, sends nothing and writes no tracker row. A person or company named in
 /// linkedin-proof/FEED-HOLD.md waits on Steve and is never queued by the feed. In a slot run for one caught role the
-/// model is told that role, a candidate at any other company is dropped, a budget-flagged role's text may ask the
+/// model is told that role, a candidate at any other company is dropped before the gates read any, only the first
+/// that passes them is queued, a budget-flagged role's text may ask the
 /// timeline question, and the queue is QUEUE-pounce-&lt;day&gt;-&lt;key&gt;.md, so the role's blocks are a file of their own.
 /// </summary>
 /// <param name="share">The share.</param>
@@ -58,14 +59,21 @@ public sealed class FeedLane(IShare share, FeedTools tools, ServerConfig config,
         string candidatesPath = $"{folder}/candidates.json";
         IReadOnlyList<FeedCandidate> candidates = await share.ExistsAsync(candidatesPath, finish) ? FeedQueue.Parse(await share.ReadAsync(candidatesPath, finish)) : [];
         lines.Add($"{candidates.Count} candidates read from {candidatesPath}.");
+        var dropped = new List<Dropped>();
+        if (start.Role is { } role)
+        {
+            dropped.AddRange(candidates.Where(candidate => !ApplicationCap.Same(candidate.Company ?? string.Empty, role.Company))
+                .Select(candidate => new Dropped($"{candidate.Person}, {candidate.Company}".Trim(' ', ','), $"not the caught role's company ({role.Company})")));
+            candidates = [.. candidates.Where(candidate => ApplicationCap.Same(candidate.Company ?? string.Empty, role.Company))];
+        }
         FeedCut cut = FeedQueue.Cut(candidates, reads.Gate, reads.Queues, reads.Holds, start.Role?.Budget == true);
-        var dropped = new List<Dropped>(cut.Dropped);
+        dropped.AddRange(cut.Dropped);
         var kept = new List<FeedCandidate>();
         foreach (FeedCandidate candidate in cut.Kept)
         {
-            if (start.Role is { } role && !ApplicationCap.Same(candidate.Company!, role.Company))
+            if (start.Role is not null && kept.Count > 0)
             {
-                dropped.Add(new Dropped($"{candidate.Person}, {candidate.Company}".Trim(' ', ','), $"not the caught role's company ({role.Company})"));
+                dropped.Add(new Dropped($"{candidate.Person}, {candidate.Company}".Trim(' ', ','), "one person a caught role: the first that passed is queued"));
             }
             else if (await tools.Prose.CleanAsync(candidate.Text!, finish))
             {

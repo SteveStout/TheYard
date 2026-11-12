@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
+
 namespace JobHunt.Server.Tests;
 
 /// <summary>
@@ -157,6 +160,86 @@ public sealed class SlotTests
         Assert.Equal(1, morning.Claude.Requests.Count(request => request.Arguments[1].Contains("FEED-LANE.md", StringComparison.Ordinal)));
     }
 
+    private static string Person(string name, string company) =>
+        $"{{\"person\":\"{name}\",\"company\":\"{company}\",\"seat\":\"VP Engineering\",\"profile_url\":\"https://www.linkedin.com/in/{name.Replace(" ", "", StringComparison.Ordinal).ToLowerInvariant()}\",\"hot\":\"A\",\"why\":\"x\",\"common_point\":\"\",\"common_source\":\"\",\"band\":\"\",\"text\":{System.Text.Json.JsonSerializer.Serialize(NoOriented.Replace("Kim", name.Split(' ')[0], StringComparison.Ordinal))},\"action\":\"invite\"}}";
+
+    private static Morning PeopleMorning(params string[] people)
+    {
+        Morning morning = null!;
+        morning = new Morning(request =>
+        {
+            if (request.Arguments[1].Contains("FEED-LANE.md", StringComparison.Ordinal))
+            {
+                morning.Share.Files[$"nightly/2026-11-03/{Slot}-feed-opus-5-5/candidates.json"] = "{\"candidates\":[" + string.Join(",", people) + "]}";
+            }
+            return new ClaudeRun(0, false, ResultLine.Empty);
+        });
+        morning.Config.Lanes["feed"].Enabled = true;
+        morning.Time.Now = TenCentral;
+        morning.Share.Files[Handoff] = Json();
+        return morning;
+    }
+
+    [Fact]
+    public async Task A_role_run_queues_one_person_and_one_at_another_company_never_crowds_out_the_role_s_own()
+    {
+        Morning two = PeopleMorning(Person("Kim Hot", "Zephyr Labs"), Person("Pat Two", "Zephyr Labs"));
+        await two.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+        string queue = two.Share.Files["linkedin-proof/QUEUE-pounce-2026-11-03-12786.md"];
+        Assert.DoesNotContain("Pat Two", queue, StringComparison.Ordinal);
+        Assert.Contains("one person a caught role", two.Share.Files[$"nightly/2026-11-03/{Slot}-feed-opus-5-5/DONE.md"], StringComparison.Ordinal);
+
+        Morning crowded = PeopleMorning(Person("Kim Hot", "Other Co"), Person("Kim Hot", "Zephyr Labs"));
+        await crowded.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+        Assert.Contains("### 1. Kim Hot, Zephyr Labs", crowded.Share.Files["linkedin-proof/QUEUE-pounce-2026-11-03-12786.md"], StringComparison.Ordinal);
+    }
+
+    // Feed, invites and apply at 40 minutes each, the recount's 8 and 5 for the records: 133 minutes before 11:30 UTC.
+    [Theory]
+    [InlineData(9, 10, true)]
+    [InlineData(9, 20, false)]
+    [InlineData(10, 30, false)]
+    public async Task A_role_run_that_could_still_hold_the_lock_at_half_past_five_does_not_start(int hour, int minute, bool runs)
+    {
+        Morning morning = RoleMorning(NoOriented);
+        morning.Time.Now = new DateTimeOffset(2026, 11, 3, hour, minute, 0, TimeSpan.Zero);
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+        Assert.Equal(runs, morning.Claude.Requests.Count > 0);
+        Assert.Equal(!runs, output.Contains("did nothing", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_role_run_whose_wait_for_the_lock_reaches_the_cutoff_does_nothing()
+    {
+        Morning morning = RoleMorning(NoOriented);
+        morning.Time.Now = new DateTimeOffset(2026, 11, 3, 9, 5, 0, TimeSpan.Zero);
+        (_, string output) = await morning.Lanes(runLock: new SlowLock(morning.Time, TimeSpan.FromMinutes(20))).ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+        Assert.Contains("did nothing", output, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
+        Assert.DoesNotContain(morning.Share.Files.Keys, path => path.StartsWith("inbox/append-inbox/", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task A_slot_and_a_hand_off_that_name_two_postings_do_nothing_and_a_key_past_the_range_reads_as_none()
+    {
+        Morning morning = RoleMorning(NoOriented);
+        (int exit, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, null, "pounce-1", Handoff), default);
+        Assert.Equal(1, exit);
+        Assert.Contains("names posting 12786", output, StringComparison.Ordinal);
+        Assert.Empty(morning.Claude.Requests);
+
+        Assert.Null(RoleHandoff.Parse(Handoff, Json().Replace("\"key\":12786", "\"key\":9223372036854775808", StringComparison.Ordinal)));
+    }
+
+    private sealed class SlowLock(FixedTime time, TimeSpan wait) : IRunLock
+    {
+        public Task<IAsyncDisposable?> TakeAsync(string dayFolder, CancellationToken ct)
+        {
+            time.Now += wait;
+            return new FakeLock().TakeAsync(dayFolder, ct);
+        }
+    }
+
     [Fact]
     public async Task A_slot_run_that_died_mid_send_holds_the_morning_s_lane_as_a_morning_run_would()
     {
@@ -226,5 +309,53 @@ public sealed class SlotTests
         Assert.Contains("## 1. Zephyr Labs, Staff Software Engineer - Web", blockers, StringComparison.Ordinal);
         Assert.Contains("- The control: the required field \"Desired start date\" has no banked answer", blockers, StringComparison.Ordinal);
         Assert.DoesNotContain("The control", Blockers.Render(Today, [new Posting("Acme", "Staff Engineer", "https://acme.example/jobs/1", "Workday", "JOBS.md:3")]), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_slot_run_builds_its_resume_in_its_own_run_folder_and_never_the_morning_s()
+    {
+        Morning morning = RoleMorning(NoOriented);
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+
+        string asked = Assert.Single(morning.Resumes.Asked);
+        Assert.Contains($"/nightly/2026-11-03/{Slot}-apply-sonnet-5-5/resumes/01", asked, StringComparison.Ordinal);
+        Assert.DoesNotContain("/0600-apply-", asked, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_caught_role_that_went_live_past_the_age_limit_is_not_applied_to()
+    {
+        Morning morning = RoleMorning(NoOriented);
+        morning.Share.Files[Handoff] = Json().Replace("\"live_at\":\"2026-11-03T15:25:00+00:00\"", "\"live_at\":\"2026-10-01T15:25:00+00:00\"", StringComparison.Ordinal);
+        await morning.Lanes().ExecuteAsync(new RunOptions(false, null, Slot, Handoff), default);
+
+        Assert.Empty(morning.Resumes.Asked);
+        Assert.Contains("skipped: age 33 days (posted 2026-10-01", morning.Share.Files[$"nightly/2026-11-03/{Slot}-apply-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_Function_holds_a_caught_role_s_item_from_where_the_box_starts_refusing_its_run()
+    {
+        // Two processes, no shared constant: the Function's window is read from its source and held to the box's cutoff,
+        // 05:30 less the role run's lead with every lane on at its default limit.
+        var config = new ServerConfig { Lanes = RunSlot.RoleOrder.ToDictionary(RunSlot.Word, _ => new LaneConfig()) };
+        TimeSpan box = RunSlot.Morning.From - RunLanes.RoleLead(config);
+        string source = File.ReadAllText(Path.Combine(Repo(), "functions", "JobHunt.Domain", "Features", "Jobs", "PounceHandoff.cs"));
+        Match from = Regex.Match(source, @"Morning = \(new\((\d+), (\d+), 0\)");
+        Assert.True(from.Success, "PounceHandoff.Morning was not found");
+        TimeSpan function = new(int.Parse(from.Groups[1].Value, CultureInfo.InvariantCulture), int.Parse(from.Groups[2].Value, CultureInfo.InvariantCulture), 0);
+        Assert.True(function <= box && box - function < TimeSpan.FromMinutes(15), $"the Function holds items from {function:hh\\:mm}, the box refuses role runs from {box:hh\\:mm}");
+    }
+
+    private static string Repo()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, "functions", "JobHunt.Domain")))
+            {
+                return dir.FullName;
+            }
+        }
+        throw new InvalidOperationException("functions/JobHunt.Domain not found above " + AppContext.BaseDirectory);
     }
 }

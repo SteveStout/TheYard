@@ -12,7 +12,8 @@ namespace JobHunt.Domain.Features.Jobs;
 /// <remarks>
 /// The item never holds up a first touch. Its 20 sorts it after every wrapper (10), and it needs what a wrapper needs,
 /// so it is never eligible while a wrapper waits on the browser; a wrapper that lands while the page is being built
-/// makes the item put a copy of itself back as a follow-on and stop. A page that fails a gen90 check, a company the
+/// makes the item put a copy of itself back as a follow-on and stop, at any of its four checks, the last right before
+/// gen90.py runs. A page that fails a gen90 check, a company the
 /// scan flags, or a role whose feed named no leader gets no page and a log line saying which and why.
 /// </remarks>
 public static class PouncePage
@@ -54,14 +55,14 @@ public static class PouncePage
         item.Append("A page builder in shadow. The page is built and logged, never attached to anything and never linked in any message, until Steve answers the ruling on the 90-day page in J:\\dispatch\\DECISION.md. ");
         item.Append($"You send nothing and open no browser. You write only in {folder}/, one line on {log}, your DONE note and your CLOSED row. You never hold up a first touch: step 1 says how.\n\n");
         item.Append("## Steps (on this box J:\\ is /mnt/j)\n\n");
-        item.Append($"1. A first touch comes first. Run `ls /mnt/j/dispatch/ready/10-pounce-*.md`. If it lists a file, run `mkdir -p {Path(requeue)}`, copy /mnt/j/dispatch/running/{lane}/prompt.md to {requeue}, write the DONE note saying you yielded to that first touch with the line `FOLLOW-ON: J:\\nightly\\pounce\\requeue\\20-{lane}.md`, write the CLOSED row (step 10) and stop. Repeat this check before steps 3 and 6.\n");
+        item.Append($"1. A first touch comes first. Run `ls /mnt/j/dispatch/ready/10-pounce-*.md`. If it lists a file, run `mkdir -p {Path(requeue)}`, copy /mnt/j/dispatch/running/{lane}/prompt.md to {requeue}, write the DONE note saying you yielded to that first touch with the line `FOLLOW-ON: J:\\nightly\\pounce\\requeue\\20-{lane}.md`, write the CLOSED row (step 10) and stop. Repeat this check before steps 3, 6 and 7.\n");
         item.Append($"2. The leader the feed named. Read the newest of `ls -t /mnt/j/linkedin-proof/QUEUE-pounce-*-{role.Key}.md /mnt/j/nightly/*/pounce-{role.Key}-feed-*/QUEUE-pounce-*-{role.Key}.md`; the leader is the name in its first block's heading, `### 1. <Name>, <Company> (<Seat>)`. ");
         item.Append($"With no file, or a first block that names no one, append `{line} | NO PAGE no leader: <what you found>` to {log}, write the DONE note and the CLOSED row, and stop.\n");
         item.Append($"3. The posting. Run `mkdir -p {folder}`, read {role.Url} and save its text word for word as {folder}/posting.txt.\n");
         item.Append($"4. The red flag scan, before anything else goes in the spec (RULE 64 and CONVENTIONS, THE 90-DAY PAGE): the company's careers board for where the engineering team sits, offshore or contractor build-outs, headcount by region, layoffs in the last year and recent interview reviews. Write {folder}/spec.json holding only `redflag_scan`: date, team_location, flags, probes, sources and verdict, as Billtrust-spec.json in {Template} has them. `flags` is `none` when nothing was found.\n");
         item.Append($"5. A flag is the end. If `flags` is anything but `none`, append `{line} | NO PAGE red flag: <the flags on one line>` to {log}, put the flags in the DONE note's LEFT FOR STEVE section, write the CLOSED row and stop. A flagged company gets no page.\n");
         item.Append($"6. The spec. Fill the rest of {folder}/spec.json in the shape of {Template}/EXAMPLE-spec.json: role, company, manager (the leader), date, posting_url, lede, four stats from PROOF-BANK.json, four points each with a `jd` line copied word for word from posting.txt, a PROOF-BANK quote and its proof links, and `posting_text_file` set to {folder}/posting.txt. Every fact comes from PROOF-BANK.json and PROOF-INDEX.json; never a number they do not hold, and no em dash.\n");
-        item.Append("7. Run gen90.py once:\n\n```\n");
+        item.Append("7. Do step 1's check once more, then run gen90.py once:\n\n```\n");
         item.Append($"cd {Template} && LANE={lane} python3 -I {Template}/gen90.py {folder}/spec.json {folder}/page --person \"<the leader>\" --channel LinkedIn --role \"{Quoted(role.Title)}, 90-day page, shadow, never attached\"\n");
         item.Append("```\n\n   Never run gen90.py a second time and never change the spec to pass a check: a page that fails a check is a page not built.\n");
         item.Append($"8. The log line. On `GEN90 PASS`, append `{line} | PAGE {folder}/page.pdf, code <the code it printed>, never attached` to {log}. On `GEN90 FAIL`, append `{line} | NO PAGE gen90: <each failing check word for word, joined by \"; \">`. Attach the page to nothing and name it in no message.\n");

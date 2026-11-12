@@ -14,8 +14,10 @@ namespace JobHunt.Server.Application.Features.Run;
 /// not only the model's. A stop from the service holds what has not started, and everything after it still closes.
 /// A slot run works one caught role the same way under the same lock, gates and day's stop file: the feed for that role,
 /// then the invites lane on that role's queue only, then the apply lane on that role's posting only, its folders and card
-/// named for its slot. It never starts from
-/// 05:30 to 07:00 Central, the morning's own window, and a slot whose lane already ran live does not run that lane again.
+/// named for its slot. It never starts from 05:30 to 07:00 Central, the morning's own window, nor so close before 05:30
+/// that its lanes' limits could carry it past then, and that is read again once the lock is held, because the wait for
+/// it counts too. A slot whose lane already ran live does not run that lane again, and a hand-off must name the slot's
+/// own posting.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="guards">The checks.</param>
@@ -34,9 +36,10 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         DateTimeOffset started = guards.Time.GetUtcNow();
         DateOnly day = RunSlot.Day(started);
         bool dry = options.Dry || config.DryRun;
-        if (options.Role is not null && RunSlot.Quiet(started))
+        string quiet = $"{RegistryRows.Lane}: no slot run starts from 05:30 to 07:00 Central, nor where its lanes could run past 05:30; {options.Slot} did nothing.";
+        if (options.Role is not null && RunSlot.Quiet(started, RoleLead(config)))
         {
-            return (0, $"{RegistryRows.Lane}: no slot run starts from 05:30 to 07:00 Central; {options.Slot} did nothing.");
+            return (0, quiet);
         }
         if (await guards.Mount.FreshAsync(ct) is { } stale)
         {
@@ -47,10 +50,18 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         {
             return (1, $"{RegistryRows.Lane} stopped before anything ran: the hand-off {options.Role} would not read");
         }
+        if (role is not null && options.Slot != RunSlot.Pounce + role.Key)
+        {
+            return (1, $"{RegistryRows.Lane} stopped before anything ran: the hand-off {options.Role} names posting {role.Key}, not slot {options.Slot}");
+        }
         await using IAsyncDisposable? held = await guards.Lock.TakeAsync(RunSlot.DayFolder(day), ct);
         if (held is null)
         {
             return (0, $"{RegistryRows.Lane}: another run holds the lock; this one did nothing.");
+        }
+        if (role is not null && RunSlot.Quiet(guards.Time.GetUtcNow(), RoleLead(config)))
+        {
+            return (0, quiet);
         }
         var lanes = (role is null ? RunSlot.Order : RunSlot.RoleOrder).Where(lane => options.Only is null || options.Only == lane).Where(lane => config.For(lane).Enabled).ToList();
         try
@@ -155,6 +166,10 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             }
         }
     }
+
+    /// <summary>The longest a role run can last: its lanes' limits, the recount's and five for the records; the Function's hold starts this long before 05:30.</summary>
+    public static TimeSpan RoleLead(ServerConfig config) =>
+        TimeSpan.FromMinutes(RunSlot.RoleOrder.Where(lane => config.For(lane).Enabled).Sum(lane => config.For(lane).TimeoutMinutes) + InviteRecount.Minutes + 5);
 
     private async Task<string?> CloseLinkedInAsync(DateOnly day, string? stop, bool dry, CancellationToken ct)
     {
