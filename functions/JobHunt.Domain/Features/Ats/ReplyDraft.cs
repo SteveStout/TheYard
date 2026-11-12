@@ -53,6 +53,12 @@ public static partial class ReplyDraft
     /// <summary>The message's marker, written before its item, so a message gets one item.</summary>
     public static string Marker(string id) => $"{Folder}/{id}.md";
 
+    /// <summary>
+    /// The marker while it is written, renamed over the marker in one step, so a pass that stops part way leaves no marker
+    /// with half its fields. It sits beside the markers, outside the ready folder the dispatcher reads.
+    /// </summary>
+    public static string MarkerTempPath(string id) => $"{Folder}/.{id}.md.tmp";
+
     /// <summary>The draft text the item writes.</summary>
     public static string DraftPath(string id) => $"{Folder}/{id}.draft.md";
 

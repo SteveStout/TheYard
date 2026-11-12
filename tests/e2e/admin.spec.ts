@@ -2100,7 +2100,8 @@ test('the time to first touch card draws one row a day against 60 minutes, from 
 /**
  * The funnel by channel (ADR: The Nightly Function on the Admin tab, the addendum on the funnel by channel): a local run
  * has no job hunt database, so the real route answers unread and says why; the drawn card is held to two weeks in the
- * route's own shape, newest first, with only the channels that moved, each reply rate read from its counts.
+ * route's own shape, newest first, with only the channels that moved, each reply rate read from its counts, and a read
+ * with no week says so across the table.
  */
 test('the funnel by channel card draws the channels of each week from the route', async ({
   page,
@@ -2159,6 +2160,18 @@ test('the funnel by channel card draws the channels of each week from the route'
   await expect(weeks).toContainText('33 %');
   await expect(card.getByTestId('channels-source')).toContainText(
     'Not here yet: opens and the highest rung'
+  );
+
+  // A read with no week at all says so across the table, as the other Admin tables do.
+  const none = JSON.stringify({ ...JSON.parse(body), weeks: [] });
+  await page.unroute('**/api/admin/channels');
+  await page.route('**/api/admin/channels', (route) =>
+    route.fulfill({ contentType: 'application/json', body: none })
+  );
+  await page.reload();
+  await expect(card.getByTestId('channels-weeks')).toContainText(
+    'no touch, reply or room in these weeks',
+    { timeout: 60_000 }
   );
 });
 // #endregion channels-card

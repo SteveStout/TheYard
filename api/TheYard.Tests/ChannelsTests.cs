@@ -1,3 +1,4 @@
+using System.Data;
 using TheYard.Application.Features.Admin.Cloud;
 
 namespace TheYard.Tests;
@@ -5,7 +6,8 @@ namespace TheYard.Tests;
 /// <summary>
 /// The funnel by channel on the Admin tab (ADR-109, the addendum on the funnel by channel): the card schema's Channels
 /// view folded into weeks, newest first, every week with the six channels in one order and zeros where a channel had
-/// nothing; and a refused or failed read is the card's unread, never a 500.
+/// nothing; a refused or failed read is the card's unread, never a 500; and a view row with no channel is left out
+/// rather than failing the read.
 /// </summary>
 public sealed class ChannelsTests
 {
@@ -48,6 +50,27 @@ public sealed class ChannelsTests
         Assert.False(thrown.Available);
         Assert.Contains("could not be read (TimeoutException)", thrown.Note, StringComparison.Ordinal);
         Assert.Contains("[card].[Channels]", SqlChannelCounts.Sql, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_view_row_with_no_channel_is_left_out_and_the_rest_of_the_read_stands()
+    {
+        using var table = new DataTable();
+        foreach ((string name, Type type) in new[] { ("Channel", typeof(string)), ("Week", typeof(DateTime)), ("Touches", typeof(int)), ("Replies", typeof(int)), ("Rooms", typeof(int)) })
+        {
+            table.Columns.Add(name, type);
+        }
+        table.Rows.Add(DBNull.Value, new DateTime(2026, 11, 9), 2, 0, 0);
+        table.Rows.Add("applications", new DateTime(2026, 11, 9), 5, 1, 0);
+        using var reader = table.CreateDataReader();
+
+        var rows = new List<ChannelWeek?>();
+        while (reader.Read())
+        {
+            rows.Add(SqlChannelCounts.Row(reader));
+        }
+
+        Assert.Equal([null, new ChannelWeek("applications", Monday, 5, 1, 0)], rows);
     }
 
     private sealed class Fixed(ChannelCountsRead read) : IChannelCounts

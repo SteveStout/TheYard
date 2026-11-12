@@ -267,3 +267,12 @@ The card is for Steve's own reading and is never a link in any message, as every
 > ### Funnel by channel (from card.Channels)
 >
 > Read `SELECT [Channel], [Week], [Touches], [Replies], [Rooms] FROM [card].[Channels] WHERE [Week] >= DATEADD(day, -28, CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Central Standard Time' AS date)) ORDER BY [Week] DESC, [Channel];` with the Function's identity, or open the Admin tab's card "The funnel by channel". Write one table: a row a channel (pounce, hotmgr, email campaign, old contacts, applications, recruiters), a column pair a week for the last four weeks (touches, replies), and a last column for rooms booked in the four weeks. Under it, one line: the channel with the most replies per touch over the four weeks, with its two numbers. Opens and the highest rung are not in the view yet; say "opens: not counted" rather than leaving the column out. Counts only: no name, company or address in the section. Never link the Admin tab in the scorecard or in any message.
+
+Correction, 1.0.5.40: four statements in the 1.0.5.37 addendum did not hold (CodeRabbit on #48).
+
+- "Its channel, first match wins ... an old contact or a referral, a recruiter, an application": the view gave every application the applications channel unless the pounce had it, so an application that reached an old contact or a recruiter was counted for applications. It also left an application that matched no channel above it with none at all. From this version an application takes applications only when no channel matched or only the LinkedIn send did; the pounce, the campaign, an old contact and a recruiter keep theirs.
+- That empty channel reached the card's reader as a null, and the reader failed the whole read on it, so one ordinary application made the card say it could not read. The view no longer makes one, and the reader leaves out a row with no channel as it leaves out a channel outside the six.
+- "The person or the note says recruiter or talent": the note was read for recruiter only. It is now read for talent too.
+- A read with no week drew the column heads over an empty table. It now says "no touch, reply or room in these weeks", as the other Admin tables say theirs.
+
+`ChannelViewTests`, `ChannelsTests` and the card's browser test hold them.

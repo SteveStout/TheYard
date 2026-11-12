@@ -6,7 +6,8 @@ namespace JobHunt.Functions.Tests;
 /// <summary>
 /// The funnel by channel in SQL: the card view counts touches, replies and rooms a channel a week from the rows view
 /// alone and carries counts only; the rows view names the six channels, reads only columns its tables declare, and
-/// joins a reply or a room to the newest touch at the same company.
+/// joins a reply or a room to the newest touch at the same company; an application takes applications only when no
+/// channel above it matched, and a recruiter is one whose person or note says recruiter or talent.
 /// </summary>
 public sealed partial class ChannelViewTests
 {
@@ -42,6 +43,25 @@ public sealed partial class ChannelViewTests
         }
         Assert.Contains("x.[Company] = k.[Company] AND x.[Day] <= k.[Day] ORDER BY x.[Day] DESC", rows, StringComparison.Ordinal);
         Assert.DoesNotContain((char)0x2014, rows);
+    }
+
+    [Fact]
+    public void An_application_takes_applications_only_when_no_channel_above_it_matched()
+    {
+        string rows = File.ReadAllText(Database("Views", "ChannelRows.sql"));
+        string touches = rows[rows.IndexOf("[Touches] AS (", StringComparison.Ordinal)..];
+        Assert.Contains("WHEN k.[Kind] = 'application' AND (k.[Channel] IS NULL OR k.[Channel] = 'hotmgr') THEN 'applications'", touches, StringComparison.Ordinal);
+        Assert.DoesNotContain("k.[Channel] <> 'pounce'", touches, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_recruiter_is_one_whose_person_or_note_says_recruiter_or_talent()
+    {
+        string recruiter = File.ReadAllLines(Database("Views", "ChannelRows.sql")).Single(line => line.Contains("THEN 'recruiters'", StringComparison.Ordinal));
+        foreach (string test in new[] { "r.[Who] LIKE '%RECRUIT%'", "r.[Who] LIKE '%TALENT%'", "r.[Note] LIKE '%RECRUITER%'", "r.[Note] LIKE '%TALENT%'" })
+        {
+            Assert.Contains(test, recruiter, StringComparison.Ordinal);
+        }
     }
 
     private static string Database(params string[] parts) => Path.Combine([Root(), "functions", "JobHunt.Database", .. parts]);

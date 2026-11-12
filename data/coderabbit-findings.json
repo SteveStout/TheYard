@@ -972,8 +972,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         47
       ]
@@ -997,8 +997,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 3,
+      "answered_as_wrong": 0,
       "prs": [
         48
       ]
@@ -1022,8 +1022,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         49
       ]
@@ -1051,6 +1051,31 @@
       "answered_as_wrong": null,
       "prs": [
         50
+      ]
+    },
+    {
+      "version": "1.0.5.40",
+      "pr": 51,
+      "sha": "2a9cec20",
+      "level": 0,
+      "at": "2026-11-12T07:07:39Z",
+      "waited_seconds": 489,
+      "review_seconds": 464,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 0,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 0,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        51
       ]
     }
   ]
