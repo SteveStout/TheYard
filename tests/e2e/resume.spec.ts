@@ -37,6 +37,20 @@ test('a resume opened through a door is counted on the activity card by its door
   );
 });
 
+test('on a phone the door says nothing is below it, and both of its links sit on the first screen (ADR: The resume has an address)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/resume?src=email');
+  const visible = await page.evaluate(() => document.body.innerText);
+  expect(visible).not.toMatch(/below/i);
+  for (const name of ['Open the PDF on its own', 'Check my work in ten minutes']) {
+    const box = await page.getByRole('link', { name }).boundingBox();
+    expect(box, name).not.toBeNull();
+    expect(box!.y + box!.height, name).toBeLessThanOrEqual(844);
+  }
+});
+
 test('a browser that opens /resume gets the door: the band leads to the review route, and at 390 the PDF is a pill and nothing scrolls sideways (ADR: The resume has an address)', async ({
   page,
 }) => {

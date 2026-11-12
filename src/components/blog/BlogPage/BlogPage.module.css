@@ -85,6 +85,11 @@
   min-width: 0;
 }
 
+/* While the posts are read the list keeps a screen of room, so what follows it is never on the first screen and never moves (ADR-113). */
+.reading {
+  min-height: 100svh;
+}
+
 .note {
   margin: 0;
   color: var(--color-text-muted);
@@ -175,6 +180,14 @@
   display: block;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
+}
+
+/* Read from an Admin route, so its size is set before the read answers: room for four rows, whatever it holds (ADR-113). */
+.sourcesBody {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  height: calc(4 * 1.5em + 3 * var(--space-2));
+  overflow: hidden;
 }
 
 .sources {
