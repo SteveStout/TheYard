@@ -57,7 +57,9 @@ public sealed class ReplyDraftTimer(IMergeStore store, IHttpClientFactory http, 
     private sealed class ThreadDrafts(IDraftWriter drafts) : IReplyDraftWriter
     {
         /// <inheritdoc />
-        public async Task<string> CreateDraftAsync(string threadId, string to, string subject, string text, CancellationToken ct) =>
-            (await drafts.CreateDraftAsync(new DraftMail(threadId, to, subject, text, System.Net.WebUtility.HtmlEncode(text).Replace("\n", "<br>", StringComparison.Ordinal), null, null), ct)).DraftId;
+        public async Task<string> CreateDraftAsync(ThreadReply reply, string text, CancellationToken ct) =>
+            (await drafts.CreateDraftAsync(new DraftMail(reply.Thread, reply.To, reply.Subject, text, System.Net.WebUtility.HtmlEncode(text).Replace("\n", "<br>", StringComparison.Ordinal), Header(reply.InReplyTo), Header(reply.References)), ct)).DraftId;
+
+        private static string? Header(string value) => value.Length == 0 ? null : value;
     }
 }

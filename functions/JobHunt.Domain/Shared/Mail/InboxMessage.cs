@@ -18,6 +18,12 @@ public sealed record InboxMessage(string Id, string ThreadId, string From, strin
     /// <summary>The HTML parts as sent, for a reader that needs a link's address (a SuccessFactors agent has no plain part).</summary>
     public string Html { get; init; } = "";
 
+    /// <summary>The Message-ID header, which a reply names in In-Reply-To, or empty.</summary>
+    public string MessageId { get; init; } = "";
+
+    /// <summary>The References header, the chain a reply carries on, or empty.</summary>
+    public string References { get; init; } = "";
+
     /// <summary>The address in the From header, lower case.</summary>
     public string Address => Mail.Address(From);
 
