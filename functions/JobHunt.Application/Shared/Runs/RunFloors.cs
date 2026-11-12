@@ -31,6 +31,7 @@ public static class RunFloors
         new("DailyCard", null, 0, 1, "it writes once a day; every other hour is not its hour"),
         new("TodayCard", null, 0, 1, "it writes once a day; every other hour is not its hour"),
         new("TodayCardHandRun", null, 0, 1, "a hand run writes one card or says why not"),
+        new("Funnel", null, 0, 1, "it writes the day before's counts whatever the day held; a day with no scan, touch or reply is a day of zeros, and the card names it"),
         new("CampaignSend", null, 0, 1, "shadow and the holds send nothing by design; a silent 8 AM has its own alert"),
         new("CampaignTestSend", null, 0, 1, "it sends one test or names what it lacks"),
         new("NetworkLogPass", null, 0, 1, "a day with no two-way thread happens; a failed read fails the run and a silent 6 AM has its own alert"),
