@@ -1,7 +1,8 @@
 /**
  * Does:      Draws the blog at ?view=blog (ADR: Every LinkedIn post is also a blog post): the head, the newest post in full
  *            and the older ones as short cards, or the one post an address names; beside them the most read this week
- *            and where readers came from.
+ *            and where readers came from. A post's address opens with its hook (ADR-132): its title, its summary and its
+ *            first image, drawn from the first load on the server and from the posts in the browser.
  * Does not:  Keep the posts (useBlogPosts.ts reads them once) or report a read (BlogPostCard does).
  * Used by:   App.tsx.
  */
@@ -15,6 +16,8 @@ import {
   type BlogStats,
 } from '../../../lib/blog';
 import { useBlogPosts } from '../../../hooks/useBlogPosts';
+import { useFirstLoad, type HookPost } from '../../../hooks/useFirstLoad';
+import { Hook } from '../../shared/Hook';
 import { BlogPostCard } from '../BlogPostCard';
 import styles from './BlogPage.module.css';
 
@@ -45,6 +48,7 @@ export function BlogPage({
   onAllPosts: () => void;
 }) {
   const posts = useBlogPosts();
+  const first = useFirstLoad();
   const [stats, setStats] = useState<BlogStats | null>(null);
   useEffect(() => {
     const stop = new AbortController();
@@ -56,6 +60,17 @@ export function BlogPage({
 
   const list = posts.state === 'ready' ? posts.posts : [];
   const named = slug === null ? null : (list.find((post) => post.slug === slug) ?? null);
+  // The post's hook: from the posts once read, and before then from what the server drew it with.
+  const hook: HookPost | null = named
+    ? {
+        slug: named.slug,
+        title: named.title,
+        summary: named.summary,
+        image: named.images[0] ?? null,
+      }
+    : first?.post && first.post.slug === slug && posts.state !== 'ready'
+      ? first.post
+      : null;
   const tags = [...new Set(list.flatMap((post) => post.tags))].slice(0, 6);
   // Four rows at most, the four sources the site names, so the box has its size before its read answers.
   const shares = sourceShares(stats?.sources ?? []).slice(0, 4);
@@ -79,16 +94,35 @@ export function BlogPage({
           </button>
         )}
       </div>
-      <p className={styles.intro}>
-        Everything I post on LinkedIn, kept here in full with the code and the live pages it talks
-        about. Newest first.
-      </p>
+      {slug === null && (
+        <p className={styles.intro}>
+          Everything I post on LinkedIn, kept here in full with the code and the live pages it talks
+          about. Newest first.
+        </p>
+      )}
 
       <div className={styles.layout}>
         <div
           className={posts.state === 'loading' ? `${styles.list} ${styles.reading}` : styles.list}
           data-testid="blog-list"
         >
+          {hook && (
+            <Hook
+              page="post"
+              title={hook.title}
+              lines={[hook.summary]}
+              figure={
+                hook.image && (
+                  <img
+                    src={hook.image.url}
+                    alt={hook.image.alt_text}
+                    width={hook.image.width}
+                    height={hook.image.height}
+                  />
+                )
+              }
+            />
+          )}
           {posts.state === 'loading' && <p className={styles.note}>Reading the posts...</p>}
           {posts.state === 'unavailable' && (
             <p className={styles.note}>The blog cannot be read now. The rest of the site can.</p>

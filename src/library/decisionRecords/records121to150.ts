@@ -87,4 +87,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '131',
   },
+  adrAHookOnEveryPage: {
+    title: 'ADR: A hook on every page',
+    menuLabel: 'ADR: A hook on every page',
+    url: '/api/docs/adr-a-hook-on-every-page',
+    kind: 'adr',
+    number: '132',
+  },
 } as const satisfies Record<string, RecordEntry>;

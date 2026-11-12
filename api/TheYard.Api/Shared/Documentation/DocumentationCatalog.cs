@@ -162,6 +162,7 @@ public static class DocumentationCatalog
         ["adr-coderabbit-one-rung-at-a-time"] = "docs/decisions/ADR-129-coderabbit-one-rung-at-a-time.md",
         ["adr-quality-you-can-watch"] = "docs/decisions/ADR-130-quality-you-can-watch.md",
         ["adr-library-docs-at-the-pinned-version"] = "docs/decisions/ADR-131-library-docs-at-the-pinned-version.md",
+        ["adr-a-hook-on-every-page"] = "docs/decisions/ADR-132-a-hook-on-every-page.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
