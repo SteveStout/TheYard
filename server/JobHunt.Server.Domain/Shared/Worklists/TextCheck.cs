@@ -4,7 +4,8 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 
 /// <summary>
 /// The OUTREACH IS SHORT checks a drafted text must pass before a lane may paste it: no em dash, sixty words or fewer,
-/// under 300 characters for an invite note, one tagged link and nothing else linked, one no-oriented question, and no
+/// under 300 characters for an invite note, one tagged link and nothing else linked (an invite may also carry the
+/// posting link of a role he applied to, JobLinkNote), one no-oriented question, and no
 /// word of a live process, because anything specific to one is held for his yes. A role that went live in the last 21
 /// days of a year (the pounce's budget flag) may ask the timeline question in place of the no-oriented one, because a
 /// seat opened then is often money that must be spent before the year closes; no other row may. A text that fails is
@@ -40,17 +41,25 @@ public static partial class TextCheck
         {
             problems.Add($"{words} words");
         }
-        if (invite && text.Length >= InviteCap)
+        // LinkedIn's counter does not count a trailing newline (failure-log 7336).
+        if (invite && text.TrimEnd().Length >= InviteCap)
         {
-            problems.Add($"{text.Length} characters");
+            problems.Add($"{text.TrimEnd().Length} characters");
         }
         int tagged = Tagged().Matches(text).Count;
-        int bare = Url().Matches(Tagged().Replace(text, string.Empty)).Count;
+        // One posting link of an application of his may ride in an invite (JobLinkNote).
+        string rest = Tagged().Replace(text, string.Empty);
+        if (invite && JobLinkNote.PostingLink.Matches(rest).Count == 1)
+        {
+            rest = JobLinkNote.PostingLink.Replace(rest, string.Empty);
+        }
+        int bare = Url().Matches(rest).Count;
         if (tagged != 1 || bare != 0)
         {
             problems.Add($"{tagged} tagged links, {bare} other links");
         }
         string prose = Tagged().Replace(text, string.Empty);
+        prose = invite ? JobLinkNote.PostingLink.Replace(prose, string.Empty) : prose;
         int questions = prose.Count(c => c == '?');
         if (questions != 1 || !(NoOriented().IsMatch(prose) || (budget && prose.Contains(Timeline, StringComparison.Ordinal))))
         {

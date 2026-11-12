@@ -41,7 +41,7 @@ switch (args.FirstOrDefault())
         var lanes = new RunLanes(
             share,
             new RunGuards(new JDriveMount(share), new FileRunLock(share, time), desktop, time),
-            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, helpers, config), new LaneRunner(share, new EssayDesk(share, helpers, claude), siteUsage, config, time), new InviteRecount(share, claude, config), new FeedLane(share, new FeedTools(claude, helpers, new UsageReport(share, siteUsage, config, time)), config, time), new NetworkLane(share, new NetworkTools(claude, new UsageReport(share, siteUsage, config, time)), config, time)),
+            new LaneWork(new DayReader(share), new WorklistBuilder(share, helpers, helpers, helpers, config), new LaneRunner(share, new EssayDesk(share, helpers, claude), siteUsage, config, time), new InviteRecount(share, claude, config), new FeedLane(share, new FeedTools(claude, helpers, new UsageReport(share, siteUsage, config, time)), config, time), new NetworkLane(share, new NetworkTools(claude, new UsageReport(share, siteUsage, config, time)), config, time), new JobLinks(new BoardPostings(http), helpers)),
             config);
         (int exit, string output) = await lanes.ExecuteAsync(options, stop.Token);
         Console.WriteLine(output);
