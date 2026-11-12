@@ -100,12 +100,19 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         string campaignLine = campaign == CampaignMode.Off || string.IsNullOrWhiteSpace(campaignSql)
             ? "off"
             : await PartAsync("campaign", token => CampaignAsync(inbox, campaignSql, token), ct);
+        // The finder is its own part (zeroresult1112), after the campaign's import, so a later failure in the
+        // campaign's reads cannot take the finder's numbers with it: on 11/12 at 09:20 21 calls were spent and the
+        // line said only "campaign: FAILED".
+        var hunter = HunterFinder.FromSetting(Environment.GetEnvironmentVariable(HunterFinder.Setting), http);
+        string finderLine = campaignLine == "off" || hunter is null
+            ? "off"
+            : await PartAsync("finder", token => FinderAsync(hunter, campaignSql!, token), ct);
         var local = CentralClock.Local(time.GetUtcNow());
-        string line = $"{local:yyyy-MM-dd HH:mm:ss} {watch.ElapsedMilliseconds} ms | ats: {atsLine} | leads: {leadsLine} | triage: {triageLine} | human: {humanLine} | campaign: {campaignLine}";
+        string line = $"{local:yyyy-MM-dd HH:mm:ss} {watch.ElapsedMilliseconds} ms | ats: {atsLine} | leads: {leadsLine} | triage: {triageLine} | human: {humanLine} | campaign: {campaignLine} | finder: {finderLine}";
         await store.EnsureFolderAsync("inbox-pass", ct);
         await store.AppendAsync(PassLog, TrackerCsvText.Encode(line + "\r\n"), ct);
         log.LogInformation("inbox pass: {Line}", line);
-        Fold(run, atsLine, leadsLine, triageLine, humanLine, _refused, ats == "on" || leads == "on" || triage == "on" || human == "on");
+        Fold(run, atsLine, leadsLine, triageLine, humanLine, campaignLine, finderLine, _refused, ats == "on" || leads == "on" || triage == "on" || human == "on");
         RunLines.Counted(run, campaignLine, ("bounced", @"(\d+) bounced"), ("replies", @"(\d+) replies"), ("stops", @"(\d+) stops"));
         if (campaignLine.Contains("BLOCKED", StringComparison.Ordinal))
         {
@@ -121,22 +128,34 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
     {
         var database = new SqlCampaignStore(sql);
         string imported = await new LeadImport(store, database, database, new DohMxCheck(http), time).RunAsync(ct);
-        if (HunterFinder.FromSetting(Environment.GetEnvironmentVariable(HunterFinder.Setting), http) is { } hunter)
-        {
-            imported += "; " + await new AddressSearch(database, new WalledFinder(hunter, store, time, HunterFinder.Control), new DohMxCheck(http), store, time, HunterFinder.MonthCap).RunAsync(ct);
-        }
         string read = await new CampaignInbox(inbox, database, database, database, store, time).RunAsync(CentralClock.Local(time.GetUtcNow()).Minute < 30, ct);
         return $"{imported}; {read}";
     }
 
-    /// <summary>The pass's counts and what it came to, from its parts' lines: numbers only, never their words.</summary>
-    public static RunLine Fold(RunLine run, string atsLine, string leadsLine, string triageLine, string humanLine, bool refused, bool acted)
+    /// <summary>The finder's part: the waiting leads asked of Hunter behind its wall, under the month's cap (ADR-118).</summary>
+    private async Task<string> FinderAsync(HunterFinder hunter, string sql, CancellationToken ct) =>
+        await new AddressSearch(new SqlCampaignStore(sql), new WalledFinder(hunter, store, time, HunterFinder.Control), new DohMxCheck(http), store, time, HunterFinder.MonthCap)
+        {
+            FloorControl = HunterFinder.FloorControl,
+        }.RunAsync(ct);
+
+    /// <summary>
+    /// The pass's counts and what it came to, from its parts' lines: numbers only, never their words. A failed
+    /// campaign or finder part fails the run as the other four do (zeroresult1112); before, a pass whose campaign
+    /// part failed on 403 at every :20 from 10/27 still came to success.
+    /// </summary>
+    public static RunLine Fold(RunLine run, string atsLine, string leadsLine, string triageLine, string humanLine, string campaignLine, string finderLine, bool refused, bool acted)
     {
         RunLines.Counted(run, atsLine, ("read", @"found (\d+)"), ("archived", @"(\d+) archived"));
         RunLines.Counted(run, leadsLine, ("leads", @"requisitions (\d+)"), ("leads_passed", @"pass (\d+)"));
         RunLines.Counted(run, triageLine, ("unjudged", @"(\d+) unjudged"));
         RunLines.Counted(run, humanLine, ("waiting", @"(\d+) waiting"));
-        string[] parts = [atsLine, leadsLine, triageLine, humanLine];
+        if (finderLine.Contains(" asked, ", StringComparison.Ordinal))
+        {
+            run.Count("finder_refused", 0);
+        }
+        RunLines.Counted(run, finderLine, ("finder_asked", @"(\d+) asked"), ("finder_found", @"(\d+) found"), ("finder_dropped", @"(\d+) dropped"), ("finder_refused", @"(\d+) refused"));
+        string[] parts = [atsLine, leadsLine, triageLine, humanLine, campaignLine, finderLine];
         return refused ? run.Came("blocked", "google_token")
             : parts.Any(p => p.StartsWith("FAILED", StringComparison.Ordinal)) ? run.Came("failed", "part_failed")
             : acted ? run.Came("success")

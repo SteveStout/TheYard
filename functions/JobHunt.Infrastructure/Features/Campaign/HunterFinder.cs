@@ -21,6 +21,9 @@ public sealed class HunterFinder(IHttpClientFactory http, string key) : IAddress
     /// <summary>What Steve does when Hunter refuses, as the WALLS.md bullet says it.</summary>
     public const string Control = "sign in at hunter.io and read the account notice";
 
+    /// <summary>What Steve does when the floor stops the asking (zeroresult1112).</summary>
+    public const string FloorControl = "read one lookup by hand at hunter.io";
+
     /// <summary>The lowest score kept.</summary>
     public const int MinScore = 70;
 

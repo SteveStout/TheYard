@@ -187,6 +187,18 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     public Task SetAddressAsync(long leadId, string address, string sourceUrl, bool? mx, DateTimeOffset at, CancellationToken ct) =>
         ExecuteAsync(CampaignSql.SetAddress, ct, ("@id", leadId), ("@email", Clip(address, 254)), ("@source", Clip(sourceUrl, 500)), ("@mx", mx), ("@at", at));
 
+    /// <inheritdoc />
+    public async Task<int> WithAddressAsync(IReadOnlyCollection<long> leadIds, CancellationToken ct)
+    {
+        if (leadIds.Count == 0)
+        {
+            return 0;
+        }
+        await using var connection = await ConnectAsync(ct);
+        await using var command = Command(connection, CampaignSql.WithAddress, ("@ids", string.Join(',', leadIds.Select(id => id.ToString(System.Globalization.CultureInfo.InvariantCulture)))));
+        return Convert.ToInt32(await command.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     private async Task<SqlConnection> ConnectAsync(CancellationToken ct)
     {
         var connection = new SqlConnection(connectionString);

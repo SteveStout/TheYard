@@ -62,15 +62,31 @@ public sealed class RunLineTests
     public void The_inbox_pass_folds_its_parts_into_counts_and_never_their_words()
     {
         var run = AtsSweepTimer.Fold(new RunLine("AtsSweep", Slot), "ON found 5: rows 2, archive 3 | 3 archived and read back, 0 failed",
-            "ON alerts 4, requisitions 9, pass 2, blocks unread 0", "0 unjudged, nothing for the model", "1 waiting, shadow: would fire 4 AM reply (waiting: dan@technologypartners.net)", refused: false, acted: true);
+            "ON alerts 4, requisitions 9, pass 2, blocks unread 0", "0 unjudged, nothing for the model", "1 waiting, shadow: would fire 4 AM reply (waiting: dan@technologypartners.net)", "off", "off", refused: false, acted: true);
 
         string text = run.Text(Slot);
 
         Assert.Contains("outcome=success", text, StringComparison.Ordinal);
         Assert.EndsWith("archived=3 leads=9 leads_passed=2 read=5 unjudged=0 waiting=1", text, StringComparison.Ordinal);
         Assert.DoesNotContain("@", text, StringComparison.Ordinal);
-        Assert.Contains("outcome=blocked", AtsSweepTimer.Fold(new RunLine("AtsSweep", Slot), "skipped", "skipped", "off", "off", refused: true, acted: true).Text(Slot), StringComparison.Ordinal);
-        Assert.Contains("outcome=planned", AtsSweepTimer.Fold(new RunLine("AtsSweep", Slot), "SHADOW found 0: ", "off", "off", "off", refused: false, acted: false).Text(Slot), StringComparison.Ordinal);
+        Assert.Contains("outcome=blocked", AtsSweepTimer.Fold(new RunLine("AtsSweep", Slot), "skipped", "skipped", "off", "off", "off", "off", refused: true, acted: true).Text(Slot), StringComparison.Ordinal);
+        Assert.Contains("outcome=planned", AtsSweepTimer.Fold(new RunLine("AtsSweep", Slot), "SHADOW found 0: ", "off", "off", "off", "off", "off", refused: false, acted: false).Text(Slot), StringComparison.Ordinal);
+    }
+
+    // zeroresult1112: the campaign part failed on 403 at every :20 pass from 10/27 and the run still came to success.
+    [Fact]
+    public void A_failed_campaign_or_finder_part_fails_the_run_and_the_finder_counts_reach_the_run_line()
+    {
+        string Fold(string campaign, string finder) =>
+            AtsSweepTimer.Fold(new RunLine("AtsSweep", Slot), "ON found 0: ", "off", "off", "off", campaign, finder, refused: false, acted: true).Text(Slot);
+
+        Assert.Contains("outcome=failed", Fold("FAILED: HttpRequestException: 403 (Forbidden)", "hunter: 0 asked, 0 found, 0 dropped, 4 of 50 this month"), StringComparison.Ordinal);
+        Assert.Contains("detail=part_failed", Fold("FAILED: HttpRequestException: 403 (Forbidden)", "off"), StringComparison.Ordinal);
+        Assert.Contains("outcome=failed", Fold("imported 0", "FAILED: SqlException: timeout"), StringComparison.Ordinal);
+        string ok = Fold("imported 0", "hunter: 3 asked, 1 found, 1 dropped, 7 of 50 this month");
+        Assert.Contains("outcome=success", ok, StringComparison.Ordinal);
+        Assert.Contains("finder_asked=3 finder_dropped=1 finder_found=1 finder_refused=0", ok, StringComparison.Ordinal);
+        Assert.Contains("finder_refused=1", Fold("imported 0", "hunter: 0 asked, 0 found, 0 dropped, 4 of 50 this month, 1 refused (HTTP 429 restricted_account)"), StringComparison.Ordinal);
     }
 
     [Fact]

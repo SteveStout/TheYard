@@ -61,7 +61,8 @@ public sealed class WalledFinder(IAddressFinder inner, IMergeStore store, TimePr
         + $"Control: {control}. Since {Central(now)}; "
         + "every lookup stops for 24 hours after each refusal, and the first address found removes this bullet.";
 
-    private static string Central(DateTimeOffset at)
+    /// <summary>A time as the walls and the pass line write it, Central: "10:20 CST Thu 11/12".</summary>
+    public static string Central(DateTimeOffset at)
     {
         DateTime local = CentralClock.Local(at);
         string zone = local - at.UtcDateTime == TimeSpan.FromHours(-5) ? "CDT" : "CST";
