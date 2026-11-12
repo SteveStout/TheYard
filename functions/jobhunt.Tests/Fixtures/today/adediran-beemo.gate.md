@@ -1,0 +1,7 @@
+RED FLAG: RED, 5 flags: NO NAMED DECISION-MAKER (his 11/10 "I will confirm the specific decision-maker" is still unconfirmed in his 5:57 PM CST 11/11 message, gmail 1a1cd0bb0f45b983) | PROBE: "Who makes the final hiring decision on this role?" | FIT: PAY PASS $180,000 to $220,000 (Beemo's own careers page beemoautomation.com/principal-engineer.html, read with curl 04:0x CST 11/12) | AGE 100 days (over 21) | SCREEN NOT RUN | BLACKLIST clear | RED FLAG RED, 5 flags: NO NAMED DECISION-MAKER (his 11/10 "I will confirm the specific decision-maker" still unconfirmed in his 5:57 PM CST 11/11 message, gmail 1a1cd0bb0f45b983) with F1 a gmail.com address naming Northbound | UNANSWERED IN WRITING: who makes the hiring call (asked 11/10, promised, not given), the interview process (asked 11/10, "need confirmation"), what sets the offer inside the range (never asked), client-site travel frequency and who pays (never asked), Northbound's agreement with Beemo (never asked)
+
+# DRAFT: reply to Adediran S. (Northbound Talent Partners), Beemo Automation Principal Engineer (Azure / AI), must-answers before his name goes to Beemo
+CHANNEL: Email
+TO: (address left out of the fixture)
+OBJECTIVE: RULE 71, "I need to get that in writing before if possible"; RULE 64, NO NAMED DECISION-MAKER goes first.
+HELD: the scan is RED, so the item is held in section A. Steve's word sends it, changes it, or drops it.
