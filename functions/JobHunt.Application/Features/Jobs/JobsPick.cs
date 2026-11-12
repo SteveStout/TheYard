@@ -5,8 +5,8 @@ namespace JobHunt.Application.Features.Jobs;
 /// <summary>
 /// The night's picker (PROMPT-JOBHUNT-NIGHTLY-JOBS rung 3, D4), a command run in the 2 o'clock hour Central right before
 /// the jobs lane is started: every posting the 1 AM scan saw open on an employer's board, and every alert lead that
-/// passed the inbox pass's filter today or yesterday, held to JobsGates against the tracker's SQL copy and the do-not-
-/// apply list; a description is read only for a posting the other gates passed. An alert lead whose company and title
+/// passed the inbox pass's filter today or yesterday, held to JobsGates against the tracker's SQL copy, the do-not-
+/// apply list and BLACKLIST.md; a description is read only for a posting the other gates passed. An alert lead whose company and title
 /// the scan read tonight is dropped for the posting, which is confirmed. The result is the candidates file, with its
 /// supply line first and every failure at its foot. With the postings tables not yet published it writes from the
 /// alert leads alone and its line says so; a tracker copy that cannot be read falls back to the share's CSV, named on
@@ -25,13 +25,14 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
         var (master, trackerWord) = await MasterAsync(ct);
         string rules = await store.ExistsAsync("systemRules.md", ct) ? TrackerCsvText.Decode(await store.ReadAsync("systemRules.md", ct)) : string.Empty;
         var list = ApplicationCap.DoNotApplyList(rules);
+        var blacklist = Blacklist.Read(await store.ExistsAsync(Blacklist.File, ct) ? TrackerCsvText.Decode(await store.ReadAsync(Blacklist.File, ct)) : string.Empty);
 
         bool ready = await postings.ReadyAsync(ct);
         var feed = ready ? await postings.OpenAsync(now - Tonight, ct) : [];
-        var first = feed.Select(f => (f.Key, Verdict: JobsGates.Judge(f.Candidate, master, list, today))).ToList();
+        var first = feed.Select(f => (f.Key, Verdict: JobsGates.Judge(f.Candidate, master, list, today, blacklist))).ToList();
         var texts = await postings.TextsAsync([.. first.Where(f => f.Verdict.Failed is null).Select(f => f.Key)], ct);
         var feedVerdicts = first.Select(f => f.Verdict.Failed is null && texts.TryGetValue(f.Key, out var text)
-            ? JobsGates.Judge(f.Verdict.Candidate with { Text = text }, master, list, today) : f.Verdict).ToList();
+            ? JobsGates.Judge(f.Verdict.Candidate with { Text = text }, master, list, today, blacklist) : f.Verdict).ToList();
 
         var alerts = new List<Candidate>();
         foreach (var day in new[] { today, today.AddDays(-1) })
@@ -42,7 +43,7 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
             }
         }
         var seen = feed.Select(f => JobsGates.Same(f.Candidate)).ToHashSet(StringComparer.Ordinal);
-        var alertVerdicts = alerts.DistinctBy(a => a.Url).Where(a => !seen.Contains(JobsGates.Same(a))).Select(a => JobsGates.Judge(a, master, list, today)).ToList();
+        var alertVerdicts = alerts.DistinctBy(a => a.Url).Where(a => !seen.Contains(JobsGates.Same(a))).Select(a => JobsGates.Judge(a, master, list, today, blacklist)).ToList();
 
         var all = feedVerdicts.Concat(alertVerdicts).ToList();
         var passed = all.Where(v => v.Failed is null).DistinctBy(v => JobsGates.Same(v.Candidate))

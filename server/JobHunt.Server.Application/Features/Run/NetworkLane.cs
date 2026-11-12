@@ -10,7 +10,8 @@ public sealed record NetworkTools(IClaudeCli Claude, UsageReport Usage);
 /// the program hands it, then the backlog on below the floor until its window's end, and writes, in its run folder only, network-threads.tsv (one row a thread where both sides
 /// wrote) and each thread's text under threads/. The program holds every row (NetworkThreads), keeps only rows whose
 /// text is there, writes the texts and then the TSV into networklog/linkedin-inbox/ for the Function's next pass to log
-/// beside the email threads, reads each back, and moves the mark forward and the floor back. A dry run checks the same and spools
+/// beside the email threads, reads each back, and moves the mark forward and the floor back. A thread with a person or a
+/// company BLACKLIST.md blocks is left out with the row's date. A dry run checks the same and spools
 /// nothing. The lane sends nothing, types nothing and writes no tracker row.
 /// </summary>
 /// <param name="share">The share.</param>
@@ -30,8 +31,9 @@ public sealed class NetworkLane(IShare share, NetworkTools tools, ServerConfig c
 
     /// <summary>Runs the lane and writes its spool and DONE note.</summary>
     /// <param name="start">The lane.</param>
+    /// <param name="reads">The morning's reads, for BLACKLIST.md.</param>
     /// <param name="ct">Stops the run.</param>
-    public async Task<LaneReport> RunAsync(LaneStart start, CancellationToken ct)
+    public async Task<LaneReport> RunAsync(LaneStart start, DayReads reads, CancellationToken ct)
     {
         DateTimeOffset began = time.GetUtcNow();
         LaneConfig lane = config.For(Lane.Network);
@@ -59,7 +61,11 @@ public sealed class NetworkLane(IShare share, NetworkTools tools, ServerConfig c
         foreach (NetworkThread row in rows)
         {
             string text = $"{folder}/threads/{row.ThreadId}.txt";
-            if (await share.ExistsAsync(text, finish) && await share.ReadAsync(text, finish) is { Length: > 0 } body)
+            if (reads.Gate.Blacklisted(row.Person, row.Company) is { } blacklisted)
+            {
+                dropped.Add(new Dropped(row.Person, blacklisted));
+            }
+            else if (await share.ExistsAsync(text, finish) && await share.ReadAsync(text, finish) is { Length: > 0 } body)
             {
                 kept.Add((row, body));
             }
