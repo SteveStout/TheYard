@@ -10,10 +10,27 @@ namespace JobHunt.Domain.Shared.Tracker;
 /// </summary>
 public static partial class TrackerRows
 {
-    /// <summary>True when a master row records an application: submitted or applied in its note, on any channel.</summary>
+    /// <summary>How far into a note its NOT APPLIED or NOT SUBMITTED is read: the status a lane writes first.</summary>
+    public const int OpeningLength = 80;
+
+    /// <summary>
+    /// True when a master row records an application: submitted or applied in its note, on any channel, unless the
+    /// note opens by saying it was not ("NOT APPLIED, BLOCKER", "NOT APPLIED YET", "NOT SUBMITTED", the leaders lane's
+    /// NOT_APPLIED). Only the opening is read for that, because a real application's long note can mention an earlier
+    /// draft that sat NOT SUBMITTED, and holding such a row out would under-count RULE 50's cap.
+    /// </summary>
     /// <param name="row">The row's seven cells.</param>
-    public static bool IsApplication(string[] row) =>
-        row.Length >= 7 && !row[6].TrimStart().StartsWith("REJECTION", StringComparison.OrdinalIgnoreCase) && Applied().IsMatch(row[6]);
+    public static bool IsApplication(string[] row)
+    {
+        if (row.Length < 7)
+        {
+            return false;
+        }
+        string note = row[6].TrimStart();
+        return !note.StartsWith("REJECTION", StringComparison.OrdinalIgnoreCase)
+            && !NotApplied().IsMatch(note[..Math.Min(OpeningLength, note.Length)])
+            && Applied().IsMatch(note);
+    }
 
     /// <summary>
     /// The channel a row's opening phrase sent on (invites, inmails, campaign, messages or emails), or null when the row
@@ -38,6 +55,9 @@ public static partial class TrackerRows
 
     [GeneratedRegex(@"\b(submitted|applied|application submitted|easy apply)\b", RegexOptions.IgnoreCase)]
     private static partial Regex Applied();
+
+    [GeneratedRegex(@"\bNOT (APPLIED|SUBMITTED)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex NotApplied();
 
     [GeneratedRegex(@"^(?:[A-Z][A-Z\-]*[ ,]+){0,8}?SENT\b")]
     private static partial Regex Sent();

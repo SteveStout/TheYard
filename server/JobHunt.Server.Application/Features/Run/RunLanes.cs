@@ -111,7 +111,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 continue;
             }
             OutreachCounts? before = reads is null ? null : OutreachCounts.From(reads.Rows, day);
-            var start = run with { Lane = lane, Before = before, Lines = [$"Lane doc nightly/{RunSlot.Doc(lane)}, the tracker, outreach-limits.md, CONVENTIONS.md, systemRules.md and responders.md read this run."] };
+            var start = run with { Lane = lane, Before = before, Lines = [$"Lane doc nightly/{RunSlot.Doc(lane)}, the tracker, outreach-limits.md, CONVENTIONS.md, systemRules.md, responders.md and BLACKLIST.md read this run."] };
             string? linkedIn = linkedInStop ?? await SecondDriverAsync(ct);
             string? held = closed
                 ?? (ct.IsCancellationRequested ? "the service was stopped" : null)
@@ -135,7 +135,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             }
             if (lane == Lane.Network)
             {
-                LaneReport read = await work.Network.RunAsync(start, ct);
+                LaneReport read = await work.Network.RunAsync(start, reads!, ct);
                 reports.Add(read);
                 if (read.Answer is { StopsLinkedIn: true } stopped)
                 {

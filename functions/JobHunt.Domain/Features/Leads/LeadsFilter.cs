@@ -7,18 +7,24 @@ namespace JobHunt.Domain.Features.Leads;
 /// only (the word remote anywhere in the location or title, or a location that names the country alone, "United
 /// States", "US", "USA" or "Anywhere in the US", which is how LinkedIn's alert prints a role it shows as
 /// "United States (Remote)"), not already applied to (the same company with the title in an application row's note), and
-/// clear of RULE 50 (ApplicationCap: three in 60 days, the do-not-apply list). One lead per job link.
+/// clear of RULE 50 (ApplicationCap: three in 60 days, the do-not-apply list), and, ahead of every other rule, not a
+/// company or a posting BLACKLIST.md blocks. One lead per job link.
 /// What passes goes to the scoring lane; what fails says which rule, so nothing is dropped unseen.
 /// </summary>
 public static partial class LeadsFilter
 {
     /// <summary>Each lead with the rule it failed, or null when it passes.</summary>
-    public static IReadOnlyList<(Lead Lead, string? Failed)> Judge(IEnumerable<Lead> leads, IReadOnlyList<string[]> master, IReadOnlyList<DoNotApply> list, DateOnly today)
+    /// <param name="leads">The alerts' leads.</param>
+    /// <param name="master">The tracker's rows.</param>
+    /// <param name="list">RULE 50's do-not-apply list.</param>
+    /// <param name="today">The Central day.</param>
+    /// <param name="blacklist">BLACKLIST.md's rows, or null for none.</param>
+    public static IReadOnlyList<(Lead Lead, string? Failed)> Judge(IEnumerable<Lead> leads, IReadOnlyList<string[]> master, IReadOnlyList<DoNotApply> list, DateOnly today, Blacklist? blacklist = null)
     {
         var applications = master.Where(TrackerRows.IsApplication).ToList();
         return [.. leads
             .GroupBy(l => l.Link, StringComparer.Ordinal).Select(g => g.First())
-            .Select(lead => (lead, Failed(lead, applications, master, list, today)))];
+            .Select(lead => (lead, blacklist?.Hit(lead.Company, url: lead.Link)?.Reason ?? Failed(lead, applications, master, list, today)))];
     }
 
     private static string? Failed(Lead lead, List<string[]> applications, IReadOnlyList<string[]> master, IReadOnlyList<DoNotApply> list, DateOnly today)

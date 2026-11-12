@@ -237,6 +237,13 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         {
             return (CampaignVerdict.Hold("tell in the email: " + string.Join(", ", tells)), null, true);
         }
+        // An A email runs sixty words at most (ADR-075's row), counted as LeaderTemplateTests counts them: every line but
+        // the bare link, split on spaces. The title is the posting's, so a long one holds this send and does not mark the lead.
+        int words = lead.Track == 'A' ? Words(email.Text ?? string.Empty) : 0;
+        if (words > MaxWords)
+        {
+            return (CampaignVerdict.Hold($"over sixty words: {words}"), null, false);
+        }
         // v1 of Template A says "so I applied today" in words: it goes out only when that is true (F8).
         if (lead.Track == 'A' && template.Text.Contains("applied today", StringComparison.Ordinal) && values["AppliedWhen"] != "today")
         {
@@ -258,6 +265,12 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         lead.GhostScore,
         lead.FirstSeen,
         lead.Company.LastDotNetPostingAt);
+
+    /// <summary>The most words a Track A email may run to, its bare link not counted.</summary>
+    public const int MaxWords = 60;
+
+    private static int Words(string text) =>
+        text.Split('\n').Where(line => !line.StartsWith("https://", StringComparison.Ordinal)).Sum(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length);
 
     private static string Word(CampaignMode mode) => mode == CampaignMode.On ? "on" : "shadow";
 }

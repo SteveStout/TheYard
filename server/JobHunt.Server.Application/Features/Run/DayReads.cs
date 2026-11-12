@@ -33,6 +33,7 @@ public sealed class DayReader(IShare share)
         string conventions = await share.ReadAsync("CONVENTIONS.md", ct);
         string rules = await share.ReadAsync("systemRules.md", ct);
         string responders = await share.ReadAsync("responders.md", ct);
+        string blacklist = await share.ReadAsync(Blacklist.File, ct);
 
         var files = await share.ListAsync(Proof, "QUEUE-*.md", ct);
         var texts = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -48,7 +49,7 @@ public sealed class DayReader(IShare share)
             blocks.AddRange(QueueBlocks.Open(name, text, statuses.Where(status => QueueBlocks.StatusOf(status) == name)));
             agencies.AddRange(QueueBlocks.Agencies(text));
         }
-        var gate = new PersonGate(new GateSources(rows, limits, rules, responders, agencies), day);
+        var gate = new PersonGate(new GateSources(rows, limits, rules, responders, agencies, blacklist), day);
         FeedHolds holds = await share.ExistsAsync(FeedLane.HoldFile, ct) ? FeedHold.Read(await share.ReadAsync(FeedLane.HoldFile, ct)) : FeedHolds.None;
         return new DayReads(day, rows, limits, conventions, gate, blocks, holds);
     }

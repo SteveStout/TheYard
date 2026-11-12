@@ -279,3 +279,9 @@ From this version:
 5. **The finder is its own part** of the inbox pass, after the campaign's, so a later failure in the campaign's reads cannot erase what it spent (ADR-109's addendum of this version).
 
 `FinderWallTests` and `AddressSearchTests.A_refused_call_is_not_counted_and_its_lead_is_asked_again` and `Ten_asked_and_none_found_stops_the_asking_with_one_wall_and_a_found_address_clears_it` hold it; `A_call_that_throws_is_still_counted_against_the_cap` stands for the failures Hunter may have charged.
+
+## Addendum, 2026-11-12 (@VER@): an A email over sixty words is held
+
+What stopped being true: the sixty-word limit ADR-075's rows hold Template A v2 and v3 to was held only on the fixture's own title. v3 names `{RoleTitle}` twice beside 39 fixed words, so a title of eleven words rendered it at 61, and the send counted no words.
+
+From this version `CampaignSend.Check`, after the render and the three holds that mark the lead (blank, what they do, a tell), counts a Track A email's words as `LeaderTemplateTests` counts them (every line but the bare link, split on spaces) and holds one over sixty as "over sixty words: <n>" with Block false, because the words over are the posting's title and the lead itself is fine. It reads every A template: v3 reaches it at an eleven-word title, v2 at twenty-three. Track B is not counted. `LeaderTemplateTests.A_v3_whose_title_runs_it_past_sixty_words_is_held_and_the_lead_is_not_blocked` holds it: a ten-word title passes at 59, an eleven-word title is held at 61 (CodeRabbit on #38).

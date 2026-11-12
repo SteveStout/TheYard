@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="JobHunt.Domain.Shared.Applications" />
+    <Using Include="JobHunt.Domain.Shared.Companies" />
     <Using Include="JobHunt.Domain.Shared.Tracker" />
     <Using Include="JobHunt.Server.Application.Shared.Config" />
     <Using Include="JobHunt.Server.Application.Shared.Ports" />

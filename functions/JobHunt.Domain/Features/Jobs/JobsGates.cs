@@ -50,7 +50,8 @@ public sealed record Verdict(Candidate Candidate, string? Failed, string BandFla
 /// days ago or less; Principal, Staff, Lead, Architect, an engineering Manager or Director (a plain Senior only
 /// with a band topping PayFloor.Pass); a band whose top is under PayFloor.Flag skipped with its number; a stack
 /// that touches C#, .NET or Azure, or an AI-native lead role; not applied to the same role; and under RULE 50's
-/// three applications a company in 60 days. Every failure names its gate, so nothing is dropped unseen.
+/// three applications a company in 60 days. Ahead of them all, a company, a name it includes or a posting BLACKLIST.md
+/// blocks fails with the row's date. Every failure names its gate, so nothing is dropped unseen.
 /// </summary>
 public static partial class JobsGates
 {
@@ -60,8 +61,13 @@ public static partial class JobsGates
     /// <summary>The levels that pass on the title alone.</summary>
     public static readonly IReadOnlyList<string> Levels = [PostingLevel.Principal, PostingLevel.Staff, PostingLevel.Lead, PostingLevel.Architect, PostingLevel.Manager, PostingLevel.Director];
 
-    /// <summary>Every gate in order; the first failure is the one written.</summary>
-    public static Verdict Judge(Candidate c, IReadOnlyList<string[]> master, IReadOnlyList<DoNotApply> list, DateOnly today)
+    /// <summary>Every gate in order, BLACKLIST.md's first; the first failure is the one written.</summary>
+    /// <param name="c">The role.</param>
+    /// <param name="master">The tracker's rows.</param>
+    /// <param name="list">RULE 50's do-not-apply list.</param>
+    /// <param name="today">The Central day.</param>
+    /// <param name="blacklist">BLACKLIST.md's rows, or null for none.</param>
+    public static Verdict Judge(Candidate c, IReadOnlyList<string[]> master, IReadOnlyList<DoNotApply> list, DateOnly today, Blacklist? blacklist = null)
     {
         int days = c.Posted is { } posted ? Math.Max(0, today.DayNumber - posted.DayNumber) : 0;
         string flag = PayFloor.Judge(c.BandMax);
@@ -70,7 +76,8 @@ public static partial class JobsGates
         var applications = master.Where(TrackerRows.IsApplication).ToList();
         var recent = ApplicationCap.Applications(c.Company, master, today);
         string note = recent.Count == 0 ? "no applications in 60 days" : $"{recent.Count} in 60 days (Counts {string.Join(", ", recent.Select(r => r.Count))})";
-        string? failed = Staffing().IsMatch(c.Company) ? "staffing firm placing an unnamed client"
+        string? failed = blacklist?.Hit(c.Company, url: c.Url) is { } row ? row.Reason
+            : Staffing().IsMatch(c.Company) ? "staffing firm placing an unnamed client"
             : FormerEmployers.Of(c.Company, null) is not null ? "former employer"
             : remote.StartsWith("not remote", StringComparison.Ordinal) || remote.StartsWith("hybrid outside", StringComparison.Ordinal) || remote == "onsite"
                 || remote.StartsWith(NamedStates, StringComparison.Ordinal) ? remote

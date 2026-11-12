@@ -64,7 +64,8 @@ public sealed class LeadsHarvest(IMergeStore store, IInbox inbox, TimeProvider t
                 alerts.Add(new Alert(message, found, missed, alone) { Board = board.Board });
             }
         }
-        var judged = LeadsFilter.Judge(alerts.SelectMany(a => a.Leads), master, ApplicationCap.DoNotApplyList(rules), DateOnly.FromDateTime(local));
+        var blacklist = Blacklist.Read(await store.ExistsAsync(Blacklist.File, ct) ? TrackerCsvText.Decode(await store.ReadAsync(Blacklist.File, ct)) : string.Empty);
+        var judged = LeadsFilter.Judge(alerts.SelectMany(a => a.Leads), master, ApplicationCap.DoNotApplyList(rules), DateOnly.FromDateTime(local), blacklist);
         var verdicts = judged.ToDictionary(j => j.Lead.Link, j => j.Failed, StringComparer.Ordinal);
         var scored = await store.ExistsAsync(Scored, ct)
             ? TrackerCsvText.Decode(await store.ReadAsync(Scored, ct)).Split('\n').Select(row => row.Split('\t')[0].Trim()).ToHashSet(StringComparer.Ordinal)

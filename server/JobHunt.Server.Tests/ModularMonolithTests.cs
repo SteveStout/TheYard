@@ -38,12 +38,13 @@ public sealed class ModularMonolithTests
     }
 
     [Fact]
-    public void What_crosses_is_five_named_linked_files_and_nothing_from_the_site()
+    public void What_crosses_is_six_named_linked_files_and_nothing_from_the_site()
     {
         string root = Repo.Root();
         Assert.Equal(
             [
                 "functions/JobHunt.Domain/Shared/Applications/ApplicationCap.cs",
+                "functions/JobHunt.Domain/Shared/Companies/Blacklist.cs",
                 "functions/JobHunt.Domain/Shared/Companies/CompanyKey.cs",
                 "functions/JobHunt.Domain/Shared/Companies/FormerEmployers.cs",
                 "functions/JobHunt.Domain/Shared/Tracker/TrackerCsvText.cs",

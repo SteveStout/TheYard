@@ -89,6 +89,20 @@ public sealed class LeaderTemplateTests
         Assert.Empty(Tells.Find(email.Subject + "\n" + email.Text));
     }
 
+    [Theory]
+    [InlineData("Senior Staff Principal Software Engineer Lead Platform Reliability Data Systems", null)]
+    [InlineData("Senior Staff Principal Software Engineer Lead Platform Reliability Data Systems Team", "over sixty words: 61")]
+    public void A_v3_whose_title_runs_it_past_sixty_words_is_held_and_the_lead_is_not_blocked(string title, string? held)
+    {
+        // v3 names the title twice beside 39 fixed words, so ten title words come to 59 and eleven to 61.
+        var lead = CampaignSendTests.Lead('A', edit: b => { b.CreatedBy = TrackAFeed.RunFor("leaders-20261111"); b.RoleTitle = title; b.AppliedAt = Eight.AddHours(-1); });
+        var (verdict, email, block) = CampaignSend.Check(lead, [], [], [], DateOnly.FromDateTime(Eight.UtcDateTime), Eight);
+
+        Assert.Equal(held, verdict.Allowed ? null : verdict.Reason);
+        Assert.Equal(held is null, email is not null);
+        Assert.False(block);
+    }
+
     [Fact]
     public void The_Lane_cell_is_read_when_the_row_has_it_and_a_jobs_lane_row_of_seventeen_reads_as_before()
     {

@@ -107,9 +107,10 @@ public static partial class FeedQueue
         {
             FeedCandidate candidate = Clean(raw);
             string what = candidate.Person!.Length > 0 ? $"{candidate.Person}, {candidate.Company}" : candidate.Company!;
-            string? reason = held.Holds(candidate.Person!, candidate.Company!)
-                ? "held for Steve's yes (linkedin-proof/FEED-HOLD.md)"
-                : Reason(candidate, gate, open, kept, budget);
+            string? reason = gate.Blacklisted(candidate.Person!, candidate.Company!)
+                ?? (held.Holds(candidate.Person!, candidate.Company!)
+                    ? "held for Steve's yes (linkedin-proof/FEED-HOLD.md)"
+                    : Reason(candidate, gate, open, kept, budget));
             if (reason is null)
             {
                 kept.Add(candidate);

@@ -63,4 +63,30 @@ public sealed class ApplicationCapTests
         var held = ApplicationCap.Held([.. master, App(3, "Initech", "10/21/2026")], ApplicationCap.DoNotApplyList(Rules), Today);
         Assert.Equal(["Acme", "Initech"], held.Select(h => h.Company));
     }
+
+    // The openings of real rows: Foundation Finance Counts 3475 and 3481 (11/5) and PointClickCare Count 3566 (11/11) were
+    // never sent, and the ServiceTitan row is a real application whose note mentions an earlier draft further in.
+    private const string NotAppliedBlocker = "NOT APPLIED, BLOCKER (chat1105) 11/5, on J:\\APPLY-BLOCKERS-2026-11-05.md. #5 Software Architect, remote (MO allowed). iCIMS login/account (his).";
+    private const string NotAppliedYet = "NOT APPLIED YET (chat1105) 11/5. iCIMS Candidate Profile creates an account (password x2 + hCaptcha), so it is his.";
+    private const string NotSubmitted = "NOT SUBMITTED (chat1111): Senior AI Architect (US), Lever, Remote USA, no band. Form requires sworn history answers.";
+    private const string AppliedWithAnEarlierDraft = "APPLIED 9/28 ~14:55 CDT, applylane with Steve. Senior Software Engineer (Exteriors squad, second req), Remote US. "
+        + "Workday account already open from the first req, resume uploaded, every question answered and read back on the review page before the click; "
+        + "the earlier draft on this req sat NOT SUBMITTED for a day.";
+
+    [Fact]
+    public void A_row_that_says_not_applied_or_not_submitted_is_not_an_application()
+    {
+        string[] Row(int count, string company, string note) => [count.ToString(System.Globalization.CultureInfo.InvariantCulture), "", company, "Company Website", "11/5/2026", "", note];
+        var master = new List<string[]>
+        {
+            Row(3475, "Foundation Finance", NotAppliedBlocker), Row(3481, "Foundation Finance", NotAppliedYet), Row(3566, "Foundation Finance", NotSubmitted),
+            Row(2220, "ServiceTitan", AppliedWithAnEarlierDraft),
+        };
+        Assert.False(TrackerRows.IsApplication(master[0]));
+        Assert.False(TrackerRows.IsApplication(master[1]));
+        Assert.False(TrackerRows.IsApplication(master[2]));
+        Assert.True(TrackerRows.IsApplication(master[3]));
+        Assert.Empty(ApplicationCap.Applications("Foundation Finance", master, new DateOnly(2026, 11, 12)));
+        Assert.Empty(ApplicationCap.Held(master, [], new DateOnly(2026, 11, 12)));
+    }
 }
