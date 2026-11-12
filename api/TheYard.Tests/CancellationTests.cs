@@ -20,7 +20,7 @@ public class CancellationTests
     private static string Scanner() => File.ReadAllText(Path.Combine(Repo.Root(), ".github", "quality.py")).ReplaceLineEndings("\n");
 
     private static string Source(params string[] parts) =>
-        File.ReadAllText(Path.Combine(Repo.Root(), Path.Combine(parts))).ReplaceLineEndings("\n");
+        File.ReadAllText(Path.Combine([Repo.Root(), .. parts])).ReplaceLineEndings("\n");
 
     // #region whole-signature
     /// <summary>
