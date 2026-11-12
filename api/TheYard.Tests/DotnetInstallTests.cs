@@ -46,4 +46,17 @@ public sealed class DotnetInstallTests
         Assert.Matches(@"^10\.0\.\d{3}$", sdk.GetProperty("version").GetString());
         Assert.Equal("latestPatch", sdk.GetProperty("rollForward").GetString());
     }
+
+    /// <summary>
+    /// The deploy image builds the API with the SDK that global.json names, as the gate and CI do: its build stage copies
+    /// no global.json, so the tag is the only thing that pins it (ADR-098, the addendum of 1.0.5.47).
+    /// </summary>
+    [Fact]
+    public void The_deploy_image_and_the_action_build_with_global_json_s_sdk()
+    {
+        using JsonDocument json = JsonDocument.Parse(Read("global.json"));
+        string version = json.RootElement.GetProperty("sdk").GetProperty("version").GetString()!;
+        Assert.Matches(new Regex($@"^FROM mcr\.microsoft\.com/dotnet/sdk:{Regex.Escape(version)} AS api-publish$", RegexOptions.Multiline), Read("Dockerfile"));
+        Assert.Equal(2, Regex.Matches(Read(".github", "actions", "dotnet", "action.yml"), @"^\s+global-json-file: global\.json$", RegexOptions.Multiline).Count);
+    }
 }
