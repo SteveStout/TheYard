@@ -40,6 +40,12 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
     /// <summary>The most threads one pass reads.</summary>
     public const int MaxThreads = 1500;
 
+    /// <summary>
+    /// The most older threads a pass reads while it resumes a backfill. The resumed slice shares the morning pass and its
+    /// budget, so it is kept to what fits beside the two days in well under two minutes; the backfill takes more mornings.
+    /// </summary>
+    public const int ResumeThreads = 100;
+
     /// <summary>The time a pass may spend reading threads before it stops and says how many it left.</summary>
     public static readonly TimeSpan Budget = TimeSpan.FromMinutes(7);
 
@@ -54,7 +60,7 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         bool first = (await rows.StartsAsync(ct)).Count == 0;
         DateTimeOffset? resume = first ? null : BackfillRule.Read(await TextAsync(BackfillRule.Path, ct));
         var window = await gmail.FindThreadIdsAsync(new ThreadSearch(first ? BackfillDays : DailyDays, MaxThreads), ct);
-        var older = resume is { } before ? await gmail.FindThreadIdsAsync(new ThreadSearch(BackfillDays, MaxThreads) { Before = before }, ct) : [];
+        var older = resume is { } before ? await gmail.FindThreadIdsAsync(new ThreadSearch(BackfillDays, ResumeThreads) { Before = before }, ct) : [];
         var backfill = (first ? window : older).ToHashSet(StringComparer.Ordinal);
         var ids = window.Concat(older).Distinct(StringComparer.Ordinal).Where(id => !campaignThreads.Contains(id)).ToList();
         var known = WarmContactRule.Known(await TextAsync("Job_Hunt_Tracker.csv", ct), await TextAsync("responders.md", ct));
@@ -75,7 +81,7 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         }
         if (first || resume is not null)
         {
-            bool capped = (first ? window.Count : older.Count) >= MaxThreads;
+            bool capped = first ? window.Count >= MaxThreads : older.Count >= ResumeThreads;
             var next = BackfillRule.Next(tally.Cut > 0, capped, summaries.Where(t => backfill.Contains(t.ThreadId)), resume);
             await share.EnsureFolderAsync(NetworkFiles.Folder, ct);
             await share.WriteAsync(BackfillRule.Path, TrackerCsvText.Encode(BackfillRule.Text(next, now)), ct);

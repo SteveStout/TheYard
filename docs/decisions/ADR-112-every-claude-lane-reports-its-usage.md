@@ -92,3 +92,15 @@ The card as it reads live at 1.0.4.30, read again with the same Playwright pass 
 ## Addendum, 2026-10-25 (1.0.4.67): the handler moved into the Admin slice
 
 The route's one handler, `KeepUsageHandler`, stood in a Usage slice of its own in the Application ring, while the route that asks it is the Admin tab's. Once rule 1 of the slices held across the rings (ADR-107, the addendum of 1.0.4.67), that was one slice using another. The handler has one user, so it moved into `Application/Features/Admin/Operations/`, the Admin slice's operations folder. Nothing it does changed; the document, the port and the store's adapter stay where this record put them.
+
+## Addendum, 2026-11-12 (@VER@): each lane's usage post carries its exit
+
+What stopped being true: a usage document said what a run spent and nothing about how it ended, so the Claude card could judge a run only by its wall time against a flat line, and the runs table carried no exit status.
+
+From this version every lane's post may carry one more field, `exit`, a string:
+
+- **nightly.yml** posts the conclusion of the lane attempt that ran, as the verdict step reads it (`success`, `failure` or `cancelled`), and no `exit` field when there is no verdict.
+- **The 6 AM program** (`UsageReport`, through `UsageCut.Document`) posts the CLI's exit code as text: `"0"`, `"1"`, `"-1"`.
+- **The dispatcher** (`post_usage` in J:\dispatch, outside this repository) posts its lane's exit code the same way, as text, and no field when it read none.
+
+`exit` is optional: a post with none is information, never a failure, and a reader takes `success` or `"0"` as a clean exit and anything else as a failed run. The site's usage route ignores the field until the card reads it. `NightlyUsageExitTests` runs the workflow step's own script, and `UsageExitTests` holds the 6 AM program's post.

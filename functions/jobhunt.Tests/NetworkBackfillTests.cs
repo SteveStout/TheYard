@@ -88,6 +88,27 @@ public sealed class NetworkBackfillTests : IDisposable
     }
 
     [Fact]
+    public async Task A_resumed_backfill_reads_one_slice_a_morning_so_the_pass_stays_short()
+    {
+        var (pass, rows, gmail) = Build();
+        rows.Store["x@acme.com"] = new Conversation { PersonKey = "x@acme.com", FirstName = "X", FullName = "x", Email = "x@acme.com", Source = "gmail", ThreadIds = ["t9"], FirstTwoWayAt = Monday.AddDays(-3) };
+        var before = Monday.AddDays(-23);
+        Directory.CreateDirectory(Path.Combine(_root, NetworkFiles.Folder));
+        await File.WriteAllTextAsync(Path.Combine(_root, BackfillRule.Path), BackfillRule.Text(before, Monday));
+        for (int i = 0; i < 1500; i++)
+        {
+            gmail.Threads[$"o{i}"] = Thread($"o{i}", $"Pat Lee <pat{i}@acme.com>", before.AddHours(-1 - i), null);
+        }
+
+        var result = await pass.RunAsync(NetworkMode.Shadow, new HashSet<string>(), CancellationToken.None);
+
+        Assert.Equal(100, gmail.Searches[1].Max);
+        Assert.Contains(" resumed=100 ", result.Line, StringComparison.Ordinal);
+        Assert.Equal(0, result.Cut);
+        Assert.Equal(before.AddHours(-100).AddSeconds(1), BackfillRule.Read(Point()));
+    }
+
+    [Fact]
     public async Task A_daily_pass_with_no_point_asks_for_two_days_only()
     {
         var (pass, rows, gmail) = Build();

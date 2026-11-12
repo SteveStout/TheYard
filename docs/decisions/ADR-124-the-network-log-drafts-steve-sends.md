@@ -103,3 +103,9 @@ A feature slice in each of the Function's rings and a card in the site's Admin m
 - [`functions/JobHunt.Infrastructure/Features/NetworkLog/`](https://github.com/SteveStout/TheYard/tree/main/functions/JobHunt.Infrastructure/Features/NetworkLog) - the SQL store and the Gmail reader and draft writer
 - [`functions/jobhunt/NetworkLogTimer.cs`](https://github.com/SteveStout/TheYard/blob/main/functions/jobhunt/NetworkLogTimer.cs) - the timer
 - [`functions/JobHunt.Database/Tables/Conversations.sql`](https://github.com/SteveStout/TheYard/blob/main/functions/JobHunt.Database/Tables/Conversations.sql) - the table
+
+## Addendum, 2026-11-12 (@VER@): a resumed backfill reads one slice a morning
+
+What stopped being true: the 1.0.4.173 addendum's item 2 has each later pass read "the 120-day window before that point as well", up to the same 1,500 threads as the first pass and under the same seven-minute budget. The point seeded on 9 November put that whole read into the 06:00 pass: on 10 November it read 1,084 threads in 7 min 52 s, `resumed=1500`, and came to late with 475 cut, near the host's ten-minute ceiling; on 11 November 798 threads in 343 s, after which the file said `done`, and on 12 November 147 threads in 79 s. It was neither a cursor reset nor a daily sweep: the morning pass is the only pass, so the backfill rode in it.
+
+From this version a resumed read asks Gmail for at most 100 older threads (`NetworkLogPass.ResumeThreads`) beside the two days, so the 06:00 pass stays well under two minutes and comes to success, and the backfill takes as many mornings as it needs. A slice that comes back full counts as capped and moves the point back past it; one that comes back short ends the backfill. The first pass on an empty table keeps the 1,500 cap, since nothing else is in that run. `NetworkBackfillTests` holds it.
