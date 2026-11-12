@@ -227,6 +227,27 @@ public sealed partial class PounceFollowUpTests
         Assert.Equal(("unresolved", 1L), ("unresolved", PounceFollowUpTimer.Counted(new RunLine("PounceFollowUp", Now), pass).Counts["unresolved"]));
     }
 
+    [Fact]
+    public async Task A_code_the_last_build_marked_by_its_code_gets_no_second_follow_up_once_its_send_row_names_the_person()
+    {
+        using var scratch = new Scratch();
+        scratch.Write(PounceFollowUp.Tokens, """
+            code,person,company,channel,role,thread,sent,lane
+            h7m3zt,"Leader at Corvid Health, name found at send",Corvid Health,LinkedIn,,,2026-11-11T13:02:00Z,pounce-12801
+            """);
+        scratch.Write("nightly/pounce/followups/12801-h7m3zt.md", "h7m3zt dispatch/ready/15-pouncefollow-h7m3zt.md 2026-11-11T15:50:00.0000000+00:00\n");
+        var tracker = new Tracker { Since = { Sent("Mara Lind", "Corvid Health", "h7m3zt") } };
+        var follow = new PounceFollowUps(scratch.Store, new Visits(), tracker, new Fixed(Now));
+
+        var lines = await follow.DryRunAsync(CancellationToken.None);
+        var pass = await follow.RunAsync(PounceHandoff.Live, CancellationToken.None);
+
+        Assert.Contains(lines, line => line.Contains("h7m3zt Mara Lind", StringComparison.Ordinal) && line.Contains("already has a follow-up for this role", StringComparison.Ordinal));
+        Assert.Equal(new FollowUpPass(1, 1, 1, 0, 0, 1), pass);
+        Assert.False(scratch.Has("dispatch/ready/15-pouncefollow-h7m3zt.md"));
+        Assert.False(scratch.Has("nightly/pounce/followups/12801-maralind.md"));
+    }
+
     private sealed class Visits : ISiteVisits
     {
         public bool Down { get; init; }

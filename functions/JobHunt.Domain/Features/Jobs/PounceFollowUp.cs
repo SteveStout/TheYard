@@ -173,6 +173,10 @@ public static partial class PounceFollowUp
     /// <param name="code">The code, its person resolved (Recipient).</param>
     public static string Marker(PounceCode code) => $"{Folder}/{code.Key}-{Who(code.Person)}.md";
 
+    /// <summary>The marker the earlier builds wrote for a code minted with no name, the role's key and the code, which still counts once the code's person is resolved.</summary>
+    /// <param name="code">The code.</param>
+    public static string LegacyMarker(PounceCode code) => $"{Folder}/{code.Key}-{code.Code}.md";
+
     /// <summary>Whole minutes from the code's first open to the instant given.</summary>
     /// <param name="visit">What the code did.</param>
     /// <param name="at">The follow-up's instant.</param>

@@ -123,11 +123,15 @@ public static class RunSlot
     /// <summary>
     /// True from 05:30 to 07:00 Central, when the morning's run owns the browser and no slot run starts, and from as far
     /// before 05:30 as <paramref name="lead"/> reaches: a run that could still be working at 05:30 would hold the run lock
-    /// the morning needs at 06:00.
+    /// the morning needs at 06:00. A lead longer than 05:30 reaches back past midnight into the evening before.
     /// </summary>
     /// <param name="utc">The instant.</param>
     /// <param name="lead">How long the run could last at most.</param>
-    public static bool Quiet(DateTimeOffset utc, TimeSpan lead = default) => Local(utc).TimeOfDay >= Morning.From - lead && Local(utc).TimeOfDay < Morning.To;
+    public static bool Quiet(DateTimeOffset utc, TimeSpan lead = default)
+    {
+        TimeSpan now = Local(utc).TimeOfDay, from = Morning.From - lead;
+        return from < TimeSpan.Zero ? now >= from + TimeSpan.FromDays(1) || now < Morning.To : now >= from && now < Morning.To;
+    }
 
     /// <summary>The file that says LinkedIn is closed for the day, which every later run that day reads.</summary>
     /// <param name="day">The Central day.</param>

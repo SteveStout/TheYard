@@ -34,7 +34,8 @@ public sealed record EmailPass(int Roles, int Leaders, int Asked, int Kept, int 
 /// run's feed named (the live queue in linkedin-proof/, else the dry feed's copy in its run folder) is looked up once
 /// with the finder on the company's domain, under the campaign's own monthly count, and the answer is kept only when it
 /// carries the leader's own name. A company that had a real campaign email in the last 30 days gets no lookup. The
-/// marker is written once the role is settled, then one log line. Nothing here can send: it is handed no mail port.
+/// marker is written once the role is settled, then one log line, and every pass first writes the line of any settled
+/// role the log is missing, whatever its age. Nothing here can send: it is handed no mail port.
 /// The mode "off" reads and writes nothing.
 /// </summary>
 /// <param name="store">The job-hunt share.</param>
@@ -55,6 +56,8 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
         }
         DateTimeOffset now = time.GetUtcNow();
         DateTime local = CentralClock.Local(now);
+        var log = new LogWriter(store);
+        await RecoverAsync(log, ct);
         var roles = await RolesAsync(now, ct);
         if (roles.Count == 0)
         {
@@ -64,14 +67,12 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
         int used = await UsedAsync(count, ct);
         IReadOnlyList<EmailTouch>? emailed = null;
         int leaders = 0, asked = 0, kept = 0, refused = 0, already = 0, waiting = 0;
-        var log = new LogWriter(store);
         foreach (EmailRole role in roles)
         {
             string marker = PounceEmail.Marker(role.Key);
             if (await store.ExistsAsync(marker, ct))
             {
                 already++;
-                await log.RecoverAsync(TrackerCsvText.Decode(await store.ReadAsync(marker, ct)), ct);
                 continue;
             }
             if (await LeaderAsync(role, ct) is not { } leader)
@@ -107,6 +108,23 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
             refused++;
         }
         return new EmailPass(roles.Count, leaders, asked, kept, refused, already, waiting);
+    }
+
+    /// <summary>
+    /// Every settled role's marker whose line the log does not hold yet, whatever its hand-off's age: the day's window
+    /// picks new work only, so a role settled near its end whose line did not reach the log still gets it on a later
+    /// pass. A marker is read only when the log has no line for its key.
+    /// </summary>
+    private async Task RecoverAsync(LogWriter log, CancellationToken ct)
+    {
+        var markers = (await store.ListFilesAsync(PounceEmail.Folder, ct)).Where(f => f.Name.EndsWith(".md", StringComparison.Ordinal)).OrderBy(f => f.Name, StringComparer.Ordinal).ToList();
+        foreach (MergeEntry file in markers)
+        {
+            if (!await log.HoldsAsync(file.Name[..^3], ct))
+            {
+                await log.RecoverAsync(TrackerCsvText.Decode(await store.ReadAsync($"{PounceEmail.Folder}/{file.Name}", ct)), ct);
+            }
+        }
     }
 
     private async Task<List<EmailRole>> RolesAsync(DateTimeOffset now, CancellationToken ct)
@@ -173,6 +191,10 @@ public sealed class PounceEmails(IMergeStore store, ILeaderFinder? finder, IPoun
                 await AppendAsync(line, ct);
             }
         }
+
+        /// <summary>True when the log holds a line for the role's key, the field after its Central minute.</summary>
+        public async Task<bool> HoldsAsync(string key, CancellationToken ct) =>
+            (await TextAsync(ct)).Split('\n').Any(line => line.Split(' ', 4) is [_, _, var field, ..] && field == key);
 
         /// <summary>Appends one line and keeps it in the copy this pass reads.</summary>
         public async Task AppendAsync(string line, CancellationToken ct)

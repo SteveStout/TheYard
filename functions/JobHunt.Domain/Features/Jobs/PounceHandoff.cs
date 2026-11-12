@@ -40,13 +40,18 @@ public static class PounceHandoff
     /// <summary>
     /// Where the item waits for 07:00 Central: the box's run of feed, recount, invites and apply can take 40, 8, 40 and 40
     /// minutes and five more for its records, so one started after about 03:17 could still hold the run lock at 05:30,
-    /// and the box refuses it. An item passed from 03:15 on carries Not_before 07:00, so the dispatcher holds it and no
-    /// wrapper sleeps through the morning. The box's SlotTests read this line and hold it to the box's own cutoff.
+    /// and the box refuses it. An item passed from 03:15 on carries Not_before 07:00, so the dispatcher holds it, and a
+    /// wrapper the dispatcher reaches inside the window anyway, passed before it but started late, puts a copy of itself
+    /// held to 07:00 back as a follow-on and stops: no wrapper sleeps through the morning. The box's SlotTests read this
+    /// line and hold it to the box's own cutoff.
     /// </summary>
     public static readonly (TimeSpan From, TimeSpan To) Morning = (new(3, 15, 0), new(7, 0, 0));
 
     /// <summary>The share folder the hand-offs go to.</summary>
     public const string Folder = "nightly/pounce";
+
+    /// <summary>Where a wrapper the dispatcher started inside the morning's window puts its copy, held to 07:00, as a follow-on.</summary>
+    public const string Requeue = "/mnt/j/nightly/pounce/requeue";
 
     /// <summary>The dispatcher's ready folder on the share.</summary>
     public const string Ready = "dispatch/ready";
@@ -94,8 +99,8 @@ public static class PounceHandoff
     }
 
     /// <summary>
-    /// The dispatcher item: a header the dispatcher reads, then the steps a wrapper lane follows. It waits out the
-    /// morning's window and a running 6 AM program, starts the program once through systemd-run, polls, and writes its
+    /// The dispatcher item: a header the dispatcher reads, then the steps a wrapper lane follows. It defers itself out of
+    /// the morning's window, waits out a running 6 AM program, starts the program once through systemd-run, polls, and writes its
     /// DONE note and CLOSED row. The header's lane, entered and approved lines go into registry rows, so none names the
     /// browser or the network.
     /// </summary>
@@ -124,18 +129,19 @@ public static class PounceHandoff
         item.Append($"{role.Company}, {role.Title}, {role.Url}. Live {Central(role.LiveAt)} Central{(role.LiveKnown ? string.Empty : " (first seen)")}, passed the pounce gate {Central(role.PassedAt)}. Band {role.BandFlag}.");
         item.Append(role.Budget ? " It carries the budget flag: its note may ask about the timeline in place of the no-oriented question.\n\n" : "\n\n");
         item.Append("## What you are\n\n");
-        item.Append("A wrapper. You open no browser, send nothing and write no message. You edit no file but your DONE note and your CLOSED row. The program does the work behind its own gates: the ceilings and the pause at 90, Rule 25, FEED-HOLD, the closed-req gate, check_aiisms.py, verified sends and the run lock.");
+        item.Append("A wrapper. You open no browser, send nothing and write no message. You edit no file but your DONE note, your CLOSED row and, when step 2 defers you, your copy in the requeue folder. The program does the work behind its own gates: the ceilings and the pause at 90, Rule 25, FEED-HOLD, the closed-req gate, check_aiisms.py, verified sends and the run lock.");
         item.Append(live ? "\n\n" : " This is a DRY RUN: the program reads pages and writes its worklists and sends nothing.\n\n");
         item.Append("## Steps (on this box J:\\ is /mnt/j)\n\n");
-        item.Append($"1. Run `date`. From {Morning.From:hh\\:mm} to 07:00 Central the program refuses a slot run, because one started then could still hold the run lock when the 6 AM program needs it: until 07:00, wait with one `sleep 240` call at a time.\n");
-        item.Append("2. Run `systemctl --user is-active jobhunt-6am.service`. While it prints active or activating, wait with one `sleep 240` call at a time, for at most 60 minutes; if it still runs then, write the DONE note saying so and stop.\n");
-        item.Append("3. Start the program once, and only once:\n\n```\n");
+        item.Append($"1. Run `TZ=America/Chicago date`. From {Morning.From:hh\\:mm} to 07:00 Central the program refuses a slot run, because one started then could still hold the run lock when the 6 AM program needs it. Outside that window go on to step 3. Inside it never wait it out: the dispatcher runs one item at a time, so a wrapper that waits holds every other item behind it.\n");
+        item.Append($"2. Inside the window, defer yourself to 07:00 and release the dispatcher: run `mkdir -p {Requeue} && sed -e '/^Not_before:/d' -e \"0,/^\\$/s/^\\$/Not_before: $(TZ=America/Chicago date +%F)T07:00 CST\\n/\" /mnt/j/dispatch/running/{lane}/prompt.md > {Requeue}/10-{lane}.md`, which copies this item with `Not_before` set to 07:00 today, write the DONE note saying you deferred to 07:00 with the line `FOLLOW-ON: J:\\nightly\\pounce\\requeue\\10-{lane}.md`, write the CLOSED row (step 8) and stop.\n");
+        item.Append("3. Run `systemctl --user is-active jobhunt-6am.service`. While it prints active or activating, wait with one `sleep 240` call at a time, for at most 60 minutes; if it still runs then, write the DONE note saying so and stop.\n");
+        item.Append("4. Start the program once, and only once:\n\n```\n");
         item.Append($"systemd-run --user --unit={lane} --collect -p WorkingDirectory=$HOME/.local/share/jobhunt-server -E DISPLAY=:0 -E XAUTHORITY=$HOME/.Xauthority -E TZ=America/Chicago -E DOTNET_ROOT=/usr/lib/dotnet -E DOTNET_CLI_TELEMETRY_OPTOUT=1 -E PATH=$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin $HOME/.local/share/jobhunt-server/JobHunt.Server run --slot {lane} --role {handoff}{(live ? string.Empty : " --dry-run")}\n");
         item.Append("```\n\n   Read `date` right after; that is the start time. If systemd-run is refused, write the DONE note with its words and stop: never start the program another way.\n");
-        item.Append($"4. Poll: one `sleep 240` call, then `systemctl --user is-active {lane}.service`, for at most 90 minutes. Never start it a second time, whatever it prints.\n");
-        item.Append($"5. When it has ended, read `journalctl --user -u {lane}.service --no-pager | tail -60` and the card /mnt/j/nightly/<the Central day it started>/{lane}-card.md.\n");
-        item.Append($"6. Write the DONE note at {done}, the RULES FIRST line on top: the start and end times, the card word for word, the minutes from the role going live ({Iso(role.LiveAt)}) to the program's end, and a `## LEFT FOR STEVE` section holding `- none`, or the one stop condition the card names.\n");
-        item.Append($"7. Write your CLOSED row through the state.md spool: a new file /mnt/j/inbox/append-inbox/state.md/<UTC yyyyMMdd-HHmmss>Z-{lane}-close.md holding one line that begins `## LANE: {lane} CLOSED <HH:MM> CST`, says `Holds: none` and the DONE note's path, and ends ` | CLOSED |`. Name no browser, no network and no request kind in it. Then stop.\n");
+        item.Append($"5. Poll: one `sleep 240` call, then `systemctl --user is-active {lane}.service`, for at most 90 minutes. Never start it a second time, whatever it prints.\n");
+        item.Append($"6. When it has ended, read `journalctl --user -u {lane}.service --no-pager | tail -60` and the card /mnt/j/nightly/<the Central day it started>/{lane}-card.md.\n");
+        item.Append($"7. Write the DONE note at {done}, the RULES FIRST line on top: the start and end times, the card word for word, the minutes from the role going live ({Iso(role.LiveAt)}) to the program's end, and a `## LEFT FOR STEVE` section holding `- none`, or the one stop condition the card names.\n");
+        item.Append($"8. Write your CLOSED row through the state.md spool: a new file /mnt/j/inbox/append-inbox/state.md/<UTC yyyyMMdd-HHmmss>Z-{lane}-close.md holding one line that begins `## LANE: {lane} CLOSED <HH:MM> CST`, says `Holds: none` and the DONE note's path, and ends ` | CLOSED |`. Name no browser, no network and no request kind in it. Then stop.\n");
         return item.ToString();
     }
 
