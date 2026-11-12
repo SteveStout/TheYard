@@ -85,7 +85,7 @@ public sealed class HomePath
         // Windows drops trailing dots and spaces from a name, so "..." or "x " can come back as
         // the root with a separator on the end. Trimming the separators hands back the root in
         // the one spelling every caller compares against, so home is always recognised as home.
-        string joined = System.IO.Path.GetFullPath(System.IO.Path.Combine(Root, System.IO.Path.Combine(segments))).TrimEnd(Separators);
+        string joined = System.IO.Path.GetFullPath(System.IO.Path.Combine([Root, .. segments])).TrimEnd(Separators);
         if (!IsInside(joined))
         {
             throw new PathRefusedException("A path must stay inside the home directory.");

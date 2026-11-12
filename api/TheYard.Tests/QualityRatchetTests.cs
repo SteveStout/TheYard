@@ -29,7 +29,7 @@ public class QualityRatchetTests
     private const string Command = "python3 .github/quality.py . --ratchet .github/quality-ratchet.json";
 
     private static string Read(params string[] parts) =>
-        File.ReadAllText(Path.Combine(Repo.Root(), Path.Combine(parts))).ReplaceLineEndings("\n");
+        File.ReadAllText(Path.Combine([Repo.Root(), .. parts])).ReplaceLineEndings("\n");
 
     // #region both-ways
     /// <summary>Every name in the ratchet file, in the order the file writes them.</summary>
