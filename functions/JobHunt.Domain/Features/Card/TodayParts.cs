@@ -86,13 +86,18 @@ public static partial class TodayParts
         .FirstOrDefault();
 
     /// <summary>
-    /// The lanes from STATUS.md: what runs, a pause, every held item with its reason, and every proposed item as a
-    /// "queue it?" line. The ready queue is the dispatcher's own business and is left off.
+    /// The lanes from STATUS.md: what runs, a pause, every held item with its reason, and the proposed items as a count
+    /// with a "queue it?" line for each one a lane asks his yes on; the rest stay in STATUS.md. The ready queue is the
+    /// dispatcher's own business and is left off.
     /// </summary>
     /// <param name="status">STATUS.md.</param>
-    public static IReadOnlyList<string> Lanes(string status)
+    /// <param name="asked">The proposed file names a LEFT FOR STEVE bullet asks his yes on, each with the lane that asks.</param>
+    public static IReadOnlyList<string> Lanes(string status, IReadOnlyDictionary<string, string> asked)
     {
         var lines = new List<string>();
+        var proposed = Proposed(status);
+        var yes = proposed.Where(asked.ContainsKey).ToList();
+        bool counted = false;
         string? section = null;
         foreach (string raw in Lines(status))
         {
@@ -118,12 +123,34 @@ public static partial class TodayParts
             {
                 lines.Add("Held: " + item);
             }
-            else if (section.StartsWith("Proposed", StringComparison.Ordinal))
+            else if (section.StartsWith("Proposed", StringComparison.Ordinal) && proposed.Count > 0 && !counted)
             {
-                lines.Add($"Proposed: {item}. Queue it?");
+                counted = true;
+                lines.Add($"Proposed: {proposed.Count} (the list is in dispatch/STATUS.md); {(yes.Count == 0 ? "none needs your yes today." : $"{yes.Count} {(yes.Count == 1 ? "needs" : "need")} your yes:")}");
+                lines.AddRange(yes.Select(y => $"Proposed: {y}. Queue it? ({asked[y]} asks)"));
             }
         }
         return lines;
+    }
+
+    /// <summary>Each proposed item's file name in STATUS.md, in its order.</summary>
+    /// <param name="status">STATUS.md.</param>
+    public static IReadOnlyList<string> Proposed(string status)
+    {
+        string? section = null;
+        var names = new List<string>();
+        foreach (string raw in Lines(status))
+        {
+            if (raw.StartsWith("## ", StringComparison.Ordinal))
+            {
+                section = raw[3..].Trim();
+            }
+            else if (raw.StartsWith("- ", StringComparison.Ordinal) && (section?.StartsWith("Proposed", StringComparison.Ordinal) ?? false) && !Empty().IsMatch(raw[2..].Trim()))
+            {
+                names.Add(raw[2..].Trim().Split(' ')[0]);
+            }
+        }
+        return names;
     }
 
     /// <summary>The time line STATUS.md opens with ("Written Mon 11/09 12:46:29 CST by dispatch.py."), or null.</summary>

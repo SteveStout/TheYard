@@ -5,7 +5,7 @@ namespace JobHunt.Infrastructure.Features.Card;
 /// <summary>
 /// Reads what the morning card is drawn from: the newest real reply run's queue of the day, the week's LinkedIn
 /// follow-ups from the network log after it, and every draft they or the
-/// carried rejection reads name (with the DO-NOT-SEND note and the .gate.md beside each), the dispatcher's STATUS.md,
+/// carried rejection reads name, and the drafts held items keep (with the DO-NOT-SEND note and the .gate.md beside each), the dispatcher's STATUS.md,
 /// LEFT-FOR-STEVE.md, ANSWERED.md, WALLS.md and DECISION.md, the day's APPLY-ESSAYS file, TODAY.md as it stands, and
 /// the next 72 hours of the calendar with each call's must-answers line from its company's NOTES file, and the week's
 /// funnel line from nightly/funnel.log through yesterday. A file that is
@@ -54,10 +54,11 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             {
                 drafts[path] = await TextAsync(path, ct);
             }
+            // The whole gate file: TodayReplies.Gate reads its verdict, fit and must-answers lines, not the first line alone.
             string gate = await TextAsync(stem + ".gate.md", ct);
-            if (TodayParts.Lines(gate).Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0 && !l.StartsWith('>') && !l.StartsWith('#')) is { } first)
+            if (gate.Length > 0)
             {
-                gates[path] = first.TrimStart('-', ' ');
+                gates[path] = gate;
             }
         }
         string essaysPath = $"{day}/APPLY-ESSAYS-{local:yyyy-MM-dd}.md";
