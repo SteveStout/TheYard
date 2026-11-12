@@ -122,8 +122,9 @@ public sealed class ShareMergeStore(ShareClient share, string root, TimeProvider
         long start = 0;
         if ((await file.ExistsAsync(ct)).Value)
         {
-            start = (await file.GetPropertiesAsync(cancellationToken: ct)).Value.ContentLength;
-            await file.SetHttpHeadersAsync(new ShareFileSetHttpHeadersOptions { NewSize = start + bytes.Length }, cancellationToken: ct);
+            ShareFileProperties properties = (await file.GetPropertiesAsync(cancellationToken: ct)).Value;
+            start = properties.ContentLength;
+            await file.SetHttpHeadersAsync(new ShareFileSetHttpHeadersOptions { NewSize = start + bytes.Length, HttpHeaders = Unhashed(properties) }, cancellationToken: ct);
         }
         else
         {
@@ -131,6 +132,21 @@ public sealed class ShareMergeStore(ShareClient share, string root, TimeProvider
         }
         await UploadAsync(file, bytes, start, ct);
     }
+
+    /// <summary>
+    /// The content headers a resize carries: the file's own, and no hash. A resize that names only the size leaves the
+    /// stored Content-MD5 as it was, the hash of the shorter file, and a reader that checks it refuses the whole file;
+    /// naming the content headers makes the service set them together, so the hash is cleared. A content type is always
+    /// named, the service's default when none is stored, because with none of them named the hash would stay.
+    /// </summary>
+    private static ShareFileHttpHeaders Unhashed(ShareFileProperties properties) => new()
+    {
+        ContentType = string.IsNullOrEmpty(properties.ContentType) ? "application/octet-stream" : properties.ContentType,
+        ContentEncoding = properties.ContentEncoding?.ToArray(),
+        ContentLanguage = properties.ContentLanguage?.ToArray(),
+        ContentDisposition = properties.ContentDisposition,
+        CacheControl = properties.CacheControl,
+    };
 
     private static async Task UploadAsync(ShareFileClient file, byte[] bytes, long offset, CancellationToken ct)
     {
