@@ -29,7 +29,7 @@ public sealed record Worklist(IReadOnlyList<WorkRow> Rows, IReadOnlyDictionary<i
 /// with the posting's title as its headline, a dry run's too, so a morning's first build is not its first proof. The
 /// night's JOBS files are read before the older sweeps and the newest file first, so a posting two files both name
 /// takes its title from the newest reading of the board. Invites are cut hottest first (HotRank), and a queue block's
-/// profile address is the fallback when the tracker holds none for that person.
+/// profile address is the fallback when the tracker holds none for that person. A row BLACKLIST.md blocks is out first.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="minter">make_ref.py.</param>
@@ -182,7 +182,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         foreach (Candidate candidate in candidates)
         {
             string what = candidate.Person.Length > 0 ? $"{candidate.Person}, {candidate.Company}" : candidate.Company;
-            string? reason = gate(candidate) ?? await TextReasonAsync(candidate, reads, ct);
+            string? reason = reads.Gate.Blacklisted(candidate.Person, candidate.Company, candidate.Url) ?? gate(candidate) ?? await TextReasonAsync(candidate, reads, ct);
             if (reason is not null)
             {
                 dropped.Add(new Dropped(what, reason));

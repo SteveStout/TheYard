@@ -213,6 +213,7 @@ internal sealed class Morning
         Share.Files["CONVENTIONS.md"] = Fixture.Read("conventions.md");
         Share.Files["systemRules.md"] = Fixture.Read("rules.md");
         Share.Files["responders.md"] = Fixture.Read("responders.md");
+        Share.Files["BLACKLIST.md"] = BlacklistTests.File;
         Share.Files["state.md"] = Fixture.Read("state-tail.md");
         Share.Files["linkedin-proof/QUEUE-linuxreach-2026-10-27-0858.md"] = Fixture.Read("queue.md");
         Share.Files["linkedin-proof/QUEUE-linuxreach-2026-11-02-1021-status.md"] = Fixture.Read("queue-status.md");

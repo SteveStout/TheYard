@@ -8,13 +8,14 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Rule 50, the tracker's CSV and the former employers, compiled here from their one file so the Function and
+    <!-- Rule 50, the tracker's CSV, the former employers and BLACKLIST.md, compiled here from their one file so the Function and
          the machine lanes cannot keep two copies. ModularMonolithTests names each one. -->
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Tracker\TrackerCsvText.cs" Link="Linked\TrackerCsvText.cs" />
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Tracker\TrackerRows.cs" Link="Linked\TrackerRows.cs" />
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Applications\ApplicationCap.cs" Link="Linked\ApplicationCap.cs" />
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Companies\CompanyKey.cs" Link="Linked\CompanyKey.cs" />
     <Compile Include="..\..\functions\JobHunt.Domain\Shared\Companies\FormerEmployers.cs" Link="Linked\FormerEmployers.cs" />
+    <Compile Include="..\..\functions\JobHunt.Domain\Shared\Companies\Blacklist.cs" Link="Linked\Blacklist.cs" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="JobHunt.Domain.Shared.Companies" />

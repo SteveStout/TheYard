@@ -61,7 +61,7 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
     {
         var master = JobsPick.Applications(await tracker.RowsAsync(ct));
         var list = ApplicationCap.DoNotApplyList(await TextAsync("systemRules.md", ct));
-        var blacklist = PounceRules.Blacklisted(await TextAsync("BLACKLIST.md", ct));
+        var blacklist = Blacklist.Read(await TextAsync(Blacklist.File, ct));
         var texts = await postings.TextsAsync([.. fresh.Select(f => f.Key)], ct);
         var recent = (await book.PassedSinceAsync(now - TimeSpan.FromDays(PounceRules.DuplicateDays), ct))
             .Select(p => JobsGates.Same(new Candidate("", p.Company, p.Title, "", "", null, "", "", null, "", "")))
@@ -70,8 +70,8 @@ public sealed class PounceTick(IMergeStore store, IJobsPostings postings, ITrack
         foreach (var f in fresh)
         {
             var candidate = f.Candidate with { Text = texts.TryGetValue(f.Key, out var text) ? text : "" };
-            var verdict = JobsGates.Judge(candidate, master, list, today);
-            string? failed = PounceRules.Gate(verdict, blacklist, recent);
+            var verdict = JobsGates.Judge(candidate, master, list, today, blacklist);
+            string? failed = PounceRules.Gate(verdict, blacklist.Companies, recent);
             if (failed is null)
             {
                 recent.Add(JobsGates.Same(candidate));

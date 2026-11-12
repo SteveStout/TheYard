@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Xunit;
 
@@ -198,7 +199,8 @@ public sealed partial class TemplateTests
         string budget = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-budget.bicep"));
         Assert.Contains("thresholdType: 'Forecasted'", budget, StringComparison.Ordinal);
         Assert.DoesNotContain("@", budget.Replace("@description", "", StringComparison.Ordinal).Replace("budgets@", "", StringComparison.Ordinal), StringComparison.Ordinal);
-        Assert.Contains("param amount int = 60\n", budget.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
+        // The default is a ceiling, not a pin: the live budget moved from $60 to $70 on 11/16 and the template follows it.
+        Assert.InRange(int.Parse(BudgetAmount().Match(budget).Groups[1].Value, CultureInfo.InvariantCulture), 1, 70);
     }
 
     [Fact]
@@ -243,6 +245,9 @@ public sealed partial class TemplateTests
 
     [GeneratedRegex(@"\{\s*name:\s*'([A-Za-z0-9_]+)'\s*,\s*value:\s*'?([^'}]*?)'?\s*\}")]
     private static partial Regex Setting();
+
+    [GeneratedRegex(@"^param amount int = (\d+)\r?$", RegexOptions.Multiline)]
+    private static partial Regex BudgetAmount();
 
     [GeneratedRegex(@"GetEnvironmentVariable\(""([A-Za-z0-9_]+)""\)")]
     private static partial Regex ReadName();

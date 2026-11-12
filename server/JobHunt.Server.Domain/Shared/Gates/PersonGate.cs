@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 namespace JobHunt.Server.Domain.Shared.Gates;
 
 /// <summary>
-/// The company and person gates a worklist row must pass: the company blocks, the do-not-apply list, Rule 25, Rule 50,
-/// the agency and former-employer skips and the people no template ever goes to. Each answer is the reason a row is
-/// out, or null, so the DONE note can say why in the gate's own words.
+/// The company and person gates a worklist row must pass: BLACKLIST.md first, then the company blocks, the do-not-apply
+/// list, Rule 25, Rule 50, the agency and former-employer skips and the people no template ever goes to. Each answer is
+/// the reason a row is out, or null, so the DONE note can say why in the gate's own words.
 /// </summary>
 public sealed partial class PersonGate
 {
@@ -16,6 +16,7 @@ public sealed partial class PersonGate
     private readonly IReadOnlyList<string> blocks;
     private readonly IReadOnlyList<DoNotApply> doNotApply;
     private readonly IReadOnlyList<string> agencies;
+    private readonly Blacklist blacklist;
     private readonly IReadOnlySet<string> noTemplate;
     private readonly DateOnly today;
 
@@ -28,6 +29,7 @@ public sealed partial class PersonGate
         blocks = CompanyBlocks(sources.Limits);
         doNotApply = ApplicationCap.DoNotApplyList(sources.Rules);
         agencies = sources.Agencies;
+        blacklist = Blacklist.Read(sources.BlacklistFile);
         noTemplate = NoTemplate(sources.Responders);
         this.today = today;
     }
@@ -73,6 +75,12 @@ public sealed partial class PersonGate
         return names;
     }
 
+    /// <summary>"blacklisted: &lt;row date&gt;" when BLACKLIST.md blocks the company, the person or the posting, or null.</summary>
+    /// <param name="person">The person, empty for none.</param>
+    /// <param name="company">The company.</param>
+    /// <param name="url">The posting's address, empty for none; a profile address matches no job row.</param>
+    public string? Blacklisted(string person, string company, string url = "") => blacklist.Hit(company, person, url)?.Reason;
+
     /// <summary>Why this person may not get an invite, or null.</summary>
     /// <param name="person">The person, empty when the lane will find the name.</param>
     /// <param name="company">The company.</param>
@@ -100,7 +108,7 @@ public sealed partial class PersonGate
     /// <param name="role">The role's title, for an application row that holds no link.</param>
     public string? Apply(string company, string link, string role)
     {
-        string? employer = Employer(company);
+        string? employer = Blacklisted(string.Empty, company, link) ?? Employer(company);
         if (employer is not null)
         {
             return employer;
@@ -130,7 +138,7 @@ public sealed partial class PersonGate
 
     private string? Outreach(string person, string company)
     {
-        if (Employer(company) is { } employer)
+        if ((Blacklisted(person, company) ?? Employer(company)) is { } employer)
         {
             return employer;
         }
@@ -222,4 +230,5 @@ public sealed partial class PersonGate
 /// <param name="Rules">systemRules.md, for the do-not-apply list.</param>
 /// <param name="Responders">responders.md, read only.</param>
 /// <param name="Agencies">The agency-submitted names out of the queues.</param>
-public sealed record GateSources(IReadOnlyList<string[]> Rows, string Limits, string Rules, string Responders, IReadOnlyList<string> Agencies);
+/// <param name="BlacklistFile">BLACKLIST.md, empty for none.</param>
+public sealed record GateSources(IReadOnlyList<string[]> Rows, string Limits, string Rules, string Responders, IReadOnlyList<string> Agencies, string BlacklistFile = "");

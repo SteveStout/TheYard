@@ -251,6 +251,12 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         {
             return (CampaignVerdict.Hold("tell in the email: " + string.Join(", ", tells)), null, true);
         }
+        // The title is the posting's, so an A email over sixty words holds this send and does not mark the lead.
+        int words = lead.Track == 'A' ? EmailWords.Count(email.Text ?? string.Empty) : 0;
+        if (words > EmailWords.Max)
+        {
+            return (CampaignVerdict.Hold($"over sixty words: {words}"), null, false);
+        }
         // v1 of Template A says "so I applied today" in words: it goes out only when that is true (F8).
         if (lead.Track == 'A' && template.Text.Contains("applied today", StringComparison.Ordinal) && values["AppliedWhen"] != "today")
         {
