@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.55** (2026-11-16): What a reader's first load costs is now held to the bytes it cost today, part by part, and a version that spends more fails the gate until it raises the number on purpose (ADR: A byte budget for the first load).
 - **1.0.5.54** (2026-11-16): Every public page ends with where to go next, at most two links each with a line of reason and its minutes; the footer's email line goes through the site's counted redirect, like the email links on About and the review route, so no page carries the address.
 - **1.0.5.55** (2026-11-16): On a phone the Quality page holds still while its charts are drawn, where every word under the first chart dropped 200 pixels when it arrived on a slow phone.
 - **1.0.5.54** (2026-11-16): TheYard keeps one SQL database with a schema for each area, now a decision record of its own, and the build fails if a template, the deploy or a setting ever names a second database.
