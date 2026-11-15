@@ -277,4 +277,25 @@ public class GateWorkflowTests
         Assert.Contains("GATE_NEEDS: ${{ toJSON(needs) }}", GateJob(), StringComparison.Ordinal);
     }
     // #endregion side-by-side
+
+    /// <summary>
+    /// Ladder 8b (ADR-133's report half): the Lighthouse job reads the built site five times inside the job and keeps
+    /// the median as an artifact, and it never holds a ship. It sits after the after-roll job, outside the check jobs
+    /// the gate folds; nothing needs it; a failure turns no run red; and its 25-minute cap bounds how long it can hold
+    /// the gate's concurrency group, and so the next ship.
+    /// </summary>
+    [Fact]
+    public void The_lighthouse_job_reports_and_never_holds_a_ship()
+    {
+        string workflow = Workflow();
+        int at = workflow.IndexOf("\n  lighthouse:\n", StringComparison.Ordinal);
+        Assert.True(at > workflow.IndexOf("\n  after-roll:\n", StringComparison.Ordinal), "the lighthouse job should come after after-roll, outside the check jobs");
+        string job = workflow[at..];
+        Assert.Contains("timeout-minutes: 25", job, StringComparison.Ordinal);
+        Assert.Contains("continue-on-error: true", job, StringComparison.Ordinal);
+        Assert.Contains("npx --yes lighthouse@12.8.2", job, StringComparison.Ordinal);
+        Assert.Contains("name: lighthouse-raw", job, StringComparison.Ordinal);
+        Assert.DoesNotContain("theyard.stevenstout.biz", job, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"needs:[^\n]*lighthouse"), workflow);
+    }
 }
