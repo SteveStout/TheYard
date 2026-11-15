@@ -168,7 +168,7 @@ public sealed partial class JobsTests
             Texts = { [3] = "Go and Rust on AWS" },
         };
 
-        var result = await new JobsPick(scratch.Store, postings, new Tracker([]), new Fixed(Night)).RunAsync(CancellationToken.None);
+        var result = await new JobsPick(scratch.Store, postings, new Tracker([]), new NoForms(), new Fixed(Night)).RunAsync(CancellationToken.None);
         string[] lines = scratch.Text("nightly/jobs-candidates-2026-11-06.tsv").Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
         Assert.Equal("# scanned 3 postings from 3 boards, 2 alert leads; 2 passed the gates; 1 confirmed by the feeds; tracker sql", lines[0]);
@@ -190,7 +190,7 @@ public sealed partial class JobsTests
         scratch.Master("1,NA,Globex,Greenhouse,10/30/2026,,SUBMITTED: Staff .NET Engineer\r\n");
         scratch.Write("nightly/leads-2026-11-05.md", "\n## 1a1a | LinkedIn digest, x | 2026-11-05 07:46 Central | s | 1 requisitions\n\n| Company | Title | Location / remote line as written | Link | Source Gmail id | Filter |\n|---|---|---|---|---|---|\n| Globex | Staff .NET Engineer | United States | https://www.linkedin.com/jobs/view/2/ | 1a1a | pass |\n");
 
-        var result = await new JobsPick(scratch.Store, new Feed(false), new Tracker(null), new Fixed(Night)).RunAsync(CancellationToken.None);
+        var result = await new JobsPick(scratch.Store, new Feed(false), new Tracker(null), new NoForms(), new Fixed(Night)).RunAsync(CancellationToken.None);
 
         Assert.Contains("postings blocked: no_postings, alert leads alone; tracker csv (the sql copy did not answer: InvalidOperationException)", result.Line, StringComparison.Ordinal);
         Assert.EndsWith("\tapplied already, Count 1", scratch.Text("nightly/jobs-candidates-2026-11-06.tsv").TrimEnd('\n').Split('\n')[^1], StringComparison.Ordinal);
@@ -229,7 +229,7 @@ public sealed partial class JobsTests
         scratch.Master("");
         scratch.Write("nightly/leads-2026-11-06.md", "\n## 1a1a | LinkedIn digest, x | 2026-11-06 01:10 Central | s | 1 requisitions\n\n| Company | Title | Location / remote line as written | Link | Source Gmail id | Filter |\n|---|---|---|---|---|---|\n| Globex | Staff .NET Engineer | United States | https://www.linkedin.com/jobs/view/2/ | 1a1a | pass |\n");
 
-        string line = await new JobsHour(scratch.Store, new Fixed(Night), Microsoft.Extensions.Logging.Abstractions.NullLogger<JobsHour>.Instance).PickAsync(CancellationToken.None);
+        string line = await new JobsHour(scratch.Store, new NoNetwork(), new Fixed(Night), Microsoft.Extensions.Logging.Abstractions.NullLogger<JobsHour>.Instance).PickAsync(CancellationToken.None);
 
         Assert.StartsWith("nightly/jobs-candidates-2026-11-06.tsv: scanned 0 postings from 0 boards, 1 alert leads; 1 passed the gates; 0 confirmed by the feeds; postings blocked", line, StringComparison.Ordinal);
         Assert.Equal($"2026-11-06 02:00:00 {line}\n", scratch.Text(JobsHour.Log));
@@ -269,7 +269,7 @@ public sealed partial class JobsTests
         scratch.Write("nightly/leads-2026-11-06.md", "\n## 1a1a | LinkedIn digest, x | 2026-11-06 01:10 Central | s | 2 requisitions\n\n| Company | Title | Location / remote line as written | Link | Source Gmail id | Filter |\n|---|---|---|---|---|---|\n| Fresh Co | Staff .NET Engineer | United States | https://www.linkedin.com/jobs/view/9/ | 1a1a | pass |\n| ACME | Principal Software Engineer | United States | https://www.linkedin.com/jobs/view/1/ | 1a1a | pass |\n");
         var postings = new Feed(true) { Rows = { (1, Role(age: 9)), (2, Role(title: "Lead .NET Engineer", company: "Globex", age: 1)), (3, Role(age: 9) with { Url = "https://job-boards.greenhouse.io/acme/jobs/2" }) } };
 
-        await new JobsPick(scratch.Store, postings, new Tracker([]), new Fixed(Night)).RunAsync(CancellationToken.None);
+        await new JobsPick(scratch.Store, postings, new Tracker([]), new NoForms(), new Fixed(Night)).RunAsync(CancellationToken.None);
         var rows = scratch.Text("nightly/jobs-candidates-2026-11-06.tsv").Split('\n').Skip(2).TakeWhile(l => l != "# FAILED").Select(l => l.Split('\t')).ToList();
 
         Assert.Equal(["Globex", "Acme", "Fresh Co"], rows.Select(r => r[1]));
@@ -286,7 +286,7 @@ public sealed partial class JobsTests
         scratch.Write("nightly/leads-2026-11-05.md", Day("2026-11-05", "Yesterday Co", 2));
         scratch.Write("nightly/leads-2026-11-04.md", Day("2026-11-04", "Older Co", 3));
 
-        var result = await new JobsPick(scratch.Store, new Feed(false), new Tracker([]), new Fixed(Night)).RunAsync(CancellationToken.None);
+        var result = await new JobsPick(scratch.Store, new Feed(false), new Tracker([]), new NoForms(), new Fixed(Night)).RunAsync(CancellationToken.None);
 
         Assert.Equal((2, 2), (result.Alerts, result.Passed));
         Assert.DoesNotContain("Older Co", scratch.Text(result.Path), StringComparison.Ordinal);

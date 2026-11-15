@@ -9,7 +9,9 @@ namespace JobHunt.Domain.Features.Jobs;
 /// tables carry a Filter column, read for the rows that passed, each dated by its alert's section. Out: the night's
 /// candidates file (nightly/jobs-candidates-&lt;date&gt;.tsv), one row a candidate in the columns the jobs lane reads, its
 /// supply line first, and every role a gate failed under the line "# FAILED" with that gate, so nothing is dropped
-/// unseen.
+/// unseen. A passed row's Hold cell names what keeps it off READY (the resume headline the builder will refuse), and
+/// the jobs lane writes such a row under NEEDS STEVE with the Hold as its control. Its Form cell names what the
+/// posting's application form requires that no bank answers ("FORM: essay required"), for the row's Notes.
 /// </summary>
 public static partial class JobsFiles
 {
@@ -23,7 +25,7 @@ public static partial class JobsFiles
     public static string Leads(DateOnly day) => $"nightly/leads-{day:yyyy-MM-dd}.md";
 
     /// <summary>The columns, in order.</summary>
-    public static readonly IReadOnlyList<string> Columns = ["Source", "Company", "Title", "Level", "Url", "BoardKind", "Posted", "DaysOld", "Band", "BandFlag", "Remote", "Confirmed", "Stack", "TrackerNote", "WhyPassed"];
+    public static readonly IReadOnlyList<string> Columns = ["Source", "Company", "Title", "Level", "Url", "BoardKind", "Posted", "DaysOld", "Band", "BandFlag", "Remote", "Confirmed", "Stack", "TrackerNote", "WhyPassed", "Hold", "Form"];
 
     /// <summary>The alert rows that passed the inbox pass's filter, as candidates dated by their alert, one a link.</summary>
     public static IReadOnlyList<Candidate> AlertRows(string text)
@@ -82,7 +84,7 @@ public static partial class JobsFiles
         return new[]
         {
             c.Source, c.Company, c.Title, c.Level, c.Url, c.BoardKind, c.Posted?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "",
-            v.DaysOld.ToString(CultureInfo.InvariantCulture), band, v.BandFlag, v.Remote, c.Confirmed, v.Stack, v.TrackerNote, v.WhyPassed,
+            v.DaysOld.ToString(CultureInfo.InvariantCulture), band, v.BandFlag, v.Remote, c.Confirmed, v.Stack, v.TrackerNote, v.WhyPassed, v.Hold, v.Form,
         }.Select(Flat);
     }
 
