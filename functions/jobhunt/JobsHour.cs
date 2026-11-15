@@ -4,11 +4,11 @@ namespace JobHunt.Functions;
 
 /// <summary>
 /// The clock's work in the 2 o'clock hour Central, before it starts the jobs lane: the night's picker (JobsPick) over
-/// CAMPAIGN_SQL, or over the alert leads and the share's CSV when the setting is absent, its line appended to
-/// nightly/jobs-pick.log. A picker that throws is logged and answered as FAILED, and the lane is still started, so the
-/// lane can say there was no candidates file.
+/// CAMPAIGN_SQL, or over the alert leads and the share's CSV when the setting is absent, each passed posting's form read
+/// from its public board, its line appended to nightly/jobs-pick.log. A picker that throws is logged and answered as
+/// FAILED, and the lane is still started, so the lane can say there was no candidates file.
 /// </summary>
-public sealed class JobsHour(IMergeStore store, TimeProvider time, ILogger<JobsHour> log)
+public sealed class JobsHour(IMergeStore store, IHttpClientFactory http, TimeProvider time, ILogger<JobsHour> log)
 {
     /// <summary>The picker's log on the share, one line a night.</summary>
     public const string Log = "nightly/jobs-pick.log";
@@ -21,7 +21,7 @@ public sealed class JobsHour(IMergeStore store, TimeProvider time, ILogger<JobsH
         {
             string? sql = Environment.GetEnvironmentVariable("CAMPAIGN_SQL");
             var reader = string.IsNullOrWhiteSpace(sql) ? null : new SqlJobsReader(sql);
-            line = (await new JobsPick(store, reader ?? (IJobsPostings)new NoDatabase(), reader ?? (ITrackerRows)new NoDatabase(), time).RunAsync(ct)).Line;
+            line = (await new JobsPick(store, reader ?? (IJobsPostings)new NoDatabase(), reader ?? (ITrackerRows)new NoDatabase(), new PublicFormReader(http), time).RunAsync(ct)).Line;
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
