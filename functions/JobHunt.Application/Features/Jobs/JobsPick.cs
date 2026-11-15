@@ -10,9 +10,10 @@ namespace JobHunt.Application.Features.Jobs;
 /// the scan read tonight is dropped for the posting, which is confirmed. The result is the candidates file, with its
 /// supply line first and every failure at its foot. With the postings tables not yet published it writes from the
 /// alert leads alone and its line says so; a tracker copy that cannot be read falls back to the share's CSV, named on
-/// the line. It writes nothing else.
+/// the line. Each passed posting the scan read has its application form read from its board, four at a time, and
+/// what the form requires that no bank answers goes in its Form cell. It writes nothing else.
 /// </summary>
-public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITrackerRows tracker, TimeProvider time)
+public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITrackerRows tracker, IPostingForms forms, TimeProvider time)
 {
     /// <summary>How far back a posting counts as seen tonight: the 1 AM scan, with room for a late one.</summary>
     public static readonly TimeSpan Tonight = TimeSpan.FromHours(30);
@@ -48,6 +49,7 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
         var all = feedVerdicts.Concat(alertVerdicts).ToList();
         var passed = all.Where(v => v.Failed is null).DistinctBy(v => JobsGates.Same(v.Candidate))
             .OrderBy(v => v.Candidate.Confirmed == "feed" ? 0 : 1).ThenBy(v => v.DaysOld).ToList();
+        passed = await FormsAsync(passed, ct);
         var failed = all.Where(v => v.Failed is not null).ToList();
         int boards = feed.Select(f => f.Candidate.Source + "|" + f.Candidate.Company).Distinct(StringComparer.Ordinal).Count();
         int confirmed = passed.Count(v => v.Candidate.Confirmed == "feed");
@@ -58,6 +60,24 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
         await store.EnsureFolderAsync("nightly", ct);
         await store.WriteAsync(path, TrackerCsvText.Encode(JobsFiles.Write(supply, passed, failed)), ct);
         return new JobsPickResult($"{path}: {supply}, {failed.Count} failed", path, feed.Count, boards, alerts.Count, passed.Count, confirmed);
+    }
+
+    /// <summary>How many forms are read at once.</summary>
+    public const int FormsAtOnce = 4;
+
+    /// <summary>Each passed posting the scan read, with its form's note; an alert row's form is the jobs lane's to read.</summary>
+    private async Task<List<Verdict>> FormsAsync(List<Verdict> passed, CancellationToken ct)
+    {
+        var noted = passed.ToArray();
+        await Parallel.ForEachAsync(Enumerable.Range(0, noted.Length), new ParallelOptions { MaxDegreeOfParallelism = FormsAtOnce, CancellationToken = ct }, async (i, token) =>
+        {
+            var c = noted[i].Candidate;
+            if (c.Confirmed == "feed" && c.BoardToken.Length > 0 && c.PostingId.Length > 0)
+            {
+                noted[i] = noted[i] with { Form = FormNotes.Of(await forms.ReadAsync(c.BoardKind, c.BoardToken, c.PostingId, token)) };
+            }
+        });
+        return [.. noted];
     }
 
     private async Task<(IReadOnlyList<string[]> Rows, string Word)> MasterAsync(CancellationToken ct)
