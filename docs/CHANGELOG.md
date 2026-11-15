@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): The 07:30 card leads with the model lanes' empty runs: a lane that had work due and did none two runs in a row prints as an EMPTY RUN line under the hiring signal, every day.
 - **@VER@** (@DATE@): A READY job is one the apply lane can submit: a posting that never says remote, or is remote only in named states without Missouri, fails "not remote" with the words it read; a title the resume headline cannot hold is held with its length; and each passed posting's form names a required essay, acknowledgement or cover letter that no bank answers, before 6 AM.
 - **1.0.5.74** (2026-11-17): Every version now gets a Lighthouse reading of the landing, five runs inside the gate with the median kept, which reports and never holds a ship.
 - **1.0.5.73** (2026-11-16): The Admin tab's nightly card names the morning card and the funnel beside the other eight processes, each with its runs; the rules table names the 6 AM program's own tests; and a counted link goes to his LinkedIn recommendations page.
