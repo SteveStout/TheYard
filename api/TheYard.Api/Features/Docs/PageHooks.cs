@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using TheYard.Application.Shared.Links;
 
 namespace TheYard.Api.Features.Docs;
 
@@ -89,7 +90,8 @@ public static partial class PageHooks
     /// </summary>
     /// <param name="file">The hook file, or null when it could not be read.</param>
     /// <param name="page">The page's name in the next list.</param>
-    public static string NextHtml(PageHooksFile? file, string page)
+    /// <param name="code">The visit's link code, carried on each link of this site so the click is counted (ladder v7b), or null.</param>
+    public static string NextHtml(PageHooksFile? file, string page, string? code = null)
     {
         var links = file?.Next?.FirstOrDefault(entry => entry.Page == page)?.Links;
         if (links is not { Count: > 0 })
@@ -99,9 +101,17 @@ public static partial class PageHooks
 
         string e(string value) => WebUtility.HtmlEncode(value);
         string items = string.Concat(links.Select(link =>
-            $"<li><a href=\"{e(link.Href)}\">{e(link.Label)}</a> <span>{e(link.Reason)} {link.Minutes.ToString(CultureInfo.InvariantCulture)} min</span></li>"));
+            $"<li><a href=\"{e(Carried(link.Href, code))}\">{e(link.Label)}</a> <span>{e(link.Reason)} {link.Minutes.ToString(CultureInfo.InvariantCulture)} min</span></li>"));
         return $"<nav class=\"where-next\" aria-label=\"Where next\" data-testid=\"where-next\" data-next=\"{e(page)}\"><p>Where next</p><ul>{items}</ul></nav>";
     }
+
+    /// <summary>A link of this site with the visit's code on it, or the link as it was.</summary>
+    /// <param name="href">The link as the file has it.</param>
+    /// <param name="code">The visit's code, or null.</param>
+    public static string Carried(string href, string? code) =>
+        LinkCodes.IsOne(code) && href.StartsWith('/')
+            ? href + (href.Contains('?', StringComparison.Ordinal) ? "&" : "?") + "r=" + code
+            : href;
 
     /// <summary>The label with each {name} replaced by its count, or null when one of them is not known.</summary>
     /// <param name="label">The link's words as the file has them.</param>
