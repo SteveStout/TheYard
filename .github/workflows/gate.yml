@@ -699,3 +699,40 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$GITHUB_REF_NAME" || echo "::warning::the gate branch $GITHUB_REF_NAME was not deleted"
   # #endregion after-roll
+
+  # #region lighthouse
+  # Ladder 8b (ADR-134, the addendum of its version): Lighthouse reads the landing as built, five times, inside this job,
+  # never the live site, and keeps the median of each reading as the lighthouse-raw artifact. It reports and never
+  # blocks: nothing needs it, so promote and the verdict never wait for it, and a failure turns no run red. Its cap
+  # matters all the same, because the gate's concurrency group holds the next gate until every job of this run has
+  # ended. A later version reads ten of these and sets the blocking line, as the owner's answer to the ladder's
+  # question 4 says. Lighthouse 12.8.2 is the version the Performance page's readings were taken with.
+  lighthouse:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx vite build
+      - name: Five readings of the landing, the median kept
+        run: |
+          out="$RUNNER_TEMP/lighthouse"; mkdir -p "$out"
+          npx vite preview --port 4173 --strictPort > "$out/preview.txt" 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:4173/ > /dev/null && break; sleep 1; done
+          for n in 1 2 3 4 5; do
+            npx --yes lighthouse@12.8.2 http://localhost:4173/ --only-categories=performance --output=json \
+              --output-path="$out/run-$n.json" --chrome-flags="--headless=new --no-sandbox" --quiet \
+              || echo "::warning::Lighthouse run $n did not finish"
+          done
+          node scripts/lighthouse_median.mjs "$out" | tee "$out/median.json"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lighthouse-raw
+          path: ${{ runner.temp }}/lighthouse/
+  # #endregion lighthouse
