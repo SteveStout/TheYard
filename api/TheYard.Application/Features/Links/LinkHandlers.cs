@@ -43,7 +43,8 @@ public sealed record GoQuery(string Key);
 /// <param name="Opens">How many opens in the window.</param>
 /// <param name="Days">How many days the code was opened on.</param>
 /// <param name="Paths">The paths opened, with a count each, busiest first.</param>
-public sealed record LinkOpensRow(string Code, long FirstMs, long LastMs, int Opens, int Days, IReadOnlyDictionary<string, int> Paths);
+/// <param name="Scanned">True when a day of the code's looks like a link scanner, not a person (LinkScans); the opens are kept and counted all the same.</param>
+public sealed record LinkOpensRow(string Code, long FirstMs, long LastMs, int Opens, int Days, IReadOnlyDictionary<string, int> Paths, bool Scanned = false);
 
 /// <summary>The card's report: whether opens are kept, the window, and one row a code, newest open first.</summary>
 /// <param name="Available">True when the store keeps opens.</param>
@@ -51,7 +52,8 @@ public sealed record LinkOpensRow(string Code, long FirstMs, long LastMs, int Op
 /// <param name="Window">The window read, as its name.</param>
 /// <param name="Codes">One row a code.</param>
 /// <param name="Keys">The pass-through link keys the configuration names, so the card can say what /api/go offers.</param>
-public sealed record LinkOpensReport(bool Available, string? Note, string Window, IReadOnlyList<LinkOpensRow> Codes, IReadOnlyList<string> Keys);
+/// <param name="ScannedCodes">How many of the codes are flagged as scanned, counted apart so the card can say so.</param>
+public sealed record LinkOpensReport(bool Available, string? Note, string Window, IReadOnlyList<LinkOpensRow> Codes, IReadOnlyList<string> Keys, int ScannedCodes = 0);
 
 /// <summary>The card's report for a window: the kept days folded to one row a code.</summary>
 /// <param name="opens">Where opens are kept.</param>
@@ -88,10 +90,11 @@ public sealed class ReadLinkOpensHandler(ILinkOpensReader opens, ILinkTargets ta
                 code.Max(day => day.Last).ToUnixTimeMilliseconds(),
                 code.Sum(day => day.Opens),
                 code.Count(),
-                code.Aggregate((IReadOnlyDictionary<string, int>)new Dictionary<string, int>(StringComparer.Ordinal), (kept, day) => LinkOpenFolding.Merge(kept, day.Paths))))
+                code.Aggregate((IReadOnlyDictionary<string, int>)new Dictionary<string, int>(StringComparer.Ordinal), (kept, day) => LinkOpenFolding.Merge(kept, day.Paths)),
+                code.Any(LinkScans.LooksScanned)))
             .OrderByDescending(row => row.LastMs)
             .ToList();
-        return new LinkOpensReport(true, null, name, rows, targets.Keys);
+        return new LinkOpensReport(true, null, name, rows, targets.Keys, rows.Count(row => row.Scanned));
     }
 }
 /// <summary>The card's opens for a window.</summary>
