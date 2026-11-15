@@ -66,9 +66,10 @@ public static class AboutPage
     /// lead, or none when it is null, and <paramref name="face"/> as the style line that
     /// declares the site's face from its own file (SiteFace), or none for the fallback face, and
     /// <paramref name="vouches"/> as the list of what colleagues said (AboutRecommendations), or none, and
-    /// <paramref name="hook"/> as the page's hook (PageHooks, ADR-132), the first box under the title, or none.
+    /// <paramref name="hook"/> as the page's hook (PageHooks, ADR-132), the first box under the title, or none, and
+    /// <paramref name="next"/> as its "Where next" footer (PageHooks.NextHtml, ladder v7), the last thing in the page, or none.
     /// </summary>
-    public static string Render(string siteUrl, string? leadImage, string face = "", string vouches = "", string hook = "")
+    public static string Render(string siteUrl, string? leadImage, string face = "", string vouches = "", string hook = "", string next = "")
     {
         string site = siteUrl.TrimEnd('/');
         string canonical = site + "/about";
@@ -203,6 +204,7 @@ public static class AboutPage
               <li><a href="/?view=review">Check my work</a></li>
             </ul>
             </article>
+            {{next}}
             </main>
             <footer><a href="/">TheYard</a> &middot; <a href="/?doc=author">About Steven, the longer version</a></footer>
             </body>

@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.54** (2026-11-16): Every public page ends with where to go next, at most two links each with a line of reason and its minutes; the footer's email line goes through the site's counted redirect, like the email links on About and the review route, so no page carries the address.
 - **1.0.5.55** (2026-11-16): On a phone the Quality page holds still while its charts are drawn, where every word under the first chart dropped 200 pixels when it arrived on a slow phone.
 - **1.0.5.54** (2026-11-16): TheYard keeps one SQL database with a schema for each area, now a decision record of its own, and the build fails if a template, the deploy or a setting ever names a second database.
 - **1.0.5.53** (2026-11-16): The deploy image now builds with the same .NET SDK as the gate and CI (10.0.404, the one global.json names), the page renderer keeps the posts of at most four sites, and the test that keeps the Admin tab's charts to itself also sees dynamic and double-quoted imports; nothing a visitor sees changes.

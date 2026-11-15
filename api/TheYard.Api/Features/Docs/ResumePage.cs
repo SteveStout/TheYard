@@ -39,7 +39,8 @@ public static class ResumePage
     /// <param name="code">The link's r= value, or null.</param>
     /// <param name="face">The site's face, or empty.</param>
     /// <param name="hook">The hook box, or empty.</param>
-    public static string Html(string door, string? code, string face = "", string hook = "")
+    /// <param name="next">The "Where next" footer (PageHooks.NextHtml, ladder v7), or empty.</param>
+    public static string Html(string door, string? code, string face = "", string hook = "", string next = "")
     {
         string e(string value) => WebUtility.HtmlEncode(value);
         string route = LinkCodes.IsOne(code) ? $"/review?r={code}" : "/review";
@@ -82,6 +83,7 @@ public static class ResumePage
               <a class="pdf" href="{{e(pdf)}}">{{e(PdfLink)}}</a>
             </header>
             <iframe src="{{e(pdf)}}" title="Steven Stout's resume, the PDF"></iframe>
+            {{next}}
             </body>
             </html>
             """;
