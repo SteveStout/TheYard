@@ -2,9 +2,9 @@
  * Does:      Reads the hook on each page a reader is sent to (ADR-132, A hook on every page) from data/hooks.json, the one
  *            file the API reads for /about and the resume door too; builds the landing hook's chart from the quality
  *            history the build carries, so the first screen draws with no read; fills a count a label names; and
- *            says whether an address opens Admin, which no hook may.
+ *            says whether an address opens Admin, which no hook may; and reads each page's "Where next" links (ladder v7).
  * Does not:  Draw anything (components/shared/Hook does), fetch anything, or type a count: every number comes from data.
- * Used by:   Landing.tsx, pageHooks.test.ts.
+ * Used by:   Landing.tsx, WhereNext.tsx, pageHooks.test.ts.
  */
 import file from '../../data/hooks.json';
 import history from '../../data/quality-history.json';
@@ -59,6 +59,31 @@ export function withCounts(label: string, counts: Record<string, number>): strin
   return label.replace(/\{([a-z_]+)\}/g, (named, name: string) =>
     name in counts ? String(counts[name]) : named
   );
+}
+
+/** The pages that carry a "Where next" footer, one entry each in the file's next list. */
+export const NEXT_PAGES = [
+  'landing',
+  'review',
+  'post',
+  'about',
+  'quality',
+  'record',
+  'architecture',
+  'resume',
+] as const;
+
+/** A page's name in the next list. */
+export type NextPage = (typeof NEXT_PAGES)[number];
+
+/** One "Where next" link: its words, one line of reason, the minutes it takes, and where it goes. */
+export type NextLink = { label: string; reason: string; minutes: number; href: string };
+
+const NEXT: readonly { page: string; links: NextLink[] }[] = file.next;
+
+/** A page's "Where next" links, at most two, which pageHooks.test.ts holds. */
+export function nextFor(page: NextPage): NextLink[] {
+  return NEXT.find((entry) => entry.page === page)?.links ?? [];
 }
 
 /** True when the address opens Admin: its view is admin, or it is one of Admin's own reads. */
