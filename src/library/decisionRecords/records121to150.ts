@@ -108,4 +108,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '134',
   },
+  adrAnEmptyRunIsAFailedRun: {
+    title: 'ADR: An empty run is a failed run',
+    menuLabel: 'ADR: An empty run is a failed run',
+    url: '/api/docs/adr-an-empty-run-is-a-failed-run',
+    kind: 'adr',
+    number: '135',
+  },
 } as const satisfies Record<string, RecordEntry>;
