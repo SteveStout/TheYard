@@ -41,6 +41,9 @@ public sealed record TodayInputs(
 {
     /// <summary>The hiring signal's line, or empty.</summary>
     public string Signal { get; init; } = "";
+
+    /// <summary>dispatch/EMPTY-RUNS.md as check_empty_runs.py wrote it, or empty.</summary>
+    public string EmptyRuns { get; init; } = "";
 }
 
 /// <summary>
@@ -60,6 +63,9 @@ public static class TodayCard
 
     /// <summary>The hiring signal's one line, which the pounce's hourly tick writes (HiringSignal.Path).</summary>
     public const string SignalPath = "nightly/hiring-signal.md";
+
+    /// <summary>The model lanes' empty runs, written each morning before the card by check_empty_runs.py.</summary>
+    public const string EmptyRunsPath = "dispatch/EMPTY-RUNS.md";
 
     /// <summary>The minutes of his time the card may take.</summary>
     public const int CapMinutes = 15;
@@ -190,6 +196,11 @@ public static class TodayCard
         if (inputs.Signal.Length > 0)
         {
             head.Append(inputs.Signal).Append("\n\n");
+        }
+        // A lane that had work due and did none two runs in a row is a wall, so it leads every day.
+        foreach (string empty in inputs.EmptyRuns.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("EMPTY RUN:", StringComparison.Ordinal)))
+        {
+            head.Append(CultureInfo.InvariantCulture, $"**{empty}**\n\n");
         }
         return head.Append(text).ToString();
     }
