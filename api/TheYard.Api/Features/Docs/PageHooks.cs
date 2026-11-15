@@ -18,9 +18,22 @@ public sealed record PageHookLink(string Label, string Href);
 /// <param name="Link">The hook's one link, or none.</param>
 public sealed record PageHook(string Page, string Path, IReadOnlyList<string> Lines, string Source, PageHookLink? Link);
 
-/// <summary>The file as read: one entry a page.</summary>
+/// <summary>One "Where next" link (ladder v7): its words, one line of reason, its minutes and where it goes.</summary>
+/// <param name="Label">The link's words.</param>
+/// <param name="Reason">One line on why a reader would go there.</param>
+/// <param name="Minutes">The minutes it takes.</param>
+/// <param name="Href">The address it opens, never one that opens Admin.</param>
+public sealed record PageNextLink(string Label, string Reason, int Minutes, string Href);
+
+/// <summary>One page's "Where next" footer: at most two links.</summary>
+/// <param name="Page">The page's name in the file's next list.</param>
+/// <param name="Links">Its links, in the order they are drawn.</param>
+public sealed record PageNext(string Page, IReadOnlyList<PageNextLink> Links);
+
+/// <summary>The file as read: one hook a page, and the "Where next" footers.</summary>
 /// <param name="Hooks">Every page's entry.</param>
-public sealed record PageHooksFile(IReadOnlyList<PageHook> Hooks);
+/// <param name="Next">Every page's footer; empty in a file from before ladder v7.</param>
+public sealed record PageHooksFile(IReadOnlyList<PageHook> Hooks, IReadOnlyList<PageNext>? Next = null);
 
 /// <summary>
 /// The hook on the two pages the API draws in C# (ADR-132, A hook on every page): /about and the resume door read their
@@ -68,6 +81,26 @@ public static partial class PageHooks
         string? label = hook.Link is null ? null : Filled(hook.Link.Label, counts);
         string link = label is null ? "" : $"<a class=\"hook-link\" href=\"{e(hook.Link!.Href)}\">{e(label)}</a>";
         return $"<section class=\"hook\" data-testid=\"hook\" data-hook=\"{e(page)}\" aria-label=\"In brief\">{words}{link}</section>";
+    }
+
+    /// <summary>
+    /// The "Where next" footer for <paramref name="page"/> (ladder v7, page flow): the same links, reasons and minutes the
+    /// React pages draw from the file's next list. Empty when the file has none for the page.
+    /// </summary>
+    /// <param name="file">The hook file, or null when it could not be read.</param>
+    /// <param name="page">The page's name in the next list.</param>
+    public static string NextHtml(PageHooksFile? file, string page)
+    {
+        var links = file?.Next?.FirstOrDefault(entry => entry.Page == page)?.Links;
+        if (links is not { Count: > 0 })
+        {
+            return "";
+        }
+
+        string e(string value) => WebUtility.HtmlEncode(value);
+        string items = string.Concat(links.Select(link =>
+            $"<li><a href=\"{e(link.Href)}\">{e(link.Label)}</a> <span>{e(link.Reason)} {link.Minutes.ToString(CultureInfo.InvariantCulture)} min</span></li>"));
+        return $"<nav class=\"where-next\" aria-label=\"Where next\" data-testid=\"where-next\" data-next=\"{e(page)}\"><p>Where next</p><ul>{items}</ul></nav>";
     }
 
     /// <summary>The label with each {name} replaced by its count, or null when one of them is not known.</summary>
