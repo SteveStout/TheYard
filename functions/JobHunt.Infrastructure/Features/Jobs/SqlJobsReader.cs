@@ -29,7 +29,7 @@ public sealed class SqlJobsReader(string connectionString) : IJobsPostings, ITra
         var rows = new List<(long, Candidate)>();
         while (await reader.ReadAsync(ct))
         {
-            rows.Add((reader.GetInt64(0), Role(reader)));
+            rows.Add((reader.GetInt64(0), Role(reader) with { BoardToken = reader.GetString(2), PostingId = reader.GetString(14) }));
         }
         return rows;
     }
@@ -112,7 +112,7 @@ public sealed class SqlJobsReader(string connectionString) : IJobsPostings, ITra
     public static bool Yearly(string interval) =>
         interval.Contains("year", StringComparison.OrdinalIgnoreCase) || interval.Contains("annual", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>A posting row's first fourteen columns, in Open's order, as the role the gates read.</summary>
+    /// <summary>A posting row's first fourteen columns, in Open's order, as the role the gates read; Open adds the board's ids after them.</summary>
     private static Candidate Role(SqlDataReader reader)
     {
         string kind = reader.GetString(1);
