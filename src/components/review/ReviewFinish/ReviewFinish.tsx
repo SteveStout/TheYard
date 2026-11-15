@@ -10,9 +10,9 @@ import { DIAGRAMS, MENUS } from '../../../library/sections';
 import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewFinish.module.css';
 
-/** The two ways to reach Steven, the same two the About page closes with. */
+/** The two ways to reach Steven, the same two the About page closes with; email through the recorded redirect (ladder v7). */
 export const REACH = [
-  { label: 'Email Steven', href: 'mailto:stevenstout11@gmail.com' },
+  { label: 'Email Steven', href: '/api/go/email' },
   { label: 'Message me on LinkedIn', href: 'https://www.linkedin.com/in/stevenwstout/' },
 ] as const;
 

@@ -12,6 +12,7 @@ import type { DocKey } from '../../../library/documents';
 import { MENUS } from '../../../library/sections';
 import { CountUp } from '../../shared/CountUp';
 import { Hook } from '../../shared/Hook';
+import { WhereNext } from '../../shared/WhereNext';
 import { QualityTrend } from '../../shared/QualityTrend';
 import { hookFor, hookTrend } from '../../../lib/pageHooks';
 import { Ring } from '../../shared/Ring';
@@ -226,6 +227,7 @@ export function Landing({
           </ul>
         </div>
       </div>
+      <WhereNext page="landing" />
     </section>
   );
 }

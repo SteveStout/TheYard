@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): Every public page ends with where to go next, at most two links each with a line of reason and its minutes, and the email link goes through the site like the GitHub and LinkedIn links, so it is counted the same way and no page carries the address.
 - **@VER@** (@DATE@): On a phone the Quality page holds still while its charts are drawn, where every word under the first chart dropped 200 pixels when it arrived on a slow phone.
 - **@VER@** (@DATE@): The deploy image now builds with the same .NET SDK as the gate and CI (10.0.404, the one global.json names), the page renderer keeps the posts of at most four sites, and the test that keeps the Admin tab's charts to itself also sees dynamic and double-quoted imports; nothing a visitor sees changes.
 - **@VER@** (@DATE@): The first screen no longer says the site rolls "blue and green, with no downtime", which the record one click away says was never built; it says the site rolls in place behind one gate, the two rolls measured in November are on the Performance page, and the review route's last panel and About both carry an email link and a LinkedIn link.

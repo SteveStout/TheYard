@@ -1,0 +1,51 @@
+/**
+ * Does:      Lays out the "Where next" footer: its small heading and its two links, each over its reason and minutes.
+ * Does not:  Draw its glass (panels.css does, through .op-glass) or hold a colour of its own.
+ * Used by:   WhereNext.tsx.
+ */
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* A thumb's height, like every control on a page a phone opens (review.spec.ts at 390). */
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+}
+
+.reason {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.minutes {
+  white-space: nowrap;
+}
