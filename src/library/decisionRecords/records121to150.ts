@@ -94,4 +94,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '132',
   },
+  adrAByteBudgetForTheFirstLoad: {
+    title: 'ADR: A byte budget for the first load',
+    menuLabel: 'ADR: A byte budget for the first load',
+    url: '/api/docs/adr-a-byte-budget-for-the-first-load',
+    kind: 'adr',
+    number: '133',
+  },
 } as const satisfies Record<string, RecordEntry>;
