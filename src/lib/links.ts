@@ -71,6 +71,8 @@ export type LinkOpensRow = {
   opens: number;
   days: number;
   paths: Record<string, number>;
+  /** A day of the code's has a link scanner's shape: four or more different paths inside 30 seconds (ladder v7c). */
+  scanned?: boolean;
 };
 
 /** The card's report. */
@@ -80,6 +82,8 @@ export type LinkOpensReport = {
   window: string;
   codes: LinkOpensRow[];
   keys: string[];
+  /** How many of the codes are flagged as scanned (ladder v7c). */
+  scanned_codes?: number;
 };
 
 /** The windows the card offers, in the order its buttons show them. */
