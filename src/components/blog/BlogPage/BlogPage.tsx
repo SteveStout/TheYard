@@ -18,6 +18,7 @@ import {
 import { useBlogPosts } from '../../../hooks/useBlogPosts';
 import { useFirstLoad, type HookPost } from '../../../hooks/useFirstLoad';
 import { Hook } from '../../shared/Hook';
+import { WhereNext } from '../../shared/WhereNext';
 import { BlogPostCard } from '../BlogPostCard';
 import styles from './BlogPage.module.css';
 
@@ -134,7 +135,10 @@ export function BlogPage({
             <p className={styles.note}>No post has that address. Every post is listed below.</p>
           )}
           {named !== null ? (
-            <BlogPostCard key={named.slug} post={named} />
+            <>
+              <BlogPostCard key={named.slug} post={named} />
+              <WhereNext page="post" />
+            </>
           ) : (
             list.map((post, index) =>
               index === 0 ? (

@@ -4,10 +4,19 @@
     {
       "page": "landing",
       "path": "/",
-      "lines": ["Fifteen quality numbers are measured on every version and none may get worse."],
+      "lines": [
+        "Fifteen quality numbers are measured on every version and none may get worse."
+      ],
       "source": "Steve's own sentence, section 2b of the showcase text of 10 November, word for word",
-      "chart": { "number": "async_without_cancellation", "label": "Async methods with no CancellationToken", "direction": "may only fall" },
-      "link": { "label": "Every number, on the Quality page", "href": "/?doc=quality" }
+      "chart": {
+        "number": "async_without_cancellation",
+        "label": "Async methods with no CancellationToken",
+        "direction": "may only fall"
+      },
+      "link": {
+        "label": "Every number, on the Quality page",
+        "href": "/?doc=quality"
+      }
     },
     {
       "page": "about",
@@ -18,7 +27,10 @@
       ],
       "source": "The resume of 10 November, the first two bullets under Conway Investment Research, word for word",
       "chart": null,
-      "link": { "label": "Both lines are from the resume", "href": "/resume" }
+      "link": {
+        "label": "Both lines are from the resume",
+        "href": "/resume"
+      }
     },
     {
       "page": "post",
@@ -31,10 +43,15 @@
     {
       "page": "resume",
       "path": "/resume",
-      "lines": ["Fifteen quality numbers are measured on every version and none may get worse."],
+      "lines": [
+        "Fifteen quality numbers are measured on every version and none may get worse."
+      ],
       "source": "Steve's own sentence, section 2b of the showcase text of 10 November, word for word",
       "chart": null,
-      "link": { "label": "Read the {recommendations} recommendations", "href": "/recommendations" }
+      "link": {
+        "label": "Read the {recommendations} recommendations",
+        "href": "/recommendations"
+      }
     },
     {
       "page": "quality",
@@ -51,6 +68,145 @@
       "source": "Stop 1's own content, src/lib/reviewStops.ts",
       "chart": null,
       "link": null
+    }
+  ],
+  "next_about": "Where next (ladder v7, page flow): at the foot of each public page, at most two links, each with one line of reason and the minutes it takes. The React build reads it for the landing, the review route, a blog post, the Quality page, a decision record and Architecture; the API reads it for /about and the resume door. No address here opens Admin. The contact line is /api/go/email, a recorded redirect to Steve's email, so no page carries the address. The landing and the review route lead to the post named by slug.",
+  "next": [
+    {
+      "page": "landing",
+      "links": [
+        {
+          "label": "Quality on both ends",
+          "reason": "What the tests and CodeRabbit each caught, version by version.",
+          "minutes": 6,
+          "href": "/?view=blog&post=quality-on-both-ends"
+        },
+        {
+          "label": "About Steven",
+          "reason": "Who built this and how he leads.",
+          "minutes": 3,
+          "href": "/about"
+        }
+      ]
+    },
+    {
+      "page": "review",
+      "links": [
+        {
+          "label": "Quality on both ends",
+          "reason": "The story behind the Quality stop, in one post.",
+          "minutes": 6,
+          "href": "/?view=blog&post=quality-on-both-ends"
+        },
+        {
+          "label": "About Steven",
+          "reason": "Who built this and how he leads.",
+          "minutes": 3,
+          "href": "/about"
+        }
+      ]
+    },
+    {
+      "page": "post",
+      "links": [
+        {
+          "label": "The Quality page",
+          "reason": "Every number a post cites, measured on every version.",
+          "minutes": 5,
+          "href": "/?doc=quality"
+        },
+        {
+          "label": "About Steven",
+          "reason": "Who wrote this and how he leads.",
+          "minutes": 3,
+          "href": "/about"
+        }
+      ]
+    },
+    {
+      "page": "about",
+      "links": [
+        {
+          "label": "The Quality page",
+          "reason": "Fifteen numbers, measured on every version.",
+          "minutes": 5,
+          "href": "/?doc=quality"
+        },
+        {
+          "label": "Email Steven",
+          "reason": "A reply comes from Steve himself.",
+          "minutes": 1,
+          "href": "/api/go/email"
+        }
+      ]
+    },
+    {
+      "page": "quality",
+      "links": [
+        {
+          "label": "Email Steven",
+          "reason": "A reply comes from Steve himself.",
+          "minutes": 1,
+          "href": "/api/go/email"
+        },
+        {
+          "label": "The resume",
+          "reason": "The work this site sits beside.",
+          "minutes": 3,
+          "href": "/resume"
+        }
+      ]
+    },
+    {
+      "page": "record",
+      "links": [
+        {
+          "label": "Email Steven",
+          "reason": "A reply comes from Steve himself.",
+          "minutes": 1,
+          "href": "/api/go/email"
+        },
+        {
+          "label": "The resume",
+          "reason": "The work this site sits beside.",
+          "minutes": 3,
+          "href": "/resume"
+        }
+      ]
+    },
+    {
+      "page": "architecture",
+      "links": [
+        {
+          "label": "Email Steven",
+          "reason": "A reply comes from Steve himself.",
+          "minutes": 1,
+          "href": "/api/go/email"
+        },
+        {
+          "label": "The resume",
+          "reason": "The work this site sits beside.",
+          "minutes": 3,
+          "href": "/resume"
+        }
+      ]
+    },
+    {
+      "page": "resume",
+      "links": [
+        {
+          "label": "Email Steven",
+          "reason": "A reply comes from Steve himself.",
+          "minutes": 1,
+          "href": "/api/go/email"
+        },
+        {
+          "label": "Recommendations",
+          "reason": "What colleagues say, in their words.",
+          "minutes": 4,
+          "href": "/recommendations"
+        }
+      ]
     }
   ]
 }
