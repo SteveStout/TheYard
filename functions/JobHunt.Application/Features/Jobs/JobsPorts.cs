@@ -43,3 +43,14 @@ public interface ITrackerRows
 /// <param name="Passed">Candidates every gate passed.</param>
 /// <param name="Confirmed">Of them, read from the employer's own board tonight.</param>
 public sealed record JobsPickResult(string Line, string Path, int Scanned, int Boards, int Alerts, int Passed, int Confirmed);
+
+/// <summary>A posting's application form as its board serves it to an applicant, read at pick time; it never submits one.</summary>
+public interface IPostingForms
+{
+    /// <summary>The form's questions, or null when the board did not answer or the posting is gone.</summary>
+    /// <param name="kind">greenhouse, lever or ashby.</param>
+    /// <param name="token">The board's token for the company.</param>
+    /// <param name="postingId">The board's own id for the posting.</param>
+    /// <param name="ct">Stops the read.</param>
+    Task<IReadOnlyList<FormQuestion>?> ReadAsync(string kind, string token, string postingId, CancellationToken ct);
+}

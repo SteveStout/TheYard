@@ -27,6 +27,12 @@ public sealed record Candidate(string Source, string Company, string Title, stri
 
     /// <summary>The level the title names.</summary>
     public string Level => PostingLevel.Of(Title);
+
+    /// <summary>The board's token for the company, for a posting the scan read; empty for an alert.</summary>
+    public string BoardToken { get; init; } = "";
+
+    /// <summary>The board's own id for the posting, for a posting the scan read; empty for an alert.</summary>
+    public string PostingId { get; init; } = "";
 }
 
 /// <summary>A candidate as the gates left it: the gate it failed (null when it passed) and what each gate read.</summary>
@@ -41,6 +47,12 @@ public sealed record Verdict(Candidate Candidate, string? Failed, string BandFla
 {
     /// <summary>The gates it passed, in one line, for the candidates file's WhyPassed column.</summary>
     public string WhyPassed => Failed is null ? $"{Remote}; {Candidate.Level}; {Stack}; band {BandFlag}; {DaysOld} days" : "";
+
+    /// <summary>Why a role that passed cannot be READY and goes to NEEDS STEVE instead ("headline: 50 characters"), or empty.</summary>
+    public string Hold => Failed is null ? ResumeHeadline.Hold(Candidate.Title) ?? "" : "";
+
+    /// <summary>What the posting's application form asks that no bank answers (FormNotes), empty when nothing or when unread.</summary>
+    public string Form { get; init; } = "";
 }
 
 /// <summary>
@@ -79,8 +91,8 @@ public static partial class JobsGates
         string? failed = blacklist?.Hit(c.Company, url: c.Url) is { } row ? row.Reason
             : Staffing().IsMatch(c.Company) ? "staffing firm placing an unnamed client"
             : FormerEmployers.Of(c.Company, null) is not null ? "former employer"
-            : remote.StartsWith("not remote", StringComparison.Ordinal) || remote.StartsWith("hybrid outside", StringComparison.Ordinal) || remote == "onsite"
-                || remote.StartsWith(NamedStates, StringComparison.Ordinal) ? remote
+            : remote == CountryOnly ? $"not remote: {c.Location.Trim()}, and the title and text never say remote"
+            : remote.StartsWith("not remote", StringComparison.Ordinal) || remote.StartsWith("hybrid outside", StringComparison.Ordinal) || remote == "onsite" ? remote
             : days > MaxDays ? $"posted {days} days ago"
             : LevelFailure(c)
             ?? (flag == "SKIP" ? $"band tops at ${c.BandMax!.Value.ToString("N0", CultureInfo.InvariantCulture)}, under ${PayFloor.Flag.ToString("N0", CultureInfo.InvariantCulture)}" : null)
@@ -97,10 +109,13 @@ public static partial class JobsGates
     public static string Same(Candidate c) =>
         new string([.. c.Company.ToLowerInvariant().Where(char.IsLetterOrDigit)]) + "|" + PostingLevel.Base(c.Title) + "|" + c.Level;
 
-    /// <summary>The remote read of a posting whose text names the states a hire must live in, Missouri not among them.</summary>
-    public const string NamedStates = "remote in named states, Missouri not among them: ";
+    /// <summary>The remote read, and the failure, of a posting whose text names the states a hire must live in, Missouri not among them.</summary>
+    public const string NamedStates = "not remote: remote only in named states, Missouri not among them: ";
 
-    /// <summary>The remote read of a bare country whose posting, read in full, never says remote; passed on as a flag, like a hybrid of unknown days.</summary>
+    /// <summary>
+    /// The remote read of a bare country whose posting, read in full, never says remote. The gate fails it "not remote"
+    /// with the location it read, because the apply lane takes a doubt as a skip and a row it cannot submit is not READY.
+    /// </summary>
     public const string CountryOnly = "country only, remote unsaid";
 
     /// <summary>
