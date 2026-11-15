@@ -20,6 +20,49 @@ export function pageOpenReport(search: string, path: string): string | null {
   return code === null ? null : `/api/links/open?r=${code}&path=${path}`;
 }
 
+/** Where a visit's code is held, so a footer link can carry it (ladder v7b). */
+const HELD = 'yard-link-code';
+
+/**
+ * The code this visit arrived with: the address's, kept in the session as it is read, or the one kept earlier in
+ * the visit. Null when there is none, or the store is shut.
+ */
+export function holdCode(
+  search: string,
+  store: Pick<Storage, 'getItem' | 'setItem'> | null
+): string | null {
+  const code = linkCode(search);
+  try {
+    if (code !== null) store?.setItem(HELD, code);
+    return code ?? linkCode(`?r=${store?.getItem(HELD) ?? ''}`);
+  } catch {
+    return code;
+  }
+}
+
+/** The session store, or null where there is none or it is shut. */
+export function sessionOrNull(): Storage | null {
+  try {
+    return typeof window === 'undefined' ? null : window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** A link of this site with the visit's code on it, or the link as it was: another site's link never carries one. */
+export function withCode(href: string, code: string | null): string {
+  if (code === null || !href.startsWith('/')) return href;
+  return href + (href.includes('?') ? '&' : '?') + `r=${code}`;
+}
+
+/** The view a page reports its open under: the blog and the Quality page by name, else what the caller says. */
+export function reportPath(search: string, fallback: string): string {
+  const params = new URLSearchParams(search);
+  if (params.get('view') === 'blog') return '/blog';
+  if (params.get('doc') === 'quality') return '/quality';
+  return fallback;
+}
+
 /** One code's row on the card, as the API answers it. */
 export type LinkOpensRow = {
   code: string;
