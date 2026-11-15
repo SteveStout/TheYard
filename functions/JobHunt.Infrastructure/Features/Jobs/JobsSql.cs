@@ -9,7 +9,7 @@ internal static class JobsSql
 
     internal const string Open = """
         SELECT p.[Id], p.[Source], p.[BoardToken], c.[Names], p.[Title], p.[Url], p.[PostedAt], p.[FirstSeenAt], p.[Location], p.[RemoteStance],
-            p.[CompMin], p.[CompMax], p.[CompCurrency], p.[CompInterval]
+            p.[CompMin], p.[CompMax], p.[CompCurrency], p.[CompInterval], p.[PostingId]
         FROM [jobhunt].[Postings] p LEFT JOIN [campaign].[Companies] c ON c.[Key] = p.[CompanyKey]
         WHERE p.[ClosedAt] IS NULL AND p.[LastSeenAt] >= @since
         """;
