@@ -60,6 +60,9 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
     {
         var client = Browser();
         Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/links/open?r=k7f2qa&path=/about")).StatusCode);
+        // The blog and the Quality page report their own opens since ladder v7b, so a footer click lands under them.
+        Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/links/open?r=k7f2qa&path=/blog")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync("/api/links/open?r=k7f2qa&path=/quality")).StatusCode);
         await Problem.Is(await client.GetAsync("/api/links/open?r=k7f2qa&path=/admin"), HttpStatusCode.BadRequest);
         await Problem.Is(await client.GetAsync("/api/links/open?r=Steve&path=/"), HttpStatusCode.BadRequest);
         await Problem.Is(await client.GetAsync("/api/links/open"), HttpStatusCode.BadRequest);
