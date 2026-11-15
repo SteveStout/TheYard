@@ -164,6 +164,7 @@ public static class DocumentationCatalog
         ["adr-library-docs-at-the-pinned-version"] = "docs/decisions/ADR-131-library-docs-at-the-pinned-version.md",
         ["adr-a-hook-on-every-page"] = "docs/decisions/ADR-132-a-hook-on-every-page.md",
         ["adr-one-sql-database-one-schema-per-area"] = "docs/decisions/ADR-133-one-sql-database-one-schema-per-area.md",
+        ["adr-a-byte-budget-for-the-first-load"] = "docs/decisions/ADR-134-a-byte-budget-for-the-first-load.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
