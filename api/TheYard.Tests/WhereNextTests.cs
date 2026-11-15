@@ -41,6 +41,19 @@ public sealed class WhereNextTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
+    public async Task A_tagged_visit_carries_its_code_on_the_footers_links()
+    {
+        // Ladder v7b: a footer click is a page load with the code on it, so the page it lands on counts the open.
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Accept.ParseAdd("text/html");
+        string html = await client.GetStringAsync("/about?r=k7f2qa");
+        int nav = html.IndexOf("data-next=\"about\"", StringComparison.Ordinal);
+        string footer = html[nav..html.IndexOf("</nav>", nav, StringComparison.Ordinal)];
+        string[] drawn = [.. Regex.Matches(footer, "href=\"([^\"]+)\"").Select(match => System.Net.WebUtility.HtmlDecode(match.Groups[1].Value))];
+        Assert.All(drawn, href => Assert.Contains("r=k7f2qa", href, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Every_footer_has_at_most_two_links_each_with_a_reason_and_minutes_and_none_opens_admin()
     {
         var root = File();
