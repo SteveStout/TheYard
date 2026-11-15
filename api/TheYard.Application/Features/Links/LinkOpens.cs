@@ -39,6 +39,28 @@ public static partial class LinkPreviews
 }
 // #endregion link-previews
 
+// #region link-scans
+/// <summary>
+/// A link scanner's shape: a mail or chat service that opens every address a message holds, one
+/// after another, before any person reads it. A code's day is flagged when every open was a different path, four or
+/// more of them, all inside thirty seconds. A read-side rule: nothing is dropped, the row keeps its opens and says it
+/// looks scanned (ADR: Tagged links, who opened what).
+/// </summary>
+public static class LinkScans
+{
+    /// <summary>The fewest paths a scanned day reads.</summary>
+    public const int Paths = 4;
+
+    /// <summary>The longest a scanned day's first to last open takes.</summary>
+    public static readonly TimeSpan Within = TimeSpan.FromSeconds(30);
+
+    /// <summary>True when the day's opens have the scanner's shape.</summary>
+    /// <param name="day">One code's opens on one day.</param>
+    public static bool LooksScanned(LinkOpenDay day) =>
+        day.Paths.Count >= Paths && day.Opens == day.Paths.Count && day.Last - day.First <= Within;
+}
+// #endregion link-scans
+
 // #region tagged-requests
 /// <summary>
 /// Which requests count as an open, decided once for the pipeline and the page's own report:

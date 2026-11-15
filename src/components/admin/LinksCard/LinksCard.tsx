@@ -25,7 +25,11 @@ const columns: Column<LinkOpensRow>[] = [
   { name: 'Last open', mono: true, short: true, cell: (row) => openStamp(row.last_ms) },
   { name: 'Opens', num: true, cell: (row) => row.opens },
   { name: 'Days', num: true, cell: (row) => row.days },
-  { name: 'Paths', mono: true, cell: (row) => pathsLine(row.paths) },
+  {
+    name: 'Paths',
+    mono: true,
+    cell: (row) => (row.scanned ? `${pathsLine(row.paths)} (looks scanned)` : pathsLine(row.paths)),
+  },
 ];
 
 export default function LinksCard({ tick }: { tick: number }) {
@@ -71,13 +75,22 @@ export default function LinksCard({ tick }: { tick: number }) {
           No tagged link was opened in the window.
         </CardState>
       ) : (
-        <DataTable
-          label="Opens by code"
-          testId="links-table"
-          rows={report.codes}
-          rowKey={(row) => row.code}
-          columns={columns}
-        />
+        <>
+          {(report.scanned_codes ?? 0) > 0 && (
+            <p className={styles.muted} data-testid="links-scanned">
+              {report.scanned_codes} of {report.codes.length} codes look scanned: on a day, every
+              open was a different path, four or more inside 30 seconds, the shape of a mail or chat
+              service reading every link before a person does. Their opens are kept and counted.
+            </p>
+          )}
+          <DataTable
+            label="Opens by code"
+            testId="links-table"
+            rows={report.codes}
+            rowKey={(row) => row.code}
+            columns={columns}
+          />
+        </>
       )}
       {report !== null && report !== 'failed' && (
         <p className={styles.muted} data-testid="links-keys">

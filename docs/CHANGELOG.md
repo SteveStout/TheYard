@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.57** (2026-11-16): The Admin tab's Who opened what card now says when a code's opens look like a link scanner reading every link at once rather than a person, and keeps counting them.
 - **1.0.5.56** (2026-11-16): A tagged link's code now travels with the reader through the "Where next" links, so each page they go on to is counted under the same code, and the blog and the Quality page are counted under their own names; the entry script's byte budget rises by 592 bytes (566,294 to 566,886) for it.
 - **1.0.5.55** (2026-11-16): What a reader's first load costs is now held to the bytes it cost today, part by part, and a version that spends more fails the gate until it raises the number on purpose (ADR: A byte budget for the first load).
 - **1.0.5.54** (2026-11-16): Every public page ends with where to go next, at most two links each with a line of reason and its minutes; the footer's email line goes through the site's counted redirect, like the email links on About and the review route, so no page carries the address.
