@@ -83,6 +83,7 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             FunnelWeek.Text(await new FunnelSource(store).LogAsync(ct), DateOnly.FromDateTime(local).AddDays(-1)))
         {
             Signal = (await TextAsync(TodayCard.SignalPath, ct)).Split('\n')[0].Trim(),
+            EmptyRuns = await TextAsync(TodayCard.EmptyRunsPath, ct),
         };
     }
 
