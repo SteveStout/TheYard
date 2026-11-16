@@ -79,7 +79,7 @@ public static class ResourceCatalog
                     {
                         // Left out of the header line rather than guessed.
                     }
-                    return CosmosCard.Facts(record, containers.RootElement, throughput);
+                    return CosmosCard.Facts(record, containers.RootElement, throughput, names.SiteRegion);
                 }),
                 CosmosCard.View),
             new("registry", "registry", names.Registry, ReadingsOf(AcrCard.Metrics), Monitor(AcrType, names.Registry, AcrCard.Metrics),

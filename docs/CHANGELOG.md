@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.74** (2026-11-16): The Cosmos DB card says why a free-tier account costs anything: its whole charge is the data it sends out of West US 2 to the site in West US 3, the one meter on the bill, with both regions read live, so fewer reads cost less.
 - **1.0.5.73** (2026-11-16): The Admin tab's nightly card names the morning card and the funnel beside the other eight processes, each with its runs; the rules table names the 6 AM program's own tests; and a counted link goes to his LinkedIn recommendations page.
 - **1.0.5.72** (2026-11-16): The Admin tab's Who opened what card now says when a code's opens look like a link scanner reading every link at once rather than a person, and keeps counting them.
 - **1.0.5.71** (2026-11-16): The site leaves the HttpClient's connection-pool metrics and Entity Framework's line for every command out of its telemetry, about 1.1 GB a month that nothing read, so the log workspace heads back toward its free 5 GB without raising the cap; the Admin tab's own rings still keep every command.
