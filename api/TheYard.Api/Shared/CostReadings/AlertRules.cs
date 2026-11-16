@@ -13,7 +13,8 @@ namespace TheYard.Api.Shared.CostReadings;
 /// <param name="Name">The rule's name as Azure holds it.</param>
 /// <param name="Enabled">True when the rule is on.</param>
 /// <param name="Line">What it watches for, in words: the metric and its threshold, the query's cadence, or the budget's amount.</param>
-public sealed record FoundRule(string Name, bool Enabled, string Line);
+/// <param name="Amount">A budget's amount in the billing currency, as Azure holds it; null for every other rule.</param>
+public sealed record FoundRule(string Name, bool Enabled, string Line, double? Amount = null);
 
 /// <summary>One read of the rules: what was found by name, the reasons any part could not be read, and when.</summary>
 /// <param name="Found">Every rule found, by name.</param>
@@ -146,7 +147,8 @@ public sealed class AlertRules(string subscriptionId, string clientId, bool conf
         }
 
         string amount = Number(properties, "amount");
-        return new FoundRule(name, true, $"${amount} a month, notices at {string.Join(", ", notices)}");
+        double? dollars = properties.TryGetProperty("amount", out var held) && held.ValueKind == JsonValueKind.Number ? held.GetDouble() : null;
+        return new FoundRule(name, true, $"${amount} a month, notices at {string.Join(", ", notices)}", dollars);
     }
 
     /// <summary>An anomaly alert: Cost Management's scheduled action of the InsightAlert kind.</summary>

@@ -243,7 +243,7 @@ public sealed class CostHistoryReader(ICostHistory history, CostReader reader, C
             view = CostView.Build(name, kept, now, availability, status.Snapshot());
         }
 
-        view = view with { Meters = MeterRows.From(rules?.Latest) };
+        view = view with { Meters = MeterRows.From(rules?.Latest), BudgetDollars = MeterRows.Budget(rules?.Latest) };
 
         lock (_gate)
         {

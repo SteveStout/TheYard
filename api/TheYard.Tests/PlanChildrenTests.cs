@@ -29,6 +29,21 @@ public class PlanChildrenTests
         Assert.Null(PlanChildren.MemoryMb(minutes, "APP-NOT-HERE"));
     }
 
+    /// <summary>The apps' own memory is every app's working set added up, from the newest minute that read them all.</summary>
+    [Fact]
+    public void The_apps_memory_is_every_apps_working_set_in_the_newest_minute_that_read_them_all()
+    {
+        var minutes = new[]
+        {
+            Minute(0, 70, new PlanAppMinute("A", 1, 400, 0, 0, null), new PlanAppMinute("B", 1, 100, 0, 0, null)),
+            Minute(1, 71, new PlanAppMinute("A", 1, 420, 0, 0, null), new PlanAppMinute("B", 1, null, 0, 0, null)),
+        };
+
+        Assert.Equal(500, PlanChildren.AppsMb(minutes));
+        Assert.Null(PlanChildren.AppsMb([Minute(0, 70, new PlanAppMinute("A", 1, null, 0, 0, null))]));
+        Assert.Null(PlanChildren.AppsMb([]));
+    }
+
     [Fact]
     public void The_plan_outside_the_apps_is_its_memory_less_every_apps_working_set()
     {
