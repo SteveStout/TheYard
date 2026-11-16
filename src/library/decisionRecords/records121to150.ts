@@ -94,4 +94,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '132',
   },
+  adrOneSqlDatabase: {
+    title: 'ADR: One SQL database, one schema per area',
+    menuLabel: 'ADR: One SQL database, one schema per area',
+    url: '/api/docs/adr-one-sql-database-one-schema-per-area',
+    kind: 'adr',
+    number: '133',
+  },
 } as const satisfies Record<string, RecordEntry>;
