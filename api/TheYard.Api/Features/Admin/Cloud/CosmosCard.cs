@@ -12,7 +12,7 @@ public static class CosmosCard
     private static readonly IReadOnlyDictionary<string, string> Sources = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["runs"] = "ARM record",
-        ["throttling"] = "Azure Monitor",
+        ["throttling"] = "Azure Monitor, and this process's store log for the end-to-end line",
         ["keeping"] = "Azure Monitor",
         ["tier"] = "kept minutes, Azure Monitor",
         ["bill"] = "the bill, the ARM record and the site's own region",
@@ -111,11 +111,15 @@ public static class CosmosCard
     /// to weigh them against; otherwise the throughput's own tone. Under five per cent with latency under its line is
     /// Microsoft's "healthy sign that the RU/s are being fully utilized", so it reads green.
     /// </summary>
-    public static string ThrottleTone(double? throttled, double? requests, PlanTone ruTone, double? gaveUp = null, double? pointP95Ms = null) =>
-        gaveUp is > 0 ? "alarm"
-        : throttled is > 0 && (requests is not > 0 || throttled.Value / requests.Value > ThrottledAmberShare) ? "warning"
-        : pointP95Ms > CloudThresholds.CosmosPointLatencyMs ? "warning"
-        : CloudTones.Of(ruTone == PlanTone.Info ? PlanTone.Good : ruTone);
+    public static string ThrottleTone(double? throttled, double? requests, PlanTone ruTone, double? gaveUp = null, double? pointP95Ms = null)
+    {
+        // The worst of the three, so a warning on the 429s or the latency never hides the throughput's own red.
+        string throughput = CloudTones.Of(ruTone == PlanTone.Info ? PlanTone.Good : ruTone);
+        string throttles = gaveUp is > 0 ? "alarm"
+            : (throttled is > 0 && (requests is not > 0 || throttled.Value / requests.Value > ThrottledAmberShare)) || pointP95Ms > CloudThresholds.CosmosPointLatencyMs ? "warning"
+            : "good";
+        return BoxRows.Worst([throughput, throttles]);
+    }
 
     /// <summary>A store fact read as a number, or null when it is not kept yet.</summary>
     private static double? StoreNumber(ResourceCardInputs inputs, string key) =>
@@ -212,11 +216,13 @@ public static class CosmosCard
     {
         string account = ResourceView.Fact(inputs, "location", ""), site = ResourceView.Fact(inputs, "site_region", "");
         string cost = inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} month to date" : "not on the bill yet";
+        // What the free tier covers is said only while the account's record says the tier is on.
+        string covers = ResourceView.Fact(inputs, "free_tier", "") == "on" ? "the free tier covers the throughput and the first 25 GB; " : "the free tier is not on this account; ";
         string why = account.Length == 0 || site.Length == 0
-            ? "the free tier covers the throughput and the first 25 GB; the account's region or the site's is not read yet"
+            ? covers + "the account's region or the site's is not read yet"
             : Region(account) == Region(site)
-            ? $"the free tier covers the throughput and the first 25 GB; the account and the site are both in {site}, so little crosses a region"
-            : $"the free tier covers the throughput and the first 25 GB; the bill is the data the account sends out of {account} to the site in {site}, the meter Inter Region Data Transfer Out, so every read the site makes crosses the two and fewer reads cost less";
+            ? covers + $"the account and the site are both in {site}, so little crosses a region"
+            : covers + $"the bill is the data the account sends out of {account} to the site in {site}, the meter Inter Region Data Transfer Out, so every read the site makes crosses the two and fewer reads cost less";
         return new CloudRow("bill", "Why does a free account cost anything?", cost, [new(why, null)], "info");
     }
 

@@ -222,7 +222,8 @@ on purpose: the plan is a deliverable too.
 The identity, as Azure lists it. The federated credential trusts one issuer
 for one subject (the owner and repository ids inside it mean a renamed or
 re-created repo cannot inherit the trust), and the three role assignments
-are the whole of what the pipeline can do:
+were the whole of what the pipeline could do when it was written (the AcrPush row went with the Azure registry,
+retired in ADR-009's addendum on it; the images go to GitHub's registry with the workflow's own token):
 
 ```text
 name:      github-main

@@ -28,8 +28,8 @@ const rows = [
     workflow: '.github/workflows/deploy.yml',
     steps: [
       ['Build the image', 'Dockerfile, three stages', ['Node builds the page; the SDK', 'publishes TheYard and The Shed;', 'the runtime image holds both.']],
-      ['Push to the registry', 'crtheyardsszmnetj67bn5h2/theyard:vN', ['One tag per version, signed in', 'as the workflow (OIDC), no', 'password anywhere.']],
-      ['Point the web app at the tag', 'APP-THEYARD-ONE-SS: DOCKER|...:vN', ['The settings it holds, then the', 'image; App Service pulls it as', 'id-theyard-ss.']],
+      ['Push to the registry', 'ghcr.io/stevestout/theyard:vN', ['One tag per version, signed in', 'with the workflow\'s own token,', 'public, so no password to pull.']],
+      ['Point the web app at the tag', 'APP-THEYARD-ONE-SS: DOCKER|...:vN', ['The settings it holds, then the', 'image; App Service pulls it', 'with no credential.']],
       ['Verify, then the edge', 'origin, the three names, domains', ['The version, readiness, the Cosmos', 'DB name and The Shed\'s name; the', 'edge moves after, if it changed.']],
     ],
   },
@@ -38,7 +38,7 @@ const rows = [
     workflow: '.github/workflows/deploy-render.yml',
     steps: [
       ['Build the image', 'render/Dockerfile, two stages', ['Node builds the renderer from', 'the site\'s own source; the', 'runtime is Node and that build.']],
-      ['Push to the registry', 'crtheyardsszmnetj67bn5h2/theyard-render:vN', ['The same version as the API,', 'the same registry, the same', 'sign-in.']],
+      ['Push to the registry', 'ghcr.io/stevestout/theyard-render:vN', ['The same version as the API,', 'the same registry, the same', 'sign-in.']],
       ['Point the web app at the tag', 'APP-THEYARD-RENDER-SS: DOCKER|...:vN', ['One call: every other setting', 'is infra/render.bicep\'s.', '']],
       ['Verify', 'its own /readyz', ['Ready as the version it was', 'built as, and says whether the', 'API has caught up.']],
     ],

@@ -24,6 +24,8 @@ public sealed class CosmosBillTests
         Assert.Equal("info", row.Tone);
         Assert.Contains("out of westus2 to the site in West US 3, the meter Inter Region Data Transfer Out", row.Detail[0].Text, StringComparison.Ordinal);
         Assert.Contains("fewer reads cost less", row.Detail[0].Text, StringComparison.Ordinal);
+        // These facts name no free tier, so the row does not say what a free tier covers.
+        Assert.StartsWith("the free tier is not on this account; ", row.Detail[0].Text, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -42,9 +42,5 @@ public sealed class CloudChartLinesTests
         Assert.Equal((70d, 85d), (sql.Chart.Series[1].Amber!.Value, sql.Chart.Series[1].Red!.Value));
         Assert.Equal(sql.Chart.RedLine, sql.Chart.Series[0].Red);
         Assert.Equal(95d, sql.Chart.Series[0].Points[0].Peak!.Value, 6);
-
-        var registry = AcrCard.View(Week("storage_gb", 1, 2, new Dictionary<string, string?> { ["size_limit_gb"] = "10", ["tier"] = "Basic" }));
-        Assert.Equal(registry.Chart.RedLine, registry.Chart.Series[0].Red);
-        Assert.Equal((CloudThresholds.RegistryPulls.Amber, CloudThresholds.RegistryPulls.Red), (registry.Chart.Series[1].Amber!.Value, registry.Chart.Series[1].Red!.Value));
     }
 }

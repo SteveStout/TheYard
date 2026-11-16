@@ -47,8 +47,6 @@ public class CloudThresholdTests
         Assert.Equal((70d, 85d), CloudThresholds.SqlSpace);
         Assert.Equal((70d, 90d), CloudThresholds.CosmosThroughput);
         Assert.Equal((70d, 90d), CloudThresholds.CosmosStorage);
-        Assert.Equal((70d, 90d), CloudThresholds.RegistryStorage);
-        Assert.Equal((60d, 90d), CloudThresholds.RegistryPulls);
         Assert.Equal((70d, 90d), CloudThresholds.InsightsIngestion);
         Assert.Equal((50d, 90d), CloudThresholds.InsightsDropped);
         Assert.Equal((60d, 85d), CloudThresholds.MailSends);
@@ -94,7 +92,9 @@ public class CloudThresholdTests
         var view = CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["container_count"] = "17", ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 6, ["requests"] = 100 }));
         Assert.Equal(90, view.Dials[0].Percent);
         Assert.Equal("alarm", view.Dials[0].Tone);
-        Assert.Equal("warning", view.Rows.Single(r => r.Key == "throttling").Tone);
+        // The row reads the worse of its two: the throttles past five per cent warn, and the throughput's red at 90 % wins.
+        Assert.Equal("alarm", view.Rows.Single(r => r.Key == "throttling").Tone);
+        Assert.Equal("warning", CosmosCard.ThrottleTone(6, 100, PlanTone.Good));
         // Inside the five per cent band the row is the throughput's own tone, red here at 90 % held.
         Assert.Equal("alarm", CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 4, ["requests"] = 100 })).Rows.Single(r => r.Key == "throttling").Tone);
         // A throttled bucket is a tally on the time axis, not a full-height line: only what Azure did is drawn at full height.
@@ -124,6 +124,8 @@ public class CloudThresholdTests
         Assert.Equal("alarm", ToneWith(facts));
         Assert.Equal("warning", ToneWith(new Dictionary<string, string?> { ["store_operations"] = "200", ["gave_up_429"] = "0", ["point_p95_ms"] = "251" }));
         Assert.Equal("good", ToneWith(new Dictionary<string, string?> { ["store_operations"] = "200", ["gave_up_429"] = "0", ["point_p95_ms"] = "70" }));
+        // A latency warning never hides the throughput's own red.
+        Assert.Equal("alarm", CosmosCard.ThrottleTone(10, 100_000, PlanTone.Alarm, 0, 900));
         var row = CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?>(facts) { ["throughput"] = "1000" }, quiet)).Rows.Single(r => r.Key == "throttling");
         Assert.Equal("of the newest 21 operations this site made, 1 ran out of the SDK's retries on a 429 (red at one) · point reads and writes p95 58 ms end to end, amber past 250 ms", row.Detail[2].Text);
     }
@@ -177,21 +179,17 @@ public class CloudThresholdTests
         var paid = CosmosCard.View(Held("storage_gb", 20, new Dictionary<string, string?> { ["free_tier"] = "off", ["throughput"] = "1000" }));
         Assert.Null(paid.Dials[1].Percent);
         Assert.Contains("no free-tier allowance", paid.Dials[1].Absolute, StringComparison.Ordinal);
-        var basic = AcrCard.View(Held("pulls", 900, new Dictionary<string, string?> { ["tier"] = "Basic", ["size_limit_gb"] = "10" }));
-        Assert.Equal(90, basic.Dials[1].Percent);
-        var standard = AcrCard.View(Held("pulls", 900, new Dictionary<string, string?> { ["tier"] = "Standard", ["size_limit_gb"] = "100" }));
-        Assert.Null(standard.Dials[1].Percent);
-        Assert.Contains("not read", standard.Dials[1].Absolute, StringComparison.Ordinal);
     }
 
+    /// <summary>The registry card turns red only on an image an anonymous pull cannot read, which a roll cannot pull.</summary>
     [Fact]
-    public void The_registry_card_names_the_untagged_layers_and_never_purges_them()
+    public void The_registry_card_is_red_only_when_an_image_cannot_be_pulled_without_a_credential()
     {
-        var view = AcrCard.View(Held("storage_gb", 9.5, new Dictionary<string, string?> { ["untagged"] = "12", ["untagged_gb"] = "3.10", ["size_limit_gb"] = "10" }));
-        Assert.Equal("alarm", view.Dials[0].Tone);
-        var stale = view.Rows.Single(r => r.Key == "stale");
-        Assert.Equal("12 untagged manifests", stale.Answer);
-        Assert.Contains("does not run it", stale.Detail[0].Text);
+        var open = RegistryCard.View(Held("unused", 0, RegistryCard.Facts([new GhcrImage("theyard", true, 7, "v1"), new GhcrImage("theyard-render", true, 7, "v1")], null)));
+        var closed = RegistryCard.View(Held("unused", 0, RegistryCard.Facts([new GhcrImage("theyard", true, 7, "v1"), new GhcrImage("theyard-render", false, 0, null)], null)));
+        Assert.Equal("good", open.Dials[0].Tone);
+        Assert.Equal("alarm", closed.Dials[0].Tone);
+        Assert.Equal(50, closed.Dials[0].Percent);
     }
 
 

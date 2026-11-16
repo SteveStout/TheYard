@@ -94,7 +94,7 @@ public static class ForemanPages
     {
         ["sqldb"] = ("ADR-102: One frame for every resource", "api/TheYard.Api/Features/Admin/Cloud/SqlCard.cs", "api/TheYard.Tests/CloudThresholdTests.cs"),
         ["cosmosdb"] = ("ADR-102: One frame for every resource", "api/TheYard.Api/Features/Admin/Cloud/CosmosCard.cs", "api/TheYard.Tests/CloudReadersTests.cs"),
-        ["registry"] = ("ADR-102: One frame for every resource", "api/TheYard.Api/Features/Admin/Cloud/AcrCard.cs", "api/TheYard.Tests/CardFrameTests.Rows.cs"),
+        ["registry"] = ("ADR-102: One frame for every resource", "api/TheYard.Api/Features/Admin/Cloud/RegistryCard.cs", "api/TheYard.Tests/CloudViewTests.Registry.cs"),
         ["insights"] = ("ADR-102: One frame for every resource", "api/TheYard.Api/Features/Admin/Cloud/InsightsCard.cs", "api/TheYard.Tests/CardFrameTests.Rows.cs"),
         ["share"] = ("ADR-102: One frame for every resource", "api/TheYard.Api/Features/Admin/Cloud/ShareCard.cs", "api/TheYard.Tests/StorageCardTests.cs"),
         ["blob"] = ("ADR-102: One frame for every resource", "api/TheYard.Api/Features/Admin/Cloud/BlobCard.cs", "api/TheYard.Tests/StorageCardTests.cs"),
