@@ -90,5 +90,7 @@ export type CostReport = {
   forecast: CostPoint[];
   resources: CostSlice[];
   types: CostKind[];
+  /** The amount Azure's own budget holds, read with its alert rules; absent or null before the first read. */
+  budget_dollars?: number | null;
 };
 // #endregion spend-types
