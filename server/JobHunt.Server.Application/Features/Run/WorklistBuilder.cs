@@ -203,6 +203,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             dropped.Add(new Dropped($"{over.Person} {over.Company}".Trim(), "over the day's room, stays queued"));
         }
         var rows = new List<WorkRow>();
+        int builds = 0;
         var texts = new Dictionary<int, string>();
         foreach (Candidate candidate in kept.Take(Math.Max(0, limit)))
         {
@@ -222,7 +223,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             ResumeBuild? resume = null;
             if (candidate.Action == WorkAction.Apply)
             {
-                string folder = share.Full($"{RunSlot.RunFolder(reads.Day, Lane.Apply, config.For(Lane.Apply).Model, dry, reads.Slot)}/resumes/{number:00}");
+                // Numbered by builds, not rows: a failed build adds no row, and its docx and pdf stay in a folder of
+                // their own for the morning's reader.
+                builds++;
+                string folder = share.Full($"{RunSlot.RunFolder(reads.Day, Lane.Apply, config.For(Lane.Apply).Model, dry, reads.Slot)}/resumes/{builds:00}");
                 resume = await resumes.BuildAsync(candidate.Role, candidate.Company, folder, ct);
                 if (resume.Failure is { } failure)
                 {
