@@ -45,15 +45,15 @@ public static class BoxRows
         };
     }
 
-    /// <summary>Memory, cache and swap; amber when swap is in use or memory passes its amber line.</summary>
+    /// <summary>Memory, cache and swap; amber when swap passes its own line or memory passes its amber line.</summary>
     public static CloudRow Memory(BoxSnapshot snapshot)
     {
         double share = snapshot.Memory.TotalB > 0 ? 100.0 * snapshot.Memory.UsedB / snapshot.Memory.TotalB : 0;
         double swapShare = snapshot.Swap.TotalB > 0 ? 100.0 * snapshot.Swap.UsedB / snapshot.Swap.TotalB : 0;
         var (amber, red) = CloudThresholds.BoxMemory;
-        string tone = share >= red ? "alarm" : share >= amber || snapshot.Swap.UsedB > 0 ? "warning" : "good";
+        string tone = share >= red ? "alarm" : share >= amber || SwapWorthALook(snapshot.Swap) ? "warning" : "good";
         return new CloudRow("memory", "Is the memory and swap fine?", $"{BoxWords.Bytes(snapshot.Memory.UsedB)} of {BoxWords.Bytes(snapshot.Memory.TotalB)}",
-            [new($"cache {BoxWords.Bytes(snapshot.Memory.CacheB)}, free {BoxWords.Bytes(snapshot.Memory.FreeB)} · swap {BoxWords.Bytes(snapshot.Swap.UsedB)} of {BoxWords.Bytes(snapshot.Swap.TotalB)} · amber {amber} %, red {red} %, swap in use is amber", null)], tone)
+            [new($"cache {BoxWords.Bytes(snapshot.Memory.CacheB)}, free {BoxWords.Bytes(snapshot.Memory.FreeB)} · swap {BoxWords.Bytes(snapshot.Swap.UsedB)} of {BoxWords.Bytes(snapshot.Swap.TotalB)} · amber {amber} %, red {red} %, swap amber past {CloudThresholds.BoxSwapShare} % of it or {BoxWords.Bytes(CloudThresholds.BoxSwapBytes)}, whichever is smaller", null)], tone)
         {
             Table = Table(["Pool", "Used", "Of", "Share"],
             [
@@ -63,6 +63,14 @@ public static class BoxRows
             ]),
         };
     }
+
+    /// <summary>Whether swap is past its line: the smaller of its share of the swap and a fixed size.</summary>
+    public static bool SwapWorthALook(BoxSwap swap) =>
+        swap.UsedB > Math.Min(CloudThresholds.BoxSwapBytes, (long)(swap.TotalB * CloudThresholds.BoxSwapShare / 100));
+
+    /// <summary>The one command that brings a stopped unit back, in its own scope.</summary>
+    public static string RestartCommand(string unit, string scope) =>
+        scope == "user" ? $"systemctl --user restart {unit}" : $"sudo systemctl restart {unit}";
 
     /// <summary>Each interface's rates and totals, by name only: no address reaches the card.</summary>
     public static CloudRow Network(BoxSnapshot snapshot)
@@ -134,7 +142,10 @@ public static class BoxRows
         };
     }
 
-    /// <summary>The services: red when one that must run is not active, amber when the morning run's last result failed.</summary>
+    /// <summary>
+    /// The services: red when one that must run is not active, and the readout names each such unit with the one command
+    /// that restarts it, so the red says what to do; amber when the morning run's last result failed.
+    /// </summary>
     public static CloudRow Services(BoxSnapshot snapshot, DateTimeOffset now)
     {
         bool Active(BoxService service) => service.ActiveState == "active";
@@ -143,7 +154,7 @@ public static class BoxRows
         string tone = stopped.Count > 0 ? "alarm" : morningFailed ? "warning" : "good";
         int running = snapshot.Services.Count(Active);
         return new CloudRow("services", "Are the job-hunt services up?", $"{running} of {snapshot.Services.Count} active",
-            [new(stopped.Count > 0 ? $"not running: {string.Join(", ", stopped)}" : $"red when {string.Join(", ", MustRun)} is not running; amber when the morning run's last result failed", null)], tone)
+            [new(stopped.Count > 0 ? $"not running: {string.Join("; ", stopped.Select(unit => snapshot.Services.FirstOrDefault(service => service.Unit == unit) is { } found ? $"{unit}, restart with {RestartCommand(unit, found.Scope)}" : $"{unit}, not in the box's report"))}" : $"red when {string.Join(", ", MustRun)} is not running; amber when the morning run's last result failed", null)], tone)
         {
             Table = Table(["Service", "State", "Up for", "Note"], snapshot.Services.Select(service => new[]
             {

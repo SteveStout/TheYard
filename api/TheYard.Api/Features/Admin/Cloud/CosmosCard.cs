@@ -15,6 +15,7 @@ public static class CosmosCard
         ["throttling"] = "Azure Monitor",
         ["keeping"] = "Azure Monitor",
         ["tier"] = "kept minutes, Azure Monitor",
+        ["bill"] = "the bill, the ARM record and the site's own region",
         ["RU/s now"] = "Azure Monitor",
         ["RU/s p95, 30 d"] = CardFrame.KeptMinutes,
         ["Normalized peak"] = "Azure Monitor",
@@ -58,11 +59,39 @@ public static class CosmosCard
     ];
 
     /// <summary>
-    /// The share of the site's own requests throttled at which the card turns amber: Azure's guidance
+    /// The share of the site's own requests throttled past which the card turns amber: Azure's guidance
     /// reads one to five per cent of requests answered 429 and retried by the SDK as healthy, so the
-    /// line sits at the bottom of that band.
+    /// line sits at the top of that band (CloudThresholds.CosmosThrottledShare has the source).
     /// </summary>
-    public const double ThrottledAmberShare = 0.01;
+    public const double ThrottledAmberShare = CloudThresholds.CosmosThrottledShare / 100;
+
+    /// <summary>
+    /// Whether a store operation ended in a 429 the SDK gave up on. A point read, write, delete or batch is recorded
+    /// with the number ("failed: 429") and a query with the name ("failed: TooManyRequests"), so both count.
+    /// </summary>
+    public static bool GaveUpOn429(string outcome) =>
+        outcome.StartsWith("failed: ", StringComparison.Ordinal)
+        && (outcome.EndsWith(" 429", StringComparison.Ordinal) || outcome.EndsWith("TooManyRequests", StringComparison.Ordinal));
+
+    /// <summary>
+    /// What this process's store log says the account did for the site, read each hour beside the record: how many of
+    /// the newest operations it keeps ran out of the SDK's retries on a 429, and the 95th percentile of its point
+    /// reads and writes, end to end with those retries. Azure Monitor's latency is the server's own average, which
+    /// never sees a retry, so the line that judges latency reads this one.
+    /// </summary>
+    /// <param name="operations">The store log's ring, the newest operations this process made.</param>
+    public static IReadOnlyDictionary<string, string?> StoreFacts(IReadOnlyList<StoreOperation> operations)
+    {
+        var points = operations.Where(operation => operation.Kind is StoreOperationKind.PointRead or StoreOperationKind.PointWrite or StoreOperationKind.PointDelete)
+            .Select(operation => operation.DurationMs).Order().ToList();
+        long? p95 = points.Count == 0 ? null : points[Math.Min(points.Count - 1, (int)Math.Ceiling(points.Count * 0.95) - 1)];
+        return new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            ["store_operations"] = operations.Count.ToString(CultureInfo.InvariantCulture),
+            ["gave_up_429"] = operations.Count(operation => GaveUpOn429(operation.Outcome)).ToString(CultureInfo.InvariantCulture),
+            ["point_p95_ms"] = p95?.ToString(CultureInfo.InvariantCulture),
+        };
+    }
 
     /// <summary>The site's own throttles and requests over the window: every container's less the live tests' copies.</summary>
     /// <param name="inputs">The card's inputs.</param>
@@ -76,13 +105,21 @@ public static class CosmosCard
     }
 
     /// <summary>
-    /// The throttling row's tone: warning when the site's own throttles reach ThrottledAmberShare of
-    /// its requests, or when there are throttles and no requests read to weigh them against;
-    /// otherwise the throughput's own tone. No throttles read leaves the tone to the throughput.
+    /// The throttling row's tone, by the owner's colour rule (green at rest, red only when something needs him): alarm
+    /// when a 429 reached the application, the SDK having given up retrying it; warning past ThrottledAmberShare of the
+    /// site's requests, when the point operations' p95 passes its line, or when there are throttles and no requests read
+    /// to weigh them against; otherwise the throughput's own tone. Under five per cent with latency under its line is
+    /// Microsoft's "healthy sign that the RU/s are being fully utilized", so it reads green.
     /// </summary>
-    public static string ThrottleTone(double? throttled, double? requests, PlanTone ruTone) =>
-        throttled is > 0 && (requests is not > 0 || throttled.Value / requests.Value >= ThrottledAmberShare) ? "warning"
+    public static string ThrottleTone(double? throttled, double? requests, PlanTone ruTone, double? gaveUp = null, double? pointP95Ms = null) =>
+        gaveUp is > 0 ? "alarm"
+        : throttled is > 0 && (requests is not > 0 || throttled.Value / requests.Value > ThrottledAmberShare) ? "warning"
+        : pointP95Ms > CloudThresholds.CosmosPointLatencyMs ? "warning"
         : CloudTones.Of(ruTone == PlanTone.Info ? PlanTone.Good : ruTone);
+
+    /// <summary>A store fact read as a number, or null when it is not kept yet.</summary>
+    private static double? StoreNumber(ResourceCardInputs inputs, string key) =>
+        double.TryParse(ResourceView.Fact(inputs, key, ""), NumberStyles.Float, CultureInfo.InvariantCulture, out double value) ? value : null;
 
     /// <summary>RU/s amber at 70 per cent of the thousand and red at 90; storage amber at 70 and red at 90.</summary>
     public static readonly (double Amber, double Red) Throughput = CloudThresholds.CosmosThroughput;
@@ -112,20 +149,25 @@ public static class CosmosCard
             .Select(b => new CloudMark(b.At.ToUnixTimeMilliseconds(), "count", $"{SiteOf(b):0} of the site's requests throttled (429)"));
         var events = inputs.Hours.SelectMany(h => h.Events).ToList();
         var ruTone = PlanThresholds.ToneOf(ResourceView.Hour(inputs, "ru_per_s").Select(v => ResourceView.Share(v, provisioned)).ToList(), Throughput);
-        string throttleTone = ThrottleTone(throttled, siteRequests, ruTone);
+        double? gaveUp = StoreNumber(inputs, "gave_up_429"), pointP95 = StoreNumber(inputs, "point_p95_ms");
+        string throttleTone = ThrottleTone(throttled, siteRequests, ruTone, gaveUp, pointP95);
+        string storeWords = StoreNumber(inputs, "store_operations") is not { } kept ? "the store log's end-to-end reading: not kept yet"
+            : string.Create(CultureInfo.InvariantCulture, $"of the newest {kept:N0} operations this site made, {gaveUp ?? 0:N0} ran out of the SDK's retries on a 429 (red at one) · point reads and writes p95 {(pointP95 is { } ms ? $"{ms:N0} ms" : "not read")} end to end, amber past {CloudThresholds.CosmosPointLatencyMs:N0} ms");
         var rows = new List<CloudRow>
         {
             new("runs", "What runs on it?", inputs.Hours.Count == 0 ? "not read yet" : $"{ResourceView.Fact(inputs, "container_count")} containers",
                 [], "good") { Table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("container_rows"), "Container", "Type", "Kept for") },
             new("throttling", "Is it throttling?", throttleAnswer,
-                [new($"the site's 429s in the window, retried by the SDK · amber at {ThrottledAmberShare * 100:0} % · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null),
-                    new(testsThrottled is { } tt ? $"the live tests' copies (tests-*) were throttled {ResourceView.Number(tt)} more times on the same shared throughput, counted apart" : "the live tests' copies (tests-*): not read yet, so every throttle above is counted as the site's", null)],
+                [new($"the site's 429s in the window, retried by the SDK · green to {ThrottledAmberShare * 100:0} %, which Microsoft calls a healthy sign the RU/s are fully used · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · server latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null),
+                    new(testsThrottled is { } tt ? $"the live tests' copies (tests-*) were throttled {ResourceView.Number(tt)} more times on the same shared throughput, counted apart" : "the live tests' copies (tests-*): not read yet, so every throttle above is counted as the site's", null),
+                    new(storeWords, null)],
                 throttleTone),
             new("keeping", "What is it keeping?", Documents(inputs) is { } docs ? $"{docs.ToString("N0", CultureInfo.InvariantCulture)} documents" : "not read yet",
                 [new($"storage {ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB · every kept container expires its own documents", null)], "info"),
             new("tier", "Is the free tier still right?", inputs.Month.Count == 0 ? "not enough kept yet" : ruTone == PlanTone.Alarm ? "no, throughput is past its line" : "yes, throughput first",
                 [new($"RU/s p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ru_per_s").P95, "0")} of {limitWords} over 30 d · free tier {ResourceView.Fact(inputs, "free_tier")} · red at {Throughput.Red} % held {PlanThresholds.Sustained} min", null)],
                 ruTone == PlanTone.Alarm ? "alarm" : "good"),
+            Bill(inputs),
         };
         var readout = new CloudReadout(
             "The account",
@@ -160,6 +202,28 @@ public static class CosmosCard
             readout), Sources);
     }
 
+    /// <summary>
+    /// Why a free-tier account costs anything: the free tier covers the throughput and the first 25 GB, and what the
+    /// bill carries is the data the account sends out of its region. Read on the bill by meter, it is all "Inter Region
+    /// Data Transfer Out", because the account is in one region and the site that reads it in another, so every read
+    /// crosses between them and fewer reads cost less. The two regions are the account's record and the site's own.
+    /// </summary>
+    public static CloudRow Bill(ResourceCardInputs inputs)
+    {
+        string account = ResourceView.Fact(inputs, "location", ""), site = ResourceView.Fact(inputs, "site_region", "");
+        string cost = inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} month to date" : "not on the bill yet";
+        string why = account.Length == 0 || site.Length == 0
+            ? "the free tier covers the throughput and the first 25 GB; the account's region or the site's is not read yet"
+            : Region(account) == Region(site)
+            ? $"the free tier covers the throughput and the first 25 GB; the account and the site are both in {site}, so little crosses a region"
+            : $"the free tier covers the throughput and the first 25 GB; the bill is the data the account sends out of {account} to the site in {site}, the meter Inter Region Data Transfer Out, so every read the site makes crosses the two and fewer reads cost less";
+        return new CloudRow("bill", "Why does a free account cost anything?", cost, [new(why, null)], "info");
+    }
+
+    /// <summary>A region's name as one word, so "West US 3" and "westus3" are the same region.</summary>
+    /// <param name="name">The region as Azure or App Service writes it.</param>
+    public static string Region(string name) => new([.. name.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant)]);
+
     /// <summary>A container's time to live in words: off, on with no default, or the default in days or hours.</summary>
     public static string TimeToLive(string? seconds) =>
         seconds is null ? "kept until deleted"
@@ -169,7 +233,11 @@ public static class CosmosCard
             : seconds;
 
     /// <summary>The hour's facts from the account's record and its containers' definitions.</summary>
-    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement account, System.Text.Json.JsonElement containers, string? throughput = null)
+    /// <param name="account">The account's record.</param>
+    /// <param name="containers">The account's containers' definitions.</param>
+    /// <param name="throughput">The database's shared throughput, or null when it was not read.</param>
+    /// <param name="siteRegion">The region the site runs in, App Service's REGION_NAME; null where it is not set.</param>
+    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement account, System.Text.Json.JsonElement containers, string? throughput = null, string? siteRegion = null)
     {
         var list = containers.TryGetProperty("value", out var value)
             ? value.EnumerateArray().Select(c => (Name: AzureMetrics.Text(c, "name") ?? "?", Ttl: AzureMetrics.Text(c, "properties.resource.defaultTtl"))).OrderBy(c => c.Name, StringComparer.Ordinal).ToList()
@@ -182,6 +250,8 @@ public static class CosmosCard
             ["container_rows"] = CloudTable.ToFact(list.Select(c => new[] { c.Name, "Cosmos DB container", TimeToLive(c.Ttl) })),
             ["free_tier"] = free == "true" ? "on" : free == "false" ? "off" : null,
             ["throughput"] = throughput,
+            ["location"] = AzureMetrics.Text(account, "location"),
+            ["site_region"] = siteRegion,
             ["spec"] = string.Join(' ', new[] { free == "true" ? "FREE TIER" : null, double.TryParse(throughput, CultureInfo.InvariantCulture, out double ru) ? $"{ru.ToString("N0", CultureInfo.InvariantCulture)} RU/S SHARED" : null, AzureMetrics.Text(account, "location")?.ToUpperInvariant() }.Where(p => p is not null)),
         };
     }

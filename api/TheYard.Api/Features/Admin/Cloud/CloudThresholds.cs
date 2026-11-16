@@ -17,6 +17,21 @@ public static class CloudThresholds
     /// <summary>Cosmos DB: request units a second of the 1,000 shared, amber at 70 and red at 90.</summary>
     public static readonly (double Amber, double Red) CosmosThroughput = (70, 90);
 
+    /// <summary>
+    /// Cosmos DB: the share of the site's own requests answered 429 and retried by the SDK past which the throttling row
+    /// is amber, in per cent. Source: Microsoft, "Diagnose and troubleshoot Azure Cosmos DB request rate too large (429)
+    /// exceptions": "between 1-5% of requests with 429 responses, and your end to end latency is acceptable, this is a
+    /// healthy sign that the RU/s are being fully utilized. No action is required." The line sits at the top of that band.
+    /// </summary>
+    public const double CosmosThrottledShare = 5;
+
+    /// <summary>
+    /// Cosmos DB: the 95th percentile of the site's point reads and writes, end to end with the SDK's retries, past which
+    /// the throttling row is amber, in milliseconds. Source: this card's own reading, 11/17: 70 ms across the two regions
+    /// (site in West US 3, account in West US 2); a burst of retried 429s waits hundreds of milliseconds and crosses it.
+    /// </summary>
+    public const double CosmosPointLatencyMs = 250;
+
     /// <summary>Cosmos DB: storage of the free 25 GB, amber at 70 and red at 90.</summary>
     public static readonly (double Amber, double Red) CosmosStorage = (70, 90);
 
@@ -105,6 +120,16 @@ public static class CloudThresholds
 
     /// <summary>The box: memory of its 32 GB, amber at 85 and red at 95. Source: the box's own number, with the headroom it has.</summary>
     public static readonly (double Amber, double Red) BoxMemory = (85, 95);
+
+    /// <summary>
+    /// The box: swap reads amber past this share of the swap, or past <see cref="BoxSwapBytes"/>, whichever is smaller.
+    /// The kernel parks a few pages in swap on a box with free memory, so any byte at all is noise, not a call to act.
+    /// Source: the owner's colour rule of 10/21 (green at rest, amber only for something worth a look).
+    /// </summary>
+    public const double BoxSwapShare = 10;
+
+    /// <summary>The box: swap reads amber past 256 MiB in use, or past <see cref="BoxSwapShare"/> per cent, whichever is smaller.</summary>
+    public const long BoxSwapBytes = 256L * 1024 * 1024;
 
     /// <summary>The box: any file system, amber at 80 per cent full and red at 90. Source: the box's own number.</summary>
     public static readonly (double Amber, double Red) BoxFileSystem = (80, 90);
