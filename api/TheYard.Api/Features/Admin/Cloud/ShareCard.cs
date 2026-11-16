@@ -23,7 +23,7 @@ public static class ShareCard
         ["Last write seen"] = CardFrame.KeptMinutes,
         ["Who mounts it"] = "Azure Monitor, transactions by authentication",
         ["Who reads it on a timer"] = "Azure Monitor, transactions by authentication",
-        ["Every caller this hour"] = "Azure Monitor, transactions by authentication",
+        ["Every caller, the clock hour so far"] = "Azure Monitor, transactions by authentication",
         ["Every caller, the last full hour"] = "Azure Monitor, transactions by authentication",
         ["The alert"] = "Azure Monitor alert rule",
         ["Cost"] = CardFrame.TheBill,
@@ -72,7 +72,7 @@ public static class ShareCard
         string txTone = txShare is not { } t ? "info" : t >= Transactions.Red ? "alarm" : t >= Transactions.Amber ? "warning" : "good";
         var dials = new[]
         {
-            new CloudDial("Transactions this hour", txShare, ResourceView.Number(thisHour), line is { } l ? $"of {l.ToString("N0", CultureInfo.InvariantCulture)}, the alert's line" : "the alert's line is not read",
+            new CloudDial("Transactions, last 60 minutes", txShare, ResourceView.Number(thisHour), line is { } l ? $"of {l.ToString("N0", CultureInfo.InvariantCulture)}, the alert's line" : "the alert's line is not read",
                 Transactions.Amber, Transactions.Red, ResourceView.Share(p95, line), ResourceView.Share(hourly.Count == 0 ? null : hourly.Max(h => h.Value), line), txTone),
             ResourceView.Dial(inputs, "used_gb", "Used of the quota", quotaGb, Quota, v => v is { } g ? $"of {Words(quotaGb, "0")} GB · {PlanView.Percent(ResourceView.Share(g, quotaGb))}" : "not read", hourly: true)
                 with { Big = usedGb is { } u ? $"{u.ToString("0.#", CultureInfo.InvariantCulture)} GB" : "not read" },
@@ -92,7 +92,7 @@ public static class ShareCard
                 new("Last write seen", LastWrite(inputs), "info"),
                 new("Who mounts it", auth.TryGetValue("SAS", out double sas) ? $"the laptop's mount and the chats, by SAS: {sas:N0} {since}" : "not read", "info"),
                 new("Who reads it on a timer", auth.TryGetValue("AccountKey", out double key) ? $"the job hunt's Function, by the account key: {key:N0} {since}" : "not read", "info"),
-                new("Every caller this hour", auth.Count == 0 ? "not read" : Callers(auth), "info"),
+                new("Every caller, the clock hour so far", auth.Count == 0 ? "not read" : $"{Callers(auth)} {since}", "info"),
                 new("Every caller, the last full hour", LastHour(inputs, hourly), "info"),
                 new("The alert", line is { } a ? $"{a.ToString("N0", CultureInfo.InvariantCulture)} transactions an hour, to his phone ({(ResourceView.Fact(inputs, "alert_enabled", "") == "true" ? "on" : "off")})" : "not read", "info"),
                 ResourceView.Cost(inputs),
@@ -114,13 +114,17 @@ public static class ShareCard
         return CardFrame.Sourced(report, Sources);
     }
 
-    /// <summary>Who is reading it: the transactions of the last hour, and the table by API for the last hour and yesterday.</summary>
+    /// <summary>
+    /// Who is reading it: the transactions of the last 60 minutes, the dial's number, and the table by API for the last
+    /// full clock hour and yesterday. Each window is named where it is shown, because the card once said "last hour"
+    /// for three different hours.
+    /// </summary>
     private static CloudRow Reading(ResourceCardInputs inputs, double? thisHour)
     {
         string log = ResourceView.Fact(inputs, "diagnostic_log", "off") == "on" ? "the share's diagnostic log is on; read it in the portal for each caller" : "turn on the share's diagnostic log to see who, by name";
-        var table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("api_rows"), "API", "Last hour", "Yesterday");
+        var table = CloudTable.FromFact(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("api_rows"), "API", "Last full hour", "Yesterday");
         return new CloudRow("reading", "Who is reading it?", thisHour is null ? "not read yet" : ResourceView.Number(thisHour),
-            [new($"transactions in the last hour, by what was asked for · {log}", null)], "info")
+            [new($"transactions in the last 60 minutes; the table is the last full clock hour and yesterday, by what was asked for · {log}", null)], "info")
         { Table = table };
     }
 

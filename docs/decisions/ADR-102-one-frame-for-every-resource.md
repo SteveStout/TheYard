@@ -375,3 +375,19 @@ Correction, 1.0.5.29: the paragraph above says a request whose joined refresh fa
 ## Addendum, 2026-11-12 (1.0.5.43): a read whose request has gone stops first
 
 What stopped being true: a kept view answered any read of a fresh slot, and a build that ended before the request began to wait answered it too, because a finished task's WaitAsync returns its result whatever the token says. So a request already cancelled could be served, and CloudTimeoutTests.A_read_the_request_itself_cancelled_still_stops failed in CI on main after 1.0.5.42 and once on the box, both when the build won the race. From this version KeptViews.ReadAsync checks the request's token before it reads the slot or starts a build; KeptViewsBuildTests holds both cases, a fresh kept view and an empty slot, with no build started.
+
+## Addendum, 2026-11-16 (1.0.5.62): every number names its window, and a card is graded on its own resource
+
+In plain words: a walk of every Cloud card on 15 and 16 November found numbers that were right but read wrong, and one that was wrong. Each now says which window it covers, and no card turns red on something its resource cannot cause.
+
+What changed, each read live before the change:
+
+- **The cost line is the month so far.** Every card's "Cost $4.22 / mo" was the month to date from the bill, and read as a monthly rate it halved the share's real cost on the fifteenth. It now says "month to date", on every card and on the plan's "Plan cost".
+- **The blob card is not graded on the share's egress.** Azure's Egress metric belongs to the storage account, so the blob dial read red at 120.82 GB of the free 100 GB (132.28 GB on 16 November) while the blob service held 13.6 MB; the rest was the share's reads. The dial is now "Account egress this month", says the share's reads are in it, and is blue at any reading. What the bytes cost is on the bill: Cost Management's 30 days to 15 November put the account's "Intra Continent Data Transfer Out" at $0.17.
+- **The host's picture cache is named.** The readout said the cache was "not built yet" after the blog's pictures had shipped with one (32 MB of the host's memory, a picture kept a day). It now says that, held by a test to the blog slice's own cap.
+- **The share names each window.** The card said "last hour" for three different hours: the dial summed the last 60 kept minutes, the by-caller line read the clock hour under way, and the table by API added the hour before to the hour under way. The dial is now "Transactions, last 60 minutes", the line "Every caller, the clock hour so far" with its start, and the table "Last full hour", which now counts only that hour.
+- **Cosmos DB counts its documents.** Azure Monitor reports the count at five minutes, and the minute a bucket is still open reads 0, so the card said "0 documents" over 3,532,492 (Azure Monitor, 15:33 UTC on 16 November). It now reads the newest minute that counted any, and says "not read yet" when none did.
+- **The plan's memory names the apps' share.** The dial read 91 to 94 % at the nightly peaks while the apps held about 0.7 GB of the 3.78; it now says what the apps hold beside the total, and the apps table keeps the rest, derived.
+- **The budget is Azure's.** The subscription's budget moved from $60 to $70 in Azure on 16 November (Steve's figure of 11 November), and the costs answer now carries the amount Azure holds (`budget_dollars`), read with the alert rules, for the cost card to grade against in place of a number typed beside it.
+
+`StorageCardTests`, `CloudThresholdTests`, `PlanViewTests`, `PlanChildrenTests` and `CostSpikeTests` hold each one.

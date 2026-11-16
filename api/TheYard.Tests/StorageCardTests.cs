@@ -133,24 +133,40 @@ public sealed partial class StorageCardTests
     }
 
     [Fact]
-    public void The_blob_card_s_second_dial_is_the_month_s_egress_against_the_free_hundred_gigabytes()
+    public void The_blob_card_s_second_dial_is_the_account_s_egress_against_the_free_hundred_gigabytes_and_never_graded()
     {
         var card = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", ["egress_month_bytes"] = "8530000000" }), new BlobLines(1e9, 1.8e9, 24_000));
 
-        Assert.Equal(("Egress this month", "8.53 GB"), (card.Dials[1].Name, card.Dials[1].Big));
+        Assert.Equal(("Account egress this month", "8.53 GB"), (card.Dials[1].Name, card.Dials[1].Big));
         Assert.Equal(8.53, card.Dials[1].Percent!.Value, 3);
-        Assert.Equal("good", card.Dials[1].Tone);
-        Assert.Equal("alarm", BlobCard.EgressDial(120e9).Tone);
+        Assert.Equal("info", card.Dials[1].Tone);
+        Assert.Contains("the share's reads included", card.Dials[1].Absolute, StringComparison.Ordinal);
+        Assert.Equal("info", BlobCard.EgressDial(120e9).Tone);
         Assert.Equal(("not read", "info"), (BlobCard.EgressDial(null).Big, BlobCard.EgressDial(null).Tone));
         Assert.DoesNotContain(card.Dials, dial => dial.Name == "Served from memory");
     }
 
+    /// <summary>
+    /// The readout says what the host keeps of the pictures, the blog slice's own cap, where it used to say the cache
+    /// was not built yet, after the pictures had shipped with it.
+    /// </summary>
+    [Fact]
+    public void The_blob_card_names_the_hosts_picture_cache_at_the_blog_slices_own_cap()
+    {
+        var card = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none" }), new BlobLines(1e9, 1.8e9, 24_000));
+
+        Assert.Equal(TheYard.Api.Features.Blog.CachedBlogImages.MaxBytes, BlobCard.HostCacheMegabytes * 1024 * 1024);
+        Assert.Equal("32 MB of the host's memory, a picture kept a day once it is asked for", card.Readout.Lines.Single(l => l.Label == "Cache in the host").Value);
+        Assert.DoesNotContain(card.Readout.Lines, line => line.Value.Contains("not built yet", StringComparison.Ordinal));
+        Assert.DoesNotContain(card.Rows.SelectMany(row => row.Detail), detail => detail.Text.Contains("serves no picture", StringComparison.Ordinal));
+    }
+
     [Theory]
-    [InlineData(79.9, "good")]
-    [InlineData(80, "warning")]
-    [InlineData(99.9, "warning")]
-    [InlineData(100, "alarm")]
-    public void The_blob_egress_dial_turns_at_eighty_per_cent_of_the_free_allowance_and_red_past_it(double gb, string tone) =>
+    [InlineData(79.9, "info")]
+    [InlineData(80, "info")]
+    [InlineData(99.9, "info")]
+    [InlineData(132.28, "info")]
+    public void The_blob_egress_dial_is_blue_at_any_reading_because_it_is_the_whole_account_s(double gb, string tone) =>
         Assert.Equal(tone, BlobCard.EgressDial(gb * 1e9).Tone);
 
     [Theory]
@@ -221,7 +237,7 @@ public sealed partial class StorageCardTests
     {
         string json = """
             {"value":[{"name":{"value":"Transactions"},"timeseries":[
-              {"metadatavalues":[{"name":{"value":"apiname"},"value":"ListFiles"}],"data":[{"timeStamp":"2026-10-23T12:00:00Z","total":100},{"timeStamp":"2026-10-24T14:00:00Z","total":40}]},
+              {"metadatavalues":[{"name":{"value":"apiname"},"value":"ListFiles"}],"data":[{"timeStamp":"2026-10-23T12:00:00Z","total":100},{"timeStamp":"2026-10-24T14:00:00Z","total":40},{"timeStamp":"2026-10-24T15:00:00Z","total":7}]},
               {"metadatavalues":[{"name":{"value":"apiname"},"value":"GetFile"}],"data":[{"timeStamp":"2026-10-24T14:30:00Z","total":3}]}]}]}
             """;
         using var answer = JsonDocument.Parse(json);
