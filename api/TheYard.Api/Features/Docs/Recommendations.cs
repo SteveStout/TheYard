@@ -94,6 +94,22 @@ public static partial class RecommendationsFile
     }
 
     /// <summary>
+    /// The recommendations for a page that only shows them beside its own content (/about, the resume door): null when
+    /// the file is missing, cannot be read or is not the shape, so the page is still served without them.
+    /// </summary>
+    public static RecommendationsReply? OrNull(string path)
+    {
+        try
+        {
+            return File.Exists(path) ? Of(path) : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Everything an entry has to get right, one line per slip: every field present and not blank,
     /// the month one of the twelve with its year, the profile a page on LinkedIn, the pull a whole
     /// sentence the writer wrote, and no two entries from the same person. Empty when the file is in shape. The pages show the file
