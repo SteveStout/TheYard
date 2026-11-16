@@ -23,7 +23,6 @@ internal sealed class RecordedCloud : HttpMessageHandler
     public const string CosmosSite = Group + "/providers/Microsoft.Web/sites/app-theyard-cosmos";
     public const string Sql = Group + "/providers/Microsoft.Sql/servers/sql-theyard/databases/sqldb-theyard-ss-basic";
     public const string Cosmos = Group + "/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-theyard-ss";
-    public const string Registry = Group + "/providers/Microsoft.ContainerRegistry/registries/crtheyard";
     public const string Component = Group + "/providers/Microsoft.Insights/components/appi-theyard-ss";
     public const string Workspace = Group + "/providers/Microsoft.OperationalInsights/workspaces/log-theyard-ss";
     public const string Mail = Group + "/providers/Microsoft.Communication/CommunicationServices/acs-theyard-ss";
@@ -61,7 +60,7 @@ internal sealed class RecordedCloud : HttpMessageHandler
         {
             "169.254.169.254" => Json(new { access_token = Jwt() }),
             "management.azure.com" => request.Method == HttpMethod.Post ? Query(body) : Arm(uri),
-            "crtheyard.azurecr.io" => Registry_(uri),
+            "ghcr.io" => Ghcr(uri),
             "api.netlify.com" => Netlify(uri),
             "api.github.com" => Json(Workflow),
             FunctionHost => Json(new { merger = new { ok = true, written = 9, read = 42, at = "2026-10-18T20:55:00Z" }, switches = new { EMAIL_CAMPAIGN = "off" } }),
@@ -109,7 +108,6 @@ internal sealed class RecordedCloud : HttpMessageHandler
                     new { id = Group + "/providers/Microsoft.Sql/servers/sql-theyard/databases/master", name = "sql-theyard/master", type = ResourceCatalog.SqlType },
                     new { id = Group + "/providers/Microsoft.Sql/servers/sql-theyard/databases/sqldb-theyard-ss", name = "sql-theyard/sqldb-theyard-ss", type = ResourceCatalog.SqlType },
                     new { id = Cosmos, name = "cosmos-theyard-ss", type = ResourceCatalog.CosmosType },
-                    new { id = Registry, name = "crtheyard", type = ResourceCatalog.AcrType },
                     new { id = Component, name = "appi-theyard-ss", type = ResourceCatalog.InsightsType },
                     new { id = Workspace, name = "log-theyard-ss", type = ResourceCatalog.WorkspaceType },
                     new { id = Mail, name = "acs-theyard-ss", type = ResourceCatalog.MailType },
@@ -117,7 +115,7 @@ internal sealed class RecordedCloud : HttpMessageHandler
                 },
             }),
             // The SQL site's record carries its kind, its image and its names; the Cosmos DB site's leaves them out.
-            Site => Json(new { kind = "app,linux,container", properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true, linuxFxVersion = "DOCKER|crtheyard.azurecr.io/theyard:v1.0.3.186" }, hostNames = new[] { "theshed.example", "app-theyard-ss.azurewebsites.net" }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
+            Site => Json(new { kind = "app,linux,container", properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true, linuxFxVersion = "DOCKER|ghcr.io/stevestout/theyard:v1.0.3.186" }, hostNames = new[] { "theshed.example", "app-theyard-ss.azurewebsites.net" }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
             CosmosSite => Json(new { properties = new { serverFarmId = Plan, state = "Running", siteConfig = new { alwaysOn = true }, lastModifiedTimeUtc = "2026-10-18T20:21:00Z" } }),
             Plan + "/sites" => Json(new { value = new[] { new { id = Site }, new { id = CosmosSite } } }),
             Plan => Json(new { sku = new { name = "B2", capacity = 1 }, location = "West US 3", kind = "linux", properties = new { maximumNumberOfWorkers = 3 } }),
@@ -134,7 +132,6 @@ internal sealed class RecordedCloud : HttpMessageHandler
                     new { name = "vehicles", properties = new { resource = new { } } },
                 },
             }),
-            Registry => Json(new { sku = new { name = "Basic" }, properties = new { loginServer = "crtheyard.azurecr.io" }, location = "westus3" }),
             Component => Json(new { properties = new { WorkspaceResourceId = Workspace, SamplingPercentage = 100 }, location = "westus3" }),
             Component + "/currentbillingfeatures" => Json(new { DataVolumeCap = new { Cap = 0.1 } }),
             Workspace => Json(new { properties = new { workspaceCapping = new { dailyQuotaGb = -1 }, retentionInDays = 30 } }),
@@ -264,21 +261,12 @@ internal sealed class RecordedCloud : HttpMessageHandler
         return Json(new { Tables = new[] { new { TableName = "PrimaryResult", Columns = table.Columns.Select(c => new { ColumnName = c, DataType = "String" }), Rows = table.Rows } } });
     }
 
-    private static HttpResponseMessage Registry_(Uri uri) => uri.AbsolutePath switch
+    /// <summary>GitHub's registry as an anonymous pull reads it: a pull token, then each image's tag list.</summary>
+    private static HttpResponseMessage Ghcr(Uri uri) => uri.AbsolutePath switch
     {
-        "/oauth2/exchange" => Json(new { refresh_token = "refresh" }),
-        "/oauth2/token" => Json(new { access_token = "access" }),
-        "/v2/_catalog" => Json(new { repositories = new[] { "theyard", "render" } }),
-        "/acr/v1/theyard/_manifests" => Json(new
-        {
-            manifests = new object[]
-            {
-                new { tags = new[] { "1.0.3.176", "latest" }, imageSize = 300_000_000L },
-                new { tags = Array.Empty<string>(), imageSize = 1_073_741_824L },
-                new { imageSize = 5L },
-            },
-        }),
-        "/acr/v1/render/_manifests" => Json(new { manifests = new[] { new { tags = new[] { "1.0.3.176" }, imageSize = 90_000_000L } } }),
+        "/token" => Json(new { token = "anonymous" }),
+        "/v2/stevestout/theyard/tags/list" => Json(new { name = "stevestout/theyard", tags = new[] { "v1.0.3.185", "v1.0.3.186", "latest" } }),
+        "/v2/stevestout/theyard-render/tags/list" => Json(new { name = "stevestout/theyard-render", tags = new[] { "v1.0.3.186" } }),
         _ => new HttpResponseMessage(HttpStatusCode.NotFound),
     };
 
@@ -343,7 +331,7 @@ public sealed class CloudReadersTests
     private static readonly BuildInfo Build = new("1.0.3.177", "abc1234");
 
     /// <summary>The deployment's names as appsettings.json gives them, for the cards built by hand.</summary>
-    private static readonly AzureResources Names = new("RG-THEYARD-SS", "app-theyard-ss", "sqldb-theyard-ss-basic", "cosmos-theyard-ss", "crtheyard", "log-theyard-ss", "acs-theyard-ss", "theyard-edge", new Uri("https://theyard.stevenstout.biz/"), new DateOnly(2026, 10, 30));
+    private static readonly AzureResources Names = new("RG-THEYARD-SS", "app-theyard-ss", "sqldb-theyard-ss-basic", "cosmos-theyard-ss", "log-theyard-ss", "acs-theyard-ss", "theyard-edge", new Uri("https://theyard.stevenstout.biz/"), new DateOnly(2026, 10, 30));
 
     private static string Text(object report) => JsonSerializer.Serialize(report);
 
@@ -381,7 +369,7 @@ public sealed class CloudReadersTests
         Assert.All(read.Apps, app => Assert.True(app.AlwaysOn));
         // What each app is, runs and answers to is read off its record, and left null where the record has none.
         var sql = read.Apps.Single(app => app.ResourceId == RecordedCloud.Site);
-        Assert.Equal(("app,linux,container", "DOCKER|crtheyard.azurecr.io/theyard:v1.0.3.186"), (sql.Kind, sql.Image));
+        Assert.Equal(("app,linux,container", "DOCKER|ghcr.io/stevestout/theyard:v1.0.3.186"), (sql.Kind, sql.Image));
         Assert.Equal(["theshed.example", "app-theyard-ss.azurewebsites.net"], sql.Hosts);
         var cosmos = read.Apps.Single(app => app.ResourceId == RecordedCloud.CosmosSite);
         Assert.Equal((null, null, null), (cosmos.Kind, cosmos.Image, cosmos.Hosts));
@@ -613,7 +601,7 @@ public sealed class CloudReadersTests
     [Theory]
     [InlineData("sqldb", "sqldb-theyard-ss", "BASIC 5 DTU 2 GB WESTUS3")]
     [InlineData("cosmosdb", "2 containers", "FREE TIER")]
-    [InlineData("registry", "2 images, 3 tags", "2 untagged")]
+    [InlineData("registry", "2 images, 4 tags", "GHCR.IO PUBLIC PACKAGES")]
     [InlineData("insights", "app-theyard-ss", "log-theyard-ss")]
     [InlineData("mail", "ae4d.azurecomm.net", "United States")]
     [InlineData("edge", "skipped, no edge change", "stevenstout.biz")]

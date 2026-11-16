@@ -14,7 +14,7 @@ public partial class CloudViewTests
     private const string Group = "/subscriptions/sub-1/resourceGroups/RG-TEST";
 
     /// <summary>The names the cards are configured with: each the second of its type in the group.</summary>
-    private static readonly AzureResources Names = new("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "crtest", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
+    private static readonly AzureResources Names = new("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
 
     /// <summary>The group's list, the instance metadata token, two component records, and an empty answer to everything else; every address asked is kept.</summary>
     private sealed class TwoOfEach : HttpMessageHandler
@@ -35,7 +35,6 @@ public partial class CloudViewTests
                 : path.EndsWith("/RG-TEST/resources", StringComparison.Ordinal) ? "{\"value\":[" + string.Join(',',
                     Entry(ResourceCatalog.SqlType, "sql-srv/sqldb-aaa"), Entry(ResourceCatalog.SqlType, "sql-srv/sqldb-test"),
                     Entry(ResourceCatalog.CosmosType, "cosmos-aaa"), Entry(ResourceCatalog.CosmosType, "cosmos-test"),
-                    Entry(ResourceCatalog.AcrType, "craaa"), Entry(ResourceCatalog.AcrType, "crtest"),
                     Entry(ResourceCatalog.InsightsType, "appi-aaa"), Entry(ResourceCatalog.InsightsType, "appi-test"),
                     Entry(ResourceCatalog.WorkspaceType, "log-aaa"), Entry(ResourceCatalog.WorkspaceType, "log-test"),
                     Entry(ResourceCatalog.MailType, "acs-aaa"), Entry(ResourceCatalog.MailType, "acs-test")) + "]}"
@@ -73,11 +72,11 @@ public partial class CloudViewTests
             }
         }
         var asked = handler.Asked.Where(address => address.Contains("/providers/", StringComparison.Ordinal)).ToList();
-        foreach (string name in new[] { "sqldb-test", "cosmos-test", "crtest", "appi-test", "log-test", "acs-test" })
+        foreach (string name in new[] { "sqldb-test", "cosmos-test", "appi-test", "log-test", "acs-test" })
         {
             Assert.Contains(asked, address => address.Contains("/" + name, StringComparison.Ordinal));
         }
-        foreach (string decoy in new[] { "sqldb-aaa", "cosmos-aaa", "craaa", "log-aaa", "acs-aaa" })
+        foreach (string decoy in new[] { "sqldb-aaa", "cosmos-aaa", "log-aaa", "acs-aaa" })
         {
             Assert.DoesNotContain(asked, address => address.Contains("/" + decoy, StringComparison.Ordinal));
         }

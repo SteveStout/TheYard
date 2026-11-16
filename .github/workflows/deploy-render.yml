@@ -48,8 +48,6 @@ jobs:
     # The build, Verify's twenty-five minutes, and room.
     timeout-minutes: 40
     env:
-      REGISTRY_NAME: crtheyardsszmnetj67bn5h2
-      ACR: crtheyardsszmnetj67bn5h2.azurecr.io
       RG: RG-THEYARD-SS
       # The renderer's web app on the plan, beside the one web app (infra/render.bicep).
       APP: APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2
@@ -82,10 +80,9 @@ jobs:
             echo "N=$N"
             echo "APP_VERSION=$N"
             echo "APP_COMMIT=${HEAD_SHA:0:7}"
-            echo "IMAGE=$ACR/theyard-render:v$N"
             echo "GHCR_IMAGE=ghcr.io/stevestout/theyard-render:v$N"
           } >> "$GITHUB_ENV"
-          echo "Deploying the renderer $N from ${HEAD_SHA:0:7} as $ACR/theyard-render:v$N"
+          echo "Deploying the renderer $N from ${HEAD_SHA:0:7} as ghcr.io/stevestout/theyard-render:v$N"
       # #endregion render-version
 
       - uses: azure/login@v3
@@ -94,11 +91,8 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Sign in to the registry
-        run: az acr login --name "$REGISTRY_NAME"
-
-      # The same image to ghcr.io, signed in with the workflow's own token. The roll pulls from there; the Azure
-      # registry keeps the same tag beside it, which is what the undo in ADR-009 rolls back to.
+      # The image to ghcr.io, signed in with the workflow's own token, and nowhere else: the roll pulls from there,
+      # and the undo in ADR-009 sets the web app back to ghcr.io's previous tag.
       - name: Sign in to GitHub's registry
         uses: docker/login-action@v4
         with:
@@ -117,7 +111,6 @@ jobs:
           file: render/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE }}
             ${{ env.GHCR_IMAGE }}
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}

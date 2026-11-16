@@ -60,9 +60,8 @@ public sealed class GhcrPackagesTests
     [Fact]
     public void The_registry_card_keeps_the_words_with_its_hour()
     {
-        using var record = JsonDocument.Parse("""{"sku":{"name":"Basic"},"location":"westus3","properties":{"loginServer":"registry.example"}}""");
-        var facts = AcrCard.Facts(record.RootElement, null, ghcr: "theyard v1.0.4.83, 7 tags");
+        var facts = RegistryCard.Facts([new GhcrImage("theyard", true, 7, "v1.0.4.83")], null);
         Assert.Equal("theyard v1.0.4.83, 7 tags", facts[GhcrPackages.Fact]);
-        Assert.Null(AcrCard.Facts(record.RootElement, null)[GhcrPackages.Fact]);
+        Assert.Equal("not read", RegistryCard.Facts([], null)[GhcrPackages.Fact]);
     }
 }

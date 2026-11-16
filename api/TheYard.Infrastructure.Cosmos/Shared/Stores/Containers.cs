@@ -53,7 +53,7 @@ public static class Containers
     /// <summary>The Cosmos DB account cosmos-theyard-ss, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
     public const string ResourceCosmos = "cosmosdb";
 
-    /// <summary>The Container Registry crtheyardsszmnetj67bn5h2, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
+    /// <summary>The image registry's card under Cloud infrastructure, GitHub's registry read hourly: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>
     public const string ResourceRegistry = "registry";
 
     /// <summary>The Application Insights component and its Log Analytics workspace, kept for its card under Cloud infrastructure: partitioned on the UTC day, expiring after a month by the container's time-to-live (ADR: One frame for every resource).</summary>

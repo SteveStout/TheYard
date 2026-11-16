@@ -46,7 +46,7 @@ public sealed class ClaudeCardTests
         }
         var source = new ClaudeSource(log, new FixedClock(Now));
         var azure = new AzureMetrics("client-1", configured: false);
-        var site = new AzureResources("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "crtest", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
+        var site = new AzureResources("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
         var cards = ResourceCatalog.Cards(azure, new ResourceDirectory(azure, "/subscriptions/sub-1/resourceGroups/RG-TEST", TimeProvider.System), new NetlifyEdge(null, "edge-test", new Uri("https://yard.example")), (3, "m1"), site, claude: source);
         var card = cards.Single(c => c.Key == "claude");
         Assert.Equal(("plan", "claude-"), (card.Container, card.KindPrefix));

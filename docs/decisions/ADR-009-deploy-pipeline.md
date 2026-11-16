@@ -280,3 +280,20 @@ The registry card now reads both registries. Beside the Azure registry's catalog
 The step that waited on the click is done. Read live at 21:18 CDT on 25 October, the registry card's anonymous read (1.0.4.83) listed both packages, `theyard v1.0.4.83, 7 tags` and `theyard-render v1.0.4.83, 7 tags`, which ghcr.io answers to an anonymous pull token only for a public package. From this version each roll sets the web app's image to `ghcr.io/stevestout/theyard:v<N>`, and the renderer's to `ghcr.io/stevestout/theyard-render:v<N>`, and turns `acrUseManagedIdentityCreds` off in the same write, because a public image needs no credential and none is stored; infra/appservice.bicep and infra/render.bicep say false, so a deployment of either template cannot put the identity's pull back. App Service starts the new container beside the old one and moves traffic only when it answers, so a pull that failed would leave the site on the version before, and Verify would turn the roll red.
 
 The Azure registry still receives every push, so it holds the tag of the version just rolled, and the undo written in the addendum of 1.0.4.77 rolls back to that same version rather than to the last one before the switch. Two parts of the prompt's rung wait. Keep-ten does not move to ghcr.io today: it would be a new deletion, of package versions through GitHub's API, and the lane that shipped this was allowed none but one database; the Azure registry's own keep-ten, the owner's standing rule, runs after each roll as before. And the Azure registry is not stopped, because the undo needs it and it is deleted only after seven green rolls from ghcr.io (ADR-106). The registry card's table of what the Azure registry holds now says no web app runs either image, which is true; its readout line on GitHub's registry names what they run. `DeployWorkflowTests.Each_roll_pulls_from_GitHub_s_registry_with_no_credential` holds both workflows and both templates: red on the prior tree.
+
+## Addendum, @DATE@ (@VER@): the Azure registry is retired
+
+In plain words: the site has pulled its images from GitHub's registry since 1.0.4.88, and the Azure registry has only been kept as the way back. The condition this record set for deleting it, seven green rolls from ghcr.io, was met many times over, so the workflows stop pushing to it, the way back moves to GitHub's own previous tag, and the registry is deleted. It saves about $5 a month (Cost Management, 30 days to 15 November: "Basic Registry Unit" $5.00).
+
+**Undo, written before anything moves.** Every version is still pushed to `ghcr.io/stevestout/theyard:v<N>` and `ghcr.io/stevestout/theyard-render:v<N>`, and GitHub keeps every tag, so the way back from a bad roll is the version before on ghcr.io, with no credential, the same write the roll makes:
+
+```
+az webapp config set -g RG-THEYARD-SS -n APP-THEYARD-ONE-SS-ZMNETJ67BN5H2 --linux-fx-version "DOCKER|ghcr.io/stevestout/theyard:v<previous>"
+az webapp config set -g RG-THEYARD-SS -n APP-THEYARD-RENDER-SS-ZMNETJ67BN5H2 --linux-fx-version "DOCKER|ghcr.io/stevestout/theyard-render:v<previous>"
+```
+
+`<previous>` is the changelog's second line. That is the undo the addendum of 1.0.4.77 kept the Azure registry for, without the registry.
+
+**The count.** `gh run list --workflow deploy.yml` from 1.0.4.88 (07:39 UTC on 26 October) reads 28 runs, 27 green; since 1.0.4.101 the gate calls Deploy and Deploy Render inside its own run, and 135 gate runs went green in the same span (read on 16 November). Every one of those rolls pulled from ghcr.io.
+
+**What goes.** Deploy and Deploy Render no longer sign in to the Azure registry or push its tag, and the keep-ten step that pruned its manifests after each roll goes with it: GitHub's registry is free for a public package, so there is nothing to prune for money. The templates stop naming the registry, the site's settings drop its name, and the registry card reads GitHub's registry alone. The registry is deleted under ADR-106 once the next roll is green from ghcr.io alone.

@@ -2,7 +2,7 @@
   "container": "registry",
   "partitionKeyPath": "/day",
   "defaultTtlSeconds": 2678400,
-  "why": "The Container Registry card's keep: one document a minute with the registry's readings from Azure Monitor (storage, pulls, pushes, run time) and one document an hour with the catalogue read through the registry's own API: images, tags and the untagged manifests a purge would free, named and never purged. Partitioned on the UTC day and written by the SQL site alone, so a reading is never written twice. The kind, the day, the moment and the three bucket keys are indexed and nothing else, so a window is a grouped query over the index. Documents expire thirty-one days after they are written, one more than the longest window (ADR: One frame for every resource).",
+  "why": "The registry card's keep: one document an hour with GitHub's registry as an anonymous pull reads it (each image, whether it is public, its tags and its newest v tag) and the tag each web app runs from the plan card's hour, partitioned on the UTC day. The Azure Container Registry it once described is retired (ADR-009, the addendum on retiring it); the card keeps no minute, because nothing it reports moves inside an hour. Documents expire thirty-one days after they are written.",
   "indexingPolicy": {
     "indexingMode": "consistent",
     "automatic": true,
