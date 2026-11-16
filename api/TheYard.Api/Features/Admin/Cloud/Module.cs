@@ -81,7 +81,7 @@ public sealed class Module : IModule
             var box = new BoxSource(provider.GetRequiredService<IBoxSnapshots>(), provider.GetRequiredService<IBoxLive>(), provider.GetRequiredService<HostStart>(), TimeProvider.System);
             // The nightly picker reads the Function's run lines from the workspace both components send to (ADR-125).
             var picker = new PickerSource(azure, $"{names.GroupPath(subscription)}/providers/Microsoft.OperationalInsights/workspaces/{names.Insights}", nightlyNames.Function);
-            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network, box, picker).Select(card => (card, KeepOf(card)))];
+            return [.. ResourceCatalog.Cards(azure, directory, edge, YardModelFacts.Read(), names, sqlSite, nightly, NewestPlanHour, claude, storage, BlobLines.From(configuration), campaign, network, box, picker, provider.GetRequiredService<StoreRingBuffer>().Snapshot).Select(card => (card, KeepOf(card)))];
         });
 
         // One reading of a shared resource is the whole truth, so one process records it, as with

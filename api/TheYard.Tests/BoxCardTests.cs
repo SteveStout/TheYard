@@ -91,7 +91,7 @@ public sealed class BoxCardTests
         var full = View(With(s => s with { Disks = [s.Disks[0] with { UsedB = 2_600_000_000_000 }] }));
         var stopped = View(With(s => s with { Services = [.. s.Services.Where(service => service.Unit != "jdrive.service")] }));
         var morning = View(With(s => s with { Services = [.. s.Services.Select(service => service.Unit == BoxRows.MorningRun ? service with { Note = "last result exit-code" } : service)] }));
-        var swapping = View(With(s => s with { Swap = new(2_100_000_000, 1_000_000) }));
+        var swapping = View(With(s => s with { Swap = new(2_100_000_000, 300_000_000) }));
 
         Assert.Equal("alarm", Row(failed, "disks").Tone);
         Assert.Equal("alarm", Row(hot, "temps").Tone);

@@ -35,7 +35,7 @@ public sealed class CosmosChargeSource(Func<IReadOnlyList<StoreOperation>> opera
         {
             ["ru_per_second"] = Math.Round(recent.Sum(operation => operation.RequestCharge) / Window.TotalSeconds, 2),
             ["requests"] = recent.Count,
-            ["throttled"] = recent.Count(operation => operation.Outcome.Contains("TooManyRequests", StringComparison.Ordinal)),
+            ["throttled"] = recent.Count(operation => CosmosCard.GaveUpOn429(operation.Outcome)),
         }));
     }
 }

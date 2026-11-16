@@ -83,13 +83,37 @@ public sealed class ClaudeCardTests
     }
 
     [Fact]
-    public async Task A_run_over_twelve_hundred_seconds_is_a_warning_and_a_dry_one_is_not_counted()
+    public async Task A_long_run_on_an_earlier_day_is_information_and_a_dry_one_is_not_counted()
     {
+        // The 1,405 s backlog run of 20 October is past the fixed line but not today's (the card reads at 07:00 Central
+        // on the 22nd), so it is listed as information rather than amber; without it every run is under the line.
         var (card, _, minutes) = await Catalogued(Ten);
-        Assert.Equal("warning", card.View(Inputs(minutes)).Rows.Single(row => row.Key == "runs").Tone);
+        Assert.Equal("info", card.View(Inputs(minutes)).Rows.Single(row => row.Key == "runs").Tone);
         var withoutTheBacklog = Ten.Where(record => record.WallMs != 1_405_000).Append(Ten[0] with { WallMs = 2_000_000, Run = "dry-long" });
         var (calm, _, calmMinutes) = await Catalogued(withoutTheBacklog);
         Assert.Equal("good", calm.View(Inputs(calmMinutes)).Rows.Single(row => row.Key == "runs").Tone);
+    }
+
+    [Fact]
+    public void A_run_is_worth_a_look_when_it_is_todays_and_over_twice_its_modes_median_or_github_timed_it_out()
+    {
+        // Seven bookkeeping runs of 540 s over the week; today's run of 1,200 s is past twice that median.
+        var week = Enumerable.Range(14, 7).Select(day => Doc(day, 8, 0, "bookkeeping", "claude-opus-5-5", 540, 1, 1, 1, 1, 1m)).ToList();
+        var now = Central(21, 13, 0);
+        var today = Doc(21, 12, 0, "bookkeeping", "claude-opus-5-5", 1_200, 1, 1, 1, 1, 1m, run: "today-long");
+        var steady = Doc(21, 8, 0, "bookkeeping", "claude-opus-5-5", 900, 1, 1, 1, 1, 1m, run: "today-steady");
+        var reply = Doc(21, 4, 0, "reply", "claude-opus-5-5", 2_100, 1, 1, 1, 1, 1m, run: "18745020001");
+        UsageRecord[] all = [.. week, today, steady, reply];
+
+        Assert.Equal(540, ClaudeRows.ModeMedianSeconds(all, "bookkeeping", Central(21, 0, 0)));
+        Assert.Equal(["today-long"], ClaudeRows.WorthALook([today, steady], all, [], now).Select(record => record.Run));
+        // A reply run with no week of replies but its own is judged against itself, and a timeout reads amber whatever its wall.
+        Assert.Empty(ClaudeRows.WorthALook([reply], all, [], now));
+        Assert.Equal(["18745020001"], ClaudeRows.WorthALook([reply], all, [Run("18745020001", 41, 21, 4) with { CameTo = "timed_out" }], now).Select(record => record.Run));
+
+        var row = ClaudeRows.Rows([today, steady], [], null, all, now).Single(r => r.Key == "runs");
+        Assert.Equal("warning", row.Tone);
+        Assert.StartsWith("worth a look: Oct 21 12:00 Central", row.Detail[1].Text, StringComparison.Ordinal);
     }
 
     [Fact]
