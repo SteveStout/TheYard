@@ -98,8 +98,8 @@ public static class ClaudeRows
 
     /// <summary>
     /// The runs worth a look, by the owner's colour rule (green at rest, amber only for something to act on): a run of
-    /// today's Central day over twice its own mode's seven-day median wall, or one GitHub ended as timed out. A mode with
-    /// no week to measure against falls back to the fixed line. A long run on an earlier day is information, listed.
+    /// today's Central day past the fixed line and over twice its own mode's seven-day median wall, or one GitHub ended
+    /// as timed out. A long run on an earlier day is information, listed.
     /// </summary>
     /// <param name="records">The window's documents.</param>
     /// <param name="history">The documents the seven-day medians are read from.</param>
@@ -109,8 +109,9 @@ public static class ClaudeRows
     {
         var today = NightlySlots.StartOfCentralDay(now);
         var timedOut = runs.Where(run => run.CameTo == "timed_out").Select(run => run.Id).ToHashSet(StringComparer.Ordinal);
+        // Past the fixed line as well as past twice the mode's median, so a short mode's minute-long run is not amber.
         return [.. records.Where(record => !record.Dry).Where(record => timedOut.Contains(record.Run)
-            || (record.At >= today && record.WallMs / 1000.0 > (ModeMedianSeconds(history, record.Mode, now) is { } median ? 2 * median : CloudThresholds.ClaudeRunSeconds)))];
+            || (record.At >= today && record.WallMs / 1000.0 > Math.Max(CloudThresholds.ClaudeRunSeconds, ModeMedianSeconds(history, record.Mode, now) is { } median ? 2 * median : 0)))];
     }
 
     /// <summary>The four rows.</summary>
@@ -137,7 +138,7 @@ public static class ClaudeRows
             { Source = ClaudeCard.Documents },
             new("runs", "What did the runs cost in tokens?",
                 records.Count == 0 ? "no run reported in the window" : $"{records.Count} {(records.Count == 1 ? "run" : "runs")}, the longest {NightlyRows.Took((longest?.WallMs ?? 0) / 1000)}",
-                [new("a run is a warning when it is today's and over twice its mode's seven-day median wall, or when GitHub timed it out · a long run on an earlier day is listed as information · dry runs are listed and left out of the averages", null),
+                [new($"a run is a warning when it is today's, over {CloudThresholds.ClaudeRunSeconds.ToString("N0", CultureInfo.InvariantCulture)} s and over twice its mode's seven-day median wall, or when GitHub timed it out · a long run on an earlier day is listed as information · dry runs are listed and left out of the averages", null),
                     .. look.Select(record => new CloudLink($"worth a look: {RunWords(record)}", null)),
                     new("cost is the API-equivalent price of a run billed to the plan, never a bill", null)],
                 records.Count == 0 ? "info" : slow ? "warning" : overLine ? "info" : "good")

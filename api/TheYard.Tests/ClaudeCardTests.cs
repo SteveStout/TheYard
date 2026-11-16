@@ -46,7 +46,7 @@ public sealed class ClaudeCardTests
         }
         var source = new ClaudeSource(log, new FixedClock(Now));
         var azure = new AzureMetrics("client-1", configured: false);
-        var site = new AzureResources("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "crtest", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
+        var site = new AzureResources("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
         var cards = ResourceCatalog.Cards(azure, new ResourceDirectory(azure, "/subscriptions/sub-1/resourceGroups/RG-TEST", TimeProvider.System), new NetlifyEdge(null, "edge-test", new Uri("https://yard.example")), (3, "m1"), site, claude: source);
         var card = cards.Single(c => c.Key == "claude");
         Assert.Equal(("plan", "claude-"), (card.Container, card.KindPrefix));
@@ -97,10 +97,10 @@ public sealed class ClaudeCardTests
     [Fact]
     public void A_run_is_worth_a_look_when_it_is_todays_and_over_twice_its_modes_median_or_github_timed_it_out()
     {
-        // Seven bookkeeping runs of 540 s over the week; today's run of 1,200 s is past twice that median.
+        // Seven bookkeeping runs of 540 s over the week; today's run of 1,300 s is past twice that median and the fixed line.
         var week = Enumerable.Range(14, 7).Select(day => Doc(day, 8, 0, "bookkeeping", "claude-opus-5-5", 540, 1, 1, 1, 1, 1m)).ToList();
         var now = Central(21, 13, 0);
-        var today = Doc(21, 12, 0, "bookkeeping", "claude-opus-5-5", 1_200, 1, 1, 1, 1, 1m, run: "today-long");
+        var today = Doc(21, 12, 0, "bookkeeping", "claude-opus-5-5", 1_300, 1, 1, 1, 1, 1m, run: "today-long");
         var steady = Doc(21, 8, 0, "bookkeeping", "claude-opus-5-5", 900, 1, 1, 1, 1, 1m, run: "today-steady");
         var reply = Doc(21, 4, 0, "reply", "claude-opus-5-5", 2_100, 1, 1, 1, 1, 1m, run: "18745020001");
         UsageRecord[] all = [.. week, today, steady, reply];
@@ -109,6 +109,9 @@ public sealed class ClaudeCardTests
         Assert.Equal(["today-long"], ClaudeRows.WorthALook([today, steady], all, [], now).Select(record => record.Run));
         // A reply run with no week of replies but its own is judged against itself, and a timeout reads amber whatever its wall.
         Assert.Empty(ClaudeRows.WorthALook([reply], all, [], now));
+        // A short mode's minute-long run is twice its median but nowhere near the fixed line, so it is not amber.
+        UsageRecord[] triage = [.. Enumerable.Range(14, 7).Select(day => Doc(day, 7, 50, "triage", "claude-sonnet-5-5", 20, 1, 1, 1, 1, 1m))];
+        Assert.Empty(ClaudeRows.WorthALook([Doc(21, 11, 20, "triage", "claude-sonnet-5-5", 59, 1, 1, 1, 1, 1m, run: "triage-59")], [.. triage], [], now));
         Assert.Equal(["18745020001"], ClaudeRows.WorthALook([reply], all, [Run("18745020001", 41, 21, 4) with { CameTo = "timed_out" }], now).Select(record => record.Run));
 
         var row = ClaudeRows.Rows([today, steady], [], null, all, now).Single(r => r.Key == "runs");

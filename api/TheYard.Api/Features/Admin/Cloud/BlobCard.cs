@@ -75,8 +75,8 @@ public static class BlobCard
     public const string EgressService = "blobServices/default";
 
     /// <summary>
-    /// The month's egress of the blob service against the free 100 GB, or "not read". The read of 11/17 set the blob
-    /// service, the file service and the account side by side: the dial's number matched the blob service alone to
+    /// The month's egress of the blob service against the free 100 GB, or "not read". A read that set the blob service,
+    /// the file service and the account side by side (ADR-102's addendum has the numbers) found the dial's number matched the blob service alone to
     /// 0.01 %, and the account was blob plus file. Almost all of it is GetBlob by the account key, a steady poll at every
     /// hour of the day, not the blog's pictures, so the dial is information on this card, blue whatever it reads. What
     /// the bytes cost is on the bill, in the cost row.

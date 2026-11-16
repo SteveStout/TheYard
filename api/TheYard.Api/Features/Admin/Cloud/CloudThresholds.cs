@@ -27,19 +27,13 @@ public static class CloudThresholds
 
     /// <summary>
     /// Cosmos DB: the 95th percentile of the site's point reads and writes, end to end with the SDK's retries, past which
-    /// the throttling row is amber, in milliseconds. Source: this card's own reading, 11/17: 70 ms across the two regions
-    /// (site in West US 3, account in West US 2); a burst of retried 429s waits hundreds of milliseconds and crosses it.
+    /// the throttling row is amber, in milliseconds. Source: this card's own reading, about 70 ms across the two regions
+    /// (site in West US 3, account in West US 2; ADR-102's addendum has the date); a burst of retried 429s waits hundreds of milliseconds and crosses it.
     /// </summary>
     public const double CosmosPointLatencyMs = 250;
 
     /// <summary>Cosmos DB: storage of the free 25 GB, amber at 70 and red at 90.</summary>
     public static readonly (double Amber, double Red) CosmosStorage = (70, 90);
-
-    /// <summary>Container Registry: storage of the 10 GB Basic includes, amber at 70 and red at 90.</summary>
-    public static readonly (double Amber, double Red) RegistryStorage = (70, 90);
-
-    /// <summary>Container Registry: pulls this minute of the 1,000 Basic allows, amber at 60 and red at 90.</summary>
-    public static readonly (double Amber, double Red) RegistryPulls = (60, 90);
 
     /// <summary>Application Insights: today's ingestion against the daily cap, amber at 70 and red at 90; a capped hour is red at once, outside these.</summary>
     public static readonly (double Amber, double Red) InsightsIngestion = (70, 90);
@@ -124,7 +118,7 @@ public static class CloudThresholds
     /// <summary>
     /// The box: swap reads amber past this share of the swap, or past <see cref="BoxSwapBytes"/>, whichever is smaller.
     /// The kernel parks a few pages in swap on a box with free memory, so any byte at all is noise, not a call to act.
-    /// Source: the owner's colour rule of 10/21 (green at rest, amber only for something worth a look).
+    /// Source: the owner's colour rule (green at rest, amber only for something worth a look; ADR-102's addendum).
     /// </summary>
     public const double BoxSwapShare = 10;
 

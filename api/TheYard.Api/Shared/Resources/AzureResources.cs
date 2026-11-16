@@ -12,13 +12,12 @@ namespace TheYard.Api.Shared.Resources;
 /// <param name="Site">The web app this process runs as.</param>
 /// <param name="SqlDatabase">The database the SQL card reads.</param>
 /// <param name="Cosmos">The Cosmos DB account.</param>
-/// <param name="Registry">The container registry.</param>
 /// <param name="Insights">The Log Analytics workspace the insights card's cost is billed under.</param>
 /// <param name="Mail">The Communication Services resource.</param>
 /// <param name="Edge">The Netlify project in front of the sites.</param>
 /// <param name="PublicSite">The public address the edge serves.</param>
 /// <param name="EdgeRetires">When the edge is meant to retire (Edge:Retires); null when no date is set and the edge stays.</param>
-public sealed record AzureResources(string Group, string Site, string SqlDatabase, string Cosmos, string Registry, string Insights, string Mail, string Edge, Uri PublicSite, DateOnly? EdgeRetires)
+public sealed record AzureResources(string Group, string Site, string SqlDatabase, string Cosmos, string Insights, string Mail, string Edge, Uri PublicSite, DateOnly? EdgeRetires)
 {
     /// <summary>
     /// The names as configuration gives them; a missing one stops the host with its key named. The
@@ -30,7 +29,7 @@ public sealed record AzureResources(string Group, string Site, string SqlDatabas
         var section = configuration.GetSection("Azure:Resources");
         string Named(string key) => section[key] is { Length: > 0 } value ? value : throw new InvalidOperationException($"Azure:Resources:{key} is not configured.");
         DateOnly? retires = configuration["Edge:Retires"] is { Length: > 0 } date ? DateOnly.Parse(date, System.Globalization.CultureInfo.InvariantCulture) : null;
-        return new AzureResources(configuration["WEBSITE_RESOURCE_GROUP"] is { Length: > 0 } group ? group : Named("Group"), Named("Site"), Named("SqlDatabase"), Named("Cosmos"), Named("Registry"), Named("Insights"), Named("Mail"), Named("Edge"), new Uri(Named("PublicSite")), retires)
+        return new AzureResources(configuration["WEBSITE_RESOURCE_GROUP"] is { Length: > 0 } group ? group : Named("Group"), Named("Site"), Named("SqlDatabase"), Named("Cosmos"), Named("Insights"), Named("Mail"), Named("Edge"), new Uri(Named("PublicSite")), retires)
         {
             SiteRegion = configuration["REGION_NAME"] is { Length: > 0 } region ? region : null,
         };

@@ -17,7 +17,7 @@ public sealed class ForemanReadings(ICloudCards cards, IIncidentsReader incident
     /// <summary>The cards the Foreman reads, in the rail's order: every card in the one frame.</summary>
     public static readonly IReadOnlyList<(string Key, string Title)> Read =
     [
-        ("sqldb", "Azure SQL Database"), ("cosmosdb", "Cosmos DB"), ("registry", "Container Registry"), ("insights", "Application Insights"),
+        ("sqldb", "Azure SQL Database"), ("cosmosdb", "Cosmos DB"), ("registry", "Container registry"), ("insights", "Application Insights"),
         ("share", "The job-hunt share"), ("blob", "The blob service"), ("mail", "Communication Services"), ("edge", "The Netlify edge"),
         ("nightly", "The Nightly Function"), ("claude", "Claude usage"), ("campaign", "The email campaign"), ("network", "The network log"), ("box", "WickedAwsome"), ("picker", "The nightly picker"),
     ];
