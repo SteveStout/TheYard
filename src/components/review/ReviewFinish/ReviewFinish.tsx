@@ -1,7 +1,7 @@
 /**
  * Does:      Draws the panel at the route's end: that was the site, what the sidebar still holds with its two counts read
- *            from the catalogue, the way back to the first screen or round the route again, and the two ways to reach
- *            Steven, as links with no pitch (profile1110-f2: a manager who finished the ten minutes had no way to write).
+ *            from the catalogue, the way back to the first screen or round the route again, and the two contact links,
+ *            with no pitch: a reader who finished the ten minutes otherwise had no way to write.
  * Does not:  Type a count (the record and diagram lists are the sidebar's own) or keep the place.
  * Used by:   ReviewPage.tsx.
  */
@@ -10,7 +10,7 @@ import { DIAGRAMS, MENUS } from '../../../library/sections';
 import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewFinish.module.css';
 
-/** The two ways to reach Steven, the same two the About page closes with; email through the recorded redirect. */
+/** The two contact links, the same two the About page closes with; email through the recorded redirect. */
 export const REACH = [
   { label: 'Email Steven', href: '/api/go/email' },
   { label: 'Message me on LinkedIn', href: 'https://www.linkedin.com/in/stevenwstout/' },
