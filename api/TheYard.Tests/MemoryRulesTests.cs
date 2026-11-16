@@ -93,6 +93,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.Shared.Activity.ActivityReportCache._building"] = "one per named window, three",
         ["TheYard.Api.Features.Admin.Cloud.CloudRecorder._hourRead"] = "one per resource card, seven",
         ["TheYard.Api.Features.Admin.Cloud.CloudRecorder._liveHour"] = "one hour per resource card, seven, each replaced by the next",
+        ["TheYard.Api.Features.Admin.Cloud.CloudRecorder._keptMinutes"] = "each card's minutes of the last ten, older ones removed on every write",
+        ["TheYard.Api.Shared.PlanReadings.PlanRecorder._keptMinutes"] = "the plan's minutes of the last ten, older ones removed on every read",
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._asked"] = "one per card, the cards in the catalogue",
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._month"] = "one per card, seven",
         ["TheYard.Api.Shared.Hosted.KeptViews`1._cached"] = "one per slot asked for in the last hour: a Cloud card's or the plan's window, the Azure card's one view, a runs page; dropped with its slot an hour after the last ask",
