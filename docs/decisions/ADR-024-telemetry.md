@@ -156,3 +156,17 @@ Telemetry is a host concern and stays in the host Api, where Composition/Telemet
 ## Addendum, 2026-11-07 (1.0.4.156): the box's routes are left out of the request telemetry
 
 Until this version every request reached Application Insights. From it, every request under /api/admin/cloud/box/ is left out of the request telemetry through the distro's own filter (`AspNetCoreTraceInstrumentationOptions.Filter`, set in TelemetryRegistration.cs): the box's agent posts about forty-three thousand times a day, which would spend most of the component's 0.1 GB daily cap on itself (ADR: The box reports itself). Every other path is kept.
+
+## Addendum, @DATE@ (@VER@): what fills the workspace, and what the site leaves out
+
+In plain words: the log workspace's first 5 GB a month are free, and it was on course for about twice that. Most of it was not the site's visitors at all. The site now leaves out two kinds of line nothing reads, and the largest source, the job hunt's Function, has its own change with the lane that owns it.
+
+Read live on 16 November from the workspace `log-theyard-ss` (the `Usage` table and each table by role, `az monitor log-analytics query`): about 0.34 GB a day billable, 0.332 GB on 15 November, so roughly 10 GB a month. Over seven days: traces 0.951 GB, metrics 0.661, dependencies 0.272, performance counters 0.178, requests 0.066. In one day the Function `func-jobhunt-ss` sent 147.2 MB of information-level traces, 96 % of all traces (its host's log level is Information for every category), and 28 MB of its health-check metric; the site sent 5.4 MB of traces, of which Entity Framework's line for every command was 4.1 MB, and about 34 MB of the HttpClient's connection-pool metrics (open connections 25.5 MB, active requests 5.7, connection duration 1.8, time in queue 1.4).
+
+What changes here:
+
+1. The four connection-pool instruments are dropped with the distro's documented view (`MetricStreamConfiguration.Drop`). No card, alert or query reads them; the request durations stay.
+2. Entity Framework's command lines are filtered from the telemetry provider alone, below a warning. The Admin tab's rings and the kept log read the same lines through their own providers and keep them all.
+3. The Function's log levels are the job hunt's lane's file (`functions/jobhunt/host.json`), so the measurement and the ask went to that lane by a state.md row: Warning by default with the Function's own run lines kept, which the process table reads.
+
+Together that is about 1.1 GB a month off the site's side and, once the Function's change lands, about 4.5 GB more, which brings the month under the free 5 GB without raising the component's cap, as Steve chose. `TelemetryTrimTests` holds the two lists.
