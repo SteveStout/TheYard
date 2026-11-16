@@ -7,8 +7,8 @@ namespace TheYard.Api.Shared.PlanReadings;
 // #region plan-recorder
 /// <summary>
 /// Reads the last five minutes of the plan every minute and keeps each minute Azure reported,
-/// so a minute Azure was late with is picked up by the next read rather than lost; writing a
-/// minute twice is one document. Once an hour it reads the plan's size, its apps' states and the
+/// so a minute Azure was late with is picked up by the next read rather than lost; a minute that
+/// reads the same as the one kept is not written again. Once an hour it reads the plan's size, its apps' states and the
 /// Activity Log. Only the site whose default store is SQL runs it, because both sites share the
 /// plan and one reading of it is the whole truth (ADR: The App Service plan, read every minute).
 /// </summary>
@@ -19,6 +19,15 @@ public sealed class PlanRecorder(PlanReader reader, IPlanHistory history, BuildI
 
     /// <summary>The newest minute this process kept, which tells the endpoint whether to read live.</summary>
     public DateTimeOffset? Newest { get; private set; }
+
+    /// <summary>
+    /// Each minute this process last kept, by its start, as its JSON: a minute read again unchanged is not written again,
+    /// so the five-minute look back costs a write only for a minute Azure was late with or a new one.
+    /// </summary>
+    private readonly Dictionary<DateTimeOffset, string> _keptMinutes = [];
+
+    /// <summary>How many minutes this process has written to the keep, the suite's way to see a minute not written twice.</summary>
+    public int MinutesWritten { get; private set; }
 
     /// <summary>The hour this process last read the slow facts for.</summary>
     private DateTimeOffset? _hourRead;
@@ -34,7 +43,18 @@ public sealed class PlanRecorder(PlanReader reader, IPlanHistory history, BuildI
         var minutes = await reader.ReadMinutesAsync(now - Lookback, now, build.Version, cancellation);
         foreach (var minute in minutes)
         {
+            string values = System.Text.Json.JsonSerializer.Serialize(minute);
+            if (_keptMinutes.TryGetValue(minute.At, out string? kept) && kept == values)
+            {
+                continue;
+            }
             await history.AppendMinuteAsync(minute, cancellation);
+            _keptMinutes[minute.At] = values;
+            MinutesWritten++;
+        }
+        foreach (var old in _keptMinutes.Keys.Where(at => at < now - Lookback - TimeSpan.FromMinutes(5)).ToList())
+        {
+            _keptMinutes.Remove(old);
         }
         if (minutes.Count > 0)
         {
