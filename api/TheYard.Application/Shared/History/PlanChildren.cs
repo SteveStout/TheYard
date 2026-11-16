@@ -22,6 +22,23 @@ public static class PlanChildren
             : null;
 
     /// <summary>
+    /// Every app's working set added up, in MB, in the newest minute where each app's was read: the part of the plan's
+    /// memory the apps themselves hold, shown beside the plan's total so a high dial is not read as the apps' alone.
+    /// </summary>
+    public static double? AppsMb(IReadOnlyList<PlanMinute> minutes)
+    {
+        for (int i = minutes.Count - 1; i >= 0; i--)
+        {
+            var apps = minutes[i].Apps;
+            if (apps.Count > 0 && apps.All(app => app.WorkingSetMb is not null))
+            {
+                return Math.Round(apps.Sum(app => app.WorkingSetMb!.Value));
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
     /// The plan's memory that no app's working set accounts for, in MB, in the newest minute where
     /// the plan's memory and every app's were all read: the operating system, the platform's own
     /// containers beside each site, and the file cache.

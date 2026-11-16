@@ -127,9 +127,12 @@ public static class ResourceView
         return hour is null ? null : new CloudLink(PlanReader.NameOf(hour.ResourceId), PlanView.Portal(hour.TenantId, hour.ResourceId));
     }
 
-    /// <summary>The cost line, read from the bill's kept days.</summary>
+    /// <summary>
+    /// The cost line, read from the bill's kept days. The figure is the month so far, not a monthly rate, so it says so:
+    /// read as "a month" it halves the real cost on the fifteenth.
+    /// </summary>
     public static CloudLine Cost(ResourceCardInputs inputs) =>
-        new("Cost", inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not on the bill yet", "info") { Source = CardFrame.TheBill };
+        new("Cost", inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} month to date" : "not on the bill yet", "info") { Source = CardFrame.TheBill };
 
     /// <summary>The live-read line: how old the newest kept minute is, or why none is kept.</summary>
     public static CloudLine LiveRead(ResourceCardInputs inputs)
