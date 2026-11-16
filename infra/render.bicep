@@ -25,7 +25,7 @@ param ownerTag string = 'SS'
 @description('The image it runs, registry/theyard-render:tag. Every roll sets this; a deployment of this file is told what is running so it rolls nothing back.')
 param renderImage string
 
-@description('The user-assigned identity both sites run as; the renderer uses it for the registry pull and nothing else')
+@description('The user-assigned identity both sites run as; the renderer carries it and, with its image on GitHub\'s registry, pulls nothing with it')
 param identityName string = 'id-theyard-ss'
 
 // #region render-naming
@@ -67,9 +67,8 @@ resource render 'Microsoft.Web/sites@2023-12-01' = {
       http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
-      // Pulled from GitHub's registry, public, with no credential (ADR-009); the undo sets this back to true.
+      // Pulled from GitHub's registry, public, with no credential (ADR-009); the undo is the previous tag there.
       acrUseManagedIdentityCreds: false
-      acrUserManagedIdentityID: identity.properties.clientId
       appSettings: [
         { name: 'WEBSITES_PORT', value: '8080' }
         { name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE', value: 'false' }

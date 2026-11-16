@@ -40,7 +40,7 @@ param skuName string = 'B2'
 @description('The image the web app runs, registry/name:tag. Every roll sets this on the web app; a deployment of this file has to be told what is running so it does not roll anything back.')
 param appImage string
 
-@description('The user-assigned identity the web app runs as: registry pull, both stores, mail, and the reads of its own resource')
+@description('The user-assigned identity the web app runs as: both stores, mail, and the reads of its own resource')
 param identityName string = 'id-theyard-ss'
 
 @description('Azure SQL logical server. A name, not a secret: the web app signs in as the identity and there is no password to hold.')
@@ -152,10 +152,9 @@ resource site 'Microsoft.Web/sites@2023-12-01' = [
         http20Enabled: true
         minTlsVersion: '1.2'
         ftpsState: 'Disabled'
-        // The image is pulled from GitHub's registry, public, with no credential (ADR-009). The undo sets
-        // this back to true with the Azure registry's tag, and the identity below is the pull it uses then.
+        // The image is pulled from GitHub's registry, public, with no credential (ADR-009); the undo is the
+        // previous tag there, pulled the same way.
         acrUseManagedIdentityCreds: false
-        acrUserManagedIdentityID: identity.properties.clientId
         appSettings: [
           // The platform's three: where the container listens, that nothing is
           // mounted over /home, and how long a start may take before App
