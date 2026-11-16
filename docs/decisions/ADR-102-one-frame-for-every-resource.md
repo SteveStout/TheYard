@@ -391,3 +391,9 @@ What changed, each read live before the change:
 - **The budget is Azure's.** The subscription's budget moved from $60 to $70 in Azure on 16 November (Steve's figure of 11 November), and the costs answer now carries the amount Azure holds (`budget_dollars`), read with the alert rules, for the cost card to grade against in place of a number typed beside it.
 
 `StorageCardTests`, `CloudThresholdTests`, `PlanViewTests`, `PlanChildrenTests` and `CostSpikeTests` hold each one.
+
+## Addendum, 2026-11-16 (1.0.5.68): a kept minute is written once, unless it changes
+
+In plain words: every minute, each card's recorder reads the last five minutes from Azure, so a minute Azure was late with still lands, and it wrote all five back to Cosmos DB every time. It now writes a minute only when it reads differently from the one it kept: a new minute, or one Azure filled in late.
+
+Why: read live on 16 November (Azure Monitor through `azure-read.yml`, run 43896649832): the database has one physical partition (partition key range 0 only), and its normalized RU peak was 100 % in 358 of the last 360 minutes, with 10,115 of 299,310 requests (3.38 %) throttled in 24 hours, spread evenly through the day and night at about 350 an hour. The `plan` container, where every card's minutes and hours are kept, took 141,085 of those requests and 4,835 of the throttles. One partition means the partition key cannot be the cause; a burst at the top of every minute can, and rewriting every card's last five minutes in the same few seconds is that burst. So the key stays, no container is added and no throughput is bought: the free 1,000 RU/s shared by the 25 containers stays the limit. The plan's own recorder keeps its minutes the same way. `CloudRecorderWritesTests` and `CloudReadersTests` hold both.
