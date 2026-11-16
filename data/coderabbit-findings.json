@@ -1197,8 +1197,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         56
       ]
@@ -1222,8 +1222,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         57
       ]
@@ -1376,6 +1376,31 @@
       "answered_as_wrong": null,
       "prs": [
         63
+      ]
+    },
+    {
+      "version": "1.0.5.53",
+      "pr": 64,
+      "sha": "7049519b",
+      "level": 0,
+      "at": "2026-11-16T15:46:18Z",
+      "waited_seconds": 392,
+      "review_seconds": 358,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 2,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 1,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        64
       ]
     }
   ]
