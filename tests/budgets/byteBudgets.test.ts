@@ -7,7 +7,8 @@ import budgets from '../../.github/byte-budgets.json';
 // Ladder 8a (ADR-134): what a reader's first load costs, held to the bytes measured when the budgets were set. A public
 // page's first load is the drawn index.html, the entry script and stylesheet it names, and, for a document, the
 // markdown chunk. Admin's chunks are not a reader's first load and are not counted. The gate's node job builds the
-// site before Vitest runs, so there the build is always read; a machine that has not built says so and is not judged.
+// site before Vitest runs, so on a gate branch the build is always read; CI on main runs Vitest before its build, and
+// a machine that has not built says so and is not judged.
 const files = import.meta.glob(
   ['../../dist/index.html', '../../dist/assets/*.js', '../../dist/assets/*.css'],
   {
@@ -30,10 +31,19 @@ function firstLoad(): Record<string, number> {
   };
 }
 
+/** Whether this run is a gate's: the gate pushes gate/<version>, and only its node job builds before Vitest. */
+const onTheGate = (ref: string | undefined) => ref?.startsWith('refs/heads/gate/') === true;
+
 describe('the first load stays inside its byte budget', () => {
   it('runs on the gate, where the site is always built first', () => {
-    if (import.meta.env.GITHUB_ACTIONS)
+    if (onTheGate(import.meta.env.GITHUB_REF))
       expect(html, 'the node job builds before Vitest').toBeDefined();
+  });
+
+  it('asks for the build only on a gate branch, not in CI on main', () => {
+    expect(onTheGate('refs/heads/gate/1.0.5.64')).toBe(true);
+    expect(onTheGate('refs/heads/main')).toBe(false);
+    expect(onTheGate(undefined)).toBe(false);
   });
 
   it.skipIf(html === undefined)('spends no more bytes than the budget names, part by part', () => {

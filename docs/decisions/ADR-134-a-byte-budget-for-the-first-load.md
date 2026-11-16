@@ -43,3 +43,7 @@ Outside the rings: a test over the build's output, beside the quality ratchet's 
 
 - [`.github/byte-budgets.json`](https://github.com/SteveStout/TheYard/blob/main/.github/byte-budgets.json) - the four numbers
 - [`tests/budgets/byteBudgets.test.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/budgets/byteBudgets.test.ts) - the check
+
+## Addendum, @DATE@ (@VER@): the build is asked for only on the gate
+
+What stopped being true: that every GitHub Actions run of Vitest has a built site to read. The gate's node job builds before Vitest, but ci.yml's frontend job runs npm test before npm run build, so after 1.0.5.63 CI on main was red on the check that a build exists. The check now holds only on a gate branch (GITHUB_REF under refs/heads/gate/); elsewhere a missing build skips the budget, as on a machine that has not built.
