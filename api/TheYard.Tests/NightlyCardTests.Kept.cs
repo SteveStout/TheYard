@@ -20,7 +20,7 @@ public sealed partial class NightlyCardTests
         var log = new UnkeptRunLog();
         var source = new NightlySource(azure, new ResourceDirectory(azure, "/subscriptions/sub-1/resourceGroups/RG-TEST-NIGHTLY", TimeProvider.System), Names,
             new NightlyRunReader(new GitHubRuns("owner/repo", "nightly.yml"), log, new NightlyRunCache(), new FixedClock(Now)), log, FunctionPath);
-        var site = new AzureResources("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "crtest", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
+        var site = new AzureResources("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
         var cards = ResourceCatalog.Cards(azure, new ResourceDirectory(azure, "/subscriptions/sub-1/resourceGroups/RG-TEST", TimeProvider.System), new NetlifyEdge(null, "edge-test", new Uri("https://yard.example")), (3, "m1"), site, nightly: source);
 
         var nightly = cards.Single(card => card.Key == "nightly");

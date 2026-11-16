@@ -30,8 +30,6 @@ public class CloudThresholdTests
         Assert.Equal((70d, 85d), CloudThresholds.SqlSpace);
         Assert.Equal((70d, 90d), CloudThresholds.CosmosThroughput);
         Assert.Equal((70d, 90d), CloudThresholds.CosmosStorage);
-        Assert.Equal((70d, 90d), CloudThresholds.RegistryStorage);
-        Assert.Equal((60d, 90d), CloudThresholds.RegistryPulls);
         Assert.Equal((70d, 90d), CloudThresholds.InsightsIngestion);
         Assert.Equal((50d, 90d), CloudThresholds.InsightsDropped);
         Assert.Equal((60d, 85d), CloudThresholds.MailSends);
@@ -126,21 +124,17 @@ public class CloudThresholdTests
         var paid = CosmosCard.View(Held("storage_gb", 20, new Dictionary<string, string?> { ["free_tier"] = "off", ["throughput"] = "1000" }));
         Assert.Null(paid.Dials[1].Percent);
         Assert.Contains("no free-tier allowance", paid.Dials[1].Absolute, StringComparison.Ordinal);
-        var basic = AcrCard.View(Held("pulls", 900, new Dictionary<string, string?> { ["tier"] = "Basic", ["size_limit_gb"] = "10" }));
-        Assert.Equal(90, basic.Dials[1].Percent);
-        var standard = AcrCard.View(Held("pulls", 900, new Dictionary<string, string?> { ["tier"] = "Standard", ["size_limit_gb"] = "100" }));
-        Assert.Null(standard.Dials[1].Percent);
-        Assert.Contains("not read", standard.Dials[1].Absolute, StringComparison.Ordinal);
     }
 
+    /// <summary>The registry card turns red only on an image an anonymous pull cannot read, which a roll cannot pull.</summary>
     [Fact]
-    public void The_registry_card_names_the_untagged_layers_and_never_purges_them()
+    public void The_registry_card_is_red_only_when_an_image_cannot_be_pulled_without_a_credential()
     {
-        var view = AcrCard.View(Held("storage_gb", 9.5, new Dictionary<string, string?> { ["untagged"] = "12", ["untagged_gb"] = "3.10", ["size_limit_gb"] = "10" }));
-        Assert.Equal("alarm", view.Dials[0].Tone);
-        var stale = view.Rows.Single(r => r.Key == "stale");
-        Assert.Equal("12 untagged manifests", stale.Answer);
-        Assert.Contains("does not run it", stale.Detail[0].Text);
+        var open = RegistryCard.View(Held("unused", 0, RegistryCard.Facts([new GhcrImage("theyard", true, 7, "v1"), new GhcrImage("theyard-render", true, 7, "v1")], null)));
+        var closed = RegistryCard.View(Held("unused", 0, RegistryCard.Facts([new GhcrImage("theyard", true, 7, "v1"), new GhcrImage("theyard-render", false, 0, null)], null)));
+        Assert.Equal("good", open.Dials[0].Tone);
+        Assert.Equal("alarm", closed.Dials[0].Tone);
+        Assert.Equal(50, closed.Dials[0].Percent);
     }
 
 

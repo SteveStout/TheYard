@@ -20,12 +20,6 @@ public static class CloudThresholds
     /// <summary>Cosmos DB: storage of the free 25 GB, amber at 70 and red at 90.</summary>
     public static readonly (double Amber, double Red) CosmosStorage = (70, 90);
 
-    /// <summary>Container Registry: storage of the 10 GB Basic includes, amber at 70 and red at 90.</summary>
-    public static readonly (double Amber, double Red) RegistryStorage = (70, 90);
-
-    /// <summary>Container Registry: pulls this minute of the 1,000 Basic allows, amber at 60 and red at 90.</summary>
-    public static readonly (double Amber, double Red) RegistryPulls = (60, 90);
-
     /// <summary>Application Insights: today's ingestion against the daily cap, amber at 70 and red at 90; a capped hour is red at once, outside these.</summary>
     public static readonly (double Amber, double Red) InsightsIngestion = (70, 90);
 

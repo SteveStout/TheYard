@@ -16,10 +16,10 @@
 // HOW THIS IS DEPLOYED, AND HOW IT IS NOT. Incremental mode, always:
 //
 //   az deployment group create -g RG-THEYARD-SS --mode Incremental \
-//     -f infra/main.bicep -p appImage=<registry>/theyard:v<N> ...
+//     -f infra/main.bicep -p appImage=ghcr.io/stevestout/theyard:v<N> ...
 //
-// RG-THEYARD-SS also holds the two databases, the document store, the
-// registry, the identity, Application Insights and the mail service, and none
+// RG-THEYARD-SS also holds the database, the document store, the
+// identity, Application Insights and the mail service, and none
 // of them is in this file on purpose: each was created once, holds state or a
 // name other things depend on, and is named and priced in the record's
 // inventory. A complete-mode deployment deletes whatever a template leaves
@@ -66,19 +66,12 @@ param enableFrontDoor bool = false
 
 // #region naming
 // Steve's naming rule in three lines: UPPERCASE for the things people read in
-// the portal, lowercase for the ones Azure requires to be (a registry name must
-// be lowercase alphanumeric), and a deterministic suffix from the resource
-// group id so a name is unique without being random (ADR-003).
+// the portal, lowercase for the ones Azure requires to be, and a deterministic
+// suffix from the resource group id so a name is unique without being random
+// (ADR-003). The images are on GitHub's registry, named there (ADR-009).
 var suffix = uniqueString(resourceGroup().id)
 var upperTag = toUpper('${baseName}-${ownerTag}')
-var acrName = toLower('cr${baseName}${ownerTag}${suffix}')
 // #endregion naming
-
-// The registry the image is pulled from. Existing, not created here: it holds
-// every image this project has shipped, and it was made on day one.
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: acrName
-}
 
 // #region what-runs
 // The plan and the one web app, every setting included, in one module so the
@@ -242,6 +235,5 @@ resource fdRoute 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = [
   }
 ]
 
-output acrLoginServer string = acr.properties.loginServer
 output planId string = compute.outputs.planId
 output origins array = compute.outputs.origins

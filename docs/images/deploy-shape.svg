@@ -31,17 +31,17 @@
   <text x="64" y="280" class="body">the runtime image holds both.</text>
   <rect x="380" y="176" width="300" height="128" class="box"/>
   <text x="394" y="202" class="title">Push to the registry</text>
-  <text x="394" y="223" class="mono">crtheyardsszmnetj67bn5h2/theyard:vN</text>
+  <text x="394" y="223" class="mono">ghcr.io/stevestout/theyard:vN</text>
   <text x="394" y="246" class="body">One tag per version, signed in</text>
-  <text x="394" y="263" class="body">as the workflow (OIDC), no</text>
-  <text x="394" y="280" class="body">password anywhere.</text>
+  <text x="394" y="263" class="body">with the workflow's own token,</text>
+  <text x="394" y="280" class="body">public, so no password to pull.</text>
   <path d="M350 240 L380 240" class="flow"/>
   <rect x="710" y="176" width="300" height="128" class="box"/>
   <text x="724" y="202" class="title">Point the web app at the tag</text>
   <text x="724" y="223" class="mono">APP-THEYARD-ONE-SS: DOCKER|...:vN</text>
   <text x="724" y="246" class="body">The settings it holds, then the</text>
-  <text x="724" y="263" class="body">image; App Service pulls it as</text>
-  <text x="724" y="280" class="body">id-theyard-ss.</text>
+  <text x="724" y="263" class="body">image; App Service pulls it</text>
+  <text x="724" y="280" class="body">with no credential.</text>
   <path d="M680 240 L710 240" class="flow"/>
   <rect x="1040" y="176" width="300" height="128" class="box"/>
   <text x="1054" y="202" class="title">Verify, then the edge</text>
@@ -61,7 +61,7 @@
   <text x="64" y="520" class="body">runtime is Node and that build.</text>
   <rect x="380" y="416" width="300" height="128" class="box"/>
   <text x="394" y="442" class="title">Push to the registry</text>
-  <text x="394" y="463" class="mono">crtheyardsszmnetj67bn5h2/theyard-render:vN</text>
+  <text x="394" y="463" class="mono">ghcr.io/stevestout/theyard-render:vN</text>
   <text x="394" y="486" class="body">The same version as the API,</text>
   <text x="394" y="503" class="body">the same registry, the same</text>
   <text x="394" y="520" class="body">sign-in.</text>

@@ -191,12 +191,12 @@
   <text x="555" y="846" class="muted">roles: AcrPush, Website Contributor, two web apps</text>
 
   <rect x="930" y="696" width="200" height="160" class="box"/>
-  <text x="945" y="722" class="title">Registry (ACR)</text>
-  <text x="945" y="746" class="mono">crtheyardsszmnetj67bn5h2</text>
-  <text x="945" y="762" class="mono">  .azurecr.io</text>
+  <text x="945" y="722" class="title">Registry (ghcr.io)</text>
+  <text x="945" y="746" class="mono">ghcr.io/stevestout</text>
+  <text x="945" y="762" class="mono">  public packages</text>
   <text x="945" y="786" class="body">One tag per version, two</text>
   <text x="945" y="802" class="body">images: theyard and</text>
-  <text x="945" y="818" class="body">theyard-render. Basic tier.</text>
+  <text x="945" y="818" class="body">theyard-render. Free.</text>
 
   <rect x="1160" y="696" width="180" height="160" class="box"/>
   <text x="1175" y="722" class="title">CI (ci.yml)</text>

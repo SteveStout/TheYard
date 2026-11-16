@@ -82,33 +82,14 @@ public static class ResourceCatalog
                     return CosmosCard.Facts(record, containers.RootElement, throughput);
                 }),
                 CosmosCard.View),
-            new("registry", "registry", names.Registry, ReadingsOf(AcrCard.Metrics), Monitor(AcrType, names.Registry, AcrCard.Metrics),
-                Hourly(AcrType, names.Registry, "2023-07-01", async (resource, record, cancellation) =>
-                {
-                    AcrHoldings? holdings = null;
-                    try
-                    {
-                        string token = await azure.ArmTokenAsync(cancellation);
-                        holdings = await AcrCatalog.ReadAsync(AzureMetrics.Text(record, "properties.loginServer") ?? "", token, PlanReader.TenantOf(token) ?? "", cancellation);
-                    }
-                    catch (HttpRequestException)
-                    {
-                        // The card says the catalogue could not be read and what the identity needs.
-                    }
-                    // GitHub's registry beside it, read as an anonymous pull reads it (ADR-009, the addendum on GitHub's registry).
-                    string ghcr = nightly is null ? "not read" : GhcrPackages.Words(await GhcrPackages.ReadAsync(nightly.Names.Repo.Split('/')[0].ToLowerInvariant(), GhcrPackages.Images, cancellation));
-                    // The registry's size limit as Azure states it, rather than the Basic figure written down.
-                    try
-                    {
-                        using var usages = await azure.GetJsonAsync($"{resource.Id}/listUsages?api-version=2023-07-01", cancellation);
-                        return AcrCard.Facts(record, holdings, usages.RootElement.Clone(), planHour is null ? null : await planHour(cancellation), ghcr);
-                    }
-                    catch (HttpRequestException)
-                    {
-                        return AcrCard.Facts(record, holdings, plan: planHour is null ? null : await planHour(cancellation), ghcr: ghcr);
-                    }
-                }),
-                AcrCard.View),
+            // GitHub's registry, where both images are pushed and every roll pulls from, read each hour as an anonymous
+            // pull reads it, beside the tag each web app runs from the plan card's own hour (ADR-009, the addendum on
+            // retiring the Azure registry). It has no minute: nothing it reports moves inside an hour.
+            new("registry", "registry", RegistryCard.Owner, [],
+                (_, _, _, _) => Task.FromResult<IReadOnlyList<ResourceMinute>>([]),
+                async (hour, _, cancellation) => new ResourceHour(hour, "", null,
+                    RegistryCard.Facts(await GhcrPackages.ReadAsync(RegistryCard.Owner, GhcrPackages.Images, cancellation), planHour is null ? null : await planHour(cancellation)), []),
+                RegistryCard.View, Hourly: true, SpecSource: RegistryCard.Anonymous),
             new("insights", "insights", names.Insights, InsightsCard.Readings,
                 async (_, to, version, cancellation) => azure.Configured && await InsightsAsync(azure, directory, names.Insights, cancellation) is { } source ? await source.MinutesAsync(to, version, cancellation) : [],
                 async (hour, since, cancellation) => !azure.Configured

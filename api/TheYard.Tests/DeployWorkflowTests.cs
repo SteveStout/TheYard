@@ -55,41 +55,31 @@ public class DeployWorkflowTests
     }
     // #endregion job-hunt-paths
 
-    // #region keep-ten
+    // #region one-registry
     /// <summary>
-    /// The registry keeps the newest ten images (Steve, 25 September). The
-    /// deploy prunes after the site answers, keeps ten, refuses to delete when
-    /// either site runs an image outside them, and never fails the deploy over
-    /// a refusal (ADR: The deploy pipeline, the addendum of 25 September).
+    /// The images go to GitHub's registry alone (ADR-009, the addendum on retiring the Azure registry): neither
+    /// workflow signs in to the Azure registry, pushes its tag or prunes it, and the keep-ten step that pruned it
+    /// after each roll is gone with it.
     /// </summary>
-    [Fact]
-    public void The_deploy_keeps_the_newest_ten_images_and_never_the_one_a_site_runs()
+    [Theory]
+    [InlineData("deploy.yml")]
+    [InlineData("deploy-render.yml")]
+    public void Each_deploy_pushes_to_GitHub_s_registry_alone_and_prunes_no_Azure_registry(string file)
     {
-        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
-        int step = workflow.IndexOf("- name: Keep the newest ten images", StringComparison.Ordinal);
-        Assert.True(step > 0, "deploy.yml should carry the step that keeps the newest ten images");
-        Assert.True(step > workflow.IndexOf("- name: Verify", StringComparison.Ordinal), "the prune runs after the site answers");
-        int next = workflow.IndexOf("- name:", step + 1, StringComparison.Ordinal);
-        string body = next < 0 ? workflow[step..] : workflow[step..next];
-        Assert.Contains("continue-on-error: true", body, StringComparison.Ordinal);
-        Assert.Contains("timeout-minutes: 5", body, StringComparison.Ordinal);
-        Assert.Contains(".[0:10]", body, StringComparison.Ordinal);
-        Assert.Contains("if [ \"$tagged\" -lt 10 ]", body, StringComparison.Ordinal);
-        Assert.Contains("outside the newest ten; nothing pruned", body, StringComparison.Ordinal);
-        // A refused delete (no AcrDelete) warns and ends the step green.
-        Assert.Contains("::warning::the registry refused a delete", body, StringComparison.Ordinal);
-        // Digests are fixed strings, not patterns.
-        Assert.DoesNotContain("grep -qx", body, StringComparison.Ordinal);
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
+        foreach (string gone in new[] { "az acr", "azurecr.io", "REGISTRY_NAME", "Keep the newest ten images", "${{ env.IMAGE }}", "IMAGE=$ACR" })
+        {
+            Assert.DoesNotContain(gone, workflow, StringComparison.Ordinal);
+        }
+        Assert.Contains("${{ env.GHCR_IMAGE }}", workflow, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// The prune deletes every untagged digest, which is safe only while each
-    /// digest is a whole image. Provenance or a second platform makes each image
-    /// an index whose children are untagged, and the prune would delete the
-    /// children of the ten it keeps. Every build step holds provenance off.
+    /// Every image is one manifest, so the tag a roll pulls is the whole image and the undo's previous tag is too:
+    /// provenance or a second platform would make each an index with children of its own.
     /// </summary>
     [Fact]
-    public void Every_image_build_is_a_single_manifest_so_the_prune_deletes_whole_images()
+    public void Every_image_build_is_a_single_manifest_so_a_tag_is_a_whole_image()
     {
         string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
         int builds = Regex.Matches(workflow, @"uses: docker/build-push-action@").Count;
@@ -99,17 +89,21 @@ public class DeployWorkflowTests
     }
 
     /// <summary>
-    /// The prune reads which image the web app runs before it deletes anything. One web app
-    /// runs the image since 19 October, so it reads that one and names no retired site.
+    /// The templates name no Azure registry: main.bicep reads none and outputs no login server, and neither web app
+    /// carries an identity for a registry pull, because a public package needs none.
     /// </summary>
     [Fact]
-    public void The_prune_reads_the_image_of_the_one_web_app_it_rolls()
+    public void The_templates_name_no_azure_registry()
     {
-        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
-        Assert.Contains("for app in \"$APP\"; do", workflow, StringComparison.Ordinal);
-        Assert.DoesNotContain("COSMOS_APP", workflow, StringComparison.Ordinal);
+        foreach (string template in new[] { "main.bicep", "appservice.bicep", "render.bicep" })
+        {
+            string text = File.ReadAllText(Path.Combine(Repo.Root(), "infra", template));
+            Assert.DoesNotContain("Microsoft.ContainerRegistry", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("acrLoginServer", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("acrUserManagedIdentityID", text, StringComparison.Ordinal);
+        }
     }
-    // #endregion keep-ten
+    // #endregion one-registry
 
     // #region warm-edge
     [Theory]
@@ -189,14 +183,14 @@ public class DeployWorkflowTests
 
     // #region ghcr-push
     /// <summary>
-    /// Both images go to GitHub's registry beside the Azure one (ADR-009, the addendum of 1.0.4.77): the workflow's
-    /// token signs in with packages:write and nothing more, and each build pushes the same version to both, so the
-    /// Azure registry holds the tag the undo rolls back to.
+    /// Both images go to GitHub's registry (ADR-009, the addenda of 1.0.4.77 and on retiring the Azure registry): the
+    /// workflow's token signs in with packages:write and nothing more, and each build pushes its version's tag there
+    /// alone, which is also the tag the undo rolls back to.
     /// </summary>
     [Theory]
     [InlineData("deploy.yml", "theyard")]
     [InlineData("deploy-render.yml", "theyard-render")]
-    public void Each_image_is_pushed_to_GitHub_s_registry_as_well_as_Azure_s(string file, string image)
+    public void Each_image_is_pushed_to_GitHub_s_registry(string file, string image)
     {
         string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", file));
         Assert.Contains("  packages: write", workflow, StringComparison.Ordinal);
@@ -205,7 +199,7 @@ public class DeployWorkflowTests
         Assert.Contains("registry: ghcr.io", workflow, StringComparison.Ordinal);
         Assert.Contains("password: ${{ secrets.GITHUB_TOKEN }}", workflow, StringComparison.Ordinal);
         string build = workflow[workflow.IndexOf("- name: Build and push", StringComparison.Ordinal)..];
-        Assert.Contains("${{ env.IMAGE }}\n            ${{ env.GHCR_IMAGE }}", build.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.Contains("tags: |\n            ${{ env.GHCR_IMAGE }}\n", build.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
     }
     // #endregion ghcr-push
 
@@ -243,7 +237,7 @@ public class DeployWorkflowTests
         string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy-render.yml"));
         string deploy = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "deploy.yml"));
         Assert.Contains("file: render/Dockerfile", workflow, StringComparison.Ordinal);
-        Assert.Contains("IMAGE=$ACR/theyard-render:v$N", workflow, StringComparison.Ordinal);
+        Assert.Contains("GHCR_IMAGE=ghcr.io/stevestout/theyard-render:v$N", workflow, StringComparison.Ordinal);
         Assert.Contains("provenance: false", workflow, StringComparison.Ordinal);
         Assert.Contains("APP_VERSION=${{ env.APP_VERSION }}", workflow, StringComparison.Ordinal);
         string versionLine = Regex.Match(deploy, @"VERSIONS=\$\(sed -n '([^']+)' docs/CHANGELOG\.md\)").Groups[1].Value;
@@ -255,7 +249,6 @@ public class DeployWorkflowTests
         Assert.Contains("budget=1500", wait, StringComparison.Ordinal);
         Assert.Contains("--max-time 30 \"$ORIGIN/readyz\"", wait, StringComparison.Ordinal);
         Assert.Contains("\\\"version\\\":\\\"$APP_VERSION\\\"", wait, StringComparison.Ordinal);
-        Assert.Equal(EnvOf("deploy.yml")["ACR"], EnvOf("deploy-render.yml")["ACR"]);
         Assert.Equal(EnvOf("deploy.yml")["RG"], EnvOf("deploy-render.yml")["RG"]);
     }
     // #endregion deploy-render
@@ -276,7 +269,7 @@ public class DeployWorkflowTests
         {
             Assert.False(File.Exists(Path.Combine(Repo.Root(), ".github", "workflows", retired)), $"{retired} rolled a web app that no longer exists");
         }
-        Assert.Equal(env["ACR"], EnvOf("deploy-render.yml")["ACR"]);
+        Assert.False(env.ContainsKey("ACR"), "deploy.yml names no Azure registry since it was retired");
     }
 
     /// <summary>

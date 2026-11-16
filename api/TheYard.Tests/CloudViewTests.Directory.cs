@@ -14,7 +14,7 @@ public partial class CloudViewTests
     private const string Group = "/subscriptions/sub-1/resourceGroups/RG-TEST";
 
     /// <summary>The names the cards are configured with: each the second of its type in the group.</summary>
-    private static readonly AzureResources Names = new("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "crtest", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
+    private static readonly AzureResources Names = new("RG-TEST", "app-test", "sqldb-test", "cosmos-test", "log-test", "acs-test", "edge-test", new Uri("https://yard.example"), new DateOnly(2026, 10, 30));
 
     /// <summary>The group's list, the instance metadata token, two component records, and an empty answer to everything else; every address asked is kept.</summary>
     private sealed class TwoOfEach : HttpMessageHandler

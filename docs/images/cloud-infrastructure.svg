@@ -47,8 +47,8 @@
   <path class="flow" d="M770 440 L876 255"/>
   <path class="flow" d="M1120 255 L1176 440"/>
   <rect x="40" y="290" width="330" height="50" rx="8" class="box"/>
-  <text x="56" y="311" class="title">Container Registry</text>
-  <text x="56" y="330" class="mono">crtheyardsszmnetj67bn5h2</text>
+  <text x="56" y="311" class="title">GitHub's registry</text>
+  <text x="56" y="330" class="mono">ghcr.io/stevestout</text>
   <path class="flow" d="M370 315 L516 440"/>
   <rect x="880" y="290" width="240" height="50" rx="8" class="keep"/>
   <text x="896" y="311" class="title">registry</text>

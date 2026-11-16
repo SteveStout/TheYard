@@ -14,7 +14,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <param name="Reading">The name the card keeps it under: lower case, digits and underscores.</param>
 /// <param name="Scale">What the value is multiplied by on the way in, to turn bytes into megabytes and the like.</param>
 /// <param name="Filter">An Azure Monitor dimension filter, such as StatusCode eq '429'; null for the whole metric.</param>
-/// <param name="Interval">The finest grain Azure keeps the metric at: PT1M for most, PT5M or PT1H for a slow one such as a registry's storage.</param>
+/// <param name="Interval">The finest grain Azure keeps the metric at: PT1M for most, PT5M or PT1H for a slow one such as Cosmos DB's document count.</param>
 public sealed record AzureMetric(string Azure, string Aggregation, string Reading, double Scale = 1, string? Filter = null, string Interval = "PT1M");
 
 /// <summary>Reads Azure Monitor and Resource Manager with the site's own identity, for any resource.</summary>
@@ -212,10 +212,6 @@ public sealed class AzureMetrics(string clientId, bool configured, HostIdentity?
 
     private static JsonElement? Property(JsonElement element, string camel, string pascal) =>
         element.ValueKind == JsonValueKind.Object && (element.TryGetProperty(camel, out var found) || element.TryGetProperty(pascal, out found)) ? found : null;
-
-    /// <summary>A Resource Manager token for the site's identity, which the registry exchanges for one of its own.</summary>
-    /// <param name="cancellation">Cancelled when the read that wanted the token has gone.</param>
-    public Task<string> ArmTokenAsync(CancellationToken cancellation) => Token(cancellation);
 
     private Task<string> Token(CancellationToken cancellation) => IdentityTokens.AcquireAsync(Http, "https://management.azure.com/", clientId, identity ?? HostIdentity.None, cancellation);
 
