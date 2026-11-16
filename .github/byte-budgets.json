@@ -1,0 +1,10 @@
+{
+  "about": "Ladder 8a (ADR-134): the most bytes each part of a reader's first load may take, locked at the values the build measured when the budget was set. tests/budgets/byteBudgets.test.ts reads the built site in the gate's node job and fails a version that spends more. A version that needs more raises a number here in its own commit and says why in its changelog line; a number never rises to fit.",
+  "measured_at": "1.0.5.63",
+  "bytes": {
+    "index_html": 176223,
+    "entry_js": 579915,
+    "entry_css": 121934,
+    "markdown_js": 149135
+  }
+}
