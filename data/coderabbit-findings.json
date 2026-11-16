@@ -1197,8 +1197,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         56
       ]
@@ -1222,8 +1222,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         57
       ]
