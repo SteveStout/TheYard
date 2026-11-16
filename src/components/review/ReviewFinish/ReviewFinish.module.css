@@ -1,6 +1,6 @@
 /**
  * Does:      Lays out the finish panel: its heading, the line on what the sidebar still holds, its two actions and the
- *            two ways to reach Steven.
+ *            two contact links.
  * Does not:  Draw the panel's glass, rule or brackets (panels.css does) or the pills (ReviewPage.module.css does).
  * Used by:   ReviewFinish.tsx.
  */
