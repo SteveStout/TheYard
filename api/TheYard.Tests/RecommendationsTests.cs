@@ -140,4 +140,30 @@ public class RecommendationsTests(WebApplicationFactory<Program> factory)
         Assert.Empty(RecommendationsFile.Problems(good));
         Assert.Single(RecommendationsFile.Problems(null));
     }
+
+    /// <summary>
+    /// /about and the resume door show the recommendations beside their own words, so a file they cannot read leaves
+    /// the block out instead of failing the page (CodeRabbit on 1.0.5.50).
+    /// </summary>
+    [Fact]
+    public void A_page_that_shows_the_recommendations_beside_it_gets_none_from_a_file_it_cannot_read()
+    {
+        string folder = Directory.CreateTempSubdirectory("yard-recommendations-").FullName;
+        try
+        {
+            string broken = Path.Combine(folder, "broken.json");
+            File.WriteAllText(broken, "{ \"recommendations\": [");
+            string empty = Path.Combine(folder, "null.json");
+            File.WriteAllText(empty, "null");
+
+            Assert.Null(RecommendationsFile.OrNull(broken));
+            Assert.Null(RecommendationsFile.OrNull(empty));
+            Assert.Null(RecommendationsFile.OrNull(Path.Combine(folder, "missing.json")));
+            Assert.NotNull(RecommendationsFile.OrNull(FilePath));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
 }
