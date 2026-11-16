@@ -91,6 +91,23 @@ public sealed class PostingsTests
     }
 
     [Fact]
+    public async Task The_nightly_line_counts_the_day_s_new_postings_another_pass_wrote_first()
+    {
+        // The quarter-hour pass inserts through the same AddNewAsync, so by 1 AM it has written the day's new postings
+        // and postings_new reads 0 (five nights 11/12 to 11/16 over about 12,000 postings, while 7 to 279 closed).
+        var book = new Postings();
+        var companies = new Companies(new BoardCompany(1, "greenhouse", "acme") { Key = "acme.com" });
+        var boards = new Boards { ["acme"] = [Job("1", "Staff .NET Engineer", 200000)] };
+        await new BoardScan(companies, boards, new Fixed(Night.AddDays(-3)), book).RunAsync(CancellationToken.None);
+        boards["acme"] = [Job("1", "Staff .NET Engineer", 200000), Job("2", "Principal .NET Engineer", 220000)];
+        await new BoardScan(companies, boards, new Fixed(Night.AddHours(-6)), book).RunAsync(CancellationToken.None);
+
+        string night = await new BoardScan(companies, boards, new Fixed(Night), book).RunAsync(CancellationToken.None);
+
+        Assert.Contains("postings_first_seen_24h 1, postings_seen 2, postings_new 0,", night, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Two_scans_in_a_row_make_no_second_row_and_a_moved_field_is_one_change_row()
     {
         var book = new Postings();
@@ -244,7 +261,7 @@ public sealed class PostingsTests
 
         public Task<IReadOnlyList<StoredPosting>> BoardAsync(string source, string token, DateTimeOffset closedSince, CancellationToken ct) =>
             Task.FromResult<IReadOnlyList<StoredPosting>>([.. Rows.Where(r => r.Posting.Source == source && r.Posting.BoardToken == token && (r.Closed is null || r.Closed >= closedSince))
-                .Select(r => new StoredPosting(r.Key, r.Posting.PostingId, r.Posting.Title, r.Posting.Level, r.Posting.RemoteStance, r.Posting.CompMin, r.Posting.CompMax, r.Posting.ContentHash, r.Closed))]);
+                .Select(r => new StoredPosting(r.Key, r.Posting.PostingId, r.Posting.Title, r.Posting.Level, r.Posting.RemoteStance, r.Posting.CompMin, r.Posting.CompMax, r.Posting.ContentHash, r.Closed, r.FirstSeen))]);
 
         /// <summary>Rows another scan writes just after this book answers KnownAsync, so the next insert of one meets the unique key.</summary>
         public List<Posting> WrittenAfterKnown { get; } = [];

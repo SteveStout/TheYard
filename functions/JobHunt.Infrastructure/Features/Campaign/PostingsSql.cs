@@ -17,7 +17,7 @@ internal static class PostingsSql
         """;
 
     internal const string Board = """
-        SELECT p.[Id], p.[PostingId], p.[Title], p.[Level], p.[RemoteStance], p.[CompMin], p.[CompMax], p.[ContentHash], p.[ClosedAt]
+        SELECT p.[Id], p.[PostingId], p.[Title], p.[Level], p.[RemoteStance], p.[CompMin], p.[CompMax], p.[ContentHash], p.[ClosedAt], p.[FirstSeenAt]
         FROM [jobhunt].[Postings] p WHERE p.[Source] = @source AND p.[BoardToken] = @token AND (p.[ClosedAt] IS NULL OR p.[ClosedAt] >= @since)
         """;
 

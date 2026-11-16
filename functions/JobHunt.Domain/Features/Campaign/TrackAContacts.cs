@@ -58,10 +58,18 @@ public static partial class TrackAContacts
     public static bool IsGeneralMailbox(string? address) =>
         address is { } a && a.IndexOf('@', StringComparison.Ordinal) is int at and > 0 && General().IsMatch(a[..at]);
 
+    /// <summary>
+    /// The shared boxes' local parts, '|' between them: the ones the lead run wrote and the campaign sent to under a
+    /// leader's name (press, media, talentacquisition and the rest), read by <see cref="IsGeneralMailbox"/> and, with
+    /// commas, by the finder's SQL, so the two can never disagree.
+    /// </summary>
+    public const string GeneralBoxes = "info|contact|contactus|hello|careers|jobs|talent|recruiting|recruitment|hr|information|press|pr|media|team|admin|office|support|sales|help"
+        + "|talentacquisition|recruiters|communications|mediarelations|publicrelations|public.relations|news|connect|marketing|hiring";
+
     [GeneratedRegex(@"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$", RegexOptions.IgnoreCase)]
     private static partial Regex Key();
 
-    [GeneratedRegex(@"^(info|contact|contactus|hello|careers|jobs|talent|recruiting|recruitment|hr|information|press|pr|media|team|admin|office|support|sales|help)$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("^(" + GeneralBoxes + ")$", RegexOptions.IgnoreCase)]
     private static partial Regex General();
 }
 

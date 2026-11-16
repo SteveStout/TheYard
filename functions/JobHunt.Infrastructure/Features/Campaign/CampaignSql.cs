@@ -22,7 +22,8 @@ internal static class CampaignSql
                l.[ProofKey], l.[FollowUpPostSlug], l.[GhostScore], l.[BandTop], l.[FirstSeen], l.[StrengthStep], l.[RefCode],
                l.[ResumeLink], l.[SiteLink], l.[GitHubLink], l.[LinkedInLink], l.[AboutLink], l.[CreatedAt], l.[CreatedBy],
                c.[Id] AS [CompanyId], c.[Key], c.[ParentKey], c.[Names], c.[RemoteStance], c.[LastDotNetPostingAt], c.[LastDotNetPostingTitle], c.[DoNotEmail],
-               (SELECT COUNT(*) FROM [campaign].[CompanyEvidence] v WHERE v.[CompanyId] = c.[Id]) AS [Evidence]
+               (SELECT COUNT(*) FROM [campaign].[CompanyEvidence] v WHERE v.[CompanyId] = c.[Id]) AS [Evidence],
+               (SELECT COUNT(*) FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0) AS [Touches]
         FROM [campaign].[Leads] l JOIN [campaign].[Companies] c ON c.[Id] = l.[CompanyId]
         WHERE l.[Blocked] IS NULL
         ORDER BY l.[CreatedAt], l.[Id]
@@ -118,20 +119,32 @@ internal static class CampaignSql
             @ref, @resume, @site, @github, @linkedin, @about, @at, @run, @at);
         """;
 
+    // A lead waits on the finder when it has no address, or only a shared box (@boxes, TrackAContacts.GeneralBoxes with
+    // commas) under a named person's greeting; the never-emailed ones are asked first, since the month's calls are few.
     internal const string WaitingLeads = """
         SELECT l.[Id], c.[Key], l.[ContactName]
         FROM [campaign].[Leads] l JOIN [campaign].[Companies] c ON c.[Id] = l.[CompanyId]
-        WHERE l.[Blocked] IS NULL AND l.[ContactEmail] IS NULL AND l.[FirstName] <> N'' AND c.[DoNotEmail] = 0
-        ORDER BY l.[Strength] DESC, l.[CreatedAt], l.[Id]
+        WHERE l.[Blocked] IS NULL AND l.[FirstName] <> N'' AND c.[DoNotEmail] = 0
+          AND (l.[ContactEmail] IS NULL
+               OR (CHARINDEX('@', l.[ContactEmail]) > 1 AND l.[ContactTitle] <> N'Company mailbox'
+                   AND LEFT(l.[ContactEmail], CHARINDEX('@', l.[ContactEmail]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ','))))
+        ORDER BY CASE WHEN EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0) THEN 1 ELSE 0 END,
+                 l.[Strength] DESC, l.[CreatedAt], l.[Id]
         """;
 
+    // The finder's address replaces no address, or a shared box; never a person's address already on the row.
     internal const string SetAddress = """
         UPDATE [campaign].[Leads] SET [ContactEmail] = @email, [EmailSource] = @source, [MxChecked] = @mx, [MxCheckedAt] = @at, [Verified] = NULL, [UpdatedAt] = @at
-        WHERE [Id] = @id AND [ContactEmail] IS NULL
+        WHERE [Id] = @id AND ([ContactEmail] IS NULL
+               OR (CHARINDEX('@', [ContactEmail]) > 1
+                   AND LEFT([ContactEmail], CHARINDEX('@', [ContactEmail]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ','))))
         """;
 
+    // Found means a person's address: a shared box the lead already had is not what the finder was asked for.
     internal const string WithAddress = """
         SELECT COUNT(*) FROM [campaign].[Leads]
         WHERE [ContactEmail] IS NOT NULL AND [Id] IN (SELECT CAST([value] AS bigint) FROM STRING_SPLIT(@ids, ','))
+          AND NOT (CHARINDEX('@', [ContactEmail]) > 1
+                   AND LEFT([ContactEmail], CHARINDEX('@', [ContactEmail]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ',')))
         """;
 }
