@@ -46,8 +46,18 @@ public static class ShareCard
         new("FileCount", "average", "files", Interval: "PT1H"),
     ];
 
-    /// <summary>The transactions dial: amber at half the alert's line, red at the line.</summary>
+    /// <summary>
+    /// The transactions dial's marks: half the alert's line and the line. By the owner's colour rule (green at rest, blue
+    /// for live but unjudged, red only when something needs him), under the line the dial is information, amber only
+    /// when the walking row says something is walking the share, and red at the line.
+    /// </summary>
     public static readonly (double Amber, double Red) Transactions = (50, 100);
+
+    /// <summary>The transactions dial's tone: red at the alert's line, amber under it only when the walking row is amber, information otherwise.</summary>
+    /// <param name="share">The hour's transactions as a share of the alert's line, in per cent; null when not read.</param>
+    /// <param name="walkingTone">The walking row's tone.</param>
+    public static string TransactionsTone(double? share, string walkingTone) =>
+        share is not { } t ? "info" : t >= Transactions.Red ? "alarm" : walkingTone is "warning" or "alarm" ? "warning" : "info";
 
     /// <summary>
     /// The walking row's lines, in listings an hour: amber where listings alone add about a quarter of a dollar a
@@ -68,8 +78,10 @@ public static class ShareCard
         double? usedGb = ResourceView.Now(inputs, "used_gb") ?? Number(ResourceView.Fact(inputs, "used_gb", ""));
         double? p95 = Series.Percentile(hourly.Select(h => h.Value), 95);
         double? txShare = ResourceView.Share(thisHour, line);
+        var auth = Pairs(ResourceView.Fact(inputs, "auth_hour", ""));
+        var walking = Walking(inputs, line, auth);
         // The hour's own sum is the reading, so its tone is the sum's, not a held run of minutes.
-        string txTone = txShare is not { } t ? "info" : t >= Transactions.Red ? "alarm" : t >= Transactions.Amber ? "warning" : "good";
+        string txTone = TransactionsTone(txShare, walking.Tone);
         var dials = new[]
         {
             new CloudDial("Transactions, last 60 minutes", txShare, ResourceView.Number(thisHour), line is { } l ? $"of {l.ToString("N0", CultureInfo.InvariantCulture)}, the alert's line" : "the alert's line is not read",
@@ -78,8 +90,7 @@ public static class ShareCard
                 with { Big = usedGb is { } u ? $"{u.ToString("0.#", CultureInfo.InvariantCulture)} GB" : "not read" },
         };
         double perMinute = line is { } limit ? limit / 60 : 0;
-        var auth = Pairs(ResourceView.Fact(inputs, "auth_hour", ""));
-        var rows = new List<CloudRow> { Reading(inputs, thisHour), CostRow(inputs), Walking(inputs, line, auth), OnIt(inputs) };
+        var rows = new List<CloudRow> { Reading(inputs, thisHour), CostRow(inputs), walking, OnIt(inputs) };
         string since = ResourceView.Fact(inputs, "auth_since", "") is { Length: > 0 } s ? $"since {s} UTC" : "in the clock hour under way";
         var readout = new CloudReadout(
             "The share, now",

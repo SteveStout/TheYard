@@ -30,8 +30,14 @@ public sealed record AzureResources(string Group, string Site, string SqlDatabas
         var section = configuration.GetSection("Azure:Resources");
         string Named(string key) => section[key] is { Length: > 0 } value ? value : throw new InvalidOperationException($"Azure:Resources:{key} is not configured.");
         DateOnly? retires = configuration["Edge:Retires"] is { Length: > 0 } date ? DateOnly.Parse(date, System.Globalization.CultureInfo.InvariantCulture) : null;
-        return new(configuration["WEBSITE_RESOURCE_GROUP"] is { Length: > 0 } group ? group : Named("Group"), Named("Site"), Named("SqlDatabase"), Named("Cosmos"), Named("Registry"), Named("Insights"), Named("Mail"), Named("Edge"), new Uri(Named("PublicSite")), retires);
+        return new AzureResources(configuration["WEBSITE_RESOURCE_GROUP"] is { Length: > 0 } group ? group : Named("Group"), Named("Site"), Named("SqlDatabase"), Named("Cosmos"), Named("Registry"), Named("Insights"), Named("Mail"), Named("Edge"), new Uri(Named("PublicSite")), retires)
+        {
+            SiteRegion = configuration["REGION_NAME"] is { Length: > 0 } region ? region : null,
+        };
     }
+
+    /// <summary>The region this web app runs in, App Service's read-only REGION_NAME; null where the platform does not set it.</summary>
+    public string? SiteRegion { get; init; }
 
     /// <summary>The resource group's path in a subscription.</summary>
     /// <param name="subscription">The subscription's id.</param>

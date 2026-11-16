@@ -17,7 +17,7 @@ public sealed class CosmosChargeSourceTests
     [Fact]
     public async Task The_last_five_seconds_become_request_units_a_second()
     {
-        StoreOperation[] ring = [Operation(1, 2.83), Operation(3, 10), Operation(4.9, 7.17), Operation(6, 100), Operation(-1, 50), Operation(2, 1, "failed: TooManyRequests")];
+        StoreOperation[] ring = [Operation(1, 2.83), Operation(3, 10), Operation(4.9, 7.17), Operation(6, 100), Operation(-1, 50), Operation(2, 1, "failed: TooManyRequests"), Operation(2.5, 1, "failed: 429")];
         var source = new CosmosChargeSource(() => ring, () => true);
 
         var sample = await source.SampleAsync(Nine, CancellationToken.None);
@@ -25,9 +25,10 @@ public sealed class CosmosChargeSourceTests
         Assert.Equal(("cosmosdb", 5, "this process's requests, live"), (source.Key, source.GrainSeconds, source.Source));
         Assert.Null(source.Absent);
         Assert.Equal(Nine, sample!.At);
-        Assert.Equal(4.2, sample.Values["ru_per_second"]);
-        Assert.Equal(4, sample.Values["requests"]);
-        Assert.Equal(1, sample.Values["throttled"]);
+        Assert.Equal(4.4, sample.Values["ru_per_second"]);
+        Assert.Equal(5, sample.Values["requests"]);
+        // A query that ran out of retries is written "failed: TooManyRequests" and a point operation "failed: 429"; both count.
+        Assert.Equal(2, sample.Values["throttled"]);
     }
 
     [Fact]

@@ -59,6 +59,10 @@ public class CloudThresholdTests
         Assert.Equal((80d, 95d), CloudThresholds.ClaudePlanWeek);
         Assert.Equal(1_200d, CloudThresholds.ClaudeRunSeconds);
         Assert.Equal((5d, 10d), CloudThresholds.MergerWait);
+        Assert.Equal(5d, CloudThresholds.CosmosThrottledShare);
+        Assert.Equal(250d, CloudThresholds.CosmosPointLatencyMs);
+        Assert.Equal(10d, CloudThresholds.BoxSwapShare);
+        Assert.Equal(256L * 1024 * 1024, CloudThresholds.BoxSwapBytes);
     }
 
     [Theory]
@@ -87,15 +91,42 @@ public class CloudThresholdTests
     [Fact]
     public void The_cosmos_card_reads_against_the_throughput_the_account_provisions_and_marks_every_throttled_bucket()
     {
-        var view = CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["container_count"] = "17", ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 4, ["requests"] = 100 }));
+        var view = CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["container_count"] = "17", ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 6, ["requests"] = 100 }));
         Assert.Equal(90, view.Dials[0].Percent);
         Assert.Equal("alarm", view.Dials[0].Tone);
         Assert.Equal("warning", view.Rows.Single(r => r.Key == "throttling").Tone);
+        // Inside the five per cent band the row is the throughput's own tone, red here at 90 % held.
+        Assert.Equal("alarm", CosmosCard.View(Held("ru_per_s", 900, new Dictionary<string, string?> { ["throughput"] = "1000" }, new Dictionary<string, double?> { ["throttled"] = 4, ["requests"] = 100 })).Rows.Single(r => r.Key == "throttling").Tone);
         // A throttled bucket is a tally on the time axis, not a full-height line: only what Azure did is drawn at full height.
         Assert.Contains(view.Chart.Marks, mark => mark.Kind == "count" && mark.Title.Contains("429", StringComparison.Ordinal));
         Assert.DoesNotContain(view.Chart.Marks, mark => mark.Kind == "event" && mark.Title.Contains("429", StringComparison.Ordinal));
     }
 
+
+    [Fact]
+    public void The_cosmos_card_is_red_only_when_a_429_reached_the_application_and_amber_when_its_end_to_end_latency_passes_the_line()
+    {
+        // The store log writes a point operation the SDK gave up on as "failed: 429" and a query as "failed: TooManyRequests".
+        Assert.True(CosmosCard.GaveUpOn429("failed: 429"));
+        Assert.True(CosmosCard.GaveUpOn429("failed: TooManyRequests"));
+        Assert.False(CosmosCard.GaveUpOn429("200"));
+        Assert.False(CosmosCard.GaveUpOn429("failed: 404"));
+        Assert.False(CosmosCard.GaveUpOn429("100 document(s) in 1 page(s)"));
+
+        StoreOperation Op(string kind, long ms, string outcome = "200") => new(Now, "plan", kind, "", [], "pinned", 1, 1, ms, outcome, null, null);
+        var ring = Enumerable.Range(0, 19).Select(i => Op(StoreOperationKind.PointRead, 40 + i)).Append(Op(StoreOperationKind.PointWrite, 900, "failed: 429")).Append(Op(StoreOperationKind.Query, 4_000)).ToList();
+        var facts = CosmosCard.StoreFacts(ring);
+        Assert.Equal(("21", "1", "58"), (facts["store_operations"], facts["gave_up_429"], facts["point_p95_ms"]));
+
+        var quiet = new Dictionary<string, double?> { ["throttled"] = 10, ["requests"] = 100_000 };
+        string ToneWith(IReadOnlyDictionary<string, string?> store) =>
+            CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?>(store) { ["throughput"] = "1000" }, quiet)).Rows.Single(r => r.Key == "throttling").Tone;
+        Assert.Equal("alarm", ToneWith(facts));
+        Assert.Equal("warning", ToneWith(new Dictionary<string, string?> { ["store_operations"] = "200", ["gave_up_429"] = "0", ["point_p95_ms"] = "251" }));
+        Assert.Equal("good", ToneWith(new Dictionary<string, string?> { ["store_operations"] = "200", ["gave_up_429"] = "0", ["point_p95_ms"] = "70" }));
+        var row = CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?>(facts) { ["throughput"] = "1000" }, quiet)).Rows.Single(r => r.Key == "throttling");
+        Assert.Equal("of the newest 21 operations this site made, 1 ran out of the SDK's retries on a 429 (red at one) · point reads and writes p95 58 ms end to end, amber past 250 ms", row.Detail[2].Text);
+    }
 
     [Fact]
     public void The_cosmos_card_judges_the_site_s_own_throttles_and_counts_the_live_tests_apart()
@@ -110,12 +141,15 @@ public class CloudThresholdTests
         // row never reads a hundred throttles and good in one breath.
         Assert.Equal("0.08 % of the site's requests (118 of 140,000)", row.Answer);
         Assert.Equal("good", row.Tone);
-        Assert.StartsWith("the site's 429s in the window, retried by the SDK · amber at 1 %", row.Detail[0].Text, StringComparison.Ordinal);
+        Assert.StartsWith("the site's 429s in the window, retried by the SDK · green to 5 %, which Microsoft calls a healthy sign", row.Detail[0].Text, StringComparison.Ordinal);
         Assert.Contains("throttled 825 more times", row.Detail[1].Text, StringComparison.Ordinal);
         Assert.Equal("fine", view.Tone);
 
-        // At one in a hundred of the site's own requests it is amber, whatever the tests did.
-        var busy = new Dictionary<string, double?> { ["throttled"] = 1_400, ["throttled_tests"] = 0, ["requests"] = 140_000 };
+        // 17 November, read live: 1.86 % of the site's own requests (5,273 of 283,314) at 3.3 ms read amber at the old 1 %
+        // line. Inside Microsoft's one to five per cent band it is green; past five per cent it is amber, whatever the tests did.
+        var today = new Dictionary<string, double?> { ["throttled"] = 5_273, ["throttled_tests"] = 0, ["requests"] = 283_314 };
+        Assert.Equal("good", CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, today)).Rows.Single(r => r.Key == "throttling").Tone);
+        var busy = new Dictionary<string, double?> { ["throttled"] = 7_100, ["throttled_tests"] = 0, ["requests"] = 140_000 };
         Assert.Equal("warning", CosmosCard.View(Held("ru_per_s", 4, new Dictionary<string, string?> { ["throughput"] = "1000" }, busy)).Rows.Single(r => r.Key == "throttling").Tone);
 
         // Throttles with no requests read to weigh them against warn, as any 429 did before; tests not read yet say so.

@@ -228,10 +228,11 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
     await expect(card.getByTestId('cloud-dial-left')).toBeVisible({ timeout: 30_000 });
     await expect(card.getByTestId('cloud-dial-right')).toBeVisible();
     // Four questions on every card, a fifth on the nightly card: whether the tracker merger is
-    // keeping up (ADR: The tracker merger runs in Azure); and eight on the box's, one a resource the box has and
-    // whether it is reporting at all (ADR: The box reports itself).
+    // keeping up (ADR: The tracker merger runs in Azure); a fifth on Cosmos DB's: why a free account costs
+    // anything (ADR: What Azure charges); and eight on the box's, one a resource the box has and whether it is
+    // reporting at all (ADR: The box reports itself).
     await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(
-      slug === 'nightly' ? 5 : slug === 'box' ? 8 : 4
+      slug === 'nightly' || slug === 'cosmosdb' ? 5 : slug === 'box' ? 8 : 4
     );
     await expect(card.getByTestId('cloud-readout')).toBeVisible();
     await expect(card.getByTestId('cloud-note')).toBeVisible();
