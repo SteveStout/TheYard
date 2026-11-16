@@ -120,16 +120,17 @@ internal static class CampaignSql
         """;
 
     // A lead waits on the finder when it has no address, or only a shared box (@boxes, TrackAContacts.GeneralBoxes with
-    // commas) under a named person's greeting; the never-emailed ones are asked first, since the month's calls are few.
+    // commas) under a named person's greeting, and has had no real email: an emailed lead can have nothing more until a
+    // second-touch template is approved (SecondTouch.NoTemplate), so the month's few calls go to first emails.
     internal const string WaitingLeads = """
         SELECT l.[Id], c.[Key], l.[ContactName]
         FROM [campaign].[Leads] l JOIN [campaign].[Companies] c ON c.[Id] = l.[CompanyId]
         WHERE l.[Blocked] IS NULL AND l.[FirstName] <> N'' AND c.[DoNotEmail] = 0
+          AND NOT EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0)
           AND (l.[ContactEmail] IS NULL
                OR (CHARINDEX('@', l.[ContactEmail]) > 1 AND l.[ContactTitle] <> N'Company mailbox'
                    AND LEFT(l.[ContactEmail], CHARINDEX('@', l.[ContactEmail]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ','))))
-        ORDER BY CASE WHEN EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0) THEN 1 ELSE 0 END,
-                 l.[Strength] DESC, l.[CreatedAt], l.[Id]
+        ORDER BY l.[Strength] DESC, l.[CreatedAt], l.[Id]
         """;
 
     // The finder's address replaces no address, or a shared box; never a person's address already on the row.

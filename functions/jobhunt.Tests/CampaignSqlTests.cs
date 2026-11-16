@@ -228,6 +228,16 @@ public sealed partial class CampaignSqlTests
         Assert.DoesNotContain("@", sql, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void The_finder_asks_only_for_leads_that_have_had_no_real_email()
+    {
+        // 14:21 CST 11/16: the finder spent the month's last 22 calls on leads already emailed, which can have nothing
+        // more until a second-touch template is approved, leaving none for the lead run's new leads.
+        string sql = Statements().Single(s => s.Name == "WaitingLeads").Sql;
+        Assert.Contains("AND NOT EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0)", sql, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY l.[Strength] DESC", sql, StringComparison.Ordinal);
+    }
+
     [GeneratedRegex(@"\b([clev])\.\[(\w+)\]")]
     private static partial Regex Qualified();
 
