@@ -170,3 +170,11 @@ Corrected in 1.0.5.14: this addendum first said each roll was a blue-green roll 
 - [`api/TheYard.Database/Tables/CostReads.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/CostReads.sql): the table.
 - [`api/TheYard.Tests/KeptCostsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeptCostsTests.cs): the three cases.
 
+
+## Addendum, @DATE@ (@VER@): what Cosmos DB's charge is
+
+In plain words: the document store is on the free tier, which covers its throughput and its first 25 GB, and it still costs about $10 a month. Read on the bill by meter, all of it is one thing: data the account sends out of its region. The account is in West US 2 and the site that reads it is in West US 3, so every read crosses between the two. The Cosmos DB card now says so, with both regions read live.
+
+The read, Cost Management's query API by resource and meter for the 30 days to 15 November: `cosmos-theyard-ss`, "Inter Region Data Transfer Out", $5.45, and no other meter; over 9 to 15 November it was $0.349 a day, as much as the file share. The account's region is its own record's `location`; the site's is App Service's `REGION_NAME`, which the platform sets on every web app.
+
+It is not waste to cut by turning something off: the site reads the store on every Cloud card's minute and every visitor's request. Two things shrink it. Fewer reads send fewer bytes, which the recorders' change in ADR-102's addendum of this day began. And the account could move to the site's region, which would end the meter, but moving a Cosmos DB account means adding a region and failing over, a change to the store everything rests on and Steve's to make; the card names the two regions so the choice is in front of him. `CosmosBillTests` holds the card's row.
