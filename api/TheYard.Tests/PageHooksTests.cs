@@ -125,6 +125,25 @@ public sealed class PageHooksTests(WebApplicationFactory<Program> factory)
     }
 
     [Fact]
+    public void A_hook_file_that_is_not_json_draws_no_hook_and_no_footer()
+    {
+        string path = Path.Combine(Directory.CreateTempSubdirectory("yard-hooks-").FullName, "hooks.json");
+        try
+        {
+            File.WriteAllText(path, "{ \"hooks\": [");
+            var file = PageHooks.Of(path);
+
+            Assert.Null(file);
+            Assert.Equal("", PageHooks.Html(file, "about", new Dictionary<string, int>()));
+            Assert.Equal("", PageHooks.NextHtml(file, "about", ""));
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
+        }
+    }
+
+    [Fact]
     public void No_address_in_the_hook_file_opens_Admin()
     {
         string text = File.ReadAllText(Repo.DataFile("hooks.json"));
