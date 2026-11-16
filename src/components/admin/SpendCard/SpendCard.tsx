@@ -104,7 +104,10 @@ function SpendBody({ report }: { report: CostReport }) {
           <h3 className={cardStyles.cardTitle}>Spend and forecast</h3>
           <p className={cardStyles.muted}>
             {money(report.window_total, report.currency)} in the window
-            {withForecast ? ', and Azure’s forecast dashed to the month’s end' : ''}.
+            {withForecast
+              ? ', and Azure’s forecast dashed to the month’s end, which weighs earlier months, spikes and all, so it can sit above this month’s pace'
+              : ''}
+            .
           </p>
           <svg
             className={chartStyles.chart}
