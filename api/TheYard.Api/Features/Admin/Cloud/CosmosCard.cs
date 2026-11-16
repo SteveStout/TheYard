@@ -15,6 +15,7 @@ public static class CosmosCard
         ["throttling"] = "Azure Monitor",
         ["keeping"] = "Azure Monitor",
         ["tier"] = "kept minutes, Azure Monitor",
+        ["bill"] = "the bill, the ARM record and the site's own region",
         ["RU/s now"] = "Azure Monitor",
         ["RU/s p95, 30 d"] = CardFrame.KeptMinutes,
         ["Normalized peak"] = "Azure Monitor",
@@ -118,6 +119,7 @@ public static class CosmosCard
             new("tier", "Is the free tier still right?", inputs.Month.Count == 0 ? "not enough kept yet" : ruTone == PlanTone.Alarm ? "no, throughput is past its line" : "yes, throughput first",
                 [new($"RU/s p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ru_per_s").P95, "0")} of {limitWords} over 30 d · free tier {ResourceView.Fact(inputs, "free_tier")} · red at {Throughput.Red} % held {PlanThresholds.Sustained} min", null)],
                 ruTone == PlanTone.Alarm ? "alarm" : "good"),
+            Bill(inputs),
         };
         var readout = new CloudReadout(
             "The account",
@@ -152,6 +154,28 @@ public static class CosmosCard
             readout), Sources);
     }
 
+    /// <summary>
+    /// Why a free-tier account costs anything: the free tier covers the throughput and the first 25 GB, and what the
+    /// bill carries is the data the account sends out of its region. Read on the bill by meter, it is all "Inter Region
+    /// Data Transfer Out", because the account is in one region and the site that reads it in another, so every read
+    /// crosses between them and fewer reads cost less. The two regions are the account's record and the site's own.
+    /// </summary>
+    public static CloudRow Bill(ResourceCardInputs inputs)
+    {
+        string account = ResourceView.Fact(inputs, "location", ""), site = ResourceView.Fact(inputs, "site_region", "");
+        string cost = inputs.CostMonth is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} month to date" : "not on the bill yet";
+        string why = account.Length == 0 || site.Length == 0
+            ? "the free tier covers the throughput and the first 25 GB; the account's region or the site's is not read yet"
+            : Region(account) == Region(site)
+            ? $"the free tier covers the throughput and the first 25 GB; the account and the site are both in {site}, so little crosses a region"
+            : $"the free tier covers the throughput and the first 25 GB; the bill is the data the account sends out of {account} to the site in {site}, the meter Inter Region Data Transfer Out, so every read the site makes crosses the two and fewer reads cost less";
+        return new CloudRow("bill", "Why does a free account cost anything?", cost, [new(why, null)], "info");
+    }
+
+    /// <summary>A region's name as one word, so "West US 3" and "westus3" are the same region.</summary>
+    /// <param name="name">The region as Azure or App Service writes it.</param>
+    public static string Region(string name) => new([.. name.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant)]);
+
     /// <summary>A container's time to live in words: off, on with no default, or the default in days or hours.</summary>
     public static string TimeToLive(string? seconds) =>
         seconds is null ? "kept until deleted"
@@ -161,7 +185,11 @@ public static class CosmosCard
             : seconds;
 
     /// <summary>The hour's facts from the account's record and its containers' definitions.</summary>
-    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement account, System.Text.Json.JsonElement containers, string? throughput = null)
+    /// <param name="account">The account's record.</param>
+    /// <param name="containers">The account's containers' definitions.</param>
+    /// <param name="throughput">The database's shared throughput, or null when it was not read.</param>
+    /// <param name="siteRegion">The region the site runs in, App Service's REGION_NAME; null where it is not set.</param>
+    public static IReadOnlyDictionary<string, string?> Facts(System.Text.Json.JsonElement account, System.Text.Json.JsonElement containers, string? throughput = null, string? siteRegion = null)
     {
         var list = containers.TryGetProperty("value", out var value)
             ? value.EnumerateArray().Select(c => (Name: AzureMetrics.Text(c, "name") ?? "?", Ttl: AzureMetrics.Text(c, "properties.resource.defaultTtl"))).OrderBy(c => c.Name, StringComparer.Ordinal).ToList()
@@ -174,6 +202,8 @@ public static class CosmosCard
             ["container_rows"] = CloudTable.ToFact(list.Select(c => new[] { c.Name, "Cosmos DB container", TimeToLive(c.Ttl) })),
             ["free_tier"] = free == "true" ? "on" : free == "false" ? "off" : null,
             ["throughput"] = throughput,
+            ["location"] = AzureMetrics.Text(account, "location"),
+            ["site_region"] = siteRegion,
             ["spec"] = string.Join(' ', new[] { free == "true" ? "FREE TIER" : null, double.TryParse(throughput, CultureInfo.InvariantCulture, out double ru) ? $"{ru.ToString("N0", CultureInfo.InvariantCulture)} RU/S SHARED" : null, AzureMetrics.Text(account, "location")?.ToUpperInvariant() }.Where(p => p is not null)),
         };
     }
