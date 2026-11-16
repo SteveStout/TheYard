@@ -50,7 +50,7 @@ public class PlanViewTests
         Assert.Equal("https://portal.azure.com/#@tenant-1/resource" + Plan, report.Resource!.Href);
         Assert.Equal("23 %", report.Dials[0].Big);
         Assert.Equal("0.23 of 1 vCPU", report.Dials[0].Absolute);
-        Assert.Equal("0.70 of 1.75 GB", report.Dials[1].Absolute);
+        Assert.Equal("0.70 of 1.75 GB · the apps 0.44 GB of it, the rest the platform", report.Dials[1].Absolute);
         Assert.All(report.Rows, row => Assert.Contains(row.Tone, new[] { "good", "info" }));
         Assert.Equal("2 apps, running", report.Rows.Single(r => r.Key == "power").Answer);
         // The apps are a table, each name a link to its blade, and each described from Azure's own
@@ -66,7 +66,7 @@ public class PlanViewTests
         // The row says it is a difference, not a reading (ADR: The App Service plan, read every minute, 19 October).
         Assert.Equal("Linux and the platform (derived: plan memory used minus the apps)", apps.Rows[^1][1].Text);
         Assert.Equal(12, report.Readout.Lines.Count);
-        Assert.Equal("$13.14 / mo", report.Readout.Lines.Single(l => l.Label == "Plan cost").Value);
+        Assert.Equal("$13.14 month to date", report.Readout.Lines.Single(l => l.Label == "Plan cost").Value);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class PlanViewTests
         Assert.False(report.Available);
         Assert.Equal("the plan container is not there yet; apply infra/cosmos/plan.json", report.Note);
         Assert.All(report.Dials, dial => Assert.Null(dial.Percent));
-        Assert.DoesNotContain(report.Readout.Lines, line => line.Value is "0" or "0 %" or "$0.00 / mo");
+        Assert.DoesNotContain(report.Readout.Lines, line => line.Value is "0" or "0 %" or "$0.00 month to date");
         Assert.Null(report.Resource);
     }
 

@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.66** (2026-11-16): The Admin cards say which window each number covers and are graded only on their own resource: the cost line reads month to date, the blob card no longer turns red on the share's egress, the share names its last 60 minutes, its clock hour and its last full hour apart, Cosmos DB counts its 3.5 million documents instead of 0, the plan's memory names what the apps hold, and the costs answer carries the $70 budget Azure holds.
 - **1.0.5.65** (2026-11-16): The campaign's address finder asks only about leads that have not been emailed yet, so its monthly lookups go toward first emails until a follow-up email is approved.
 - **1.0.5.64** (2026-11-16): The byte budget holds again for every lane: it asks for a built site only on a gate branch, not in CI on main, which tests before it builds, and it lets the landing grow by one reading's bytes for each row the gate adds to the quality history, since the landing draws every reading, while every other byte still counts.
 - **1.0.5.63** (2026-11-16): What a reader's first load costs is now held to the bytes it cost today, part by part, and a version that spends more fails the gate until it raises the number on purpose (ADR: A byte budget for the first load).

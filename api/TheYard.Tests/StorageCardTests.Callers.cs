@@ -22,13 +22,13 @@ public sealed partial class StorageCardTests
         facts["auth_hour"] = "AccountKey=69;SAS=0;Unnamed=17206";
         var card = ShareCard.View(Inputs(100, facts));
 
-        var line = card.Readout.Lines.Single(l => l.Label == "Every caller this hour");
-        Assert.Equal("Unnamed 17,206 · the account key (the job hunt's Function) 69 · SAS (the laptop's mount and the chats) 0", line.Value);
+        var line = card.Readout.Lines.Single(l => l.Label == "Every caller, the clock hour so far");
+        Assert.Equal("Unnamed 17,206 · the account key (the job hunt's Function) 69 · SAS (the laptop's mount and the chats) 0 in the clock hour under way", line.Value);
         Assert.Equal("Azure Monitor, transactions by authentication", line.Source);
         Assert.Contains("this clock hour Unnamed 17,206 · the account key (the job hunt's Function) 69 · SAS (the laptop's mount and the chats) 0 transactions", card.Rows[2].Detail[0].Text, StringComparison.Ordinal);
 
         facts["auth_hour"] = "";
-        Assert.Equal("not read", ShareCard.View(Inputs(100, facts)).Readout.Lines.Single(l => l.Label == "Every caller this hour").Value);
+        Assert.Equal("not read", ShareCard.View(Inputs(100, facts)).Readout.Lines.Single(l => l.Label == "Every caller, the clock hour so far").Value);
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public sealed partial class StorageCardTests
         facts["auth_hour"] = "SAS=many;AccountKey=5";
         var card = ShareCard.View(Inputs(100, facts));
         Assert.Equal("not read", card.Readout.Lines.Single(l => l.Label == "Who mounts it").Value);
-        Assert.Equal("the account key (the job hunt's Function) 5", card.Readout.Lines.Single(l => l.Label == "Every caller this hour").Value);
+        Assert.Equal("the account key (the job hunt's Function) 5 in the clock hour under way", card.Readout.Lines.Single(l => l.Label == "Every caller, the clock hour so far").Value);
     }
 
     [Fact]

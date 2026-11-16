@@ -32,6 +32,14 @@ public static class CosmosCard
     /// </summary>
     public const double FreeGb = 25;
 
+    /// <summary>
+    /// The newest document count above zero. Azure Monitor reports the count at five minutes, and the minute a bucket
+    /// is still open reads 0: on an account holding gigabytes that zero is an unread bucket, not an empty store, and the
+    /// card used to say "0 documents" over 3.5 million. Null when no minute of the hour has counted any.
+    /// </summary>
+    public static double? Documents(ResourceCardInputs inputs) =>
+        inputs.LastHour.LastOrDefault(minute => minute.Values.GetValueOrDefault("documents") is > 0)?.Values["documents"];
+
     /// <summary>The metrics the card keeps.</summary>
     public static readonly IReadOnlyList<AzureMetric> Metrics =
     [
@@ -113,7 +121,7 @@ public static class CosmosCard
                 [new($"the site's 429s in the window, retried by the SDK · amber at {ThrottledAmberShare * 100:0} % · normalized peak {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak)} · latency {ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", null),
                     new(testsThrottled is { } tt ? $"the live tests' copies (tests-*) were throttled {ResourceView.Number(tt)} more times on the same shared throughput, counted apart" : "the live tests' copies (tests-*): not read yet, so every throttle above is counted as the site's", null)],
                 throttleTone),
-            new("keeping", "What is it keeping?", ResourceView.Now(inputs, "documents") is { } docs ? $"{docs.ToString("N0", CultureInfo.InvariantCulture)} documents" : "not read yet",
+            new("keeping", "What is it keeping?", Documents(inputs) is { } docs ? $"{docs.ToString("N0", CultureInfo.InvariantCulture)} documents" : "not read yet",
                 [new($"storage {ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB · every kept container expires its own documents", null)], "info"),
             new("tier", "Is the free tier still right?", inputs.Month.Count == 0 ? "not enough kept yet" : ruTone == PlanTone.Alarm ? "no, throughput is past its line" : "yes, throughput first",
                 [new($"RU/s p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ru_per_s").P95, "0")} of {limitWords} over 30 d · free tier {ResourceView.Fact(inputs, "free_tier")} · red at {Throughput.Red} % held {PlanThresholds.Sustained} min", null)],
@@ -128,7 +136,7 @@ public static class CosmosCard
                 new("RU/s p95, 30 d", ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ru_per_s").P95, "0"), "info"),
                 new("Normalized peak", PlanView.Percent(ResourceFolding.Spread(inputs.Month, "normalized").Peak), "info"),
                 new("Storage", storageLimit is { } free ? $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} / {free} GB" : $"{ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB", "info"),
-                new("Documents", ResourceView.Number(ResourceView.Now(inputs, "documents")), "info"),
+                new("Documents", ResourceView.Number(Documents(inputs)), "info"),
                 new("Requests, hour", ResourceView.Number(ResourceView.HourSum(inputs, "requests") is { } hourAll ? (double?)Math.Max(0, hourAll - (ResourceView.HourSum(inputs, "requests_tests") ?? 0)) : null), "info"),
                 new("Throttled", ResourceView.Number(throttled), throttleTone == "warning" ? "warning" : "info"),
                 new("Latency", $"{ResourceView.Number(ResourceView.Now(inputs, "latency_ms"), "0.0")} ms", "info"),
