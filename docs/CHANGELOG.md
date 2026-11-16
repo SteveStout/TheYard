@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.57** (2026-11-16): The preflight before a ship now refuses a version number that is taken or is not one above main, and prints the next free one, so a lane learns it in a minute instead of after the whole gate; a gate branch at the lane's own commit passes, and leftover branches below main are named and never block.
 - **1.0.5.56** (2026-11-16): On a phone the Quality page holds still while its charts are drawn, where every word under the first chart dropped 200 pixels when it arrived on a slow phone.
 - **1.0.5.55** (2026-11-16): An invite note carries the job link when Steve has applied to a role at the person's company and the board still lists it, in the shape he approved on 11/12 ("I applied for your <role> role:" and the posting's link above the tagged one), dropping "Thanks," and then the proof sentence to stay under LinkedIn's 300; the worklist now prints each note's expected count, the number LinkedIn's counter must show.
 - **1.0.5.54** (2026-11-16): TheYard keeps one SQL database with a schema for each area, now a decision record of its own, and the build fails if a template, the deploy or a setting ever names a second database.
