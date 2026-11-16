@@ -1552,6 +1552,31 @@
       "prs": [
         70
       ]
+    },
+    {
+      "version": "1.0.5.60",
+      "pr": 71,
+      "sha": "faf6751a",
+      "level": 0,
+      "at": "2026-11-16T19:44:10Z",
+      "waited_seconds": 612,
+      "review_seconds": 590,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 4,
+      "findings": {
+        "critical": 0,
+        "major": 2,
+        "minor": 2,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        71
+      ]
     }
   ]
 }

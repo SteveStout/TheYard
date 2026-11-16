@@ -279,3 +279,16 @@ From this version:
 5. **The finder is its own part** of the inbox pass, after the campaign's, so a later failure in the campaign's reads cannot erase what it spent (ADR-109's addendum of this version).
 
 `FinderWallTests` and `AddressSearchTests.A_refused_call_is_not_counted_and_its_lead_is_asked_again` and `Ten_asked_and_none_found_stops_the_asking_with_one_wall_and_a_found_address_clears_it` hold it; `A_call_that_throws_is_still_counted_against_the_cap` stands for the failures Hunter may have charged.
+
+## Addendum, 2026-11-16 (1.0.5.60): no shared box under a leader's name, no first email twice, and the night's new postings
+
+What stopped being true: "a shared box is never a Track A address" was the only refusal of one. Of the first 105 sends (10/27 to 11/13), 99 went to a shared box, info@ 54 of them, press@, media@ and careers@ 7 each, with a leader's first name as the greeting, because the lead run wrote the leadership page's name beside the contact page's inbox. Whoever reads those boxes is not the person the email names, and the opens they made were read as the leaders'. Also no longer true: an emailed lead stayed open with Touch 1, so the 30-day hold was the only thing between it and the same first email again, from 11/27 for the 10/27 sends.
+
+From this version:
+
+1. **A shared box under a person's greeting is held on every track** (`CampaignSend.SharedBoxNamed`). A box greeted as the company mailbox is unchanged. `TrackAContacts.GeneralBoxes` is the one list, and gains the local parts the sends showed it missed.
+2. **The finder asks for the person behind the box.** `WaitingLeads` takes a lead with a shared box and a named person as waiting, the never-emailed ones first, under the same month's cap; `SetAddress` may replace a shared box but never a person's address; `WithAddress` does not count a shared box as found, so the floor of item 4 above reads true.
+3. **No first email twice.** Each open lead carries `Touches`, its real sends. `SecondTouch` holds an emailed lead: never a third email, never a follow-up to a shared box, and a second, different email only after a second-touch template is approved, which none is yet.
+4. **The 1 AM line counts the day's new postings.** Since the quarter-hour pass (1.0.5.11) writes new postings all day, `postings_new` counts only the minutes since its last run; the line now leads with `postings_first_seen_24h`, the listed postings any scan first wrote in the last 24 hours, read from `FirstSeenAt`.
+
+`CampaignSharedBoxTests` (press@roblox.com greeted "Nick" is refused) and `PostingsTests.The_nightly_line_counts_the_day_s_new_postings_another_pass_wrote_first` hold it.

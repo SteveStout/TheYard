@@ -232,6 +232,8 @@ public sealed record LeadRecord
     public int? BandTop { get; init; }
     public required DateOnly FirstSeen { get; init; }
     public int StrengthStep { get; init; }
+    /// <summary>The real (not shadow) emails this lead has had; one or more means the first email already went.</summary>
+    public int Touches { get; init; }
     public string? RefCode { get; init; }
     public string? ResumeLink { get; init; }
     public string? SiteLink { get; init; }

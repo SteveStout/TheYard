@@ -51,7 +51,7 @@ public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeP
         }
         string line = $"{all.Count} boards, {answered} answered, {read} postings, {dotNet} .NET" + (left > 0 ? $", {left} left at the {Budget.TotalMinutes:0}-minute budget" : "");
         return line + (postings is null ? "" : keep
-            ? $", postings_seen {tally.Seen}, postings_new {tally.New}, postings_changed {tally.Changed}, postings_closed {tally.Closed}, postings_failed {tally.Failed}"
+            ? $", postings_first_seen_24h {tally.FirstSeenDay}, postings_seen {tally.Seen}, postings_new {tally.New}, postings_changed {tally.Changed}, postings_closed {tally.Closed}, postings_failed {tally.Failed}"
             : ", postings blocked: no_postings");
     }
 
@@ -69,6 +69,7 @@ public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeP
             tally.Seen++;
             if (byId.TryGetValue(posting.PostingId, out var known))
             {
+                tally.FirstSeenDay += known.FirstSeenAt is { } first && now - first <= TimeSpan.FromHours(24) ? 1 : 0;
                 var changes = PostingRules.Changes(known, posting);
                 bool described = known.ContentHash != posting.ContentHash;
                 if (changes.Count == 0 && !described && known.ClosedAt is null)
@@ -88,7 +89,9 @@ public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeP
                 tally.Changed += changes.Count > 0 ? 1 : 0;
                 continue;
             }
-            tally.New += await AddNewAsync(postings, company, posting, stored, now, ct) ? 1 : 0;
+            bool added = await AddNewAsync(postings, company, posting, stored, now, ct);
+            tally.New += added ? 1 : 0;
+            tally.FirstSeenDay += added ? 1 : 0;
         }
         if (unchanged.Count > 0)
         {
@@ -146,6 +149,12 @@ public sealed class BoardScan(ICompanyBook companies, IBoardReader boards, TimeP
 
         /// <summary>Postings written for the first time.</summary>
         public int New { get; set; }
+
+        /// <summary>
+        /// Postings still listed that any scan first wrote in the last 24 hours. The quarter-hour pass writes new postings
+        /// all day, so New counts only the minutes since its last run; this is the day's real count of new postings.
+        /// </summary>
+        public int FirstSeenDay { get; set; }
 
         /// <summary>Postings with at least one compared field moved.</summary>
         public int Changed { get; set; }

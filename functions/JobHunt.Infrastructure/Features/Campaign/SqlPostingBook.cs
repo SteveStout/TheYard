@@ -33,7 +33,7 @@ public sealed class SqlPostingBook(string connectionString) : IPostingBook, IWat
         {
             rows.Add(new StoredPosting(reader.GetInt64(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), reader.GetString(4),
                 reader.IsDBNull(5) ? null : reader.GetInt32(5), reader.IsDBNull(6) ? null : reader.GetInt32(6), reader.GetString(7),
-                reader.IsDBNull(8) ? null : reader.GetDateTimeOffset(8)));
+                reader.IsDBNull(8) ? null : reader.GetDateTimeOffset(8), reader.GetDateTimeOffset(9)));
         }
         return rows;
     }

@@ -66,7 +66,8 @@ public sealed record Posting(string Source, string BoardToken, string PostingId,
 /// <param name="CompMax">The stored band's high end.</param>
 /// <param name="ContentHash">The stored description hash.</param>
 /// <param name="ClosedAt">When a scan last found it gone, or null while open.</param>
-public sealed record StoredPosting(long Key, string PostingId, string Title, string Level, string RemoteStance, int? CompMin, int? CompMax, string ContentHash, DateTimeOffset? ClosedAt);
+/// <param name="FirstSeenAt">When any scan first wrote the row, the quarter-hour pass or the nightly one; null when not read.</param>
+public sealed record StoredPosting(long Key, string PostingId, string Title, string Level, string RemoteStance, int? CompMin, int? CompMax, string ContentHash, DateTimeOffset? ClosedAt, DateTimeOffset? FirstSeenAt = null);
 
 /// <summary>
 /// The posting rules the scan applies, no I/O: the remote stance from what a board writes, the fields a re-scan

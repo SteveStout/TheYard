@@ -497,6 +497,7 @@ internal sealed class LeadRecordBuilder
     public string? AboutLink { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public string? CreatedBy { get; set; }
+    public int Touches { get; set; }
 
     public LeadRecord Build() => new()
     {
@@ -522,5 +523,6 @@ internal sealed class LeadRecordBuilder
         AboutLink = AboutLink,
         CreatedAt = CreatedAt,
         CreatedBy = CreatedBy,
+        Touches = Touches,
     };
 }

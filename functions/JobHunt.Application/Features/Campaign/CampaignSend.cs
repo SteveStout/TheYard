@@ -56,6 +56,12 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
     /// <summary>One line a pass on the share.</summary>
     public const string PassLog = "campaign/pass.log";
 
+    /// <summary>
+    /// The hold for a shared box (press@, info@) under a person's greeting: whoever reads that box is not the leader
+    /// the email names. The finder asks for the person's own address instead (AddressSearch).
+    /// </summary>
+    public const string SharedBoxNamed = "shared mailbox under a person's name: waits on the person's own address";
+
     /// <summary>The wait between two real sends; the tests set it to nothing.</summary>
     public TimeSpan Spacing { get; init; } = CampaignRules.Spacing;
 
@@ -194,6 +200,10 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         {
             return (CampaignVerdict.Hold("bounced: the address took no mail"), null, false);
         }
+        if (SecondTouch.Hold(lead) is { } secondTouch)
+        {
+            return (CampaignVerdict.Hold(secondTouch), null, false);
+        }
         var recipient = RecipientDomainRule.Check(lead.ContactEmail, lead.MxChecked);
         if (!recipient.Allowed)
         {
@@ -212,6 +222,10 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         if (lead.Track == 'A' && (LeadSpool.IsCompanyMailbox(lead.ContactTitle) || TrackAFeed.IsGeneralMailbox(lead.ContactEmail)))
         {
             return (CampaignVerdict.Hold(TrackAFeed.NoNamedAddress), null, false);
+        }
+        if (TrackAFeed.IsGeneralMailbox(lead.ContactEmail) && !LeadSpool.IsCompanyMailbox(lead.ContactTitle))
+        {
+            return (CampaignVerdict.Hold(SharedBoxNamed), null, false);
         }
         if (lead.Track == 'A')
         {
