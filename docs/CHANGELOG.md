@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.63** (2026-11-16): What a reader's first load costs is now held to the bytes it cost today, part by part, and a version that spends more fails the gate until it raises the number on purpose (ADR: A byte budget for the first load).
 - **1.0.5.62** (2026-11-16): The job hunt's records read straight: a tracker row that opens "NOT APPLIED" or "NOT SUBMITTED" is no longer counted as an application in the three-in-sixty-days cap, BLACKLIST.md is read by one reader that the picker, the leads, the pounce and the 6 AM lanes all use (a company, a person, or one job), and a Track A email that renders past sixty words is held instead of sent.
 - **1.0.5.61** (2026-11-16): Every public page ends with where to go next, at most two links each with a line of reason and its minutes; the footer's email line goes through the site's counted redirect, like the email links on About and the review route, so no page carries the address.
 - **1.0.5.60** (2026-11-16): The campaign never sends to a shared inbox such as press@ or info@ under a leader's name and asks the finder for that person's own address instead, never sends a lead the same first email twice, and the 1 AM postings line now counts the postings first seen in the last 24 hours.
