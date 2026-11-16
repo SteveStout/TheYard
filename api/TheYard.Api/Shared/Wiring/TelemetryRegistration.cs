@@ -1,5 +1,7 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using OpenTelemetry.Instrumentation.AspNetCore;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 
 namespace TheYard.Api.Shared.Wiring;
 
@@ -33,6 +35,14 @@ public static class TelemetryRegistration
             // the component's daily cap on itself (ADR: The box reports itself): its routes are left out of the
             // request telemetry, the distro's documented way, and every other path is kept.
             builder.Services.Configure<AspNetCoreTraceInstrumentationOptions>(options => options.Filter = context => Traced(context.Request.Path, context.Request.Headers.UserAgent.ToString()));
+            // The workspace's free 5 GB a month (ADR-024, the addendum on what fills it): the HttpClient's connection-pool
+            // instruments, read by nothing on the site, and Entity Framework's line for every command, which the Admin
+            // tab's own rings already keep, stay out of telemetry. The distro's documented way to drop an instrument.
+            foreach (string instrument in DroppedInstruments)
+            {
+                builder.Services.ConfigureOpenTelemetryMeterProvider(metrics => metrics.AddView(instrumentName: instrument, MetricStreamConfiguration.Drop));
+            }
+            builder.Logging.AddFilter<OpenTelemetryLoggerProvider>(CommandCategory, LogLevel.Warning);
         }
         // The component's app id is public (it is not a key) and is what the Admin
         // tab queries with the container's managed identity.
@@ -47,6 +57,25 @@ public static class TelemetryRegistration
         builder.Services.AddSingleton(new TelemetryReader(source, enabled: telemetryOn, TimeProvider.System));
         #endregion telemetry
     }
+
+    /// <summary>
+    /// The metric instruments left out of telemetry: the HttpClient's connection pool, which sent about 34 MB a day to
+    /// the workspace (its AppMetrics table) and which no card, alert or query reads. The request durations
+    /// stay.
+    /// </summary>
+    public static readonly IReadOnlyList<string> DroppedInstruments =
+    [
+        "http.client.open_connections",
+        "http.client.active_requests",
+        "http.client.connection.duration",
+        "http.client.request.time_in_queue",
+    ];
+
+    /// <summary>
+    /// Entity Framework's category for the line it logs for every command: kept from telemetry below a warning, and
+    /// kept whole in the Admin tab's rings and the kept log, which read the same lines through their own providers.
+    /// </summary>
+    public const string CommandCategory = "Microsoft.EntityFrameworkCore.Database.Command";
 
     /// <summary>
     /// Whether a request reaches the request telemetry: every request but the box's routes, every card's live route
