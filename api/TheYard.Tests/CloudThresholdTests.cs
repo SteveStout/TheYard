@@ -23,6 +23,23 @@ public class CloudThresholdTests
     }
 
     // #region cloud-threshold-tests
+    /// <summary>
+    /// The document count is the newest minute that counted any: the open five-minute bucket reads 0, and the card read
+    /// "0 documents" over an account of 3.5 million. An hour that counted none says it is not read.
+    /// </summary>
+    [Fact]
+    public void The_cosmos_card_counts_documents_from_the_newest_minute_that_counted_any()
+    {
+        var counted = Held("documents", 3_532_492, new Dictionary<string, string?> { ["container_count"] = "25", ["throughput"] = "1000" });
+        var lastHour = counted.LastHour.Concat([new ResourceMinute(Now, new Dictionary<string, double?> { ["documents"] = 0 }, "1.0.3.171")]).ToList();
+        var view = CosmosCard.View(counted with { LastHour = lastHour });
+
+        Assert.Equal("3,532,492 documents", view.Rows.Single(r => r.Key == "keeping").Answer);
+        Assert.Equal("3,532,492", view.Readout.Lines.Single(l => l.Label == "Documents").Value);
+        Assert.Null(CosmosCard.Documents(Held("documents", 0)));
+        Assert.Equal("not read yet", CosmosCard.View(Held("documents", 0, new Dictionary<string, string?> { ["throughput"] = "1000" })).Rows.Single(r => r.Key == "keeping").Answer);
+    }
+
     [Fact]
     public void Every_cards_lines_are_the_numbers_the_record_names()
     {

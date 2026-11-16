@@ -39,10 +39,10 @@ public static class ShareKeeping
         facts["spec"] = string.Join(" · ", new[] { "Azure Files", Redundancy(facts.GetValueOrDefault("sku") ?? ""), facts["tier"], facts["quota_gb"] is { } q ? $"{q} GB quota" : null }.Where(p => !string.IsNullOrEmpty(p)));
     }
 
-    /// <summary>The table by API: the last hour and yesterday, the busiest first, the first eight.</summary>
+    /// <summary>The table by API: the last full clock hour and yesterday, the busiest first, the first eight.</summary>
     public static string ApiRows(IReadOnlyDictionary<string, IReadOnlyDictionary<DateTimeOffset, double>> byApi, DateTimeOffset today, DateTimeOffset hour) =>
         CloudTable.ToFact(byApi
-            .Select(api => (Api: api.Key, Hour: api.Value.Where(p => p.Key >= hour.AddHours(-1)).Sum(p => p.Value), Yesterday: api.Value.Where(p => p.Key >= today.AddDays(-1) && p.Key < today).Sum(p => p.Value)))
+            .Select(api => (Api: api.Key, Hour: api.Value.Where(p => p.Key >= hour.AddHours(-1) && p.Key < hour).Sum(p => p.Value), Yesterday: api.Value.Where(p => p.Key >= today.AddDays(-1) && p.Key < today).Sum(p => p.Value)))
             .Where(a => a.Hour + a.Yesterday > 0)
             .OrderByDescending(a => a.Hour).ThenByDescending(a => a.Yesterday).ThenBy(a => a.Api, StringComparer.Ordinal)
             .Take(8)

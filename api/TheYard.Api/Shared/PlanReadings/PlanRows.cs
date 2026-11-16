@@ -136,7 +136,7 @@ public static class PlanRows
                 new("Instances", hour?.Instances is { } n ? (hour.MaxWorkers is { } most ? $"{n} of {most}" : $"{n}") : "not read", "info") { Source = "ARM maximumNumberOfWorkers", Key = PlanRows.InstancesKey },
                 new("Always on", hour is null ? "not read" : $"{hour.Apps.Count(app => app.AlwaysOn is true)} apps", "info") { Source = "ARM siteConfig" },
                 new("Restarts, 30 d", hours.Count == 0 ? "not read" : restarts.ToString(CultureInfo.InvariantCulture), unplanned ? "alarm" : "info") { Source = "Activity Log" },
-                new("Plan cost", cost is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} / mo" : "not read from the bill yet", "info"),
+                new("Plan cost", cost is { } dollars ? $"${dollars.ToString("0.00", CultureInfo.InvariantCulture)} month to date" : "not read from the bill yet", "info"),
                 // A stale read is the frame's unread rule (the card's tone goes unread), not a warning of its own.
                 new("Live read", age is { } seconds ? $"{seconds} s ago" : "not read yet", "info"),
             ],

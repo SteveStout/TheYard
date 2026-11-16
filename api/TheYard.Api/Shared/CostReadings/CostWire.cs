@@ -59,6 +59,13 @@ public sealed record CostReport(
     /// <summary>Every meter that can run away and the rule that watches it; empty, never null.</summary>
     public IReadOnlyList<MeterRow> Meters { get; init; } = [];
 
+    /// <summary>
+    /// The subscription's monthly budget as Azure holds it (budget-subscription-monthly), read with the rules an hour
+    /// apart, so the card grades against the budget itself and not a number typed beside it; null before the first read
+    /// or when the budget cannot be read.
+    /// </summary>
+    public double? BudgetDollars { get; init; }
+
     /// <summary>An answer with nothing to draw and the reason why.</summary>
     public static CostReport Absent(string window, string note, string currency, long? readAtMs) =>
         new(window, CostWindows.Names, false, note, currency, readAtMs, null, false, null, 0, null, 0, 0, 0, [], [], [], []);
