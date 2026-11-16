@@ -30,9 +30,9 @@ public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicat
     [Fact]
     public void Every_portal_link_is_built_from_the_id_and_tenant_Azure_returned()
     {
-        var view = AcrCard.View(Held("storage_gb", 1, new Dictionary<string, string?>()));
+        var view = SqlCard.View(Held("storage_gb", 1, new Dictionary<string, string?>()));
         Assert.Equal("https://portal.azure.com/#@tenant/resource/subscriptions/s/resourceGroups/RG-THEYARD-SS/providers/T/x", view.Resource!.Href);
-        Assert.Null(AcrCard.View(Held("storage_gb", 1)).Resource);
+        Assert.Null(SqlCard.View(Held("storage_gb", 1)).Resource);
     }
 
 
@@ -43,12 +43,12 @@ public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicat
             {"value":[
               {"id":"/s/x/providers/Microsoft.Sql/servers/sql-theyard-ss-westus3/databases/sqldb-theyard-ss","name":"sql-theyard-ss-westus3/sqldb-theyard-ss","type":"Microsoft.Sql/servers/databases"},
               {"id":"/s/x/providers/Microsoft.Sql/servers/sql-theyard-ss-westus3/databases/sqldb-theyard-ss-basic","name":"sql-theyard-ss-westus3/sqldb-theyard-ss-basic","type":"Microsoft.Sql/servers/databases"},
-              {"id":"/s/x/providers/Microsoft.ContainerRegistry/registries/crtheyardsszmnetj67bn5h2","name":"crtheyardsszmnetj67bn5h2","type":"Microsoft.ContainerRegistry/registries"}
+              {"id":"/s/x/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-theyard-ss","name":"cosmos-theyard-ss","type":"Microsoft.DocumentDB/databaseAccounts"}
             ]}
             """);
         var all = ResourceDirectory.Parse(listed.RootElement);
         Assert.EndsWith("/sqldb-theyard-ss-basic", ResourceDirectory.Find(all, ResourceCatalog.SqlType, "/sqldb-theyard-ss-basic")!.Id, StringComparison.Ordinal);
-        Assert.Equal("crtheyardsszmnetj67bn5h2", ResourceDirectory.Find(all, ResourceCatalog.AcrType, null)!.Name);
+        Assert.Equal("cosmos-theyard-ss", ResourceDirectory.Find(all, ResourceCatalog.CosmosType, null)!.Name);
         Assert.Null(ResourceDirectory.Find(all, ResourceCatalog.MailType, null));
         // Two accounts of one type in the group: the configured name selects, not the alphabet
         // (1.0.4.0 asked for the first of the type, the review of 1.0.4.0, finding 2).
@@ -128,15 +128,12 @@ public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicat
         {
             ["sql"] = ["dtu_consumption_percent", "storage", "log_write_percent", "sessions_count", "workers_percent", "blocked_by_firewall", "deadlock", "connection_failed"],
             ["cosmos"] = ["TotalRequestUnits", "NormalizedRUConsumption", "DataUsage", "DocumentCount", "ServerSideLatency", "TotalRequests"],
-            ["registry"] = ["StorageUsed", "TotalPullCount", "SuccessfulPullCount", "SuccessfulPushCount", "RunDuration"],
             ["mail"] = ["ApiRequests", "DeliveryStatusUpdate", "UserEngagement"],
         };
         Assert.All(SqlCard.Metrics, m => Assert.Contains(m.Azure, reports["sql"]));
         Assert.All(CosmosCard.Metrics, m => Assert.Contains(m.Azure, reports["cosmos"]));
-        Assert.All(AcrCard.Metrics, m => Assert.Contains(m.Azure, reports["registry"]));
         Assert.All(MailCard.Metrics, m => Assert.Contains(m.Azure, reports["mail"]));
         // The slow ones are asked at the grain Azure keeps them at.
-        Assert.Equal("PT1H", AcrCard.Metrics.Single(m => m.Azure == "StorageUsed").Interval);
         Assert.All(CosmosCard.Metrics.Where(m => m.Azure is "DataUsage" or "DocumentCount"), m => Assert.Equal("PT5M", m.Interval));
     }
     [Fact]
@@ -180,18 +177,14 @@ public partial class CloudViewTests(Microsoft.AspNetCore.Mvc.Testing.WebApplicat
         Assert.Equal("/api answered without naming its app", NetlifyEdge.AnsweredBy("/api", null));
     }
 
+    /// <summary>The registry card keeps no minute, because nothing it reports moves inside an hour, and reads hourly.</summary>
     [Fact]
-    public void The_registry_storage_dial_is_read_against_the_size_limit_its_usages_state()
+    public void The_registry_card_reads_no_azure_metric_and_keeps_no_minute()
     {
-        using var usages = JsonDocument.Parse("""{"value":[{"name":"Webhooks","limit":2,"currentValue":0,"unit":"Count"},{"name":"Size","limit":10737418240,"currentValue":536870912,"unit":"Bytes"}]}""");
-        Assert.Equal(10, AcrCard.SizeLimitGb(usages.RootElement));
-        using var none = JsonDocument.Parse("{}");
-        Assert.Null(AcrCard.SizeLimitGb(none.RootElement));
-        Assert.Null(AcrCard.SizeLimitGb(null));
-
-        // Unread, the dial says so rather than reading against a typed size.
-        var report = AcrCard.View(Held("storage_gb", 1));
-        Assert.Contains("not read yet", report.Dials[0].Absolute, StringComparison.Ordinal);
+        var report = RegistryCard.View(Held("unused", 0));
+        Assert.Empty(report.Sparks);
+        Assert.Empty(report.Chart.Series);
+        Assert.Equal("GitHub's registry", report.Readout.Title);
     }
     // #endregion cloud-view-tests
 }

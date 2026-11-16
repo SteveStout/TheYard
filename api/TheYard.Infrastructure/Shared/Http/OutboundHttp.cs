@@ -1,5 +1,5 @@
 // Every call this application makes to another service over HTTP (Azure Resource Manager, Azure Monitor,
-// Log Analytics, the cost API, the registry, Netlify, GitHub, Anthropic, its own loopback) opens its socket here,
+// Log Analytics, the cost API, GitHub's registry, Netlify, GitHub, Anthropic, its own loopback) opens its socket here,
 // in Infrastructure, and nowhere in the host: the host builds a request as data and hands it to an Outbound
 // (ADR: The onion cut into vertical slices, rule 8). One connection pool serves the readers, because the pool and
 // the suite's seam into it are one decision (ADR: One frame for every resource).
