@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): CodeRabbit's seven Minors on 1.0.5.50 and 1.0.5.51 are fixed: About and the resume page are still served when the recommendations or the hook file cannot be read, the two link tests wait for the open to be written instead of trusting one drain, the README counts the browser tests a gate declared from that gate's own version, and three comments no longer name anyone.
 - **1.0.5.58** (2026-11-16): Every version now gets a Lighthouse reading of the landing, five runs inside the gate with the median kept, which reports and never holds a ship.
 - **1.0.5.57** (2026-11-16): The Admin tab's Who opened what card now says when a code's opens look like a link scanner reading every link at once rather than a person, and keeps counting them.
 - **1.0.5.56** (2026-11-16): A tagged link's code now travels with the reader through the "Where next" links, so each page they go on to is counted under the same code, and the blog and the Quality page are counted under their own names; the entry script's byte budget rises by 592 bytes (566,294 to 566,886) for it.
