@@ -38,5 +38,26 @@ for (const width of [1280, 390]) {
     );
     expect(sideways).toBeLessThanOrEqual(0);
   });
+
+  test(`at ${width} a chart's place on the Quality page is its height before the chart is drawn into it`, async ({
+    page,
+  }) => {
+    // The charts mount into their placeholders after the words have painted (useLiveBlocks.tsx). An empty one was
+    // 0 px, so on a slow phone every word under the first chart dropped 200 px when it arrived (0.123 at 390 under
+    // 4x CPU throttling, 15 November). An empty placeholder beside a drawn chart is the drawn chart's height.
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await openTheYard(page, '/?doc=quality');
+    const dialog = page.locator('dialog[open]');
+    await expect(dialog.getByTestId('quality-trend').first()).toBeVisible({ timeout: 30_000 });
+    const [drawn, empty] = await page.evaluate(() => {
+      const box = document.querySelector('dialog[open] [data-quality-trend]') as HTMLElement;
+      const spare = document.createElement('div');
+      spare.setAttribute('data-quality-trend', '{}');
+      box.after(spare);
+      return [box.getBoundingClientRect().height, spare.getBoundingClientRect().height];
+    });
+    expect(drawn).toBeGreaterThanOrEqual(150);
+    expect(Math.abs(empty - drawn)).toBeLessThanOrEqual(1);
+  });
 }
 // #endregion quality
