@@ -1,6 +1,7 @@
 /**
  * Does:      Styles the Style section's live blocks inside a document: the sub-page tiles in the landing tile's look,
- *            the readouts the build counts, the glossary as a definition list, and the ribbon strip.
+ *            the readouts the build counts, the glossary as a definition list, and the ribbon strip; and holds the
+ *            Quality page's chart places at their charts' height before the charts are drawn into them.
  * Does not:  Draw a tile's or a readout's glass (panels.css does, through .op-glass and .op-tile), draw the ribbons
  *            (Ribbons.tsx does), or hold a colour of its own.
  * Used by:   DocDialog.tsx.
@@ -171,5 +172,14 @@
   padding: 0 var(--space-3) var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+/* A Quality chart mounts into its place after the words have painted (useLiveBlocks.tsx), so the place holds the
+   chart's own height first: 200 px while the column is narrower than the chart's 640-wide box (fitBox keeps the
+   height), the box's shape when wider, and never past the chart's 260 px cap (charts.module.css). Empty, it was 0 px,
+   and every word under it dropped when the chart arrived. */
+.prose :global([data-quality-trend]) {
+  min-height: 200px;
+  max-height: 260px;
+  aspect-ratio: 640 / 200;
 }
 /* #endregion style-blocks */
