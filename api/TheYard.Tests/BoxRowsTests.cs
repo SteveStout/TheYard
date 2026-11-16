@@ -40,6 +40,32 @@ public sealed class BoxRowsTests
     }
 
     [Fact]
+    public void A_few_kilobytes_of_swap_at_low_memory_is_green_and_swap_past_its_line_is_amber()
+    {
+        long gib = 1024L * 1024 * 1024;
+        var calm = BoxSamples.Snapshot() with { Memory = new(32 * gib, 6 * gib, 24 * gib, gib), Swap = new(2 * gib, 8 * 1024) };
+        var busy = calm with { Swap = new(2 * gib, 300L * 1024 * 1024) };
+        var small = calm with { Swap = new(gib, 120L * 1024 * 1024) };
+
+        Assert.Equal("good", BoxRows.Memory(calm).Tone);
+        Assert.Equal("warning", BoxRows.Memory(busy).Tone);
+        Assert.Equal("warning", BoxRows.Memory(small).Tone);
+        Assert.Contains("swap amber past 10 % of it or 256.0 MiB, whichever is smaller", BoxRows.Memory(calm).Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_stopped_must_run_unit_stays_red_and_names_the_command_that_restarts_it()
+    {
+        var snapshot = BoxSamples.Snapshot();
+        var stopped = snapshot with { Services = [.. snapshot.Services.Select(service => service.Unit == "claude-remote-control.service" ? service with { ActiveState = "inactive", SubState = "dead" } : service)] };
+        var row = BoxRows.Services(stopped, Nine);
+
+        Assert.Equal("alarm", row.Tone);
+        Assert.Equal("not running: claude-remote-control.service, restart with systemctl --user restart claude-remote-control.service", row.Detail[0].Text);
+        Assert.Equal("sudo systemctl restart ssh.service", BoxRows.RestartCommand("ssh.service", "system"));
+    }
+
+    [Fact]
     public void The_network_table_names_interfaces_only_and_leaves_the_loopback_out()
     {
         var row = BoxRows.Network(BoxSamples.Snapshot());

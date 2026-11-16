@@ -23,7 +23,7 @@ public static class ResourceCatalog
     /// <param name="blobLines">The lines the blob card is read against, from configuration.</param>
     /// <param name="campaign">The email campaign's reads for its card; null leaves the card out, which only a test that builds the catalogue by hand does.</param>
     /// <param name="network">The network log's reads for its card; null leaves the card out, as for the campaign.</param>
-    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null, CampaignSource? campaign = null, NetworkSource? network = null, BoxSource? box = null, PickerSource? picker = null)
+    public static IReadOnlyList<ResourceCard> Cards(AzureMetrics azure, ResourceDirectory directory, NetlifyEdge edge, (int Tables, string Migration) model, AzureResources names, string? sqlSite = null, NightlySource? nightly = null, Func<CancellationToken, Task<PlanHour?>>? planHour = null, ClaudeSource? claude = null, StorageSource? storage = null, BlobLines? blobLines = null, CampaignSource? campaign = null, NetworkSource? network = null, BoxSource? box = null, PickerSource? picker = null, Func<IReadOnlyList<StoreOperation>>? storeOperations = null)
     {
         string sqlDatabase = names.SqlDatabase;
         static IReadOnlyList<string> ReadingsOf(IReadOnlyList<AzureMetric> metrics) => [.. metrics.Select(m => m.Reading).Distinct()];
@@ -79,7 +79,9 @@ public static class ResourceCatalog
                     {
                         // Left out of the header line rather than guessed.
                     }
-                    return CosmosCard.Facts(record, containers.RootElement, throughput);
+                    // The store log's end-to-end reading rides with the record's facts, read in the process that made the calls.
+                    return new Dictionary<string, string?>(CosmosCard.Facts(record, containers.RootElement, throughput, names.SiteRegion)
+                        .Concat(CosmosCard.StoreFacts(storeOperations?.Invoke() ?? [])), StringComparer.Ordinal);
                 }),
                 CosmosCard.View),
             new("registry", "registry", names.Registry, ReadingsOf(AcrCard.Metrics), Monitor(AcrType, names.Registry, AcrCard.Metrics),

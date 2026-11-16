@@ -39,13 +39,17 @@ public sealed partial class StorageCardTests
         ["tx_hourly"] = Series.Encode(Enumerable.Range(0, 720).ToDictionary(i => Noon.AddHours(i - 720), i => i < 690 ? 6_500d : 1_200_000d)),
     };
 
+    /// <summary>
+    /// By the owner's colour rule the dial under the alert's line is information, not amber: on 17 November it read amber
+    /// at 59.78 % of the 20,000 line while the walking row beside it answered No. Red stays at the line.
+    /// </summary>
     [Theory]
-    [InlineData(100, "good")]
-    [InlineData(9_990.0 / 60, "good")]
-    [InlineData(10_000.0 / 60, "warning")]
-    [InlineData(19_990.0 / 60, "warning")]
+    [InlineData(100, "info")]
+    [InlineData(9_990.0 / 60, "info")]
+    [InlineData(10_000.0 / 60, "info")]
+    [InlineData(19_990.0 / 60, "info")]
     [InlineData(20_000.0 / 60, "alarm")]
-    public void The_share_is_fine_under_half_the_alert_s_line_amber_from_half_and_red_at_the_line(double perMinute, string tone)
+    public void The_share_is_information_under_the_alert_s_line_and_red_at_it(double perMinute, string tone)
     {
         var card = ShareCard.View(Inputs(perMinute, ShareFacts()));
 
@@ -133,17 +137,42 @@ public sealed partial class StorageCardTests
     }
 
     [Fact]
-    public void The_blob_card_s_second_dial_is_the_account_s_egress_against_the_free_hundred_gigabytes_and_never_graded()
+    public void The_share_s_dial_is_amber_under_the_line_only_when_the_walking_row_is()
+    {
+        Assert.Equal("warning", ShareCard.TransactionsTone(59.78, "warning"));
+        Assert.Equal("info", ShareCard.TransactionsTone(59.78, "good"));
+        Assert.Equal("alarm", ShareCard.TransactionsTone(100, "good"));
+        Assert.Equal("info", ShareCard.TransactionsTone(null, "warning"));
+    }
+
+    [Fact]
+    public void The_blob_card_s_second_dial_is_the_blob_service_s_egress_against_the_free_hundred_gigabytes_and_never_graded()
     {
         var card = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", ["egress_month_bytes"] = "8530000000" }), new BlobLines(1e9, 1.8e9, 24_000));
 
-        Assert.Equal(("Account egress this month", "8.53 GB"), (card.Dials[1].Name, card.Dials[1].Big));
+        Assert.Equal(("Blob egress this month", "8.53 GB"), (card.Dials[1].Name, card.Dials[1].Big));
         Assert.Equal(8.53, card.Dials[1].Percent!.Value, 3);
         Assert.Equal("info", card.Dials[1].Tone);
-        Assert.Contains("the share's reads included", card.Dials[1].Absolute, StringComparison.Ordinal);
+        Assert.Contains("the blob service only, the share's reads not included", card.Dials[1].Absolute, StringComparison.Ordinal);
         Assert.Equal("info", BlobCard.EgressDial(120e9).Tone);
         Assert.Equal(("not read", "info"), (BlobCard.EgressDial(null).Big, BlobCard.EgressDial(null).Tone));
         Assert.DoesNotContain(card.Dials, dial => dial.Name == "Served from memory");
+    }
+
+    /// <summary>
+    /// The dial's label says blob because its query reads the blob service: on 11/17 the card read 145.05 GB, the blob
+    /// service 145.054 GB and the account 458.24 GB (blob plus file). The label and the service it names are held together,
+    /// so one cannot change without the other.
+    /// </summary>
+    [Fact]
+    public void The_egress_dial_s_label_is_pinned_to_the_service_its_query_reads()
+    {
+        string source = File.ReadAllText(Path.Combine(Repo.Root(), "api", "TheYard.Api", "Features", "Admin", "Cloud", "StorageSource.cs"));
+
+        Assert.Equal("blobServices/default", BlobCard.EgressService);
+        Assert.Contains("string service = $\"{account.Id}/{BlobCard.EgressService}\";", source, StringComparison.Ordinal);
+        Assert.Contains("TotalsAsync(service, \"Egress\"", source, StringComparison.Ordinal);
+        Assert.StartsWith("Blob ", BlobCard.EgressDial(1).Name, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -166,7 +195,7 @@ public sealed partial class StorageCardTests
     [InlineData(80, "info")]
     [InlineData(99.9, "info")]
     [InlineData(132.28, "info")]
-    public void The_blob_egress_dial_is_blue_at_any_reading_because_it_is_the_whole_account_s(double gb, string tone) =>
+    public void The_blob_egress_dial_is_blue_at_any_reading_because_it_is_not_graded_on_this_card(double gb, string tone) =>
         Assert.Equal(tone, BlobCard.EgressDial(gb * 1e9).Tone);
 
     [Theory]

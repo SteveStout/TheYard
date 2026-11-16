@@ -176,7 +176,7 @@ public static class ClaudeCard
             dials,
             sparks,
             chart,
-            ClaudeRows.Rows(window, runs.Where(run => run.At >= inputs.Now - inputs.Length).ToList(), repo),
+            ClaudeRows.Rows(window, runs.Where(run => run.At >= inputs.Now - inputs.Length).ToList(), repo, records, inputs.Now),
             readout);
     }
 }

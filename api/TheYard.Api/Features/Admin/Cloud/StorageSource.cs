@@ -110,7 +110,7 @@ public sealed class StorageSource(AzureMetrics azure, ResourceDirectory director
         {
             BlobCard.AccountFacts(facts, record.RootElement);
         }
-        string service = $"{account.Id}/blobServices/default";
+        string service = $"{account.Id}/{BlobCard.EgressService}";
         var containers = new List<(string Name, string Access, string? Purpose)>();
         await Try(facts, "containers", async () =>
         {
