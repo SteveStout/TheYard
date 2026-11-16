@@ -406,6 +406,26 @@ public sealed class CloudReadersTests
         Assert.NotEmpty(await history.NewestAsync(60, CancellationToken.None));
         Assert.Contains("B2", Text(report), StringComparison.Ordinal);
     }
+    /// <summary>
+    /// The plan's recorder reads five minutes back every minute; a minute it reads again unchanged is not written again,
+    /// so the look back costs a write only for a minute Azure was late with or a new one.
+    /// </summary>
+    [Fact]
+    public async Task The_plan_recorder_writes_a_minute_it_read_again_unchanged_only_once()
+    {
+        using var route = OutboundHttp.RouteTo(new RecordedCloud());
+        var history = new MemoryPlanHistory("no document store in the test");
+        // One clock for both reads, so a minute turning over between them cannot bring a new minute in.
+        var recorder = new PlanRecorder(new PlanReader("client-1", new PlanLayout(RecordedCloud.Site, TimeProvider.System), configured: true), history, Build, new AtTime(DateTimeOffset.UtcNow), NullLogger<PlanRecorder>.Instance);
+
+        int read = await recorder.RecordOnceAsync(CancellationToken.None);
+        int written = recorder.MinutesWritten;
+        await recorder.RecordOnceAsync(CancellationToken.None);
+
+        Assert.True(read > 0 && written == read, $"read {read}, written {written}");
+        Assert.Equal(written, recorder.MinutesWritten);
+    }
+
     // #endregion plan-reader
 
     // #region resource-cards

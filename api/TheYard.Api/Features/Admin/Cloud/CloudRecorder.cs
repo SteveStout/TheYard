@@ -18,6 +18,16 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
     private readonly Dictionary<string, ResourceHour> _liveHour = new(StringComparer.Ordinal);
     private readonly object _gate = new();
 
+    /// <summary>
+    /// Each minute this process last kept for a card, by its start, with its values as text: the read goes five minutes
+    /// back so a minute Azure was late with still lands, and a minute that reads the same as the one kept is not written
+    /// again. Writing all five every minute for every card was the database's busiest work, every minute of the day.
+    /// </summary>
+    private readonly Dictionary<(string Key, DateTimeOffset At), string> _keptMinutes = [];
+
+    /// <summary>How many minutes this process has written to the keeps, the suite's way to see a minute not written twice.</summary>
+    public int MinutesWritten { get; private set; }
+
     /// <summary>The newest hour read for a card, whether or not its keep took it; null before the first.</summary>
     /// <param name="key">The card's key.</param>
     public ResourceHour? LiveHour(string key)
@@ -61,7 +71,24 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
         {
             foreach (var minute in await card.Minutes(now - PlanRecorder.Lookback, now, build.Version, cancellation))
             {
+                string values = Fingerprint(minute);
+                lock (_gate)
+                {
+                    if (_keptMinutes.TryGetValue((key, minute.At), out string? kept) && kept == values)
+                    {
+                        continue;
+                    }
+                }
                 await history.AppendMinuteAsync(minute, cancellation);
+                lock (_gate)
+                {
+                    _keptMinutes[(key, minute.At)] = values;
+                    MinutesWritten++;
+                    foreach (var old in _keptMinutes.Keys.Where(entry => entry.At < now - PlanRecorder.Lookback - TimeSpan.FromMinutes(5)).ToList())
+                    {
+                        _keptMinutes.Remove(old);
+                    }
+                }
             }
         }
         if (failed is not null)
@@ -82,6 +109,12 @@ public sealed class CloudRecorder(IReadOnlyList<(ResourceCard Card, IResourceHis
             }
         }
     }
+
+    /// <summary>A minute's values and version as one line of text, the same for the same reading whatever order they came in.</summary>
+    /// <param name="minute">The minute read.</param>
+    public static string Fingerprint(ResourceMinute minute) =>
+        minute.Version + "|" + string.Join(";", minute.Values.OrderBy(entry => entry.Key, StringComparer.Ordinal)
+            .Select(entry => $"{entry.Key}={entry.Value?.ToString("R", System.Globalization.CultureInfo.InvariantCulture)}"));
 
     /// <summary>Where a failure says which read it was, the minute's or the hour's, for the loop's log line.</summary>
     public const string PartKey = "cloud.part";
