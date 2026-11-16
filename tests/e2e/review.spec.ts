@@ -98,8 +98,9 @@ test('the finish panel and About both say how to reach Steven, as links', async 
   for (const [name, href] of ways)
     await expect(reach.getByRole('link', { name })).toHaveAttribute('href', href);
   await page.goto('/about');
+  const about = page.getByRole('article');
   for (const [name, href] of ways)
-    await expect(page.getByRole('link', { name })).toHaveAttribute('href', href);
+    await expect(about.getByRole('link', { name })).toHaveAttribute('href', href);
 });
 
 test('every stop opens the site’s own address, and the stop on screen is the only one with Do this', async ({
