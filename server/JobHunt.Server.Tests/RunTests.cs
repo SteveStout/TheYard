@@ -182,17 +182,33 @@ public sealed class RunTests
         Assert.DoesNotContain(morning.Claude.Requests, request => IsLane(request, Lane.Messages));
     }
 
-    [Theory]
-    [InlineData(95, "invite pause, 95")]
-    [InlineData(-1, "no recount, no invite")]
-    public async Task The_pause_is_the_program_s_arithmetic_and_a_missing_count_sends_nothing(int live, string reason)
+    [Fact]
+    public async Task The_pause_is_the_program_s_arithmetic()
     {
-        string count = live < 0 ? "null" : live.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        var morning = new Morning(_ => Answer($$"""{"rows":[],"live_invite_count":{{count}},"stop_condition":"none","stop_detail":null,"stop_screenshot":null}"""));
+        var morning = new Morning(_ => Answer("""{"rows":[],"live_invite_count":95,"stop_condition":"none","stop_detail":null,"stop_screenshot":null}"""));
         (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
-        Assert.Contains(reason, output, StringComparison.Ordinal);
+        Assert.Contains("invite pause, 95", output, StringComparison.Ordinal);
         Assert.Single(morning.Claude.Requests);
         Assert.Empty(morning.Minter.Asked);
+    }
+
+    [Fact]
+    public async Task A_missing_count_hands_the_room_to_the_tracker_s_seven_days()
+    {
+        var morning = new Morning(request => IsRecount(request)
+            ? Answer("""{"rows":[],"live_invite_count":null,"stop_condition":"none","stop_detail":"Load more did not load","stop_screenshot":null}""")
+            : Quiet(request));
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, Lane.Invites), default);
+        Assert.DoesNotContain("no recount, no invite", output, StringComparison.Ordinal);
+        Assert.Contains("the tracker's 7-day count governs", morning.Share.Files["nightly/2026-11-03/0600-invites-sonnet-5-5/DONE.md"], StringComparison.Ordinal);
+        Assert.True(morning.Share.Files.ContainsKey("nightly/2026-11-03/0600-invites-sonnet-5-5/worklist.tsv"));
+    }
+
+    [Fact]
+    public void The_recount_may_click_only_load_more()
+    {
+        IReadOnlyList<string> arguments = ClaudeArguments.Recount(new LaneConfig(), "/mnt/j", "/mnt/j/run", false);
+        Assert.Contains("click no button but the sent page's Load more (at most 10 times)", arguments[1], StringComparison.Ordinal);
     }
 
     [Fact]

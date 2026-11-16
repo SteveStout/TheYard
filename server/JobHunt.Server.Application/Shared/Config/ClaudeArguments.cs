@@ -84,7 +84,7 @@ public static class ClaudeArguments
     {
         var arguments = new List<string>
         {
-            "-p", $"Read {share}/nightly/{RunSlot.Doc(Lane.Invites)} and do its section Recount and nothing else. JOBHUNT={share}. DRY_RUN={dry.ToString().ToLowerInvariant()}. Send nothing, click no button, return rows empty.",
+            "-p", $"Read {share}/nightly/{RunSlot.Doc(Lane.Invites)} and do its section Recount and nothing else. JOBHUNT={share}. DRY_RUN={dry.ToString().ToLowerInvariant()}. Send nothing, click no button but the sent page's Load more (at most 10 times), return rows empty.",
             "--model", config.Model,
             "--effort", config.Effort,
             "--max-turns", RecountTurns,

@@ -11,8 +11,10 @@ public sealed record Recount(int? Live, int Room, string? Held, string? Stop, IR
 /// <summary>
 /// The live invite count, read by a short model run before the worklist is cut, so the pause at 90 and the stop at 89 are
 /// the program's arithmetic and not only the lane doc's. The sent page governs: the tracker has read eight low against
-/// it. A live run with no count sends no invite, and a run that gave no answer closes LinkedIn, because it may have ended
-/// on a checkpoint. A dry run cannot scroll, so a count it did not read is no defect.
+/// it. When the page would not give a count (it ends in a Load more button the recount may click at most ten times),
+/// the tracker's seven days govern instead, because a held day sends nothing and a missing count is the page, not a
+/// risk. A run that gave no answer, or stopped, closes LinkedIn, because it may have ended on a checkpoint. A dry run
+/// cannot scroll, so a count it did not read is no defect.
 /// </summary>
 /// <param name="share">The share.</param>
 /// <param name="claude">The CLI.</param>
@@ -46,7 +48,11 @@ public sealed class InviteRecount(IShare share, IClaudeCli claude, ServerConfig 
         }
         if (result.LiveInviteCount is not { } live)
         {
-            return start.Dry ? new Recount(null, room, null, null, lines) : new Recount(null, 0, "no recount, no invite", null, lines);
+            if (!start.Dry)
+            {
+                lines.Add("The sent page gave no count, so the tracker's 7-day count governs today's room.");
+            }
+            return new Recount(null, room, null, null, lines);
         }
         return live >= ceilings.InvitePause
             ? new Recount(live, 0, $"invite pause, {live} on the sent page", null, lines)
