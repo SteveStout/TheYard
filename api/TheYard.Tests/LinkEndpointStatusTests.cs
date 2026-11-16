@@ -24,6 +24,30 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         return client;
     }
 
+    /// <summary>
+    /// The card's row for <paramref name="code"/> once it holds <paramref name="opens"/> opens. The collector's own loop may
+    /// have taken an open off the channel and still be writing it when a drain here finds the channel empty, so the card
+    /// is read again until the row is there, for up to ten seconds (CodeRabbit on 1.0.5.51).
+    /// </summary>
+    private async Task<JsonDocument> CardWithRow(HttpClient client, string code, int opens)
+    {
+        var collector = factory.Services.GetRequiredService<LinkOpenCollector>();
+        var until = DateTime.UtcNow.AddSeconds(10);
+        while (true)
+        {
+            await collector.DrainAsync(CancellationToken.None);
+            var json = JsonDocument.Parse(await (await client.GetAsync("/api/admin/links?window=7d")).Content.ReadAsStringAsync());
+            bool there = json.RootElement.GetProperty("codes").EnumerateArray()
+                .Any(entry => entry.GetProperty("code").GetString() == code && entry.GetProperty("opens").GetInt32() >= opens);
+            if (there || DateTime.UtcNow > until)
+            {
+                return json;
+            }
+            json.Dispose();
+            await Task.Delay(100);
+        }
+    }
+
     [Fact]
     [Covers("GET", "/api/go/{key}", 302)]
     [Covers("GET", "/api/go/{key}", 404)]
@@ -47,8 +71,7 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         var email = await client.GetAsync($"/api/go/email?r={code}");
         Assert.Equal(HttpStatusCode.Found, email.StatusCode);
         Assert.Equal("mailto:stevenstout11@gmail.com?subject=TheYard", email.Headers.Location!.ToString());
-        await factory.Services.GetRequiredService<LinkOpenCollector>().DrainAsync(CancellationToken.None);
-        using var json = JsonDocument.Parse(await (await client.GetAsync("/api/admin/links?window=7d")).Content.ReadAsStringAsync());
+        using var json = await CardWithRow(client, code, 1);
         var row = json.RootElement.GetProperty("codes").EnumerateArray().Single(entry => entry.GetProperty("code").GetString() == code);
         Assert.Equal(1, row.GetProperty("paths").GetProperty("/api/go/email").GetInt32());
     }
@@ -84,12 +107,9 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         unfurler.DefaultRequestHeaders.UserAgent.ParseAdd("LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)");
         Assert.Equal(HttpStatusCode.NoContent, (await unfurler.GetAsync($"/api/links/open?r={code}&path=/")).StatusCode);
 
-        // The collector writes off the request path; drain it the way the loop would.
-        await factory.Services.GetRequiredService<LinkOpenCollector>().DrainAsync(CancellationToken.None);
-
-        var card = await client.GetAsync("/api/admin/links?window=7d");
-        Assert.Equal(HttpStatusCode.OK, card.StatusCode);
-        using var json = JsonDocument.Parse(await card.Content.ReadAsStringAsync());
+        // The collector writes off the request path; drain it the way the loop would, until the row is there.
+        using var json = await CardWithRow(client, code, 3);
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/admin/links?window=7d")).StatusCode);
         var root = json.RootElement;
         Assert.True(root.GetProperty("available").GetBoolean());
         Assert.Equal("7d", root.GetProperty("window").GetString());
