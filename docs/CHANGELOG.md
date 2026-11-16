@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.59** (2026-11-16): Every public page ends with where to go next, at most two links each with a line of reason and its minutes; the footer's email line goes through the site's counted redirect, like the email links on About and the review route, so no page carries the address.
 - **1.0.5.58** (2026-11-16): The 6 AM invite run may click the sent page's Load more button (at most ten times) to finish its count, and counts the week from the tracker when the page will not give one, instead of holding the day; and each resume the apply run fails to build keeps its own folder, so every failure can be read the next morning.
 - **1.0.5.57** (2026-11-16): The preflight before a ship now refuses a version number that is taken or is not one above main, and prints the next free one, so a lane learns it in a minute instead of after the whole gate; a gate branch at the lane's own commit passes, and leftover branches below main are named and never block.
 - **1.0.5.56** (2026-11-16): On a phone the Quality page holds still while its charts are drawn, where every word under the first chart dropped 200 pixels when it arrived on a slow phone.

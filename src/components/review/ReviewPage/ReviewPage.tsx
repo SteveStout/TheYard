@@ -9,6 +9,7 @@ import { useRef } from 'react';
 import { useReviewProgress } from '../../../hooks/useReviewProgress';
 import { REVIEW_STOPS } from '../../../lib/reviewStops';
 import { ReviewFinish } from '../ReviewFinish';
+import { WhereNext } from '../../shared/WhereNext';
 import { ReviewProgress } from '../ReviewProgress';
 import { ReviewRail } from '../ReviewRail';
 import { ReviewStop, type StopState } from '../ReviewStop';
@@ -69,6 +70,7 @@ export function ReviewPage() {
         ))}
       </ol>
       <ReviewFinish ref={finish} finished={review.finished} onRestart={review.restart} />
+      <WhereNext page="review" />
     </section>
   );
 }

@@ -6,6 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Recommendations } from '../components/shared/Recommendations';
+import { WhereNext } from '../components/shared/WhereNext';
+import type { NextPage } from '../lib/pageHooks';
 import { useFirstLoad } from '../hooks/useFirstLoad';
 import { request as askTheSite } from '../lib/request';
 import styles from './DocDialog.module.css';
@@ -42,6 +44,12 @@ export type DocRequest = { key: DocKey };
  * doc through the one instance the sidebar owns; onClose lets the sidebar
  * drop the row's current marker.
  */
+/** The "Where next" footer a document ends with: Quality, Architecture and every decision record carry one. */
+function nextPage(key: DocKey): NextPage | null {
+  if (key === 'quality' || key === 'architecture') return key;
+  return DOCS[key].url.startsWith('/api/docs/adr-') ? 'record' : null;
+}
+
 export function DocDialog({
   request,
   onClose,
@@ -224,11 +232,14 @@ export function DocDialog({
         ) : docHtml[activeDoc] === undefined ? (
           <p className={styles.docLoading}>Loading...</p>
         ) : (
-          <div
-            ref={proseRef}
-            className={PROSE}
-            dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }}
-          />
+          <>
+            <div
+              ref={proseRef}
+              className={PROSE}
+              dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }}
+            />
+            {nextPage(activeDoc) && <WhereNext page={nextPage(activeDoc)!} />}
+          </>
         )}
         {said !== null && createPortal(<Recommendations />, said)}
       </div>
