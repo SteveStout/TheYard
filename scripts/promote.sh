@@ -27,7 +27,9 @@ refuse() {
   echo "::error::$*"
   exit 1
 }
-versions() { sed -n 's/^- \*\*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)\*\*.*/\1/p'; }
+# The changelog's version lines and the number after one, read the one way preflight.sh's claim check reads them.
+# shellcheck source=scripts/versions.sh
+. scripts/versions.sh
 
 # #region the-tested-commit
 # Before anything is written: HEAD is the commit the named run tested, and it is one commit on main, so the gate's
@@ -72,7 +74,7 @@ below=$(versions < docs/CHANGELOG.md | sed -n 2p)
 [ "$top" != "$below" ] || refuse "the changelog's top line is still $below: a version ships with its own line"
 [ "$(printf '%s\n%s\n' "$below" "$top" | sort -V | tail -1)" = "$top" ] || refuse "the version goes down, $below to $top"
 if [ "${top%.*}" = "${below%.*}" ]; then
-  [ "${top##*.}" -eq $((${below##*.} + 1)) ] || refuse "the version skips, $below to $top: the fourth number moves by one"
+  [ "$top" = "$(next_version "$below")" ] || refuse "the version skips, $below to $top: the fourth number moves by one"
   moved="the fourth number only"
 else
   # The first three numbers are the owner's (ADR-130). A move in them ships only by hand, from a machine where the

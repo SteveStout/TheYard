@@ -88,7 +88,10 @@ public sealed partial class PromoteScriptTests : IDisposable
         Directory.CreateDirectory(Path.Combine(Work, Path.GetDirectoryName(resume)!));
         File.Copy(Path.Combine(Repo.Root(), resume), Path.Combine(Work, resume));
         Directory.CreateDirectory(Path.Combine(Work, "scripts"));
-        File.Copy(Path.Combine(Repo.Root(), "scripts", "promote.sh"), Path.Combine(Work, "scripts", "promote.sh"));
+        foreach (string script in new[] { "promote.sh", "versions.sh" })
+        {
+            File.Copy(Path.Combine(Repo.Root(), "scripts", script), Path.Combine(Work, "scripts", script));
+        }
         Git("add -A");
         Git("commit -q -m main");
         Git("push -q origin main");
