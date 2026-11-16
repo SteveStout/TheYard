@@ -173,7 +173,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     public async Task<IReadOnlyList<WaitingLead>> WaitingAsync(CancellationToken ct)
     {
         await using var connection = await ConnectAsync(ct);
-        await using var command = Command(connection, CampaignSql.WaitingLeads);
+        await using var command = Command(connection, CampaignSql.WaitingLeads, ("@boxes", Boxes));
         await using var r = await command.ExecuteReaderAsync(ct);
         var waiting = new List<WaitingLead>();
         while (await r.ReadAsync(ct))
@@ -185,7 +185,10 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
 
     /// <inheritdoc />
     public Task SetAddressAsync(long leadId, string address, string sourceUrl, bool? mx, DateTimeOffset at, CancellationToken ct) =>
-        ExecuteAsync(CampaignSql.SetAddress, ct, ("@id", leadId), ("@email", Clip(address, 254)), ("@source", Clip(sourceUrl, 500)), ("@mx", mx), ("@at", at));
+        ExecuteAsync(CampaignSql.SetAddress, ct, ("@id", leadId), ("@email", Clip(address, 254)), ("@source", Clip(sourceUrl, 500)), ("@mx", mx), ("@at", at), ("@boxes", Boxes));
+
+    /// <summary>The shared boxes as the SQL's STRING_SPLIT reads them.</summary>
+    private static string Boxes => TrackAContacts.GeneralBoxes.Replace('|', ',');
 
     /// <inheritdoc />
     public async Task<int> WithAddressAsync(IReadOnlyCollection<long> leadIds, CancellationToken ct)
@@ -195,7 +198,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
             return 0;
         }
         await using var connection = await ConnectAsync(ct);
-        await using var command = Command(connection, CampaignSql.WithAddress, ("@ids", string.Join(',', leadIds.Select(id => id.ToString(System.Globalization.CultureInfo.InvariantCulture)))));
+        await using var command = Command(connection, CampaignSql.WithAddress, ("@ids", string.Join(',', leadIds.Select(id => id.ToString(System.Globalization.CultureInfo.InvariantCulture)))), ("@boxes", Boxes));
         return Convert.ToInt32(await command.ExecuteScalarAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
     }
 
@@ -260,6 +263,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
         AboutLink = Text(r, "AboutLink"),
         CreatedAt = r.GetDateTimeOffset(r.GetOrdinal("CreatedAt")),
         CreatedBy = Text(r, "CreatedBy"),
+        Touches = r.GetInt32(r.GetOrdinal("Touches")),
     };
 
     private static string? Text(SqlDataReader r, string column) => r.IsDBNull(r.GetOrdinal(column)) ? null : r.GetString(r.GetOrdinal(column));
