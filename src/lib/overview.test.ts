@@ -74,20 +74,27 @@ describe('overviewRows', () => {
     expect(failing.tone).toBe('bad');
   });
 
-  it("grades the month at yesterday's rate against the $60 budget, Azure's forecast beside it", () => {
+  it("grades the month at yesterday's rate against the $70 budget, Azure's forecast beside it", () => {
     const cost = overviewRows(base)[2];
     expect(cost.value).toBe('$13.62');
     expect(cost.detail).toBe(
       "October so far; at yesterday's rate $47.30 (13 Oct cost $1.59) · Azure's forecast $73.77"
     );
     expect(cost.range).toBe(
-      "the month at yesterday's rate against the $60 budget: amber at $50, red at $60; red on any day over 3x the median of the week before it (never under $5.00)"
+      "the month at yesterday's rate against the $70 budget: amber at $60, red at $70; red on any day over 3x the median of the week before it (never under $5.00)"
     );
     expect(cost.tone).toBe('good');
-    const near = overviewRows({ ...base, cost: { ...base.cost!, month_at_yesterday: 52 } })[2];
+    const near = overviewRows({ ...base, cost: { ...base.cost!, month_at_yesterday: 62 } })[2];
     expect(near.tone).toBe('warn');
-    const over = overviewRows({ ...base, cost: { ...base.cost!, month_at_yesterday: 61 } })[2];
+    const over = overviewRows({ ...base, cost: { ...base.cost!, month_at_yesterday: 71 } })[2];
     expect(over.tone).toBe('bad');
+    // Azure's own budget, when the cost read carries it, is the line the month is graded against.
+    const read = overviewRows({
+      ...base,
+      cost: { ...base.cost!, month_at_yesterday: 52, budget_dollars: 55 },
+    })[2];
+    expect(read.tone).toBe('warn');
+    expect(read.range).toContain('against the $55 budget: amber at $45, red at $55');
     const spike = {
       day: '2026-10-13',
       cost: 25.74,

@@ -27,8 +27,11 @@ export type Range = {
 };
 
 // #region ranges
-/** The owner's monthly budget for the whole subscription: over it the cost reads red. */
-export const MONTHLY_BUDGET_DOLLARS = 60;
+/**
+ * The owner's monthly budget for the whole subscription: over it the cost reads red. The card grades against the
+ * amount Azure's own budget holds when the cost read carries it, and against this number only when it does not.
+ */
+export const MONTHLY_BUDGET_DOLLARS = 70;
 
 /** Ten dollars under the budget, the amber line the owner named, rather than a share of it. */
 export const BUDGET_AMBER_DOLLARS = MONTHLY_BUDGET_DOLLARS - 10;
@@ -90,7 +93,7 @@ export const RANGES = {
     amber: BUDGET_AMBER_DOLLARS,
     red: MONTHLY_BUDGET_DOLLARS,
     source:
-      "Steve's budget, 11/4: \"adjust it up 10$ then as we've added more resources\"; red at $60, amber $10 under it, graded on what is being spent, never on Azure's forecast",
+      "Steve's budget: $60 on 11/4 (\"adjust it up 10$ then as we've added more resources\"), $70 on 11/11, read from Azure's budget when the cost read carries it; red at the budget, amber $10 under it, graded on what is being spent, never on Azure's forecast",
   },
   clientErrorsHour: {
     name: 'Turned away (4xx) in the hour',
@@ -171,8 +174,15 @@ export function spikeTone(day: SpikeReading): RangeTone {
 export function costTone(
   monthToDate: number,
   monthAtYesterday: number | null | undefined,
-  spikeDays: readonly SpikeReading[] = []
+  spikeDays: readonly SpikeReading[] = [],
+  budget: number = MONTHLY_BUDGET_DOLLARS
 ): RangeTone {
   if (spikeDays.slice(0, 2).some((day) => spikeTone(day) === 'bad')) return 'bad';
-  return toneOf('cost', Math.max(monthToDate, monthAtYesterday ?? monthToDate));
+  const month = Math.max(monthToDate, monthAtYesterday ?? monthToDate);
+  return month >= budget ? 'bad' : month >= budget - 10 ? 'warn' : 'good';
+}
+
+/** The cost range in words against <budget>: amber $10 under it, red at it. */
+export function costRangeWords(budget: number = MONTHLY_BUDGET_DOLLARS): string {
+  return `amber at $${budget - 10}, red at $${budget}`;
 }
