@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # preflight.sh
 #
-# Does:      The checks the gate runs that a shipping machine can also run, in under three minutes and inside
-#            8 GB: dotnet format, Prettier, oxlint and the type check, each named with the first lines of its
-#            output when it is red, and then one line saying whether this version changes .github/workflows
-#            and whether the secret PROMOTE_TOKEN will carry it. Exits non-zero on any red.
+# Does:      The version claim check (scripts/versions.sh: the changelog's top line filled, one above main, and its
+#            gate branch free or this commit's own), then the checks the gate runs that a shipping machine can also
+#            run, in under three minutes and inside 8 GB: dotnet format, Prettier, oxlint and the type check, each
+#            named with the first lines of its output when it is red, and then one line saying whether this version
+#            changes .github/workflows and whether the secret PROMOTE_TOKEN will carry it. Exits non-zero on any red.
 # Does not:  Run the browser suite or the two passes on Cosmos DB. Those need the 16 GB runner, which is why
 #            the gate moved off the laptop in the first place (ADR-098, ADR-068). Read, print or take a token
 #            value: the secret is read by NAME from the repository's secret list and nowhere else.
@@ -17,6 +18,20 @@ set -uo pipefail
 cd "$(git rev-parse --show-toplevel)" || exit 1
 out=$(mktemp -d)
 red=""
+
+# #region the-version
+# The number this version claims, checked before anything slow runs: filled, one above main, and no gate branch of
+# that number on origin at another commit (scripts/versions.sh). A taken number found here costs a minute; found at
+# promote, after the whole gate, it cost a gate run and every lane behind it.
+printf '%-9s ' version
+if bash scripts/versions.sh > "$out/version.txt" 2>&1; then
+  echo ok
+  sed 's/^/          /' "$out/version.txt"
+else
+  echo RED
+  red="$red version"
+fi
+# #endregion the-version
 
 # #region the-checks
 # The same four commands the gate's dotnet-side and node-side regions run, in the same order the gate runs
