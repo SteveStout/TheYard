@@ -59,7 +59,11 @@ run by hand, naming it:
 bash scripts/preflight.sh
 ```
 
-It runs the four gate checks a shipping machine can run in under three minutes
+It first checks the number the version claims (`scripts/versions.sh`): the changelog's top line is filled and is
+main's top line plus one, and no `gate/<version>` is on origin at another commit; a refusal names the next free
+version, and a taken number says that pushing over it is a force-push with lease that is Steve's to run or allow
+(ADR: The version comes from the changelog, the addendum on the claim check). Then it runs the four gate checks a
+shipping machine can run in under three minutes
 and inside 8 GB (`dotnet format api/TheYard.slnx --verify-no-changes`, `npm run
 format:check`, `npm run lint`, `npx tsc -b`), names the red one with the first
 twenty lines of its output, and then says whether this version changes
@@ -254,6 +258,7 @@ URL, and every deploy so far has been gated on it.
 
 ## Files
 
+- [`scripts/versions.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/versions.sh): the version claim check preflight runs first, and the version reading promote.sh shares
 - [`scripts/preflight.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/preflight.sh): the gate's four quick checks and the promote path, run before the push; a red preflight is never pushed.
 - [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `gate/<version>` branch the ship pushes; `main` moves only on its green.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the suites as three jobs behind it, on every push to main and on a pull request.

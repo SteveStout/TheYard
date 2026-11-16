@@ -121,7 +121,9 @@ bash scripts/preflight.sh
 
 **A red preflight is never pushed.** Right after the push, `bash scripts/gate_pr.sh open <version>` opens the gate's
 pull request and asks CodeRabbit for its review, which the gate waits for before it promotes (ADR-129); a ship
-with no request is logged "not reviewed, no pull request" and warned in the run. It runs the four gate checks that fit on a shipping machine (`dotnet
+with no request is logged "not reviewed, no pull request" and warned in the run. It first checks the version claim (`scripts/versions.sh`: the changelog's top line is main's plus one
+and no gate branch of that number is on origin at another commit; ADR-031's addendum on the claim check), then runs
+the four gate checks that fit on a shipping machine (`dotnet
 format`, Prettier, oxlint, the type check) and says whether this version changes `.github/workflows` and
 whether the secret `PROMOTE_TOKEN` will carry it; a version that changes a workflow with no such secret
 is promoted by hand after a green gate, which the preflight prints the command for (ADR-098, the addendum
