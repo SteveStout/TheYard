@@ -7,7 +7,7 @@ namespace TheYard.Api.Features.Links;
 /// Where each pass-through link leads, from configuration (Links:Go:{key}): GitHub and LinkedIn
 /// cannot count an open on their side, so a tagged link to either goes through this site first.
 /// The addresses are configuration, not code, like every other name of this deployment. The one
-/// key "email" leads to a mailto address (Links:Email), so the Email Steven links on /about and the
+/// key "email" leads to a mailto address (Links:Email), so the email contact links on /about and the
 /// review route's finish panel and the "Where next" footer's contact line are counted too and no drawn
 /// page carries the address (ADR-123's and ADR-108's addenda).
 /// </summary>

@@ -54,7 +54,7 @@ public static partial class PageHooks
         {
             return File.Exists(path) ? JsonSerializer.Deserialize<PageHooksFile>(File.ReadAllText(path), Format) : null;
         }
-        catch (JsonException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
             return null;
         }
