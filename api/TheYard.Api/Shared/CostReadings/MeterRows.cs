@@ -28,6 +28,14 @@ public static class MeterRows
         ("Cost anomalies", "the subscription", "anomaly-subscription-daily"),
     ];
 
+    /// <summary>The name the subscription's monthly budget has in Azure.</summary>
+    public const string BudgetName = "budget-subscription-monthly";
+
+    /// <summary>The monthly budget's amount from the newest read of the rules, or null when it was not found.</summary>
+    /// <param name="read">The newest read; null before the first.</param>
+    public static double? Budget(AlertRulesRead? read) =>
+        read?.Found.GetValueOrDefault(BudgetName)?.Amount;
+
     /// <summary>The words a meter reads before the rules have been read.</summary>
     public const string NotRead = "not read yet: the rules are read an hour apart, beside the bill";
 

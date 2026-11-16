@@ -99,6 +99,22 @@ public class CostSpikeTests(WebApplicationFactory<Program> factory) : IClassFixt
         Assert.All(MeterRows.Named, meter => Assert.Contains($"name: '{meter.Rule}'", templates, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// The costs answer carries the budget Azure holds, read with the rules, so a card grades against the budget and
+    /// not a number typed beside it: the budget moved to $70 and a constant kept saying $60.
+    /// </summary>
+    [Fact]
+    public void The_budget_the_cards_grade_against_is_the_one_azure_holds()
+    {
+        using var budget = JsonDocument.Parse("""{"value":[{"name":"budget-subscription-monthly","properties":{"amount":70,"notifications":{"actual80":{"threshold":80,"thresholdType":"Actual"}}}}]}""");
+        var rule = AlertRules.BudgetRule(AlertRules.Entries(budget.RootElement).Single())!;
+        var read = new AlertRulesRead(new Dictionary<string, FoundRule> { [rule.Name] = rule }, [], DateTimeOffset.UnixEpoch);
+
+        Assert.Equal(70, MeterRows.Budget(read));
+        Assert.Null(MeterRows.Budget(null));
+        Assert.Null(MeterRows.Budget(new AlertRulesRead(new Dictionary<string, FoundRule>(), ["the budgets could not be read"], DateTimeOffset.UnixEpoch)));
+    }
+
     [Fact]
     public void The_rules_are_read_from_azures_own_answers()
     {
@@ -115,6 +131,8 @@ public class CostSpikeTests(WebApplicationFactory<Program> factory) : IClassFixt
         Assert.Equal(new FoundRule("alert-jobhunt-blob-egress", true, "Egress over 2,000,000,000 in 1 hour"), egress);
         Assert.Equal(new FoundRule("alert-theyard-ingestion", false, "a log alert checked every 1 hour over 1 day"), ingestion);
         Assert.Equal("$60 a month, notices at 80 %, 100 % of the forecast", amount?.Line);
+        Assert.Equal(60, amount?.Amount);
+        Assert.Null(egress?.Amount);
         Assert.True(anomalies[0]?.Enabled);
         Assert.Null(anomalies[1]);
         Assert.Equal("15 minutes", AlertRules.Duration("PT15M"));

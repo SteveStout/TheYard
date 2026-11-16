@@ -42,7 +42,7 @@ public static class PlanView
                 newest?.CpuPercent is { } cpu && cores is { } c ? $"{(cpu / 100 * c).ToString("0.00", CultureInfo.InvariantCulture)} of {c} vCPU" : "size not read yet",
                 PlanThresholds.Cpu.Amber, PlanThresholds.Cpu.Red, month.CpuP95, month.CpuPeak, CloudTones.Dial(newest?.CpuPercent, PlanThresholds.Cpu, cpuTone)),
             new("Memory, right now", newest?.MemoryPercent, Percent(newest?.MemoryPercent),
-                newest?.MemoryPercent is { } mem && memoryGb is { } g ? $"{(mem / 100 * g).ToString("0.00", CultureInfo.InvariantCulture)} of {g} GB" : "size not read yet",
+                newest?.MemoryPercent is { } mem && memoryGb is { } g ? $"{(mem / 100 * g).ToString("0.00", CultureInfo.InvariantCulture)} of {g} GB{AppsShare(lastHour)}" : "size not read yet",
                 PlanThresholds.Memory.Amber, PlanThresholds.Memory.Red, month.MemoryP95, month.MemoryPeak, CloudTones.Dial(newest?.MemoryPercent, PlanThresholds.Memory, memoryTone)),
         };
 
@@ -121,6 +121,14 @@ public static class PlanView
         string.IsNullOrWhiteSpace(tenant) || string.IsNullOrWhiteSpace(resourceId)
             ? null
             : $"https://portal.azure.com/#@{tenant}/resource{(resourceId.StartsWith('/') ? "" : "/")}{resourceId}";
+
+    /// <summary>
+    /// The apps' own share of the memory in use, after the plan's total on the memory dial: " · the apps 0.70 GB of it",
+    /// or nothing when an app's working set was not read. The rest is the platform and the file cache, derived on the
+    /// apps table, so the dial's percentage is never read as what the apps hold.
+    /// </summary>
+    public static string AppsShare(IReadOnlyList<PlanMinute> lastHour) =>
+        PlanChildren.AppsMb(lastHour) is { } mb ? $" · the apps {(mb / 1024).ToString("0.00", CultureInfo.InvariantCulture)} GB of it, the rest the platform" : "";
 
     /// <summary>A percentage the way the card prints it.</summary>
     public static string Percent(double? value) => value is { } v ? $"{v.ToString("0", CultureInfo.InvariantCulture)} %" : "not read";
