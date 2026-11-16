@@ -21,6 +21,6 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "render"],
+  "include": ["src", "render", "tests/budgets"],
   "exclude": ["render/vite.config.ts"]
 }
