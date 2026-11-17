@@ -4,7 +4,7 @@ name: Gate
 #
 # The laptop that ships has 8 GB and the suites need more than it has free with an editor open: a
 # gate there waited hours for memory, and three takes timed out in specs the change did not touch.
-# So the laptop now only builds the commit and pushes it to a branch named gate/<version>; this
+# So the laptop now only builds the commit and pushes it to a branch named gate/<version>-<lane>-<sha8>; this
 # workflow runs every check the laptop's gate ran, in the same order, on a runner with 16 GB. Red,
 # main is never touched.
 #
@@ -12,7 +12,9 @@ name: Gate
 # 1.0.4.101): the promote job writes data/test-results.json and the README's figures from the
 # gate-raw artifact, folds them into the commit and fast-forwards main, the run calls Deploy and
 # Deploy Render on that commit, and the after-roll job reads both names and CI on main. A ship is
-# a push of gate/<version>; no machine has to be on. The gate job itself only reads.
+# a push of gate/<version>-<lane>-<sha8>; no machine has to be on. The gate job itself only reads. Every reader of
+# the branch name takes the version as the text after gate/ up to the first hyphen (scripts/versions.sh,
+# branch_version), so the older gate/<version> still reads.
 #
 # A version that changes a workflow is the one that needs more than the run's own token. With the
 # secret PROMOTE_TOKEN it pushes itself, and because a personal token's push starts the workflows
@@ -28,10 +30,14 @@ permissions:
   contents: read
   id-token: write
 
-# One gate at a time: two would share the tests- containers on the Cosmos DB account.
+# One gate at a time: two would share the tests- containers on the Cosmos DB account. queue: max keeps every pending
+# run in line (up to a hundred) instead of the default, which keeps one and cancels the run it replaces, so a third
+# push can never cancel a pending gate in silence. A pending run is never cancelled for a running one either way, and
+# GitHub refuses queue: max beside cancel-in-progress: true, so that line is left out (ADR-031, the addendum on the
+# fill at the claim).
 concurrency:
   group: gate
-  cancel-in-progress: false
+  queue: max
 
 jobs:
   # The checks run side by side (ADR-098, the addendum of 1.0.5.4). Until 1.0.5.3 every check ran in one job, one
@@ -43,10 +49,25 @@ jobs:
   # Admin tab read, in the shape they read before, and turns the run red or green with the same verdict. Every check
   # still runs, on the same cuts; only the order of the waiting changed.
 
+  # #region number-job
+  # The number, read again the moment this run holds the gate's group (ADR-031, the addendum on the fill at the
+  # claim): the branch's version must be the changelog's top line and still origin/main's top line plus one. Two lanes
+  # that claimed one number are told in seconds, and every job that costs minutes waits on this one, so a double claim
+  # costs under a minute instead of a gate. promote.sh's own version checks stay as the backstop.
+  number:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: The number is still main's top line plus one
+        run: bash scripts/versions.sh gate "$GITHUB_REF_NAME"
+  # #endregion number-job
+
   # #region dotnet-job
   # The .NET side on SQLite: the build with any warning red, dotnet format, the SQL projects, the job hunt's
   # Function's suite, the machine lanes' suite and xUnit on SQLite.
   dotnet:
+    needs: number
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -131,6 +152,7 @@ jobs:
   # the account, and the last two the tests- containers on it, so they are never split across jobs. This is the one
   # job that signs in to Azure: a sign-in that times out reddens this job's passes and nothing else.
   cosmos:
+    needs: number
     runs-on: ubuntu-24.04
     # The federated credential for the Cosmos DB passes is issued to this environment, so a
     # branch name never has to be registered in Azure.
@@ -218,6 +240,7 @@ jobs:
   # The node checks: the two bundles and the code's own numbers, Prettier, oxlint, the type check, Vitest, the em
   # dash scan and the quality ratchet.
   node:
+    needs: number
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -312,6 +335,7 @@ jobs:
   # reads, and a pass that needed its retry is still written r (ADR-068, the addendum of 1.0.4.24).
   browser:
     name: browser ${{ matrix.shard }} of 2
+    needs: number
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
@@ -461,6 +485,7 @@ jobs:
   # its path rules are written for the system they run on, and one of its cases (a drive letter is a
   # rooted path) only means something there.
   shed:
+    needs: number
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
@@ -487,6 +512,7 @@ jobs:
   # moves. At Level 0 no finding holds the ship: a review that does not come inside the ceiling ships anyway with a
   # notice, and the row it writes says so. The row joins data/coderabbit-findings.json in the promote job.
   coderabbit:
+    needs: number
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -559,7 +585,9 @@ jobs:
         run: |
           started=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
           seconds=$(( $(date +%s) - $(date -d "$started" +%s) ))
-          bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds" "${GITHUB_REF_NAME#gate/}" "$GITHUB_RUN_ID"
+          # The version is the text after gate/ up to the first hyphen: gate/<version>-<lane>-<sha8>, or gate/<version>.
+          . scripts/versions.sh
+          bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds" "$(branch_version "$GITHUB_REF_NAME")" "$GITHUB_RUN_ID"
   # #endregion promote-job
 
   # #region the-roll
@@ -692,7 +720,7 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/gate_pr.sh close "${{ needs.promote.outputs.version }}" "${{ needs.promote.outputs.sha }}" || echo "::warning::the pull request for $GITHUB_REF_NAME was not closed"
+        run: bash scripts/gate_pr.sh close "$GITHUB_REF_NAME" "${{ needs.promote.outputs.sha }}" || echo "::warning::the pull request for $GITHUB_REF_NAME was not closed"
       - name: The gate branch goes
         if: always()
         env:
@@ -706,8 +734,10 @@ jobs:
   # blocks: nothing needs it, so promote and the verdict never wait for it, and a failure turns no run red. Its cap
   # matters all the same, because the gate's concurrency group holds the next gate until every job of this run has
   # ended. A later version reads ten of these and sets the blocking line, as the owner's answer to the ladder's
-  # question 4 says. Lighthouse 12.8.2 is the version the Performance page's readings were taken with.
+  # question 4 says. Lighthouse 12.8.2 is the version the Performance page's readings were taken with. It waits only
+  # for the number job, so a run turned away for its number never starts it.
   lighthouse:
+    needs: number
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     continue-on-error: true

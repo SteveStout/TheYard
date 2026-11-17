@@ -15,6 +15,9 @@ namespace TheYard.Tests;
 public sealed class GateReviewWaitTests : IDisposable
 {
     private const string Sha = "0123456789abcdef0123456789abcdef01234567";
+
+    /// <summary>A gate branch as a lane pushes it: the version, the lane and the commit.</summary>
+    private const string Branch = "gate/1.0.4.900-coding1116-01234567";
     private readonly string _root = Path.Combine(Path.GetTempPath(), "review-wait-" + Guid.NewGuid().ToString("N"));
 
     /// <summary>The planted answers go with the case that planted them.</summary>
@@ -81,7 +84,7 @@ public sealed class GateReviewWaitTests : IDisposable
     private JsonElement Wait(int ceiling)
     {
         string row = Path.Combine(_root, "row.json");
-        var (code, output) = Run("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" gate/1.0.4.900 {Sha} {ceiling} \"{row}\"");
+        var (code, output) = Run("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" {Branch} {Sha} {ceiling} \"{row}\"");
         Assert.True(code == 0, output);
         using var read = JsonDocument.Parse(File.ReadAllText(row));
         return read.RootElement.Clone();
@@ -110,6 +113,8 @@ public sealed class GateReviewWaitTests : IDisposable
         JsonElement row = Wait(30);
 
         Assert.Equal("full", row.GetProperty("reviewed").GetString());
+        // The row's version is read off the branch up to its first hyphen, never the lane or the commit after it.
+        Assert.Equal("1.0.4.900", row.GetProperty("version").GetString());
         Assert.Equal(42, row.GetProperty("pr").GetInt32());
         Assert.Equal(1, row.GetProperty("findings").GetProperty("minor").GetInt32());
         Assert.Equal(600, row.GetProperty("review_seconds").GetInt32());
@@ -153,11 +158,16 @@ public sealed class GateReviewWaitTests : IDisposable
     // #endregion the-wait
 
     // #region the-request
-    /// <summary>`open` makes the request when there is none, titled with the commit's subject, reuses one that is open, and asks for the review either way.</summary>
+    /// <summary>
+    /// `open` makes the request when there is none, titled with the commit's subject, reuses one that is open, and asks
+    /// for the review either way. It takes the branch, gate/ written or left off, and still takes a bare version for an
+    /// older gate/version branch.
+    /// </summary>
     [Theory]
-    [InlineData("", "78", true)]
-    [InlineData("77", "77", false)]
-    public void Open_makes_or_reuses_the_request_and_asks_for_the_review(string open, string pr, bool created)
+    [InlineData(Branch, Branch, "", "78", true)]
+    [InlineData("1.0.4.900-coding1116-01234567", Branch, "77", "77", false)]
+    [InlineData("1.0.4.900", "gate/1.0.4.900", "", "78", true)]
+    public void Open_makes_or_reuses_the_request_and_asks_for_the_review(string named, string branch, string open, string pr, bool created)
     {
         if (OperatingSystem.IsWindows())
         {
@@ -165,19 +175,20 @@ public sealed class GateReviewWaitTests : IDisposable
         }
         Gh();
 
-        var (code, output) = Run("bash", $"\"{Path.Combine(Repo.Root(), "scripts", "gate_pr.sh")}\" open 1.0.4.900", open);
+        var (code, output) = Run("bash", $"\"{Path.Combine(Repo.Root(), "scripts", "gate_pr.sh")}\" open {named}", open);
 
         Assert.True(code == 0, output);
-        Assert.Contains($"pull request {pr} for gate/1.0.4.900, review asked", output, StringComparison.Ordinal);
-        Assert.Equal(created, Calls().Contains("pr create -R SteveStout/TheYard --base main --head gate/1.0.4.900 --title TheYard 1.0.4.900: a line", StringComparison.Ordinal));
+        Assert.Contains($"pull request {pr} for {branch}, review asked", output, StringComparison.Ordinal);
+        Assert.Equal(created, Calls().Contains($"pr create -R SteveStout/TheYard --base main --head {branch} --title TheYard 1.0.4.900: a line", StringComparison.Ordinal));
         Assert.Contains($"pr comment {pr} -R SteveStout/TheYard --body @coderabbitai review", Calls(), StringComparison.Ordinal);
     }
 
-    /// <summary>`close` closes the open request on main's commit; with none open it says so and closes nothing.</summary>
+    /// <summary>`close` closes the open request on main's commit, naming the version read off the branch; with none open it says so and closes nothing.</summary>
     [Theory]
-    [InlineData("77", "pull request 77 closed on abcdef12")]
-    [InlineData("", "no open pull request for gate/1.0.4.900")]
-    public void Close_closes_the_open_request_on_main_s_commit_or_says_there_is_none(string open, string said)
+    [InlineData(Branch, "77", "pull request 77 closed on abcdef12")]
+    [InlineData(Branch, "", "no open pull request for " + Branch)]
+    [InlineData("1.0.4.900", "", "no open pull request for gate/1.0.4.900")]
+    public void Close_closes_the_open_request_on_main_s_commit_or_says_there_is_none(string named, string open, string said)
     {
         if (OperatingSystem.IsWindows())
         {
@@ -185,11 +196,12 @@ public sealed class GateReviewWaitTests : IDisposable
         }
         Gh();
 
-        var (code, output) = Run("bash", $"\"{Path.Combine(Repo.Root(), "scripts", "gate_pr.sh")}\" close 1.0.4.900 abcdef1234567890", open);
+        var (code, output) = Run("bash", $"\"{Path.Combine(Repo.Root(), "scripts", "gate_pr.sh")}\" close {named} abcdef1234567890", open);
 
         Assert.True(code == 0, output);
         Assert.Contains(said, output, StringComparison.Ordinal);
         Assert.Equal(open.Length > 0, Calls().Contains("pr close 77", StringComparison.Ordinal));
+        Assert.Equal(open.Length > 0, Calls().Contains("TheYard 1.0.4.900. The gate amends", StringComparison.Ordinal));
     }
     // #endregion the-request
 }
