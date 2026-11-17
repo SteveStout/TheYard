@@ -9,11 +9,25 @@ name: CI
 # A push that touches only The Shed under samples/ runs this too: The Shed is
 # built into the same app since 19 October, so its code can break this one's
 # build (ADR: One web app for every .NET process).
+# By hand it may be told which commit to test (sha): the gate's promote job and the after-roll start it that way for
+# the commit main was promoted to, and every job checks that commit out. A run started on main otherwise tests
+# whatever main's head is when it starts, which after main moves is another version's commit.
+#
+# The run's name carries the commit it tested, and the next promote's line-stop and the after-roll find a run by
+# that name, never by its headSha: a run started with --ref main carries main's head at its start as its headSha,
+# not the commit it was told to test (ADR-098, the addendum on the gate freeing at live).
+run-name: CI ${{ inputs.sha || github.sha }}
+
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      sha:
+        description: The commit to test, whole (empty for the ref's head)
+        required: false
+        type: string
 
 # Read-only token for every job: CI checks out and tests, nothing more (ADR-017).
 permissions:
@@ -62,6 +76,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -82,6 +98,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -98,6 +116,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
       - uses: ./.github/actions/dotnet
       # #region coverage
       # The suites are counted as well as run.
@@ -234,6 +254,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
       - uses: ./.github/actions/dotnet
       - name: Run the job hunt Function's tests
         run: dotnet test functions/jobhunt.Tests --logger 'console;verbosity=normal'
@@ -249,6 +271,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
       - uses: ./.github/actions/dotnet
       - name: Run the machine lanes' tests
         run: dotnet test server/JobHunt.Server.Tests --logger 'console;verbosity=normal'
@@ -270,6 +294,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
       - uses: ./.github/actions/dotnet
       - run: dotnet build api/TheYard.Database/TheYard.Database.sqlproj -c Debug
       - name: The build has to have produced a package
@@ -286,6 +312,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24

@@ -98,7 +98,23 @@ public sealed partial class PromoteScriptTests : IDisposable
 
         string bin = Path.Combine(_root, "bin");
         Directory.CreateDirectory(bin);
-        File.WriteAllText(Path.Combine(bin, "gh"), "#!/usr/bin/env bash\ncase \"$*\" in *headSha*) echo \"$FAKE_TESTED\";; *coderabbit*) echo \"${FAKE_REVIEW:-none}\";; *jobs*) echo \"$FAKE_GREEN\";; *) exit 1;; esac\n");
+        // Main's own runs for the line-stop, named for main's commit (MAIN in a case's answer): CI and the after-roll
+        // green unless a case plants another answer. They come first, because their fields name headSha too.
+        File.WriteAllText(Path.Combine(bin, "gh"), """
+            #!/usr/bin/env bash
+            main=$(git rev-parse origin/main 2> /dev/null)
+            ci='[{"displayTitle":"CI MAIN","status":"completed","conclusion":"success","event":"workflow_dispatch","headSha":"0000"}]'
+            after='[{"displayTitle":"After roll 1.0.4.105 at MAIN","status":"completed","conclusion":"success"}]'
+            case "$*" in
+              *"--workflow ci.yml"*) out=${FAKE_CI_RUNS-$ci}; printf '%s' "${out//MAIN/$main}";;
+              *"--workflow after-roll.yml"*) out=${FAKE_AFTER_RUNS-$after}; printf '%s' "${out//MAIN/$main}";;
+              *headSha*) echo "$FAKE_TESTED";;
+              *coderabbit*) echo "${FAKE_REVIEW:-none}";;
+              *jobs*) echo "$FAKE_GREEN";;
+              *) exit 1;;
+            esac
+
+            """);
         File.WriteAllText(Path.Combine(bin, "curl"), "#!/usr/bin/env bash\n[ -n \"$FAKE_CARD\" ] || exit 22\nprintf '%s' \"$FAKE_CARD\"\n");
         File.WriteAllText(Path.Combine(bin, "node"), "#!/usr/bin/env bash\nexit 0\n");
         File.WriteAllText(Path.Combine(bin, "python3"), "#!/usr/bin/env bash\nexit 0\n");
@@ -107,11 +123,28 @@ public sealed partial class PromoteScriptTests : IDisposable
         File.WriteAllText(Path.Combine(_root, "raw", "dotnet.result"), "oncosmos=0\n");
     }
 
-    /// <summary>One gate commit on HEAD naming <paramref name="version"/> at the top of the changelog.</summary>
-    private void Version(string version, string below = "1.0.4.105")
+    /// <summary>One gate commit on HEAD naming <paramref name="version"/> at the top of the changelog, with a trailer when one is named.</summary>
+    private void Version(string version, string below = "1.0.4.105", string? trailer = null)
     {
         Write("docs/CHANGELOG.md", Changelog(version, below, "1.0.4.104"));
-        Git("commit -q -am " + version);
+        Git("commit -q -am " + version + (trailer is null ? "" : $" -m \"{trailer}\""));
+    }
+
+    /// <summary>Main moved on to a commit that carries after-roll.yml, so its proof needs an after-roll run as well as CI.</summary>
+    private void MainCarriesTheAfterRoll()
+    {
+        Write(Path.Combine(".github", "workflows", "after-roll.yml"), "name: After roll\n");
+        Git("add -A");
+        Git("commit -q -m after-roll");
+        Git("push -q origin main");
+    }
+
+    /// <summary>The job's outputs file for a case run as the gate runs it, and the environment that says so.</summary>
+    private (string File, Dictionary<string, string> Env) InTheGate()
+    {
+        string outputs = Path.Combine(_root, "outputs.txt");
+        File.WriteAllText(outputs, "");
+        return (outputs, new Dictionary<string, string>(StringComparer.Ordinal) { ["GITHUB_ACTIONS"] = "true", ["GITHUB_OUTPUT"] = outputs });
     }
 
     private string MainOnOrigin() => Run(_root, "git", "--git-dir origin.git rev-parse main").Output.Trim();
@@ -125,6 +158,9 @@ public sealed partial class PromoteScriptTests : IDisposable
             ["FAKE_TESTED"] = tested ?? Git("rev-parse HEAD"),
             ["FAKE_GREEN"] = green.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["FAKE_CARD"] = card,
+            // The line-stop's twenty minutes, cut to seconds so a case that waits ends in a test's time.
+            ["LINE_STOP_SECONDS"] = "2",
+            ["LINE_STOP_POLL"] = "1",
         };
         foreach (var (name, value) in env ?? new Dictionary<string, string>())
         {
@@ -313,6 +349,167 @@ public sealed partial class PromoteScriptTests : IDisposable
         Assert.Equal(Git("rev-parse HEAD"), MainOnOrigin());
     }
     // #endregion the-cases
+
+    // #region the-line-stop
+    /// <summary>
+    /// The line-stop (ADR-098, the addendum on the gate freeing at live): a red CI on main, or a red after-roll for
+    /// main's commit, refuses the next promote, and the same promote passes when its commit message carries
+    /// "Fixes-main: <main's commit>", because a red main must not refuse its own fix. Main moves only on the second.
+    /// </summary>
+    /// <param name="which">Which of main's two proofs is planted red.</param>
+    /// <param name="fixes">Whether the version's commit carries the Fixes-main trailer for main's commit.</param>
+    [Theory]
+    [InlineData("ci", false)]
+    [InlineData("ci", true)]
+    [InlineData("after-roll", false)]
+    [InlineData("after-roll", true)]
+    public void A_red_main_is_refused_unless_the_version_says_it_fixes_it(string which, bool fixes)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        MainCarriesTheAfterRoll();
+        string before = MainOnOrigin();
+        Version("1.0.4.106", trailer: fixes ? $"Fixes-main: {before}" : null);
+        var env = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (which == "ci")
+        {
+            env["FAKE_CI_RUNS"] = """[{"displayTitle":"CI MAIN","status":"completed","conclusion":"failure","event":"workflow_dispatch","headSha":"0000"}]""";
+        }
+        else
+        {
+            env["FAKE_AFTER_RUNS"] = """[{"displayTitle":"After roll gate/1.0.4.105-coding1116-abcdef12 at MAIN","status":"completed","conclusion":"failure"}]""";
+        }
+
+        var (code, output) = Promote("1.0.4.106", env: env);
+
+        if (fixes)
+        {
+            Assert.True(code == 0, output);
+            Assert.Contains("carries Fixes-main for it", output, StringComparison.Ordinal);
+            Assert.Equal(Git("rev-parse HEAD"), MainOnOrigin());
+        }
+        else
+        {
+            Assert.NotEqual(0, code);
+            Assert.Contains($"is red: {(which == "ci" ? "CI on main" : "the after-roll")}", output, StringComparison.Ordinal);
+            Assert.Contains($"\"Fixes-main: {before}\"", output, StringComparison.Ordinal);
+            Assert.Equal(before, MainOnOrigin());
+        }
+    }
+
+    /// <summary>
+    /// A main that is not yet proven, its run missing or still running, is waited on to the bound; in the gate the wait
+    /// that runs out ends GREEN with promoted=false and a notice naming what it waited on, never a red gate, and main
+    /// does not move. A run named for main's commit but another version (a Gate run that promoted nothing) is no proof.
+    /// </summary>
+    /// <param name="shape">What main's runs answer.</param>
+    /// <param name="waited">What the notice says it waited on.</param>
+    [Theory]
+    [InlineData("ci-missing", "CI on main (none)")]
+    [InlineData("ci-running", "CI on main (running)")]
+    [InlineData("after-roll-missing", "the after-roll (none)")]
+    [InlineData("after-roll-for-another-version", "the after-roll (none)")]
+    public void A_main_not_yet_proven_is_waited_on_and_then_ends_green_without_a_promote(string shape, string waited)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        MainCarriesTheAfterRoll();
+        string before = MainOnOrigin();
+        Version("1.0.4.106");
+        var (outputs, env) = InTheGate();
+        switch (shape)
+        {
+            case "ci-missing":
+                env["FAKE_CI_RUNS"] = "[]";
+                break;
+            case "ci-running":
+                env["FAKE_CI_RUNS"] = """[{"displayTitle":"CI MAIN","status":"in_progress","conclusion":"","event":"workflow_dispatch","headSha":"0000"}]""";
+                break;
+            case "after-roll-missing":
+                env["FAKE_AFTER_RUNS"] = "[]";
+                break;
+            case "after-roll-for-another-version":
+                env["FAKE_AFTER_RUNS"] = """[{"displayTitle":"After roll gate/1.0.4.106-coding1116-abcdef12 at MAIN","status":"completed","conclusion":"success"}]""";
+                break;
+        }
+
+        var (code, output) = Promote("1.0.4.106", env: env);
+
+        Assert.True(code == 0, output);
+        Assert.Contains($"::notice::the line-stop waited 2 s for {waited}", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("::error::", output, StringComparison.Ordinal);
+        Assert.Contains("promoted=false", File.ReadAllText(outputs), StringComparison.Ordinal);
+        Assert.Equal(before, MainOnOrigin());
+    }
+
+    /// <summary>By hand the same wait ends in a refusal that names the command that starts what is missing.</summary>
+    [Fact]
+    public void By_hand_a_main_with_no_run_is_refused_with_the_command_to_run()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        MainCarriesTheAfterRoll();
+        string before = MainOnOrigin();
+        Version("1.0.4.106");
+
+        var (code, output) = Promote("1.0.4.106", env: new Dictionary<string, string>(StringComparer.Ordinal) { ["FAKE_AFTER_RUNS"] = "[]" });
+
+        Assert.NotEqual(0, code);
+        Assert.Contains($"gh workflow run after-roll.yml --ref main -f sha={before} -f version=1.0.4.105", output, StringComparison.Ordinal);
+        Assert.Equal(before, MainOnOrigin());
+    }
+
+    /// <summary>
+    /// The transition: a main commit from before after-roll.yml existed on main has no after-roll run and never will,
+    /// and its CI runs carry no name with the commit in it. For such a commit CI on main alone is the proof, found by
+    /// the run's headSha; from the first commit that carries after-roll.yml, the same unnamed run is no proof.
+    /// </summary>
+    /// <param name="carries">Whether main's commit carries after-roll.yml.</param>
+    /// <param name="ciNamed">Whether the green CI run is named for main's commit or found only by its headSha.</param>
+    /// <param name="moves">Whether main is expected to move.</param>
+    [Theory]
+    [InlineData(false, true, true)]
+    [InlineData(false, false, true)]
+    [InlineData(true, false, false)]
+    public void A_main_from_before_the_after_roll_is_proven_by_ci_alone(bool carries, bool ciNamed, bool moves)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        if (carries)
+        {
+            MainCarriesTheAfterRoll();
+        }
+        string before = MainOnOrigin();
+        Version("1.0.4.106");
+        var (outputs, env) = InTheGate();
+        env["FAKE_AFTER_RUNS"] = carries ? """[{"displayTitle":"After roll 1.0.4.105 at MAIN","status":"completed","conclusion":"success"}]""" : "[]";
+        env["FAKE_CI_RUNS"] = ciNamed
+            ? """[{"displayTitle":"CI MAIN","status":"completed","conclusion":"success","event":"push","headSha":"MAIN"}]"""
+            : """[{"displayTitle":"TheYard 1.0.4.105: a line","status":"completed","conclusion":"success","event":"push","headSha":"MAIN"}]""";
+
+        var (code, output) = Promote("1.0.4.106", env: env);
+
+        Assert.True(code == 0, output);
+        Assert.Equal(moves ? Git("rev-parse HEAD") : before, MainOnOrigin());
+        Assert.Contains(moves ? "promoted=true" : "promoted=false", File.ReadAllText(outputs), StringComparison.Ordinal);
+        if (moves && !carries)
+        {
+            Assert.Contains("is proven by CI on main alone: it predates after-roll.yml", output, StringComparison.Ordinal);
+        }
+    }
+    // #endregion the-line-stop
 
     // #region the-three-paths
     /// <summary>

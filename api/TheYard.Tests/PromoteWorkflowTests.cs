@@ -19,14 +19,22 @@ public class PromoteWorkflowTests
 
     private static string Promote() => Read("scripts", "promote.sh");
 
+    private static string AfterRoll() => Read(".github", "workflows", "after-roll.yml");
+
+    private static string Ci() => Read(".github", "workflows", "ci.yml");
+
     /// <summary>One job of gate.yml, from its key to the next job's key or the end.</summary>
-    private static string Job(string key)
+    private static string Job(string key) => Job(Gate(), "gate.yml", key);
+
+    /// <summary>One job of after-roll.yml, from its key to the next job's key or the end.</summary>
+    private static string AfterRollJob(string key) => Job(AfterRoll(), "after-roll.yml", key);
+
+    private static string Job(string workflow, string file, string key)
     {
-        string gate = Gate();
-        int start = gate.IndexOf($"\n  {key}:\n", StringComparison.Ordinal);
-        Assert.True(start > 0, $"gate.yml should hold the {key} job");
-        var next = System.Text.RegularExpressions.Regex.Match(gate[(start + 1)..], @"\n  [a-z-]+:\n");
-        return next.Success ? gate[start..(start + 1 + next.Index)] : gate[start..];
+        int start = workflow.IndexOf($"\n  {key}:\n", StringComparison.Ordinal);
+        Assert.True(start > 0, $"{file} should hold the {key} job");
+        var next = System.Text.RegularExpressions.Regex.Match(workflow[(start + 1)..], @"\n  [a-z-]+:\n");
+        return next.Success ? workflow[start..(start + 1 + next.Index)] : workflow[start..];
     }
 
     // #region the-order
@@ -40,9 +48,9 @@ public class PromoteWorkflowTests
         Assert.Contains("bash scripts/promote.sh", promote, StringComparison.Ordinal);
         Assert.Contains("needs: promote", Job("deploy"), StringComparison.Ordinal);
         Assert.Contains("needs: promote", Job("deploy-render"), StringComparison.Ordinal);
-        Assert.Contains("needs: [promote, deploy, deploy-render]", Job("after-roll"), StringComparison.Ordinal);
-        Assert.Equal(2, Gate().Split("contents: write").Length - 1);
-        Assert.DoesNotContain("git push", Job("after-roll"), StringComparison.Ordinal);
+        // The reads after the roll are a run of their own, which can write to the gate branch and nothing else.
+        Assert.Equal(1, Gate().Split("contents: write").Length - 1);
+        Assert.DoesNotContain("git push", AfterRoll(), StringComparison.Ordinal);
         Assert.DoesNotContain("\n    if:", promote, StringComparison.Ordinal);
         Assert.Contains("\"$GITHUB_RUN_ID\"", promote, StringComparison.Ordinal);
         // The version is read off gate/<version>-<lane>-<sha8> up to the first hyphen, the one way every script reads it.
@@ -68,11 +76,11 @@ public class PromoteWorkflowTests
         Assert.Contains("name: coderabbit-raw", Job("promote"), StringComparison.Ordinal);
         Assert.Contains("python3 scripts/coderabbit_review.py fold \"$raw/coderabbit.json\" data/coderabbit-findings.json", Promote(), StringComparison.Ordinal);
         Assert.Contains("coderabbit job is $review, not green", Promote(), StringComparison.Ordinal);
-        string afterRoll = Job("after-roll");
+        string afterRoll = AfterRollJob("after-roll");
         int close = afterRoll.IndexOf("bash scripts/gate_pr.sh close", StringComparison.Ordinal);
         int branch = afterRoll.IndexOf("name: The gate branch goes", StringComparison.Ordinal);
         Assert.True(close > 0 && branch > close, "after-roll should close the gate's pull request before the gate branch goes");
-        Assert.Contains("bash scripts/gate_pr.sh close \"$GITHUB_REF_NAME\"", afterRoll, StringComparison.Ordinal);
+        Assert.Contains("bash scripts/gate_pr.sh close \"$branch\" \"$SHA\"", afterRoll, StringComparison.Ordinal);
         Assert.Contains("pull-requests: write", afterRoll, StringComparison.Ordinal);
     }
     // #endregion the-review
@@ -110,17 +118,22 @@ public class PromoteWorkflowTests
         { "the results touch five files only", "promote.sh", "the results touched more than their five files" },
         { "the results folded into the gate's commit", "promote.sh", "git commit -q --amend --no-edit" },
         { "four tries at main", "promote.sh", "for try in 1 2 3 4" },
-        { "the edge moved after the deploy", "gate.yml", "gh workflow run edge-branch.yml --ref main" },
-        { "the roll read on both names", "gate.yml", "python3 scripts/admin_after_roll.py" },
-        { "CI on main read to its end", "gate.yml", "gh run watch \"$run\" --exit-status" },
-        { "the gate branch deleted", "gate.yml", "git/refs/heads/$GITHUB_REF_NAME" },
+        { "the edge moved after the deploy", "after-roll.yml", "gh workflow run edge-branch.yml --ref main" },
+        { "the roll read on both names", "after-roll.yml", "python3 scripts/admin_after_roll.py" },
+        { "CI on main read to its end", "after-roll.yml", "gh run watch \"$run\" --exit-status" },
+        { "the gate branch deleted", "after-roll.yml", "git/refs/heads/$branch" },
     };
 
     [Theory]
     [MemberData(nameof(Parts))]
     public void Nothing_the_laptop_did_after_a_green_run_is_dropped(string part, string file, string line)
     {
-        string text = file == "gate.yml" ? Gate() : Promote();
+        string text = file switch
+        {
+            "gate.yml" => Gate(),
+            "after-roll.yml" => AfterRoll(),
+            _ => Promote(),
+        };
         Assert.True(text.Contains(line, StringComparison.Ordinal), $"{file} should do {part}: {line}");
     }
     // #endregion nothing-dropped
@@ -210,9 +223,9 @@ public class PromoteWorkflowTests
 
     /// <summary>
     /// A promote that pushed with a personal token started Deploy, Deploy Render and CI on that push, which the
-    /// run's own token never does. So the two deploy jobs skip on it, the edge needs no start, and after-roll
+    /// run's own token never does. So the two deploy jobs skip on it, the edge needs no start, and the after-roll
     /// waits for the push's two runs and reads the push's CI run rather than rolling the site a second time in
-    /// the same concurrency group.
+    /// the same concurrency group. A start of the after-roll by hand is always a person's push, so it is the same path.
     /// </summary>
     [Fact]
     public void A_promote_that_pushed_with_a_personal_token_lets_the_push_be_the_roll()
@@ -221,17 +234,130 @@ public class PromoteWorkflowTests
         {
             Assert.Contains("if: needs.promote.outputs.promoted == 'true' && needs.promote.outputs.by_push != 'true'", job, StringComparison.Ordinal);
         }
-        string after = Job("after-roll");
-        Assert.Contains("needs.promote.outputs.promoted == 'true'", after, StringComparison.Ordinal);
-        Assert.Contains("- name: The roll the push started", after, StringComparison.Ordinal);
+        string after = AfterRollJob("after-roll");
+        Assert.Contains("if: needs.promoted.outputs.promoted == 'true'", after, StringComparison.Ordinal);
+        Assert.Contains("- name: The roll the push started\n        if: needs.promoted.outputs.by_push == 'true'", after, StringComparison.Ordinal);
         Assert.Contains("--event push", after, StringComparison.Ordinal);
-        Assert.Contains("if: needs.promote.outputs.by_push != 'true'", after, StringComparison.Ordinal);
-        Assert.Contains("BY_PUSH: ${{ needs.promote.outputs.by_push }}", after, StringComparison.Ordinal);
+        Assert.Contains("if: needs.promoted.outputs.by_push != 'true'", after, StringComparison.Ordinal);
+        Assert.Contains("sha=$INPUT_SHA version=$INPUT_VERSION by_push=true", AfterRollJob("promoted"), StringComparison.Ordinal);
         // The Function's deploy has no push trigger, so its dispatch is owed on both paths alike.
         Assert.DoesNotContain("by_push", after[after.IndexOf("- name: The Function, by a run of its own", StringComparison.Ordinal)..after.IndexOf("- name: The reads after the roll", StringComparison.Ordinal)], StringComparison.Ordinal);
         Assert.DoesNotContain("on:\n  push:", Read(".github", "workflows", "deploy-function.yml"), StringComparison.Ordinal);
     }
     // #endregion the-token
+
+    // #region free-at-live
+    /// <summary>
+    /// The gate frees at live (ADR-098, the addendum on the gate freeing at live): the Gate run's last jobs are the two
+    /// deploys, so its concurrency group ends when they end, and the reads after the roll are a workflow of their own,
+    /// after-roll.yml, started by a Gate run's completion or by hand, in a group of its own. It runs only on a Gate run
+    /// that succeeded, and its run's name carries the commit it reads, by which the line-stop finds it.
+    /// </summary>
+    [Fact]
+    public void The_after_roll_is_a_run_of_its_own_started_by_a_green_gate_run_or_by_hand()
+    {
+        string gate = Gate();
+        Assert.DoesNotContain("\n  after-roll:\n", gate, StringComparison.Ordinal);
+        Assert.DoesNotContain("\n  lighthouse:\n", gate, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new System.Text.RegularExpressions.Regex(@"needs:[^\n]*deploy"), gate);
+        Assert.True(gate.TrimEnd().EndsWith("# #endregion the-roll", StringComparison.Ordinal), "the two deploys should be gate.yml's last jobs");
+
+        string after = AfterRoll();
+        Assert.Contains("\non:\n  workflow_run:\n    workflows: [Gate]\n    types: [completed]\n  workflow_dispatch:\n    inputs:\n      sha:\n", after, StringComparison.Ordinal);
+        Assert.Contains("\n      version:\n", after, StringComparison.Ordinal);
+        Assert.Contains("if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'", AfterRollJob("promoted"), StringComparison.Ordinal);
+        Assert.Contains("\nconcurrency:\n  group: after-roll\n  queue: max\n", after, StringComparison.Ordinal);
+        Assert.DoesNotContain("group: gate", after, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new System.Text.RegularExpressions.Regex(@"(?m)^\s*cancel-in-progress:"), after);
+        // The commit it reads, and the version, in the run's name; a Gate run that was not green names no commit.
+        Assert.Contains("\nrun-name: After roll ${{ inputs.version || github.event.workflow_run.head_branch }} at ${{ inputs.sha || (github.event.workflow_run.conclusion == 'success' && github.sha) || 'nothing, the Gate run was not green' }}\n", after, StringComparison.Ordinal);
+        // The permissions of the job it replaces, on the job that does the work, and no more.
+        string job = AfterRollJob("after-roll");
+        Assert.Contains("    permissions:\n      contents: write\n      actions: write\n      pull-requests: write\n", job, StringComparison.Ordinal);
+        Assert.Contains("permissions:\n  contents: read\n", after, StringComparison.Ordinal);
+        Assert.Equal(1, after.Split("contents: write").Length - 1);
+        Assert.Contains("needs: promoted", job, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A workflow_run run reads no job's outputs and the promoted commit is not the gate branch's, because promote.sh
+    /// amended it; so the promote job leaves one small artifact, promoted, only when it moved main, and the after-roll
+    /// reads it from the Gate run that started it, ends green doing nothing when it is absent, and deletes that run's
+    /// branch.
+    /// </summary>
+    [Fact]
+    public void The_promoted_commit_reaches_the_after_roll_by_one_artifact_left_only_on_a_promote()
+    {
+        string promote = Job("promote");
+        Assert.Contains("- uses: actions/upload-artifact@v7\n        if: steps.promote.outputs.promoted == 'true'\n        with:\n          name: promoted\n", promote, StringComparison.Ordinal);
+        Assert.Contains("- name: The promoted commit, for the after-roll\n        if: steps.promote.outputs.promoted == 'true'", promote, StringComparison.Ordinal);
+        foreach (string field in new[] { "sha", "version", "functions", "by_push" })
+        {
+            Assert.Contains($"echo \"{field}=$", promote, StringComparison.Ordinal);
+        }
+
+        string read = AfterRollJob("promoted");
+        Assert.Contains("name: promoted\n", read, StringComparison.Ordinal);
+        Assert.Contains("run-id: ${{ github.event.workflow_run.id }}", read, StringComparison.Ordinal);
+        Assert.Contains("continue-on-error: true", read, StringComparison.Ordinal);
+        Assert.Contains("::notice::the Gate run promoted nothing", read, StringComparison.Ordinal);
+        Assert.Contains("echo \"promoted=false\" >> \"$GITHUB_OUTPUT\"\n            exit 0", read, StringComparison.Ordinal);
+        Assert.Contains("HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}", read, StringComparison.Ordinal);
+        Assert.Contains("branches=$HEAD_BRANCH", read, StringComparison.Ordinal);
+        Assert.Contains("if: needs.promoted.outputs.promoted == 'true'", AfterRollJob("lighthouse"), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The promote job holds the line-stop's twenty-minute wait inside a thirty-minute cap, and starts CI on main for
+    /// the promoted commit in a step of its own that never fails the job: main has already moved by then, and the two
+    /// deploys need the job green. A push with PROMOTE_TOKEN started CI itself, so it starts none then.
+    /// </summary>
+    [Fact]
+    public void The_promote_job_waits_inside_its_cap_and_starts_ci_on_main_without_ever_failing()
+    {
+        string promote = Job("promote");
+        Assert.Contains("\n    timeout-minutes: 30\n", promote, StringComparison.Ordinal);
+        Assert.Contains("\n      actions: write\n", promote, StringComparison.Ordinal);
+        Assert.Contains("${LINE_STOP_SECONDS:-1200}", Promote(), StringComparison.Ordinal);
+
+        int at = promote.IndexOf("- name: CI on main, for the promoted commit", StringComparison.Ordinal);
+        Assert.True(at > promote.IndexOf("- name: Promote\n", StringComparison.Ordinal), "CI on main should be started in a step after Promote");
+        string step = promote[at..];
+        Assert.Contains("if: steps.promote.outputs.promoted == 'true' && steps.promote.outputs.by_push != 'true'", step, StringComparison.Ordinal);
+        Assert.Contains("run: gh workflow run ci.yml --ref main -f sha=\"$SHA\" || echo \"::warning::", step, StringComparison.Ordinal);
+        Assert.DoesNotContain("continue-on-error: false", step, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A CI run is found by the name it carries, never by its headSha: a run started with --ref main carries main's
+    /// head at its start, not the commit it was told to test. So ci.yml takes the commit as an input, checks it out in
+    /// every job and names its run for it, and the after-roll and the line-stop select runs by that name; the after-roll
+    /// starts CI only when no run names the commit.
+    /// </summary>
+    [Fact]
+    public void Ci_on_main_is_named_for_the_commit_it_tests_and_found_by_that_name()
+    {
+        string ci = Ci();
+        Assert.Contains("\nrun-name: CI ${{ inputs.sha || github.sha }}\n", ci, StringComparison.Ordinal);
+        Assert.Contains("  workflow_dispatch:\n    inputs:\n      sha:\n", ci, StringComparison.Ordinal);
+        int checkouts = ci.Split("- uses: actions/checkout@v7\n").Length - 1;
+        Assert.True(checkouts >= 7, $"ci.yml should check out in every job; it does {checkouts} times");
+        Assert.Equal(checkouts, ci.Split("- uses: actions/checkout@v7\n        with:\n          ref: ${{ inputs.sha || github.sha }}\n").Length - 1);
+
+        string step = AfterRollJob("after-roll");
+        step = step[step.IndexOf("- name: CI on main\n", StringComparison.Ordinal)..step.IndexOf("- name: The pull request closes", StringComparison.Ordinal)];
+        Assert.Contains("select(.displayTitle == \\\"CI $SHA\\\")", step, StringComparison.Ordinal);
+        Assert.DoesNotContain("headSha", step, StringComparison.Ordinal);
+        int named = step.IndexOf("run=$(named)", StringComparison.Ordinal);
+        int start = step.IndexOf("gh workflow run ci.yml --ref main -f sha=\"$SHA\"", StringComparison.Ordinal);
+        Assert.True(named > 0 && start > named && step.Contains("if [ -z \"$run\" ]; then", StringComparison.Ordinal), "the after-roll should start CI only when no run names the commit");
+
+        string script = Promote();
+        Assert.Contains("pick='.displayTitle == \"CI \" + $sha'", script, StringComparison.Ordinal);
+        Assert.Contains("git cat-file -e \"$main_sha:.github/workflows/after-roll.yml\"", script, StringComparison.Ordinal);
+        Assert.Contains("Fixes-main", script, StringComparison.Ordinal);
+    }
+    // #endregion free-at-live
 
     // #region the-preflight
     /// <summary>
