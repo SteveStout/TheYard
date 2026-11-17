@@ -69,4 +69,29 @@ test('a post ends with its Where next links', async ({ page }) => {
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
   expect(hrefs).toEqual(nextFor('post').map((link) => link.href));
 });
+test('a tagged visit carries its code through the footers, and each page it lands on reports it', async ({
+  page,
+  request,
+}) => {
+  // Ladder v7b, the proof walk (R7): the review route with a code, its footer to the post, then About, then
+  // About's email line. That the API keeps each open under its path is LinkEndpointStatusTests' and
+  // LinkHandlerTests'; this holds that every step sends the code and is answered.
+  const code = `zz${Date.now().toString(36).slice(-4)}`;
+  await page.route('**/api/blog/posts', (route) => route.fulfill({ json: { posts: [] } }));
+  await openTheYard(page, `/?view=review&r=${code}`);
+  const toPost = page
+    .locator('[data-next="review"]')
+    .getByRole('link', { name: 'Quality on both ends' });
+  await expect(toPost).toHaveAttribute('href', new RegExp(`r=${code}`));
+  const blogReport = page.waitForResponse((response) =>
+    response.url().includes(`/api/links/open?r=${code}&path=/blog`)
+  );
+  await toPost.click();
+  expect((await blogReport).status()).toBe(204);
+  // The local blog has no posts, so About is opened with the code the way the post's footer link carries it.
+  expect((await page.goto(`/about?r=${code}`))!.status()).toBe(200);
+  const email = page.locator('[data-next="about"]').getByRole('link', { name: 'Email Steven' });
+  await expect(email).toHaveAttribute('href', `/api/go/email?r=${code}`);
+  expect((await request.get(`/api/go/email?r=${code}`, { maxRedirects: 0 })).status()).toBe(302);
+});
 // #endregion where-next

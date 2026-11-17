@@ -170,7 +170,7 @@ public static class DocumentationEndpoints
         var reply = File.Exists(paths.RecommendationsPath) ? RecommendationsFile.Of(paths.RecommendationsPath) : null;
         var hooks = PageHooks.Of(paths.HooksPath);
         string hook = PageHooks.Html(hooks, "about", HookCounts(reply));
-        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply), hook, PageHooks.NextHtml(hooks, "about")), "text/html; charset=utf-8");
+        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply), hook, PageHooks.NextHtml(hooks, "about", http.Request.Query["r"].ToString())), "text/html; charset=utf-8");
     }
 
     /// <summary>The counts a hook's link may name, each read from its own file: none when the file is missing or out of shape.</summary>
@@ -208,7 +208,7 @@ public static class DocumentationEndpoints
             var reply = File.Exists(paths.RecommendationsPath) ? RecommendationsFile.Of(paths.RecommendationsPath) : null;
             var hooks = PageHooks.Of(paths.HooksPath);
             string hook = PageHooks.Html(hooks, "resume", HookCounts(reply));
-            return TypedResults.Content(ResumePage.Html(ResumeDoor.Of(src), r, SiteFace.StyleFor(paths.AssetsRoot), hook, PageHooks.NextHtml(hooks, "resume")), "text/html; charset=utf-8");
+            return TypedResults.Content(ResumePage.Html(ResumeDoor.Of(src), r, SiteFace.StyleFor(paths.AssetsRoot), hook, PageHooks.NextHtml(hooks, "resume", r)), "text/html; charset=utf-8");
         }
         http.Response.Headers.ContentDisposition = $"inline; filename=\"{ResumeDoor.FileName}\"";
         return TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");

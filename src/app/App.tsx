@@ -6,7 +6,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useFirstLoad, useInTheBrowser } from '../hooks/useFirstLoad';
 import { useNow } from '../hooks/useNow';
-import { pageOpenReport } from '../lib/links';
+import { holdCode, pageOpenReport, reportPath, sessionOrNull } from '../lib/links';
 import { REVIEW_REPORT_PATH } from '../lib/reviewStops';
 import { RECOMMENDATIONS_REPORT_PATH } from '../lib/recommendationsPage';
 import { prefetchWhenIdle } from '../lib/prefetch';
@@ -73,12 +73,19 @@ export default function App() {
       ? null
       : pageOpenReport(
           window.location.search,
-          address.reviewOpen
-            ? REVIEW_REPORT_PATH
-            : address.recommendationsOpen
-              ? RECOMMENDATIONS_REPORT_PATH
-              : '/'
+          reportPath(
+            window.location.search,
+            address.reviewOpen
+              ? REVIEW_REPORT_PATH
+              : address.recommendationsOpen
+                ? RECOMMENDATIONS_REPORT_PATH
+                : '/'
+          )
         )
+  );
+  // The code is held for the visit as well, so the "Where next" links carry it (ladder v7b).
+  useState(() =>
+    typeof window === 'undefined' ? null : holdCode(window.location.search, sessionOrNull())
   );
   useEffect(() => {
     if (openReport !== null)

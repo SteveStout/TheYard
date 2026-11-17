@@ -4,12 +4,22 @@
  * Does not:  Choose the links (the file does), type a count, or link to Admin (pageHooks.test.ts holds the file to that).
  * Used by:   Landing.tsx, ReviewPage.tsx, BlogPage.tsx, DocDialog.tsx.
  */
+import { useSyncExternalStore } from 'react';
+import { holdCode, sessionOrNull, withCode } from '../../../lib/links';
 import { nextFor, type NextPage } from '../../../lib/pageHooks';
 import styles from './WhereNext.module.css';
+
+/** The held code never changes during a visit, so there is nothing to subscribe to. */
+const noChange = () => () => {};
+const heldCode = () => holdCode('', sessionOrNull());
+const noCode = () => null;
 
 /** The page's footer, or nothing when the file has no links for it. */
 export function WhereNext({ page }: { page: NextPage }) {
   const links = nextFor(page);
+  // The visit's code, put on the links once the page is live: the landing is drawn at the build with none, so the
+  // hydrating render reads the server's answer (none) and the next one reads the session (ladder v7b).
+  const code = useSyncExternalStore(noChange, heldCode, noCode);
   if (links.length === 0) return null;
   return (
     <nav
@@ -22,7 +32,7 @@ export function WhereNext({ page }: { page: NextPage }) {
       <ul className={styles.links}>
         {links.map((link) => (
           <li key={link.href}>
-            <a href={link.href}>{link.label}</a>
+            <a href={withCode(link.href, code)}>{link.label}</a>
             <span className={styles.reason}>
               {link.reason} <span className={styles.minutes}>{link.minutes} min</span>
             </span>
