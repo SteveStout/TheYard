@@ -259,7 +259,7 @@ test.describe('the docked rail', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+        name: 'Built with AI. Gated so quality never slides.',
       })
     ).toBeVisible();
     await expect(page).not.toHaveURL(/view=admin/);

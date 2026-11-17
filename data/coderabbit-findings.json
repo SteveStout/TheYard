@@ -1972,8 +1972,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 1,
+      "answered_as_wrong": 0,
       "prs": [
         90
       ]
@@ -2101,6 +2101,31 @@
       "answered_as_wrong": null,
       "prs": [
         99
+      ]
+    },
+    {
+      "version": "1.0.5.82",
+      "pr": 100,
+      "sha": "6d463609",
+      "level": 0,
+      "at": "2026-11-17T21:05:27Z",
+      "waited_seconds": 736,
+      "review_seconds": 717,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 4,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 4,
+        "trivial": 1,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        100
       ]
     }
   ]
