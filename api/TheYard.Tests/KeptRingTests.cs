@@ -59,8 +59,8 @@ public class KeptRingTests : IClassFixture<WebApplicationFactory<Program>>
         return entry.RootElement.GetProperty("request").GetString();
     }
 
-    private static SqlStatement Statement(string? request, DateTimeOffset? at = null) =>
-        new(at ?? DateTimeOffset.UtcNow, "SELECT 1 WHERE @p0 = 1", [new SqlParameterShape("@p0", "Int32", null)], 7, "ok", request);
+    private static StoreStatement Statement(string? request, DateTimeOffset? at = null) =>
+        new(at ?? DateTimeOffset.UtcNow, "SELECT 1 WHERE @p0 = 1", [new ParameterShape("@p0", "Int32", null)], 7, "ok", request);
 
     // #region rings-and-writer
     [Fact]
@@ -70,7 +70,7 @@ public class KeptRingTests : IClassFixture<WebApplicationFactory<Program>>
         var collector = new LogCollector(store);
         var writer = new KeptRingWriter(collector, "sql");
         var ring = new SqlRingBuffer(10);
-        ring.Kept = statement => writer.Keep(KeptRings.Sql, statement.At, statement);
+        ring.Kept = statement => writer.Keep(KeptRings.Statements, statement.At, statement);
 
         ring.Record(Statement("GET /api/vehicles"));
         // The tab watching itself is not in the ring, so it is not kept either.
@@ -78,7 +78,7 @@ public class KeptRingTests : IClassFixture<WebApplicationFactory<Program>>
         await collector.DrainAsync(CancellationToken.None);
 
         LogEvent kept = Assert.Single(store.Written);
-        Assert.Equal(KeptRings.Sql, kept.Kind);
+        Assert.Equal(KeptRings.Statements, kept.Kind);
         Assert.Equal("sql", kept.Store);
         Assert.Equal(KeptRings.RetentionSeconds, kept.TtlSeconds);
         Assert.True(KeptRings.RetentionSeconds >= 30 * 86_400, "a document must outlive the widest window that reads it");
@@ -125,8 +125,8 @@ public class KeptRingTests : IClassFixture<WebApplicationFactory<Program>>
         var collector = new LogCollector(store);
         var writer = new KeptRingWriter(collector, "sql");
         var now = DateTimeOffset.UtcNow;
-        writer.Keep(KeptRings.Sql, now.AddDays(-2), Statement("GET /api/old", now.AddDays(-2)));
-        writer.Keep(KeptRings.Sql, now.AddMinutes(-5), Statement("GET /api/new", now.AddMinutes(-5)));
+        writer.Keep(KeptRings.Statements, now.AddDays(-2), Statement("GET /api/old", now.AddDays(-2)));
+        writer.Keep(KeptRings.Statements, now.AddMinutes(-5), Statement("GET /api/new", now.AddMinutes(-5)));
         await collector.DrainAsync(CancellationToken.None);
         var reader = new KeptRingReader(collector, "sql", "Azure Cosmos DB");
 
@@ -185,13 +185,13 @@ public class KeptRingTests : IClassFixture<WebApplicationFactory<Program>>
         string newer = JsonSerializer.Serialize(Statement("GET /api/newer", now.AddSeconds(-1)), KeptRingWriter.Wire);
         await store.AppendAsync(
         [
-            KeptRings.Entry(KeptRings.Sql, site, now.AddSeconds(-2), older),
-            KeptRings.Entry(KeptRings.Sql, site, now.AddSeconds(-1), newer),
+            KeptRings.Entry(KeptRings.Statements, site, now.AddSeconds(-2), older),
+            KeptRings.Entry(KeptRings.Statements, site, now.AddSeconds(-1), newer),
             KeptRings.Entry(KeptRings.Store, site, now, "{\"container\":\"bids\"}"),
-            KeptRings.Entry(KeptRings.Sql, site + "-other", now, newer),
+            KeptRings.Entry(KeptRings.Statements, site + "-other", now, newer),
         ], CancellationToken.None);
 
-        var page = await store.RingAsync(KeptRings.Sql, site, now.AddMinutes(-1), 10, CancellationToken.None);
+        var page = await store.RingAsync(KeptRings.Statements, site, now.AddMinutes(-1), 10, CancellationToken.None);
 
         Assert.Equal(2, page.Total);
         List<string?> requests = page.Entries.Select(RequestOf).ToList();

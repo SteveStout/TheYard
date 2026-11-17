@@ -71,7 +71,7 @@ public class CosmosStoreTests
         var second = await store.Starting.PrepareAsync(vehicles, photos, CancellationToken.None);
         Assert.True(second.Ready, second.Note);
         Assert.Contains("inserting 0 vehicles and 0 photos", second.Note);
-        Assert.Equal(0, second.SeedRequestUnits);
+        Assert.Equal(0, second.SeedCharge);
 
         // The container checks are in the log as metadata reads, before anything else.
         var operations = log.Snapshot();
@@ -134,14 +134,14 @@ public class CosmosStoreTests
 
         var operations = log.Snapshot();
         // Every write was pinned to the buyer; the second save was a replace carrying the etag.
-        Assert.Contains(operations, o => o.Container == "bids" && o.Kind == StoreOperationKind.PointWrite && o.Text == "CreateItem" && o.Partition == "pinned to the buyer");
+        Assert.Contains(operations, o => o.Container == "bids" && o.Kind == StoreOperationKind.PointWrite && o.Text == "CreateItem" && o.Scope == "pinned to the buyer");
         Assert.Contains(operations, o => o.Container == "bids" && o.Text == "ReplaceItem (If-Match)");
         // The reset was one query inside the partition and one batch of deletes.
-        Assert.Contains(operations, o => o.Container == "bids" && o.Kind == StoreOperationKind.Query && o.Partition == "pinned to the buyer");
+        Assert.Contains(operations, o => o.Container == "bids" && o.Kind == StoreOperationKind.Query && o.Scope == "pinned to the buyer");
         Assert.Contains(operations, o => o.Container == "bids" && o.Kind == StoreOperationKind.Batch);
         // And the only fan-out was the load.
-        Assert.All(operations.Where(o => o.Partition.StartsWith("cross", StringComparison.Ordinal)), o => Assert.Equal(StoreOperationKind.Query, o.Kind));
-        Assert.All(operations, o => Assert.True(o.RequestCharge > 0, $"{o.Kind} on {o.Container} reported no charge"));
+        Assert.All(operations.Where(o => o.Scope.StartsWith("cross", StringComparison.Ordinal)), o => Assert.Equal(StoreOperationKind.Query, o.Kind));
+        Assert.All(operations, o => Assert.True(o.Charge > 0, $"{o.Kind} on {o.Container} reported no charge"));
     }
     // #endregion bids
 
@@ -206,7 +206,7 @@ public class CosmosStoreTests
         foreach (var operation in operations)
         {
             Assert.DoesNotContain(email, operation.Text, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain(email, operation.Partition, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(email, operation.Scope, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("leak-canary", operation.Text, StringComparison.OrdinalIgnoreCase);
         }
 

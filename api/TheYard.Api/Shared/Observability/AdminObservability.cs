@@ -18,9 +18,9 @@ namespace TheYard.Api.Shared.Observability;
 
 /// <summary>
 /// Fixed-size, thread-safe ring of recent SQL statements. Nothing here holds a
-/// parameter value: <see cref="SqlStatement"/> has no field for one.
+/// parameter value: <see cref="StoreStatement"/> has no field for one.
 /// </summary>
-public sealed class SqlRingBuffer(int capacity) : ISqlLog
+public sealed class SqlRingBuffer(int capacity) : IStatementLog
 {
     /// <summary>The most entries the ring keeps, never below one.</summary>
     private readonly int _capacity = Math.Max(1, capacity);
@@ -29,7 +29,7 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
     private readonly object _gate = new();
 
     /// <summary>The entries, oldest first; the oldest leaves when a new one would pass the capacity.</summary>
-    private readonly Queue<SqlStatement> _entries = new();
+    private readonly Queue<StoreStatement> _entries = new();
 
     /// <summary>
     /// A statement the Admin tab caused by being looked at.
@@ -54,13 +54,13 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
             || request.EndsWith("/api/admin/machines", StringComparison.Ordinal));
 
     /// <summary>Where a statement also goes so a roll does not end it (ADR: Logs that outlive the container, the addendum on the cards); unset, nowhere.</summary>
-    public Action<SqlStatement>? Kept { get; set; }
+    public Action<StoreStatement>? Kept { get; set; }
 
     /// <summary>
     /// Keeps a statement unless the Admin tab caused it by being looked at, then hands it to <see
     /// cref="Kept"/>.
     /// </summary>
-    public void Record(SqlStatement statement)
+    public void Record(StoreStatement statement)
     {
         if (SelfObservation(statement.Request))
         {
@@ -80,7 +80,7 @@ public sealed class SqlRingBuffer(int capacity) : ISqlLog
     }
 
     /// <summary>The ring's entries, newest first, copied so the caller can read them outside the lock.</summary>
-    public IReadOnlyList<SqlStatement> Snapshot()
+    public IReadOnlyList<StoreStatement> Snapshot()
     {
         lock (_gate)
         {
@@ -193,7 +193,7 @@ public sealed record StoreMetrics(
     public static StoreMetrics Of(string store, IReadOnlyList<StoreOperation> operations)
     {
         long[] durations = operations.Select(o => o.DurationMs).ToArray();
-        double[] charges = operations.Select(o => o.RequestCharge).OrderBy(c => c).ToArray();
+        double[] charges = operations.Select(o => o.Charge).OrderBy(c => c).ToArray();
         return new StoreMetrics(
             store,
             operations.Count,
@@ -203,7 +203,7 @@ public sealed record StoreMetrics(
             Math.Round(charges.Sum(), 2),
             charges.Length == 0 ? 0 : charges[(int)Math.Ceiling(charges.Length * 0.5) - 1],
             charges.Length == 0 ? 0 : charges[^1],
-            operations.Count(o => o.Partition.StartsWith("cross", StringComparison.Ordinal)),
+            operations.Count(o => o.Scope.StartsWith("cross", StringComparison.Ordinal)),
             operations.Count(o => o.Kind.StartsWith("point", StringComparison.Ordinal)));
     }
 }

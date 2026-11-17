@@ -23,7 +23,7 @@ public sealed partial class CosmosStore
         var clock = Stopwatch.StartNew();
         try
         {
-            var response = await Recorder.Timed(container, StoreOperationKind.PointRead, "ReadItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
+            var response = await Recorder.Timed(container, StoreOperationKind.PointRead, "ReadItem", [new ParameterShape("id", "String", id.Length)], partitionLabel, 1,
                 () => container.ReadItemAsync<T>(id, new PartitionKey(partitionKey), cancellationToken: cancellation), r => r.Cost());
             return new MeasuredItem<T>(response.Resource, Math.Round(response.RequestCharge, 2), clock.ElapsedMilliseconds);
         }
@@ -44,12 +44,12 @@ public sealed partial class CosmosStore
 
     /// <summary>A replace that carries the etag it read, so a stale write is refused with 412 rather than winning.</summary>
     public Task<ItemResponse<T>> ReplaceAsync<T>(Container container, T document, string id, string partitionKey, string? etag, string partitionLabel, CancellationToken cancellation = default) =>
-        Recorder.Timed(container, StoreOperationKind.PointWrite, "ReplaceItem (If-Match)", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
+        Recorder.Timed(container, StoreOperationKind.PointWrite, "ReplaceItem (If-Match)", [new ParameterShape("id", "String", id.Length)], partitionLabel, 1,
             () => container.ReplaceItemAsync(document, id, new PartitionKey(partitionKey), new ItemRequestOptions { IfMatchEtag = etag }, cancellation), r => r.Cost());
 
     /// <summary>A point delete of one document by id in one partition; a missing document throws the SDK's 404.</summary>
     public Task<ItemResponse<T>> DeleteAsync<T>(Container container, string id, string partitionKey, string partitionLabel, CancellationToken cancellation = default) =>
-        Recorder.Timed(container, StoreOperationKind.PointDelete, "DeleteItem", [new SqlParameterShape("id", "String", id.Length)], partitionLabel, 1,
+        Recorder.Timed(container, StoreOperationKind.PointDelete, "DeleteItem", [new ParameterShape("id", "String", id.Length)], partitionLabel, 1,
             () => container.DeleteItemAsync<T>(id, new PartitionKey(partitionKey), cancellationToken: cancellation), r => r.Cost());
 
     /// <summary>
@@ -66,7 +66,7 @@ public sealed partial class CosmosStore
     public async Task<MeasuredQuery<T>> QueryMeasuredAsync<T>(Container container, QueryDefinition query, string? partitionKey, string partitionLabel, CancellationToken cancellation = default)
     {
         var parameters = query.GetQueryParameters()
-            .Select(p => new SqlParameterShape(p.Name, p.Value?.GetType().Name ?? "null", p.Value is string s ? s.Length : null))
+            .Select(p => new ParameterShape(p.Name, p.Value?.GetType().Name ?? "null", p.Value is string s ? s.Length : null))
             .ToList();
         var options = new QueryRequestOptions { MaxItemCount = -1 };
         if (partitionKey is not null)

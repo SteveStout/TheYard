@@ -76,7 +76,7 @@ public sealed class MachineRecorder(
             MachineFolding.MeanOf(read.Select(row => (double?)row.CpuPercent)),
             MachineFolding.MeanOf(read.Select(row => (double?)row.MemoryPercent)),
             MachineFolding.MeanOf(read.Select(row => (double?)row.DataIoPercent)),
-            Math.Round(charged.Sum(operation => operation.RequestCharge), 2),
+            Math.Round(charged.Sum(operation => operation.Charge), 2),
             charged.Count,
             traffic?.Requests ?? 0,
             traffic?.P50Ms,

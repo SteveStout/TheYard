@@ -48,7 +48,7 @@ public sealed class CosmosOperationLog(IStoreLog log, string prefix)
     /// charge, and never an id that could be an address or a value that could
     /// be anything (ADR: What the store is actually doing).
     /// </summary>
-    internal async Task<TResponse> Timed<TResponse>(Container container, string kind, string text, IReadOnlyList<SqlParameterShape> parameters, string partitionLabel, int physical, Func<Task<TResponse>> operation, Func<TResponse, Cost> cost)
+    internal async Task<TResponse> Timed<TResponse>(Container container, string kind, string text, IReadOnlyList<ParameterShape> parameters, string partitionLabel, int physical, Func<Task<TResponse>> operation, Func<TResponse, Cost> cost)
     {
         var clock = Stopwatch.StartNew();
         try
@@ -81,7 +81,7 @@ public sealed class CosmosOperationLog(IStoreLog log, string prefix)
     /// the kind, the container, the charge, the time, the partition described,
     /// the outcome and the query text, and never a parameter's value.
     /// </summary>
-    internal void Record(Container container, string kind, string text, IReadOnlyList<SqlParameterShape> parameters, string partitionLabel, int physical, double charge, TimeSpan elapsed, string outcome)
+    internal void Record(Container container, string kind, string text, IReadOnlyList<ParameterShape> parameters, string partitionLabel, int physical, double charge, TimeSpan elapsed, string outcome)
     {
         // Nothing in here may break the operation it observed
         // (ADR: What the database is actually doing).

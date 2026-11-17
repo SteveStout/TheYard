@@ -44,7 +44,7 @@ public static class AdminEndpoints
         #region admin-observability-endpoints
         // The raw SQL, newest first. Statement text, parameter names and types, how
         // long the database took, and the request that caused it. No parameter values:
-        // see the comment on SqlStatement for why there is nowhere to put one.
+        // see the comment on StoreStatement for why there is nowhere to put one.
         app.MapGet("/api/admin/sql", AdminObservabilityRoutes.Sql);
 
         // #region store-endpoint

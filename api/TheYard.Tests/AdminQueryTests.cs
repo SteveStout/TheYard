@@ -22,7 +22,7 @@ public sealed class AdminQueryTests
     public async Task The_ring_reads_answer_what_the_rings_hold()
     {
         var fake = new Fake();
-        Assert.Equal("sql", (await new ReadSqlRingHandler(fake).HandleAsync(new ReadSqlRingQuery(), None)).Body);
+        Assert.Equal("sql", (await new ReadStatementRingHandler(fake).HandleAsync(new ReadStatementRingQuery(), None)).Body);
         Assert.Equal("store", (await new ReadStoreRingHandler(fake).HandleAsync(new ReadStoreRingQuery(), None)).Body);
         Assert.Equal("logs", (await new ReadLogRingHandler(fake).HandleAsync(new ReadLogRingQuery(), None)).Body);
         Assert.Equal("metrics", (await new ReadMetricsHandler(fake).HandleAsync(new ReadMetricsQuery(), None)).Body);
@@ -99,7 +99,7 @@ public sealed class AdminQueryTests
 
         public bool Free { get; init; } = true;
 
-        public object Sql() => "sql";
+        public object Statements() => "sql";
 
         public object Store() => "store";
 
