@@ -290,9 +290,10 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
         string page = File.ReadAllText(Path.Combine(RepoRoot(), DocumentationCatalog.Files["onion"]));
 
         Assert.Contains("{{live:facts api/TheYard.Tests/OnionTests.cs}} tests", page, StringComparison.Ordinal);
-        string[] typed = [.. Regex.Matches(page, @"\b(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) (tests|rules)\b", RegexOptions.IgnoreCase)
+        string[] typed = [.. Regex.Matches(page, @"\b(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) (?:(?:[a-z]+ )?tests|rules)\b", RegexOptions.IgnoreCase)
             .Select(m => m.Value)
             .Where(found => !found.Equals("ten rules", StringComparison.OrdinalIgnoreCase) || !page.Contains("The first ten rules", StringComparison.Ordinal))];
+        // A qualified count, "ten architecture tests", is a typed count too (CodeRabbit on 1.0.5.85).
         Assert.Empty(typed);
         Assert.DoesNotContain("IBidStore.SaveAsync", page, StringComparison.Ordinal);
     }

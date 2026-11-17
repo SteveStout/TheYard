@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeRows, gateTrend, verdictSeconds } from './codeHealth';
+import { codeRows, gateTone, gateTrend, verdictSeconds } from './codeHealth';
 
 describe('code health', () => {
   it('reads every number the gate measured, and red on one warning', () => {
@@ -17,7 +17,8 @@ describe('code health', () => {
   it('says what the gate did not measure rather than a zero', () => {
     const rows = codeRows(undefined, 320);
     expect(rows[0]).toMatchObject({ value: 'not measured by this gate', tone: 'plain' });
-    expect(rows[1].tone).toBe('warn');
+    // Past five minutes and under ten the gate is information, not a fault.
+    expect(rows[1].tone).toBe('info');
     expect(rows[3].value).toBe('not measured by this gate');
   });
 
@@ -68,5 +69,14 @@ describe('code health', () => {
       },
     ]);
     expect(trend.points.map((point) => point.value)).toEqual([741, 420]);
+  });
+
+  it('reads the gate green under five minutes, information to ten, red from ten', () => {
+    expect([gateTone(299), gateTone(300), gateTone(599), gateTone(600)]).toEqual([
+      'good',
+      'info',
+      'info',
+      'bad',
+    ]);
   });
 });

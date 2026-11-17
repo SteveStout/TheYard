@@ -11,6 +11,7 @@ namespace TheYard.Api.Features.Docs;
 /// ADR-075, the gate's results (data/test-results.json), CodeRabbit's ladder (ADR-129) and its findings log
 /// (data/coderabbit-findings.json). None is typed into the page, so the page cannot say a number the data does not.
 /// A measure it does not know, or a file this build lacks, renders as a note in words, as every live number does.
+/// Its parts: this file, and QualityCounts.RuleGroups.cs, the rulebook's six cards.
 /// </summary>
 public static partial class QualityCounts
 {
@@ -152,66 +153,41 @@ public static partial class QualityCounts
     }
 
     /// <summary>
-    /// The rules of ADR-075's table that cite the record titled <paramref name="title"/>, each with the tests that
-    /// hold it and how they did in the gate this build shipped from, for the record's "Enforced by" section
-    /// (EnforcedBy.cs). A cell may cite several records, and a title may hold a comma, so a citation runs from its
-    /// own "ADR: " to the next, as RuleTableTests reads it.
+    /// The rules of ADR-075's table that cite the record titled <paramref name="title"/>, numbered
+    /// <paramref name="number"/>, each with the tests that hold it and how they did in the gate this build shipped
+    /// from, for the record's "Enforced by" section (EnforcedBy.cs). A cell may cite several records, and a title may
+    /// hold a comma, so a citation runs from its own marker to the next, as RuleTableTests reads it. A citation names
+    /// a record three ways: "ADR: " and its title, "ADR-" and its number, or "This record", which is ADR-075 itself.
     /// </summary>
-    internal static List<(string Rule, string Holds, string Verdict)> RulesCiting(string title, string repoRoot)
+    internal static List<(string Rule, string Holds, string Verdict)> RulesCiting(string title, int number, string repoRoot)
     {
         var results = Results(repoRoot);
         var elsewhere = FunctionClasses(repoRoot);
         return [.. RuleRows(repoRoot)
-            .Where(cells => Regex.Split(cells[1], @"(?=\bADR: )")
-                .Where(part => part.StartsWith("ADR: ", StringComparison.Ordinal))
-                .Any(part => string.Equals(part["ADR: ".Length..].Trim().TrimEnd(',', '.', ' '), title, StringComparison.Ordinal)))
+            .Where(cells => Citation().Split(cells[1]).Any(part => Cites(part.Trim(), title, number)))
             .Select(cells =>
             {
                 var (run, passed) = Ran(Counted(cells, results, elsewhere), results);
                 return (cells[0], cells[2], run == 0 ? "in its own suite, not this file" : $"{passed} of {run} passed");
             })];
     }
+
+    /// <summary>Whether one citation names the record titled <paramref name="title"/>, numbered <paramref name="number"/>.</summary>
+    private static bool Cites(string part, string title, int number)
+    {
+        if (part.StartsWith("ADR: ", StringComparison.Ordinal))
+        {
+            return string.Equals(part["ADR: ".Length..].Trim().TrimEnd(',', '.', ' '), title, StringComparison.Ordinal);
+        }
+        Match numbered = NumberedCitation().Match(part);
+        if (numbered.Success)
+        {
+            return int.Parse(numbered.Groups[1].Value, CultureInfo.InvariantCulture) == number;
+        }
+        return part.StartsWith("This record", StringComparison.Ordinal) && number == 75;
+    }
     // #endregion rules-table
 
-    // #region rule-groups
-    /// <summary>
-    /// The rulebook's six cards for a reader who is not an engineer (ADR-130): each group of
-    /// data/rule-groups.json as its title, its promise, its example, and a line counted from ADR-075's table and the
-    /// gate's results, never typed. A rule held only by the job hunt Function's suite, which its own deploy runs and
-    /// this results file does not record test by test, is counted apart rather than called passing.
-    /// </summary>
-    private static string RuleGroups(string repoRoot)
-    {
-        var results = Results(repoRoot);
-        var elsewhere = FunctionClasses(repoRoot);
-        var rows = RuleRows(repoRoot).ToDictionary(cells => cells[0], StringComparer.Ordinal);
-        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "data", "rule-groups.json")));
-        var cards = new StringBuilder();
-        foreach (JsonElement group in document.RootElement.GetProperty("groups").EnumerateArray())
-        {
-            string[] rules = [.. group.GetProperty("rules").EnumerateArray().Select(r => r.GetString() ?? "").Where(rows.ContainsKey)];
-            var counted = rules.Select(rule => Counted(rows[rule], results, elsewhere)).ToList();
-            int gated = counted.Count(classes => classes.Length > 0);
-            // A class two rules both name ran once, so the group counts it once.
-            var (run, passed) = Ran(counted.SelectMany(classes => classes), results);
-            string status = passed == run ? $"all {Number(run)} of their test runs in the last gate passed" : $"{Number(passed)} of their {Number(run)} test runs in the last gate passed";
-            string apart = (rules.Length - gated) switch
-            {
-                0 => "",
-                1 => " One more is held by a suite this file does not record test by test, the job hunt Function's or the machine lanes'.",
-                int more => $" {more} more are held by suites this file does not record test by test, the job hunt Function's and the machine lanes'.",
-            };
-            cards.Append(CultureInfo.InvariantCulture, $"### {group.GetProperty("title").GetString()}\n\n{group.GetProperty("promise").GetString()}\n\n{group.GetProperty("example").GetString()}\n\n**{RuleWords(rules.Length)}: {(gated == rules.Length ? "" : $"{gated} checked by the gate, ")}{status}.**{apart}\n\n");
-        }
-        return cards.ToString().TrimEnd();
-    }
-
-    /// <summary>A count of rules in words a card can say: one rule, or <paramref name="count"/> rules.</summary>
-    private static string RuleWords(int count) => count == 1 ? "1 rule" : $"{Number(count)} rules";
-
-    /// <summary>A count as the site writes one: 1,516.</summary>
-    private static string Number(int count) => count.ToString("#,0", CultureInfo.InvariantCulture);
-    // #endregion rule-groups
 
     /// <summary>Each test class's results in the gate this build shipped from, across every suite, by class name.</summary>
     private static Dictionary<string, (int Run, int Passed)> Results(string repoRoot)
@@ -267,4 +243,10 @@ public static partial class QualityCounts
 
     [GeneratedRegex(@"\bjob hunt\b|\bthe Function\b|\bFunction's\b", RegexOptions.IgnoreCase)]
     private static partial Regex FunctionRule();
+
+    [GeneratedRegex(@"(?=\bADR: |\bADR-\d+\b|\bThis record\b)")]
+    private static partial Regex Citation();
+
+    [GeneratedRegex(@"^ADR-(\d+)\b")]
+    private static partial Regex NumberedCitation();
 }

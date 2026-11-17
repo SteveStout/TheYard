@@ -472,3 +472,7 @@ The first gate for 1.0.4.72 (run 40224307813) failed in its first minute without
 
 The addendum of 1.0.3.183 worked out that the gate gets under ten minutes as two jobs, one per store, and left it unbuilt. It is built in 1.0.5.4, with one difference: the Cosmos DB passes stay in one job because they share the `tests-` containers, and the SQLite side is three jobs, the browser suite in two shards, because that suite is the longest pass. The record is ADR-098, the addendum of 1.0.5.4.
 
+
+## Addendum, 2026-11-17 (1.0.5.86): five minutes is the target, not an alarm
+
+What stopped being true: that the Admin tab's tests card marks a gate over five minutes "worth a look". Read on 17 November, 29 of the last 30 shipped versions ran past 300 seconds, with a median of 399, so the row was amber on nearly every version, on the card the review route opens as "the gate that shipped this version". By the Admin tab's rule that amber means something needs a look, a gate between five and ten minutes is now information, and red only from ten. The five-minute line stays the target and stays printed: the card's range line reads "target under 300 s, information past it, red at 600 s". codeHealth.test.ts holds the three tones at 299, 300, 599 and 600 seconds.

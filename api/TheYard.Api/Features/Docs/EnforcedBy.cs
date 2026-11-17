@@ -27,14 +27,16 @@ public static partial class EnforcedBy
         {
             return markdown;
         }
-        var rules = QualityCounts.RulesCiting(title.Groups[1].Value.Trim(), repoRoot);
+        Match numbered = FileNumber().Match(file);
+        int number = numbered.Success ? int.Parse(numbered.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
+        var rules = QualityCounts.RulesCiting(title.Groups[1].Value.Trim(), number, repoRoot);
         var section = new StringBuilder($"\n\n{Heading}\n\n");
         if (rules.Count == 0)
         {
             section.Append("Not machine-checked. Held by review.\n");
             return markdown.TrimEnd() + section;
         }
-        section.Append(CultureInfo.InvariantCulture, $"{(rules.Count == 1 ? "One rule" : $"{rules.Count} rules")} in [the rulebook](/?doc=adr-rules) cite this record, each held by a test on every release.\n\n");
+        section.Append(CultureInfo.InvariantCulture, $"{(rules.Count == 1 ? "One rule in [the rulebook](/?doc=adr-rules) cites" : $"{rules.Count} rules in [the rulebook](/?doc=adr-rules) cite")} this record, each held by a test on every release.\n\n");
         section.Append("| The rule | What holds it | In the last gate |\n| --- | --- | --- |\n");
         foreach (var (rule, holds, verdict) in rules)
         {
@@ -45,4 +47,7 @@ public static partial class EnforcedBy
 
     [GeneratedRegex(@"\A# ADR(?:-\d+)?: (.+)$", RegexOptions.Multiline)]
     private static partial Regex Title();
+
+    [GeneratedRegex(@"docs/decisions/ADR-(\d+)-")]
+    private static partial Regex FileNumber();
 }
