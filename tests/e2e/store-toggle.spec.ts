@@ -42,8 +42,15 @@ test('the bar sits at the top of every view, marks this site and names the store
   const current = nav.locator('[aria-current="page"]');
   await expect(current).toHaveAttribute('data-store', site.key);
   await expect(current).toHaveText(label(site.key));
+  // The short form on the bar at every width, and the whole sentence as its title (the gate badge has the room).
   await expect(bar.getByTestId('store-bar-note')).toContainText(
-    `This is the ${label(site.key)} site, served from ${serving.name}`
+    `${label(site.key)} site · ${serving.name}`
+  );
+  await expect(bar.getByTestId('store-bar-note')).toHaveAttribute(
+    'title',
+    new RegExp(
+      `^This is the ${label(site.key)} site, served from ${serving.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`
+    )
   );
 
   // The bar is above the view, so it is there on the Admin tab and the account view too.
@@ -135,10 +142,10 @@ test('the bar is as tall before the stores answer as after, at a desk, whatever 
 });
 
 // #region no-ellipsis
-// The tweaks pass (A3, A6): no ellipsis anywhere the gate reads. Under 1440 the note
-// is the short form, the site and its store; from 1440, where it fits with the rail
-// open and Azure's store names, the whole sentence on one line; at every width, the
-// words the reader sees fit their box whole. The ready ring has
+// The tweaks pass (A3, A6): no ellipsis anywhere the gate reads. The note is the
+// short form at every width, the site and its store, with the whole sentence as its
+// title (from 1440 the gate badge says all three facts in the room the sentence
+// took); at every width, the words the reader sees fit their box whole. The ready ring has
 // its count in words beside it, and the whole count in its title.
 test('the store bar ends no word in an ellipsis at 768, 1024, 1280 or 1440, and says how many stores are ready', async ({
   page,
@@ -160,8 +167,7 @@ test('the store bar ends no word in an ellipsis at 768, 1024, 1280 or 1440, and 
       };
     });
     expect(read.fits, `the note fits whole at ${width}: "${read.words}"`).toBe(true);
-    if (width < 1440) expect(read.words).toMatch(/^(SQL|Cosmos DB) site · /);
-    else expect(read.words).toMatch(/^This is the (SQL|Cosmos DB) site, served from /);
+    expect(read.words).toMatch(/^(SQL|Cosmos DB) site · /);
     await expect(bar.getByTestId('store-bar-ready-words')).toHaveText(/^\d\/\d ready$/i);
     // A screen reader hears the note at every width: the displayed form is not hidden from it.
     await expect(bar.getByTestId('store-bar-note').locator('[aria-hidden="true"]')).toHaveCount(0);

@@ -31,7 +31,7 @@ for (const viewport of [
       await expect(
         page.getByRole('heading', {
           level: 1,
-          name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+          name: 'Built with AI. Gated so quality never slides.',
         })
       ).toBeVisible();
       await expect(page.getByTestId('view-announcement')).toHaveText('The Yard, home');
@@ -309,7 +309,7 @@ test('the Inventory tile opens the inventory at its own address, and Back return
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+      name: 'Built with AI. Gated so quality never slides.',
     })
   ).toBeVisible();
 });
@@ -354,7 +354,7 @@ test.describe('the docked rail', () => {
     await expect(
       page.getByRole('heading', {
         level: 1,
-        name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+        name: 'Built with AI. Gated so quality never slides.',
       })
     ).toBeVisible();
     await expect(rail.locator('[aria-current="page"]')).toHaveText('Home');
@@ -379,7 +379,7 @@ test('Admin opened from the landing page says it goes back home, and does', asyn
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: 'Fifteen quality numbers are measured on every version and none may get worse.',
+      name: 'Built with AI. Gated so quality never slides.',
     })
   ).toBeVisible();
   // By its address there is nothing behind it, and the button says where it goes instead.

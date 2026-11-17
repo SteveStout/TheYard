@@ -12,6 +12,7 @@ import styles from '../AdminPanel/AdminPanel.module.css';
 import cardStyles from '../shared/card.module.css';
 import { AdminRailContent } from '../AdminRailContent';
 import { AdminHourAtAGlance } from '../AdminHourAtAGlance';
+import { useAddressedCardIntoView } from './useAddressedCardIntoView';
 
 // #region workbench
 /**
@@ -58,6 +59,7 @@ export function AdminWorkbench({
   const [foldOpen, setFoldOpen] = useState(false);
   const { previous, next } = neighbours(open);
   const openCard = benchCard(open);
+  const openColumn = useAddressedCardIntoView(open);
   const question = BENCH_QUESTIONS.find((entry) => entry.key === openCard.question);
   const pinShown = pin !== null && pin !== open;
   // "This hour" shows only with the cards in HOUR_CARDS. On a wide screen with
@@ -213,7 +215,12 @@ export function AdminWorkbench({
           data-pinned={pinShown && !phone ? 'true' : 'false'}
           data-hour={!hourHere ? 'none' : hourBeside ? 'beside' : 'above'}
         >
-          <div className={styles.benchColumn} data-testid="bench-open" data-card={open}>
+          <div
+            ref={openColumn}
+            className={styles.benchColumn}
+            data-testid="bench-open"
+            data-card={open}
+          >
             {render(open)}
           </div>
           {pinShown && !phone && (
