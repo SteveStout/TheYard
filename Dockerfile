@@ -164,6 +164,9 @@ COPY --chown=app:app api/TheYard.Experiment/*.cs api/TheYard.Experiment/*.csproj
 COPY --chown=app:app api/TheYard.Migrations.Sqlite/*.cs api/TheYard.Migrations.Sqlite/*.csproj ./api/TheYard.Migrations.Sqlite/
 # The job hunt Function's sources, so the nightly card reads each process's summary from the code at this version (ADR-109).
 COPY --chown=app:app functions/jobhunt/*.cs ./functions/jobhunt/
+# The job hunt Function's test classes by name: the Quality page's rule counts leave a Function rule's tests out of the
+# site's results by these names, read when the page is served (QualityCounts.cs).
+COPY --chown=app:app functions/jobhunt.Tests ./functions/jobhunt.Tests
 # The DDL, so the records can show the schema they describe (ADR-014).
 COPY --chown=app:app api/TheYard.Database ./api/TheYard.Database
 COPY --chown=app:app api/TheYard.Tests/*.cs api/TheYard.Tests/*.csproj ./api/TheYard.Tests/
