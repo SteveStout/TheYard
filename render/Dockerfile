@@ -23,6 +23,10 @@ COPY data/recommendations.json ./data/recommendations.json
 # first screen draws with no read (ADR-132).
 COPY data/hooks.json ./data/hooks.json
 COPY data/quality-history.json ./data/quality-history.json
+# The changelog's dated lines and CodeRabbit's newest row, which the build reads for the landing's releases of the
+# week and the header's gate badge (vite.config.ts, release-facts; ADR-132).
+COPY docs/CHANGELOG.md ./docs/CHANGELOG.md
+COPY data/coderabbit-findings.json ./data/coderabbit-findings.json
 COPY render ./render
 RUN npx vite build --config render/vite.config.ts
 # #endregion build
