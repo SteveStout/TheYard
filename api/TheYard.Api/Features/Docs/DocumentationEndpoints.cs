@@ -137,7 +137,8 @@ public static class DocumentationEndpoints
         if (!Rendered.TryGet(key, out var text))
         {
             // The pictures are named here rather than on GitHub's raw host (DocImages.cs).
-            text = DocImages.Rewrite(LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot);
+            // A decision record gains its "Enforced by" section, built from the rules table (EnforcedBy.cs).
+            text = DocImages.Rewrite(EnforcedBy.Append(file, LiveCounts.Expand(LiveSamples.Expand(File.ReadAllText(Path.Combine(paths.RepoRoot, file)), paths.RepoRoot, build.Commit), paths.RepoRoot), paths.RepoRoot), paths.RepoRoot);
             Rendered.Set(key, text);
         }
         return text;

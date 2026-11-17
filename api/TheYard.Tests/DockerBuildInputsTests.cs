@@ -65,6 +65,20 @@ public class DockerBuildInputsTests
     // #endregion inputs
 
     /// <summary>
+    /// What the API reads from the repository when it serves a page has to be in the runtime image too: the
+    /// Quality page names the job hunt Function's test classes from their folder (QualityCounts.cs), and without
+    /// it every Function rule would be counted from the site's same-named tests on the live site alone.
+    /// </summary>
+    [Fact]
+    public void The_runtime_image_carries_the_folders_the_quality_page_reads()
+    {
+        string dockerfile = File.ReadAllText(Path.Combine(Repo.Root(), "Dockerfile"));
+        string runtime = dockerfile[dockerfile.IndexOf(" AS runtime", StringComparison.Ordinal)..];
+
+        Assert.Matches(new Regex(@"^COPY\s+(?:[^\s]+\s+)*functions/jobhunt\.Tests\s", RegexOptions.Multiline), runtime);
+    }
+
+    /// <summary>
     /// The frontend stage copies the inputs above and nothing else, and `npm run build` type-checks every
     /// file under src, tests included. A file under src that imports from anywhere else builds on a
     /// developer's machine and in CI, which hold the whole repository, and fails in the image: on

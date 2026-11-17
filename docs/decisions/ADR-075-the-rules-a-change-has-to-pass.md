@@ -419,3 +419,9 @@ What stopped being true: "How the table is read" says a row's test is a class in
 
 From this version `RuleTableTests` reads the machine lanes' test classes from their source the way it reads the Function's, and a test holds that a server class is one a row may name. The three rows are in the table: the feed's writes and gates, the hottest-first cut of the invites worklist (`FeedTests`), and what an invite stands on (`ResultTests`, `RunTests`).
 
+
+## Addendum, 2026-11-17 (1.0.5.85): every record says what enforces it
+
+What stopped being true: that a reader has to come to this table to learn whether a record is held by a test. Every decision record the site serves now ends with a section built from this table when the record is opened: the rules that cite it, each with what holds it and how its tests did in the gate the build shipped from, or, where no rule cites it, "Not machine-checked. Held by review." The section is never written into a record (EnforcedByTests refuses one that does), so it cannot drift from the table, and a rule added here shows on its record the version it lands. The files on GitHub stay as written. The plan's index column (which records are held by a test, at a glance) is left for a later version.
+
+Corrected in the same version (CodeRabbit on 1.0.5.78): the Quality page's six cards, the table's last column and the new section count a test class two rules share once in a group, and for a rule about the job hunt Function they never count the site's run of a class that shares its name (SliceTests, CqrsTests): the results file holds only the site's suites. A rule whose tests the file does not hold is said to be held by a suite it does not record, the job hunt Function's or the machine lanes', rather than named as the Function's. RuleGroupCountsTests holds all three.

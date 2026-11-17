@@ -6,7 +6,7 @@
  * Used by:   StoreBar.tsx, by a lazy import.
  */
 import { useEffect, useRef } from 'react';
-import type { GateFacts } from '../StoreBar/gateFacts';
+import { qualityLine, type GateFacts } from '../StoreBar/gateFacts';
 import styles from './GatePopover.module.css';
 
 export function GatePopover({
@@ -64,13 +64,7 @@ export function GatePopover({
             ? 'Every gate job green before it could ship: the build, both stores, the browser tests and the checks'
             : 'The gate’s reading of this version is not on file yet'}
         </li>
-        <li>
-          {quality
-            ? `${quality.held} of ${quality.of} quality numbers held, none worse than in the version before${
-                quality.better > 0 ? `, ${quality.better} better` : ''
-              }`
-            : 'Its quality numbers are not on file yet'}
-        </li>
+        <li>{quality ? qualityLine(quality) : 'Its quality numbers are not on file yet'}</li>
         <li>
           {review?.reviewed === 'full'
             ? `CodeRabbit read the pull request in full and found ${

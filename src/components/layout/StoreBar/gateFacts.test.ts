@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { HistoryRow } from '../../../lib/qualityHeld';
-import { gateChips, gateFacts } from './gateFacts';
+import { gateChips, gateFacts, qualityLine } from './gateFacts';
 
 const row = (version: string, a: number, commit = 'abcdef0123'): HistoryRow => ({
   version,
@@ -41,5 +41,14 @@ describe('the gate badge', () => {
     expect(
       gateChips({ ...answer, review: { version: '1.0.0.2', reviewed: 'none', critical: 0 } })[2]
     ).toBe('CodeRabbit not reviewed');
+  });
+
+  it('says none worse only when every number held (CodeRabbit on 1.0.5.82)', () => {
+    expect(qualityLine({ held: 2, of: 2, better: 1 })).toBe(
+      '2 of 2 quality numbers held, none worse than in the version before, 1 better'
+    );
+    expect(qualityLine({ held: 1, of: 2, better: 0 })).toBe(
+      '1 of 2 quality numbers held, 1 worse than in the version before'
+    );
   });
 });
