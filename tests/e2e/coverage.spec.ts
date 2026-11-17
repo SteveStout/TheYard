@@ -263,11 +263,13 @@ async function rowsOf(
       const boxes = Array.from(document.querySelectorAll(tile)).map((element) => {
         const box = element.getBoundingClientRect();
         const number = element.querySelector(figure)?.getBoundingClientRect();
+        // Page positions, not the window's: an address that names a card scrolls to it (ADR: Ten minutes,
+        // seven stops), and the rows are judged against each other, wherever the page sits.
         return {
           left: Math.round(box.left),
-          top: Math.round(box.top),
+          top: Math.round(box.top + window.scrollY),
           height: Math.round(box.height),
-          figure: number === undefined ? -1 : Math.round(number.top),
+          figure: number === undefined ? -1 : Math.round(number.top + window.scrollY),
         };
       });
       const columns = new Set(boxes.map((box) => box.left)).size;

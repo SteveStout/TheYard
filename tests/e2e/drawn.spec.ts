@@ -56,9 +56,7 @@ test('the bare address arrives with the landing page already drawn in its HTML',
     return;
   }
   expect(root).toContain('data-drawn="landing"');
-  expect(root).toContain(
-    'Fifteen quality numbers are measured on every version and none may get worse.'
-  );
+  expect(root).toContain('Built with AI. Gated so quality never slides.');
   expect(root).toContain('data-testid="landing-tile-inventory"');
   // Drawn with nothing fetched: the API is asked nothing while the site is built.
   expect(root).toContain('data-state="reading"');
@@ -139,7 +137,7 @@ async function drawnAddresses(page: Page): Promise<Array<{ path: string; carries
   return [
     {
       path: '/',
-      carries: 'Fifteen quality numbers are measured on every version and none may get worse.',
+      carries: 'Built with AI. Gated so quality never slides.',
     },
     { path: '/?view=inventory', carries: 'data-testid="result-count"' },
     { path: `/?vehicle=${vehicle.id}`, carries: vehicle.vin },
