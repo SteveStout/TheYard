@@ -69,7 +69,8 @@ jobs:
         if: inputs.read == 'storage-egress'
         run: |
           out="$RUNNER_TEMP/azure-read"; mkdir -p "$out"; index="$out/index.txt"
-          acct=$(az storage account show -g RG-JOBHUNT-SS -n stjobhuntss --query id -o tsv)
+          # Built, not looked up: the read's identity holds metrics read on the account, not the account's own read.
+          acct="/subscriptions/$(az account show --query id -o tsv)/resourceGroups/RG-JOBHUNT-SS/providers/Microsoft.Storage/storageAccounts/stjobhuntss"
           endH=$(date -u +%Y-%m-%dT%H:00:00Z); s7d=$(date -u -d '7 days ago' +%Y-%m-%dT%H:00:00Z); sMon=$(date -u +%Y-%m-01T00:00:00Z)
           echo "spans 7d $s7d..$endH  month $sMon..$endH" > "$index"
           read_metric() {
