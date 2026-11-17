@@ -417,3 +417,7 @@ What stopped being true: "How the table is read" says a row's test is a class in
 
 From this version `RuleTableTests` reads the machine lanes' test classes from their source the way it reads the Function's, and a test holds that a server class is one a row may name. The three rows are in the table: the feed's writes and gates, the hottest-first cut of the invites worklist (`FeedTests`), and what an invite stands on (`ResultTests`, `RunTests`).
 
+
+## Addendum, @DATE@ (@VER@): every record says what enforces it
+
+What stopped being true: that a reader has to come to this table to learn whether a record is held by a test. Every decision record the site serves now ends with a section built from this table when the record is opened: the rules that cite it, each with what holds it and how its tests did in the gate the build shipped from, or, where no rule cites it, "Not machine-checked. Held by review." The section is never written into a record (EnforcedByTests refuses one that does), so it cannot drift from the table, and a rule added here shows on its record the version it lands. The files on GitHub stay as written. The plan's index column (which records are held by a test, at a glance) is left for a later version.
