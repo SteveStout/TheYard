@@ -287,5 +287,28 @@ public sealed class LinkHandlerTests
         Assert.DoesNotContain(week.Codes, row => row.Code == "old1st");
         Assert.Equal("30d", (await handler.HandleAsync(new ReadLinkOpensQuery("sideways"), CancellationToken.None)).Window);
     }
+
+    [Fact]
+    public async Task A_code_whose_day_is_four_or_more_different_paths_inside_thirty_seconds_is_flagged_and_keeps_its_opens()
+    {
+        // Ladder v7c (R11): code 5u9cdd's shape on 12 November, five paths in 14 seconds at 08:01 CST, is a link
+        // scanner reading every address a message holds, not a person. The row keeps its opens and says so.
+        var keeper = new MemoryLinkOpens();
+        DateTimeOffset start = Noon.AddHours(-4);
+        await keeper.RecordAsync(
+            [
+                .. new[] { "/", "/about", "/review", "/resume/email", "/api/go/github" }
+                    .Select((path, i) => new LinkOpen(start.AddSeconds(i * 3.5), "5u9cdd", path, "sql")),
+                new LinkOpen(Noon.AddHours(-2), "k7f2qa", "/review", "sql"),
+                new LinkOpen(Noon.AddHours(-2).AddMinutes(4), "k7f2qa", "/about", "sql"),
+            ],
+            CancellationToken.None);
+        var report = await new ReadLinkOpensHandler(keeper, new FakeTargets(), new FakeClock(Noon)).HandleAsync(new ReadLinkOpensQuery("7d"), CancellationToken.None);
+        var scanned = report.Codes.Single(row => row.Code == "5u9cdd");
+        Assert.True(scanned.Scanned);
+        Assert.Equal(5, scanned.Opens);
+        Assert.False(report.Codes.Single(row => row.Code == "k7f2qa").Scanned);
+        Assert.Equal(1, report.ScannedCodes);
+    }
 }
 // #endregion link-handler-tests
