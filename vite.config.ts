@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { build, defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { releaseFacts } from './src/lib/releaseFacts.ts';
 
 // #region font-preload
 // The type file (IBM Plex Sans since 1.0.3.19, one variable file for its four
@@ -83,7 +84,7 @@ async function drawLandingMarkup(root: string): Promise<string> {
     configFile: false,
     root,
     logLevel: 'warn',
-    plugins: [react()],
+    plugins: [react(), carryTheReleaseFacts()],
     ssr: { noExternal: true },
     build: {
       ssr: 'src/app/drawLanding.tsx',
@@ -140,6 +141,45 @@ function drawTheLandingPage(): Plugin {
 }
 // #endregion draw-the-landing-page
 
+// #region release-facts
+// The landing's releases of the last seven days and the header badge's CodeRabbit chip are read from the
+// repository's own records when the site is built, so the first paint carries them and the bundle does not carry
+// the files (ADR-132): the changelog's dated lines as a count a day, and the newest row of
+// data/coderabbit-findings.json. src/lib/releaseFacts.ts does the reading; this only hands it the two texts. The
+// file reader is imported by a name held in a variable because this project carries no @types/node.
+const RELEASE_FACTS = 'virtual:release-facts';
+
+function carryTheReleaseFacts(): Plugin {
+  let root = '';
+  return {
+    name: 'theyard-release-facts',
+    configResolved(config) {
+      root = config.root;
+    },
+    resolveId(id) {
+      return id === RELEASE_FACTS ? `\0${RELEASE_FACTS}` : null;
+    },
+    async load(id) {
+      if (id !== `\0${RELEASE_FACTS}`) return null;
+      const reader = 'node:fs';
+      const fs = (await import(/* @vite-ignore */ reader)) as {
+        readFileSync(path: string, encoding: 'utf8'): string;
+      };
+      const changelog = `${root}/docs/CHANGELOG.md`;
+      const findings = `${root}/data/coderabbit-findings.json`;
+      this.addWatchFile(changelog);
+      this.addWatchFile(findings);
+      const facts = releaseFacts(
+        fs.readFileSync(changelog, 'utf8'),
+        JSON.parse(fs.readFileSync(findings, 'utf8')),
+        new Date()
+      );
+      return `export default ${JSON.stringify(facts)};`;
+    },
+  };
+}
+// #endregion release-facts
+
 // #region dev-server
 // The .NET API (api/) owns /api: data and vehicle photos. Proxying keeps the
 // browser same-origin, so the API needs no CORS configuration. The preview
@@ -159,7 +199,7 @@ const apiProxy = {
 };
 
 export default defineConfig({
-  plugins: [react(), preloadTheFonts(), drawTheLandingPage()],
+  plugins: [react(), preloadTheFonts(), drawTheLandingPage(), carryTheReleaseFacts()],
   server: {
     proxy: apiProxy,
     // Keep Vite's file watcher out of the .NET build output, because dotnet holds

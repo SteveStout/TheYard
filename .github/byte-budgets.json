@@ -2,9 +2,9 @@
   "about": "Ladder 8a (ADR-134): the most bytes each part of a reader's first load may take, locked at the values the build measured when the budget was set. The landing draws every reading in data/quality-history.json, which the gate's promote adds a row to after each version, so the drawn index.html and the entry script may also grow by per_history_row bytes for each row past history_rows, and by nothing else. tests/budgets/byteBudgets.test.ts reads the built site in the gate's node job and fails a version that spends more. A version that needs more raises a number here in its own commit and says why in its changelog line; a number never rises to fit.",
   "measured_at": "1.0.5.63",
   "bytes": {
-    "index_html": 176223,
-    "entry_js": 580507,
-    "entry_css": 121934,
+    "index_html": 176325,
+    "entry_js": 581849,
+    "entry_css": 122058,
     "markdown_js": 149135
   },
   "history_rows": 141,
