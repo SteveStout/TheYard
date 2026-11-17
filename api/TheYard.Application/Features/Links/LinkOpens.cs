@@ -52,8 +52,17 @@ public static class TaggedRequests
     /// <summary>The path the page reports its own open on.</summary>
     public const string PageReport = "/api/links/open";
 
-    /// <summary>The views the page may report: the home page, About Steven, the review route and the recommendations page.</summary>
-    public static readonly IReadOnlyList<string> PageViews = ["/", "/about", ReviewView, RecommendationsView];
+    /// <summary>
+    /// The views the page may report: the home page, About Steven, the review route, the recommendations page, and
+    /// since ladder v7b the blog and the Quality page, so a footer click that carries the code lands under its page.
+    /// </summary>
+    public static readonly IReadOnlyList<string> PageViews = ["/", "/about", ReviewView, RecommendationsView, BlogView, QualityView];
+
+    /// <summary>The blog's page view: the list and every post, reported by the page, never a path the site serves.</summary>
+    public const string BlogView = "/blog";
+
+    /// <summary>The Quality page's view, reported by the page when it opens the document.</summary>
+    public const string QualityView = "/quality";
 
     /// <summary>
     /// The review route's page view, and its short door: /review answers a redirect to the view
@@ -70,7 +79,7 @@ public static class TaggedRequests
     /// <summary>Whether a path is one a sent link names, so a code on any other request (a cache-buster, a guess) is not an open.</summary>
     /// <param name="path">The request's path, with no query.</param>
     public static bool IsSent(string path) =>
-        (PageViews.Contains(path, StringComparer.Ordinal) && path is not (ReviewView or RecommendationsView))
+        (PageViews.Contains(path, StringComparer.Ordinal) && path is not (ReviewView or RecommendationsView or BlogView or QualityView))
         || SentPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.Ordinal));
 
     /// <summary>The open this request is, or null when it is not one.</summary>
