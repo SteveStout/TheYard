@@ -9,6 +9,12 @@ Async methods with no CancellationToken | may only fall | 1.0.4.115
 
 From {{live:quality-first async_without_cancellation}} on 15 October to a worst of {{live:quality-peak async_without_cancellation}}, and {{live:quality-now async_without_cancellation}} today. The gold mark is the version the ratchet went in.
 
+## Every rule in the rulebook has a test that enforces it
+
+{{live:rule-count}} rules, each written down with the reason behind it and checked by a test on every release. If a change breaks one, it doesn't ship. Here is what they protect; the full rulebook, for engineers, is folded at the bottom of this page.
+
+{{live:rule-groups}}
+
 ## In plain words
 
 I built this site with AI while most of my attention was elsewhere, and the risk in that is quality slipping while nobody is looking. So the decisions are written down as records, the records that a machine can check are tests, and a scanner counts fifteen things about the code on every version. A version that breaks a rule or makes any of them worse does not ship.
@@ -46,45 +52,63 @@ Declarations with no summary | may only fall | 1.0.4.115
 {{live:quality-trend undocumented_declarations}}
 ```
 
+Why it matters: a public type or method with no summary is one the next developer has to read the body of to use.
+
 ```quality-trend
 Clock reads outside a composition root | may only fall | 1.0.4.115
 {{live:quality-trend clock_outside_composition}}
 ```
+
+Why it matters: code that reads the clock itself cannot be tested at a chosen time, so its bugs show up at midnight, not in the build.
 
 ```quality-trend
 Comments carrying a date or a name | may only fall | 1.0.4.115
 {{live:quality-trend history_or_name_comments}}
 ```
 
+Why it matters: a date or a name in a comment is history the commit log already keeps, and it goes stale the day it is written.
+
 ```quality-trend
 Service classes with six or more dependencies | may only fall | 1.0.4.115
 {{live:quality-trend wide_service_classes}}
 ```
+
+Why it matters: a class that needs six or more collaborators is doing more than one job, and a change to any of them can break it.
 
 ```quality-trend
 Files within ten lines of the 300-line cap | may only fall | 1.0.4.115
 {{live:quality-trend files_within_10_of_cap}}
 ```
 
+Why it matters: a file close to the line cap is the next one to be split in a hurry; counting them keeps the split planned.
+
 ```quality-trend
 Behaviour types no test names | may only fall | 1.0.4.115
 {{live:quality-trend behavior_types_never_named_in_a_test}}
 ```
+
+Why it matters: a type that does something and that no test names is behaviour nobody has pinned down.
 
 ```quality-trend
 React files with no header saying what they do | may only fall | 1.0.5.1
 {{live:quality-trend react_files_without_header}}
 ```
 
+Why it matters: a page file with no header saying what it does costs every reader a scroll through it first.
+
 ```quality-trend
 Test lines per production line | may only rise | 1.0.4.115
 {{live:quality-trend test_to_prod_ratio_higher_is_better}}
 ```
 
+Why it matters: if the code grows faster than its tests, more of it runs unchecked on every release.
+
 ```quality-trend
 xUnit facts and data rows | may only rise | 1.0.4.115
 {{live:quality-trend dotnet_tests_higher_is_better}}
 ```
+
+Why it matters: a test that disappears takes its rule with it, so the count may never go down.
 
 Held at zero on every version since the ratchet went in, so there is no line to draw: project references pointing outward ({{live:quality-now onion_outward_refs}}), inner rings reaching the disk or the network ({{live:quality-now inner_ring_leaks}}), one slice naming another ({{live:quality-now cross_slice_usings}}), blocking waits ({{live:quality-now blocking_waits}}) and files over the cap ({{live:quality-now files_over_300}}).
 
@@ -118,12 +142,6 @@ Named plainly, with the numbers:
 
 The headers and the wide classes are ratchet numbers: each is paid down one version at a time, the payment lowers its limit in the same commit, and it cannot come back. The XML documentation figure is not on the ratchet yet; it is shown so it is not hidden.
 
-## The rules, and the tests that hold them
-
-Every rule a machine can check, from [ADR-075](https://theyard.stevenstout.biz/?doc=adr-rules), with the tests that hold it and how they did in the gate this build shipped from.
-
-{{live:quality-rules}}
-
 ## The ratchet, read from this build
 
 The limits, one per number:
@@ -135,6 +153,17 @@ And the block of the scanner that measures them:
 
 ```live path=.github/quality.py region=ratchet
 ```
+
+## The rules, and the tests that hold them
+
+<details>
+<summary>The full rulebook: {{live:rule-count}} rules, the decision behind each, and the test that holds it (for engineers)</summary>
+
+Every rule a machine can check, from [ADR-075](https://theyard.stevenstout.biz/?doc=adr-rules), with the tests that hold it and how they did in the gate this build shipped from.
+
+{{live:quality-rules}}
+
+</details>
 
 ## Files
 

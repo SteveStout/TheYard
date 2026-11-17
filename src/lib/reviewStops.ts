@@ -36,7 +36,8 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
     minutes: 2,
     shows:
       'Built with AI, measured on every version. Two weeks of slip in October, the ratchet that turned it, and every number since, read live from the build.',
-    doThis: 'Look at the first chart, then scroll to "The slip, and the turn".',
+    doThis:
+      'Look at the first chart, read the six cards under it on what the rules protect, then scroll to "The slip, and the turn".',
     record: 'adr-the-numbers-that-may-only-fall',
     links: [{ label: 'The rules and the tests that hold them', href: '/?doc=adr-rules' }],
   },
