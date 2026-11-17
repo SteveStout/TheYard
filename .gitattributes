@@ -8,6 +8,8 @@
 * text=auto eol=lf
 
 # Written by other tools, byte for byte.
+# Files the site offers as downloads are served exactly as they were handed over (ADR-093, the addendum on downloads).
+api/TheYard.Api/wwwroot/downloads/** -text
 *.png binary
 *.jpg binary
 *.jpeg binary

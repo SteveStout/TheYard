@@ -2,6 +2,7 @@
 // where they are found. Its own file because these three answer one question between them, how long
 // an answer is good for and in what shape it goes out, which is a different job from recording an
 // answer (RequestRecording.cs) and from the order of the pipeline itself (RequestPipeline.cs).
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 
 namespace TheYard.Api.Shared.Wiring;
@@ -85,6 +86,7 @@ public static class ResponseKeeping
         // routes with index.html, while an address that looks like a file stays a
         // 404 rather than a page dressed as a script.
         app.UseDefaultFiles();
+        UseDownloads(app);
         app.UseStaticFiles();
 
         app.UseStaticFiles(new StaticFileOptions
@@ -101,4 +103,34 @@ public static class ResponseKeeping
 
         return app;
     }
+
+    #region downloads
+    /// <summary>The address the files the blog offers to save are served under.</summary>
+    public const string DownloadsPath = "/downloads";
+
+    /// <summary>
+    /// The files the blog offers to save (ADR-093, the addendum on downloads): plain text says its
+    /// character set, and every file there asks the browser to save it under its own name rather than open it. Its own
+    /// branch, ahead of the site's files, so no other file's headers change.
+    /// </summary>
+    /// <param name="app">The built host.</param>
+    private static void UseDownloads(WebApplication app)
+    {
+        string folder = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "downloads");
+        if (!Directory.Exists(folder))
+        {
+            return;
+        }
+        var types = new FileExtensionContentTypeProvider();
+        types.Mappings[".txt"] = "text/plain; charset=utf-8";
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(folder),
+            RequestPath = DownloadsPath,
+            ContentTypeProvider = types,
+            OnPrepareResponse = ctx =>
+                ctx.Context.Response.Headers.ContentDisposition = $"attachment; filename=\"{ctx.File.Name}\"",
+        });
+    }
+    #endregion downloads
 }
