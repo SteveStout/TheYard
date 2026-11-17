@@ -6,6 +6,7 @@
  */
 import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
+import { costRangeWords } from '../../../lib/ranges';
 import type { ReactNode } from 'react';
 import {
   costWindowFor,
@@ -46,7 +47,13 @@ export default function SpendCard({
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="spend-card">
       <h2 className={cardStyles.cardTitle}>What Azure charges</h2>
-      <Range of="cost" />
+      {/* The same budget the Overview grades against: Azure's own when the read carries it (ADR-087). */}
+      <Range
+        of="cost"
+        words={costRangeWords(
+          report !== null && report !== 'failed' ? (report.budget_dollars ?? undefined) : undefined
+        )}
+      />
       <About>
         The bill for the subscription this site runs on, as Azure Cost Management reports it: the
         spend so far and what Azure forecasts for the rest of the month, what each resource cost,

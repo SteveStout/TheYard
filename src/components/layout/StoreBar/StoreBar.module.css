@@ -126,21 +126,37 @@ a.segment:focus-visible {
   color: var(--color-text-muted);
 }
 
-.noteLong {
+/* The note and the gate badge after it share the rest of the band, so on a phone the badge sits in the note's own
+   row instead of adding one, and the first screen keeps its height (hooks.spec, the landing and stop 1). */
+.tail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* From 640 to 1279 the note's short form and the badge do not both fit on the Cosmos DB site's row (its store's
+   name is the longer), so the badge takes a row of its own under the note: there from the first paint, so the band
+   does not move when the note arrives. A phone shares the note's row, and from 1280 there is room beside it. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .tail {
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    flex-basis: 100%;
+  }
+}
+
+/* The gate badge's second and third facts, shown from 1440, where they fit beside the note's short form. */
+.wide {
   display: none;
 }
 
-.noteShort {
-  display: inline;
-}
-
 @media (min-width: 1440px) {
-  .noteLong {
+  .wide {
     display: inline;
-  }
-
-  .noteShort {
-    display: none;
   }
 }
 
@@ -173,6 +189,10 @@ a.segment:focus-visible {
 
   /* Its own row, at the height it will have once /api/stores answers, so
      the page below does not move when the sentence arrives. */
+  .tail {
+    flex-basis: 100%;
+  }
+
   .note {
     flex-basis: 100%;
     min-height: var(--store-note-height);
