@@ -123,6 +123,20 @@ test('every stop opens the site’s own address, and the stop on screen is the o
   await expect(stop(page, 3).getByTestId('review-do-this')).toBeVisible();
 });
 
+test('a stop that names an Admin card opens with that card in view, not under the tiles (MASTER-PLAN-2026-11-17 V1)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const named = REVIEW_STOPS.filter((each) => /[?&]card=/.test(each.address));
+  expect(named.length).toBeGreaterThan(0);
+  for (const each of named) {
+    const card = new URLSearchParams(each.address.split('?')[1]).get('card');
+    await openTheYard(page, each.address);
+    const open = page.locator(`[data-testid="bench-open"][data-card="${card}"]`);
+    await expect(open.locator('h2').first()).toBeInViewport({ timeout: 15_000 });
+  }
+});
+
 test('a stop’s decision record opens its document, and Back returns to the route', async ({
   page,
 }) => {
