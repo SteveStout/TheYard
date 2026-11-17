@@ -132,15 +132,17 @@ public class QualityRatchetTests
     }
 
     /// <summary>
-    /// The gate runs the same command and its verdict reads the result, so the step cannot run
-    /// and not count. A check that records a result nothing reads is the failure mode the gate's
-    /// own workflow test exists for, and this holds this one check to the same bar.
+    /// The gate runs the same command, through the script preflight's catch list runs too, and its
+    /// verdict reads the result, so the step cannot run and not count. A check that records a result
+    /// nothing reads is the failure mode the gate's own workflow test exists for, and this holds this
+    /// one check to the same bar.
     /// </summary>
     [Fact]
     public void The_gate_runs_the_ratchet_and_its_verdict_turns_the_run_red()
     {
         string gate = Read(".github", "workflows", "gate.yml");
-        Assert.Contains(Command, gate, StringComparison.Ordinal);
+        Assert.Contains("bash scripts/quality_ratchet.sh", gate, StringComparison.Ordinal);
+        Assert.Contains(Command, Read("scripts", "quality_ratchet.sh"), StringComparison.Ordinal);
         Assert.Contains("echo \"quality=$code\"", gate, StringComparison.Ordinal);
 
         int verdict = gate.IndexOf("- name: The verdict", StringComparison.Ordinal);

@@ -47,9 +47,9 @@ public class MachineFreeWorkflowsTests
         Assert.True(deploy.IndexOf("Wait out the records run", StringComparison.Ordinal) > deploy.IndexOf("name: Publish and zip", StringComparison.Ordinal), "the records-run wait is read just before the zip deploy");
         Assert.DoesNotContain("workflow_call", deploy, StringComparison.Ordinal);
 
-        string gate = Workflow("gate.yml");
-        Assert.Contains("gh workflow run deploy-function.yml --ref main", gate, StringComparison.Ordinal);
-        Assert.DoesNotContain("uses: ./.github/workflows/deploy-function.yml", gate, StringComparison.Ordinal);
+        // Started by the after-roll, a run of its own since the gate frees at live, and never called by the Gate run.
+        Assert.Contains("gh workflow run deploy-function.yml --ref main", Workflow("after-roll.yml"), StringComparison.Ordinal);
+        Assert.DoesNotContain("uses: ./.github/workflows/deploy-function.yml", Workflow("gate.yml"), StringComparison.Ordinal);
     }
 
     /// <summary>Every az call the Function's deploy makes is one of the reads and the one zip deploy it needs: nothing that sets, assigns or deletes.</summary>

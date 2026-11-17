@@ -6,17 +6,22 @@
 #            version goes up by one in its fourth number, the locked resume, and the Cloud roles; writes
 #            data/test-results.json and the README's figures from the run's reports in <raw>, adds CodeRabbit's row
 #            to data/coderabbit-findings.json and this version's row to data/quality-history.json, folds them into the
-#            commit, and fast-forwards main to it. A version that moves the first three numbers is promoted only by
-#            hand, with OWNER_YES naming it. Never force-pushes. Writes sha, version and functions to
-#            $GITHUB_OUTPUT when it runs in the gate.
+#            commit, and fast-forwards main to it. Before it writes anything, the line-stop: origin/main's commit must
+#            be proven by a green CI run and a green after-roll run named for it, waited on up to LINE_STOP_SECONDS
+#            (twenty minutes), and a red one refuses unless the commit carries "Fixes-main: <that commit>". A version
+#            that moves the first three numbers is promoted only by hand, with OWNER_YES naming it. Never
+#            force-pushes. Writes sha, version, functions, promoted and by_push to $GITHUB_OUTPUT when it runs in
+#            the gate.
 # Does not:  Run a check (the gate did), roll the site (the gate calls Deploy and Deploy Render, or the push does
-#            when a personal token made it), or read, print or pass a token value: a version that changes a
+#            when a personal token made it), read the roll back (after-roll.yml does), or read, print or pass a
+#            token value: a version that changes a
 #            workflow is carried by the secret PROMOTE_TOKEN the promote job checks out with, and where that
 #            secret does not exist this ends green with a notice and moves nothing.
 # Used by:   .github/workflows/gate.yml's promote job, and a person promoting a run by hand, naming the run:
 #            raw=$(mktemp -d) && gh run download <run> -n gate-raw -D "$raw" && { gh run download <run> -n coderabbit-raw -D "$raw" || rm -f "$raw/coderabbit.json"; } && scripts/promote.sh "$raw" <seconds> <version> <run>
 #            A fresh folder outside the worktree each time: a reused one can hold another run's coderabbit.json, which
 #            this would fold as this version's row, and a folder inside the worktree is a file the results check refuses.
+#            By hand it ends by starting the after-roll for the commit it pushed (after-roll.yml), or naming the command.
 set -euo pipefail
 raw=$1
 seconds=$2
@@ -152,6 +157,98 @@ if [ "$workflow" = true ]; then
 fi
 # #endregion the-ancestor
 
+# #region the-line-stop
+# Main is proven before anything is built on it (ADR-098, the addendum on the gate freeing at live). The Gate run
+# now ends at the deploys and the reads after the roll are a run of their own, so the next promote checks them:
+# origin/main's commit passes only on proof, never on absence. The proof is the newest CI run named "CI <commit>"
+# and the newest After roll run named for main's version at that commit, each completed and green. A run is found
+# by the name it carries, never by its headSha: a run started with --ref main carries main's head at its start, not
+# the commit it was told to test. Missing or still running, either is waited on, polling, up to LINE_STOP_SECONDS
+# (twenty minutes). Red, it is refused, unless this commit's message carries the trailer "Fixes-main: <that commit>":
+# the gate has tested the fix in full, and a red main must not refuse its own fix. A wait that runs out in the gate
+# ends GREEN with promoted=false and a notice, as a workflow change does: only a red main is a refusal, so a slow
+# main never costs a second gate run. By hand the same wait ends in a refusal that names the command to run.
+#
+# The transition: a main commit from before after-roll.yml existed on main has no After roll run and never will,
+# and the ci.yml it carries gave its CI runs no name with the commit in it. For such a commit CI on main alone is
+# the proof, and its run is the newest push or by-hand CI run whose headSha is that commit, the one way those runs
+# can be found; from the first commit that carries after-roll.yml on, only the names count.
+main_sha=$(git rev-parse origin/main)
+if git cat-file -e "$main_sha:.github/workflows/after-roll.yml" 2> /dev/null; then named=true; else named=false; fi
+# The newest run of one kind for main's commit, as one word: success, red, running, none, or unread when gh failed.
+proof() {
+  local runs pick
+  if [ "$1" = ci ]; then
+    runs=$(gh run list --workflow ci.yml --limit 50 --json displayTitle,status,conclusion,event,headSha 2> /dev/null) || {
+      echo unread
+      return
+    }
+    pick='.displayTitle == "CI " + $sha'
+    [ "$named" = true ] || pick="($pick) or ((.event == \"push\" or .event == \"workflow_dispatch\") and .headSha == \$sha)"
+  else
+    runs=$(gh run list --workflow after-roll.yml --limit 50 --json displayTitle,status,conclusion 2> /dev/null) || {
+      echo unread
+      return
+    }
+    # "After roll <version> at <commit>", or "After roll gate/<version>-<lane>-<sha8> at <commit>" when the Gate
+    # run started it: a run for another version at main's commit (a Gate run that promoted nothing) is no proof.
+    pick='(.displayTitle | endswith(" at " + $sha)) and ((.displayTitle | ltrimstr("After roll ") | rtrimstr(" at " + $sha) | ltrimstr("gate/") | split("-")[0]) == $version)'
+  fi
+  jq -r --arg sha "$main_sha" --arg version "$on_main" "[.[] | select($pick)] | if length == 0 then \"none\" else .[0] | if .status != \"completed\" then \"running\" elif .conclusion == \"success\" then \"success\" else \"red\" end end" <<< "$runs" 2> /dev/null || echo unread
+}
+fixes=false
+while read -r named_sha; do
+  if [ "${#named_sha}" -ge 7 ] && [ "${main_sha#"$named_sha"}" != "$main_sha" ]; then fixes=true; fi
+done < <(git log -1 --format=%B HEAD | git interpret-trailers --parse | sed -n 's/^Fixes-main: *//p')
+bound=${LINE_STOP_SECONDS:-1200}
+every=${LINE_STOP_POLL:-30}
+waited=$SECONDS
+while :; do
+  red="" waiting="" missing=""
+  ci=$(proof ci)
+  case "$ci" in
+    success) ;;
+    red) red="CI on main" ;;
+    *)
+      waiting="CI on main ($ci)"
+      if [ "$ci" != running ]; then missing="gh workflow run ci.yml --ref main -f sha=$main_sha"; fi
+      ;;
+  esac
+  if [ "$named" = true ]; then
+    after=$(proof after)
+    case "$after" in
+      success) ;;
+      red) red="${red:+$red and }the after-roll" ;;
+      *)
+        waiting="${waiting:+$waiting and }the after-roll ($after)"
+        if [ "$after" != running ]; then missing="${missing:+$missing; }gh workflow run after-roll.yml --ref main -f sha=$main_sha -f version=$on_main"; fi
+        ;;
+    esac
+  fi
+  if [ -n "$red" ] && [ "$fixes" != true ]; then
+    refuse "the line-stop: main ${main_sha:0:8} ($on_main) is red: $red. Fix main first, or, when this version is that fix, carry the trailer \"Fixes-main: $main_sha\" in its commit message"
+  fi
+  [ -n "$waiting" ] || break
+  if [ $((SECONDS - waited)) -ge "$bound" ]; then
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+      echo "::notice::the line-stop waited ${bound} s for $waiting on main ${main_sha:0:8} ($on_main): promote it by hand with scripts/promote.sh once main is proven"
+      if [ -n "${GITHUB_OUTPUT:-}" ]; then { echo "promoted=false"; echo "by_push=false"; } >> "$GITHUB_OUTPUT"; fi
+      exit 0
+    fi
+    refuse "the line-stop waited ${bound} s for $waiting on main ${main_sha:0:8} ($on_main)${missing:+: start what is missing, then promote again: $missing}"
+  fi
+  echo "the line-stop: waiting for $waiting on main ${main_sha:0:8}"
+  sleep "$every"
+done
+if [ -n "$red" ]; then
+  echo "the line-stop: main ${main_sha:0:8} is red ($red), and this version carries Fixes-main for it; the gate tested the fix in full"
+elif [ "$named" = true ]; then
+  echo "the line-stop: main ${main_sha:0:8} ($on_main) is proven: CI on main and the after-roll are green"
+else
+  echo "the line-stop: main ${main_sha:0:8} ($on_main) is proven by CI on main alone: it predates after-roll.yml"
+fi
+# #endregion the-line-stop
+
 # #region the-results
 if grep -q '^oncosmos=skipped' "$raw/dotnet.result"; then export YARD_CARRY_COSMOS=1; else export YARD_CARRY_COSMOS=0; fi
 # The version card the gate drew from this commit, folded in with the results.
@@ -208,4 +305,10 @@ echo "main is now ${sha:0:8}, $version; the Function: $functions"
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   { echo "sha=$sha"; echo "version=$version"; echo "functions=$functions"; echo "promoted=true"; echo "by_push=$by_push"; } >> "$GITHUB_OUTPUT"
+fi
+# By hand no Gate run starts the after-roll, and the next promote's line-stop waits for one, so it is started here;
+# a start that fails names the command, and main has moved either way.
+if [ -z "${GITHUB_ACTIONS:-}" ]; then
+  start="gh workflow run after-roll.yml --ref main -f sha=$sha -f version=$version"
+  if $start > /dev/null 2>&1; then echo "the after-roll started: $start"; else echo "the after-roll did not start; run: $start"; fi
 fi
