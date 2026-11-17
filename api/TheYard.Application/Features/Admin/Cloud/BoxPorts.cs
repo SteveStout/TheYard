@@ -4,7 +4,7 @@
 // and the kept minutes in the plan container are the record. One process serves both names, so both read
 // the same ring.
 using TheYard.Application.Shared.Live;
-using TheYard.Data;
+using TheYard.Domain.Features.Admin;
 
 namespace TheYard.Application.Features.Admin.Cloud;
 

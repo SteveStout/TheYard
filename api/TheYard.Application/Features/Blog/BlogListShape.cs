@@ -1,7 +1,6 @@
 // The parts of a list page both stores shape the same way once they have their counts: the page cut from the
 // places in order, and the three rows of chips with their labels. The relational store counts in SQL and the
 // memory store in LINQ; what the counts become is written once, here, so the two answers cannot drift apart.
-using TheYard.Data;
 using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Application.Features.Blog;

@@ -3,7 +3,7 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.Azure.Cosmos;
 using TheYard.Application.Shared.History;
-using TheYard.Data;
+using TheYard.Domain.Features.Admin;
 using TheYard.Infrastructure.Cosmos.Shared.Stores;
 
 namespace TheYard.Infrastructure.Cosmos.Features.Admin;

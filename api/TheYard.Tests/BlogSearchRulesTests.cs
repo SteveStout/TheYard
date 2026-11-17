@@ -162,7 +162,7 @@ public sealed class BlogSearchRulesTests
     };
 
     /// <summary>The posts that match, best first, newest first on a tie, each scored from its words, its topics and its keywords.</summary>
-    private static IEnumerable<string> Ranked(string query, Func<BlogFixture.Entry, (IReadOnlyList<Data.BlogWord> Words, IReadOnlyList<string> Keywords)> read) =>
+    private static IEnumerable<string> Ranked(string query, Func<BlogFixture.Entry, (IReadOnlyList<TheYard.Domain.Features.Blog.BlogWord> Words, IReadOnlyList<string> Keywords)> read) =>
         BlogFixture.Posts
             .Select(entry =>
             {
@@ -181,7 +181,7 @@ public sealed class BlogSearchRulesTests
         // The mockup's copy: its text as the body, its keywords as kept, the title and summary as the post has them.
         var ranked = Ranked(query, entry => (
             [.. BlogText.Counted(entry.Post.Title, BlogText.Title).Concat(BlogText.Counted(entry.Post.Summary, BlogText.Summary)).Concat(BlogText.Counted(entry.MockupText, BlogText.Body))
-                .Select(w => new Data.BlogWord(w.Word, w.Field, w.Mentions))],
+                .Select(w => new TheYard.Domain.Features.Blog.BlogWord(w.Word, w.Field, w.Mentions))],
             entry.MockupKeywords));
         Assert.Equal(slugs.Split(' '), ranked);
     }

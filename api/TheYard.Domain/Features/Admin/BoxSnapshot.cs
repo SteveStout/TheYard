@@ -1,4 +1,7 @@
-namespace TheYard.Data;
+// What the box posts about itself (ADR: The box reports itself): a snapshot a minute and a live sample every
+// two seconds. They sit in Domain beside BoxSnapshotRules, the rules each passes before it is kept, which is
+// the innermost place both that rule and the Admin slice above it can read.
+namespace TheYard.Domain.Features.Admin;
 
 // #region box-snapshot
 /// <summary>

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using TheYard.Application.Features.Blog;
-using TheYard.Data;
 
 namespace TheYard.Tests;
 
