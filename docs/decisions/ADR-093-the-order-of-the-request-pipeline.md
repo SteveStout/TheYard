@@ -106,6 +106,12 @@ timing is outside the exception handler and the record is directly inside it, wh
 "what breaks if it moves" column says in both rows. Putting them together in one call reads better
 and is wrong; it was tried, and the error list came back empty in the test that reads it.
 
+## Addendum, 2026-11-17 (1.0.5.84): downloads the blog offers live under /downloads/
+
+In plain words: a blog post can now offer a file to save, starting with the full transcript of the Microsoft Ignite 2026 opening keynote. It lives at `/downloads/<name>`, and the browser is told to save it under its own name instead of opening it in a tab.
+
+Where it sits in the order: its own `UseStaticFiles`, for `/downloads` only, just ahead of the site's own files at position 7, so it ends the request where the file is found exactly as the others do. It is a branch of its own so that nothing else changes: plain text there says `text/plain; charset=utf-8` (the framework's own mapping for `.txt` names no character set), and every file there carries `Content-Disposition: attachment` with its own file name; every other file, the photographs, the bundle and the page, keeps the headers it had. The cache rule above still wraps it, so a download says no-cache like any address whose file can change. A file there is served exactly as it was handed over: `.gitattributes` marks the folder `-text`, so git never rewrites its line endings (the transcript keeps its CRLF and its SHA-256). Both names are served by one web app, so the file answers on both. `DownloadsTests` holds the type, the header, the bytes, and an image outside the folder with no attachment header.
+
 ## Where it sits
 
 The API ring's host only: the composition root's pipeline, its registration and four readers that now trust the middleware instead of a header (the cookie's Secure flag, the activity card's address, the reset link, and the documentation pages' own address when no Site:Url is set). No port, no use case and no rule changes. Single responsibility: one place resolves where a request came from, and every reader asks the request. It costs nothing; what would change it is an edge with fixed addresses, where trust by address would replace trust by count.
@@ -115,5 +121,7 @@ The API ring's host only: the composition root's pipeline, its registration and 
 - [`api/TheYard.Api/Shared/Wiring/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/RequestPipeline.cs): the order, one comment per placement.
 - [`api/TheYard.Api/Shared/Wiring/ApiRegistration.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ApiRegistration.cs): the forwarded headers' options, and why there is no HTTP logger.
 - [`api/TheYard.Api/Features/Health/HealthEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Health/HealthEndpoints.cs): the short-circuited probes, and readiness on every store.
+- [`api/TheYard.Api/Shared/Wiring/ResponseKeeping.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Wiring/ResponseKeeping.cs): the cache rules, the compressed branch, the files and the downloads.
+- [`api/TheYard.Tests/DownloadsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DownloadsTests.cs): the download's type, its attachment header and its bytes, and a file outside the folder unchanged.
 - [`api/TheYard.Tests/RequestPipelineTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/RequestPipelineTests.cs): files before the session, probes at routing, the visitor from the right, the cookie's Secure flag.
 - [`samples/theshed/Composition/RequestPipeline.cs`](https://github.com/SteveStout/TheYard/blob/main/samples/theshed/Composition/RequestPipeline.cs): The Shed's pipeline and what it leaves out.
