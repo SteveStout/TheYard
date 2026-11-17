@@ -92,7 +92,7 @@ public static class StorePrepare
     {
         SchemaMs = state.SchemaMs,
         SeedMs = state.SeedMs,
-        SeedRequestUnits = state.SeedRequestUnits,
+        SeedCharge = state.SeedCharge,
     };
 }
 // #endregion five-tries

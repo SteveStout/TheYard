@@ -21,7 +21,7 @@ namespace TheYard.Api.Features.Admin.Operations;
 public sealed class RingReadings(HostRings rings, Backends backends, HostStart start, IHttpContextAccessor accessor) : IRingReadings
 {
     /// <inheritdoc/>
-    public object Sql() => rings.Sql.Snapshot();
+    public object Statements() => rings.Sql.Snapshot();
 
     /// <inheritdoc/>
     public object Store() => new

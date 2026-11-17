@@ -102,10 +102,10 @@ public class MachineHistoryTests(WebApplicationFactory<Program> factory)
         // Two of the three samples carry a processor share; the mean is of those two.
         Assert.Equal(20, minute.CpuPercent);
         Assert.Equal(30, minute.CpuMaxPercent);
-        Assert.Equal(3, minute.SqlCpuPercent);
-        Assert.Equal(42, minute.SqlMemoryPercent);
-        Assert.Equal(2, minute.SqlDataIoPercent);
-        Assert.Equal(6, minute.RequestUnits);
+        Assert.Equal(3, minute.StoreCpuPercent);
+        Assert.Equal(42, minute.StoreMemoryPercent);
+        Assert.Equal(2, minute.StoreDataIoPercent);
+        Assert.Equal(6, minute.Charge);
         Assert.Equal(2, minute.Operations);
         // Four requests inside the minute: nearest rank puts the median on the
         // second of them and the ninety-fifth on the slowest.
@@ -126,9 +126,9 @@ public class MachineHistoryTests(WebApplicationFactory<Program> factory)
         Assert.NotNull(minute);
         Assert.Null(minute.CpuPercent);
         Assert.Null(minute.CpuMaxPercent);
-        Assert.Null(minute.SqlCpuPercent);
-        Assert.Null(minute.SqlMemoryPercent);
-        Assert.Equal(0, minute.RequestUnits);
+        Assert.Null(minute.StoreCpuPercent);
+        Assert.Null(minute.StoreMemoryPercent);
+        Assert.Equal(0, minute.Charge);
         Assert.Equal(0, minute.Operations);
         // Nobody asked for anything, so there is no median to keep: absent, not zero.
         Assert.Equal(0, minute.Requests);
@@ -158,8 +158,8 @@ public class MachineHistoryTests(WebApplicationFactory<Program> factory)
         // One of the two minutes read a processor share: the average is that one, not half of it.
         Assert.Equal(10, buckets[0].CpuPercent);
         Assert.Equal(15, buckets[0].CpuMaxPercent);
-        Assert.Equal(3, buckets[0].SqlCpuPercent);
-        Assert.Equal(3.5, buckets[0].RequestUnits);
+        Assert.Equal(3, buckets[0].StoreCpuPercent);
+        Assert.Equal(3.5, buckets[0].Charge);
         Assert.Equal(4, buckets[0].Operations);
         // Requests and errors add up; the typical answer is the mean of the
         // minutes' medians, and the slow one is the worst minute's.
@@ -169,7 +169,7 @@ public class MachineHistoryTests(WebApplicationFactory<Program> factory)
         Assert.Equal(1, buckets[0].ServerErrors);
         Assert.Equal(3, buckets[0].ClientErrors);
         Assert.Equal(new DateTimeOffset(2026, 9, 20, 9, 10, 0, TimeSpan.Zero), buckets[1].At);
-        Assert.Null(buckets[1].SqlCpuPercent);
+        Assert.Null(buckets[1].StoreCpuPercent);
         Assert.Equal(0, buckets[1].Requests);
         Assert.Null(buckets[1].P50Ms);
     }

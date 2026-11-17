@@ -32,7 +32,7 @@ public sealed class Module : IModule
         services.AddScoped<ICostReadings, CostCardReadings>();
         foreach (var handler in new[]
         {
-            typeof(ReadSqlRingHandler), typeof(ReadStoreRingHandler), typeof(ReadLogRingHandler), typeof(ReadMetricsHandler), typeof(ReadKeptRingHandler),
+            typeof(ReadStatementRingHandler), typeof(ReadStoreRingHandler), typeof(ReadLogRingHandler), typeof(ReadMetricsHandler), typeof(ReadKeptRingHandler),
             typeof(ReadActivityHandler), typeof(ReadVisitorRowsHandler), typeof(ReadKeptLogsHandler), typeof(ReadMachinesHandler), typeof(ReadFollowsHandler),
             typeof(ReadAzureSelfHandler), typeof(ReadPeerHandler), typeof(ReadTelemetryHandler), typeof(ReadArrivalHandler), typeof(ReadStoresHandler),
             typeof(ReadPageStatusHandler), typeof(RunPageSweepHandler), typeof(ReadTestSummaryHandler), typeof(ReadTestResultsHandler), typeof(RunExperimentHandler),
