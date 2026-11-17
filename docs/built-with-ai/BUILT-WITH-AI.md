@@ -4,6 +4,14 @@ TheYard was built by one engineer using AI as a force multiplier. This page says
 practice: what the AI wrote and what I decided. It also covers what governed the result and what it cost,
 and then what went wrong. Everything here links to the record or the file that proves it.
 
+## What the AI wrote, what I decided
+
+**The AI wrote** the code, the tests I specified and the first drafts of the decision records.
+
+**I decided** the architecture, every rule, what each test must prove and what ships.
+
+**The first design held the whole catalogue in memory.** The hundred thousand vehicles were loaded into every process, and that went from the prototype into the real site. The App Service plan showed it on 18 October: 2.77 of its 3.5 GB in use at 15:40, and the plan at 82 per cent, 2.87 GB, once both sites had loaded both stores. My ruling that afternoon kept the hundred thousand vehicles and moved the work to the store, which now does the filtering, sorting and paging ([ADR-103](https://theyard.stevenstout.biz/?doc=adr-the-store-does-the-work), [ADR-104](https://theyard.stevenstout.biz/?doc=adr-memory-follows-traffic)).
+
 ## In plain words
 
 This page says how the site was built: one engineer used AI to write most first drafts and kept the choices a tool cannot make. It also lists what the work cost and what went wrong, and links each item to the record or file that proves it.
@@ -37,7 +45,7 @@ The choices a tool cannot make, each with its record.
 
 ## What governed it
 
-**The test gate.** Every version runs all three suites once, in the ship's gate: 2251 xUnit tests, 692 Vitest tests at 1.0.5.85 and 230 Playwright tests. The ship
+**The test gate.** Every version runs all three suites once, in the ship's gate: 2254 xUnit tests, 693 Vitest tests at 1.0.5.86 and 230 Playwright tests. The ship
 gate runs the API suite against both stores and was measured on 9 September at 275 seconds green on a quiet machine, 302
 to 342 seconds with the developer's browser open, and 372 seconds cold after a restart (ADR-068); the gate on 1.0.0.182 took 493 seconds, and the gate on 1.0.3.59, with both store passes carried forward from 1.0.3.58, took 641. Since 1.0.5.4 the gate runs on GitHub's runners with its checks side by side, and they end seven to ten minutes into the run: 410 to 564 seconds over its first three ships (ADR-098). A push that fails the gate does not roll.
 

@@ -86,7 +86,7 @@ The rule is easiest to see by following one request. A signed-in buyer bids on a
    the bid and the vehicle as it now stands.
 
 **The practice:** an endpoint reads the request, asks one use case, and writes the answer. It does not
-decide anything and does not put services together itself. Two of the ten architecture tests hold that
+decide anything and does not put services together itself. Two of the onion's architecture tests hold that
 (`Endpoints_never_reach_a_store_or_the_service_container` and
 `Endpoints_reach_the_auction_only_through_the_Application_ring`).
 

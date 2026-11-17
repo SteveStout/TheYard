@@ -155,3 +155,7 @@ said 1.0.0.39. The structural answer is in ADR: The version comes from the
 changelog: the top line is what the deploy reads, so the two cannot disagree,
 and a missing line now fails the deploy instead of warning into a log nobody
 opens.
+
+## Addendum, 2026-11-17 (1.0.5.86): each line carries its quality reading
+
+What stopped being true: that the changelog the site serves is the file word for word. Each version the quality history measured now ends its line with its reading against the version before: how many of its quality numbers held, and how many got worse or better, read from data/quality-history.json when the page is opened (ChangelogQuality.cs). "Held" means no worse than the version before, the meaning the landing's line and the gate badge use. A version the history did not measure keeps its line as written, every line still ends with a full stop, and the file on GitHub is unchanged. ChangelogQualityTests holds it.

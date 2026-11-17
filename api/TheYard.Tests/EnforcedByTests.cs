@@ -50,4 +50,22 @@ public sealed class EnforcedByTests
         const string page = "# Quality you can watch\n\nWords.";
         Assert.Equal(page, EnforcedBy.Append("docs/quality/QUALITY.md", page, Repo.Root()));
     }
+
+    [Fact]
+    public void A_rule_that_cites_its_record_by_number_or_as_this_record_is_listed_under_it()
+    {
+        // CodeRabbit on 1.0.5.85: a citation names a record by "ADR: " and its title, by "ADR-" and its number, or,
+        // in ADR-075's own table, as "This record".
+        string table = File.ReadAllText(Records().Single(path => Path.GetFileName(path).StartsWith("ADR-075-", StringComparison.Ordinal)));
+        var rows = table.Split('\n').SkipWhile(l => !l.StartsWith("| The rule |", StringComparison.Ordinal)).Skip(2)
+            .TakeWhile(l => l.StartsWith('|')).Select(l => l.Trim().Trim('|').Split(" | ").Select(c => c.Trim()).ToArray()).ToList();
+
+        string[] self = rows.First(cells => cells[1].StartsWith("This record", StringComparison.Ordinal));
+        Assert.Contains($"| {self[0]} |", Served(Records().Single(path => Path.GetFileName(path).StartsWith("ADR-075-", StringComparison.Ordinal))), StringComparison.Ordinal);
+
+        string[] numbered = rows.First(cells => System.Text.RegularExpressions.Regex.IsMatch(cells[1], @"^ADR-\d+\b"));
+        string number = System.Text.RegularExpressions.Regex.Match(numbered[1], @"^ADR-(\d+)").Groups[1].Value;
+        string record = Records().Single(path => Path.GetFileName(path).StartsWith($"ADR-{number}-", StringComparison.Ordinal));
+        Assert.Contains($"| {numbered[0]} |", Served(record), StringComparison.Ordinal);
+    }
 }

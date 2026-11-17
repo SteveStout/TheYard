@@ -4,6 +4,7 @@
 import { CodeHealthSection } from './CodeHealthSection';
 import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
+import { RANGES } from '../../../lib/ranges';
 import { Fragment, useEffect, useState } from 'react';
 import {
   duration,
@@ -101,7 +102,11 @@ export default function TestsCard() {
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="tests-card">
       <h2 className={cardStyles.cardTitle}>Every test, for this build</h2>
-      <Range of="gateSeconds" />
+      {/* Five minutes is the target, printed; past it is information until the red line (V4 of the plan's review). */}
+      <Range
+        of="gateSeconds"
+        words={`target under ${RANGES.gateSeconds.amber} s, information past it, red at ${RANGES.gateSeconds.red} s`}
+      />
       <About>
         The ship&rsquo;s gate runs every suite once, on a GitHub runner from the version&rsquo;s
         gate branch: xUnit on SQLite and again booted on Cosmos DB, the live Cosmos DB tests,

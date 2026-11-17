@@ -29,7 +29,12 @@ export type GateSummary = {
 };
 
 /** One row of CODE HEALTH: what is measured, the reading, and its tone. */
-export type CodeRow = { key: string; label: string; value: string; tone: RangeTone | 'plain' };
+export type CodeRow = {
+  key: string;
+  label: string;
+  value: string;
+  tone: RangeTone | 'info' | 'plain';
+};
 
 const kb = (bytes: number) =>
   `${(bytes / 1024).toLocaleString('en-US', { maximumFractionDigits: 1 })} kB`;
@@ -70,7 +75,9 @@ export function codeRows(code: CodeNumbers | undefined, gateSeconds: number): Co
       key: 'gate',
       label: 'The gate, start to verdict',
       value: `${gateSeconds.toLocaleString('en-US')} s`,
-      tone: toneOf('gateSeconds', gateSeconds),
+      // Five minutes stays the target and stays printed; a gate between it and ten minutes is information, not a
+      // fault, by the Admin tab's rule that amber means something needs a look, and red only from ten.
+      tone: gateTone(gateSeconds),
     },
     {
       key: 'bundle',
@@ -93,6 +100,12 @@ export function codeRows(code: CodeNumbers | undefined, gateSeconds: number): Co
   ];
 }
 // #endregion code-rows
+
+/** The gate row's tone: fine under its target, information up to its red line, red from it. */
+export function gateTone(seconds: number): 'good' | 'info' | 'bad' {
+  const tone = toneOf('gateSeconds', seconds);
+  return tone === 'warn' ? 'info' : tone;
+}
 
 /** The gate's seconds over the kept gates, oldest first, with the amber line for the chart's scale. */
 export function gateTrend(history: GateSummary[] | undefined): {
