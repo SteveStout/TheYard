@@ -96,6 +96,25 @@ public class RuleTableTests
     }
 
     [Fact]
+    public void Every_rule_sits_in_exactly_one_of_the_six_groups_and_every_grouped_rule_is_in_the_table()
+    {
+        // The Quality page's six cards are drawn from a side map keyed by each rule's exact words, so the table and
+        // its parsers stay as they are (MASTER-PLAN-2026-11-17 R13j). A rule with no group would drop out of every
+        // card's count; a key that matches no rule would count a rule that is not there.
+        using var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Repo.DataFile("rule-groups.json")));
+        var groups = document.RootElement.GetProperty("groups").EnumerateArray().ToList();
+        string[] grouped = [.. groups.SelectMany(g => g.GetProperty("rules").EnumerateArray().Select(r => r.GetString() ?? ""))];
+        string[] rules = [.. Rows().Select(cells => cells[0])];
+
+        Assert.Equal(6, groups.Count);
+        Assert.Empty(rules.Except(grouped, StringComparer.Ordinal).Select(rule => $"no group: '{rule}'"));
+        Assert.Empty(grouped.Except(rules, StringComparer.Ordinal).Select(rule => $"no such rule: '{rule}'"));
+        Assert.Empty(grouped.GroupBy(rule => rule, StringComparer.Ordinal).Where(g => g.Count() > 1).Select(g => $"in two groups: '{g.Key}'"));
+        Assert.All(groups, g => Assert.False(string.IsNullOrWhiteSpace(g.GetProperty("promise").GetString())));
+        Assert.All(groups, g => Assert.DoesNotMatch(@"\d", g.GetProperty("promise").GetString() + g.GetProperty("title").GetString()));
+    }
+
+    [Fact]
     public void Every_rule_in_the_table_names_a_test_that_exists()
     {
         var classes = KnownTestClasses();
