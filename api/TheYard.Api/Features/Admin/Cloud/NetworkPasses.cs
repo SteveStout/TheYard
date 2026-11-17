@@ -44,6 +44,10 @@ public sealed class NetworkPasses(string? function, IProcessRunsReader? runs)
                 facts[NetworkCard.PassFact] = run.Outcome;
                 facts[NetworkCard.PassAtFact] = run.At.ToString("O", CultureInfo.InvariantCulture);
                 facts[NetworkCard.PassCameFact] = ProcessWords.Came(run);
+                foreach (string count in NetworkCard.ReconnectCounts)
+                {
+                    facts["pass_" + count] = run.Counts.TryGetValue(count, out long n) ? n.ToString(CultureInfo.InvariantCulture) : null;
+                }
             }
         }
         catch (Exception ex) when (!cancellation.IsCancellationRequested)

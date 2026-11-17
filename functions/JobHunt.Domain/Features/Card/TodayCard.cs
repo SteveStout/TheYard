@@ -44,6 +44,9 @@ public sealed record TodayInputs(
 
     /// <summary>dispatch/EMPTY-RUNS.md as check_empty_runs.py wrote it, or empty.</summary>
     public string EmptyRuns { get; init; } = "";
+
+    /// <summary>The day's networklog/sent file, the email reconnects the 6 AM pass sent, or empty.</summary>
+    public string Reconnects { get; init; } = "";
 }
 
 /// <summary>
@@ -63,6 +66,9 @@ public static class TodayCard
 
     /// <summary>The hiring signal's one line, which the pounce's hourly tick writes (HiringSignal.Path).</summary>
     public const string SignalPath = "nightly/hiring-signal.md";
+
+    /// <summary>The day's sent email reconnects, the network log's NetworkFiles.SentPath, held equal by ReconnectSendTests.</summary>
+    public static string ReconnectsPath(DateOnly day) => $"networklog/sent/{day:yyyy-MM-dd}.tsv";
 
     /// <summary>The model lanes' empty runs, written each morning before the card by check_empty_runs.py.</summary>
     public const string EmptyRunsPath = "dispatch/EMPTY-RUNS.md";
@@ -201,6 +207,17 @@ public static class TodayCard
         foreach (string empty in inputs.EmptyRuns.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("EMPTY RUN:", StringComparison.Ordinal)))
         {
             head.Append(CultureInfo.InvariantCulture, $"**{empty}**\n\n");
+        }
+        // The reconnects that sent themselves this morning: who, where, and when, so a reply is no surprise.
+        var sent = inputs.Reconnects.Split('\n').Select(l => l.Split('\t')).Where(c => c.Length >= 3 && c[1].Length > 0).ToList();
+        if (sent.Count > 0)
+        {
+            head.Append(CultureInfo.InvariantCulture, $"## Reconnects sent ({sent.Count})\n\nFrom {ReconnectsPath(DateOnly.FromDateTime(inputs.At))}, sent by the 6 AM network pass in RECONNECT-v1.\n\n");
+            foreach (var c in sent)
+            {
+                head.Append(CultureInfo.InvariantCulture, $"- {c[1]}, {(c[2].Length > 0 ? c[2] : "no company")}, sent {c[0]}\n");
+            }
+            head.Append('\n');
         }
         return head.Append(text).ToString();
     }
