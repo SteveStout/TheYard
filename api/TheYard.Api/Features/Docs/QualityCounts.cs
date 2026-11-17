@@ -15,7 +15,7 @@ namespace TheYard.Api.Features.Docs;
 public static partial class QualityCounts
 {
     /// <summary>The measures this class answers, by the first word of the placeholder.</summary>
-    public static readonly string[] Measures = ["quality-trend", "quality-now", "quality-limit", "quality-first", "quality-peak", "quality-thin", "quality-versions", "coverage-trend", "coverage-now", "quality-rules", "coderabbit-level", "coderabbit-rows"];
+    public static readonly string[] Measures = ["quality-trend", "quality-now", "quality-limit", "quality-first", "quality-peak", "quality-thin", "quality-versions", "coverage-trend", "coverage-now", "quality-rules", "rule-count", "rule-groups", "coderabbit-level", "coderabbit-rows"];
 
     // #region quality-measures
     /// <summary>One measure, as text; <paramref name="argument"/> is the word after the measure's name, if any.</summary>
@@ -35,6 +35,8 @@ public static partial class QualityCounts
                 "coverage-trend" when argument is "lines" or "branches" => CoverageTrend(repoRoot, argument),
                 "coverage-now" when argument is not null => Format(Measured(repoRoot).Last(r => r.GetProperty("coverage").ValueKind == JsonValueKind.Object).GetProperty("coverage").GetProperty(argument)),
                 "quality-rules" => Rules(repoRoot),
+                "rule-count" => RuleRows(repoRoot).Count.ToString(CultureInfo.InvariantCulture),
+                "rule-groups" => RuleGroups(repoRoot),
                 "coderabbit-level" => Ladder(repoRoot),
                 "coderabbit-rows" => Findings(repoRoot),
                 _ => $"(no live measure named '{kind}{(argument is null ? "" : " " + argument)}')",
@@ -102,25 +104,65 @@ public static partial class QualityCounts
     /// </summary>
     private static string Rules(string repoRoot)
     {
-        string record = File.ReadAllText(Directory.GetFiles(Path.Combine(repoRoot, "docs", "decisions"), "ADR-075-*.md").Single());
-        int start = record.IndexOf("| The rule | Where it was decided | What holds it |", StringComparison.Ordinal);
         var results = Results(repoRoot);
         var table = new StringBuilder("| The rule | Where it was decided | What holds it | In the last gate |\n| --- | --- | --- | --- |\n");
-        foreach (string line in record[start..].Split('\n').Skip(2).TakeWhile(l => l.StartsWith('|')))
+        foreach (string[] cells in RuleRows(repoRoot))
         {
-            string[] cells = line.Trim().Trim('|').Split(" | ");
-            if (cells.Length < 3)
-            {
-                continue;
-            }
-            string[] classes = [.. TestClass().Matches(cells[2]).Select(m => m.Value).Distinct()];
-            int run = classes.Sum(c => results.TryGetValue(c, out var r) ? r.Run : 0);
-            int passed = classes.Sum(c => results.TryGetValue(c, out var r) ? r.Passed : 0);
+            var (run, passed) = Ran(cells, results);
             string verdict = run == 0 ? "in its own suite, not this file" : $"{passed} of {run} passed";
             table.Append(CultureInfo.InvariantCulture, $"| {cells[0]} | {cells[1]} | {cells[2]} | {verdict} |\n");
         }
         return table.ToString().TrimEnd();
     }
+
+    /// <summary>ADR-075's table, one row's three cells at a time, as the record keeps them.</summary>
+    private static List<string[]> RuleRows(string repoRoot)
+    {
+        string record = File.ReadAllText(Directory.GetFiles(Path.Combine(repoRoot, "docs", "decisions"), "ADR-075-*.md").Single());
+        int start = record.IndexOf("| The rule | Where it was decided | What holds it |", StringComparison.Ordinal);
+        return [.. record[start..].Split('\n').Skip(2).TakeWhile(l => l.StartsWith('|'))
+            .Select(l => l.Trim().Trim('|').Split(" | ").Select(c => c.Trim()).ToArray())
+            .Where(cells => cells.Length >= 3)];
+    }
+
+    /// <summary>A row's tests in the gate this build shipped from: run and passed, across the classes it names.</summary>
+    private static (int Run, int Passed) Ran(string[] cells, Dictionary<string, (int Run, int Passed)> results)
+    {
+        string[] classes = [.. TestClass().Matches(cells[2]).Select(m => m.Value).Distinct()];
+        return (classes.Sum(c => results.TryGetValue(c, out var r) ? r.Run : 0), classes.Sum(c => results.TryGetValue(c, out var r) ? r.Passed : 0));
+    }
+    // #endregion rules-table
+
+    // #region rule-groups
+    /// <summary>
+    /// The rulebook's six cards for a reader who is not an engineer (MASTER-PLAN-2026-11-17 R13j): each group of
+    /// data/rule-groups.json as its title, its promise, its example, and a line counted from ADR-075's table and the
+    /// gate's results, never typed. A rule held only by the job hunt Function's suite, which its own deploy runs and
+    /// this results file does not record test by test, is counted apart rather than called passing.
+    /// </summary>
+    private static string RuleGroups(string repoRoot)
+    {
+        var results = Results(repoRoot);
+        var rows = RuleRows(repoRoot).ToDictionary(cells => cells[0], StringComparer.Ordinal);
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "data", "rule-groups.json")));
+        var cards = new StringBuilder();
+        foreach (JsonElement group in document.RootElement.GetProperty("groups").EnumerateArray())
+        {
+            string[] rules = [.. group.GetProperty("rules").EnumerateArray().Select(r => r.GetString() ?? "").Where(rows.ContainsKey)];
+            var ran = rules.Select(rule => Ran(rows[rule], results)).ToList();
+            int gated = ran.Count(r => r.Run > 0);
+            int run = ran.Sum(r => r.Run);
+            int passed = ran.Sum(r => r.Passed);
+            string status = passed == run ? $"every one of their {run} tests passed in the last gate" : $"{passed} of their {run} tests passed in the last gate";
+            string apart = gated == rules.Length ? "" : $" {rules.Length - gated} more are held by the job hunt Function's own suite, which its deploy runs.";
+            cards.Append(CultureInfo.InvariantCulture, $"### {group.GetProperty("title").GetString()}\n\n{group.GetProperty("promise").GetString()}\n\n{group.GetProperty("example").GetString()}\n\n**{RuleWords(rules.Length)}: {(gated == rules.Length ? "" : $"{gated} checked by the gate, ")}{status}.**{apart}\n\n");
+        }
+        return cards.ToString().TrimEnd();
+    }
+
+    /// <summary>A count of rules in words a card can say: one rule, or <paramref name="count"/> rules.</summary>
+    private static string RuleWords(int count) => count == 1 ? "1 rule" : $"{count.ToString(CultureInfo.InvariantCulture)} rules";
+    // #endregion rule-groups
 
     /// <summary>Each test class's results in the gate this build shipped from, across every suite, by class name.</summary>
     private static Dictionary<string, (int Run, int Passed)> Results(string repoRoot)
@@ -138,7 +180,6 @@ public static partial class QualityCounts
         }
         return counts;
     }
-    // #endregion rules-table
 
     /// <summary>CodeRabbit's current level, read from the line ADR-129 keeps it on.</summary>
     private static string Ladder(string repoRoot)
