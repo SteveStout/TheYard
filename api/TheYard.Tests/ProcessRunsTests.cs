@@ -270,7 +270,7 @@ public sealed class ProcessRunsTests
         Assert.Equal(["FUNNEL off"], sections[6].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.Equal(["EMAIL_CAMPAIGN off"], sections[7].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.Equal("off", sections[7].Tone);
-        Assert.Equal(["NETWORK_LOG off", "NETWORK_LOG_ANY_HOUR off"], sections[8].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal(["NETWORK_LOG off", "NETWORK_LOG_ANY_HOUR off", "NETWORK_SEND off"], sections[8].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.Equal("off", sections[8].Tone);
         Assert.Equal(["always on"], sections[^1].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.All(sections, section => Assert.All(section.Figures, figure => Assert.False(string.IsNullOrEmpty(figure.Source))));

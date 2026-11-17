@@ -14,7 +14,7 @@ namespace JobHunt.Infrastructure.Features.Campaign;
 /// <param name="http">The client factory.</param>
 /// <param name="google">The lane's credentials.</param>
 /// <param name="time">The clock a rate answer is waited out on; the system's when none is given.</param>
-public sealed class GmailSender(IHttpClientFactory http, GoogleCredentials google, TimeProvider? time = null) : IMailSender
+public sealed class GmailSender(IHttpClientFactory http, GoogleCredentials google, TimeProvider? time = null) : IMailSender, ISentReader
 {
     private const string Api = GmailHttp.Api;
 
@@ -24,10 +24,19 @@ public sealed class GmailSender(IHttpClientFactory http, GoogleCredentials googl
     public async Task<SentMail> SendAsync(OutgoingMail mail, CancellationToken ct)
     {
         string raw = MimeText.Base64Url(Encoding.UTF8.GetBytes(Mime(mail, "yard-" + Guid.NewGuid().ToString("N"))));
-        using var sent = await _gmail.PostAsync($"{Api}/messages/send", new { raw }, false, ct);
+        using var sent = mail.ThreadId is { Length: > 0 } threadId
+            ? await _gmail.PostAsync($"{Api}/messages/send", new { raw, threadId }, false, ct)
+            : await _gmail.PostAsync($"{Api}/messages/send", new { raw }, false, ct);
         string id = sent.RootElement.GetProperty("id").GetString()!;
         string thread = sent.RootElement.GetProperty("threadId").GetString()!;
         return new SentMail(id, thread, await MessageIdAsync(id, ct));
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> InSentAsync(string messageId, CancellationToken ct)
+    {
+        using var json = await _gmail.GetAsync($"{Api}/messages/{messageId}?format=minimal", ct);
+        return json.RootElement.TryGetProperty("labelIds", out var labels) && labels.EnumerateArray().Any(l => l.GetString() == "SENT");
     }
 
     /// <summary>The sent message's Message-Id header, or null when it cannot be read: the message went either way.</summary>
@@ -47,14 +56,15 @@ public sealed class GmailSender(IHttpClientFactory http, GoogleCredentials googl
         }
     }
 
-    /// <summary>The message as RFC 5322 text: To, Subject (encoded when not ASCII), and the two bodies.</summary>
+    /// <summary>The message as RFC 5322 text: To, Subject (encoded when not ASCII), In-Reply-To and References for a reply, and the two bodies.</summary>
     public static string Mime(OutgoingMail mail, string boundary)
     {
-        if (mail.To.IndexOfAny(['\r', '\n', ',', ';']) >= 0 || mail.Subject.IndexOfAny(['\r', '\n']) >= 0)
+        if (mail.To.IndexOfAny(['\r', '\n', ',', ';']) >= 0 || mail.Subject.IndexOfAny(['\r', '\n']) >= 0 || (mail.InReplyTo ?? "").IndexOfAny(['\r', '\n']) >= 0)
         {
             throw new ArgumentException("a header with a line break or a second address", nameof(mail));
         }
-        return $"To: {mail.To}\r\nSubject: {MimeText.Subject(mail.Subject)}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n"
+        string reply = mail.InReplyTo is { Length: > 0 } id ? $"In-Reply-To: {id}\r\nReferences: {id}\r\n" : "";
+        return $"To: {mail.To}\r\nSubject: {MimeText.Subject(mail.Subject)}\r\n{reply}MIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"{boundary}\"\r\n\r\n"
             + MimeText.Alternative(boundary, mail.Text, mail.Html);
     }
 }

@@ -29,7 +29,7 @@ public static class FunctionProcesses
         new("TodayCard", "The morning card", "0 30 * * * *", "Every hour at 30 past; writes and mails TODAY.md once a day, at 7:30 Central. TODAY_CARD unset reads as on.", ["TODAY_CARD"], false),
         new("Funnel", "The funnel", null, "No timer of its own: the morning card's 7:30 tick writes the day before's line once a day; a hand run writes any day's. FUNNEL unset reads as on.", ["FUNNEL"], true),
         new("CampaignSend", "The email campaign", "0 0 * * * *", "Every hour on the hour; acts at 8 AM Central, seven days a week.", ["EMAIL_CAMPAIGN"], false),
-        new("NetworkLogPass", "The network log", "0 0 * * * *", "Every hour on the hour; acts once a day in the 6 AM hour Central.", ["NETWORK_LOG", "NETWORK_LOG_ANY_HOUR"], false),
+        new("NetworkLogPass", "The network log", "0 0 * * * *", "Every hour on the hour; acts once a day in the 6 AM hour Central.", ["NETWORK_LOG", "NETWORK_LOG_ANY_HOUR", "NETWORK_SEND"], false),
         new("MergerHealth", "The merger's health", null, "On request; this card asks once a minute.", [], true),
     ];
 

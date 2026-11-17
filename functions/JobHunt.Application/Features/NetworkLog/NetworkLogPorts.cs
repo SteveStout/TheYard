@@ -1,5 +1,34 @@
 namespace JobHunt.Application.Features.NetworkLog;
 
+/// <summary>Which way the switch is set: off runs nothing, shadow writes what it would draft, on drafts.</summary>
+public enum NetworkMode
+{
+    /// <summary>Absent or anything else: nothing runs.</summary>
+    Off,
+
+    /// <summary>Reads, logs and writes would-drafts to the share; the draft port is never called.</summary>
+    Shadow,
+
+    /// <summary>Reads, logs and writes Gmail drafts under the Ready label.</summary>
+    On,
+}
+
+/// <summary>What one pass did, for its line, its row and the run line.</summary>
+/// <param name="Line">The pass line as written to the share.</param>
+/// <param name="Counts">The counts for network.Passes.</param>
+/// <param name="Cut">Threads left unread because the pass ran out of time.</param>
+public sealed record NetworkPassResult(string Line, PassCounts Counts, int Cut)
+{
+    /// <summary>Email reconnects sent and read back from Sent.</summary>
+    public int Sent { get; init; }
+
+    /// <summary>Email reconnects a guard held.</summary>
+    public int Held { get; init; }
+
+    /// <summary>Sent reconnects that bounced.</summary>
+    public int Bounced { get; init; }
+}
+
 /// <summary>Which threads a pass reads: those touched in the last days, at most a number of them, never chats.</summary>
 /// <param name="NewerThanDays">The window in days.</param>
 /// <param name="Max">The most thread ids returned.</param>
@@ -94,7 +123,7 @@ public interface IThreadReader
 /// <param name="References">The References header, the same id.</param>
 public sealed record DraftMail(string ThreadId, string To, string Subject, string Text, string Html, string? InReplyTo, string? References);
 
-/// <summary>The Gmail draft port: drafts and labels only, never a send. Shadow is handed a writer that refuses.</summary>
+/// <summary>The Gmail draft port: drafts and labels only, never a send (a reconnect sends through the shared mail port). Shadow is handed a writer that refuses.</summary>
 public interface IDraftWriter
 {
     /// <summary>The label's id, made when absent.</summary>
@@ -108,6 +137,9 @@ public interface IDraftWriter
 
     /// <summary>Whether the draft is still in Drafts.</summary>
     Task<bool> DraftExistsAsync(string draftId, CancellationToken ct);
+
+    /// <summary>Deletes a draft the pass wrote, so a reconnect that sends after a flip leaves no second copy for Steve to send.</summary>
+    Task DeleteDraftAsync(string draftId, CancellationToken ct);
 }
 
 /// <summary>The threads the campaign still owns: a real send with no reply yet belongs to the campaign, not here.</summary>

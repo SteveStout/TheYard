@@ -1,7 +1,8 @@
 // The network log's card (ADR-124): conversations started this week against the
 // four weeks before, and the follow-up drafts waiting, on the dials; drafts waiting for sixty minutes; conversations
-// started a week for five weeks; whether the pass is logging, where the follow-ups stand and what it costs. Counts
-// only: never a name, a company, an address, a subject or a code.
+// started a week for five weeks; whether the pass is logging, where the follow-ups stand, what the last pass's email
+// reconnects did (sent, held by a guard, bounced) and what it costs. Counts only: never a name, a company, an
+// address, a subject or a code.
 using System.Globalization;
 using TheYard.Application.Features.Admin.Cloud;
 
@@ -27,6 +28,7 @@ public static class NetworkCard
         ["logging"] = "the card schema's Network view, conversations by the week they started · the Function's run history in Application Insights, the newest pass",
         ["follow-ups"] = "the card schema's Network view, rows by state",
         ["silences"] = "the card schema's Network view, rows by state",
+        ["reconnects"] = "the Function's run history in Application Insights, the newest pass's sent, held and bounced counts",
         ["cost"] = CardFrame.TheBill,
         ["The switch"] = "the Function's health route",
         ["Next pass"] = "the Function's CentralClock",
@@ -65,7 +67,7 @@ public static class NetworkCard
                 $"against {average.ToString("0.#", CultureInfo.InvariantCulture)} a week over the four before", WeekLevels.Amber, WeekLevels.Red, null, null, "good"),
             new CloudDial("Drafts waiting", ResourceView.Share(drafted, MondayCap), ResourceView.Number(drafted), $"of at most {MondayCap} a Monday, under Follow-up/Ready", DraftLevels.Amber, DraftLevels.Red, null, null, drafted is null ? "info" : "good"),
         };
-        var rows = new List<CloudRow> { Logging(inputs, weeks, monday, mode), FollowUps(inputs), Silences(inputs), CostRow(inputs) };
+        var rows = new List<CloudRow> { Logging(inputs, weeks, monday, mode), FollowUps(inputs), Reconnects(inputs), Silences(inputs), CostRow(inputs) };
         var readout = new CloudReadout(
             "The network log, now",
             ResourceView.Uptime(inputs),
@@ -73,7 +75,7 @@ public static class NetworkCard
             [
                 new("The switch", mode, mode == "on" ? "good" : "info"),
                 new("Next pass", Next(inputs.Now), "info"),
-                new("The window", $"21 to 45 days after the last exchange, at most {MondayCap} a Monday; nothing sends, Steve presses Send", "info"),
+                new("The window", $"21 to 45 days after the last exchange, at most {MondayCap} a Monday; an email reconnect sends itself in RECONNECT-v1 once NETWORK_SEND reads on, and is a draft for Steve until then; LinkedIn waits for Steve", "info"),
                 new("The database", "Azure SQL Basic, the site's own, linked in the card's header", "info"),
                 ResourceView.Cost(inputs),
                 ResourceView.LiveRead(inputs),
@@ -174,6 +176,23 @@ public static class NetworkCard
         }
         return new CloudRow("follow-ups", "Where do the follow-ups stand?", $"{ResourceView.Fact(inputs, "drafted", "0")} drafted, waiting for Steve",
             [new($"{open} open: two-way, waiting for 21 days of silence and a TopicLine · drafts go into the person's own thread under Follow-up/Ready, at most {MondayCap} a Monday", null)], "info");
+    }
+
+    /// <summary>The run line's reconnect counts, as the pass writes them.</summary>
+    public static readonly IReadOnlyList<string> ReconnectCounts = ["sent", "held", "bounced"];
+
+    /// <summary>What the last pass's email reconnects did: sent and read back, held by a guard, bounced.</summary>
+    public static CloudRow Reconnects(ResourceCardInputs inputs)
+    {
+        var facts = ResourceView.Latest(inputs)?.Facts;
+        if (facts?.GetValueOrDefault("pass_sent") is not { Length: > 0 } sent)
+        {
+            return new CloudRow("reconnects", "What did the last pass send?", "not read yet", [new("email reconnects sent, held by a guard and bounced, from the newest pass", null)], "info");
+        }
+        string held = facts.GetValueOrDefault("pass_held") ?? "0", bounced = facts.GetValueOrDefault("pass_bounced") ?? "0";
+        return new CloudRow("reconnects", "What did the last pass send?", $"{sent} sent · {held} held by a guard · {bounced} bounced",
+            [new("each sent one read back from Sent before it counts · a guard holds a blacklisted name, a former employer, a relay, a reply owed, 21 days since the last, three a company in 60 days, or past fifteen a pass", null)],
+            bounced != "0" ? "warning" : "good");
     }
 
     /// <summary>Who has gone quiet: the rows never drafted again, by why.</summary>
