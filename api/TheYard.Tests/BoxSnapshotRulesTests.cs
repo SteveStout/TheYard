@@ -31,9 +31,9 @@ public sealed class BoxSnapshotRulesTests
     public void A_body_past_the_list_limits_is_refused_before_it_can_grow_a_document()
     {
         var good = BoxSamples.Snapshot();
-        Assert.Equal("cores holds at most 64.", BoxSnapshotRules.Validate(good with { Cores = [.. Enumerable.Range(0, 65).Select(i => new Data.BoxCore(i, 1, 1, null))] }, Nine));
+        Assert.Equal("cores holds at most 64.", BoxSnapshotRules.Validate(good with { Cores = [.. Enumerable.Range(0, 65).Select(i => new BoxCore(i, 1, 1, null))] }, Nine));
         Assert.Equal("services holds at most 32.", BoxSnapshotRules.Validate(good with { Services = [.. Enumerable.Range(0, 33).Select(i => good.Services[0])] }, Nine));
-        Assert.Equal("nets holds at most 32.", BoxSnapshotRules.Validate(BoxSamples.Sample(Nine) with { Nets = [.. Enumerable.Range(0, 33).Select(i => new Data.BoxNetRate("x", 0, 0))] }, Nine));
+        Assert.Equal("nets holds at most 32.", BoxSnapshotRules.Validate(BoxSamples.Sample(Nine) with { Nets = [.. Enumerable.Range(0, 33).Select(i => new BoxNetRate("x", 0, 0))] }, Nine));
     }
 
     [Fact]

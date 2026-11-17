@@ -4,7 +4,7 @@
 // synonyms the search widens through, replaced whole the same way. Its own type beside EfBlogStore, because these
 // writes change when the rules change and the posts' own columns do not.
 using Microsoft.EntityFrameworkCore;
-using TheYard.Data;
+using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Infrastructure.Features.Blog;
 

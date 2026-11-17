@@ -3,7 +3,6 @@
 // reporting at all. Each row is read from the newest snapshot this process holds and says it is waiting until
 // one lands; every word from the box is scrubbed of addresses and ports before it reaches the wire.
 using System.Globalization;
-using TheYard.Data;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

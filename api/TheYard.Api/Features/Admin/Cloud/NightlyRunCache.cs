@@ -1,7 +1,6 @@
 // The nightly card's run log as the card draws it: the last thirty days read back from the kept
 // log once an hour, newest first, held in this process so the card's view, which is synchronous,
 // never waits on the document store (ADR: The Nightly Function on the Admin tab).
-using TheYard.Data;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

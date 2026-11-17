@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using TheYard.Api.Features.Blog;
 using TheYard.Application.Features.Blog;
-using TheYard.Data;
 using TheYard.Infrastructure;
 using TheYard.Infrastructure.Features.Blog;
 
