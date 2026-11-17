@@ -12,10 +12,11 @@ function afterColon(name: string): string {
   return /^(Azure|SQL)/.test(name) ? name : name.charAt(0).toLowerCase() + name.slice(1);
 }
 
-export function Range({ of }: { of: RangeKey }) {
+export function Range({ of, words }: { of: RangeKey; words?: string }) {
   return (
     <p className={styles.muted} data-testid={`range-${of}`}>
-      Normal: {afterColon(RANGES[of].name)}, {rangeWords(of)}.
+      {/* A card whose line moves with live data (the cost card against Azure's own budget) hands its words in. */}
+      Normal: {afterColon(RANGES[of].name)}, {words ?? rangeWords(of)}.
     </p>
   );
 }

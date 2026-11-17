@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { INTRO } from '../../../lib/intro';
 import { landingHealth, storesUp, type LandingHealth } from '../../../lib/landingHealth';
 import {
@@ -14,7 +14,9 @@ import { CountUp } from '../../shared/CountUp';
 import { Hook } from '../../shared/Hook';
 import { WhereNext } from '../../shared/WhereNext';
 import { QualityTrend } from '../../shared/QualityTrend';
-import { hookFor, hookTrend } from '../../../lib/pageHooks';
+import { hookFor, hookTrend, landingLines } from '../../../lib/pageHooks';
+import { centralDay, releasesInLastSevenDays } from '../../../lib/releaseFacts';
+import RELEASES from 'virtual:release-facts';
 import { Ring } from '../../shared/Ring';
 import { PulseBand } from '../PulseBand';
 import { TechStack } from '../TechStack';
@@ -42,6 +44,11 @@ import { request } from '../../../lib/request';
  * One tile is drawn by LandingTile, the banners by LandingBanners.
  */
 /** The landing's hook and its chart, read once from the files the build carries. */
+/** The day never changes under a mounted page in a way worth a redraw, so nothing is subscribed. */
+const noSubscription = () => () => {};
+const visitorsDay = () => centralDay(new Date());
+const buildsDay = () => RELEASES.builtOn;
+
 const HOOK = hookFor('landing');
 const HOOK_TREND = hookTrend(HOOK);
 
@@ -77,6 +84,11 @@ export function Landing({
   const [health, setHealth] = useState<LandingHealth>('reading');
   const [stores, setStores] = useState<{ up: number; of: number } | null>(null);
   const [summary, setSummary] = useState<TestSummary | null>(null);
+  // The week's releases, counted from the day the build ran while the page drawn ahead of a visit is taken over, so
+  // the two draws agree, then from the visitor's own Central day (ADR-132).
+  const today = useSyncExternalStore(noSubscription, visitorsDay, buildsDay);
+  const releases = releasesInLastSevenDays(RELEASES.days, today);
+  const lines = landingLines(HOOK, releases);
   useEffect(() => {
     let live = true;
     request('/api/health', undefined, { background: true })
@@ -116,7 +128,7 @@ export function Landing({
     <section className={styles.landing} aria-labelledby="landing-title" data-testid="landing">
       <Hook
         page="landing"
-        lines={HOOK.lines}
+        lines={lines}
         headingId="landing-title"
         headingClass={styles.heading}
         caption={HOOK.chart ? `${HOOK.chart.label}, ${HOOK.chart.direction}` : undefined}
