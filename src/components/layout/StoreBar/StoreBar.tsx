@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import {
   fetchStores,
   note,
@@ -9,6 +9,17 @@ import {
 } from '../../../lib/stores';
 import { Ring } from '../../shared/Ring';
 import styles from './StoreBar.module.css';
+import { gateChips, gateFacts } from './gateFacts';
+
+// The badge's popover is fetched the first time it opens, so its words and styles stay out of the first load
+// (ADR-134, .github/byte-budgets.json).
+const GatePopover = lazy(() =>
+  import('../GatePopover/GatePopover').then((module) => ({ default: module.GatePopover }))
+);
+
+/** What this build's version had to pass: read once, from what the build carries. */
+const GATE = gateFacts();
+const CHIPS = gateChips(GATE);
 
 /**
  * The bar at the top of the page (ADR: One container, both stores, and its
@@ -24,6 +35,9 @@ import styles from './StoreBar.module.css';
  */
 export function StoreBar() {
   const [stores, setStores] = useState<Stores | null>(null);
+  const [gateTop, setGateTop] = useState<number | null>(null);
+  const badge = useRef<HTMLButtonElement>(null);
+  const closeGate = useCallback(() => setGateTop(null), []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -109,17 +123,50 @@ export function StoreBar() {
             {ready === null ? '' : `${ready.up}/${ready.of} ready`}
           </span>
         </span>
-        <span
-          className={styles.note}
-          data-testid="store-bar-note"
-          title={stores === null ? undefined : note(stores)}
-        >
-          {/* The whole sentence from 1440, the short form under it (A6): no ellipsis at
-              any width. One of the two is displayed at every width, so a screen reader
-              always hears the note the eye reads. */}
-          <span className={styles.noteLong}>{stores === null ? '' : note(stores)}</span>
-          <span className={styles.noteShort}>{stores === null ? '' : shortNote(stores)}</span>
+        <span className={styles.tail}>
+          <span
+            className={styles.note}
+            data-testid="store-bar-note"
+            title={stores === null ? undefined : note(stores)}
+          >
+            {/* The short form at every width, the site and its store, with the whole sentence as its title: the
+              gate badge has the room beside it that the sentence took from 1440 (A6: no ellipsis at any width). */}
+            <span>{stores === null ? '' : shortNote(stores)}</span>
+          </span>
+          {/* The gate badge (ADR-130): what this version had to pass, read from what the build carries, so it is
+              whole on the first paint. The gate's word at every width and all three facts from 1440, in the site's
+              own pill group, which on a phone makes it a thumb-tall pill in the note's row (hooks.spec, mobile.spec).
+              Its name and its popover say all three at any width. */}
+          <span className="op-seg op-seg-wrap">
+            <button
+              ref={badge}
+              type="button"
+              className={styles.segment}
+              style={{ cursor: 'pointer', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap' }}
+              aria-label={`${CHIPS.join(', ')}: what v${GATE.version} had to pass`}
+              aria-haspopup="dialog"
+              aria-expanded={gateTop !== null}
+              data-testid="gate-badge"
+              data-gated={GATE.gated}
+              onClick={() =>
+                setGateTop((open) =>
+                  open !== null ? null : (badge.current?.getBoundingClientRect().bottom ?? 0) + 8
+                )
+              }
+            >
+              {CHIPS[0]}
+              <span className={styles.wide}>
+                {' '}
+                · {CHIPS[1]} · {CHIPS[2]}
+              </span>
+            </button>
+          </span>
         </span>
+        {gateTop !== null && (
+          <Suspense fallback={null}>
+            <GatePopover facts={GATE} top={gateTop} onClose={closeGate} />
+          </Suspense>
+        )}
       </div>
     </div>
   );
