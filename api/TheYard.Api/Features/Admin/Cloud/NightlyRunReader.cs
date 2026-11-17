@@ -7,7 +7,6 @@
 // GitHub's own conclusion for a run can differ from the word the job had when it posted itself. One
 // job, apart from the Azure reads in NightlySource, so it is tested with a GitHub answer and a log
 // and nothing of Azure.
-using TheYard.Data;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

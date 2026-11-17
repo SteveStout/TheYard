@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application.Features.Blog;
-using TheYard.Data;
 
 namespace TheYard.Infrastructure.Features.Blog;
 

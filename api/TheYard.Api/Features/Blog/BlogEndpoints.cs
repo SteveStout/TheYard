@@ -1,6 +1,5 @@
 using System.Text.Json;
 using TheYard.Application.Features.Blog;
-using TheYard.Data;
 
 namespace TheYard.Api.Features.Blog;
 

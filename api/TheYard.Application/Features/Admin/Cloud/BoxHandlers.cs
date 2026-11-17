@@ -4,7 +4,6 @@
 // with the silence measured on this process's clock. Each takes its port and its clock by constructor and is
 // tested with a fake and no host.
 using TheYard.Application.Shared;
-using TheYard.Data;
 using TheYard.Domain.Features.Admin;
 
 namespace TheYard.Application.Features.Admin.Cloud;

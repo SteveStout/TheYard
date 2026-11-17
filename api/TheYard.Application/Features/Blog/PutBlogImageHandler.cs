@@ -5,7 +5,6 @@
 // resizes before it uploads.
 using System.Globalization;
 using TheYard.Application.Shared;
-using TheYard.Data;
 using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Application.Features.Blog;
