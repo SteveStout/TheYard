@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BUDGET_AMBER_DOLLARS,
+  costRangeWords,
   costTone,
   MONTHLY_BUDGET_DOLLARS,
   RANGES,
@@ -30,21 +31,29 @@ describe('ranges', () => {
   it('says every range in its own unit', () => {
     expect(rangeWords('memory')).toBe('amber at 80%, red at 95%');
     expect(rangeWords('p95')).toBe('amber at 1 s, red at 3 s');
-    expect(rangeWords('cost')).toBe('amber at $50, red at $60');
+    expect(rangeWords('cost')).toBe('amber at $60, red at $70');
     expect(rangeWords('certificateDays')).toBe('amber under 30 days, red under 7 days');
     expect(rangeWords('clientErrorsHour')).toBe('amber at 50, red at 200');
   });
 
-  it("holds the cost to Steve's budget of $60 a month, graded on what is being spent", () => {
-    expect(MONTHLY_BUDGET_DOLLARS).toBe(60);
-    expect(BUDGET_AMBER_DOLLARS).toBe(50);
-    expect(RANGES.cost.red).toBe(60);
+  it("holds the cost to Steve's budget of $70 a month when Azure's is not read, graded on what is being spent", () => {
+    expect(MONTHLY_BUDGET_DOLLARS).toBe(70);
+    expect(BUDGET_AMBER_DOLLARS).toBe(60);
+    expect(RANGES.cost.red).toBe(70);
     // 4 November: $5.18 spent and $47.30 at yesterday's rate is under the amber line.
     expect(costTone(5.18, 47.3)).toBe('good');
-    expect(costTone(5.18, 52)).toBe('warn');
-    expect(costTone(5.18, 61)).toBe('bad');
-    expect(costTone(61, null)).toBe('bad');
+    expect(costTone(5.18, 62)).toBe('warn');
+    expect(costTone(5.18, 71)).toBe('bad');
+    expect(costTone(71, null)).toBe('bad');
     expect(costTone(5.18, undefined)).toBe('good');
+    expect(costRangeWords()).toBe('amber at $60, red at $70');
+  });
+
+  it("grades against the amount Azure's budget holds when the cost read carries it", () => {
+    expect(costTone(5.18, 52, [], 60)).toBe('warn');
+    expect(costTone(5.18, 61, [], 60)).toBe('bad');
+    expect(costTone(5.18, 61, [], 80)).toBe('good');
+    expect(costRangeWords(80)).toBe('amber at $70, red at $80');
   });
 
   it("reads a day over three times the week's median as a spike, never under the $5 floor", () => {
@@ -85,7 +94,7 @@ describe('ranges', () => {
       ruMinute: { amber: 0.5, red: 0.9, step: 0.001 },
       sqlDtu: { amber: 0.6, red: 0.9, step: 0.001 },
       keptWarm: { amber: 1_000, red: 3_000, step: 1 },
-      cost: { amber: 50, red: 60, step: 0.01 },
+      cost: { amber: 60, red: 70, step: 0.01 },
       clientErrorsHour: { amber: 50, red: 200, step: 1 },
       gateSeconds: { amber: 300, red: 600, step: 1 },
       certificateDays: { amber: 30, red: 7, step: 1, lowIsBad: true },

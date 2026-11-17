@@ -170,3 +170,7 @@ Corrected in 1.0.5.14: this addendum first said each roll was a blue-green roll 
 - [`api/TheYard.Database/Tables/CostReads.sql`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Database/Tables/CostReads.sql): the table.
 - [`api/TheYard.Tests/KeptCostsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/KeptCostsTests.cs): the three cases.
 
+
+## Addendum, 2026-11-17 (1.0.5.76): the card's line is the budget Azure holds
+
+What stopped being true: that the cost row's red line is a number typed into the page. Steve raised the budget to $70 on 11 November and Azure's budget-subscription-monthly now holds $70 (set 16 November), while the Overview still graded the month against $60. The row now grades against the amount Azure's budget holds whenever the cost read carries it (budget_dollars, read with the alert rules), amber $10 under it as before, and against $70 only when that field is missing or null; its range line names whichever budget it used. The Spend and forecast card says why Azure's dashed forecast can sit above the month's own pace: the forecast weighs earlier months, spikes and all (it read $70.75 on 16 November against about $58 a month at that week's rate). The grade still never reads the forecast.
