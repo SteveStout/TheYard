@@ -1682,6 +1682,8 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
   await expect(card.getByTestId('spend-headline')).toContainText('September so far: $47.18.');
   await expect(card.getByTestId('spend-headline')).toContainText('Forecast: $49.03');
   await expect(card.getByTestId('spend-partial')).toBeAttached();
+  // The card's line is the budget the Overview grades against: the typed $70 when the read carries none.
+  await expect(card.getByTestId('range-cost')).toContainText('amber at $60, red at $70');
   await expect(card.getByTestId('spend-resource')).toHaveCount(5);
   await expect(card.getByTestId('spend-resource').last()).toContainText('Others (3 resources)');
   // Every resource and type figure is a month at the window's rate, worked out by the server, and
@@ -1727,6 +1729,21 @@ test('the cost card draws the spend with its forecast, the cost by resource and 
  * type, one long word with nowhere to break, and the meters' longest rule names. The card ran 3 to 6 px past its
  * edge on the live bill at a phone and a desk and no local run saw it, because a local run reads no bill.
  */
+test('the cost card states the budget Azure holds, the one the Overview grades against (CodeRabbit on 1.0.5.76)', async ({
+  page,
+}) => {
+  await page.route('**/api/admin/costs?*', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ ...spendBill, budget_dollars: 80 }),
+    })
+  );
+  await openTheYard(page, '/?view=admin&card=spend');
+  const card = page.getByTestId('spend-card');
+  await expect(card.getByTestId('spend-headline')).toBeVisible({ timeout: 60_000 });
+  await expect(card.getByTestId('range-cost')).toContainText('amber at $70, red at $80');
+});
+
 test("the cost card fits a phone and a desk with the live bill's long type and meter names", async ({
   page,
 }) => {

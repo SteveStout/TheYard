@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import file from '../../data/hooks.json';
 import history from '../../data/quality-history.json';
-import { hookFor, hookTrend, opensAdmin, withCounts, HOOK_PAGES } from './pageHooks';
+import { hookFor, hookTrend, landingLines, opensAdmin, withCounts, HOOK_PAGES } from './pageHooks';
+import { heldSince, measured, type HistoryRow } from './qualityHeld';
 
 // #region one-file
 /**
@@ -40,15 +41,34 @@ describe('the hook data, one entry a page', () => {
     for (const page of HOOK_PAGES) expect(hookFor(page).page).toBe(page);
   });
 
-  it('says the quality sentence the same on the landing and the resume door, word for word as Steve wrote it', () => {
-    const said = file.hooks
-      .flatMap((hook) => hook.lines)
-      .filter((line) => /quality numbers/.test(line));
-    expect(said).toEqual([
-      'Fifteen quality numbers are measured on every version and none may get worse.',
+  it("keeps Steve's quality sentence on the resume door and opens the landing on the approved headline", () => {
+    expect(hookFor('resume').lines).toEqual([
       'Fifteen quality numbers are measured on every version and none may get worse.',
     ]);
-    expect(hookFor('landing').lines).toEqual(hookFor('resume').lines);
+    expect(hookFor('landing').lines[0]).toBe('Built with AI. Gated so quality never slides.');
+    // The landing's counts are placeholders the history fills, never typed (MASTER-PLAN-2026-11-17 R13a, R13f).
+    expect(hookFor('landing').lines.join(' ')).not.toMatch(/\d/);
+  });
+
+  it('draws the landing as the headline, the held-since line, its counts and the week of releases', () => {
+    const rows = measured(history.rows as unknown as HistoryRow[]);
+    const held = heldSince(rows)!;
+    const lines = landingLines(hookFor('landing'), 4);
+    expect(lines[0]).toBe('Built with AI. Gated so quality never slides.');
+    expect(lines[1]).toMatch(
+      new RegExp(
+        `^No quality number has gotten worse at any release since ${held.version.replace(/\./g, '\\.')} on \\d{1,2} [A-Z][a-z]+: ${held.releases} releases? in a row\\.$`
+      )
+    );
+    const newest = rows[rows.length - 1]!;
+    expect(lines[2]).toContain(
+      `${Object.keys(newest.numbers).length} quality numbers on every release`
+    );
+    expect(lines[2]).toContain(`${rows.length} versions measured`);
+    expect(lines.at(-1)).toBe('4 releases in the last 7 days, each through the same gate.');
+    expect(landingLines(hookFor('landing'), 1).at(-1)).toBe(
+      '1 release in the last 7 days, each through the same gate.'
+    );
   });
 
   it('keeps the copy rules: no em dash, never the two job words, and a number in what each page says', () => {
@@ -57,7 +77,8 @@ describe('the hook data, one entry a page', () => {
     expect(text).not.toMatch(/hiring manager|recruiter/i);
     expect(text).not.toMatch(/zero downtime|no downtime/i);
     for (const hook of file.hooks.filter((each) => each.lines.length > 0)) {
-      expect(hook.lines.join(' '), hook.page).toMatch(
+      const said = hook.page === 'landing' ? landingLines(hookFor('landing'), 0) : hook.lines;
+      expect(said.join(' '), hook.page).toMatch(
         new RegExp(`\\d|\\b(${WORDS.slice(2).join('|')})\\b`, 'i')
       );
     }
