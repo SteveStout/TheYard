@@ -84,6 +84,7 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
         {
             Signal = (await TextAsync(TodayCard.SignalPath, ct)).Split('\n')[0].Trim(),
             EmptyRuns = await TextAsync(TodayCard.EmptyRunsPath, ct),
+            Reconnects = await TextAsync(TodayCard.ReconnectsPath(DateOnly.FromDateTime(local)), ct),
         };
     }
 

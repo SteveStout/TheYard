@@ -39,6 +39,44 @@ public static class NetworkFiles
     /// <summary>The shadow's would-drafts, one file a Monday.</summary>
     public const string WouldDrafts = "networklog/would-drafts";
 
+    /// <summary>NETWORK_SEND's shadow: the exact HTML each reconnect would send, one folder a Central day.</summary>
+    public const string WouldSends = "networklog/would-sends";
+
+    /// <summary>The spool the merger folds into the tracker; a sent reconnect drops one fragment there.</summary>
+    public const string TrackerSpool = "inbox/tracker-inbox";
+
+    /// <summary>The reconnects sent, one tab-separated file a Central day, which the 07:30 card reads.</summary>
+    public const string Sent = "networklog/sent";
+
+    /// <summary>A day's would-sends folder.</summary>
+    public static string WouldSendsFolder(DateOnly day) => $"{WouldSends}/{day:yyyy-MM-dd}";
+
+    /// <summary>A day's would-sends index: one line a would-send, written with them, which a flip of NETWORK_SEND looks for.</summary>
+    public static string WouldSendsIndex(DateOnly day) => $"{WouldSendsFolder(day)}/index.tsv";
+
+    /// <summary>The marker a flip's re-run writes before it runs, so the day re-runs once.</summary>
+    public static string FlippedPath(DateOnly day) => $"{WouldSendsFolder(day)}/flipped.log";
+
+    /// <summary>A day's sent file.</summary>
+    public static string SentPath(DateOnly day) => $"{Sent}/{day:yyyy-MM-dd}.tsv";
+
+    /// <summary>A thread id as a file name: letters, digits and dashes only.</summary>
+    public static string Safe(string id) => new([.. id.Select(c => char.IsAsciiLetterOrDigit(c) || c == '-' ? c : '-')]);
+
+    /// <summary>
+    /// A would-send file: a comment naming who and which subject, then the HTML part exactly as the send would carry it,
+    /// so the file opens in a browser as the email reads.
+    /// </summary>
+    public static string WouldSendText(Conversation row, FollowUpDraft mail) =>
+        $"<!-- To: {Comment(row.FullName)} <{row.Email}> | Subject: {Comment(mail.Subject)} | {ReconnectTemplate.Version} -->\n{mail.Html}\n";
+
+    /// <summary>A field inside an HTML comment, which may not hold two dashes in a row.</summary>
+    private static string Comment(string field) => Clean(field).Replace("--", "- -", StringComparison.Ordinal);
+
+    /// <summary>One sent line: the Central time, the name, the company, the address, the thread, the message and the code.</summary>
+    public static string SentLine(DateTime centralAt, Conversation row, string threadId, string messageId, string code) =>
+        string.Join('\t', centralAt.ToString("HH:mm", CultureInfo.InvariantCulture), Clean(row.FullName), Clean(row.Company ?? row.CompanyKey ?? ""), row.Email ?? "", threadId, messageId, code) + "\n";
+
     /// <summary>Where the 6 AM program leaves LinkedIn rows.</summary>
     public const string LinkedInInbox = "networklog/linkedin-inbox";
 

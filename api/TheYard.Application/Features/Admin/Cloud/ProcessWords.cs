@@ -148,6 +148,9 @@ public static class ProcessWords
                 Add("threads", n => $"{Plural(n, "thread")} read");
                 Add("upserted", n => $"{n} logged");
                 Add("drafted", n => $"{n} drafted");
+                Add("sent", n => $"{n} sent");
+                Add("held", n => $"{n} held by a guard");
+                Add("bounced", n => $"{n} bounced");
                 break;
             case "MergerHealth":
                 Add("waiting", n => $"{n} waiting");

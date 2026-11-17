@@ -262,9 +262,13 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'EMAIL_CAMPAIGN', value: 'shadow' }
         // The network log (functions/jobhunt/NetworkLogTimer.cs), in the 6 o'clock hour Central: 'shadow' logs every
         // two-way conversation and writes the Monday would-drafts to the share; 'on' writes Gmail drafts under
-        // Follow-up/Ready and never sends; anything else is off. NETWORK_LOG_ANY_HOUR 'on' lets a pass run outside the hour.
+        // Follow-up/Ready, and sends email reconnects only when NETWORK_SEND reads 'on'; anything else is off.
+        // NETWORK_LOG_ANY_HOUR 'on' lets a pass run outside the hour.
         { name: 'NETWORK_LOG', value: 'shadow' }
         { name: 'NETWORK_LOG_ANY_HOUR', value: 'off' }
+        // NETWORK_SEND, read only while NETWORK_LOG is 'on': 'on' sends each email reconnect in RECONNECT-v1 through the
+        // campaign's GmailSender; anything else is shadow, which drafts it and writes the HTML that would send.
+        { name: 'NETWORK_SEND', value: 'shadow' }
         { name: 'CAMPAIGN_SQL', value: campaignSql }
       ]
     }

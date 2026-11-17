@@ -6,17 +6,26 @@ namespace JobHunt.Application.Features.NetworkLog;
 /// <param name="RenderFailed">Rows whose render failed a check; each stays Open and is tried next Monday.</param>
 /// <param name="Failed">The checks that failed, by row.</param>
 /// <param name="Posts">Drafts, or would-drafts, that name a post.</param>
-public sealed record MondayResult(int Due, int Drafted, int RenderFailed, IReadOnlyList<string> Failed, int Posts = 0);
+public sealed record MondayResult(int Due, int Drafted, int RenderFailed, IReadOnlyList<string> Failed, int Posts = 0)
+{
+    /// <summary>Email reconnects sent and read back from Sent (NETWORK_SEND on); they count in Drafted too.</summary>
+    public int Sent { get; init; }
+
+    /// <summary>Email reconnects a guard held, by the guard.</summary>
+    public IReadOnlyDictionary<string, int> Held { get; init; } = new Dictionary<string, int>();
+}
 
 /// <summary>
 /// The week's follow-ups, on a Monday: the due rows through FOLLOWUP-v1 and its checks, written to the share as
-/// would-drafts in shadow, and in `on` written as Gmail drafts into each row's own thread under Follow-up/Ready,
-/// to the address the person wrote from, each read back before the row is marked Drafted. Nothing sends: the draft
-/// port has no send, and a row is Drafted only once its DraftId is stored, so a second build the same Monday drafts
-/// nothing twice. A row whose newest exchange was on LinkedIn goes to the week's LinkedIn queue under section A, its
-/// text beside it, for Steve's send; nothing types it into a thread without that. A row holding a post and
-/// its code names the post when the blog's feed shows it went out after Steve's last message; a draft whose post line
-/// fails a check is written without it.
+/// would-drafts in shadow. In `on`, a row whose newest exchange was by email is a reconnect in RECONNECT-v1 (Reconnects):
+/// its guards, its code, and, while NETWORK_SEND reads shadow, a Gmail draft into its own thread under
+/// Follow-up/Ready read back before the row is marked Drafted, beside the HTML that would send; with NETWORK_SEND on,
+/// the send itself. A row is Drafted only once its DraftId is stored, so a second build the same Monday writes
+/// nothing twice, except that a build after NETWORK_SEND flips to on sends the rows the day's shadow build drafted,
+/// deleting each draft first. A row whose newest exchange was on LinkedIn goes to the week's LinkedIn queue under
+/// section A in FOLLOWUP-v1, its text beside it, for Steve's send; nothing types it into a thread without that. A
+/// LinkedIn row holding a post and its code names the post when the blog's feed shows it went out after Steve's last
+/// message; a draft whose post line fails a check is written without it.
 /// </summary>
 public sealed class MondayDrafts(IConversationStore rows, IThreadReader gmail, IDraftWriter drafts, IMergeStore share, IBlogPosts blog)
 {
@@ -25,6 +34,9 @@ public sealed class MondayDrafts(IConversationStore rows, IThreadReader gmail, I
 
     /// <summary>The label every draft carries.</summary>
     public const string Ready = "Follow-up/Ready";
+
+    /// <summary>The email reconnects' sender and its mode; the default drafts in shadow.</summary>
+    public Reconnects? Reconnect { get; init; }
 
     /// <summary>Builds the Monday's follow-ups from the open rows.</summary>
     public async Task<MondayResult> RunAsync(NetworkMode mode, DateOnly monday, IReadOnlyList<Conversation> open, DateTimeOffset now, CancellationToken ct)
@@ -40,29 +52,24 @@ public sealed class MondayDrafts(IConversationStore rows, IThreadReader gmail, I
             await share.WriteAsync(NetworkFiles.WouldDraftsPath(monday), TrackerCsvText.Encode(NetworkFiles.WouldDraftsText(monday, rendered)), ct);
             return new MondayResult(batch.Count, rendered.Count(r => r.Item3.Count == 0), failed.Count, failed, named);
         }
-        int written = 0;
-        string? label = null;
-        foreach (var (row, draft, checks) in rendered.Where(r => r.Item3.Count == 0 && r.row.LastChannel == Channel.Email && r.row.Email is not null && r.row.ThreadIds.Count > 0))
+        var reconnects = Reconnect ?? new Reconnects(rows, gmail, drafts, share, TimeProvider.System);
+        var email = batch.Where(r => r.LastChannel == Channel.Email && r.Email is not null && r.ThreadIds.Count > 0).ToList();
+        if (reconnects.Mode == SendMode.On)
         {
-            if (label is null)
+            // A flip after the day's shadow build: its drafts are sent instead, each draft deleted first so Steve has no second copy.
+            foreach (var row in open.Where(r => r.State == ConversationState.Drafted && r.DraftChannel == Channel.Email && r.Email is not null && r.ThreadIds.Count > 0
+                && r.DraftId is { } id && !id.StartsWith(Reconnects.SentPrefix, StringComparison.Ordinal) && r.DraftedAt is { } at && DateOnly.FromDateTime(CentralClock.Local(at)) == monday))
             {
-                await drafts.EnsureLabelAsync(Parent, ct);
-                label = await drafts.EnsureLabelAsync(Ready, ct);
+                await drafts.DeleteDraftAsync(row.DraftId!, ct);
+                email.Add(row with { State = ConversationState.Open, DraftId = null, DraftedAt = null });
             }
-            var thread = await gmail.ReadSummaryAsync(row.ThreadIds[0], ct);
-            string? newest = thread.Messages.LastOrDefault(m => m.RfcMessageId is not null)?.RfcMessageId;
-            var (draftId, messageId) = await drafts.CreateDraftAsync(new DraftMail(row.ThreadIds[0], row.Email!, draft.Subject, draft.Text, draft.Html, newest, newest), ct);
-            await drafts.LabelAsync(messageId, label, ct);
-            if (!await drafts.DraftExistsAsync(draftId, ct))
-            {
-                failed.Add($"{row.PersonKey}: draft not read back");
-                continue;
-            }
-            await rows.SetDraftAsync(row.Id, draftId, Channel.Email, now, ct);
-            written++;
         }
-        written += await LinkedInAsync(monday, [.. rendered.Where(r => r.Item3.Count == 0 && r.row.LastChannel == Channel.LinkedIn && r.row.ThreadIds.Count > 0).Select(r => (r.row, r.Item2))], ct);
-        return new MondayResult(batch.Count, written, failed.Count, failed, named);
+        var sent = await reconnects.RunAsync(monday, email, open, now, ct);
+        var linkedIn = rendered.Where(r => r.row.LastChannel == Channel.LinkedIn && r.row.ThreadIds.Count > 0).ToList();
+        var failedOn = linkedIn.Where(r => r.Item3.Count > 0).Select(r => $"{r.row.PersonKey}: {string.Join(", ", r.Item3)}").Concat(sent.Failed).ToList();
+        int written = sent.Sent + sent.Drafted + await LinkedInAsync(monday, [.. linkedIn.Where(r => r.Item3.Count == 0).Select(r => (r.row, r.Item2))], ct);
+        int namedOn = linkedIn.Count(r => r.Item3.Count == 0 && r.Item2.Text.Contains(BlogLine.Site, StringComparison.Ordinal));
+        return new MondayResult(batch.Count, written, failedOn.Count, failedOn, namedOn) { Sent = sent.Sent, Held = sent.Held };
     }
 
     /// <summary>

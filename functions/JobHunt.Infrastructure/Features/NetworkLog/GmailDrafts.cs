@@ -63,6 +63,9 @@ public sealed class GmailDrafts(IHttpClientFactory http, GoogleCredentials googl
     }
 
     /// <inheritdoc />
+    public Task DeleteDraftAsync(string draftId, CancellationToken ct) => _gmail.DeleteOrMissingAsync($"{Api}/drafts/{draftId}", ct);
+
+    /// <inheritdoc />
     public async Task<bool> DraftExistsAsync(string draftId, CancellationToken ct)
     {
         using var answer = await _gmail.GetOrMissingAsync($"{Api}/drafts/{draftId}?format=minimal", ct);
