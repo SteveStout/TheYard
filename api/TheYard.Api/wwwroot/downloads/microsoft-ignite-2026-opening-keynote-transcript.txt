@@ -1,0 +1,1561 @@
+Microsoft Ignite 2026 opening keynote - full transcript
+Tuesday, November 17, 2026. Satya Nadella, Judson Althoff and guests.
+Video: https://www.youtube.com/watch?v=ZR4v1c4CClc
+Shared by Steven Stout with his write-up: https://theyard.stevenstout.biz/?view=blog&post=microsoft-ignite-2026-all-in-on-ai-light-on-everything-else
+
+Word counts in this transcript, whole words: agent or agents 237, AI 108, Copilot 101, trust 29, Azure 12. .NET and Visual Studio: 0. Azure DevOps and SQL Server: 0. These are machine captions and a few lines repeat, so treat the counts as close.
+
+Segments, in the transcript's Central times:
+- 12:17 Satya Nadella: the outage, trust, Copilot, GitHub, MAI models, Azure, HorizonDB
+- 12:54 Judson Althoff: the Copilot demo, which priced one Cowork session at about $45 so IT could set a spend limit
+- 13:44 Alaska Airlines and Seth Juarez: grading and tuning an agent
+- 13:52 Mustafa Suleyman: MAI model prices and token spend
+- 14:04 Charles Lamanna: Agent 365 spend limits and caps
+- 14:20 Security: Perception, with red team agents that attack and green team agents that fix
+- 14:33 BNY: the agent-to-agent treasury trade
+- 14:38 Judson Althoff: the close
+
+I recorded the keynote live with Windows Live Captions and cleaned up the repeated lines afterward. I checked the quotes and key numbers in my write-up against the official YouTube captions. Times are US Central, when each line was captured. To find a line in the video, subtract about 12:17 from its time (14:00 here is about 1:43 in the video). These are machine captions, so names and product terms are sometimes misheard ("GBT" for GPT, for example). Check anything you quote against the video. The two short gaps, 12:28 to 12:30 and 13:01 to 13:02, were demo videos with little speech.
+
+[12:17:14] To improve the outcomes that matter.
+[12:17:21] And accelerate your advantage in a world that never stops moving.
+[12:17:28] This is how we create technology that amplifies human ambition.
+[12:17:36] And turn intelligence grounded in trust into real world impact.
+[12:17:44] More people building, more people innovating, more people shaping the future together.
+[12:17:45] Welcome.
+[12:17:49] To Microsoft Ignite.
+[12:17:53] All right.
+[12:17:57] Good morning.
+[12:18:09] It's fantastic to be back here at Ignite and welcome we have our.
+[12:18:21] Fantastic show for you lined up for the rest of the week and I want to kick it off by highlighting what we're going to unpack throughout the week.
+[12:18:22] This week is about two things.
+[12:18:28] First, how do we capitalize on all these new capability that's growing exponentially and.
+[12:18:38] Second, how do we build the capability inside of our organizations to deal with the consequences of all this capability that's growing exponentially?
+[12:18:50] So last week in some sense was a really a reminder of how critical digital infrastructure is as the dial tone for the world we know.
+[12:18:58] We know the trust you place in our services and take that responsibility extremely seriously.
+[12:19:03] And in that context, I know we have work to do to provide.
+[12:19:19] That resilience that you can count on, the world can count on, and we are committed to ensuring that we learn and we continuously improve.
+[12:19:19] And I also want to recognize.
+[12:19:23] Yeah.
+[12:19:32] But more than that, I want to recognize the hard work that each of you do.
+[12:19:39] Inside of your organizations to ensure that continuity, that resilience.
+[12:19:54] And so really a big, big thank you from the bottom of my heart for all that you do for your organization's and the entire ecosystem.
+[12:20:07] You know, I always find it grounding helpful to always start with our mission, which is to empower every person and every organization on the planet to achieve more.
+[12:20:12] And in today's world, that means 1 singular thing, which is how do we collectively build our.
+[12:20:13] That frontier ecosystem.
+[12:20:26] We need to be able to parlay all of this technological advances into real outcomes, new points of leverage for people, the organizations that we build, as well as the society at large.
+[12:20:28] That's the goal.
+[12:20:33] And for us, that comes down to three things.
+[12:20:47] One, keeping the human at the center of it all, ensuring that you have ownership over your organization's intelligence and learning and trust.
+[12:20:52] You know, AI in the flow of human ambition is perhaps.
+[12:20:56] The biggest design challenge we have in front of us, right?
+[12:20:57] How do you do that?
+[12:21:14] How do you make sure that individual roles, organization, systems and products are all being designed to amplify human intent and ambition and agency so that it can flourish going forward?
+[12:21:34] And we are seeing this change in some sense unfold when you look at a software engineering team today, right as an example, developers are not just writing code or doing PRS, but they're building these systems around code that give them new leverage.
+[12:21:42] As an example, developers are not just writing code or doing PRS, but they're building these systems around code that give them new leverage.
+[12:21:44] You can think of software engineering scaling from building software artifacts to building software factories that build those artifacts.
+[12:21:56] The important thing here, though, is to remember still that that human intent, that judgment, that experience, skills, expertise all very much matter.
+[12:22:00] And it's not just about the point.
+[12:22:05] So it's mostly about the change in the point of leverage.
+[12:22:08] What you did before changes, but your expertise matters, your skill matters, your craft matters.
+[12:22:13] And this is not just limited to software teams.
+[12:22:20] Every function will go through a similar change across their work, their workflow, and their work artifacts.
+[12:22:27] The second pillar is intelligence in the age of AI.
+[12:22:31] The key question is how do individual firms continually build?
+[12:22:45] And own their learning and tacit knowledge right for an economy to remain.
+[12:22:45] An economy where many firms exist and thrive.
+[12:22:51] For an economy to remain an economy where many firms exist and thrive, intelligence by definition needs to be broadly distributed versus just collapse into a couple of models.
+[12:22:56] And the third pillar is trust.
+[12:22:57] I mean, here it's an interesting time, right?
+[12:23:02] Scaling laws continue to work.
+[12:23:04] You have all these emerging capabilities from each.
+[12:23:06] Scale up.
+[12:23:17] And yet we find ourselves in a place where alignment is elusive.
+[12:23:17] Mechanistic understanding of these models is elusive.
+[12:23:23] And so the question is how can you even trust all this powerful technology?
+[12:23:27] And and the reality is, by definition, you can't.
+[12:23:36] And in other words, it becomes an architectural imperative to separate the supply of intelligence from the authority over it.
+[12:23:46] And so our goal is to build a stack that addresses these three architectural imperatives.
+[12:23:48] So let's start with the 1st 1 copilot.
+[12:23:56] You know, Copilot is the new operating system for work.
+[12:24:04] It brings together all of the form factors of human computer interaction, whether it's chat or Co work or code or autopilot, all into one experience.
+[12:24:18] It also brings together the disparate categories right that we have all referenced right knowledge, work, coding, business process, applications, apps are just plug insurance to co-pilot.
+[12:24:26] That's why we in fact have brought all of office, all of its richness, right built into copilot.
+[12:24:38] And underlying this is a model system that matches the right intelligence to the right context and the right form factor to accomplish any task that you may have.
+[12:24:55] You know home gives you one place to start whether you need a quick answer or want to really complete a complex multi step task and code brings you an infinite satisfactory up to every individual inside the organization, right?
+[12:25:03] You can build your applications in any dashboard and much more.
+[12:25:04] And all of this can be hosted managed securely inside of your tenant.
+[12:25:12] An autopilot is an autonomous agent that keeps moving your work, you know, twenty four by seven.
+[12:25:16] It continues to work in in all the places where you and your teammates collaborate today.
+[12:25:18] An autopilot is an autonomous agent that keeps moving your work, you know, 24 by seven, it continues to work in in all the places where you and your teammates collaborate.
+[12:25:19] Today, your session essentially have an additional teammate.
+[12:25:23] Underlying all of this.
+[12:25:27] Is this very powerful database work?
+[12:25:27] IQ?
+[12:25:30] You can think of this as perhaps the most important.
+[12:25:33] Data ask that you have right.
+[12:25:42] Data.
+[12:25:46] It has a deep understanding of the people, its relationships to other people, your emails, your meetings, chats, projects that make up all of the fabric of work and today.
+[12:26:02] We are thrilled to announce that all of this that I just talked about is broadly available to you to use inside of your organizations.
+[12:26:10] And so we are going further, we're extending copilot to specific roles.
+[12:26:11] We're extending copilot to specific roles.
+[12:26:24] That means if you're in sales, legal, finance, service, we are organizing the skills, the connectors, the plugins to all of the business applications so that you can access them from your the copilot surface areas.
+[12:26:28] This includes in fact third party systems too.
+[12:26:32] This includes in fact 3rd party systems too.
+[12:26:34] In fact, we are announcing today business plug insurance for you know, Dynamics 365.
+[12:26:36] It's just not dynamics.
+[12:26:43] We're excited to partner with sales force to bring sales force to copilot.
+[12:26:50] And you'll hear a lot more from Judson shortly.
+[12:27:05] And of course we also recognize the need to continue to have the right form factors, the ergonomics for heads down work, whether you are an analyst in Excel or legal professional in Word or designer in Powerpoint.
+[12:27:14] A scientist using discovery, a doctor or nurse using Dragon or software developer in Github.
+[12:27:23] Now, speaking of Ginab at Universe, a couple of weeks ago we announced two new primitives projects.
+[12:27:33] Projects lets you define a goal, connect one or more repos, and have copilot coordinate task sessions and recurring work all driving towards that goal.
+[12:27:34] It's pretty magical.
+[12:27:42] And second, we're also creating a new composite model family in Github Copilot Fusion.
+[12:27:44] It orchestrates multiple models.
+[12:27:54] To deliver Frontier level results at a significantly lower cost.
+[12:28:01] In fact, just today Copilot Fusion was ranked as the number one coding agent on terminal bench, scoring five points over Claude Core at less than half the cost.
+[12:28:07] It's exciting to see that.
+[12:28:11] And of course, we're going beyond that as well.
+[12:28:31] Up until now, right when you think about Copilot, it's been about the single player world right of people, and they're quoting loops or agent loops and swamps.
+[12:28:38] But time has come for a true multiplayer form factor, where people, their agents, and other people are driving towards that common goal with shared context.
+[12:28:41] This is Copilot workspaces.
+[12:28:51] Let's take a look.
+[12:30:05] Yeah, I'm really, really excited about.
+[12:30:11] You know, even in the in the few weeks that I've been using it, it's really changed my working habits.
+[12:30:24] Just like how for the when you first had chats show up and it became the place where you started all work, I think workspaces and today are going to be very similar.
+[12:30:30] I think workspaces and today are going to be very similar.
+[12:30:35] What you just saw though was just the what points to essentially organizational intelligence.
+[12:30:37] All that work we've done building out that database in work IQ, lights up the cloud, enabled us to move clients.
+[12:30:44] Software to have this very rich representation of organizational data.
+[12:30:46] Enabling deep collaboration, right?
+[12:30:54] So the cloud was about moving from just clients software to essentially this cloud data gravity that allowed that collaboration and now?
+[12:31:08] AI is allowing us to take that data that you have in the cloud and connect it to intelligence, and that's what we're doing with Microsoft IQ.
+[12:31:17] The idea behind IQ is to help every organization build, retain, and continuously improve your own intelligence across the organization it brings together.
+[12:31:20] Your action space.
+[12:31:25] That means all of your data is state, all of your application is state.
+[12:31:28] The context.
+[12:31:34] All of your application is state, the context that means all of the IQ that you have created over the years, and the.
+[12:31:57] Additional intelligence that you have with a multimodal system, essentially we are taking the system we built underneath Copilot and our externalizing it as a 1st class platform that embodies your organizational intelligence as an asset that you can continually own, continually build on bringing.
+[12:32:03] Together, all of the data you have right, whether it's the data underneath Microsoft three, six, five.
+[12:32:14] That's work IQ, Fabric, IQ, Foundry, IQ, the data inside the across the web with Web IQ and of course third party context too.
+[12:32:23] Together, all of the data you have right, whether it's the data underneath Microsoft 365, that's work IQ, Fabric, IQ, Foundry, IQ, the data inside the across the web with Web IQ and of course 3rd party context too.
+[12:32:25] In fact, Microsoft IQ comes with hundreds of new connectors we're announcing today so that agents that you build can act with full enterprise context where businesses get done.
+[12:32:36] And all this manifests as simply as business plug insurance that can be shared and inherited across the entire organization.
+[12:32:40] And finally there is a multi model system.
+[12:32:46] Now, for us, it's about making sure that we are able to map intelligence to a given task with the best economics.
+[12:32:51] That's the optimization problem we are trying to solve.
+[12:33:04] This is something we can uniquely do in the context of the real world task by tuning the product, the harness, the tools and the model system all as one end to end optimization.
+[12:33:13] Now speaking of models, we are very excited about a new class of models called decision models.
+[12:33:21] As a core primitive, they're quickly becoming key to how software is built.
+[12:33:23] These models allow you to embed intelligence into software as a core primitive.
+[12:33:25] They're quickly becoming key to how software is built.
+[12:33:31] In fact, just like how databases back in the day or relational databases back in the day change software engineering, I think of Decision Engine similarly.
+[12:33:42] And today we are thrilled to announce Microsoft decision what 1.1, which is now generally available and ready for enterprise deployment.
+[12:33:46] You know we've added multi modal support to it.
+[12:33:53] We have improved performance making decisions more accurate in responses faster.
+[12:33:55] Already over four thousand customers have used it.
+[12:34:06] In fact Epic is using it to make decisions across their patient experience, clinical care as well as their back office apps.
+[12:34:14] Already over 4000 customers have used it.
+[12:34:14] Copilot system itself uses it to route users to that right mode model the effort level in with millisecond precision.
+[12:34:23] And our Xbox team is using it to sort tens and thousands of open ended pieces of feedback into what people are saying about all the different game launches.
+[12:34:38] And here's the fun thing right it's more than 10X faster and 200 times less expensive than using an LLM.
+[12:34:47] And Foundry, of course, has all of the popular closed and open weight models.
+[12:34:54] In fact, today we are very excited to bring GPD Six Two to Foundry.
+[12:35:03] It's a great new model sets a new bar for AI professional work on a benchmark for complex professional work.
+[12:35:10] In fact, today we are very excited to bring GPD 6 2 to Foundry.
+[12:35:10] GPD 6 to Astra outperformed its predecessor by more than half the estimated cost and we also brought.
+[12:35:12] Claude Fable Five Two.
+[12:35:21] Claude Fable 52, Mythos 52 last week, and today we are also announcing Meta's latest models are all coming to Foundry as well.
+[12:35:26] So a great choice of models for you.
+[12:35:30] And of course, we're also.
+[12:35:47] Innovating at the frontier with our own model family, the MAI model family that's both computer efficient when it comes to pre training and token efficient when it comes to the deployment.
+[12:36:01] Our goal is to put additional points on the frontier curve, really informed by these real world roles around task performance that matters to you inside of all the products.
+[12:36:03] And we have great momentum.
+[12:36:07] Mai transcribed two requests are up twelve wax since it launched.
+[12:36:11] It launched at open router MAI code flash on Github.
+[12:36:15] Copilot last month had three million users.
+[12:36:23] MAI Cyber now powers over 40% of the scans across perception code scanning and we are going further.
+[12:36:34] We are announcing MAI licensed weights, meaning trusted partners will now be able to get access to Microsoft AI model weights through our Frontier Co.
+[12:36:45] And we are committed to doing what it takes to ensure that everyone can own their own intelligence and thereby drive the broad benefits of this platform shift.
+[12:37:00] And today we're also introducing lots of new models, and Mustafa will come up and talk a lot more about this in more detail, but I wanted to highlight 2 in particular, first code.
+[12:37:08] We're introducing a new flagship family of agentic coding models, Code 2.
+[12:37:19] You know, code two is at the frontier of cost performance for everyday enterprise coding tasks.
+[12:37:20] It excels in taking code to production.
+[12:37:42] Multi file implementations, repo wide reasoning and UI at a fraction of the cost and code two flash is designed for fast high volume work like code explanations, targeted edits, rapid iterations and it really brings you know mere flagship quality with much lower cost.
+[12:37:47] And we are taking the same approach with cyber as well.
+[12:37:50] Cyber 2 Flash is our most capable security model yet.
+[12:38:01] It flash size model that delivers performance ahead of frontier models at a fraction of the cost per task.
+[12:38:15] And just as we've done with coding, we're Co designing the model, the tools and the systems all as one system and we're integrating Cyber 2 with perception and once you have the models and your context in foundry.
+[12:38:22] Our Managed Agent harness is available to you to be able to deploy and build these long running agents.
+[12:38:35] The same harness we use to power co-pilot and get up copilot is now available to you and you can connect it to a continuous improvement loop that learns from experience.
+[12:38:48] You get to define your own private benchmarks and evals and then foundry measures your agents against them and improves the agent or the model underneath it based on what you see in production, right?
+[12:38:53] That means every execution is an opportunity to learn, improve and deliver.
+[12:38:55] A better outcome?
+[12:39:04] Ultimately that you know, always improving, always self healing system.
+[12:39:11] That's how your organizational intelligence becomes an asset and more valuable over time and becomes your IQ.
+[12:39:16] So now let's move to the third pillar, which is all about trust.
+[12:39:23] It starts by making sure that you have observer ability at every layer of the stack.
+[12:39:26] That's where Agent Three Sixty Five comes in.
+[12:39:37] It's the control plane that extends your existing governance, identity, security and management systems to the agents across your enterprise.
+[12:39:46] We already have fifty million agents in Agent Three Six Five now, and it include finops too.
+[12:39:52] That's where Agent 365 comes in.
+[12:39:52] We already have 50 million agents in Agent 365 now, and it include finops too.
+[12:39:52] And as AI scales, every organization needs a clear line between what it spends and the value AI creates inside the organization.
+[12:39:54] And that's why today.
+[12:40:02] We are very excited about announcing Agent 365 Business Analytics.
+[12:40:12] You can simply think of this as an ERP system of AI usage.
+[12:40:18] You can connect the spend to the outcomes that drive business value.
+[12:40:23] You can optimize the ROI across different scenarios.
+[12:40:25] You can see exactly what's driving the spend, you can connect the spend to the outcomes that drive business value.
+[12:40:27] And the next thing I want to talk about is how do you take an environment?
+[12:40:32] You have set up from Copilot to IQ to all the agents registered in Agent 365.
+[12:40:37] And secure them.
+[12:40:39] That's where perception our city is.
+[12:40:41] Our security stack comes in.
+[12:40:44] You know we are building this end to end trust platform.
+[12:41:11] We are helping customers both secure their AI deployments and use AI to strengthen their security posture from agent three, six, five and Entra giving every agent a unique durable identity to MXC and cloud containers.
+[12:41:13] We are helping customers both secure their AI deployments and use AI to strengthen their security posture from Agent 365 and Entra.
+[12:41:13] Giving every agent a unique durable identity to MXC and cloud containers.
+[12:41:13] Providing strong tool and network boundaries to purview governing all of the data and information flows and defender disrupting and containing threats in real time.
+[12:41:19] In fact, we saw a fantastic example of this recently.
+[12:41:19] An independent security researcher used Artex.
+[12:41:29] That's in the news everywhere nowadays, an autonomous AI attack framework to test an environment protected by defender.
+[12:41:46] But Defender automated attack disruptions really kept containing those compromised accounts and isolating devices even as the agent continued its attack.
+[12:41:49] So the agent kept trying to move laterally across the network, but Defender automated attack disruptions really kept containing those compromised accounts and isolating devices even as the agent continued its attack.
+[12:41:56] Attacks like this one are unfortunately increasingly genetic and autonomous, and that's why I think it's so important that we have that machine speed in our own agentic response.
+[12:42:03] That's why we build perception as this complete agentic security system.
+[12:42:17] And the best way to think about perception is that you have these red teenagers that simulate attacks, blue team agents that detect attacks, green team agents that fix and remediate.
+[12:42:23] A good example is of a blue team agent would be what you had in Defender that protected against the Artex attack.
+[12:42:27] Another example would be a pen test red teen agent.
+[12:42:27] Right.
+[12:42:33] It takes, say an entire surface area of something like a web A, the auth the Apis.
+[12:42:43] Injection attacks business logic and creating all of the evidence you need to confirm that you're not exploitable.
+[12:42:51] In fact, it's not just any individual agent, it's the playbooks.
+[12:42:56] You can compose teams of agents to tackle the complex jobs that trigger and take action autonomously.
+[12:43:05] Essentially connect, you know, the signals, the sensors, the actuators across all of the the assets, right?
+[12:43:24] Our perception also helps essentially connect, you know the signals, the sensors, the actuators across all of the the assets, right, you have identity, your client, your cloud, your apps, of course agents now and really secure your end to end environments and that's why I am very excited to share that perception is now generally available.
+[12:43:29] At the end of the day, we believe they should never be.
+[12:43:39] A choice between innovation and safety.
+[12:43:45] That means in addition to the work we've been doing across our products, we're also working across the ecosystem to ensure that everyone can innovate with speed and scale.
+[12:43:56] Today, we can see almost everything that models touch, but you cannot see what happens inside a model.
+[12:43:58] And really, what's worse?
+[12:44:14] And one model monitoring another model has the same issue.
+[12:44:21] Is that we know that what a model tells us about itself is not even independent evidence and therefore cannot be trusted, and one model monitoring another model has the same issue.
+[12:44:25] So you essentially have these unacceptable nested set of black boxes which we now need to make transparent and verifiable.
+[12:44:29] That's the technical challenge.
+[12:44:29] And so therefore we need standards that allow us to examine.
+[12:44:38] What AI sees and does verify its actions independently and control what it's allowed to do.
+[12:44:47] And that's why today we are also announcing the Microsoft AI Transparency Initiative.
+[12:44:53] There are three parts to this very important initiative.
+[12:45:07] 1st is we will expand our collaboration in this agent standards initiative drawing on its research to help the development of open industry wide standards for AI transparency.
+[12:45:10] Security and governance.
+[12:45:26] Second, we are taking an ecosystem approach that means together we will enable AI systems that are accountable, independently verifiable and safe by design, regardless of which model it is or who the provider is.
+[12:45:30] Already 40 organizations are working with us on defining and applying these standards.
+[12:45:36] And third, we are going to incorporate the same standards across all our products.
+[12:45:44] That means our MAI models, foundry and copilot.
+[12:45:53] Our ambition through all of this work, the research work, the product work, our ecosystem work is to help establish an open industry standard that makes AI safer, more transparent and more accessible.
+[12:46:05] Now, underneath every one of these experiences that I've just talked about is infrastructure to deliver them at global scale.
+[12:46:11] And when it comes to infrastructure, it's always shaped by the primary workloads of any new platform.
+[12:46:13] Error, right?
+[12:46:13] That means.
+[12:46:13] These are being shaped.
+[12:46:23] Today's infrastructure is being shaped by large scale training and of course now agentic inference workloads at scale.
+[12:46:27] A great example of this is what we are seeing with Github, right?
+[12:46:33] Github is seeing exponentially increases the pushes, the commits, the actions, the PRS.
+[12:46:36] All being driven by agents and we're rebuilding.
+[12:46:59] That means all of Github score starting with the Git architecture, simplifying the system primitives, in fact decoupling storage and compute, minimizing the coordination by sort of shrinking that critical path of a push to the smallest step of integration.
+[12:47:08] After doing all of that and testing, we put in, in testing, we pointed I think five thousand agents to one repo and were able to sustain seven thousand, two hundred writes per second, right?
+[12:47:10] That's a hundred and eighty X the current throughput.
+[12:47:15] After doing all of that and testing we put in, in testing, we pointed I think 5000 agents to one repo and were able to sustain 7200 writes per second, right.
+[12:47:15] That's 180X the current throughput.
+[12:47:17] That's the kind of improvement in scale we need for an agentic workload.
+[12:47:27] And of course, you know what worked for Github now needs to be pervasive throughout the Azure platform, and that's what we're doing in Azure.
+[12:47:28] For agent primitives.
+[12:47:41] We now have more than five hundred plus data centers, eighty Azure regions and we are continually working to make them more efficient, more sustainable and partner deeply with the communities in which we operate.
+[12:47:51] We absolutely believe that technology to strengthen and not strain any community and the systems on which they depend on.
+[12:47:53] And that belief underpins our community.
+[12:48:07] And we're doing all of that sustainably from matching hundred percent of our annual global electricity consumption with renewable energy or reusing or recycling.
+[12:48:14] First AI infrastructure commitments and we're doing all of that sustainably from matching 100% of our annual global electricity consumption with renewable energy or reusing or recycling 92% of all the servers and components and of course all of the cooling designs that conserve water.
+[12:48:33] And customers are also asking for more control over where and how they run their most important workloads and that's where sovereign cloud options provide a continuum of security, control, resilience capabilities without compromising on innovation.
+[12:48:38] And that's where sovereign cloud options provide a continuum of security, control, resilience capabilities without compromising on innovation.
+[12:48:41] And of course, we are also excited about Windows extending all of that infrastructure to the edge, right.
+[12:48:45] We now have very capable models that can run locally and we really see the opportunity with Windows to deliver.
+[12:48:48] Unmetered intelligence.
+[12:49:07] We are working across the hardware ecosystem to bring those capabilities to a new generation of PCS with new devices you can run in some sense last year's frontier models on your laptop and last quarters models on your desk.
+[12:49:11] You can run in some sense last year's frontier models on your laptop and last quarters models on your desk.
+[12:49:21] And we are also re architecting of course the core compute, storage and networking primitives in Azure to execute connect, share contacts at that agent scale I talked about when it comes to get up.
+[12:49:35] Right, one on top of all of this you have these micro VMS now that can you know come up in less than a second with full sandbox, you know isolation guarantees on top and all of this can run inside of confidential computing enclaves.
+[12:49:50] You can then put an Asian grid on front of it right that brings identity and policy aware networking controls where each agent what you can sort of control, what an each agent can access, where it can connect in fact which other agents can it communicate with.
+[12:49:58] And then this context cache will even accelerate and model loading.
+[12:50:10] Of course you can now then take all this and wrap it into ask or ask Flex or even hosted agents inside of Foundry, giving you all of the agentic primitives for you to be able to build your next generation of applications.
+[12:50:15] But also reimagining the data layer.
+[12:50:25] Agents need databases that can keep up with their speed and scale while giving them the context they need for all of the reasoning and actions.
+[12:50:32] And that's why we're building Horizon DB, our new distributed yeah, it's exciting.
+[12:50:38] It's new distributed managed Postgres SQL database with ultra low latency.
+[12:50:44] Scalable reads, built in search and AI capabilities.
+[12:50:46] I mean just a performance is mind boggling.
+[12:50:59] It's 8X faster performance than self managed Postgres and today I'm excited to share that Horizon DB is generally available in Azure.
+[12:51:10] And this next part is what I've been working on for I think 25 years of my life, which is we are bringing all of Horizon, DB into fabric.
+[12:51:22] This represents the complete unification of transactional and analytical data for agentic error.
+[12:51:30] In the past you had your transactional databases running your business and then a separate set of analytical systems to understand what was happening.
+[12:51:33] Think about what this means for a second, right in the past you had your transactional databases running your business and then a separate set of analytical systems to understand what was happening.
+[12:51:42] But now imagine an E commerce business processing millions of transactions, every order, every purchase, every inventory change, all happening obviously in real time.
+[12:51:56] And then with Horizon, DB and fabric coming together, agents now can reason over those live transactions along with terabytes of historical records in real time.
+[12:52:07] And now you can just simply go to Copilot and just tell it, tell me what's happening in my business right now and Co-pilot can create a live dashboard of your real time enterprise.
+[12:52:14] So this is really, really exciting that this vision that we have had for 20 plus years is now finally coming together.
+[12:52:23] And for you to be able to build the next generation of systems.
+[12:52:33] Underneath all of this is also unbelievable systems in silicon innovation, right?
+[12:52:51] We are also, we are building a heterogeneous fleet, a platform where we are able to tap into the best innovation coming across the ecosystem and we are also advancing our own hardware systems Co designing the data center, the servers, the silicon, all mapping to our workloads.
+[12:53:11] We just announced Maya three hundred which will deliver over forty percent more tokens per Watt compared with leading GPU systems and Azure Boost and Azure integrated HSM take that critical infrastructure and security functions and put them into purpose built silicon.
+[12:53:22] And today we're very excited to announce the general availability of our next generation of Cobalt 200 VMS which are our highest performance general purpose VMS with leading price performance.
+[12:53:22] Features.
+[12:53:28] Thank you so much for that.
+[12:53:44] So that's just a very quick walk across all of the layers of what we are building.
+[12:53:54] And when you look at all of what is coming, what is clear is we are entering an era of ubiquitous intelligence.
+[12:54:04] But the key imperatives for us are to ensure that human ambition remains central, a firm's control of its own intelligence remains central, and trust in technology that gets broadly diffused is maintained.
+[12:54:13] This is the promise of the Frontier ecosystem and that's what we are focused on building together with you.
+[12:54:16] And now let me hand it over to Judson to take all of this and show you how we're bringing it to life.
+[12:54:24] Thank you all very much and have a fantastic good night.
+[12:54:26] Thank you.
+[12:54:35] Well, good morning, everyone.
+[12:54:38] Good morning and welcome to Ignite.
+[12:54:40] It's awesome to be with you all here in the arena and everybody watching online.
+[12:54:53] The rest of our keynote this morning is going to be anchored around these three durable assets of frontier transformation and the journey that lies ahead for all of us, human ambition, intelligence and trust.
+[12:54:55] And we're going to start with human ambition.
+[12:54:58] Microsoft Copilot is a platform for human ambition.
+[12:55:06] It enables amazing everyday AI experiences for all of your people and on top of that, high valued experiences using the best state of the art models.
+[12:55:13] Simply stated, anything you can do in clawed or chat GPT, you can do better with copilot and for less.
+[12:55:22] Now my ambition since the beginning of my career has always been about helping people and organizations solve problems using technology.
+[12:55:29] So I thought a great way to start off this keynote, which would be to show you how I use Copilot to support my ambition.
+[12:55:36] So to do that, let me take you back a couple of Sundays ago, very specifically Sunday, November 8th.
+[12:55:37] I've been super busy preparing there for this event.
+[12:55:47] Meeting with customers and let's just say I've been a little bit behind on my email and the Teams messages I've been getting outside of the context of Ignite.
+[12:55:54] So I'm here in Microsoft today, which is an awesome new feature inside of Copilot.
+[12:56:01] It appears both in the Outlook canvas as well as in the Copilot app.
+[12:56:06] And the cool thing about today is that it scans my entire email inbox, all of my team's messages, and shows me what's most important.
+[12:56:11] Now you'll see a lot of things redacted and and grayed out here.
+[12:56:14] That's because this is my real environment and not a demo.
+[12:56:19] And so we have to hide a few things.
+[12:56:21] But here you see that today has surfaced up this email from my Chief of Staff, Caroline Sanderson.
+[12:56:34] You'll see this email is calling to attention that in January I have the lead keynote at NRF, which is retail's biggest show.
+[12:56:34] And I really haven't done anything to prepare for it yet.
+[12:56:42] So I'm going to go into Copilot and actually get started in on some preparation without bothering my team because they're super busy working on this event.
+[12:56:47] So I went into Copilot and I created a project.
+[12:56:59] Projects are super cool because they allow you to chat with your business and use cowork for advanced tasks.
+[12:57:03] So I can use all the models that I need and only the models I need to get real work done.
+[12:57:03] You'll see.
+[12:57:07] That I kick things off with a simple prompt.
+[12:57:16] If you look here, I've just said basically tell me what's going on at NRF and what the hot topics are going to be.
+[12:57:22] If you Scroll down you can see that Copilot's done some really cool things here.
+[12:57:25] First, it has expand all of my work IQ all of the external information.
+[12:57:37] And it's used hybrid intelligence here on my Surface Laptop Ultra, which means it's pulled in content that's local to my device.
+[12:57:44] My speaker notes that I downloaded before finding out that I was speaking at the event.
+[12:57:48] And So what it's done here is it's pulled together a great synopsis.
+[12:58:05] It says there are seven big topics, ranging from agentic commerce through to the return of the physical store experience and also supply chain and sustainability.
+[12:58:11] So I chat back with Copilot and further prompt hey Copilot.
+[12:58:15] Given that Ignite is just two months prior to this event, wouldn't it be great if we took the 7 stanzas of.
+[12:58:19] NRF and merge them with the three here at Ignite Human Ambition, Intelligence, and Trust.
+[12:58:22] So Co pilot goes off and creates an awesome outline.
+[12:58:26] For me.
+[12:58:27] The cool part about this is Office is embedded in copilot.
+[12:58:37] This is the full blown office.
+[12:58:45] You see all of the sensitivity labeling carrying through my ribbons and even the ability to track changes and you can see that it's got some news around dynamics three, sixty five supply chain.
+[12:58:45] So that's really cool.
+[12:58:49] This is not a sidecar, this is the full blown office.
+[12:58:50] I can close that out and then actually open up a richer body of work.
+[12:58:54] And use copilot Co work to take this a bit of a step further.
+[12:58:57] You can see the prompt I've asked here.
+[12:58:58] I've added here is a bit more robust.
+[12:59:20] So we can get started on the keynote prep, as well as a tracking document that shows me the top customers attending NRF and what they're doing with Microsoft because we want to stay situationally fluent as we deliver the content.
+[12:59:24] Tell me more about what's happening, why people love retailer a retail experiences, what the retail craft is all about, and build me a storyboard using Word, a presentation I can share with my team once we get done with Ignite, so we can get started on the keynote prep, as well as a tracking document that shows me the top customers attending NRF and what they're doing with Microsoft because we want to stay situationally fluent as we deliver the content.
+[12:59:24] So here's what it built for me, it multitasked, it used.
+[12:59:28] The models that it felt were best for each task.
+[12:59:34] Producing great work in the most efficient way so you can see the power point presentation that built for me.
+[12:59:38] Again, this is Powerpoint.
+[12:59:38] I can go in and edit this document, make it to my liking.
+[12:59:45] You can see the rich storyboard that it built and that it picked up on my notion to really pull out the human ambition here.
+[13:00:04] What what is the merchants craft in this whole retail experience?
+[13:00:05] And it's giving me a minute by minute outline of how to run the keynote that I can share with my team.
+[13:00:09] Why people love retailer what what is the merchants craft in this whole retail experience and it's giving me a minute by minute outline of how to run the keynote that I can share with my team.
+[13:00:10] Now that context for them is so powerful because normally we would have to spend meeting after meeting so they could get those ideas out of my head and into the.
+[13:00:15] Context of a show, so this is super beneficial.
+[13:00:16] Lastly, it's pulled together this customer tracker and Excel.
+[13:00:35] Again, there's things redacted here because this is from Work IQ and Fabric IQ pulling together what we do with these customers and how important they are to us as partners, whether they're speaking at NRF.
+[13:00:35] So fantastic.
+[13:00:53] Basis she's going to keep that spreadsheet.
+[13:00:58] And she's also going to attend all of my product meetings.
+[13:01:06] I just showed you up to date with everything that's happening in the market, what's most important to my customers and she's also going to attend all of my product meetings.
+[13:01:07] Big part of my job is taste, making our products and working through product road maps.
+[13:02:08] So Amelia is going to keep track of everything we're working on and help me understand what's best to present at NRF once we get to January.
+[13:02:16] Autopilot and they can work on curating this content.
+[13:02:23] Again, this is all on a Sunday not bothering anybody.
+[13:02:31] He working on my own to help prepare the team once we get done with Ignite.
+[13:03:05] Taylor very unique IQ, the shopping agents, merchandising agents, logistics agents and the trust platform that enables the retailer to manage, govern, secure and get business value out of all of these assets and all three layers coming together.
+[13:03:14] Now the really cool thing about this demo is though, even though I didn't write a line of code, there is real code behind it.
+[13:03:23] So I can hand this Javascript file to my professional developers.
+[13:03:23] They can dump it into Github copilot and Plumb the back end with databases and and hit the ground running.
+[13:03:33] Now again, the awesome thing with all of this is I did all of it without bothering my team on a Sunday.
+[13:03:33] I spent a couple hours doing it.
+[13:03:47] Vice President of Copilot Jacob Andrea.
+[13:03:54] Thank you.
+[13:03:59] Thanks Johnson.
+[13:04:04] Now what's so cool about what you just saw is that wasn't a special build.
+[13:04:10] This is how we're getting our work done in Copilot right now, and you'll notice what he didn't have to do.
+[13:04:25] And you'll notice what he didn't have to do.
+[13:04:25] He didn't jump into developer tool to write code.
+[13:04:26] He didn't jump between five different applications.
+[13:04:35] He did everything right in Copilot now, a ton of what you just saw is already in your people's hands, and some of it's coming soon.
+[13:04:35] But let's start with home.
+[13:04:39] Home is where chat and cohort come together in a single composer.
+[13:04:42] This means that whether you have a quick question or you're kicking off an entire project, Home is the perfect starting point.
+[13:04:45] And you also saw Office.
+[13:04:48] We've all seen Anthropic and Open AI, Embrace, documents, slides, and spreadsheets.
+[13:04:52] But their simplified viewers and editors force compromise.
+[13:04:54] On power and collaboration in real work needs both.
+[13:04:59] Knowledge work already lives in Word, Excel and Powerpoint.
+[13:05:14] It's where your team is already collaborating and that's why we brought the full functionality of Word, Excel and Powerpoint directly into Copilot.
+[13:05:22] This means that you can collaborate with AI and your team at the exact same time.
+[13:05:22] This includes track changes in Word.
+[13:05:32] It includes real advanced formulas in Excel, and of course the ability to at mention a teammate to bring them into the dock that you're working in.
+[13:05:43] This means that your whole team doesn't have to blow up their workflow, doesn't have to switch which apps they're using, and all the files stay at rest in your tenants, with security labels and compliance policies fully intact.
+[13:05:49] The best part is all of Office and Copilot is included in your Copilot subscription.
+[13:05:58] That means that Copilot is the only way to draft a Powerpoint presentation without spinning a meter.
+[13:06:01] You also saw Judson use code.
+[13:06:03] Code allows anyone to describe what they want to build in their own words.
+[13:06:10] Copilot picks the best approach, whether it's a tracker, an app, or a dashboard, and it builds a full working app.
+[13:06:16] Code is fully sandboxed locally or hosted securely in your tenant.
+[13:06:24] It makes hosting and sharing as easy as sharing a Word document.
+[13:06:31] Now, none of this innovation matters unless it really holds up its scale, and few are at the scale of Chevron.
+[13:06:34] By default.
+[13:06:37] And so I'd like to welcome Ryder to show us how the new co-pilot is transforming work at Chevron.
+[13:06:44] Thanks Jacob at Chevron.
+[13:06:44] Powering the world to enable human progress is our purpose.
+[13:06:48] At Chevron.
+[13:06:56] Society depends on us to provide reliable, affordable energy and to do this while protecting people and the environment.
+[13:06:59] One of the ways we achieve this is through a engineered basis of design.
+[13:07:09] It's the blueprint our engineers use to ensure we execute and operate safely and reliably.
+[13:07:12] However, building this can take months.
+[13:07:15] So to improve this, we turn to Copilot, where I typically start and in my day.
+[13:07:17] Let me walk you through the demo.
+[13:07:27] We started in copilot chat and asked it to write a cowork prompt to build a basis of design.
+[13:07:37] You can see here's the prompt, it's 300 lines of technical instructions to cowork and what enabled.
+[13:07:37] This is work IQ in the background sourcing relevant files.
+[13:07:43] And with one click I'll send this over to Co.
+[13:07:43] work.
+[13:07:59] And work begins.
+[13:07:59] Co works already gone through hundreds of engineering files.
+[13:08:11] It's highlighted to the engineer right here where they need to focus their time to build out the basis of design and here at the bottom, our first two initial drafts of basis of design document and an Excel workbook.
+[13:08:14] However, these two documents were based on a relatively small data set compared to our complete enterprise data.
+[13:08:17] So next.
+[13:08:21] Scroll up here.
+[13:08:21] We asked Co work to enrich both deliverables.
+[13:08:34] With our engineering standards and with all of our relevant data across the company and what enables this is Fabric IQ.
+[13:08:52] You can see here in the bottom right quarter in our plugins Fabric, IQ and without changing any of our our data architecture, it's compared our basis of design to thousands and thousands of company operated designs and operational reports.
+[13:08:52] So I'll Scroll down.
+[13:08:57] Takes just a second here to our deliverables.
+[13:08:59] You'll see our two updated deliverables here.
+[13:09:03] And I'll click on our basis of design over.
+[13:09:07] 80 pages of technical information on a basis of design.
+[13:09:19] Based on our company template, informed of our company standards and pulling in from across the company.
+[13:09:31] Data in our institutional knowledge located in multiple systems across the company, including a system from a company we recently acquired, all enabled by Fabric IQ.
+[13:09:36] I'll close out of this and get back into our session.
+[13:09:38] And now that we've completed that task.
+[13:09:44] We asked Co Work to turn all of this into a reusable skill.
+[13:09:49] And I'll go ahead and justice Scroll down to the output, you can see it working here.
+[13:09:56] And here it is, bottom of the screen assets basis of design skill.
+[13:10:00] Now anyone on the engineering team can use this skill.
+[13:10:09] In fact, any engineer in the company can use this skill to create a basis of design.
+[13:10:10] We're almost finished.
+[13:10:10] We go.
+[13:10:15] Back into Co, work, we give it a prompt to summarize the work we've done.
+[13:10:21] Post the two deliverable files into our Engineering teams channel.
+[13:10:25] For further review and with one click.
+[13:10:26] We're done.
+[13:10:31] And I never left Copilot, so it was really awesome writer.
+[13:10:37] So I bet the question, though, that everybody's asking in the room is how much did all of that work cost you?
+[13:10:44] Well, Judson, costs always matter, but in cowork, I can hit forward.
+[13:10:44] Slash cost.
+[13:10:44] Let's see.
+[13:10:55] Oh, in this session, 4500 credits around $45, which is significantly less than if I'd stood up a coding team to build this as an agenda solution.
+[13:10:57] In our engineers, time went from months.
+[13:10:58] To minutes.
+[13:10:59] Fantastic.
+[13:11:03] Thanks so much, Ryder.
+[13:11:14] But it's really cool to be able to see this from the entire perspective of the IT organization.
+[13:11:16] So you saw how Writer or visualized his cause with just one simple command, but it's really cool to be able to see this from the entire perspective of the IT organization.
+[13:11:17] I'm here with Steph Waters from Chevron's Enterprise Data and AI team.
+[13:11:21] Steph, show us what this looks like across the whole of Chevron will do.
+[13:11:31] Agent three Sixty five gives IT visibility into the AI spend across the organization so we can see where investment is going and manage it at scale.
+[13:11:38] At a glance I could see what we've used, what remains and what's driving spend across our services, agents, policies.
+[13:11:43] And models and I can drill down into our users.
+[13:11:57] And here I can see the writer and I can see the models he's using as well as the services and the use cases and the value that he's getting for using copilot.
+[13:12:01] Now, importantly.
+[13:12:12] IT needs to set the spend limit before anyone can use Cowork, and once that limit is reached, the user must request an increase to continue to use Copilot.
+[13:12:15] That prevents runaway spend and alerts.
+[13:12:20] Let it step in before any issues occur.
+[13:12:30] I can also set which models are available for use as well as create ones from templates.
+[13:12:40] So ultimately I'm not just managing cost.
+[13:12:40] I can see the value that we're creating and make better decisions about where to optimize and where to invest next.
+[13:12:41] Super awesome job, Steph.
+[13:12:43] Thank you, Jacob, back to you.
+[13:12:51] Those guardrails help keep cost and control, but copilot works to maximize how far each of those dollars go.
+[13:12:54] We do that in three ways.
+[13:12:59] First, we do it with the copilot subscription.
+[13:13:04] The Copilot subscription is the best way to give everyday AI to every person at your company.
+[13:13:18] 1st, we do it with the copilot subscription.
+[13:13:19] It includes chat, all of copilot and office, which means that you can do drafting, summarizing, and analysis, all without spinning a meter or generating additional charges.
+[13:13:24] Everything you saw is also powered by auto routing.
+[13:13:27] Auto routing selects the right mode, the right model, and the right effort, all from a single composer.
+[13:13:33] That means that you get the best possible response, and if you're using Co, work, we help manage the costs of each request under the hood.
+[13:13:46] It also benefits from work IQ, work IQ grounds, everything that you do in your company context and how you work the most impactful way to keep costs under control.
+[13:13:53] Is to make sure that you have the context to do the job right the first time, so copilot knows your work.
+[13:14:01] It's able to pick the best model for every task, and all of that is included in a high value fixed subscription.
+[13:14:02] So Copilot knows your work.
+[13:14:09] So whether it's everyday iron, everyone's hands or advanced AI for your very hardest tasks, Copilot saves you money.
+[13:14:17] This is AI built for work.
+[13:14:28] So everything you've seen so far is available now, and I want to take a second to pivot to some of the really cool things rolling out over the next couple weeks.
+[13:14:32] This is when Copilot goes from helping you with your work to actually moving your work forward.
+[13:14:37] Judson started this off by showing you today.
+[13:14:42] Today is our new proactive, personalized experience in Copilot.
+[13:14:48] It's a command center that spans across male calendar teams, meetings, tasks.
+[13:14:56] It shows you what you missed, what needs your attention.
+[13:14:56] And today doesn't just surface the work, it actually helps move things forward.
+[13:15:02] The draft is already written, the proposed schedule change is already made.
+[13:15:07] Everything is waiting, always for your approval.
+[13:15:08] You also saw autopilot.
+[13:15:10] The proposed schedule change is already made.
+[13:15:11] Autopilot is your digital teammate.
+[13:15:17] It's the first ever enterprise grade long running agent.
+[13:15:18] It lives in your tenant.
+[13:15:20] It shows you what you missed, what needs your attention and today doesn't just surface the work, it actually helps move things forward.
+[13:15:22] It has its own identity, its own memory, its own email and its own computer.
+[13:15:27] And that means that Autopilot is not just limited to M, three, sixty five apps.
+[13:15:32] Three, sixty five apps.
+[13:15:32] It can also use all of the legacy applications that your business runs on.
+[13:15:37] And that means that Autopilot is not just limited to M365 apps.
+[13:15:40] Autopilot watches channels, it can follow up on threads, and it can push recurring work forward even while you sleep.
+[13:15:47] We're also really excited to announce Workspaces, which you saw in Satya's keynote at the top.
+[13:15:52] The future of collaboration is bringing people and AI into one place, and Autopilot's come to life in Workspaces.
+[13:16:05] Until now, AI has been mostly single player, and Workspaces makes it truly multiplayer.
+[13:16:13] In a workspace, people and agents come together around a common goal with shared context.
+[13:16:18] The workspace automatically pulls in the files and the people needed to get something done so that conversations and decisions all live in one place.
+[13:16:23] Everyone has full context, they know where things stand, and they know what to do next.
+[13:16:28] We think all of these things can make copilot an amazing way to serve every person at your business.
+[13:16:35] But what sets your company apart likely lives in the functions it lives in legal.
+[13:16:45] Each of these functions in your company has its own systems, its own data, its own way of doing things.
+[13:16:48] It lives in legal, in sales, in finance, in HR.
+[13:16:55] Copilot is a platform for human ambition, and plugins is how it supports each function in your business.
+[13:16:55] It brings together the skills, the connectors.
+[13:16:58] And the tools that each of your teams relies on.
+[13:17:04] Plugins is how copilot stops being a generalist and actually becomes an expert in the job to be done.
+[13:17:09] IT approves plugins once and it works everywhere.
+[13:17:14] Copilot does across chat, Co, work, code and even autopilot.
+[13:17:19] Please welcome Andrew from Blackrock to show you how they're putting the new copilot to work.
+[13:17:22] Andrew.
+[13:17:22] Thank you.
+[13:17:27] Sales is a relationship business.
+[13:17:30] It's about knowing your clients.
+[13:17:35] Understanding what matters to them and bringing the best solution to them at the right time.
+[13:17:43] Today, the challenge isn't having the information to do that, it's connecting the information across conversations and systems.
+[13:17:46] It's connecting the information across conversations and systems.
+[13:17:47] And that's where AI gets really powerful.
+[13:17:58] It brings those signals together and gives our relationship managers a much better starting point so they spend more time with clients and less time searching for information.
+[13:18:01] At Black Rock, the opportunity isn't simply adding AI to the way sales works today.
+[13:18:06] It's reimagining how we manage client relationships.
+[13:18:19] Now we're working with Microsoft to shape the co-pilot and Dynamics experience around the needs of our teams and our clients to enable our sellers to mine insights, take action and accelerate commercial outcomes.
+[13:18:25] So let me pass it to Nirja to show you what we're working towards.
+[13:18:28] Thanks, Andrew.
+[13:18:30] Hi, everyone.
+[13:18:30] I'm Nirja Trivedi from Microsoft.
+[13:18:33] Let me show you what we're building with Blackrock.
+[13:18:38] So let's say I'm a global sales lead.
+[13:18:55] My day starts in copilot, specifically in today, the command center for my work here, information from dynamic three, sixty five sales is pulled in along with information across my work systems as well as my business systems like financial health and pipeline performance.
+[13:18:58] So here for example, I see from Dynamics 365 sales.
+[13:19:03] That my team is at seventy three percent of their goal.
+[13:19:14] Thank you, Jacob.
+[13:19:14] So we have some work to do.
+[13:19:18] In order to hit our goal we need about three X pipeline coverage but we're only at about two point two X so we have some work to do copilot spots this gap and recommends a cross cell play around our new private markets fund.
+[13:19:20] Copilot spots this gap and recommends a cross cell play around our new private markets fund.
+[13:19:30] That my team is at 73% of their goal.
+[13:19:31] In order to hit our goal, we need about 3x pipeline coverage, but we're only at about 2.2 X.
+[13:19:31] So I'm going to dive into this a bit deeper.
+[13:19:31] With Co, work, cowork will pull in information across Dynamics 365 sales and services, plug insurance like my service history and client information.
+[13:19:35] To identify the top clients that are most likely to commit.
+[13:19:43] These clients represent about a hundred and ten million dollars of potential commitment.
+[13:19:50] More than that, the top clients are in decisions and could commit by December.
+[13:19:55] So I want to turn this insight into action.
+[13:19:55] So I'm going to jump back over to cowork.
+[13:20:02] These clients represent about $110,000,000 of potential commitment.
+[13:20:06] I'm going to ask Cowork to help me build a package for each client with the standard information from Blackrock's knowledge base, a personalized email, and an invitation to meet with our private fund specialist in New York.
+[13:20:06] I also want to account for some of the travel time in between.
+[13:20:13] Lastly, I want to send each packet to the clients relationship manager to review.
+[13:20:24] Co-work will pull this information from Dynamics three sixty Five to route it to the specific account to the specific client relationship manager.
+[13:20:27] More than that, nothing goes out without that relationship manager's explicit approval.
+[13:20:34] And if I want to, I cannot only read from the CRMI can write back with my approval as well.
+[13:20:38] To see this in action, I'm going to hand it over to FA.
+[13:20:42] Thank you, Nirsa.
+[13:20:52] My name is FA Rugo and I am a relationship manager on nears team.
+[13:21:03] In my today co-pilot has pulled NIRSA's request right to the top of my view with those three personalized emails to send out to my clients.
+[13:21:03] And below I can also see other recommended actions I could take today.
+[13:21:13] So I'm going to hit start task and cowork is going to begin building out those three emails for me to send and work IQ pulls in meeting and email contacts from Microsoft 365.
+[13:21:28] And with dynamics three sixty five client activity and history, I'm able to actually see personalized emails based upon conversations we've actually had.
+[13:21:35] So coworkers proposed meeting times based upon his actual availability.
+[13:21:43] Now two of my clients are actually going to be in New York next week where our private fund specialist would be will be so coworkers proposed meeting times based upon his actual availability.
+[13:21:43] Now all three emails look good to me.
+[13:21:44] So I'm going to hit send on all of them and they're all going to go off all at one time.
+[13:21:55] Now this is a lot of work to stay on top of, so to help me keep track of everything I am going to put Autopilot to work.
+[13:22:03] Autopilot will work on my behalf, keeping me updated on key items as well as helping me move critical work projects forward.
+[13:22:15] So here I'm going to ask Autopilot to help me track my fundraising outreach opportunities, client news and service cases, and if a client hasn't responded within a week, I wanted to draft a follow up for me to review.
+[13:22:19] And approve.
+[13:22:22] I want to get a weekly view of relative fund performance and firm level news.
+[13:22:26] So here we see Autopilot has created the two routines.
+[13:22:39] First we have that daily check where Autopilot will look across dynamics, outlook and Teams and we have that Monday morning Intel brief and the guardrail is clear.
+[13:22:39] Nothing goes out to my clients without my approval.
+[13:22:47] Autopilot is operating within the supported controls IT has already put into place.
+[13:22:56] And if we come out here and navigate to the right, I can see all of the routines I currently have running, including the two that we just created together.
+[13:23:04] So at any point, I have visibility into the actions Autopilot is performing on my behalf.
+[13:23:11] Now let's turn it back to Nirja to see how things are going.
+[13:23:11] This is great.
+[13:23:11] Thanks.
+[13:23:11] FA.
+[13:23:21] All right, so it's been about two weeks, so let's check in on the progress of my team.
+[13:23:24] I can see in just two weeks were up from seventy three percent all the way up to eighty one percent.
+[13:23:32] We also have fifty nine million dollars of new pipelines generated from this play.
+[13:23:40] So you can see here that copilot really becomes the front door to my business processes.
+[13:23:47] I can see in just two weeks were up from 73% all the way up to 81%.
+[13:23:47] We also have $59 million of new pipelines generated from this play.
+[13:23:47] Client knowledge that once only lived in sellers heads is now intelligence my whole team can act on and with Dynamics 365 plug insurance, sales and service intelligence is now directly in the flow of my work.
+[13:23:51] So I can keep the momentum to have a strong close to the quarter.
+[13:23:51] Back to you Judson.
+[13:23:54] Thanks, Nerja.
+[13:23:54] NFA, really appreciate it.
+[13:23:54] Well done.
+[13:24:07] So Microsoft Copilot again is a platform for human ambition and plug insurance enable you to wire in these experiences for your people and how they work, whether they're sales professionals or other walks of life.
+[13:24:23] Now you would have expected us to have plumbed that demo with our own assets to see Copilot working well with Dynamics.
+[13:24:23] But what you might not have expected is that we're doing the same thing with sales force.
+[13:24:26] We're announcing three major new product innovations in conjunction with.
+[13:24:32] Sales force today first copilot force which is the new sales force plug in for copilot.
+[13:24:43] The Sales Force Cloud, Sales Cloud in Teams and the integration of Data Three Sixty and Fabric with zero copy.
+[13:24:50] To share more about that, please welcome to the stage President of Engineering, Rohan Kumar.
+[13:24:54] Rohan, welcome back to the United States.
+[13:25:00] Well, thank you Johnson, and good morning everyone.
+[13:25:05] After nearly 28 amazing years at Microsoft, it's wonderful to be back at Microsoft Ignite.
+[13:25:27] Now representing sales force as we bring together our power to shape the future of enterprise AI, you know it's clear that the foundations of computing are changing and people actually had to adapt to software, navigating applications, moving through systems and actually piercing together their work and.
+[13:25:45] What we're seeing essentially is the ability for AI to become the interface of the future, applications becoming capabilities and enterprise users basically spending their time focused on their business outcomes that they're trying to seek instead of navigating software.
+[13:25:58] You know, this is exactly the vision we landed at Dreamforce earlier this year when we introduced AI Force, bringing the power of sales force closer to wherever you choose to work.
+[13:26:00] And for millions of business users across the world, that place is Microsoft.
+[13:26:02] Three, sixty five.
+[13:26:07] Sixty five.
+[13:26:07] You know, sales force has your complete customer context, business understanding and work flows.
+[13:26:14] Microsoft 365 is where your people collaborate and get their work done.
+[13:26:16] Why should they not work together?
+[13:26:19] And as Johnson mentioned, we are so excited to introduce copilot force.
+[13:26:29] We are bringing the best of sales force directly into Microsoft Three Sixty Five Copilot and Microsoft Teams.
+[13:26:40] You know with this ability it's not just about your CRM data, it's about your complete trusted customer context, your business understanding and the ability to take action all with sales for security and permissions.
+[13:26:49] We are bringing the best of sales force directly into Microsoft 365, Copilot and Microsoft Teams.
+[13:26:49] It's about your complete trusted customer context, your business understanding and the ability to take action all with sales for security and permissions.
+[13:26:52] So instead of asking AI what can, what's the next best action with the customers, you can actually get it done, get it execute executed using Copilot Force.
+[13:27:09] This is the part of the Agentic enterprise, intelligent, open and interoperable and we are thrilled to partner with Accenture, both Salesforce and Microsoft as we build Copilot force to bring this part together and we are thrilled that they're deploying this across their sales teams.
+[13:27:09] Back to you, Jackson.
+[13:27:11] Thanks, Rohan.
+[13:27:12] So.
+[13:27:16] That's why you're clapped for that.
+[13:27:20] So we're really excited to have Accenture share what this is like in their environment.
+[13:27:26] Please welcome Tony Laurais, the Chief Information Officer of Accenture.
+[13:27:27] Thank you, Johnson.
+[13:27:29] At Accenture we all work in teams.
+[13:27:39] It's where more than eight hundred thousand of our people meet, collaborate and increasingly use copilot to deliver impact every day.
+[13:27:46] Now with Copilot Force, our sellers will have customer context built right into the tools they're already working.
+[13:27:50] Accenture is a design partner and we're customer zero.
+[13:27:52] We help build it and we will prove it on ourselves.
+[13:27:54] 1st, let me show you what that looks like.
+[13:27:57] Here's Priya, one of our sellers.
+[13:28:03] She relies on Co work to track her sales priorities for the day.
+[13:28:14] Copilot reasons over her entire sales force pipeline, from open opportunities to the latest customer activity on each account.
+[13:28:16] It went in moments, briefs her on the top deals and where to focus.
+[13:28:30] First up a new RFP from Crystal Foods that needs her attention with a quick tap she uses Co work to set up the deal room to tackle the whole pursuit.
+[13:28:32] With a quick tap.
+[13:28:33] She uses Co work to set up the deal room to tackle the whole pursuit.
+[13:28:35] The opportunity in sales force A teams channel, a closed plan and a weekly deal sink in everybody's calendar.
+[13:28:38] Day one, and we're already organized.
+[13:28:44] Now let's jump to the deal room in teams.
+[13:28:50] Here the team is grounded on the customer opportunity with the RFP and the close plan ready to go.
+[13:29:04] Let's hop over to the teams chat, where Priya has shared with the team that they've made it to the shortlist without needing to switch apps and directly in the chat, she asked Atlas for Autopilot to update sales force.
+[13:29:20] Using the Salesforce plugin and grounded on work IQ, it can pull insights across CRM, emails and chats and meetings and proposes 5 updates to send the sales Force One click.
+[13:29:22] And sales forces current.
+[13:29:25] Now, this isn't just for sellers.
+[13:29:25] A week later, Prius manager.
+[13:29:39] Opens Copilot to see how her team's updates have moved the forecast using the Pipeline Review skill, which is one of more than thirty eight sales force skills available in Copilot.
+[13:29:48] It combines CRM data with context from email and chat to give an instant snapshot of a region.
+[13:29:54] You can see it flags the two biggest deals at risk, with a recommended next step for each.
+[13:30:00] With a simple confirmation, she sends the account manager a nudge in teams tailored to the opportunity in sales force.
+[13:30:16] That sales leadership in the flow of work copilot teams and salesforce working at one with copilot force, our sellers will spend less time on process, more time with clients and by proving the value on ourselves first, we can help every company do the same.
+[13:30:21] Thanks, Tony.
+[13:30:30] Intelligence is the second durable asset that we all need to build on the Frontier transformation journey.
+[13:30:44] We all need to build, retain and continuously improve the assets inside of our organization so that intelligence compounds from within.
+[13:30:56] Last year, we launched Work IQ, Foundry IQ and Fabric IQ to release to you the fundamental building blocks for this intelligence platform.
+[13:31:00] Now over the last year, we've been thrilled to see so many customers adopt the same concept.
+[13:31:07] You'll see a Lily IQ at Toyota IQ and a Levi IQ.
+[13:31:09] We really want to bring this whole concept to life for you by showing you Unilever IQ.
+[13:31:15] Please join me in welcoming to the stage Deepak Roy Chowdhury from Unilever to talk to you about Unilever IQ.
+[13:31:18] Thank you, Jackson.
+[13:31:34] Every day we have three point seven billion consumers use a Unilever product and that helps us generate twenty million orders and five million claims a year.
+[13:31:44] How are people operate, how our business runs and how we generate value for our customers.
+[13:31:47] Every day we have 3.7 billion consumers use a Unilever product and that helps us generate 20 million orders and 5 million claims a year.
+[13:31:48] At that scale, we need intelligence at the core and that's Unilever, IQ, how are people operate, how our business runs and how we generate value for our customers.
+[13:31:50] Judson, back to you.
+[13:31:50] Sharon, you want to showcase the trade claims agent we have been building.
+[13:31:50] Thank you deep.
+[13:31:53] Here is the trade claims agent.
+[13:31:53] It works where our team works.
+[13:32:00] Absolutely, thank you deep here is the trade claims agent.
+[13:32:02] You can see it has already processed fourteen claims on its own and now it's asking me for help for the North Wind claim.
+[13:32:05] Now let's take a closer look.
+[13:32:10] Looking at the first line, you can see that the customer is billing us.
+[13:32:23] However, we notice a discrepancy with the contracted rate more than $2000 over $2000 on one line.
+[13:32:23] I don't think a human would have picked up out of the millions of lines that we look at.
+[13:32:30] And so I am sure you know the agent did some magic to get this going spontaneously.
+[13:32:33] How did it do that?
+[13:32:34] Great question.
+[13:32:37] The agent in this case ran a three way match.
+[13:32:40] Sharoon, great question.
+[13:32:47] You can see that it looked at the deal sheet from foundry IQ and matched it with the claim file and point of sales data from Fabric IQ.
+[13:32:56] Now if I'm working on this claim, I'm trying to understand well has this happened, happened before?
+[13:33:03] So now you can see that the agent goes through all my past claims and finds four similar claims with the exact same pattern.
+[13:33:06] But even more interesting, it looked at work IQ to find the people behind those decisions.
+[13:33:14] And that is Unilever IQ in action.
+[13:33:15] Our contracts, our data and our people all in one place so deep.
+[13:33:18] Should Unilever pay this higher rate?
+[13:33:22] Hey, hold on.
+[13:33:22] I don't want the agent to make a judgment.
+[13:33:30] Let's bring in some people in and have the agent and people work collaboratively.
+[13:33:37] So let's have Daniela call up Jordan who is the account lead for the Northwind account and see what he has to talk about it exactly.
+[13:33:46] So seems like Jordan has already responded here and he's recommending to settle this as a one time adjustment.
+[13:33:50] Now, I can apply the override here, but here is the best part.
+[13:34:01] Jordan's judgment doesn't just stay in a chat thread, it's saved back to Unilever IQ so that the next time this comes up, the agent knows how to handle it and also helps with auditing.
+[13:34:06] It's saved back to Unilever IQ so that the next time this comes up, the agent knows how to handle it and also helps with auditing.
+[13:34:13] Now, finally, for the four items that are still pending, the agent drafts a letter leveraging all of this context from Unilever IQ and clearly articulates whatever is needed to close this claim out.
+[13:34:20] That's nearly twelve thousand dollars protected in value on this claim alone, and twelve thousand dollars on one claim.
+[13:34:29] Think about the millions we save on the other claims if we find such discrepancies.
+[13:34:29] Great job, that's right.
+[13:34:34] If we find such discrepancies.
+[13:34:34] Great job.
+[13:34:34] That's right.
+[13:34:34] Now all of this comes back to Unilever IQ.
+[13:34:42] That's nearly $12,000 protected in value on this claim alone and $12,000 on one claim.
+[13:34:42] Every decision our team makes is added here.
+[13:34:43] Our best analyst tacit knowledge is now part of it, and every claim makes it smarter.
+[13:34:47] Well done.
+[13:34:53] So we're taking this a step further today by launching Microsoft IQ.
+[13:35:03] It's your enterprise context management system that enables you to create these durable business plugins that you can use with Copilot and across your engetic estate.
+[13:35:11] Now of course it works with Github, Foundry Fabric and Azure, but it is also open model, diverse and heterogeneous at every layer of the stack.
+[13:35:12] Here.
+[13:35:20] To tell you more about it, please welcome to the stage EVP of Azure Arun Ulak.
+[13:35:20] All right.
+[13:35:25] Thank you, Judson.
+[13:35:29] What you deliver built and what every company here can build are agents that understand exactly how your business works.
+[13:35:46] Today, we are excited to announce Microsoft IQ, the enterprise context management platform that allows you to bring together all of the context across your entire organization to a single place so that it can be used consistently across all your agents.
+[13:35:52] This includes all your collaboration data, both humans to humans and humans to agents.
+[13:35:58] It includes all your business data, your unstructured data, data from the web, as well as context from pretty much any enterprise system that you already use.
+[13:36:12] It's really easy to get started because you already have the building blocks for every Microsoft IQ customer work IQ makes your collaboration data available.
+[13:36:19] This includes your team chats, your email, your documents, your spreadsheets, your Sharepoint sites, and so much more.
+[13:36:25] Work IQ enforces the permissions in Microsoft 365 Every.
+[13:36:25] Agent.
+[13:36:38] Can only see what it's supposed to see for every power BI, customer fabric, IQ makes all of your metrics and KP is that you've already defined in your power BI semantic models available to your agents.
+[13:36:45] Again with all of the security and permissions intact.
+[13:36:54] Parbia already connects to all your data, not just from Azure, but from AWS GCP, data breaks, Snowflake, and so much more, so it's ready to go without having to rebuild your semantics in yet another platform.
+[13:37:15] And when you need to selectively bring in content from the Internet for example regulatory guidelines or the news and specific topics, web IQ can take care of that for you.
+[13:37:20] With Foundry IQ, you can build knowledge bases that bring together everything your organization knows, from contracts and precedents to technical manuals, case studies, and beyond, making that knowledge accessible to agents and when you need to selectively bring in content from the Internet for example regulatory guidelines or the news and specific topics, web IQ can take care of that for you.
+[13:37:24] Microsoft IQ goes beyond the Microsoft ecosystem.
+[13:37:28] With 350 plus connectors to third parties including ERP and CRM systems, you can bring your entire business context into one unified platform.
+[13:37:29] And it works.
+[13:37:37] Wherever works happens in copilot for your people, in foundry, for your agents.
+[13:37:37] And because it's completely open in assistance like Chatgpt and Cloud as well.
+[13:37:37] This context is your intellectual property.
+[13:37:42] It's what makes your organization unique.
+[13:37:47] It is your IQ.
+[13:37:51] Thank you.
+[13:37:56] Our goal at Microsoft is to ensure that your IQ stays yours.
+[13:37:56] And it compounds in a way where the benefits accrue to you.
+[13:37:56] Not to Microsoft, not to the model companies, and definitely not to your competitors.
+[13:38:12] So now I'm going to invite Iran Orbay to show you a demo so you can see Microsoft IQ in action, unifying context for the business process, packaging of the context into a business plugin, and using it seamlessly in Copilot Iran.
+[13:38:12] Over to you.
+[13:38:12] Thanks, Arun.
+[13:38:15] Back to you, Judson.
+[13:38:24] You just saw what a trade claims agent can do with the right context, and Microsoft IQ is the platform that helps enterprises manage that context.
+[13:38:33] Our company's knowledge used to be scattered across different sites, handbook systems and imaginations and now it's consolidated and codified here in a brand new interface as our IQ.
+[13:38:40] These are business processes that we've minted with building blocks from Microsoft plus contacts from our own systems.
+[13:38:40] So let's take a look at that trade claims process.
+[13:38:47] It sits under legal and compliance standards that apply company wide.
+[13:38:54] The legal team has vetted certain skills and policy documents that point agents to canonical sources like these.
+[13:39:01] And then within legal we have guidelines for contracts and then specifically for commercial contracts.
+[13:39:09] And down here in trade claims, we automatically inherit from that hierarchy.
+[13:39:17] So everything above flows through skills, documents, data, and official web sources, and then our claims team can add bespoke agent skills for checking a charge.
+[13:39:17] Or escalating exceptions to the right approver.
+[13:39:22] These skills sync up with the responsibilities that we've defined for people in our organization.
+[13:39:28] And we've pulled in the live teams thread where we triage escalations day by day.
+[13:39:46] Foundry IQ comes in to help us index files like contracts and deal sheets for agentic retrieval and Fabric IQ brings an operational and analytical data with one leg from across clouds in open formats, plus semantic models like this one, which define metrics and measures atop that data.
+[13:39:51] Every source here can be customized with instructions telling agents when and how to use it.
+[13:39:51] So.
+[13:40:00] They load only what they need and no more saving tokens along the way.
+[13:40:04] And as a subject matter expert, I can evolve this process by bringing in assets from our enterprise and beyond.
+[13:40:09] Of course, there's a copilot experience to help me evolve the process further.
+[13:40:16] And all of this context can be permission so that only select stakeholders on our team can view and edit it.
+[13:40:26] At the top level, this context can also be certified by IT as a source of ground truth for agents, as we see here.
+[13:40:32] And put it all together and our trade claims context can be published as a durable, interoperable business plugin.
+[13:40:38] It's governed in agent three, sixty five and accessible in copilot, in foundry and in other applications that we use.
+[13:40:47] So here's what that means at the most essential level for a claims analyst.
+[13:40:51] It's governed in Agent 365 and accessible in Copilot, in foundry, and in other applications that we use.
+[13:40:51] When I ask Copilot why one retailer's claim looks high, our IQ steers it straight to trusted sources like these.
+[13:40:57] The response that we get charts the charges that don't match up according to our data and our contracts.
+[13:41:12] It lays out next steps based on our process and for anything that needs human judgment, Copilot drafts an email to the approver specified by, you guessed it, our context.
+[13:41:12] With Microsoft IQ.
+[13:41:17] Every agent and every analyst can follow the same process that we define, getting answers grounded in in house expertise.
+[13:41:20] That's the power of curated enterprise content.
+[13:41:24] Happy Ignite folks and Jay, over to you.
+[13:41:29] Thanks, Saran.
+[13:41:36] Now if you ask any CIO about agents, you're going to hear the same thing.
+[13:41:41] Building them is easy, but running them in production is not.
+[13:41:52] A production agent needs things like identity authentication, sandboxing, access to enterprise data monitoring, red teaming, and the list goes on.
+[13:41:55] And that's where most agents stop.
+[13:41:57] So the question isn't how to build an agent.
+[13:42:05] It's how to build and run thousands of them, trust them and make them better every day.
+[13:42:09] We built a foundation to help you do that, a comprehensive end to end platform.
+[13:42:18] Github is where you build, fabric is where your data is organized, and Foundry is where your agents run in production and keep getting better.
+[13:42:22] Today I'm going to cover a couple of key features in Foundry.
+[13:42:27] Let's start with models and model choice.
+[13:42:29] Foundry has more than 11,000 models.
+[13:42:39] Including Open AI, Anthropic, Meta, Mistral, Open Weight models, and our own MAI models.
+[13:42:39] But the number isn't the important point.
+[13:42:45] It's having one place to evaluate them and switch when a better one ships without having to rebuild your agents.
+[13:42:54] Now with our model router, you don't have to pick just one simple request.
+[13:42:57] Go to small, fast models, complex ones go to the Frontier data.
+[13:43:07] Shows that this is up to 65% cheaper than sending everything to a frontier model.
+[13:43:17] This allows you to strike the right balance between the quality of the output and the cost of getting to that output.
+[13:43:22] The next big question is, once I have my agents up and running, how do I improve them over time?
+[13:43:31] After all, your business isn't static, you're working hard to improve it all the time, and your agent should be doing the same.
+[13:43:34] Foundry helps you do that in three ways.
+[13:43:37] First, agents on Foundry get better the more you use them.
+[13:43:46] Foundry allows you to feed agent traces and user input back into the system, creating a continuous learning loop.
+[13:43:51] Second, Foundry looks across every run for ways to make your agents better.
+[13:44:05] The system finds and tests improvements, shows you how each one trades off across quality, speed, and cost, and then you get to decide what ships.
+[13:44:08] Finally, Foundry provides a range of other capabilities that allow you to improve progressively.
+[13:44:23] From lightweight skill improvements to agent configuration, all the way to training your own model using your own data, and all of this learned intelligence stays with you and only you.
+[13:44:28] Alaska Airlines runs this kind of loop, and they are here with us today to show us what they've built.
+[13:44:34] Three things to watch.
+[13:44:34] First, how they define better.
+[13:44:40] 3 things to watch, 1st how they define better, 2nd how far optimization takes them, 3rd what training ads.
+[13:44:46] Please welcome Charu Jane from Alaska Airlines and Seth Juarez from Microsoft.
+[13:44:49] Thanks, Jay.
+[13:44:52] Airlines are in the business of time.
+[13:44:58] Being reliable and running on schedule is how we earn your trust and deliver a remarkable travel experience.
+[13:45:05] Our approach to innovation starts with the guest.
+[13:45:08] We look for pain points across your journey and work to solve them.
+[13:45:19] So we're working with our Seattle neighbors at Microsoft to put powerful tools in the hands of the people who are closest to our operation.
+[13:45:27] What you're about to see starts with routine maintenance.
+[13:45:31] It lays out next steps based on our process and for anything that needs human judgment, Copilot drafts an email to the approver specified by, you guessed it, our context with Microsoft IQ.
+[13:45:31] Thanks, Saran.
+[13:45:31] The system finds and tests improvements, shows you how each 1 trades off across quality, speed, and cost, and then you get to decide what ships.
+[13:45:36] Every maintenance report gets an ATA code that helps us track the work across our fleet.
+[13:45:39] The more precise and consistent that coding is, the easier it is to see patterns.
+[13:45:42] And identify issues we may be able to address proactively rather than having them show up close to departure.
+[13:45:51] So this is very great work and I'm excited for you all to see it.
+[13:45:54] So let's go see it.
+[13:45:54] How you doing, Charu?
+[13:45:55] I'm good.
+[13:45:55] Seth, what have you been up to?
+[13:45:56] What have you been up to?
+[13:45:56] I am so excited.
+[13:45:58] Seth.
+[13:46:02] When I heard about this scenario, I generated a whole bunch of synthetic data that matches exactly what you're doing now.
+[13:46:06] You talked about ATA code.
+[13:46:07] ATA stands for Air Transfer Association and they have chapter.
+[13:46:17] You can see it up there.
+[13:46:17] There's a lot of them, but it's also hierarchical, so it's fairly complex.
+[13:46:18] So do you want to see the system we built to help out with that?
+[13:46:18] Let's see it OK.
+[13:46:25] And verse of every single code that maps to every single, you can see it up there.
+[13:46:26] So this is the maintenance reliability software and what you can see is that during a general inspection.
+[13:46:30] Identified number three break is near its wear limits and that's routine maintenance.
+[13:46:31] Absolutely, this is routine.
+[13:46:31] It's the system working.
+[13:46:38] But here's the thing, right?
+[13:46:42] The engineer coded it as a thirty two zero zero in the log book, which is technically correct.
+[13:46:42] It's part of a landing gear.
+[13:46:43] But thirty two forty turns out to be a little bit more precise.
+[13:46:58] The engineer coded it as a 30, 200 in the log book, which is technically correct.
+[13:46:58] But 3240 turns out to be a little bit more precise.
+[13:46:58] Yeah, see, these precise codes will help us make better decisions and solve the right problem 100 percent.
+[13:46:58] And so since it's text coming in, we thought maybe we could make some agentic software to look at the text and see if it could figure out the ATA code.
+[13:47:10] But again, the important bit is that the engineer is always in charge.
+[13:47:10] So they can look at this and then confirm whether something is correct or not.
+[13:47:10] Isn't that cool?
+[13:47:10] That's really cool.
+[13:47:11] All right, so let me show you how we built this.
+[13:47:23] This is Microsoft Foundry, your place to build, optimize and train your particular agents inside of one service.
+[13:47:24] So let me show you how we built this.
+[13:47:24] So let me go to the agents pane here, and what you're going to see is the Alaska ATA agent is right there.
+[13:47:24] There you go.
+[13:47:37] And what it is, is it's an agent that we built, but we need to know how it's working.
+[13:47:38] So there is something called traces that enables us to see inside.
+[13:47:38] Of these agents.
+[13:47:38] Have a trace already open up and you can see it right here.
+[13:47:49] All right.
+[13:47:49] Notice that you can see the entire run of this particular agent, including getting your Alaska IQ, which includes these ATA codes plus some other stuff that we're going to talk about later.
+[13:48:00] It's really cool.
+[13:48:00] So Seth, how hard was it for the model to understand airline maintenance codes?
+[13:48:01] And see, this is the thing that's most important.
+[13:48:01] Just because we made an agent doesn't mean that we know it's working.
+[13:48:05] Yeah.
+[13:48:12] So what we actually did is we created a rubric that grades this.
+[13:48:12] Agent foundry did this for us, but we can validate and let me show you three things that it checks.
+[13:48:12] This is like a rubric, like any school grading rubric.
+[13:48:27] And notice that the 1st one is correct.
+[13:48:27] ATA code is super important, but you also have as part of your Alaska IQ.
+[13:48:28] Your internal house codes, which are amazingly super important as well, the way you do stuff, which is good.
+[13:48:28] So we ran.
+[13:48:28] We ran this.
+[13:48:28] I made a naive agent the first time.
+[13:48:41] Do you want to see the results?
+[13:48:41] I did OK.
+[13:48:41] So it turns out that I did not.
+[13:48:41] This is not as good as I thought it could be.
+[13:48:41] You can do better.
+[13:48:42] I think I could do better.
+[13:48:42] OK.
+[13:48:59] So there's two things you can do whenever you're making an agent better or more accurate, you can correct the assets of the agent, like your instructions, your tool descriptions, or you can fix the model.
+[13:48:59] So let's do that.
+[13:48:59] Let's do this.
+[13:48:59] The the first thing first, let's see if we can fix the assets.
+[13:49:00] The the first thing 1st, let's see if we can fix the assets.
+[13:49:00] So inside of Foundry we have something called the Foundry Optimizer.
+[13:49:15] And notice that it actually changed a lot of stuff.
+[13:49:15] It changed a lot of stuff and do you want to see how much better it did?
+[13:49:16] So here it is.
+[13:49:16] Now what it does is it looks at your agent and it iteratively goes through fixing the system prompt and the tool descriptions to give us actual a better one and notice that it actually changed a lot of stuff.
+[13:49:16] Notice that it's getting way better.
+[13:49:16] Accuracy.
+[13:49:16] We were using a Frontier model, GBT six, Astra.
+[13:49:16] And I have to I have to come clean.
+[13:49:27] We were using a Frontier model GBT 6 Astra and I have to I have to come clean OK.
+[13:49:27] So we did a little analysis of this thing and you buckle buckle your seat belt.
+[13:49:27] Oh, hold on a SEC.
+[13:49:37] Yeah, that is way too I know, but here's the thing.
+[13:49:37] Here's my explanation.
+[13:49:56] I know.
+[13:49:57] It turns out that because we're using so much more tokens preloading for the instructions because we're getting more instructions, the input and output token cost went up a little bit.
+[13:49:57] I think we can do better.
+[13:49:57] Let's do it.
+[13:49:57] So the next thing we can do is we can actually fix or train a model to know more.
+[13:49:58] I know, but here's the thing.
+[13:49:58] You can do better, let's do it.
+[13:49:58] So one of the things that I do when I'm looking at this, a hint is if you have a lot of stuff in your instructions that could be an indication that you could train a model.
+[13:49:58] To have those instructions in its weight instead of the instructions.
+[13:50:08] Yeah, that is way too.
+[13:50:10] So that's what we did.
+[13:50:21] If you go over here, notice that we actually did a training job on MAI Code 2 flash so that it would actually do a little bit better.
+[13:50:21] And notice as it if you look at the monitor as it goes up, you're going to see a chart that actually sees the the things increasing and Are you ready for what we were able to do with this Model 90?
+[13:50:33] 7% on exact ATA code match and 93 on your coding group.
+[13:50:33] But here it gets better.
+[13:50:33] It gets better.
+[13:50:33] Everyone buckle your seatbelts one more time.
+[13:50:33] Nice.
+[13:50:33] That's fantastic.
+[13:50:33] We should clap for this.
+[13:50:43] Yeah, we should clap for this.
+[13:50:43] This is MAI, code two, train.
+[13:50:43] But more the more that we do this, the more you know efficiency we get.
+[13:50:43] How you feel about this?
+[13:51:01] I'm feeling really good.
+[13:51:02] This is amazing.
+[13:51:02] And so we we actually made it work.
+[13:51:02] It's pretty cool.
+[13:51:03] You know Seth, what I love about this is that it started with people close to the operation and they saw a problem they could solve and then they had now have the tools to build a solution themselves.
+[13:51:37] So people always remain at the center AI makes a recommendation, our maintenance engineers make the decision and that's how we're using technology to empower our people and deliver the reliability our guests depend on.
+[13:51:37] And that's the innovation we're unlocking at Alaska Airlines.
+[13:51:37] Hey, so do you know people at Alaska Airlines?
+[13:51:38] Is there a way to get me from at most gold to titanium?
+[13:51:38] I think you're going to have to fly more.
+[13:51:38] How about one of our new long hauls from Seattle to Japan or London?
+[13:51:38] Let's go.
+[13:51:38] So let's buckle up one more time.
+[13:51:51] Over to you, Mustafa.
+[13:51:52] Thanks Sir Thanks Sharu.
+[13:51:52] Great demo so.
+[13:52:05] Our mission at MAI is to build you the very best models in the world and to keep every developer and organization operating right at the absolute frontier of capability.
+[13:52:17] But what I hear time and again from every CIO and CFO is that right now token spend is going through the roof and at frontier prices.
+[13:52:17] The math just isn't sustainable.
+[13:52:32] And we also know that you want models that feel truly yours where you get to control the weights.
+[13:52:37] So our commitment is to give you the very best price performance out there so that you can really scale your agents and we also know that you want models that feel truly yours where you get to control the weights.
+[13:52:43] So we don't just hill climb on frontier quality alone.
+[13:52:43] We Co optimize quality and price together and we keep doing it over and over.
+[13:52:47] We ship, we learn, we improve, we repeat.
+[13:52:47] Take coding for example.
+[13:53:07] Averaged over four widely used benchmarks that target the everyday enterprise coding tasks that we see in Github Copilot, MAI code two gives you ninety eight percent the performance of GBT six, point one Sol at just forty percent of the cost.
+[13:53:10] Averaged over four widely used benchmarks that target the everyday enterprise coding tasks that we see in Github Copilot, MAI Code 2 gives you 98% the performance of GBT 6.1 Sol at just 40% of the cost, and against Opus 55, it's an incredible five percent of that cost.
+[13:53:13] Yeah.
+[13:53:14] Same goes for Code Flash.
+[13:53:17] It matches 6LUNAR and Haiku 5.5 on these everyday tasks at just 65%.
+[13:53:23] And twenty percent of the price, respectively.
+[13:53:27] But agents are increasingly needed to make decisions, especially where speed and cost are critical.
+[13:53:37] And on the a a decision index.
+[13:53:41] It beats Jeff Google and Open AI.
+[13:53:45] So decision one point one provides model routing integrated right into your applications and on the A, a decision index, it beats Jeff, Google and Open AI.
+[13:53:48] And 20% of the price respectively.
+[13:53:49] And on the AA Decision Index, it beats Jeff, Google and Open AI.
+[13:53:49] Now it's super important to say that we've built these models to prioritize the coding work that our customers do every single day.
+[13:54:02] So they're explicitly not yet tuned for the harder problems like fundamental scientific research and very long horizon agentic work.
+[13:54:02] And we won't chase those more niche capabilities at your expense.
+[13:54:11] Because after all, when the same model is built to also push the frontier of science, you pay for that capability on every task, even for a routine bug fix.
+[13:54:18] So our commitment is to keep pushing that price performance frontier on what matters most to you.
+[13:54:25] And a great example of that is AT and TS custom version of code two flash.
+[13:54:35] It outperformed 6.1 soul at standard network analysis for 5G while being a whopping 50 times cheaper.
+[13:54:38] Now it's the same story in cybersecurity.
+[13:54:40] The last few months have really been, I think a wake up call and a warning shot for all of us.
+[13:54:51] We're facing a completely new reality where these attacks and exploits are cheaper and easier and more ubiquitous than ever before.
+[13:54:59] And that means that agent security, alignment and containment are going to be the most important things that we need to get right in 2027 and beyond.
+[13:55:03] MAI Cyber Two Flash is our response.
+[13:55:13] MAI Cyber 2 Flash is our response.
+[13:55:13] It's ahead of GPT6 Astra on Cyber gym end to end at less than 2% of the cost per task.
+[13:55:16] Truly remarkable.
+[13:55:32] You know, that's the power of Microsoft's decades of proprietary data and world class security expertise, enabling us to bring you a model that not only detects the vulnerabilities, but recommends the right fixes and incredible price.
+[13:55:39] We're also moving just as fast in multimodal we're now the number two lab on image generation.
+[13:55:46] We're also moving just as fast in multimodal we're now the number 2 lab on image generation, an MAI Image 2.7 just this morning is the world's number one image editing model at a fifth of the cost of the competition.
+[13:55:58] Customers like Adobe, Sports Illustrated and Mana say that it gives them professional quality with super precise and responsive edits and our transcription model is now the fastest and most accurate in the world.
+[13:56:06] And of course medicine is probably the most important, most complex and high stakes of any of the AI applications.
+[13:56:16] And so MAI Transcribe has now been deployed to 10 million Copilot Dragon patient encounters a month whilst having the error rate.
+[13:56:38] I think at the top, your core assets in this new platform shift are your IP and your workflows, the years of commercial data that you've assembled, essentially everything that makes your company what it is, your IQ.
+[13:56:40] The years of commercial data that you've assembled, essentially everything that makes your company what it is, your IQ.
+[13:56:41] And I've heard it again and again from leaders.
+[13:56:46] No one wants to pour their IQ into somebody else's model.
+[13:56:48] So Judson said it best, I think at the top, your core assets in this new platform shift are your IP and your workflows.
+[13:56:49] And if you build on open weights, can you really trust where they've come from or how they'll behave when you use one of them as the foundation?
+[13:57:02] Of your most valuable IP and data and so we heard you.
+[13:57:04] And so we heard you.
+[13:57:07] We started with custom models as we just saw with Alaska and AT and T, but also Docusign Rakuten, Woven by by Toyota faster and better at the tasks that meet your specific needs.
+[13:57:15] But today we're taking a big step forward with MAI licensed weights models under your control.
+[13:57:22] You take a Frontier MAI model, customize it using your proprietary data if you want to.
+[13:57:25] And then you run it securely in your own Azure environment.
+[13:57:42] You control who has access to it, your adaptations and your data stay entirely yours.
+[13:57:43] And we'll work with you through Frontier Company to deliver the custom model and embed it in your own products and agents.
+[13:57:50] So that's MAIA, family of world class models with exceptional price performance, the world's best image editing model, the world's best transcription model.
+[13:58:08] Frontier cyber defense at two percent of the cost and world class everyday coding models at a price that you can truly scale and crucially, all of it with your IQ, your agents, your weights, all under your control.
+[13:58:19] This is frontier intelligence that you can trust from the company that you can trust Judson over to you.
+[13:58:22] Thanks, Mustafa.
+[13:58:24] I thought the best way to round out our intelligence segment is to take the view from the top.
+[13:58:27] The very top.
+[13:58:31] Please join me in welcoming my dear friend.
+[13:58:33] Our tourists are doing the CEO of publicist Artura.
+[13:58:33] Welcome.
+[13:58:34] Thank you.
+[13:58:37] Good to have you here at my office every night.
+[13:58:39] So Arthur, I'm going to be blunt since we're friends.
+[13:58:48] You're not supposed to be here if you sort of read the press three years ago and the dawn of generative AI.
+[13:58:51] If you sort of read the press three years ago and the dawn of generative AI.
+[13:58:51] The very first companies that were supposed to have died off were were media companies.
+[13:58:51] But you're still here.
+[13:58:58] You're actually doing better than you've done before.
+[13:59:00] The dawn of generative AI and and all grounded on this notion of having intelligence at the core because of the platform you've built.
+[13:59:03] Tell us more about that.
+[13:59:09] And I'm here on the Steph Curry scene, the mean for a French guy.
+[13:59:09] I was sending picture to my family.
+[13:59:12] The mean for a French guy.
+[13:59:12] This is a great pleasure.
+[13:59:16] I mean, yes, I should be dead and I'm here on the Steph Curry scene.
+[13:59:20] You know advertising is dead everyone is going to be off job.
+[13:59:23] A couple of years ago every AI guru will tell you, you know advertising is dead.
+[13:59:23] Everyone is going to be off job.
+[13:59:27] Tell us more about that I mean yes I should be dead and I'm here on the Steph Curry scene.
+[13:59:27] The mean for a French guy I was sending picture to my family this is a great pleasure.
+[13:59:28] Now more seriously yeah a couple of years ago every AI guru will tell you you know advertising is dead everyone is going to be off job.
+[13:59:31] I mean, yes, I should be dead and I'm here on the Steph Curry scene, the mean for a French guy.
+[13:59:31] Yeah.
+[13:59:32] I mean, I remember Sam Altman from open AI think 90% of the people that work in advertising will disappear in the next two years.
+[13:59:32] Four years later we moved publicist from 90,000 people.
+[13:59:41] And we made at the time three strategic bets that were tough bets that we actually made with you.
+[13:59:50] To one hundred and twenty thousand people and we made at the time three strategic bets that were tough bets that we actually made with you.
+[13:59:55] The first is we invested massively into identity and technology, buying Epsilon and Sapient to really have the power that we need for our clients.
+[14:00:05] To 120,000 people and we made at the time three strategic bets that were tough bets that we actually made with you.
+[14:00:05] The 2nd, which is something that I think is important for everyone in this room, is that we said it's time to break down the silos because technology and AI doesn't work if you don't break the silos.
+[14:00:05] And we have some great example today.
+[14:00:11] And we had this philosophy that was no silos, no solos, no bozos.
+[14:00:20] We said advertising will be led by AI.
+[14:00:24] And of all of our bozos and make an exceptional organization and last but not least it was ten years ago now we said advertising will be led by AI.
+[14:00:24] No one in our industry thought it was the case.
+[14:00:29] And one day I received the mail from Satya saying I'm interested about what you say, maybe we should be together together, something together.
+[14:00:39] And this is why we started Marcel and we moved from not being very well placed to the number one position in our industry today.
+[14:00:39] Super.
+[14:00:39] So tell tell us more about how the work actually changed.
+[14:00:44] You talked about the evolution of your organization.
+[14:00:44] What's different about the ambition of people inside a publicist today?
+[14:00:55] I mean, I see what we should not forget and I'm sure in the case of a lot of people here is we are a service business.
+[14:01:00] There is a lot of investors that came to me in the last year saying Archer, Archer, you you have to move to really become an AI company.
+[14:01:04] We are all about the people.
+[14:01:05] We are a service business.
+[14:01:12] Yes, we have the best tech, we have the best data, we have great AI partner, but we are a service business.
+[14:01:24] And I don't know, I see you're seeing the demo here.
+[14:01:36] Marcel is our AI platform where we bring publicist IQ with Microsoft IQ.
+[14:01:40] And when I heard everything I hear this morning about human ambition and how do we make sure that we bring people to a better future, I think this is exactly where we are and I don't know I see you're seeing the demo here Marcel is our AI platform where we bring publicist IQ with Microsoft IQ.
+[14:01:40] And this give us a collective intelligence that is Barnab the best of our industry and in a lot of our people not only to learn more and to share more but actually to do more.
+[14:01:45] And that was makes a big difference for us.
+[14:01:45] Awesome.
+[14:01:49] So you and I spend a lot of time with customers.
+[14:01:53] Tell us about the partnership, what it means to you and what customers are saying about our work together, I mean.
+[14:01:57] The thing we can do with AI and data today that we couldn't do yesterday are just amazing.
+[14:02:11] We can find billions of prospect.
+[14:02:16] We are able to know the customer of our client better, we can find billions of prospect.
+[14:02:16] We can connect all the different media particularly creators with influencer and commerce and then dragging onto the LL, NS.
+[14:02:21] We are able to deliver the right kind of content and we have shown great example here, intelligent content that we can measure.
+[14:02:25] And we are starting to Co create data sets that make the agent of our clients unique.
+[14:02:40] Now the things that we are confronted with every day is that it's not enough to have the capabilities.
+[14:02:40] The level of change management you need to bring into the organization is pretty amazing.
+[14:02:54] And again, I don't think anyone in this room is going to be replaced one day by an agent or robot.
+[14:02:54] But I do think we can actually all get fired if we don't bring the right level of AI adoption into organization.
+[14:03:08] And basically where where I think we did a great job together is that you guys are really the trusted partner that get us in.
+[14:03:14] And if I want to be a bit provocative and we say that in terms of subject matters, we have done a great job with us.
+[14:03:33] You have great engineer, but where you have made a big difference is the change management, is it this ability to make sure that we continuously improve and I have to admit in an industry that is a bit creative, you have been the adult in the home and when you look at what we do with Rodrigo now through the faulty, it's exactly what we are trying to replicate for our clients.
+[14:03:38] Well, look, I can't thank you enough for the partnership and everything we have done together is deeply meaningful for us and all you're doing to help Microsoft.
+[14:03:45] And it is, it is really for me and maybe I close with that.
+[14:03:45] And this is why it was so important to be I didn't know it would be in this place, which I like a lot.
+[14:03:46] But you know, I've been CEO for 10 years now.
+[14:03:49] It has been a tough journey.
+[14:03:52] I had to fill big shoes when I took my job.
+[14:03:53] I faced the distrust of the financial market.
+[14:03:57] Our stock went down like this before going up.
+[14:04:01] I went through Covid, I went through cancer.
+[14:04:02] We went through the war in Europe.
+[14:04:02] We went through the distress on the eye.
+[14:04:14] But I think that what is making the difference, and this is what I feel in this room, is that when you have the trust of your people, when you have great clients and when you have partner like you, everything becomes possible.
+[14:04:15] So thank you very much.
+[14:04:15] Thank you, Arthur.
+[14:04:19] Really appreciate it.
+[14:04:31] So our final pillar this morning,'s keynote is arguably the most important, and that's the pillar of trust.
+[14:04:36] In order to enable trust inside of your organization, you have to have observability at every layer of the stack.
+[14:04:46] You have to be able to manage, govern, secure and get business value out of all the AI assets that you deploy here.
+[14:04:50] To talk more about that, please welcome Charles Lamanna.
+[14:04:50] And good morning, everybody or I guess it's afternoon now.
+[14:04:59] It's great to be back here at Ignite with all of you.
+[14:05:09] Work now runs on AI.
+[14:05:14] Every company is deploying AI and work is increasingly being done by agents and with AI assistance.
+[14:05:14] But further adoption is constrained by security and governance risks.
+[14:05:18] Without observability and management of your entire AI estate, you really can't start to reach scale.
+[14:05:18] You have to be able to manage the cost, the security and the agents from.
+[14:05:23] And that's why one year ago here at Ignite, we announced Agent 365.
+[14:05:31] Agent Three Sixty Five is your observability platform for AI.
+[14:05:43] You can manage your agents centrally in one place, you can govern their deployment in their enablement, and you can track the cost and value of each agent that you build.
+[14:05:53] And you're also able to keep your employees and agents secure over time so you can take advantage of the capabilities without compromising on risk and compliance.
+[14:05:57] Agent 365 is your observability platform for AI.
+[14:05:57] In Agent 365 does all of this across Microsoft and non Microsoft platforms.
+[14:06:01] Agent 365 supports the key partners across AI ecosystem.
+[14:06:13] That's platforms like AWS GCP, Open AI, and Anthropic, and apps and data backends like Data Bricks, Snowflakes, Snails, Force, and more.
+[14:06:24] Agent Three Sixty Five is that one place to manage all of your AI investments in Agent Three Sixty Five does that by maintaining a registry of all your AI assets, things like your agents, your plugins, your skills, models, and more.
+[14:06:28] And you're able to join signals and create policies that span all of them.
+[14:06:32] And that registry is just the starting point.
+[14:06:38] Agent Three Sixty Five applies policies around cost.
+[14:06:50] You can do things like set limits and alerts at the agent, departmental or individual level, and you can even empower IT or business leaders to manage their own budgets and usage at their level.
+[14:06:57] Agent 365 applies policies around cost.
+[14:06:58] Companies around the world are already operating AI at scale with Agent 365.
+[14:06:58] They're managing over 50 million agents.
+[14:07:02] And we have tens of thousands of companies like Lumen, AT and TKPMGEY and others.
+[14:07:05] Across every industry and every region.
+[14:07:05] So to show that in action, let's welcome Jeremy Legg.
+[14:07:11] Together, their show how Agent Three Sixty Five is used at AT and T.
+[14:07:15] All right, thank you, Charles.
+[14:07:19] At AT and T, we connect hundreds of millions of people every day.
+[14:07:23] So when we implement AI, we have to do it at scale.
+[14:07:35] Together their show how agent 365 is used at AT&T.
+[14:07:35] We're operating over 60,000 agents as well as a multitude of skills across our enterprise and it cuts across all of the divisions of our company as well as our millions of customers.
+[14:07:38] And while the technology is incredibly important, the transparency, the governance and the visibility.
+[14:07:45] Is even more essential and that's why we're excited to use agent three, sixty five as part of our enterprise.
+[14:07:48] So let's see a little bit about it.
+[14:07:52] AT and T is already running agents at an incredible scale.
+[14:07:57] So Jeremy, let's look at what's new in Agent 365 for admins to go even further.
+[14:08:07] This is Agent 365, the observability platform for admins to see, manage and govern all of their agents across Microsoft and non Microsoft services.
+[14:08:20] And with the expanded capabilities in connected platforms, admins can get deeper insights into services like Databricks that you see here and right here in the registry.
+[14:08:27] Let's look at the wireless sales agent.
+[14:08:30] This helps sellers recommend the right plan to customers.
+[14:08:40] This ID gives it a unique identity and entra so admins can govern it like any user.
+[14:08:42] And everything that's connected to this agent is visible via this beautiful agent map tools.
+[14:08:53] Resources, people, AI models all here and this red line shows admins any exceptions or errors so they know where to look for.
+[14:08:58] To troubleshoot.
+[14:09:10] This ontology is incredibly important because when you're operating agents at scale, you need to know both what they are doing as well as what they shouldn't be doing, matching the intent of the agent against the actual results of what is performing so that you can take the appropriate actions across the enterprise.
+[14:09:10] Exactly.
+[14:09:12] And sometimes it's really hard to know where to start.
+[14:09:15] And that's where Action Center comes in.
+[14:09:18] It brings everything that needs my attention right here.
+[14:09:23] Groups by category, ranks by priority, even gives me the next steps.
+[14:09:33] So let's look at this alert for agents that haven't been used in the last ninety days.
+[14:09:35] A threshold admins can adjust.
+[14:09:45] And instead of chasing each one down, admins can now set automation for clean up at scale so it notifies owners, block idle agents, removes what's no longer necessary.
+[14:09:48] Forgotten agents can become rogue agents.
+[14:09:51] Less clutter, less risk forgotten agents can become rogue agents.
+[14:09:52] You can think of them essentially as digital employees.
+[14:09:54] And how do you monitor what they're doing?
+[14:10:11] Knowing that they maintain levels of access into your systems, your privileges, your access layers, your authentications, and so you have to have the observability associated with those and be able to take automated actions at scale so that you can both manage the cyber security side of it as well as your costs.
+[14:10:17] And so you have to have the observability associated with those and be able to take automated actions at scale so that you can both manage the cyber security side of it as well as your costs.
+[14:10:17] And speaking of cost, Action Center keeps track of that as well.
+[14:10:26] So here we can see agents that recently had a cost bike and spikes aren't always bad, but.
+[14:10:26] Admins do need a control over that.
+[14:10:35] And two of these agents recently switched to a different model.
+[14:10:46] One, if they did nothing with it, two, if they reverted back to the old model, and three, it shows the price right before the spike happened.
+[14:10:48] And this graph right here shows spending forecast for three different options, 1 if they did nothing with it, 2 if they reverted back to the old model, and 3 it shows the price right before the spike happened.
+[14:10:51] And to mitigate this risk, admins can now set spending policies.
+[14:10:57] And right here you can see that once this two agents hit a certain threshold.
+[14:11:02] The right person is notified, and with Microsoft agents it goes a step further.
+[14:11:12] Admins can actually set hard limits, so usage just stops as soon as it hits the cab.
+[14:11:18] And with spending groups, business users can now set budgets on the day to day, while admins can set guardrails in place.
+[14:11:31] So for all of you, CT, OS and CI, OS out there, this feature is the one that you use to please your CF, OS and how many times you've been asked about token costs.
+[14:11:35] And so you need to have visibility back to the business so that there's transparency not only about what the costs are.
+[14:11:37] But also the benefits and the revenue that you're generating for the company?
+[14:11:40] You don't want to guess at those numbers, right?
+[14:11:55] So that's what's new in Agent 365 for admins, so they can have the visibility and control to manage AI at scale across the entire state so they can move faster with confidence.
+[14:11:59] Back to you, Charles.
+[14:12:08] Thank you so much Jeremy and Vandenham, AT and T story really shows that one of the most important parts of Agent Three Sixty Five are its cost controls.
+[14:12:12] Cost controls tell you where the money's going and keeps your spending on track.
+[14:12:19] But calculating your return on investment also requires understanding the value that's being generated.
+[14:12:28] That means connecting investment to business outcomes across your agents and projects.
+[14:12:32] And the new agent three Sixty five business analytics experience brings AI, spend, adoption and value together in one integrated experience.
+[14:12:39] It measures the work that gets done, not just the tokens that are spent.
+[14:12:43] It covers the tasks that your AI completes, how much time it saves, and how much value it creates.
+[14:12:56] And you can change things like your budget, your model mix, and platforms to balance cost and performance over time.
+[14:13:02] The goal is not simply to spend less on AI to get more value from every dollar that you invest.
+[14:13:06] It gives leaders a directional view of how AI is helping their team and their business move forward, and you can change things like your budget, your model mix, and platforms to balance cost and performance over time.
+[14:13:06] Now let's see how this works with another demo.
+[14:13:10] I'm excited to have Stephanie join us and show us the experience for business leaders.
+[14:13:12] Thanks Charles.
+[14:13:20] We just saw how IT admins manage agents and their costs in agent three, sixty five.
+[14:13:25] Now let's switch seats to a business leader.
+[14:13:31] Here we can see a research and development operations leader has just received next month's AI budget.
+[14:13:38] So they're working in the new business analytics app with a view that's scoped to R and D.
+[14:13:42] We just saw how IT admins manage agents and their costs in Agent 365.
+[14:13:45] This overview page shows spend, use and value across Copilot Co work, Github co-pilot and agents.
+[14:13:52] But every budget needs a plan, and so they start and cost and forecast.
+[14:13:54] This chart follows every dollar from each of those services to the models doing the work.
+[14:14:02] And so they start and cost and forecast.
+[14:14:09] And they can see that Copilot Co work is currently thirty nine percent of R, and DS usage today and they want to see what it's doing.
+[14:14:09] The use case summary map shows exactly that.
+[14:14:20] It shows task inferencing so they can see what R and D is using Co work for like hypothesis testing, and they can see the cost right next to the value.
+[14:14:33] And it's just a conservative estimate of the work's value, not cash savings.
+[14:14:38] Back on the previous chart, copilot coworkers usage is spread across several different models.
+[14:14:51] And leaders determine how this value is calculated using their own task times and costs, so it reflects their business and it's just a conservative estimate of the work's value, not cash savings.
+[14:14:51] This is auto model at work, selecting the right model for the task at hand, optimizing value and costs, and maximizing the value of Co.
+[14:14:52] work.
+[14:15:06] Now that is the power of multimodal, but they also want to take a look at Github copilot and so if we scroll up to the top they can see that the cost drivers for Github copilot are these groups and these job functions and these are teams in engineering.
+[14:15:16] And so if we scroll up to the top, they can see that the cost drivers for Github Copilot are these groups and these job functions and these are teams in engineering.
+[14:15:19] So looking closer at the cost and credits over time, they can see that monthly usage has been steadily increasing and they need to preserve room for other services.
+[14:15:19] So they run a custom forecast.
+[14:15:22] They use a model mix that leverages lower cost cloud models.
+[14:15:29] And immediately they can see that it has a substantial impact on the budget.
+[14:15:42] But they also want to understand the impact on the work itself.
+[14:15:43] And so before taking any action, they send this forecast to the engineering department head, who can then run the pilots and necessary evals to ensure things like output quality and business continuity.
+[14:15:52] Now there's one more piece to the plan, the agents themselves.
+[14:15:56] Here in the agent registry they can get a single view of both Microsoft and non Microsoft agents.
+[14:15:59] Let's take a look at this first agent here.
+[14:16:04] It's built in Copilot Studio and they can see the cost of the agent.
+[14:16:16] They can also see things like the use case summary that shows the work it supports, and they can see model insights and group comparisons.
+[14:16:23] Now since the cost here is being pulled directly from Copilot Studio, they can set up things like a spending alert or a spending limit that stops spend when it's reached.
+[14:16:30] Now Agent 365 is open by design and so if we go back to the agent registry and take a look at this trial recruitment agent.
+[14:16:40] We can see that this agent that's built on Amazon Bedrock shows information that's been pulled from the connected platform and being shared to agent three, sixty five.
+[14:16:51] So we can see things like the estimated cost and with that they can set up spending alerts so that when that cost reaches a certain threshold, they notify the right people.
+[14:16:58] Now the more a platform shares, the more controls Agent Three Sixty Five can offer.
+[14:17:02] Now the more a platform shares, the more controls Agent 365 can offer.
+[14:17:02] Now if we take a look here at spending policies with all of these AI insights, they're ready to take some action.
+[14:17:24] That is agent Three Sixty five, business analytics and the budget for next month planned.
+[14:17:29] See it, forecast it, budget it, and charge it back.
+[14:17:33] So the leader has already created a spending policy for engineering's copilot co-work usage and it has a monthly limit and it's being charged back to the engineering team via their Azure subscription that's tied to their cost center that is Agent 365 Business Analytics and the budget for next month planned see it, forecast it, budget it and charge it back.
+[14:17:37] Everything you just saw is available today starting in Frontier public preview and we have delegated spending policies and.
+[14:17:41] And non Microsoft agent cost visibility coming in December.
+[14:17:45] Thank you and back to you Charles.
+[14:17:46] Thank you, Stephanie.
+[14:17:54] And that's how we can move from just controlling AI spend to really starting to understand and manage the value it creates.
+[14:18:06] Agent three sixty five helps you manage your AI across your entire company, across Microsoft and other AI platforms like Open AI and Tropic AWS and more.
+[14:18:10] But operating AI at enterprise scale also means securing it.
+[14:18:15] I want to invite Yena up on stage to show you how Agent 365 helps you do exactly that.
+[14:18:17] Thank you, Charles.
+[14:18:24] As agent fleets grow across the enterprise, so does the need to manage their identities, access and actions.
+[14:18:28] Let's take a look at the new security capabilities in Agent Three.
+[14:18:31] Let's take a look at the new security capabilities in Agent 365 that give you greater visibility and control.
+[14:18:49] We can discover for a total of sixty five including Open Claw, Open AI, Perplexity and many more.
+[14:18:52] Here in Shadow AII can discover agents running on employee devices and we're expanding the local AJ types.
+[14:18:53] Let's take a look at Openqual.
+[14:18:59] The Agent registry as we can see and manage all the agents across your organization here in Shadow AII can discover agents running on employee devices and we're expanding the local AJ types we can discover for a total of 65, including Open Claw, Open AI, Perplexity and many more.
+[14:18:59] Here we can see which devices the agent type is deployed and immediately see where my attention is needed.
+[14:19:08] Microsoft is introducing a dynamic agent risk for every managed agent, including local agents.
+[14:19:14] This dynamic agent risk brings together runtime exposure and potential blast radio so you get a total risk picture.
+[14:19:22] The related incidents show what contributed to the risk, using the same incidents that the security team is already working on.
+[14:19:31] That way IT and security teams work from the same prioritized list and risk assessment which follows the agent and adopts as risk posture changes.
+[14:19:37] Here it can also govern agents on devices with engine integration.
+[14:19:47] It can block the agent flag devices that are not compliant and scope the agents access with MXC from Windows.
+[14:19:50] And that's the unique value for IT and security teams with agent three sixty Five.
+[14:19:53] They operate over the same prioritized inventory.
+[14:19:56] Let's apply it and that's the unique value for IT and security teams with Agent 365.
+[14:19:56] Complete risk understanding and policies.
+[14:19:56] Back to you Charles.
+[14:20:00] You know.
+[14:20:07] And these agents access data, use applications and start to take action.
+[14:20:09] Security has to become a critical part of your identical state to show you how we can secure that broader estate.
+[14:20:16] Please welcome Alesh to the stage.
+[14:20:22] Thank you, Charles and hello friends.
+[14:20:34] It's really great to be here with you, especially talking about security.
+[14:20:34] As we all know, advanced AI models and increasingly more autonomous agents are changing every industry.
+[14:20:41] And cyber is no exception.
+[14:20:49] Over the past 12 months, frontier and open weight models have become remarkably good at discovering and exploiting vulnerabilities.
+[14:20:53] As a result, we see three significant trends.
+[14:21:02] Number one is increased volume of vulnerabilities.
+[14:21:06] #1 is increased volume of vulnerabilities.
+[14:21:06] Just this month's past Tuesday, we addressed more than 1000 vulnerabilities, compared us to the fewer than 100 in March.
+[14:21:12] That is ten X increase in less than a year.
+[14:21:12] And it's not just Microsoft.
+[14:21:20] The same pattern holds true for all major platforms, browsers and open source packages.
+[14:21:24] The second trend we see is reduced cost.
+[14:21:34] Bounty programs pay about three hundred thousand dollars for high quality vulnerabilities.
+[14:21:37] That is 10X increase in less than a year.
+[14:21:37] The 2nd trend we see is reduced cost.
+[14:21:39] Bounty programs pay about $300,000 for high quality vulnerabilities with the help of AI researchers and also the bad guys are now finding them for less than $5.
+[14:21:47] And then the last trend is time.
+[14:21:50] The time window between discovery and exploitation is approaching zero.
+[14:22:04] This is driven by AI being able to immediately exploit vulnerabilities using toolkits like Artex, but also because the process of responsible and coordinated disclosure is collapsing.
+[14:22:16] We're on a mission to responsibly put the same technology attackers are using into the hands of defenders.
+[14:22:21] That's why we built completely new cyber stack designed for agent security.
+[14:22:33] At the foundation are the products one point six million customers already trust, Defender, Intra, Purview and Sentinel.
+[14:22:35] At the foundation are the products 1.6 million customers already trust Defender, Intra, Purview and Sentinel.
+[14:22:37] They act as censors and raise alerts when something is going wrong.
+[14:22:50] But detection is not enough when under attack, you need to act at machine speed, and that's what the actuators in our security portfolio do.
+[14:23:01] They let you contain a device on the network, revoke a compromised identity, or create a block at the authorization or data layer.
+[14:23:07] We understand your security stock is heterogeneous and ours is too.
+[14:23:11] That's why we have built more than 500 security connectors our product.
+[14:23:26] S combined with these connectors generate more than hundred and sixty five trillion signals every day.
+[14:23:31] S combined with these connectors generate more than 165 trillion signals every day.
+[14:23:33] And we take these signals and we enrich them with threat intelligence from Microsoft and also threat intel from you and also your business intelligence.
+[14:23:44] We turn all of this information into a real time token efficient security context that agents can reason over and act on everyday.
+[14:23:50] We evaluate this context for precision and recall so agents can act on what matters.
+[14:23:59] At the top of the stock are the agents, the harness, and the models.
+[14:24:03] Specialized agents work together to deliver protection and security outcomes.
+[14:24:07] All of this comes together in a Microsoft perception.
+[14:24:14] Our new agent security system generally available today.
+[14:24:24] Please welcome David Weston, our own Frontier Security Engineer and the architect of Perception to show you the product.
+[14:24:24] All right awesome.
+[14:24:34] So Alex told you how our attackers are moving at machine speed, but we built Perception, our new Agentec security system, so defenders can move just as fast.
+[14:24:34] And let me show you how you can do that.
+[14:24:44] So we're here in Perception, where you can do things like ask questions, but you can also delegate work to singular agents or teams of agents.
+[14:24:49] You can set them up to automatically trigger, and you can manage them as teams just like you would a human set of security folks.
+[14:24:54] So let's jump into the agents and get you a view of what these look like.
+[14:24:58] So our agents are created to mimic the way human security teams operate.
+[14:25:05] So the first thing we have is a team of agents we call our blue team.
+[14:25:06] So they can hunt, they can detect, they can investigate.
+[14:25:09] Just like expert humans can and you can delegate work to them.
+[14:25:11] Second, we've introduced this concept of red team agents.
+[14:25:18] Just like highly skilled pen testers.
+[14:25:20] They can proactively analyze your environment, highlight risk just like highly skilled pen testers where it can.
+[14:25:22] They can even operate with threat intelligence to mimic sophisticated attacks.
+[14:25:26] And then finally, this is what really matters.
+[14:25:27] They're the fixers.
+[14:25:32] The green agents, they're the fixers.
+[14:25:39] They can come in and repair your posture, fix code, help with detections, all sorts of very useful things.
+[14:25:39] And where this really gets interesting is the concept of playbooks.
+[14:25:47] Think about being able to create your own team to do highly sophisticated tasks like hunting.
+[14:25:47] Analysis.
+[14:25:50] Anything you can imagine you can create in a custom playbook.
+[14:25:53] So let's take a look at my favorite playbook.
+[14:25:56] You can see here right away that you can actually transparently see what it's going to cost and what the time will be.
+[14:26:05] You can also set up a trigger of when it should operate.
+[14:26:06] And really cool.
+[14:26:09] You can see the threat intelligence agent, the Recon agent are involved here, even a web app, pen test agent detecting authoring imposters.
+[14:26:17] So this all comes together to do sophisticated work in a really simple way.
+[14:26:22] And then finally this is the place I call the Frontier Engineers Inbox.
+[14:26:26] This is a Canvan board where you can manage agents.
+[14:26:32] You can see which ones are requiring human in the loop or human input.
+[14:26:36] You can delegate tasks and you can understand.
+[14:26:51] And then finally, just as important, we have our finops dashboard that explains what agents ran, what they cost and most importantly what the outcomes are.
+[14:26:51] And this is all propagated in the A365.
+[14:27:03] All comes together to be a Frontier Agentex security system and an amazing tool for defenders.
+[14:27:08] Back to election.
+[14:27:08] Dave, that is some awesome sauce.
+[14:27:08] Thank you Perception.
+[14:27:12] Was built to deliver measurable security outcomes, not just raise alerts.
+[14:27:20] We evaluate every agent and playbook against rigorous benchmarks grounded in real security work.
+[14:27:20] Our multi model design routes.
+[14:27:31] Each and every task to the most qualified model and that includes Mai Cyber two closely Co developed with Mustafa and announced earlier by Satya.
+[14:27:44] We train the MAI Cyber models using decades of real world security data and hill climb in learning environments designed by industry-leading security experts reflecting the most up-to-date threat landscape.
+[14:27:49] The result is effective protection.
+[14:27:58] Better than GPT six, Astra on cyber gym end to end and at two percent of cost per jask, making agentic security affordable at scale.
+[14:28:02] Let's hand it back to David to see how perception helps security practitioners like him reduce the exposure and defend with agents.
+[14:28:09] Better than GPT6 astra on cyber gym end to end and at 2% of cost per jask, making agentic security affordable at scale.
+[14:28:14] David OK So I'm going to transform whoop into a security engineer at Keldova, and as a frontier security engineer, I have two big jobs.
+[14:28:20] The first is I need to protect the estate.
+[14:28:20] I need to analyze configurations, exposures, apply patches.
+[14:28:24] This keeps the bad folks out and creates a fortress around my company.
+[14:28:28] The second job I have is detecting and responding.
+[14:28:33] If someone gets through that fortress, it's all about interdicting that attack, detecting and responding quickly, and healing the enterprise.
+[14:28:38] So let me show you how perception makes this extremely easy for a frontier security engineer.
+[14:28:43] So what?
+[14:28:43] The first thing you can see here is that perception is popped for me.
+[14:28:43] Something I need to be concerned about.
+[14:28:52] Which is there's been a Patch Tuesday push to all of my company, and within that Patch Tuesday, there is a vulnerability that's being actively exploited.
+[14:29:08] This is something I cared about deeply, so I'll pop open a perception session, and the first thing is doing for me is a bunch of work to analyze in my enterprise which machines have actually been patched or not, and which ones would be vulnerable.
+[14:29:14] So I get a great report here on my client devices, my servers.
+[14:29:19] You can see here, it's about 52,000 devices and a few thousand servers that still need to be looked at.
+[14:29:19] This Patch Tuesday is a big one because of the agentic push.
+[14:29:23] There's about fifteen hundred distinct CVS in there.
+[14:29:28] I want to push out patches that I need to immediately based on exposure and criticality and exploitation with threat intelligence.
+[14:29:33] So I get all of that in a single system.
+[14:29:43] Normally this would have required me to write custom Powershell, do analysis, dig through CVE.
+[14:29:48] There's about 1500 distinct CVS in there.
+[14:29:48] All of that information is compacted into a singular pane here with the agents, and it does all that work for me.
+[14:29:48] So I want to move quick and I want to expedite.
+[14:29:48] So I pushed this out right away.
+[14:30:03] The critical patches are starting to be applied on client systems, but on server systems I want to be a bit more conservative.
+[14:30:03] So I use our new endpoint shielding technology to protect these servers to give me a little more time to analyze the impact.
+[14:30:09] Here it's done super simply for me.
+[14:30:16] So now I'm going to switch to my other job, which is analyzing alerts in my enterprise and acting on them.
+[14:30:21] This is the place where I spent a lot of my time at the detection role.
+[14:30:26] Again, that's something that would have been really complicated without these agents here it's done super simply for me.
+[14:30:26] You can see here there's a bunch of cases that need to be triaged that are open.
+[14:30:27] This is where perception does the hard work for me.
+[14:30:32] So each one of these might represent hours or even days here I can just jump in, ask my agent team to do the work for me.
+[14:30:37] Here I can just jump in ask my agent team to do the work for me.
+[14:30:47] So I want this to be triggered anytime there's a new alert.
+[14:30:53] And each of the triage attack investigation and the detection authoring agent are going to work on each of those alerts.
+[14:30:54] And I can see that it's going to take between ten minutes and an hour depending on the sophistication of the investigation.
+[14:30:59] So right away my agent goes to work and you can see all these different investigations.
+[14:31:00] The first one I want to look at actually demonstrates how perception can use third party data.
+[14:31:05] This is an alert that was detected based on the usage of Octa data and AWS cloud data.
+[14:31:05] So we'll jump in here.
+[14:31:19] We can see that perceptions that a lot of the heavy lifting it's already triaging, it's generating a report and findings and it's actually going to create some custom detections if needed.
+[14:31:23] So let's drop in on our agent doing a bunch of the work.
+[14:31:23] We can see here that the attack investigation agent has already pulled up some findings for us.
+[14:31:33] And the detection authoring agent is starting to enrich.
+[14:31:33] So we'll let this run for a second.
+[14:31:33] And the first thing we see here is there's a new detection report.
+[14:31:38] So we'll jump into that.
+[14:31:50] And what it's giving us an idea of is as the investigation happened, we did a good job of detecting, but we can actually leave it better than where we found it by writing a few more detections to augment our chain.
+[14:31:54] So we'll let this run for a 2nd.
+[14:31:55] Traditionally this would take an expert security engineer to do this and someone who could also write custom code.
+[14:32:05] But with a combination of API's and actuators and the coding model in use here, we can actually write custom detections here to cover the entire attack chain.
+[14:32:10] So I'm human in the loop here because this is a a sensitive thing.
+[14:32:10] I want to make sure I'm in control.
+[14:32:17] I can review all those rules, publish them with a single click.
+[14:32:23] These are also being checked for false positive things like that.
+[14:32:28] And in the end I can see that three new detections were deployed, my scope of detection got better and overall my enterprise is better protected with perception and agents.
+[14:32:29] With that, I'll hand it back to Alesh.
+[14:32:29] Yeah.
+[14:32:35] Thank you, David.
+[14:32:46] Thank you for walking us through how perception takes on threats on the perimeter.
+[14:32:46] But AI also introduces new risk inside of our organizations.
+[14:32:58] Agents while not inherently malicious, they are frequently over privileged, have access to a broad set of tools and high value data and are increasingly more autonomous executing business processes around the clock.
+[14:33:09] Perception and Agent 365 share the same context and work together to secure agents across your entire enterprise.
+[14:33:13] At machine speed.
+[14:33:29] AI has changed the physics of cyber and that's why we build perception and agency security system that helps you secure your foundations, defend against threats and protect your agency insiders.
+[14:33:29] Johnson, back to you.
+[14:33:33] Thanks Elash.
+[14:33:37] So I'm going to close this out this morning and I'm going to do it by sharing the perspective of arguably what has become one of the hardest jobs in the entire industry, the Chief Information Officer.
+[14:33:41] I'm here with Leanne Russell, the CIO BNY Leann, welcome.
+[14:33:45] Thank you.
+[14:33:45] Thanks for having me here.
+[14:33:50] So we have this amazing relationship.
+[14:33:55] You have done so much leading technology and engineering at BNY.
+[14:34:05] Tell us a little bit about the work that you're doing so as someone who leads technology at a highly regulated industry governance and security is something I'm super passionate about.
+[14:34:10] So as someone who leads technology at a highly regulated industry, governance and security is something I'm super passionate about.
+[14:34:15] If B and Y, we put that at the heart of everything that we do, including in our AI journey and our build of a platform.
+[14:34:15] Eliza.
+[14:34:23] And I firmly believe that if you build in governance and security at the heart of a project, that's how you scale fast.
+[14:34:28] If you do it later, it becomes a break and that slows things down.
+[14:34:37] Now our teams have been putting those principles to the test in something very, very cool.
+[14:34:45] Under our agentic negotiation protocol, we have brought together a Microsoft agent at the BNY agent and together they have executed a treasury trade negotiation, which is a market first.
+[14:34:49] And now they're going to learn how to scale that.
+[14:34:53] Super cool.
+[14:35:02] What gave you the confidence that you could manage, govern and secure these agents operating in your environment and how did you get after it?
+[14:35:06] Well, our teams working together put those principles to the test.
+[14:35:16] First of all, they really sweated the detail on what they were going to build and this is really important in agents at scale and regulated industries.
+[14:35:20] So what?
+[14:35:20] And this is really important in agents at scale and regulated industries.
+[14:35:20] 1st of all, they said, what are the roles of the human, what is the role of the agent, what are the permissions that are going to govern this trade?
+[14:35:24] And what's the accountability?
+[14:35:24] Where does the accountability lie?
+[14:35:33] And then they tested, tested, tested before we went to a live market.
+[14:35:46] And even when we went live, there was a human over the loop who looked at the whole process and had the ability to pause or even stop the trade.
+[14:35:46] Now when it came to the final trade execution, a human made the accountable decision, and that's how the trade took place.
+[14:35:51] And those principles allow us to have that confidence.
+[14:35:51] Awesome.
+[14:35:55] Let's pivot to the cyber side of things.
+[14:35:55] You've been.
+[14:35:59] Involved in our private preview of Project Perception and now Perceptions, GA.
+[14:35:59] We're very excited about that.
+[14:36:07] But share a little bit about what it's been like to go from a reactive mode to a proactive mode in the world of cyber.
+[14:36:07] Absolutely.
+[14:36:20] When when the bad guys have AI at their fingertips and go in AI time or teams have to also have great AI tooling and also work in AI time, not human time.
+[14:36:24] Or teams have to also have great AI tooling and also work in AI time, not human time.
+[14:36:27] So we're super grateful that we were part of preview that allows our teams to have the best tools at their fingertips to fight cyber crime.
+[14:36:32] But it's not just about having the tools.
+[14:36:40] These tools have to give our cyber professionals great visibility about what's going on so that we still can have our cyber teams really in control of the defenses.
+[14:36:43] Now my word for the year was coherence.
+[14:36:44] My word for next year is interlock.
+[14:36:47] It comes from my background in physical engineering.
+[14:36:51] There's four eyes to interlock intent.
+[14:36:59] How do we know what we're building is designed by intent, integrity, governance, and security by design infrastructure.
+[14:36:59] Satya talked about it.
+[14:37:08] There's 4 eyes to interlock intent.
+[14:37:08] Do we have the right infrastructure supporting our AI, build out and then impact.
+[14:37:08] Everything that we do has to show up with an impact for our clients.
+[14:37:09] I think he framed it super well, but.
+[14:37:17] But the the pressures of doing all of this in a highly regulated industry have to be super intense.
+[14:37:22] Bring us all together on the color around that, what it's like.
+[14:37:22] Well, it's about having these controls.
+[14:37:40] That's what gives us confidence to move forward and you don't get to be two hundred and forty two years old like B and Y is without being at the forefront of innovation.
+[14:37:45] And you don't get to be two hundred and forty two years old like B and Y is without being at the forefront of innovation.
+[14:37:45] And we want to innovate fast, but we want to do it within a framework of trust or clients depend on us to be resilient.
+[14:37:50] Our clients and our regulators depend on us having discipline.
+[14:37:50] And I think technology can solve both of those things.
+[14:37:54] But it has to do it with that framework and I think at the end of the day, trust is the product.
+[14:37:59] And I think at the end of the day, trust is the product.
+[14:38:00] Thanks so much for being here with us and thanks for the partnership, Leanne.
+[14:38:00] I really appreciate it.
+[14:38:11] This morning you've seen how we're building the Frontier ecosystem with our customers.
+[14:38:21] You've also seen how the three most durable assets for this transformation are human ambition, intelligence, and trust.
+[14:38:26] Every technology wave has been created to serve humanity, and this one will be no different.
+[14:38:32] Infinite cognitive compute will never replace human purpose.
+[14:38:38] I have the opportunity to host an event recently for Microsoft employees, and we organized a party for the kids to free up the parents at the front door.
+[14:38:42] To free up the parents at the front door.
+[14:38:43] We set up these posters.
+[14:38:43] And I asked the kids to write down their biggest ambition.
+[14:38:48] I found these to be inspirational for how we think about the journey ahead.
+[14:38:53] I want to become a football player.
+[14:38:58] Now there's some fun answers here, like, I want to go to Japan, I want to become a football player, I want to touch a king cobra.
+[14:38:58] And while it's true that AI might be able to help with some spelling.
+[14:39:07] If you look beyond that, you see the hopes and dreams of the future generation.
+[14:39:17] Nowhere on here do you see the words Prompt engineer, and it's pretty clear that our children will not want to live in a chat window.
+[14:39:17] Frontier transformation is intended to enable human ambition.
+[14:39:27] People want to see AI lit up in the canvases that they use every day in the flow of their work, so they can spend more time on what matters most to them.
+[14:39:32] We've given AI models far too much credit in the intelligence category.
+[14:39:36] Thank you.
+[14:39:41] Intelligence means something more.
+[14:39:46] The same intelligence means something more.
+[14:39:46] Your unique ideas, your organization's unique differentiation.
+[14:39:50] Intelligence is not the aggregation of information or the inferencing over the same intelligence means something more.
+[14:39:50] Throughout history, the gaps between the haves and the have nots have correlated to the access to knowledge.
+[14:39:59] AI gives us the opportunity to democratize intelligence more than any technology has ever done before and solve real problems for society.
+[14:40:03] The cure for the uncurable.
+[14:40:10] Advances in science and research, nourishment and prosperity for all intelligence must compound from within.
+[14:40:19] The frontier ecosystem is not about the success of anyone model or a model lab seeking the world's GDP as its total addressable market.
+[14:40:32] It's about your IQ, your unique differentiation amplified in an open model, diverse and heterogeneous way, achieving your highest aspirations while protecting the durability of the same.
+[14:40:35] In the end, it comes down to trust.
+[14:40:38] Take this completely out of context for a minute.
+[14:40:42] Consider the last time you invited someone into your home to do some work.
+[14:40:45] There's this initial moment where you must decide to trust this person.
+[14:40:49] They're coming into your most personal space.
+[14:40:52] There's an actual contract for service and the associated costs.
+[14:41:01] You want them to perform the job at hand and only that job and you want to see value and you need to feel a sense of security.
+[14:41:05] That's the kind of agreement we have to have with AI.
+[14:41:05] The only way to gain trust is through observability.
+[14:41:15] If you can't observe, manage, govern, secure and measure the value of the AI solutions in your technology environment, you simply can't trust it.
+[14:41:25] We have over 50 years of building security into everything we do within the enterprise and we're applying that to the safe application of AI.
+[14:41:42] Everyone in this room has something that they're passionate about, and we ask the employees from the customers presenting with us here at Ignite about their ambitions.
+[14:41:42] Because technology doesn't have ambitions, people do.
+[14:41:46] People do.
+[14:41:52] When technology has the potential to reshape every job, every workload or workflow, every company in every industry, you need a trusted partner, I can say.
+[14:41:58] Confidently that Microsoft is the adult in the room relative to the transformation journey that lies ahead.
+[14:42:02] And today we've shown you a comprehensive AI platform for building the Frontier ecosystem.
+[14:42:08] We're not here to empower every AI model or agent or every GPU.
+[14:42:14] We're here to empower every person and every organization on the planet to achieve more.
+[14:42:23] Let's all stay grounded on the principle that AI must do more for humanity and go build the frontier ecosystem together.
