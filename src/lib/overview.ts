@@ -9,7 +9,7 @@
  * No React in here: one plain function over plain shapes, tested on its own.
  */
 import { clockLabel } from './machineChart';
-import { costTone, MONTHLY_BUDGET_DOLLARS, rangeWords } from './ranges';
+import { costRangeWords, costTone, MONTHLY_BUDGET_DOLLARS, rangeWords } from './ranges';
 import { dayShort, money, monthWords, spikeRuleWords, spikeSentence, type SpikeDay } from './spend';
 import type { StatTile, TileTone } from './statTiles';
 import { uptimeWords } from './statTiles';
@@ -54,6 +54,8 @@ export type OverviewReadings = {
     currency: string;
     /** Why there is no bill, in the cost reader's words, such as a throttled read or a missing role. */
     note?: string | null;
+    /** The amount Azure's own budget holds, read with its alert rules; null before the first read. */
+    budget_dollars?: number | null;
   } | null;
   /** The strip's tiles, for the speed and the errors rows. */
   tiles: StatTile[];
@@ -114,7 +116,8 @@ function fastRow({ tiles }: OverviewReadings): OverviewRow {
 /** Cost: the month graded on what is being spent, at yesterday's rate, with Azure's forecast beside it. */
 function costRow({ cost }: OverviewReadings): OverviewRow {
   const question = 'Is it costing anything?';
-  const range = `the month at yesterday's rate against the $${MONTHLY_BUDGET_DOLLARS} budget: ${rangeWords('cost')}; ${spikeRuleWords()}`;
+  const budget = cost?.budget_dollars ?? MONTHLY_BUDGET_DOLLARS;
+  const range = `the month at yesterday's rate against the $${budget} budget: ${costRangeWords(budget)}; ${spikeRuleWords()}`;
   if (cost === null) {
     return { key: 'cost', question, value: '…', detail: 'not read yet', range, tone: 'waiting' };
   }
@@ -147,7 +150,7 @@ function costRow({ cost }: OverviewReadings): OverviewRow {
     value: money(cost.month_to_date, cost.currency),
     detail: `${monthWords(cost.month)} so far${atRate}${azure}${spike === null ? '' : ` · ${spike}`}`,
     range,
-    tone: costTone(cost.month_to_date, cost.month_at_yesterday, cost.spike_days),
+    tone: costTone(cost.month_to_date, cost.month_at_yesterday, cost.spike_days, budget),
   };
 }
 

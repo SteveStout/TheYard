@@ -10,13 +10,24 @@ s = {x["id"]: x for x in d["suites"]}
 def n(i): return s[i]["passed"] + s[i]["failed"]
 total = sum(n(i) for i in s)
 declared = sum(1 for p in __import__("glob").glob("tests/e2e/*.spec.ts") for l in open(p, encoding="utf-8") if re.match(r"^\s*test\(", l))
+def declared_at(version):
+    """The browser tests the gate of <version> declared, from that version's own commit: a version rebased after that
+    gate may add tests, and the paragraph describes the gate's runs, not the source's. The source's count when the
+    commit is not in this clone's history (a shallow checkout at promote, where the source is that version)."""
+    import subprocess
+    git = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True).stdout
+    sha = git("log", "-1", "--format=%H", "-E", f"--grep=^TheYard {re.escape(version)}:").strip()
+    if not sha:
+        return declared
+    specs = [f for f in git("ls-tree", "--name-only", f"{sha}:tests/e2e").split() if f.endswith(".spec.ts")]
+    return sum(1 for f in specs for l in git("show", f"{sha}:tests/e2e/{f}").splitlines() if re.match(r"^\s*test\(", l)) or declared
 def carried(i):
     c = s[i].get("carried") or s[i].get("carriedFrom")
     return f", carried forward from {c}" if c else ""
 para = (f"**How {total:,} is counted**, from the gate's own results file for {ver} "
         f"([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): "
         f"{n('vitest')} Vitest tests, {n('xunit-sqlite')} xUnit tests on SQLite and the same {n('xunit-cosmos')} booted on Cosmos DB{carried('xunit-cosmos')}, "
-        f"the {n('xunit-live')} that need the live Cosmos DB account, {n('browser-sqlite')} browser runs on SQLite from the {declared} declared tests "
+        f"the {n('xunit-live')} that need the live Cosmos DB account, {n('browser-sqlite')} browser runs on SQLite from the {declared_at(ver)} declared tests "
         f"(a loop runs one of them more than once) and {n('browser-cosmos')} of those again on Cosmos DB{carried('browser-cosmos')}, which is {total:,}. "
         f"The xUnit and browser counts above are read from the source; a test written after {ver} first runs in the gate of the version that ships it.")
 
