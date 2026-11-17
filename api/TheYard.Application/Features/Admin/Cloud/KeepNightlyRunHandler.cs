@@ -5,7 +5,6 @@
 // refuse it. It takes its port and its clock by constructor and is tested with a fake and no host.
 using TheYard.Application.Shared;
 using TheYard.Application.Shared.History;
-using TheYard.Data;
 using TheYard.Domain.Features.Admin;
 
 namespace TheYard.Application.Features.Admin.Cloud;

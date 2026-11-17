@@ -1,4 +1,4 @@
-namespace TheYard.Data;
+namespace TheYard.Application.Features.Blog;
 
 // #region blog-list
 /// <summary>
@@ -47,25 +47,6 @@ public sealed record BlogFacet(string Key, string Label, int Count);
 /// <param name="Terms">What the typed words were widened to and matched as, for the page to mark; empty when not searching.</param>
 public sealed record BlogListPage(IReadOnlyList<BlogCard> Cards, int Total, IReadOnlyList<BlogFacet> Topics, IReadOnlyList<BlogFacet> Keywords, IReadOnlyList<BlogFacet> Months, string? Next, IReadOnlyList<string>? Terms = null);
 // #endregion blog-list
-
-/// <summary>One word of a post as the search keeps it: the word or two neighbouring words, where, and how often.</summary>
-/// <param name="Word">Lower case; two words have one space between.</param>
-/// <param name="Field">1 the title, 2 the summary, 3 the body.</param>
-/// <param name="Mentions">How many times.</param>
-public sealed record BlogWord(string Word, byte Field, int Mentions);
-
-/// <summary>One keyword a post really talks about, and how many times it names it.</summary>
-/// <param name="Key">The keyword's key.</param>
-/// <param name="Mentions">How many times.</param>
-public sealed record BlogKeywordCount(string Key, int Mentions);
-
-/// <summary>What a save works out from a post, kept beside it: the body drawn once, the minutes, the words and the keywords.</summary>
-/// <param name="BodyHtml">The body as HTML.</param>
-/// <param name="ReadingMinutes">The body's words over 230, rounded up.</param>
-/// <param name="Words">The words the search reads.</param>
-/// <param name="Keywords">The keywords the chips read.</param>
-/// <param name="Version">The rules' version it was worked out with.</param>
-public sealed record BlogDerived(string BodyHtml, int ReadingMinutes, IReadOnlyList<BlogWord> Words, IReadOnlyList<BlogKeywordCount> Keywords, int Version);
 
 /// <summary>One post as its own page shows it: the post, its body drawn, its counts, and where to go next.</summary>
 /// <param name="Post">The post, its source body included.</param>

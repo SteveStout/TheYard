@@ -1,4 +1,4 @@
-using TheYard.Data;
+using TheYard.Application.Features.Blog;
 
 namespace TheYard.Api.Features.Blog;
 
