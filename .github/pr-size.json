@@ -1,0 +1,13 @@
+{
+  "floor": 100,
+  "ceiling": 1000,
+  "not_counted": [
+    "data/",
+    "README.md",
+    "docs/CHANGELOG.md",
+    "docs/images/og.svg",
+    "public/og.png",
+    "docs/built-with-ai/BUILT-WITH-AI.md",
+    "package-lock.json"
+  ]
+}

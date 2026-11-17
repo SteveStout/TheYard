@@ -159,6 +159,8 @@ if [ -f "$raw/og.svg" ] && [ -f "$raw/og.png" ]; then
   cp "$raw/og.svg" docs/images/og.svg
   cp "$raw/og.png" public/og.png
 fi
+# What the tests card and Home read about this run and the gate's reds, read with gh; it never fails a promote.
+bash scripts/gate_feed.sh "$run" "$raw/feed.json"
 node scripts/test_results.mjs "$raw" "$version" "$seconds"
 # The file the site serves has to describe the run that shipped it. A green gate cannot hold a failing or a
 # skipped suite, so a results file that records one was assembled from another attempt's reports: that is what

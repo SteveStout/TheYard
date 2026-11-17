@@ -124,6 +124,38 @@ public class GateWorkflowTests
     }
     // #endregion every-report
 
+    // #region the-catch-list
+    /// <summary>
+    /// The catch list runs the gate's own em dash scan before a claim (ADR-098, the addendum on the catch list): the
+    /// pattern and the file types the shared script greps are the gate's, character for character, so a version the
+    /// script passes is one the gate's step passes. Once the gate calls the script itself this holds the call.
+    /// </summary>
+    [Fact]
+    public void The_catch_list_s_em_dash_scan_is_the_gate_s_own()
+    {
+        string script = File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "emdash_scan.sh"));
+        string grep = Regex.Match(script, @"grep -rlP '\\x\{2014\}'[^)]*\.").Value;
+        Assert.False(string.IsNullOrEmpty(grep), "emdash_scan.sh should grep for the em dash");
+
+        string workflow = Workflow();
+        Assert.True(workflow.Contains(grep, StringComparison.Ordinal) || workflow.Contains("scripts/emdash_scan.sh", StringComparison.Ordinal),
+            "gate.yml's em dash step and scripts/emdash_scan.sh should run the same scan");
+
+        string ratchet = File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "quality_ratchet.sh"));
+        Assert.Contains("python3 .github/quality.py . --ratchet .github/quality-ratchet.json", ratchet, StringComparison.Ordinal);
+        Assert.True(workflow.Contains("python3 .github/quality.py . --ratchet .github/quality-ratchet.json", StringComparison.Ordinal) || workflow.Contains("scripts/quality_ratchet.sh", StringComparison.Ordinal),
+            "gate.yml's ratchet step and scripts/quality_ratchet.sh should run the same command");
+
+        string list = File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "catch_list.sh"));
+        foreach (string part in new[] { "scripts/emdash_scan.sh", "scripts/quality_ratchet.sh", "scripts/pr_size.sh", "cap=120" })
+        {
+            Assert.Contains(part, list, StringComparison.Ordinal);
+        }
+        Assert.Contains("check catch bash scripts/catch_list.sh", File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "preflight.sh")), StringComparison.Ordinal);
+        Assert.Contains("bash scripts/gate_feed.sh \"$run\" \"$raw/feed.json\"", File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "promote.sh")), StringComparison.Ordinal);
+    }
+    // #endregion the-catch-list
+
     // #region the-verdict
     /// <summary>Every result key the workflow writes is one its verdict reads, so no check can run and not count.</summary>
     [Fact]
