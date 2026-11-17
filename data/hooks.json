@@ -5,9 +5,10 @@
       "page": "landing",
       "path": "/",
       "lines": [
-        "Fifteen quality numbers are measured on every version and none may get worse."
+        "Built with AI. Gated so quality never slides.",
+        "One engineer, an AI agent and a gate that checks {measures} quality numbers on every release. {versions} versions measured, with every result public, the worst days included."
       ],
-      "source": "Steve's own sentence, section 2b of the showcase text of 10 November, word for word",
+      "source": "The affected-pages markup of 17 November, change 1 (J:\\mockups\\TheYard-affected-pages-markup-2026-11-17.html), approved by Steve at 08:03 that morning, word for word with the review's corrections (MASTER-PLAN-2026-11-17 R13a and R13f); {measures} and {versions} are read from data/quality-history.json when the page is drawn",
       "chart": {
         "number": "async_without_cancellation",
         "label": "Async methods with no CancellationToken",

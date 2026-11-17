@@ -88,11 +88,24 @@ public sealed class PageHooksTests(WebApplicationFactory<Program> factory)
     {
         using var ratchet = JsonDocument.Parse(File.ReadAllText(Path.Combine(Repo.Root(), ".github", "quality-ratchet.json")));
         int count = ratchet.RootElement.EnumerateObject().Count();
-        string[] said = [.. Lines(Entry("landing")), .. Lines(Entry("resume"))];
+        string[] said = [.. Lines(Entry("resume"))];
 
-        // Steve's sentence, word for word; a sixteenth number in the ratchet turns this red rather than the hook stale.
+        // Steve's sentence, word for word, on the resume door; a sixteenth number in the ratchet turns this red rather
+        // than the hook stale. The landing opened on it until 17 November (ADR-132's addendum of that day).
         Assert.All(said, line => Assert.Equal(
             $"{Words[count]} quality numbers are measured on every version and none may get worse.", line));
+    }
+
+    [Fact]
+    public void The_landing_opens_on_the_approved_headline_and_types_no_count()
+    {
+        string[] said = [.. Lines(Entry("landing"))];
+
+        // The markup of 17 November, change 1, word for word (MASTER-PLAN-2026-11-17 V6); every count under it is a
+        // placeholder the quality history fills when the page is drawn, so the words cannot go stale.
+        Assert.Equal("Built with AI. Gated so quality never slides.", said[0]);
+        Assert.DoesNotMatch(@"\d", string.Join(' ', said));
+        Assert.Contains("{measures}", string.Join(' ', said));
     }
 
     [Fact]
