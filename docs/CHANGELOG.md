@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.72** (2026-11-16): Every version now gets a Lighthouse reading of the landing, five runs inside the gate with the median kept, which reports and never holds a ship.
 - **1.0.5.71** (2026-11-16): The Admin tab's Who opened what card now says when a code's opens look like a link scanner reading every link at once rather than a person, and keeps counting them.
 - **1.0.5.69** (2026-11-16): A tagged link's code now travels with the reader through the "Where next" links, so each page they go on to is counted under the same code, and the blog and the Quality page are counted under their own names; the entry script's byte budget rises by 592 bytes (579,915 to 580,507) for it.
 - **1.0.5.68** (2026-11-16): The Admin cards' recorders write a kept minute to Cosmos DB only when it reads differently from the one they kept, where they wrote the last five minutes again for every card every minute, the burst that held the database at its throughput limit in nearly every minute and drew most of its throttled requests.
