@@ -14,7 +14,9 @@ import { CountUp } from '../../shared/CountUp';
 import { Hook } from '../../shared/Hook';
 import { WhereNext } from '../../shared/WhereNext';
 import { QualityTrend } from '../../shared/QualityTrend';
-import { hookFor, hookTrend } from '../../../lib/pageHooks';
+import { hookFor, hookTrend, landingLines } from '../../../lib/pageHooks';
+import { centralDay, releasesInLastSevenDays } from '../../../lib/releaseFacts';
+import RELEASES from 'virtual:release-facts';
 import { Ring } from '../../shared/Ring';
 import { PulseBand } from '../PulseBand';
 import { TechStack } from '../TechStack';
@@ -77,6 +79,13 @@ export function Landing({
   const [health, setHealth] = useState<LandingHealth>('reading');
   const [stores, setStores] = useState<{ up: number; of: number } | null>(null);
   const [summary, setSummary] = useState<TestSummary | null>(null);
+  // The week's releases, counted first from the day the build ran, so the page drawn ahead of a visit and the
+  // browser's first draw say the same, then from the visitor's own Central day (ADR-132).
+  const [releases, setReleases] = useState(() =>
+    releasesInLastSevenDays(RELEASES.days, RELEASES.builtOn)
+  );
+  useEffect(() => setReleases(releasesInLastSevenDays(RELEASES.days, centralDay(new Date()))), []);
+  const lines = landingLines(HOOK, releases);
   useEffect(() => {
     let live = true;
     request('/api/health', undefined, { background: true })
@@ -116,7 +125,7 @@ export function Landing({
     <section className={styles.landing} aria-labelledby="landing-title" data-testid="landing">
       <Hook
         page="landing"
-        lines={HOOK.lines}
+        lines={lines}
         headingId="landing-title"
         headingClass={styles.heading}
         caption={HOOK.chart ? `${HOOK.chart.label}, ${HOOK.chart.direction}` : undefined}

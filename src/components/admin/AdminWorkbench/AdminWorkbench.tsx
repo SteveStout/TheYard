@@ -58,6 +58,37 @@ export function AdminWorkbench({
   const [foldOpen, setFoldOpen] = useState(false);
   const { previous, next } = neighbours(open);
   const openCard = benchCard(open);
+  const openColumn = useRef<HTMLDivElement>(null);
+  // The card the address named when the page opened, and whether it has been brought into view yet.
+  const addressed = useRef(
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('card')
+  );
+  const broughtIntoView = useRef(false);
+
+  // An address that names a card, as the review route's stops 4 and 5 do, brings that card's heading into view
+  // once the card has drawn, instead of leaving it under the tiles (ADR: Ten minutes, seven stops). Only the card the
+  // page opened on, once: a card opened from the rail afterwards stays where the reader is.
+  useEffect(() => {
+    const column = openColumn.current;
+    if (!column || broughtIntoView.current || addressed.current !== open) return;
+    const bring = () => {
+      const heading = column.querySelector('h2');
+      if (!heading) return false;
+      heading.scrollIntoView({ block: 'start' });
+      broughtIntoView.current = true;
+      return true;
+    };
+    if (bring()) return;
+    const watch = new MutationObserver(() => {
+      if (bring()) watch.disconnect();
+    });
+    watch.observe(column, { childList: true, subtree: true });
+    const stop = window.setTimeout(() => watch.disconnect(), 10_000);
+    return () => {
+      watch.disconnect();
+      window.clearTimeout(stop);
+    };
+  }, [open]);
   const question = BENCH_QUESTIONS.find((entry) => entry.key === openCard.question);
   const pinShown = pin !== null && pin !== open;
   // "This hour" shows only with the cards in HOUR_CARDS. On a wide screen with
@@ -213,7 +244,12 @@ export function AdminWorkbench({
           data-pinned={pinShown && !phone ? 'true' : 'false'}
           data-hour={!hourHere ? 'none' : hourBeside ? 'beside' : 'above'}
         >
-          <div className={styles.benchColumn} data-testid="bench-open" data-card={open}>
+          <div
+            ref={openColumn}
+            className={styles.benchColumn}
+            data-testid="bench-open"
+            data-card={open}
+          >
             {render(open)}
           </div>
           {pinShown && !phone && (

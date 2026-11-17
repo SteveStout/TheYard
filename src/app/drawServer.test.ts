@@ -97,7 +97,7 @@ describe('the views the rendering service draws, with no browser', () => {
   it('draws the landing page, with the build the API reported in the footer', async () => {
     const html = await draw(load(''));
     expect(html).toContain(
-      'Fifteen quality numbers are measured on every version and none may get worse.'
+      'Built with AI. Gated so quality never slides.'
     );
     expect(html).toContain('1.0.3.100');
   });

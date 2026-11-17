@@ -126,6 +126,16 @@ a.segment:focus-visible {
   color: var(--color-text-muted);
 }
 
+/* The note and the gate badge after it share the rest of the band, so on a phone the badge sits in the note's own
+   row instead of adding one, and the first screen keeps its height (hooks.spec, the landing and stop 1). */
+.tail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .noteLong {
   display: none;
 }
@@ -173,6 +183,10 @@ a.segment:focus-visible {
 
   /* Its own row, at the height it will have once /api/stores answers, so
      the page below does not move when the sentence arrives. */
+  .tail {
+    flex-basis: 100%;
+  }
+
   .note {
     flex-basis: 100%;
     min-height: var(--store-note-height);
