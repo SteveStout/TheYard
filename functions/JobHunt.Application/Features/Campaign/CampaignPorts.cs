@@ -177,24 +177,6 @@ public interface IEmailLog
     Task MarkReplyAsync(string gmailThreadId, DateTimeOffset at, CancellationToken ct);
 }
 
-/// <summary>
-/// Where an address comes from when no public source published one. No third-party finder is used, so the one
-/// adapter is NoFinder, which answers nothing. The port exists anyway, and that is the decision worth reading:
-/// a finder is a question to settle on the shadow week's own numbers rather than on a guess, and keeping the
-/// seam means settling it costs one adapter instead of a change to every caller.
-/// </summary>
-public interface IAddressFinder
-{
-    /// <summary>The finder's name for the card and the pass log.</summary>
-    string Name { get; }
-
-    /// <summary>An address with its source, or null with nothing spent.</summary>
-    Task<FoundAddress?> FindAsync(string fullName, string domain, CancellationToken ct);
-}
-
-/// <summary>An address and the URL it was read from.</summary>
-public sealed record FoundAddress(string Address, string SourceUrl);
-
 /// <summary>One company row.</summary>
 public sealed record CompanyRecord(
     int Id,

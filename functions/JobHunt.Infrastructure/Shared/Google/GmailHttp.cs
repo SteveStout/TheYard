@@ -52,6 +52,15 @@ public sealed class GmailHttp(IHttpClientFactory http, GoogleCredentials google,
     public Task<JsonDocument?> GetOrMissingAsync(string url, CancellationToken ct) =>
         SendAsync(HttpMethod.Get, url, null, true, true, ct);
 
+    /// <summary>A DELETE, answered with whether there was anything to delete (false when Gmail answers 404).</summary>
+    /// <param name="url">The request.</param>
+    /// <param name="ct">The cancellation token.</param>
+    public async Task<bool> DeleteOrMissingAsync(string url, CancellationToken ct)
+    {
+        using var answer = await SendAsync(HttpMethod.Delete, url, null, true, true, ct);
+        return answer is not null;
+    }
+
     /// <summary>
     /// A POST's answer. A server error is waited out only when <paramref name="again"/> says the call may be made twice
     /// (a label change), never for one that makes something (a send, a draft, a label), where it may have landed.
@@ -118,7 +127,7 @@ public sealed class GmailHttp(IHttpClientFactory http, GoogleCredentials google,
             string text = await answer.Content.ReadAsStringAsync(ct);
             if (answer.IsSuccessStatusCode)
             {
-                return JsonDocument.Parse(text);
+                return JsonDocument.Parse(text.Length == 0 ? "{}" : text);
             }
             if (missing && answer.StatusCode == HttpStatusCode.NotFound)
             {

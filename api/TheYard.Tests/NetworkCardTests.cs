@@ -36,6 +36,9 @@ public sealed class NetworkCardTests
         [NetworkCard.PassNoteFact] = null,
         [NetworkCard.PassFact] = "success",
         [NetworkCard.PassAtFact] = "2026-11-04T12:00:01.0000000+00:00",
+        ["pass_sent"] = "9",
+        ["pass_held"] = "3",
+        ["pass_bounced"] = "0",
         [NetworkCard.PassCameFact] = "success",
     };
 
@@ -63,7 +66,8 @@ public sealed class NetworkCardTests
         Assert.Contains("newest first: 6, 4, 4, 2", logging.Detail[0].Text, StringComparison.Ordinal);
         Assert.Equal("5 drafted, waiting for Steve", card.Rows.Single(r => r.Key == "follow-ups").Answer);
         Assert.Equal("2 quiet after a follow-up", card.Rows.Single(r => r.Key == "silences").Answer);
-        Assert.Equal(4, card.Rows.Count);
+        Assert.Equal("9 sent · 3 held by a guard · 0 bounced", card.Rows.Single(r => r.Key == "reconnects").Answer);
+        Assert.Equal(5, card.Rows.Count);
         Assert.Equal("nothing of its own this month", card.Rows.Single(r => r.Key == "cost").Answer);
         Assert.Equal("Thu 5 Nov, 6:00 AM Central", NetworkCard.Next(Nine));
     }

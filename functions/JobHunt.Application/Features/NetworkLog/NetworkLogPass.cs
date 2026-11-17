@@ -2,25 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace JobHunt.Application.Features.NetworkLog;
 
-/// <summary>Which way the switch is set: off runs nothing, shadow writes what it would draft, on drafts.</summary>
-public enum NetworkMode
-{
-    /// <summary>Absent or anything else: nothing runs.</summary>
-    Off,
-
-    /// <summary>Reads, logs and writes would-drafts to the share; the draft port is never called.</summary>
-    Shadow,
-
-    /// <summary>Reads, logs and writes Gmail drafts under the Ready label.</summary>
-    On,
-}
-
-/// <summary>What one pass did, for its line, its row and the run line.</summary>
-/// <param name="Line">The pass line as written to the share.</param>
-/// <param name="Counts">The counts for network.Passes.</param>
-/// <param name="Cut">Threads left unread because the pass ran out of time.</param>
-public sealed record NetworkPassResult(string Line, PassCounts Counts, int Cut);
-
 /// <summary>
 /// The network log's daily pass: the window of Gmail threads less the campaign's, each two-way thread into its row,
 /// the stop and quiet rules, the LinkedIn spool, the TopicLine export, on a Monday the week's due follow-ups, and one
@@ -30,6 +11,12 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
 {
     /// <summary>The blog's feed, read on a Monday when a due row names a post; with none set no draft names one.</summary>
     public IBlogPosts Posts { get; init; } = NoPosts.Instance;
+
+    /// <summary>The email reconnects' sender and NETWORK_SEND's mode; with none set they are drafted, as in shadow.</summary>
+    public Reconnects? Reconnect { get; init; }
+
+    /// <summary>Hunter, asked once for a bounced reconnect's person; with none set a bounce closes the row.</summary>
+    public IAddressFinder? Finder { get; init; }
 
     /// <summary>The daily window in days.</summary>
     public const int DailyDays = 2;
@@ -110,8 +97,9 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         var local = CentralClock.Local(now);
         if (local.DayOfWeek == DayOfWeek.Monday)
         {
-            var monday = await new MondayDrafts(rows, gmail, drafts, share, Posts).RunAsync(mode, DateOnly.FromDateTime(local), open, now, ct);
+            var monday = await new MondayDrafts(rows, gmail, drafts, share, Posts) { Reconnect = Reconnect }.RunAsync(mode, DateOnly.FromDateTime(local), open, now, ct);
             (tally.Due, tally.Drafted, tally.RenderFailed, tally.Posts) = (monday.Due, monday.Drafted, monday.RenderFailed, monday.Posts);
+            (tally.Sent, tally.Held) = (monday.Sent, monday.Held.Values.Sum());
         }
         var week = (await rows.StartsAsync(ct)).Count(at => IsoWeek.Of(DateOnly.FromDateTime(CentralClock.Local(at))) == IsoWeek.Of(DateOnly.FromDateTime(local)));
         int seconds = (int)time.GetElapsedTime(started).TotalSeconds;
@@ -121,6 +109,9 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
             extra.Add(("resumed", older.Count));
         }
         extra.Add(("render_failed", tally.RenderFailed));
+        extra.Add(("sent", tally.Sent));
+        extra.Add(("held", tally.Held));
+        extra.Add(("bounced", tally.Bounced));
         extra.Add(("posts", topics.Posts));
         extra.Add(("named", tally.Posts));
         if (tally.Cut > 0)
@@ -129,7 +120,7 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
         }
         string line = NetworkFiles.Line(CentralClock.Local(time.GetUtcNow()), new PassLine(mode == NetworkMode.On ? "on" : "shadow", summaries.Count, tally.Upserted, tally.Stopped, tally.Quiet, tally.Personal, tally.Due, tally.Drafted, seconds, week, extra));
         var counts = new PassCounts(summaries.Count, tally.Upserted, tally.Stopped, tally.Quiet, tally.Drafted, week, seconds, line);
-        return new NetworkPassResult(line, counts, tally.Cut);
+        return new NetworkPassResult(line, counts, tally.Cut) { Sent = tally.Sent, Held = tally.Held, Bounced = tally.Bounced };
     }
 
     private async Task<ThreadSummary> ReadAsync(string id, CancellationToken ct)
@@ -179,8 +170,15 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
     {
         foreach (var row in drafted)
         {
-            bool exists = row.DraftId is { } id && await drafts.DraftExistsAsync(id, ct);
+            bool reconnect = row.DraftId?.StartsWith(Reconnects.SentPrefix, StringComparison.Ordinal) == true;
+            bool exists = !reconnect && row.DraftId is { } id && await drafts.DraftExistsAsync(id, ct);
             var thread = await gmail.ReadSummaryAsync(row.ThreadIds[0], ct);
+            if (reconnect && row.DraftedAt is { } sentAt && thread.Messages.Any(m => m.At >= sentAt && HumanSenderRule.IsBounce(m.From)))
+            {
+                tally.Bounced++;
+                await (Reconnect ?? new Reconnects(rows, gmail, drafts, share, time)).BouncedAsync(row, Finder, now, ct);
+                continue;
+            }
             switch (QuietRule.Next(row, exists, thread, now))
             {
                 case DraftedOutcome.Answered:
@@ -275,6 +273,15 @@ public sealed partial class NetworkLogPass(IConversationStore rows, IThreadReade
 
         /// <summary>LinkedIn spool rows read.</summary>
         public int LinkedIn { get; set; }
+
+        /// <summary>Email reconnects sent and read back from Sent.</summary>
+        public int Sent { get; set; }
+
+        /// <summary>Email reconnects a guard held.</summary>
+        public int Held { get; set; }
+
+        /// <summary>Sent reconnects a delivery failure came back for.</summary>
+        public int Bounced { get; set; }
 
         /// <summary>Threads left unread for want of time.</summary>
         public int Cut { get; set; }

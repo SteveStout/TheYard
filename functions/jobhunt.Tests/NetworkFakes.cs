@@ -141,6 +141,16 @@ public static class NetworkFakes
             Asked.Add(draftId);
             return Task.FromResult(Existing.Contains(draftId));
         }
+
+        /// <summary>The drafts deleted, in order.</summary>
+        public List<string> Deleted { get; } = [];
+
+        public Task DeleteDraftAsync(string draftId, CancellationToken ct)
+        {
+            Deleted.Add(draftId);
+            Existing.Remove(draftId);
+            return Task.CompletedTask;
+        }
     }
 
     /// <summary>The blog's feed as a list it is handed, counting its reads.</summary>

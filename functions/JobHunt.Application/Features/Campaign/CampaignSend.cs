@@ -15,19 +15,6 @@ public enum CampaignMode
     On,
 }
 
-/// <summary>One email for the mail port to send.</summary>
-public sealed record OutgoingMail(string To, string Subject, string Text, string Html);
-
-/// <summary>What Gmail answered for a sent email: its ids, and the Message-Id a delivery failure quotes back.</summary>
-public sealed record SentMail(string MessageId, string ThreadId, string? RfcMessageId);
-
-/// <summary>Sends one email from Steve's Gmail. Only the campaign's `on` path reaches it; a test holds shadow away from it.</summary>
-public interface IMailSender
-{
-    /// <summary>Sends the message and answers its ids.</summary>
-    Task<SentMail> SendAsync(OutgoingMail mail, CancellationToken ct);
-}
-
 /// <summary>A pass's outcome: what it came to, its counts and its line for campaign/pass.log.</summary>
 public sealed record CampaignPassResult(string Came, int Open, int Eligible, int Written, IReadOnlyDictionary<string, int> Held, string Line)
 {

@@ -132,16 +132,26 @@ public sealed partial class NetworkSqlTests
         Assert.Throws<ArgumentException>(() => GmailDrafts.Mime(draft with { To = "" }, "b"));
     }
 
+    /// <summary>
+    /// Replaces "Nothing in the network log can send" (ADR-124's addendum of RECONNECT-v1): an email reconnect now
+    /// sends, so the one class that may is named and the rest still cannot. No network log file calls Gmail's send
+    /// route itself, only Reconnects holds the shared mail port, and nothing reads a calendar.
+    /// </summary>
     [Fact]
-    public void Nothing_in_the_network_log_can_send()
+    public void Only_the_reconnects_send_and_only_through_the_shared_mail_port()
     {
-        foreach (string path in Directory.EnumerateFiles(Path.Combine(Root(), "functions"), "*.cs", SearchOption.AllDirectories).Where(p => p.Contains("NetworkLog", StringComparison.Ordinal) && !p.Contains("jobhunt.Tests", StringComparison.Ordinal) && !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+        var files = Directory.EnumerateFiles(Path.Combine(Root(), "functions"), "*.cs", SearchOption.AllDirectories).Where(p => p.Contains("NetworkLog", StringComparison.Ordinal) && !p.Contains("jobhunt.Tests", StringComparison.Ordinal) && !p.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)).ToList();
+        Assert.Contains(files, p => p.EndsWith("Reconnects.cs", StringComparison.Ordinal));
+        foreach (string path in files)
         {
             string code = File.ReadAllText(path);
             Assert.DoesNotContain("/send", code, StringComparison.Ordinal);
-            Assert.DoesNotContain("IMailSender", code, StringComparison.Ordinal);
             Assert.DoesNotContain("calendar.readonly", code, StringComparison.Ordinal);
             Assert.DoesNotContain("googleapis.com/calendar", code, StringComparison.Ordinal);
+            if (!path.EndsWith("Reconnects.cs", StringComparison.Ordinal))
+            {
+                Assert.DoesNotContain("IMailSender", code, StringComparison.Ordinal);
+            }
         }
     }
 

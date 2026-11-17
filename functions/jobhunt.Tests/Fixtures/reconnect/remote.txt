@@ -1,0 +1,18 @@
+Pat,
+
+It's been a few weeks since we talked about the platform consolidation on .NET 10.
+
+Is it a bad idea to stay in contact?
+
+Has anything fully remote come across your desk?
+
+Portfolio
+Resume -> https://theyard.stevenstout.biz/?view=review&r=abc123
+Site -> https://theyard.stevenstout.biz/?r=abc123
+GitHub -> https://theyard.stevenstout.biz/api/go/github?r=abc123
+LinkedIn -> https://theyard.stevenstout.biz/api/go/linkedin?r=abc123
+About -> https://theyard.stevenstout.biz/about?r=abc123
+Recommendations -> https://theyard.stevenstout.biz/api/go/linkedin-recs?r=abc123
+
+Thanks,
+Steve
