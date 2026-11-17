@@ -102,7 +102,7 @@ export default function TestsCard() {
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="tests-card">
       <h2 className={cardStyles.cardTitle}>Every test, for this build</h2>
-      {/* Five minutes is the target, printed; past it is information until the red line (V4 of the plan's review). */}
+      {/* Five minutes is the target, printed; past it is information until the red line. */}
       <Range
         of="gateSeconds"
         words={`target under ${RANGES.gateSeconds.amber} s, information past it, red at ${RANGES.gateSeconds.red} s`}

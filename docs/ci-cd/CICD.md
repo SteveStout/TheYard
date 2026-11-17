@@ -12,7 +12,7 @@ What that is worth: a developer can merge knowing a failing test stops the chang
 ## What runs today
 
 **Continuous integration.** Every test runs once per version, in the ship's
-gate: the ship pushes the version to a `gate/<version>` branch, `gate.yml` runs
+gate: the ship pushes the version to a `gate/<version>-<lane>-<sha8>` branch, `gate.yml` runs
 the API suite on both stores, the frontend suite, and a browser suite that
 clicks through the running app the way a person would, on GitHub's runners, and
 `main` moves only when all of it is green (ADR-098). A change that fails any of
@@ -29,7 +29,7 @@ installs .NET through one step, `.github/actions/dotnet`, which tries the
 download twice and then builds with the runner's own .NET 10 SDK, so a failed
 download cannot turn a good version red (ADR-068, the addendum of 1.0.4.72).
 
-**A ship is a push of `gate/<version>`.** From 1.0.4.101 no machine has to stay
+**A ship is a push of `gate/<version>-<lane>-<sha8>`.** From 1.0.4.101 no machine has to stay
 on for a version to ship (ADR-098, the addendum of 1.0.4.101). When the gate
 and The Shed's suites are both green, the same run promotes itself: its
 promote job runs `scripts/promote.sh`, which checks the version and the locked
@@ -53,16 +53,56 @@ found nothing wrong must not send a failure email; a person then promotes the
 run by hand, naming it:
 `raw=$(mktemp -d) && gh run download <run> -n gate-raw -D "$raw" && { gh run download <run> -n coderabbit-raw -D "$raw" || rm -f "$raw/coderabbit.json"; } && bash scripts/promote.sh "$raw" <gate seconds> <version> <run>`.
 
+**The number is filled at the claim, under the lock** (ADR-031, the addendum on the
+fill at the claim). A lane builds its one commit on `origin/main` with the
+placeholders for the version, the date and the record number where the numbers
+go, and fills them only once it holds the gate lock:
+
+```
+v=$(bash scripts/versions.sh next)
+bash scripts/gate_lock.sh claim <lane> "$v"
+GATE_LANE=<lane> bash scripts/fill_version.sh
+GATE_LANE=<lane> bash scripts/preflight.sh
+git push origin HEAD:refs/heads/gate/$v-<lane>-$(git rev-parse --short=8 HEAD)
+bash scripts/gate_pr.sh open gate/$v-<lane>-<sha8>
+bash scripts/gate_lock.sh annotate <run> gate/$v-<lane>-<sha8>
+```
+
+`scripts/gate_lock.sh claim` takes `flock` on a local file for the seconds it
+reads the share's lock, creates the lock only if it is absent (`set -o
+noclobber`), writes `lane= pid= since= version=` and reads it back after two
+seconds; `annotate` adds `run=` and `branch=` once the run exists.
+`scripts/fill_version.sh` refuses unless HEAD is exactly one commit on
+`origin/main`, fills the version (main's top line plus one), today's date in
+America/Chicago and the next free record number (in a file's name too), redraws
+the version card, tightens `.github/quality-ratchet.json` to what
+`.github/quality.py` measures, amends the commit and prints `VERSION= ADR=
+HEAD=`; a second run changes nothing. Every reader of a gate branch's name
+takes the version as the text after `gate/` up to the first hyphen, so the
+older `gate/<version>` still reads.
+
+**A red gate releases the lock and frees its number.** The holder runs
+`bash scripts/gate_lock.sh release`, which renames the lock to
+`theyard-gate.released-<unix time>`; the next claim takes main's top line plus
+one, and nothing waits on a gate branch being deleted. A peer may release
+another lane's lock only when its run concluded failure or cancelled, or
+concluded success with main already on its version (`gate_lock.sh show` says
+which); a green run that has not promoted is its holder's or Steve's. The gate's
+concurrency group keeps every pending run in line (`queue: max`), and its first
+job, `number`, turns a run away within seconds when its version is no longer
+main's top line plus one, so a double claim costs under a minute. Promote's own
+version checks stay as the backstop.
+
 **Before the push, run the preflight** (ADR-098, the addendum of 1.0.4.119):
 
 ```
-bash scripts/preflight.sh
+GATE_LANE=<lane> bash scripts/preflight.sh
 ```
 
 It first checks the number the version claims (`scripts/versions.sh`): the changelog's top line is filled and is
-main's top line plus one, and no `gate/<version>` is on origin at another commit; a refusal names the next free
-version, and a taken number says that pushing over it is a force-push with lease that is Steve's to run or allow
-(ADR: The version comes from the changelog, the addendum on the claim check). Then it runs the four gate checks a
+main's top line plus one, and the held gate lock does not name it for another lane; taken means on main or in the
+held lock, never "a branch exists", and a refusal names the next free version (ADR-031, the addendums on the claim
+check and on the fill at the claim). Then it runs the four gate checks a
 shipping machine can run in under three minutes
 and inside 8 GB (`dotnet format api/TheYard.slnx --verify-no-changes`, `npm run
 format:check`, `npm run lint`, `npx tsc -b`), names the red one with the first
@@ -80,8 +120,8 @@ with a notice and moves nothing, and the person promoting names it,
 `OWNER_YES=<version> bash scripts/promote.sh "$raw" <gate seconds> <version> <run>`, with `raw` downloaded as above.
 
 **CodeRabbit is asked to read every ship** (ADR-129, CodeRabbit, one rung at a time); a ship it does not get to is logged as not reviewed. Right
-after the push of `gate/<version>`, the machine that ships runs
-`bash scripts/gate_pr.sh open <version>`: a pull request from the gate branch into
+after the push of the gate branch, the machine that ships runs
+`bash scripts/gate_pr.sh open <branch>`: a pull request from the gate branch into
 `main`, titled with the commit's subject, and the comment that asks CodeRabbit for
 its review, which a repository under ten stars needs. The gate's `coderabbit` job
 waits beside the checks, up to 30 minutes, for CodeRabbit's check on the commit to
@@ -92,7 +132,7 @@ sits. A Major or a Minor holds nothing, and a review that never came ships with 
 notice. The
 review's row joins `data/coderabbit-findings.json` with the results, and the
 after-roll job closes the request on `main`'s commit. A version promoted by hand
-closes it with `bash scripts/gate_pr.sh close <version> <main sha>`.
+closes it with `bash scripts/gate_pr.sh close <branch> <main sha>` (a bare version still names an older `gate/<version>` branch).
 
 **What a red gate run prints.** Each log belongs to one check, and its tail
 reaches the run's error annotations only when that check is red, so the failure
@@ -114,8 +154,8 @@ it pushed, because the gate checks these and does not write them: draws the
 pictures (`node docs/images/render.mjs`, `node docs/images/dataflow.mjs --png`,
 `node docs/images/rings.mjs --png`, `node docs/images/og.mjs`), strips their
 stamps (`python3 scripts/strip_c2pa.py docs/images`), runs Prettier's write,
-commits with the changelog's new line on top, and pushes the commit to
-`gate/<version>`. From 1.0.4.105 the gate draws the version card itself, so
+commits with the changelog's new line on top, fills it at the claim, and pushes the commit to
+`gate/<version>-<lane>-<sha8>`. From 1.0.4.105 the gate draws the version card itself, so
 the commit and the push are all a ship needs.
 
 **Nothing else waits on a machine either** (ADR-098, the addendum of
@@ -262,9 +302,11 @@ URL, and every deploy so far has been gated on it.
 
 ## Files
 
-- [`scripts/versions.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/versions.sh): the version claim check preflight runs first, and the version reading promote.sh shares
+- [`scripts/versions.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/versions.sh): the version claim check preflight runs first, the gate's first check, and the version reading (a branch's name included) every script shares
+- [`scripts/fill_version.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/fill_version.sh): fills the version, the date and the record number at the claim, under the lock, and amends the one commit.
+- [`scripts/gate_lock.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_lock.sh): the gate lock's claim, annotation and release, and the rule for when a peer may release it.
 - [`scripts/preflight.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/preflight.sh): the gate's four quick checks and the promote path, run before the push; a red preflight is never pushed.
-- [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `gate/<version>` branch the ship pushes; `main` moves only on its green.
+- [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `gate/<version>-<lane>-<sha8>` branch the ship pushes; `main` moves only on its green.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the suites as three jobs behind it, on every push to main and on a pull request.
 - [`.github/workflows/edge-branch.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/edge-branch.yml): moves the edge's branch to main after Deploy, only when what the edge serves (edge/ or netlify.toml) changed.
 - [`.github/workflows/nightly.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/nightly.yml): the nightly job the Function dispatches (ADR: The Nightly Function on the Admin tab).

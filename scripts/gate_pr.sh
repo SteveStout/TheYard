@@ -1,26 +1,31 @@
 #!/usr/bin/env bash
-# gate_pr.sh open <version> | close <version> <main-sha>
+# gate_pr.sh open <branch> | close <branch> <main-sha>
 #
 # Does:      The gate's pull request, so CodeRabbit reviews every ship (ADR-129). `open` runs on the machine that
-#            ships, right after the push of gate/<version>: it opens a pull request from that branch into main
-#            titled with the commit's subject, or reuses the open one, and asks CodeRabbit for a review with a
-#            comment, which a repository under ten stars needs. `close` runs once main holds the version: it
-#            closes the pull request with a comment naming main's commit, because promote.sh amends the gate's
-#            commit before it fast-forwards main and GitHub therefore never marks the request merged.
+#            ships, right after the push of gate/<version>-<lane>-<sha8>: it opens a pull request from that branch
+#            into main titled with the commit's subject, or reuses the open one, and asks CodeRabbit for a review with
+#            a comment, which a repository under ten stars needs. `close` runs once main holds the version: it closes
+#            the pull request with a comment naming main's commit, because promote.sh amends the gate's commit before
+#            it fast-forwards main and GitHub therefore never marks the request merged. The branch is named whole
+#            (gate/ may be left off); the version is read off it the way every script reads it (versions.sh's
+#            branch_version), and a bare version still names the older gate/<version> branch.
 # Does not:  Merge anything, push anything or wait for the review: the gate's coderabbit job waits, and main only
 #            ever moves by promote.sh's fast-forward. Read, print or pass a token value: gh signs in as whoever
 #            runs it (the owner on the shipping machine, the run's own token in the gate).
-# Used by:   Whoever ships, after `git push origin HEAD:gate/<version>` (docs/ci-cd/CICD.md); gate.yml's
+# Used by:   Whoever ships, after `git push origin HEAD:gate/<version>-<lane>-<sha8>` (docs/ci-cd/CICD.md); gate.yml's
 #            after-roll job and a person promoting by hand, for `close`.
 set -euo pipefail
 repo=${GITHUB_REPOSITORY:-SteveStout/TheYard}
 action=${1:-}
-version=${2:-}
-[ -n "$version" ] || {
-  echo "usage: gate_pr.sh open <version> | close <version> <main-sha>" >&2
+named=${2:-}
+[ -n "$named" ] || {
+  echo "usage: gate_pr.sh open <branch> | close <branch> <main-sha>" >&2
   exit 2
 }
-branch="gate/$version"
+# shellcheck source=scripts/versions.sh
+. "$(dirname "$0")/versions.sh"
+branch="gate/${named#gate/}"
+version=$(branch_version "$branch")
 open_pr() { gh pr list -R "$repo" --head "$branch" --state open --json number --jq '.[0].number // empty'; }
 
 case "$action" in
@@ -50,7 +55,7 @@ case "$action" in
   close)
     sha=${3:-}
     [ -n "$sha" ] || {
-      echo "usage: gate_pr.sh close <version> <main-sha>" >&2
+      echo "usage: gate_pr.sh close <branch> <main-sha>" >&2
       exit 2
     }
     pr=$(open_pr)
@@ -62,7 +67,7 @@ case "$action" in
     echo "pull request $pr closed on ${sha:0:8}"
     ;;
   *)
-    echo "usage: gate_pr.sh open <version> | close <version> <main-sha>" >&2
+    echo "usage: gate_pr.sh open <branch> | close <branch> <main-sha>" >&2
     exit 2
     ;;
 esac

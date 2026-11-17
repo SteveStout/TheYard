@@ -113,21 +113,36 @@ coverage floor to make a run green (ADR-122).
 
 ## Shipping
 
-**A ship is a push of `gate/<version>`.** Before that push, run the preflight:
+**A ship is a push of `gate/<version>-<lane>-<sha8>`.** The number is filled at the claim, under the gate lock, never
+before it (ADR-031, the addendum on the fill at the claim). Build the one commit on origin/main with the placeholders
+for the version, the date and the record number where the numbers go (the changelog's top line, the subject, a record's
+name), then:
 
 ```
-bash scripts/preflight.sh
+v=$(bash scripts/versions.sh next)                 # origin/main's top line plus one
+bash scripts/gate_lock.sh claim <lane> "$v"         # the lock, created only if absent, read back after 2 s
+GATE_LANE=<lane> bash scripts/fill_version.sh       # fills the numbers, redraws the card, tightens the ratchet, amends
+GATE_LANE=<lane> bash scripts/preflight.sh
+git push origin HEAD:refs/heads/gate/$v-<lane>-$(git rev-parse --short=8 HEAD)
 ```
 
-**A red preflight is never pushed.** Right after the push, `bash scripts/gate_pr.sh open <version>` opens the gate's
+**A red preflight is never pushed.** Right after the push, `bash scripts/gate_pr.sh open <branch>` opens the gate's
 pull request and asks CodeRabbit for its review, which the gate waits for before it promotes (ADR-129); a ship
-with no request is logged "not reviewed, no pull request" and warned in the run. It first checks the version claim (`scripts/versions.sh`: the changelog's top line is main's plus one
-and no gate branch of that number is on origin at another commit; ADR-031's addendum on the claim check), then runs
+with no request is logged "not reviewed, no pull request" and warned in the run. Then
+`bash scripts/gate_lock.sh annotate <run> <branch>` adds the run and the branch to the lock's line. The preflight first
+checks the version claim (`scripts/versions.sh`: the changelog's top line is main's plus one and the held lock does not
+name it for another lane; taken means on main or in the held lock, never "a branch exists"), then runs
 the four gate checks that fit on a shipping machine (`dotnet
 format`, Prettier, oxlint, the type check) and says whether this version changes `.github/workflows` and
 whether the secret `PROMOTE_TOKEN` will carry it; a version that changes a workflow with no such secret
 is promoted by hand after a green gate, which the preflight prints the command for (ADR-098, the addendum
 of 1.0.4.119). The browser suite and the two passes on Cosmos DB are the gate's, on its 16 GB runner.
+
+**A red gate releases the lock and frees its number.** `bash scripts/gate_lock.sh release` renames the lock; the next
+claim takes main's top line plus one again, so nothing ever waits on a gate branch being deleted. The gate's first job
+turns a run away in seconds when its number is no longer main's top line plus one. A peer may release another lane's
+lock only when `gate_lock.sh show` says yes: its run ended red, or ended green with main already on its version. A
+green run that has not promoted is released by its holder or by Steve, never by a peer.
 
 **One full run, the gate's.** While you work, run only the suite your change touches (on the box,
 `yard-test <branch> api|server|web|e2e`; elsewhere the one command below for that suite). The whole of
