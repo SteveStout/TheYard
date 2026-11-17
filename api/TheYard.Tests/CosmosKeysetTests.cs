@@ -49,8 +49,8 @@ public class CosmosKeysetTests
             Assert.Equal(100, byKey.Count);
             Assert.Equal(expected.Select(entry => entry.Seq), byKey.Select(entry => entry.Seq));
             Assert.DoesNotContain(operations, operation => operation.Text.Contains("OFFSET 5000", StringComparison.Ordinal));
-            double charge = operations.Sum(operation => operation.RequestCharge);
-            Assert.True(charge < 100, $"the kept-place page cost {charge} request units: {string.Join(" | ", operations.Select(operation => $"{operation.RequestCharge} {operation.Text}"))}");
+            double charge = operations.Sum(operation => operation.Charge);
+            Assert.True(charge < 100, $"the kept-place page cost {charge} request units: {string.Join(" | ", operations.Select(operation => $"{operation.Charge} {operation.Text}"))}");
         }
     }
 

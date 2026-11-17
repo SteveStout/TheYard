@@ -189,7 +189,7 @@ public static partial class Routes
             {
                 var parts = perRequest.Key.Item2.Split(' ', 2);
                 string route = parts.Length == 2 ? Of(parts[0], parts[1]) : perRequest.Key.Item2;
-                return (Route: route, Operations: perRequest.Count(), Charge: perRequest.Sum(operation => operation.RequestCharge), CrossPartition: perRequest.Count(o => o.Partition.StartsWith("cross", StringComparison.Ordinal)));
+                return (Route: route, Operations: perRequest.Count(), Charge: perRequest.Sum(operation => operation.Charge), CrossPartition: perRequest.Count(o => o.Scope.StartsWith("cross", StringComparison.Ordinal)));
             })
             .GroupBy(sample => sample.Route, StringComparer.Ordinal)
             .Select(group =>

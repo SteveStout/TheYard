@@ -12,8 +12,8 @@ public static class AdminObservabilityRoutes
 {
 
     /// <summary>Answers the SQL ring: the statements the relational store ran, newest first.</summary>
-    internal static async Task<IResult> Sql(ReadSqlRingHandler handler, CancellationToken cancellation) =>
-        AdminEndpoints.Answer(await handler.HandleAsync(new ReadSqlRingQuery(), cancellation));
+    internal static async Task<IResult> Sql(ReadStatementRingHandler handler, CancellationToken cancellation) =>
+        AdminEndpoints.Answer(await handler.HandleAsync(new ReadStatementRingQuery(), cancellation));
 
     /// <summary>Answers the document store's operations ring, newest first, with the store's name.</summary>
     internal static async Task<IResult> Store(ReadStoreRingHandler handler, CancellationToken cancellation) =>

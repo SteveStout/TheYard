@@ -174,14 +174,14 @@ async Task<int> QueryAsync()
                 await store.QueryAsync<VehicleDocument>(target, query, partition, partition is null ? "cross-partition" : "pinned to the make");
             }
             clock.Stop();
-            charges[name].Add(log.Operations.Sum(o => o.RequestCharge));
+            charges[name].Add(log.Operations.Sum(o => o.Charge));
             times[name].Add(clock.ElapsedMilliseconds);
         }
         log.Operations.Clear();
         var point = Stopwatch.StartNew();
         await store.ReadAsync<VehicleDocument>(target, id, "Ford", "pinned to the make");
         point.Stop();
-        pointCharges.Add(log.Operations.Sum(o => o.RequestCharge));
+        pointCharges.Add(log.Operations.Sum(o => o.Charge));
         pointTimes.Add(point.ElapsedMilliseconds);
         Console.Error.WriteLine($"round {round + 1} of {rounds}");
     }

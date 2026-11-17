@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace TheYard.Application.Shared.History;
 
@@ -25,10 +26,10 @@ namespace TheYard.Application.Shared.History;
 /// <param name="ManagedMb">The average managed heap size, in megabytes.</param>
 /// <param name="CpuPercent">The average process CPU, in percent; null when not read.</param>
 /// <param name="CpuMaxPercent">The highest process CPU sampled, in percent; null when not read.</param>
-/// <param name="SqlCpuPercent">The relational store's own CPU reading, in percent; null when not read.</param>
-/// <param name="SqlMemoryPercent">The relational store's own memory reading, in percent; null when not read.</param>
-/// <param name="SqlDataIoPercent">The relational store's own data IO reading, in percent; null when not read.</param>
-/// <param name="RequestUnits">What the document store charged, in request units.</param>
+/// <param name="StoreCpuPercent">The relational store's own CPU reading, in percent; null when not read. On the wire as <c>sql_cpu_percent</c>.</param>
+/// <param name="StoreMemoryPercent">The relational store's own memory reading, in percent; null when not read. On the wire as <c>sql_memory_percent</c>.</param>
+/// <param name="StoreDataIoPercent">The relational store's own data IO reading, in percent; null when not read. On the wire as <c>sql_data_io_percent</c>.</param>
+/// <param name="Charge">What the document store charged, in its own unit (request units). On the wire as <c>request_units</c>.</param>
 /// <param name="Operations">How many operations went to the document store.</param>
 /// <param name="Requests">How many HTTP requests the site answered.</param>
 /// <param name="P50Ms">The median request duration, in milliseconds; null when not read.</param>
@@ -44,10 +45,10 @@ public sealed record MachineMinute(
     double ManagedMb,
     double? CpuPercent,
     double? CpuMaxPercent,
-    double? SqlCpuPercent,
-    double? SqlMemoryPercent,
-    double? SqlDataIoPercent,
-    double RequestUnits,
+    [property: JsonPropertyName("sql_cpu_percent")] double? StoreCpuPercent,
+    [property: JsonPropertyName("sql_memory_percent")] double? StoreMemoryPercent,
+    [property: JsonPropertyName("sql_data_io_percent")] double? StoreDataIoPercent,
+    [property: JsonPropertyName("request_units")] double Charge,
     int Operations,
     int Requests = 0,
     double? P50Ms = null,
@@ -64,10 +65,10 @@ public sealed record MachineMinute(
 /// <param name="ManagedMb">The average managed heap size, in megabytes.</param>
 /// <param name="CpuPercent">The average process CPU, in percent; null when not read.</param>
 /// <param name="CpuMaxPercent">The highest process CPU sampled, in percent; null when not read.</param>
-/// <param name="SqlCpuPercent">The relational store's own CPU reading, in percent; null when not read.</param>
-/// <param name="SqlMemoryPercent">The relational store's own memory reading, in percent; null when not read.</param>
-/// <param name="SqlDataIoPercent">The relational store's own data IO reading, in percent; null when not read.</param>
-/// <param name="RequestUnits">What the document store charged, in request units, summed over the bucket.</param>
+/// <param name="StoreCpuPercent">The relational store's own CPU reading, in percent; null when not read. On the wire as <c>sql_cpu_percent</c>.</param>
+/// <param name="StoreMemoryPercent">The relational store's own memory reading, in percent; null when not read. On the wire as <c>sql_memory_percent</c>.</param>
+/// <param name="StoreDataIoPercent">The relational store's own data IO reading, in percent; null when not read. On the wire as <c>sql_data_io_percent</c>.</param>
+/// <param name="Charge">What the document store charged, in its own unit (request units), summed over the bucket. On the wire as <c>request_units</c>.</param>
 /// <param name="Operations">How many operations went to the document store, summed over the bucket.</param>
 /// <param name="Requests">How many HTTP requests the site answered, summed over the bucket.</param>
 /// <param name="P50Ms">The mean of the minutes' median request durations, in milliseconds; null when not read.</param>
@@ -83,10 +84,10 @@ public sealed record MachineBucket(
     double ManagedMb,
     double? CpuPercent,
     double? CpuMaxPercent,
-    double? SqlCpuPercent,
-    double? SqlMemoryPercent,
-    double? SqlDataIoPercent,
-    double RequestUnits,
+    [property: JsonPropertyName("sql_cpu_percent")] double? StoreCpuPercent,
+    [property: JsonPropertyName("sql_memory_percent")] double? StoreMemoryPercent,
+    [property: JsonPropertyName("sql_data_io_percent")] double? StoreDataIoPercent,
+    [property: JsonPropertyName("request_units")] double Charge,
     int Operations,
     int Requests = 0,
     double? P50Ms = null,
@@ -197,10 +198,10 @@ public static class MachineFolding
                 Math.Round(group.Average(minute => minute.ManagedMb), 1),
                 MeanOf(group.Select(minute => minute.CpuPercent)),
                 MaxOf(group.Select(minute => minute.CpuMaxPercent)),
-                MeanOf(group.Select(minute => minute.SqlCpuPercent)),
-                MeanOf(group.Select(minute => minute.SqlMemoryPercent)),
-                MeanOf(group.Select(minute => minute.SqlDataIoPercent)),
-                Math.Round(group.Sum(minute => minute.RequestUnits), 2),
+                MeanOf(group.Select(minute => minute.StoreCpuPercent)),
+                MeanOf(group.Select(minute => minute.StoreMemoryPercent)),
+                MeanOf(group.Select(minute => minute.StoreDataIoPercent)),
+                Math.Round(group.Sum(minute => minute.Charge), 2),
                 group.Sum(minute => minute.Operations),
                 group.Sum(minute => minute.Requests),
                 // A median of medians is not a median, and the chart does not
