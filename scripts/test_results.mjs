@@ -63,6 +63,21 @@ const checksSeconds =
   timed.checks_s === undefined || timed.checks_s === '' ? null : Number(timed.checks_s);
 const seconds = (side, key) => Number(side[`${key}_s`] ?? 0);
 
+// What scripts/gate_feed.sh read with gh for this promote, which promote.sh writes into the raw folder before this
+// runs (the gate's own jobs do not write it): the run's id and push time, the lines the version changes, the gate's
+// reds since the last promote, and when the version below went live. Empty when it was not written.
+const feedOf = (folder) => {
+  const full = path.join(folder, 'feed.json');
+  try {
+    return existsSync(full) ? JSON.parse(readFileSync(full, 'utf8')) : {};
+  } catch {
+    return {};
+  }
+};
+const feed = feedOf(raw);
+const secondsBetween = (from, to) =>
+  from && to ? Math.max(0, Math.round((Date.parse(to) - Date.parse(from)) / 1000)) : null;
+
 const readJson = (file) => {
   const full = path.join(raw, file);
   return existsSync(full) ? JSON.parse(readFileSync(full, 'utf8').replace(/^\uFEFF/, '')) : null;
@@ -270,6 +285,13 @@ const history = [
           checksSeconds: before.checksSeconds ?? null,
           ...summed(before.suites ?? []),
           distJsBytes: before.code?.distJsBytes ?? null,
+          runId: before.runId ?? null,
+          changedLines: before.changedLines ?? null,
+          // Push to live, known only now: the version below went live after its own promote wrote its row.
+          liveSeconds:
+            feed.below?.version === before.version
+              ? secondsBetween(before.pushedAt ?? feed.below?.pushedAt, feed.below?.liveAt)
+              : null,
         },
       ]
     : []),
@@ -283,6 +305,10 @@ const lines = [
   `  "ranAt": ${JSON.stringify(new Date().toISOString())},`,
   `  "gateSeconds": ${Number(gateSeconds ?? 0)},`,
   `  "checksSeconds": ${JSON.stringify(checksSeconds)},`,
+  `  "runId": ${JSON.stringify(feed.runId ?? null)},`,
+  `  "pushedAt": ${JSON.stringify(feed.pushedAt ?? null)},`,
+  `  "changedLines": ${JSON.stringify(feed.changedLines ?? null)},`,
+  `  "reds": ${JSON.stringify(feed.reds ?? [])},`,
   `  "checks": ${JSON.stringify(checks)},`,
   `  "code": ${JSON.stringify(code)},`,
   `  "history": ${JSON.stringify(history)},`,
