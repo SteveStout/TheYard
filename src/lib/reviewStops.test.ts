@@ -91,7 +91,7 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     const stop = (key: string) => REVIEW_STOPS.find((each) => each.key === key);
     expect(stop('spend')?.doThis).toBe('Open the cost card and read the bill by resource.');
     expect(stop('gate')?.shows).toMatch(
-      /, with CodeRabbit reviewing the pull request, then a roll in place that is read back on both names before the run ends\.$/
+      /, with CodeRabbit reviewing the pull request, then a roll in place, where the gate's run ends; a run of its own reads the version back on both names and runs CI on main right after\.$/
     );
     expect(stop('gate')?.doThis).toBe(
       'Read the suites and their times for the build you are looking at.'

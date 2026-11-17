@@ -78,7 +78,7 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
     address: '/?view=admin&card=tests',
     minutes: 1,
     shows:
-      'Every push through one gate: xUnit, Vitest, Playwright with axe and the architecture rules, on both stores, with CodeRabbit reviewing the pull request, then a roll in place that is read back on both names before the run ends.',
+      "Every push through one gate: xUnit, Vitest, Playwright with axe and the architecture rules, on both stores, with CodeRabbit reviewing the pull request, then a roll in place, where the gate's run ends; a run of its own reads the version back on both names and runs CI on main right after.",
     doThis: 'Read the suites and their times for the build you are looking at.',
     record: 'adr-five-minute-gate',
   },
