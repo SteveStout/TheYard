@@ -45,6 +45,9 @@ public class PromoteWorkflowTests
         Assert.DoesNotContain("git push", Job("after-roll"), StringComparison.Ordinal);
         Assert.DoesNotContain("\n    if:", promote, StringComparison.Ordinal);
         Assert.Contains("\"$GITHUB_RUN_ID\"", promote, StringComparison.Ordinal);
+        // The version is read off gate/<version>-<lane>-<sha8> up to the first hyphen, the one way every script reads it.
+        Assert.Contains("\"$(branch_version \"$GITHUB_REF_NAME\")\"", promote, StringComparison.Ordinal);
+        Assert.DoesNotContain("${GITHUB_REF_NAME#gate/}", Gate(), StringComparison.Ordinal);
     }
     // #endregion the-order
 
@@ -69,6 +72,7 @@ public class PromoteWorkflowTests
         int close = afterRoll.IndexOf("bash scripts/gate_pr.sh close", StringComparison.Ordinal);
         int branch = afterRoll.IndexOf("name: The gate branch goes", StringComparison.Ordinal);
         Assert.True(close > 0 && branch > close, "after-roll should close the gate's pull request before the gate branch goes");
+        Assert.Contains("bash scripts/gate_pr.sh close \"$GITHUB_REF_NAME\"", afterRoll, StringComparison.Ordinal);
         Assert.Contains("pull-requests: write", afterRoll, StringComparison.Ordinal);
     }
     // #endregion the-review

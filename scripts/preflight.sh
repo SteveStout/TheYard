@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # preflight.sh
 #
-# Does:      The version claim check (scripts/versions.sh: the changelog's top line filled, one above main, and its
-#            gate branch free or this commit's own), then the checks the gate runs that a shipping machine can also
+# Does:      The version claim check (scripts/versions.sh: the changelog's top line filled, one above main, and not
+#            named in the gate lock by another lane), then the checks the gate runs that a shipping machine can also
 #            run, in under three minutes and inside 8 GB: dotnet format, Prettier, oxlint and the type check, each
 #            named with the first lines of its output when it is red, and then one line saying whether this version
 #            changes .github/workflows and whether the secret PROMOTE_TOKEN will carry it. Exits non-zero on any red.
 # Does not:  Run the browser suite or the two passes on Cosmos DB. Those need the 16 GB runner, which is why
 #            the gate moved off the laptop in the first place (ADR-098, ADR-068). Read, print or take a token
 #            value: the secret is read by NAME from the repository's secret list and nowhere else.
-# Used by:   Whoever ships, before a push of gate/<version> (CLAUDE.md, docs/ci-cd/CICD.md). A red preflight
-#            is never pushed.
+# Used by:   Whoever ships, after scripts/fill_version.sh and before the push of gate/<version>-<lane>-<sha8>
+#            (CLAUDE.md, docs/ci-cd/CICD.md). A red preflight is never pushed.
 #
 # Runs on the laptop that ships and on the Linux machine beside it. A check this machine cannot run says so
 # and is UNKNOWN; nothing here is ever assumed green.
@@ -20,9 +20,9 @@ out=$(mktemp -d)
 red=""
 
 # #region the-version
-# The number this version claims, checked before anything slow runs: filled, one above main, and no gate branch of
-# that number on origin at another commit (scripts/versions.sh). A taken number found here costs a minute; found at
-# promote, after the whole gate, it cost a gate run and every lane behind it.
+# The number this version claims, checked before anything slow runs: filled, one above main, and not named in the
+# gate lock by another lane (scripts/versions.sh). A taken number found here costs a minute; found at promote, after
+# the whole gate, it cost a gate run and every lane behind it.
 printf '%-9s ' version
 if bash scripts/versions.sh > "$out/version.txt" 2>&1; then
   echo ok
@@ -96,5 +96,11 @@ if [ -n "$red" ]; then
 fi
 echo "preflight green: none of these four will turn the gate red"
 echo "the full run is the gate's: before the push, run only the suite your change touches (CLAUDE.md, Testing)"
-echo "after the push of gate/<version>: bash scripts/gate_pr.sh open <version>, so CodeRabbit reviews it (ADR-129)"
+# The branch this commit ships on: gate/<version>-<lane>-<sha8>, the version first so every parser cuts at one hyphen.
+# shellcheck source=scripts/versions.sh
+. scripts/versions.sh
+branch="gate/$(versions < docs/CHANGELOG.md | sed -n 1p)-${GATE_LANE:-<lane>}-$(git rev-parse --short=8 HEAD)"
+echo "the push: git push origin HEAD:refs/heads/$branch"
+echo "after the push: bash scripts/gate_pr.sh open $branch, so CodeRabbit reviews it (ADR-129),"
+echo "  and bash scripts/gate_lock.sh annotate <run> $branch; a red gate releases the lock and frees its number"
 # #endregion the-verdict

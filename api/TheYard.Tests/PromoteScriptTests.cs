@@ -154,6 +154,32 @@ public sealed partial class PromoteScriptTests : IDisposable
         Assert.Equal(Git("rev-parse HEAD"), MainOnOrigin());
     }
 
+    /// <summary>
+    /// With no version named, the gate's branch names it, read up to the first hyphen: gate/version-lane-sha8 and the
+    /// older gate/version both promote, and a branch naming another version than the changelog's top line is refused.
+    /// </summary>
+    [Theory]
+    [InlineData("gate/1.0.4.106-coding1116-abcdef12", true)]
+    [InlineData("gate/1.0.4.106", true)]
+    [InlineData("gate/1.0.4.107-coding1116-abcdef12", false)]
+    public void The_version_is_read_off_the_gate_branch_up_to_its_first_hyphen(string branch, bool promotes)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        Version("1.0.4.106");
+
+        var (code, output) = Promote("\"\"", env: new Dictionary<string, string> { ["GITHUB_REF_NAME"] = branch });
+
+        Assert.True(promotes == (code == 0), output);
+        if (!promotes)
+        {
+            Assert.Contains("the branch names 1.0.4.107 and the changelog's top line is 1.0.4.106", output, StringComparison.Ordinal);
+        }
+    }
+
     public static TheoryData<string, string> Refusals => new()
     {
         { "red", "check jobs are not all green: 6 of the 7 it trusts" },

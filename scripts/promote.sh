@@ -20,16 +20,18 @@
 set -euo pipefail
 raw=$1
 seconds=$2
-version=${3:-${GITHUB_REF_NAME#gate/}}
 run=${4:-${GITHUB_RUN_ID:-}}
 cd "$(git rev-parse --show-toplevel)"
 refuse() {
   echo "::error::$*"
   exit 1
 }
-# The changelog's version lines and the number after one, read the one way preflight.sh's claim check reads them.
+# The changelog's version lines, the number after one and the version a gate branch names, read the one way
+# preflight.sh's claim check reads them.
 # shellcheck source=scripts/versions.sh
 . scripts/versions.sh
+# Named, or read off the gate branch: gate/<version>-<lane>-<sha8>, or the older gate/<version>.
+version=${3:-$(branch_version "${GITHUB_REF_NAME:-}")}
 
 # #region the-tested-commit
 # Before anything is written: HEAD is the commit the named run tested, and it is one commit on main, so the gate's

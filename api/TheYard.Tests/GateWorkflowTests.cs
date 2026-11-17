@@ -278,6 +278,38 @@ public class GateWorkflowTests
     }
     // #endregion side-by-side
 
+    // #region the-number
+    /// <summary>
+    /// One gate at a time, every pending run kept in line: the concurrency group keeps queue: max, which keeps up to a
+    /// hundred pending runs instead of cancelling the one a third push replaces, and carries no cancel-in-progress line,
+    /// because GitHub refuses queue: max beside cancel-in-progress: true (ADR-031, the addendum on the fill at the claim).
+    /// </summary>
+    [Fact]
+    public void The_gate_queues_every_pending_run_and_names_no_cancel_in_progress()
+    {
+        string workflow = Workflow();
+        Assert.Contains("\nconcurrency:\n  group: gate\n  queue: max\n", workflow, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"(?m)^\s*cancel-in-progress:"), workflow);
+    }
+
+    /// <summary>
+    /// The number is read again before anything slow: a small first job runs the gate check of scripts/versions.sh on
+    /// the branch, and every job that costs minutes waits on it, so a second claim of one number ends the run in seconds.
+    /// </summary>
+    [Fact]
+    public void Every_job_that_costs_minutes_waits_for_the_number_check()
+    {
+        string number = Job("number");
+        Assert.Contains("run: bash scripts/versions.sh gate \"$GITHUB_REF_NAME\"", number, StringComparison.Ordinal);
+        Assert.DoesNotContain("needs:", number, StringComparison.Ordinal);
+        Assert.Contains("timeout-minutes: 5", number, StringComparison.Ordinal);
+        foreach (string job in new[] { "dotnet", "cosmos", "node", "browser", "shed", "coderabbit", "lighthouse" })
+        {
+            Assert.Contains("\n    needs: number\n", Job(job), StringComparison.Ordinal);
+        }
+    }
+    // #endregion the-number
+
     /// <summary>
     /// Ladder 8b (ADR-134's report half): the Lighthouse job reads the built site five times inside the job and keeps
     /// the median as an artifact, and it never holds a ship. It sits after the after-roll job, outside the check jobs
