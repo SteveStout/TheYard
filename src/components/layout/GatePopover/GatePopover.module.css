@@ -1,0 +1,47 @@
+/**
+ * Does:      Styles the header badge's popover: a glass panel under the badge at the window's right edge, its title,
+ *            three lines, the commit and the link to the Quality page.
+ * Does not:  Style the badge itself, which wears the store bar's own pill group (StoreBar.module.css), so the first
+ *            load carries no new style.
+ * Used by:   GatePopover.tsx.
+ */
+/* The ground, the rule and the corners are the shared glass's (.op-glass); this places it over the header. */
+.panel {
+  position: fixed;
+  right: var(--space-4);
+  z-index: calc(var(--layer-header) + 1);
+  width: var(--drawer-width);
+  padding: var(--space-4);
+  color: var(--color-text);
+}
+
+.panel:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+
+.lines {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-size: var(--text-sm);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.commit {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.link {
+  display: inline-block;
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
