@@ -2222,10 +2222,35 @@
         "nitpick": 0
       },
       "critical_at": [],
+      "fixed": 2,
+      "answered_as_wrong": 0,
+      "prs": [
+        104
+      ]
+    },
+    {
+      "version": "1.0.5.87",
+      "pr": 105,
+      "sha": "bda32e45",
+      "level": 0,
+      "at": "2026-11-18T12:56:56Z",
+      "waited_seconds": 677,
+      "review_seconds": 677,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 16,
+      "findings": {
+        "critical": 0,
+        "major": 6,
+        "minor": 11,
+        "trivial": 3,
+        "nitpick": 0
+      },
+      "critical_at": [],
       "fixed": null,
       "answered_as_wrong": null,
       "prs": [
-        104
+        105
       ]
     }
   ]

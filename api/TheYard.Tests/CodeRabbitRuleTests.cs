@@ -486,7 +486,7 @@ public sealed class CodeRabbitRuleTests
             string log = Path.Combine(dir, "log.json");
             File.WriteAllText(log, JsonSerializer.Serialize(new { about = "test", rows = new[] { new { version = "1.0.5.3", pr = 12, sha = "8533b35f", reviewed = "full", actionable = 0, findings = new { critical = 0, major = 0, minor = 0, trivial = 0, nitpick = 0 } } } }));
 
-            var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" recount 1.0.5.3 gate/1.0.5.3 {Sha} \"{log}\"") { WorkingDirectory = dir };
+            var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" recount 1.0.5.3 gate/1.0.5.3-coding1116-8533b35f {Sha} \"{log}\"") { WorkingDirectory = dir };
             start.Environment["PATH"] = bin + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
             var (code, output) = Script(start);
             Assert.True(code == 0, output);
@@ -532,7 +532,7 @@ public sealed class CodeRabbitRuleTests
             string log = Path.Combine(dir, "log.json");
             File.WriteAllText(log, JsonSerializer.Serialize(new { about = "test", rows = new[] { new { version = "1.0.5.3", pr = 12, sha = "8533b35f", reviewed = "full", actionable = 0, findings = new { critical = 0, major = 0, minor = 0, trivial = 0, nitpick = 0 } } } }));
 
-            var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" recount 1.0.5.3 gate/1.0.5.3 {Sha} \"{log}\"") { WorkingDirectory = dir };
+            var start = new ProcessStartInfo("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" recount 1.0.5.3 gate/1.0.5.3-coding1116-8533b35f {Sha} \"{log}\"") { WorkingDirectory = dir };
             start.Environment["PATH"] = bin + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
             var (code, output) = Script(start);
             Assert.True(code == 0, output);

@@ -130,6 +130,12 @@ def count(reviews, comments, sha=None):
     return found, actionable, places
 
 
+def branch_version(branch):
+    """The version a gate branch names: the text after gate/ up to the first hyphen, so gate/<version>-<lane>-<sha8> and
+    the older gate/<version> both read, the one way scripts/versions.sh reads them."""
+    return branch.removeprefix("refs/heads/").removeprefix("gate/").split("-", 1)[0]
+
+
 def carried(branch, sha, pr=None):
     """Every request from <branch> whose head is <sha>, closed ones included, and <pr>: when a gate branch is deleted and
     pushed again its request closes, a new one opens on the same commit, and CodeRabbit's review stays on the first."""
@@ -326,7 +332,7 @@ def main():
                     run = newest
                     break
         time.sleep(POLL_SECONDS)
-    row = empty_row(branch.removeprefix("gate/"), sha, None)
+    row = empty_row(branch_version(branch), sha, None)
     row["pr"] = pr
     row["waited_seconds"] = int(time.monotonic() - start)
     if pr is None:
@@ -361,7 +367,7 @@ def main():
     print(json.dumps(row))
     if row["reviewed"].startswith("not reviewed") or row["reviewed"].endswith("not read"):
         kind = "warning" if pr is None else "notice"
-        print(f"::{kind}::CodeRabbit: {row['reviewed']}; Level 0 ships anyway (ADR-129). Open it with scripts/gate_pr.sh open <version> after the push.")
+        print(f"::{kind}::CodeRabbit: {row['reviewed']}; Level 0 ships anyway (ADR-129). Open it with scripts/gate_pr.sh open <branch> after the push.")
 
 
 if __name__ == "__main__":
