@@ -225,6 +225,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The machine lanes' feed writes only its run folder and one QUEUE-hotmgr file a day, and every candidate passes the person, text and closed-req gates and the feed's hold file before it is queued | ADR-119, the addendum of 1.0.4.166 on the feed lane | FeedTests |
 | The invites worklist is ranked hottest first before it is cut to the day's room, so a row left over is never hotter than a row kept | ADR-119, the addendum of 1.0.4.166 on the feed lane | FeedTests |
 | An invite stands on Pending and its note read back, shown in a screenshot copied into the run folder; the toast is recorded when seen and never required, and a send with no such proof stands unverified | ADR-119, the addendum of 1.0.4.166 on the feed lane | ResultTests, RunTests |
+| Before a claim, preflight counts the lines a version changes, added plus deleted, with the promote's and the fill's files left out, and refuses one under the floor or over the ceiling of `.github/pr-size.json` unless its commit names why (Ships-alone:, Fixes-main: or Large:) | ADR: A pull request of AI-written code is sized to the gate | PrSizeScriptTests |
 
 ## How the table is read
 

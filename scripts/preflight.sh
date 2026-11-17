@@ -54,6 +54,9 @@ check format-server dotnet format server/JobHunt.Server.slnx --verify-no-changes
 check prettier npm run format:check
 check lint npm run lint
 check tsc npx tsc -b
+# The catch list (ADR-098, the addendum on the catch list): the gate's own em dash scan and ratchet, the version's
+# size against its band, the og card and the specs the change touches, under a printed two-minute cap.
+check catch bash scripts/catch_list.sh
 # #endregion the-checks
 
 # #region the-workflow-line
@@ -94,7 +97,7 @@ if [ -n "$red" ]; then
   echo "a red preflight is never pushed"
   exit 1
 fi
-echo "preflight green: none of these four will turn the gate red"
+echo "preflight green: none of these checks will turn the gate red"
 echo "the full run is the gate's: before the push, run only the suite your change touches (CLAUDE.md, Testing)"
 # The branch this commit ships on: gate/<version>-<lane>-<sha8>, the version first so every parser cuts at one hyphen.
 # shellcheck source=scripts/versions.sh

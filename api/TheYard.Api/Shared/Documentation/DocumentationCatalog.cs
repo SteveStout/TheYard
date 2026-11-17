@@ -166,6 +166,7 @@ public static class DocumentationCatalog
         ["adr-one-sql-database-one-schema-per-area"] = "docs/decisions/ADR-133-one-sql-database-one-schema-per-area.md",
         ["adr-a-byte-budget-for-the-first-load"] = "docs/decisions/ADR-134-a-byte-budget-for-the-first-load.md",
         ["adr-an-empty-run-is-a-failed-run"] = "docs/decisions/ADR-135-an-empty-run-is-a-failed-run.md",
+        ["adr-a-pull-request-of-ai-written-code-is-sized-to-the-gate"] = "docs/decisions/ADR-@ADR@-a-pull-request-of-ai-written-code-is-sized-to-the-gate.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
