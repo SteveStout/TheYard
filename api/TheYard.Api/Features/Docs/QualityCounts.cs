@@ -131,6 +131,26 @@ public static partial class QualityCounts
         string[] classes = [.. TestClass().Matches(cells[2]).Select(m => m.Value).Distinct()];
         return (classes.Sum(c => results.TryGetValue(c, out var r) ? r.Run : 0), classes.Sum(c => results.TryGetValue(c, out var r) ? r.Passed : 0));
     }
+
+    /// <summary>
+    /// The rules of ADR-075's table that cite the record titled <paramref name="title"/>, each with the tests that
+    /// hold it and how they did in the gate this build shipped from, for the record's "Enforced by" section
+    /// (EnforcedBy.cs). A cell may cite several records, and a title may hold a comma, so a citation runs from its
+    /// own "ADR: " to the next, as RuleTableTests reads it.
+    /// </summary>
+    internal static List<(string Rule, string Holds, string Verdict)> RulesCiting(string title, string repoRoot)
+    {
+        var results = Results(repoRoot);
+        return [.. RuleRows(repoRoot)
+            .Where(cells => Regex.Split(cells[1], @"(?=\bADR: )")
+                .Where(part => part.StartsWith("ADR: ", StringComparison.Ordinal))
+                .Any(part => string.Equals(part["ADR: ".Length..].Trim().TrimEnd(',', '.', ' '), title, StringComparison.Ordinal)))
+            .Select(cells =>
+            {
+                var (run, passed) = Ran(cells, results);
+                return (cells[0], cells[2], run == 0 ? "in its own suite, not this file" : $"{passed} of {run} passed");
+            })];
+    }
     // #endregion rules-table
 
     // #region rule-groups
