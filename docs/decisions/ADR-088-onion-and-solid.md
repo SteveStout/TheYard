@@ -121,6 +121,8 @@ The single-responsibility line above names `PasswordReset` as the class that hol
 - [`docs/images/rings.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/rings.mjs): the drawing.
 - [`docs/images/solid.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/solid.mjs): the SOLID letters, one at a time.
 - [`api/TheYard.Tests/StoreVocabularyTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreVocabularyTests.cs): the Application ring's names, held to no store's vocabulary.
+- [`api/TheYard.Tests/DataRecordsTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/DataRecordsTests.cs): Data held to the records the rules read, by name.
+- [`api/TheYard.Tests/CosmosCatalogueTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/CosmosCatalogueTests.cs): the document store's catalogue held to the in-memory one, row for row.
 
 ## Addendum, 2026-10-20 (1.0.4.0): the onion cut into vertical slices
 
@@ -365,3 +367,66 @@ that no longer excuses anything fails too. The list is empty. The same class ser
 shapes and holds their field names, so a rename that forgets its attribute is red. The test was
 planted against: a type named for Cosmos DB with a method named for request units and a parameter
 named for partitions failed it on all three names.
+
+## Addendum, @DATE@ (@VER@): Data holds the rules' records, and the Cosmos catalogue answers like the others
+
+**In plain words: the centre of the onion holds the dataset again, and the third copy of the
+catalogue filter is held to the first.** Data had grown report shapes beside `Vehicle` and
+`PhotoEntry`: the blog's post, read, event, numbers and reads by source, the nightly workflow's run
+and the Function's judged slot, and the box's snapshot and live sample with their eleven parts. Each
+now lives where it is read, and Data declares two types. Nothing does anything differently.
+
+**Why.** The review of the database in the onion, read at 1.0.5.56, found these as finding B and
+finding C. B: the shapes obeyed Data's rule (plain records, no behaviour) and were still query and
+report shapes, closer to transfer objects than a model, in the one ring every other ring depends
+on. C: the catalogue filter is written three times, as `VehicleFilter`, as `EfVehicleCatalogue`'s
+EF Core query and as `CosmosVehicleCatalogue`'s Cosmos DB SQL, and `StoreCatalogueTests` held only
+the relational copy to the in-memory one; `CosmosKeysetTests` checks the kept places against OFFSET
+inside Cosmos DB and never against the list.
+
+**Where each went.** The rule was the slice that reads a shape, without a cycle:
+
+- `BlogPost`, `BlogImage`, `BlogRead`, `BlogEvent`, `BlogStat` and `BlogSourceCount` are the Blog
+  slice's, in `Application/Features/Blog/BlogPost.cs` beside its port. The port, its handlers, the
+  relational adapter and the host's routes read them, and each of those can see Application. The
+  review listed four; the post and its image went too, because no rule in Domain reads either.
+- `NightlyFiring` is in `Application/Shared/History/NightlyRunLog.cs`, beside the port that keeps
+  it. The Cosmos DB adapter that writes it and the host's source that judges it both see Application.
+- `NightlyRun` could not go to Application: `NightlyRunRules` in Domain validates it, and Domain
+  cannot see Application. It is in `Domain/Features/Admin/NightlyRun.cs`, beside that rule, which is
+  the narrowest place the rule, the Application port, the adapter and the host all see.
+- `BoxSnapshot`, its parts (`BoxCore`, `BoxMemory`, `BoxSwap`, `BoxNet`, `BoxDisk`, `BoxGpu`,
+  `BoxTemp`, `BoxService`) and `BoxLiveSample` with `BoxNetRate` and `BoxGpuLoad` are in
+  `Domain/Features/Admin/BoxSnapshot.cs` for the same reason: `BoxSnapshotRules` reads every part.
+  Domain already kept a record beside the rule that reads it (`PounceDay`, `FunnelDay`,
+  `ChannelWeek`), so this is its pattern, not a new one.
+
+**The wire and the store did not move.** A namespace is not a field name: every route serves the
+same JSON, and no type was renamed. The nightly documents in the plan container nest a run and a
+firing under `run` and `firing`, told apart by a `kind` string the adapter writes, and the box's
+readings are held in memory; no stored document carries a type's name or a discriminator, so none
+changed shape. The Function and the machine lanes keep their own records and read none of these.
+
+**What holds B.** `DataRecordsTests` reads the Data assembly with Mono.Cecil and holds the types it
+declares to a list of two, each with its reason: `Vehicle`, a listing exactly as
+`data/vehicles.json` has it, which the bid, standing, schedule and search rules read; and
+`PhotoEntry`, a photo of the manifest as the file has it, which `PhotoGallery` picks from. A type
+not on the list fails, and so does an entry that no longer exists. A second test holds that each is
+a record a Domain rule reads, by reading the Domain assembly's type references. It was planted
+against: a `PlantedStat` record in Data failed the first test by name.
+
+**What holds C.** `CosmosCatalogueTests` fills six hundred of the expansion into the live tests'
+copy of the catalogue through the port, only when the day's documents have expired, and asks it
+what `StoreCatalogueTests` asks the relational adapter: the same filters, read from one list both
+tests share, at the same three instants, for the three counts and every order's first page, a page
+inside it and a page deep enough for a kept place. Then, once the walks have kept their places, the
+deep pages they serve are read again from them, and a find by id is held to the list's places. It
+carries the `Store=cosmos` trait, so CI leaves it out and the gate's cosmos job runs it with the
+other live tests, and like them it does not skip: with no account it fails and says why.
+
+**What C still needs.** The test writes to `tests-catalogue`, and that container is not on the
+account. The code creates no container, and the `theyard` database is at the 25 a database with
+shared throughput holds (the nightly card met the same refusal, ADR: The Nightly Function on the
+Admin tab), so a person retires one and creates `tests-catalogue` from `infra/cosmos/catalogue.json`
+with a day's time to live. Until then this test fails in the cosmos job with that sentence, and
+`CosmosDefinitionTests` does not list the copy, because listing it makes 26.

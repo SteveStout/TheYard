@@ -15,7 +15,7 @@ namespace TheYard.Tests;
 /// </summary>
 public sealed class StoreCatalogueTests
 {
-    private static async Task<IReadOnlyList<Vehicle>> ExpansionAsync(int count) =>
+    internal static async Task<IReadOnlyList<Vehicle>> ExpansionAsync(int count) =>
         await new SyntheticVehicleSource(new JsonFileVehicleSource(Path.Combine(Repo.Root(), "data", "vehicles.json")), count).LoadAsync(CancellationToken.None);
 
     // #region slot
@@ -109,31 +109,10 @@ public sealed class StoreCatalogueTests
             Assert.Equal(Target, await store.FilledAsync(CancellationToken.None));
 
             var facets = await memory.FacetsAsync(CancellationToken.None);
-            string make = facets.Makes[1];
-            string province = facets.Provinces[0];
             string moved = vehicles[7].Id;
-            string longMake = vehicles.First(v => v.Make.Length >= 5).Make.ToLowerInvariant();
-            var filters = new List<CatalogueFilter>
-            {
-                new(),
-                new() { Make = make },
-                new() { Province = province, MinCondition = 3.5 },
-                new() { PriceMin = 10_000, PriceMax = 30_000 },
-                new() { Tokens = [new CatalogueToken(vehicles[3].Model.ToLowerInvariant(), [])] },
-                new() { Tokens = [new CatalogueToken("live", [CatalogueSegment.Live])] },
-                new() { Tokens = [new CatalogueToken("e", [CatalogueSegment.Upcoming, CatalogueSegment.Ended]), new CatalogueToken("20", [])] },
-                // A word of three characters or more is the start of a word, from the words table;
-                // the same three letters inside a word find nothing there and nothing in the list.
-                new() { Tokens = [new CatalogueToken(longMake[..3], [])] },
-                new() { Tokens = [new CatalogueToken(longMake[1..4], [])] },
-                new() { Tokens = [new CatalogueToken(vehicles[5].City.ToLowerInvariant().Split(' ')[0], []), new CatalogueToken(vehicles[5].Year.ToString(System.Globalization.CultureInfo.InvariantCulture), [])] },
-                new() { Segment = CatalogueSegment.Live, BodyStyle = vehicles[0].BodyStyle },
-                new() { Segment = CatalogueSegment.Ended, Exclude = [moved, vehicles[11].Id, "not-in-the-catalogue"] },
-                new() { Segment = CatalogueSegment.Upcoming, TitleStatus = vehicles[0].TitleStatus },
-            };
-            long[] instants = [-6 * 3_600_000L, 13 * 3_600_000L, 40 * 3_600_000L];
+            var filters = Filters(vehicles, facets);
             int compared = 0;
-            foreach (long since in instants)
+            foreach (long since in Instants)
             {
                 foreach (var shape in filters)
                 {
@@ -177,6 +156,40 @@ public sealed class StoreCatalogueTests
         }
     }
     // #endregion relational-same-answer
+
+    /// <summary>The three instants every filter is asked at, from the day's anchor: six hours before it, thirteen hours into it and forty hours on.</summary>
+    internal static readonly long[] Instants = [-6 * 3_600_000L, 13 * 3_600_000L, 40 * 3_600_000L];
+
+    /// <summary>
+    /// The filters both stores are held to the list on, read off the vehicles and the facets the list gives:
+    /// none, each equality, a grade, a price band, a model, the segment words, word starts and middles, a
+    /// city and a year, and each segment with an equality or the moved ids left out.
+    /// </summary>
+    internal static List<CatalogueFilter> Filters(IReadOnlyList<Vehicle> vehicles, InventoryFacets facets)
+    {
+        string make = facets.Makes[1];
+        string province = facets.Provinces[0];
+        string moved = vehicles[7].Id;
+        string longMake = vehicles.First(v => v.Make.Length >= 5).Make.ToLowerInvariant();
+        return
+        [
+            new(),
+            new() { Make = make },
+            new() { Province = province, MinCondition = 3.5 },
+            new() { PriceMin = 10_000, PriceMax = 30_000 },
+            new() { Tokens = [new CatalogueToken(vehicles[3].Model.ToLowerInvariant(), [])] },
+            new() { Tokens = [new CatalogueToken("live", [CatalogueSegment.Live])] },
+            new() { Tokens = [new CatalogueToken("e", [CatalogueSegment.Upcoming, CatalogueSegment.Ended]), new CatalogueToken("20", [])] },
+            // A word of three characters or more is the start of a word (on SQL, from the words
+            // table); the same three letters inside a word find nothing in the store or the list.
+            new() { Tokens = [new CatalogueToken(longMake[..3], [])] },
+            new() { Tokens = [new CatalogueToken(longMake[1..4], [])] },
+            new() { Tokens = [new CatalogueToken(vehicles[5].City.ToLowerInvariant().Split(' ')[0], []), new CatalogueToken(vehicles[5].Year.ToString(System.Globalization.CultureInfo.InvariantCulture), [])] },
+            new() { Segment = CatalogueSegment.Live, BodyStyle = vehicles[0].BodyStyle },
+            new() { Segment = CatalogueSegment.Ended, Exclude = [moved, vehicles[11].Id, "not-in-the-catalogue"] },
+            new() { Segment = CatalogueSegment.Upcoming, TitleStatus = vehicles[0].TitleStatus },
+        ];
+    }
 
     // #region relational-plans
     /// <summary>

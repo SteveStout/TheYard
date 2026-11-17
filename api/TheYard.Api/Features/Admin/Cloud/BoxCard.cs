@@ -68,14 +68,14 @@ public static class BoxCard
     }
 
     /// <summary>The spec line: the distribution, the processor, the memory, the GPUs and the uptime.</summary>
-    public static string Spec(Data.BoxSnapshot snapshot)
+    public static string Spec(BoxSnapshot snapshot)
     {
         string gpus = snapshot.Gpus.Count == 0 ? "no GPU" : $"{snapshot.Gpus.Count} x {snapshot.Gpus[0].Name.Replace("NVIDIA GeForce ", "", StringComparison.Ordinal)} {BoxWords.Bytes(snapshot.Gpus[0].MemTotalB)}";
         return $"{snapshot.Distro} · {snapshot.Cores.Count} cores · {BoxWords.Bytes(snapshot.Memory.TotalB)} · {gpus} · up {BoxWords.Span(TimeSpan.FromSeconds(snapshot.UptimeS))}";
     }
 
     /// <summary>The readout: the box, its uptime, its load, the live sample, the snapshot, the silence, the agent and the cost.</summary>
-    private static CloudReadout Readout(ResourceCardInputs inputs, BoxSource box, Data.BoxSnapshot? snapshot)
+    private static CloudReadout Readout(ResourceCardInputs inputs, BoxSource box, BoxSnapshot? snapshot)
     {
         string Ago(DateTimeOffset? at) => at is { } when ? $"{BoxWords.Span(inputs.Now - when)} ago" : "none yet";
         DateTimeOffset? newest = new[] { snapshot?.At, inputs.LastHour.Count == 0 ? null : inputs.LastHour[^1].At }.Where(at => at is not null).Max();

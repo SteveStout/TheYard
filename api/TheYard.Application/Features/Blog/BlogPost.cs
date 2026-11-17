@@ -1,4 +1,8 @@
-namespace TheYard.Data;
+// The blog's records (ADR: Every LinkedIn post is also a blog post): a post and its images, a read and an
+// event as the logs keep them, and a post's numbers and the reads by source as the Admin tab reports them.
+// They are the Blog slice's own, here beside its port: the port, its handlers, the relational adapter and
+// the host's routes read them, and no rule in Domain does.
+namespace TheYard.Application.Features.Blog;
 
 // #region blog-post
 /// <summary>
