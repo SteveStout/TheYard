@@ -35,9 +35,39 @@ and The Shed's suites are both green, the same run promotes itself: its
 promote job runs `scripts/promote.sh`, which checks the version and the locked
 resume, writes the results file and the README's figures from the run's
 reports, folds them into the commit and fast-forwards `main`, never by force.
-The run then calls Deploy and Deploy Render on that commit, starts the edge's
-move, reads both names after the roll, and starts CI on `main` and reads it to
-its end.
+The run then calls Deploy and Deploy Render on that commit and starts CI on
+`main` for it, and ends when the two deploys end, so the next gate starts at
+live.
+
+**The reads after the roll are a run of their own** (ADR-098, the addendum on
+the gate freeing at live). `.github/workflows/after-roll.yml` starts when a Gate
+run completes green, reads the one small artifact the promote job leaves when
+it moved `main` (the commit, the version, whether the Function changed, whether
+the push was the roll), and ends green doing nothing when there is none. It
+waits for the push's deploys when a personal token made the push, starts the
+edge's move, deploys the Function when the version touched it, reads both names
+after the roll, reads CI on `main` for the commit to its end (starting it only
+when no CI run names the commit), closes the gate's pull request and deletes the
+gate branch, and runs Lighthouse on the promoted commit, report-only. It has its
+own concurrency group, so the next gate runs while it reads. Its run's name
+carries the version and the commit, and CI's run is named `CI <commit>`:
+`ci.yml` takes the commit as an input by hand and checks it out in every job,
+because a run started on `main` otherwise tests whatever `main`'s head is.
+
+**The line-stop: main is proven before the next promote.** Before it writes
+anything, `scripts/promote.sh` needs, for `origin/main`'s commit, the newest CI
+run named for it and the newest after-roll run named for it and `main`'s
+version, each completed and green; runs are found by those names, never by
+their head commit. A run missing or still running is waited on up to twenty
+minutes (`LINE_STOP_SECONDS`); in the gate a wait that runs out ends GREEN with
+`promoted=false` and a notice naming what it waited on, and the holder promotes
+by hand once `main` is proven, so a slow `main` never costs a second gate. By
+hand the same wait refuses and names the command that starts what is missing.
+A red run refuses, unless the version's commit message carries
+`Fixes-main: <main's sha>`: a red `main` must not refuse its own fix, and the
+gate has tested the fix in full. A `main` commit from before `after-roll.yml`
+existed is proven by CI on `main` alone. The promote job's cap is thirty
+minutes, to hold the wait.
 
 **A version that changes a workflow** needs more than the run's own token,
 which GitHub never lets write to `.github/workflows` (ADR-098, the addendum of
@@ -45,13 +75,16 @@ which GitHub never lets write to `.github/workflows` (ADR-098, the addendum of
 token with Contents and Workflows write, the promote job pushes `main` itself;
 and because a personal token's push starts the workflows the run's own push
 would not, that push is the roll, so the gate's two deploy jobs skip and the
-after-roll job waits for the push's own Deploy and Deploy Render runs and reads
-the push's CI run. With no such secret the promote job ends GREEN with
+after-roll waits for the push's own Deploy and Deploy Render runs and reads the
+push's CI run. With no such secret the promote job ends GREEN with
 `::notice::this version changes a workflow: promote it by hand with
 scripts/promote.sh`, moves nothing, and the deploys skip, because a gate that
 found nothing wrong must not send a failure email; a person then promotes the
 run by hand, naming it:
 `raw=$(mktemp -d) && gh run download <run> -n gate-raw -D "$raw" && { gh run download <run> -n coderabbit-raw -D "$raw" || rm -f "$raw/coderabbit.json"; } && bash scripts/promote.sh "$raw" <gate seconds> <version> <run>`.
+No Gate run starts the after-roll for a version promoted by hand, so `promote.sh`
+starts it right after its push, or names the one command:
+`gh workflow run after-roll.yml --ref main -f sha=<sha> -f version=<version>`.
 
 **The number is filled at the claim, under the lock** (ADR-031, the addendum on the
 fill at the claim). A lane builds its one commit on `origin/main` with the
@@ -131,8 +164,8 @@ it writes anything and refuses, naming the pull request and where each Critical
 sits. A Major or a Minor holds nothing, and a review that never came ships with its
 notice. The
 review's row joins `data/coderabbit-findings.json` with the results, and the
-after-roll job closes the request on `main`'s commit. A version promoted by hand
-closes it with `bash scripts/gate_pr.sh close <branch> <main sha>` (a bare version still names an older `gate/<version>` branch).
+after-roll closes the request on `main`'s commit; started by hand, it closes the
+request of every gate branch that names the version. `bash scripts/gate_pr.sh close <branch> <main sha>` does the same by hand (a bare version still names an older `gate/<version>` branch).
 
 **What a red gate run prints.** Each log belongs to one check, and its tail
 reaches the run's error annotations only when that check is red, so the failure
@@ -161,7 +194,7 @@ the commit and the push are all a ship needs.
 **Nothing else waits on a machine either** (ADR-098, the addendum of
 1.0.4.105). Each of these is a workflow of its own and goes red on its own run:
 `.github/workflows/deploy-function.yml` deploys the job hunt's Function when a
-version touches it, started by the gate after the roll and never setting an
+version touches it, started by the after-roll and never setting an
 app setting; `.github/workflows/blog-post.yml` saves a blog post's body from
 `data/blog/<slug>.md`, started by hand; and `.github/workflows/azure-read.yml`
 reads Azure Monitor by hand and leaves the raw answers as its artifact.

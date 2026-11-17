@@ -10,8 +10,10 @@ name: Gate
 #
 # Green, the run promotes itself (ADR: The gate runs where the memory is, the addendum of
 # 1.0.4.101): the promote job writes data/test-results.json and the README's figures from the
-# gate-raw artifact, folds them into the commit and fast-forwards main, the run calls Deploy and
-# Deploy Render on that commit, and the after-roll job reads both names and CI on main. A ship is
+# gate-raw artifact, folds them into the commit and fast-forwards main, and the run calls Deploy and
+# Deploy Render on that commit and ends there, freeing the gate at live. The reads after the roll, both
+# names and CI on main, are a run of their own, after-roll.yml, started by this run's end (ADR-098, the
+# addendum on the gate freeing at live); the next promote's line-stop waits for both to be green. A ship is
 # a push of gate/<version>-<lane>-<sha8>; no machine has to be on. The gate job itself only reads. Every reader of
 # the branch name takes the version as the text after gate/ up to the first hyphen (scripts/versions.sh,
 # branch_version), so the older gate/<version> still reads.
@@ -45,7 +47,7 @@ jobs:
   # would bring it under ten minutes and left it unbuilt. Now four kinds of job start together: the .NET side on
   # SQLite, everything that reads the Cosmos DB account (in ONE job, because two would share the tests- containers
   # on it), the node checks, and the browser suite on SQLite in two shards. Each leaves its reports as
-  # raw-<job>-<attempt>, and the gate job folds them into the one gate-raw folder promote.sh, the after-roll and the
+  # raw-<job>-<attempt>, and the gate job folds them into the one gate-raw folder promote.sh and the
   # Admin tab read, in the shape they read before, and turns the run red or green with the same verdict. Every check
   # still runs, on the same cuts; only the order of the waiting changed.
 
@@ -294,27 +296,30 @@ jobs:
       # #endregion node-side
 
       # #region em-dashes
-      # The house rule on em dashes, over every text file.
+      # The house rule on em dashes, over every text file: the one script preflight's catch list runs too, so the
+      # check a lane runs before its claim is this one (ADR-098, the addendum on the catch list). Its exit code is
+      # the result, 0 for none.
       - name: The em dash scan
         if: always()
         run: |
           r="$RAW/rest.result"; : > "$r"
-          hits=$( (grep -rlP '\x{2014}' --include='*.md' --include='*.cs' --include='*.ts' --include='*.tsx' --include='*.css' --include='*.yml' --include='*.yaml' --include='*.json' --include='*.sql' --include='*.sqlproj' --include='*.csproj' --include='*.slnx' --include='*.mjs' --include='*.svg' --exclude-dir=node_modules --exclude-dir=bin --exclude-dir=obj --exclude-dir=.git --exclude-dir=dist --exclude-dir=dist-render --exclude-dir=playwright-report --exclude-dir=test-results . || true) | tee "$RAW/emdash.txt" | wc -l)
-          echo "emdash=$hits" >> "$r"
-          cat "$r"
+          code=0
+          bash scripts/emdash_scan.sh > "$RAW/emdash.txt" 2>&1 || code=$?
+          echo "emdash=$code" >> "$r"
+          cat "$RAW/emdash.txt" "$r"
       # #endregion em-dashes
 
       # #region quality-ratchet
       # The quality ratchet, the same command CI runs, so a version cannot reach main with
       # any of its numbers worse than the file says (ADR: The numbers that may only fall).
-      # It reads the checkout and builds nothing, so it costs seconds. Its result joins
-      # rest.result, which the verdict reads.
+      # It reads the checkout and builds nothing, so it costs seconds. The script is the one
+      # the catch list runs. Its result joins rest.result, which the verdict reads.
       - name: The quality ratchet
         if: always()
         run: |
           r="$RAW/rest.result"
           code=0
-          python3 .github/quality.py . --ratchet .github/quality-ratchet.json > "$RAW/quality.txt" 2>&1 || code=$?
+          bash scripts/quality_ratchet.sh > "$RAW/quality.txt" 2>&1 || code=$?
           echo "quality=$code" >> "$r"
           cat "$RAW/quality.txt"
       # #endregion quality-ratchet
@@ -538,14 +543,18 @@ jobs:
 
   # #region promote-job
   # The run's own promotion: only after the gate and The Shed are both green and CodeRabbit's review has been
-  # read, and the only job that may write, to fast-forward main without force.
+  # read, and the only job that may write, to fast-forward main without force. Before it moves anything,
+  # promote.sh's line-stop waits up to twenty minutes for main's own proof, CI on main and the after-roll for
+  # main's commit; thirty minutes holds that wait and the promote itself (ADR-098, the addendum on the gate
+  # freeing at live).
   promote:
     needs: [gate, shed, coderabbit]
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: write
-      actions: read
+      # Read this run and main's runs, and start CI on main for the promoted commit.
+      actions: write
       # The coverage CI on main wrote for earlier versions, read into the quality history (ADR-130).
       checks: read
     outputs:
@@ -588,6 +597,37 @@ jobs:
           # The version is the text after gate/ up to the first hyphen: gate/<version>-<lane>-<sha8>, or gate/<version>.
           . scripts/versions.sh
           bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds" "$(branch_version "$GITHUB_REF_NAME")" "$GITHUB_RUN_ID"
+
+      # #region the-handoff
+      # What the after-roll needs, as one small artifact: a workflow_run run reads no job's outputs, and the
+      # promoted commit is not the gate branch's, because promote.sh amended it. Only a promote that moved main
+      # leaves it, so a run that promoted nothing starts an after-roll that ends green doing nothing.
+      - name: The promoted commit, for the after-roll
+        if: steps.promote.outputs.promoted == 'true'
+        env:
+          SHA: ${{ steps.promote.outputs.sha }}
+          VERSION: ${{ steps.promote.outputs.version }}
+          FUNCTIONS: ${{ steps.promote.outputs.functions }}
+          BY_PUSH: ${{ steps.promote.outputs.by_push }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/promoted"
+          { echo "sha=$SHA"; echo "version=$VERSION"; echo "functions=$FUNCTIONS"; echo "by_push=$BY_PUSH"; } | tee "$RUNNER_TEMP/promoted/promoted.env"
+      - uses: actions/upload-artifact@v7
+        if: steps.promote.outputs.promoted == 'true'
+        with:
+          name: promoted
+          path: ${{ runner.temp }}/promoted/
+      # CI on main for the promoted commit, started the moment main moves, so it runs beside the roll and is
+      # usually done before the after-roll looks. A push with PROMOTE_TOKEN started CI itself. A start that fails
+      # never fails this job, because main has already moved and the deploys need this job green: the after-roll
+      # starts CI when no CI run names the commit.
+      - name: CI on main, for the promoted commit
+        if: steps.promote.outputs.promoted == 'true' && steps.promote.outputs.by_push != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.promote.outputs.sha }}
+        run: gh workflow run ci.yml --ref main -f sha="$SHA" || echo "::warning::CI on main was not started for $SHA; the after-roll starts it"
+      # #endregion the-handoff
   # #endregion promote-job
 
   # #region the-roll
@@ -598,8 +638,11 @@ jobs:
   # with no PROMOTE_TOKEN to carry it) has nothing to roll. A promote that pushed WITH that token made
   # a push a person's credentials could have made, and such a push starts Deploy and Deploy Render on
   # its own: calling them again would put a second run in each concurrency group and roll the site
-  # twice for one commit. So the push is the roll, and after-roll waits for the push's two runs
+  # twice for one commit. So the push is the roll, and the after-roll run waits for the push's two runs
   # instead (ADR-098, the addendum of 1.0.4.119).
+  #
+  # These two are the run's last jobs, so the gate's concurrency group ends when they end and the next gate starts
+  # at live. The reads after the roll are after-roll.yml's, started by this run's end.
   deploy:
     needs: promote
     if: needs.promote.outputs.promoted == 'true' && needs.promote.outputs.by_push != 'true'
@@ -626,143 +669,3 @@ jobs:
       contents: read
       packages: write
   # #endregion the-roll
-
-  # #region after-roll
-  # The reads after the roll, both names; then CI on main, started by hand (the one start the
-  # token may make) and read to its end; then the gate branch goes.
-  after-roll:
-    needs: [promote, deploy, deploy-render]
-    if: always() && needs.promote.result == 'success' && needs.promote.outputs.promoted == 'true' && needs.deploy.result != 'failure' && needs.deploy.result != 'cancelled' && needs.deploy-render.result != 'failure' && needs.deploy-render.result != 'cancelled'
-    runs-on: ubuntu-24.04
-    # The reads after the roll take up to thirty-three minutes, CI's start five, and CI its own length.
-    timeout-minutes: 75
-    permissions:
-      contents: write
-      actions: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.promote.outputs.sha }}
-      # When the promote pushed with PROMOTE_TOKEN the push started Deploy and Deploy Render itself, so this
-      # job waits for those two runs where it would otherwise have called them: the reads below must not read
-      # the version before it is rolled. The commit is this version's and no other run's, so the runs are
-      # found by their head commit (ADR-098, the addendum of 1.0.4.119).
-      - name: The roll the push started
-        if: needs.promote.outputs.by_push == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SHA: ${{ needs.promote.outputs.sha }}
-        run: |
-          for workflow in deploy.yml deploy-render.yml; do
-            run=""
-            for i in $(seq 1 30); do
-              run=$(gh run list --workflow "$workflow" --branch main --event push --limit 10 --json databaseId,headSha --jq ".[] | select(.headSha == \"$SHA\") | .databaseId" | head -n 1)
-              [ -n "$run" ] && break
-              sleep 10
-            done
-            [ -n "$run" ] || { echo "::error::$workflow did not start for $SHA in five minutes"; exit 1; }
-            echo "$workflow on the push: https://github.com/$GITHUB_REPOSITORY/actions/runs/$run"
-            gh run watch "$run" --exit-status --interval 30 > /dev/null || { echo "::error::$workflow is red for $SHA (run $run)"; exit 1; }
-          done
-      # The edge moves after Deploy (edge-branch.yml), which starts on a Deploy run of its own and so
-      # never on the one this run called: it is started by hand on main, the promoted commit. A promote
-      # that pushed with PROMOTE_TOKEN needs no start: the push's own Deploy run is a Deploy run of its
-      # own, and edge-branch.yml is already watching for it.
-      - name: The edge, after the deploy
-        if: needs.promote.outputs.by_push != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run edge-branch.yml --ref main
-      # The job hunt's Function, when the version touched it: a run of its own, so a Function that will not
-      # deploy is read on its own run and never turns this one red (ADR-098, the addendum of 1.0.4.105).
-      # Only while the promoted commit is still main's head: a re-run of an older run never sends the Function back.
-      - name: The Function, by a run of its own
-        if: needs.promote.outputs.functions == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SHA: ${{ needs.promote.outputs.sha }}
-        run: |
-          if [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$SHA" ]; then echo "::warning::$SHA is no longer main's head; the Function is not deployed from it"; exit 0; fi
-          gh workflow run deploy-function.yml --ref main -f sha="$SHA"
-      - name: The reads after the roll
-        run: python3 scripts/admin_after_roll.py "${{ needs.promote.outputs.version }}" "${{ needs.promote.outputs.sha }}" "$RUNNER_TEMP/after-roll.log"
-      - name: CI on main
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SHA: ${{ needs.promote.outputs.sha }}
-          BY_PUSH: ${{ needs.promote.outputs.by_push }}
-        # Only a run created after this dispatch counts, so a re-run never reads an earlier dispatch's result.
-        # A promote that pushed with PROMOTE_TOKEN already started CI on that push, so its run is read instead
-        # of a second one being dispatched; it is older than this step, and the head commit alone names it.
-        run: |
-          if [ "$BY_PUSH" = true ]; then
-            event=push
-            since=1970-01-01T00:00:00Z
-          else
-            event=workflow_dispatch
-            since=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-            gh workflow run ci.yml --ref main
-          fi
-          run=""
-          for i in $(seq 1 30); do
-            sleep 10
-            run=$(gh run list --workflow ci.yml --branch main --event "$event" --limit 10 --json databaseId,headSha,createdAt --jq ".[] | select(.headSha == \"$SHA\" and .createdAt >= \"$since\") | .databaseId" | head -n 1)
-            [ -n "$run" ] && break
-          done
-          [ -n "$run" ] || { echo "::error::CI on main did not start for $SHA in five minutes"; exit 1; }
-          echo "CI on main: https://github.com/$GITHUB_REPOSITORY/actions/runs/$run"
-          gh run watch "$run" --exit-status --interval 30 > /dev/null || { echo "::error::CI on main is red for $SHA (run $run)"; exit 1; }
-          echo "CI on main: success (run $run)"
-      # The gate's pull request closes on main's commit before its branch goes: promote.sh amended the commit the
-      # request carries, so GitHub never marks it merged (ADR-129).
-      - name: The pull request closes
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bash scripts/gate_pr.sh close "$GITHUB_REF_NAME" "${{ needs.promote.outputs.sha }}" || echo "::warning::the pull request for $GITHUB_REF_NAME was not closed"
-      - name: The gate branch goes
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$GITHUB_REF_NAME" || echo "::warning::the gate branch $GITHUB_REF_NAME was not deleted"
-  # #endregion after-roll
-
-  # #region lighthouse
-  # Ladder 8b (ADR-134, the addendum of its version): Lighthouse reads the landing as built, five times, inside this job,
-  # never the live site, and keeps the median of each reading as the lighthouse-raw artifact. It reports and never
-  # blocks: nothing needs it, so promote and the verdict never wait for it, and a failure turns no run red. Its cap
-  # matters all the same, because the gate's concurrency group holds the next gate until every job of this run has
-  # ended. A later version reads ten of these and sets the blocking line, as the owner's answer to the ladder's
-  # question 4 says. Lighthouse 12.8.2 is the version the Performance page's readings were taken with. It waits only
-  # for the number job, so a run turned away for its number never starts it.
-  lighthouse:
-    needs: number
-    runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npx vite build
-      - name: Five readings of the landing, the median kept
-        run: |
-          out="$RUNNER_TEMP/lighthouse"; mkdir -p "$out"
-          npx vite preview --port 4173 --strictPort > "$out/preview.txt" 2>&1 &
-          for i in $(seq 1 30); do curl -sf http://localhost:4173/ > /dev/null && break; sleep 1; done
-          for n in 1 2 3 4 5; do
-            npx --yes lighthouse@12.8.2 http://localhost:4173/ --only-categories=performance --output=json \
-              --output-path="$out/run-$n.json" --chrome-flags="--headless=new --no-sandbox" --quiet \
-              || echo "::warning::Lighthouse run $n did not finish"
-          done
-          node scripts/lighthouse_median.mjs "$out" | tee "$out/median.json"
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: lighthouse-raw
-          path: ${{ runner.temp }}/lighthouse/
-  # #endregion lighthouse
