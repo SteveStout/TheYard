@@ -33,6 +33,10 @@ public class DockerBuildInputsTests
         "public",
         // The recommendations file: the column draws one blank place per entry in it, read at build time.
         "data",
+        // The release facts the landing and the gate badge are drawn with, read by vite.config.ts at build time:
+        // 1.0.5.82 shipped without them in the image and both deploys failed at the build (ADR-132).
+        "docs/CHANGELOG.md",
+        "data/coderabbit-findings.json",
     ];
 
     [Fact]

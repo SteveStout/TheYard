@@ -24,6 +24,10 @@ COPY data/recommendations.json ./data/recommendations.json
 # first screen draws with no read (ADR-132).
 COPY data/hooks.json ./data/hooks.json
 COPY data/quality-history.json ./data/quality-history.json
+# The changelog's dated lines and CodeRabbit's newest row, which the build reads for the landing's releases of the
+# week and the header's gate badge (vite.config.ts, release-facts; ADR-132).
+COPY docs/CHANGELOG.md ./docs/CHANGELOG.md
+COPY data/coderabbit-findings.json ./data/coderabbit-findings.json
 # Vite copies everything in public/ to the root of the built site untouched, so
 # this is where robots.txt, sitemap.xml and the link preview image come from.
 # It is easy to leave out, and leaving it out fails in the one place nobody
