@@ -50,7 +50,7 @@ public sealed class ProofRequests(SqlRingBuffer sqlLog, StoreRingBuffer storeLog
         var operations = store.Backend.LogsOperations
             ? storeLog.Snapshot().Where(operation => operation.At >= at).ToArray()
             : [];
-        store.Samples.Add(new ProofRunner.Sample(path, elapsedMs, (int)response.StatusCode, statements + operations.Length, operations.Sum(operation => operation.RequestCharge)));
+        store.Samples.Add(new ProofRunner.Sample(path, elapsedMs, (int)response.StatusCode, statements + operations.Length, operations.Sum(operation => operation.Charge)));
         return response;
     }
 

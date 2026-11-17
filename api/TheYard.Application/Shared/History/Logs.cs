@@ -86,7 +86,7 @@ public static class KeptRings
 {
     public const string Errors = "ring-errors";
     public const string Log = "ring-log";
-    public const string Sql = "ring-sql";
+    public const string Statements = "ring-sql";
     public const string Store = "ring-store";
 
     /// <summary>The names a card asks by, and the kind each is kept under.</summary>
@@ -94,7 +94,7 @@ public static class KeptRings
     {
         ["errors"] = Errors,
         ["logs"] = Log,
-        [StoreKeys.Relational] = Sql,
+        [StoreKeys.Relational] = Statements,
         ["store"] = Store,
     };
 
