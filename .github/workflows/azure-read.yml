@@ -12,6 +12,7 @@ on:
         type: choice
         options:
           - cosmos-throttling
+          - storage-egress
 
 permissions:
   id-token: write
@@ -59,6 +60,36 @@ jobs:
           read_metric nru-by-coll-6h NormalizedRUConsumption Maximum PT1M "$s6h" "$endM" "CollectionName eq '*'"
           cat "$index"
       # #endregion cosmos-throttling
+
+      # #region storage-egress
+      # Which side of the storage account the blob card's egress number is: the blob service, the file service (the
+      # share) and the account itself, side by side. Egress and Transactions on each service, split by ApiName and by
+      # Authentication, hourly for a week and daily from the 1st of the month; the account's Egress daily, unsplit.
+      - name: Storage egress
+        if: inputs.read == 'storage-egress'
+        run: |
+          out="$RUNNER_TEMP/azure-read"; mkdir -p "$out"; index="$out/index.txt"
+          acct=$(az storage account show -g RG-JOBHUNT-SS -n stjobhuntss --query id -o tsv)
+          endH=$(date -u +%Y-%m-%dT%H:00:00Z); s7d=$(date -u -d '7 days ago' +%Y-%m-%dT%H:00:00Z); sMon=$(date -u +%Y-%m-01T00:00:00Z)
+          echo "spans 7d $s7d..$endH  month $sMon..$endH" > "$index"
+          read_metric() {
+            filter=(); [ -n "$7" ] && filter=(--filter "$7")
+            az monitor metrics list --resource "$2" --metric "$3" --aggregation Total --interval "$4" --start-time "$5" --end-time "$6" "${filter[@]}" --top 100 -o json > "$out/$1.json"
+            echo "$1	$3 Total $4 $5..$6 [$7] $(wc -c < "$out/$1.json") bytes" >> "$index"
+          }
+          for svc in blob file; do
+            res="$acct/${svc}Services/default"
+            for metric in Egress Transactions; do
+              for dim in ApiName Authentication; do
+                read_metric "$svc-${metric,,}-by-${dim,,}-7d" "$res" "$metric" PT1H "$s7d" "$endH" "$dim eq '*'"
+                read_metric "$svc-${metric,,}-by-${dim,,}-month" "$res" "$metric" P1D "$sMon" "$endH" "$dim eq '*'"
+              done
+            done
+            read_metric "$svc-egress-month" "$res" Egress P1D "$sMon" "$endH" ""
+          done
+          read_metric account-egress-month "$acct" Egress P1D "$sMon" "$endH" ""
+          cat "$index"
+      # #endregion storage-egress
 
       - uses: actions/upload-artifact@v7
         if: always()
