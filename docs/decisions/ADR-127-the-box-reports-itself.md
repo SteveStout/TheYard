@@ -37,14 +37,14 @@ What was considered: Azure Arc (a sign-in on the box, more on the box, and Log A
 
 ## Where it sits
 
-The records in `TheYard.Data`, the rules in the Domain's Admin feature, the ports and handlers in the Application's Cloud feature, and the source, the card, its rows, its words and its routes in the host's Cloud slice beside the network log's. The agent and its unit are in `scripts/box-agent/`.
+The records and the rules beside them in the Domain's Admin feature, the ports and handlers in the Application's Cloud feature, and the source, the card, its rows, its words and its routes in the host's Cloud slice beside the network log's. The agent and its unit are in `scripts/box-agent/`.
 
 ```live path=api/TheYard.Api/Features/Admin/Cloud/BoxRows.cs region=box-rows
 ```
 
 ## Files
 
-- [`api/TheYard.Data/BoxSnapshot.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Data/BoxSnapshot.cs) - what the box posts
+- [`api/TheYard.Domain/Features/Admin/BoxSnapshot.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Features/Admin/BoxSnapshot.cs) - what the box posts
 - [`api/TheYard.Domain/Features/Admin/BoxSnapshotRules.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Domain/Features/Admin/BoxSnapshotRules.cs) - what it may hold
 - [`api/TheYard.Application/Features/Admin/Cloud/BoxPorts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Admin/Cloud/BoxPorts.cs) and [`BoxHandlers.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Admin/Cloud/BoxHandlers.cs) - the ring, the snapshots and the three handlers
 - [`api/TheYard.Api/Features/Admin/Cloud/BoxCard.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/BoxCard.cs), [`BoxRows.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/BoxRows.cs), [`BoxSource.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/BoxSource.cs) and [`BoxRoutes.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Admin/Cloud/BoxRoutes.cs) - the card and its routes

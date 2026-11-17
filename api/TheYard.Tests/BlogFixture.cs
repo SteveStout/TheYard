@@ -1,5 +1,5 @@
 using System.Text.Json;
-using TheYard.Data;
+using TheYard.Application.Features.Blog;
 
 namespace TheYard.Tests;
 

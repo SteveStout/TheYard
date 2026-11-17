@@ -3,7 +3,6 @@
 // the memory store and no host. The Domain's BlogRules decide what a read's source is and what an event
 // may carry; these only ask them and keep what they admit.
 using TheYard.Application.Shared;
-using TheYard.Data;
 using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Application.Features.Blog;

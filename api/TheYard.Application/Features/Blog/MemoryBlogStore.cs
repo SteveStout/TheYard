@@ -1,7 +1,6 @@
 // The blog kept in this process's memory: for a process with no relational store, and for the tests. It answers the
 // list the way the relational store does, from the same rules and the same shaping (BlogListShape), so the shared
 // test table holds the two to one answer; only the counting is LINQ here and SQL there.
-using TheYard.Data;
 using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Application.Features.Blog;

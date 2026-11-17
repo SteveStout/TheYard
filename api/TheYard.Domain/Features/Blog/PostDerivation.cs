@@ -1,7 +1,6 @@
 // What a save works out from a post and keeps beside it: the body drawn to HTML, the reading minutes, the words the
 // search reads and the keywords the chips read, stamped with the rules' version. A copy of the rules' answer, made
 // in one place, so the store never decides any of it and a change to the rules is a new version to derive again.
-using TheYard.Data;
 
 namespace TheYard.Domain.Features.Blog;
 

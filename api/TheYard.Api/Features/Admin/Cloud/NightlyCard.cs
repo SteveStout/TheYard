@@ -5,7 +5,6 @@
 // the Function's own health route; no file in the share it works on is opened, and until the site's
 // identity holds a role on the Function's group, every line that needs Azure says so in words.
 using System.Globalization;
-using TheYard.Data;
 
 namespace TheYard.Api.Features.Admin.Cloud;
 

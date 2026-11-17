@@ -4,7 +4,6 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TheYard.Application.Features.Blog;
-using TheYard.Data;
 using TheYard.Infrastructure;
 using TheYard.Infrastructure.Features.Blog;
 
