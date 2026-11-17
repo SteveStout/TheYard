@@ -2,7 +2,7 @@
 // GitHub run of the nightly workflow and one per judged slot of the Function, kept a year by the
 // container's time to live. The port is here; the document store's adapter is in
 // Infrastructure.Cosmos, and this process's memory stands in where there is no document store.
-using TheYard.Data;
+using TheYard.Domain.Features.Admin;
 
 namespace TheYard.Application.Shared.History;
 
@@ -23,6 +23,13 @@ public interface INightlyRunLog
     Task<IReadOnlyList<NightlyRun>> SinceAsync(DateTimeOffset since, CancellationToken cancellation);
 }
 // #endregion nightly-run-port
+
+/// <summary>One slot of the nightly Function, judged from Azure Monitor's firing counts: due at its hour, then on time, late or missed.</summary>
+/// <param name="Slot">The slot's hour, UTC.</param>
+/// <param name="Name">"nightly" or "bookkeeping", the run the slot starts.</param>
+/// <param name="Outcome">"on time", "late" or "missed".</param>
+/// <param name="FiredAt">The start of the first counted firing in the slot's hour; null when it was missed.</param>
+public sealed record NightlyFiring(DateTimeOffset Slot, string Name, string Outcome, DateTimeOffset? FiredAt);
 
 /// <summary>The run log in this process's memory: the tests, and a run with no document store. It keeps a year, like the container.</summary>
 public sealed class MemoryNightlyRunLog(string reason) : INightlyRunLog

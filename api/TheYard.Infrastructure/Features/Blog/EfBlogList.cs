@@ -6,7 +6,6 @@
 // read, and no row of either log: a card's reads are one GROUP BY over the page's posts.
 using Microsoft.EntityFrameworkCore;
 using TheYard.Application.Features.Blog;
-using TheYard.Data;
 using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Infrastructure.Features.Blog;

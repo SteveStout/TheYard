@@ -1,4 +1,7 @@
-namespace TheYard.Data;
+// One run of the nightly workflow (ADR: The Nightly Function on the Admin tab). It sits in Domain beside
+// NightlyRunRules, the rules a run passes before it is kept, which is the innermost place both that rule and
+// the Admin slice above it can read.
+namespace TheYard.Domain.Features.Admin;
 
 // #region nightly-run
 /// <summary>
@@ -17,11 +20,4 @@ namespace TheYard.Data;
 /// <param name="TookSeconds">How long it ran, start to last update, in seconds; null while it runs.</param>
 /// <param name="CameTo">GitHub's conclusion, or its status while the run has none.</param>
 public sealed record NightlyRun(string Id, long Number, DateTimeOffset At, string Slot, string StartedBy, bool Dry, string Lane, long? TookSeconds, string CameTo);
-
-/// <summary>One slot of the nightly Function, judged from Azure Monitor's firing counts: due at its hour, then on time, late or missed.</summary>
-/// <param name="Slot">The slot's hour, UTC.</param>
-/// <param name="Name">"nightly" or "bookkeeping", the run the slot starts.</param>
-/// <param name="Outcome">"on time", "late" or "missed".</param>
-/// <param name="FiredAt">The start of the first counted firing in the slot's hour; null when it was missed.</param>
-public sealed record NightlyFiring(DateTimeOffset Slot, string Name, string Outcome, DateTimeOffset? FiredAt);
 // #endregion nightly-run
