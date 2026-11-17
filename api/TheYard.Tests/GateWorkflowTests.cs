@@ -88,7 +88,8 @@ public class GateWorkflowTests
         { "Vitest", "npx vitest run" },
         { "the browser suite on SQLite", "npx playwright test --shard=\"$SHARD/2\" --workers=2 --retries=1" },
         { "the store specs on Cosmos DB", "tests/e2e/store-toggle.spec.ts tests/e2e/account.spec.ts tests/e2e/admin.spec.ts" },
-        { "the em dash scan", "grep -rlP '\\x{2014}'" },
+        { "the em dash scan", "bash scripts/emdash_scan.sh" },
+        { "the quality ratchet", "bash scripts/quality_ratchet.sh" },
     };
 
     [Theory]
@@ -126,9 +127,9 @@ public class GateWorkflowTests
 
     // #region the-catch-list
     /// <summary>
-    /// The catch list runs the gate's own em dash scan before a claim (ADR-098, the addendum on the catch list): the
-    /// pattern and the file types the shared script greps are the gate's, character for character, so a version the
-    /// script passes is one the gate's step passes. Once the gate calls the script itself this holds the call.
+    /// The catch list runs the gate's own em dash scan and ratchet before a claim (ADR-098, the addendum on the catch
+    /// list): the gate's two steps call the same two scripts preflight's catch list calls, and keep their result lines
+    /// in rest.result, where the verdict reads them, so a version the scripts pass is one the gate's steps pass.
     /// </summary>
     [Fact]
     public void The_catch_list_s_em_dash_scan_is_the_gate_s_own()
@@ -137,14 +138,15 @@ public class GateWorkflowTests
         string grep = Regex.Match(script, @"grep -rlP '\\x\{2014\}'[^)]*\.").Value;
         Assert.False(string.IsNullOrEmpty(grep), "emdash_scan.sh should grep for the em dash");
 
-        string workflow = Workflow();
-        Assert.True(workflow.Contains(grep, StringComparison.Ordinal) || workflow.Contains("scripts/emdash_scan.sh", StringComparison.Ordinal),
-            "gate.yml's em dash step and scripts/emdash_scan.sh should run the same scan");
+        string node = Job("node");
+        Assert.Contains("bash scripts/emdash_scan.sh > \"$RAW/emdash.txt\" 2>&1 || code=$?\n          echo \"emdash=$code\" >> \"$r\"", node, StringComparison.Ordinal);
+        Assert.DoesNotContain("grep -rlP", node, StringComparison.Ordinal);
 
         string ratchet = File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "quality_ratchet.sh"));
         Assert.Contains("python3 .github/quality.py . --ratchet .github/quality-ratchet.json", ratchet, StringComparison.Ordinal);
-        Assert.True(workflow.Contains("python3 .github/quality.py . --ratchet .github/quality-ratchet.json", StringComparison.Ordinal) || workflow.Contains("scripts/quality_ratchet.sh", StringComparison.Ordinal),
-            "gate.yml's ratchet step and scripts/quality_ratchet.sh should run the same command");
+        Assert.Contains("bash scripts/quality_ratchet.sh > \"$RAW/quality.txt\" 2>&1 || code=$?\n          echo \"quality=$code\" >> \"$r\"", node, StringComparison.Ordinal);
+        Assert.DoesNotContain("python3 .github/quality.py", node, StringComparison.Ordinal);
+        Assert.Contains("r=\"$RAW/rest.result\"", node, StringComparison.Ordinal);
 
         string list = File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "catch_list.sh"));
         foreach (string part in new[] { "scripts/emdash_scan.sh", "scripts/quality_ratchet.sh", "scripts/pr_size.sh", "cap=120" })
@@ -335,7 +337,7 @@ public class GateWorkflowTests
         Assert.Contains("run: bash scripts/versions.sh gate \"$GITHUB_REF_NAME\"", number, StringComparison.Ordinal);
         Assert.DoesNotContain("needs:", number, StringComparison.Ordinal);
         Assert.Contains("timeout-minutes: 5", number, StringComparison.Ordinal);
-        foreach (string job in new[] { "dotnet", "cosmos", "node", "browser", "shed", "coderabbit", "lighthouse" })
+        foreach (string job in new[] { "dotnet", "cosmos", "node", "browser", "shed", "coderabbit" })
         {
             Assert.Contains("\n    needs: number\n", Job(job), StringComparison.Ordinal);
         }
@@ -344,17 +346,20 @@ public class GateWorkflowTests
 
     /// <summary>
     /// Ladder 8b (ADR-134's report half): the Lighthouse job reads the built site five times inside the job and keeps
-    /// the median as an artifact, and it never holds a ship. It sits after the after-roll job, outside the check jobs
-    /// the gate folds; nothing needs it; a failure turns no run red; and its 25-minute cap bounds how long it can hold
-    /// the gate's concurrency group, and so the next ship.
+    /// the median as an artifact, and it never holds a ship. It moved with the reads after the roll into after-roll.yml
+    /// (ADR-098, the addendum on the gate freeing at live), so it never holds the gate's concurrency group; it reads the
+    /// promoted commit; nothing needs it; a failure turns no run red; and its 25-minute cap bounds the run it is in.
     /// </summary>
     [Fact]
     public void The_lighthouse_job_reports_and_never_holds_a_ship()
     {
-        string workflow = Workflow();
+        Assert.DoesNotContain("\n  lighthouse:\n", Workflow(), StringComparison.Ordinal);
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "after-roll.yml")).ReplaceLineEndings("\n");
         int at = workflow.IndexOf("\n  lighthouse:\n", StringComparison.Ordinal);
-        Assert.True(at > workflow.IndexOf("\n  after-roll:\n", StringComparison.Ordinal), "the lighthouse job should come after after-roll, outside the check jobs");
+        Assert.True(at > workflow.IndexOf("\n  after-roll:\n", StringComparison.Ordinal), "the lighthouse job should come after the after-roll job in after-roll.yml");
         string job = workflow[at..];
+        Assert.Contains("needs: promoted", job, StringComparison.Ordinal);
+        Assert.Contains("ref: ${{ needs.promoted.outputs.sha }}", job, StringComparison.Ordinal);
         Assert.Contains("timeout-minutes: 25", job, StringComparison.Ordinal);
         Assert.Contains("continue-on-error: true", job, StringComparison.Ordinal);
         Assert.Contains("npx --yes lighthouse@12.8.2", job, StringComparison.Ordinal);

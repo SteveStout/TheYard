@@ -144,6 +144,15 @@ turns a run away in seconds when its number is no longer main's top line plus on
 lock only when `gate_lock.sh show` says yes: its run ended red, or ended green with main already on its version. A
 green run that has not promoted is released by its holder or by Steve, never by a peer.
 
+**The gate frees at live, and main is proven before the next promote** (ADR-098, the addendum on the gate freeing
+at live). The Gate run ends when its two deploys end, so the next gate starts then. The reads after the roll, both
+names and CI on main, are a run of their own, `.github/workflows/after-roll.yml`, which the Gate run's end starts. The
+next promote's line-stop (`scripts/promote.sh`) needs a green CI run and a green after-roll run named for main's
+commit; it waits up to twenty minutes for one still missing or running, and in the gate a wait that runs out ends green
+with nothing promoted, for the holder to promote by hand once main is proven. A red one refuses, unless the version is
+main's fix and its commit message carries `Fixes-main: <main's sha>`. A version promoted by hand starts its own
+after-roll (promote.sh does it, or `gh workflow run after-roll.yml --ref main -f sha=<sha> -f version=<version>`).
+
 **One full run, the gate's.** While you work, run only the suite your change touches (on the box,
 `yard-test <branch> api|server|web|e2e`; elsewhere the one command below for that suite). The whole of
 every suite runs once per version, in the gate, side by side on GitHub's runners (ADR-098, the addendum
