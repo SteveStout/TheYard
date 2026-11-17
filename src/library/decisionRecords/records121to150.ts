@@ -115,4 +115,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '135',
   },
+  adrAPullRequestOfAiWrittenCodeIsSizedToTheGate: {
+    title: 'ADR: A pull request of AI-written code is sized to the gate',
+    menuLabel: 'ADR: A pull request of AI-written code is sized to the gate',
+    url: '/api/docs/adr-a-pull-request-of-ai-written-code-is-sized-to-the-gate',
+    kind: 'adr',
+    number: '@ADR@',
+  },
 } as const satisfies Record<string, RecordEntry>;
