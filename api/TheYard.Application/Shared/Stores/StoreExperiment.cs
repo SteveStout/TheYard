@@ -1,21 +1,28 @@
 // The partition key experiment as the Admin tab asks for it: one port, the shapes of its answer,
 // and the answer a container with no document store gives. The experiment itself runs in the
 // Cosmos DB adapter (TheYard.Infrastructure.Cosmos/Shared/Stores/Experiment.cs); the host only asks this port.
+using System.Text.Json.Serialization;
+
 namespace TheYard.Application.Shared.Stores;
 
 /// <summary>One query of the experiment: what it asked, how far it fanned out, and what it cost.</summary>
 /// <param name="Query">What the query asked, in words.</param>
-/// <param name="Partitions">How far the query fanned out, such as "1 logical" or every physical partition.</param>
-/// <param name="RequestCharge">What the query cost, in request units.</param>
+/// <param name="Scope">How far the query fanned out, such as "1 logical" or every physical partition. On the wire as <c>partitions</c>.</param>
+/// <param name="Charge">What the query cost, in the store's own unit (request units). On the wire as <c>request_charge</c>.</param>
 /// <param name="DurationMs">How long the query took, in milliseconds.</param>
 /// <param name="Documents">How many documents the query returned or counted.</param>
-public sealed record ExperimentRow(string Query, string Partitions, double RequestCharge, long DurationMs, int Documents);
+public sealed record ExperimentRow(
+    string Query,
+    [property: JsonPropertyName("partitions")] string Scope,
+    [property: JsonPropertyName("request_charge")] double Charge,
+    long DurationMs,
+    int Documents);
 
 /// <summary>The experiment card's answer, including the four ways it can have nothing to show.</summary>
 /// <param name="Available">True when the experiment ran and has rows to show.</param>
 /// <param name="Reason">Why there is nothing to show, or null when there is.</param>
 /// <param name="Container">The container the experiment ran against.</param>
-/// <param name="PhysicalPartitions">How many physical partitions the container has.</param>
+/// <param name="Shards">How many physical partitions the container has. On the wire as <c>physical_partitions</c>.</param>
 /// <param name="Documents">How many documents the container holds.</param>
 /// <param name="Rows">One row per query the experiment ran.</param>
 /// <param name="RanAt">When the experiment ran.</param>
@@ -23,7 +30,7 @@ public sealed record ExperimentResult(
     bool Available,
     string? Reason,
     string Container,
-    int PhysicalPartitions,
+    [property: JsonPropertyName("physical_partitions")] int Shards,
     int Documents,
     IReadOnlyList<ExperimentRow> Rows,
     DateTimeOffset RanAt);

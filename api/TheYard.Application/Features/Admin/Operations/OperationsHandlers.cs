@@ -7,18 +7,18 @@ using TheYard.Application.Shared;
 namespace TheYard.Application.Features.Admin.Operations;
 
 // #region ring-handlers
-/// <summary>The SQL ring.</summary>
+/// <summary>The statement ring.</summary>
 /// <param name="rings">The process's rings.</param>
-public sealed class ReadSqlRingHandler(IRingReadings rings) : IQueryHandler<ReadSqlRingQuery, Reading>
+public sealed class ReadStatementRingHandler(IRingReadings rings) : IQueryHandler<ReadStatementRingQuery, Reading>
 {
     /// <summary>The ring as it stands.</summary>
     /// <param name="query">The query; it carries nothing.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public Task<Reading> HandleAsync(ReadSqlRingQuery query, CancellationToken cancellation) => Task.FromResult(Reading.Of(rings.Sql()));
+    public Task<Reading> HandleAsync(ReadStatementRingQuery query, CancellationToken cancellation) => Task.FromResult(Reading.Of(rings.Statements()));
 }
 
-/// <summary>Asks for the SQL ring.</summary>
-public sealed record ReadSqlRingQuery;
+/// <summary>Asks for the statement ring.</summary>
+public sealed record ReadStatementRingQuery;
 
 /// <summary>The document store's operation ring.</summary>
 /// <param name="rings">The process's rings.</param>

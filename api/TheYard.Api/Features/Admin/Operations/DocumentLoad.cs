@@ -31,14 +31,14 @@ public static class DocumentLoad
             .OrderBy(group => group.Key)
             .Select(group => new DocumentMinute(
                 group.Key,
-                Math.Round(group.Sum(operation => operation.RequestCharge), 2),
+                Math.Round(group.Sum(operation => operation.Charge), 2),
                 group.Count(),
                 // The minute's charge spread over its sixty seconds, as a share
                 // of the thousand request units a second the free tier allows:
                 // the average rate the minute ran at against an allowance that
                 // is itself a rate. A burst inside the minute runs higher than
                 // this for its few seconds, and the store says nothing finer.
-                Math.Round(group.Sum(operation => operation.RequestCharge) / 60 / FreeRequestUnitsPerSecond * 100, 3)))
+                Math.Round(group.Sum(operation => operation.Charge) / 60 / FreeRequestUnitsPerSecond * 100, 3)))
             .ToList();
 
         long[] durations = operations.Select(operation => operation.DurationMs).ToArray();
@@ -51,7 +51,7 @@ public static class DocumentLoad
             store,
             true,
             null,
-            Math.Round(operations.Sum(operation => operation.RequestCharge), 2),
+            Math.Round(operations.Sum(operation => operation.Charge), 2),
             operations.Count,
             Percentiles.Of(durations, 50),
             Percentiles.Of(durations, 95),

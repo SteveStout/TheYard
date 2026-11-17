@@ -39,7 +39,7 @@ public static class ObservabilityRegistration
         // be handed every ring separately (HostRings.cs).
         builder.Services.AddSingleton(new HostRings(sqlLog, storeLog, logLog, requestLog));
         builder.Services.AddSingleton(sqlLog);
-        builder.Services.AddSingleton<ISqlLog>(sqlLog);
+        builder.Services.AddSingleton<IStatementLog>(sqlLog);
         builder.Services.AddSingleton(storeLog);
         builder.Services.AddSingleton<IStoreLog>(storeLog);
         builder.Services.AddSingleton<IHttpContextAccessor>(accessor);
@@ -72,7 +72,7 @@ public static class ObservabilityRegistration
         // two error rings are wired to it when the host starts (ErrorRingKeeping).
         var keptRings = new KeptRingWriter(logCollector, backends.Default.Key);
         builder.Services.AddSingleton(keptRings);
-        sqlLog.Kept = statement => keptRings.Keep(KeptRings.Sql, statement.At, statement);
+        sqlLog.Kept = statement => keptRings.Keep(KeptRings.Statements, statement.At, statement);
         storeLog.Kept = operation => keptRings.Keep(KeptRings.Store, operation.At, operation);
         logLog.Kept = line => keptRings.Keep(KeptRings.Log, line.At, line);
         builder.Services.AddSingleton(new KeptRingReader(logCollector, backends.Default.Key, backends.Named(StoreKeys.Document)?.Name ?? backends.Default.Name));

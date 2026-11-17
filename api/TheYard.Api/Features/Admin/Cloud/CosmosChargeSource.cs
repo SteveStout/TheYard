@@ -33,7 +33,7 @@ public sealed class CosmosChargeSource(Func<IReadOnlyList<StoreOperation>> opera
         var recent = operations().Where(operation => operation.At > now - Window && operation.At <= now).ToList();
         return Task.FromResult<LiveSample?>(new LiveSample(now, new Dictionary<string, double?>(StringComparer.Ordinal)
         {
-            ["ru_per_second"] = Math.Round(recent.Sum(operation => operation.RequestCharge) / Window.TotalSeconds, 2),
+            ["ru_per_second"] = Math.Round(recent.Sum(operation => operation.Charge) / Window.TotalSeconds, 2),
             ["requests"] = recent.Count,
             ["throttled"] = recent.Count(operation => CosmosCard.GaveUpOn429(operation.Outcome)),
         }));

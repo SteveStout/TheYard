@@ -14,34 +14,34 @@ namespace TheYard.Application.Shared.Stores;
 // this column" is one new column away from being wrong; a type with nowhere to
 // write the value cannot leak it whatever anyone adds later.
 
-/// <summary>One parameter of a SQL statement, described but never valued.</summary>
+/// <summary>One parameter of a statement, described but never valued.</summary>
 /// <param name="Name">The parameter name, such as <c>@p0</c>.</param>
 /// <param name="Type">The parameter's database type.</param>
 /// <param name="Size">The declared size of the parameter, or null when it has none.</param>
-public sealed record SqlParameterShape(string Name, string Type, int? Size);
+public sealed record ParameterShape(string Name, string Type, int? Size);
 
 /// <summary>
-/// One SQL statement the application ran: its text, the shape of its
+/// One statement the application ran on the relational store: its text, the shape of its
 /// parameters, how long the database took, and the HTTP request that caused it.
 /// </summary>
 /// <param name="At">When the statement ran.</param>
-/// <param name="Text">The SQL text as sent to the database.</param>
+/// <param name="Text">The statement's text as sent to the database.</param>
 /// <param name="Parameters">The shape of each parameter: name, type and size, never the value.</param>
 /// <param name="DurationMs">How long the database took, in milliseconds.</param>
 /// <param name="Outcome">How the statement ended, such as success or the failure it met.</param>
 /// <param name="Request">The HTTP request that caused the statement, like "GET /api/vehicles", or null when none did.</param>
-public sealed record SqlStatement(
+public sealed record StoreStatement(
     DateTimeOffset At,
     string Text,
-    IReadOnlyList<SqlParameterShape> Parameters,
+    IReadOnlyList<ParameterShape> Parameters,
     long DurationMs,
     string Outcome,
     string? Request);
 
-/// <summary>Port: where recent SQL statements are kept for the Admin tab.</summary>
-public interface ISqlLog
+/// <summary>Port: where recent statements are kept for the Admin tab.</summary>
+public interface IStatementLog
 {
-    void Record(SqlStatement statement);
+    void Record(StoreStatement statement);
 }
 
 /// <summary>
@@ -62,13 +62,13 @@ public interface ICurrentRequest
 }
 
 /// <summary>The port wired to nothing, for the tests and the design-time tools.</summary>
-public sealed class NullSqlLog : ISqlLog
+public sealed class NullStatementLog : IStatementLog
 {
-    public static readonly NullSqlLog Instance = new();
+    public static readonly NullStatementLog Instance = new();
 
-    private NullSqlLog() { }
+    private NullStatementLog() { }
 
-    public void Record(SqlStatement statement) { }
+    public void Record(StoreStatement statement) { }
 }
 
 /// <summary>The port wired to nothing: no request, ever.</summary>

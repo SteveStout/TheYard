@@ -120,6 +120,7 @@ The single-responsibility line above names `PasswordReset` as the class that hol
 - [`api/TheYard.Api/Shared`](https://github.com/SteveStout/TheYard/tree/main/api/TheYard.Api/Shared): the composition root.
 - [`docs/images/rings.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/rings.mjs): the drawing.
 - [`docs/images/solid.mjs`](https://github.com/SteveStout/TheYard/blob/main/docs/images/solid.mjs): the SOLID letters, one at a time.
+- [`api/TheYard.Tests/StoreVocabularyTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/StoreVocabularyTests.cs): the Application ring's names, held to no store's vocabulary.
 
 ## Addendum, 2026-10-20 (1.0.4.0): the onion cut into vertical slices
 
@@ -321,3 +322,46 @@ promised code; `LiveSampleCoverageTests` names every one of them, which is how t
 
 `files_within_10_of_cap` is 2 from 6, lowered in this same commit. No file in the six projects or
 the sample is over 300 lines, and none of the four cuts changed what anything does.
+
+## Addendum, @DATE@ (@VER@): Application speaks no store's language
+
+**In plain words: the middle ring no longer names a database.** The Admin tab's store diagnostics
+sat in the Application ring under the document store's own words: a `StoreOperation` carried a
+`RequestCharge`, a `Partition` and its `PhysicalPartitions`, the relational side had `SqlStatement`
+and `ISqlLog`, a machine minute had `SqlCpuPercent`, and the startup answer had `SeedRequestUnits`.
+They are a charge, a scope, shards and a statement now: `StoreOperation.Charge`, `.Scope` and
+`.Shards`; `ExperimentRow.Charge` and `.Scope`; `ExperimentResult.Shards`; `StoreStatement`,
+`ParameterShape`, `IStatementLog` and `NullStatementLog`; `DatabaseState.SeedCharge`;
+`ActivityCost.Charge`; and on `MachineMinute` and `MachineBucket`, `StoreCpuPercent`,
+`StoreMemoryPercent`, `StoreDataIoPercent` and `Charge`. Three names the review did not list went
+the same way: `ReadSqlRingQuery` and its handler are `ReadStatementRingQuery` and
+`ReadStatementRingHandler`, `IRingReadings.Sql()` is `Statements()`, and `KeptRings.Sql` is
+`KeptRings.Statements`. Nothing does anything differently.
+
+**Why.** The review of the database in the onion, read at 1.0.5.56, found it as finding A: no
+package leaked, the ring rules saw to that, but the concepts did, so "what a Cosmos DB request unit
+is" was written into the use-case ring. The ring rules check references, not vocabulary, which is
+why nothing caught it. The review offered two remedies, and this is the second. Moving the shapes
+to an outer operations area would have needed a new project: both adapters implement these ports
+and the host reads them, an adapter cannot reference the host, and the Application ring uses some of
+them itself (its kept rings are keyed by `StoreKeys`, and `MachineFolding` folds the machine
+minutes), so the ring rule would have had to widen to let Application see the new area. Renaming changes names and nothing else, and holds the same rule.
+
+**The wire did not move.** Every renamed member that goes out as JSON carries its old field name in
+a `JsonPropertyName`, so `/api/admin/store`, `/api/admin/machines`, `/api/admin/experiment`, the
+kept rings and the Admin tab's store card read `partition`, `physical_partitions`, `request_charge`,
+`partitions`, `sql_cpu_percent` and `request_units` as before, and the page's types are unchanged.
+`StoreKeys` keeps the values `sql` and `cosmos`, because they are the header's and the session
+claim's words; its names were already `Relational` and `Document`. The file `SqlLog.cs` keeps its
+name, because two records' live fences read it by path. The adapters keep the store's words where
+they are the store's: `CosmosOperationLog` reads `RequestCharge` off the SDK's response and hands
+it to the port as a charge.
+
+**What holds it.** `StoreVocabularyTests` reads the Application assembly with Mono.Cecil, the way
+`OnionTests` reads method bodies, and splits every type, property, field, method, event and
+parameter name into its words. A name with SQL, Cosmos, a request charge, a request unit, a
+partition or RU as a word fails, unless it is on the test's allow list with a reason, and an entry
+that no longer excuses anything fails too. The list is empty. The same class serializes the renamed
+shapes and holds their field names, so a rename that forgets its attribute is red. The test was
+planted against: a type named for Cosmos DB with a method named for request units and a parameter
+named for partitions failed it on all three names.

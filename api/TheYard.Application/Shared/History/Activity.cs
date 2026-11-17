@@ -76,11 +76,11 @@ public sealed record ActivityVisitor(
 /// <param name="Retention">How long a kept row lasts, as the store says it; null when the store is down or does not know.</param>
 public sealed record ActivityAvailability(bool Available, string Reason, string? Retention = null);
 
-/// <summary>What keeping activity has cost a store: request units, operations, and the operations that failed.</summary>
-/// <param name="RequestUnits">The request units spent keeping activity.</param>
+/// <summary>What keeping activity has cost a store: its charge, operations, and the operations that failed.</summary>
+/// <param name="Charge">What keeping activity was charged, in the store's own unit (request units).</param>
 /// <param name="Operations">How many store operations keeping activity took.</param>
 /// <param name="Failures">How many of those operations failed.</param>
-public sealed record ActivityCost(double RequestUnits, int Operations, int Failures);
+public sealed record ActivityCost(double Charge, int Operations, int Failures);
 
 /// <summary>
 /// What keeping activity has cost a store since the process started, for a

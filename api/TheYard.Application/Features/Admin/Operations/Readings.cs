@@ -10,8 +10,8 @@ namespace TheYard.Application.Features.Admin.Operations;
 /// <summary>The process's own rings: the SQL statements, the store operations, the log lines, and the timings built from them.</summary>
 public interface IRingReadings
 {
-    /// <summary>The SQL ring.</summary>
-    object Sql();
+    /// <summary>The statement ring: the relational store's statements.</summary>
+    object Statements();
 
     /// <summary>The document store's operation ring, with the store's name.</summary>
     object Store();

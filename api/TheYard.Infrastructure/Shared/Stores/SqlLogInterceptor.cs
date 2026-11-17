@@ -6,7 +6,7 @@ namespace TheYard.Infrastructure.Shared.Stores;
 
 // #region sql-interceptor
 /// <summary>
-/// Reads every command EF Core sends and hands it to the <see cref="ISqlLog"/>.
+/// Reads every command EF Core sends and hands it to the <see cref="IStatementLog"/>.
 ///
 /// This is an interceptor rather than a log filter on purpose. EF's own
 /// "Executed DbCommand" log line already contains everything, including the
@@ -17,7 +17,7 @@ namespace TheYard.Infrastructure.Shared.Stores;
 /// the <see cref="DbCommand"/> itself, so this code can read a parameter's name,
 /// type and size and never touch <c>Value</c> at all.
 /// </summary>
-public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, TimeProvider clock) : DbCommandInterceptor
+public sealed class SqlLogInterceptor(IStatementLog log, ICurrentRequest request, TimeProvider clock) : DbCommandInterceptor
 {
     // A statement is trimmed before it is stored: EF writes a SELECT of every
     // column of Vehicles, which is thirty of them, and the Admin tab is a page
@@ -48,11 +48,11 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, Time
 
     private void RecordOrThrow(DbCommand command, TimeSpan duration, string outcome)
     {
-        var parameters = new List<SqlParameterShape>(command.Parameters.Count);
+        var parameters = new List<ParameterShape>(command.Parameters.Count);
         foreach (DbParameter parameter in command.Parameters)
         {
-            // Name, type, size. Never Value. See the comment on SqlStatement.
-            parameters.Add(new SqlParameterShape(
+            // Name, type, size. Never Value. See the comment on StoreStatement.
+            parameters.Add(new ParameterShape(
                 parameter.ParameterName,
                 parameter.DbType.ToString(),
                 parameter.Size == 0 ? null : parameter.Size));
@@ -62,7 +62,7 @@ public sealed class SqlLogInterceptor(ISqlLog log, ICurrentRequest request, Time
             ? command.CommandText
             : command.CommandText[..MaxTextLength] + "\n... trimmed";
 
-        log.Record(new SqlStatement(
+        log.Record(new StoreStatement(
             clock.GetUtcNow(),
             text,
             parameters,

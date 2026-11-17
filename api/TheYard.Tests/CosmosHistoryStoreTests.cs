@@ -112,7 +112,7 @@ public sealed class CosmosHistoryStoreTests
         var hours = await activity.HoursAsync(hour.AddHours(-1), CancellationToken.None);
         var folded = Assert.Single(hours, row => row.Hour == hour && row.Store == "cosmos");
         Assert.True(folded.Requests >= 3, $"the hour holds this test's three requests and whatever else that hour kept; it read {folded.Requests}");
-        Assert.True(activity.Cost.RequestUnits > 0, "the fold that was written was charged for");
+        Assert.True(activity.Cost.Charge > 0, "the fold that was written was charged for");
     }
 
     /// <summary>One hit, already reduced to a keyed hash and a cleaned path, the way the recorder offers one.</summary>
