@@ -21,8 +21,8 @@ public sealed record DatabaseState(bool Ready, string Note, Exception? Failure =
     /// <summary>How long the first-boot seed took, zero when there was nothing to seed.</summary>
     public long SeedMs { get; init; }
 
-    /// <summary>What the seed cost in request units, which only the document store can say.</summary>
-    public double? SeedRequestUnits { get; init; }
+    /// <summary>What the seed cost in the store's own unit (request units), which only the document store can say.</summary>
+    public double? SeedCharge { get; init; }
 
     /// <summary>
     /// One sentence safe to put anywhere, including a public page.

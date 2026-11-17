@@ -66,7 +66,7 @@ public sealed class CosmosStoreStartup(CosmosStore store)
             {
                 SchemaMs = checking.ElapsedMilliseconds,
                 SeedMs = seeding.ElapsedMilliseconds,
-                SeedRequestUnits = Math.Round(seeded.SeedCharge, 2),
+                SeedCharge = Math.Round(seeded.SeedCharge, 2),
             };
         }
         catch (Exception ex)

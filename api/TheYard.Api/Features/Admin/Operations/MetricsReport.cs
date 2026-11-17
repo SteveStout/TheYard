@@ -18,7 +18,7 @@ public static class MetricsReport
         Backends backends,
         Backend mine,
         IReadOnlyList<RequestEntry> requests,
-        IReadOnlyList<SqlStatement> statements,
+        IReadOnlyList<StoreStatement> statements,
         IReadOnlyList<StoreOperation> operations,
         DateTimeOffset startedAt)
     {
@@ -125,7 +125,7 @@ public static class MetricsReport
         prepare_ms = backend.Startup.Ms("prepare"),
         schema_ms = backend.Database.SchemaMs,
         seed_ms = backend.Database.SeedMs,
-        seed_ru = backend.Database.SeedRequestUnits,
+        seed_ru = backend.Database.SeedCharge,
         catalogue_ms = backend.Startup.Ms("catalogue"),
         bids_ms = backend.Startup.Ms("bids"),
         ready_ms = backend.Startup.ReadyMs,

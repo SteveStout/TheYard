@@ -113,7 +113,7 @@ public static class ActivityReport
                 last_write = counters.LastWrite,
                 interval_seconds = (int)ActivityCollector.Interval.TotalSeconds,
             },
-            cost = cost is null ? null : new { request_units = Math.Round(cost.RequestUnits, 2), operations = cost.Operations, failures = cost.Failures },
+            cost = cost is null ? null : new { request_units = Math.Round(cost.Charge, 2), operations = cost.Operations, failures = cost.Failures },
         };
     }
 
