@@ -105,10 +105,11 @@ public static partial class QualityCounts
     private static string Rules(string repoRoot)
     {
         var results = Results(repoRoot);
+        var elsewhere = FunctionClasses(repoRoot);
         var table = new StringBuilder("| The rule | Where it was decided | What holds it | In the last gate |\n| --- | --- | --- | --- |\n");
         foreach (string[] cells in RuleRows(repoRoot))
         {
-            var (run, passed) = Ran(cells, results);
+            var (run, passed) = Ran(Counted(cells, results, elsewhere), results);
             string verdict = run == 0 ? "in its own suite, not this file" : $"{passed} of {run} passed";
             table.Append(CultureInfo.InvariantCulture, $"| {cells[0]} | {cells[1]} | {cells[2]} | {verdict} |\n");
         }
@@ -125,11 +126,50 @@ public static partial class QualityCounts
             .Where(cells => cells.Length >= 3)];
     }
 
-    /// <summary>A row's tests in the gate this build shipped from: run and passed, across the classes it names.</summary>
-    private static (int Run, int Passed) Ran(string[] cells, Dictionary<string, (int Run, int Passed)> results)
+    /// <summary>
+    /// The classes a row names whose tests the gate this build shipped from recorded. A rule about the job hunt
+    /// Function names its own suite's classes, some of which share a name with the site's (SliceTests, CqrsTests);
+    /// the results file holds only the site's suites, so for such a rule those names are not counted at all.
+    /// </summary>
+    private static string[] Counted(string[] cells, Dictionary<string, (int Run, int Passed)> results, HashSet<string> elsewhere)
     {
-        string[] classes = [.. TestClass().Matches(cells[2]).Select(m => m.Value).Distinct()];
-        return (classes.Sum(c => results.TryGetValue(c, out var r) ? r.Run : 0), classes.Sum(c => results.TryGetValue(c, out var r) ? r.Passed : 0));
+        bool functions = FunctionRule().IsMatch(cells[0]);
+        return [.. TestClass().Matches(cells[2]).Select(m => m.Value).Distinct()
+            .Where(c => results.ContainsKey(c) && !(functions && elsewhere.Contains(c)))];
+    }
+
+    /// <summary>Runs and passes across <paramref name="classes"/>, each class once.</summary>
+    private static (int Run, int Passed) Ran(IEnumerable<string> classes, Dictionary<string, (int Run, int Passed)> results) =>
+        classes.Distinct().Aggregate((Run: 0, Passed: 0), (sum, c) => (sum.Run + results[c].Run, sum.Passed + results[c].Passed));
+
+    /// <summary>The job hunt Function's test classes, by file name: a suite this results file does not record.</summary>
+    private static HashSet<string> FunctionClasses(string repoRoot)
+    {
+        string folder = Path.Combine(repoRoot, "functions", "jobhunt.Tests");
+        return Directory.Exists(folder)
+            ? [.. Directory.GetFiles(folder, "*Tests.cs", SearchOption.AllDirectories).Select(Path.GetFileNameWithoutExtension).OfType<string>()]
+            : [];
+    }
+
+    /// <summary>
+    /// The rules of ADR-075's table that cite the record titled <paramref name="title"/>, each with the tests that
+    /// hold it and how they did in the gate this build shipped from, for the record's "Enforced by" section
+    /// (EnforcedBy.cs). A cell may cite several records, and a title may hold a comma, so a citation runs from its
+    /// own "ADR: " to the next, as RuleTableTests reads it.
+    /// </summary>
+    internal static List<(string Rule, string Holds, string Verdict)> RulesCiting(string title, string repoRoot)
+    {
+        var results = Results(repoRoot);
+        var elsewhere = FunctionClasses(repoRoot);
+        return [.. RuleRows(repoRoot)
+            .Where(cells => Regex.Split(cells[1], @"(?=\bADR: )")
+                .Where(part => part.StartsWith("ADR: ", StringComparison.Ordinal))
+                .Any(part => string.Equals(part["ADR: ".Length..].Trim().TrimEnd(',', '.', ' '), title, StringComparison.Ordinal)))
+            .Select(cells =>
+            {
+                var (run, passed) = Ran(Counted(cells, results, elsewhere), results);
+                return (cells[0], cells[2], run == 0 ? "in its own suite, not this file" : $"{passed} of {run} passed");
+            })];
     }
     // #endregion rules-table
 
@@ -143,22 +183,23 @@ public static partial class QualityCounts
     private static string RuleGroups(string repoRoot)
     {
         var results = Results(repoRoot);
+        var elsewhere = FunctionClasses(repoRoot);
         var rows = RuleRows(repoRoot).ToDictionary(cells => cells[0], StringComparer.Ordinal);
         using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(repoRoot, "data", "rule-groups.json")));
         var cards = new StringBuilder();
         foreach (JsonElement group in document.RootElement.GetProperty("groups").EnumerateArray())
         {
             string[] rules = [.. group.GetProperty("rules").EnumerateArray().Select(r => r.GetString() ?? "").Where(rows.ContainsKey)];
-            var ran = rules.Select(rule => Ran(rows[rule], results)).ToList();
-            int gated = ran.Count(r => r.Run > 0);
-            int run = ran.Sum(r => r.Run);
-            int passed = ran.Sum(r => r.Passed);
-            string status = passed == run ? $"all {run} of their test runs in the last gate passed" : $"{passed} of their {run} test runs in the last gate passed";
+            var counted = rules.Select(rule => Counted(rows[rule], results, elsewhere)).ToList();
+            int gated = counted.Count(classes => classes.Length > 0);
+            // A class two rules both name ran once, so the group counts it once.
+            var (run, passed) = Ran(counted.SelectMany(classes => classes), results);
+            string status = passed == run ? $"all {Number(run)} of their test runs in the last gate passed" : $"{Number(passed)} of their {Number(run)} test runs in the last gate passed";
             string apart = (rules.Length - gated) switch
             {
                 0 => "",
-                1 => " One more is held by the job hunt Function's own suite, which its deploy runs.",
-                int more => $" {more} more are held by the job hunt Function's own suite, which its deploy runs.",
+                1 => " One more is held by a suite this file does not record test by test, the job hunt Function's or the machine lanes'.",
+                int more => $" {more} more are held by suites this file does not record test by test, the job hunt Function's and the machine lanes'.",
             };
             cards.Append(CultureInfo.InvariantCulture, $"### {group.GetProperty("title").GetString()}\n\n{group.GetProperty("promise").GetString()}\n\n{group.GetProperty("example").GetString()}\n\n**{RuleWords(rules.Length)}: {(gated == rules.Length ? "" : $"{gated} checked by the gate, ")}{status}.**{apart}\n\n");
         }
@@ -166,7 +207,10 @@ public static partial class QualityCounts
     }
 
     /// <summary>A count of rules in words a card can say: one rule, or <paramref name="count"/> rules.</summary>
-    private static string RuleWords(int count) => count == 1 ? "1 rule" : $"{count.ToString(CultureInfo.InvariantCulture)} rules";
+    private static string RuleWords(int count) => count == 1 ? "1 rule" : $"{Number(count)} rules";
+
+    /// <summary>A count as the site writes one: 1,516.</summary>
+    private static string Number(int count) => count.ToString("#,0", CultureInfo.InvariantCulture);
     // #endregion rule-groups
 
     /// <summary>Each test class's results in the gate this build shipped from, across every suite, by class name.</summary>
@@ -220,4 +264,7 @@ public static partial class QualityCounts
 
     [GeneratedRegex(@"^Current level: (\d+)", RegexOptions.Multiline)]
     private static partial Regex CurrentLevel();
+
+    [GeneratedRegex(@"\bjob hunt\b|\bthe Function\b|\bFunction's\b", RegexOptions.IgnoreCase)]
+    private static partial Regex FunctionRule();
 }

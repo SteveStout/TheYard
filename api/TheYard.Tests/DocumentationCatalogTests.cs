@@ -279,6 +279,24 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
         Assert.Equal(expected, headings);
     }
 
+    /// <summary>
+    /// The onion page said "ten tests" for weeks after the eleventh was written (ONIONPAGE1116). Its count of the
+    /// onion's tests is read from the test file when the page is opened, and no count of tests or rules is typed
+    /// beside it, except the first ten, which the record's table keeps as history.
+    /// </summary>
+    [Fact]
+    public void The_onion_page_reads_its_count_of_tests_from_the_test_file_and_types_none()
+    {
+        string page = File.ReadAllText(Path.Combine(RepoRoot(), DocumentationCatalog.Files["onion"]));
+
+        Assert.Contains("{{live:facts api/TheYard.Tests/OnionTests.cs}} tests", page, StringComparison.Ordinal);
+        string[] typed = [.. Regex.Matches(page, @"\b(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) (tests|rules)\b", RegexOptions.IgnoreCase)
+            .Select(m => m.Value)
+            .Where(found => !found.Equals("ten rules", StringComparison.OrdinalIgnoreCase) || !page.Contains("The first ten rules", StringComparison.Ordinal))];
+        Assert.Empty(typed);
+        Assert.DoesNotContain("IBidStore.SaveAsync", page, StringComparison.Ordinal);
+    }
+
     /// <summary>The folder README.md and src/ sit in, found by walking up from the test binaries.</summary>
     private static string RepoRoot()
     {
