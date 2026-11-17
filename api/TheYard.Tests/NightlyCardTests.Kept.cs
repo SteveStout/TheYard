@@ -57,7 +57,7 @@ public sealed partial class NightlyCardTests
         // 22 October, live after 1.0.4.25 rolled: the keep had minutes from 10:5x UTC, no slot had
         // come due inside them, and the dial read "no slot kept yet" beside a Last fired the hour had read.
         var fired = new DateTimeOffset(2026, 10, 22, 9, 0, 40, TimeSpan.Zero);
-        var firings = new List<TheYard.Data.NightlyFiring>
+        var firings = new List<NightlyFiring>
         {
             new(new DateTimeOffset(2026, 10, 22, 9, 0, 0, TimeSpan.Zero), "reply", TheYard.Domain.Features.Admin.NightlySlots.OnTime, fired),
             new(new DateTimeOffset(2026, 10, 22, 5, 0, 0, TimeSpan.Zero), "records", TheYard.Domain.Features.Admin.NightlySlots.Late, fired.AddHours(-3.9)),

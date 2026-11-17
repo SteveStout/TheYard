@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Xml.Linq;
 using TheYard.Application.Features.Blog;
-using TheYard.Data;
 
 namespace TheYard.Api.Features.Blog;
 

@@ -2,7 +2,6 @@
 // slug; the read and event logs; and each post's numbers. The relational store is the one adapter that
 // keeps them (the logs join the posts), and a process with no relational store keeps them in memory and
 // says so, the way the activity counters do.
-using TheYard.Data;
 
 namespace TheYard.Application.Features.Blog;
 
