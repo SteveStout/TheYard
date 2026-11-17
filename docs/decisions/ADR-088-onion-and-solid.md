@@ -321,3 +321,19 @@ promised code; `LiveSampleCoverageTests` names every one of them, which is how t
 
 `files_within_10_of_cap` is 2 from 6, lowered in this same commit. No file in the six projects or
 the sample is over 300 lines, and none of the four cuts changed what anything does.
+
+## Addendum, 2026-11-17 (1.0.5.84): the ten are now 19
+
+What stopped being true: "the ten rules". The table under "How the build holds them" is the first set, written when this record was accepted, and it stays as it was. `OnionTests.cs` has grown since, each new test for a break it stops, and at this version holds 19: the ten above and these 9:
+
+- `Data_has_no_behaviour`
+- `Infrastructure_adapts_and_decides_nothing`
+- `Endpoints_see_the_auction_and_the_request_s_store_never_a_backend`
+- `The_host_uses_the_sheds_assembly_only_from_the_shed_s_own_site`
+- `The_host_finds_nothing_at_runtime_outside_its_composition_root`
+- `A_route_or_a_handler_is_handed_its_settings_never_the_configuration`
+- `The_application_ring_finds_nothing_at_runtime_at_all`
+- `Claude_is_asked_only_through_the_one_client_that_reports_its_usage`
+- `The_host_opens_no_socket`
+
+The onion practices page no longer types the count: it reads it from the test file when the page is opened, so the next rule cannot leave it stale (DocumentationCatalogTests holds the page to that). The page's bid walk now names the port's method as it is, `IBidStore.TrySaveAsync`, a compare-and-set on the standing's version, and says which ports the two stores adapt and that the use cases reach them through a reading and a writing interface each since this record's addendum of 2026-10-23.

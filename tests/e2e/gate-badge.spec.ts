@@ -45,6 +45,8 @@ test('every page carries the badge, which names all three and opens its popover 
   await expect(page.getByTestId('gate-badge')).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');
   await expect(popover).toHaveCount(0);
+  // The focus goes back to the badge it was opened from (CodeRabbit on 1.0.5.82).
+  await expect(page.getByTestId('gate-badge')).toBeFocused();
 });
 
 test("at 390 the badge is a thumb-tall chip in the note's row, and nothing scrolls sideways", async ({

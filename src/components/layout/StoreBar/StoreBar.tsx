@@ -14,7 +14,7 @@ import { gateChips, gateFacts } from './gateFacts';
 // The badge's popover is fetched the first time it opens, so its words and styles stay out of the first load
 // (ADR-134, .github/byte-budgets.json).
 const GatePopover = lazy(() =>
-  import('../GatePopover/GatePopover').then((module) => ({ default: module.GatePopover }))
+  import('../GatePopover').then((module) => ({ default: module.GatePopover }))
 );
 
 /** What this build's version had to pass: read once, from what the build carries. */
@@ -37,7 +37,11 @@ export function StoreBar() {
   const [stores, setStores] = useState<Stores | null>(null);
   const [gateTop, setGateTop] = useState<number | null>(null);
   const badge = useRef<HTMLButtonElement>(null);
-  const closeGate = useCallback(() => setGateTop(null), []);
+  // Closing hands the focus back to the badge, so a keyboard reader is where they opened it from.
+  const closeGate = useCallback(() => {
+    setGateTop(null);
+    badge.current?.focus();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();

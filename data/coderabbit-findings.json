@@ -2022,8 +2022,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 3,
+      "answered_as_wrong": 0,
       "prs": [
         95
       ]
@@ -2122,8 +2122,8 @@
         "nitpick": 0
       },
       "critical_at": [],
-      "fixed": null,
-      "answered_as_wrong": null,
+      "fixed": 5,
+      "answered_as_wrong": 0,
       "prs": [
         100
       ]

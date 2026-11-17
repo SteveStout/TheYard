@@ -3,7 +3,7 @@
  *            reading against the one before it, and the CodeRabbit row the gate wrote for it (ADR-130). The badge's
  *            chips and its popover read this one answer.
  * Does not:  Fetch anything or type a count: a version the history or the findings file has no row for says so.
- * Used by:   StoreBar.tsx (the badge), GatePopover.tsx, gateFacts.test.ts.
+ * Used by:   StoreBar.tsx (the badge), GatePopover.tsx (the popover's words), gateFacts.test.ts.
  */
 import history from '../../../../data/quality-history.json';
 import RELEASES from 'virtual:release-facts';
@@ -51,4 +51,19 @@ export function gateChips(facts: GateFacts): [string, string, string] {
         ? 'CodeRabbit reviewed'
         : 'CodeRabbit not reviewed',
   ];
+}
+
+/** The popover's quality line: "none worse" only when every number held, and how many moved the good way. */
+export function qualityLine({
+  held,
+  of,
+  better,
+}: {
+  held: number;
+  of: number;
+  better: number;
+}): string {
+  const worse = of - held;
+  const moved = better > 0 ? `, ${better} better` : '';
+  return `${held} of ${of} quality numbers held, ${worse === 0 ? 'none' : worse} worse than in the version before${moved}`;
 }

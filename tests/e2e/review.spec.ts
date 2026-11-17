@@ -135,6 +135,13 @@ test('a stop that names an Admin card opens with that card in view, not under th
     const open = page.locator(`[data-testid="bench-open"][data-card="${card}"]`);
     await expect(open.locator('h2').first()).toBeInViewport({ timeout: 15_000 });
   }
+  // A padded name opens the card the address handler trims it to, and scrolls to it too (CodeRabbit on 1.0.5.82).
+  await openTheYard(page, '/?view=admin&card=%20spend%20');
+  await expect(
+    page.locator('[data-testid="bench-open"][data-card="spend"] h2').first()
+  ).toBeInViewport({
+    timeout: 15_000,
+  });
 });
 
 test('a stop’s decision record opens its document, and Back returns to the route', async ({

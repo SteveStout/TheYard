@@ -12,8 +12,11 @@ import type { CardSlug } from '../../../lib/workbench';
 export function useAddressedCardIntoView(open: CardSlug) {
   const column = useRef<HTMLDivElement>(null);
   // The card the address named when the page opened, and whether it has been brought into view yet.
+  // Trimmed as the address handler trims it before it picks the card (cardFromAddress).
   const addressed = useRef(
-    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('card')
+    typeof window === 'undefined'
+      ? null
+      : (new URLSearchParams(window.location.search).get('card')?.trim() ?? null)
   );
   const broughtIntoView = useRef(false);
 
@@ -28,16 +31,13 @@ export function useAddressedCardIntoView(open: CardSlug) {
       return true;
     };
     if (bring()) return;
-    // A lazy card draws its heading a moment after the column exists.
+    // A lazy card draws its heading when its chunk arrives, however long that takes; the watch ends with it, or
+    // when the open card changes.
     const watch = new MutationObserver(() => {
       if (bring()) watch.disconnect();
     });
     watch.observe(here, { childList: true, subtree: true });
-    const stop = window.setTimeout(() => watch.disconnect(), 10_000);
-    return () => {
-      watch.disconnect();
-      window.clearTimeout(stop);
-    };
+    return () => watch.disconnect();
   }, [open]);
 
   return column;

@@ -14,7 +14,7 @@ The server is built in rings. The auction's rules sit in the middle, the code th
 visitor asks for wraps them, and the database code and the web endpoints sit on the outside. Code may
 use the rings inside it and never the ones outside it. This page follows one bid through those rings,
 shows how the inner ring can save a bid without knowing which database it is talking to, why the
-rules never read the clock, how ten tests keep the shape from slipping, and how a small codebase gets
+rules never read the clock, how {{live:facts api/TheYard.Tests/OnionTests.cs}} tests keep the shape from slipping, and how a small codebase gets
 the same shape from folders instead of projects.
 
 What that is worth: a developer can copy each practice into their own codebase this week, and the
@@ -77,8 +77,9 @@ The rule is easiest to see by following one request. A signed-in buyer bids on a
 4. **Domain decides.** The answer is a `BidOutcome`: refused because the vehicle is sold, the auction
    is not live or the bid is under the minimum; won at the buy-now price; or accepted. It is a pure
    function, so the same inputs give the same answer every time.
-5. **Application saves through the port.** On yes, `BidBook` calls `IBidStore.SaveAsync` and only
-   then records the bid in memory, so a failed write means the bid did not happen anywhere.
+5. **Application saves through the port.** On yes, `BidBook` calls `IBidStore.TrySaveAsync`, which
+   writes only if the standing still has the version it read (a compare-and-set), and only then records
+   the bid in memory, so a failed or overtaken write means the bid did not happen anywhere.
 6. **An adapter writes.** Whichever adapter the composition root wired in at startup, for SQL or for
    Cosmos DB, writes the row or the document.
 7. **The host answers.** A refusal becomes a 400 with the reason; a bid that stands becomes a 200 with
@@ -130,8 +131,11 @@ inner ring owns.
 
 Microsoft's architecture guide for .NET describes the same move: "defining abstractions, or
 interfaces, in the Application Core, which are then implemented by types defined in the
-Infrastructure layer." TheYard runs it twice over, because two stores sit behind the same three
-ports, and the rules have no idea which one is answering.
+Infrastructure layer." TheYard runs it twice over, because two stores, SQL and Cosmos DB, each
+adapt the same auction ports in `Ports.cs` (`IVehicleSource`, `IPhotoManifestSource`, `IBidStore`
+and `IVehicleCatalogue`). Since the auction's reads and writes were split, the use cases reach them
+through a reading and a writing interface each (`IStockReader`; `IBidReader` and `IBidWriter`;
+`IRoomReader` and `IRoomWriter`), and the rules have no idea which store is answering.
 
 **The practice:** name the port for what the inner ring needs (`IBidStore`) and keep the technology
 out of the name (`ISqlBidRepository` would leak it), and keep every type the port mentions inside the
@@ -295,15 +299,17 @@ the test that reads the error list said so within a minute of the first attempt.
 
 ## The build holds the rings
 
-A rule held by code review alone slips the first busy week. TheYard's is held by ten tests that read
+A rule held by code review alone slips the first busy week. TheYard's is held by {{live:facts api/TheYard.Tests/OnionTests.cs}} tests that read
 the compiled code with NetArchTest, a library that opens .NET assemblies (the compiled `.dll` files)
 and checks which types use which. Reading compiled code matters: it sees method bodies and the hidden
 types the compiler writes for lambdas and `async` methods, so a dependency tucked inside a lambda
 fails the build as surely as a `using` line would. This repository uses the maintained fork,
 NetArchTest.eNhancedEdition.
 
-The ten rules, each with what it stops, are a table in the record, under
-[How the build holds them](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid#how-the-build-holds-them).
+The first ten rules, each with what it stops, are a table in the record, under
+[How the build holds them](https://theyard.stevenstout.biz/?doc=adr-onion-and-solid#how-the-build-holds-them). The rest came later, each
+for a break it stops, and the record's addendum of 17 November names them all; the test file,
+[`OnionTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/OnionTests.cs), is the list.
 Each one was watched failing before it was trusted. Four failed against the code as it stood when
 they were written:
 
@@ -400,7 +406,7 @@ and The Shed above is the middle road between the two.
   Microsoft's description of clean architecture in .NET, including the difference between a
   compile-time dependency and a call at runtime that the bid's drawing shows.
 - [NetArchTest.eNhancedEdition](https://github.com/NeVeSpl/NetArchTest.eNhancedEdition): the
-  library the ten tests are written in, a maintained fork of NetArchTest with the failure explanations
+  library the onion's tests are written in, a maintained fork of NetArchTest with the failure explanations
   the tests above print.
 - [Robert C. Martin, The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
   (2012): the same idea stated as The Dependency Rule, that source code dependencies can only point
