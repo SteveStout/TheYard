@@ -25,6 +25,7 @@ import { type Column, DataTable } from '../DataTable';
 import { formatDateTime } from '../../../lib/format';
 import { verdictSeconds } from '../../../lib/codeHealth';
 import { request } from '../../../lib/request';
+import { gateRunUrl } from '../../layout/StoreBar/gateFacts';
 
 /** A suite: its name and mark, then what passed, failed and was skipped, and how long it took. */
 const SUITE_COLUMNS: Column<TestSuite>[] = [
@@ -102,7 +103,11 @@ export default function TestsCard() {
   return (
     <article className={`${cardStyles.wide} op-glass`} data-testid="tests-card">
       <h2 className={cardStyles.cardTitle}>Every test, for this build</h2>
-      {/* Five minutes is the target, printed; past it is information until the red line. */}
+      {/* Each target is printed; past it is information until the red line. */}
+      <Range
+        of="liveSeconds"
+        words={`target under ${RANGES.liveSeconds.amber} s, information past it, red at ${RANGES.liveSeconds.red} s`}
+      />
       <Range
         of="gateSeconds"
         words={`target under ${RANGES.gateSeconds.amber} s, information past it, red at ${RANGES.gateSeconds.red} s`}
@@ -231,6 +236,20 @@ function TestsSummary({ results }: { results: TestResults }) {
         {results.checksSeconds != null && `, and ${results.gateSeconds} s to its promotion`}.
         {reruns > 0 &&
           ` ${reruns.toLocaleString()} of these runs repeat tests on the second store, so the landing page, which counts each test once, shows ${(sums.tests - reruns).toLocaleString()}.`}
+        {results.runId != null && (
+          <>
+            {' '}
+            <a
+              href={gateRunUrl(results.runId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="tests-run"
+            >
+              Open the gate run
+            </a>
+            .
+          </>
+        )}
       </p>
     </div>
   );

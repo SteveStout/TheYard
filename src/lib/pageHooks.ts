@@ -11,6 +11,7 @@ import file from '../../data/hooks.json';
 import history from '../../data/quality-history.json';
 import type { QualityTrendData } from './qualityTrend';
 import { heldSince, measured, type HistoryRow } from './qualityHeld';
+import type { GateStop } from './releaseFacts';
 
 /** The pages that carry a hook, one entry each in the file. */
 export const HOOK_PAGES = ['landing', 'about', 'post', 'resume', 'quality', 'review'] as const;
@@ -72,10 +73,14 @@ function counted(count: number, noun: string): string {
 /**
  * The landing's words (ADR-132): the headline, then the run the quality history holds
  * now, computed from it (heldSince), then the hook's own lines with their counts read from the history, then the
- * releases of the last seven days the caller counted from the changelog. The held line is left out when the newest
- * version made a number worse, so it never claims a run that is not there.
+ * releases of the last seven days the caller counted from the changelog, and the last release the gate stopped. The
+ * held line is left out when the newest version made a number worse, so it never claims a run that is not there.
  */
-export function landingLines(hook: PageHook, releasesThisWeek: number): string[] {
+export function landingLines(
+  hook: PageHook,
+  releasesThisWeek: number,
+  stopped: GateStop | null = null
+): string[] {
   const rows = measured(history.rows as unknown as HistoryRow[]);
   const newest = rows[rows.length - 1];
   const counts = {
@@ -94,7 +99,17 @@ export function landingLines(hook: PageHook, releasesThisWeek: number): string[]
     ...heldLine,
     ...rest,
     `${counted(releasesThisWeek, 'release')} in the last 7 days, each through the same gate.`,
+    ...(stopped ? [stoppedLine(stopped)] : []),
   ];
+}
+
+/** The last version the gate turned back, from data/gate-reds.json: left out when none is kept (G5). */
+function stoppedLine(stopped: GateStop): string {
+  const where =
+    stopped.failed.length === 0
+      ? ''
+      : `, at its ${stopped.failed.join(' and ')} job${stopped.failed.length === 1 ? '' : 's'}`;
+  return `The last release the gate stopped was ${stopped.version} on ${dayWords(stopped.day)}${where}.`;
 }
 
 /** The label with each {name} replaced by its count; a name with no count is left as it is. */
