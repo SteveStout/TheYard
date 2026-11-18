@@ -261,6 +261,7 @@ public sealed class SliceTests
     private static readonly Dictionary<string, string> HostedConcerns = new(StringComparer.Ordinal)
     {
         ["ActivityCollector"] = "keeps the visitor counts off the request path",
+        ["BlogDerivationPass"] = "derives the blog's posts again after a roll that brought new rules, then stops",
         ["CatalogueWarm"] = "warms each store's catalogue once at start",
         ["CloudRecorder"] = "reads and keeps the resource cards' minutes and hours",
         ["LiveSampler"] = "runs each live source while its card is open, at the source's own grain",

@@ -13,6 +13,9 @@ public static class BlogImageEndpoints
     /// <summary>What a picture is cached for: a year, and never revalidated, because its name changes with its bytes.</summary>
     public const string CacheRule = "public, max-age=31536000, immutable";
 
+    /// <summary>What a full picture answering for a thumbnail not kept yet is cached for: five minutes, so the thumbnail takes over soon after it is put.</summary>
+    public const string StandInRule = "public, max-age=300";
+
     /// <summary>Maps GET /blog/images/{name}.</summary>
     public static IEndpointRouteBuilder MapBlogImages(this IEndpointRouteBuilder app)
     {
@@ -24,7 +27,7 @@ public static class BlogImageEndpoints
 
         app.MapPost("/api/admin/blog/posts/{slug}/images", Upload)
             .WithName("PutBlogImage").WithTags("Admin")
-            .WithSummary("Puts a picture on a post at its position: a multipart form with file, alt and position; the operator's key only")
+            .WithSummary("Puts a picture on a post at its position: a multipart form with file, alt, position and an optional 320 px WebP thumb; the operator's key only")
             .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -38,7 +41,7 @@ public static class BlogImageEndpoints
     /// The operator's upload: the key first, then the form's file (read to one byte past the limit, so a file
     /// over it is refused by its size without being read whole), its alt text and its position.
     /// </summary>
-    private static async Task<IResult> Upload(string slug, HttpContext http, AdminKey adminKey, PutBlogImageHandler handler, CancellationToken cancellation)
+    private static async Task<IResult> Upload(string slug, HttpContext http, AdminKey adminKey, PutBlogImageHandler handler, BlogAnswers answers, CancellationToken cancellation)
     {
         if (!adminKey.IsPresentedBy(http.Request))
         {
@@ -53,7 +56,18 @@ public static class BlogImageEndpoints
         int read = await stream.ReadAtLeastAsync(buffer, buffer.Length, throwOnEndOfStream: false, cancellation);
         byte[] bytes = buffer[..read];
         int position = int.TryParse(form["position"], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int p) ? p : 0;
-        var result = await handler.HandleAsync(new PutBlogImageCommand(slug, bytes, form["alt"].ToString(), position), cancellation);
+        byte[]? thumb = null;
+        if (form.Files["thumb"] is { } small)
+        {
+            using var thumbStream = small.OpenReadStream();
+            var thumbBuffer = new byte[Math.Min(small.Length, Domain.Features.Blog.BlogImageNames.ThumbMaxBytes + 1)];
+            thumb = thumbBuffer[..await thumbStream.ReadAtLeastAsync(thumbBuffer, thumbBuffer.Length, throwOnEndOfStream: false, cancellation)];
+        }
+        var result = await handler.HandleAsync(new PutBlogImageCommand(slug, bytes, form["alt"].ToString(), position, thumb), cancellation);
+        if (result.Kept is not null)
+        {
+            answers.Clear();
+        }
         return result.Kept is { } kept
             ? Results.Json(new { position = kept.Position, url = kept.Url, alt_text = kept.AltText, width = kept.Width, height = kept.Height })
             : Results.Problem(detail: result.Wrong, statusCode: result.Status, title: result.Status switch
@@ -70,8 +84,11 @@ public static class BlogImageEndpoints
         {
             return Results.Problem(detail: "No picture is kept under that name.", statusCode: 404, title: "No such picture");
         }
-        http.Response.Headers.CacheControl = CacheRule;
-        http.Response.Headers.ETag = $"\"{name}\"";
+        http.Response.Headers.CacheControl = file.StandIn ? StandInRule : CacheRule;
+        if (!file.StandIn)
+        {
+            http.Response.Headers.ETag = $"\"{name}\"";
+        }
         return Results.File(file.Bytes, file.ContentType);
     }
 }

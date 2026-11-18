@@ -14,10 +14,41 @@ costs somebody a session to understand, which this repository has paid for twice
 Usage: python3 .github/coverage.py <results-dir> <line-floor> <branch-floor>
 """
 
+import json
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+
+
+# The blog's slice is held to a floor of its own, higher than the whole suite's (ADR: Every LinkedIn post is also a
+# blog post, the addendum on the read model): every file under a Features/Blog folder in any ring, the blog's model
+# and the security headers, counted line by line and branch by branch from the same report. The Data ring's records
+# and the row types hold no behaviour, so they are left out. The floor lives in .github/blog-coverage.json, and like
+# every floor here it only moves up, in the commit that earned it.
+BLOG_FILES = re.compile(r"/Features/Blog/|/BlogModel\.cs$|/SecurityHeaders\.cs$")
+BLOG_FLOOR = Path(__file__).with_name("blog-coverage.json")
+
+
+def blog_slice(root) -> tuple[float, float]:
+    seen, lines, hit, branches, taken = set(), 0, 0, 0, 0
+    for cls in root.iter("class"):
+        name = cls.get("filename", "").replace("\\", "/")
+        if "/TheYard.Data/" in name or name.endswith("BlogRows.cs") or not BLOG_FILES.search(name):
+            continue
+        for line in cls.iter("line"):
+            key = (name, line.get("number"))
+            if key in seen:
+                continue
+            seen.add(key)
+            lines += 1
+            hit += int(line.get("hits", "0")) > 0
+            counted = re.search(r"\((\d+)/(\d+)\)", line.get("condition-coverage", ""))
+            if counted:
+                taken += int(counted.group(1))
+                branches += int(counted.group(2))
+    return 100 * hit / max(lines, 1), 100 * taken / max(branches, 1)
 
 
 def report(results_dir: str, line_floor: float, branch_floor: float) -> int:
@@ -63,6 +94,12 @@ def report(results_dir: str, line_floor: float, branch_floor: float) -> int:
     print("\n".join(summary))
 
     failed = False
+    floor = json.loads(BLOG_FLOOR.read_text(encoding="utf-8"))
+    blog_lines, blog_branches = blog_slice(root)
+    print(f"blog slice: {blog_lines:.1f}% of lines, {blog_branches:.1f}% of branches (floors {floor['lines']}% and {floor['branches']}%)")
+    if blog_lines < floor["lines"] or blog_branches < floor["branches"]:
+        print(f"::error::the blog slice's coverage, {blog_lines:.1f}% of lines and {blog_branches:.1f}% of branches, is under its floor in {BLOG_FLOOR.name}")
+        failed = True
     if lines < line_floor:
         print(f"::error::line coverage {lines:.1f}% is under the {line_floor:.0f}% floor")
         failed = True

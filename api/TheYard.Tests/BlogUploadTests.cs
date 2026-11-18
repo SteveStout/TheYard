@@ -40,7 +40,7 @@ public sealed class BlogUploadTests
     private static async Task<(PutBlogImageHandler Handler, MemoryBlogStore Store, MemoryBlogImageStore Images)> SetUpAsync()
     {
         var store = new MemoryBlogStore("kept in the test's memory");
-        await store.SaveAsync(new BlogPost(0, "solid-carousel", "SOLID", "Five slides.", "The body.", At, "https://www.linkedin.com/posts/x", null, [], []), At, CancellationToken.None);
+        await store.SaveAsync(new BlogPost(0, "solid-carousel", "SOLID", "Five slides.", "The body.", At, "https://www.linkedin.com/posts/x", null, [], []), TheYard.Domain.Features.Blog.PostDerivation.Of("SOLID", "Five slides.", "The body."), At, CancellationToken.None);
         var images = new MemoryBlogImageStore();
         return (new PutBlogImageHandler(store, images, new FixedClock(At)), store, images);
     }
@@ -61,6 +61,54 @@ public sealed class BlogUploadTests
         Assert.Equal(again.Kept!.Url, post.Images[0].Url);
         Assert.EndsWith(".jpg", post.Images[0].Url, StringComparison.Ordinal);
         Assert.Equal(3, (await images.TallyAsync(CancellationToken.None)).Count);
+    }
+
+    [Fact]
+    public async Task A_thumbnail_sent_beside_a_picture_is_kept_under_the_picture_s_thumbnail_name()
+    {
+        var (handler, _, images) = await SetUpAsync();
+
+        var kept = await handler.HandleAsync(new PutBlogImageCommand("solid-carousel", Png, "The first slide.", 1, Lossy), CancellationToken.None);
+
+        string thumb = BlogImageNames.ThumbOf(kept.Kept!.Url)["/blog/images/".Length..];
+        Assert.Equal($"{BlogImageNames.For(Png, "png")[..16]}-320.webp", thumb);
+        Assert.Equal(Lossy, (await images.OpenAsync(thumb, CancellationToken.None))!.Bytes);
+        Assert.Equal(2, (await images.TallyAsync(CancellationToken.None)).Count);
+    }
+
+    [Theory]
+    [InlineData("png", "a thumbnail is a WebP")]
+    [InlineData("wide", "a thumbnail is at most 320 pixels wide")]
+    [InlineData("big", "a thumbnail is at most 65,536 bytes")]
+    public async Task A_thumbnail_is_refused_by_the_figure_it_breaks_and_neither_file_is_kept(string fault, string names)
+    {
+        var (handler, _, images) = await SetUpAsync();
+        byte[] thumb = fault switch
+        {
+            "png" => Png,
+            "wide" => WideWebp,
+            _ => [.. Lossy, .. new byte[BlogImageNames.ThumbMaxBytes]],
+        };
+
+        var result = await handler.HandleAsync(new PutBlogImageCommand("solid-carousel", Png, "A slide.", 1, thumb), CancellationToken.None);
+
+        Assert.Equal(400, result.Status);
+        Assert.Contains(names, result.Wrong, StringComparison.Ordinal);
+        Assert.Equal(0, (await images.TallyAsync(CancellationToken.None)).Count);
+    }
+
+    /// <summary>A WebP whose header says 400 pixels wide: the extended file's canvas, widened in its VP8X chunk.</summary>
+    private static byte[] WideWebp
+    {
+        get
+        {
+            byte[] wide = [.. Extended];
+            // VP8X stores the canvas width less one in three little-endian bytes at offset 24.
+            wide[24] = 399 & 0xFF;
+            wide[25] = 399 >> 8;
+            wide[26] = 0;
+            return wide;
+        }
     }
 
     [Theory]

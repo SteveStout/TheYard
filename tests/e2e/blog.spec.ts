@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { openTheYard } from './app';
+import { answerBlog, made } from './blogFake';
 
 // #region blog
 /**
@@ -11,48 +12,15 @@ import { openTheYard } from './app';
  * and answered by the test, so the layout is checked whatever the local store holds; the last test
  * asks the real API, so the route and the store behind it are checked too.
  */
-const day = 86_400_000;
-const made = (slug: string, title: string, ageDays: number, reads: number) => ({
-  slug,
-  title,
-  summary: `Two lines about ${title.toLowerCase()}.`,
-  body: `${title}\n\n${'A line of the post, long enough to wrap on a phone and fill the card. '.repeat(14)}\n#dotnet #csharp`,
-  published_at: new Date(Date.now() - ageDays * day).toISOString(),
-  linkedin_url: `https://www.linkedin.com/posts/${slug}`,
-  code_url: 'https://github.com/SteveStout/TheYard',
-  images: [1, 2, 3].map((position) => ({
-    position,
-    url: '/api/images/badges/steve-176.jpg',
-    alt_text: `Slide ${position}`,
-    width: 176,
-    height: 176,
-  })),
-  tags: ['dotnet', 'csharp'],
-  reads,
-  reads7d: reads,
-});
 const POSTS = [
-  made('a-made-up-newest-post', 'A made-up newest post', 1, 12),
-  made('a-made-up-second-post', 'A made-up second post', 5, 30),
-  made('a-made-up-third-post', 'A made-up third post', 9, 4),
-  made('a-made-up-fourth-post', 'A made-up fourth post', 20, 2),
+  made('a-made-up-newest-post', 'A made-up newest post', 1, { reads: 12, reads7d: 12 }),
+  made('a-made-up-second-post', 'A made-up second post', 5, { reads: 30, reads7d: 30 }),
+  made('a-made-up-third-post', 'A made-up third post', 9, { reads: 4, reads7d: 4 }),
+  made('a-made-up-fourth-post', 'A made-up fourth post', 20, { reads: 2, reads7d: 2 }),
 ];
 
 async function answerPosts(page: Page, posts = POSTS) {
-  await page.route('**/api/blog/posts', (route) => route.fulfill({ json: { posts } }));
-  await page.route('**/api/admin/blog', (route) =>
-    route.fulfill({
-      json: {
-        kept: null,
-        available: true,
-        posts: [],
-        sources: [
-          { source: 'linkedin', reads: 6 },
-          { source: 'direct', reads: 2 },
-        ],
-      },
-    })
-  );
+  await answerBlog(page, posts);
 }
 
 for (const viewport of [
@@ -98,7 +66,7 @@ test('the Blog row sits third, under Home and the review route, and says NEW POS
 });
 
 test('no NEW POST when the newest post is over a week old', async ({ page }) => {
-  await answerPosts(page, [made('an-older-post', 'An older post', 8, 1)]);
+  await answerPosts(page, [made('an-older-post', 'An older post', 8)]);
   await openTheYard(page, '/');
   await expect(page.getByTestId('landing-latest')).toBeVisible();
   await expect(page.getByTestId('rail-new-post')).toHaveCount(0);
@@ -123,7 +91,9 @@ test('the home page shows the three newest posts, and one opens at its own addre
   await expect(page.getByTestId('landing')).toBeVisible();
 });
 
-test('a read and what the reader does are reported, see more once', async ({ page }) => {
+test('a read and what the reader does are reported: a link in the body, see more once', async ({
+  page,
+}) => {
   await answerPosts(page);
   const reads: unknown[] = [];
   const events: { type: string; value: string }[] = [];
@@ -138,9 +108,23 @@ test('a read and what the reader does are reported, see more once', async ({ pag
   await openTheYard(page, '/?view=blog&post=a-made-up-third-post');
   await expect(page.getByTestId('blog-post')).toContainText('A made-up third post');
   await expect.poll(() => reads.length).toBe(1);
+  // A post at its own address opens in full; on the list the newest post is clamped, with "see more".
+  await expect(page.getByRole('button', { name: '…see more' })).toHaveCount(0);
+  // The link opens a new tab; the test reaches no site but this one.
+  await page.context().route('https://github.com/**', (route) => route.abort());
+  await page.getByTestId('blog-post').getByRole('link', { name: 'GitHub' }).click();
+  await expect
+    .poll(() => events.filter((e) => e.type === 'click' && e.value === 'body:github.com').length)
+    .toBe(1);
+  await openTheYard(page, '/?view=blog');
   await page.getByRole('button', { name: '…see more' }).click();
   await expect(page.getByRole('button', { name: '…see more' })).toHaveCount(0);
   await expect.poll(() => events.filter((e) => e.type === 'more').length).toBe(1);
+  await page
+    .getByTestId('blog-mini')
+    .first()
+    .getByRole('button', { name: /Read the post/ })
+    .click();
   await page.getByRole('button', { name: 'All posts' }).click();
   await expect(page).toHaveURL(/\?view=blog$/);
 });
@@ -154,23 +138,7 @@ test('a read and what the reader does are reported, see more once', async ({ pag
 for (const address of ['/?view=blog', '/?view=blog&post=a-made-up-second-post']) {
   test(`${address} holds still at 390 by 844 while its reads arrive`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    const held = (json: unknown) => async (route: import('@playwright/test').Route) => {
-      await new Promise((resolve) => setTimeout(resolve, 1_500));
-      await route.fulfill({ json });
-    };
-    await page.route('**/api/blog/posts', held({ posts: POSTS }));
-    await page.route(
-      '**/api/admin/blog',
-      held({
-        kept: null,
-        available: true,
-        posts: [],
-        sources: [
-          { source: 'linkedin', reads: 6 },
-          { source: 'direct', reads: 2 },
-        ],
-      })
-    );
+    await answerBlog(page, POSTS, 1_500);
     await page.addInitScript(() => {
       (window as unknown as { shift: number }).shift = 0;
       new PerformanceObserver((list) => {
@@ -201,7 +169,7 @@ test('the sources box, read from an Admin route, has its size before the read an
   await page.setViewportSize({ width: 1440, height: 900 });
   let answer: () => void = () => {};
   const answered = new Promise<void>((resolve) => (answer = resolve));
-  await page.route('**/api/blog/posts', (route) => route.fulfill({ json: { posts: POSTS } }));
+  await answerBlog(page, POSTS);
   await page.route('**/api/admin/blog', async (route) => {
     await answered;
     await route.fulfill({
@@ -232,7 +200,23 @@ test('the blog route answers from the store behind it', async ({ request }) => {
   const answer = await request.get('http://localhost:5210/api/blog/posts');
   expect([200, 503]).toContain(answer.status());
   if (answer.status() === 200) {
-    expect(Array.isArray(((await answer.json()) as { posts: unknown }).posts)).toBe(true);
+    const list = (await answer.json()) as { cards: unknown[]; total: number; terms: unknown[] };
+    expect(Array.isArray(list.cards)).toBe(true);
+    expect(list.total).toBeGreaterThanOrEqual(list.cards.length);
+  }
+  // The filter rides in the address, and an answer for it is a page of cards with the widened terms beside it.
+  const searched = await request.get('http://localhost:5210/api/blog/posts?q=copilot&topic=ai');
+  expect([200, 503]).toContain(searched.status());
+  if (searched.status() === 200) {
+    expect(((await searched.json()) as { terms: string[] }).terms).toEqual([
+      'copilot',
+      'microsoft copilot',
+      'github copilot',
+    ]);
+    expect(searched.headers()['cache-control']).toBe(
+      'public, max-age=60, stale-while-revalidate=600'
+    );
+    expect(searched.headers()['etag']).toMatch(/^"b-[0-9a-f]{16}"$/);
   }
 });
 
@@ -248,15 +232,17 @@ test('a post with slides draws them from the site and every picture answers with
   request,
 }) => {
   const answer = await request.get('/api/blog/posts');
-  const posts =
+  const cards =
     answer.status() === 200
-      ? (
-          (await answer.json()) as {
-            posts: { slug: string; images: { url: string; alt_text: string }[] }[];
-          }
-        ).posts
+      ? ((await answer.json()) as { cards: { slug: string; slides: number }[] }).cards
       : [];
-  const post = posts.find((p) => p.images.length > 1);
+  const withSlides = cards.find((card) => card.slides > 1);
+  const post = withSlides
+    ? ((await (await request.get(`/api/blog/posts/${withSlides.slug}`)).json()) as {
+        slug: string;
+        images: { url: string; thumb_url: string; alt_text: string }[];
+      })
+    : undefined;
   if (post === undefined) {
     // No post here has its slides yet (a local store): the picture route still answers a name it does not keep
     // with a 404 problem, never the page, and a made-up post's strip is held to the same look and axe.
@@ -282,6 +268,7 @@ test('a post with slides draws them from the site and every picture answers with
   await openTheYard(page, `/?view=blog&post=${post.slug}`);
   const strip = page.getByRole('region', { name: `The slides (${post.images.length})` });
   await expect(strip.locator('img')).toHaveCount(post.images.length);
+  await expect(strip.getByRole('button', { name: /^Open slide 1 of / })).toBeVisible();
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze();

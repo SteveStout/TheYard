@@ -35,6 +35,15 @@ public sealed class PostRow
 
     /// <summary>When the row was last written. Kept because a save of a post that already exists is an update, and without this there would be no record that it had been revised.</summary>
     public DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>The body drawn to HTML on save, or null for a row no save has drawn yet. Kept so the page shows the post with no Markdown reader of its own, and so the drawing is done once and not on every read.</summary>
+    public string? BodyHtml { get; set; }
+
+    /// <summary>The body's words over 230, rounded up, or null before the first derivation. Kept because a card shows it and a card never carries the body.</summary>
+    public int? ReadingMinutes { get; set; }
+
+    /// <summary>The version of the rules the derived columns and the post's words and keywords were worked out with, or null for never. Kept so a change to the rules is noticed and the posts derived again, the way a copy of a rule's answer has to be.</summary>
+    public int? DerivedWith { get; set; }
 }
 
 /// <summary>A row of blog.PostImage: one image of a post, in its place.</summary>
@@ -135,4 +144,43 @@ public sealed class PostEventRow
 
     /// <summary>Whether the reader looked like a bot. Kept for the same reason as on a read: the numbers leave bots out, and a row thrown away could never be counted another way.</summary>
     public bool IsBot { get; set; }
+}
+
+/// <summary>A row of blog.PostWord: one word of a post, or two neighbouring ones, in one field, with how often it is there.</summary>
+public sealed class PostWordRow
+{
+    /// <summary>The word in lower case, or two words with one space between. First in the key, because every search asks for a word or a word's start and the key is what a seek reads.</summary>
+    public required string Word { get; set; }
+
+    /// <summary>The post. Second in the key, and a foreign key that takes the post's words with it when the post goes.</summary>
+    public int PostId { get; set; }
+
+    /// <summary>Where in the post: 1 the title, 2 the summary, 3 the body. The third part of the key, because a word in the title weighs more than the same word in the body.</summary>
+    public byte Field { get; set; }
+
+    /// <summary>How many times the word is in that field. Kept because the body's weight grows with its mentions, and the match line says how many.</summary>
+    public int Mentions { get; set; }
+}
+
+/// <summary>A row of blog.PostKeyword: one named product or idea a post talks about.</summary>
+public sealed class PostKeywordRow
+{
+    /// <summary>The post. Half of the key, and a foreign key that takes its keywords with it when the post goes.</summary>
+    public int PostId { get; set; }
+
+    /// <summary>The keyword's key as the address carries it (copilot, sql, onion). The other half of the key, and indexed first on its own, because a keyword chip asks for its posts.</summary>
+    public required string Keyword { get; set; }
+
+    /// <summary>How many times the post names it. Kept so the match line can say so and a later rule can rank by it.</summary>
+    public int Mentions { get; set; }
+}
+
+/// <summary>A row of blog.SearchSynonym: one thing a typed word is matched as.</summary>
+public sealed class SearchSynonymRow
+{
+    /// <summary>What the reader typed, in lower case. First in the key, because a search asks for one typed word's terms at a time.</summary>
+    public required string Word { get; set; }
+
+    /// <summary>One term it is widened to. The other half of the key: a word has as many rows as it has terms.</summary>
+    public required string Term { get; set; }
 }
