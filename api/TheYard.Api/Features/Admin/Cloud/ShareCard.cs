@@ -30,9 +30,8 @@ public static class ShareCard
         ["Live read"] = CardFrame.ThisProcess,
     };
 
-    /// <summary>The share's API names that list a folder, read a file or its properties, and write.</summary>
+    /// <summary>The share's API names that list a folder, and that write; every other call is <see cref="Rest"/>.</summary>
     public const string ListingFilter = "ApiName eq 'ListFiles' or ApiName eq 'QueryDirectory' or ApiName eq 'ListShares'";
-    public const string ReadFilter = "ApiName eq 'GetFile' or ApiName eq 'GetFileProperties' or ApiName eq 'GetDirectoryProperties' or ApiName eq 'Read' or ApiName eq 'QueryInfo' or ApiName eq 'GetShareProperties'";
     public const string WriteFilter = "ApiName eq 'PutRange' or ApiName eq 'CreateFile' or ApiName eq 'CreateDirectory' or ApiName eq 'SetFileProperties' or ApiName eq 'SetDirectoryProperties' or ApiName eq 'SetDirectoryMetadata' or ApiName eq 'Write' or ApiName eq 'SetInfo' or ApiName eq 'Create' or ApiName eq 'RenameFile' or ApiName eq 'DeleteFile' or ApiName eq 'Flush'";
 
     /// <summary>The metrics the card keeps a minute.</summary>
@@ -40,7 +39,6 @@ public static class ShareCard
     [
         new("Transactions", "total", "transactions"),
         new("Transactions", "total", "listings", Filter: ListingFilter),
-        new("Transactions", "total", "reads", Filter: ReadFilter),
         new("Transactions", "total", "writes", Filter: WriteFilter),
         new("FileCapacity", "average", "used_gb", 1.0 / 1_000_000_000, Interval: "PT1H"),
         new("FileCount", "average", "files", Interval: "PT1H"),
@@ -121,12 +119,19 @@ public static class ShareCard
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),
             ResourceView.Resource(inputs),
             dials,
-            [ResourceView.Spark(inputs, "listings", $"Listings, 60 min · {pace}", perMinute), ResourceView.Spark(inputs, "reads", $"Reads, 60 min · {pace}", perMinute), ResourceView.Spark(inputs, "writes", $"Writes, 60 min · {pace}", perMinute)],
+            [ResourceView.Spark(inputs, "listings", $"Listings, 60 min · {pace}", perMinute), new CloudSpark($"Reads and the rest, 60 min · {pace}", [.. Rest(inputs).Select(v => ResourceView.Share(v, perMinute))]), ResourceView.Spark(inputs, "writes", $"Writes, 60 min · {pace}", perMinute)],
             DailyChart(inputs, hourly, line),
             rows,
             readout);
         return CardFrame.Sourced(report, Sources);
     }
+
+    /// <summary>Each minute's transactions less its listings and writes, so the three sparks split the dial's own total; null when the total was not read.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static IReadOnlyList<double?> Rest(ResourceCardInputs inputs) =>
+        [.. inputs.LastHour.Select(minute => minute.Values.GetValueOrDefault("transactions") is { } all
+            ? Math.Max(0, all - (minute.Values.GetValueOrDefault("listings") ?? 0) - (minute.Values.GetValueOrDefault("writes") ?? 0))
+            : (double?)null)];
 
     /// <summary>
     /// Who is reading it: the transactions of the last 60 minutes, the dial's number, and the table by API for the last

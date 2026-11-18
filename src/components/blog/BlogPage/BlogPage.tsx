@@ -84,8 +84,10 @@ export function BlogPage({
       setWhen(how === 'type' ? 'wait' : 'now');
       onMove(filterToParams(next).toString(), how === 'type' ? 'replace' : 'push');
     };
-    if (how === 'type') startTransition(move);
-    else move();
+    if (how === 'type') {
+      listed.typed();
+      startTransition(move);
+    } else move();
   };
   const byTopic = (topic: string) =>
     slug === null
