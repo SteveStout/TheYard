@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { codeRows, gateTone, gateTrend, verdictSeconds } from './codeHealth';
+import { codeRows, gateTone, gateTrend, liveTone, newestLive, verdictSeconds } from './codeHealth';
 
 describe('code health', () => {
   it('reads every number the gate measured, and red on one warning', () => {
@@ -20,6 +20,31 @@ describe('code health', () => {
     // Past five minutes and under ten the gate is information, not a fault.
     expect(rows[1].tone).toBe('info');
     expect(rows[3].value).toBe('not measured by this gate');
+  });
+
+  it('leads with the newest push to live the gate has measured, toned by its own range (G5, V4)', () => {
+    const gate = (version: string, liveSeconds?: number | null) => ({
+      version,
+      ranAt: '2026-11-18T10:00:00Z',
+      gateSeconds: 400,
+      passed: 1,
+      failed: 0,
+      distJsBytes: null,
+      liveSeconds,
+    });
+    const live = newestLive([gate('a', 700), gate('b', 1_000), gate('c', null), gate('d')]);
+    expect(live).toEqual({ version: 'b', seconds: 1_000 });
+    const rows = codeRows(undefined, 240, live);
+    expect(rows.map((row) => row.key)).toEqual(['live', 'warnings', 'gate', 'bundle', 'outdated']);
+    expect(rows[0]).toMatchObject({ label: 'Push to live, b', value: '1,000 s', tone: 'info' });
+    expect(newestLive([gate('a')])).toBeNull();
+    expect(newestLive(undefined)).toBeNull();
+    expect([liveTone(899), liveTone(900), liveTone(1_799), liveTone(1_800)]).toEqual([
+      'good',
+      'info',
+      'info',
+      'bad',
+    ]);
   });
 
   it('draws the kept gates oldest first against the five-minute line', () => {
