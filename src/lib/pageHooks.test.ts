@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import file from '../../data/hooks.json';
 import history from '../../data/quality-history.json';
-import { hookFor, hookTrend, landingLines, opensAdmin, withCounts, HOOK_PAGES } from './pageHooks';
+import {
+  hookFor,
+  hookTrend,
+  landingLines,
+  opensAdmin,
+  stoppedLine,
+  withCounts,
+  HOOK_PAGES,
+} from './pageHooks';
 import { heldSince, measured, type HistoryRow } from './qualityHeld';
 
 // #region one-file
@@ -68,6 +76,23 @@ describe('the hook data, one entry a page', () => {
     expect(lines.at(-1)).toBe('4 releases in the last 7 days, each through the same gate.');
     expect(landingLines(hookFor('landing'), 1).at(-1)).toBe(
       '1 release in the last 7 days, each through the same gate.'
+    );
+  });
+
+  it('words the last release the gate stopped, and keeps it out of the hook', () => {
+    const stopped = { version: '1.0.5.80', day: '2026-11-17', failed: ['cosmos'] };
+    expect(stoppedLine(stopped)).toBe(
+      'The last release the gate stopped was 1.0.5.80 on 17 November, at its cosmos job.'
+    );
+    expect(stoppedLine({ ...stopped, failed: ['dotnet', 'cosmos'] })).toBe(
+      'The last release the gate stopped was 1.0.5.80 on 17 November, at its dotnet and cosmos jobs.'
+    );
+    expect(stoppedLine({ ...stopped, failed: [] })).toBe(
+      'The last release the gate stopped was 1.0.5.80 on 17 November.'
+    );
+    // The hook has to fit a phone's first screen (hooks.spec.ts), so it ends on the week's releases.
+    expect(landingLines(hookFor('landing'), 4).at(-1)).toBe(
+      '4 releases in the last 7 days, each through the same gate.'
     );
   });
 

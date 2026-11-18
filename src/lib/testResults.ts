@@ -39,6 +39,8 @@ export type TestResults = {
   code?: CodeNumbers;
   /** The last thirty gates before this one, oldest first; absent from a file an older gate wrote. */
   history?: GateSummary[];
+  /** The public gate run that shipped this build (G5's data, scripts/gate_feed.sh); absent before G5. */
+  runId?: number | null;
 };
 
 export type TestTotals = { tests: number; passed: number; failed: number; skipped: number };
