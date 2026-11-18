@@ -168,9 +168,9 @@ public static class CosmosCard
                 throttleTone),
             new("keeping", "What is it keeping?", Documents(inputs) is { } docs ? $"{docs.ToString("N0", CultureInfo.InvariantCulture)} documents" : "not read yet",
                 [new($"storage {ResourceView.Number(ResourceView.Now(inputs, "storage_gb"), "0.00")} GB · every kept container expires its own documents", null)], "info"),
-            new("tier", "Is the free tier still right?", inputs.Month.Count == 0 ? "not enough kept yet" : ruTone == PlanTone.Alarm ? "no, throughput is past its line" : "yes, throughput first",
-                [new($"RU/s p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ru_per_s").P95, "0")} of {limitWords} over 30 d · free tier {ResourceView.Fact(inputs, "free_tier")} · red at {Throughput.Red} % held {PlanThresholds.Sustained} min", null)],
-                ruTone == PlanTone.Alarm ? "alarm" : "good"),
+            new("tier", "Is the free tier still right?", inputs.Month.Count == 0 ? "not enough kept yet" : ruTone == PlanTone.Alarm ? "no, throughput is past its line" : ruTone == PlanTone.Warning ? "for now; throughput is past its amber line" : "yes, throughput first",
+                [new($"RU/s p95 {ResourceView.Number(ResourceFolding.Spread(inputs.Month, "ru_per_s").P95, "0")} of {limitWords} over 30 d · free tier {ResourceView.Fact(inputs, "free_tier")} · amber at {Throughput.Amber} %, red at {Throughput.Red} % held {PlanThresholds.Sustained} min", null)],
+                ruTone is PlanTone.Alarm or PlanTone.Warning ? CloudTones.Of(ruTone) : "good"),
             Bill(inputs),
         };
         var readout = new CloudReadout(

@@ -90,6 +90,9 @@ public static class ShareCard
                 with { Big = usedGb is { } u ? $"{u.ToString("0.#", CultureInfo.InvariantCulture)} GB" : "not read" },
         };
         double perMinute = line is { } limit ? limit / 60 : 0;
+        // The sparks are each minute as a share of the alert's pace, not counts, and say so: read as counts they summed
+        // to a third of the dial (ADR-102, the addendum on the share's sparks).
+        string pace = line is { } per ? $"% of the alert's {(per / 60).ToString("N0", CultureInfo.InvariantCulture)} a minute" : "the alert's line is not read";
         var rows = new List<CloudRow> { Reading(inputs, thisHour), CostRow(inputs), walking, OnIt(inputs) };
         string since = ResourceView.Fact(inputs, "auth_since", "") is { Length: > 0 } s ? $"since {s} UTC" : "in the clock hour under way";
         var readout = new CloudReadout(
@@ -118,7 +121,7 @@ public static class ShareCard
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),
             ResourceView.Resource(inputs),
             dials,
-            [ResourceView.Spark(inputs, "listings", "Listings, 60 min", perMinute), ResourceView.Spark(inputs, "reads", "Reads, 60 min", perMinute), ResourceView.Spark(inputs, "writes", "Writes, 60 min", perMinute)],
+            [ResourceView.Spark(inputs, "listings", $"Listings, 60 min · {pace}", perMinute), ResourceView.Spark(inputs, "reads", $"Reads, 60 min · {pace}", perMinute), ResourceView.Spark(inputs, "writes", $"Writes, 60 min · {pace}", perMinute)],
             DailyChart(inputs, hourly, line),
             rows,
             readout);

@@ -77,9 +77,10 @@ public static class SqlCard
             new("azure", "What did Azure do to it?", inputs.Hours.Count == 0 ? "not read yet" : $"{events.Count} events, {CloudTones.WindowWords(inputs.Window)}",
                 [new(events.Count == 0 ? "no failover, no maintenance" : string.Join(" · ", events.TakeLast(3).Select(e => $"{e.At.ToString("d MMM HH:mm", CultureInfo.InvariantCulture)} {e.Title}")), null)],
                 CloudTones.Of(PlanThresholds.EventsTone(events))),
-            new("tier", $"Is {ResourceView.Fact(inputs, "tier", "the tier")} still right?", inputs.Month.Count == 0 ? "not enough kept yet" : dtuTone == PlanTone.Alarm ? "no, DTU is past its line" : "yes, DTU first",
-                [new($"DTU p95 {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "dtu").P95)} over 30 d · red at {Dtu.Red} % held {PlanThresholds.Sustained} min", null)],
-                CloudTones.Of(dtuTone == PlanTone.Alarm ? PlanTone.Alarm : PlanTone.Good)),
+            // Past its own amber line the row is amber, as the dial is: it said "yes" in green over a DTU past amber.
+            new("tier", $"Is {ResourceView.Fact(inputs, "tier", "the tier")} still right?", inputs.Month.Count == 0 ? "not enough kept yet" : dtuTone == PlanTone.Alarm ? "no, DTU is past its line" : dtuTone == PlanTone.Warning ? "for now; DTU is past its amber line" : "yes, DTU first",
+                [new($"DTU p95 {PlanView.Percent(ResourceFolding.Spread(inputs.Month, "dtu").P95)} over 30 d · amber at {Dtu.Amber} %, red at {Dtu.Red} % held {PlanThresholds.Sustained} min", null)],
+                CloudTones.Of(dtuTone is PlanTone.Alarm or PlanTone.Warning ? dtuTone : PlanTone.Good)),
         };
         var readout = new CloudReadout(
             "The database",

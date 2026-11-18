@@ -525,8 +525,9 @@ test.describe('the Admin tab on the narrowest phone', () => {
       );
     expect(cut).toEqual([]);
     // The typical answer's line names what it is over, and the rest of the sentence is heard.
+    // A ring cut short is the line itself, the requests after it (ADR-102, the addendum on a ring cut short).
     await expect(strip.getByTestId('tile-speed')).toContainText(
-      /requests in the last (hour|minute|\d+ minutes)/
+      /requests in the last (hour|minute|\d+ minutes)|last (minute|\d+ minutes), all the request ring holds: .*requests/
     );
   });
 

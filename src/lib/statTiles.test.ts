@@ -227,7 +227,7 @@ describe('the stat tiles', () => {
   it('says how far back the request ring reaches when it stops short of the hour', () => {
     const short = { ...quietDay, traffic: { ...quietDay.traffic!, ring_minutes: 6 } };
     expect(tileSentence(tile(short, 'speed'))).toBe(
-      '95th 180 ms over 240 requests in the last 6 minutes, all the request ring holds'
+      'last 6 minutes, all the request ring holds: 95th 180 ms over 240 requests'
     );
     expect(tile(short, 'errors').more).toBe(
       '; the list is the most recent from the server and the browser, the 5xx are from the last 6 minutes'
