@@ -46,6 +46,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
     /// </summary>
     private static readonly Dictionary<string, string> Bounded = new(StringComparer.Ordinal)
     {
+        ["TheYard.Api.Features.Docs.EnforcedBy.Counted"] = "one per repository root this process serves, one in a running host, each one count per decision record",
         ["TheYard.Application.Shared.Caching.BoundedCache`2._map"] = "the bounded cache itself: a count and a byte limit, and an expiry",
         ["TheYard.Application.Shared.Caching.BoundedCache`2._recency"] = "the same cache's order of use, the same size as its map",
         ["TheYard.Application.Shared.Caching.BoundedCache`2._inflight"] = "the loads under way, one a key, each removed the moment it finishes",
