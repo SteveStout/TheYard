@@ -518,6 +518,28 @@ The cache rules, read off the same responses: every hashed file under `/assets` 
 
 What this read was for: the list of fixes to make in order of what they cost a visitor, and it named none. No page took over 500 ms to its first byte, the slowest single read was 450 ms, nothing loads from another domain, and nothing immutable is uncached. The one shape worth a later look is the Admin tab's cards, whose code is fetched at about 1.9 s, after the tab's first reads, because each card is its own chunk; it does not delay the first paint, so it was left as it is and named here.
 
+## The blog, made filterable and fast, measured on 18 November
+
+The blog's list was every post with every body and every picture, and each read of it loaded both of the blog's logs whole (ADR: Every LinkedIn post is also a blog post, the addendum on a blog that filters). What changed, and what it moved, each "before" read on the live site at 1.0.5.86 and each "after" read on this build the same way:
+
+| Reading | Before (live, 1.0.5.86) | After (this build) | How |
+| --- | --- | --- | --- |
+| The list's answer, raw | 143,102 B | 7,372 B | curl of /api/blog/posts; after, the 15 live posts in the test host (BlogApiTests) |
+| The list's answer, brotli | 43,783 B | 2,459 B | the same, brotli on the wire before, quality 11 after |
+| The Ignite post's strip | 1,623,796 B, 11 full slides | 147,756 B, 11 thumbnails | Lighthouse's network requests before; scripts/blog_thumbs.mjs after |
+| Main script chunk, raw | 609,446 B | 473,194 B | the build's own report; the quality history no longer rides in it |
+| Lighthouse Performance, phone, list | 62 | 91, 92, 91 | Lighthouse 12.8.2, mobile profile; after on the built site through the rendering service with compression |
+| Lighthouse Performance, phone, post | 84 | 92, 94, 96 | the same |
+| Total blocking time, phone, list | 1,882 ms | 84 to 94 ms | the same |
+| Layout shift, phone | 0 (list), 0.042 (post) | 0 and 0 | the same |
+| Accessibility, Best Practices, SEO | 100, 100, 100 | 100, 100, 100 | the same |
+| Security headers | D (securityheaders.com), C (Observatory) | read live after the roll | the graders' own pages |
+
+What the numbers do not say: Performance on a phone stops short of 100. Lighthouse estimates a slow phone network, and it counts the React bundle's download before the page's largest paint even though the page arrives drawn; closing that last gap is a change of how the blog's first load is built, not a setting.
+
+```live path=tests/e2e/blog-budgets.spec.ts region=blog-budgets
+```
+
 ## Check any of it yourself
 
 - Open the **Admin** tab on either site: live health checks per store, the paired-round comparison card,
@@ -530,6 +552,8 @@ What this read was for: the list of fixes to make in order of what they cost a v
   code it describes.
 
 ## Files
+
+- [`tests/e2e/blog-budgets.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/blog-budgets.spec.ts): the blog's budgets on a cold phone load, and [`scripts/blog_thumbs.mjs`](https://github.com/SteveStout/TheYard/blob/main/scripts/blog_thumbs.mjs): the thumbnails behind the strip's figure.
 
 - [`api/TheYard.Api/Shared/Proof/Proof.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/Proof.cs) and [`api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Shared/Proof/ProofRunner.Rounds.cs): the runner, and its paired rounds, alternating which store goes first.
 - [`api/TheYard.Infrastructure/Shared/Stores/YardDatabase.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Infrastructure/Shared/Stores/YardDatabase.cs): `PingAsync`, the round trip to the relational store the proof measures.

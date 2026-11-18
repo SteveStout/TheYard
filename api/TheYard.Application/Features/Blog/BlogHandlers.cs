@@ -8,37 +8,71 @@ using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Application.Features.Blog;
 
-/// <summary>Every published post, newest first, each with its reads, for the Blog page and the home page's band.</summary>
+/// <summary>
+/// One page of the blog's list (ADR: Every LinkedIn post is also a blog post, the addendum on the read model): the cards
+/// the filter matches, the total, the chips' counts and the next page's cursor, for the Blog page, the home page's band
+/// and the side nav's NEW POST.
+/// </summary>
 /// <param name="store">Where the posts are kept.</param>
 /// <param name="clock">The clock the week's reads are counted against.</param>
-public sealed class ListPostsHandler(IBlogReader store, TimeProvider clock) : IQueryHandler<ListPostsQuery, (IReadOnlyList<BlogPost> Posts, IReadOnlyList<BlogStat> Stats, string? Unavailable)>
+public sealed class ListPostsHandler(IBlogReader store, TimeProvider clock) : IQueryHandler<ListPostsQuery, (BlogListPage? Page, string? Unavailable)>
 {
-    /// <summary>The posts and their numbers, or the store's reason when it cannot read now.</summary>
-    /// <param name="query">The list, which takes nothing.</param>
+    /// <summary>The page, or the store's reason when it cannot read now.</summary>
+    /// <param name="query">The filter.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<(IReadOnlyList<BlogPost> Posts, IReadOnlyList<BlogStat> Stats, string? Unavailable)> HandleAsync(ListPostsQuery query, CancellationToken cancellation)
+    public async Task<(BlogListPage? Page, string? Unavailable)> HandleAsync(ListPostsQuery query, CancellationToken cancellation)
     {
         var availability = await store.AvailabilityAsync(cancellation);
         if (!availability.Available)
         {
-            return ([], [], availability.Reason);
+            return (null, availability.Reason);
         }
-        return (await store.PostsAsync(cancellation), await store.StatsAsync(clock.GetUtcNow(), cancellation), null);
+        var page = await store.ListAsync(query.Filter, clock.GetUtcNow(), cancellation);
+        return (page with { Terms = [.. KeywordRules.QueryWords(query.Filter.Q).SelectMany(KeywordRules.Expand).Distinct(StringComparer.Ordinal)] }, null);
     }
 }
 
-/// <summary>Every published post, newest first; there is nothing to ask beyond the asking.</summary>
-public sealed record ListPostsQuery;
+/// <summary>One page of the list for a filter.</summary>
+/// <param name="Filter">The text, topic, keyword, month or year, the order and the cursor.</param>
+public sealed record ListPostsQuery(BlogFilter Filter);
 
-/// <summary>One published post by its slug.</summary>
+/// <summary>Every published post newest first, for the RSS feed: its own query, because a feed item needs the summary and the tags of every post and no page of cards.</summary>
 /// <param name="store">Where the posts are kept.</param>
-public sealed class ReadPostHandler(IBlogReader store) : IQueryHandler<ReadPostQuery, BlogPost?>
+public sealed class ReadFeedHandler(IBlogReader store) : IQueryHandler<ReadFeedQuery, (IReadOnlyList<BlogPost> Posts, string? Unavailable)>
 {
-    /// <summary>The post, or null when no published post has the slug or the slug is not one.</summary>
+    /// <summary>The posts, or the store's reason when it cannot read now.</summary>
+    /// <param name="query">The feed, which takes nothing.</param>
+    /// <param name="cancellation">The request's cancellation.</param>
+    public async Task<(IReadOnlyList<BlogPost> Posts, string? Unavailable)> HandleAsync(ReadFeedQuery query, CancellationToken cancellation)
+    {
+        var availability = await store.AvailabilityAsync(cancellation);
+        return availability.Available ? (await store.PostsAsync(cancellation), null) : ([], availability.Reason);
+    }
+}
+
+/// <summary>The feed; there is nothing to ask beyond the asking.</summary>
+public sealed record ReadFeedQuery;
+
+/// <summary>One published post as its page shows it, by its slug.</summary>
+/// <param name="store">Where the posts are kept.</param>
+/// <param name="clock">The clock the week's reads are counted against.</param>
+public sealed class ReadPostHandler(IBlogReader store, TimeProvider clock) : IQueryHandler<ReadPostQuery, BlogPostPage?>
+{
+    /// <summary>
+    /// The post's page, or null when no published post has the slug or the slug is not one. A post no save has drawn
+    /// yet is drawn here, from the same rule a save uses, so the page never waits on the background pass.
+    /// </summary>
     /// <param name="query">The slug.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<BlogPost?> HandleAsync(ReadPostQuery query, CancellationToken cancellation) =>
-        BlogRules.IsSlug(query.Slug) && (await store.AvailabilityAsync(cancellation)).Available ? await store.PostAsync(query.Slug, cancellation) : null;
+    public async Task<BlogPostPage?> HandleAsync(ReadPostQuery query, CancellationToken cancellation)
+    {
+        if (!BlogRules.IsSlug(query.Slug) || !(await store.AvailabilityAsync(cancellation)).Available)
+        {
+            return null;
+        }
+        var page = await store.PostPageAsync(query.Slug, clock.GetUtcNow(), cancellation);
+        return page is { BodyHtml.Length: 0 } ? page with { BodyHtml = BlogBodyHtml.Render(page.Post.Body) } : page;
+    }
 }
 
 /// <summary>One published post.</summary>
@@ -114,12 +148,19 @@ public sealed class RecordEventHandler(IBlogStore store, TimeProvider clock) : I
 /// <param name="IsBot">The site's guess at a bot.</param>
 public sealed record RecordEventCommand(string Slug, string Type, string Value, byte[] Session, bool IsBot);
 
-/// <summary>Every post's numbers, the month's reads by source and the pictures kept, for the Admin tab's Blog analytics card.</summary>
+/// <summary>
+/// Every post's numbers over the last thirty days, the same window's reads by source and the pictures kept, for the
+/// Admin tab's Blog analytics card. Thirty days is the widest window the Admin tab offers and the bound the store reads
+/// through its window indexes, so the card's cost follows a month of reads and never the whole log.
+/// </summary>
 /// <param name="store">Where the logs are kept.</param>
 /// <param name="clock">The clock the windows are read against.</param>
 /// <param name="images">Where the pictures are kept; their count and bytes are the card's pictures line.</param>
 public sealed class ReadBlogStatsHandler(IBlogReader store, TimeProvider clock, IBlogImageReader images) : IQueryHandler<ReadBlogStatsQuery, (IReadOnlyList<BlogStat> Stats, IReadOnlyList<BlogSourceCount> Sources, BlogAvailability Kept, BlogImageTally Pictures)>
 {
+    /// <summary>The days the card's numbers are counted over.</summary>
+    public const int WindowDays = 30;
+
     /// <summary>The numbers, where they are kept, the sources over the last thirty days, and the pictures.</summary>
     /// <param name="query">The numbers, which take nothing.</param>
     /// <param name="cancellation">The request's cancellation.</param>
@@ -132,7 +173,8 @@ public sealed class ReadBlogStatsHandler(IBlogReader store, TimeProvider clock, 
             return ([], [], availability, pictures);
         }
         var now = clock.GetUtcNow();
-        return (await store.StatsAsync(now, cancellation), await store.SourcesAsync(now.AddDays(-30), cancellation), availability, pictures);
+        var since = now.AddDays(-WindowDays);
+        return (await store.StatsAsync(now, since, cancellation), await store.SourcesAsync(since, cancellation), availability, pictures);
     }
 }
 
@@ -162,10 +204,45 @@ public sealed class SavePostHandler(IBlogStore store, TimeProvider clock) : ICom
             return (null, wrong, null);
         }
         var availability = await store.AvailabilityAsync(cancellation);
-        return availability.Available ? (await store.SaveAsync(post, clock.GetUtcNow(), cancellation), null, null) : (null, null, availability.Reason);
+        return availability.Available
+            ? (await store.SaveAsync(post, PostDerivation.Of(post.Title, post.Summary, post.Body), clock.GetUtcNow(), cancellation), null, null)
+            : (null, null, availability.Reason);
     }
 }
 
 /// <summary>A post to add, or to replace the one with its slug.</summary>
 /// <param name="Post">The post.</param>
 public sealed record SavePostCommand(BlogPost Post);
+
+/// <summary>
+/// Derives again every post kept under an older version of the rules, or never derived (ADR: Every LinkedIn post is
+/// also a blog post, the addendum on the read model), and refreshes the synonyms. A post never derived before takes
+/// its topics from the backfill when the backfill names it, which is how the posts saved before topics existed get
+/// theirs; after that the operator's save is the authority on a post's topics.
+/// </summary>
+/// <param name="store">Where the posts are kept.</param>
+public sealed class DerivePostsHandler(IBlogStore store) : ICommandHandler<DerivePostsCommand, int?>
+{
+    /// <summary>How many posts were derived; null when the store cannot be written now.</summary>
+    /// <param name="command">The backfill's topics by slug.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
+    public async Task<int?> HandleAsync(DerivePostsCommand command, CancellationToken cancellation)
+    {
+        if (!(await store.AvailabilityAsync(cancellation)).Available)
+        {
+            return null;
+        }
+        await store.KeepSynonymsAsync(KeywordRules.SynonymRows(), cancellation);
+        var stale = await store.StaleAsync(KeywordRules.Version, cancellation);
+        foreach (var (post, never) in stale)
+        {
+            var topics = never && command.Topics.TryGetValue(post.Slug, out var backfill) ? backfill : null;
+            await store.KeepDerivedAsync(post.Id, PostDerivation.Of(post.Title, post.Summary, post.Body), topics, cancellation);
+        }
+        return stale.Count;
+    }
+}
+
+/// <summary>Derive the stale posts, with the topics the backfill gives the posts that never had any derived.</summary>
+/// <param name="Topics">Each post's topics by its slug, from data/blog/topics.json.</param>
+public sealed record DerivePostsCommand(IReadOnlyDictionary<string, IReadOnlyList<string>> Topics);

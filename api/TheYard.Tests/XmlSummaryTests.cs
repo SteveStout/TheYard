@@ -36,6 +36,8 @@ public class XmlSummaryTests
         "20261022214415_Blog.Designer.cs",
         "20261111030100_CostReads.cs",
         "20261111030100_CostReads.Designer.cs",
+        "20261118124221_BlogReadModel.cs",
+        "20261118124221_BlogReadModel.Designer.cs",
         "YardDbContextModelSnapshot.cs",
     };
 

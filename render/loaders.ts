@@ -1,6 +1,6 @@
 /**
  * Does:      Reads from the API what an address needs drawn before it is drawn: who is signed in, the build, the first page
- *            of the list, the vehicle, the document. One loader per view, all at once, each under one deadline.
+ *            of the list, the vehicle, the document, the blog's list and the post it shows in full. One loader per view, all at once, each under one deadline.
  * Does not:  Draw anything, read a store, or reach anything but the API's public reads; a read that fails or runs past the
  *            deadline is left to the browser, which asks for it as it always did.
  * Used by:   render.ts, render.test.ts.
@@ -16,6 +16,8 @@ import { DOCS } from '../src/library/documents';
 import { PULSE_URL } from '../src/lib/pulse';
 import { RECOMMENDATIONS_URL } from '../src/lib/recommendations';
 import { SELF_READ } from './page';
+import { fetchedFor, type BlogList, type BlogPost } from '../src/lib/blog';
+import { filterFromSearch, listPath } from '../src/lib/blogFilter';
 
 // #region reads
 /** One read of the API: its JSON, or null on anything but a 200. */
@@ -94,7 +96,22 @@ export async function loadFirst(
     !first.review &&
     !first.recommendations;
 
-  const [account, build, page, facets, vehicle, markdown, pulse, recommendations] =
+  // The blog is drawn whole here, its list and the post it shows in full, so its first screen is in the page itself.
+  // A post the address names is read beside the list; only the list's lead post has to wait for the list.
+  const blogFirst = async (): Promise<FirstLoad['blog']> => {
+    const postOf = (slug: string) =>
+      inTime(get<BlogPost & { body?: string }>(fetchedFor(slug), signal));
+    const named = first.blogPost ? postOf(first.blogPost) : null;
+    const list = await inTime(get<BlogList>(listPath(filterFromSearch(search)), signal));
+    const lead = list?.cards[0]?.slug ?? null;
+    const post = named ? await named : lead ? await postOf(lead) : null;
+    // The page draws the body the API drew on save; the Markdown it was drawn from rides along for the save
+    // workflow's read-back and is left out here, a third of the post's bytes.
+    if (post) delete post.body;
+    return { list, post };
+  };
+
+  const [account, build, page, facets, vehicle, markdown, pulse, recommendations, blog] =
     await Promise.all([
       // Nobody signed in sends no cookie, and needs no read to say so.
       cookie ? inTime(get<AccountWire>('/api/auth/me', signal)) : Promise.resolve(null),
@@ -112,6 +129,7 @@ export async function loadFirst(
       first.recommendations
         ? inTime(get<unknown>(RECOMMENDATIONS_URL, signal))
         : Promise.resolve(null),
+      first.blog ? blogFirst() : Promise.resolve(undefined),
     ]);
 
   const signedIn: Account = account ? toAccount(account) : SIGNED_OUT;
@@ -125,6 +143,7 @@ export async function loadFirst(
     doc: first.docKey && markdown ? await renderedDoc(first.docKey, markdown) : null,
     pulse,
     recommendations,
+    ...(blog ? { blog } : {}),
   };
 }
 

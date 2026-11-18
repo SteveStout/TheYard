@@ -1,16 +1,16 @@
 /**
  * Does:      Reads the hook on each page a reader is sent to (ADR-132, A hook on every page) from data/hooks.json, the one
  *            file the API reads for /about and the resume door too; builds the landing hook's chart from the quality
- *            history the build carries, so the first screen draws with no read; fills a count a label names; and
+ *            history's digest the build carries (releaseFacts.ts), so the first screen draws with no read and no page
+ *            carries the history itself; fills a count a label names; and
  *            says whether an address opens Admin, which no hook may; and reads each page's "Where next" links (ladder v7).
  * Does not:  Draw anything (components/shared/Hook does), fetch anything, or type a count: every number comes from data.
  *            Builds the landing's lines too: its headline, the held-since line under it and the week's releases.
  * Used by:   Landing.tsx, WhereNext.tsx, pageHooks.test.ts.
  */
 import file from '../../data/hooks.json';
-import history from '../../data/quality-history.json';
+import RELEASES from 'virtual:release-facts';
 import type { QualityTrendData } from './qualityTrend';
-import { heldSince, measured, type HistoryRow } from './qualityHeld';
 
 /** The pages that carry a hook, one entry each in the file. */
 export const HOOK_PAGES = ['landing', 'about', 'post', 'resume', 'quality', 'review'] as const;
@@ -41,18 +41,11 @@ export function hookFor(page: HookPage): PageHook {
  */
 export function hookTrend(hook: PageHook): QualityTrendData | null {
   if (!hook.chart) return null;
-  const key = hook.chart.number;
-  const points = history.rows.flatMap((row) => {
-    const value = (row.numbers as Record<string, unknown>)[key];
-    return typeof value === 'number'
-      ? [{ date: row.date, version: row.version, value, preScan: row.source === 'pre-scan' }]
-      : [];
-  });
   return {
     label: hook.chart.label,
     direction: hook.chart.direction,
-    marker: history.first_ratchet_version,
-    points,
+    marker: RELEASES.quality.marker,
+    points: RELEASES.quality.trends[hook.chart.number] ?? [],
   };
 }
 
@@ -76,14 +69,10 @@ function counted(count: number, noun: string): string {
  * version made a number worse, so it never claims a run that is not there.
  */
 export function landingLines(hook: PageHook, releasesThisWeek: number): string[] {
-  const rows = measured(history.rows as unknown as HistoryRow[]);
-  const newest = rows[rows.length - 1];
-  const counts = {
-    measures: newest ? Object.keys(newest.numbers).length : 0,
-    versions: rows.length,
-  };
-  const [headline = '', ...rest] = hook.lines.map((line) => withCounts(line, counts));
-  const held = heldSince(rows);
+  const { measures, versions, held } = RELEASES.quality;
+  const [headline = '', ...rest] = hook.lines.map((line) =>
+    withCounts(line, { measures, versions })
+  );
   const heldLine = held
     ? [
         `No quality number has gotten worse at any release since ${held.version} on ${dayWords(held.date)}: ${counted(held.releases, 'release')} in a row.`,

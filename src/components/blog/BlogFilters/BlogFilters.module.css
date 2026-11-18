@@ -1,0 +1,196 @@
+/**
+ * Does:      Lays out the filter bar: the search box, the two selects and Clear on one row that wraps, then the topic
+ *            and keyword chips each under its label, then the count; every control at least a finger's height.
+ * Does not:  Style the list it filters (BlogPage.module.css does).
+ * Used by:   BlogFilters.tsx.
+ */
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.search {
+  position: relative;
+  flex: 1 1 240px;
+  min-width: 0;
+  color: var(--color-accent);
+}
+
+.search svg {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  opacity: var(--ribbons-phone-opacity);
+}
+
+.search input {
+  width: 100%;
+  min-height: var(--pill-height);
+  padding: var(--space-2) var(--space-3) var(--space-2) 34px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--input-radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.search input:focus-visible,
+.row select:focus-visible,
+.clear:focus-visible,
+.chip:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.row select,
+.clear {
+  min-height: var(--pill-height);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.clear {
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.clear:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.chipLabel {
+  flex: none;
+  width: 76px;
+  padding-top: 6px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  color: var(--color-teal-deep);
+}
+
+/* A row keeps a chip's height before its chips arrive, so the posts under the bar do not move when they do. */
+.chips {
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: 32px;
+}
+
+.chip {
+  min-height: 32px;
+  padding: 4px 11px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.chip small {
+  margin-left: 4px;
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.chip[aria-pressed='true'] small {
+  color: var(--color-on-accent);
+}
+
+.chip:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+.dashed {
+  border-style: dashed;
+}
+
+.count {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* On a phone the bar stays short enough that the first post shows: each row of chips is one line that scrolls
+   sideways, its label above it, and the two selects and Clear share the row under the search box. */
+@media (max-width: 639.98px) {
+  .bar {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .search {
+    flex-basis: 100%;
+  }
+
+  .row select {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .chipRow {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .chipLabel {
+    width: auto;
+    padding-top: 0;
+  }
+
+  .chips {
+    flex: none;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chip {
+    flex: none;
+  }
+}

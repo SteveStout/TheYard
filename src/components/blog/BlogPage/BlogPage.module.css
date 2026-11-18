@@ -1,7 +1,8 @@
 /**
- * Does:      Lays out the blog page: the head with its topics, the posts column and the side column beside it, the short
- *            cards, the most-read list and the sources bars; one column under 900px, nothing wider than a phone.
- * Does not:  Style the full post (BlogPostCard.module.css does).
+ * Does:      Lays out the blog page: the head, the posts column and the side column beside it, the list dimmed while a
+ *            newer one is read, the empty result, the "More posts" button, the most-read list and the sources bars; one
+ *            column under 900px, nothing wider than a phone.
+ * Does not:  Style the full post, the short cards or the filter bar (their own sheets do).
  * Used by:   BlogPage.tsx.
  */
 .page {
@@ -26,24 +27,6 @@
   color: var(--color-heading);
   font-size: var(--text-2xl);
   font-weight: var(--title-weight);
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tags li {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--color-accent-soft);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--color-accent);
 }
 
 .back {
@@ -95,138 +78,41 @@
   color: var(--color-text-muted);
 }
 
-.mini {
+/* While a newer list is read the one on screen stays, dimmed, so the page never blanks and nothing moves (ADR-113). */
+.dim {
+  opacity: var(--opacity-disabled);
+  transition: opacity 0.15s ease;
+}
+
+.empty {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-  padding: var(--space-4) var(--space-5);
-}
-
-.miniTitle {
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
-  color: var(--color-heading);
-}
-
-.miniSummary {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.miniFoot {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-sm);
+  padding: var(--space-6) var(--space-4);
+  border: 1px dashed var(--glass-border);
+  border-radius: var(--radius-md);
+  text-align: center;
   color: var(--color-text-muted);
 }
 
-.read {
-  margin-left: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-accent);
-  cursor: pointer;
-}
-
-.side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  min-width: 0;
-}
-
-.box {
-  padding: var(--space-4);
-}
-
-.boxTitle {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
-  color: var(--color-teal-deep);
-}
-
-.ranked {
-  margin: 0;
-  padding-left: var(--space-5);
-}
-
-.ranked li {
-  margin-bottom: var(--space-2);
-}
-
-.ranked button {
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-heading);
-  text-align: left;
-  cursor: pointer;
-}
-
-.ranked small {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-}
-
-/* Read from an Admin route, so its size is set before the read answers: room for four rows, whatever it holds (ADR-113). */
-.sourcesBody {
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  height: calc(4 * 1.5em + 3 * var(--space-2));
-  overflow: hidden;
-}
-
-.sources {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.empty p {
   margin: 0;
 }
 
-.source {
-  display: grid;
-  grid-template-columns: 7.5em minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
+.empty .back {
+  margin-left: 0;
 }
 
-.source dt {
-  color: var(--color-text);
-}
-
-.source dd {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
-.meter {
-  flex: 1;
+.more {
+  align-self: center;
+  min-height: var(--pill-height);
+  padding: var(--pill-padding);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-full);
-  height: 8px;
-  overflow: hidden;
-  background: var(--color-accent-soft);
-}
-
-.meter i {
-  display: block;
-  height: 100%;
-  background: var(--color-accent);
+  background: var(--color-surface);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--pill-weight);
+  cursor: pointer;
 }

@@ -1,13 +1,13 @@
 /**
  * Does:      Says what the running version had to pass, from what the build carries: the quality history's newest
- *            reading against the one before it, and the CodeRabbit row the gate wrote for it (ADR-130). The badge's
+ *            reading against the one before it (the two the release facts carry, never the whole history), and the
+ *            CodeRabbit row the gate wrote for it (ADR-130). The badge's
  *            chips and its popover read this one answer.
  * Does not:  Fetch anything or type a count: a version the history or the findings file has no row for says so.
  * Used by:   StoreBar.tsx (the badge), GatePopover.tsx (the popover's words), gateFacts.test.ts.
  */
-import history from '../../../../data/quality-history.json';
 import RELEASES from 'virtual:release-facts';
-import { heldAt, measured, type HistoryRow } from '../../../lib/qualityHeld';
+import { heldAt, type HistoryRow } from '../../../lib/qualityHeld';
 import type { ReleaseFacts } from '../../../lib/releaseFacts';
 
 /** The badge's answer: the version, whether the gate's own reading of it is on file, the quality held, the review. */
@@ -22,7 +22,7 @@ export type GateFacts = {
 
 /** The answer for the rows and facts given; the default is what this build carries. */
 export function gateFacts(
-  rows: readonly HistoryRow[] = measured(history.rows as unknown as HistoryRow[]),
+  rows: readonly HistoryRow[] = RELEASES.latest,
   facts: ReleaseFacts = RELEASES
 ): GateFacts {
   const newest = rows[rows.length - 1];

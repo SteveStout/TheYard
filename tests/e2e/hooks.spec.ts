@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openTheYard } from './app';
+import { answerBlog, made } from './blogFake';
 import file from '../../data/hooks.json' with { type: 'json' };
 
 // #region hooks
@@ -13,26 +14,16 @@ import file from '../../data/hooks.json' with { type: 'json' };
 const PHONE = { width: 390, height: 844 };
 const lines = (page: string) => file.hooks.find((hook) => hook.page === page)!.lines;
 
-const POST = {
-  slug: 'a-made-up-post-with-a-hook',
-  title: 'A made-up post whose title is long enough to wrap onto a second line on a phone',
-  summary:
-    'Two sentences of summary, the length a real post carries. The second one is here so the box is as tall as a real one.',
-  body: `A made-up post\n\n${'A line of the post, long enough to wrap on a phone and fill the card. '.repeat(14)}`,
-  published_at: new Date(Date.now() - 86_400_000).toISOString(),
-  linkedin_url: 'https://www.linkedin.com/posts/a-made-up-post-with-a-hook',
-  code_url: null,
-  images: [1, 2].map((position) => ({
-    position,
-    url: '/api/images/badges/steve-176.jpg',
-    alt_text: `Slide ${position}`,
-    width: 1080,
-    height: 1350,
-  })),
-  tags: ['dotnet'],
-  reads: 3,
-  reads7d: 3,
-};
+const POST = made(
+  'a-made-up-post-with-a-hook',
+  'A made-up post whose title is long enough to wrap onto a second line on a phone',
+  1,
+  {
+    summary:
+      'Two sentences of summary, the length a real post carries. The second one is here so the box is as tall as a real one.',
+    slides: 2,
+  }
+);
 
 async function onTheFirstScreen(box: Locator, name: string) {
   await expect(box, name).toBeVisible({ timeout: 30_000 });
@@ -84,7 +75,7 @@ test.describe('at 390 by 844 each hook sits on the first screen', () => {
 
   test('a blog post: its title, its summary and its first image', async ({ page }) => {
     await atPhoneSize(page);
-    await page.route('**/api/blog/posts', (route) => route.fulfill({ json: { posts: [POST] } }));
+    await answerBlog(page, [POST]);
     await openTheYard(page, `/?view=blog&post=${POST.slug}`);
     const hook = page.locator('[data-hook="post"]');
     await expect(hook).toContainText(POST.title);

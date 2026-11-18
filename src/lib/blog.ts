@@ -1,36 +1,76 @@
 /**
- * Does:      The blog's words and numbers for the page (ADR: Every LinkedIn post is also a blog post): the post and
- *            stats shapes the API answers, the NEW POST rule, the date line, where readers came from as shares, the
- *            most read, and the reports a page sends for a read and an event.
+ * Does:      The blog's words and numbers for the page (ADR: Every LinkedIn post is also a blog post): the card, list,
+ *            post and stats shapes the API answers, the reads of a list page and of one post, the NEW POST rule, the
+ *            date line, where readers came from as shares, the most read, and the reports a page sends.
  * Does not:  Draw anything (components/blog does), read the text's marks (blogBody.ts does) or decide where a read
  *            came from (the API does, from what is sent).
- * Used by:   BlogPage, BlogPostCard, BlogCard, useBlogPosts, useBlogReport.
+ * Used by:   BlogPage, BlogPostCard, BlogMini, BlogFilters, SlideViewer, BlogCard, useBlogPosts, useBlogList, useBlogPost,
+ *            useBlogReport, blogReads.ts.
  */
 import { linkCode } from './links';
 import { request } from './request';
 
-/** One slide or image of a post, as the API answers it. */
+/** One slide or image of a post, as the API answers it: the full picture and its 320 px thumbnail. */
 export type BlogImage = {
   position: number;
   url: string;
+  thumb_url: string;
   alt_text: string;
   width: number;
   height: number;
 };
 
-/** One published post with its reads, as the API answers it. */
+/** A card's cover: the first slide, its thumbnail and its size. */
+export type BlogCover = { url: string; thumb_url: string; width: number; height: number };
+
+/** One post as a card shows it: no body, the cover, the counts, and where a search matched. */
+export type BlogCard = {
+  slug: string;
+  title: string;
+  summary: string;
+  published_at: string;
+  cover: BlogCover | null;
+  slides: number;
+  reading_minutes: number;
+  topics: string[];
+  keywords: string[];
+  reads: number;
+  reads7d: number;
+  matched: string[];
+};
+
+/** One chip: the key the address carries, its label, and how many posts it would leave. */
+export type BlogFacet = { key: string; label: string; count: number };
+
+/** One page of the list as the API answers it. */
+export type BlogList = {
+  cards: BlogCard[];
+  total: number;
+  topics: BlogFacet[];
+  keywords: BlogFacet[];
+  months: BlogFacet[];
+  next: string | null;
+  terms: string[];
+};
+
+/** One post as its own page shows it, as the API answers it. */
 export type BlogPost = {
   slug: string;
   title: string;
   summary: string;
-  body: string;
+  body_html: string;
   published_at: string;
   linkedin_url: string;
   code_url: string | null;
   images: BlogImage[];
-  tags: string[];
+  topics: string[];
+  keywords: string[];
+  reading_minutes: number;
   reads: number;
   reads7d: number;
+  older: BlogCard | null;
+  newer: BlogCard | null;
+  related: BlogCard[];
 };
 
 /** One post's numbers on the Admin card, every one from the blog's views. */
@@ -120,7 +160,7 @@ export function sourceShares(
 }
 
 /** The posts read most this week, then all time, then newest: the page's "Most read" column. */
-export function mostRead(posts: BlogPost[], count = 3): BlogPost[] {
+export function mostRead(posts: BlogCard[], count = 3): BlogCard[] {
   return [...posts]
     .sort(
       (a, b) =>
@@ -154,9 +194,24 @@ async function readJson<T>(url: string, signal?: AbortSignal): Promise<T | null>
   return (await response.json()) as T;
 }
 
-/** Every published post, newest first; null when the blog cannot be read now. */
-export async function fetchPosts(signal?: AbortSignal): Promise<BlogPost[] | null> {
-  return (await readJson<{ posts: BlogPost[] }>('/api/blog/posts', signal))?.posts ?? null;
+/** The first page of the list, newest first, with nothing filtered; null when the blog cannot be read now. */
+export async function fetchPosts(signal?: AbortSignal): Promise<BlogList | null> {
+  return readJson<BlogList>('/api/blog/posts', signal);
+}
+
+/** One page of the list at an API address listPath made; null when the blog cannot be read now. */
+export function fetchList(path: string, signal?: AbortSignal): Promise<BlogList | null> {
+  return readJson<BlogList>(path, signal);
+}
+
+/** The API address of one post's page. */
+export function fetchedFor(slug: string): string {
+  return `/api/blog/posts/${encodeURIComponent(slug)}`;
+}
+
+/** One post's page; null when no published post has the slug or the blog cannot be read now. */
+export function fetchPost(slug: string, signal?: AbortSignal): Promise<BlogPost | null> {
+  return readJson<BlogPost>(fetchedFor(slug), signal);
 }
 
 /** The Admin card's numbers and the page's sources column. */

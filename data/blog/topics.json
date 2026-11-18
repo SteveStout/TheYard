@@ -1,0 +1,58 @@
+{
+ "microsoft-ignite-2026-all-in-on-ai-light-on-everything-else": [
+  "ai",
+  "dotnet",
+  "azure"
+ ],
+ "onion-architecture-for-beginners": [
+  "architecture",
+  "dotnet"
+ ],
+ "cqrs-for-beginners": [
+  "architecture",
+  "dotnet"
+ ],
+ "read-the-query-behind-the-dial": [
+  "azure",
+  "cost"
+ ],
+ "lee-markum-told-me-to-blog": [
+  "career"
+ ],
+ "ais-instinct-was-to-escalate-mine-was-to-look": [
+  "ai"
+ ],
+ "quality-on-both-ends": [
+  "ai",
+  "testing"
+ ],
+ "i-plan-with-claude-fable-and-let-other-sessions-write-the-code": [
+  "ai"
+ ],
+ "my-resume-came-back-as-a-job": [
+  "security",
+  "job-search"
+ ],
+ "my-linux-server-runs-on-one-ethernet-cable-and-an-hdmi-dummy-plug": [
+  "linux"
+ ],
+ "scammers-read-the-job-market-too": [
+  "security",
+  "job-search"
+ ],
+ "my-first-linux-server-is-my-old-gaming-pc": [
+  "linux"
+ ],
+ "a-25-dollar-day-from-a-file-share": [
+  "azure",
+  "cost"
+ ],
+ "the-spec-has-to-run": [
+  "ai",
+  "testing"
+ ],
+ "solid-in-five-real-files": [
+  "architecture",
+  "dotnet"
+ ]
+}
