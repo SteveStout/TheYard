@@ -34,6 +34,7 @@ public sealed class HandlerRuleTests(WebApplicationFactory<Program> factory) : I
         ["DocumentationEndpoints.Diagram"] = "a drawing the host renders from the repository",
         ["DocumentationEndpoints.About"] = "a page the host renders from its own words",
         ["DocumentationEndpoints.Bicep"] = "a file the host serves from the repository",
+        ["DocumentationEndpoints.Enforced"] = "a count the host reads from the repository's records, as each record's own section does",
         ["DocumentationEndpoints.Resume"] = "a file the host serves from the repository",
         ["DocumentationEndpoints.ResumeAtItsAddress"] = "a file the host serves from the repository",
         ["DocumentationEndpoints.ReviewAtItsAddress"] = "a redirect to the app's own view, carrying the link's query",
