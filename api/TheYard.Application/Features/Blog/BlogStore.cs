@@ -3,6 +3,7 @@
 // keeps them (the logs join the posts), and a process with no relational store keeps them in memory and
 // says so, the way the activity counters do.
 using TheYard.Data;
+using TheYard.Domain.Features.Blog;
 
 namespace TheYard.Application.Features.Blog;
 
@@ -23,8 +24,18 @@ public interface IBlogReader
     /// <summary>One published post by its slug, or null.</summary>
     Task<BlogPost?> PostAsync(string slug, CancellationToken cancellation);
 
-    /// <summary>Each published post's numbers, bots left out, newest post first.</summary>
-    Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, CancellationToken cancellation);
+    /// <summary>
+    /// One page of the list (ADR: Every LinkedIn post is also a blog post, the addendum on the read model): the cards
+    /// the filter matches in its order, how many match in all, the chips' counts, and the next page's cursor. A card
+    /// carries no body, and its reads are counted, never read row by row.
+    /// </summary>
+    Task<BlogListPage> ListAsync(BlogFilter filter, DateTimeOffset now, CancellationToken cancellation);
+
+    /// <summary>One published post as its page shows it, with its older, newer and related posts; null when no published post has the slug.</summary>
+    Task<BlogPostPage?> PostPageAsync(string slug, DateTimeOffset now, CancellationToken cancellation);
+
+    /// <summary>Each published post's numbers over the reads and events since an instant, bots left out, newest post first.</summary>
+    Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, DateTimeOffset since, CancellationToken cancellation);
 
     /// <summary>Reads by source since an instant, bots left out.</summary>
     Task<IReadOnlyList<BlogSourceCount>> SourcesAsync(DateTimeOffset since, CancellationToken cancellation);
@@ -32,11 +43,20 @@ public interface IBlogReader
 // #endregion blog-reader
 
 // #region blog-store
-/// <summary>Where the blog's posts and its two logs are kept: the reader, and the three writes.</summary>
+/// <summary>Where the blog's posts and its two logs are kept: the reader, and the writes.</summary>
 public interface IBlogStore : IBlogReader
 {
-    /// <summary>Adds a post, or replaces the one with the same slug; returns its id.</summary>
-    Task<int> SaveAsync(BlogPost post, DateTimeOffset at, CancellationToken cancellation);
+    /// <summary>Adds a post, or replaces the one with the same slug, with what was worked out from it; returns its id.</summary>
+    Task<int> SaveAsync(BlogPost post, BlogDerived derived, DateTimeOffset at, CancellationToken cancellation);
+
+    /// <summary>Every post whose derived parts were worked out with rules other than this version, each with whether they never were.</summary>
+    Task<IReadOnlyList<(BlogPost Post, bool Never)>> StaleAsync(int version, CancellationToken cancellation);
+
+    /// <summary>Keeps a post's derived parts, and its topics too when they are given.</summary>
+    Task KeepDerivedAsync(int postId, BlogDerived derived, IReadOnlyList<string>? topics, CancellationToken cancellation);
+
+    /// <summary>Replaces the synonyms the search widens a typed word through.</summary>
+    Task KeepSynonymsAsync(IReadOnlyList<(string Word, string Term)> rows, CancellationToken cancellation);
 
     /// <summary>Keeps one read.</summary>
     Task KeepReadAsync(BlogRead read, CancellationToken cancellation);
@@ -81,103 +101,6 @@ public static class BlogNumbers
             ToCode: Clicked("code"),
             PastHalf: deepest.Count(d => d >= 50),
             Finished: deepest.Count(d => d >= 100),
-            ClickedOut: acts.Where(e => e.Type == "click").Select(e => Key(e.Session)).Distinct().Count());
-    }
-}
-
-/// <summary>
-/// The blog kept in this process's memory: for a process with no relational store, and for the tests.
-/// Bounded like every log the site keeps in memory, so a flood of reads cannot grow it without end.
-/// </summary>
-/// <param name="reason">What the Admin tab says about where the blog is kept.</param>
-public sealed class MemoryBlogStore(string reason) : IBlogStore
-{
-    /// <summary>The most reads and events each kept before the oldest go.</summary>
-    public const int MaxRows = 20_000;
-
-    private readonly Lock _gate = new();
-    private readonly List<BlogPost> _posts = [];
-    private readonly Queue<BlogRead> _reads = new();
-    private readonly Queue<BlogEvent> _events = new();
-
-    public Task<BlogAvailability> AvailabilityAsync(CancellationToken cancellation) => Task.FromResult(new BlogAvailability(true, reason));
-
-    public Task<IReadOnlyList<BlogPost>> PostsAsync(CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            return Task.FromResult<IReadOnlyList<BlogPost>>([.. _posts.OrderByDescending(p => p.PublishedAt)]);
-        }
-    }
-
-    public Task<BlogPost?> PostAsync(string slug, CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            return Task.FromResult(_posts.FirstOrDefault(p => p.Slug == slug));
-        }
-    }
-
-    public Task<int> SaveAsync(BlogPost post, DateTimeOffset at, CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            int index = _posts.FindIndex(p => p.Slug == post.Slug);
-            int id = index >= 0 ? _posts[index].Id : _posts.Count == 0 ? 1 : _posts.Max(p => p.Id) + 1;
-            var kept = post with { Id = id };
-            if (index >= 0)
-            {
-                _posts[index] = kept;
-            }
-            else if (_posts.Count < MaxRows)
-            {
-                _posts.Add(kept);
-            }
-            return Task.FromResult(id);
-        }
-    }
-
-    public Task KeepReadAsync(BlogRead read, CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            _reads.Enqueue(read);
-            while (_reads.Count > MaxRows)
-            {
-                _reads.Dequeue();
-            }
-        }
-        return Task.CompletedTask;
-    }
-
-    public Task KeepEventAsync(BlogEvent blogEvent, CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            _events.Enqueue(blogEvent);
-            while (_events.Count > MaxRows)
-            {
-                _events.Dequeue();
-            }
-        }
-        return Task.CompletedTask;
-    }
-
-    public Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            return Task.FromResult<IReadOnlyList<BlogStat>>([.. _posts.OrderByDescending(p => p.PublishedAt)
-                .Select(p => BlogNumbers.Of(p, _reads.Where(r => r.PostId == p.Id), _events.Where(e => e.PostId == p.Id), now))]);
-        }
-    }
-
-    public Task<IReadOnlyList<BlogSourceCount>> SourcesAsync(DateTimeOffset since, CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            return Task.FromResult<IReadOnlyList<BlogSourceCount>>([.. _reads.Where(r => !r.IsBot && r.At >= since)
-                .GroupBy(r => r.Source).Select(g => new BlogSourceCount(g.Key, g.Count())).OrderByDescending(s => s.Reads)]);
-        }
+            ClickedOut: acts.Where(e => e.Type == "click" && BlogRules.IsWayOut(e.Value)).Select(e => Key(e.Session)).Distinct().Count());
     }
 }

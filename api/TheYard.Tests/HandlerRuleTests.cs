@@ -60,6 +60,7 @@ public sealed class HandlerRuleTests(WebApplicationFactory<Program> factory) : I
         ["VisitorTokens"] = "the day's keyed hash a blog read and its events are kept under, the request's own fact",
         ["Credentials"] = "the register and login forms' body",
         ["VehicleQueryParams"] = "the list's query string, bound as parameters",
+        ["BlogAnswers"] = "the host's minute-long copy of the blog's public answers and their ETags, kept and dropped by the host and never by a use case",
     };
 
     /// <summary>The handlers' home in the Application ring.</summary>

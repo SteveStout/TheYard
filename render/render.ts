@@ -10,7 +10,8 @@ import { loadFirst } from './loaders';
 import { headFor, withHead, type PostHead } from './heads';
 import { blogPostFrom } from '../src/app/firstAddress';
 import type { HookPost } from '../src/hooks/useFirstLoad';
-import { keptPosts, servedPages, type ServedPage } from './page';
+import { keptPost, servedPages, type ServedPage } from './page';
+import { inlineScriptHashes, pageNonce, securityHeaders } from './security';
 
 // #region the-renderer
 /** The build this service was made from; it draws only for an API running the same one. */
@@ -51,7 +52,13 @@ export function createRenderer(
   read: typeof fetch = fetch
 ): Render {
   const pageAt = servedPages(read);
-  const postsAt = keptPosts(read);
+  const postAt = keptPost(read);
+  // The API's page changes only with a roll, so its inline scripts' hashes are worked out once for each page read.
+  const hashed = new WeakMap<ServedPage, Promise<string[]>>();
+  const hashesOf = (page: ServedPage) => {
+    if (!hashed.has(page)) hashed.set(page, inlineScriptHashes(page.html));
+    return hashed.get(page)!;
+  };
   return async (url, headers, apiOrigin, store = null) => {
     const asked = performance.now();
     const page = await pageAt(apiOrigin);
@@ -68,22 +75,33 @@ export function createRenderer(
       });
     }
     if (page.version !== own.version || page.commit !== own.commit) {
-      return asServed(page, `other-build ${page.version}`);
+      return asServed(
+        page,
+        `other-build ${page.version}`,
+        securityHeaders(await hashesOf(page), null)
+      );
     }
     const search = new URL(url).search.replace(/^\?/, '');
-    const posts = search.includes('post=') ? await postsAt(apiOrigin) : [];
+    const cookie = headers.get('cookie');
+    // The first load starts now, beside the read of a named post for the page's head, never after it.
+    const loading = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store);
+    const named = blogPostFrom(new URLSearchParams(search));
+    const posts = named ? [await postAt(apiOrigin, named)].filter((post) => post !== null) : [];
     const head = headFor(search, posts);
     const shell = head ? { ...page, before: withHead(page.before, head) } : page;
-    const cookie = headers.get('cookie');
     // The post an address names goes into the first load from the posts already read for its head, so its hook is
     // drawn here and the browser asks for nothing to show it (ADR-132).
     const post = postFor(search, posts);
-    const load = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store).then((first) =>
-      post ? { ...first, post } : first
-    );
-    return new Response(streamPage(shell, load), {
+    const load = loading.then((first) => (post ? { ...first, post } : first));
+    // A nonce for this page alone: React writes it on any script it streams, and the policy lets only it through.
+    const nonce = pageNonce();
+    return new Response(streamPage(shell, load, nonce), {
       status: 200,
-      headers: { ...pageHeaders(cookie), 'Server-Timing': timing },
+      headers: {
+        ...pageHeaders(cookie),
+        ...securityHeaders(await hashesOf(page), nonce),
+        'Server-Timing': timing,
+      },
     });
   };
 }
@@ -138,13 +156,14 @@ export function pageHeaders(cookie: string | null): Record<string, string> {
 // #endregion edge-copy
 
 /** The API's page, untouched: what a visitor got before this service existed. */
-function asServed(page: ServedPage, why: string): Response {
+function asServed(page: ServedPage, why: string, security: Record<string, string> = {}): Response {
   return new Response(page.html, {
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-cache',
       [RENDERED_HEADER]: why,
+      ...security,
     },
   });
 }
@@ -159,7 +178,11 @@ function asServed(page: ServedPage, why: string): Response {
  * A draw that fails before its frame is ready leaves #root empty with no first
  * load, and the browser draws it from nothing, as it did before.
  */
-function streamPage(page: ServedPage, load: Promise<Awaited<ReturnType<typeof loadFirst>>>) {
+function streamPage(
+  page: ServedPage,
+  load: Promise<Awaited<ReturnType<typeof loadFirst>>>,
+  nonce: string
+) {
   const text = new TextEncoder();
   return new ReadableStream<Uint8Array>({
     async start(out) {
@@ -167,7 +190,11 @@ function streamPage(page: ServedPage, load: Promise<Awaited<ReturnType<typeof lo
       let opened = false;
       try {
         const first = await load;
-        const drawing = await drawForTheService(first, (error) => console.error('draw:', error));
+        const drawing = await drawForTheService(
+          first,
+          (error) => console.error('draw:', error),
+          nonce
+        );
         out.enqueue(text.encode('\n    <div id="root" data-drawn="server">'));
         opened = true;
         const reader = drawing.getReader();

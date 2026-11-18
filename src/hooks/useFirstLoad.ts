@@ -1,6 +1,6 @@
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import type { Account } from '../lib/auth';
-import type { BlogImage } from '../lib/blog';
+import type { BlogImage, BlogList, BlogPost } from '../lib/blog';
 import type { InventoryFacets, VehiclePage } from '../lib/data';
 import type { Vehicle } from '../lib/types';
 
@@ -33,6 +33,8 @@ export type FirstLoad = {
   recommendations?: unknown;
   /** The post a ?view=blog&post= address names, as much as its hook draws (ADR-132), or null; absent elsewhere. */
   post?: HookPost | null;
+  /** On ?view=blog: the list's first page for the address's filter, and the post drawn in full (the one named, else the first card's); absent elsewhere. */
+  blog?: { list: BlogList | null; post: BlogPost | null };
 };
 
 /** What a post's hook draws on the first screen: its title, its summary and its first image. */

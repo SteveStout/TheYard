@@ -57,8 +57,13 @@ export default function App() {
   // The two chunks a click most often waits on, fetched once the first page has
   // loaded and the browser is idle: the renderer every document needs and the
   // Admin tab. Nothing here is on the first page's bytes, and a reader who asked
-  // to save data, or is on 2G, gets none of it (src/lib/prefetch.ts).
-  useEffect(() => prefetchWhenIdle([() => import('../lib/markdown'), loadAdminPanel]), []);
+  // to save data, or is on 2G, gets none of it (src/lib/prefetch.ts). A reader who
+  // came for the blog gets none of it either: a post is drawn on save and needs no
+  // renderer, and the 200 KB the two weigh are the blog route's budget twice over.
+  const [cameForTheBlog] = useState(() => address.blogOpen);
+  useEffect(() => {
+    if (!cameForTheBlog) return prefetchWhenIdle([() => import('../lib/markdown'), loadAdminPanel]);
+  }, [cameForTheBlog]);
   // #endregion fetch-ahead
 
   // #region tagged-open
@@ -135,7 +140,9 @@ export default function App() {
       ) : address.blogOpen ? (
         <BlogPage
           slug={address.blogPost}
-          onOpenPost={(slug) => go.openBlog(slug)}
+          query={address.blogQuery}
+          onOpen={go.openBlog}
+          onMove={go.moveBlog}
           onAllPosts={go.closeBlogPost}
         />
       ) : address.reviewOpen ? (

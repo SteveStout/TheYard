@@ -128,7 +128,14 @@ function send(request, response, answer) {
   });
 }
 
-/** The browser suite's one-machine stand-in for the edge: anything but a page goes on to the site. */
+/** The answers the edge compresses on their way out: text of every kind, and nothing already squeezed like a picture. */
+const COMPRESSIBLE =
+  /^(text\/|application\/(javascript|json|problem\+json|xml|rss\+xml)|image\/svg\+xml)/;
+
+/**
+ * The browser suite's one-machine stand-in for the edge: anything but a page goes on to the site, and a text answer
+ * is compressed on its way back as the edge compresses it, so a reading taken here pays for the bytes a visitor pays for.
+ */
 async function passOn(request, response) {
   const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : request;
   const answer = await fetch(`${passOrigin}${request.url}`, {
@@ -138,6 +145,16 @@ async function passOn(request, response) {
     duplex: 'half',
     redirect: 'manual',
   });
+  if (COMPRESSIBLE.test(answer.headers.get('content-type') ?? '')) {
+    const plain = new Headers(answer.headers);
+    plain.delete('content-encoding');
+    plain.delete('content-length');
+    return send(
+      request,
+      response,
+      new Response(answer.body, { status: answer.status, headers: plain })
+    );
+  }
   const headers = Object.fromEntries(answer.headers);
   delete headers['content-encoding'];
   delete headers['content-length'];

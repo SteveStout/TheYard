@@ -84,7 +84,7 @@ public sealed class BlogEndpointsTests(BlogEndpointsTests.KeyedHost host) : ICla
         Assert.Equal(HttpStatusCode.OK, (await Save(APost(slug))).StatusCode);
         var client = host.CreateClient();
         using var list = JsonDocument.Parse(await client.GetStringAsync("/api/blog/posts"));
-        Assert.Contains(list.RootElement.GetProperty("posts").EnumerateArray(), p => p.GetProperty("slug").GetString() == slug);
+        Assert.Contains(list.RootElement.GetProperty("cards").EnumerateArray(), p => p.GetProperty("slug").GetString() == slug);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/blog/posts/{slug}")).StatusCode);
         var read = await client.PostAsJsonAsync("/api/blog/reads", new { slug, referrer = "https://www.linkedin.com/feed/" });
         Assert.Equal(HttpStatusCode.OK, read.StatusCode);
@@ -141,13 +141,23 @@ public sealed class BlogUnkeptTests(BlogUnkeptTests.UnkeptHost host) : IClassFix
 
         public Task<BlogPost?> PostAsync(string slug, CancellationToken cancellation) => Task.FromResult<BlogPost?>(null);
 
-        public Task<int> SaveAsync(BlogPost post, DateTimeOffset at, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
+        public Task<int> SaveAsync(BlogPost post, BlogDerived derived, DateTimeOffset at, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
+
+        public Task<IReadOnlyList<(BlogPost Post, bool Never)>> StaleAsync(int version, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
+
+        public Task<BlogPostPage?> PostPageAsync(string slug, DateTimeOffset now, CancellationToken cancellation) => Task.FromResult<BlogPostPage?>(null);
+
+        public Task KeepDerivedAsync(int postId, BlogDerived derived, IReadOnlyList<string>? topics, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
+
+        public Task KeepSynonymsAsync(IReadOnlyList<(string Word, string Term)> rows, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
+
+        public Task<BlogListPage> ListAsync(BlogFilter filter, DateTimeOffset now, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
 
         public Task KeepReadAsync(BlogRead read, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
 
         public Task KeepEventAsync(BlogEvent blogEvent, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
 
-        public Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
+        public Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, DateTimeOffset since, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
 
         public Task<IReadOnlyList<BlogSourceCount>> SourcesAsync(DateTimeOffset since, CancellationToken cancellation) => throw new InvalidOperationException("not kept");
     }

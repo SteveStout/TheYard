@@ -19,7 +19,13 @@ import { cardFromAddress, DEFAULT_CARD, pinFromAddress, type CardSlug } from '..
 import { docKeyForSlug, docSlug } from '../../library/addresses';
 import type { DocKey } from '../../library/documents';
 import { useFirstLoad } from '../../hooks/useFirstLoad';
-import { blogPostFrom, browserSearch, readFirstAddress } from '../firstAddress';
+import {
+  blogPostFrom,
+  blogQueryFrom,
+  browserSearch,
+  inventoryPart,
+  readFirstAddress,
+} from '../firstAddress';
 import { pageOf } from '../pageOpen';
 
 // This file is the only code that writes the address bar. Everything else
@@ -81,6 +87,8 @@ export function useAddressBar() {
   /** The blog (ADR: Every LinkedIn post is also a blog post), ?view=blog, and the post open on it. */
   const [blogOpen, setBlogOpen] = useState(first.blog);
   const [blogPost, setBlogPost] = useState<string | null>(first.blogPost);
+  /** The blog's own parts of the address (the list's filter, a post's slide), never the inventory's q and sort. */
+  const [blogQuery, setBlogQuery] = useState(first.blogQuery);
   /** The review route, ?view=review, and the recommendations page, ?view=recommendations; the page open; one close for all three. */
   const [reviewOpen, setReviewOpen] = useState(first.review);
   const [recommendationsOpen, setRecommendationsOpen] = useState(first.recommendations);
@@ -104,7 +112,8 @@ export function useAddressBar() {
     // The landing page carries no filters: they belong to the inventory, and an
     // address with one in it opens the inventory (opensInventory).
     const onLanding = !inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen && !page;
-    const params = onLanding ? new URLSearchParams() : filtersToSearchParams(filters, sort);
+    const params =
+      onLanding || page === 'blog' ? new URLSearchParams() : filtersToSearchParams(filters, sort);
     if (selectedVehicle) params.set('vehicle', selectedVehicle.id);
     const listOnly = inventoryOpen && !selectedVehicle && !adminOpen && !accountOpen;
     if (listOnly && !opensInventory(params)) params.set('view', 'inventory');
@@ -117,6 +126,7 @@ export function useAddressBar() {
     if (accountOpen) params.set('view', 'account');
     if (page) params.set('view', page);
     if (page === 'blog' && blogPost !== null) params.set('post', blogPost);
+    if (page === 'blog') new URLSearchParams(blogQuery).forEach((v, k) => params.set(k, v));
     if (openDocKey) params.set('doc', docSlug(openDocKey));
     const query = params.toString();
     window.history.replaceState(
@@ -136,6 +146,7 @@ export function useAddressBar() {
     inventoryOpen,
     page,
     blogPost,
+    blogQuery,
   ]);
   // #endregion url-mirror
 
@@ -175,7 +186,7 @@ export function useAddressBar() {
   useEffect(() => {
     const onPopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const restored = filtersFromSearchParams(params);
+      const restored = filtersFromSearchParams(inventoryPart(params));
       setFilters(restored.filters);
       setSort(restored.sort);
       setAdminOpen(params.get('view') === 'admin');
@@ -186,9 +197,10 @@ export function useAddressBar() {
       setAccountOpen(params.get('view') === 'account');
       setBlogOpen(params.get('view') === 'blog');
       setBlogPost(blogPostFrom(params));
+      setBlogQuery(blogQueryFrom(params));
       setReviewOpen(params.get('view') === 'review');
       setRecommendationsOpen(params.get('view') === 'recommendations');
-      setInventoryOpen(opensInventory(params));
+      setInventoryOpen(opensInventory(inventoryPart(params)));
       setOpenDocKey(docKeyForSlug(params.get('doc')));
       const vehicleId = params.get('vehicle');
       if (!vehicleId) {
@@ -261,6 +273,8 @@ export function useAddressBar() {
     setBlogOpen,
     blogPost,
     setBlogPost,
+    blogQuery,
+    setBlogQuery,
     reviewOpen,
     setReviewOpen,
     recommendationsOpen,

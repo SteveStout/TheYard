@@ -31,6 +31,9 @@ public sealed record HostPaths(
     /// <summary>The hook on each page a reader is sent to, data/hooks.json, beside the dataset (ADR-132, A hook on every page).</summary>
     public string HooksPath => Path.Combine(Path.GetDirectoryName(DataPath)!, "hooks.json");
 
+    /// <summary>The blog's backfill of topics by slug, data/blog/topics.json, beside the dataset (ADR-113, the addendum on the read model).</summary>
+    public string BlogTopicsPath => Path.Combine(Path.GetDirectoryName(DataPath)!, "blog", "topics.json");
+
     /// <summary>Finds every path from the content root the host was started in.</summary>
     public static HostPaths Find(string contentRoot)
     {

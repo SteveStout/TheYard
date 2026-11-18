@@ -1,11 +1,14 @@
 /**
- * Does:      Reads the two release facts the first paint needs from the repository's own records, at build time:
- *            how many versions the changelog dates on each of its newest days, and the newest CodeRabbit row
- *            (ADR-132). Counts the releases of the last seven Central days from them.
+ * Does:      Reads the release facts the first paint needs from the repository's own records, at build time: how
+ *            many versions the changelog dates on each of its newest days, the newest CodeRabbit row (ADR-132), and
+ *            the quality history's two newest measured readings, all the gate badge needs of it, so no page carries
+ *            the whole history. Counts the releases of the last seven Central days from them.
  * Does not:  Read a file (vite.config.ts hands the text in, as the virtual module virtual:release-facts), or type a
  *            count: every number is the changelog's or the findings file's.
  * Used by:   vite.config.ts (carryTheReleaseFacts), Landing.tsx, GateBadge.tsx, releaseFacts.test.ts.
  */
+
+import { heldSince, measured, type HistoryRow } from './qualityHeld';
 
 // #region release-facts
 /** What the build carries: versions a day, the top version, the day it was built and that version's review. */
@@ -18,7 +21,53 @@ export type ReleaseFacts = {
   builtOn: string;
   /** The findings file's row for the top version; null until the gate has written it. */
   review: { version: string; reviewed: string; critical: number } | null;
+  /** The quality history's two newest measured readings, oldest first: the gate badge's whole need of it. */
+  latest: HistoryRow[];
+  /** What the landing's hook says of the history, worked out here so no page carries the history itself. */
+  quality: QualityDigest;
 };
+
+/** One reading of one number, as a chart draws it. */
+export type QualityPoint = { date: string; version: string; value: number; preScan: boolean };
+
+/** The landing's whole need of the quality history. */
+export type QualityDigest = {
+  /** How many numbers the newest measured reading holds. */
+  measures: number;
+  /** How many versions were measured. */
+  versions: number;
+  /** The run of releases with no number worse, from heldSince; null with no reading. */
+  held: { version: string; date: string; releases: number } | null;
+  /** The ratchet's first version, marked on a chart. */
+  marker: string;
+  /** Every reading of each charted number, in the history's order, pre-scan readings flagged. */
+  trends: Record<string, QualityPoint[]>;
+};
+
+/** The history file's shape, as much of it as the build reads. */
+type HistoryFile = { rows: HistoryRow[]; first_ratchet_version?: string };
+
+/** The landing's digest of the history: the counts, the held run, and a line for each number a hook charts. */
+export function qualityDigest(history: HistoryFile, charted: readonly string[]): QualityDigest {
+  const rows = measured(history.rows);
+  const newest = rows[rows.length - 1];
+  const trends: Record<string, QualityPoint[]> = {};
+  for (const key of charted) {
+    trends[key] = history.rows.flatMap((row) => {
+      const value = row.numbers[key];
+      return typeof value === 'number'
+        ? [{ date: row.date, version: row.version, value, preScan: row.source === 'pre-scan' }]
+        : [];
+    });
+  }
+  return {
+    measures: newest ? Object.keys(newest.numbers).length : 0,
+    versions: rows.length,
+    held: heldSince(rows),
+    marker: history.first_ratchet_version ?? '',
+    trends,
+  };
+}
 
 /** How many of the changelog's newest days the build keeps: twice the window, so a late visit still counts true. */
 const DAYS_KEPT = 14;
@@ -39,7 +88,9 @@ type FindingsFile = {
 export function releaseFacts(
   changelog: string,
   findings: FindingsFile,
-  builtAt: Date
+  builtAt: Date,
+  history: HistoryFile = { rows: [] },
+  charted: readonly string[] = []
 ): ReleaseFacts {
   const dated = [...changelog.matchAll(DATED)].map((match) => ({
     version: match[1]!,
@@ -59,6 +110,8 @@ export function releaseFacts(
     review: row
       ? { version, reviewed: row.reviewed ?? '', critical: row.findings?.critical ?? 0 }
       : null,
+    latest: measured(history.rows).slice(-2),
+    quality: qualityDigest(history, charted),
   };
 }
 

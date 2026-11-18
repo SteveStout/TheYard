@@ -1,8 +1,8 @@
 // Putting a picture into a post (ADR-113, the addendum on putting a picture in): the operator's one write path
 // for a picture. The handler holds the picture to its limits by what its own bytes say (one megabyte, PNG,
 // JPEG or WebP by the magic numbers, 2000 pixels wide, an alt text that says what it shows), keeps it under
-// the hash of its bytes, and puts its row on the post at its position. No resizing here: the post lane
-// resizes before it uploads.
+// the hash of its bytes, and puts its row on the post at its position; a 320 px WebP thumbnail sent beside it
+// is kept under the picture's thumbnail name. No resizing here: the post lane resizes both before it uploads.
 using System.Globalization;
 using TheYard.Application.Shared;
 using TheYard.Data;
@@ -16,7 +16,8 @@ namespace TheYard.Application.Features.Blog;
 /// <param name="Bytes">The picture.</param>
 /// <param name="AltText">One sentence saying what the picture shows.</param>
 /// <param name="Position">Its place among the post's pictures, from 1; a picture already there is replaced.</param>
-public sealed record PutBlogImageCommand(string Slug, byte[] Bytes, string AltText, int Position);
+/// <param name="Thumb">Its 320 px WebP thumbnail for the strip and the cards, made by the post lane like the picture; null for none.</param>
+public sealed record PutBlogImageCommand(string Slug, byte[] Bytes, string AltText, int Position, byte[]? Thumb = null);
 
 /// <summary>What putting a picture came to: the row kept, or the status and the sentence why not.</summary>
 /// <param name="Kept">The post's new picture row; null when it was refused.</param>
@@ -42,6 +43,7 @@ public sealed class PutBlogImageHandler(IBlogStore store, IBlogImageWriter image
             : header.Width <= 0 || header.Height <= 0 ? "the picture's header states no size"
             : command.AltText.Trim().Length is 0 or > 300 ? "the alt text is one sentence saying what the picture shows, 1 to 300 characters"
             : command.Position is < 1 or > 50 ? "the position is the picture's place in the post, 1 to 50"
+            : command.Thumb is { } thumb ? ThumbWrong(thumb)
             : null;
         if (wrong is not null)
         {
@@ -59,8 +61,22 @@ public sealed class PutBlogImageHandler(IBlogStore store, IBlogImageWriter image
         string name = BlogImageNames.For(command.Bytes, header!.Kind);
         await images.PutAsync(name, new BlogImageFile(command.Bytes, BlogImageNames.Kinds[header.Kind]), cancellation);
         var row = new BlogImage(command.Position, $"/blog/images/{name}", command.AltText.Trim(), header.Width, header.Height);
-        await store.SaveAsync(post with { Images = [.. post.Images.Where(i => i.Position != command.Position).Append(row).OrderBy(i => i.Position)] }, clock.GetUtcNow(), cancellation);
+        if (command.Thumb is { } small)
+        {
+            await images.PutAsync(BlogImageNames.ThumbOf(row.Url)["/blog/images/".Length..], new BlogImageFile(small, BlogImageNames.Kinds["webp"]), cancellation);
+        }
+        await store.SaveAsync(post with { Images = [.. post.Images.Where(i => i.Position != command.Position).Append(row).OrderBy(i => i.Position)] }, PostDerivation.Of(post.Title, post.Summary, post.Body), clock.GetUtcNow(), cancellation);
         return new(row, null, null);
+    }
+
+    /// <summary>The one sentence wrong with a thumbnail, or null: a WebP by its own bytes, at most 320 pixels wide and 64 KB.</summary>
+    private static string? ThumbWrong(byte[] thumb)
+    {
+        var header = BlogImageHeaders.Read(thumb);
+        return header is null || header.Kind != "webp" ? "a thumbnail is a WebP by its own bytes"
+            : header.Width > BlogImageNames.ThumbWidth ? $"a thumbnail is at most {BlogImageNames.ThumbWidth} pixels wide, and this is {header.Width}"
+            : thumb.Length > BlogImageNames.ThumbMaxBytes ? $"a thumbnail is at most {BlogImageNames.ThumbMaxBytes.ToString("N0", CultureInfo.InvariantCulture)} bytes"
+            : null;
     }
 }
 // #endregion put-blog-image

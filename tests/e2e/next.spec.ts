@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { openTheYard } from './app';
+import { answerBlog, made } from './blogFake';
 
 // #region where-next
 /**
@@ -47,20 +48,8 @@ test('the contact line answers with the email redirect, not an address on the pa
 
 test('a post ends with its Where next links', async ({ page }) => {
   // The local stack has no posts of its own, so the blog answers with one made up the way blog.spec.ts makes them.
-  const post = {
-    slug: 'a-made-up-post',
-    title: 'A made-up post',
-    summary: 'Two lines about a made-up post.',
-    body: 'A made-up post\n\nA line of the post.',
-    published_at: new Date().toISOString(),
-    linkedin_url: 'https://www.linkedin.com/posts/a-made-up-post',
-    code_url: 'https://github.com/SteveStout/TheYard',
-    images: [],
-    tags: ['dotnet'],
-    reads: 1,
-    reads7d: 1,
-  };
-  await page.route('**/api/blog/posts', (route) => route.fulfill({ json: { posts: [post] } }));
+  const post = made('a-made-up-post', 'A made-up post', 0, { slides: 0 });
+  await answerBlog(page, [post]);
   await openTheYard(page, `/?view=blog&post=${post.slug}`);
   const footer = page.locator('[data-testid="where-next"][data-next="post"]');
   await expect(footer).toBeAttached({ timeout: 30_000 });
@@ -77,7 +66,7 @@ test('a tagged visit carries its code through the footers, and each page it land
   // About's email line. That the API keeps each open under its path is LinkEndpointStatusTests' and
   // LinkHandlerTests'; this holds that every step sends the code and is answered.
   const code = `zz${Date.now().toString(36).slice(-4)}`;
-  await page.route('**/api/blog/posts', (route) => route.fulfill({ json: { posts: [] } }));
+  await answerBlog(page, []);
   await openTheYard(page, `/?view=review&r=${code}`);
   const toPost = page
     .locator('[data-next="review"]')
