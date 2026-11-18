@@ -161,6 +161,21 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
         }
     }
 
+    [Fact]
+    public async Task The_records_marks_answer_by_number_with_five_minutes_of_cache()
+    {
+        // The Decision Records index reads these when it is opened (ADR-029, the addendum on the marks); a literal
+        // route, so it is never looked up as a document's slug.
+        var response = await _client.GetAsync("/api/docs/enforced");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("public, max-age=300", response.Headers.CacheControl?.ToString());
+        using var json = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var marks = json.RootElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetInt32());
+        Assert.Equal(Directory.GetFiles(Path.Combine(Repo.Root(), "docs", "decisions"), "ADR-*.md").Length, marks.Count);
+        Assert.True(marks["075"] > 0);
+        Assert.Contains(0, marks.Values);
+    }
+
     [Theory]
     [InlineData("/api/docs/images/nope.png")]
     [InlineData("/api/docs/images/..%2F..%2FREADME.md")]
