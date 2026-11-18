@@ -45,6 +45,9 @@ public class MachineFreeWorkflowsTests
         Assert.Contains("[ \"$commit\" = \"$SHA\" ] || {", deploy, StringComparison.Ordinal);
         Assert.DoesNotContain("[ \"$code\" = 204 ]", deploy, StringComparison.Ordinal);
         Assert.True(deploy.IndexOf("Wait out the records run", StringComparison.Ordinal) > deploy.IndexOf("name: Publish and zip", StringComparison.Ordinal), "the records-run wait is read just before the zip deploy");
+        int login = deploy.IndexOf("uses: azure/login", StringComparison.Ordinal);
+        Assert.True(login > deploy.IndexOf("Wait out the records run", StringComparison.Ordinal), "the sign-in comes after the records-run wait, so its five-minute client assertion has not run out by the deploy (AADSTS700024)");
+        Assert.True(login < deploy.IndexOf("name: Before", StringComparison.Ordinal), "every az read is signed in");
         Assert.DoesNotContain("workflow_call", deploy, StringComparison.Ordinal);
 
         // Started by the after-roll, a run of its own since the gate frees at live, and never called by the Gate run.
