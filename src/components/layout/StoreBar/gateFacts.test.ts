@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { HistoryRow } from '../../../lib/qualityHeld';
-import { gateChips, gateFacts, qualityLine } from './gateFacts';
+import { gateChips, gateFacts, gateRunUrl, qualityLine } from './gateFacts';
 
 const row = (version: string, a: number, commit = 'abcdef0123'): HistoryRow => ({
   version,
@@ -16,11 +16,13 @@ const row = (version: string, a: number, commit = 'abcdef0123'): HistoryRow => (
   source: 'quality.py',
   numbers: { a, b: 1 },
 });
-const facts = (version: string, reviewed: string | null) => ({
+const facts = (version: string, reviewed: string | null, run: number | null = null) => ({
   days: {},
   version,
   builtOn: '2026-11-17',
   review: reviewed === null ? null : { version, reviewed, critical: 0 },
+  run,
+  stopped: null,
 });
 
 describe('the gate badge', () => {
@@ -32,6 +34,13 @@ describe('the gate badge', () => {
       quality: { held: 2, of: 2, better: 1 },
     });
     expect(gateChips(answer)).toEqual(['Gate green', 'Quality 2 of 2 held', 'CodeRabbit reviewed']);
+  });
+
+  it('links the public gate run only for a version the gate measured (G5)', () => {
+    const shipped = gateFacts([row('1.0.0.1', 5), row('1.0.0.2', 4)], facts('1.0.0.2', 'full', 44));
+    expect(shipped.run).toBe(44);
+    expect(gateRunUrl(44)).toBe('https://github.com/SteveStout/TheYard/actions/runs/44');
+    expect(gateFacts([row('1.0.0.1', 5)], facts('1.0.0.2', 'full', 44)).run).toBeNull();
   });
 
   it('claims nothing for a version the gate has not measured or CodeRabbit has not read', () => {

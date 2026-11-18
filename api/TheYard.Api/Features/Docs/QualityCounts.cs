@@ -16,7 +16,7 @@ namespace TheYard.Api.Features.Docs;
 public static partial class QualityCounts
 {
     /// <summary>The measures this class answers, by the first word of the placeholder.</summary>
-    public static readonly string[] Measures = ["quality-trend", "quality-now", "quality-limit", "quality-first", "quality-peak", "quality-thin", "quality-versions", "coverage-trend", "coverage-now", "quality-rules", "rule-count", "rule-groups", "coderabbit-level", "coderabbit-rows"];
+    public static readonly string[] Measures = ["quality-trend", "quality-now", "quality-limit", "quality-first", "quality-peak", "quality-thin", "quality-versions", "coverage-trend", "coverage-now", "quality-rules", "rule-count", "rule-groups", "coderabbit-level", "coderabbit-rows", "gate-caught"];
 
     // #region quality-measures
     /// <summary>One measure, as text; <paramref name="argument"/> is the word after the measure's name, if any.</summary>
@@ -40,6 +40,7 @@ public static partial class QualityCounts
                 "rule-groups" => RuleGroups(repoRoot),
                 "coderabbit-level" => Ladder(repoRoot),
                 "coderabbit-rows" => Findings(repoRoot),
+                "gate-caught" => GateCaught(repoRoot),
                 _ => $"(no live measure named '{kind}{(argument is null ? "" : " " + argument)}')",
             };
         }

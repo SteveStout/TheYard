@@ -27,6 +27,10 @@ COPY data/quality-history.json ./data/quality-history.json
 # week and the header's gate badge (vite.config.ts, release-facts; ADR-132).
 COPY docs/CHANGELOG.md ./docs/CHANGELOG.md
 COPY data/coderabbit-findings.json ./data/coderabbit-findings.json
+# The gate run that shipped this version and the newest version the gate stopped, for the badge's link and the
+# landing's line (release-facts, G5's data).
+COPY data/test-results.json ./data/test-results.json
+COPY data/gate-reds.json ./data/gate-reds.json
 COPY render ./render
 RUN npx vite build --config render/vite.config.ts
 # #endregion build
