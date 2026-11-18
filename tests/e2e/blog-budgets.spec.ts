@@ -11,7 +11,9 @@ import { answerBlog, made } from './blogFake';
  * the first screen at most 300 KB, the largest paint the post's title or its cover slide asked for first, the layout
  * moving less than 0.01, no long task over 50 ms while a search is typed, and the viewer's slide on screen within
  * 200 ms of the click. Bytes are counted as brotli would send them, read off the files themselves, so the count is the
- * same on any server; the list's own answer is held to 6 KB by BlogApiTests.
+ * same on any server; the list's own answer is held to 6 KB by BlogApiTests. The first screen's bytes and the tasks
+ * while typing are the built site's (YARD_WEB_PREVIEW, the gate): the dev server sends every module unminified and
+ * React's development build, so there those two end at their first line, as csp.spec.ts does without the renderer.
  */
 const POSTS = [
   made(
@@ -110,6 +112,7 @@ test('the first screen costs at most 300 KB, its largest paint is the title or t
   page,
   request,
 }) => {
+  if (!process.env.YARD_WEB_PREVIEW) return;
   await coldPhone(page);
   await openTheYard(page, '/?view=blog');
   await expect(page.getByTestId('blog-post')).toBeVisible();
@@ -163,6 +166,7 @@ test('the first screen costs at most 300 KB, its largest paint is the title or t
 });
 
 test('typing a search runs no task over 50 ms', async ({ page }) => {
+  if (!process.env.YARD_WEB_PREVIEW) return;
   await coldPhone(page);
   await openTheYard(page, '/?view=blog');
   await expect(page.getByTestId('blog-post')).toBeVisible();
