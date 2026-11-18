@@ -34,7 +34,7 @@ public static class BlobCard
         ["Public access"] = "Azure Resource Manager",
         ["Kept"] = "the container listings",
         ["Cache in the host"] = CardFrame.ThisProcess,
-        ["Blob egress this month"] = "Azure Monitor, Egress on the blob service",
+        ["Blob total egress this month"] = "Azure Monitor, Egress on the blob service",
         ["Lifecycle rule"] = "Azure Resource Manager",
         ["The read line"] = "configuration, Admin:BlobDailyReadLine",
         ["Cost"] = CardFrame.TheBill,
@@ -65,29 +65,20 @@ public static class BlobCard
     /// </summary>
     public const long HostCacheMegabytes = 32;
 
-    /// <summary>The free egress a month, which the readout reads the month's egress against.</summary>
-    public const double FreeEgressGb = 100;
-
-    /// <summary>The marks drawn on the egress dial: 80 % and all of the free egress. They are marks, not tones.</summary>
-    public static readonly (double Amber, double Red) Egress = (80, 100);
-
     /// <summary>The service the egress dial reads, on the storage account: the blob service, not the account.</summary>
     public const string EgressService = "blobServices/default";
 
     /// <summary>
-    /// The month's egress of the blob service against the free 100 GB, or "not read". A read that set the blob service,
-    /// the file service and the account side by side (ADR-102's addendum has the numbers) found the dial's number matched the blob service alone to
-    /// 0.01 %, and the account was blob plus file. Almost all of it is GetBlob by the account key, a steady poll at every
-    /// hour of the day, not the blog's pictures, so the dial is information on this card, blue whatever it reads. What
-    /// the bytes cost is on the bill, in the cost row.
+    /// The month's total egress of the blob service, or "not read", read against no limit. Azure's Egress metric counts
+    /// every byte out, traffic that stays inside Azure included, and only internet egress counts against the free 100 GB
+    /// a month, so the two are not the same number and the dial does not set one against the other: it has no share and
+    /// no marks (ADR-102, the addendum on the egress dial). It stays blue whatever it reads, because nothing on this card
+    /// causes it; what the bytes cost is on the bill, in the cost row.
     /// </summary>
     /// <param name="bytes">The month's egress in bytes.</param>
-    public static CloudDial EgressDial(double? bytes)
-    {
-        double? share = bytes is { } b ? 100 * b / 1e9 / FreeEgressGb : null;
-        return new CloudDial("Blob egress this month", share, bytes is { } e ? $"{(e / 1e9).ToString("0.##", CultureInfo.InvariantCulture)} GB" : "not read",
-            $"the blob service only, the share's reads not included, of the free {FreeEgressGb:0} GB a month · not graded on this card", Egress.Amber, Egress.Red, null, null, "info");
-    }
+    public static CloudDial EgressDial(double? bytes) =>
+        new("Blob total egress this month", null, bytes is { } e ? $"{(e / 1e9).ToString("0.##", CultureInfo.InvariantCulture)} GB" : "not read",
+            "the blob service's, traffic inside Azure included, so not the billable figure · not graded on this card", null, null, null, null, "info");
 
     public static CloudReport View(ResourceCardInputs inputs, BlobLines lines)
     {
@@ -141,7 +132,7 @@ public static class BlobCard
                 new("Public access", publicAccess == "none" ? "None; the site's identity reads" : publicAccess, exposed ? "alarm" : "info"),
                 new("Kept", Number(ResourceView.Fact(inputs, "kept_bytes", "")) is { } kept ? $"{Bytes(kept)} in {ResourceView.Fact(inputs, "kept_blobs", "0")} blobs" : "not read", "info"),
                 new("Cache in the host", $"{HostCacheMegabytes} MB of the host's memory, a picture kept a day once it is asked for", "info"),
-                new("Blob egress this month", egress is { } e ? $"{(e / 1e9).ToString("0.##", CultureInfo.InvariantCulture)} GB of the free {FreeEgressGb:0} GB, the blob service's" : "not read", "info"),
+                new("Blob total egress this month", egress is { } e ? $"{(e / 1e9).ToString("0.##", CultureInfo.InvariantCulture)} GB, the blob service's, traffic inside Azure included" : "not read", "info"),
                 new("Lifecycle rule", ResourceView.Fact(inputs, "lifecycle"), "info"),
                 new("The read line", $"{lines.DailyReads:N0} reads a day, the card's red line; today {ResourceView.Number(today)} · the Functions host's own reads, by the account key, are left out", overReads ? "alarm" : "info"),
                 ResourceView.Cost(inputs),

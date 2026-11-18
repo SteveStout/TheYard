@@ -174,6 +174,7 @@ export function stripTiles({
           client_errors: hourTotals.client_errors,
           p50_ms: hourTotals.p50_ms,
           p95_ms: hourTotals.p95_ms,
+          ring_minutes: hourTotals.ring_minutes,
         }
   );
   // What the lines under the tiles are of: the hour, the kept history, a

@@ -50,7 +50,7 @@ public static class CardFrame
         var tone = CardTones.Of(report.Dials.Select(dial => Level(dial.Tone)).Concat(report.Rows.Select(row => Level(Unread(row.Answer) ? "info" : row.Tone))), report.ReadAgeSeconds, cadence);
         bool held = !hourly;
         var first = report.Dials.Count > 0 ? report.Dials[0] : null;
-        return report with
+        return (tone == CardTone.Unread ? Unjudged(report) : report) with
         {
             Tone = CardTones.Wire(tone),
             SpecSource = specSource,
@@ -60,6 +60,19 @@ public static class CardFrame
             UnreadAfterSeconds = CardTones.ReadsBeforeUnread * cadence,
         };
     }
+
+    /// <summary>
+    /// A card past its unread age shows nothing as fine: its green dials, rows and readout lines read blue, live but not
+    /// judged, by the owner's colour rule. A warning or an alarm stays, because a card last read over its line says so
+    /// until a fresher reading says otherwise (CardTones.Of).
+    /// </summary>
+    /// <param name="report">The card's report.</param>
+    public static CloudReport Unjudged(CloudReport report) => report with
+    {
+        Dials = [.. report.Dials.Select(dial => dial.Tone == "good" ? dial with { Tone = "info" } : dial)],
+        Rows = [.. report.Rows.Select(row => row.Tone == "good" ? row with { Tone = "info" } : row)],
+        Readout = report.Readout with { Lines = [.. report.Readout.Lines.Select(line => line.Tone == "good" ? line with { Tone = "info" } : line)] },
+    };
 
     /// <summary>
     /// Every row (by its key) and readout line (by its label) that names no source, given the one
@@ -84,8 +97,15 @@ public static class CardFrame
         foreach (var dial in dials)
         {
             string name = dial.Name.Split(',')[0].Trim();
-            chips.Add(new CloudChip($"{name} amber {dial.Amber:0.##} %", "amber"));
-            chips.Add(new CloudChip($"{name} red {dial.Red:0.##} %", "red"));
+            // A dial read against no limit has no marks, so it has no chips either.
+            if (dial.Amber is { } amber)
+            {
+                chips.Add(new CloudChip($"{name} amber {amber:0.##} %", "amber"));
+            }
+            if (dial.Red is { } red)
+            {
+                chips.Add(new CloudChip($"{name} red {red:0.##} %", "red"));
+            }
         }
         if (held)
         {
