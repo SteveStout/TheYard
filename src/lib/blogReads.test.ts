@@ -32,6 +32,26 @@ describe('the list reader', () => {
     expect(SEARCH_WAIT_MS).toBe(300);
   });
 
+  it('waits from the last key when a later key holds back the address it asks for', async () => {
+    const read = vi.fn(async (path: string) => list(path.length));
+    const reader = listReader(read, () => {});
+    reader.typed();
+    reader.ask('/api/blog/posts?q=c', 'wait');
+    // "o" to "t": six keys 40 ms apart while the page draws, and no address arrives until it commits.
+    for (let key = 0; key < 6; key++) {
+      await vi.advanceTimersByTimeAsync(40);
+      reader.typed();
+    }
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS - 1);
+    expect(read).not.toHaveBeenCalled();
+    reader.ask('/api/blog/posts?q=copilot', 'wait');
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
+    expect(read.mock.calls.map((call) => call[0])).toEqual(['/api/blog/posts?q=copilot']);
+    reader.typed();
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
   it('aborts the read a newer ask replaces, and never hands on its answer', async () => {
     const signals: AbortSignal[] = [];
     let finish: (value: BlogList) => void = () => {};

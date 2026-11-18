@@ -20,6 +20,8 @@ export type BlogListState = {
   failed: boolean;
   /** Reads the next page and adds its cards; nothing when there is none or one is being read. */
   more: () => void;
+  /** Called on each key in the search box, before its transition, so a waiting search waits from the last key. */
+  typed: () => void;
   moreReading: boolean;
 };
 
@@ -81,5 +83,7 @@ export function useBlogList(
       .finally(() => setMoreReading(false));
   };
 
-  return { list, reading: shownFor !== path, unavailable, failed, more, moreReading };
+  const typed = () => reader.current?.typed();
+
+  return { list, reading: shownFor !== path, unavailable, failed, more, moreReading, typed };
 }

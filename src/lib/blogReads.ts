@@ -22,6 +22,7 @@ export function listReader(
   onAnswer: OnAnswer
 ) {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let waiting: string | null = null;
   let inFlight: AbortController | null = null;
 
   const start = (path: string) => {
@@ -38,16 +39,35 @@ export function listReader(
     );
   };
 
+  const wait = (path: string) => {
+    clearTimeout(timer);
+    waiting = path;
+    timer = setTimeout(() => {
+      waiting = null;
+      start(path);
+    }, SEARCH_WAIT_MS);
+  };
+
   return {
     /** Asks for a list address, now or after the search's wait; a pending ask or a read under way gives way. */
     ask(path: string, when: AskWhen) {
       clearTimeout(timer);
+      waiting = null;
       if (when === 'now') start(path);
-      else timer = setTimeout(() => start(path), SEARCH_WAIT_MS);
+      else wait(path);
+    },
+    /**
+     * A key was pressed: a search still waiting waits its whole time again from this key. Its address arrives only
+     * when the page's transition commits, and a later key can hold that commit back, so without this the wait ran
+     * from the last page drawn and a slow machine asked for "c" while "copilot" was still being typed.
+     */
+    typed() {
+      if (waiting !== null) wait(waiting);
     },
     /** Drops a pending ask and aborts the read under way: the page is going. */
     stop() {
       clearTimeout(timer);
+      waiting = null;
       inFlight?.abort();
       inFlight = null;
     },
