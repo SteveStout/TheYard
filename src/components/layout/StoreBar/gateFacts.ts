@@ -18,6 +18,8 @@ export type GateFacts = {
   gated: boolean;
   quality: { held: number; of: number; better: number } | null;
   review: ReleaseFacts['review'];
+  /** The public gate run that shipped this version, its proof in one click; null until the gate has written it. */
+  run: number | null;
 };
 
 /** The answer for the rows and facts given; the default is what this build carries. */
@@ -33,7 +35,13 @@ export function gateFacts(
     gated,
     quality: gated ? heldAt(newest, rows[rows.length - 2]) : null,
     review: facts.review,
+    run: gated ? facts.run : null,
   };
+}
+
+/** Where a gate run is read in public: its page on GitHub Actions. */
+export function gateRunUrl(run: number): string {
+  return `https://github.com/SteveStout/TheYard/actions/runs/${run}`;
 }
 
 /**

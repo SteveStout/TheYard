@@ -1,7 +1,7 @@
 /**
  * CODE HEALTH on the tests card: the numbers about the code itself that the
- * gate measures beside its suites (build warnings, the bundle's size, packages
- * with a newer release) and the last thirty gates, so a slow creep in the
+ * gate measures beside its suites (push to live, build warnings, the bundle's
+ * size, packages with a newer release) and the last thirty gates, so a slow creep in the
  * gate's seconds or the bundle reads as a line rather than a memory. React-free:
  * plain functions over the results file, tested on their own.
  */
@@ -26,7 +26,22 @@ export type GateSummary = {
   passed: number;
   failed: number;
   distJsBytes: number | null;
+  /** The gate run that shipped it, its push to live in seconds and the lines it changed (G5); absent before G5. */
+  runId?: number | null;
+  liveSeconds?: number | null;
+  changedLines?: number | null;
 };
+
+/** A version's push to live: from its gate branch's push to both sites serving it. */
+export type LiveReading = { version: string; seconds: number };
+
+/** The newest kept gate whose push to live is known: a version's own is known only after the next promote reads it. */
+export function newestLive(history: GateSummary[] | undefined): LiveReading | null {
+  const gate = [...(history ?? [])]
+    .reverse()
+    .find((row) => row.liveSeconds !== null && row.liveSeconds !== undefined);
+  return gate ? { version: gate.version, seconds: gate.liveSeconds! } : null;
+}
 
 /** One row of CODE HEALTH: what is measured, the reading, and its tone. */
 export type CodeRow = {
@@ -54,11 +69,26 @@ export function verdictSeconds(gate: {
 
 // #region code-rows
 /** The rows the section draws; a number the gate did not measure says so rather than reading as zero. */
-export function codeRows(code: CodeNumbers | undefined, gateSeconds: number): CodeRow[] {
+export function codeRows(
+  code: CodeNumbers | undefined,
+  gateSeconds: number,
+  live: LiveReading | null = null
+): CodeRow[] {
   const unread = 'not measured by this gate';
   const counted = (n: number | null | undefined, unit: string) =>
     n === null || n === undefined || n < 0 ? unread : `${n.toLocaleString('en-US')} ${unit}`;
   return [
+    // The row a manager who runs continuous deployment reads first, so it leads once the gate has measured one (V4).
+    ...(live
+      ? [
+          {
+            key: 'live',
+            label: `Push to live, ${live.version}`,
+            value: `${live.seconds.toLocaleString('en-US')} s`,
+            tone: liveTone(live.seconds),
+          } satisfies CodeRow,
+        ]
+      : []),
     {
       key: 'warnings',
       label: 'Build warnings',
@@ -100,6 +130,12 @@ export function codeRows(code: CodeNumbers | undefined, gateSeconds: number): Co
   ];
 }
 // #endregion code-rows
+
+/** The push to live row's tone, by the gate row's rule: fine under its target, information up to red, red from it. */
+export function liveTone(seconds: number): 'good' | 'info' | 'bad' {
+  const tone = toneOf('liveSeconds', seconds);
+  return tone === 'warn' ? 'info' : tone;
+}
 
 /** The gate row's tone: fine under its target, information up to its red line, red from it. */
 export function gateTone(seconds: number): 'good' | 'info' | 'bad' {
