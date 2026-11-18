@@ -144,8 +144,9 @@ function drawTheLandingPage(): Plugin {
 // #region release-facts
 // The landing's releases of the last seven days and the header badge's CodeRabbit chip are read from the
 // repository's own records when the site is built, so the first paint carries them and the bundle does not carry
-// the files (ADR-132): the changelog's dated lines as a count a day, and the newest row of
-// data/coderabbit-findings.json. src/lib/releaseFacts.ts does the reading; this only hands it the two texts. The
+// the files (ADR-132): the changelog's dated lines as a count a day, the newest row of
+// data/coderabbit-findings.json, the gate run in data/test-results.json and the newest row of data/gate-reds.json.
+// src/lib/releaseFacts.ts does the reading; this only hands it the texts. The
 // file reader is imported by a name held in a variable because this project carries no @types/node.
 const RELEASE_FACTS = 'virtual:release-facts';
 
@@ -169,22 +170,32 @@ function carryTheReleaseFacts(): Plugin {
       const findings = `${root}/data/coderabbit-findings.json`;
       const history = `${root}/data/quality-history.json`;
       const hooks = `${root}/data/hooks.json`;
-      this.addWatchFile(changelog);
-      this.addWatchFile(findings);
-      this.addWatchFile(history);
-      this.addWatchFile(hooks);
+      const results = `${root}/data/test-results.json`;
+      const reds = `${root}/data/gate-reds.json`;
+      for (const file of [changelog, findings, history, hooks, results, reds])
+        this.addWatchFile(file);
       // The numbers the hooks chart, so the build carries their lines and no page carries the whole history.
       const charted = (
         JSON.parse(fs.readFileSync(hooks, 'utf8')) as {
           hooks: { chart: { number: string } | null }[];
         }
       ).hooks.flatMap((hook) => (hook.chart ? [hook.chart.number] : []));
+      // The run id and the gate's reds are G5's (scripts/gate_feed.sh); a tree that has not written them yet has none.
+      const optional = (file: string, empty: unknown) => {
+        try {
+          return JSON.parse(fs.readFileSync(file, 'utf8')) as unknown;
+        } catch {
+          return empty;
+        }
+      };
       const facts = releaseFacts(
         fs.readFileSync(changelog, 'utf8'),
         JSON.parse(fs.readFileSync(findings, 'utf8')),
         new Date(),
         JSON.parse(fs.readFileSync(history, 'utf8')),
-        charted
+        charted,
+        optional(results, {}) as Parameters<typeof releaseFacts>[5],
+        optional(reds, { rows: [] }) as Parameters<typeof releaseFacts>[6]
       );
       return `export default ${JSON.stringify(facts)};`;
     },
