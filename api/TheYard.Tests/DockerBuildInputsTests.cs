@@ -37,6 +37,9 @@ public class DockerBuildInputsTests
         // 1.0.5.82 shipped without them in the image and both deploys failed at the build (ADR-132).
         "docs/CHANGELOG.md",
         "data/coderabbit-findings.json",
+        // The badge's link to the gate run and the landing's last stopped release, read the same way (G5's data).
+        "data/test-results.json",
+        "data/gate-reds.json",
     ];
 
     [Fact]

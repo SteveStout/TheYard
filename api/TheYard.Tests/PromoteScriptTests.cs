@@ -187,7 +187,7 @@ public sealed partial class PromoteScriptTests : IDisposable
         { "not-on-main", "not one commit on main" },
         { "two-ahead", "not one commit on main" },
         { "goes-down", "the version goes down" },
-        { "extra-file", "the results touched more than their five files" },
+        { "extra-file", "the results touched more than their six files" },
         { "review-unread", "coderabbit job is cancelled, not green" },
         { "owners-number-without-a-yes", "ships from a machine with his yes (OWNER_YES=1.0.5.0)" },
         { "owners-number-skipped", "and not to 1.0.5.0" },

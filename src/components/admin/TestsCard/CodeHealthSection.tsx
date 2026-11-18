@@ -1,11 +1,12 @@
 /**
- * CODE HEALTH under the tests card's headline: the build's warnings, the
+ * CODE HEALTH under the tests card's headline: the last push to live, the build's warnings, the
  * gate's seconds against five minutes, the page's built size and the packages
  * with a newer release, each with its tone, and the last gates behind More.
  * The rows come from src/lib/codeHealth.ts; this draws them.
  */
 import {
   codeRows,
+  newestLive,
   verdictSeconds,
   type CodeNumbers,
   type GateSummary,
@@ -24,7 +25,7 @@ export function CodeHealthSection({
   gateSeconds: number;
   history: GateSummary[] | undefined;
 }) {
-  const rows = codeRows(code, gateSeconds);
+  const rows = codeRows(code, gateSeconds, newestLive(history));
   return (
     <section data-testid="code-health" aria-label="Code health">
       <h3 className={cardStyles.cardTitle}>Code health</h3>
