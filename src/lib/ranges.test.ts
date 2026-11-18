@@ -97,6 +97,7 @@ describe('ranges', () => {
       cost: { amber: 60, red: 70, step: 0.01 },
       clientErrorsHour: { amber: 50, red: 200, step: 1 },
       gateSeconds: { amber: 300, red: 600, step: 1 },
+      liveSeconds: { amber: 900, red: 1_800, step: 1 },
       certificateDays: { amber: 30, red: 7, step: 1, lowIsBad: true },
       sqlStorage: { amber: 0.8, red: 0.95, step: 0.001 },
     };
@@ -111,6 +112,7 @@ describe('ranges', () => {
     cost: ["The month, at yesterday's rate", '$'],
     clientErrorsHour: ['Turned away (4xx) in the hour', ''],
     gateSeconds: ['The gate, start to verdict', 's'],
+    liveSeconds: ['Push to live', 's'],
     certificateDays: ['Days left on the certificate', 'days'],
     sqlStorage: ['Azure SQL storage of its tier', '%'],
   };

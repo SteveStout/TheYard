@@ -110,6 +110,14 @@ export const RANGES = {
     red: 600,
     source: 'ADR-068: every check in under five minutes',
   },
+  liveSeconds: {
+    name: 'Push to live',
+    unit: 's',
+    amber: 900,
+    red: 1800,
+    source:
+      'GATEFLOW1117: push to live read 929 s at 1.0.5.75, and R1 aims at a version every 16 to 20 minutes, so a quarter of an hour is the target and half an hour the red line',
+  },
   certificateDays: {
     name: 'Days left on the certificate',
     unit: 'days',

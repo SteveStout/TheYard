@@ -14,7 +14,7 @@ import { CountUp } from '../../shared/CountUp';
 import { Hook } from '../../shared/Hook';
 import { WhereNext } from '../../shared/WhereNext';
 import { QualityTrend } from '../../shared/QualityTrend';
-import { hookFor, hookTrend, landingLines } from '../../../lib/pageHooks';
+import { hookFor, hookTrend, landingLines, stoppedLine } from '../../../lib/pageHooks';
 import { centralDay, releasesInLastSevenDays } from '../../../lib/releaseFacts';
 import RELEASES from 'virtual:release-facts';
 import { Ring } from '../../shared/Ring';
@@ -217,6 +217,13 @@ export function Landing({
               );
             })}
           </ul>
+          {/* The landing ends on the last release the gate turned back (G5), under what the gate measured: below the
+          first screen, because the hook above has to fit a phone's (hooks.spec.ts). Left out when none is kept. */}
+          {RELEASES.stopped && (
+            <p className={styles.stopped} data-testid="landing-stopped">
+              {stoppedLine(RELEASES.stopped)}
+            </p>
+          )}
           <LatestPosts headingClass={styles.groupHeading} onOpenBlog={onOpenBlog} />
           <TechStack headingClass={styles.groupHeading} />
         </div>
