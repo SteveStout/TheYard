@@ -66,6 +66,8 @@ public static class ServedAddresses
             new("/api/admin/costs?window=30d", "What Azure charges, the last 30 days", "api"),
             // The tagged links' card reads the store behind a public address the same way.
             new("/api/admin/links?window=7d", "Who opened what, the last 7 days", "api"),
+            // The Decision Records index reads its marks here when it is opened (ADR-029).
+            new("/api/docs/enforced", "Which decision records a test holds", "api"),
             new("/api/docs/resume", "Steven's resume (PDF)", "file"),
             new("/api/docs/bicep", "Infrastructure (Bicep)", "document"),
         };
