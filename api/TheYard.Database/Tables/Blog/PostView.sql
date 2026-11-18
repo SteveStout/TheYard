@@ -21,5 +21,14 @@ CREATE TABLE [blog].[PostView] (
     CONSTRAINT [FK_PostView_Post] FOREIGN KEY ([PostId]) REFERENCES [blog].[Post] ([Id])
 );
 GO
-CREATE INDEX [IX_PostView_PostId_ViewedAt] ON [blog].[PostView] ([PostId], [ViewedAt]);
+-- A card's reads and its reads this week: one GROUP BY over the page's posts, people only. Filtered on
+-- IsBot = 0 because no number the blog shows counts a bot, and covering what a count reads.
+CREATE INDEX [IX_PostView_Reads] ON [blog].[PostView] ([PostId], [ViewedAt])
+    INCLUDE ([SessionHash], [RefCode], [Source])
+    WHERE [IsBot] = 0;
+GO
+-- Where readers came from and the Admin funnel's window: every post's reads since a moment, people only.
+CREATE INDEX [IX_PostView_Window] ON [blog].[PostView] ([ViewedAt])
+    INCLUDE ([PostId], [Source], [SessionHash], [RefCode])
+    WHERE [IsBot] = 0;
 GO

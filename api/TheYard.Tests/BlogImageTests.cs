@@ -38,6 +38,35 @@ public sealed class BlogImageTests
     }
 
     [Fact]
+    public void A_thumbnail_is_named_for_its_picture_and_its_width_and_is_always_webp()
+    {
+        Assert.Equal("/blog/images/0123456789abcdef-320.webp", BlogImageNames.ThumbOf("/blog/images/0123456789abcdef.png"));
+        Assert.Equal("/elsewhere/a.png", BlogImageNames.ThumbOf("/elsewhere/a.png"));
+        Assert.True(BlogImageNames.IsName("0123456789abcdef-320.webp"));
+        Assert.Equal("image/webp", BlogImageNames.ContentType("0123456789abcdef-320.webp"));
+        Assert.False(BlogImageNames.IsName("0123456789abcdef-321.webp"));
+        Assert.False(BlogImageNames.IsName("0123456789abcdef-320.png"));
+        Assert.Equal("0123456789abcdef", BlogImageNames.PictureOf("0123456789abcdef-320.webp"));
+        Assert.Null(BlogImageNames.PictureOf("0123456789abcdef.webp"));
+    }
+
+    [Fact]
+    public async Task A_thumbnail_not_kept_yet_is_answered_by_its_full_picture_marked_as_a_stand_in()
+    {
+        var store = new MemoryBlogImageStore();
+        await store.PutAsync("0123456789abcdef.png", new BlogImageFile(Webp, "image/png"), CancellationToken.None);
+        var handler = new ReadBlogImageHandler(store);
+
+        var standIn = await handler.HandleAsync(new ReadBlogImageQuery("0123456789abcdef-320.webp"), CancellationToken.None);
+        Assert.Equal(("image/png", true), (standIn!.ContentType, standIn.StandIn));
+        await store.PutAsync("0123456789abcdef-320.webp", new BlogImageFile([1, 2, 3], "image/webp"), CancellationToken.None);
+        var thumb = await handler.HandleAsync(new ReadBlogImageQuery("0123456789abcdef-320.webp"), CancellationToken.None);
+        Assert.Equal([1, 2, 3], thumb!.Bytes);
+        Assert.False(thumb.StandIn);
+        Assert.Null(await handler.HandleAsync(new ReadBlogImageQuery("fedcba9876543210-320.webp"), CancellationToken.None));
+    }
+
+    [Fact]
     public async Task The_query_answers_a_kept_picture_and_null_for_a_name_not_kept_or_not_a_name()
     {
         var store = new MemoryBlogImageStore();
@@ -133,6 +162,21 @@ public sealed class BlogImageRouteTests(WebApplicationFactory<Program> factory) 
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         Assert.Equal("application/problem+json", missing.Content.Headers.ContentType?.MediaType);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/blog/images/not-a-name.webp")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_stand_in_for_a_thumbnail_is_kept_five_minutes_and_never_for_a_year()
+    {
+        string name = BlogImageNames.For(Webp, "webp");
+        await factory.Services.GetRequiredService<MemoryBlogImageStore>().PutAsync(name, new BlogImageFile(Webp, "image/webp"), CancellationToken.None);
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/blog/images/{name[..16]}-320.webp");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(BlogImageEndpoints.StandInRule, response.Headers.CacheControl?.ToString());
+        Assert.Null(response.Headers.ETag);
+        Assert.Equal(Webp, await response.Content.ReadAsByteArrayAsync());
     }
 }
 // #endregion blog-image-tests

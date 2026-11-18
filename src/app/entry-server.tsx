@@ -20,12 +20,14 @@ import { TheYard } from './TheYard';
  * draws; everything the page needs was read before, into the first load.
  * @param load what the service read for this address
  * @param onError told of a component that threw while drawing; the stream carries on and the browser draws that part
+ * @param nonce the page's nonce, written on any script React streams so the page's policy lets it run
  */
 export function drawForTheService(
   load: FirstLoad,
-  onError: (error: unknown) => void
+  onError: (error: unknown) => void,
+  nonce?: string
 ): Promise<ReadableStream<Uint8Array>> {
-  return renderToReadableStream(<TheYard firstLoad={load} />, { onError });
+  return renderToReadableStream(<TheYard firstLoad={load} />, { onError, nonce });
 }
 
 /** The first load as the script element the browser reads it back from (firstLoad.ts). */

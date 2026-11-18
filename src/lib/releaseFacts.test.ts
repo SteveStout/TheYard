@@ -19,16 +19,44 @@ describe('release facts', () => {
       line('1.0.0.3', '2026-11-17'),
       line('1.0.0.2', '2026-11-15'),
     ].join('\n');
+    const history = {
+      first_ratchet_version: '1.0.0.2',
+      rows: [
+        { version: '1.0.0.1', date: '2026-11-14', source: 'quality.py', numbers: { a: 3 } },
+        { version: '1.0.0.2', date: '2026-11-15', source: 'pre-scan', numbers: { a: 2 } },
+        { version: '1.0.0.3', date: '2026-11-17', source: 'quality.py', numbers: { a: 2 } },
+        { version: '1.0.0.4', date: '2026-11-17', source: 'quality.py', numbers: { a: 1 } },
+      ],
+    };
     const facts = releaseFacts(
       changelog,
       { rows: [{ version: '1.0.0.4', reviewed: 'full', findings: { critical: 0 } }] },
-      new Date('2026-11-17T18:00:00Z')
+      new Date('2026-11-17T18:00:00Z'),
+      history,
+      ['a']
     );
     expect(facts).toEqual({
       days: { '2026-11-17': 2, '2026-11-15': 1 },
       version: '1.0.0.4',
       builtOn: '2026-11-17',
       review: { version: '1.0.0.4', reviewed: 'full', critical: 0 },
+      // The badge needs the newest measured reading and the one before it, never the whole history.
+      latest: [history.rows[2], history.rows[3]],
+      // The landing needs two counts, the run held, and one number's line: worked out here, at the build.
+      quality: {
+        measures: 1,
+        versions: 3,
+        held: { version: '1.0.0.1', date: '2026-11-14', releases: 3 },
+        marker: '1.0.0.2',
+        trends: {
+          a: [
+            { date: '2026-11-14', version: '1.0.0.1', value: 3, preScan: false },
+            { date: '2026-11-15', version: '1.0.0.2', value: 2, preScan: true },
+            { date: '2026-11-17', version: '1.0.0.3', value: 2, preScan: false },
+            { date: '2026-11-17', version: '1.0.0.4', value: 1, preScan: false },
+          ],
+        },
+      },
     });
   });
 

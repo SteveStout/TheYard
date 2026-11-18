@@ -50,6 +50,11 @@
   object-fit: contain;
 }
 
+/* A post's hook draws its cover slide, the page's largest picture on the first screen, so it is drawn taller. */
+.hook[data-hook='post'] .figure img {
+  height: 240px;
+}
+
 .caption {
   margin: 0 0 var(--space-1);
   color: var(--color-text-muted);

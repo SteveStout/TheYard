@@ -66,6 +66,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.Features.Blog.MemoryBlogStore._posts"] = "the blog's posts where no database is attached, at most MaxRows, refused past it",
         ["TheYard.Application.Features.Blog.MemoryBlogStore._reads"] = "the blog's reads where no database is attached, the oldest dropped past MaxRows",
         ["TheYard.Application.Features.Blog.MemoryBlogStore._events"] = "the blog's events where no database is attached, the oldest dropped past MaxRows",
+        ["TheYard.Application.Features.Blog.MemoryBlogStore._derived"] = "one entry a kept post, so bounded by the posts' own MaxRows",
+        ["TheYard.Application.Features.Blog.MemoryBlogStore._synonyms"] = "KeywordRules' synonym rows, replaced whole, a few hundred",
         ["TheYard.Application.Shared.Live.LiveRing`1._ring"] = "a live ring's samples, its size of them (LiveRings.Size or MemoryBoxLive.Size), the oldest dropped on every push",
         ["TheYard.Application.Shared.Live.LiveLease._touched"] = "one moment a card key, the catalogue's keys and no more",
         ["TheYard.Application.Shared.Live.LiveRings._rings"] = "one ring a live source, the sources this process has and no more",

@@ -7,6 +7,7 @@
 import { filtersFromSearchParams, opensInventory } from '../lib/inventory';
 import { cardFromAddress, pinFromAddress } from '../lib/workbench';
 import { docKeyForSlug } from '../library/addresses';
+import { FILTER_PARTS } from '../lib/blogFilter';
 
 // #region first-address
 /**
@@ -19,9 +20,10 @@ import { docKeyForSlug } from '../library/addresses';
 export function readFirstAddress(search: string) {
   const params = new URLSearchParams(search);
   const card = cardFromAddress(params.get('card'));
+  const inventory = inventoryPart(params);
   return {
     /** Filters live in it (?make=Ford&status=live). */
-    ...filtersFromSearchParams(params),
+    ...filtersFromSearchParams(inventory),
     /** A tile click is GET navigation: ?vehicle={id} deep-links the detail view. */
     vehicleId: params.get('vehicle'),
     /** A password reset link's token: the address bar loses it on the first render. */
@@ -29,12 +31,14 @@ export function readFirstAddress(search: string) {
     /** ?doc=adr-lockout opens that record. A name that matches no record opens nothing. */
     docKey: docKeyForSlug(params.get('doc')),
     /** Home is the landing page; an address naming the inventory, a filter, a sort or a vehicle opens the list. */
-    inventory: opensInventory(params),
+    inventory: opensInventory(inventory),
     admin: params.get('view') === 'admin',
     account: params.get('view') === 'account',
     /** The blog, ?view=blog, and one post on it, ?view=blog&post=solid-in-five-real-files. */
     blog: params.get('view') === 'blog',
     blogPost: blogPostFrom(params),
+    /** The blog's own parts of the address: the list's filter (?topic=, ?q=, ...) or the slide a post opens on (?slide=3). */
+    blogQuery: blogQueryFrom(params),
     /** The review route, ?view=review (ADR: Ten minutes, seven stops). */
     review: params.get('view') === 'review',
     /** The recommendations page, ?view=recommendations (ADR: The recommendations have a page). */
@@ -46,6 +50,25 @@ export function readFirstAddress(search: string) {
 }
 
 /** The post an address names on the blog: a slug, or null for the list and for anything that is not one. */
+export function blogQueryFrom(params: URLSearchParams): string {
+  const own = new URLSearchParams();
+  if (params.get('view') !== 'blog') return '';
+  for (const part of [...FILTER_PARTS, 'slide']) {
+    const value = params.get(part);
+    if (value !== null && value !== '') own.set(part, value);
+  }
+  return own.toString();
+}
+
+/**
+ * The inventory's part of an address: all of it, but nothing on the blog's page, whose q and sort are the blog's own
+ * (?view=blog&q=onion&sort=read), so a blog address never filters the vehicles or opens the inventory under the blog.
+ */
+export function inventoryPart(params: URLSearchParams): URLSearchParams {
+  return params.get('view') === 'blog' ? new URLSearchParams() : params;
+}
+
+/** The post a ?view=blog&post= address names, when its slug is one; null otherwise. */
 export function blogPostFrom(params: URLSearchParams): string | null {
   const post = params.get('post');
   return params.get('view') === 'blog' && post !== null && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(post)

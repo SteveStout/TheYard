@@ -46,16 +46,23 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         }
     }
 
-    /// <summary>
-    /// Every published post, newest first, each with its images in order and its tags. The ordering is
-    /// done in memory because the rows are few and the alternative is a second index to keep.
-    /// </summary>
+    /// <summary>Every published post, newest first, each with its images in order and its tags; the feed reads it.</summary>
     /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<IReadOnlyList<BlogPost>> PostsAsync(CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
-        var posts = (await db.Posts.AsNoTracking().Where(p => p.IsPublished).ToListAsync(cancellation)).OrderByDescending(p => p.PublishedAt).ToList();
+        var posts = await db.Posts.AsNoTracking().Where(p => p.IsPublished).OrderByDescending(p => p.PublishedAt).ThenByDescending(p => p.Id).ToListAsync(cancellation);
         return await WithPartsAsync(db, posts, cancellation);
+    }
+
+    /// <summary>One page of the list, filtered, ordered and paged in SQL (EfBlogList).</summary>
+    /// <param name="filter">What the list is asked for.</param>
+    /// <param name="now">The moment the week's reads are counted back from.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
+    public async Task<BlogListPage> ListAsync(BlogFilter filter, DateTimeOffset now, CancellationToken cancellation)
+    {
+        using var db = await Contexts().CreateDbContextAsync(cancellation);
+        return await EfBlogList.PageAsync(db, filter, now, cancellation);
     }
 
     /// <summary>One published post by its address, with its parts, or null when no published post answers at that address.</summary>
@@ -75,9 +82,10 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
     /// deduplicated without regard to case, so a post that says a hashtag twice keeps one row.
     /// </summary>
     /// <param name="post">The post as it went out, with its images and tags.</param>
+    /// <param name="derived">What the Domain worked out from it: the drawn body, the minutes, the words and the keywords.</param>
     /// <param name="at">The moment the save is stamped with, handed in so the store keeps no clock of its own.</param>
     /// <param name="cancellation">The caller's cancellation.</param>
-    public async Task<int> SaveAsync(BlogPost post, DateTimeOffset at, CancellationToken cancellation)
+    public async Task<int> SaveAsync(BlogPost post, BlogDerived derived, DateTimeOffset at, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
         var row = await db.Posts.FirstOrDefaultAsync(p => p.Slug == post.Slug, cancellation);
@@ -100,7 +108,50 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
         db.PostImages.AddRange(post.Images.Select(i => new PostImageRow { PostId = row.Id, Position = i.Position, Url = i.Url, AltText = i.AltText, Width = i.Width, Height = i.Height }));
         db.PostTags.AddRange(post.Tags.Distinct(StringComparer.OrdinalIgnoreCase).Select(t => new PostTagRow { PostId = row.Id, Tag = t }));
         await db.SaveChangesAsync(cancellation);
+        await EfBlogIndex.KeepAsync(db, row.Id, derived, null, cancellation);
         return row.Id;
+    }
+
+    /// <summary>Every post whose derived parts are from another version of the rules, or from none, with its parts and whether it never was.</summary>
+    /// <param name="version">The rules' version now.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
+    public async Task<IReadOnlyList<(BlogPost Post, bool Never)>> StaleAsync(int version, CancellationToken cancellation)
+    {
+        using var db = await Contexts().CreateDbContextAsync(cancellation);
+        var rows = await db.Posts.AsNoTracking().Where(p => p.DerivedWith == null || p.DerivedWith != version).OrderBy(p => p.Id).ToListAsync(cancellation);
+        var never = rows.Where(p => p.DerivedWith is null).Select(p => p.Id).ToHashSet();
+        return [.. (await WithPartsAsync(db, rows, cancellation)).Select(p => (p, never.Contains(p.Id)))];
+    }
+
+    /// <summary>One published post as its page shows it (EfBlogList), or null when no published post has the slug.</summary>
+    /// <param name="slug">The post's address.</param>
+    /// <param name="now">The moment the week's reads are counted back from.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
+    public async Task<BlogPostPage?> PostPageAsync(string slug, DateTimeOffset now, CancellationToken cancellation)
+    {
+        using var db = await Contexts().CreateDbContextAsync(cancellation);
+        var row = await db.Posts.AsNoTracking().FirstOrDefaultAsync(p => p.Slug == slug && p.IsPublished, cancellation);
+        return row is null ? null : await EfBlogList.PostPageAsync(db, (await WithPartsAsync(db, [row], cancellation))[0], now, cancellation);
+    }
+
+    /// <summary>Keeps a post's derived parts, and its topics when they are given (EfBlogIndex).</summary>
+    /// <param name="postId">The post.</param>
+    /// <param name="derived">What the Domain worked out from it.</param>
+    /// <param name="topics">Its topics to keep in place of its tags; null to leave them.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
+    public async Task KeepDerivedAsync(int postId, BlogDerived derived, IReadOnlyList<string>? topics, CancellationToken cancellation)
+    {
+        using var db = await Contexts().CreateDbContextAsync(cancellation);
+        await EfBlogIndex.KeepAsync(db, postId, derived, topics, cancellation);
+    }
+
+    /// <summary>Replaces blog.SearchSynonym's rows whole (EfBlogIndex).</summary>
+    /// <param name="rows">Each typed word with each term it widens to.</param>
+    /// <param name="cancellation">The caller's cancellation.</param>
+    public async Task KeepSynonymsAsync(IReadOnlyList<(string Word, string Term)> rows, CancellationToken cancellation)
+    {
+        using var db = await Contexts().CreateDbContextAsync(cancellation);
+        await EfBlogIndex.KeepSynonymsAsync(db, rows, cancellation);
     }
 
     /// <summary>
@@ -141,30 +192,33 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
     }
 
     /// <summary>
-    /// Each published post's numbers, bots left out. Reads the two logs whole and counts in memory through
-    /// the rules that own the arithmetic, so the funnel is worked out in one place and not half in SQL:
-    /// the logs are small enough for that to be the cheaper honesty.
+    /// Each published post's numbers over a window, bots left out. The window and the bots are cut in SQL, through
+    /// the filtered window indexes, and the funnel's arithmetic stays in BlogNumbers, the one place it lives: the
+    /// rows a window holds are the reads and events of thirty days at most, never the whole of either log.
     /// </summary>
-    /// <param name="now">The moment the windows are measured back from, handed in so the store keeps no clock of its own.</param>
+    /// <param name="now">The moment the seven-day count is measured back from, handed in so the store keeps no clock of its own.</param>
+    /// <param name="since">The start of the window.</param>
     /// <param name="cancellation">The caller's cancellation.</param>
-    public async Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, CancellationToken cancellation)
+    public async Task<IReadOnlyList<BlogStat>> StatsAsync(DateTimeOffset now, DateTimeOffset since, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
-        var posts = await PostsAsync(cancellation);
-        var reads = (await db.PostViews.AsNoTracking().Where(v => !v.IsBot).ToListAsync(cancellation)).Select(Read).ToList();
-        var events = (await db.PostEvents.AsNoTracking().Where(e => !e.IsBot).ToListAsync(cancellation))
-            .Select(e => new BlogEvent(e.PostId, e.SessionHash, e.At, e.Type, e.Value, e.IsBot)).ToList();
-        return [.. posts.Select(p => BlogNumbers.Of(p, reads.Where(r => r.PostId == p.Id), events.Where(e => e.PostId == p.Id), now))];
+        var posts = await db.Posts.AsNoTracking().Where(p => p.IsPublished).OrderByDescending(p => p.PublishedAt).ThenByDescending(p => p.Id).ToListAsync(cancellation);
+        var reads = (await db.PostViews.AsNoTracking().Where(v => !v.IsBot && v.ViewedAt >= since).ToListAsync(cancellation)).Select(Read).ToLookup(r => r.PostId);
+        var events = (await db.PostEvents.AsNoTracking().Where(e => !e.IsBot && e.At >= since).ToListAsync(cancellation))
+            .Select(e => new BlogEvent(e.PostId, e.SessionHash, e.At, e.Type, e.Value, e.IsBot)).ToLookup(e => e.PostId);
+        var parts = await WithPartsAsync(db, posts, cancellation);
+        return [.. parts.Select(p => BlogNumbers.Of(p, reads[p.Id], events[p.Id], now))];
     }
 
-    /// <summary>Reads of the blog by where they came from since a moment, most read first, bots left out.</summary>
+    /// <summary>Reads of the blog by where they came from since a moment, most read first, bots left out, counted in SQL.</summary>
     /// <param name="since">The start of the window.</param>
     /// <param name="cancellation">The caller's cancellation.</param>
     public async Task<IReadOnlyList<BlogSourceCount>> SourcesAsync(DateTimeOffset since, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
-        var reads = await db.PostViews.AsNoTracking().Where(v => !v.IsBot).Select(v => new { v.Source, v.ViewedAt }).ToListAsync(cancellation);
-        return [.. reads.Where(r => r.ViewedAt >= since).GroupBy(r => r.Source).Select(g => new BlogSourceCount(g.Key, g.Count())).OrderByDescending(s => s.Reads)];
+        var counts = await db.PostViews.AsNoTracking().Where(v => !v.IsBot && v.ViewedAt >= since)
+            .GroupBy(v => v.Source).Select(g => new { Source = g.Key, Reads = g.Count() }).ToListAsync(cancellation);
+        return [.. counts.OrderByDescending(c => c.Reads).ThenBy(c => c.Source, StringComparer.Ordinal).Select(c => new BlogSourceCount(c.Source, c.Reads))];
     }
 
     private IDbContextFactory<YardDbContext> Contexts() => factory() ?? throw new InvalidOperationException("the relational store is not attached");

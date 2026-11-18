@@ -142,6 +142,7 @@ async function drawnAddresses(page: Page): Promise<Array<{ path: string; carries
     { path: '/?view=inventory', carries: 'data-testid="result-count"' },
     { path: `/?vehicle=${vehicle.id}`, carries: vehicle.vin },
     { path: '/?doc=readme', carries: 'In plain words' },
+    { path: '/?view=blog', carries: 'data-testid="blog-filters"' },
     { path: '/?doc=author', carries: 'Steven' },
   ];
 }

@@ -23,6 +23,8 @@ public sealed class BlogTests : IDisposable
 
     private static byte[] Session(byte b) => Enumerable.Repeat(b, 32).ToArray();
 
+    private static readonly BlogDerived Derived = PostDerivation.Of("A post", "Two lines about it.", "The text.");
+
     // #region blog-rules
     [Theory]
     [InlineData("www.linkedin.com", null, null, "linkedin")]
@@ -52,7 +54,8 @@ public sealed class BlogTests : IDisposable
     [InlineData("slide", "3", null)]
     [InlineData("click", "linkedin", null)]
     [InlineData("click", "body:github.com", null)]
-    [InlineData("click", "https://evil.example/x", "a click names where it went: linkedin, code, or body: and a host")]
+    [InlineData("click", "slides", null)]
+    [InlineData("click", "https://evil.example/x", "a click names where it went: linkedin, code, slides, or body: and a host")]
     [InlineData("more", "1", null)]
     [InlineData("copy", "2", "see more and copy carry 1")]
     [InlineData("hover", "1", "the event type must be one of click, copy, depth, more, slide, time")]
@@ -79,11 +82,15 @@ public sealed class BlogTests : IDisposable
         Assert.Equal((null, "the LinkedIn address starts https://www.linkedin.com/", null), await save.HandleAsync(new SavePostCommand(Post("bad", Now) with { LinkedInUrl = "http://x" }), CancellationToken.None));
         Assert.NotNull((await save.HandleAsync(new SavePostCommand(Post("older-post", Now.AddDays(-9))), CancellationToken.None)).Id);
         Assert.NotNull((await save.HandleAsync(new SavePostCommand(Post("newer-post", Now.AddDays(-2))), CancellationToken.None)).Id);
-        var (posts, _, unavailable) = await new ListPostsHandler(store, clock).HandleAsync(new ListPostsQuery(), CancellationToken.None);
+        var (page, unavailable) = await new ListPostsHandler(store, clock).HandleAsync(new ListPostsQuery(new BlogFilter(null, null, null, null, null, "new", null)), CancellationToken.None);
         Assert.Null(unavailable);
-        Assert.Equal(["newer-post", "older-post"], posts.Select(p => p.Slug));
-        Assert.Equal("older-post", (await new ReadPostHandler(store).HandleAsync(new ReadPostQuery("older-post"), CancellationToken.None))?.Slug);
-        Assert.Null(await new ReadPostHandler(store).HandleAsync(new ReadPostQuery("no-such-post"), CancellationToken.None));
+        Assert.Equal(["newer-post", "older-post"], page!.Cards.Select(p => p.Slug));
+        var (feed, _) = await new ReadFeedHandler(store).HandleAsync(new ReadFeedQuery(), CancellationToken.None);
+        Assert.Equal(["newer-post", "older-post"], feed.Select(p => p.Slug));
+        var older = await new ReadPostHandler(store, clock).HandleAsync(new ReadPostQuery("older-post"), CancellationToken.None);
+        Assert.Equal(("older-post", "newer-post"), (older?.Post.Slug, older?.Newer?.Slug));
+        Assert.Equal("<p>The text.<br><span class=\"tag\">#dotnet</span></p>\n", older?.BodyHtml);
+        Assert.Null(await new ReadPostHandler(store, clock).HandleAsync(new ReadPostQuery("no-such-post"), CancellationToken.None));
     }
 
     [Fact]
@@ -131,6 +138,16 @@ public sealed class BlogTests : IDisposable
         // Funnel: opened 3, past half 2, finished 1, clicked out 2; LinkedIn 1, code 1.
         Assert.Equal((2, 1, 2, 1, 1), (stat.PastHalf, stat.Finished, stat.ClickedOut, stat.ToLinkedIn, stat.ToCode));
     }
+
+    [Fact]
+    public void Opening_the_slide_viewer_is_a_click_that_is_not_a_way_out()
+    {
+        var post = Post("a-post", Now.AddDays(-2)) with { Id = 7 };
+        var events = new[] { new BlogEvent(7, Session(3), Now, "click", "slides", false), new BlogEvent(7, Session(4), Now, "click", "slides", false) };
+        Assert.Equal(0, BlogNumbers.Of(post, [], events, Now).ClickedOut);
+        Assert.False(BlogRules.IsWayOut("slides"));
+        Assert.True(BlogRules.IsWayOut("body:github.com"));
+    }
     // #endregion blog-handlers
 
     // #region blog-sqlite
@@ -145,9 +162,9 @@ public sealed class BlogTests : IDisposable
         }
         var store = new EfBlogStore(() => new SqliteContexts(Context));
         Assert.Equal("kept in SQLite", (await store.AvailabilityAsync(CancellationToken.None)).Reason);
-        int older = await store.SaveAsync(Post("older-post", Now.AddDays(-9)), Now, CancellationToken.None);
-        int newer = await store.SaveAsync(Post("newer-post", Now.AddDays(-2), "Newer"), Now, CancellationToken.None);
-        Assert.Equal(older, await store.SaveAsync(Post("older-post", Now.AddDays(-9), "Older, edited"), Now, CancellationToken.None));
+        int older = await store.SaveAsync(Post("older-post", Now.AddDays(-9)), Derived, Now, CancellationToken.None);
+        int newer = await store.SaveAsync(Post("newer-post", Now.AddDays(-2), "Newer"), Derived, Now, CancellationToken.None);
+        Assert.Equal(older, await store.SaveAsync(Post("older-post", Now.AddDays(-9), "Older, edited"), Derived, Now, CancellationToken.None));
         var posts = await store.PostsAsync(CancellationToken.None);
         Assert.Equal(["newer-post", "older-post"], posts.Select(p => p.Slug));
         Assert.Equal("Older, edited", posts[1].Title);
@@ -167,7 +184,7 @@ public sealed class BlogTests : IDisposable
             var kinds = await db.PostEvents.Select(e => e.Type).ToListAsync();
             Assert.Equal(["click", "copy", "depth", "more", "slide", "time"], kinds.Order(StringComparer.Ordinal));
         }
-        var stat = (await store.StatsAsync(Now, CancellationToken.None)).Single(s => s.PostId == newer);
+        var stat = (await store.StatsAsync(Now, Now.AddDays(-30), CancellationToken.None)).Single(s => s.PostId == newer);
         Assert.Equal((1, 1, 75d, 12d, 1), (stat.Reads, stat.Readers, stat.AverageDepth, stat.AverageSeconds, stat.ToCode));
         Assert.Equal([new BlogSourceCount("linkedin", 1)], await store.SourcesAsync(Now.AddDays(-1), CancellationToken.None));
     }

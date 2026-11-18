@@ -24,7 +24,7 @@ const share = (part: number, whole: number) =>
 const columns: Column<BlogStat>[] = [
   { name: 'Post', rowHeader: true, cell: (row) => row.title },
   { name: 'First on LinkedIn', short: true, cell: (row) => postDate(row.published_at) },
-  { name: 'Reads', num: true, cell: (row) => row.reads },
+  { name: 'Reads, 30 days', num: true, cell: (row) => row.reads },
   { name: 'Readers', num: true, cell: (row) => row.readers },
   { name: 'This week', num: true, cell: (row) => row.reads7d },
   {
@@ -54,7 +54,8 @@ export default function BlogCard({ tick }: { tick: number }) {
         Every LinkedIn post is also a post on this site. Each read is one row, kept under the day's
         keyed hash with where it came from and the device class; each thing a reader does (how far
         they scrolled, how long they stayed, a slide, a click out, a copied link) is one more. The
-        numbers below are the blog's SQL views over those rows, bots left out.
+        numbers below are counted over the last 30 days of those rows, bots left out; opening the
+        slide viewer is not a click out.
       </About>
       {report === null ? (
         <CardState state="loading" />

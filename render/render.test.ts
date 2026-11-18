@@ -83,18 +83,57 @@ const PULSE = {
   visits_by_day: [61, 70, 58],
 };
 
-/** One published post as /api/blog/posts answers it, with two slides. */
+/** One published post as /api/blog/posts/{slug} answers it, with two slides. */
 const POST = {
   slug: 'a-post-with-a-hook',
   title: 'A post with a hook',
   summary: 'The summary its hook draws, with 2 numbers in it.',
+  body: 'The text.',
+  body_html: '<p>The text.</p>\n',
+  published_at: '2026-11-18T11:38:00Z',
+  linkedin_url: 'https://www.linkedin.com/posts/a-post-with-a-hook',
+  code_url: null,
   images: [1, 2].map((position) => ({
     position,
     url: `/api/blog/images/slide-${position}.png`,
+    thumb_url: `/api/blog/images/slide-${position}.png`,
     alt_text: `Slide ${position}`,
     width: 1080,
     height: 1350,
   })),
+  tags: [],
+  topics: [],
+  keywords: [],
+  reading_minutes: 1,
+  reads: 0,
+  reads7d: 0,
+  older: null,
+  newer: null,
+  related: [],
+};
+
+/** The list's first page as /api/blog/posts answers it: the one post as a card. */
+const LIST = {
+  cards: [
+    {
+      ...POST,
+      published_at: '2026-11-18T11:38:00Z',
+      cover: null,
+      slides: 2,
+      reading_minutes: 3,
+      topics: [],
+      keywords: [],
+      reads: 0,
+      reads7d: 0,
+      matched: [],
+    },
+  ],
+  total: 1,
+  topics: [],
+  keywords: [],
+  months: [],
+  next: null,
+  terms: [],
 };
 
 /** Every request the renderer made, with the headers it sent: what the service reaches, and with what. */
@@ -118,7 +157,8 @@ function fakeApi(build = OWN, broken: string[] = []) {
       return json({ makes: [], body_styles: [], title_statuses: [], provinces: [] });
     if (path === `/api/vehicles/${vehicle.id}`) return json(vehicle);
     if (path === '/api/pulse') return json(PULSE);
-    if (path === '/api/blog/posts') return json({ posts: [POST] });
+    if (path === `/api/blog/posts/${POST.slug}`) return json(POST);
+    if (path === '/api/blog/posts') return json(LIST);
     if (path === '/api/auth/me')
       return json({ signed_in: true, email: 'reader@example.com', member_since_ms: NOW });
     if (path.startsWith('/api/docs/'))
@@ -171,7 +211,10 @@ describe('the rendering service', () => {
 
   it('draws a post address with its hook, the title, summary and first image, from the posts it read for the head (ADR-132)', async () => {
     const { html } = await page(`?view=blog&post=${POST.slug}`);
-    const hook = html.slice(html.indexOf('data-hook="post"'));
+    // The hook's own box: the post itself is drawn whole below it now, its strip with every slide.
+    const start = html.indexOf('data-hook="post"');
+    const hook = html.slice(start, html.indexOf('</section>', start));
+    expect(html.slice(start)).toContain('data-testid="blog-post"');
     expect(hook).toContain(POST.title);
     expect(hook).toContain(POST.summary);
     expect(hook).toContain('src="/api/blog/images/slide-1.png"');

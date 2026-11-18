@@ -24,11 +24,20 @@ public sealed class Module : IModule
             return new EfBlogStore(() => held.Contexts);
         });
         services.AddScoped(provider => new ListPostsHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
-        services.AddScoped(provider => new ReadPostHandler(provider.GetRequiredService<IBlogStore>()));
+        services.AddScoped(provider => new ReadPostHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
+        services.AddScoped(provider => new ReadFeedHandler(provider.GetRequiredService<IBlogStore>()));
         services.AddScoped(provider => new RecordReadHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         services.AddScoped(provider => new RecordEventHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
         services.AddScoped(provider => new ReadBlogStatsHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System, provider.GetRequiredService<IBlogImageReader>()));
         services.AddScoped(provider => new SavePostHandler(provider.GetRequiredService<IBlogStore>(), TimeProvider.System));
+        // The host's minute-long copy of the list and the posts, dropped on every save, and the pass that derives
+        // the posts again after a roll that brought new rules.
+        services.AddSingleton<BlogAnswers>();
+        services.AddHostedService(provider => new BlogDerivationPass(
+            new DerivePostsHandler(provider.GetRequiredService<IBlogStore>()),
+            provider.GetRequiredService<HostPaths>(),
+            provider.GetRequiredService<BlogAnswers>(),
+            provider.GetRequiredService<ILogger<BlogDerivationPass>>()));
         // The pictures: the job hunt's storage account's private blog container on Azure, read with the site's
         // identity and kept in the host's memory in front; in this process's memory anywhere else.
         string? account = configuration["Blog:ImagesAccount"], container = configuration["Blog:ImagesContainer"];

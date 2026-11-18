@@ -1,15 +1,19 @@
 /**
  * Does:      Draws one post in full, in the feed layout readers know from LinkedIn and in the site's own colours: who wrote
- *            it and when, the title and the text clamped with "see more", the slides, the reads, and three actions
- *            (comment on LinkedIn, read the code, copy the link). Reports the read and what the reader does.
- * Does not:  Fetch the post (BlogPage hands it over), read the text's marks (blogBody.ts does) or keep anything about
- *            the reader (useBlogReport.ts sends, the API keeps).
+ *            it, when and how long it takes, the title, where a search matched, its topics and keywords, the body drawn
+ *            on save and clamped with "see more", the slides as a strip of thumbnails that open the slide viewer, the
+ *            reads, and three actions (comment on LinkedIn, read the code, copy the link). Reports the read and what the
+ *            reader does, a link in the body as a click that names its host.
+ * Does not:  Fetch the post (BlogPage hands it over), draw the body's Markdown (the API drew it on save) or keep anything
+ *            about the reader (useBlogReport.ts sends, the API keeps).
  * Used by:   BlogPage.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
 import { postDate, type BlogPost } from '../../../lib/blog';
-import { bodyBlocks, type BodyInline } from '../../../lib/blogBody';
+import { matchLine, minutesLine, type FilterLabels } from '../../../lib/blogFilter';
 import { useBlogReport } from '../../../hooks/useBlogReport';
+import { BlogTags, Marked } from '../BlogTags';
+import { SlideViewer } from '../SlideViewer';
 import styles from './BlogPostCard.module.css';
 
 /** The author's line, the resume's own words. */
@@ -20,66 +24,46 @@ const AUTHOR = {
     'Lead / Staff .NET Engineer | 12 Years Full Stack .NET, 7 Fully Remote | Cloud Platform Architecture',
 };
 
-/** The address a copied link carries: the post on the blog, with no tagged code. */
-function postAddress(slug: string): string {
+/** The strip's thumbnail width in CSS pixels; the 320 px thumbnail covers it twice over. */
+const THUMB_WIDTH = 150;
+
+/** The address a copied link carries: the post on the blog, with no tagged code, and a slide when one is named. */
+export function postAddress(slug: string, slide?: number): string {
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
-  return `${origin}/?view=blog&post=${slug}`;
+  return `${origin}/?view=blog&post=${slug}${slide ? `&slide=${slide}` : ''}`;
 }
 
-/** One line of the text as the card draws it: plain runs, bold, code, hashtags, and links that count as a click out. */
-function Line({ parts, onLink }: { parts: BodyInline[]; onLink: (href: string) => void }) {
-  return (
-    <>
-      {parts.map((part, index) =>
-        part.kind === 'link' ? (
-          <a
-            key={index}
-            href={part.href}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => onLink(part.href)}
-          >
-            {part.text}
-          </a>
-        ) : part.kind === 'bold' ? (
-          <strong key={index}>{part.text}</strong>
-        ) : part.kind === 'code' ? (
-          <code key={index}>{part.text}</code>
-        ) : part.kind === 'tag' ? (
-          <span key={index} className={styles.hash}>
-            {part.text}
-          </span>
-        ) : (
-          <span key={index}>{part.text}</span>
-        )
-      )}
-    </>
-  );
-}
-
-/** Lines of one paragraph or item, each on a line of its own as the writer broke them. */
-function Lines({ lines, onLink }: { lines: BodyInline[][]; onLink: (href: string) => void }) {
-  return (
-    <>
-      {lines.map((parts, index) => (
-        <span key={index}>
-          {index > 0 && <br />}
-          <Line parts={parts} onLink={onLink} />
-        </span>
-      ))}
-    </>
-  );
-}
-
-export function BlogPostCard({ post }: { post: BlogPost }) {
+export function BlogPostCard({
+  post,
+  open = false,
+  matched = [],
+  terms = [],
+  labels = null,
+  slide = null,
+  onSlide = () => {},
+  onTopic = () => {},
+  onKeyword = () => {},
+}: {
+  post: BlogPost;
+  open?: boolean;
+  matched?: string[];
+  terms?: readonly string[];
+  labels?: FilterLabels | null;
+  slide?: number | null;
+  onSlide?: (position: number | null) => void;
+  onTopic?: (key: string) => void;
+  onKeyword?: (key: string) => void;
+}) {
   const card = useRef<HTMLElement>(null);
   const strip = useRef<HTMLOListElement>(null);
   const send = useBlogReport(post.slug, card);
-  const [open, setOpen] = useState(false);
+  const [unclamped, setUnclamped] = useState(open);
   const [copied, setCopied] = useState(false);
+  const viewing = slide === null ? -1 : post.images.findIndex((image) => image.position === slide);
+  const line = matchLine(matched);
 
   // #region slides-seen
-  // Each slide counts once, when most of it has been in the strip's view.
+  // Each slide counts once, when most of it has been in the strip's view, or when the viewer shows it.
   useEffect(() => {
     const list = strip.current;
     if (!list || typeof IntersectionObserver === 'undefined') return;
@@ -92,18 +76,17 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
       },
       { root: list, threshold: 0.6 }
     );
-    list.querySelectorAll('li').forEach((slide) => watch.observe(slide));
+    list.querySelectorAll('li').forEach((each) => watch.observe(each));
     return () => watch.disconnect();
   }, [send, post.images.length]);
+  useEffect(() => {
+    if (viewing >= 0) send('slide', String(post.images[viewing].position));
+  }, [send, viewing, post.images]);
   // #endregion slides-seen
 
-  /** A link in the text is a way out of the post, kept as a click that names the host it went to, never the address. */
-  const linkOut = (href: string) => {
-    try {
-      send('click', `body:${new URL(href).host}`);
-    } catch {
-      // Not an address the browser can read: the link still opens, and nothing is kept about it.
-    }
+  const openSlides = (position: number) => {
+    send('click', 'slides');
+    onSlide(position);
   };
 
   const copy = () => {
@@ -130,44 +113,49 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
           <p className={styles.headline}>{AUTHOR.headline}</p>
           <p className={styles.when}>
             <time dateTime={post.published_at}>{postDate(post.published_at)}</time> · first posted
-            on LinkedIn
+            on LinkedIn · {minutesLine(post.reading_minutes)}
           </p>
         </div>
       </header>
 
+      <h2 id={`post-${post.slug}`} className={styles.title}>
+        <Marked text={post.title} terms={terms} />
+      </h2>
+      {line && (
+        <p className={styles.why} data-testid="blog-matched">
+          {line}
+        </p>
+      )}
+      <BlogTags
+        topics={post.topics}
+        keywords={post.keywords}
+        labels={labels}
+        onTopic={onTopic}
+        onKeyword={onKeyword}
+      />
+
+      {/* The body was drawn to HTML on save from the post's own Markdown, every piece of its text escaped and only an
+          http or https address let through as a link (BlogBodyHtml); a click on a link is a way out of the post. */}
       <div
-        className={open ? styles.body : `${styles.body} ${styles.clamped}`}
+        className={unclamped ? styles.body : `${styles.body} ${styles.clamped}`}
         data-testid="blog-post-body"
-      >
-        <h2 id={`post-${post.slug}`} className={styles.title}>
-          {post.title}
-        </h2>
-        {bodyBlocks(post.body).map((block, index) =>
-          block.kind === 'heading' ? (
-            <h3 key={index} className={styles.heading}>
-              <Line parts={block.text} onLink={linkOut} />
-            </h3>
-          ) : block.kind === 'list' ? (
-            <ul key={index} className={styles.list}>
-              {block.items.map((item, at) => (
-                <li key={at}>
-                  <Line parts={item} onLink={linkOut} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p key={index} className={styles.paragraph}>
-              <Lines lines={block.lines} onLink={linkOut} />
-            </p>
-          )
-        )}
-      </div>
-      {!open && (
+        onClick={(event) => {
+          const link = (event.target as HTMLElement).closest('a');
+          if (!link) return;
+          try {
+            send('click', `body:${new URL(link.href).host}`);
+          } catch {
+            // Not an address the browser can read: the link still opens, and nothing is kept about it.
+          }
+        }}
+        dangerouslySetInnerHTML={{ __html: post.body_html }}
+      />
+      {!unclamped && (
         <button
           type="button"
           className={styles.more}
           onClick={() => {
-            setOpen(true);
+            setUnclamped(true);
             send('more', '1');
           }}
         >
@@ -177,7 +165,17 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
 
       {post.images.length > 0 && (
         <section className={styles.slides} aria-label={`The slides (${post.images.length})`}>
-          <h3 className={styles.slidesHead}>The slides ({post.images.length})</h3>
+          <div className={styles.slidesHead}>
+            <h3>The slides ({post.images.length})</h3>
+            <button
+              type="button"
+              className={styles.viewAll}
+              onClick={() => openSlides(post.images[0].position)}
+              data-testid="slides-view-all"
+            >
+              View all slides
+            </button>
+          </div>
           {/* A strip wider than the card scrolls sideways, so it takes the keyboard's focus and names itself:
               a reader without a mouse can scroll it with the arrow keys (axe, scrollable-region-focusable). */}
           <ol
@@ -187,16 +185,27 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
             aria-label={`The slides, ${post.images.length} of them, scroll sideways`}
             data-testid="blog-slides-strip"
           >
-            {post.images.map((image) => (
+            {post.images.map((image, index) => (
               <li key={image.position} data-position={image.position} className={styles.slide}>
-                <img
-                  src={image.url}
-                  alt={image.alt_text}
-                  width={image.width}
-                  height={image.height}
-                  loading="lazy"
-                  decoding="async"
-                />
+                <button
+                  type="button"
+                  className={styles.thumb}
+                  onClick={() => openSlides(image.position)}
+                  aria-label={`Open slide ${index + 1} of ${post.images.length}: ${image.alt_text}`}
+                >
+                  <img
+                    src={image.thumb_url}
+                    alt=""
+                    width={THUMB_WIDTH}
+                    height={Math.round((THUMB_WIDTH * image.height) / Math.max(image.width, 1))}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={index === 0 ? 'high' : 'auto'}
+                    decoding="async"
+                  />
+                  <span className={styles.number} aria-hidden="true">
+                    {index + 1}
+                  </span>
+                </button>
               </li>
             ))}
           </ol>
@@ -233,6 +242,17 @@ export function BlogPostCard({ post }: { post: BlogPost }) {
           {copied ? 'Link copied' : 'Copy link'}
         </button>
       </div>
+
+      {viewing >= 0 && (
+        <SlideViewer
+          title={post.title}
+          images={post.images}
+          at={viewing}
+          slideAddress={(position) => postAddress(post.slug, position)}
+          onMove={(index) => onSlide(post.images[index].position)}
+          onClose={() => onSlide(null)}
+        />
+      )}
     </article>
   );
 }
