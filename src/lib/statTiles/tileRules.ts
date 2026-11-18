@@ -26,22 +26,31 @@ function speedLine(
   const tail =
     (t.slowest_label ? `, slowest at ${t.slowest_label}` : '') +
     (t.cold_start_label ? `; the start at ${t.cold_start_label} is left out` : '');
+  const over = `95th ${millisecondsWords(t.p95_ms ?? 0)} over ${formatNumber(t.warm_requests)} requests`;
+  // A ring cut short is the visible line itself, in the Traffic card's words, so the tile never
+  // passes a stretch of minutes off as the hour; the line holds two lines on the narrowest phone,
+  // so what it is over follows in the rest of the sentence, which the overview row prints whole.
+  if (short !== '') {
+    const rest =
+      judged && t.p95_ms !== null
+        ? `: ${over}`
+        : t.warm_requests > 0
+          ? `: ${t.warm_requests} requests, too few to judge${both === '' ? '' : `; ${both}`}`
+          : `: ${t.requests} requests`;
+    return { detail: `${stretch}${short}`, more: rest + tail };
+  }
   if (judged && t.p95_ms !== null) {
-    return {
-      detail: `95th ${millisecondsWords(t.p95_ms)} over ${formatNumber(t.warm_requests)} requests`,
-      more: ` in the ${stretch}${short}${tail}`,
-    };
+    return { detail: over, more: ` in the ${stretch}${tail}` };
   }
   if (t.warm_requests > 0) {
     return {
       detail: `${t.warm_requests} requests in the ${stretch}`,
-      more: `${short}, too few to judge${both === '' ? '' : `; ${both}`}${tail}`,
+      more: `, too few to judge${both === '' ? '' : `; ${both}`}${tail}`,
     };
   }
-  const rest = short + tail;
   return {
     detail: `${t.requests} requests in the ${stretch}`,
-    ...(rest === '' ? {} : { more: rest }),
+    ...(tail === '' ? {} : { more: tail }),
   };
 }
 

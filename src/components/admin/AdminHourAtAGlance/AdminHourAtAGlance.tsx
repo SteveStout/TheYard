@@ -31,6 +31,11 @@ export function AdminHourAtAGlance({
       <h2 className={styles.hourTitle} id="bench-hour-title">
         This hour
       </h2>
+      {glance.stretch !== '' && (
+        <p className={styles.hourStretch} data-testid="bench-hour-stretch">
+          {glance.stretch}
+        </p>
+      )}
       <div className={styles.hourBody}>
         <Ring
           value={glance.ring?.p95 ?? 0}

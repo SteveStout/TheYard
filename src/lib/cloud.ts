@@ -23,8 +23,9 @@ export type CloudDial = {
   percent: number | null;
   big: string;
   absolute: string;
-  amber: number;
-  red: number;
+  /** null on a dial read against no limit, which draws no marks. */
+  amber: number | null;
+  red: number | null;
   p95: number | null;
   peak: number | null;
   tone: CloudTone;

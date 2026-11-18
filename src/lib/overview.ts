@@ -12,7 +12,7 @@ import { clockLabel } from './machineChart';
 import { costRangeWords, costTone, MONTHLY_BUDGET_DOLLARS, rangeWords } from './ranges';
 import { dayShort, money, monthWords, spikeRuleWords, spikeSentence, type SpikeDay } from './spend';
 import type { StatTile, TileTone } from './statTiles';
-import { uptimeWords } from './statTiles';
+import { tileSentence, uptimeWords } from './statTiles';
 
 /** One row of the Overview. */
 export type OverviewRow = {
@@ -107,7 +107,8 @@ function fastRow({ tiles }: OverviewReadings): OverviewRow {
     key: 'fast',
     question: 'Is it fast?',
     value: tile?.value ?? '…',
-    detail: tile?.detail ?? 'not read yet',
+    // The row has room for the tile's whole sentence: the stretch it covers and what it is over.
+    detail: tile === undefined ? 'not read yet' : tileSentence(tile),
     range: `the ninety-fifth: ${rangeWords('p95')}`,
     tone: tile?.tone ?? 'waiting',
   };

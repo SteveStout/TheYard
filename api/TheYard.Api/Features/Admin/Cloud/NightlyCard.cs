@@ -113,12 +113,14 @@ public static class NightlyCard
         double? gbSeconds = roleMissing ? null : GbSecondsThisMonth(inputs);
         double? grantShare = ResourceView.Share(gbSeconds, CloudThresholds.FreeGrantGbSeconds);
         var grantTone = ResourceView.Tone([grantShare], Grant, hourly: true);
+        double? grantPace = MonthPace.Projected(grantShare, inputs.Now);
         var dials = new[]
         {
             new CloudDial("Runs on time, 30 days", onTime, PlanView.Percent(onTime),
                 roleMissing ? noRole : tally.Due == 0 ? "no slot kept yet" : $"{tally.OnTime} of {tally.Due} slots", 100 - Misses.Amber, 100 - Misses.Red, null, null, CloudTones.Of(missTone)),
             new CloudDial("Free grant used, this month", grantShare, PlanView.Percent(grantShare),
-                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s" : NightlyRows.NoMinutes(inputs), Grant.Amber, Grant.Red, null, null, CloudTones.Of(grantTone)),
+                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s · {MonthPace.Words(grantPace, "{0:0} %")}" : NightlyRows.NoMinutes(inputs), Grant.Amber, Grant.Red, null, null,
+                MonthPace.Tone(CloudTones.Of(grantTone), grantPace, 100)),
         };
         var next = NightlySlots.Next(inputs.Now);
         string? lastFired = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("last_fired");

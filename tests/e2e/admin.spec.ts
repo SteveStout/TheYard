@@ -1241,8 +1241,9 @@ test('the Admin tab opens on tiles that answer four questions and go to the card
   await expect(strip.getByTestId('tile-memory')).toContainText(/[\d,]+ of [\d,]+ MB/, {
     timeout: 60_000,
   });
+  // A ring cut short is the line itself, the requests after it (ADR-102, the addendum on a ring cut short).
   await expect(strip.getByTestId('tile-speed')).toContainText(
-    /requests in the last (hour|minute|\d+ minutes)/
+    /requests in the last (hour|minute|\d+ minutes)|last (minute|\d+ minutes), all the request ring holds: .*requests/
   );
   // The tone is a word as well as a colour.
   await expect(strip.getByTestId('tile-health')).toContainText('fine');
