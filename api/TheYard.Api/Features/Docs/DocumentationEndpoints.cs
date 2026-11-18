@@ -74,6 +74,19 @@ public static class DocumentationEndpoints
             .WithSummary("The infrastructure definition, as a markdown page")
             .Produces<string>(StatusCodes.Status200OK, "text/markdown");
 
+        #region enforced-endpoint
+        // The marks in the sidebar's Decision Records index (ADR-029, the addendum of @VER@): how many of the
+        // rulebook's rules cite each record, from the table the records' own sections read (EnforcedBy.Marks). A
+        // literal route, so it wins over {slug}; the section asks for it when it is opened, never on the first load.
+        app.MapGet("/api/docs/enforced", Enforced)
+            .WithName("GetEnforcedRecords")
+            .WithTags("Documents")
+            .WithSummary("How many of the rulebook's rules cite each decision record")
+            .WithDescription("Keyed by the record's three-digit number. Above zero, a test holds the record on every release; "
+                + "zero, review holds it. Read by the sidebar when its Decision Records section is opened.")
+            .Produces<Dictionary<string, int>>(StatusCodes.Status200OK);
+        #endregion enforced-endpoint
+
         app.MapGet("/api/docs/resume", Resume)
             .WithName("GetResume")
             .WithTags("Documents")
@@ -183,6 +196,13 @@ public static class DocumentationEndpoints
 
     private static ContentHttpResult Bicep(HostPaths paths) =>
         TypedResults.Text("# infra/main.bicep" + "\n\nWhat runs, as code: one App Service plan, the one web app that serves both sites and The Shed (the module below it) and the rendering service's web app (infra/render.bicep), with Azure Front Door and the origin lock behind a parameter that stays off while the subscription refuses Front Door. Deployed in incremental mode only; the Hosting overview explains both.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "main.bicep")) + "\n```\n\n## infra/appservice.bicep\n\nThe plan and the one web app: the three names it answers to and every setting it carries.\n\n```bicep\n" + File.ReadAllText(Path.Combine(paths.RepoRoot, "infra", "appservice.bicep")) + "\n```\n", "text/markdown");
+
+    private static Ok<IReadOnlyDictionary<string, int>> Enforced(HttpContext http, HostPaths paths)
+    {
+        // The marks change only with a build, the same as a drawing; five minutes is the most a reader sees the old ones.
+        http.Response.Headers.CacheControl = "public, max-age=300";
+        return TypedResults.Ok(EnforcedBy.Marks(paths.RepoRoot));
+    }
 
     private static PhysicalFileHttpResult Resume(HostPaths paths) =>
         TypedResults.PhysicalFile(paths.ResumePath, "application/pdf");

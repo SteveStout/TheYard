@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -44,6 +45,24 @@ public static partial class EnforcedBy
         }
         return markdown.TrimEnd() + section;
     }
+
+    /// <summary>
+    /// How many rules of ADR-075's table cite each decision record, keyed by the record's number as its file writes it
+    /// ("029"), for the marks in the sidebar's Decision Records index (ADR-029): above zero a test holds the record,
+    /// zero and review does. The same reading as each record's own section (QualityCounts.RulesCiting), so the mark and
+    /// the section cannot disagree; counted once a process, because the records and the table are this build's files.
+    /// </summary>
+    public static IReadOnlyDictionary<string, int> Marks(string repoRoot) =>
+        Counted.GetOrAdd(repoRoot, root => Directory.GetFiles(Path.Combine(root, "docs", "decisions"), "ADR-*.md")
+            .Select(path => (Number: FileNumber().Match(path.Replace('\\', '/')), Title: Title().Match(File.ReadAllText(path))))
+            .Where(record => record.Number.Success && record.Title.Success)
+            .OrderBy(record => record.Number.Groups[1].Value, StringComparer.Ordinal)
+            .ToDictionary(
+                record => record.Number.Groups[1].Value,
+                record => QualityCounts.RulesCiting(record.Title.Groups[1].Value.Trim(), int.Parse(record.Number.Groups[1].Value, CultureInfo.InvariantCulture), root).Count,
+                StringComparer.Ordinal));
+
+    private static readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, int>> Counted = new(StringComparer.Ordinal);
 
     [GeneratedRegex(@"\A# ADR(?:-\d+)?: (.+)$", RegexOptions.Multiline)]
     private static partial Regex Title();

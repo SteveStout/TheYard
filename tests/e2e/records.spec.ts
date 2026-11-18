@@ -81,3 +81,80 @@ test.describe('a record has an address', () => {
     ).toBeVisible();
   });
 });
+
+/**
+ * The index marks which records a test holds (ADR-029, the addendum on the
+ * marks): a filled dot where a rule cites the record, a ring where review
+ * holds it. They arrive when the index is opened, each row keeps its name, and
+ * no mark pushes a row past the rail, at the docked width or in the drawer.
+ */
+test.describe('the index marks which records a test holds', () => {
+  for (const width of [1024, 1280, 1920]) {
+    test(`on the docked rail at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await openTheYard(page);
+      const rail = page.getByTestId('side-rail');
+      const asked = page.waitForResponse((response) =>
+        response.url().endsWith('/api/docs/enforced')
+      );
+      await openSection(rail, 'Decision Records');
+      expect((await asked).ok()).toBe(true);
+      await expectTheMarks(rail);
+    });
+  }
+
+  for (const width of [360, 390, 768]) {
+    test(`in the drawer at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await openTheYard(page);
+      await page.getByRole('button', { name: 'Menu' }).click();
+      const drawer = page.getByRole('dialog', { name: 'Menu' });
+      await openSection(drawer, 'Decision Records');
+      await expectTheMarks(drawer);
+    });
+  }
+});
+
+/** Every record row carries one mark inside its own box, the key counts them all, and a row is named by its label. */
+async function expectTheMarks(scope: import('@playwright/test').Locator): Promise<void> {
+  const key = scope.getByTestId('records-held-key');
+  await expect(key).toBeVisible();
+  // A has locator is read inside each details, so it is rooted at the page, not at the rail.
+  const section = scope
+    .locator('details')
+    .filter({ has: scope.page().getByTestId('records-held-key') });
+  const rows = section.getByRole('button');
+  const marks = section.locator('button [data-held]');
+  await expect(marks.first()).toBeVisible();
+  expect(await marks.count()).toBe(await rows.count());
+
+  const counts = (await key.innerText()).match(/(\d+) held by a test\s+(\d+) by review/);
+  expect(counts).not.toBeNull();
+  expect(Number(counts![1]) + Number(counts![2])).toBe(await rows.count());
+
+  // The mark's words describe the row; its name is still the label a reader hears.
+  const changelog = section.getByRole('button', { name: 'ADR: The changelog' });
+  await expect(changelog).toHaveAccessibleDescription(/^Held by (review|a test|tests)/);
+  expect(await changelog.getAttribute('aria-describedby')).toBeTruthy();
+
+  const outside = await section.evaluate(
+    (node) =>
+      [...node.querySelectorAll('button')].filter((row) => {
+        const mark = row.querySelector('[data-held]');
+        if (!mark) return false;
+        const box = row.getBoundingClientRect();
+        const dot = mark.getBoundingClientRect();
+        return (
+          dot.right > box.right + 0.5 ||
+          dot.left < box.left ||
+          row.scrollWidth > row.clientWidth + 1
+        );
+      }).length
+  );
+  expect(outside).toBe(0);
+  const scroller = await section.evaluate((node) => {
+    const scroll = node.closest('nav')?.querySelector('div') as HTMLElement;
+    return scroll.scrollWidth - scroll.clientWidth;
+  });
+  expect(scroller).toBeLessThanOrEqual(0);
+}
