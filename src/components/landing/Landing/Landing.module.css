@@ -236,6 +236,13 @@
    produced, on the same glass as the title so the ribbons stay behind them. Two
    across on a phone; from the widths below, three across on the featured row's
    own columns. */
+/* The last release the gate stopped, under the strip of what it measured (G5). */
+.stopped {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 .proof {
   list-style: none;
   margin: calc(-1 * var(--space-2)) 0 0;
