@@ -68,4 +68,23 @@ public sealed class EnforcedByTests
         string record = Records().Single(path => Path.GetFileName(path).StartsWith($"ADR-{number}-", StringComparison.Ordinal));
         Assert.Contains($"| {numbered[0]} |", Served(record), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void The_index_marks_count_each_records_rules_the_way_its_own_section_lists_them()
+    {
+        // ADR-029, the addendum on the marks: the sidebar marks a record held by a test exactly when its section
+        // lists a rule, so the mark and the record cannot disagree.
+        var marks = EnforcedBy.Marks(Repo.Root());
+        Assert.Equal(Records().Length, marks.Count);
+        Assert.All(Records(), path =>
+        {
+            string number = Regex.Match(Path.GetFileName(path), @"^ADR-(\d+)-").Groups[1].Value;
+            string section = Served(path)[Served(path).IndexOf(EnforcedBy.Heading, StringComparison.Ordinal)..];
+            int listed = section.Split('\n').Count(line => line.StartsWith("| ", StringComparison.Ordinal)
+                && !line.StartsWith("| The rule |", StringComparison.Ordinal) && !line.StartsWith("| ---", StringComparison.Ordinal));
+            Assert.True(marks[number] == listed, $"{number}: the mark counts {marks[number]}, the section lists {listed}");
+        });
+        Assert.Contains(marks.Values, rules => rules > 0);
+        Assert.Contains(marks.Values, rules => rules == 0);
+    }
 }
