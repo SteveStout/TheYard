@@ -22,14 +22,19 @@ import styles from '../SideNav/SideNav.module.css';
  * the rows are icons and the words are hidden, so a closed section would be a
  * triangle with nothing to read and nothing to aim at. It keeps the rows
  * (ADR: The sidebar, the addendum on closed sections).
+ *
+ * onOpen runs each time the section opens: the Decision Records index reads
+ * its marks then, so the first load never carries them (ADR-029).
  */
 export function RailSectionShell({
   label,
   iconsOnly,
+  onOpen,
   children,
 }: {
   label: string;
   iconsOnly: boolean;
+  onOpen?: () => void;
   children: ReactNode;
 }) {
   if (iconsOnly) {
@@ -46,6 +51,7 @@ export function RailSectionShell({
       onToggle={(event) => {
         if (event.currentTarget.open) {
           event.currentTarget.scrollIntoView({ block: 'nearest' });
+          onOpen?.();
         }
       }}
     >
