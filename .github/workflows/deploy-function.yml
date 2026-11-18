@@ -56,19 +56,7 @@ jobs:
           echo "SHA=$SHA" >> "$GITHUB_ENV"
           git merge-base --is-ancestor "$SHA" origin/main || { echo "::error::$SHA is not on main"; exit 1; }
       - uses: ./.github/actions/dotnet
-      - uses: azure/login@v3
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
       # #region the-function-deploy
-      - name: Before
-        run: |
-          az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort > "$RUNNER_TEMP/before.txt"
-          cat "$RUNNER_TEMP/before.txt"
-          [ -s "$RUNNER_TEMP/before.txt" ] || { echo "::error::the function list before the deploy is empty, so nothing could be compared"; exit 1; }
-          az resource show --ids "$(az functionapp show -g "$RG" -n "$APP" --query id -o tsv)" --api-version 2024-04-01 --query "properties.functionAppConfig.runtime" -o json
       - name: Publish and zip
         run: |
           dotnet publish functions/jobhunt/JobHunt.Functions.csproj -c Release -o "$RUNNER_TEMP/publish" --nologo -v q -p:SourceRevisionId="$SHA"
@@ -82,6 +70,20 @@ jobs:
           h=$(TZ=America/Chicago date +%-H); m=$(TZ=America/Chicago date +%-M)
           if [ $((h % 4)) -eq 0 ] && [ "$m" -lt 10 ]; then echo "waiting to :11 of $h"; sleep $(( (11 - m) * 60 )); fi
           if [ $((h % 4)) -eq 3 ] && [ "$m" -ge 55 ]; then echo "waiting to :11 of $(( (h + 1) % 24 ))"; sleep $(( (71 - m) * 60 )); fi
+      # The sign-in comes after the wait, never before it: azure/login's client assertion lasts five minutes, and
+      # a wait of up to sixteen ran it out before config-zip asked for the deploy credentials (AADSTS700024, the
+      # Function deploy of 1.0.5.75 at 07:58 CST). Signed in here, the reads and the deploy all fall inside it.
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Before
+        run: |
+          az functionapp function list -g "$RG" -n "$APP" --query "[].name" -o tsv | sort > "$RUNNER_TEMP/before.txt"
+          cat "$RUNNER_TEMP/before.txt"
+          [ -s "$RUNNER_TEMP/before.txt" ] || { echo "::error::the function list before the deploy is empty, so nothing could be compared"; exit 1; }
+          az resource show --ids "$(az functionapp show -g "$RG" -n "$APP" --query id -o tsv)" --api-version 2024-04-01 --query "properties.functionAppConfig.runtime" -o json
       - name: Zip deploy
         run: az functionapp deployment source config-zip -g "$RG" -n "$APP" --src "$RUNNER_TEMP/function.zip" -o none
       - name: After
