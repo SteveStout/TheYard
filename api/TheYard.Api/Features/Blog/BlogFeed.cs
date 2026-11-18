@@ -8,7 +8,7 @@ namespace TheYard.Api.Features.Blog;
 /// <summary>
 /// The blog as an RSS 2.0 feed (ADR: Every LinkedIn post is also a blog post): every published post,
 /// newest first, each with its address on the blog, its date and its two-line summary, so a reader can
-/// follow the blog without LinkedIn. Written from the same handler the page reads.
+/// follow the blog without LinkedIn. Read by its own query, the feed's handler, over the same store the page reads.
 /// </summary>
 public static class BlogFeed
 {
@@ -25,9 +25,9 @@ public static class BlogFeed
         return app;
     }
 
-    private static async Task<IResult> Feed(HttpContext http, SiteHosts hosts, ListPostsHandler handler, CancellationToken cancellation)
+    private static async Task<IResult> Feed(HttpContext http, SiteHosts hosts, ReadFeedHandler handler, CancellationToken cancellation)
     {
-        var (posts, _, unavailable) = await handler.HandleAsync(new ListPostsQuery(), cancellation);
+        var (posts, unavailable) = await handler.HandleAsync(new ReadFeedQuery(), cancellation);
         return unavailable is { } reason
             ? Results.Problem(detail: reason, statusCode: 503, title: "The blog cannot be read now")
             : Results.Text(Write(posts, hosts.LinkOrigin(http)), "application/rss+xml; charset=utf-8");

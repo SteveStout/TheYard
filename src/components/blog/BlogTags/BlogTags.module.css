@@ -1,0 +1,44 @@
+/**
+ * Does:      Styles a post's topic and keyword buttons and a search's marks: small pills in the accent, a keyword's border
+ *            dashed so the two rows read apart, and a mark in the accent's soft tint, the accent's words on it.
+ * Does not:  Style the filter bar's chips (BlogFilters.module.css does).
+ * Used by:   BlogTags.tsx.
+ */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  min-height: 24px;
+  padding: 2px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.keyword {
+  border: 1px dashed var(--color-accent);
+  background: transparent;
+}
+
+.tag:hover,
+.tag:focus-visible {
+  border-color: var(--color-accent);
+}
+
+.mark {
+  padding: 0 1px;
+  border-radius: var(--radius-xs);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+}

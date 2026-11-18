@@ -56,6 +56,7 @@ Every "latest stable" below was read live on 2026-10-03 from nuget.org, the npm 
 | @vitejs/plugin-react | 6.1.1 | 6.1.1 | |
 | typescript | 7.0.2 | 7.0.2 | |
 | vitest | 5.0.3 | 5.0.3 | |
+| @vitest/coverage-v8 | 5.0.3 | 5.0.3 | The blog front end's coverage floor (npm test). |
 | @playwright/test | 1.63.0 | 1.63.0 | |
 | @axe-core/playwright | 4.13.0 | 4.13.0 | |
 | @stryker-mutator/core | 10.1.1 | 10.1.1 | |

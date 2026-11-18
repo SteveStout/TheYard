@@ -167,12 +167,24 @@ function carryTheReleaseFacts(): Plugin {
       };
       const changelog = `${root}/docs/CHANGELOG.md`;
       const findings = `${root}/data/coderabbit-findings.json`;
+      const history = `${root}/data/quality-history.json`;
+      const hooks = `${root}/data/hooks.json`;
       this.addWatchFile(changelog);
       this.addWatchFile(findings);
+      this.addWatchFile(history);
+      this.addWatchFile(hooks);
+      // The numbers the hooks chart, so the build carries their lines and no page carries the whole history.
+      const charted = (
+        JSON.parse(fs.readFileSync(hooks, 'utf8')) as {
+          hooks: { chart: { number: string } | null }[];
+        }
+      ).hooks.flatMap((hook) => (hook.chart ? [hook.chart.number] : []));
       const facts = releaseFacts(
         fs.readFileSync(changelog, 'utf8'),
         JSON.parse(fs.readFileSync(findings, 'utf8')),
-        new Date()
+        new Date(),
+        JSON.parse(fs.readFileSync(history, 'utf8')),
+        charted
       );
       return `export default ${JSON.stringify(facts)};`;
     },
@@ -234,6 +246,16 @@ export default defineConfig({
     // contrast tests and the swatches), the panels sheet (panels.test.ts), the
     // ribbon sheet (ribbons.test.ts) and every component sheet (icons.test.ts,
     // for a stroke written as a number of its own).
+    // The blog's front-end logic held to a floor that only moves up (npm test runs with --coverage; CI on main runs
+    // npm test): the filter in the address, the reads and their abort, the body, the API reads and the rendering
+    // service's headers and post lookups. Its hooks and components are covered by the browser suite instead.
+    coverage: {
+      provider: 'v8',
+      include: ['src/lib/blog*.ts', 'render/security.ts', 'render/page.ts'],
+      exclude: ['**/*.test.ts'],
+      reporter: ['text-summary'],
+      thresholds: { lines: 99, statements: 97, functions: 98, branches: 91 },
+    },
     css: {
       include: [
         /(colors|sizes|typography|effects)\.css\?raw$/,

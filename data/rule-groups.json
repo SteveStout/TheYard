@@ -105,7 +105,9 @@
         "Every collection a long-lived object keeps is named with what bounds it, every cache is bounded and expires, every outbound call shares one pool, and each .NET site runs under a heap limit of thirty per cent",
         "A blog picture is served from the site's own address under the hash of its bytes with a year's immutable cache, a name the rule does not make is never looked up, the host's memory answers a second read, and the container is private",
         "A Cloud card's request answers from a view under two minutes old and builds the next behind it past one minute; a view at two minutes is not served; the keeper builds each window asked for in the last hour once a minute and drops the rest",
-        "TheYard keeps one SQL database: no template declares one, and every Initial Catalog a template or a workflow builds, and every database name a template, workflow or settings file writes, is sqldb-theyard-ss-basic"
+        "TheYard keeps one SQL database: no template declares one, and every Initial Catalog a template or a workflow builds, and every database name a template, workflow or settings file writes, is sqldb-theyard-ss-basic",
+        "The blog's list and post answer with an ETag, a minute's public cache and a 304, the host's copy is dropped on a save, and the blog slice's coverage stays at its floor in .github/blog-coverage.json",
+        "The blog route at a phone's size holds its budgets: its JavaScript at most 150 KB in brotli with no Markdown or Admin chunk, the first screen at most 300 KB, the largest paint the title or the cover, shift under 0.01, no task over 50 ms while typing, the viewer's slide within 200 ms; the list's first page at most 6 KB in brotli"
       ]
     },
     {
@@ -243,7 +245,10 @@
         "TODAY.md is rewritten whole in the 7 o'clock hour Central in a fixed order, CRITICAL sends first with their full text; an answered ask or a draft with a DO-NOT-SEND note never reaches it; rejection reads carry forward; past 15 minutes the held replies fold; the mail goes to his own address only",
         "The machine lanes' feed writes only its run folder and one QUEUE-hotmgr file a day, and every candidate passes the person, text and closed-req gates and the feed's hold file before it is queued",
         "The invites worklist is ranked hottest first before it is cut to the day's room, so a row left over is never hotter than a row kept",
-        "An invite stands on Pending and its note read back, shown in a screenshot copied into the run folder; the toast is recorded when seen and never required, and a send with no such proof stands unverified"
+        "An invite stands on Pending and its note read back, shown in a screenshot copied into the run folder; the toast is recorded when seen and never required, and a send with no such proof stands unverified",
+        "The blog's list filters, orders, pages and counts in the store, and the memory store and SQLite give every filter the same posts in the same order; a card carries no body, and a large read log costs the list two counts and no row",
+        "A typed word is widened by the synonym list, matched at a word's start, ranked title 6, keyword 5, topic 4, summary 3 and the body by its mentions, and the mockup's six searches give its own posts in its own order; a keyword needs the title or its minimum of mentions in the words a reader reads",
+        "Every answer and every drawn page carries one security policy: no inline script but the page's own by hash or nonce, no framing by another site, nosniff, the referrer kept to the origin, unused powers off, the opener isolated, HSTS with its subdomains and no preload; nothing on the site breaks under it"
       ]
     }
   ]

@@ -12,7 +12,8 @@ namespace TheYard.Application.Features.Blog;
 /// <summary>One kept picture: its bytes and the type it is served with.</summary>
 /// <param name="Bytes">The picture.</param>
 /// <param name="ContentType">image/webp, image/png or image/jpeg.</param>
-public sealed record BlogImageFile(byte[] Bytes, string ContentType);
+/// <param name="StandIn">True when this is the full picture answering for a thumbnail not kept yet.</param>
+public sealed record BlogImageFile(byte[] Bytes, string ContentType, bool StandIn = false);
 
 /// <summary>Port: reads a kept picture by its name.</summary>
 public interface IBlogImageReader
@@ -72,14 +73,38 @@ public sealed class MemoryBlogImageStore : IBlogImageReader, IBlogImageWriter
 /// <param name="Name">The name from the route.</param>
 public sealed record ReadBlogImageQuery(string Name);
 
-/// <summary>One picture by its name; null for a name the rule never makes or a picture not kept.</summary>
+/// <summary>
+/// One picture by its name; null for a name the rule never makes or a picture not kept. A thumbnail not kept yet is
+/// answered by its full picture, marked as a stand-in, so a post whose thumbnails have not been made still shows.
+/// </summary>
 /// <param name="images">The kept pictures.</param>
 public sealed class ReadBlogImageHandler(IBlogImageReader images) : IQueryHandler<ReadBlogImageQuery, BlogImageFile?>
 {
-    /// <summary>The picture, or null.</summary>
+    /// <summary>The picture, its stand-in, or null.</summary>
     /// <param name="query">The name.</param>
     /// <param name="cancellation">The request's cancellation.</param>
-    public async Task<BlogImageFile?> HandleAsync(ReadBlogImageQuery query, CancellationToken cancellation) =>
-        BlogImageNames.IsName(query.Name) ? await images.OpenAsync(query.Name, cancellation) : null;
+    public async Task<BlogImageFile?> HandleAsync(ReadBlogImageQuery query, CancellationToken cancellation)
+    {
+        if (!BlogImageNames.IsName(query.Name))
+        {
+            return null;
+        }
+        if (await images.OpenAsync(query.Name, cancellation) is { } kept)
+        {
+            return kept;
+        }
+        if (BlogImageNames.PictureOf(query.Name) is not { } picture)
+        {
+            return null;
+        }
+        foreach (string kind in BlogImageNames.Kinds.Keys)
+        {
+            if (await images.OpenAsync($"{picture}.{kind}", cancellation) is { } full)
+            {
+                return full with { StandIn = true };
+            }
+        }
+        return null;
+    }
 }
 // #endregion blog-images

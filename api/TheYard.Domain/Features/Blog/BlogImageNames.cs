@@ -26,15 +26,45 @@ public static partial class BlogImageNames
             ? $"{Convert.ToHexStringLower(SHA256.HashData(bytes))[..16]}.{kind}"
             : throw new ArgumentOutOfRangeException(nameof(kind), kind, "not webp, png or jpg");
 
-    /// <summary>Whether a name from a route is one this rule makes; anything else is never looked up.</summary>
-    /// <param name="name">The name asked for.</param>
-    public static bool IsName(string? name) => name is not null && Shape().IsMatch(name);
+    /// <summary>The width a slide's thumbnail is drawn at for the strip and the mini cards, in pixels.</summary>
+    public const int ThumbWidth = 320;
 
-    /// <summary>The content type a kept name is served with; null for a name that is not one.</summary>
+    /// <summary>The most bytes a thumbnail may be: a 320 px WebP of a slide is a tenth of this.</summary>
+    public const int ThumbMaxBytes = 64 * 1024;
+
+    /// <summary>Whether a name from a route is one this rule makes, a picture or its thumbnail; anything else is never looked up.</summary>
+    /// <param name="name">The name asked for.</param>
+    public static bool IsName(string? name) => name is not null && (Shape().IsMatch(name) || Thumb().IsMatch(name));
+
+    /// <summary>The content type a kept name is served with; null for a name that is not one. A thumbnail is always WebP.</summary>
     /// <param name="name">A kept name.</param>
-    public static string? ContentType(string name) => IsName(name) ? Kinds[name[(name.IndexOf('.', StringComparison.Ordinal) + 1)..]] : null;
+    public static string? ContentType(string name) =>
+        Thumb().IsMatch(name) ? Kinds["webp"] : IsName(name) ? Kinds[name[(name.IndexOf('.', StringComparison.Ordinal) + 1)..]] : null;
+
+    /// <summary>
+    /// A picture's thumbnail beside it: its own sixteen digits, the width and webp ("3f9a0c2b1d4e5f60-320.webp"), kept
+    /// in the same container under the same year's cache rule. Named for its picture rather than its own bytes, so the
+    /// page can name it from the picture's address; a picture with new bytes is a new name, and so is its thumbnail.
+    /// An address that is not one of the kept pictures' comes back as it was.
+    /// </summary>
+    /// <param name="url">A picture's served address, /blog/images/name.</param>
+    public static string ThumbOf(string url)
+    {
+        int slash = url.LastIndexOf('/');
+        string name = url[(slash + 1)..];
+        return url.StartsWith("/blog/images/", StringComparison.Ordinal) && Shape().IsMatch(name)
+            ? $"{url[..(slash + 1)]}{name[..16]}-{ThumbWidth}.webp"
+            : url;
+    }
+
+    /// <summary>The sixteen digits of the picture a thumbnail's name stands for; null for a name that is no thumbnail.</summary>
+    /// <param name="name">A name from the route.</param>
+    public static string? PictureOf(string name) => Thumb().IsMatch(name) ? name[..16] : null;
 
     [GeneratedRegex("^[0-9a-f]{16}\\.(webp|png|jpg)$")]
     private static partial Regex Shape();
+
+    [GeneratedRegex("^[0-9a-f]{16}-320\\.webp$")]
+    private static partial Regex Thumb();
 }
 // #endregion blog-image-names

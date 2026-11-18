@@ -29,6 +29,9 @@ public static class RequestPipeline
         // Outermost, above the exception handler, because unwinding runs inner to outer.
         app.UseTheYardRequestTiming(recorder);
 
+        // What a browser may run, load and frame, on every answer, an error's included (SecurityHeaders.cs).
+        app.UseTheYardSecurityHeaders(Path.Combine(Path.GetDirectoryName(paths.AssetsRoot)!, "index.html"));
+
         // #region forwarded-headers
         // What: the visitor's address and scheme, read from the headers the edge and App
         // Service's front end add, and written onto the request. How: UseForwardedHeaders

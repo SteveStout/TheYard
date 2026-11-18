@@ -5,7 +5,7 @@
  * Used by:   Landing.tsx.
  */
 import { useBlogPosts } from '../../../hooks/useBlogPosts';
-import { BlogMini } from '../../blog/BlogPage';
+import { BlogMini } from '../../blog/BlogMini';
 import styles from './LatestPosts.module.css';
 
 /** How many of the newest posts the band shows. */

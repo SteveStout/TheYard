@@ -62,11 +62,18 @@ public static partial class BlogRules
             "depth" when !number || !Depths.Contains(n) => "a depth is 25, 50, 75 or 100",
             "time" when !number || n is < 1 or > 86_400 => "a time is whole seconds, from 1 to a day",
             "slide" when !number || n is < 1 or > 60 => "a slide is its number, from 1",
-            "click" when !Click().IsMatch(v) => "a click names where it went: linkedin, code, or body: and a host",
+            "click" when !Click().IsMatch(v) => "a click names where it went: linkedin, code, slides, or body: and a host",
             "more" or "copy" when v != "1" => "see more and copy carry 1",
             _ => null,
         };
     }
+
+    /// <summary>
+    /// Whether a click left the post: every click does but "slides", which opens the post's own slide viewer and
+    /// keeps the reader on the page, so the funnel's "clicked out" never counts it.
+    /// </summary>
+    /// <param name="value">What the click carries.</param>
+    public static bool IsWayOut(string value) => value != "slides";
 
     /// <summary>True when a slug is lower-case words joined by dashes, 3 to 120 characters.</summary>
     /// <param name="slug">The slug.</param>
@@ -92,7 +99,7 @@ public static partial class BlogRules
     [GeneratedRegex(@"Mobi|iPhone|iPod|Android.*Mobile|Windows Phone", RegexOptions.IgnoreCase)]
     private static partial Regex Phone();
 
-    [GeneratedRegex(@"^(linkedin|code|body:[a-z0-9.-]{1,120})$")]
+    [GeneratedRegex(@"^(linkedin|code|slides|body:[a-z0-9.-]{1,120})$")]
     private static partial Regex Click();
 
     [GeneratedRegex(@"^[a-z0-9]+(-[a-z0-9]+)*$")]

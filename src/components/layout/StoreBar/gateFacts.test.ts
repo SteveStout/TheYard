@@ -20,6 +20,8 @@ const facts = (version: string, reviewed: string | null) => ({
   days: {},
   version,
   builtOn: '2026-11-17',
+  latest: [],
+  quality: { measures: 0, versions: 0, held: null, marker: '', trends: {} },
   review: reviewed === null ? null : { version, reviewed, critical: 0 },
 });
 

@@ -12,6 +12,9 @@ CREATE TABLE [blog].[Post] (
     [IsPublished] bit            NOT NULL,
     [CreatedAt]   datetimeoffset NOT NULL,
     [UpdatedAt]   datetimeoffset NOT NULL,
+    [BodyHtml]       nvarchar(max) NULL,  -- the body drawn to HTML once, on save, so the page needs no Markdown reader
+    [ReadingMinutes] int           NULL,  -- the body's words over 230, rounded up, for the cards
+    [DerivedWith]    int           NULL,  -- the version of the rules BodyHtml, the minutes, the words and the keywords were worked out with; null for never
     CONSTRAINT [PK_Post] PRIMARY KEY ([Id])
 );
 GO
@@ -19,5 +22,9 @@ CREATE UNIQUE INDEX [IX_Post_Slug] ON [blog].[Post] ([Slug]);
 GO
 CREATE UNIQUE INDEX [IX_Post_LinkedInUrl] ON [blog].[Post] ([LinkedInUrl]);
 GO
-CREATE INDEX [IX_Post_PublishedAt] ON [blog].[Post] ([PublishedAt]);
+-- The list: published posts newest first, a page at a time by keyset, with what a card shows, read from
+-- this index alone. Filtered to the published rows, so a draft costs the list nothing.
+CREATE INDEX [IX_Post_Published] ON [blog].[Post] ([PublishedAt] DESC, [Id] DESC)
+    INCLUDE ([Slug], [Title], [Summary], [ReadingMinutes])
+    WHERE [IsPublished] = 1;
 GO

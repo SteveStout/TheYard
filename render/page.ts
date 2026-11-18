@@ -45,9 +45,6 @@ const KEEP_MS = 15_000;
 /** How long a read that failed is kept, so an API that is back is drawn for again at once. */
 const KEEP_FAILED_MS = 2_000;
 
-/** How many API origins' posts are kept at once; the service asks two, and the origin asked longest ago goes first. */
-export const KEPT_ORIGINS = 4;
-
 /** The agent on every read this service makes, so the Site activity card counts them as the site's own. */
 export const SELF_READ = 'TheYard-SelfRead/1 (render)';
 
@@ -74,38 +71,45 @@ export function servedPages(read: typeof fetch = fetch) {
 }
 
 /**
- * The published posts' titles, summaries and first images at one API origin, read at most once every fifteen seconds,
- * so a post's link preview carries its own title (ADR: The public face) and its hook draws on the first screen with no
- * read in the browser (ADR-132). Empty when the blog does not answer: the preview then says what the blog is.
+ * The post an address names, as its head and its hook need it (its title, summary and first image), read from its own
+ * route at one API origin at most once every fifteen seconds, so a post's link preview carries its own title (ADR:
+ * The public face) and its hook draws on the first screen with no read in the browser (ADR-132). Null when the blog
+ * does not answer or has no such post: the preview then says what the blog is.
  */
-export function keptPosts(read: typeof fetch = fetch) {
-  const kept = new Map<string, { at: number; posts: Promise<PostHead[]> }>();
-  return (apiOrigin: string): Promise<PostHead[]> => {
-    const hit = kept.get(apiOrigin);
-    kept.delete(apiOrigin); // set again below, so the Map's order is the order the origins were last asked in
+export function keptPost(read: typeof fetch = fetch) {
+  const kept = new Map<string, { at: number; post: Promise<PostHead | null> }>();
+  return (apiOrigin: string, slug: string): Promise<PostHead | null> => {
+    const key = `${apiOrigin} ${slug}`;
+    const hit = kept.get(key);
+    kept.delete(key); // set again below, so the Map's order is the order the posts were last asked in
     if (hit && Date.now() - hit.at < KEEP_MS) {
-      kept.set(apiOrigin, hit);
-      return hit.posts;
+      kept.set(key, hit);
+      return hit.post;
     }
-    if (kept.size >= KEPT_ORIGINS) kept.delete(kept.keys().next().value!);
-    const posts = read(`${apiOrigin}/api/blog/posts`, {
+    if (kept.size >= KEPT_POSTS) kept.delete(kept.keys().next().value!);
+    const post = read(`${apiOrigin}/api/blog/posts/${encodeURIComponent(slug)}`, {
       headers: { 'User-Agent': SELF_READ },
       signal: AbortSignal.timeout(2_000),
     })
       .then((r) => (r.ok ? r.json() : null))
-      .then((body: { posts?: (PostHead & { images?: BlogImage[] })[] } | null) =>
-        (body?.posts ?? []).map(({ slug, title, summary, images }) => ({
-          slug,
-          title,
-          summary,
-          image: images?.[0] ?? null,
-        }))
+      .then((body: (PostHead & { images?: BlogImage[] }) | null) =>
+        body
+          ? {
+              slug: body.slug,
+              title: body.title,
+              summary: body.summary,
+              image: body.images?.[0] ?? null,
+            }
+          : null
       )
-      .catch(() => [] as PostHead[]);
-    kept.set(apiOrigin, { at: Date.now(), posts });
-    return posts;
+      .catch(() => null);
+    kept.set(key, { at: Date.now(), post });
+    return post;
   };
 }
+
+/** The most posts the service keeps a head for at once: every post a burst of shared links names, and a stop on made-up ones. */
+export const KEPT_POSTS = 64;
 
 async function readServedPage(read: typeof fetch, apiOrigin: string): Promise<ServedPage | null> {
   try {

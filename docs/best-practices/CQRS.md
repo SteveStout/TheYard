@@ -123,9 +123,9 @@ Read back by `CqrsTests` on every build, so a number here cannot go stale.
 
 | shape | count |
 | --- | --- |
-| queries | 45 |
-| commands | 22 |
-| handlers | 67 |
+| queries | 46 |
+| commands | 23 |
+| handlers | 69 |
 | services | 0 |
 
 ## The Function finds its read-only use cases rather than being told them
