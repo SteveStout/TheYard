@@ -145,18 +145,28 @@ public sealed partial class StorageCardTests
         Assert.Equal("info", ShareCard.TransactionsTone(null, "warning"));
     }
 
+    /// <summary>
+    /// Azure's Egress counts every byte out, traffic inside Azure included, and only internet egress is billed against
+    /// the free 100 GB, so on 18 November the dial read 154.65 GB as 154 % "of the free 100 GB a month" for a number that
+    /// is not the billable one. It is total egress now, read against no limit: no share, no marks, no chips, no 100 GB.
+    /// </summary>
     [Fact]
-    public void The_blob_card_s_second_dial_is_the_blob_service_s_egress_against_the_free_hundred_gigabytes_and_never_graded()
+    public void The_blob_card_s_second_dial_is_total_egress_read_against_no_limit_and_never_graded()
     {
-        var card = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", ["egress_month_bytes"] = "8530000000" }), new BlobLines(1e9, 1.8e9, 24_000));
+        var card = BlobCard.View(Inputs(1, new Dictionary<string, string?> { ["public_access"] = "none", ["egress_month_bytes"] = "154647492023" }), new BlobLines(1e9, 1.8e9, 24_000));
+        var dial = card.Dials[1];
 
-        Assert.Equal(("Blob egress this month", "8.53 GB"), (card.Dials[1].Name, card.Dials[1].Big));
-        Assert.Equal(8.53, card.Dials[1].Percent!.Value, 3);
-        Assert.Equal("info", card.Dials[1].Tone);
-        Assert.Contains("the blob service only, the share's reads not included", card.Dials[1].Absolute, StringComparison.Ordinal);
-        Assert.Equal("info", BlobCard.EgressDial(120e9).Tone);
+        Assert.Equal(("Blob total egress this month", "154.65 GB"), (dial.Name, dial.Big));
+        Assert.Equal((null, null, null), (dial.Percent, dial.Amber, dial.Red));
+        Assert.Equal("info", dial.Tone);
+        Assert.Contains("traffic inside Azure included, so not the billable figure", dial.Absolute, StringComparison.Ordinal);
+        Assert.DoesNotContain("100 GB", dial.Absolute, StringComparison.Ordinal);
+        Assert.DoesNotContain(TheYard.Application.Shared.Cards.CardFrame.Chips(card.Dials, held: false), chip => chip.Label.StartsWith("Blob total egress", StringComparison.Ordinal));
+        var line = card.Readout.Lines.Single(l => l.Label == "Blob total egress this month");
+        Assert.Equal("154.65 GB, the blob service's, traffic inside Azure included", line.Value);
+        Assert.Equal("Azure Monitor, Egress on the blob service", line.Source);
         Assert.Equal(("not read", "info"), (BlobCard.EgressDial(null).Big, BlobCard.EgressDial(null).Tone));
-        Assert.DoesNotContain(card.Dials, dial => dial.Name == "Served from memory");
+        Assert.DoesNotContain(card.Dials, d => d.Name == "Served from memory");
     }
 
     /// <summary>

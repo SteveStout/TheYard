@@ -8,6 +8,7 @@
  *
  * No React in here: each is a plain function, so each is a rule a test can read.
  */
+import { ringStretchInFull } from './statTiles/tileWords';
 import { CARD_SLUGS, type CardSlug } from './workbench';
 
 /** The six questions, which are the rail's six groups. */
@@ -145,6 +146,8 @@ export type HourReading = {
   client_errors: number;
   p50_ms: number | null;
   p95_ms: number | null;
+  /** How many minutes the request ring reaches back when it stops short of the hour; null or absent for the whole hour. */
+  ring_minutes?: number | null;
 };
 
 export type HourGlance = {
@@ -154,6 +157,8 @@ export type HourGlance = {
   inside: string;
   /** What the ring says to a screen reader. */
   label: string;
+  /** The stretch the panel covers when the ring stops short of the hour, in the Traffic card's words; '' for the whole hour. */
+  stretch: string;
   rows: [string, string][];
 };
 
@@ -176,6 +181,7 @@ export function hourGlance(hour: HourReading | null): HourGlance {
       ring: null,
       inside: '...',
       label: 'The hour, not read yet',
+      stretch: '',
       rows: [
         ['Typical answer', 'not read yet'],
         ['Ninety-fifth', 'not read yet'],
@@ -186,11 +192,16 @@ export function hourGlance(hour: HourReading | null): HourGlance {
   const p50 = hour.p50_ms ?? 0;
   const p95 = hour.p95_ms ?? 0;
   const count = (n: number) => n.toLocaleString('en-US');
+  const clipped = hour.ring_minutes !== null && hour.ring_minutes !== undefined;
+  const stretch = clipped ? `in the ${ringStretchInFull(hour.ring_minutes)}` : '';
   return {
     ring: { p95, p50, max: HOUR_RING_MS },
     inside:
       hour.p50_ms === null ? 'none' : hour.p50_ms < 1 ? '< 1 ms' : `${Math.round(hour.p50_ms)} ms`,
-    label: `The hour's typical answer ${msWords(hour.p50_ms)} and its ninety-fifth ${msWords(hour.p95_ms)}, against ${HOUR_RING_MS} ms`,
+    label: clipped
+      ? `The typical answer ${msWords(hour.p50_ms)} and the ninety-fifth ${msWords(hour.p95_ms)} ${stretch}, against ${HOUR_RING_MS} ms`
+      : `The hour's typical answer ${msWords(hour.p50_ms)} and its ninety-fifth ${msWords(hour.p95_ms)}, against ${HOUR_RING_MS} ms`,
+    stretch,
     rows: [
       ['Typical answer', msWords(hour.p50_ms)],
       ['Ninety-fifth', msWords(hour.p95_ms)],

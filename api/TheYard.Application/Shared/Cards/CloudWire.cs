@@ -82,12 +82,12 @@ public sealed record CloudLink(string Text, string? Href);
 /// <param name="Percent">The reading as a share of its limit, 0 to 100; null when not read.</param>
 /// <param name="Big">The big figure in the middle: "23 %".</param>
 /// <param name="Absolute">The line under it: "0.23 of 1 vCPU".</param>
-/// <param name="Amber">Where the amber mark sits, in percent.</param>
-/// <param name="Red">Where the red mark sits, in percent.</param>
+/// <param name="Amber">Where the amber mark sits, in percent; null on a dial read against no limit, which draws no marks.</param>
+/// <param name="Red">Where the red mark sits, in percent; null on a dial read against no limit.</param>
 /// <param name="P95">The thirty-day 95th, in percent; null when not enough is kept.</param>
 /// <param name="Peak">The thirty-day peak, in percent; null when not enough is kept.</param>
 /// <param name="Tone">good, info, warning or alarm.</param>
-public sealed record CloudDial(string Name, double? Percent, string Big, string Absolute, double Amber, double Red, double? P95, double? Peak, [property: Description("good, info, warning or alarm")] string Tone);
+public sealed record CloudDial(string Name, double? Percent, string Big, string Absolute, double? Amber, double? Red, double? P95, double? Peak, [property: Description("good, info, warning or alarm")] string Tone);
 
 /// <summary>One sixty-minute sparkline.</summary>
 /// <param name="Name">Its label: "CPU, 60 min".</param>

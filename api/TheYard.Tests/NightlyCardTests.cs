@@ -58,9 +58,13 @@ public sealed partial class NightlyCardTests
         Assert.Equal($"{due} of {due} slots on time", NightlyCard.View(Month(due), Names, FunctionPath, []).Rows.Single(r => r.Key == "firing").Answer);
     }
 
-    /// <summary>The grant dial counts the month's units in gigabyte-seconds against the free grant, amber at 80 and red at 95.</summary>
+    /// <summary>
+    /// The grant dial counts the month's units in gigabyte-seconds against the free grant, amber at 80 and red at 95, and
+    /// amber under 80 when the month's pace passes the grant: 70 % on 20 October is about 110 % by the 31st.
+    /// </summary>
     [Theory]
-    [InlineData(70_000d, "good")]
+    [InlineData(60_000d, "good")]
+    [InlineData(70_000d, "warning")]
     [InlineData(80_000d, "warning")]
     [InlineData(95_000d, "alarm")]
     public void The_grant_dial_turns_at_eighty_and_ninety_five_per_cent(double gbSeconds, string tone)

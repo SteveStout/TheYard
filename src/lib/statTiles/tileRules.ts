@@ -26,22 +26,23 @@ function speedLine(
   const tail =
     (t.slowest_label ? `, slowest at ${t.slowest_label}` : '') +
     (t.cold_start_label ? `; the start at ${t.cold_start_label} is left out` : '');
+  // A ring cut short is said in the visible line, so neither the tile nor the overview row
+  // that reads the line passes a stretch of minutes off as the hour.
   if (judged && t.p95_ms !== null) {
-    return {
-      detail: `95th ${millisecondsWords(t.p95_ms)} over ${formatNumber(t.warm_requests)} requests`,
-      more: ` in the ${stretch}${short}${tail}`,
-    };
+    const over = `95th ${millisecondsWords(t.p95_ms)} over ${formatNumber(t.warm_requests)} requests`;
+    return short === ''
+      ? { detail: over, more: ` in the ${stretch}${tail}` }
+      : { detail: `${over} in the ${stretch}${short}`, ...(tail === '' ? {} : { more: tail }) };
   }
   if (t.warm_requests > 0) {
     return {
-      detail: `${t.warm_requests} requests in the ${stretch}`,
-      more: `${short}, too few to judge${both === '' ? '' : `; ${both}`}${tail}`,
+      detail: `${t.warm_requests} requests in the ${stretch}${short}`,
+      more: `, too few to judge${both === '' ? '' : `; ${both}`}${tail}`,
     };
   }
-  const rest = short + tail;
   return {
-    detail: `${t.requests} requests in the ${stretch}`,
-    ...(rest === '' ? {} : { more: rest }),
+    detail: `${t.requests} requests in the ${stretch}${short}`,
+    ...(tail === '' ? {} : { more: tail }),
   };
 }
 

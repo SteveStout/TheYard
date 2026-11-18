@@ -71,10 +71,12 @@ export function gaugeLabels(
   r: number,
   height: number
 ): GaugeLabel[] {
-  const wanted: { key: GaugeLabel['key']; text: string; percent: number }[] = [
-    { key: 'amber', text: `amber ${level(dial.amber)} %`, percent: dial.amber },
-    { key: 'red', text: `red ${level(dial.red)} %`, percent: dial.red },
-  ];
+  // A dial read against no limit has no marks to draw.
+  const wanted: { key: GaugeLabel['key']; text: string; percent: number }[] = [];
+  if (dial.amber !== null)
+    wanted.push({ key: 'amber', text: `amber ${level(dial.amber)} %`, percent: dial.amber });
+  if (dial.red !== null)
+    wanted.push({ key: 'red', text: `red ${level(dial.red)} %`, percent: dial.red });
   if (dial.p95 !== null)
     wanted.push({ key: 'p95', text: `p95 ${Math.round(dial.p95)} %`, percent: dial.p95 });
   const placed = wanted.map((w) => {
