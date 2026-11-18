@@ -1,11 +1,15 @@
 /**
  * Does:      The header badge's popover (ADR-130): what the running version had to
  *            pass, one line for each chip, the commit, and the way to every number on the Quality page. Loaded only
- *            when the badge is first opened, so the words and their styles stay out of every page's first load.
- * Does not:  Read anything: StoreBar hands in the badge's answer (gateFacts.ts), which the chips draw too.
+ *            when the badge is first opened, so the words and their styles stay out of every page's first load. Drawn
+ *            into document.body through a portal, so the store bar's frost, which makes a stacking context and holds a
+ *            fixed child, cannot trap it: its layer is the page's, and its top is the window's.
+ * Does not:  Read anything: StoreBar hands in the badge's answer (gateFacts.ts), which the chips draw too. Nor raise a
+ *            layer: the glass panels after the header stay as they are, and this draws over them by its own layer.
  * Used by:   StoreBar.tsx, by a lazy import.
  */
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { qualityLine, type GateFacts } from '../StoreBar/gateFacts';
 import styles from './GatePopover.module.css';
 
@@ -45,7 +49,8 @@ export function GatePopover({
   }, [onClose]);
 
   const { quality, review } = facts;
-  return (
+  // Into the body: inside the store bar, its backdrop-filter held both the layer and the fixed top.
+  return createPortal(
     <div
       ref={panel}
       className={`${styles.panel} op-glass`}
@@ -77,6 +82,7 @@ export function GatePopover({
       <a className={styles.link} href="/?doc=quality">
         See every number on the Quality page
       </a>
-    </div>
+    </div>,
+    document.body
   );
 }

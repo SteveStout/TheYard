@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openTheYard } from './app';
+import { answerBlog, made } from './blogFake';
 
 // #region gate-badge
 /**
@@ -66,5 +67,50 @@ test("at 390 the badge is a thumb-tall chip in the note's row, and nothing scrol
   expect(Math.abs(box.y + box.height / 2 - (note.y + note.height / 2))).toBeLessThan(box.height);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });
+
+// The popover draws over the glass panels after the header. Drawn inside the store bar, whose frost makes a
+// stacking context, its layer counted only inside the bar, and the blog's filter panel, glass too and later in the
+// page, painted over its lower half. So the topmost element at the panel's centre, and at a grid of points across
+// it, has to be the popover's own, on the blog at the desk's width and at a phone's.
+const POSTS = Array.from({ length: 12 }, (_, n) =>
+  made(`a-post-${n + 1}`, `A post ${n + 1}`, n + 1, {
+    topics: [['ai', 'dotnet', 'azure', 'career', 'security', 'linux'][n % 6]!],
+    keywords: [['microsoft', 'copilot', 'claude', 'cqrs'][n % 4]!],
+  })
+);
+
+for (const width of [1440, 390]) {
+  test(`on the blog at ${width} the open popover is on top of the filter panel`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await answerBlog(page, POSTS);
+    await openTheYard(page, '/?view=blog');
+    await expect(page.getByTestId('blog-count')).toHaveText('Showing 12 of 12 posts');
+    await page.getByTestId('gate-badge').click();
+    const popover = page.getByTestId('gate-popover');
+    await expect(popover).toBeVisible();
+    const missed = await popover.evaluate((panel) => {
+      const box = panel.getBoundingClientRect();
+      const points = [0.5, 0.15, 0.3, 0.7, 0.85].flatMap((fx) =>
+        [0.5, 0.15, 0.3, 0.7, 0.85].map((fy) => [fx, fy] as const)
+      );
+      return points
+        .map(([fx, fy]) => {
+          const x = box.left + box.width * fx;
+          const y = box.top + box.height * fy;
+          const hit = document.elementFromPoint(x, y);
+          return hit && panel.contains(hit)
+            ? null
+            : `${fx},${fy}: ${hit?.className || hit?.tagName}`;
+        })
+        .filter((miss) => miss !== null);
+    });
+    expect(missed).toEqual([]);
+    await page.keyboard.press('Escape');
+    await expect(popover).toHaveCount(0);
+    await expect(page.getByTestId('gate-badge')).toBeFocused();
+  });
+}
 
 // #endregion gate-badge
