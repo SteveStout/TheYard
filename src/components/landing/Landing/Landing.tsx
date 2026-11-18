@@ -88,7 +88,7 @@ export function Landing({
   // the two draws agree, then from the visitor's own Central day (ADR-132).
   const today = useSyncExternalStore(noSubscription, visitorsDay, buildsDay);
   const releases = releasesInLastSevenDays(RELEASES.days, today);
-  const lines = landingLines(HOOK, releases);
+  const lines = landingLines(HOOK, releases, RELEASES.stopped);
   useEffect(() => {
     let live = true;
     request('/api/health', undefined, { background: true })
