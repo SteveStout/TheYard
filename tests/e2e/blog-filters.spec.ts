@@ -53,7 +53,7 @@ test('a topic chip narrows the list, writes the address, and Back and Forward wa
     .click();
   await expect(page).toHaveURL(/\?view=blog&topic=security$/);
   await expect(page.getByTestId('blog-count')).toHaveText('Showing 1 of 12 posts');
-  expect(await slugs(page)).toEqual(['Scammers read the job market too']);
+  await expect.poll(() => slugs(page)).toEqual(['Scammers read the job market too']);
   await page.goBack();
   await expect(page).toHaveURL(/\?view=blog$/);
   await expect(page.getByTestId('blog-count')).toHaveText('Showing 12 of 12 posts');
@@ -71,7 +71,8 @@ test('a keyword chip narrows the list to the posts that really talk about it', a
     .getByRole('button', { name: /^Microsoft Copilot/ })
     .click();
   await expect(page).toHaveURL(/keyword=copilot/);
-  expect(await slugs(page)).toEqual(['Microsoft Ignite: all in on AI']);
+  // The list is redrawn as a transition after the address moves, so it is read until it settles.
+  await expect.poll(() => slugs(page)).toEqual(['Microsoft Ignite: all in on AI']);
 });
 
 for (const [typed, found] of [
@@ -90,7 +91,7 @@ for (const [typed, found] of [
     await page.getByTestId('blog-search').pressSequentially(typed, { delay: 40 });
     await expect(page).toHaveURL(new RegExp(`q=${typed}$`));
     await expect(page.getByTestId('blog-count')).toHaveText(`Showing ${found.length} of 12 posts`);
-    expect(await slugs(page)).toEqual([...found]);
+    await expect.poll(() => slugs(page)).toEqual([...found]);
     expect(asked.slice(before)).toEqual([`?q=${typed}`]);
     await expect(page.getByTestId('blog-matched').first()).toContainText('Matched on');
   });
@@ -135,7 +136,7 @@ test('the list on screen stays, dimmed, while the next one is read', async ({ pa
   await expect(page.getByTestId('blog-list')).toHaveAttribute('aria-busy', 'false', {
     timeout: 10_000,
   });
-  expect((await slugs(page))[0]).toBe('Scammers read the job market too');
+  await expect.poll(async () => (await slugs(page))[0]).toBe('Scammers read the job market too');
   await expect(page).toHaveURL(/sort=read/);
 });
 
