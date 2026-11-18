@@ -71,6 +71,19 @@ describe('the hook data, one entry a page', () => {
     );
   });
 
+  it('ends on the last release the gate stopped, and leaves it out when none is kept', () => {
+    const stopped = { version: '1.0.5.80', day: '2026-11-17', failed: ['cosmos'] };
+    expect(landingLines(hookFor('landing'), 4, stopped).at(-1)).toBe(
+      'The last release the gate stopped was 1.0.5.80 on 17 November, at its cosmos job.'
+    );
+    expect(landingLines(hookFor('landing'), 4, { ...stopped, failed: [] }).at(-1)).toBe(
+      'The last release the gate stopped was 1.0.5.80 on 17 November.'
+    );
+    expect(landingLines(hookFor('landing'), 4, null).at(-1)).toBe(
+      '4 releases in the last 7 days, each through the same gate.'
+    );
+  });
+
   it('keeps the copy rules: no em dash, never the two job words, and a number in what each page says', () => {
     const text = JSON.stringify(file.hooks);
     expect(text).not.toMatch(/\u2014/);
