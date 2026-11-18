@@ -20,14 +20,16 @@ public static class BlogEndpoints
         // #region blog-endpoints
         app.MapGet("/api/blog/posts", Posts)
             .WithName("GetBlogPosts").WithTags("Blog")
-            .WithSummary("Every published post, newest first, each with its reads")
-            .Produces<PostsWire>(StatusCodes.Status200OK)
+            .WithSummary("A page of cards for a filter (q, topic, keyword, month, year, sort, after), with the total, the chips' counts and the next cursor")
+            .Produces<BlogWire.List>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status304NotModified)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         app.MapGet("/api/blog/posts/{slug}", Post)
             .WithName("GetBlogPost").WithTags("Blog")
-            .WithSummary("One published post by its slug")
-            .Produces<PostWire>(StatusCodes.Status200OK)
+            .WithSummary("One published post by its slug: its body drawn, its counts, its older, newer and related posts")
+            .Produces<BlogWire.Post>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status304NotModified)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         app.MapPost("/api/blog/reads", Read)
@@ -60,43 +62,54 @@ public static class BlogEndpoints
         return app;
     }
 
-    /// <summary>Every published post, newest first.</summary>
-    /// <param name="Posts">The posts.</param>
-    public sealed record PostsWire(IReadOnlyList<PostWire> Posts);
-
     /// <summary>Where a kept read came from.</summary>
     /// <param name="Source">linkedin, ref, search or direct.</param>
     public sealed record SourceWire(string Source);
 
-    /// <summary>A post as the page reads it, with its numbers.</summary>
-    /// <param name="Slug">The post's address on the blog.</param>
-    /// <param name="Title">Its first line.</param>
-    /// <param name="Summary">Two lines for a short card.</param>
-    /// <param name="Body">The text as LinkedIn has it.</param>
-    /// <param name="PublishedAt">When LinkedIn first had it.</param>
-    /// <param name="LinkedinUrl">The post on LinkedIn.</param>
-    /// <param name="CodeUrl">The code it talks about, when it names some.</param>
-    /// <param name="Images">Its slides, in order.</param>
-    /// <param name="Tags">Its hashtags, without the mark.</param>
-    /// <param name="Reads">Every read, bots left out.</param>
-    /// <param name="Reads7d">The reads of the last seven days.</param>
-    public sealed record PostWire(string Slug, string Title, string Summary, string Body, DateTimeOffset PublishedAt, string LinkedinUrl, string? CodeUrl, IReadOnlyList<BlogImage> Images, IReadOnlyList<string> Tags, int Reads, int Reads7d);
-
-    private static PostWire Wire(BlogPost p, BlogStat? s) =>
-        new(p.Slug, p.Title, p.Summary, p.Body, p.PublishedAt, p.LinkedInUrl, p.CodeUrl, p.Images, p.Tags, s?.Reads ?? 0, s?.Reads7d ?? 0);
-
-    private static async Task<IResult> Posts(ListPostsHandler handler, CancellationToken cancellation)
+    /// <summary>
+    /// The filter as the address carries it: each part kept only in the shape it can have, and anything else left out
+    /// rather than refused, so a shared link with a stray part still opens the blog.
+    /// </summary>
+    /// <param name="query">The request's query string.</param>
+    public static BlogFilter FilterOf(IQueryCollection query)
     {
-        var (posts, stats, unavailable) = await handler.HandleAsync(new ListPostsQuery(), cancellation);
-        return unavailable is { } reason
-            ? Results.Problem(detail: reason, statusCode: 503, title: "The blog cannot be read now")
-            : Results.Json(new PostsWire([.. posts.Select(p => Wire(p, stats.FirstOrDefault(s => s.PostId == p.Id)))]), WireFormat);
+        static string? Part(IQueryCollection query, string name, int longest) =>
+            query[name].ToString().Trim() is { Length: > 0 } value && value.Length <= longest ? value : null;
+        static string? Key(string? value) => value is not null && value.All(c => c is (>= 'a' and <= 'z') or '-') ? value : null;
+        string? month = Part(query, "month", 7);
+        return new BlogFilter(
+            Part(query, "q", 100),
+            Key(Part(query, "topic", 40)),
+            Key(Part(query, "keyword", 40)),
+            month is not null && Domain.Features.Blog.BlogListRules.MonthRange(month) is not null ? month : null,
+            int.TryParse(Part(query, "year", 4), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int year) ? year : null,
+            Part(query, "sort", 8) == "read" ? "read" : "new",
+            Part(query, "after", 80));
     }
 
-    private static async Task<IResult> Post(string slug, ReadPostHandler handler, CancellationToken cancellation) =>
-        await handler.HandleAsync(new ReadPostQuery(slug), cancellation) is { } post
-            ? Results.Json(Wire(post, null), WireFormat)
+    private static async Task<IResult> Posts(HttpContext http, ListPostsHandler handler, BlogAnswers answers, CancellationToken cancellation)
+    {
+        var filter = FilterOf(http.Request.Query);
+        string? unavailable = null;
+        var answer = await answers.GetAsync($"list|{filter}", async token =>
+        {
+            var (page, reason) = await handler.HandleAsync(new ListPostsQuery(filter), token);
+            unavailable = reason;
+            return page is null ? null : JsonSerializer.SerializeToUtf8Bytes(BlogWire.Of(page), WireFormat);
+        }, cancellation);
+        return answer is not null
+            ? BlogAnswers.Send(http, answer)
+            : Results.Problem(detail: unavailable, statusCode: 503, title: "The blog cannot be read now");
+    }
+
+    private static async Task<IResult> Post(string slug, HttpContext http, ReadPostHandler handler, BlogAnswers answers, CancellationToken cancellation)
+    {
+        var answer = await answers.GetAsync($"post|{slug}", async token =>
+            await handler.HandleAsync(new ReadPostQuery(slug), token) is { } page ? JsonSerializer.SerializeToUtf8Bytes(BlogWire.Of(page), WireFormat) : null, cancellation);
+        return answer is not null
+            ? BlogAnswers.Send(http, answer)
             : Results.Problem(detail: $"No published post has the slug {slug}.", statusCode: 404, title: "No such post");
+    }
 
     /// <summary>What the page sends when a post opens: its slug, the referring host, and the address's code and utm fields.</summary>
     /// <param name="Slug">The post.</param>
@@ -159,7 +172,7 @@ public static class BlogEndpoints
     /// <param name="Tags">Its hashtags.</param>
     public sealed record SaveWire(string? Slug, string? Title, string? Summary, string? Body, DateTimeOffset? PublishedAt, string? LinkedinUrl, string? CodeUrl, IReadOnlyList<BlogImage>? Images, IReadOnlyList<string>? Tags);
 
-    private static async Task<IResult> Save(HttpContext http, AdminKey adminKey, SavePostHandler handler, CancellationToken cancellation)
+    private static async Task<IResult> Save(HttpContext http, AdminKey adminKey, SavePostHandler handler, BlogAnswers answers, CancellationToken cancellation)
     {
         if (!adminKey.IsPresentedBy(http.Request))
         {
@@ -172,6 +185,10 @@ public static class BlogEndpoints
         }
         var post = new BlogPost(0, wire.Slug ?? "", wire.Title ?? "", wire.Summary ?? "", wire.Body ?? "", published, wire.LinkedinUrl ?? "", wire.CodeUrl, wire.Images ?? [], wire.Tags ?? []);
         var (id, wrong, unavailable) = await handler.HandleAsync(new SavePostCommand(post), cancellation);
+        if (id is not null)
+        {
+            answers.Clear();
+        }
         return id is { } kept ? Results.Json(new { id = kept, slug = post.Slug }, WireFormat)
             : unavailable is { } reason ? Results.Problem(detail: reason, statusCode: 503, title: "The blog cannot keep posts now")
             : Results.Problem(detail: wrong, statusCode: 400, title: "The post could not be kept");

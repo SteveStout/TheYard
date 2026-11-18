@@ -1,27 +1,34 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  fetchBlogStats,
+  fetchList,
+  fetchPost,
+  fetchPosts,
+  fetchedFor,
   picturesLine,
   depthsPassed,
   isNew,
   mostRead,
   postDate,
   readReport,
+  sendBlogReport,
   sourceShares,
-  type BlogPost,
+  type BlogCard,
 } from './blog';
 
-const post = (slug: string, published_at: string, reads: number, reads7d: number): BlogPost => ({
+const post = (slug: string, published_at: string, reads: number, reads7d: number): BlogCard => ({
   slug,
   title: slug,
   summary: '',
-  body: '',
   published_at,
-  linkedin_url: `https://www.linkedin.com/posts/${slug}`,
-  code_url: null,
-  images: [],
-  tags: [],
+  cover: null,
+  slides: 0,
+  reading_minutes: 1,
+  topics: [],
+  keywords: [],
   reads,
   reads7d,
+  matched: [],
 });
 
 describe('the blog on the page', () => {
@@ -106,5 +113,59 @@ describe('the pictures line', () => {
     expect(picturesLine({ count: null, bytes: 0, source: 'the listing answered 403' })).toBe(
       'Pictures: not read (the listing answered 403).'
     );
+  });
+});
+
+// The network is a stub here: each read answers what the test hands it, and the address asked for is kept.
+describe('the blog read from the API', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const answering = (status: number, body: unknown = {}) => {
+    const fetchMock = vi.fn(
+      async (_url: RequestInfo | URL) => new Response(JSON.stringify(body), { status })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  };
+
+  it('reads the list, a page of it, a post and the numbers from their own addresses', async () => {
+    const fetchMock = answering(200, { posts: [] });
+    expect(await fetchPosts()).toEqual({ posts: [] });
+    await fetchList('/api/blog/posts?topic=ai');
+    await fetchPost('a post/2');
+    await fetchBlogStats();
+    expect(fetchMock.mock.calls.map((call) => String(call[0]))).toEqual([
+      '/api/blog/posts',
+      '/api/blog/posts?topic=ai',
+      '/api/blog/posts/a%20post%2F2',
+      '/api/admin/blog',
+    ]);
+    expect(fetchedFor('a-post')).toBe('/api/blog/posts/a-post');
+  });
+
+  it('says no post for a 404, nothing to read for a 503, and fails on any other error', async () => {
+    answering(404);
+    expect(await fetchPost('no-such-post')).toBeNull();
+    answering(503);
+    expect(await fetchPosts()).toBeNull();
+    answering(500);
+    await expect(fetchList('/api/blog/posts')).rejects.toThrow('The blog API responded with 500');
+  });
+
+  it('sends a report as JSON that outlives the page, and a lost one costs nothing', async () => {
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => {
+      throw new Error('offline');
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    sendBlogReport('/api/blog/events', { slug: 'a-post', type: 'click', value: 'slides' });
+    await Promise.resolve();
+    const [path, init] = fetchMock.mock.calls[0];
+    expect(path).toBe('/api/blog/events');
+    expect(init).toMatchObject({ method: 'POST', keepalive: true });
+    expect(JSON.parse(String(init?.body))).toEqual({
+      slug: 'a-post',
+      type: 'click',
+      value: 'slides',
+    });
   });
 });

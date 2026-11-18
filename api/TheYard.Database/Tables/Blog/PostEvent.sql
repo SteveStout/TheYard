@@ -13,5 +13,11 @@ CREATE TABLE [blog].[PostEvent] (
     CONSTRAINT [FK_PostEvent_Post] FOREIGN KEY ([PostId]) REFERENCES [blog].[Post] ([Id])
 );
 GO
-CREATE INDEX [IX_PostEvent_PostId_Type] ON [blog].[PostEvent] ([PostId], [Type]);
+-- The Admin funnel's window of events, people only, with what the funnel reads from each row.
+CREATE INDEX [IX_PostEvent_Window] ON [blog].[PostEvent] ([At])
+    INCLUDE ([PostId], [Type], [SessionHash], [Value])
+    WHERE [IsBot] = 0;
+GO
+-- The foreign key's own index: a post's events, found by the post.
+CREATE INDEX [IX_PostEvent_PostId] ON [blog].[PostEvent] ([PostId]);
 GO

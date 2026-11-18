@@ -1,0 +1,225 @@
+/**
+ * Does:      Styles the slide viewer: the dialog over the whole screen on a dark ground, the title and the count at the
+ *            top with the two actions, the slide as large as the screen allows with the arrows beside it, the caption,
+ *            the strip of every slide with the one on screen ringed in white, and the hint. On a phone the arrows sit over
+ *            the slide's edges and the strip scrolls.
+ * Does not:  Style the strip on the post's card (BlogPostCard.module.css does).
+ * Used by:   SlideViewer.tsx.
+ */
+.viewer {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--color-green-dark);
+  color: var(--color-on-accent);
+  flex-direction: column;
+}
+
+.viewer[open] {
+  display: flex;
+}
+
+.viewer::backdrop {
+  background: var(--scrim);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.where {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.where b {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.where span {
+  font-size: var(--text-sm);
+  color: var(--color-header-text-muted);
+}
+
+.action {
+  min-height: var(--pill-height);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--glass-bg-phone);
+  border-radius: var(--radius-full);
+  background: var(--dialog-sheet-bg);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.action:focus-visible,
+.arrow:focus-visible,
+.film button:focus-visible {
+  outline: var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  max-width: calc(100% - 140px);
+  margin: 0;
+}
+
+.frame {
+  position: relative;
+  height: calc(100% - 3.5em);
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.under,
+.full {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.under {
+  filter: blur(2px);
+}
+
+.full {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+
+.zoomed {
+  cursor: zoom-out;
+}
+
+.caption {
+  min-height: 3em;
+  padding: var(--space-2) var(--space-4) 0;
+  font-size: var(--text-sm);
+  text-align: center;
+  color: var(--color-header-text-muted);
+}
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dialog-sheet-bg);
+  color: var(--color-on-accent);
+  font-size: var(--text-3xl);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.prev {
+  left: var(--space-3);
+}
+
+.next {
+  right: var(--space-3);
+}
+
+.arrow:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: default;
+}
+
+.film {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  overflow-x: auto;
+  list-style: none;
+}
+
+/* A pill like every button; the slide inside it keeps its own corners, and the one on screen is ringed. */
+.film button {
+  display: block;
+  flex: none;
+  width: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  opacity: var(--opacity-disabled);
+  cursor: pointer;
+}
+
+.film button[aria-current='true'] {
+  opacity: 1;
+}
+
+.film img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.film button[aria-current='true'] img {
+  border-color: var(--color-on-accent);
+}
+
+.hint {
+  margin: 0;
+  padding-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  text-align: center;
+  color: var(--color-header-text-muted);
+}
+
+@media (max-width: 639.98px) {
+  .figure {
+    max-width: 100%;
+  }
+
+  .arrow {
+    width: 44px;
+    height: 44px;
+    background: var(--scrim);
+  }
+
+  .film {
+    justify-content: flex-start;
+  }
+
+  .hint {
+    display: none;
+  }
+}
