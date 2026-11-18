@@ -161,6 +161,8 @@ if [ -f "$raw/og.svg" ] && [ -f "$raw/og.png" ]; then
 fi
 # What the tests card and Home read about this run and the gate's reds, read with gh; it never fails a promote.
 bash scripts/gate_feed.sh "$run" "$raw/feed.json"
+# The gate's reds since the last promote join the kept list of every version the gate stopped (data/gate-reds.json).
+node scripts/gate_reds.mjs "$raw/feed.json"
 node scripts/test_results.mjs "$raw" "$version" "$seconds"
 # The file the site serves has to describe the run that shipped it. A green gate cannot hold a failing or a
 # skipped suite, so a results file that records one was assembled from another attempt's reports: that is what
@@ -175,11 +177,12 @@ python3 scripts/quality_history.py append "$version" || echo "::warning::the qua
 # A run whose read wrote no row still gets one, saying so, so the log never skips a ship.
 if [ ! -f "$raw/coderabbit.json" ] && [ "$review" = success ]; then python3 scripts/coderabbit_review.py missing "$version" "$tested" "$raw/coderabbit.json"; fi
 if [ -f "$raw/coderabbit.json" ]; then python3 scripts/coderabbit_review.py fold "$raw/coderabbit.json" data/coderabbit-findings.json; fi
-extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|data/coderabbit-findings\.json|data/quality-history\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
-[ -z "$extra" ] || refuse "the results touched more than their five files and the version card: $extra"
+extra=$(git status --porcelain -uall --no-renames | cut -c4- | grep -vxE 'data/test-results\.json|data/coderabbit-findings\.json|data/quality-history\.json|data/gate-reds\.json|README\.md|docs/built-with-ai/BUILT-WITH-AI\.md|docs/images/og\.svg|public/og\.png' || true)
+[ -z "$extra" ] || refuse "the results touched more than their six files and the version card: $extra"
 git add data/test-results.json README.md docs/built-with-ai/BUILT-WITH-AI.md docs/images/og.svg public/og.png
 if [ -f data/coderabbit-findings.json ]; then git add data/coderabbit-findings.json; fi
 if [ -f data/quality-history.json ]; then git add data/quality-history.json; fi
+if [ -f data/gate-reds.json ]; then git add data/gate-reds.json; fi
 GIT_COMMITTER_NAME="$(git log -1 --format=%an)" GIT_COMMITTER_EMAIL="$(git log -1 --format=%ae)" git commit -q --amend --no-edit
 sha=$(git rev-parse HEAD)
 echo "the results folded into the commit: ${sha:0:8}"

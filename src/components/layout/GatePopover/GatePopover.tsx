@@ -1,12 +1,13 @@
 /**
  * Does:      The header badge's popover (ADR-130): what the running version had to
- *            pass, one line for each chip, the commit, and the way to every number on the Quality page. Loaded only
+ *            pass, one line for each chip, the commit, the gate run that shipped it, and the way to every number on
+ *            the Quality page. Loaded only
  *            when the badge is first opened, so the words and their styles stay out of every page's first load.
  * Does not:  Read anything: StoreBar hands in the badge's answer (gateFacts.ts), which the chips draw too.
  * Used by:   StoreBar.tsx, by a lazy import.
  */
 import { useEffect, useRef } from 'react';
-import { qualityLine, type GateFacts } from '../StoreBar/gateFacts';
+import { gateRunUrl, qualityLine, type GateFacts } from '../StoreBar/gateFacts';
 import styles from './GatePopover.module.css';
 
 export function GatePopover({
@@ -74,6 +75,17 @@ export function GatePopover({
         </li>
       </ul>
       {facts.commit && <p className={styles.commit}>Commit {facts.commit}</p>}
+      {facts.run !== null && (
+        <a
+          className={styles.link}
+          href={gateRunUrl(facts.run)}
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="gate-popover-run"
+        >
+          Open the gate run that shipped it
+        </a>
+      )}
       <a className={styles.link} href="/?doc=quality">
         See every number on the Quality page
       </a>
