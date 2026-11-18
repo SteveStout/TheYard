@@ -11,6 +11,7 @@
 import file from '../../data/hooks.json';
 import RELEASES from 'virtual:release-facts';
 import type { QualityTrendData } from './qualityTrend';
+import type { GateStop } from './releaseFacts';
 
 /** The pages that carry a hook, one entry each in the file. */
 export const HOOK_PAGES = ['landing', 'about', 'post', 'resume', 'quality', 'review'] as const;
@@ -84,6 +85,18 @@ export function landingLines(hook: PageHook, releasesThisWeek: number): string[]
     ...rest,
     `${counted(releasesThisWeek, 'release')} in the last 7 days, each through the same gate.`,
   ];
+}
+
+/**
+ * The last version the gate turned back, from data/gate-reds.json (G5): the landing ends on it, under the strip of
+ * what the gate measured. Never one of the hook's lines, which have to fit a phone's first screen (hooks.spec.ts).
+ */
+export function stoppedLine(stopped: GateStop): string {
+  const where =
+    stopped.failed.length === 0
+      ? ''
+      : `, at its ${stopped.failed.join(' and ')} job${stopped.failed.length === 1 ? '' : 's'}`;
+  return `The last release the gate stopped was ${stopped.version} on ${dayWords(stopped.day)}${where}.`;
 }
 
 /** The label with each {name} replaced by its count; a name with no count is left as it is. */
