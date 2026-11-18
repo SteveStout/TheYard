@@ -1,7 +1,7 @@
 /**
  * Does:      Holds the release facts the build reads (releaseFacts.ts): a count a day from the changelog's dated
- *            lines for its newest fourteen days, the top version's CodeRabbit row, and the seven Central days ending
- *            today, today included.
+ *            lines for its newest fourteen days, the top version's CodeRabbit row and gate run, the newest version
+ *            the gate stopped, and the seven Central days ending today, today included.
  * Does not:  Read the real changelog: the build's own read is held by the landing's browser tests.
  * Used by:   Vitest (npm test).
  */
@@ -57,7 +57,36 @@ describe('release facts', () => {
           ],
         },
       },
+      run: null,
+      stopped: null,
     });
+  });
+
+  it('carries the gate run only for the top version, and the newest stop with its Central day', () => {
+    const changelog = line('1.0.0.4', '2026-11-17');
+    const reds = {
+      rows: [
+        { version: '1.0.0.3', at: '2026-11-18T03:30:00Z', failed: ['cosmos'] },
+        { version: '1.0.0.2', at: '2026-11-10T15:00:00Z', failed: [] },
+      ],
+    };
+    const shipped = releaseFacts(
+      changelog,
+      { rows: [] },
+      new Date(),
+      { rows: [] },
+      [],
+      { version: '1.0.0.4', runId: 44 },
+      reds
+    );
+    expect(shipped.run).toBe(44);
+    expect(shipped.stopped).toEqual({ version: '1.0.0.3', day: '2026-11-17', failed: ['cosmos'] });
+    const older = releaseFacts(changelog, { rows: [] }, new Date(), { rows: [] }, [], {
+      version: '1.0.0.3',
+      runId: 43,
+    });
+    expect(older.run).toBeNull();
+    expect(older.stopped).toBeNull();
   });
 
   it('keeps fourteen days and no more, and has no review until the gate writes one', () => {
