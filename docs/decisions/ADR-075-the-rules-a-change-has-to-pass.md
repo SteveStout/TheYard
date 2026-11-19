@@ -234,6 +234,16 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The invites worklist is ranked hottest first before it is cut to the day's room, so a row left over is never hotter than a row kept | ADR-119, the addendum of 1.0.4.166 on the feed lane | FeedTests |
 | An invite stands on Pending and its note read back, shown in a screenshot copied into the run folder; the toast is recorded when seen and never required, and a send with no such proof stands unverified | ADR-119, the addendum of 1.0.4.166 on the feed lane | ResultTests, RunTests |
 | Before a claim, preflight counts the lines a version changes, added plus deleted, with the promote's and the fill's files left out, and refuses one under the floor or over the ceiling of `.github/pr-size.json` unless its commit names why (Ships-alone:, Fixes-main: or Large:) | ADR: A pull request of AI-written code is sized to the gate | PrSizeScriptTests |
+| A lane never picks a version or a record number: its one commit leaves the version, date and record placeholders, the cop fills them at landing, and a ready branch whose top line is already a number is skipped | ADR: One traffic cop for main | CopScriptTests |
+| A ready branch is one commit off main, and a branch of two commits is skipped green with the reason | ADR: One traffic cop for main | CopScriptTests |
+| A ready branch carrying a gate.yml older than main's is skipped and told to rebase, unless changing gate.yml is its own commit's work | ADR: One traffic cop for main | CopScriptTests |
+| The number is assigned inside the gate's group, one run at a time: two ready branches cut from one main land as N and N+1, the second's changelog line lifted over the first's, and every job tests the filled commit | ADR: One traffic cop for main | CopScriptTests, GateWorkflowTests, PromoteScriptTests |
+| A lane reads landed, a hand promote owed, a red gate or a skip on its own commit, and the after-roll deletes a ready branch only once landed is there | ADR: One traffic cop for main | GateWorkflowTests, GateReviewWaitTests |
+| The queue's order is GitHub's and is not promised: every pending gate run is kept in line and none is cancelled | ADR: One traffic cop for main | GateWorkflowTests |
+| Red means a check failed: a rebase conflict outside the changelog, two commits or a workflow change with no token ends the run green with a notice | ADR: One traffic cop for main | CopScriptTests |
+| No lane takes the gate lock: the ready path claims nothing, and the lock is kept only for a hand promote | ADR: One traffic cop for main | GateWorkflowTests |
+| With PROMOTE_TOKEN every promote is that token's push and the push is the roll, so each commit rolls once; without it a workflow change ends green needing a hand promote | ADR: One traffic cop for main | PromoteScriptTests |
+| gate/* takes the old path until main's gate.yml carries the ready trigger, and is refused red after | ADR: One traffic cop for main | CopScriptTests |
 
 ## How the table is read
 

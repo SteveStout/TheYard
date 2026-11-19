@@ -113,36 +113,50 @@ coverage floor to make a run green (ADR-122).
 
 ## Shipping
 
-**A ship is a push of `gate/<version>-<lane>-<sha8>`.** The number is filled at the claim, under the gate lock, never
-before it (ADR-031, the addendum on the fill at the claim). Build the one commit on origin/main with the placeholders
-for the version, the date and the record number where the numbers go (the changelog's top line, the subject, a record's
-name), then:
+**A ship is a push of `ready/<lane>-<sha8>`; the traffic cop numbers it at landing** (ADR-137, One traffic cop
+for main). A lane never picks a version or a record number. Build ONE commit on the origin/main you just fetched, with
+the three placeholders left as they are: &#64;VER@ for the version (the changelog's top line, the subject), &#64;DATE@ for
+the date and &#64;ADR@ for a new record's number (its file name and its text). Each is an at sign, the word, an at sign;
+they are written here with &#64; so the fill leaves this file alone. Then:
 
 ```
-v=$(bash scripts/versions.sh next)                 # origin/main's top line plus one
-bash scripts/gate_lock.sh claim <lane> "$v"         # the lock, created only if absent, read back after 2 s
-GATE_LANE=<lane> bash scripts/fill_version.sh       # fills the numbers, redraws the card, tightens the ratchet, amends
-GATE_LANE=<lane> bash scripts/preflight.sh
-git push origin HEAD:refs/heads/gate/$v-<lane>-$(git rev-parse --short=8 HEAD)
+git fetch origin && git rebase origin/main          # an older branch starts no run (its gate.yml has no ready/**)
+GATE_LANE=<lane> bash scripts/preflight.sh           # a red preflight is never pushed
+b=ready/<lane>-$(git rev-parse --short=8 HEAD)
+git push origin HEAD:refs/heads/$b && bash scripts/gate_pr.sh open $b
+gh run list -R SteveStout/TheYard -w Gate -b $b       # prove the run exists
+gh api repos/SteveStout/TheYard/commits/$(git rev-parse HEAD)/statuses --jq '.[0].description'
 ```
 
-**A red preflight is never pushed.** Right after the push, `bash scripts/gate_pr.sh open <branch>` opens the gate's
-pull request and asks CodeRabbit for its review, which the gate waits for before it promotes (ADR-129); a ship
-with no request is logged "not reviewed, no pull request" and warned in the run. Then
-`bash scripts/gate_lock.sh annotate <run> <branch>` adds the run and the branch to the lock's line. The preflight first
-checks the version claim (`scripts/versions.sh`: the changelog's top line is main's plus one and the held lock does not
-name it for another lane; taken means on main or in the held lock, never "a branch exists"), then runs
-the four gate checks that fit on a shipping machine (`dotnet
-format`, Prettier, oxlint, the type check) and says whether this version changes `.github/workflows` and
-whether the secret `PROMOTE_TOKEN` will carry it; a version that changes a workflow with no such secret
-is promoted by hand after a green gate, which the preflight prints the command for (ADR-098, the addendum
-of 1.0.4.119). The browser suite and the two passes on Cosmos DB are the gate's, on its 16 GB runner.
+The Gate run's first job, the cop, waits its turn in the gate's group, rebases the commit onto main, lifts its changelog
+line over main's newest, fills the three numbers (main's top line plus one), and every job tests that filled commit. No
+lane takes the gate lock: the number is assigned inside the group, one run at a time. **A lane watches its commit to
+landed or skipped** (the status named `cop`): "landed as <version>, main <sha8>" is done; "skipped: <reason>" (a
+rebase conflict outside the changelog, two commits, a filled top line, an older gate.yml) or "red gate: <checks>" is
+the lane's to fix, rebase and push as a new ready branch. Nobody retries for it. **Red means a check failed:** a skip
+tested nothing and ends green. **The queue's order is GitHub's and is not promised**; two pushes seconds apart still land
+as N and N+1. **gate/* is closed:** the cop refuses it red once main carries the cop.
 
-**A red gate releases the lock and frees its number.** `bash scripts/gate_lock.sh release` renames the lock; the next
-claim takes main's top line plus one again, so nothing ever waits on a gate branch being deleted. The gate's first job
-turns a run away in seconds when its number is no longer main's top line plus one. A peer may release another lane's
-lock only when `gate_lock.sh show` says yes: its run ended red, or ended green with main already on its version. A
-green run that has not promoted is released by its holder or by Steve, never by a peer.
+**A version that changes a workflow lands through the cop like any other.** The promote job pushes with the secret
+PROMOTE_TOKEN (fine-grained, SteveStout/TheYard only, Contents and Workflows read and write, expires 2027-11-19), so
+the push itself rolls the site, and the run calls no deploy a second time, for every version. If the secret is missing
+or its push is refused, the run ends green, the commit reads "green as <version>, needs a hand promote", and a person
+promotes it by hand, holding the gate lock so two hand promotes never run at once:
+
+```
+run=<the Gate run>; v=<its version>; ready=<the ready commit>
+git fetch origin && raw=$(mktemp -d) && f=$(mktemp -d)
+gh run download $run -n gate-raw -D "$raw" && { gh run download $run -n coderabbit-raw -D "$raw" || rm -f "$raw/coderabbit.json"; }
+gh run download $run -n filled -D "$f" && git fetch "$f/filled.bundle" cop-filled && git checkout --detach "$(cat "$raw/filled.sha")"
+bash scripts/gate_lock.sh claim <you> "$v" && bash scripts/promote.sh "$raw" <gate seconds> "$v" $run; bash scripts/gate_lock.sh release
+GITHUB_RUN_ID=$run bash scripts/cop_status.sh $ready success "landed as $v, main $(git rev-parse --short=8 HEAD)"
+git push origin --delete <the ready branch>
+```
+
+The preflight checks the ship's shape (one commit on origin/main, the top line still the placeholder), runs the four
+gate checks that fit on a shipping machine (`dotnet format`, Prettier, oxlint, the type check) and says whether this
+version changes `.github/workflows` and whether PROMOTE_TOKEN will carry it. The browser suite and the two passes on
+Cosmos DB are the gate's, on its 16 GB runner. CodeRabbit reviews the ready commit itself (ADR-129).
 
 **The gate frees at live, and main is proven before the next promote** (ADR-098, the addendum on the gate freeing
 at live). The Gate run ends when its two deploys end, so the next gate starts then. The reads after the roll, both

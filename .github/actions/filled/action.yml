@@ -1,0 +1,30 @@
+name: The filled commit
+description: >-
+  Checks out the commit the cop job filled, from the bundle it left as the run's filled artifact (ADR-137, One
+  traffic cop for main). Every job after the cop tests that commit and no other: the pushed one still carries the
+  placeholders, and a job that filled on its own could read another date or another main.
+inputs:
+  sha:
+    description: The filled commit, the cop job's sha output
+    required: true
+  base:
+    description: Main's commit when the cop read it, the bundle's one prerequisite
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@v7
+      with:
+        name: filled
+        path: ${{ runner.temp }}/filled
+    - name: The filled commit, from its bundle
+      shell: bash
+      env:
+        SHA: ${{ inputs.sha }}
+        BASE: ${{ inputs.base }}
+      run: |
+        # A shallow checkout may not hold main's commit yet; the bundle needs it and nothing older.
+        git cat-file -e "$BASE^{commit}" 2> /dev/null || git fetch -q --depth=1 origin "$BASE"
+        git fetch -q "$RUNNER_TEMP/filled/filled.bundle" cop-filled
+        git checkout -q --detach "$SHA"
+        echo "the filled commit: $(git log -1 --format='%h %s')"

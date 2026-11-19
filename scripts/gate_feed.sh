@@ -47,10 +47,13 @@ fi
 
 # #region the-red-feed
 # The version is the text after gate/ up to the first hyphen; a branch named gate/<version>-<lane>-<sha8> also names its lane.
+# A ready/<lane>-<sha8> branch names its lane and no version, because the cop assigns one only at landing (ADR-137): a red
+# one is written by its branch, which is what its lane pushed and what the site can say.
 reds=$(gh run list -R "$repo" --workflow gate.yml --limit 50 --json databaseId,headBranch,headSha,conclusion,createdAt 2> /dev/null |
   jq -c --arg since "$since" --argjson run "${run}" '[.[] | select(.databaseId != $run) | select(.conclusion == "failure" or .conclusion == "cancelled") | select($since == "" or .createdAt > $since)
-    | (.headBranch | ltrimstr("gate/")) as $tail
-    | {run: .databaseId, version: ($tail | split("-")[0]), lane: (($tail | split("-")) as $p | if ($p | length) >= 3 then $p[1:-1] | join("-") else null end),
+    | (if (.headBranch | startswith("ready/")) then {version: .headBranch, lane: (.headBranch | ltrimstr("ready/") | split("-") | if length >= 2 then .[0:-1] | join("-") else null end)}
+       else (.headBranch | ltrimstr("gate/")) as $tail | {version: ($tail | split("-")[0]), lane: (($tail | split("-")) as $p | if ($p | length) >= 3 then $p[1:-1] | join("-") else null end)} end) as $named
+    | {run: .databaseId, version: $named.version, lane: $named.lane,
        sha: .headSha[0:8], at: .createdAt, came: .conclusion}]' 2> /dev/null || echo '[]')
 [ -n "$reds" ] || reds='[]'
 reds=$(jq -c '.[]' <<< "$reds" | while read -r red; do

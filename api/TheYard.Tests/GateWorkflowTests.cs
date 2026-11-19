@@ -216,15 +216,16 @@ public class GateWorkflowTests
 
     // #region the-boundary
     /// <summary>
-    /// The workflow runs on a gate branch and nowhere else, and its checks cannot push: the gate job and
-    /// The Shed's read the code and nothing more, so a red run leaves main as it was. Only the promote job,
-    /// after both are green, may write (PromoteWorkflowTests; ADR-098, the addendum of 1.0.4.101).
+    /// The workflow runs on a ready branch, or a gate branch while main has no cop, and nowhere else, and its checks
+    /// cannot push: the gate job and The Shed's read the code and nothing more, so a red run leaves main as it was.
+    /// Only the promote job, after both are green, may write (PromoteWorkflowTests; ADR-098, the addendum of
+    /// 1.0.4.101; ADR: One traffic cop for main).
     /// </summary>
     [Fact]
-    public void The_gate_runs_on_gate_branches_only_and_its_checks_cannot_push()
+    public void The_gate_runs_on_ready_and_gate_branches_only_and_its_checks_cannot_push()
     {
         string workflow = Workflow();
-        Assert.Contains("on:\n  push:\n    branches: [\"gate/**\"]\n", workflow, StringComparison.Ordinal);
+        Assert.Contains("on:\n  push:\n    branches: [\"gate/**\", \"ready/**\"]\n", workflow, StringComparison.Ordinal);
         Assert.Contains("permissions:\n  contents: read\n", workflow, StringComparison.Ordinal);
         foreach (string job in new[] { CheckJobs(), GateJob(), ShedJob() })
         {
@@ -246,7 +247,8 @@ public class GateWorkflowTests
     {
         Assert.Contains($"name: {artifact}", Job(job), StringComparison.Ordinal);
         string gate = GateJob();
-        Assert.Contains("needs: [dotnet, cosmos, node, browser]", gate, StringComparison.Ordinal);
+        Assert.Contains("needs: [cop, dotnet, cosmos, node, browser]", gate, StringComparison.Ordinal);
+        Assert.Contains("if: always() && needs.cop.outputs.landed == 'go'", gate, StringComparison.Ordinal);
         Assert.Contains("if: always()", gate[..gate.IndexOf("steps:", StringComparison.Ordinal)], StringComparison.Ordinal);
         Assert.Contains("python3 scripts/gate_fold.py \"$RUNNER_TEMP/jobs\" \"$RUNNER_TEMP/raw\" \"$GITHUB_RUN_ATTEMPT\" dotnet cosmos node browser-1 browser-2", gate, StringComparison.Ordinal);
         Assert.Contains("pattern: raw-*", gate, StringComparison.Ordinal);
@@ -322,7 +324,7 @@ public class GateWorkflowTests
     }
     // #endregion side-by-side
 
-    // #region the-number
+    // #region the-cop
     /// <summary>
     /// One gate at a time, every pending run kept in line: the concurrency group keeps queue: max, which keeps up to a
     /// hundred pending runs instead of cancelling the one a third push replaces, and carries no cancel-in-progress line,
@@ -337,22 +339,74 @@ public class GateWorkflowTests
     }
 
     /// <summary>
-    /// The number is read again before anything slow: a small first job runs the gate check of scripts/versions.sh on
-    /// the branch, and every job that costs minutes waits on it, so a second claim of one number ends the run in seconds.
+    /// The number is assigned before anything slow, inside the gate's group (ADR: One traffic cop for main): the cop
+    /// job runs scripts/cop.sh on the branch, every job that costs minutes waits on it and runs only when it says go,
+    /// and every job that tests checks out the commit the cop filled, never the pushed one. CodeRabbit reads the
+    /// pushed commit, the one it reviewed.
     /// </summary>
     [Fact]
-    public void Every_job_that_costs_minutes_waits_for_the_number_check()
+    public void Every_job_that_costs_minutes_waits_for_the_cop_and_tests_the_filled_commit()
     {
-        string number = Job("number");
-        Assert.Contains("run: bash scripts/versions.sh gate \"$GITHUB_REF_NAME\"", number, StringComparison.Ordinal);
-        Assert.DoesNotContain("needs:", number, StringComparison.Ordinal);
-        Assert.Contains("timeout-minutes: 5", number, StringComparison.Ordinal);
+        string cop = Job("cop");
+        Assert.Contains("bash scripts/cop.sh \"$GITHUB_REF_NAME\" \"$RUNNER_TEMP/filled\"", cop, StringComparison.Ordinal);
+        Assert.DoesNotContain("needs:", cop, StringComparison.Ordinal);
+        Assert.Contains("timeout-minutes: 10", cop, StringComparison.Ordinal);
+        Assert.Contains("name: filled", cop, StringComparison.Ordinal);
         foreach (string job in new[] { "dotnet", "cosmos", "node", "browser", "shed", "coderabbit" })
         {
-            Assert.Contains("\n    needs: number\n", Job(job), StringComparison.Ordinal);
+            Assert.Contains("\n    needs: cop\n    if: needs.cop.outputs.landed == 'go'\n", Job(job), StringComparison.Ordinal);
         }
+        foreach (string job in new[] { "dotnet", "cosmos", "node", "browser", "shed", "promote" })
+        {
+            Assert.Contains("uses: ./.github/actions/filled\n        with:\n          sha: ${{ needs.cop.outputs.sha }}", Job(job), StringComparison.Ordinal);
+        }
+        Assert.DoesNotContain("actions/filled", Job("coderabbit"), StringComparison.Ordinal);
+        Assert.Contains("echo \"$FILLED\" | tee \"$RAW/filled.sha\"", GateJob(), StringComparison.Ordinal);
     }
-    // #endregion the-number
+
+    /// <summary>
+    /// A lane reads what became of its ready branch on its own commit, the status named cop (ADR: One traffic cop for
+    /// main): a skip from the cop job, then landed, a hand promote owed, or the red checks with the first failing line
+    /// from the said job; the after-roll deletes a ready branch only once landed is there to read.
+    /// </summary>
+    [Fact]
+    public void A_ready_branch_hears_what_became_of_it_on_its_own_commit()
+    {
+        Assert.Contains("bash scripts/cop_status.sh \"$GITHUB_SHA\" failure \"skipped: $REASON\"", Job("cop"), StringComparison.Ordinal);
+        string said = Job("said");
+        Assert.Contains("needs: [cop, gate, promote]", said, StringComparison.Ordinal);
+        Assert.Contains("if: always() && startsWith(github.ref_name, 'ready/') && needs.cop.outputs.landed == 'go'", said, StringComparison.Ordinal);
+        Assert.Contains("success \"landed as $VERSION, main ${SHA:0:8}\"", said, StringComparison.Ordinal);
+        Assert.Contains("pending \"green as $VERSION, needs a hand promote", said, StringComparison.Ordinal);
+        Assert.Contains("failure \"red gate: ${RED:-a check}${FIRST:+; $FIRST}\"", said, StringComparison.Ordinal);
+        Assert.Contains("statuses: write", said, StringComparison.Ordinal);
+        string afterRoll = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "after-roll.yml"));
+        int landed = afterRoll.IndexOf("select(.context == \"cop\" and .state == \"success\")", StringComparison.Ordinal);
+        int delete = afterRoll.IndexOf("gh api -X DELETE", StringComparison.Ordinal);
+        Assert.True(landed > 0 && delete > landed, "the after-roll should read the landed status before it deletes a ready branch");
+    }
+
+    /// <summary>
+    /// No lane takes the gate lock (ADR: One traffic cop for main): the number is the cop's, so the ready path in
+    /// CLAUDE.md and in the preflight claims nothing, and the lock is named only in the hand promote, where it stops two
+    /// promotes at once.
+    /// </summary>
+    [Fact]
+    public void No_lane_takes_the_gate_lock_on_the_ready_path()
+    {
+        string claude = File.ReadAllText(Path.Combine(Repo.Root(), "CLAUDE.md"));
+        int ready = claude.IndexOf("**A ship is a push of `ready/<lane>-<sha8>`", StringComparison.Ordinal);
+        int hand = claude.IndexOf("**A version that changes a workflow lands through the cop like any other.**", StringComparison.Ordinal);
+        Assert.True(ready > 0 && hand > ready, "CLAUDE.md should say the ready ship before the hand promote");
+        Assert.DoesNotContain("gate_lock.sh", claude[ready..hand], StringComparison.Ordinal);
+        Assert.Contains("bash scripts/gate_lock.sh claim <you>", claude[hand..], StringComparison.Ordinal);
+        string preflight = File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "preflight.sh"));
+        int path = preflight.IndexOf("if [ \"$ship\" = ready ]; then\n  # The branch", StringComparison.Ordinal);
+        int old = preflight.IndexOf("\nelse\n", path, StringComparison.Ordinal);
+        Assert.True(path > 0 && old > path, "the preflight should print the ready push first");
+        Assert.DoesNotContain("gate_lock", preflight[path..old], StringComparison.Ordinal);
+    }
+    // #endregion the-cop
 
     /// <summary>
     /// Ladder 8b (ADR-134's report half): the Lighthouse job reads the built site five times inside the job and keeps

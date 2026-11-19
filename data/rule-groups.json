@@ -28,7 +28,17 @@
         "The findings log counts each CodeRabbit finding by the label in its header alone, and a remark with no label as a nitpick; from 1.0.4.178 only the gated commit's findings and never a reply in a thread, and every ship has exactly one row whatever the read did",
         "A version that moves the first three numbers ships only by hand, with the person promoting naming it as OWNER_YES, moves the third number by one and starts the fourth at 0; the gate ends green with a notice and moves nothing, whatever its environment holds",
         "A session unsure of a library's API at the version this repository pins looks it up first, Microsoft Learn for .NET and Azure and Context7 for the rest, and no file a reader can read holds a Context7 key",
-        "Before a claim, preflight counts the lines a version changes, added plus deleted, with the promote's and the fill's files left out, and refuses one under the floor or over the ceiling of `.github/pr-size.json` unless its commit names why (Ships-alone:, Fixes-main: or Large:)"
+        "Before a claim, preflight counts the lines a version changes, added plus deleted, with the promote's and the fill's files left out, and refuses one under the floor or over the ceiling of `.github/pr-size.json` unless its commit names why (Ships-alone:, Fixes-main: or Large:)",
+        "A lane never picks a version or a record number: its one commit leaves the version, date and record placeholders, the cop fills them at landing, and a ready branch whose top line is already a number is skipped",
+        "A ready branch is one commit off main, and a branch of two commits is skipped green with the reason",
+        "A ready branch carrying a gate.yml older than main's is skipped and told to rebase, unless changing gate.yml is its own commit's work",
+        "The number is assigned inside the gate's group, one run at a time: two ready branches cut from one main land as N and N+1, the second's changelog line lifted over the first's, and every job tests the filled commit",
+        "A lane reads landed, a hand promote owed, a red gate or a skip on its own commit, and the after-roll deletes a ready branch only once landed is there",
+        "The queue's order is GitHub's and is not promised: every pending gate run is kept in line and none is cancelled",
+        "Red means a check failed: a rebase conflict outside the changelog, two commits or a workflow change with no token ends the run green with a notice",
+        "No lane takes the gate lock: the ready path claims nothing, and the lock is kept only for a hand promote",
+        "With PROMOTE_TOKEN every promote is that token's push and the push is the roll, so each commit rolls once; without it a workflow change ends green needing a hand promote",
+        "gate/* takes the old path until main's gate.yml carries the ready trigger, and is refused red after"
       ]
     },
     {

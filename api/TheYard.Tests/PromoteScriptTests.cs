@@ -109,6 +109,7 @@ public sealed partial class PromoteScriptTests : IDisposable
               *"--workflow ci.yml"*) out=${FAKE_CI_RUNS-$ci}; printf '%s' "${out//MAIN/$main}";;
               *"--workflow after-roll.yml"*) out=${FAKE_AFTER_RUNS-$after}; printf '%s' "${out//MAIN/$main}";;
               *headSha*) echo "$FAKE_TESTED";;
+              *'select(.name == "after-roll")'*) for p in ${FAKE_AFTER_JOBS:-}; do if [ "${p%%=*}" = "$3" ]; then echo "${p#*=}"; fi; done;;
               *coderabbit*) echo "${FAKE_REVIEW:-none}";;
               *jobs*) echo "$FAKE_GREEN";;
               *) exit 1;;
@@ -412,6 +413,7 @@ public sealed partial class PromoteScriptTests : IDisposable
     [InlineData("ci-running", "CI on main (running)")]
     [InlineData("after-roll-missing", "the after-roll (none)")]
     [InlineData("after-roll-for-another-version", "the after-roll (none)")]
+    [InlineData("after-roll-of-a-ready-branch-that-read-nothing", "the after-roll (none)")]
     public void A_main_not_yet_proven_is_waited_on_and_then_ends_green_without_a_promote(string shape, string waited)
     {
         if (OperatingSystem.IsWindows())
@@ -437,6 +439,11 @@ public sealed partial class PromoteScriptTests : IDisposable
             case "after-roll-for-another-version":
                 env["FAKE_AFTER_RUNS"] = """[{"displayTitle":"After roll gate/1.0.4.106-coding1116-abcdef12 at MAIN","status":"completed","conclusion":"success"}]""";
                 break;
+            case "after-roll-of-a-ready-branch-that-read-nothing":
+                // A ready branch the cop skipped: its Gate run ended green and its after-roll read nothing at main's commit.
+                env["FAKE_AFTER_RUNS"] = """[{"databaseId":2,"displayTitle":"After roll ready/beta-abcdef12 at MAIN","status":"completed","conclusion":"success"}]""";
+                env["FAKE_AFTER_JOBS"] = "2=skipped";
+                break;
         }
 
         var (code, output) = Promote("1.0.4.106", env: env);
@@ -446,6 +453,34 @@ public sealed partial class PromoteScriptTests : IDisposable
         Assert.DoesNotContain("::error::", output, StringComparison.Ordinal);
         Assert.Contains("promoted=false", File.ReadAllText(outputs), StringComparison.Ordinal);
         Assert.Equal(before, MainOnOrigin());
+    }
+
+    /// <summary>
+    /// A ready branch names no version, so an after-roll started by a cop run is named for the branch (ADR: One traffic
+    /// cop for main). It proves main's commit only when its after-roll job ran: the newest run at main's commit can be a
+    /// skipped branch's, which read nothing, and the one behind it the landed branch's.
+    /// </summary>
+    [Fact]
+    public void An_after_roll_named_for_a_ready_branch_proves_main_when_its_reads_ran()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        MainCarriesTheAfterRoll();
+        string before = MainOnOrigin();
+        Version("1.0.4.106");
+        var (outputs, env) = InTheGate();
+        env["FAKE_AFTER_RUNS"] = """[{"databaseId":3,"displayTitle":"After roll ready/beta-abcdef12 at MAIN","status":"completed","conclusion":"success"},{"databaseId":2,"displayTitle":"After roll ready/alpha-01234567 at MAIN","status":"completed","conclusion":"success"}]""";
+        env["FAKE_AFTER_JOBS"] = "3=skipped 2=success";
+
+        var (code, output) = Promote("1.0.4.106", env: env);
+
+        Assert.True(code == 0, output);
+        Assert.True(output.Contains("is proven: CI on main and the after-roll are green", StringComparison.Ordinal), output);
+        Assert.Contains("promoted=true", File.ReadAllText(outputs), StringComparison.Ordinal);
+        Assert.NotEqual(before, MainOnOrigin());
     }
 
     /// <summary>By hand the same wait ends in a refusal that names the command that starts what is missing.</summary>
@@ -526,6 +561,8 @@ public sealed partial class PromoteScriptTests : IDisposable
     public static TheoryData<string, bool, bool, bool, string[]> Paths => new()
     {
         { "plain", false, false, true, ["promoted=true", "by_push=false"] },
+        // With the secret every push is the personal token's, so a plain version rolls by its push, once.
+        { "plain-with-the-token", false, true, true, ["promoted=true", "by_push=true"] },
         { "workflow-with-the-token", true, true, true, ["promoted=true", "by_push=true"] },
         { "workflow-with-no-token", true, false, false, ["promoted=false", "by_push=false"] },
     };
@@ -575,4 +612,42 @@ public sealed partial class PromoteScriptTests : IDisposable
         }
     }
     // #endregion the-three-paths
+
+    // #region the-filled-commit
+    /// <summary>
+    /// A run since the traffic cop tested the commit its cop job filled, which gate-raw names in filled.sha, not the
+    /// ready branch's commit the run was pushed with (ADR: One traffic cop for main): HEAD on the filled commit
+    /// promotes, HEAD on any other is refused.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void A_cop_run_is_held_to_the_filled_commit_its_gate_raw_names(bool onIt)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        string before = MainOnOrigin();
+        Version("1.0.4.106");
+        string filled = Git("rev-parse HEAD");
+        File.WriteAllText(Path.Combine(_root, "raw", "filled.sha"), (onIt ? filled : before) + "\n");
+
+        // The run's headSha is the pushed ready commit, which still carried the placeholders.
+        var (code, output) = Promote("1.0.4.106", tested: "1234567890abcdef1234567890abcdef12345678");
+
+        if (onIt)
+        {
+            // Main is the filled commit with the run's results folded in.
+            Assert.True(code == 0, output);
+            Assert.Equal(Git("rev-parse HEAD"), MainOnOrigin());
+            Assert.Equal(before, Git("rev-parse HEAD~1"));
+            return;
+        }
+        Assert.Equal(1, code);
+        Assert.Contains($"gate run 4242 tested {before[..8]} and HEAD is {filled[..8]}", output, StringComparison.Ordinal);
+        Assert.Equal(before, MainOnOrigin());
+    }
+    // #endregion the-filled-commit
 }

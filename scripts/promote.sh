@@ -42,7 +42,13 @@ version=${3:-$(branch_version "${GITHUB_REF_NAME:-}")}
 # Before anything is written: HEAD is the commit the named run tested, and it is one commit on main, so the gate's
 # two cuts (the diff of that one commit) saw everything this push ships.
 [ -n "$run" ] || refuse "name the gate run this promotes: scripts/promote.sh <raw> <seconds> <version> <run>"
-tested=$(gh run view "$run" --json headSha --jq .headSha) || refuse "gate run $run could not be read"
+# A run since the traffic cop tested the commit its cop job filled, not the one pushed, and its gate-raw names it
+# (ADR-137); a run from before names none, and tested the commit it was pushed with.
+if [ -s "$raw/filled.sha" ]; then
+  tested=$(tr -d '[:space:]' < "$raw/filled.sha")
+else
+  tested=$(gh run view "$run" --json headSha --jq .headSha) || refuse "gate run $run could not be read"
+fi
 [ "$tested" = "$(git rev-parse HEAD)" ] || refuse "gate run $run tested ${tested:0:8} and HEAD is $(git rev-parse --short=8 HEAD)"
 # The jobs it trusts, by name: the gate's verdict, The Shed, and the check jobs the verdict folds, which run side by
 # side since 1.0.5.4 (ADR-098, the addendum of that version). Every one green, or nothing is promoted.
@@ -144,7 +150,11 @@ git merge-base --is-ancestor origin/main HEAD || refuse "main is not an ancestor
 # carries this version the roll is the push's and the run must not call the two deploys a second time.
 workflow=false
 if git diff --name-only origin/main HEAD -- .github/workflows | grep -q .; then workflow=true; fi
+# In the gate the promote job checks out with PROMOTE_TOKEN whenever the secret exists, so the push below is a
+# personal token's for EVERY version, not only one that changes a workflow, and starts Deploy and Deploy Render on
+# its own. The run must not call them a second time: one roll per commit (ADR-137, the double roll).
 by_push=false
+if [ -n "${GITHUB_ACTIONS:-}" ] && [ "${HAS_PROMOTE_TOKEN:-}" = true ]; then by_push=true; fi
 if [ "$workflow" = true ]; then
   if [ -z "${GITHUB_ACTIONS:-}" ] || [ "${HAS_PROMOTE_TOKEN:-}" = true ]; then
     by_push=true
@@ -186,13 +196,36 @@ proof() {
     pick='.displayTitle == "CI " + $sha'
     [ "$named" = true ] || pick="($pick) or ((.event == \"push\" or .event == \"workflow_dispatch\") and .headSha == \$sha)"
   else
-    runs=$(gh run list --workflow after-roll.yml --limit 50 --json displayTitle,status,conclusion 2> /dev/null) || {
+    runs=$(gh run list --workflow after-roll.yml --limit 50 --json databaseId,displayTitle,status,conclusion 2> /dev/null) || {
       echo unread
       return
     }
     # "After roll <version> at <commit>", or "After roll gate/<version>-<lane>-<sha8> at <commit>" when the Gate
     # run started it: a run for another version at main's commit (a Gate run that promoted nothing) is no proof.
-    pick='(.displayTitle | endswith(" at " + $sha)) and ((.displayTitle | ltrimstr("After roll ") | rtrimstr(" at " + $sha) | ltrimstr("gate/") | split("-")[0]) == $version)'
+    # "After roll ready/<lane>-<sha8> at <commit>" names no version (ADR-137, One traffic cop for main), and a ready
+    # branch the cop skipped ends green with an after-roll that reads nothing at main's same commit, so a ready-named
+    # run is proof only when its after-roll job ran; newest first, the first one that did is main's.
+    local id title status conclusion job
+    while IFS=$'\t' read -r id title status conclusion; do
+      case "$title" in
+        "After roll ready/"*)
+          if [ "$status" = completed ]; then
+            job=$(gh run view "$id" --json jobs --jq '[.jobs[] | select(.name == "after-roll")][0].conclusion // "none"' 2> /dev/null) || {
+              echo unread
+              return
+            }
+            case "$job" in skipped | none | "") continue ;; esac
+          fi
+          ;;
+        *)
+          [ "$(sed -e 's/^After roll //' -e "s/ at $main_sha\$//" -e 's#^gate/##' -e 's/-.*//' <<< "$title")" = "$on_main" ] || continue
+          ;;
+      esac
+      if [ "$status" != completed ]; then echo running; elif [ "$conclusion" = success ]; then echo success; else echo red; fi
+      return
+    done < <(jq -r --arg sha "$main_sha" '.[] | select(.displayTitle | endswith(" at " + $sha)) | [(.databaseId // 0 | tostring), .displayTitle, .status, (.conclusion // "")] | @tsv' <<< "$runs" 2> /dev/null)
+    echo none
+    return
   fi
   jq -r --arg sha "$main_sha" --arg version "$on_main" "[.[] | select($pick)] | if length == 0 then \"none\" else .[0] | if .status != \"completed\" then \"running\" elif .conclusion == \"success\" then \"success\" else \"red\" end end" <<< "$runs" 2> /dev/null || echo unread
 }

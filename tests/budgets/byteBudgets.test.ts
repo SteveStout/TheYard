@@ -50,8 +50,12 @@ export function allowed(
   );
 }
 
-/** Whether this run is a gate's: the gate pushes gate/<version>, and only its node job builds before Vitest. */
-const onTheGate = (ref: string | undefined) => ref?.startsWith('refs/heads/gate/') === true;
+/**
+ * Whether this run is a gate's: a lane pushes ready/<lane>-<sha8> (ADR-137), or gate/<version> before the cop, and only
+ * the gate's node job builds before Vitest.
+ */
+const onTheGate = (ref: string | undefined) =>
+  ref?.startsWith('refs/heads/ready/') === true || ref?.startsWith('refs/heads/gate/') === true;
 
 describe('the first load stays inside its byte budget', () => {
   it('runs on the gate, where the site is always built first', () => {
@@ -61,6 +65,7 @@ describe('the first load stays inside its byte budget', () => {
 
   it('asks for the build only on a gate branch, not in CI on main', () => {
     expect(onTheGate('refs/heads/gate/1.0.5.64')).toBe(true);
+    expect(onTheGate('refs/heads/ready/code1118e-1a2b3c4d')).toBe(true);
     expect(onTheGate('refs/heads/main')).toBe(false);
     expect(onTheGate(undefined)).toBe(false);
   });
