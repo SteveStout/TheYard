@@ -111,7 +111,7 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
         {
             try
             {
-                var sent = await sender.SendAsync(new OutgoingMail(TodayMail.To, TodayCard.Subject(inputs.At), card, TodayMail.Html(card)), ct);
+                var sent = await sender.SendAsync(new OutgoingMail(TodayMail.To, TodayCard.Subject(inputs), card, TodayMail.Html(card)), ct);
                 line = $"{head}, mailed to {TodayMail.To}, gmail {sent.MessageId} thread {sent.ThreadId}";
                 if (labels is not null)
                 {

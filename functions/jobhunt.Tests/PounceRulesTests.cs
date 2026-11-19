@@ -127,13 +127,13 @@ public sealed class PounceRulesTests
     }
 
     [Fact]
-    public void SingleStore_never_says_remote_so_the_night_and_the_pounce_both_fail_it()
+    public void SingleStore_never_says_remote_so_the_night_passes_it_under_rule_76_and_the_pounce_still_fails_it()
     {
         // The excerpt carries the location words; the stack sentence stands in for the rest of the posting, which the stack gate passed on 11/10.
         var verdict = JobsGates.Judge(Role("SingleStore", "Staff / Principal Software Engineer – Cloud Platform & SaaS", SingleStore + " The platform runs on Azure."), [], [], Today);
         Assert.Equal(JobsGates.CountryOnly, verdict.Remote);
-        Assert.Equal("not remote: United States, and the title and text never say remote", verdict.Failed);
-        Assert.Equal(verdict.Failed, PounceRules.Gate(verdict, [], new HashSet<string>()));
+        Assert.Null(verdict.Failed);
+        Assert.Equal(JobsGates.CountryOnly, PounceRules.Gate(verdict, [], new HashSet<string>()));
     }
 
     [Theory]

@@ -56,11 +56,14 @@ public static partial class TrackerRowFile
         AddWhen(parts, evidence?.Confirmation, "Confirmation: {0}.");
         AddWhen(parts, record.Text, "Text sent: {0}");
         AddWhen(parts, record.Row.Code, "Code {0}.");
-        AddWhen(parts, record.Row.Resume is { } resume ? $"headline \"{resume.Headline}\", {Path.GetFileName(resume.Path)} SHA-256 {resume.Sha}" : null, "Resume {0}.");
+        AddWhen(parts, record.Row.Resume is { } resume ? $"{Headline(resume)}, {Path.GetFileName(resume.Path)} SHA-256 {resume.Sha}" : null, "Resume {0}.");
         AddWhen(parts, record.Screenshot, "Screenshot {0}.");
         parts.Add($"Source {record.Row.Source}.");
         return string.Join(' ', parts);
     }
+
+    private static string Headline(ResumeBuild resume) =>
+        resume.Headline.StartsWith(ResumeLock.Marker, StringComparison.Ordinal) ? resume.Headline : $"headline \"{resume.Headline}\"";
 
     private static void AddWhen(List<string> parts, string? value, string shape)
     {

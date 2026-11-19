@@ -48,7 +48,7 @@ public sealed class JobsPick(IMergeStore store, IJobsPostings postings, ITracker
 
         var all = feedVerdicts.Concat(alertVerdicts).ToList();
         var passed = all.Where(v => v.Failed is null).DistinctBy(v => JobsGates.Same(v.Candidate))
-            .OrderBy(v => v.Candidate.Confirmed == "feed" ? 0 : 1).ThenBy(v => v.DaysOld).ToList();
+            .OrderBy(v => JobsGates.Arrangement(v.Remote)).ThenBy(v => v.Candidate.Confirmed == "feed" ? 0 : 1).ThenBy(v => v.DaysOld).ToList();
         passed = await FormsAsync(passed, ct);
         var failed = all.Where(v => v.Failed is not null).ToList();
         int boards = feed.Select(f => f.Candidate.Source + "|" + f.Candidate.Company).Distinct(StringComparer.Ordinal).Count();
