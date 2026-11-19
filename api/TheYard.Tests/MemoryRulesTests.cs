@@ -99,6 +99,7 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Api.Shared.PlanReadings.PlanRecorder._keptMinutes"] = "the plan's minutes of the last ten, older ones removed on every read",
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._asked"] = "one per card, the cards in the catalogue",
         ["TheYard.Api.Features.Admin.Cloud.CloudReader._month"] = "one per card, seven",
+        ["TheYard.Application.Shared.History.MonthKeep`1._kept"] = "thirty days of five-minute buckets, 8,640 at most, older ones dropped on every read",
         ["TheYard.Api.Shared.Hosted.KeptViews`1._cached"] = "one per slot asked for in the last hour: a Cloud card's or the plan's window, the Azure card's one view, a runs page; dropped with its slot an hour after the last ask",
         ["TheYard.Api.Shared.Hosted.KeptViews`1._watched"] = "one per slot asked for, dropped an hour after the last ask; the slots are the windows, process names and pages each route already accepts",
         ["TheYard.Api.Shared.Hosted.KeptViews`1._building"] = "every build under way, one a slot, shared by the requests and the keeper, each removed the moment it finishes",

@@ -54,6 +54,37 @@ public sealed class BoxRowsTests
     }
 
     [Fact]
+    public void Parked_swap_with_nothing_paging_is_green_and_paging_pressure_or_a_swap_the_memory_cannot_take_back_is_amber()
+    {
+        // WickedAwsome on 19 November (ADR-127, the addendum on paging): 1.9 of 2.0 GiB in swap, 0 B/s in and out, no
+        // pressure and 22 GiB available. The occupancy line read amber; the box was fine. Parked pages are not pressure.
+        long gib = 1024L * 1024 * 1024;
+        var parked = BoxSamples.Snapshot() with { Memory = new(32 * gib, 8 * gib, 20 * gib, 3 * gib, 22 * gib, 0), Swap = new(2 * gib, 1_900L * 1024 * 1024, 0, 0) };
+        var paging = parked with { Swap = parked.Swap with { InBps = 700L * 1024, OutBps = 400L * 1024 } };
+        var pressed = parked with { Memory = parked.Memory with { PressurePercent = 12 } };
+        var cornered = parked with { Memory = parked.Memory with { AvailableB = gib } };
+        var halfFullCornered = cornered with { Swap = cornered.Swap with { UsedB = gib } };
+
+        Assert.Equal("good", BoxRows.Memory(parked).Tone);
+        Assert.Equal("warning", BoxRows.Memory(paging).Tone);
+        Assert.Equal("warning", BoxRows.Memory(pressed).Tone);
+        Assert.Equal("warning", BoxRows.Memory(cornered).Tone);
+        Assert.Equal("good", BoxRows.Memory(halfFullCornered).Tone);
+        Assert.Contains("moving 0 B/s in and 0 B/s out over five minutes, memory pressure 0 %", BoxRows.Memory(parked).Detail[0].Text, StringComparison.Ordinal);
+        Assert.Contains("swap amber when 1.0 MiB/s moves through it", BoxRows.Memory(parked).Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_snapshot_from_an_agent_that_reads_no_paging_keeps_the_occupancy_line_and_says_why()
+    {
+        long gib = 1024L * 1024 * 1024;
+        var older = BoxSamples.Snapshot() with { Memory = new(32 * gib, 8 * gib, 20 * gib, 3 * gib), Swap = new(2 * gib, 1_900L * 1024 * 1024) };
+
+        Assert.Equal("warning", BoxRows.Memory(older).Tone);
+        Assert.Contains("(the agent reads no paging yet)", BoxRows.Memory(older).Detail[0].Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_stopped_must_run_unit_stays_red_and_names_the_command_that_restarts_it()
     {
         var snapshot = BoxSamples.Snapshot();

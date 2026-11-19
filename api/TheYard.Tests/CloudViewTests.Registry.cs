@@ -133,4 +133,33 @@ public partial class CloudViewTests
         Assert.Equal("GHCR.IO PUBLIC PACKAGES", facts["spec"]);
         Assert.Null(RegistryCard.Facts(Both(), null)["apps_read"]);
     }
+
+    [Fact]
+    public void A_registry_with_a_kept_hour_and_no_minute_is_read_and_judged_good_by_that_hour()
+    {
+        // The registry keeps no minute (ADR-102, the addendum on the honesty rule): read by minutes, its hour never counted,
+        // and on 19 November it sat unread for eight hours with a fresh hour kept, both dials information at 2 of 2.
+        var kept = Registry(Both(), Rolled()) with { LastHour = [], Hours = [new ResourceHour(Now.AddMinutes(-30), "", null, RegistryCard.Facts(Both(), Rolled()), [])] };
+
+        var card = CardFrame.Complete(RegistryCard.View(kept), RegistryCard.Anonymous, hourly: true);
+
+        Assert.Equal(1800, card.ReadAgeSeconds);
+        Assert.Null(card.Note);
+        Assert.Equal("fine", card.Tone);
+        Assert.All(card.Dials, dial => Assert.Equal("good", dial.Tone));
+        Assert.Equal("30 min ago", card.Readout.Lines.Single(line => line.Label == "Hourly read").Value);
+    }
+
+    [Fact]
+    public void A_registry_with_no_hour_kept_stays_unread_and_says_so()
+    {
+        var empty = Registry(Both(), Rolled()) with { LastHour = [], Hours = [] };
+
+        var card = CardFrame.Complete(RegistryCard.View(empty), RegistryCard.Anonymous, hourly: true);
+
+        Assert.Null(card.ReadAgeSeconds);
+        Assert.Equal("unread", card.Tone);
+        Assert.StartsWith("no hour kept yet", card.Note, StringComparison.Ordinal);
+        Assert.Equal("not read yet: no hour kept yet", card.Readout.Lines.Single(line => line.Label == "Hourly read").Value);
+    }
 }
