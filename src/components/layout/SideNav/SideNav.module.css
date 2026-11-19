@@ -3,7 +3,7 @@
  *            icons and record numbers.
  * Does not:  Decide which rows exist (siteMap.ts and sections.ts do) or open a document (DocDialog.tsx does).
  * Used by:   SideNav.tsx, RailBrandBar.tsx, RailSectionShell.tsx, RailDocRow.tsx, RailLinkRow.tsx,
- *            RailPinnedRow.tsx, RailPinnedRows.tsx, RailResetBidsRow.tsx.
+ *            RailPinnedRow.tsx, RailPinnedRows.tsx, RailResetBidsRow.tsx, RailHeldKey.tsx.
  */
 /*
  * The one navigation surface (ADR-013). Two shapes, one set of rows:
@@ -461,6 +461,38 @@ details[open] > .sectionToggleIcons::after {
   font-variant-numeric: tabular-nums;
   color: var(--color-sheet-text-muted);
   font-size: var(--text-xs);
+}
+
+/* The Decision Records marks (ADR-029, the addendum on the marks): a filled dot where a test holds the record, a
+   ring where review does, at the row's end so the number and the label keep their place. Drawn as shapes, not
+   colours alone, so the two read apart without colour. */
+.heldMark {
+  flex: none;
+  display: inline-block;
+  box-sizing: border-box;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.heldMark[data-held='test'] {
+  background: var(--color-teal-deep);
+}
+
+.heldMark[data-held='review'] {
+  border: 1.5px solid var(--color-sheet-text-muted);
+}
+
+/* The key above the index, in the record number's small type. */
+.heldKey {
+  margin: var(--space-1) var(--space-4) var(--space-2);
+  color: var(--color-sheet-text-muted);
+  font-size: var(--text-xs);
+}
+
+.heldKeyGap {
+  display: inline-block;
+  width: var(--space-3);
 }
 
 .srOnly {
