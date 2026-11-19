@@ -94,45 +94,36 @@ No Gate run starts the after-roll for a version promoted by hand, so `promote.sh
 starts it right after its push, or names the one command:
 `gh workflow run after-roll.yml --ref main -f sha=<sha> -f version=<version>`.
 
-**The number is filled at the claim, under the lock** (ADR-031, the addendum on the
-fill at the claim). A lane builds its one commit on `origin/main` with the
-placeholders for the version, the date and the record number where the numbers
-go, and fills them only once it holds the gate lock:
+**The number is filled at landing, by the traffic cop** (ADR-137, One traffic cop for main). A lane builds its
+one commit on `origin/main` with the placeholders for the version, the date and the record number where the
+numbers go (CLAUDE.md, Shipping, spells them), and never fills them itself:
 
 ```
-v=$(bash scripts/versions.sh next)
-bash scripts/gate_lock.sh claim <lane> "$v"
-GATE_LANE=<lane> bash scripts/fill_version.sh
+git fetch origin && git rebase origin/main
 GATE_LANE=<lane> bash scripts/preflight.sh
-git push origin HEAD:refs/heads/gate/$v-<lane>-$(git rev-parse --short=8 HEAD)
-bash scripts/gate_pr.sh open gate/$v-<lane>-<sha8>
-bash scripts/gate_lock.sh annotate <run> gate/$v-<lane>-<sha8>
+git push origin HEAD:refs/heads/ready/<lane>-$(git rev-parse --short=8 HEAD)
+bash scripts/gate_pr.sh open ready/<lane>-<sha8>
+gh run list -w Gate -b ready/<lane>-<sha8>
 ```
 
-`scripts/gate_lock.sh claim` takes `flock` on a local file for the seconds it
-reads the share's lock, creates the lock only if it is absent (`set -o
-noclobber`), writes `lane= pid= since= version=` and reads it back after two
-seconds; `annotate` adds `run=` and `branch=` once the run exists.
-`scripts/fill_version.sh` refuses unless HEAD is exactly one commit on
-`origin/main`, fills the version (main's top line plus one), today's date in
-America/Chicago and the next free record number (in a file's name too), redraws
-the version card, tightens `.github/quality-ratchet.json` to what
-`.github/quality.py` measures, amends the commit and prints `VERSION= ADR=
-HEAD=`; a second run changes nothing. Every reader of a gate branch's name
-takes the version as the text after `gate/` up to the first hyphen, so the
-older `gate/<version>` still reads.
+The Gate run's first job, `cop`, runs the moment the run holds the gate's concurrency group (`queue: max`, every
+pending run kept in line, the order GitHub's and not promised). `scripts/cop.sh` skips a branch that is not one
+commit off main, whose changelog top line is already a number, or whose `gate.yml` is older than main's; it lifts the
+lane's changelog line out, gives the changelog, `.github/quality-ratchet.json` and the version card main's side,
+rebases the rest onto `origin/main` (a conflict anywhere else is a skip), puts the line back on top of main's
+newest and runs `scripts/fill_version.sh`, which fills the version (main's top line plus one), today's date in
+America/Chicago and the next free record number (in a file's name too), redraws the version card, tightens the
+ratchet and amends. The filled commit leaves as a git bundle in the run's `filled` artifact, and every later job
+checks it out with `.github/actions/filled`, so every check tests the commit that ships. A skip tested nothing
+and ends the run green.
 
-**A red gate releases the lock and frees its number.** The holder runs
-`bash scripts/gate_lock.sh release`, which renames the lock to
-`theyard-gate.released-<unix time>`; the next claim takes main's top line plus
-one, and nothing waits on a gate branch being deleted. A peer may release
-another lane's lock only when its run concluded failure or cancelled, or
-concluded success with main already on its version (`gate_lock.sh show` says
-which); a green run that has not promoted is its holder's or Steve's. The gate's
-concurrency group keeps every pending run in line (`queue: max`), and its first
-job, `number`, turns a run away within seconds when its version is no longer
-main's top line plus one, so a double claim costs under a minute. Promote's own
-version checks stay as the backstop.
+**The lane reads what became of its branch on its own commit**, the status named `cop` that
+`scripts/cop_status.sh` posts: "landed as <version>, main <sha8>", "green as <version>, needs a hand promote",
+"red gate: <checks>; <first failing line>" or "skipped: <reason>", each linked to its run. Anything but landed is
+the lane's to fix and push as a new ready branch; nobody retries for it. The after-roll deletes a ready branch
+once landed is there. No lane takes the gate lock: `scripts/gate_lock.sh` is kept for a hand promote, where it
+stops two promotes at once. `gate/*` is refused red since 1.0.5.99. A hand promote of a cop run fetches the
+filled commit from the run's bundle first; the steps are in CLAUDE.md, Shipping.
 
 **Before the push, run the preflight** (ADR-098, the addendum of 1.0.4.119):
 
@@ -140,10 +131,8 @@ version checks stay as the backstop.
 GATE_LANE=<lane> bash scripts/preflight.sh
 ```
 
-It first checks the number the version claims (`scripts/versions.sh`): the changelog's top line is filled and is
-main's top line plus one, and the held gate lock does not name it for another lane; taken means on main or in the
-held lock, never "a branch exists", and a refusal names the next free version (ADR-031, the addendums on the claim
-check and on the fill at the claim). Then it runs the four gate checks a
+It first checks the ship's shape: one commit on `origin/main` with the changelog's top line still the version
+placeholder, for the cop to fill (ADR-137). Then it runs the four gate checks a
 shipping machine can run in under three minutes
 and inside 8 GB (`dotnet format api/TheYard.slnx --verify-no-changes`, `npm run
 format:check`, `npm run lint`, `npx tsc -b`), names the red one with the first
@@ -195,8 +184,8 @@ it pushed, because the gate checks these and does not write them: draws the
 pictures (`node docs/images/render.mjs`, `node docs/images/dataflow.mjs --png`,
 `node docs/images/rings.mjs --png`, `node docs/images/og.mjs`), strips their
 stamps (`python3 scripts/strip_c2pa.py docs/images`), runs Prettier's write,
-commits with the changelog's new line on top, fills it at the claim, and pushes the commit to
-`gate/<version>-<lane>-<sha8>`. From 1.0.4.105 the gate draws the version card itself, so
+commits with the changelog's new line on top, and pushes the commit to `ready/<lane>-<sha8>`; the cop fills it at
+landing. From 1.0.4.105 the gate draws the version card itself, so
 the commit and the push are all a ship needs.
 
 **Nothing else waits on a machine either** (ADR-098, the addendum of
@@ -343,9 +332,11 @@ URL, and every deploy so far has been gated on it.
 
 ## Files
 
-- [`scripts/versions.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/versions.sh): the version claim check preflight runs first, the gate's first check, and the version reading (a branch's name included) every script shares
-- [`scripts/fill_version.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/fill_version.sh): fills the version, the date and the record number at the claim, under the lock, and amends the one commit.
-- [`scripts/gate_lock.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_lock.sh): the gate lock's claim, annotation and release, and the rule for when a peer may release it.
+- [`scripts/versions.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/versions.sh): the version reading (a gate branch's name included) every script shares, and the old path's claim check, which the cop takes for a gate/* branch only until main carries it
+- [`scripts/cop.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/cop.sh): the traffic cop, the Gate run's first job: the lift, the rebase, the fill, the skips and the bundle of the filled commit.
+- [`scripts/cop_status.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/cop_status.sh): what became of a ready branch, posted on its own commit.
+- [`scripts/fill_version.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/fill_version.sh): fills the version, the date and the record number, run by the cop at landing, and amends the one commit.
+- [`scripts/gate_lock.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_lock.sh): the gate lock, kept since the cop only for a hand promote, and the rule for when a peer may release it.
 - [`scripts/preflight.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/preflight.sh): the gate's four quick checks and the promote path, run before the push; a red preflight is never pushed.
 - [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `ready/<lane>-<sha8>` branch a lane pushes, led by the traffic cop (`scripts/cop.sh`); `main` moves only on its green.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the suites as three jobs behind it, on every push to main and on a pull request.
