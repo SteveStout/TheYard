@@ -3252,6 +3252,31 @@
       "prs": [
         186
       ]
+    },
+    {
+      "version": "1.0.5.128",
+      "pr": 188,
+      "sha": "ead4b810",
+      "level": 0,
+      "at": "2026-11-20T14:04:13Z",
+      "waited_seconds": 430,
+      "review_seconds": 461,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 4,
+      "findings": {
+        "critical": 0,
+        "major": 1,
+        "minor": 2,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        188
+      ]
     }
   ]
 }
