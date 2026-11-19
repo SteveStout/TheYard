@@ -7,6 +7,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { useFirstLoad, useInTheBrowser } from '../hooks/useFirstLoad';
 import { useNow } from '../hooks/useNow';
 import { holdCode, pageOpenReport, reportPath, sessionOrNull } from '../lib/links';
+import { screenOf } from '../lib/reviewMirror';
 import { REVIEW_REPORT_PATH } from '../lib/reviewStops';
 import { RECOMMENDATIONS_REPORT_PATH } from '../lib/recommendationsPage';
 import { prefetchWhenIdle } from '../lib/prefetch';
@@ -140,13 +141,13 @@ export default function App() {
       ) : address.blogOpen ? (
         <BlogPage
           slug={address.blogPost}
-          query={address.blogQuery}
+          query={address.pageQuery}
           onOpen={go.openBlog}
           onMove={go.moveBlog}
           onAllPosts={go.closeBlogPost}
         />
       ) : address.reviewOpen ? (
-        <ReviewPage onOpenDoc={go.openDocument} />
+        <ReviewPage screen={screenOf(address.pageQuery)} onOpenDoc={go.openDocument} />
       ) : address.recommendationsOpen ? (
         <RecommendationsPage />
       ) : !address.inventoryOpen ? (

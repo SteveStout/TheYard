@@ -23,6 +23,17 @@ public static class ReviewActions
     /// </summary>
     public const string CountedFrom = "2026-11-19";
 
+    /// <summary>The first screens the route draws: "verdict" at /?view=review, "mirror" at /?view=review&amp;for=ai.</summary>
+    public static readonly IReadOnlyList<string> Screens = ["verdict", "mirror"];
+
+    /// <summary>The screen a row is counted under: the one it kept, or "verdict" for a row kept before screens were.</summary>
+    /// <param name="row">The visitor's row.</param>
+    public static string ScreenOf(ReviewRow row) => row.Screen ?? Screens[0];
+
+    /// <summary>A screen the page reported, or null for none or one the route does not draw, which is dropped, not refused.</summary>
+    /// <param name="screen">The screen reported.</param>
+    public static string? ScreenOrNull(string? screen) => screen is not null && Screens.Contains(screen, StringComparer.Ordinal) ? screen : null;
+
     /// <summary>Whether a name is one the page may report; null is not one.</summary>
     /// <param name="name">The name reported.</param>
     public static bool IsOne(string? name) => name is not null && Names.Contains(name, StringComparer.Ordinal);

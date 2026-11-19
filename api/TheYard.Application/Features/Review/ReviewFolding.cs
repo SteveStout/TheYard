@@ -28,12 +28,12 @@ public static class ReviewFolding
     /// <summary>One report as a row of its own; a report of an action carries the action in a set of one.</summary>
     /// <param name="reach">The report.</param>
     public static ReviewRow Row(ReviewReach reach) =>
-        new(reach.Hash, reach.Day, reach.Stop, reach.Code, reach.At, reach.At, reach.Action is { } action ? [action] : []);
+        new(reach.Hash, reach.Day, reach.Stop, reach.Code, reach.At, reach.At, reach.Action is { } action ? [action] : [], reach.Screen);
 
     /// <summary>
     /// A row folded into the one kept for the same visitor and day: the higher stop, the first code
-    /// (a code is kept once per visitor and day), the earlier first and the later last, and the actions of
-    /// both, so an action once seen is never taken away.
+    /// (a code is kept once per visitor and day), the earlier first and the later last, the actions of
+    /// both, so an action once seen is never taken away, and the first screen seen.
     /// </summary>
     /// <param name="kept">The row as kept.</param>
     /// <param name="added">The row the batch adds.</param>
@@ -44,6 +44,7 @@ public static class ReviewFolding
         First = added.First < kept.First ? added.First : kept.First,
         Last = added.Last > kept.Last ? added.Last : kept.Last,
         Actions = ReviewActions.Union(kept.Actions, added.Actions),
+        Screen = kept.Screen ?? added.Screen,
     };
 }
 // #endregion review-folding

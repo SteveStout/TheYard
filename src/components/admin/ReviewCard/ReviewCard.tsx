@@ -13,6 +13,7 @@ import {
   reachedWords,
   REORDERED_LINE,
   REVIEW_WINDOWS,
+  screenLine,
   secondCountedLine,
   secondFigures,
   tookWords,
@@ -101,6 +102,19 @@ export default function ReviewCard({ tick }: { tick: number }) {
               </div>
             ))}
           </dl>
+          {(funnel.second?.by_screen ?? []).length > 0 && (
+            <ul
+              className={own.screens}
+              aria-label="The two figures by first screen"
+              data-testid="review-screens"
+            >
+              {(funnel.second?.by_screen ?? []).map((row) => (
+                <li key={row.screen} data-testid={`review-screen-${row.screen}`}>
+                  {screenLine(row)}
+                </li>
+              ))}
+            </ul>
+          )}
           <p className={styles.muted} data-testid="review-second-counted">
             {secondCountedLine(funnel.second)}
           </p>

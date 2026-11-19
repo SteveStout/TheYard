@@ -4,7 +4,7 @@
  *            after the lede, before the tiles, so the primary button is inside the first screen.
  * Does not:  Draw a panel's glass (panels.css does), a tile (ProofTile.module.css does) or the pills' own look
  *            (ReviewPage.module.css does).
- * Used by:   ReviewVerdict.tsx.
+ * Used by:   ReviewMirror.tsx, ReviewVerdict.tsx.
  */
 .verdict {
   display: grid;

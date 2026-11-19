@@ -87,6 +87,39 @@ public sealed class ReviewHandlerTests
     }
 
     [Fact]
+    public async Task The_two_figures_split_by_the_first_screen_kept_and_a_row_with_none_reads_as_the_verdict()
+    {
+        var store = new MemoryReviewStore();
+        await store.KeepAsync([
+            new("a", "2026-11-04", 0, null, Now.AddHours(-2), Now.AddHours(-2)),
+            new("b", "2026-11-04", 0, null, Now.AddHours(-2), Now.AddHours(-2), ["proof"], "verdict"),
+            new("c", "2026-11-04", 0, null, Now.AddHours(-1), Now.AddHours(-1), ["resume"], "mirror"),
+            new("d", "2026-11-04", 0, null, Now.AddHours(-1), Now.AddHours(-1), [], "mirror"),
+        ], CancellationToken.None);
+        var week = await new ReadReviewFunnelHandler(store, new FixedClock(Now)).HandleAsync(new ReadReviewFunnelQuery(ReviewWindow.Week), CancellationToken.None);
+
+        Assert.Equal(
+            [new ReviewScreenRow("verdict", 2, 1, 1), new ReviewScreenRow("mirror", 2, 1, 0)],
+            week.Second.ByScreen);
+    }
+
+    [Fact]
+    public async Task A_screen_the_route_does_not_draw_is_dropped_not_refused_and_the_first_one_seen_stays()
+    {
+        var offers = new Offers();
+        var handler = new RecordReviewReachHandler(offers, new FixedClock(Now));
+        Assert.True(await handler.HandleAsync(new RecordReviewReachCommand("hash", 0, null, null, "sideways"), CancellationToken.None));
+        Assert.True(await handler.HandleAsync(new RecordReviewReachCommand("hash", 0, null, null, "mirror"), CancellationToken.None));
+        Assert.Equal([null, "mirror"], offers.Taken.Select(reach => reach.Screen));
+
+        var row = Assert.Single(ReviewFolding.Fold([
+            new ReviewReach("a", "2026-11-04", 0, null, Now, null, "mirror"),
+            new ReviewReach("a", "2026-11-04", 1, null, Now.AddMinutes(1), null, "verdict"),
+        ]));
+        Assert.Equal("mirror", row.Screen);
+    }
+
+    [Fact]
     public async Task The_funnel_counts_each_visitor_once_at_the_highest_stop_with_eight_places_and_the_codes_newest_first()
     {
         var store = new MemoryReviewStore();

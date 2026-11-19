@@ -31,8 +31,8 @@ function browserStorage(): StorageLike | null {
  * background: a send that fails is let go and never blocks the page, and keepalive lets one sent as a stop's
  * link is followed finish after the page has gone.
  */
-function report(stop: number, code: string | null): void {
-  send(reachBody(stop, code));
+function report(stop: number, code: string | null, screen: string): void {
+  send(reachBody(stop, code, screen));
 }
 
 /** One report to the API, in the background; keepalive lets one sent as a link is followed finish after the page has gone. */
@@ -54,7 +54,7 @@ function send(body: object): void {
  * page is drawn on the server at the first stop, and hydrated at the first stop too, so the two
  * agree; once the page is in the browser the kept place is what shows, and every move is kept.
  */
-export function useReviewProgress() {
+export function useReviewProgress(screen: string = 'verdict') {
   const inBrowser = useInTheBrowser();
   // A move made on this page; until there is one, the place is the kept one.
   const [moved, setMoved] = useState<{ progress: ReviewProgress; finished: boolean } | null>(null);
@@ -66,12 +66,12 @@ export function useReviewProgress() {
     typeof window === 'undefined' ? null : linkCode(window.location.search)
   );
   // The route opened: stop 0, once for this page.
-  useEffect(() => report(0, code), [code]);
+  useEffect(() => report(0, code, screen), [code, screen]);
 
   // Every move but the last Mark done puts a stop back on screen, so the route is not finished. A stop
   // reached for the first time on this browser is reported once; the reached set is what is kept.
   const keep = (next: ReviewProgress, done = false) => {
-    for (const stop of newlyReached(progress, next)) report(stop, code);
+    for (const stop of newlyReached(progress, next)) report(stop, code, screen);
     setMoved({ progress: next, finished: done });
     writeProgress(browserStorage(), next);
   };
@@ -101,6 +101,6 @@ export function useReviewProgress() {
      * reported by its name with the code the page opened on. The API keeps each name once a visitor a day,
      * so a second press costs a request and changes nothing.
      */
-    action: (name: ReviewAction) => send(actionBody(name, code)),
+    action: (name: ReviewAction) => send(actionBody(name, code, screen)),
   };
 }

@@ -3,7 +3,8 @@
  *            under it as one column at the reading measure; and holds the route's two pills: the filled one for the
  *            move to make and the outlined one beside it.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a stop (ReviewStop.module.css does).
- * Used by:   ReviewFinish.tsx, ReviewPage.tsx, ReviewProgress.tsx, ReviewStop.tsx, ReviewVerdict.tsx.
+ * Used by:   ReviewFinish.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewProgress.tsx, ReviewStop.tsx,
+ *            ReviewVerdict.tsx.
  */
 .page {
   display: flex;

@@ -18,7 +18,34 @@ export type ReviewCodeRow = { code: string; stop: number; minutes: number; last_
  * The card's two figures (ADR: Ten minutes, seven stops, the addendum on the second actions), each a count of the
  * visitors who opened: any second action or a stop past the opening, and the running system or the booking button.
  */
-export type ReviewSecond = { second_action: number; running_or_book: number; counted_from: string };
+export type ReviewSecond = {
+  second_action: number;
+  running_or_book: number;
+  counted_from: string;
+  /** The same two figures for each first screen; absent from an answer made before screens were kept. */
+  by_screen?: ReviewScreenRow[];
+};
+
+/** One first screen's row: who opened on it and how many of them reached each figure. */
+export type ReviewScreenRow = {
+  screen: string;
+  opened: number;
+  second_action: number;
+  running_or_book: number;
+};
+
+/** What the card calls each first screen, and where it is. */
+const SCREEN_NAMES: Record<string, string> = {
+  verdict: 'The verdict, /?view=review',
+  mirror: 'The mirror, /?view=review&for=ai',
+};
+
+/** One screen's line on the card: its name, who opened on it, and the two figures as shares of them. */
+export function screenLine(row: ReviewScreenRow): string {
+  const share = (count: number) =>
+    row.opened === 0 ? 0 : Math.round((Math.min(count, row.opened) * 100) / row.opened);
+  return `${SCREEN_NAMES[row.screen] ?? row.screen}: ${row.opened} opened, ${share(row.second_action)}% a second action, ${share(row.running_or_book)}% the running system or the booking button`;
+}
 
 /** The card's report, as GET /api/admin/review answers it. */
 export type ReviewFunnel = {

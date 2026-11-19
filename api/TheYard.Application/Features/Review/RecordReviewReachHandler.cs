@@ -33,7 +33,7 @@ public sealed class RecordReviewReachHandler(IReviewReachOffers offers, TimeProv
         {
             var at = clock.GetUtcNow();
             string? code = LinkCodes.IsOne(command.Code) ? command.Code : null;
-            offers.Offer(new ReviewReach(hash, at.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), command.Stop ?? 0, code, at, command.Action));
+            offers.Offer(new ReviewReach(hash, at.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), command.Stop ?? 0, code, at, command.Action, ReviewActions.ScreenOrNull(command.Screen)));
         }
         return Task.FromResult(true);
     }
@@ -44,5 +44,6 @@ public sealed class RecordReviewReachHandler(IReviewReachOffers offers, TimeProv
 /// <param name="Stop">0 for opened, 1 to 7 for the stop reached, or null for a report of an action alone.</param>
 /// <param name="Code">The ?r= code the page opened on, or null; one that is not a code is dropped.</param>
 /// <param name="Action">The button pressed (<see cref="ReviewActions.Names"/>), or null.</param>
-public sealed record RecordReviewReachCommand(string? Hash, int? Stop, string? Code, string? Action = null);
+/// <param name="Screen">The first screen the page drew; one the route does not draw is dropped, not refused.</param>
+public sealed record RecordReviewReachCommand(string? Hash, int? Stop, string? Code, string? Action = null, string? Screen = null);
 // #endregion record-review-reach

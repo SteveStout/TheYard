@@ -36,7 +36,7 @@ public static class ReviewEndpoints
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> Reached(ReviewReachedBody body, HttpContext http, VisitorTokens tokens, RecordReviewReachHandler handler, CancellationToken cancellation) =>
-        await handler.HandleAsync(new RecordReviewReachCommand(PersonOf(http, tokens), body.Stop, body.R, body.Action), cancellation)
+        await handler.HandleAsync(new RecordReviewReachCommand(PersonOf(http, tokens), body.Stop, body.R, body.Action, body.Screen), cancellation)
             ? TypedResults.NoContent()
             : TypedResults.Problem(
                 detail: $"A report carries a stop, 0 (opened) to {ReviewFolding.LastStop}, or an action, one of {string.Join(", ", ReviewActions.Names)}.",
@@ -64,4 +64,5 @@ public static class ReviewEndpoints
 /// <param name="Stop">0 for opened, 1 to 7 for the stop reached, or null for an action alone.</param>
 /// <param name="R">The code, or null.</param>
 /// <param name="Action">The button pressed, one of <see cref="ReviewActions.Names"/>, or null.</param>
-public sealed record ReviewReachedBody(int? Stop, string? R, string? Action = null);
+/// <param name="Screen">The first screen the page drew, "verdict" or "mirror", or null.</param>
+public sealed record ReviewReachedBody(int? Stop, string? R, string? Action = null, string? Screen = null);

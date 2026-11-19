@@ -16,7 +16,7 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 2541 xUnit tests, 732 Vitest tests at 1.0.5.109 and 253 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.5.109 hold 6,166 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 2541 xUnit tests, 732 Vitest tests at 1.0.5.109 and 254 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.5.109 hold 6,166 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |

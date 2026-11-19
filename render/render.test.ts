@@ -331,6 +331,17 @@ describe('the rendering service', () => {
     ]);
   });
 
+  it('draws the mirror whole on the server for ?for=ai, with its own preview, and the verdict for any other value', async () => {
+    const { html } = await page('?view=review&for=ai');
+    expect(html).toContain('Shipping with AI without losing quality.');
+    expect(html).toContain('<title>Shipping with AI without losing quality | Steven Stout</title>');
+    expect(html).toContain('3,010');
+    expect(html).toContain('href="/?view=admin&amp;card=tests"');
+    expect(html).not.toContain('Production .NET that stays up.');
+    const other = (await page('?view=review&for=sales')).html;
+    expect(other).toContain('Production .NET that stays up.');
+  });
+
   it('draws both banners on the landing page, the resume first', async () => {
     const { html } = await page('');
     const resume = html.indexOf('data-testid="landing-banner-resume"');

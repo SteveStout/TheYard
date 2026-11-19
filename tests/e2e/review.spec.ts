@@ -276,6 +276,41 @@ test('at 390 by 844 the primary button is on the first screen and nothing scroll
   expect(sideways).toBeLessThanOrEqual(0);
 });
 
+// The mirror (ADR: The review route gives a reason before it asks, the addendum on the mirror): only for=ai draws it,
+// with its gate panel and its names (its own link preview is render.test.ts's), the address keeps for=ai, and every
+// report names the screen.
+test('for=ai draws the mirror with its gate panel at 1568 by 772, keeps the address, and reports its screen', async ({
+  page,
+}) => {
+  const screens: string[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { screen?: string };
+    screens.push(body.screen ?? '');
+    await route.fulfill({ status: 204 });
+  });
+  await page.setViewportSize({ width: 1568, height: 772 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review&for=ai');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Shipping with AI without losing quality.' })
+  ).toBeVisible();
+  await expect(page).toHaveURL(/[?&]for=ai/);
+  for (const shown of ['review-proof', 'review-book', 'review-gate-panel'])
+    expect(await bottomOf(page, shown), shown).toBeLessThanOrEqual(772);
+  await expect(page.getByTestId('review-proof')).toHaveAttribute('href', '/?view=admin&card=tests');
+  await expect(page.getByTestId('review-names')).toContainText('Drew Dell');
+  await expect.poll(() => screens).toContain('mirror');
+  expect(screens.every((screen) => screen === 'mirror')).toBe(true);
+  // At 390 the primary button is still on the first screen.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=review&for=ai');
+  expect(await bottomOf(page, 'review-proof')).toBeLessThanOrEqual(844);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(sideways).toBeLessThanOrEqual(0);
+});
+
 // "See the proof in 2 minutes" opens Quality in place on "The slip, and the turn", and reports its action once.
 test('the primary button opens Quality on the slip and the turn, in place, and reports the proof action', async ({
   page,

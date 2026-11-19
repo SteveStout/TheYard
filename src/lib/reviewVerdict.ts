@@ -3,7 +3,8 @@
  *            word for word from the design, the two tiles from the record, and the pickers that turn the live
  *            answers into the third tile, the one quote and the counts. Every number is read, never typed.
  * Does not:  Read anything or draw anything; no React in here.
- * Used by:   ReviewVerdict.tsx, ReviewLeadQuote.tsx, ReviewPage.tsx, StoreBar.tsx, reviewVerdict.test.ts.
+ * Used by:   ReviewVerdict.tsx, ReviewLeadQuote.tsx, ReviewMirror.tsx, GatePanel.tsx, NameStrip.tsx, ReviewPage.tsx,
+ *            StoreBar.tsx, reviewVerdict.test.ts.
  */
 import { proofFigures, type TestSummary } from './landingProof';
 import type { Recommendation } from './recommendations';

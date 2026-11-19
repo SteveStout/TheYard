@@ -3,7 +3,7 @@
  *            is rewritten without it, or a section a link asked for, such as the review route's "See the proof in 2
  *            minutes" opening Quality in place at "The slip, and the turn".
  * Does not:  Scroll or draw anything (useLiveBlocks.tsx lands on it once the document is drawn), or read a document.
- * Used by:   ReviewVerdict.tsx, useLiveBlocks.tsx.
+ * Used by:   ReviewMirror.tsx, ReviewVerdict.tsx, useLiveBlocks.tsx.
  */
 
 let pending =

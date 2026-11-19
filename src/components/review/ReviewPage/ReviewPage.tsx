@@ -1,6 +1,7 @@
 /**
  * Does:      Draws the review route at ?view=review: first the reason (ADR: The review route gives a reason before it
- *            asks), the first screen with its proof, its one primary move and one named quote; then, under "The full
+ *            asks), the first screen the address names (the verdict, or the mirror for ?for=ai) with its proof, its one
+ *            primary move and the people who vouch for him; then, under "The full
  *            tour, if you want it", the seven stops of ADR: Ten minutes, seven stops as they were, where the reviewer
  *            is, the finish panel, and what the sidebar still holds.
  * Does not:  Hold the stops (reviewStops.ts does), the words (reviewVerdict.ts does) or the place (useReviewProgress.ts
@@ -12,21 +13,31 @@ import { useReviewProgress } from '../../../hooks/useReviewProgress';
 import { useReviewReadings } from '../../../hooks/useReviewReadings';
 import type { DocKey } from '../../../library/documents';
 import { DIAGRAMS, MENUS } from '../../../library/sections';
+import { MIRROR, type ReviewScreen } from '../../../lib/reviewMirror';
 import { REVIEW_STOPS } from '../../../lib/reviewStops';
 import { sidebarRestLine, TOUR_ID, VERDICT } from '../../../lib/reviewVerdict';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
 import { ReviewFinish } from '../ReviewFinish';
+import { ReviewMirror } from '../ReviewMirror';
 import { WhereNext } from '../../shared/WhereNext';
 import { ReviewProgress } from '../ReviewProgress';
 import { ReviewStop, type StopState } from '../ReviewStop';
 import { ReviewVerdict } from '../ReviewVerdict';
 import styles from './ReviewPage.module.css';
 
-/** The quality numbers this build held, read once from what the build carries. */
-const QUALITY = gateFacts().quality;
+/** What the build carries about this version, read once: gated, the quality numbers held and CodeRabbit's read. */
+const GATE = gateFacts();
+const QUALITY = GATE.quality === null ? null : { held: GATE.quality.held, of: GATE.quality.of };
 
-export function ReviewPage({ onOpenDoc }: { onOpenDoc: (key: DocKey) => void }) {
-  const review = useReviewProgress();
+export function ReviewPage({
+  screen,
+  onOpenDoc,
+}: {
+  /** The first screen: the verdict, or the mirror for a link sent with for=ai. */
+  screen: ReviewScreen;
+  onOpenDoc: (key: DocKey) => void;
+}) {
+  const review = useReviewProgress(screen);
   const readings = useReviewReadings();
   const { current, reached } = review.progress;
   const finish = useRef<HTMLElement>(null);
@@ -49,19 +60,30 @@ export function ReviewPage({ onOpenDoc }: { onOpenDoc: (key: DocKey) => void }) 
 
   return (
     <section className={styles.page} aria-labelledby="review-title" data-testid="review-page">
-      <ReviewVerdict
-        summary={readings.summary}
-        recommendations={readings.recommendations}
-        quality={QUALITY === null ? null : { held: QUALITY.held, of: QUALITY.of }}
-        onAction={review.action}
-        onOpenDoc={onOpenDoc}
-      />
+      {screen === 'mirror' ? (
+        <ReviewMirror
+          summary={readings.summary}
+          recommendations={readings.recommendations}
+          gate={{ gated: GATE.gated, version: GATE.version, quality: QUALITY, review: GATE.review }}
+          onAction={review.action}
+          onOpenDoc={onOpenDoc}
+        />
+      ) : (
+        <ReviewVerdict
+          summary={readings.summary}
+          recommendations={readings.recommendations}
+          quality={QUALITY}
+          onAction={review.action}
+          onOpenDoc={onOpenDoc}
+        />
+      )}
       <p className={styles.fold} data-testid="review-fold">
         <span>
-          {VERDICT.foldAsk}{' '}
+          {screen === 'mirror' ? MIRROR.foldAsk : VERDICT.foldAsk}{' '}
           <a href={`#${TOUR_ID}`} onClick={() => review.action('tour')} data-action="review.tour">
-            {VERDICT.foldLink}
+            {screen === 'mirror' ? MIRROR.foldLink : VERDICT.foldLink}
           </a>
+          {screen === 'mirror' && MIRROR.foldTail}
         </span>
       </p>
       <section
