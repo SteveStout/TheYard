@@ -10,6 +10,8 @@ units="$HOME/.config/systemd/user"
 mkdir -p "$target" "$units" "$HOME/.config/jobhunt-server"
 dotnet publish "$here/JobHunt.Server/JobHunt.Server.csproj" -c Release -r linux-x64 --self-contained false -o "$target"
 cp "$here/systemd/jobhunt-6am.service" "$here/systemd/jobhunt-6am.timer" "$units/"
+# The cross-post lane's timer runs a program on the share (J:\crosspost\crosspost.py), not this build.
+cp "$here/systemd/jobhunt-crosspost.service" "$here/systemd/jobhunt-crosspost.timer" "$units/"
 systemctl --user daemon-reload
-systemctl --user enable --now jobhunt-6am.timer
-systemctl --user list-timers jobhunt-6am.timer --no-pager
+systemctl --user enable --now jobhunt-6am.timer jobhunt-crosspost.timer
+systemctl --user list-timers jobhunt-6am.timer jobhunt-crosspost.timer --no-pager
