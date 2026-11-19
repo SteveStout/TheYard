@@ -244,6 +244,9 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | No lane takes the gate lock: the ready path claims nothing, and the lock is kept only for a hand promote | ADR: One traffic cop for main | GateWorkflowTests |
 | With PROMOTE_TOKEN every promote is that token's push and the push is the roll, so each commit rolls once; without it a workflow change ends green needing a hand promote | ADR: One traffic cop for main | PromoteScriptTests |
 | gate/* takes the old path until main's gate.yml carries the ready trigger, and is refused red after | ADR: One traffic cop for main | CopScriptTests |
+| A US role passes the night's location gate whatever its arrangement and one abroad fails it, the picker ranks remote, then St. Louis hybrid, then other US roles, and the pounce still passes only remote | ADR-125, the addendum of @VER@ on RULE 76 | JobsTests, ReadyRowTests, PounceRulesTests |
+| An empty run becomes a fix proposal and never a WALLS.md bullet or a card line, and the card's first lines are the high-value roles only Steve can unblock, counted in the mail's subject | ADR-135, the addendum of @VER@ | TodayUnblockTests |
+| The apply worklist takes postings the tracker shows submitted off before the gates, and a tailored resume that stops falls back to the lock's send copy, checked by its hash | ADR-119 and ADR-135, the addenda of @VER@ | WorklistTests, ResumeLockTests |
 
 ## How the table is read
 

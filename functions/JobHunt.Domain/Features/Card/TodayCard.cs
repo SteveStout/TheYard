@@ -42,11 +42,11 @@ public sealed record TodayInputs(
     /// <summary>The hiring signal's line, or empty.</summary>
     public string Signal { get; init; } = "";
 
-    /// <summary>dispatch/EMPTY-RUNS.md as check_empty_runs.py wrote it, or empty.</summary>
-    public string EmptyRuns { get; init; } = "";
-
     /// <summary>The day's networklog/sent file, the email reconnects the 6 AM pass sent, or empty.</summary>
     public string Reconnects { get; init; } = "";
+
+    /// <summary>The high-value roles only he can unblock (TodayUnblock), which lead the card.</summary>
+    public IReadOnlyList<UnblockRow> Unblock { get; init; } = [];
 }
 
 /// <summary>
@@ -70,9 +70,6 @@ public static class TodayCard
     /// <summary>The day's sent email reconnects, the network log's NetworkFiles.SentPath, held equal by ReconnectSendTests.</summary>
     public static string ReconnectsPath(DateOnly day) => $"networklog/sent/{day:yyyy-MM-dd}.tsv";
 
-    /// <summary>The model lanes' empty runs, written each morning before the card by check_empty_runs.py.</summary>
-    public const string EmptyRunsPath = "dispatch/EMPTY-RUNS.md";
-
     /// <summary>The minutes of his time the card may take.</summary>
     public const int CapMinutes = 15;
 
@@ -85,6 +82,10 @@ public static class TodayCard
     /// <summary>The subject the mail carries, which triage keeps in the inbox.</summary>
     /// <param name="at">The card's time.</param>
     public static string Subject(DateTime at) => "TODAY, " + at.ToString("ddd M/d", CultureInfo.InvariantCulture);
+
+    /// <summary>The subject with the count of high-value roles waiting on him, so his phone shows it (RULE 76 check 8).</summary>
+    /// <param name="inputs">What the card is drawn from.</param>
+    public static string Subject(TodayInputs inputs) => Subject(inputs.At) + TodayUnblock.SubjectTail(inputs.Unblock);
 
     /// <summary>The card's text, folded to the cap when the whole card would run over it.</summary>
     /// <param name="inputs">What it is drawn from.</param>
@@ -195,6 +196,8 @@ public static class TodayCard
         head.Append(RulesFirst).Append("\n\n");
         head.Append(CultureInfo.InvariantCulture, $"# TODAY, {inputs.At:dddd M/d}\n\n");
         head.Append(CultureInfo.InvariantCulture, $"Written {inputs.At:HH:mm} Central by the job hunt's Function, no model; each heading names the file it was read from. About {minutes} {(minutes == 1 ? "minute" : "minutes")} to read{(fold ? ", the held replies folded to stay near the 15-minute cap" : string.Empty)}{(minutes > CapMinutes ? $", over the {CapMinutes}-minute cap" : string.Empty)}.\n\n");
+        // RULE 76 check 8: the high-value roles only he can unblock are the first lines he reads.
+        head.Append(TodayUnblock.Section(inputs.Unblock));
         if (inputs.Funnel.Length > 0)
         {
             head.Append(inputs.Funnel).Append("\n\n");
@@ -202,11 +205,6 @@ public static class TodayCard
         if (inputs.Signal.Length > 0)
         {
             head.Append(inputs.Signal).Append("\n\n");
-        }
-        // A lane that had work due and did none two runs in a row is a wall, so it leads every day.
-        foreach (string empty in inputs.EmptyRuns.Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("EMPTY RUN:", StringComparison.Ordinal)))
-        {
-            head.Append(CultureInfo.InvariantCulture, $"**{empty}**\n\n");
         }
         // The reconnects that sent themselves this morning: who, where, and when, so a reply is no surprise.
         var sent = inputs.Reconnects.Split('\n').Select(l => l.Split('\t')).Where(c => c.Length >= 3 && c[1].Length > 0).ToList();

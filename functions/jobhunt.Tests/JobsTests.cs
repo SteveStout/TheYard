@@ -80,13 +80,36 @@ public sealed partial class JobsTests
     public void The_remote_gate_reads_remote_and_St_Louis_hybrid_and_names_the_rest(string location, string stance, string read) =>
         Assert.Equal(read, JobsGates.RemoteRead(Role(location: location, stance: stance)));
 
+    [Theory]
+    [InlineData("Remote, US", "Remote", null)]
+    [InlineData("St Louis, MO", "Hybrid", null)]
+    [InlineData("San Francisco, CA", "Onsite", null)]
+    [InlineData("Roseville, CA", "Hybrid", null)]
+    [InlineData("Boston, Massachusetts", "Unknown", null)]
+    [InlineData("United States", "Onsite", null)]
+    [InlineData("Warsaw, Poland", "Hybrid", "outside the US: Warsaw, Poland")]
+    [InlineData("Hyderabad, Telangana, India", "Hybrid", "outside the US: Hyderabad, Telangana, India")]
+    [InlineData("", "Onsite", "onsite")]
+    [InlineData("Berkeley", "Unknown", "not remote: Berkeley")]
+    public void Rule_76_a_US_hybrid_or_onsite_role_passes_and_one_abroad_or_with_no_US_place_fails(string location, string stance, string? failed) =>
+        Assert.Equal(failed, Fail(Role(location: location, stance: stance)));
+
     [Fact]
-    public void A_hybrid_or_onsite_role_away_from_St_Louis_fails_and_a_St_Louis_one_with_no_day_count_passes_to_Steve()
+    public void Rule_76_OpenGov_onsite_and_GoodLeap_hybrid_from_the_11_18_scan_now_pass()
     {
-        Assert.Equal("onsite", Fail(Role(location: "Boston, MA", stance: "Onsite")));
-        Assert.StartsWith("hybrid outside St. Louis", Fail(Role(location: "Chicago, IL", stance: "Hybrid")), StringComparison.Ordinal);
-        Assert.Null(Fail(Role(location: "St Louis, MO", stance: "Hybrid")));
+        Assert.Null(Fail(Role("Staff Software Engineer", "OpenGov", "San Francisco, CA", "Onsite", 227_000)));
+        Assert.Null(Fail(Role("Principal Software Engineer", "GoodLeap", "Roseville, CA", "Hybrid", 271_797)));
     }
+
+    [Theory]
+    [InlineData("remote", 0)]
+    [InlineData("St. Louis hybrid, 1 day", 1)]
+    [InlineData("hybrid, days unknown", 1)]
+    [InlineData("hybrid outside St. Louis: Chicago, IL", 2)]
+    [InlineData("onsite", 2)]
+    [InlineData("country only, remote unsaid", 2)]
+    public void Rule_76_ranks_remote_first_St_Louis_hybrid_second_and_every_other_US_role_third(string remote, int rank) =>
+        Assert.Equal(rank, JobsGates.Arrangement(remote));
 
     [Fact]
     public void A_role_whose_title_says_remote_passes_wherever_its_location_is()

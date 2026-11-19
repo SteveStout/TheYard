@@ -40,7 +40,7 @@ public static partial class TrackerKinds
 
     private static string Head(string[] row) => row[6].TrimStart()[..Math.Min(80, row[6].TrimStart().Length)];
 
-    [GeneratedRegex(@"CONNECTION REQUEST|SCOPED INVITE|INVITE SENT|CONNECT NOTE", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"CONNECTION REQUEST|SCOPED INVITE|INVITE SENT|INVITE WITH NOTE SENT|CONNECT NOTE", RegexOptions.IgnoreCase)]
     private static partial Regex Invite();
 
     [GeneratedRegex(@"^\W*(NOT APPLIED|APPLIED|SUBMITTED|APPLICATION SUBMITTED|SKIPPED|DROPPED)", RegexOptions.IgnoreCase)]
