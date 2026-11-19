@@ -180,7 +180,11 @@ public sealed partial class PersonGate
             ? $"already invited someone there within {RecentDays} days"
             : null;
 
-    private bool Applied(string company, string link, string role)
+    /// <summary>True when the tracker already holds this posting as applied, by its id in the link or its title at the company.</summary>
+    /// <param name="company">The company.</param>
+    /// <param name="link">The posting's link.</param>
+    /// <param name="role">The role's title.</param>
+    public bool Applied(string company, string link, string role)
     {
         string id = PostingId().Matches(link).Select(m => m.Value).LastOrDefault() ?? link.TrimEnd('/');
         string title = ClosedReqs.Normal(TitleEnd().Split(role)[0]);

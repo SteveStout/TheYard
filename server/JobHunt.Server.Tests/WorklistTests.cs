@@ -267,6 +267,25 @@ public sealed class WorklistTests
     }
 
     [Fact]
+    public async Task A_posting_the_tracker_shows_applied_never_reaches_the_skip_list()
+    {
+        string tracker = Fixture.Read("tracker.csv") + "3700,NA,Northwind,Greenhouse,11/2/2026,,\"APPLICATION SUBMITTED by Claude, Principal Engineer.\"\n";
+        var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"), tracker);
+        morning.Share.Files["JOBS-2026-11-02.md"] = "## READY TO APPLY\n| # | Company | Role | Link | Board | Band | Posted | Notes |\n|---|---|---|---|---|---|---|---|\n"
+            + "| 1 | Northwind | Principal Engineer | https://jobs.lever.co/northwind/a | lever | PASS | 2026-11-02 | |\n"
+            + "| 2 | Contoso | Staff Engineer | https://jobs.lever.co/contoso/b | lever | PASS | 2026-11-02 | |\n";
+        var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+        var reads = await new DayReader(morning.Share).ReadAsync(DateOnly.FromDateTime(Morning.At.UtcDateTime), default);
+
+        var list = await builder.ApplyAsync(reads, null, false, default);
+
+        Assert.DoesNotContain(list.Rows, row => row.Company == "Northwind");
+        Assert.DoesNotContain(list.Dropped, dropped => dropped.Reason.Contains("already applied", StringComparison.Ordinal));
+        Assert.Contains(list.Dropped, dropped => dropped.Reason.StartsWith("off the list before the gates: the tracker shows them submitted", StringComparison.Ordinal));
+        Assert.Contains(list.Rows, row => row.Company == "Contoso");
+    }
+
+    [Fact]
     public async Task A_jobs_row_with_no_link_is_dropped_with_its_reason()
     {
         var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"));
