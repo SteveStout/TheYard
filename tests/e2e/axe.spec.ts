@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { openTheYard, openSection } from './app';
 import { signIn } from './signIn';
 import { CLOUD_RESOURCES } from '../../src/lib/workbench';
+import { REACHED_KEY } from '../../src/lib/reviewProgress';
 
 /**
  * The accessibility rules a machine can check (ADR: The accessibility check).
@@ -143,7 +144,8 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   });
 
   // The review route (ADR: Ten minutes, seven stops; ADR: The review route gives a reason before it asks): the
-  // first screen, then three states of a stop on one page, the ring and the pills, at the first screen's two widths.
+  // first screen, the three stops and the tour's cells, then the cells reached with their ticks, at the first screen's
+  // two widths.
   for (const [width, height] of [
     [1568, 772],
     [390, 844],
@@ -158,8 +160,9 @@ test.describe('WCAG 2.1 AA, on every view', () => {
         })
       ).toBeVisible();
       expect(await violations(page)).toEqual([]);
-      await page.getByRole('button', { name: 'Next stop' }).click();
-      await expect(page.getByTestId('review-do-this')).toHaveCount(1);
+      await page.evaluate((key) => localStorage.setItem(key, '[0,1]'), REACHED_KEY);
+      await page.reload();
+      await expect(page.getByTestId('review-tour-seen')).toHaveText('2 of 7 seen.');
       expect(await violations(page)).toEqual([]);
     });
   }

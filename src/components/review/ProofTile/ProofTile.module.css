@@ -60,8 +60,9 @@
 @media (max-width: 639.98px) {
   .tile {
     display: grid;
-    grid-template-columns: 6.5em minmax(0, 1fr);
+    grid-template-columns: 104px minmax(0, 1fr);
     column-gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
   }
 
   .figure {
@@ -73,5 +74,6 @@
 
   .label {
     margin: 0;
+    font-size: var(--text-base);
   }
 }
