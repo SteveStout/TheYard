@@ -88,4 +88,14 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
       'The mirror, /?view=review&for=ai: 0 opened, 0% a second action, 0% the running system or the booking button'
     );
   });
+
+  it('never gives a figure above the visitors who opened, whatever the answer says', () => {
+    const second = { second_action: 9, running_or_book: -2, counted_from: '2026-11-19' };
+    expect(
+      secondFigures({ opened: 4, second }).map((figure) => [figure.count, figure.percent])
+    ).toEqual([
+      [4, 100],
+      [0, 0],
+    ]);
+  });
 });

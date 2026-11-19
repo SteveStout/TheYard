@@ -1,7 +1,7 @@
 /**
  * Does:      Draws the review route at ?view=review: first the reason (ADR: The review route gives a reason before it
  *            asks), the first screen the address names (the verdict, or the mirror for ?for=ai) with its proof, its one
- *            primary move and the people who vouch for him; then, under "The full
+ *            primary move and the people who vouch for him; then the short path's three stops; then, under "The full
  *            tour, if you want it", the seven stops of ADR: Ten minutes, seven stops as they were, where the reviewer
  *            is, the finish panel, and what the sidebar still holds.
  * Does not:  Hold the stops (reviewStops.ts does), the words (reviewVerdict.ts does) or the place (useReviewProgress.ts
@@ -10,15 +10,17 @@
  */
 import { useRef } from 'react';
 import { useReviewProgress } from '../../../hooks/useReviewProgress';
+import { useReviewPath } from '../../../hooks/useReviewPath';
 import { useReviewReadings } from '../../../hooks/useReviewReadings';
 import type { DocKey } from '../../../library/documents';
 import { DIAGRAMS, MENUS } from '../../../library/sections';
-import { MIRROR, type ReviewScreen } from '../../../lib/reviewMirror';
+import { gateTotals, MIRROR, type ReviewScreen } from '../../../lib/reviewMirror';
 import { REVIEW_STOPS } from '../../../lib/reviewStops';
 import { sidebarRestLine, TOUR_ID, VERDICT } from '../../../lib/reviewVerdict';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
 import { ReviewFinish } from '../ReviewFinish';
 import { ReviewMirror } from '../ReviewMirror';
+import { ReviewPath } from '../ReviewPath';
 import { WhereNext } from '../../shared/WhereNext';
 import { ReviewProgress } from '../ReviewProgress';
 import { ReviewStop, type StopState } from '../ReviewStop';
@@ -39,6 +41,7 @@ export function ReviewPage({
 }) {
   const review = useReviewProgress(screen);
   const readings = useReviewReadings();
+  const path = useReviewPath();
   const { current, reached } = review.progress;
   const finish = useRef<HTMLElement>(null);
 
@@ -77,6 +80,16 @@ export function ReviewPage({
           onOpenDoc={onOpenDoc}
         />
       )}
+      <ReviewPath
+        reached={path.reached}
+        readings={path.readings}
+        lot={path.lot}
+        gate={{ gated: GATE.gated, quality: QUALITY, review: GATE.review }}
+        totals={gateTotals(readings.summary, GATE.version)}
+        onReach={path.reach}
+        onAction={review.action}
+        onOpenDoc={onOpenDoc}
+      />
       <p className={styles.fold} data-testid="review-fold">
         <span>
           {screen === 'mirror' ? MIRROR.foldAsk : VERDICT.foldAsk}{' '}

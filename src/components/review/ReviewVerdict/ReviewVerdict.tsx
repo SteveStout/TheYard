@@ -92,7 +92,7 @@ export function ReviewVerdict({
             data-testid="review-proof"
           >
             {VERDICT.primary}
-            <span aria-hidden="true"> →</span>
+            <span aria-hidden="true">→</span>
           </a>
           <a
             className={`${pills.secondary} ${styles.book}`}

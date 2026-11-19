@@ -342,6 +342,56 @@ describe('the rendering service', () => {
     expect(other).toContain('Production .NET that stays up.');
   });
 
+  it('draws the short path under the first screen on the server, nothing reached, its live tiles waiting for the browser', async () => {
+    const { html, asked } = await page('?view=review');
+    expect(html).toContain('0 of 3 stops');
+    for (const title of [
+      'Quality held with AI',
+      'The gate every push passes',
+      'A system that is really running',
+    ])
+      expect(html).toContain(title);
+    expect(html).toContain('href="/?view=admin&amp;card=tests"');
+    // The path's tiles read in the browser, from their own kept answers; the server reads neither for them.
+    const paths = asked.map((read) => read.url.slice(API.length).split('?')[0]);
+    expect(paths.some((path) => path.startsWith('/api/review/'))).toBe(false);
+    expect(paths.some((path) => path.startsWith('/api/vehicles'))).toBe(false);
+    // In the page's order: the claim, the path, then the tour.
+    const claim = html.indexOf('Production .NET that stays up.');
+    const path = html.indexOf('0 of 3 stops');
+    const tour = html.indexOf('The full tour, if you want it');
+    expect(claim).toBeLessThan(path);
+    expect(path).toBeLessThan(tour);
+  });
+
+  it('names the mirror’s strip in its order with the API’s titles and the rest as a count, with no quote panel', async () => {
+    const { html } = await page('?view=review&for=ai');
+    const list = recommendations.recommendations;
+    const order = [
+      'Drew Dell',
+      'Sean Whitesell',
+      'Anthony Fortner',
+      'Khushbu Shah',
+      'Cliff True',
+      'Henry Crans',
+      'Meagan Colley',
+    ];
+    const named = order.filter((name) => list.some((entry) => entry.name === name));
+    const places = named.map((name) => html.indexOf(`<strong>${escapeHtml(name)}</strong>`));
+    expect(places.every((place) => place > -1)).toBe(true);
+    expect([...places].sort((a, b) => a - b)).toEqual(places);
+    for (const name of named) {
+      const entry = list.find((each) => each.name === name)!;
+      expect(html).toContain(escapeHtml(entry.title));
+    }
+    expect(html).toMatch(
+      new RegExp(`and (<!-- -->)?${list.length - named.length}(<!-- -->)? more`)
+    );
+    expect(html).toContain(`${list.length} people who worked with him put their name on it`);
+    // The strip names people; the verdict's quote panel is not drawn on the mirror.
+    expect(html).not.toContain('data-testid="review-lead-quote"');
+  });
+
   it('draws both banners on the landing page, the resume first', async () => {
     const { html } = await page('');
     const resume = html.indexOf('data-testid="landing-banner-resume"');

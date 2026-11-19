@@ -81,7 +81,7 @@ export function ReviewMirror({
             data-testid="review-proof"
           >
             {MIRROR.primary}
-            <span aria-hidden="true"> →</span>
+            <span aria-hidden="true">→</span>
           </a>
           <a
             className={`${pills.secondary} ${verdict.book}`}
