@@ -49,10 +49,11 @@ public static class ProcessSections
                     new CloudFigure(process.Key == "MergerHealth" ? "Last answer" : "Last run", LastRun(last, fold), last is { HasLine: false } ? "Application Insights, the request row" : RunSource),
                     Second(process, last, health),
                     new CloudFigure("30 days", fold.Available ? ProcessWords.ThirtyDays(process, month) : "not read", FoldSource),
-                    new CloudFigure("Next", NextWords(FunctionProcesses.Next(process, now), now), process.Key switch
+                    new CloudFigure("Next", FunctionProcesses.ByHand(process) ? "on request" : NextWords(FunctionProcesses.Next(process, now), now), process.Key switch
                     {
                         "Nightly" => "the clock's slots",
                         "MergerHealth" => "this card's next read",
+                        _ when FunctionProcesses.ByHand(process) => "a hand run, with the function key",
                         _ => "the timer's schedule",
                     }),
                 ],

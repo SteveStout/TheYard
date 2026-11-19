@@ -267,7 +267,7 @@ test('the nightly card draws seven processes whose histories open on request', a
   await expect(card.getByTestId('cloud-processes')).toBeVisible({ timeout: 30_000 });
   await expect(card.getByTestId('cloud-description')).toContainText('What it is.');
   const sections = card.locator('[data-testid^="process-"][data-tone]');
-  await expect(sections).toHaveCount(10);
+  await expect(sections).toHaveCount(19);
   for (const key of [
     'AtsSweep',
     'Merger',
@@ -279,6 +279,15 @@ test('the nightly card draws seven processes whose histories open on request', a
     'CampaignSend',
     'NetworkLogPass',
     'MergerHealth',
+    'BoardScan',
+    'FreshScan',
+    'Pounce',
+    'PounceDay',
+    'PounceFollowUp',
+    'ReplyDraft',
+    'Watch',
+    'TodayCardHandRun',
+    'CampaignTestSend',
   ]) {
     await expect(card.getByTestId(`process-history-${key}`)).not.toHaveAttribute('open', /.*/);
     await expect(card.getByTestId(`process-strip-${key}`).locator('rect')).toHaveCount(

@@ -235,6 +235,9 @@ resource app 'Microsoft.Web/sites@2024-04-01' = {
         // run's and adds nothing; 'on' appends the master's missing rows to the Sheet and checks the read-back;
         // anything else is off. The Google client, its refresh token and the Sheet's id are set out of band.
         { name: 'SHEET_MIRROR', value: 'shadow' }
+        // The watch (functions/jobhunt/WatchTimer.cs, at 13, 28, 43 and 58 past): 'shadow' reads every test's real source and
+        // writes J:\dispatch\WATCH.md, healing nothing; 'on' also runs the heal ladder; anything else is off.
+        { name: 'WATCH', value: 'shadow' }
         // The 30-minute inbox pass (functions/jobhunt/AtsSweepTimer.cs, at 20 and 50 past each hour), three parts.
         // The ATS sweep (functions/JobHunt.Application/Features/Ats): 'on' drops the rows in the spool, archives and reads the labels back;
         // 'shadow' writes its plan and archives nothing; anything else is off.
