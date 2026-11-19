@@ -130,6 +130,15 @@ public interface IPlanHistory
 /// <summary>The arithmetic the stores share: the bucket keys and the 95th percentile, testable with no store at all.</summary>
 public static class PlanFolding
 {
+    /// <summary>The month's spread over its five-minute means: the minutes, the 95th percentile and the peak of each.</summary>
+    /// <param name="fives">The five-minute buckets.</param>
+    public static PlanSpread Spread(IReadOnlyList<PlanBucket> fives) => new(
+        fives.Sum(bucket => bucket.Minutes),
+        P95(fives.Select(bucket => bucket.CpuPercent)),
+        MachineFolding.MaxOf(fives.Select(bucket => bucket.CpuMaxPercent)),
+        P95(fives.Select(bucket => bucket.MemoryPercent)),
+        MachineFolding.MaxOf(fives.Select(bucket => bucket.MemoryMaxPercent)));
+
     /// <summary>The 95th percentile by nearest rank of the readings that exist, or null when none does.</summary>
     public static double? P95(IEnumerable<double?> values)
     {

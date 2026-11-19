@@ -154,14 +154,24 @@ public static class ResourceView
     /// <summary>How old the newest kept minute is, in seconds.</summary>
     public static long? Age(ResourceCardInputs inputs) => inputs.LastHour.Count == 0 ? null : (long)(inputs.Now - inputs.LastHour[^1].At).TotalSeconds;
 
+    /// <summary>How old the newest kept hour is, in seconds: the age of a card that keeps no minute, so its reading is judged by what it does keep.</summary>
+    public static long? HourAge(ResourceCardInputs inputs) => Latest(inputs) is { } hour ? (long)(inputs.Now - hour.At).TotalSeconds : null;
+
+    /// <summary>The hourly-read line of a card that keeps no minute: how old its newest kept hour is, or why none is kept.</summary>
+    public static CloudLine HourRead(ResourceCardInputs inputs) =>
+        new("Hourly read", HourAge(inputs) is { } seconds ? $"{seconds / 60} min ago" : inputs.Availability.Available ? "not read yet: no hour kept yet" : $"not read yet: {KeepReason(inputs)}", "info") { Source = CardFrame.ThisProcess };
+
     /// <summary>The fact an hour writes when the group holds no resource by the configured name.</summary>
     public const string MissingFact = "missing";
 
-    /// <summary>The note a card prints when its resource is not in the group, or its keep is missing or empty; null when it has minutes.</summary>
-    public static string? Note(ResourceCardInputs inputs, string firstRead) =>
+    /// <summary>The note a card prints when its resource is not in the group, or its keep is missing or empty; null when it has what it keeps.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    /// <param name="firstRead">The empty-keep sentence.</param>
+    /// <param name="hoursOnly">True for a card that keeps no minute: its keep is empty only when it has no hour.</param>
+    public static string? Note(ResourceCardInputs inputs, string firstRead, bool hoursOnly = false) =>
         Latest(inputs)?.Facts.GetValueOrDefault(MissingFact) is { } missing ? missing
             : !inputs.Availability.Available ? inputs.Availability.Reason
-            : inputs.LastHour.Count == 0 ? firstRead
+            : (hoursOnly ? inputs.Hours.Count : inputs.LastHour.Count) == 0 ? firstRead
             : null;
 
     /// <summary>The empty-keep sentence, naming the recording site by its configured name.</summary>

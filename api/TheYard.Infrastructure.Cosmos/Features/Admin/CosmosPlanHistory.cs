@@ -119,13 +119,7 @@ public sealed class CosmosPlanHistory(CosmosStore store, TimeProvider clock) : I
     {
         // The five-minute means are a few thousand rows for a month, which the store groups; the
         // percentile is taken here over them, since the store has no percentile function.
-        var fives = await BucketsAsync(since, MachineGrain.FiveMinutes, cancellation);
-        return new PlanSpread(
-            fives.Sum(bucket => bucket.Minutes),
-            PlanFolding.P95(fives.Select(bucket => bucket.CpuPercent)),
-            MachineFolding.MaxOf(fives.Select(bucket => bucket.CpuMaxPercent)),
-            PlanFolding.P95(fives.Select(bucket => bucket.MemoryPercent)),
-            MachineFolding.MaxOf(fives.Select(bucket => bucket.MemoryMaxPercent)));
+        return PlanFolding.Spread(await BucketsAsync(since, MachineGrain.FiveMinutes, cancellation));
     }
 
     public async Task<IReadOnlyList<PlanHour>> HoursAsync(DateTimeOffset since, CancellationToken cancellation)

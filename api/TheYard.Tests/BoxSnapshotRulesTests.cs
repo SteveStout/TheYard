@@ -23,6 +23,8 @@ public sealed class BoxSnapshotRulesTests
         Assert.Equal("every list and part is present, empty when there is none.", BoxSnapshotRules.Validate(good with { Gpus = null! }, Nine));
         Assert.Equal("every load is 0 to 100.", BoxSnapshotRules.Validate(good with { AgentCpuPercent = 101 }, Nine));
         Assert.Equal("every byte count and rate is zero or more.", BoxSnapshotRules.Validate(good with { Swap = new(-1, 0) }, Nine));
+        Assert.Equal("every byte count and rate is zero or more.", BoxSnapshotRules.Validate(good with { Swap = new(1, 0, -1, 0) }, Nine));
+        Assert.Equal("every load is 0 to 100.", BoxSnapshotRules.Validate(good with { Memory = good.Memory with { PressurePercent = 101 } }, Nine));
         Assert.Equal("every load is 0 to 100.", BoxSnapshotRules.Validate(BoxSamples.Sample(Nine) with { Cores = [120] }, Nine));
         Assert.Equal("every byte count and rate is zero or more.", BoxSnapshotRules.Validate(BoxSamples.Sample(Nine) with { MemoryUsedB = -5 }, Nine));
     }

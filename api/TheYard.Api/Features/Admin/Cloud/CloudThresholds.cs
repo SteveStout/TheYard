@@ -125,6 +125,20 @@ public static class CloudThresholds
     /// <summary>The box: swap reads amber past 256 MiB in use, or past <see cref="BoxSwapShare"/> per cent, whichever is smaller.</summary>
     public const long BoxSwapBytes = 256L * 1024 * 1024;
 
+    /// <summary>
+    /// The box: swap reads amber when pages move through it at this many bytes a second, in and out together, averaged over five
+    /// minutes. Used only once the agent reads the rate (version 2); before that the two lines above. Parked pages move nothing,
+    /// so they read zero here however full the swap is; one MiB a second for five minutes is 300 MiB through the disk, which is
+    /// paging. Source: the honesty rule (ADR-102's addendum on it): the card judges what hurts the box, not what fills a counter.
+    /// </summary>
+    public const long BoxPagingBps = 1024L * 1024;
+
+    /// <summary>The box: swap reads amber when some task waited on memory this share of the last five minutes, the kernel's own pressure figure.</summary>
+    public const double BoxMemoryPressure = 10;
+
+    /// <summary>The box: swap reads amber when it is this full and the memory the kernel could free is less than the swap in use, so the box could not take it back.</summary>
+    public const double BoxSwapNearlyFull = 90;
+
     /// <summary>The box: any file system, amber at 80 per cent full and red at 90. Source: the box's own number.</summary>
     public static readonly (double Amber, double Red) BoxFileSystem = (80, 90);
 
