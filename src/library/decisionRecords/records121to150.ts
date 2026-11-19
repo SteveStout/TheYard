@@ -129,4 +129,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '137',
   },
+  adrAutomatedTestsNeverTouchARealDatabaseOrPermanentStorage: {
+    title: 'ADR: Automated tests never touch a real database or permanent storage',
+    menuLabel: 'ADR: Automated tests never touch a real database or permanent storage',
+    url: '/api/docs/adr-automated-tests-never-touch-a-real-database-or-permanent-storage',
+    kind: 'adr',
+    number: '@ADR@',
+  },
 } as const satisfies Record<string, RecordEntry>;

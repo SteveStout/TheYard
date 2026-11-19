@@ -245,6 +245,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | No lane takes the gate lock: the ready path claims nothing, and the lock is kept only for a hand promote | ADR: One traffic cop for main | GateWorkflowTests |
 | With PROMOTE_TOKEN every promote is that token's push and the push is the roll, so each commit rolls once; without it a workflow change ends green needing a hand promote | ADR: One traffic cop for main | PromoteScriptTests |
 | gate/* takes the old path until main's gate.yml carries the ready trigger, and is refused red after | ADR: One traffic cop for main | CopScriptTests |
+| No automated test reads or writes a real database or permanent storage: the store tests' one fixture refuses any address that is not this machine, no test opens a Cosmos DB store but that fixture and the one listed exception, and every share or blob client a test builds rides a fake transport | ADR: Automated tests never touch a real database or permanent storage | TestsTouchNoLiveStoreTests |
 
 ## How the table is read
 
