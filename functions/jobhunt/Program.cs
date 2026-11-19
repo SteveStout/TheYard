@@ -12,9 +12,11 @@ using Azure.Storage.Files.Shares;
 using JobHunt.Functions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWorkerDefaults()
+    .ConfigureLogging(logging => LogLevels.Apply(logging))
     .ConfigureServices(services =>
     {
         services.AddSingleton(_ => new ShareClient(

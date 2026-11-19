@@ -209,7 +209,7 @@ Measured on this build:
 
 | shape | count |
 | --- | --- |
-| sealed | 351 |
+| sealed | 352 |
 | static | 218 |
 | abstract | 0 |
 | open | 0 |
