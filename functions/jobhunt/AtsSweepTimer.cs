@@ -132,11 +132,13 @@ public sealed class AtsSweepTimer(IMergeStore store, IHttpClientFactory http, Ti
         return $"{imported}; {read}";
     }
 
-    /// <summary>The finder's part: the waiting leads asked of Hunter behind its wall, under the month's cap (ADR-118).</summary>
+    /// <summary>The finder's part: the waiting leads asked of Hunter behind its wall, under the month's cap and what the plan has left (ADR-118).</summary>
     private async Task<string> FinderAsync(HunterFinder hunter, string sql, CancellationToken ct) =>
-        await new AddressSearch(new SqlCampaignStore(sql), new WalledFinder(hunter, store, time, HunterFinder.Control), new DohMxCheck(http), store, time, HunterFinder.MonthCap)
+        await new AddressSearch(new SqlCampaignStore(sql), new WalledFinder(hunter, store, time, HunterFinder.Control), new DohMxCheck(http), store, time,
+            HunterFinder.MonthCapFrom(Environment.GetEnvironmentVariable(HunterFinder.CapSetting)))
         {
             FloorControl = HunterFinder.FloorControl,
+            Plan = hunter,
         }.RunAsync(ct);
 
     /// <summary>

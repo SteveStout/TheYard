@@ -87,15 +87,104 @@ public sealed class AddressSearchTests
         Assert.Equal(new FoundAddress("pat@acme.com", "https://acme.com/team"), HunterFinder.Read(Good));
         Assert.Null(HunterFinder.Read(Good.Replace("91", "69", StringComparison.Ordinal)));
         Assert.Null(HunterFinder.Read(Good.Replace("\"valid\"", "\"accept_all\"", StringComparison.Ordinal)));
-        Assert.Null(HunterFinder.Read("""{"data":{"email":"pat@acme.com","score":95,"verification":{"status":"valid"},"sources":[]}}"""));
+        Assert.Null(HunterFinder.Read("""{"data":{"email":"pat@acme.com","score":95,"verification":{"status":"accept_all"},"sources":[]}}"""));
         Assert.Null(HunterFinder.Read("""{"data":null}"""));
     }
 
-    private static (AddressSearch Search, string Root) Search(Book book, IAddressFinder finder, int cap)
+    // Steve 11/12 08:42 CST: a Hunter "valid" address counts with no cited page; its source names Hunter's verifier, as hunter_find.py writes it.
+    [Fact]
+    public void A_valid_answer_with_no_page_is_kept_with_the_verifier_as_its_source()
+    {
+        Assert.Equal(
+            new FoundAddress("pat@acme.com", HunterFinder.VerifierPage),
+            HunterFinder.Read("""{"data":{"email":"pat@acme.com","score":95,"verification":{"status":"valid"},"sources":[]}}"""));
+        Assert.Null(AddressSearch.Refuse(new FoundAddress("pat@acme.com", HunterFinder.VerifierPage), "acme.com"));
+    }
+
+    [Theory]
+    [InlineData(null, 50)]
+    [InlineData("", 50)]
+    [InlineData("1500", 1500)]
+    [InlineData(" 1500 ", 1500)]
+    [InlineData("many", 50)]
+    [InlineData("-3", 50)]
+    [InlineData("0", 0)]
+    public void The_month_s_cap_is_the_setting_and_the_free_plan_s_50_without_one(string? setting, int cap) =>
+        Assert.Equal(cap, HunterFinder.MonthCapFrom(setting));
+
+    [Fact]
+    public void The_searches_left_are_read_from_the_account_answer()
+    {
+        Assert.Equal(1988, HunterFinder.SearchesLeft("""{"data":{"plan_name":"Starter","requests":{"searches":{"used":12,"available":2000,"remaining":1988}}}}"""));
+        Assert.Equal(1990, HunterFinder.SearchesLeft("""{"data":{"requests":{"searches":{"used":10,"available":2000}}}}"""));
+        Assert.Null(HunterFinder.SearchesLeft("""{"data":{"requests":{}}}"""));
+        Assert.Null(HunterFinder.SearchesLeft("not json"));
+    }
+
+    [Fact]
+    public async Task The_plan_is_read_from_hunter_s_account_endpoint_and_a_failure_reads_as_unknown()
+    {
+        var ok = new OneAnswer(System.Net.HttpStatusCode.OK, """{"data":{"requests":{"searches":{"used":0,"available":2000,"remaining":2000}}}}""");
+        Assert.Equal(2000, await new HunterFinder(ok, "k").SearchesLeftAsync(CancellationToken.None));
+        Assert.StartsWith("https://api.hunter.io/v2/account?api_key=", ok.Asked, StringComparison.Ordinal);
+        Assert.Null(await new HunterFinder(new OneAnswer(System.Net.HttpStatusCode.Unauthorized, "{}"), "k").SearchesLeftAsync(CancellationToken.None));
+    }
+
+    private sealed class OneAnswer(System.Net.HttpStatusCode status, string body) : HttpMessageHandler, IHttpClientFactory
+    {
+        public string? Asked { get; private set; }
+
+        public HttpClient CreateClient(string name) => new(this, disposeHandler: false);
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Asked = request.RequestUri!.ToString();
+            return Task.FromResult(new HttpResponseMessage(status) { Content = new StringContent(body) });
+        }
+    }
+
+    // HUNTER1119: on the paid plan the cap is a setting, and each pass also stops at what the plan reports left.
+    [Fact]
+    public async Task The_pass_stops_at_the_lower_of_the_cap_and_the_searches_the_plan_has_left()
+    {
+        var book = new Book(new WaitingLead(1, "acme.com", "Pat Lee"), new WaitingLead(2, "acme.com", "Sam Roe"), new WaitingLead(3, "acme.com", "Jo Ray"));
+        var finder = new Finder([]);
+        var (search, _) = Search(book, finder, 1500, new Plan(2));
+
+        Assert.Equal("fake: 2 asked, 0 found, 0 dropped, 2 of 1500 this month, 0 left on the plan", await search.RunAsync(CancellationToken.None));
+        Assert.Equal(2, finder.Calls);
+    }
+
+    [Fact]
+    public async Task A_plan_with_nothing_left_asks_nothing()
+    {
+        var finder = new Finder([]);
+        var (search, root) = Search(new Book(new WaitingLead(1, "acme.com", "Pat Lee")), finder, 1500, new Plan(0));
+
+        Assert.Equal("fake: 0 asked, 0 found, 0 dropped, 0 of 1500 this month, 0 left on the plan", await search.RunAsync(CancellationToken.None));
+        Assert.Equal(0, finder.Calls);
+        Assert.False(File.Exists(Path.Combine(root, "campaign", "finder", "fake-2026-10.txt")));
+    }
+
+    [Fact]
+    public async Task A_plan_that_does_not_answer_leaves_the_cap_in_charge()
+    {
+        var book = new Book(new WaitingLead(1, "acme.com", "Pat Lee"), new WaitingLead(2, "acme.com", "Sam Roe"));
+        var (search, _) = Search(book, new Finder([]), 1500, new Plan(null));
+
+        Assert.Equal("fake: 2 asked, 0 found, 0 dropped, 2 of 1500 this month, plan not read", await search.RunAsync(CancellationToken.None));
+    }
+
+    private static (AddressSearch Search, string Root) Search(Book book, IAddressFinder finder, int cap, IFinderPlan? plan = null)
     {
         string root = Path.Combine(Path.GetTempPath(), "address-search-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
-        return (new AddressSearch(book, finder, new Mx(), new FolderMergeStore(root), new FixedTime(Now), cap), root);
+        return (new AddressSearch(book, finder, new Mx(), new FolderMergeStore(root), new FixedTime(Now), cap) { Plan = plan }, root);
+    }
+
+    private sealed class Plan(int? left) : IFinderPlan
+    {
+        public Task<int?> SearchesLeftAsync(CancellationToken ct) => Task.FromResult(left);
     }
 
     [Fact]

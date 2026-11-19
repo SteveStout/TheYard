@@ -22,6 +22,13 @@ public interface IAddressBook
     Task<int> WithAddressAsync(IReadOnlyCollection<long> leadIds, CancellationToken ct);
 }
 
+/// <summary>What the finder's paid plan reports left, read at the start of a pass.</summary>
+public interface IFinderPlan
+{
+    /// <summary>The searches the plan has left, or null when the account did not answer.</summary>
+    Task<int?> SearchesLeftAsync(CancellationToken ct);
+}
+
 /// <summary>
 /// The finder pass (ADR-118): after the lead run's files are imported, each lead that names a manager and has no
 /// address is asked of the configured finder, up to a monthly cap counted in a file on the share. An answer is
@@ -44,6 +51,12 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
 
     /// <summary>How long the asking stops once the floor is met, and after a refusal (WalledFinder.Stop).</summary>
     public static readonly TimeSpan FloorStop = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// The paid plan: when set, the pass reads the searches left first and asks no more than the lower of
+    /// that and the month's cap. A plan that does not answer leaves the cap in charge and the line says so.
+    /// </summary>
+    public IFinderPlan? Plan { get; init; }
 
     /// <summary>
     /// Asks the finder for each waiting lead under the cap that it has not been asked about this month; answers the
@@ -73,7 +86,8 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
             return $"{finder.Name}: 0 asked, 0 found, 0 dropped, {used} of {monthCap} this month, stopped: {FloorAsked} asked and none found, until {WalledFinder.Central(since + FloorStop)}";
         }
         int foundBefore = before.Count > 0 ? await book.WithAddressAsync(before, ct) : 0;
-        int most = floorSince is null ? int.MaxValue : 1;
+        int? left = Plan is null ? null : await Plan.SearchesLeftAsync(ct);
+        int most = Math.Min(floorSince is null ? int.MaxValue : 1, Math.Max(0, left ?? int.MaxValue));
         var now = new List<long>();
         int found = 0, dropped = 0, refusedCalls = 0;
         string? stopped = null;
@@ -141,7 +155,8 @@ public sealed class AddressSearch(IAddressBook book, IAddressFinder finder, IMxC
             await WriteWallsAsync(WallList.With(await WallsAsync(ct), FloorKey, FloorBullet(utc), utc), ct);
             stopped = "floor";
         }
-        string line = $"{finder.Name}: {now.Count} asked, {found} found, {dropped} dropped, {used + now.Count} of {monthCap} this month";
+        string plan = Plan is null ? "" : left is int had ? $", {Math.Max(0, had - now.Count)} left on the plan" : ", plan not read";
+        string line = $"{finder.Name}: {now.Count} asked, {found} found, {dropped} dropped, {used + now.Count} of {monthCap} this month{plan}";
         return stopped switch
         {
             null => line,

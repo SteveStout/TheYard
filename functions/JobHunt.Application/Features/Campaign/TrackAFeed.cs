@@ -41,13 +41,29 @@ public sealed partial class TrackAFeed(IMergeStore store, ITrackABook book, IMxC
     /// <summary>Whether an address is a shared mailbox and not a person's.</summary>
     public static bool IsGeneralMailbox(string? address) => TrackAContacts.IsGeneralMailbox(address);
 
+    /// <summary>
+    /// Whether a tracker row is an application Track A follows: an application by the tracker's own test whose opening
+    /// says it was submitted or applied, in the lanes' upper-case status words or as its first word, and is not an
+    /// invite, an InMail, a message or an inbound note that only mentions an application (ADR-118, the addendum on the
+    /// paid finder: a week counted as 16 applications was 4 submissions and 12 such rows).
+    /// </summary>
+    public static bool Submitted(string[] row)
+    {
+        if (row.Length < 7 || !TrackerRows.IsApplication(row))
+        {
+            return false;
+        }
+        string opening = row[6].TrimStart()[..Math.Min(TrackerRows.OpeningLength, row[6].TrimStart().Length)];
+        return (StatusWord().IsMatch(opening) || FirstWord().IsMatch(opening)) && !Touch().IsMatch(opening);
+    }
+
     /// <summary>Runs one pass and answers its line: counts only.</summary>
     public async Task<string> RunAsync(CancellationToken ct)
     {
         var now = time.GetUtcNow();
         var today = DateOnly.FromDateTime(CentralClock.Local(now));
         var master = TrackerCsvText.Parse(TrackerCsvText.Decode(await store.ReadAsync(MergePaths.Master, ct)));
-        var applications = master.Where(row => row.Length >= 7 && TrackerRows.IsApplication(row) && Day(row[4]) is { } day && today.DayNumber - day.DayNumber is >= 0 and < WindowDays)
+        var applications = master.Where(row => Submitted(row) && Day(row[4]) is { } day && today.DayNumber - day.DayNumber is >= 0 and < WindowDays)
             .Select(row => (Company: row[2].Trim(), Count: row[0].Trim(), Day: Day(row[4])!.Value)).OrderBy(a => a.Day).ToList();
         var contacts = new List<TrackAContact>();
         int unread = 0;
@@ -102,6 +118,15 @@ public sealed partial class TrackAFeed(IMergeStore store, ITrackABook book, IMxC
 
     [GeneratedRegex(@"^leaders(-[a-z0-9]+)*$")]
     private static partial Regex LeadersLane();
+
+    [GeneratedRegex(@"\b(SUBMITTED|APPLIED|EASY APPLY)\b")]
+    private static partial Regex StatusWord();
+
+    [GeneratedRegex(@"^(applied|submitted)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex FirstWord();
+
+    [GeneratedRegex(@"\b(CONNECTION|INVITE|INBOUND|REMINDER|INMAIL|FOLLOW-UP|MESSAGE)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Touch();
 
     private static DateOnly? Day(string text) =>
         DateOnly.TryParseExact(text.Trim(), ["M/d/yyyy", "yyyy-MM-dd", "MM/dd/yyyy"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) ? day : null;

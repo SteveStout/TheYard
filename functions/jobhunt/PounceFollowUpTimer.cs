@@ -48,7 +48,7 @@ public sealed class PounceFollowUpTimer(IMergeStore store, IHttpClientFactory ht
             if (mode != PounceHandoff.Off)
             {
                 ILeaderFinder? finder = HunterFinder.FromSetting(Environment.GetEnvironmentVariable(HunterFinder.Setting), http) is { } hunter ? new FinderLeaders(new WalledFinder(hunter, store, time, HunterFinder.Control)) : null;
-                var emails = await new PounceEmails(store, finder, new SqlPounceBook(sql!), time, HunterFinder.MonthCap).RunAsync(mode, ct);
+                var emails = await new PounceEmails(store, finder, new SqlPounceBook(sql!), time, HunterFinder.MonthCapFrom(Environment.GetEnvironmentVariable(HunterFinder.CapSetting))).RunAsync(mode, ct);
                 run.Count("email_roles", emails.Roles).Count("email_asked", emails.Asked).Count("email_kept", emails.Kept).Count("email_refused", emails.Refused);
             }
         }
