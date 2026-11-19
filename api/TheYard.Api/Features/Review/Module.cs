@@ -34,8 +34,11 @@ public sealed class Module : IModule
         services.AddScoped(provider =>
         {
             var backend = provider.GetRequiredService<CurrentBackend>();
-            var reader = new ReviewLotReader(backend.Standings, backend.Backend.Bids, backend.Backend.Market, Clocks.Now);
-            return new ReadReviewLotHandler(provider.GetRequiredService<ReviewLotKeeper>(), backend.Key, reader);
+            // The room opens the lot (ADR: Competing bidders, the line on the review route): its turn is a command with
+            // its own handler, sent once a refresh, and the read follows it.
+            var open = new OpenReviewLotHandler(backend.Standings, backend.Backend.Inventory, backend.Backend.Bids, backend.Backend.Market, Clocks.Now);
+            var reader = new ReviewLotReader(backend.Standings, Clocks.Now);
+            return new ReadReviewLotHandler(provider.GetRequiredService<ReviewLotKeeper>(), backend.Key, ReviewLots.OpenedBy(open, reader));
         });
         // #endregion review-wiring
     }
