@@ -264,24 +264,34 @@ public class GateWorkflowTests
     }
 
     /// <summary>
-    /// Everything that reads the Cosmos DB account stays in one job, one pass after another, because the passes share
-    /// the tests- containers on it; and that job is the only one that signs in to Azure, so a sign-in that times out
-    /// reddens its passes and nothing else.
+    /// Every Cosmos DB pass stays in one job, one pass after another, because the passes share the tests- containers;
+    /// and those containers are on the emulator beside that job, never on the account the sites read. The one sign-in
+    /// left is for the keyset test's read of the live catalogue's request units; a test writes nothing that outlives
+    /// the runner, and no pass can throttle the live sites (ADR-098, the addendum of @VER@).
     /// </summary>
     [Fact]
-    public void Every_pass_on_the_cosmos_db_account_runs_in_the_one_job_that_signs_in()
+    public void Every_pass_on_cosmos_db_runs_in_the_one_job_and_on_the_emulator_beside_it()
     {
         string cosmos = Job("cosmos");
         foreach (string pass in new[] { "trx;LogFileName=xunit-live.trx", "trx;LogFileName=xunit-cosmos.trx", "tests/e2e/store-toggle.spec.ts tests/e2e/account.spec.ts tests/e2e/admin.spec.ts", "Cosmos__ContainerPrefix=\"tests-\"" })
         {
             Assert.Contains(pass, cosmos, StringComparison.Ordinal);
         }
+        Assert.Contains("image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-latest@sha256:", cosmos, StringComparison.Ordinal);
+        Assert.Contains("COSMOS_ENDPOINT: http://localhost:8081/", cosmos, StringComparison.Ordinal);
+        Assert.Contains("Cosmos__Credential=emulator", cosmos, StringComparison.Ordinal);
+        Assert.Contains("node scripts/cosmos_emulator.mjs \"$COSMOS_ENDPOINT\" tests- activity,bids,logs,machines,photos,resets,users,vehicles", cosmos, StringComparison.Ordinal);
+        // The account is named once, for the keyset test's read, and only the store tests' pass is given it.
+        Assert.Contains("COSMOS_ACCOUNT: https://cosmos-theyard-ss.documents.azure.com:443/", cosmos, StringComparison.Ordinal);
+        Assert.Single(Regex.Matches(Workflow(), "documents\\.azure\\.com"));
+        Assert.Single(Regex.Matches(cosmos, "\\$COSMOS_ACCOUNT"));
+        Assert.Contains("Cosmos__CatalogueAccountEndpoint=\"$COSMOS_ACCOUNT\" bash -c 'dotnet test api --no-build --filter \"Store=cosmos\"", cosmos, StringComparison.Ordinal);
         Assert.Contains("environment: gate", cosmos, StringComparison.Ordinal);
         Assert.Contains("uses: azure/login@", cosmos, StringComparison.Ordinal);
         string others = CheckJobs().Replace(cosmos, "", StringComparison.Ordinal) + GateJob() + ShedJob();
-        foreach (string signIn in new[] { "azure/login@", "environment: gate", "Cosmos__AccountEndpoint", "xunit-cosmos.trx", "xunit-live.trx" })
+        foreach (string pass in new[] { "azure/login@", "environment: gate", "Cosmos__AccountEndpoint", "xunit-cosmos.trx", "xunit-live.trx" })
         {
-            Assert.DoesNotContain(signIn, others, StringComparison.Ordinal);
+            Assert.DoesNotContain(pass, others, StringComparison.Ordinal);
         }
     }
     /// <summary>

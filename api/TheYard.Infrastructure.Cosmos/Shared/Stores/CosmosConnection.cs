@@ -15,7 +15,7 @@ public static class CosmosConnection
     /// <summary>
     /// Connect as the container's managed identity, or as whoever is signed in
     /// to the Azure CLI on a developer's machine, and the configuration says
-    /// which. There is no third way in, because the account has no keys: local
+    /// which. There is no third way into the account, because it has no keys: local
     /// authentication was disabled when it was created, so there is nothing to
     /// put in a connection string and nothing to leak (ADR: A second store on
     /// Cosmos DB, and what it costs).
@@ -31,7 +31,6 @@ public static class CosmosConnection
     /// </summary>
     public static CosmosStore Connect(string accountEndpoint, string databaseName, string containerPrefix, string credentialKind, string managedIdentityClientId, IStoreLog log)
     {
-        TokenCredential credential = CredentialFor(credentialKind, managedIdentityClientId);
         var options = new CosmosClientOptions
         {
             ApplicationName = "TheYard",
@@ -47,9 +46,37 @@ public static class CosmosConnection
             MaxRetryAttemptsOnRateLimitedRequests = 9,
             MaxRetryWaitTimeOnRateLimitedRequests = TimeSpan.FromSeconds(30),
         };
-        var client = new CosmosClient(accountEndpoint, credential, options);
+        var client = string.Equals(credentialKind, Emulator, StringComparison.OrdinalIgnoreCase)
+            ? EmulatorClient(accountEndpoint, options)
+            : new CosmosClient(accountEndpoint, CredentialFor(credentialKind, managedIdentityClientId), options);
         return new CosmosStore(client, databaseName, containerPrefix, log);
     }
+
+    /// <summary>
+    /// The one way in with a key, and not to the account: the Azure Cosmos DB
+    /// emulator the gate runs beside its suite, so the tests write into a
+    /// database thrown away with the job and never into the one the sites read
+    /// (ADR: The gate runs where the memory is, the addendum on the emulator). Its key is
+    /// published by Microsoft and the same on every copy, so any address that
+    /// is not this machine is refused before a client is made.
+    /// </summary>
+    static CosmosClient EmulatorClient(string accountEndpoint, CosmosClientOptions options)
+    {
+        if (!new Uri(accountEndpoint).IsLoopback)
+        {
+            throw new InvalidOperationException($"Cosmos:Credential is \"{Emulator}\" but {accountEndpoint} is not this machine; the emulator's key opens the emulator only.");
+        }
+        // The emulator answers in gateway mode only, at the one address it was started on.
+        options.ConnectionMode = ConnectionMode.Gateway;
+        options.LimitToEndpoint = true;
+        return new CosmosClient(accountEndpoint, EmulatorKey, options);
+    }
+
+    /// <summary>The value of <c>Cosmos:Credential</c> that means the emulator on this machine.</summary>
+    public const string Emulator = "emulator";
+
+    // Microsoft's documented key for the emulator, the same on every copy of it.
+    const string EmulatorKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==";
 
     /// <summary>
     /// The one rule above, on its own so the other Azure client in this
