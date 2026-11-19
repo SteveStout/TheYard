@@ -135,9 +135,12 @@ internal sealed class CountingMinter : ICodeMinter
 
     public List<string> Lanes { get; } = [];
 
-    public Task<string?> MintAsync(string person, string company, string lane, CancellationToken ct)
+    public List<string> Roles { get; } = [];
+
+    public Task<string?> MintAsync(string person, string company, string role, string lane, CancellationToken ct)
     {
         Asked.Add($"{person}|{company}");
+        Roles.Add(role);
         Lanes.Add(lane);
         return Task.FromResult(Code);
     }
@@ -238,6 +241,8 @@ internal sealed class Morning
 
     public FixedTime Time { get; } = new(At);
 
+    public Random Roll { get; set; } = new(1119);
+
     public ServerConfig Config { get; } = new()
     {
         Lanes = new Dictionary<string, LaneConfig>
@@ -246,6 +251,7 @@ internal sealed class Morning
             ["invites"] = new() { TargetModel = "claude-haiku-5-5" },
             ["messages"] = new(),
             ["network"] = new() { Enabled = false },
+            ["commentline"] = new() { Enabled = false },
             ["apply"] = new() { Effort = "medium" },
         },
     };
@@ -255,7 +261,7 @@ internal sealed class Morning
         return new(
             Share,
             new RunGuards(mount ?? new FakeMount(), runLock ?? new FakeLock(), desktop ?? new FakeDesktop(), Time),
-            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, new EssayDesk(Share, Prose, Claude), Usage, Config, Time), new InviteRecount(Share, Claude, Config), new FeedLane(Share, new FeedTools(Claude, Prose, new UsageReport(Share, Usage, Config, Time)), Config, Time), new NetworkLane(Share, new NetworkTools(Claude, new UsageReport(Share, Usage, Config, Time)), Config, Time)),
+            new LaneWork(new DayReader(Share), new WorklistBuilder(Share, Minter, new FakeProse(), Resumes, Config), new LaneRunner(Share, new EssayDesk(Share, Prose, Claude), Usage, Config, Time), new InviteRecount(Share, Claude, Config), new FeedLane(Share, new FeedTools(Claude, Prose, new UsageReport(Share, Usage, Config, Time)), Config, Time), new NetworkLane(Share, new NetworkTools(Claude, new UsageReport(Share, Usage, Config, Time)), Config, Time), null, new CommentLine(Share, new CommentTools(Claude, Minter, Prose, new UsageReport(Share, Usage, Config, Time), Roll), Config, Time)),
             Config);
     }
 

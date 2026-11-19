@@ -19,6 +19,9 @@ public enum Lane
 
     /// <summary>Job applications in Chrome.</summary>
     Apply,
+
+    /// <summary>The comment line: adds the portfolio line to a random third of Steve's own comments of the last day, and nothing else.</summary>
+    Commentline,
 }
 
 /// <summary>
@@ -35,8 +38,8 @@ public static class RunSlot
     /// <summary>The start of a slot that runs the program for one caught role; the posting's key follows it.</summary>
     public const string Pounce = "pounce-";
 
-    /// <summary>The lanes in run order.</summary>
-    public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply];
+    /// <summary>The lanes in run order: the comment line right after the feed, while the morning's LinkedIn session is fresh and before any send.</summary>
+    public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Commentline, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply];
 
     /// <summary>
     /// The lanes a run for one caught role works: the feed finds the leader and writes the role's queue, the invites lane
@@ -58,6 +61,7 @@ public static class RunSlot
         Lane.Invites => "invites",
         Lane.Messages => "messages",
         Lane.Network => "network",
+        Lane.Commentline => "commentline",
         _ => "apply",
     };
 
@@ -69,6 +73,7 @@ public static class RunSlot
         Lane.Invites => "LINKEDIN-INVITES-LANE.md",
         Lane.Messages => "LINKEDIN-MESSAGES-LANE.md",
         Lane.Network => "LINKEDIN-NETWORK-LANE.md",
+        Lane.Commentline => "COMMENTLINE-LANE.md",
         _ => "APPLY-LANE.md",
     };
 
