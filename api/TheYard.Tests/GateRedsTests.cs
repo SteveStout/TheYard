@@ -144,4 +144,56 @@ public sealed class GateRedsTests : IDisposable
         Assert.Contains("git add data/gate-reds.json", promote, StringComparison.Ordinal);
         Assert.Contains("data/gate-reds\\.json", promote, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// A red ready branch names no version (ADR-137, One traffic cop for main), so gate_feed.sh keeps it under the one the
+    /// cop gave it, read from the cop's status on its commit ("red gate as &lt;version&gt;"), and leaves out one with no
+    /// such status: every kept row names a version. 1.0.5.100 kept the fail proof under its branch's name and main went
+    /// red on the case above. Run against a stand-in gh in a throwaway repository, no network (RULE 79).
+    /// </summary>
+    [Fact]
+    public void A_red_ready_branch_is_kept_under_the_version_the_cop_gave_it()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        string repo = Path.Combine(_root, "repo");
+        string bin = Path.Combine(_root, "bin");
+        Directory.CreateDirectory(Path.Combine(repo, "scripts"));
+        Directory.CreateDirectory(bin);
+        File.Copy(Path.Combine(Repo.Root(), "scripts", "gate_feed.sh"), Path.Combine(repo, "scripts", "gate_feed.sh"));
+        string runs = """[{"databaseId":3,"headBranch":"ready/alpha-aaaaaaaa","headSha":"aaaaaaaa11","conclusion":"failure","createdAt":"2026-11-19T15:00:00Z"},{"databaseId":2,"headBranch":"ready/beta-bbbbbbbb","headSha":"bbbbbbbb22","conclusion":"failure","createdAt":"2026-11-19T14:59:00Z"},{"databaseId":1,"headBranch":"gate/1.0.5.98-gamma-cccccccc","headSha":"cccccccc33","conclusion":"failure","createdAt":"2026-11-19T14:58:00Z"}]""";
+        File.WriteAllText(Path.Combine(_root, "runs.json"), runs);
+        File.WriteAllText(Path.Combine(bin, "gh"), """
+            #!/usr/bin/env bash
+            case "$*" in
+              *"--workflow gate.yml --limit 50"*) cat "$ROOT/runs.json";;
+              *"commits/aaaaaaaa11/statuses"*) echo "red gate as 1.0.5.101: xunit; xunit-sqlite.txt: Failed X";;
+              *"/statuses"*) echo "";;
+              *"--json jobs"*) echo '["dotnet"]';;
+              *) echo "";;
+            esac
+
+            """);
+        File.SetUnixFileMode(Path.Combine(bin, "gh"), UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        var init = new ProcessStartInfo("git", "init -q") { WorkingDirectory = repo };
+        using (var git = Process.Start(init)!)
+        {
+            git.WaitForExit();
+        }
+        var start = new ProcessStartInfo("bash", $"scripts/gate_feed.sh 99 \"{Path.Combine(_root, "feed.json")}\"") { WorkingDirectory = repo, RedirectStandardOutput = true, RedirectStandardError = true };
+        start.Environment["PATH"] = bin + Path.PathSeparator + Environment.GetEnvironmentVariable("PATH");
+        start.Environment["ROOT"] = _root;
+        start.Environment["GITHUB_REPOSITORY"] = "SteveStout/TheYard";
+        using var process = Process.Start(start)!;
+        string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        Assert.True(process.ExitCode == 0, output);
+        using var feed = JsonDocument.Parse(File.ReadAllText(Path.Combine(_root, "feed.json")));
+        string[] kept = [.. feed.RootElement.GetProperty("reds").EnumerateArray().Select(red => $"{red.GetProperty("run").GetInt64()} {red.GetProperty("version").GetString()} {red.GetProperty("lane").GetString()}")];
+        Assert.Equal(["3 1.0.5.101 alpha", "1 1.0.5.98 gamma"], kept);
+        Assert.DoesNotContain("full", File.ReadAllText(Path.Combine(_root, "feed.json")), StringComparison.Ordinal);
+    }
 }
