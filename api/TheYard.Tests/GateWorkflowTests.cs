@@ -378,7 +378,8 @@ public class GateWorkflowTests
         Assert.Contains("if: always() && startsWith(github.ref_name, 'ready/') && needs.cop.outputs.landed == 'go'", said, StringComparison.Ordinal);
         Assert.Contains("success \"landed as $VERSION, main ${SHA:0:8}\"", said, StringComparison.Ordinal);
         Assert.Contains("pending \"green as $VERSION, needs a hand promote", said, StringComparison.Ordinal);
-        Assert.Contains("failure \"red gate: ${RED:-a check}${FIRST:+; $FIRST}\"", said, StringComparison.Ordinal);
+        // The version the cop gave a red branch rides in its status, where the list of what the gate caught reads it.
+        Assert.Contains("failure \"red gate as $VERSION: ${RED:-a check}${FIRST:+; $FIRST}\"", said, StringComparison.Ordinal);
         Assert.Contains("statuses: write", said, StringComparison.Ordinal);
         string afterRoll = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "after-roll.yml"));
         int landed = afterRoll.IndexOf("select(.context == \"cop\" and .state == \"success\")", StringComparison.Ordinal);
