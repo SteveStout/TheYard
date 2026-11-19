@@ -562,8 +562,16 @@ jobs:
           # warnings are red with no log of their own until here; they get their lines too.
           is_red() { case " $red " in *" $1 "*) return 0;; *) return 1;; esac; }
           lines() { while IFS= read -r line; do printf '::error::%s: %s\n' "$1" "$(printf '%s' "$line" | cut -c1-300)" | tee -a "$RAW/red.txt"; done; }
-          # Written on the way out, red or green: the status job names the checks and the first failing line.
-          trap 'out=${GITHUB_OUTPUT:-/dev/null}; echo "red=${red# }" >> "$out"; echo "first=$(sed -n 1p "$RAW/red.txt" 2> /dev/null | sed "s/^::error:://" | tr -s " " | cut -c1-90)" >> "$out"' EXIT
+          # Written on the way out, red or green: the status job names the checks and the first failing line. A failing
+          # test's line comes first when there is one, xUnit's "Failed <test>" or the browser's "1) <spec>": the fold's
+          # note on the job that died prints before the test logs and names no test (ADR-137, the fail proof of 1.0.5.99).
+          said() {
+            local out=${GITHUB_OUTPUT:-/dev/null} first
+            first=$({ grep -m1 -E 'Failed [A-Za-z]|[0-9]+\) ' "$RAW/red.txt" || sed -n 1p "$RAW/red.txt"; } 2> /dev/null | sed 's/^::error:://' | tr -s ' ' | cut -c1-90)
+            echo "red=${red# }" >> "$out"
+            echo "first=$first" >> "$out"
+          }
+          trap said EXIT
           if [ -n "$red" ]; then
             echo "::error::red:$red"
             for pair in prettier:prettier.txt lint:lint.txt tsc:tsc.txt format:format.txt sqlproj:sqlproj.txt emdash:emdash.txt quality:quality.txt fold:fold.txt; do
