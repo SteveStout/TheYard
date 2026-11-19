@@ -1,22 +1,33 @@
 /**
- * Does:      Draws the review route at ?view=review (ADR: Ten minutes, seven stops): the title and lede, where the
- *            reviewer is, the seven stops from the one list in their three states, the finish panel, and the rail.
- * Does not:  Hold the stops (reviewStops.ts does) or the place (useReviewProgress.ts keeps it on the browser); the stops
- *            read nothing from the API, so the server draws them whole, and the rail's quotes arrive in the browser.
+ * Does:      Draws the review route at ?view=review: first the reason (ADR: The review route gives a reason before it
+ *            asks), the first screen with its proof, its one primary move and one named quote; then, under "The full
+ *            tour, if you want it", the seven stops of ADR: Ten minutes, seven stops as they were, where the reviewer
+ *            is, the finish panel, and what the sidebar still holds.
+ * Does not:  Hold the stops (reviewStops.ts does), the words (reviewVerdict.ts does) or the place (useReviewProgress.ts
+ *            keeps it on the browser); the first screen's two answers are read by useReviewReadings.ts.
  * Used by:   App.tsx.
  */
 import { useRef } from 'react';
 import { useReviewProgress } from '../../../hooks/useReviewProgress';
+import { useReviewReadings } from '../../../hooks/useReviewReadings';
+import type { DocKey } from '../../../library/documents';
+import { DIAGRAMS, MENUS } from '../../../library/sections';
 import { REVIEW_STOPS } from '../../../lib/reviewStops';
+import { sidebarRestLine, TOUR_ID, VERDICT } from '../../../lib/reviewVerdict';
+import { gateFacts } from '../../layout/StoreBar/gateFacts';
 import { ReviewFinish } from '../ReviewFinish';
 import { WhereNext } from '../../shared/WhereNext';
 import { ReviewProgress } from '../ReviewProgress';
-import { ReviewRail } from '../ReviewRail';
 import { ReviewStop, type StopState } from '../ReviewStop';
+import { ReviewVerdict } from '../ReviewVerdict';
 import styles from './ReviewPage.module.css';
 
-export function ReviewPage() {
+/** The quality numbers this build held, read once from what the build carries. */
+const QUALITY = gateFacts().quality;
+
+export function ReviewPage({ onOpenDoc }: { onOpenDoc: (key: DocKey) => void }) {
   const review = useReviewProgress();
+  const readings = useReviewReadings();
   const { current, reached } = review.progress;
   const finish = useRef<HTMLElement>(null);
 
@@ -38,38 +49,57 @@ export function ReviewPage() {
 
   return (
     <section className={styles.page} aria-labelledby="review-title" data-testid="review-page">
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Review</p>
-        <h1 id="review-title" className={styles.title}>
-          Check my work in ten minutes
-        </h1>
-        <p className={styles.lede}>
-          Seven stops, ten minutes. By the end you will know how I design, how I test and how I
-          decide, without taking my word for any of it. Every stop is the running system, and every
-          number on it is read live.
-        </p>
-      </header>
-      <ReviewRail />
-      <ReviewProgress
-        current={current}
-        reached={reached.length}
-        onPrevious={review.previous}
-        onNext={review.next}
+      <ReviewVerdict
+        summary={readings.summary}
+        recommendations={readings.recommendations}
+        quality={QUALITY === null ? null : { held: QUALITY.held, of: QUALITY.of }}
+        onAction={review.action}
+        onOpenDoc={onOpenDoc}
       />
-      <ol className={styles.stops} aria-label="The seven stops">
-        {REVIEW_STOPS.map((stop, index) => (
-          <ReviewStop
-            key={stop.key}
-            stop={stop}
-            index={index}
-            state={stateOf(index)}
-            onChoose={() => review.choose(index)}
-            onOpened={() => review.opened(index)}
-            onMarkDone={markDone}
-          />
-        ))}
-      </ol>
-      <ReviewFinish ref={finish} finished={review.finished} onRestart={review.restart} />
+      <p className={styles.fold} data-testid="review-fold">
+        <span>
+          {VERDICT.foldAsk}{' '}
+          <a href={`#${TOUR_ID}`} onClick={() => review.action('tour')} data-action="review.tour">
+            {VERDICT.foldLink}
+          </a>
+        </span>
+      </p>
+      <section
+        id={TOUR_ID}
+        className={styles.tour}
+        aria-labelledby="review-tour-title"
+        data-testid="review-tour"
+      >
+        <header className={styles.head}>
+          <h2 id="review-tour-title" className={styles.tourTitle}>
+            {VERDICT.tourTitle}
+          </h2>
+          <p className={styles.lede}>{VERDICT.tourLine}</p>
+        </header>
+        <ReviewProgress
+          current={current}
+          reached={reached.length}
+          onPrevious={review.previous}
+          onNext={review.next}
+        />
+        <ol className={styles.stops} aria-label="The seven stops">
+          {REVIEW_STOPS.map((stop, index) => (
+            <ReviewStop
+              key={stop.key}
+              stop={stop}
+              index={index}
+              state={stateOf(index)}
+              onChoose={() => review.choose(index)}
+              onOpened={() => review.opened(index)}
+              onMarkDone={markDone}
+            />
+          ))}
+        </ol>
+        <p className={styles.lede} data-testid="review-sidebar-rest">
+          {sidebarRestLine(MENUS.records.items.length, DIAGRAMS.length)}
+        </p>
+        <ReviewFinish ref={finish} finished={review.finished} onRestart={review.restart} />
+      </section>
       <WhereNext page="review" />
     </section>
   );

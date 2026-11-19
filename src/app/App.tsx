@@ -46,7 +46,7 @@ export default function App() {
   const { account, changeAccount } = useAccount(); // who is signed in
   const inventory = useInventory(address, account.email); // the vehicle list, with this visitor's bids on it
   const vehicle = useOpenVehicle(address, inventory); // the vehicle on screen
-  const rail = useRail(); // the sidebar: docked, collapsed, or a drawer
+  const rail = useRail(address.reviewOpen); // the sidebar: docked, collapsed, or a drawer
   const go = useNavigation(address, inventory.loadState); // open and close views, move focus, announce
   const build = useRunningBuild(); // the version line, asked of the API
   const now = useNow(1000, useFirstLoad()?.nowMs); // the clock every countdown reads
@@ -146,7 +146,7 @@ export default function App() {
           onAllPosts={go.closeBlogPost}
         />
       ) : address.reviewOpen ? (
-        <ReviewPage />
+        <ReviewPage onOpenDoc={go.openDocument} />
       ) : address.recommendationsOpen ? (
         <RecommendationsPage />
       ) : !address.inventoryOpen ? (

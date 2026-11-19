@@ -1,0 +1,192 @@
+/**
+ * Does:      Lays out the review route's first screen: at a desk the claim, the tiles and the moves in a wide column with
+ *            the quote and the roles card beside it; under the desk one column; on a phone the moves come straight
+ *            after the lede, before the tiles, so the primary button is inside the first screen.
+ * Does not:  Draw a panel's glass (panels.css does), a tile (ProofTile.module.css does) or the pills' own look
+ *            (ReviewPage.module.css does).
+ * Used by:   ReviewVerdict.tsx.
+ */
+.verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 344px;
+  gap: var(--space-7);
+  align-items: start;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+}
+
+.slash {
+  padding: 0 var(--space-2);
+  color: var(--color-gold-bar-dark);
+}
+
+.title {
+  align-self: flex-start;
+  margin: var(--space-3) 0 0;
+  padding-bottom: var(--space-3);
+  border-bottom: var(--rule-gold);
+  border-image: var(--gradient-gold) 1;
+  color: var(--color-heading);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.12;
+  letter-spacing: var(--title-tracking);
+}
+
+/* At a desk each sentence of the claim is its own line. */
+.line {
+  display: block;
+}
+
+.lede {
+  max-width: 700px;
+  margin: var(--space-4) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.moves {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.proof,
+.book {
+  min-height: var(--touch-target);
+  font-size: var(--text-md);
+}
+
+/* The one primary move carries the gold ring, so the eye lands on it first. */
+.proof {
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-gold);
+}
+
+/* A text link, a thumb tall on every width. */
+.resume {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--color-accent);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.resume:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* On the bare page, not in a panel: body text, since the quiet colours are kept for words with a panel behind them. */
+.under {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.roles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+
+.rolesLine {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.roleLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* At a desk the first screen fills the window down to the fold line, so the tour and its ten minutes start under
+   it whatever the window's height (the store bar and the fold line take the rest). */
+@media (min-width: 1024px) {
+  .verdict {
+    min-height: calc(100svh - 150px);
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .verdict {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+}
+
+/* A phone: the claim, then the moves, then the proof, so the primary button is on the first screen. */
+@media (max-width: 639.98px) {
+  .title {
+    font-size: var(--text-3xl);
+  }
+
+  .line {
+    display: inline;
+  }
+
+  .lede {
+    font-size: var(--text-md);
+  }
+
+  .moves {
+    order: 2;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+
+  .resume {
+    align-self: center;
+  }
+
+  .under {
+    order: 3;
+  }
+
+  .tiles {
+    order: 4;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+}

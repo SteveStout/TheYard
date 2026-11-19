@@ -1,12 +1,13 @@
 /**
  * Does:      Says how the sidebar sits: docked open, docked collapsed, a drawer on a narrow screen, or not known yet
- *            while a page drawn at build time is taken over, and remembers a collapsed rail between visits.
+ *            while a page drawn at build time is taken over, remembers a collapsed rail between visits, and starts
+ *            it collapsed on a page that asks for that when nothing is remembered.
  * Does not:  Draw the sidebar (SideNav does) or choose what is in it.
  * Used by:   App.tsx, Shell.tsx.
  */
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { DESK } from '../../lib/breakpoints';
-import { readRailCollapsed, storeRailCollapsed } from '../../lib/railStorage';
+import { railStartsCollapsed, storeRailCollapsed } from '../../lib/railStorage';
 
 export type Rail = ReturnType<typeof useRail>;
 
@@ -20,7 +21,6 @@ export type Rail = ReturnType<typeof useRail>;
 // argument is the build's answer, used only while taking the page over; on any
 // other page the browser is asked from the first draw, as it always was.
 const whileTakingOver = () => null;
-const openWhileTakingOver = () => false;
 const nothingToWatch = () => () => {};
 
 function watchTheDockingLine(onChange: () => void): () => void {
@@ -31,7 +31,12 @@ function watchTheDockingLine(onChange: () => void): () => void {
 const pastTheDockingLine = () => window.matchMedia(DESK).matches;
 // #endregion known-after-hydration
 
-export function useRail() {
+/**
+ * The sidebar's state. On the review route nothing kept draws it collapsed (ADR: The review route gives a reason
+ * before it asks), on the server too, so the first screen is the page's own; a kept choice wins everywhere.
+ * @param collapsedByDefault the page's default when this browser keeps no choice
+ */
+export function useRail(collapsedByDefault = false) {
   // #region docking
   /** The sidebar (ADR-013): a docked rail at 1024px and up, a drawer below, null while a drawn page is taken over. */
   const docked: boolean | null = useSyncExternalStore(
@@ -40,7 +45,11 @@ export function useRail() {
     whileTakingOver
   );
   // What this browser remembers, until the reader chooses again on this visit.
-  const remembered = useSyncExternalStore(nothingToWatch, readRailCollapsed, openWhileTakingOver);
+  const remembered = useSyncExternalStore(
+    nothingToWatch,
+    () => railStartsCollapsed(collapsedByDefault),
+    () => collapsedByDefault
+  );
   const [chosen, setChosen] = useState<boolean | null>(null);
   const railCollapsed = chosen ?? remembered;
   const [drawerOpen, setDrawerOpen] = useState(false);

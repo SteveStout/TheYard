@@ -29,8 +29,10 @@ export type FirstLoad = {
   doc: { key: string; html: string } | null;
   /** The first screen's reading (/api/pulse) on the bare address, as it answered, or null; absent on a page drawn before it was read. */
   pulse?: unknown;
-  /** /api/recommendations as it answered, on ?view=recommendations, or null; absent on a page drawn before it was read. */
+  /** /api/recommendations as it answered, on ?view=recommendations and ?view=review, or null; absent on a page drawn before it was read. */
   recommendations?: unknown;
+  /** /api/tests/summary as it answered, on ?view=review, or null; absent elsewhere. */
+  tests?: unknown;
   /** The post a ?view=blog&post= address names, as much as its hook draws (ADR-132), or null; absent elsewhere. */
   post?: HookPost | null;
   /** On ?view=blog: the list's first page for the address's filter, and the post drawn in full (the one named, else the first card's); absent elsewhere. */

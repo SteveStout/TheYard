@@ -1,6 +1,6 @@
 /**
  * Does:      Styles the store band under the header: the two segments, this site and the other, and the readiness
- *            note.
+ *            note; on the review route, the one sentence that stands in for them.
  * Does not:  Decide which store a site runs on (the server does), or hold a colour of its own.
  * Used by:   StoreBar.tsx.
  */
@@ -184,4 +184,27 @@ a.segment:focus-visible {
     flex-basis: 100%;
     min-height: var(--store-note-height);
   }
+}
+
+/* The review route's one sentence, at the height the segments hold, so the band is the same band. */
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--pill-height);
+  margin: 0 0 0 auto;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.live strong {
+  color: var(--color-teal-deep);
+  font-weight: var(--weight-semibold);
+}
+
+.liveDot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
 }

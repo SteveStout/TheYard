@@ -19,9 +19,9 @@ export type PostHead = { slug: string; title: string; summary: string; image?: B
 export type Head = { title: string; description: string; path: string };
 
 const REVIEW: Head = {
-  title: 'Check my work in ten minutes',
+  title: 'Production .NET that stays up. Built with AI, measured on every version.',
   description:
-    'Seven stops, ten minutes. Every stop is the running system, and every number on it is read live.',
+    '200+ production releases with zero downtime. Now I build with AI and measure quality on every version. See the proof on the running system in two minutes.',
   path: '/?view=review',
 };
 

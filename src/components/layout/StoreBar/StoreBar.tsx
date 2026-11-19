@@ -7,6 +7,7 @@ import {
   shortNote,
   type Stores,
 } from '../../../lib/stores';
+import { liveSentence } from '../../../lib/reviewVerdict';
 import { Ring } from '../../shared/Ring';
 import styles from './StoreBar.module.css';
 import { gateChips, gateFacts } from './gateFacts';
@@ -32,8 +33,12 @@ const CHIPS = gateChips(GATE);
  * of 0.12, when this bar appeared); the segments are drawn only once the
  * server has answered, so a container that names no other site shows the
  * other segment as not here rather than as a control that does nothing.
+ *
+ * On the review route the band talks to a stranger, not to the operator (ADR: The review route gives a reason
+ * before it asks): one sentence in place of the toggle, the ready ring and the gate chips, "passed every check"
+ * only when the build carries the gate's own reading of this version.
  */
-export function StoreBar() {
+export function StoreBar({ review = false }: { review?: boolean }) {
   const [stores, setStores] = useState<Stores | null>(null);
   const [gateTop, setGateTop] = useState<number | null>(null);
   const badge = useRef<HTMLButtonElement>(null);
@@ -44,12 +49,29 @@ export function StoreBar() {
   }, []);
 
   useEffect(() => {
+    // The review route's band names no store, so it asks for none.
+    if (review) return;
     const controller = new AbortController();
     void fetchStores(controller.signal).then((answer) => {
       if (answer) setStores(answer);
     });
     return () => controller.abort();
-  }, []);
+  }, [review]);
+
+  if (review) {
+    const sentence = liveSentence(GATE.gated);
+    return (
+      <div className={styles.bar} data-testid="store-bar" data-state="review">
+        <div className={styles.inner}>
+          <p className={styles.live} data-testid="store-bar-live">
+            <span className={styles.liveDot} aria-hidden="true" />
+            <strong>{sentence.lead}</strong>
+            {sentence.rest !== null && <span> {sentence.rest}</span>}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // The build draws the landing page where there is no window: the bare address, which is what it is.
   const here =

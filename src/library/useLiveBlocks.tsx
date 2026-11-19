@@ -15,15 +15,9 @@ import { QualityTrend } from '../components/shared/QualityTrend';
 import { parseTrend } from '../lib/qualityTrend';
 import type { NavIcon } from '../lib/siteMap';
 import { DOCS, type DocKey } from './documents';
+import { landOnSection, pendingAnchor } from './pendingAnchor';
 
 // #region live-blocks
-/**
- * The section to land on once the next document is drawn. The first address's
- * hash is read before the address bar is rewritten without it, so a shared
- * link such as `?doc=color-style#the-glass` still lands on its section.
- */
-let pendingAnchor =
-  typeof window === 'undefined' ? '' : decodeURIComponent(window.location.hash.slice(1));
 
 /** The document a slug names, by the address the API serves it at. */
 function keyOf(slug: string): DocKey | undefined {
@@ -98,11 +92,14 @@ export function useLiveBlocks(
   useEffect(() => {
     const root = container.current;
     if (!root || html === undefined) return;
-    if (pendingAnchor !== '') {
-      const target = root.querySelector<HTMLElement>(`[id="${CSS.escape(pendingAnchor)}"]`);
+    // The section to land on once the document is drawn (pendingAnchor.ts): the first address's hash, so a shared
+    // link such as `?doc=color-style#the-glass` lands on its section, or one a link asked for.
+    const waiting = pendingAnchor();
+    if (waiting !== '') {
+      const target = root.querySelector<HTMLElement>(`[id="${CSS.escape(waiting)}"]`);
       if (target) {
         target.scrollIntoView({ block: 'start' });
-        pendingAnchor = '';
+        landOnSection('');
       }
     }
     const open = (event: MouseEvent) => {
@@ -126,7 +123,7 @@ export function useLiveBlocks(
         here.scrollIntoView({ block: 'start' });
         return;
       }
-      pendingAnchor = anchor;
+      landOnSection(anchor);
       opener.current(key);
     };
     root.addEventListener('click', open);

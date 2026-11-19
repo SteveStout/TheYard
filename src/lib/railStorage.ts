@@ -8,13 +8,24 @@
 /** The local storage key the rail's collapsed state is kept under. */
 const RAIL_KEY = 'theyard.rail';
 
-/** Whether the rail was left collapsed in this browser; false when nothing is stored or the store is blocked. */
-export function readRailCollapsed(): boolean {
+/** What this browser keeps for the rail: 'collapsed', 'open', or null when nothing is kept or the store is blocked. */
+export function readRailStored(): 'collapsed' | 'open' | null {
   try {
-    return window.localStorage.getItem(RAIL_KEY) === 'collapsed';
+    const kept = window.localStorage.getItem(RAIL_KEY);
+    return kept === 'collapsed' || kept === 'open' ? kept : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/**
+ * Whether the rail starts collapsed: what this browser kept when it kept anything, otherwise the page's own default.
+ * The review route's first screen defaults to collapsed (ADR: The review route gives a reason before it asks), and
+ * that default is never written, so a visitor's own choice is the only thing ever kept.
+ */
+export function railStartsCollapsed(collapsedByDefault: boolean): boolean {
+  const kept = readRailStored();
+  return kept === null ? collapsedByDefault : kept === 'collapsed';
 }
 
 /** Keeps the rail's collapsed state for the next visit; a blocked store drops it. */

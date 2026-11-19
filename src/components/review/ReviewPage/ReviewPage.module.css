@@ -1,64 +1,68 @@
 /**
- * Does:      Lays out the review route as one column at the page's reading measure, its title on the gold bar, and holds
- *            the route's two pills: the filled one for the move to make and the outlined one beside it.
+ * Does:      Lays out the review route: the first screen at the page's full measure, the line at the fold, and the tour
+ *            under it as one column at the reading measure; and holds the route's two pills: the filled one for the
+ *            move to make and the outlined one beside it.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a stop (ReviewStop.module.css does).
- * Used by:   ReviewPage.tsx, ReviewProgress.tsx, ReviewStop.tsx, ReviewFinish.tsx, ReviewRail.tsx.
+ * Used by:   ReviewFinish.tsx, ReviewPage.tsx, ReviewProgress.tsx, ReviewStop.tsx, ReviewVerdict.tsx.
  */
 .page {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   width: 100%;
-  max-width: 720px;
+  max-width: 1234px;
   margin: 0 auto;
 }
 
-/* A wide desk: the stops at their reading measure, the rail beside them spanning every row, the last row taking any
-   height the rail has over the stops so the stops never spread apart. */
-@media (min-width: 1280px) {
-  .page {
-    display: grid;
-    grid-template-columns: minmax(0, 720px) 332px;
-    grid-template-rows: auto auto auto 1fr;
-    column-gap: var(--space-5);
-    align-items: start;
-    max-width: calc(720px + 332px + var(--space-5));
-  }
+/* The tour keeps the stops at their reading measure, centred under the first screen. */
+.tour {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  scroll-margin-top: var(--space-6);
+}
 
-  .page > :not([data-testid='review-rail']) {
-    grid-column: 1;
-  }
+/* The line at the fold that points down to the tour, between two hairlines. */
+.fold {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-6) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  text-align: center;
+}
 
-  .page > [data-testid='review-rail'] {
-    grid-column: 2;
-    grid-row: 1 / span 4;
-  }
+.fold::before,
+.fold::after {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+  content: '';
+}
+
+.fold a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+}
+
+.tourTitle {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--title-weight);
 }
 
 .head {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-}
-
-.eyebrow {
-  margin: 0;
-  color: var(--color-text);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--title-tracking);
-  text-transform: uppercase;
-}
-
-.title {
-  align-self: flex-start;
-  margin: 0;
-  padding-bottom: var(--space-1);
-  border-bottom: var(--rule-gold);
-  border-image: var(--gradient-gold) 1;
-  color: var(--color-heading);
-  font-size: var(--text-2xl);
-  font-weight: var(--title-weight);
 }
 
 /* On the bare page, not in a panel: the quiet colours are kept for words with a panel behind them. */
