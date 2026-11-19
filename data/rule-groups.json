@@ -109,6 +109,7 @@
       "example": "For example: the site runs on one SQL database, and no template can quietly add a second one to the bill.",
       "rules": [
         "A request on a store whose catalogue is cold waits for the load without blocking a thread, and a warm store is waited on for no time at all",
+        "The job-hunt Function sends the HTTP client's lines, the host's start-up lines and the health route's status lines only at Warning and above, and every process's run line at Information",
         "Every Cloud card's thirty-day month is read whole once, then only from its newest bucket, trimmed at thirty days, with one read shared by every caller that arrives during it",
         "The site asks the Function's health route every five minutes for the merger's numbers and every fifteen for the switches",
         "The shared Cosmos DB database never needs a twenty-sixth container: the definitions and the live tests' copies stay at its limit, and the nightly card keeps its minutes and runs in the plan container under kinds of its own",

@@ -345,3 +345,26 @@ On 19 November the grant dial read 84,959 of 100,000 GB-s, amber. Flex Consumpti
 The roughly 420 new instances a day cost nothing, so a dispatcher would have saved only the rounding of short runs, about 160 GB-s a day.
 
 From this version the site asks the health route every five minutes for the merger's numbers (`MergerReading.Every`) and every fifteen minutes for the switches (`NightlyProcesses.SwitchesKeep`), which saves about 1,150 GB-s a day. The merger row names the minute it was read. The dial's projection now uses the last day's rate (ADR-102, the addendum on the honesty rule). The month runs past the grant whatever ships, at about 158 % and roughly $1.50 at the on-demand rate. The dial reads red from about 21 November and green from 1 December. `MergerHoldTests` and `NightlyCardTests` hold it.
+
+## Addendum, 2026-11-19 (1.0.5.112): the merger's reading stays on its minute
+
+In plain words: after the health route was asked every five minutes, the nightly card's merger row read "not read" all day. The reading was taken, then wiped by the next minute's write.
+
+The recorder reads each card five minutes back every minute, and writes again any minute whose values changed. The reading was put on one minute; a minute later that same minute came back from Azure without it, its values had changed, and it was written over. Asked every minute, the next reading always arrived to replace it, which hid the fault.
+
+From this version the reading is remembered with the minute it landed on (`MergerHold`) and put back on that minute at every read until the next ask, so the minute reads the same and is not written again. The ask stays every five minutes. `MergerHoldTests` holds the minute read twice.
+
+## Addendum, 2026-11-19 (1.0.5.112): what the workspace pays for
+
+In plain words: the Function was filling most of the site's free 5 GB of telemetry a month with lines nobody reads, and it now sends fewer of them.
+
+On 19 November the one workspace both apps report to, log-theyard-ss, held 4.757 GB for the month. The Function's share was 2.835 GB, 1.77 GB of it traces, and its daily rate stepped up from about 0.10 to 0.22 GB on 11 November when FreshScan began. FreshScan's HTTP client logs two Information lines for every board it reads, about 54,000 rows and 46 MB a day. Beside them were the host's start-up lines, about 15 MB a day, and the health route's status lines, about 24 MB a day.
+
+From this version:
+
+- the worker sends the HTTP client's lines only at Warning and above (`LogLevels`);
+- the host sends Host.Startup and the status lines only at Warning and above;
+- every process's own "process:" run line, which the Admin tab's nightly card reads, keeps Information, as do every request row, warning and error.
+
+No daily cap was added. A cap drops whatever arrives after it fills, errors included, which is the data loss the Insights card exists to show. `LogLevelsTests` holds it.
+

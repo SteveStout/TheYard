@@ -47,6 +47,33 @@ public class MergerHoldTests
         Assert.Equal(2, asked);
     }
 
+    /// <summary>
+    /// On 19 November, after the roll that read the route every five minutes, the merger row read "not read" for good: the
+    /// recorder reads five minutes back, and the minute that carried the reading came back on the next read without it and
+    /// was written over. The reading now stays on the minute it landed on until the next ask.
+    /// </summary>
+    [Fact]
+    public void A_reading_stays_on_the_minute_it_landed_on_until_the_next_ask()
+    {
+        var hold = new MergerHold();
+        ResourceMinute At(int minutes) => new(Nine.AddMinutes(minutes), new Dictionary<string, double?> { ["executions"] = 1 }, "test");
+        var reading = new Dictionary<string, double?> { [MergerReading.Waiting] = 2, [MergerReading.Over5] = 0, [MergerReading.Over10] = 0, [MergerReading.LogAge] = 30, [MergerReading.Oldest] = 90 };
+
+        Assert.True(hold.Due(Nine));
+        var first = hold.Fold([At(-2), At(-1)], reading, Nine, "test");
+        Assert.Equal(2d, first[^1].Values[MergerReading.Waiting]);
+
+        var again = hold.Fold([At(-2), At(-1), At(0)], null, Nine.AddMinutes(1), "test");
+        Assert.Equal(2d, again.Single(minute => minute.At == Nine.AddMinutes(-1)).Values[MergerReading.Waiting]);
+        Assert.Equal(1d, again.Single(minute => minute.At == Nine.AddMinutes(-1)).Values["executions"]);
+        Assert.False(again[0].Values.ContainsKey(MergerReading.Waiting));
+        Assert.False(again[^1].Values.ContainsKey(MergerReading.Waiting));
+        Assert.Equal(again[1], MergerReading.Newest(again));
+
+        Assert.Null(MergerReading.Newest(hold.Fold([At(5), At(6)], null, Nine.AddMinutes(7), "test")));
+        Assert.Empty(new MergerHold().Fold([], null, Nine, "test"));
+    }
+
     /// <summary>The workspace, folding nothing and counting the folds.</summary>
     private sealed class CountingRuns : IProcessRunsReader
     {
