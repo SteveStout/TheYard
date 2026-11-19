@@ -123,6 +123,8 @@ public sealed class MemoryRulesTests(WebApplicationFactory<Program> factory) : I
         ["TheYard.Application.Features.Visitors.MemoryVisitorStore._visitors"] = "the visitors of a site with no document store: one per stable hash, every person and scanner who has visited since the process started",
         ["TheYard.Application.Features.Links.MemoryLinkOpens._days"] = "one per tagged code per day it was opened; the operator sends a few dozen codes a week, and the site keeps none of this without a document store",
         ["TheYard.Application.Features.Review.MemoryReviewStore._rows"] = "one per visitor per day on the review route, of a site with no document store, gone with the process",
+        ["TheYard.Api.Features.Docs.QualityTrendFence._kept"] = "one entry a quality number a page asks for, one today (the review route's short path)",
+        ["TheYard.Application.Features.Review.ReviewLotKeeper._kept"] = "one lot a store, two (SQL and Cosmos DB), each replaced every fifteen seconds",
         ["TheYard.Api.Features.Links.ConfiguredLinkTargets._targets"] = "the pass-through addresses configuration names, two, read once at startup",
         ["TheYard.Infrastructure.Cosmos.Shared.Auction.CosmosVehicleCatalogue._makeBySeedId"] = "the seed's two hundred ids and their makes",
         ["TheYard.Infrastructure.Cosmos.Shared.Stores.CosmosStore._physicalPartitions"] = "one per container, read at startup",

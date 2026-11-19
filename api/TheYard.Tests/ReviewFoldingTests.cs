@@ -115,6 +115,26 @@ public sealed class ReviewFoldingTests
         Assert.False(ReviewActions.ReachedASecond(old));
     }
 
+    [Fact]
+    public void A_union_keeps_each_name_once_in_the_list_s_order_and_drops_a_name_no_page_reports()
+    {
+        Assert.Equal(["proof", "book", "slip"], ReviewActions.Union(["slip", "book"], ["proof", "slip"])!);
+        Assert.Equal(["resume"], ReviewActions.Union(["resume", "elsewhere"], null)!);
+        Assert.Equal([], ReviewActions.Union([], null)!);
+        Assert.Null(ReviewActions.Union(null, null));
+    }
+
+    [Theory]
+    [InlineData("verdict", "verdict")]
+    [InlineData("mirror", "mirror")]
+    [InlineData("Mirror", null)]
+    [InlineData("ai", null)]
+    [InlineData(null, null)]
+    public void A_screen_is_one_the_route_draws_or_none(string? reported, string? kept)
+    {
+        Assert.Equal(kept, ReviewActions.ScreenOrNull(reported));
+    }
+
     [Theory]
     [InlineData(0, true)]
     [InlineData(1, true)]

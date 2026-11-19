@@ -311,6 +311,95 @@ test('for=ai draws the mirror with its gate panel at 1568 by 772, keeps the addr
   expect(sideways).toBeLessThanOrEqual(0);
 });
 
+// The short path (ADR: The review route gives a reason before it asks, the addendum on the short path): under both
+// first screens, three stops with their live tiles and "0 of 3 stops", and no visit asks the catalogue or the bids for
+// the lot: it comes from the one kept answer.
+for (const address of ['/?view=review', '/?view=review&for=ai']) {
+  test(`${address} draws the three-stop path with live tiles and never reads the catalogue for its lot`, async ({
+    page,
+  }) => {
+    const asked: string[] = [];
+    page.on('request', (request) => asked.push(new URL(request.url()).pathname));
+    await page.setViewportSize({ width: 1568, height: 772 });
+    await freshRoute(page);
+    await page.addInitScript(() => localStorage.removeItem('theyard-review-short'));
+    await openTheYard(page, address);
+    const path = page.getByTestId('review-path');
+    await expect(path.getByTestId('review-path-count')).toHaveText('0 of 3 stops');
+    await expect(path.getByTestId('review-path-trend').getByTestId('quality-trend')).toBeVisible();
+    await expect(path.getByTestId('review-path-total')).toHaveText(/^\d{1,3}(,\d{3})*$/);
+    await expect(path.getByTestId('review-path-gate-tile')).toContainText('passed');
+    await expect(path.getByTestId('review-path-room')).toHaveAttribute(
+      'href',
+      /^\/\?(vehicle=|view=inventory)/
+    );
+    expect(
+      asked.filter((each) => each.startsWith('/api/vehicles') || each.startsWith('/api/bids'))
+    ).toEqual([]);
+  });
+}
+
+// On a phone the three stops stack, nothing scrolls sideways and every button is a thumb tall; the Quality stop opens
+// the page in place on the slip and the turn, reports its action, and the path counts it on this browser.
+test('at 390 the short path stacks, and its Quality stop lands on the slip and counts once', async ({
+  page,
+}) => {
+  const actions: string[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { action?: string };
+    if (body.action) actions.push(body.action);
+    await route.fulfill({ status: 204 });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await freshRoute(page);
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('path-spec-cleared') === null) {
+      localStorage.removeItem('theyard-review-short');
+      sessionStorage.setItem('path-spec-cleared', '1');
+    }
+  });
+  await openTheYard(page, '/?view=review');
+  const quality = page.getByTestId('review-path-quality');
+  const room = page.getByTestId('review-path-room');
+  const first = await quality.boundingBox();
+  const third = await room.boundingBox();
+  expect(third!.y).toBeGreaterThan(first!.y + first!.height);
+  for (const button of [quality, page.getByTestId('review-path-gate'), room])
+    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(sideways).toBeLessThanOrEqual(0);
+
+  await quality.click();
+  const slip = page.locator('dialog[open]').locator('h2[id="the-slip-and-the-turn"]');
+  await expect(slip).toBeInViewport({ timeout: 30_000 });
+  await expect.poll(() => actions).toEqual(['stop-quality']);
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 stops');
+  await page.reload();
+  await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 stops');
+});
+
+// The mirror's honest line opens Quality in place on the slip and the turn and reports its own action; its Book 20
+// minutes is the counted mailto, the same as the verdict's.
+test('the mirror’s slip line lands on the slip and the turn and reports slip', async ({ page }) => {
+  const actions: string[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { action?: string };
+    if (body.action) actions.push(body.action);
+    await route.fulfill({ status: 204 });
+  });
+  await page.setViewportSize({ width: 1568, height: 772 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review&for=ai');
+  await expect(page.getByTestId('review-book')).toHaveAttribute('href', '/api/go/book');
+  await page.getByTestId('review-slip').click();
+  const slip = page.locator('dialog[open]').locator('h2[id="the-slip-and-the-turn"]');
+  await expect(slip).toBeInViewport({ timeout: 30_000 });
+  await expect.poll(() => actions).toEqual(['slip']);
+});
+
 // "See the proof in 2 minutes" opens Quality in place on "The slip, and the turn", and reports its action once.
 test('the primary button opens Quality on the slip and the turn, in place, and reports the proof action', async ({
   page,

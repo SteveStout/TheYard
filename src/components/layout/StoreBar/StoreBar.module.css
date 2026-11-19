@@ -188,11 +188,10 @@ a.segment:focus-visible {
 
 /* The review route's one sentence, at the height the segments hold, so the band is the same band. */
 .live {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+  display: block;
   min-height: var(--pill-height);
   margin: 0 0 0 auto;
+  padding: var(--space-2) 0;
   color: var(--color-text);
   font-size: var(--text-sm);
 }
@@ -203,6 +202,9 @@ a.segment:focus-visible {
 }
 
 .liveDot {
+  display: inline-block;
+  margin-right: var(--space-2);
+  vertical-align: middle;
   width: var(--space-2);
   height: var(--space-2);
   border-radius: var(--radius-full);
