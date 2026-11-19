@@ -244,6 +244,10 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | No lane takes the gate lock: the ready path claims nothing, and the lock is kept only for a hand promote | ADR: One traffic cop for main | GateWorkflowTests |
 | With PROMOTE_TOKEN every promote is that token's push and the push is the roll, so each commit rolls once; without it a workflow change ends green needing a hand promote | ADR: One traffic cop for main | PromoteScriptTests |
 | gate/* takes the old path until main's gate.yml carries the ready trigger, and is refused red after | ADR: One traffic cop for main | CopScriptTests |
+| A card turns green only when its cause is fixed: a threshold, tone or formula changes only with a test and an addendum naming what it measured, why that was wrong and what it measures now; a monthly allowance is projected at the last day's rate; Insights past its allowance stays amber while that rate would overrun a month; a card with no reading stays unread | ADR-102, the addendum on the honesty rule | CardToneRulesTests, CloudViewTests, NightlyCardTests |
+| Every Cloud card's thirty-day month is read whole once, then only from its newest bucket, trimmed at thirty days, with one read shared by every caller that arrives during it | ADR-104, the addendum on the month that was read whole | MonthKeepTests |
+| The site asks the Function's health route every five minutes for the merger's numbers and every fifteen for the switches | ADR-109, the addendum on what the grant pays for | MergerHoldTests, NightlyCardTests |
+| The box's swap row is amber on paging, memory pressure, or a swap nearly full that the available memory could not take back, never on parked pages alone; a snapshot from an agent that reads no paging keeps the occupancy line and says so | ADR-127, the addendum on paging | BoxRowsTests, BoxSnapshotRulesTests |
 
 ## How the table is read
 

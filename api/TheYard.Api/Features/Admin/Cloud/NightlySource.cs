@@ -32,6 +32,7 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
     /// read and the minute's run on the recorder's loop one after the other, and a reader may ask between.
     /// </summary>
     private volatile string? _host;
+    private DateTimeOffset _mergerRead = DateTimeOffset.MinValue;
 
     /// <summary>The Function's default host name, once a minute or an hour has read it.</summary>
     public string? Host => _host;
@@ -99,7 +100,10 @@ public sealed class NightlySource(AzureMetrics azure, ResourceDirectory director
             // No role on the group yet: the hour records it, and the card says so.
             minutes = [];
         }
-        var merger = _host is { Length: > 0 } host ? await MergerReading.ReadAsync(host, cancellation) : null;
+        // The health route at most once in MergerReading.Every: each answer is billed a full second of the Function's grant.
+        string? due = to - _mergerRead >= MergerReading.Every ? _host : null;
+        _mergerRead = due is { Length: > 0 } ? to : _mergerRead;
+        var merger = due is { Length: > 0 } host ? await MergerReading.ReadAsync(host, cancellation) : null;
         return MergerReading.Fold(minutes, merger, to, version);
     }
 
