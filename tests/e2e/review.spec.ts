@@ -600,4 +600,16 @@ test('at 1568 by 772 the primary button and "Two minutes, three stops" are on th
   ).toBeInViewport();
 });
 
+// 8. Alive: on the seeded catalogue the lot tile shows a vehicle and a dollar amount, and never "No auction is live".
+for (const address of ['/?view=review', '/?view=review&for=ai']) {
+  test(`${address} shows a live lot with a bid on the seeded catalogue`, async ({ page }) => {
+    await page.setViewportSize({ width: 1568, height: 772 });
+    await freshRoute(page);
+    await openTheYard(page, address);
+    await expect(page.getByTestId('review-path-lot-name')).toHaveText(/\S/);
+    await expect(page.getByTestId('review-path-bid')).toHaveText(/^\$\d{1,3}(,\d{3})*$/);
+    await expect(page.getByTestId('review-path-closes')).toHaveText(/^\d+:\d{2}$/);
+    await expect(page.getByText('No auction is live', { exact: false })).toHaveCount(0);
+  });
+}
 // #endregion the-look
