@@ -78,12 +78,15 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
         string rules = await store.ExistsAsync("systemRules.md", ct) ? TrackerCsvText.Decode(await store.ReadAsync("systemRules.md", ct)) : string.Empty;
         var doNotApply = ApplicationCap.DoNotApplyList(rules);
         var sends = logged.Select(e => new PastSend(e.Key, e.ParentKey, e.Company, e.CentralDay)).ToList();
+        // A send to a shared box never reached a person, so it starts no 30 days for an email to a person's own address
+        // (ADR-118, the addendum on the paid finder). A shared box itself still waits out the 30 days after any send.
+        var personSends = logged.Where(e => !TrackAFeed.IsGeneralMailbox(e.To)).Select(e => new PastSend(e.Key, e.ParentKey, e.Company, e.CentralDay)).ToList();
 
         var held = new Dictionary<string, int>(StringComparer.Ordinal);
         var ready = new List<(LeadRecord Lead, RenderedEmail Email, RankedLead Rank)>();
         foreach (var lead in open)
         {
-            var (verdict, email, block) = Check(lead, sends, doNotApply, master, today, now);
+            var (verdict, email, block) = Check(lead, TrackAFeed.IsGeneralMailbox(lead.ContactEmail) ? sends : personSends, doNotApply, master, today, now);
             if (!verdict.Allowed)
             {
                 string reason = verdict.Reason.Split(':')[0];
