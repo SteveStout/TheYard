@@ -77,6 +77,14 @@ public static class NightlyCard
         return units.Count == 0 ? null : Math.Round(units.Sum() / NightlyMetrics.MbMsPerGbSecond, 2);
     }
 
+    /// <summary>The last twenty-four hours' execution units in gigabyte-seconds, from the month's five-minute buckets; null when none is kept.</summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static double? GbSecondsLastDay(ResourceCardInputs inputs)
+    {
+        var units = inputs.Month.Where(b => b.At >= inputs.Now.AddDays(-1)).Select(b => b.Sums.GetValueOrDefault("units_mbms")).Where(v => v is not null).Select(v => v!.Value).ToList();
+        return units.Count == 0 ? null : Math.Round(units.Sum() / NightlyMetrics.MbMsPerGbSecond, 2);
+    }
+
     /// <summary>Every Monday and Friday in the window, in Central days, as bands behind the chart.</summary>
     /// <param name="inputs">The card's inputs.</param>
     public static IReadOnlyList<CloudBand> Bands(ResourceCardInputs inputs)
@@ -113,13 +121,13 @@ public static class NightlyCard
         double? gbSeconds = roleMissing ? null : GbSecondsThisMonth(inputs);
         double? grantShare = ResourceView.Share(gbSeconds, CloudThresholds.FreeGrantGbSeconds);
         var grantTone = ResourceView.Tone([grantShare], Grant, hourly: true);
-        double? grantPace = MonthPace.Projected(grantShare, inputs.Now);
+        double? grantPace = MonthPace.Projected(grantShare, inputs.Now, roleMissing ? null : ResourceView.Share(GbSecondsLastDay(inputs), CloudThresholds.FreeGrantGbSeconds));
         var dials = new[]
         {
             new CloudDial("Runs on time, 30 days", onTime, PlanView.Percent(onTime),
                 roleMissing ? noRole : tally.Due == 0 ? "no slot kept yet" : $"{tally.OnTime} of {tally.Due} slots", 100 - Misses.Amber, 100 - Misses.Red, null, null, CloudTones.Of(missTone)),
             new CloudDial("Free grant used, this month", grantShare, PlanView.Percent(grantShare),
-                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s · {MonthPace.Words(grantPace, "{0:0} %")}" : NightlyRows.NoMinutes(inputs), Grant.Amber, Grant.Red, null, null,
+                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s · {MonthPace.Words(grantPace, "{0:0} %", rated: GbSecondsLastDay(inputs) is not null)}" : NightlyRows.NoMinutes(inputs), Grant.Amber, Grant.Red, null, null,
                 MonthPace.Tone(CloudTones.Of(grantTone), grantPace, 100)),
         };
         var next = NightlySlots.Next(inputs.Now);

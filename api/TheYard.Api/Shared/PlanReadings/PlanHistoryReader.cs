@@ -18,10 +18,8 @@ public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? record
     /// <summary>How old the newest kept minute may be before the card asks Azure itself.</summary>
     public static readonly TimeSpan Fresh = TimeSpan.FromSeconds(60);
 
-    private readonly object _gate = new();
-
-    /// <summary>The thirty-day spread, kept ten minutes: the heaviest query the card asks, and one that moves slowly.</summary>
-    private (DateTimeOffset At, PlanSpread Spread)? _month;
+    /// <summary>The thirty days of five-minute buckets the spread is taken over, brought up to date a few buckets at a time.</summary>
+    private readonly MonthKeep<PlanBucket> _month = new(bucket => bucket.At);
 
     /// <summary>The plan's windows as built, which the one keeper builds again each minute while somebody asks.</summary>
     public KeptViews<CloudReport> Views => views;
@@ -68,21 +66,7 @@ public sealed class PlanHistoryReader(IPlanHistory history, PlanRecorder? record
             recordingSite), PlanRows.SpecSource);
     }
 
-    private async Task<PlanSpread> MonthAsync(DateTimeOffset now, CancellationToken cancellation)
-    {
-        lock (_gate)
-        {
-            if (_month is { } hit && now - hit.At < TimeSpan.FromMinutes(10))
-            {
-                return hit.Spread;
-            }
-        }
-        var spread = await history.SpreadAsync(now - TimeSpan.FromDays(30), cancellation);
-        lock (_gate)
-        {
-            _month = (now, spread);
-        }
-        return spread;
-    }
+    private async Task<PlanSpread> MonthAsync(DateTimeOffset now, CancellationToken cancellation) =>
+        PlanFolding.Spread(await _month.ReadAsync(now, (since, read) => history.BucketsAsync(since, MachineGrain.FiveMinutes, read), cancellation));
 }
 // #endregion plan-history-reader

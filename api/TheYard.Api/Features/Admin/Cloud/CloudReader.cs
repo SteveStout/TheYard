@@ -27,7 +27,7 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
     /// The thirty days at five minutes, per card, kept ten minutes: it is the heaviest query a card
     /// asks, its 95th and peak move slowly, and every card shares one document store allowance.
     /// </summary>
-    private readonly Dictionary<string, (DateTimeOffset At, IReadOnlyList<ResourceBucket> Month)> _month = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, MonthKeep<ResourceBucket>> _month = new(StringComparer.Ordinal);
 
     /// <summary>True, and the time noted, when an unkept card's source was last asked a minute or more ago.</summary>
     /// <param name="key">The card.</param>
@@ -128,21 +128,17 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
         return lines;
     }
 
-    private async Task<IReadOnlyList<ResourceBucket>> MonthAsync(string key, IResourceHistory history, IReadOnlyList<string> readings, DateTimeOffset now, CancellationToken cancellation)
+    private Task<IReadOnlyList<ResourceBucket>> MonthAsync(string key, IResourceHistory history, IReadOnlyList<string> readings, DateTimeOffset now, CancellationToken cancellation)
     {
+        MonthKeep<ResourceBucket> month;
         lock (_gate)
         {
-            if (_month.TryGetValue(key, out var hit) && now - hit.At < TimeSpan.FromMinutes(10))
+            if (!_month.TryGetValue(key, out month!))
             {
-                return hit.Month;
+                month = _month[key] = new MonthKeep<ResourceBucket>(bucket => bucket.At);
             }
         }
-        var month = await history.BucketsAsync(now - TimeSpan.FromDays(30), MachineGrain.FiveMinutes, readings, cancellation);
-        lock (_gate)
-        {
-            _month[key] = (now, month);
-        }
-        return month;
+        return month.ReadAsync(now, (since, read) => history.BucketsAsync(since, MachineGrain.FiveMinutes, readings, read), cancellation);
     }
 }
 // #endregion cloud-reader
