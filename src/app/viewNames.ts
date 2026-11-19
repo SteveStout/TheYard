@@ -37,7 +37,7 @@ export function viewKeyOf(view: ViewOnScreen): string {
 export function announcementOf(view: ViewOnScreen): string {
   if (view.adminOpen) return 'Admin panel';
   if (view.blogOpen) return 'Blog';
-  if (view.reviewOpen) return 'Check my work in ten minutes';
+  if (view.reviewOpen) return 'Production .NET that stays up';
   if (view.recommendationsOpen) return 'The people who worked with Steven';
   if (view.accountOpen) return 'Account';
   const vehicle = view.selectedVehicle;

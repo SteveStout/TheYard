@@ -21,6 +21,7 @@
   --text-xl: 20px;
   --text-2xl: 24px;
   --text-3xl: 30px;
+  --text-4xl: 40px; /* the review route's first screen: its H1 at a desk and a proof tile's figure */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;

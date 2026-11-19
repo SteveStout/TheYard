@@ -118,10 +118,11 @@ export function Shell({
 
         {/* #region store-bar */}
         {/* The store toggle (SQL or Cosmos DB), at the top of every view on
-            every width (ADR-066). Above main so it is not part of the view
-            that announces itself, and below the phone header so the
-            hamburger keeps its corner. */}
-        <StoreBar />
+            every width (ADR-066), and on the review route one sentence in its
+            place (ADR: The review route gives a reason before it asks). Above
+            main so it is not part of the view that announces itself, and below
+            the phone header so the hamburger keeps its corner. */}
+        <StoreBar review={views.reviewOpen} />
         {/* #endregion store-bar */}
 
         <main className={styles.main} id={MAIN_ID} tabIndex={-1}>

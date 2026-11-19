@@ -1,0 +1,104 @@
+import { describe, expect, it } from 'vitest';
+import type { TestSummary } from './landingProof';
+import { proofFigures } from './landingProof';
+import type { Recommendation } from './recommendations';
+import {
+  leadQuote,
+  liveSentence,
+  PROOF_ADDRESS,
+  RECORD_TILES,
+  recommendationsLink,
+  sidebarRestLine,
+  testsTile,
+  VERDICT,
+} from './reviewVerdict';
+
+const entry = (name: string): Recommendation => ({
+  name,
+  title: `${name}'s title`,
+  profile: 'https://www.linkedin.com/in/someone/',
+  relationship: 'worked with',
+  when: 'May 2024',
+  paragraphs: ['Words.'],
+  pull: `${name} said so.`,
+});
+
+const summary: TestSummary = {
+  version: '1.0.5.107',
+  ran_at: '2026-11-19T17:00:00Z',
+  gate_seconds: 900,
+  passed: 6140,
+  failed: 0,
+  skipped: 0,
+  suites: [
+    { id: 'vitest', name: 'Vitest', passed: 722, failed: 0, skipped: 0, seconds: 30 },
+    { id: 'xunit-sqlite', name: 'xUnit', passed: 2535, failed: 0, skipped: 0, seconds: 300 },
+    { id: 'xunit-live', name: 'live', passed: 12, failed: 0, skipped: 0, seconds: 10 },
+    { id: 'xunit-cosmos', name: 'Cosmos', passed: 2535, failed: 0, skipped: 0, seconds: 300 },
+    { id: 'browser-sqlite', name: 'Browser', passed: 276, failed: 0, skipped: 0, seconds: 600 },
+  ],
+};
+
+describe('the review route first screen (ADR: The review route gives a reason before it asks)', () => {
+  it('says the spec’s words, word for word', () => {
+    expect(VERDICT.title.join(' ')).toBe(
+      'Production .NET that stays up. Built with AI, measured on every version.'
+    );
+    expect(VERDICT.eyebrow.join(' / ')).toBe('Steven Stout / Lead / Staff .NET engineer / Remote');
+    expect(VERDICT.primary).toBe('See the proof in 2 minutes');
+    expect(VERDICT.book).toBe('Book 20 minutes');
+    expect(VERDICT.roles).toBe('Open to remote Lead, Staff and Principal roles.');
+    // The ten-minute ask is only below the fold: the words above it never name it.
+    const above = [
+      ...VERDICT.eyebrow,
+      ...VERDICT.title,
+      VERDICT.lede,
+      VERDICT.primary,
+      VERDICT.book,
+      VERDICT.under,
+      VERDICT.quoteLabel,
+      VERDICT.roles,
+      ...RECORD_TILES.flatMap((tile) => [tile.figure, tile.label, tile.source]),
+    ].join(' ');
+    expect(above).not.toMatch(/ten minutes|seven stops/i);
+    expect(VERDICT.foldLink).toBe('Seven stops, ten minutes, all optional');
+  });
+
+  it('opens Quality at the slip and the turn', () => {
+    expect(PROOF_ADDRESS).toBe('/?doc=quality#the-slip-and-the-turn');
+  });
+
+  it('prints the same tests figure the landing page prints, and the quality held only when the build has it', () => {
+    const landing = proofFigures(summary, 0)?.find((figure) => figure.key === 'tests')?.figure;
+    expect(testsTile(summary, { held: 15, of: 15 })).toMatchObject({
+      figure: landing,
+      label: 'tests passed on the version you are reading',
+      source: 'TheYard, read from the build. 15 of 15 quality numbers held.',
+      live: true,
+    });
+    expect(landing).toBe('3,545');
+    expect(testsTile(summary, null).source).toBe('TheYard, read from the build.');
+    // Before the summary arrives the tile keeps its place with no figure.
+    expect(testsTile(null, null).figure).toBe('');
+  });
+
+  it('quotes Drew Dell when the answer has him, the first entry when not, and nobody for an empty answer', () => {
+    const list = [entry('Cliff True'), entry('Drew Dell'), entry('Henry Crans')];
+    expect(leadQuote(list)?.name).toBe('Drew Dell');
+    expect(leadQuote([entry('Cliff True')])?.name).toBe('Cliff True');
+    expect(leadQuote([])).toBeNull();
+    expect(leadQuote(null)).toBeNull();
+    expect(recommendationsLink(13)).toBe('Read all 13 named recommendations');
+  });
+
+  it('says what the sidebar holds and the store bar’s one sentence, from the build’s own facts', () => {
+    expect(sidebarRestLine(138, 19)).toBe(
+      'The sidebar holds the rest: 138 decision records, 19 diagrams, the incidents and the changelog.'
+    );
+    expect(liveSentence(true)).toEqual({
+      lead: 'Live system.',
+      rest: 'This version passed every check before it shipped.',
+    });
+    expect(liveSentence(false)).toEqual({ lead: 'Live system.', rest: null });
+  });
+});

@@ -28,7 +28,11 @@ const read = {
 
 describe('a link preview says what the page is (ADR-053, the addendum of 1.0.5.45)', () => {
   it.each([
-    ['?view=review', 'Check my work in ten minutes', '/?view=review'],
+    [
+      '?view=review',
+      'Production .NET that stays up. Built with AI, measured on every version.',
+      '/?view=review',
+    ],
     ['?view=blog', 'Blog', '/?view=blog'],
     ['?view=blog&post=a-post', 'A post with a title', '/?view=blog&post=a-post'],
     ['?doc=author', 'About Steven', '/?doc=author'],

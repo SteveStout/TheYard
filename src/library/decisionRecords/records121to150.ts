@@ -129,4 +129,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '137',
   },
+  adrTheReviewRouteGivesAReasonBeforeItAsks: {
+    title: 'ADR: The review route gives a reason before it asks',
+    menuLabel: 'ADR: The review route gives a reason before it asks',
+    url: '/api/docs/adr-the-review-route-gives-a-reason-before-it-asks',
+    kind: 'adr',
+    number: '@ADR@',
+  },
 } as const satisfies Record<string, RecordEntry>;

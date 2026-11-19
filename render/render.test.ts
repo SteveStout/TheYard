@@ -6,6 +6,7 @@ import serverSource from './server.mjs?raw';
 import { cutAtRoot, ROOT_END, ROOT_START } from './page';
 import { createRenderer, EDGE_RULE, EDGE_VARY, postFor, RENDERED_HEADER } from './render';
 import { REVIEW_STOPS } from '../src/lib/reviewStops';
+import recommendations from '../data/recommendations.json';
 
 /** Text as React writes it into HTML: the five characters an attribute or a text node escapes. */
 // As React's server render escapes text: the five characters it rewrites, a double quote among them.
@@ -140,6 +141,23 @@ const LIST = {
 type Asked = { url: string; headers: Record<string, string> };
 
 /** A stand-in for the API at one origin, answering the reads the renderer makes, and keeping each one. */
+/** The gate's results file added up, as /api/tests/summary answers it: 700 + 2,000 + 10 + 300 counted once. */
+const SUMMARY = {
+  version: OWN.version,
+  ran_at: '2026-11-19T17:00:00Z',
+  gate_seconds: 900,
+  passed: 5010,
+  failed: 0,
+  skipped: 0,
+  suites: [
+    { id: 'vitest', name: 'Vitest', passed: 700, failed: 0, skipped: 0, seconds: 30 },
+    { id: 'xunit-sqlite', name: 'xUnit', passed: 2000, failed: 0, skipped: 0, seconds: 300 },
+    { id: 'xunit-live', name: 'live', passed: 10, failed: 0, skipped: 0, seconds: 10 },
+    { id: 'xunit-cosmos', name: 'Cosmos', passed: 2000, failed: 0, skipped: 0, seconds: 300 },
+    { id: 'browser-sqlite', name: 'Browser', passed: 300, failed: 0, skipped: 0, seconds: 600 },
+  ],
+};
+
 function fakeApi(build = OWN, broken: string[] = []) {
   const asked: Asked[] = [];
   const read = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -157,6 +175,8 @@ function fakeApi(build = OWN, broken: string[] = []) {
       return json({ makes: [], body_styles: [], title_statuses: [], provinces: [] });
     if (path === `/api/vehicles/${vehicle.id}`) return json(vehicle);
     if (path === '/api/pulse') return json(PULSE);
+    if (path === '/api/recommendations') return json(recommendations);
+    if (path === '/api/tests/summary') return json(SUMMARY);
     if (path === `/api/blog/posts/${POST.slug}`) return json(POST);
     if (path === '/api/blog/posts') return json(LIST);
     if (path === '/api/auth/me')
@@ -204,9 +224,11 @@ describe('the rendering service', () => {
 
   it("gives the review route a link preview of its own, and leaves the bare address with the build's (ADR: The public face)", async () => {
     const review = (await page('?view=review')).html;
-    expect(review).toContain('<title>Check my work in ten minutes | Steven Stout</title>');
+    expect(review).toContain(
+      '<title>Production .NET that stays up. Built with AI, measured on every version. | Steven Stout</title>'
+    );
     const bare = (await page('')).html;
-    expect(bare).not.toContain('Check my work in ten minutes | Steven Stout');
+    expect(bare).not.toContain('Production .NET that stays up. Built with AI');
   });
 
   it('reads a named post beside the list, so a slow list never leaves the post out of the page', async () => {
@@ -271,19 +293,28 @@ describe('the rendering service', () => {
     expect(doc.asked.some((read) => read.url.startsWith(`${API}/api/pulse`))).toBe(false);
   });
 
-  it('draws the review route whole on the server from its one list, and reads nothing for it (ADR: Ten minutes, seven stops)', async () => {
+  it('draws the review route whole on the server: the first screen from its two reads, then the seven stops from their list (ADR: The review route gives a reason before it asks)', async () => {
     const { response, html, asked } = await page('?view=review');
     expect(response.status).toBe(200);
     expect(response.headers.get(RENDERED_HEADER)).toBe('drawn');
-    expect(html).toContain('Check my work in ten minutes');
-    expect(html).toContain('without taking my word for any of it');
-    expect(html).not.toContain('Nothing here is a pitch');
+    // The first screen: the claim, the live tile's figure read here so nothing moves, and the one quote.
+    expect(html).toContain('Production .NET that stays up.');
+    expect(html).toContain('3,010');
+    const drew = recommendations.recommendations.find((entry) => entry.name === 'Drew Dell');
+    expect(drew).toBeDefined();
+    expect(html).toContain(escapeHtml(drew!.pull));
+    expect(html).toContain(
+      `Read all ${recommendations.recommendations.length} named recommendations`
+    );
+    expect(html).toContain('href="/?doc=quality#the-slip-and-the-turn"');
+    // The tour, under it, as it was.
     for (const stop of REVIEW_STOPS) expect(html).toContain(escapeHtml(stop.title));
-    // Each stop names its decision record, one link a stop, read from the list and not from the API.
     for (const stop of REVIEW_STOPS) expect(html).toContain(`href="/?doc=${stop.record}"`);
-    expect(html.match(/href="\/\?doc=adr-/g)?.length).toBeGreaterThanOrEqual(7);
-    // The stop showing Do this on a page drawn for nobody is the first.
     expect(html).toContain(escapeHtml(REVIEW_STOPS[0].doThis));
+    // The ten-minute ask is below the first screen: the claim comes before it in the page.
+    expect(html.indexOf('Production .NET that stays up.')).toBeLessThan(
+      html.indexOf('Seven stops, ten minutes, all optional')
+    );
     // The rail's row sits directly under Home.
     const home = html.indexOf('>Home<');
     const review = html.indexOf('>Check my work<');
@@ -291,9 +322,13 @@ describe('the rendering service', () => {
     expect(home).toBeGreaterThan(-1);
     expect(review).toBeGreaterThan(home);
     expect(blog).toBeGreaterThan(review);
-    // Nothing but the version is read for it: no pulse, no list, no document.
+    // The version, the recommendations and the tests summary are read for it: no pulse, no list, no document.
     const paths = asked.map((read) => read.url.slice(API.length).split('?')[0]);
-    expect(paths.filter((path) => path !== '/' && path !== '/api/version')).toEqual([]);
+    expect([...new Set(paths.filter((path) => path !== '/'))].sort()).toEqual([
+      '/api/recommendations',
+      '/api/tests/summary',
+      '/api/version',
+    ]);
   });
 
   it('draws both banners on the landing page, the resume first', async () => {

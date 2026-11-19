@@ -142,16 +142,27 @@ test.describe('WCAG 2.1 AA, on every view', () => {
     expect(await violations(page)).toEqual([]);
   });
 
-  // The review route (ADR: Ten minutes, seven stops): three states of a stop on one page, the ring and the pills.
-  test('the review route', async ({ page }) => {
-    await openTheYard(page, '/?view=review');
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Check my work in ten minutes' })
-    ).toBeVisible();
-    await page.getByRole('button', { name: 'Next stop' }).click();
-    await expect(page.getByTestId('review-do-this')).toHaveCount(1);
-    expect(await violations(page)).toEqual([]);
-  });
+  // The review route (ADR: Ten minutes, seven stops; ADR: The review route gives a reason before it asks): the
+  // first screen, then three states of a stop on one page, the ring and the pills, at the first screen's two widths.
+  for (const [width, height] of [
+    [1568, 772],
+    [390, 844],
+  ]) {
+    test(`the review route at ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await openTheYard(page, '/?view=review');
+      await expect(
+        page.getByRole('heading', {
+          level: 1,
+          name: 'Production .NET that stays up. Built with AI, measured on every version.',
+        })
+      ).toBeVisible();
+      expect(await violations(page)).toEqual([]);
+      await page.getByRole('button', { name: 'Next stop' }).click();
+      await expect(page.getByTestId('review-do-this')).toHaveCount(1);
+      expect(await violations(page)).toEqual([]);
+    });
+  }
 
   // The resume's door (ADR: The resume has an address): the band and the embedded PDF, at a desk and a phone.
   for (const width of [1280, 390]) {

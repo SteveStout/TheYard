@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { REVIEW_STOPS } from '../../src/lib/reviewStops';
 import { CURRENT_KEY, REACHED_KEY } from '../../src/lib/reviewProgress';
+import { proofFigures, type TestSummary } from '../../src/lib/landingProof';
 import { openTheYard } from './app';
 import { fadedContent, quietWordsOnTheBareGround } from './glass';
 
@@ -26,6 +27,9 @@ async function freshRoute(page: Page) {
   );
 }
 
+/** The first screen's claim (ADR: The review route gives a reason before it asks). */
+const CLAIM = 'Production .NET that stays up. Built with AI, measured on every version.';
+
 const stop = (page: Page, index: number) =>
   page.getByTestId(`review-stop-${REVIEW_STOPS[index].key}`);
 
@@ -40,10 +44,8 @@ test('the rail row under Home opens the review route', async ({ page }) => {
   expect(rows[home + 2]).toContain('Blog');
   await rail.getByRole('button', { name: 'Check my work' }).click();
   await expect(page).toHaveURL(/\?view=review$/);
-  await expect(page.getByTestId('view-announcement')).toHaveText('Check my work in ten minutes');
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Check my work in ten minutes' })
-  ).toBeVisible();
+  await expect(page.getByTestId('view-announcement')).toHaveText('Production .NET that stays up');
+  await expect(page.getByRole('heading', { level: 1, name: CLAIM })).toBeVisible();
   await page.goBack();
   await expect(page.getByTestId('landing')).toBeVisible();
 });
@@ -209,31 +211,92 @@ test('the short door /review is a permanent redirect that keeps the code', async
 });
 // #endregion review
 
-test('at a wide desk the rail stands beside the stops with every pull quote the API answers, and at 390 it folds into the column', async ({
+/** The bottom edge of an element on the page, read where it is drawn. */
+async function bottomOf(page: Page, testId: string): Promise<number> {
+  const box = await page.getByTestId(testId).boundingBox();
+  expect(box, `${testId} is drawn`).not.toBeNull();
+  return box!.y + box!.height;
+}
+
+// The first screen (ADR: The review route gives a reason before it asks): at the desk the screenshot was taken at,
+// the claim, the three tiles, the one quote and both buttons with no scroll, the tour and its ten minutes under the
+// fold, the store bar's one sentence in place of the toggle, the ring and the chips, and the sidebar collapsed on a
+// first visit with Menu, the rail's expand button, opening it. The live tile prints the landing page's own figure.
+test('at 1568 by 772 the first screen gives the reason before the ask, with no scroll and no chrome for the operator', async ({
   page,
 }) => {
-  const answer = (await (await page.request.get('/api/recommendations')).json()) as {
-    recommendations: { name: string }[];
-  };
-  await page.setViewportSize({ width: 1440, height: 900 });
+  const summary = (await (await page.request.get('/api/tests/summary')).json()) as TestSummary;
+  const landing = proofFigures(summary, 0)!.find((figure) => figure.key === 'tests')!.figure;
+  await page.setViewportSize({ width: 1568, height: 772 });
   await freshRoute(page);
+  await page.addInitScript(() => localStorage.removeItem('theyard.rail'));
   await openTheYard(page, '/?view=review');
-  const quotes = page.getByTestId('review-quotes');
-  await expect(quotes.getByRole('listitem')).toHaveCount(answer.recommendations.length);
-  const more = quotes.getByRole('link', { name: /Read the whole thing/ });
-  await expect(more.first()).toHaveAttribute('href', /^\/\?view=recommendations#[a-z0-9-]+$/);
-  const rail = await page.getByTestId('review-rail').boundingBox();
-  const stops = await page.getByRole('list', { name: 'The seven stops' }).boundingBox();
-  expect(rail!.x).toBeGreaterThan(stops!.x + stops!.width - 1);
-  // The phone, opened at its own width as every phone test here is.
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openTheYard(page, '/?view=review');
-  await expect(quotes.getByRole('listitem')).toHaveCount(answer.recommendations.length);
-  const finish = await page.getByTestId('review-finish').boundingBox();
-  const folded = await quotes.boundingBox();
-  expect(folded!.y).toBeGreaterThan(finish!.y);
+  await expect(page.getByRole('heading', { level: 1, name: CLAIM })).toBeVisible();
+  await expect(page.getByTestId('review-proof-tests-figure')).toHaveText(landing);
+  await expect(page.getByTestId('review-lead-quote')).toContainText('Drew Dell');
+  for (const shown of [
+    'review-proof-releases',
+    'review-proof-cycle',
+    'review-proof-tests',
+    'review-lead-quote',
+    'review-proof',
+    'review-book',
+  ])
+    expect(await bottomOf(page, shown), shown).toBeLessThanOrEqual(772);
+  // The ten-minute ask is the tour's, under the fold.
+  const tour = await page.getByTestId('review-tour').boundingBox();
+  expect(tour!.y).toBeGreaterThan(772);
+  await expect(page.getByTestId('review-book')).toHaveAttribute('href', '/api/go/book');
+  // The band says one sentence to a stranger.
+  await expect(page.getByTestId('store-bar-live')).toContainText('Live system.');
+  await expect(page.getByTestId('gate-badge')).toHaveCount(0);
+  await expect(page.getByTestId('store-bar-ready')).toHaveCount(0);
+  // The sidebar is collapsed on a first visit, and Menu opens it.
+  const frame = page.locator('[data-rail]').first();
+  await expect(frame).toHaveAttribute('data-rail', 'collapsed');
+  await page.getByRole('button', { name: 'Expand the sidebar' }).click();
+  await expect(frame).toHaveAttribute('data-rail', 'open');
   const sideways = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );
   expect(sideways).toBeLessThanOrEqual(0);
+});
+
+test('at 390 by 844 the primary button is on the first screen and nothing scrolls sideways', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  await expect(page.getByRole('heading', { level: 1, name: CLAIM })).toBeVisible();
+  expect(await bottomOf(page, 'review-proof')).toBeLessThanOrEqual(844);
+  const sideways = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+  );
+  expect(sideways).toBeLessThanOrEqual(0);
+});
+
+// "See the proof in 2 minutes" opens Quality in place on "The slip, and the turn", and reports its action once.
+test('the primary button opens Quality on the slip and the turn, in place, and reports the proof action', async ({
+  page,
+}) => {
+  const actions: string[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { action?: string };
+    if (body.action) actions.push(body.action);
+    await route.fulfill({ status: 204 });
+  });
+  await page.setViewportSize({ width: 1568, height: 772 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  let loads = 0;
+  page.on('load', () => (loads += 1));
+  await page.getByTestId('review-proof').click();
+  const dialog = page.locator('dialog[open]');
+  const slip = dialog.locator('h2[id="the-slip-and-the-turn"]');
+  await expect(slip).toHaveText('The slip, and the turn', { timeout: 30_000 });
+  await expect(slip).toBeInViewport();
+  await expect(page).toHaveURL(/[?&]doc=quality/);
+  expect(loads).toBe(0);
+  await expect.poll(() => actions).toEqual(['proof']);
 });

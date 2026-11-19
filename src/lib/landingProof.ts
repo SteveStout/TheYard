@@ -20,6 +20,9 @@
  * No React here.
  */
 
+/** Where the gate's results file is read, added up: the landing strip's and the review route's one source. */
+export const TESTS_SUMMARY_URL = '/api/tests/summary';
+
 export type TestSuiteCount = {
   id: string;
   name: string;

@@ -15,6 +15,7 @@ import { readFirstAddress } from '../src/app/firstAddress';
 import { DOCS } from '../src/library/documents';
 import { PULSE_URL } from '../src/lib/pulse';
 import { RECOMMENDATIONS_URL } from '../src/lib/recommendations';
+import { TESTS_SUMMARY_URL } from '../src/lib/landingProof';
 import { SELF_READ } from './page';
 import { fetchedFor, type BlogList, type BlogPost } from '../src/lib/blog';
 import { filterFromSearch, listPath } from '../src/lib/blogFilter';
@@ -63,8 +64,9 @@ function inTime<T>(work: Promise<T | null>): Promise<T | null> {
  * filters on any address that opens the inventory, which a vehicle's does too,
  * because the vehicle draws over the list; the vehicle on ?vehicle=; the
  * document, rendered here with the same code the browser uses, on ?doc=.
- * Admin and the account page draw in the browser behind the frame drawn here; the review
- * route is drawn from its own list and needs no read at all; the recommendations page from its one read.
+ * Admin and the account page draw in the browser behind the frame drawn here; the recommendations page is
+ * drawn from its one read, and the review route's first screen from two: the recommendations for its quote and
+ * the tests summary for its live tile, so neither moves when the browser takes the page over.
  * @param search the address's query, without its "?"
  * @param cookie the visitor's Cookie header, or null
  * @param apiOrigin the API this page is read from
@@ -111,7 +113,7 @@ export async function loadFirst(
     return { list, post };
   };
 
-  const [account, build, page, facets, vehicle, markdown, pulse, recommendations, blog] =
+  const [account, build, page, facets, vehicle, markdown, pulse, recommendations, tests, blog] =
     await Promise.all([
       // Nobody signed in sends no cookie, and needs no read to say so.
       cookie ? inTime(get<AccountWire>('/api/auth/me', signal)) : Promise.resolve(null),
@@ -125,10 +127,12 @@ export async function loadFirst(
         : Promise.resolve(null),
       doc ? inTime(get<string>(doc.url, signal)) : Promise.resolve(null),
       landing ? inTime(get<unknown>(PULSE_URL, signal)) : Promise.resolve(null),
-      // The recommendations page is drawn whole from the answer, so a crawler reads every name and the count.
-      first.recommendations
+      // The recommendations page is drawn whole from the answer, so a crawler reads every name and the count;
+      // the review route's first screen quotes one of them and prints the count.
+      first.recommendations || first.review
         ? inTime(get<unknown>(RECOMMENDATIONS_URL, signal))
         : Promise.resolve(null),
+      first.review ? inTime(get<unknown>(TESTS_SUMMARY_URL, signal)) : Promise.resolve(null),
       first.blog ? blogFirst() : Promise.resolve(undefined),
     ]);
 
@@ -143,6 +147,7 @@ export async function loadFirst(
     doc: first.docKey && markdown ? await renderedDoc(first.docKey, markdown) : null,
     pulse,
     recommendations,
+    ...(first.review ? { tests } : {}),
     ...(blog ? { blog } : {}),
   };
 }

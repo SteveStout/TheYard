@@ -7,8 +7,8 @@ import file from '../../data/hooks.json' with { type: 'json' };
 /**
  * A hook on every page (ADR-132): on a phone, 390 by 844, each page a reader is sent to opens with its hook, and the
  * hook's whole box sits on the first screen with no scroll. The landing, /about, the resume door and a blog post each
- * draw their entry of data/hooks.json; the Quality page's hook is its own first chart, and the review route's is stop
- * 1, which starts on the first screen once the person panel folds below the stops. The post is made up and
+ * draw their entry of data/hooks.json; the Quality page's hook is its own first chart, and the review route's is its
+ * first screen's claim and its primary button (ADR: The review route gives a reason before it asks). The post is made up and
  * answered by the test, with a tall first image, so the box is held at its largest.
  */
 const PHONE = { width: 390, height: 844 };
@@ -91,14 +91,13 @@ test.describe('at 390 by 844 each hook sits on the first screen', () => {
     await onTheFirstScreen(chart, 'the Quality page first chart');
   });
 
-  test('the review route: stop 1, its heading and what it shows, before the person panel', async ({
+  test('the review route: its claim and its primary button, before the proof tiles', async ({
     page,
   }) => {
     await atPhoneSize(page);
     await openTheYard(page, '/?view=review');
-    const first = page.getByRole('list', { name: 'The seven stops' }).getByRole('listitem').first();
-    await onTheFirstScreen(first.getByRole('heading', { level: 2 }), 'stop 1 heading');
-    await onTheFirstScreen(first.locator('p').nth(1), 'what stop 1 shows');
+    await onTheFirstScreen(page.getByRole('heading', { level: 1 }), 'the claim');
+    await onTheFirstScreen(page.getByTestId('review-proof'), 'the primary button');
   });
 });
 // #endregion hooks

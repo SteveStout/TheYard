@@ -157,14 +157,14 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       onLanding: false,
     },
     // #region review-action
-    // Directly under Home: check my work in ten minutes, seven live stops ending at the resume
-    // (ADR: Ten minutes, seven stops). On the landing page it is the banner beside the resume's.
+    // Directly under Home: check my work, a first screen that gives the reason in two minutes, then the seven live
+    // stops ending at the resume (ADR: Ten minutes, seven stops; ADR: The review route gives a reason before it
+    // asks). On the landing page it is the banner beside the resume's.
     {
       key: 'review',
       label: 'Check my work',
       icon: 'review',
-      blurb:
-        'Seven live stops in ten minutes: how I design, test and decide, ending at the resume.',
+      blurb: 'Two minutes on the running system: how I ship with AI and keep the quality measured.',
       featured: true,
       featuredRank: 4,
       banner: true,
