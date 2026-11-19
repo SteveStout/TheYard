@@ -124,7 +124,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
         {
             dropped.Add(new Dropped($"{posting.Company}, {posting.Role}", $"no link in the row ({posting.Source}), nothing to apply to"));
         }
-        foreach (Posting posting in postings.Where(posting => posting.Link.Trim().Length > 0).DistinctBy(posting => posting.Link))
+        foreach (Posting posting in ApplyPostings.Unapplied(postings, reads.Gate, dropped))
         {
             string what = $"{posting.Company}, {posting.Role}";
             if (reads.Gate.Apply(posting.Company, posting.Link, posting.Role) is { } reason)
