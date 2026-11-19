@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using JobHunt.Domain.Features.Watch;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;
@@ -53,6 +54,14 @@ public sealed partial class TemplateTests
         var settings = Settings();
         Assert.True(settings.ContainsKey("SHEET_MIRROR"), "infra/jobhunt.bicep has no SHEET_MIRROR setting: a redeploy would stop the Sheet mirror");
         Assert.Contains(settings["SHEET_MIRROR"], new[] { "shadow", "on" });
+    }
+
+    [Fact]
+    public void The_template_keeps_the_watch_in_shadow_so_a_redeploy_never_turns_its_heals_on()
+    {
+        var settings = Settings();
+        Assert.True(settings.ContainsKey(WatchTick.Setting), "infra/jobhunt.bicep has no WATCH setting: a redeploy would stop the watch");
+        Assert.Equal("shadow", settings[WatchTick.Setting]);
     }
 
     [Fact]

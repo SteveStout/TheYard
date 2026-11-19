@@ -93,7 +93,7 @@ public sealed class ProcessRunsTests
         var fake = new FakeRuns([], ProcessTally.None);
 
         // The 404's words name every process the route knows, the morning card's among them.
-        Assert.Equal("AtsSweep, Merger, Nightly, SheetMirror, DailyCard, TodayCard, Funnel, CampaignSend, NetworkLogPass and MergerHealth", FunctionProcesses.Named());
+        Assert.Equal("AtsSweep, Merger, Nightly, SheetMirror, DailyCard, TodayCard, Funnel, CampaignSend, NetworkLogPass, MergerHealth, BoardScan, FreshScan, Pounce, PounceDay, PounceFollowUp, ReplyDraft, Watch, TodayCardHandRun and CampaignTestSend", FunctionProcesses.Named());
         Assert.NotNull(await new ReadProcessRunsHandler(fake).HandleAsync(new ReadProcessRunsQuery("TodayCard", "24h", 1), CancellationToken.None));
         fake.Asked.Clear();
 
@@ -188,13 +188,25 @@ public sealed class ProcessRunsTests
             .SelectMany(file => Regex.Matches(File.ReadAllText(file), "\\[Function\\(\"(?<name>\\w+)\"\\)\\][\\s\\S]{0,200}?TimerTrigger\\(\"(?<cron>[^\"]+)\"\\)").Select(m => (m.Groups["name"].Value, m.Groups["cron"].Value)))
             .ToDictionary(pair => pair.Item1, pair => pair.Item2);
 
-        // Thirteen timers: the board scan's, at 1 AM, the fresh pass's, every quarter hour, the pounce's, five minutes behind it, the pounce follow-up's, five minutes behind that, and the reply drafts', every five minutes from two past, off the sweep's :20 and :50, have no row in the card's table yet, so each of the table's eight timed rows is checked against them.
-        Assert.Equal(13, crons.Count);
+        // Fourteen timers, each with its row in the card's table (the watch's W12 reads one row a process), so every timed
+        // row is checked against the Function's own cron string.
+        Assert.Equal(14, crons.Count);
+        Assert.Equal("0 13,28,43,58 * * * *", crons["Watch"]);
         Assert.Equal("0 30 * * * *", crons["TodayCard"]);
         Assert.Equal("0 10/15 * * * *", crons["PounceFollowUp"]);
         Assert.Equal("0 2-59/5 * * * *", crons["ReplyDraft"]);
         Assert.All(FunctionProcesses.All.Where(p => p.Cron is not null), process => Assert.Equal(crons[process.Key], process.Cron));
-        Assert.Equal(10, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
+        Assert.Equal(19, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
+        Assert.All(crons.Keys, timer => Assert.NotNull(FunctionProcesses.Find(timer)));
+        // The step and range forms the newer timers use: the pounce at 5, 20, 35 and 50 past, the reply drafts every 5 from 2.
+        var noon = new DateTimeOffset(2026, 11, 20, 12, 36, 0, TimeSpan.Zero);
+        Assert.Equal(noon.AddMinutes(14), FunctionProcesses.Next(FunctionProcesses.Find("Pounce")!, noon));
+        Assert.Equal(noon.AddMinutes(1), FunctionProcesses.Next(FunctionProcesses.Find("ReplyDraft")!, noon));
+        Assert.Equal(noon.AddMinutes(9), FunctionProcesses.Next(FunctionProcesses.Find("FreshScan")!, noon));
+        Assert.Equal(noon.AddMinutes(7), FunctionProcesses.Next(FunctionProcesses.Find("Watch")!, noon));
+        Assert.True(FunctionProcesses.ByHand(FunctionProcesses.Find("CampaignTestSend")!));
+        Assert.False(FunctionProcesses.ByHand(FunctionProcesses.Find("PounceDay")!));
+        Assert.False(FunctionProcesses.ByHand(FunctionProcesses.Find("MergerHealth")!));
         // The funnel has no timer: it rides the morning card's tick, so it has no cron of its own and runs when the card next does.
         var funnel = FunctionProcesses.Find("Funnel")!;
         Assert.Null(funnel.Cron);
@@ -253,7 +265,7 @@ public sealed class ProcessRunsTests
 
         var sections = ProcessSections.Build(fold, switches, key => $"{key} does its work.", key => $"https://all/{key}", Noon);
 
-        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The morning card", "The funnel", "The email campaign", "The network log", "The merger's health"], sections.Select(s => s.Name));
+        Assert.Equal(["The inbox pass", "The tracker merger", "The clock", "The Sheet mirror", "The daily card", "The morning card", "The funnel", "The email campaign", "The network log", "The merger's health", "The board scan", "The fresh pass", "The pounce", "The pounce's day line", "The pounce follow-up", "The reply drafts", "The watch", "The morning card by hand", "The campaign's test send"], sections.Select(s => s.Name));
         var inbox = sections[0];
         Assert.Equal(("good", "on", "fine"), (inbox.Tone, inbox.Switches[0].Value, inbox.Switches[0].Tone));
         Assert.Equal(("shadow", "info"), (inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Value, inbox.Switches.Single(s => s.Name == "REPLY_ON_HUMAN").Tone));
@@ -272,7 +284,7 @@ public sealed class ProcessRunsTests
         Assert.Equal("off", sections[7].Tone);
         Assert.Equal(["NETWORK_LOG off", "NETWORK_LOG_ANY_HOUR off", "NETWORK_SEND off"], sections[8].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.Equal("off", sections[8].Tone);
-        Assert.Equal(["always on"], sections[^1].Switches.Select(s => $"{s.Name} {s.Value}"));
+        Assert.Equal(["always on"], sections[9].Switches.Select(s => $"{s.Name} {s.Value}"));
         Assert.All(sections, section => Assert.All(section.Figures, figure => Assert.False(string.IsNullOrEmpty(figure.Source))));
 
         var unread = ProcessSections.Build(ProcessFold.Unread("Application Insights answered 403"), null, _ => "", _ => null, Noon);

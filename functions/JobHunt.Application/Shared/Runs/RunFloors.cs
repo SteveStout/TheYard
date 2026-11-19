@@ -39,6 +39,7 @@ public static class RunFloors
         new("PounceDay", null, 0, 1, "the day's line is written whatever the day held"),
         new("PounceFollowUp", null, 0, 1, "a quarter hour with no code due is ordinary"),
         new("ReplyDraft", null, 0, 1, "five minutes with no new human mail is ordinary"),
+        new("Watch", null, 0, 1, "a tick whose tests all pass is the usual quarter hour; a failing test is a line in WATCH.md, not an empty run"),
     ];
 
     /// <summary>The row for a process, or null.</summary>

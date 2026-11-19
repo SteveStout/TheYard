@@ -44,9 +44,15 @@ public static class CanaryRun
     public static string? NotStarted(DateTimeOffset now, Lane lane) =>
         RunSlot.Quiet(now, Lead) ? $"{RegistryRows.Lane}: no canary starts from 05:28 to 07:00 Central; the {RunSlot.Word(lane)} canary was not run." : null;
 
-    /// <summary>The canary's exit: passed when its lane reached its target, else failed.</summary>
+    /// <summary>
+    /// The canary's exit: passed when its lane reached its target; not run when the lane had nothing to reach (an empty
+    /// worklist, so no model ran, or another lane holding LinkedIn or Chrome), which is never the lane failing; else failed.
+    /// </summary>
     /// <param name="reports">The run's lane reports.</param>
-    public static int Exit(IReadOnlyList<LaneReport> reports) => Reached(reports) ? Passed : Failed;
+    public static int Exit(IReadOnlyList<LaneReport> reports) =>
+        Reached(reports) ? Passed
+        : reports.Count == 1 && (reports[0] is { Held: null, Rows.Count: 0 } || reports[0].Held?.StartsWith("a hold on LinkedIn or Chrome by", StringComparison.Ordinal) == true) ? NotRun
+        : Failed;
 
     /// <summary>Whether the canary's one lane ran and answered: not held, an answer, not cut short, and no defect line.</summary>
     /// <param name="reports">The run's lane reports.</param>

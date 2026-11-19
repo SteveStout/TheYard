@@ -3,11 +3,13 @@
 // schedule and that schedule in words, and when it next runs. One table, held by a test, so the card's
 // words and the Function's cron strings cannot drift apart unnoticed. Pure: the moment goes in, the
 // next run comes out; nothing here reads the clock.
+using System.Globalization;
+
 namespace TheYard.Domain.Features.Admin;
 
 // #region function-processes
 /// <summary>One of the Function's processes on the card.</summary>
-/// <param name="Key">Its name in the Function and in Application Insights: AtsSweep, Merger, Nightly, SheetMirror, DailyCard, TodayCard, Funnel, CampaignSend, NetworkLogPass or MergerHealth.</param>
+/// <param name="Key">Its name in the Function and in Application Insights, the run line's process: every RunFloors row has one (the watch's W12 reads each).</param>
 /// <param name="Title">What the card calls it: "The inbox pass".</param>
 /// <param name="Cron">The timer's schedule as the Function writes it (seconds first); null for the health route, which runs on request, and for a process that rides another's timer.</param>
 /// <param name="Schedule">The schedule in words.</param>
@@ -31,6 +33,15 @@ public static class FunctionProcesses
         new("CampaignSend", "The email campaign", "0 0 * * * *", "Every hour on the hour; acts at 8 AM Central, seven days a week.", ["EMAIL_CAMPAIGN"], false),
         new("NetworkLogPass", "The network log", "0 0 * * * *", "Every hour on the hour; acts once a day in the 6 AM hour Central.", ["NETWORK_LOG", "NETWORK_LOG_ANY_HOUR", "NETWORK_SEND"], false),
         new("MergerHealth", "The merger's health", null, "On request; this card asks once a minute.", [], true),
+        new("BoardScan", "The board scan", "0 0 * * * *", "Every hour on the hour; acts once a day in the 1 AM hour Central.", ["CAMPAIGN_SQL"], false),
+        new("FreshScan", "The fresh pass", "0 */15 * * * *", "Every 15 minutes, on the quarter hour.", ["FRESH", "CAMPAIGN_SQL"], false),
+        new("Pounce", "The pounce", "0 5/15 * * * *", "Every 15 minutes, at 5, 20, 35 and 50 past, five minutes behind the fresh pass.", ["POUNCE", "POUNCE_RUN"], false),
+        new("PounceDay", "The pounce's day line", null, "No timer of its own: the pounce's first tick after midnight Central writes the day before's line.", ["POUNCE"], true),
+        new("PounceFollowUp", "The pounce follow-up", "0 10/15 * * * *", "Every 15 minutes, at 10, 25, 40 and 55 past, five minutes behind the pounce.", ["POUNCE_RUN"], false),
+        new("ReplyDraft", "The reply drafts", "0 2-59/5 * * * *", "Every 5 minutes from 2 past, off the sweep's 20 and 50.", ["POUNCE_RUN"], false),
+        new("Watch", "The watch", "0 13,28,43,58 * * * *", "Every 15 minutes, at 13, 28, 43 and 58 past, clear of every other timer's minute. WATCH shadow writes WATCH.md and heals nothing.", ["WATCH"], true),
+        new("TodayCardHandRun", "The morning card by hand", null, "On request, with the function key.", ["TODAY_CARD"], true),
+        new("CampaignTestSend", "The campaign's test send", null, "On request, with the function key; one test email to the test address.", ["CAMPAIGN_SQL"], true),
     ];
 
     /// <summary>
@@ -42,6 +53,7 @@ public static class FunctionProcesses
         ["CampaignSend"] = (8, 0),
         ["NetworkLogPass"] = (6, 0),
         ["TodayCard"] = (7, 30),
+        ["BoardScan"] = (1, 0),
     };
 
     /// <summary>
@@ -51,6 +63,7 @@ public static class FunctionProcesses
     public static readonly IReadOnlyDictionary<string, string> Riders = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["Funnel"] = "TodayCard",
+        ["PounceDay"] = "Pounce",
     };
 
     /// <summary>The process by its key, or null for a name that is not one of the table's.</summary>
@@ -59,6 +72,10 @@ public static class FunctionProcesses
 
     /// <summary>Every key in the card's order as one phrase: "AtsSweep, Merger, ... and MergerHealth".</summary>
     public static string Named() => string.Join(", ", All.SkipLast(1).Select(process => process.Key)) + " and " + All[^1].Key;
+
+    /// <summary>Whether a process runs only when it is asked by hand: no timer, no host tick to ride, and not the health route the card asks.</summary>
+    /// <param name="process">One of the table's.</param>
+    public static bool ByHand(FunctionProcess process) => process.Cron is null && !Riders.ContainsKey(process.Key) && process.Key != "MergerHealth";
 
     /// <summary>The Central hour a process that ticks hourly acts in, or null for one that acts whenever it runs.</summary>
     /// <param name="key">The process's key.</param>
@@ -110,8 +127,24 @@ public static class FunctionProcesses
     }
 
     /// <summary>The values a cron field allows: "*" is every value, else a comma list of numbers.</summary>
+    /// <summary>One cron field's values: "*", a list ("7,22,37,52"), a step from a start or a range ("5/15", "*/15", "2-59/5").</summary>
     private static HashSet<int> Field(string field, int count) =>
-        field == "*" ? [.. Enumerable.Range(0, count)] : [.. field.Split(',').Select(int.Parse)];
+        [.. field.Split(',').SelectMany(part => Values(part, count))];
+
+    private static List<int> Values(string part, int count)
+    {
+        string[] stepped = part.Split('/');
+        int step = stepped.Length == 2 ? int.Parse(stepped[1], CultureInfo.InvariantCulture) : 1;
+        string[] span = stepped[0].Split('-');
+        int from = span[0] == "*" ? 0 : int.Parse(span[0], CultureInfo.InvariantCulture);
+        int to = span.Length == 2 ? int.Parse(span[1], CultureInfo.InvariantCulture) : stepped.Length == 2 || span[0] == "*" ? count - 1 : from;
+        var values = new List<int>();
+        for (int value = from; value <= to; value += step)
+        {
+            values.Add(value);
+        }
+        return values;
+    }
 
     private static DateTimeOffset Minute(DateTimeOffset at) => new(at.UtcDateTime.Year, at.UtcDateTime.Month, at.UtcDateTime.Day, at.UtcDateTime.Hour, at.UtcDateTime.Minute, 0, TimeSpan.Zero);
 }

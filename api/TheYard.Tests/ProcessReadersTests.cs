@@ -104,23 +104,23 @@ public sealed class ProcessReadersTests(WebApplicationFactory<Program> factory) 
 
         Assert.Contains("let role = 'func-jobhunt-ss';", kusto, StringComparison.Ordinal);
         Assert.Contains("ago(168h)", kusto, StringComparison.Ordinal);
-        Assert.Contains("Name in ('AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'TodayCard', 'CampaignSend', 'NetworkLogPass', 'MergerHealth')", kusto, StringComparison.Ordinal);
+        Assert.Contains("Name in ('AtsSweep', 'Merger', 'Nightly', 'SheetMirror', 'DailyCard', 'TodayCard', 'CampaignSend', 'NetworkLogPass', 'MergerHealth', 'BoardScan', 'FreshScan', 'Pounce', 'PounceFollowUp', 'ReplyDraft', 'Watch', 'TodayCardHandRun', 'CampaignTestSend')", kusto, StringComparison.Ordinal);
         // One invocation can write more than one process's line (the morning card's tick writes the funnel's first),
         // so a request is joined to the line its own process wrote, never to whichever line comes first.
         Assert.Contains("summarize Line = take_any(Message) by OperationId, Process", kusto, StringComparison.Ordinal);
         Assert.Contains("join kind=leftouter lines on OperationId, Process", kusto, StringComparison.Ordinal);
-        // The funnel has no request row of its own (it runs inside the morning card's tick and its own hand run), so
-        // its runs are its lines, each standing for its own run.
-        Assert.Contains("| where Process in ('Funnel')", kusto, StringComparison.Ordinal);
+        // The funnel and the pounce's day line have no request row of their own (each runs inside another process's
+        // tick), so their runs are their lines, each standing for its own run.
+        Assert.Contains("| where Process in ('Funnel', 'PounceDay')", kusto, StringComparison.Ordinal);
         Assert.Contains("let runs = union requests, riders", kusto, StringComparison.Ordinal);
-        Assert.Contains("Process in ('AtsSweep', 'SheetMirror', 'Funnel', 'MergerHealth')", kusto, StringComparison.Ordinal);
+        Assert.Contains("Process in ('AtsSweep', 'SheetMirror', 'Funnel', 'MergerHealth', 'PounceDay', 'Watch', 'TodayCardHandRun', 'CampaignTestSend')", kusto, StringComparison.Ordinal);
         Assert.Contains("Message startswith 'process:'", kusto, StringComparison.Ordinal);
         Assert.DoesNotContain("__", kusto, StringComparison.Ordinal);
 
         // A Merger pass that moved the tracker's SQL copy is listed beside the ones that merged, and the newest-run
         // read adds the Merger's newest parity check as one more row for the section's tone.
         Assert.Contains("extend Copied = Process == 'Merger' and (Line contains 'tracker_sql_parity=' or Line contains 'tracker_sql_failed='", kusto, StringComparison.Ordinal);
-        Assert.Contains("Listed = Process in ('AtsSweep', 'SheetMirror', 'Funnel', 'MergerHealth') or Copied or", kusto, StringComparison.Ordinal);
+        Assert.Contains("Listed = Process in ('AtsSweep', 'SheetMirror', 'Funnel', 'MergerHealth', 'PounceDay', 'Watch', 'TodayCardHandRun', 'CampaignTestSend') or Copied or", kusto, StringComparison.Ordinal);
         Assert.Contains("extend Process = 'MergerParity'", InsightsProcessRuns.Newest, StringComparison.Ordinal);
         Assert.StartsWith("union (runs | summarize arg_max(At, TookMs, Ok, Line, OperationId) by Process), ", InsightsProcessRuns.Newest, StringComparison.Ordinal);
     }

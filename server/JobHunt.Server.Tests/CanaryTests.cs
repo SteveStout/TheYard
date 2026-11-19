@@ -75,6 +75,22 @@ public sealed class CanaryTests
     }
 
     [Fact]
+    public async Task A_canary_whose_lane_has_nothing_on_its_worklist_is_not_run()
+    {
+        var morning = new Morning(Answered);
+        morning.Time.Now = Morning.At.AddHours(4);
+        CanaryRun.Fit(morning.Config, Lane.Messages);
+        foreach (string path in morning.Share.Files.Keys.Where(path => path.Contains("queue", StringComparison.OrdinalIgnoreCase)).ToList())
+        {
+            morning.Share.Files.Remove(path);
+        }
+
+        (int exit, _) = await morning.Lanes().ExecuteAsync(RunOptions.Parse(["run", "--canary", "--lane", "messages"])!, default);
+
+        Assert.Equal(CanaryRun.NotRun, exit);
+    }
+
+    [Fact]
     public void A_canary_from_05_28_to_07_00_is_not_run_and_says_so()
     {
         Assert.Contains("the apply canary was not run", CanaryRun.NotStarted(Morning.At.AddMinutes(-32), Lane.Apply), StringComparison.Ordinal);
