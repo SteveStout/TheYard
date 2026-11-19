@@ -136,4 +136,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '138',
   },
+  adrTheSystemWatchesItsScheduledTasksAndHealsWhatItMay: {
+    title: 'ADR: The system watches its scheduled tasks and heals what it may',
+    menuLabel: 'ADR: The system watches its scheduled tasks and heals what it may',
+    url: '/api/docs/adr-the-system-watches-its-scheduled-tasks-and-heals-what-it-may',
+    kind: 'adr',
+    number: '@ADR@',
+  },
 } as const satisfies Record<string, RecordEntry>;

@@ -46,7 +46,7 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
                 run.Came("unchanged", "mailed_already");
                 return;
             }
-            string line = await WriteAsync(store, new TodayCardSource(store, http, time), mode == "on" ? Sender() : null, time, "07:30", ct, LabelsAsync);
+            string line = await WriteAsync(store, new TodayCardSource(store, http, time), mode == "on" ? Sender(await NoEmailDayGate.ReadAsync(store, ct)) : null, time, "07:30", ct, LabelsAsync);
             run.Count("written", 1).Count("mailed", mode == "on" ? 1 : 0).Came("success", mode);
             log.LogInformation("today card: {Line}", line);
         }
@@ -70,7 +70,7 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
         var run = new RunLine("TodayCardHandRun", time.GetUtcNow());
         try
         {
-            string line = await WriteAsync(store, new TodayCardSource(store, http, time), Sender(), time, "hand run", ct, LabelsAsync);
+            string line = await WriteAsync(store, new TodayCardSource(store, http, time), Sender(await NoEmailDayGate.ReadAsync(store, ct)), time, "hand run", ct, LabelsAsync);
             run.Count("written", 1).Count("mailed", 1).Came("success", "hand");
             var response = request.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
@@ -163,6 +163,9 @@ public sealed class TodayCardTimer(IMergeStore store, IHttpClientFactory http, T
         }
     }
 
-    private IMailSender Sender() =>
-        GoogleCredentials.FromEnvironment() is { } google ? new GmailSender(http, google) : throw new InvalidOperationException("the Google settings are not set, so the card cannot be mailed");
+    /// <summary>The card's sender behind the no-email-day gate: the card goes to his own address, so it passes on every day.</summary>
+    private IMailSender Sender(NoEmailDays days) =>
+        GoogleCredentials.FromEnvironment() is { } google
+            ? new NoEmailDayGate(new GmailSender(http, google), days, time, TodayMail.To)
+            : throw new InvalidOperationException("the Google settings are not set, so the card cannot be mailed");
 }

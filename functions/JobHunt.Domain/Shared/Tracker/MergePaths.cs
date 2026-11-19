@@ -19,6 +19,12 @@ public static class MergePaths
 
     public static string Rejected(string spool) => $"{spool}/rejected";
 
+    /// <summary>
+    /// Where a file with no tracker row in it goes (header lines only, or rows with no Person, Company, Communication or
+    /// Date): read and logged, with its row in the folder's README, so it never waits on the card's rejected count.
+    /// </summary>
+    public static string RejectedLogged(string spool) => $"{spool}/rejected-logged";
+
     public static string In(string folder, string name) => $"{folder}/{name}";
 
     public static string Temp(string path) => $"{path}.merger-tmp";

@@ -20,6 +20,14 @@ public interface IMailSender
     Task<SentMail> SendAsync(OutgoingMail mail, CancellationToken ct);
 }
 
+/// <summary>A send the no-email-day gate held: nothing was sent, and the caller tries again the next open day.</summary>
+/// <param name="reason">The run line's word.</param>
+public sealed class MailHeldException(string reason) : Exception($"mail held: {reason}")
+{
+    /// <summary>The run line's word.</summary>
+    public string Reason { get; } = reason;
+}
+
 /// <summary>Reads a sent message back: a send counts only once Gmail shows it under Sent.</summary>
 public interface ISentReader
 {

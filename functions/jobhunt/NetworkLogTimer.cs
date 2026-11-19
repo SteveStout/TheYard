@@ -93,7 +93,9 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
             IDraftWriter drafts = mode == NetworkMode.On ? new GmailDrafts(http, google) : new NoDraftWriter();
             var threads = new GmailThreads(http, google, time);
             var sender = send == SendMode.On ? new GmailSender(http, google, time) : null;
-            var reconnect = new Reconnects(database, threads, drafts, store, time) { Mode = send, Mail = sender, SentBox = sender };
+            // The reconnect's sends pass the no-email-day gate (selfheal1120 version 2); Sent is still read from Gmail itself.
+            NoEmailDayGate? gated = sender is null ? null : new NoEmailDayGate(sender, await NoEmailDayGate.ReadAsync(store, ct), time, TodayMail.To);
+            var reconnect = new Reconnects(database, threads, drafts, store, time) { Mode = send, Mail = gated, SentBox = sender };
             IAddressFinder? finder = HunterFinder.FromSetting(Environment.GetEnvironmentVariable(HunterFinder.Setting), http) is { } hunter ? new WalledFinder(hunter, store, time, HunterFinder.Control) : null;
             var result = await new NetworkLogPass(database, threads, drafts, store, time) { Posts = new BlogFeed(http), Reconnect = reconnect, Finder = finder }.RunAsync(mode, await database.OpenThreadIdsAsync(ct), ct);
             await store.AppendAsync(NetworkFiles.PassLog, TrackerCsvText.Encode(result.Line + "\n"), ct);
@@ -101,6 +103,7 @@ public sealed class NetworkLogTimer(IMergeStore store, IHttpClientFactory http, 
             log.LogInformation("network pass: {Line}", result.Line);
             run.Count("threads", result.Counts.ThreadsRead).Count("upserted", result.Counts.Upserted).Count("drafted", result.Counts.DraftsBuilt)
                 .Count("sent", result.Sent).Count("held", result.Held).Count("bounced", result.Bounced)
+                .Count(NoEmailDayGate.Reason, gated is { HeldToday: true } ? 1 : 0)
                 .Came(result.Cut > 0 ? "late" : "success", modeName);
         }
         catch (Exception ex)

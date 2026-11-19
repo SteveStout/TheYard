@@ -53,8 +53,12 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
                 mode = CampaignMode.Shadow;
                 log.LogWarning("campaign held in shadow: {SwitchLog} says two bounces in a day", BounceTrip.SwitchLog);
             }
+            // Every real send passes the no-email-day gate (selfheal1120 version 2): on a listed day the pass sends nothing,
+            // writes no_email_day on its run line, counts nothing against the day's cap, and the next open day sends.
             IMailSender sender = mode == CampaignMode.On
-                ? GoogleCredentials.FromEnvironment() is { } google ? new GmailSender(http, google) : throw new InvalidOperationException("EMAIL_CAMPAIGN is on and the Google settings are not set")
+                ? GoogleCredentials.FromEnvironment() is { } google
+                    ? new NoEmailDayGate(new GmailSender(http, google), await NoEmailDayGate.ReadAsync(store, ct), time, TodayMail.To)
+                    : throw new InvalidOperationException("EMAIL_CAMPAIGN is on and the Google settings are not set")
                 : new NoSender();
             var database = new SqlCampaignStore(sql);
             // The board scan runs in the 1 o'clock hour (BoardScanTimer); the send ranks Track B by what it wrote.
@@ -88,6 +92,10 @@ public sealed class CampaignSendTimer(IMergeStore store, IHttpClientFactory http
             }
             run.Count("open", result.Open).Count("eligible", result.Eligible).Count(mode == CampaignMode.On ? "sent" : "written", result.Written)
                 .Count("held", result.Held.Values.Sum()).Came(result.Came, mode == CampaignMode.On ? "on" : "shadow");
+            if (result.Held.TryGetValue(NoEmailDayGate.Reason, out int heldToday))
+            {
+                run.Count(NoEmailDayGate.Reason, heldToday).Came("unchanged", NoEmailDayGate.Reason);
+            }
         }
         catch (Exception ex)
         {
