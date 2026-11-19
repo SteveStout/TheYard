@@ -93,7 +93,7 @@ public sealed class GateVerdictTests : IDisposable
     }
 
     /// <summary>The verdict as the gate runs it, with GitHub's own default shell for a run step.</summary>
-    private (int Code, string Output) Run()
+    private (int Code, string Output) Run(string? outputs = null)
     {
         string file = Path.Combine(_root, "verdict.sh");
         File.WriteAllText(file, Verdict().ReplaceLineEndings("\n"));
@@ -104,6 +104,11 @@ public sealed class GateVerdictTests : IDisposable
             RedirectStandardError = true,
         };
         start.Environment["RAW"] = _root;
+        start.Environment.Remove("GITHUB_OUTPUT");
+        if (outputs is not null)
+        {
+            start.Environment["GITHUB_OUTPUT"] = outputs;
+        }
         using var process = Process.Start(start)!;
         var errors = process.StandardError.ReadToEndAsync();
         string output = process.StandardOutput.ReadToEnd();
@@ -113,6 +118,34 @@ public sealed class GateVerdictTests : IDisposable
     // #endregion the-script
 
     // #region the-cases
+    /// <summary>
+    /// What a ready branch's lane reads on its commit is the red checks and the first failing line (ADR-137, One traffic
+    /// cop for main). The fold's note on a job that failed prints before the test logs, and the fail proof of 19
+    /// November posted "fold.txt: dotnet: raw-dotnet-1" for a red xUnit test; the first line is the failing test's.
+    /// </summary>
+    [Fact]
+    public void The_line_a_lane_reads_names_the_failing_test_before_the_fold_s_note()
+    {
+        if (NoBash())
+        {
+            return;
+        }
+        Green();
+        Plant("dotnet.result", "format=0\nsqlproj=0\nfunctions=0\nserver=0\nxunit=1\nlive=0\noncosmos=skipped\n");
+        Plant("rest.result", "emdash=0\nquality=0\nfold=1\n");
+        Plant("fold.txt", "job dotnet: failure\ndotnet: raw-dotnet-1\n");
+        Plant("xunit-sqlite.txt", "  Failed TheYard.Tests.CopFailProofTests.The_fail_proof_fails_on_purpose [< 1 ms]\n  Error Message:\n");
+        string outputs = Path.Combine(_root, "outputs.txt");
+        File.WriteAllText(outputs, "");
+
+        var (code, output) = Run(outputs);
+
+        Assert.Equal(1, code);
+        string said = File.ReadAllText(outputs);
+        Assert.True(said.Contains("red=xunit fold\n", StringComparison.Ordinal), said + output);
+        Assert.Contains("first=xunit-sqlite.txt: Failed TheYard.Tests.CopFailProofTests.The_fail_proof_fails_on_purpose", said, StringComparison.Ordinal);
+    }
+
     /// <summary>The control: every check green, and the two the cuts may skip skipped, leaves the run green and silent.</summary>
     [Fact]
     public void A_run_with_nothing_red_says_so_and_prints_no_annotation()
