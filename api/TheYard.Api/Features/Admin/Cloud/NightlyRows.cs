@@ -114,7 +114,7 @@ public static class NightlyRows
         if (MergerReading.Newest(inputs.LastHour) is not { } minute)
         {
             return new CloudRow("merger", question, MergerUnread,
-                [new("read once a minute from the Function, which lists its two spool folders and reads no file", null)], "info")
+                [new("read every five minutes from the Function, which lists its two spool folders and reads no file", null)], "info")
             { Source = source };
         }
         var values = minute.Values;

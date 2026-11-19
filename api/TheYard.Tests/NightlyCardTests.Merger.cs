@@ -99,17 +99,21 @@ public sealed partial class NightlyCardTests
     [Fact]
     public async Task The_first_minute_after_a_roll_reads_the_host_itself_and_reads_the_record_once()
     {
-        // A roll starts a new process with no hour read yet: the merger row must not wait for the hour.
+        // A roll starts a new process with no hour read yet: the merger row must not wait for the hour. After that the
+        // health route is asked every five minutes, not every minute: each answer is billed a full second of the grant.
         var nightly = CatalogueNightly();
         var group = new FunctionGroup("""{"log_age_s":12,"waiting":0,"waiting_over_5":0,"waiting_over_10":0,"oldest_wait_s":null}""");
-        IReadOnlyList<ResourceMinute> first, second;
+        IReadOnlyList<ResourceMinute> first, second, sixth;
         using (OutboundHttp.RouteTo(group))
         {
             first = await nightly.Minutes(Now.AddMinutes(-2), Now.AddMinutes(-1), "1.0.4.30", CancellationToken.None);
             second = await nightly.Minutes(Now.AddMinutes(-1), Now, "1.0.4.30", CancellationToken.None);
+            Assert.Single(group.Asked, asked => asked == FunctionHost + "/api/merger/health");
+            sixth = await nightly.Minutes(Now.AddMinutes(3), Now.AddMinutes(4), "1.0.4.30", CancellationToken.None);
         }
         Assert.Equal(0d, MergerReading.Newest(first)?.Values[MergerReading.Waiting]);
-        Assert.Equal(0d, MergerReading.Newest(second)?.Values[MergerReading.Waiting]);
+        Assert.Null(MergerReading.Newest(second));
+        Assert.Equal(0d, MergerReading.Newest(sixth)?.Values[MergerReading.Waiting]);
         Assert.Equal(2, group.Asked.Count(asked => asked == FunctionHost + "/api/merger/health"));
         Assert.Equal(1, group.Asked.Count(asked => asked.EndsWith(FunctionPath, StringComparison.OrdinalIgnoreCase)));
         Assert.Equal(("keeping up", "good"), (NightlyRows.MergerRow(WithMinutes(first)).Answer, NightlyRows.MergerRow(WithMinutes(first)).Tone));

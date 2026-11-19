@@ -47,6 +47,56 @@ public sealed class CardToneRulesTests
         Assert.Equal("info", Tone(5.6, out _));
     }
 
+    /// <summary>
+    /// 19 November, 13:13 UTC: 4.757 GB used, 0.312 GB in the last day. The straight line said 7.69 GB; the last day's rate
+    /// says 8.33, and after a cut it would say less at once, where the straight line would wait for the month to dilute it
+    /// (ADR-102, the addendum on the honesty rule).
+    /// </summary>
+    [Fact]
+    public void The_month_is_projected_at_the_last_day_s_rate_when_the_last_day_is_read()
+    {
+        var thursday = new DateTimeOffset(2026, 11, 19, 13, 13, 0, TimeSpan.Zero);
+        double elapsed = 18 + 13 / 24.0 + 13 / 1440.0;
+
+        Assert.Equal(4.757 + 0.312 * (30 - elapsed), MonthPace.Projected(4.757, thursday, 0.312)!.Value, 6);
+        Assert.Equal(4.757 * 30 / elapsed, MonthPace.Projected(4.757, thursday)!.Value, 6);
+        Assert.Null(MonthPace.Projected(1, new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero), 0.3));
+        Assert.Equal(0.312 * 30, MonthPace.RunRate(0.312, thursday)!.Value, 6);
+        Assert.Null(MonthPace.RunRate(null, thursday));
+        Assert.Equal("at the last day's rate 8.33 GB by the month's end", MonthPace.Words(8.33, "{0:0.00} GB", rated: true));
+    }
+
+    /// <summary>Past the free 5 GB the cost row stays amber while the last day's rate would overrun a month, and is information once it fits.</summary>
+    [Fact]
+    public void Insights_past_the_free_five_gigabytes_stays_amber_while_the_last_day_s_rate_would_overrun_a_month()
+    {
+        string Tone(double monthGb, double? dayGb, out string detail)
+        {
+            var row = InsightsCard.View(Insights(monthGb, dayGb)).Rows.Single(r => r.Key == "cost");
+            detail = row.Detail[0].Text;
+            return row.Tone;
+        }
+
+        Assert.Equal("warning", Tone(5.2, 0.312, out string over));
+        Assert.Contains("the last day's 0.312 GB makes 9.36 GB a month", over, StringComparison.Ordinal);
+        Assert.Equal("info", Tone(5.2, 0.15, out _));
+        Assert.Equal("warning", Tone(4.757, 0.312, out string paced));
+        Assert.Contains("at the last day's rate", paced, StringComparison.Ordinal);
+        Assert.Equal("good", Tone(1.0, 0.05, out _));
+    }
+
+    /// <summary>The Nightly dial's last day is the month's newest twenty-four hours of execution units.</summary>
+    [Fact]
+    public void The_nightly_last_day_is_the_newest_twenty_four_hours_of_execution_units()
+    {
+        var units = new Dictionary<string, double?> { ["units_mbms"] = 1_024_000 };
+        ResourceBucket At(double hoursAgo) => new(Wednesday.AddHours(-hoursAgo), 5, units, units, units, "test");
+        var inputs = Insights(1) with { Month = [At(30), At(23), At(1)] };
+
+        Assert.Equal(2, NightlyCard.GbSecondsLastDay(inputs));
+        Assert.Null(NightlyCard.GbSecondsLastDay(inputs with { Month = [At(30)] }));
+    }
+
     /// <summary>The SQL card's tier row said "yes, DTU first" in green over a DTU past its amber 60; past red it was already red.</summary>
     [Fact]
     public void The_tier_rows_take_amber_past_their_own_amber_line_as_their_dials_do()
@@ -83,13 +133,14 @@ public sealed class CardToneRulesTests
         Assert.Equal(("amber", "warning"), (warned.Tone, warned.Rows[1].Tone));
     }
 
-    private static ResourceCardInputs Insights(double monthGb)
+    private static ResourceCardInputs Insights(double monthGb, double? dayGb = null)
     {
         var minute = new Dictionary<string, double?>
         {
             ["ingest_today_gb"] = 0.173,
             ["ingest_component_today_gb"] = 0.019,
             ["ingest_month_gb"] = monthGb,
+            ["ingest_day_gb"] = dayGb,
             ["sampling"] = 100,
             ["capped"] = 0,
         };

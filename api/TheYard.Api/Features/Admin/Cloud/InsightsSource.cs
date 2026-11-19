@@ -20,6 +20,7 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
     /// <summary>The queries, kept here so a test can hold their shape.</summary>
     public const string IngestedToday = "Usage | where TimeGenerated >= startofday(now()) and IsBillable | summarize gb = sum(Quantity) / 1024.0";
     public const string IngestedMonth = "Usage | where TimeGenerated >= startofmonth(now()) and IsBillable | summarize gb = sum(Quantity) / 1024.0";
+    public const string IngestedDay = "Usage | where TimeGenerated > ago(1d) and IsBillable | summarize gb = sum(Quantity) / 1024.0";
     public const string Sampling = "AppRequests | where TimeGenerated > ago(1h) | summarize kept = count(), seen = sum(ItemCount)";
     public const string Capped = "_LogOperation | where TimeGenerated > ago(1h) and Operation has 'Data collection stopped' | summarize capped = count()";
     public const string Reporters = "union AppRequests, AppTraces, AppDependencies | where TimeGenerated > ago(1d) | summarize items = count() by AppRoleName | order by items desc";
@@ -38,6 +39,7 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
     {
         double? today = await NumberAsync(IngestedToday, "gb", cancellation);
         double? month = await NumberAsync(IngestedMonth, "gb", cancellation);
+        double? day = await NumberAsync(IngestedDay, "gb", cancellation);
         var sampled = (await RowsAsync(Sampling, cancellation)).FirstOrDefault();
         double? kept = Parse(sampled?.GetValueOrDefault("kept")), seen = Parse(sampled?.GetValueOrDefault("seen"));
         double? capped = await NumberAsync(Capped, "capped", cancellation);
@@ -46,6 +48,7 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
         {
             ["ingest_today_gb"] = today is { } t ? Math.Round(t, 4) : null,
             ["ingest_month_gb"] = month is { } m ? Math.Round(m, 4) : null,
+            ["ingest_day_gb"] = day is { } d ? Math.Round(d, 4) : null,
             ["sampling"] = kept is { } k && seen is > 0 ? Math.Round(100 * k / seen.Value, 1) : null,
             ["capped"] = capped,
             ["ingest_component_today_gb"] = own is { } o ? Math.Round(o, 4) : null,

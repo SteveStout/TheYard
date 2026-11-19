@@ -58,9 +58,10 @@ public static partial class BoxSnapshotRules
         snapshot.Disks.Count > MostDisks ? $"disks holds at most {MostDisks}."
         : snapshot.Temps.Count > MostTemps ? $"temps holds at most {MostTemps}."
         : snapshot.Services.Count > MostServices ? $"services holds at most {MostServices}."
-        : snapshot.Cores.Any(core => !Percent(core.Load)) || snapshot.Gpus.Any(gpu => !Percent(gpu.Load)) || !Percent(snapshot.AgentCpuPercent) ? "every load is 0 to 100."
+        : snapshot.Cores.Any(core => !Percent(core.Load)) || snapshot.Gpus.Any(gpu => !Percent(gpu.Load)) || !Percent(snapshot.AgentCpuPercent)
+            || snapshot.Memory.PressurePercent is { } pressure && !Percent(pressure) ? "every load is 0 to 100."
         : snapshot.UptimeS < 0 || snapshot.Memory.TotalB < 0 || snapshot.Memory.UsedB < 0 || snapshot.Memory.CacheB < 0 || snapshot.Memory.FreeB < 0
-            || snapshot.Swap.TotalB < 0 || snapshot.Swap.UsedB < 0
+            || snapshot.Swap.TotalB < 0 || snapshot.Swap.UsedB < 0 || snapshot.Memory.AvailableB < 0 || snapshot.Swap.InBps < 0 || snapshot.Swap.OutBps < 0
             || snapshot.Nets.Any(net => net.InBps < 0 || net.OutBps < 0 || net.InTotalB < 0 || net.OutTotalB < 0)
             || snapshot.Disks.Any(disk => disk.SizeB < 0 || disk.UsedB < 0)
             || snapshot.Gpus.Any(gpu => gpu.MemUsedB < 0 || gpu.MemTotalB < 0)
