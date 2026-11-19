@@ -2,7 +2,8 @@ namespace JobHunt.Server.Application.Features.Run;
 
 /// <summary>
 /// The morning: mount, lock, registry, then the lanes in order, the feed first and the queues read again after it so the
-/// invites lane works what the feed just wrote, the network lane after the messages lane, then the card and the close
+/// invites lane works what the feed just wrote, the comment line after the feed, which a second driver or the stop file holds
+/// and an edit run with no result closes LinkedIn after, the network lane after the messages lane, then the card and the close
 /// row. The network lane reads LinkedIn Messaging and sends nothing, but it is a drive: a second driver or the day's stop
 /// file holds it like a sending lane, and only a hard stop it met closes LinkedIn for the day. The feed reads LinkedIn and sends
 /// nothing: it waits on the day's LinkedIn stop file, never on another driver, and only a hard stop it met on the page
@@ -115,7 +116,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             string? linkedIn = linkedInStop ?? await SecondDriverAsync(ct);
             string? held = closed
                 ?? (ct.IsCancellationRequested ? "the service was stopped" : null)
-                ?? (RunSlot.OnLinkedIn(lane) || lane == Lane.Network ? linkedIn : lane == Lane.Feed ? linkedInStop : null)
+                ?? (RunSlot.OnLinkedIn(lane) || lane is Lane.Network or Lane.Commentline ? linkedIn : lane == Lane.Feed ? linkedInStop : null)
                 ?? await work.Runner.CrashedAsync(start, ct);
             if (held is not null)
             {
@@ -133,14 +134,13 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
                 reads = await work.Reader.ReadAsync(day, ct);
                 continue;
             }
-            if (lane == Lane.Network)
+            if (lane is Lane.Network or Lane.Commentline)
             {
-                LaneReport read = await work.Network.RunAsync(start, reads!, ct);
+                LaneReport read = lane == Lane.Network ? await work.Network.RunAsync(start, reads!, ct) : await work.Comments!.RunAsync(start, ct);
                 reports.Add(read);
-                if (read.Answer is { StopsLinkedIn: true } stopped)
-                {
-                    linkedInStop ??= await CloseLinkedInAsync(day, $"the network lane met {stopped.StopCondition}: {stopped.StopDetail}", dry, CancellationToken.None);
-                }
+                string? stop = read.Answer is { StopsLinkedIn: true } stopped ? $"the {RunSlot.Word(lane)} lane met {stopped.StopCondition}: {stopped.StopDetail}"
+                    : lane == Lane.Commentline && !read.Dry && read.Queued > 0 && read.CutShort ? "the commentline lane's edit run gave no result, read its DONE note" : null;
+                linkedInStop ??= stop is null ? null : await CloseLinkedInAsync(day, stop, dry, CancellationToken.None);
                 continue;
             }
             int invitesRoom = 0;

@@ -122,9 +122,10 @@ public interface ICodeMinter
     /// <summary>A new code, or null when the helper failed.</summary>
     /// <param name="person">The person, or the role when no name is known yet.</param>
     /// <param name="company">The company.</param>
+    /// <param name="role">The row's role column: a posting's title, or what a public comment was about; empty for a note.</param>
     /// <param name="lane">The lane the code's row names: the morning's own, or the slot a caught role's run works, so a pounce note's code says so.</param>
     /// <param name="ct">Stops the mint.</param>
-    Task<string?> MintAsync(string person, string company, string lane, CancellationToken ct);
+    Task<string?> MintAsync(string person, string company, string role, string lane, CancellationToken ct);
 }
 
 /// <summary>build_tailored_resume.py, the one place a resume gets a posting's title as its headline.</summary>
