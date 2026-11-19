@@ -122,4 +122,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '136',
   },
+  adrOneTrafficCopForMain: {
+    title: 'ADR: One traffic cop for main',
+    menuLabel: 'ADR: One traffic cop for main',
+    url: '/api/docs/adr-one-traffic-cop-for-main',
+    kind: 'adr',
+    number: '137',
+  },
 } as const satisfies Record<string, RecordEntry>;

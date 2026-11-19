@@ -16,6 +16,9 @@ public sealed class GateReviewWaitTests : IDisposable
 {
     private const string Sha = "0123456789abcdef0123456789abcdef01234567";
 
+    /// <summary>A ready branch as a lane pushes it since the traffic cop: the lane and the commit, no version (ADR: One traffic cop for main).</summary>
+    private const string Ready = "ready/coding1116-01234567";
+
     /// <summary>A gate branch as a lane pushes it: the version, the lane and the commit.</summary>
     private const string Branch = "gate/1.0.4.900-coding1116-01234567";
     private readonly string _root = Path.Combine(Path.GetTempPath(), "review-wait-" + Guid.NewGuid().ToString("N"));
@@ -49,7 +52,7 @@ public sealed class GateReviewWaitTests : IDisposable
             + "  *check-runs*) cat \"$ROOT/checks.json\" 2>/dev/null || echo '[{\"check_runs\":[]}]';;\n"
             + "  *\"/reviews\"*) cat \"$ROOT/reviews.json\" 2>/dev/null || echo '[[]]';;\n"
             + "  *\"/comments\"*) cat \"$ROOT/comments.json\" 2>/dev/null || echo '[[]]';;\n"
-            + "  \"api repos/\"*\"/commits/gate/\"*) echo 'TheYard 1.0.4.900: a line';;\n"
+            + "  \"api repos/\"*\"/commits/\"*) echo 'TheYard 1.0.4.900: a line';;\n"
             + "  \"pr list\"*) if [ -n \"${FAKE_OPEN:-}\" ]; then echo \"$FAKE_OPEN\"; elif [ -f \"$ROOT/created\" ]; then echo 78; fi;;\n"
             + "  \"pr create\"*) touch \"$ROOT/created\";;\n"
             + "  \"pr comment\"*|\"pr close\"*) ;;\n"
@@ -81,10 +84,10 @@ public sealed class GateReviewWaitTests : IDisposable
     }
 
     /// <summary>The wait as the gate's coderabbit job runs it, with a ceiling of <paramref name="ceiling"/> seconds, and the row it wrote.</summary>
-    private JsonElement Wait(int ceiling)
+    private JsonElement Wait(int ceiling, string branch = Branch, string version = "")
     {
         string row = Path.Combine(_root, "row.json");
-        var (code, output) = Run("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" {Branch} {Sha} {ceiling} \"{row}\"");
+        var (code, output) = Run("python3", $"\"{Path.Combine(Repo.Root(), "scripts", "coderabbit_review.py")}\" {branch} {Sha} {ceiling} \"{row}\" {version}");
         Assert.True(code == 0, output);
         using var read = JsonDocument.Parse(File.ReadAllText(row));
         return read.RootElement.Clone();
@@ -167,6 +170,7 @@ public sealed class GateReviewWaitTests : IDisposable
     [InlineData(Branch, Branch, "", "78", true)]
     [InlineData("1.0.4.900-coding1116-01234567", Branch, "77", "77", false)]
     [InlineData("1.0.4.900", "gate/1.0.4.900", "", "78", true)]
+    [InlineData(Ready, Ready, "", "78", true)]
     public void Open_makes_or_reuses_the_request_and_asks_for_the_review(string named, string branch, string open, string pr, bool created)
     {
         if (OperatingSystem.IsWindows())
@@ -202,6 +206,40 @@ public sealed class GateReviewWaitTests : IDisposable
         Assert.Contains(said, output, StringComparison.Ordinal);
         Assert.Equal(open.Length > 0, Calls().Contains("pr close 77", StringComparison.Ordinal));
         Assert.Equal(open.Length > 0, Calls().Contains("TheYard 1.0.4.900. The gate amends", StringComparison.Ordinal));
+    }
+
+    /// <summary>A ready branch names no version, so `close` is handed the one the cop assigned and keeps the branch's own name.</summary>
+    [Fact]
+    public void Close_on_a_ready_branch_names_the_version_it_is_handed()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Gh();
+
+        var (code, output) = Run("bash", $"\"{Path.Combine(Repo.Root(), "scripts", "gate_pr.sh")}\" close {Ready} abcdef1234567890 1.0.4.901", "77");
+
+        Assert.True(code == 0, output);
+        Assert.Contains("pull request 77 closed on abcdef12", output, StringComparison.Ordinal);
+        Assert.Contains($"--head {Ready} --state open", Calls(), StringComparison.Ordinal);
+        Assert.Contains("TheYard 1.0.4.901. The gate amends", Calls(), StringComparison.Ordinal);
+    }
+
+    /// <summary>The review row of a ready branch carries the version the cop assigned, handed in, since the branch names none.</summary>
+    [Fact]
+    public void The_row_of_a_ready_branch_carries_the_version_it_is_handed()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Gh();
+
+        JsonElement row = Wait(1, Ready, "1.0.4.901");
+
+        Assert.Equal("1.0.4.901", row.GetProperty("version").GetString());
+        Assert.Contains($"head=SteveStout:{Ready}", Calls(), StringComparison.Ordinal);
     }
     // #endregion the-request
 }

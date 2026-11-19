@@ -167,6 +167,7 @@ public static class DocumentationCatalog
         ["adr-a-byte-budget-for-the-first-load"] = "docs/decisions/ADR-134-a-byte-budget-for-the-first-load.md",
         ["adr-an-empty-run-is-a-failed-run"] = "docs/decisions/ADR-135-an-empty-run-is-a-failed-run.md",
         ["adr-a-pull-request-of-ai-written-code-is-sized-to-the-gate"] = "docs/decisions/ADR-136-a-pull-request-of-ai-written-code-is-sized-to-the-gate.md",
+        ["adr-one-traffic-cop-for-main"] = "docs/decisions/ADR-137-one-traffic-cop-for-main.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
@@ -216,6 +217,7 @@ public static class DocumentationCatalog
         ["deploy-shape"] = ("docs/images/deploy-shape.svg", "One shape for every app that runs"),
         ["request-path"] = ("docs/images/request-path.svg", "How a request gets answered"),
         ["vertical-slices"] = ("docs/images/vertical-slices.svg", "The onion cut into vertical slices"),
+        ["traffic-cop"] = ("docs/images/traffic-cop.svg", "One traffic cop for main"),
     };
     // #endregion diagrams
 }

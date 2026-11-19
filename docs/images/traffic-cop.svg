@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000" font-family="'IBM Plex Sans', 'Segoe UI', system-ui, Arial, sans-serif" font-size="14">
+  <title>One traffic cop for main: three lanes each push a ready branch; the ready queue holds them, oldest first; the traffic cop takes one and assigns main plus one; the full gate runs build, tests, quality and CodeRabbit; a pass ships to main and the version goes live, a fail is logged and skipped and the lane sees why on its branch; either way the cop takes the next ready branch</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a6c96"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#25663a"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#9a3b2e"/>
+    </marker>
+    <style>
+      .ring1 { fill: #ece9ea; stroke: #7b7f8a; stroke-width: 1.5; }
+      .part { fill: #ffffff; stroke: #536786; stroke-width: 1.5; }
+      .pass { fill: #ffffff; stroke: #25663a; stroke-width: 2; }
+      .fail { fill: #ffffff; stroke: #9a3b2e; stroke-width: 2; stroke-dasharray: 7 4; }
+      .pill { fill: #f7f5f6; stroke: #7b7f8a; stroke-width: 1; }
+      .title { fill: #3f3a37; font-size: 16px; font-weight: 700; }
+      .name { fill: #3f3a37; font-size: 14px; font-weight: 700; }
+      .mono { fill: #5e5653; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: 11.5px; }
+      .body { fill: #5e5653; font-size: 12.5px; }
+      .flow { stroke: #4a6c96; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .back { stroke: #4a6c96; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow); }
+      .green { stroke: #25663a; stroke-width: 2; fill: none; marker-end: url(#arrow-green); }
+      .red { stroke: #9a3b2e; stroke-width: 2; fill: none; marker-end: url(#arrow-red); }
+      .flow-label { fill: #4a6c96; font-size: 12px; font-weight: 500; }
+      .green-label { fill: #25663a; font-size: 12px; font-weight: 600; }
+      .red-label { fill: #9a3b2e; font-size: 12px; font-weight: 600; }
+      .step { fill: #4a6c96; }
+      .step-text { fill: #ffffff; font-size: 12px; font-weight: 700; }
+      .heading { fill: #3f3a37; font-size: 22px; font-weight: 700; }
+      .caption { fill: #62666f; font-size: 13px; }
+    </style>
+  </defs>
+
+  <rect width="1000" height="1000" fill="#e9e6e7"/>
+  <text x="40" y="48" class="heading">One traffic cop for main</text>
+  <text x="40" y="72" class="caption">Top to bottom is one version's way to the live site. No lane picks a number: the cop assigns it, one branch at a time.</text>
+
+  <!-- 1. Three lanes -->
+  <circle cx="52" cy="112" r="12" class="step"/><text x="52" y="116" text-anchor="middle" class="step-text">1</text>
+  <text x="72" y="117" class="title">Three lanes finish their work</text>
+  <rect x="60" y="132" width="260" height="84" rx="10" class="part"/>
+  <text x="76" y="156" class="name">code1118b</text>
+  <text x="76" y="176" class="mono">ready/code1118b-395e780b</text>
+  <text x="76" y="200" class="body">pushes ready branch</text>
+  <rect x="370" y="132" width="260" height="84" rx="10" class="part"/>
+  <text x="386" y="156" class="name">adminfix1118</text>
+  <text x="386" y="176" class="mono">ready/adminfix1118-352343c4</text>
+  <text x="386" y="200" class="body">pushes ready branch</text>
+  <rect x="680" y="132" width="260" height="84" rx="10" class="part"/>
+  <text x="696" y="156" class="name">zfix1118</text>
+  <text x="696" y="176" class="mono">ready/zfix1118-983f125a</text>
+  <text x="696" y="200" class="body">pushes ready branch</text>
+  <path d="M190 216 L190 276" class="flow"/>
+  <path d="M500 216 L500 276" class="flow"/>
+  <path d="M810 216 L810 276" class="flow"/>
+  <text x="202" y="252" class="flow-label">one commit each, numbers left as placeholders</text>
+
+  <!-- 2. Ready queue -->
+  <circle cx="52" cy="300" r="12" class="step"/><text x="52" y="304" text-anchor="middle" class="step-text">2</text>
+  <rect x="60" y="280" width="880" height="110" rx="14" class="ring1"/>
+  <text x="80" y="306" class="title">Ready queue: ready/* branches, oldest first</text>
+  <text x="80" y="326" class="body">Each push starts a Gate run that waits in GitHub's one gate group (queue: max). The order is GitHub's and is not promised.</text>
+  <rect x="80" y="342" width="250" height="32" rx="8" class="pill"/><text x="94" y="363" class="mono">1st  ready/code1118b-395e780b</text>
+  <rect x="345" y="342" width="270" height="32" rx="8" class="pill"/><text x="359" y="363" class="mono">2nd  ready/adminfix1118-352343c4</text>
+  <rect x="630" y="342" width="250" height="32" rx="8" class="pill"/><text x="644" y="363" class="mono">3rd  ready/zfix1118-983f125a</text>
+  <path d="M500 390 L500 446" class="flow"/>
+  <text x="512" y="424" class="flow-label">the run that holds the group</text>
+
+  <!-- 3. Traffic cop -->
+  <circle cx="52" cy="470" r="12" class="step"/><text x="52" y="474" text-anchor="middle" class="step-text">3</text>
+  <rect x="60" y="450" width="880" height="100" rx="14" class="part"/>
+  <text x="80" y="476" class="title">Traffic cop: takes one, assigns main + 1</text>
+  <text x="80" y="498" class="body">Rebases the commit onto main, lifts the lane's changelog line over main's newest, and fills the version, the date and the</text>
+  <text x="80" y="516" class="body">record number. Two branches pushed seconds apart still land as N and N+1: the number is read inside the group.</text>
+  <text x="80" y="536" class="mono">scripts/cop.sh, the Gate run's first job</text>
+  <path d="M500 550 L500 606" class="flow"/>
+  <text x="512" y="584" class="flow-label">the filled commit, handed to every job</text>
+
+  <!-- 4. Full gate -->
+  <circle cx="52" cy="630" r="12" class="step"/><text x="52" y="634" text-anchor="middle" class="step-text">4</text>
+  <rect x="60" y="610" width="880" height="96" rx="14" class="part"/>
+  <text x="80" y="636" class="title">Full gate: build, tests, quality, CodeRabbit</text>
+  <text x="80" y="658" class="body">The build with no warnings, xUnit on SQLite and on the Cosmos DB emulator, the browser suite, The Shed, the quality</text>
+  <text x="80" y="676" class="body">ratchet, and CodeRabbit's review of the lane's own commit. Every job tests the filled commit and nothing else.</text>
+  <text x="80" y="696" class="mono">.github/workflows/gate.yml</text>
+  <path d="M330 706 L270 766" class="green"/>
+  <text x="196" y="742" class="green-label">all green</text>
+  <path d="M670 706 L730 766" class="red"/>
+  <text x="712" y="742" class="red-label">a check red, or a skip</text>
+
+  <!-- 5. Pass or fail -->
+  <circle cx="52" cy="790" r="12" class="step"/><text x="52" y="794" text-anchor="middle" class="step-text">5</text>
+  <rect x="60" y="770" width="420" height="120" rx="14" class="pass"/>
+  <text x="80" y="796" class="title">Pass: ship to main</text>
+  <text x="80" y="818" class="body">The version lands on main and both live sites roll.</text>
+  <text x="80" y="838" class="body">The lane's commit reads:</text>
+  <text x="80" y="858" class="mono">landed as 1.0.5.N, main 1a2b3c4d</text>
+  <text x="80" y="878" class="body">The ready branch is deleted after that.</text>
+  <rect x="520" y="770" width="420" height="120" rx="14" class="fail"/>
+  <text x="540" y="796" class="title">Fail: log and skip</text>
+  <text x="540" y="818" class="body">Main is not touched. The lane sees why on its branch:</text>
+  <text x="540" y="838" class="mono">red gate: xunit; Failed ...</text>
+  <text x="540" y="858" class="mono">skipped: the rebase conflicts in ...</text>
+  <text x="540" y="878" class="body">The lane fixes it and pushes a new ready branch.</text>
+
+  <!-- 6. Return arrow -->
+  <path d="M270 890 L270 940 L22 940 L22 500 L56 500" class="back"/>
+  <path d="M730 890 L730 940 L270 940" class="back" style="marker-end: none"/>
+  <circle cx="52" cy="966" r="12" class="step"/><text x="52" y="970" text-anchor="middle" class="step-text">6</text>
+  <text x="72" y="971" class="flow-label">Either way, the cop takes the next ready branch: a red version never holds the line behind it.</text>
+</svg>

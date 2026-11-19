@@ -43,7 +43,7 @@ public class PromoteWorkflowTests
     public void Promote_runs_only_after_both_checks_are_green_and_is_the_one_job_that_moves_main()
     {
         string promote = Job("promote");
-        Assert.Contains("needs: [gate, shed, coderabbit]", promote, StringComparison.Ordinal);
+        Assert.Contains("needs: [cop, gate, shed, coderabbit]", promote, StringComparison.Ordinal);
         Assert.Contains("contents: write", promote, StringComparison.Ordinal);
         Assert.Contains("bash scripts/promote.sh", promote, StringComparison.Ordinal);
         Assert.Contains("needs: promote", Job("deploy"), StringComparison.Ordinal);
@@ -53,8 +53,9 @@ public class PromoteWorkflowTests
         Assert.DoesNotContain("git push", AfterRoll(), StringComparison.Ordinal);
         Assert.DoesNotContain("\n    if:", promote, StringComparison.Ordinal);
         Assert.Contains("\"$GITHUB_RUN_ID\"", promote, StringComparison.Ordinal);
-        // The version is read off gate/<version>-<lane>-<sha8> up to the first hyphen, the one way every script reads it.
-        Assert.Contains("\"$(branch_version \"$GITHUB_REF_NAME\")\"", promote, StringComparison.Ordinal);
+        // The version is the cop's: assigned for a ready branch, read off a gate/* branch (ADR: One traffic cop for main).
+        Assert.Contains("VERSION: ${{ needs.cop.outputs.version }}", promote, StringComparison.Ordinal);
+        Assert.Contains("bash scripts/promote.sh \"$RUNNER_TEMP/raw\" \"$seconds\" \"$VERSION\" \"$GITHUB_RUN_ID\"", promote, StringComparison.Ordinal);
         Assert.DoesNotContain("${GITHUB_REF_NAME#gate/}", Gate(), StringComparison.Ordinal);
     }
     // #endregion the-order
@@ -213,7 +214,8 @@ public class PromoteWorkflowTests
         {
             Assert.DoesNotContain(reading, script, StringComparison.Ordinal);
         }
-        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(Gate(), @"secrets\.PROMOTE_TOKEN").Count);
+        // The checkout's token, and whether it exists for the cop's notice and for promote.sh.
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(Gate(), @"secrets\.PROMOTE_TOKEN").Count);
         foreach (string line in Gate().Split('\n').Where(line => line.Contains("PROMOTE_TOKEN", StringComparison.Ordinal)))
         {
             Assert.DoesNotContain("echo", line, StringComparison.Ordinal);

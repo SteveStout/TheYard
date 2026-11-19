@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gate_pr.sh open <branch> | close <branch> <main-sha>
+# gate_pr.sh open <branch> | close <branch> <main-sha> [<version>]
 #
 # Does:      The gate's pull request, so CodeRabbit reviews every ship (ADR-129). `open` runs on the machine that
 #            ships, right after the push of gate/<version>-<lane>-<sha8>: it opens a pull request from that branch
@@ -8,24 +8,34 @@
 #            the pull request with a comment naming main's commit, because promote.sh amends the gate's commit before
 #            it fast-forwards main and GitHub therefore never marks the request merged. The branch is named whole
 #            (gate/ may be left off); the version is read off it the way every script reads it (versions.sh's
-#            branch_version), and a bare version still names the older gate/<version> branch.
+#            branch_version), and a bare version still names the older gate/<version> branch. A ready/<lane>-<sha8>
+#            branch (ADR-137, One traffic cop for main) keeps its name and names no version: `open` titles it with
+#            the commit's subject alone, and `close` is handed the version the cop assigned.
 # Does not:  Merge anything, push anything or wait for the review: the gate's coderabbit job waits, and main only
 #            ever moves by promote.sh's fast-forward. Read, print or pass a token value: gh signs in as whoever
 #            runs it (the owner on the shipping machine, the run's own token in the gate).
-# Used by:   Whoever ships, after `git push origin HEAD:gate/<version>-<lane>-<sha8>` (docs/ci-cd/CICD.md); gate.yml's
-#            after-roll job and a person promoting by hand, for `close`.
+# Used by:   Whoever ships, after `git push origin HEAD:ready/<lane>-<sha8>` (CLAUDE.md, Shipping); after-roll.yml and
+#            a person promoting by hand, for `close`.
 set -euo pipefail
 repo=${GITHUB_REPOSITORY:-SteveStout/TheYard}
 action=${1:-}
 named=${2:-}
 [ -n "$named" ] || {
-  echo "usage: gate_pr.sh open <branch> | close <branch> <main-sha>" >&2
+  echo "usage: gate_pr.sh open <branch> | close <branch> <main-sha> [<version>]" >&2
   exit 2
 }
 # shellcheck source=scripts/versions.sh
 . "$(dirname "$0")/versions.sh"
-branch="gate/${named#gate/}"
-version=$(branch_version "$branch")
+case "$named" in
+  ready/*)
+    branch=$named
+    version=${4:-}
+    ;;
+  *)
+    branch="gate/${named#gate/}"
+    version=$(branch_version "$branch")
+    ;;
+esac
 open_pr() { gh pr list -R "$repo" --head "$branch" --state open --json number --jq '.[0].number // empty'; }
 
 case "$action" in
@@ -36,13 +46,13 @@ case "$action" in
       exit 1
     }
     case "$subject" in
-      "TheYard $version: "*) title=$subject ;;
+      "TheYard $version: "* | "TheYard "*": "*) title=$subject ;;
       *) title="TheYard $version: $subject" ;;
     esac
     pr=$(open_pr)
     if [ -z "$pr" ]; then
       gh pr create -R "$repo" --base main --head "$branch" --title "$title" \
-        --body "The gate's pull request for $version. CodeRabbit reviews it at the level .coderabbit.yaml names (ADR-129); the gate promotes on its own run and this request is closed with main's commit, never merged here." > /dev/null
+        --body "The gate's pull request for ${version:-$branch}. CodeRabbit reviews it at the level .coderabbit.yaml names (ADR-129); the gate promotes on its own run and this request is closed with main's commit, never merged here." > /dev/null
       pr=$(open_pr)
     fi
     [ -n "$pr" ] || {
@@ -55,7 +65,7 @@ case "$action" in
   close)
     sha=${3:-}
     [ -n "$sha" ] || {
-      echo "usage: gate_pr.sh close <branch> <main-sha>" >&2
+      echo "usage: gate_pr.sh close <branch> <main-sha> [<version>]" >&2
       exit 2
     }
     pr=$(open_pr)
@@ -67,7 +77,7 @@ case "$action" in
     echo "pull request $pr closed on ${sha:0:8}"
     ;;
   *)
-    echo "usage: gate_pr.sh open <branch> | close <branch> <main-sha>" >&2
+    echo "usage: gate_pr.sh open <branch> | close <branch> <main-sha> [<version>]" >&2
     exit 2
     ;;
 esac

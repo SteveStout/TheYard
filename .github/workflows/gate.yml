@@ -23,9 +23,16 @@ name: Gate
 # the run's own push would not, that push is the roll and the two deploy jobs skip. With no such
 # secret the promote job ends GREEN with a notice and moves nothing, and a person promotes the run
 # by hand: green code never sends a failure email (ADR-098, the addendum of 1.0.4.119).
+#
+# The traffic cop (ADR-137, One traffic cop for main): a lane never picks a version. It pushes
+# ready/<lane>-<sha8>, one commit with the placeholders unfilled, and the cop job, run the moment this run
+# holds the gate's group, rebases it onto main, fills the numbers (main's top line plus one) and hands the
+# filled commit to every later job as a bundle; each job tests that commit. A branch that cannot be filled
+# is skipped green with its reason posted on the branch's commit, and a run that lands posts "landed as
+# <version>". gate/* is the old path, taken only until main's gate.yml carries the ready/** trigger.
 on:
   push:
-    branches: ["gate/**"]
+    branches: ["gate/**", "ready/**"]
 
 # Read the code; sign in to Azure for the Cosmos DB passes. Nothing else.
 permissions:
@@ -51,31 +58,80 @@ jobs:
   # Admin tab read, in the shape they read before, and turns the run red or green with the same verdict. Every check
   # still runs, on the same cuts; only the order of the waiting changed.
 
-  # #region number-job
-  # The number, read again the moment this run holds the gate's group (ADR-031, the addendum on the fill at the
-  # claim): the branch's version must be the changelog's top line and still origin/main's top line plus one. Two lanes
-  # that claimed one number are told in seconds, and every job that costs minutes waits on this one, so a double claim
-  # costs under a minute instead of a gate. promote.sh's own version checks stay as the backstop.
-  number:
+  # #region cop-job
+  # The traffic cop, run the moment this run holds the gate's group (ADR-137): the number is assigned here, inside
+  # the group, one run at a time, so two branches pushed seconds apart land as N and N+1 whatever order GitHub starts
+  # them in. scripts/cop.sh rebases a ready branch onto main, lifts its changelog line over main's, fills the version,
+  # the date and the record number, and leaves the filled commit as a bundle in the filled artifact; a gate/* branch
+  # takes the old number check until main carries the cop. Every job that costs minutes waits on this one and runs
+  # only when it says go. A skip tested nothing, so it ends green, and the reason goes on the branch's commit as a
+  # failing status the lane reads.
+  cop:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      statuses: write
+    outputs:
+      landed: ${{ steps.cop.outputs.landed }}
+      reason: ${{ steps.cop.outputs.reason }}
+      version: ${{ steps.cop.outputs.version }}
+      sha: ${{ steps.cop.outputs.sha }}
+      ready: ${{ steps.cop.outputs.ready }}
+      base: ${{ steps.cop.outputs.base }}
+      workflow: ${{ steps.cop.outputs.workflow }}
     steps:
       - uses: actions/checkout@v7
-      - name: The number is still main's top line plus one
-        run: bash scripts/versions.sh gate "$GITHUB_REF_NAME"
-  # #endregion number-job
+        with:
+          fetch-depth: 0
+      # The fill redraws the version card (docs/images/og.mjs, on the runner's own Chrome) and measures the ratchet
+      # (python3 .github/quality.py), so a ready branch needs node and the packages; a gate/* branch arrives filled.
+      - uses: actions/setup-node@v7
+        if: startsWith(github.ref_name, 'ready/')
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+        if: startsWith(github.ref_name, 'ready/')
+      - name: The cop
+        id: cop
+        env:
+          # Whether the secret exists, never its value.
+          HAS_PROMOTE_TOKEN: ${{ secrets.PROMOTE_TOKEN != '' }}
+        run: |
+          git config user.name "$(git log -1 --format=%an)"
+          git config user.email "$(git log -1 --format=%ae)"
+          bash scripts/cop.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/filled"
+      - uses: actions/upload-artifact@v7
+        if: steps.cop.outputs.landed == 'go'
+        with:
+          name: filled
+          path: ${{ runner.temp }}/filled/
+      - name: The skip, said on the branch's commit
+        if: steps.cop.outputs.landed == 'skip'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REASON: ${{ steps.cop.outputs.reason }}
+        run: |
+          bash scripts/cop_status.sh "$GITHUB_SHA" failure "skipped: $REASON"
+  # #endregion cop-job
 
   # #region dotnet-job
   # The .NET side on SQLite: the build with any warning red, dotnet format, the SQL projects, the job hunt's
   # Function's suite, the machine lanes' suite and xUnit on SQLite.
   dotnet:
-    needs: number
+    needs: cop
+    if: needs.cop.outputs.landed == 'go'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/filled
+        with:
+          sha: ${{ needs.cop.outputs.sha }}
+          base: ${{ needs.cop.outputs.base }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -154,7 +210,8 @@ jobs:
   # the account, and the last two the tests- containers on it, so they are never split across jobs. This is the one
   # job that signs in to Azure: a sign-in that times out reddens this job's passes and nothing else.
   cosmos:
-    needs: number
+    needs: cop
+    if: needs.cop.outputs.landed == 'go'
     runs-on: ubuntu-24.04
     # The federated credential for the one read of the account is issued to this environment, so a
     # branch name never has to be registered in Azure.
@@ -177,6 +234,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/filled
+        with:
+          sha: ${{ needs.cop.outputs.sha }}
+          base: ${{ needs.cop.outputs.base }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -258,13 +319,18 @@ jobs:
   # The node checks: the two bundles and the code's own numbers, Prettier, oxlint, the type check, Vitest, the em
   # dash scan and the quality ratchet.
   node:
-    needs: number
+    needs: cop
+    if: needs.cop.outputs.landed == 'go'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/filled
+        with:
+          sha: ${{ needs.cop.outputs.sha }}
+          base: ${{ needs.cop.outputs.base }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -356,7 +422,8 @@ jobs:
   # reads, and a pass that needed its retry is still written r (ADR-068, the addendum of 1.0.4.24).
   browser:
     name: browser ${{ matrix.shard }} of 2
-    needs: number
+    needs: cop
+    if: needs.cop.outputs.landed == 'go'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
@@ -367,6 +434,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/filled
+        with:
+          sha: ${{ needs.cop.outputs.sha }}
+          base: ${{ needs.cop.outputs.base }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -408,13 +479,17 @@ jobs:
   # check jobs did, so a job that died before it wrote its reports reads red here by name instead of leaving a
   # verdict that never ran.
   gate:
-    needs: [dotnet, cosmos, node, browser]
-    if: always()
+    needs: [cop, dotnet, cosmos, node, browser]
+    if: always() && needs.cop.outputs.landed == 'go'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
       actions: read
+    # The red checks and the first failing line, for the status a ready branch's lane reads.
+    outputs:
+      red: ${{ steps.verdict.outputs.red }}
+      first: ${{ steps.verdict.outputs.first }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v7
@@ -436,6 +511,14 @@ jobs:
           echo "RAW=$RUNNER_TEMP/raw" >> "$GITHUB_ENV"
           python3 scripts/gate_fold.py "$RUNNER_TEMP/jobs" "$RUNNER_TEMP/raw" "$GITHUB_RUN_ATTEMPT" dotnet cosmos node browser-1 browser-2
       # #endregion the-fold
+
+      # The commit every check tested, which promote.sh holds HEAD to, by hand as in the run: the cop's filled commit,
+      # not the pushed one (ADR-137).
+      - name: The tested commit
+        if: always()
+        env:
+          FILLED: ${{ needs.cop.outputs.sha }}
+        run: echo "$FILLED" | tee "$RAW/filled.sha"
 
       # The checks' own wall clock, from the run's start to here, beside gateSeconds, which promote measures to its
       # own step and so also counts the wait on CodeRabbit (ADR-098, the addendum of 1.0.5.4).
@@ -459,6 +542,7 @@ jobs:
       # #region verdict
       # Red is any pass that is not 0, except the two that the cuts above may skip, and a fold that is missing a job.
       - name: The verdict
+        id: verdict
         if: always()
         run: |
           red=""
@@ -477,7 +561,9 @@ jobs:
           # who has to find the real failure among the green ones stops reading the email. The build's
           # warnings are red with no log of their own until here; they get their lines too.
           is_red() { case " $red " in *" $1 "*) return 0;; *) return 1;; esac; }
-          lines() { while IFS= read -r line; do printf '::error::%s: %s\n' "$1" "$(printf '%s' "$line" | cut -c1-300)"; done; }
+          lines() { while IFS= read -r line; do printf '::error::%s: %s\n' "$1" "$(printf '%s' "$line" | cut -c1-300)" | tee -a "$RAW/red.txt"; done; }
+          # Written on the way out, red or green: the status job names the checks and the first failing line.
+          trap 'echo "red=${red# }" >> "$GITHUB_OUTPUT"; echo "first=$(sed -n 1p "$RAW/red.txt" 2> /dev/null | sed "s/^::error:://" | tr -s " " | cut -c1-90)" >> "$GITHUB_OUTPUT"' EXIT
           if [ -n "$red" ]; then
             echo "::error::red:$red"
             for pair in prettier:prettier.txt lint:lint.txt tsc:tsc.txt format:format.txt sqlproj:sqlproj.txt emdash:emdash.txt quality:quality.txt fold:fold.txt; do
@@ -506,7 +592,8 @@ jobs:
   # its path rules are written for the system they run on, and one of its cases (a drive letter is a
   # rooted path) only means something there.
   shed:
-    needs: number
+    needs: cop
+    if: needs.cop.outputs.landed == 'go'
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
@@ -514,6 +601,10 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7
+      - uses: ./.github/actions/filled
+        with:
+          sha: ${{ needs.cop.outputs.sha }}
+          base: ${{ needs.cop.outputs.base }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -533,7 +624,8 @@ jobs:
   # moves. At Level 0 no finding holds the ship: a review that does not come inside the ceiling ships anyway with a
   # notice, and the row it writes says so. The row joins data/coderabbit-findings.json in the promote job.
   coderabbit:
-    needs: number
+    needs: cop
+    if: needs.cop.outputs.landed == 'go'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
@@ -545,9 +637,12 @@ jobs:
       - name: The review, read when it completes
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.cop.outputs.version }}
         run: |
           mkdir -p "$RUNNER_TEMP/review"
-          python3 scripts/coderabbit_review.py "$GITHUB_REF_NAME" "$GITHUB_SHA" 1800 "$RUNNER_TEMP/review/coderabbit.json" ||
+          # CodeRabbit reviews the pushed commit, the ready branch's own, so that is the one it waits on; the row
+          # carries the version the cop assigned.
+          python3 scripts/coderabbit_review.py "$GITHUB_REF_NAME" "$GITHUB_SHA" 1800 "$RUNNER_TEMP/review/coderabbit.json" "$VERSION" ||
             echo "::notice::the CodeRabbit read failed; Level 0 ships anyway (ADR-129)"
       - uses: actions/upload-artifact@v7
         if: always()
@@ -564,7 +659,7 @@ jobs:
   # main's commit; thirty minutes holds that wait and the promote itself (ADR-098, the addendum on the gate
   # freeing at live).
   promote:
-    needs: [gate, shed, coderabbit]
+    needs: [cop, gate, shed, coderabbit]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -588,6 +683,10 @@ jobs:
           # push promote.sh makes; where the secret does not exist this is the run's own token again and
           # the script ends green with its notice (ADR-098, the addendum of 1.0.4.119).
           token: ${{ secrets.PROMOTE_TOKEN || github.token }}
+      - uses: ./.github/actions/filled
+        with:
+          sha: ${{ needs.cop.outputs.sha }}
+          base: ${{ needs.cop.outputs.base }}
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -607,12 +706,12 @@ jobs:
           # Whether the secret exists, never its value: the script decides which of its three paths it is on
           # from this and prints neither.
           HAS_PROMOTE_TOKEN: ${{ secrets.PROMOTE_TOKEN != '' }}
+          # The version the cop assigned (or read off a gate/* branch) and the commit every check tested.
+          VERSION: ${{ needs.cop.outputs.version }}
         run: |
           started=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
           seconds=$(( $(date +%s) - $(date -d "$started" +%s) ))
-          # The version is the text after gate/ up to the first hyphen: gate/<version>-<lane>-<sha8>, or gate/<version>.
-          . scripts/versions.sh
-          bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds" "$(branch_version "$GITHUB_REF_NAME")" "$GITHUB_RUN_ID"
+          bash scripts/promote.sh "$RUNNER_TEMP/raw" "$seconds" "$VERSION" "$GITHUB_RUN_ID"
 
       # #region the-handoff
       # What the after-roll needs, as one small artifact: a workflow_run run reads no job's outputs, and the
@@ -645,6 +744,43 @@ jobs:
         run: gh workflow run ci.yml --ref main -f sha="$SHA" || echo "::warning::CI on main was not started for $SHA; the after-roll starts it"
       # #endregion the-handoff
   # #endregion promote-job
+
+  # #region said-job
+  # What became of a ready branch, posted on its own commit, the one its lane pushed and watches (ADR-137): landed
+  # with the version and main's commit, green with a hand promote owed, or the checks that were red and the first
+  # failing line. The lane reads it there and, on anything but landed, rebases and pushes a new ready branch itself.
+  # The ready branch is deleted by the after-roll, after this.
+  said:
+    needs: [cop, gate, promote]
+    if: always() && startsWith(github.ref_name, 'ready/') && needs.cop.outputs.landed == 'go'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: The status on the lane's commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROMOTED: ${{ needs.promote.outputs.promoted }}
+          PROMOTE: ${{ needs.promote.result }}
+          GATE: ${{ needs.gate.result }}
+          RED: ${{ needs.gate.outputs.red }}
+          FIRST: ${{ needs.gate.outputs.first }}
+          VERSION: ${{ needs.cop.outputs.version }}
+          SHA: ${{ needs.promote.outputs.sha }}
+        run: |
+          if [ "$PROMOTED" = true ]; then
+            bash scripts/cop_status.sh "$GITHUB_SHA" success "landed as $VERSION, main ${SHA:0:8}"
+          elif [ "$PROMOTE" = success ]; then
+            bash scripts/cop_status.sh "$GITHUB_SHA" pending "green as $VERSION, needs a hand promote (CLAUDE.md, Shipping)"
+          elif [ "$GATE" = failure ]; then
+            bash scripts/cop_status.sh "$GITHUB_SHA" failure "red gate: ${RED:-a check}${FIRST:+; $FIRST}"
+          else
+            bash scripts/cop_status.sh "$GITHUB_SHA" failure "not landed: the gate was $GATE and the promote $PROMOTE"
+          fi
+  # #endregion said-job
 
   # #region the-roll
   # A push made with the workflow's token starts no workflow, so the run calls the two deploys
