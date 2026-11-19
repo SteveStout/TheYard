@@ -6,13 +6,15 @@ namespace TheYard.Tests;
 
 // #region cosmos-fact
 /// <summary>
-/// A test that needs the real account. CI has no Azure credential and is not
-/// getting one, so CI runs the suite with these filtered out by their trait
-/// (`--filter "Store!=cosmos"`), and the ship gate on the runner runs them as
-/// the signed-in principal against the tests- containers, whose documents
-/// expire in a day. They are not skipped: run with no endpoint they fail and
-/// say why, because a store test that passes with no store is a check that
-/// cannot fail (ADR: A second store on Cosmos DB, and what it costs).
+/// A test that needs a Cosmos DB store to drive. CI runs the suite with these
+/// filtered out by their trait (`--filter "Store!=cosmos"`), and the gate runs
+/// them against the tests- containers on the emulator beside its cosmos job,
+/// which is thrown away with the runner, so nothing they write outlives the run
+/// (ADR: The gate runs where the memory is, the addendum of 1.0.5.94). On a laptop
+/// they run against whatever Cosmos__AccountEndpoint and Cosmos__Credential
+/// say. They are not skipped: run with no endpoint they fail and say why,
+/// because a store test that passes with no store is a check that cannot fail
+/// (ADR: A second store on Cosmos DB, and what it costs).
 /// </summary>
 internal static class CosmosLive
 {

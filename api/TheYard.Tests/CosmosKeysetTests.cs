@@ -14,12 +14,17 @@ public class CosmosKeysetTests
     [Fact]
     public async Task A_deep_live_page_from_the_kept_places_is_the_offset_page_for_under_a_hundred_request_units()
     {
+        // The one test that reads the account itself and not the emulator: what a page costs in
+        // request units is the account's answer, which the emulator does not give, and the kept
+        // places are walked over the live site's own catalogue. It only reads, so it leaves
+        // nothing behind (ADR: The gate runs where the memory is, the addendum of 1.0.5.94).
+        string? account = Environment.GetEnvironmentVariable("Cosmos__CatalogueAccountEndpoint");
         var log = new StoreRingBuffer(500);
         var store = CosmosConnection.Connect(
-            CosmosLive.Endpoint,
+            account ?? CosmosLive.Endpoint,
             Environment.GetEnvironmentVariable("Cosmos__Database") ?? "theyard",
             "",
-            Environment.GetEnvironmentVariable("Cosmos__Credential") ?? "azure-cli",
+            account is null ? Environment.GetEnvironmentVariable("Cosmos__Credential") ?? "azure-cli" : "azure-cli",
             Environment.GetEnvironmentVariable("Azure__ClientId") ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
             log);
         var catalogue = new CosmosVehicleCatalogue(store, 100_000);
