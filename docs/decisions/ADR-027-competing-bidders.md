@@ -246,3 +246,7 @@ The rule now lives in `src/lib/auction.ts` as `minimumIsStale`, where the arithm
 
 ```live path=src/lib/auction.ts region=stale-minimum
 ```
+
+## Addendum, @DATE@ (@VER@): the room opens the review route's lot
+
+The review route's short path shows one live lot to strangers (ADR: The review route gives a reason before it asks, the addendum on one unit), and before the lot is read the room takes one turn on it, through the same `Tick` the round calls with everybody's standing and the clock, at most once in the fifteen seconds its answer is kept. It is this room under these rules, its ceiling, its grace and its refusal to buy a vehicle out, so the review route never shows a bid the room's own rules would not have made.

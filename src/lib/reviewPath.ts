@@ -61,6 +61,7 @@ export const PATH = {
   noLot: 'No auction is live right now',
   bidding: 'the room is bidding',
   currentBid: 'Current bid',
+  openingBid: 'Opening bid',
   closes: 'Closes in',
 } as const;
 
@@ -124,12 +125,13 @@ export function pathTrend(
   );
 }
 
-/** The short path's lot, as GET /api/review/lot answers it. */
+/** The short path's lot, as GET /api/review/lot answers it: the room has taken its turn on it before the answer. */
 export type PathLot = {
   live: boolean;
   vehicle_id: string | null;
   name: string | null;
   current_bid: number | null;
+  opening_bid: number | null;
   ends_at_ms: number | null;
   total: number;
 };
@@ -158,7 +160,10 @@ export function bidWords(lot: PathLot | null): string {
   return lot?.current_bid == null ? '' : `$${figures(lot.current_bid)}`;
 }
 
-/** What the lot tile prints under the name: the bid with the room bidding, or nothing before the answer. */
+/**
+ * What the lot tile prints under the name: the bid with the room bidding, or, when the room's rules refused its turn
+ * and nobody has bid, the opening ask with no dots; nothing before the answer.
+ */
 export function lotAmount(lot: PathLot | null): {
   label: string;
   amount: string;
@@ -166,6 +171,8 @@ export function lotAmount(lot: PathLot | null): {
 } {
   if (lot?.current_bid != null)
     return { label: PATH.currentBid, amount: bidWords(lot), bidding: true };
+  if (lot?.opening_bid != null)
+    return { label: PATH.openingBid, amount: `$${figures(lot.opening_bid)}`, bidding: false };
   return { label: PATH.currentBid, amount: '', bidding: false };
 }
 

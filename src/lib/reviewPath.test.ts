@@ -43,6 +43,7 @@ const lot: PathLot = {
   vehicle_id: 'v 42',
   name: '2019 Honda Civic EX',
   current_bid: 12500,
+  opening_bid: 9000,
   ends_at_ms: 1,
   total: 100000,
 };
@@ -99,8 +100,13 @@ describe('the review route short path (ADR: The review route gives a reason befo
     expect(data?.points.map((point) => point.value)).toEqual([12, 30]);
   });
 
-  it('prints the lot’s bid with the room bidding, and nothing before the answer', () => {
+  it('prints the room’s bid with the room bidding, or the opening ask with no dots when nobody has bid', () => {
     expect(lotAmount(lot)).toEqual({ label: 'Current bid', amount: '$12,500', bidding: true });
+    expect(lotAmount({ ...lot, current_bid: null })).toEqual({
+      label: 'Opening bid',
+      amount: '$9,000',
+      bidding: false,
+    });
     expect(lotAmount(null)).toEqual({ label: 'Current bid', amount: '', bidding: false });
   });
 
