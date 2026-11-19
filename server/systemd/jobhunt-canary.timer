@@ -1,0 +1,12 @@
+# Every day at 05:15 America/Chicago: after the 05:00 restart, before the 05:30 quiet and the 06:00 run (W8 of the
+# year-end plan). Not Persistent: a canary missed while the box was off has nothing left to guard, so it is skipped.
+[Unit]
+Description=JobHunt canaries, daily at 05:15 Central
+
+[Timer]
+OnCalendar=*-*-* 05:15:00 America/Chicago
+Persistent=false
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,12 @@
+# Every day at 04:55 America/Chicago: the box's daily restart at 05:00 (Steve, 11/12). The script pauses the dispatcher
+# first and restarts nothing while a lane is LIVE on the box. Not Persistent: a restart missed is not made up later.
+[Unit]
+Description=JobHunt box restart, daily at 05:00 Central
+
+[Timer]
+OnCalendar=*-*-* 04:55:00 America/Chicago
+Persistent=false
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

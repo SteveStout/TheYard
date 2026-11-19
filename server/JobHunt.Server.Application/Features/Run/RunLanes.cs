@@ -67,7 +67,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         var lanes = (role is null ? RunSlot.Order : RunSlot.RoleOrder).Where(lane => options.Only is null || options.Only == lane).Where(lane => config.For(lane).Enabled).ToList();
         try
         {
-            string words = string.Join(", ", lanes.Select(RunSlot.Word)) + (role is null ? string.Empty : $" for slot {options.Slot}");
+            string words = string.Join(", ", lanes.Select(RunSlot.Word)) + (role is null ? string.Empty : $" for slot {options.Slot}") + (options.Canary ? " (canary, one row)" : string.Empty);
             await share.WriteNewAsync(RegistryRows.Path(started, "registry"), RegistryRows.Live(started, dry, words), ct);
         }
         catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
@@ -85,7 +85,8 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
         {
             broke = $"DEFECT: the run stopped early: {failure.Message}. Read the DONE notes before any lane runs again.";
         }
-        return (broke is null ? 0 : 1, await CloseAsync(new CloseOf(reports, started, day, dry, broke, options.Only is not null || reports.Count < lanes.Count, options.Slot), CancellationToken.None));
+        string closed = await CloseAsync(new CloseOf(reports, started, day, dry, broke, options.Only is not null || reports.Count < lanes.Count, options.Slot), CancellationToken.None);
+        return (options.Canary ? CanaryRun.Exit(reports) : broke is null ? 0 : 1, closed);
     }
 
     private async Task WorkAsync(IReadOnlyList<Lane> lanes, LaneStart run, List<LaneReport> reports, CancellationToken ct)
@@ -115,7 +116,7 @@ public sealed class RunLanes(IShare share, RunGuards guards, LaneWork work, Serv
             var start = run with { Lane = lane, Before = before, Lines = [$"Lane doc nightly/{RunSlot.Doc(lane)}, the tracker, outreach-limits.md, CONVENTIONS.md, systemRules.md, responders.md and BLACKLIST.md read this run."] };
             string? linkedIn = linkedInStop ?? await SecondDriverAsync(ct);
             string? held = closed
-                ?? (ct.IsCancellationRequested ? "the service was stopped" : null)
+                ?? (ct.IsCancellationRequested ? "the service was stopped" : null) ?? (run.Slot == RunSlot.Canary ? null : await BreakerHold.ReadAsync(share, lane, ct))
                 ?? (RunSlot.OnLinkedIn(lane) || lane is Lane.Network or Lane.Commentline ? linkedIn : lane == Lane.Feed ? linkedInStop : null)
                 ?? await work.Runner.CrashedAsync(start, ct);
             if (held is not null)

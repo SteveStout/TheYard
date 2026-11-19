@@ -38,6 +38,9 @@ public static class RunSlot
     /// <summary>The start of a slot that runs the program for one caught role; the posting's key follows it.</summary>
     public const string Pounce = "pounce-";
 
+    /// <summary>The canary's slot: a dry run of one lane on one row, its folders and card apart from the morning's.</summary>
+    public const string Canary = "canary";
+
     /// <summary>The lanes in run order: the comment line right after the feed, while the morning's LinkedIn session is fresh and before any send.</summary>
     public static readonly IReadOnlyList<Lane> Order = [Lane.Feed, Lane.Commentline, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply];
 
@@ -137,6 +140,13 @@ public static class RunSlot
         TimeSpan now = Local(utc).TimeOfDay, from = Morning.From - lead;
         return from < TimeSpan.Zero ? now >= from + TimeSpan.FromDays(1) || now < Morning.To : now >= from && now < Morning.To;
     }
+
+    /// <summary>
+    /// The breaker's hold on one lane (J:\dispatch\held\server6am-<lane>.hold): three failed or empty runs in a row,
+    /// or a canary that failed twice, wrote it, and the lane is skipped until its heal lands or the playbook clears it.
+    /// </summary>
+    /// <param name="lane">The lane.</param>
+    public static string BreakerHold(Lane lane) => $"dispatch/held/server6am-{Word(lane)}.hold";
 
     /// <summary>The file that says LinkedIn is closed for the day, which every later run that day reads.</summary>
     /// <param name="day">The Central day.</param>
