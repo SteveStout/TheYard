@@ -94,28 +94,36 @@ public sealed class EfBlogStore(Func<IDbContextFactory<YardDbContext>?> factory)
     public async Task<int> SaveAsync(BlogPost post, BlogDerived derived, DateTimeOffset at, CancellationToken cancellation)
     {
         using var db = await Contexts().CreateDbContextAsync(cancellation);
-        var row = await db.Posts.FirstOrDefaultAsync(p => p.Slug == post.Slug, cancellation);
-        if (row is null)
+        // One transaction through the context's retry strategy: the post, its images and tags, and its derived parts commit
+        // together, so a save that fails partway keeps none of it and a dropped connection retries the whole.
+        return await db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
         {
-            row = new PostRow { Slug = post.Slug, Title = post.Title, Summary = post.Summary, Body = post.Body, LinkedInUrl = post.LinkedInUrl, CreatedAt = at };
-            db.Posts.Add(row);
-        }
-        row.Title = post.Title;
-        row.Summary = post.Summary;
-        row.Body = post.Body;
-        row.PublishedAt = post.PublishedAt;
-        row.LinkedInUrl = post.LinkedInUrl;
-        row.CodeUrl = post.CodeUrl;
-        row.IsPublished = true;
-        row.UpdatedAt = at;
-        await db.SaveChangesAsync(cancellation);
-        db.PostImages.RemoveRange(db.PostImages.Where(i => i.PostId == row.Id));
-        db.PostTags.RemoveRange(db.PostTags.Where(t => t.PostId == row.Id));
-        db.PostImages.AddRange(post.Images.Select(i => new PostImageRow { PostId = row.Id, Position = i.Position, Url = i.Url, AltText = i.AltText, Width = i.Width, Height = i.Height }));
-        db.PostTags.AddRange(post.Tags.Distinct(StringComparer.OrdinalIgnoreCase).Select(t => new PostTagRow { PostId = row.Id, Tag = t }));
-        await db.SaveChangesAsync(cancellation);
-        await EfBlogIndex.KeepAsync(db, row.Id, derived, null, cancellation);
-        return row.Id;
+            db.ChangeTracker.Clear();
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellation);
+            var row = await db.Posts.FirstOrDefaultAsync(p => p.Slug == post.Slug, cancellation);
+            if (row is null)
+            {
+                row = new PostRow { Slug = post.Slug, Title = post.Title, Summary = post.Summary, Body = post.Body, LinkedInUrl = post.LinkedInUrl, CreatedAt = at };
+                db.Posts.Add(row);
+            }
+            row.Title = post.Title;
+            row.Summary = post.Summary;
+            row.Body = post.Body;
+            row.PublishedAt = post.PublishedAt;
+            row.LinkedInUrl = post.LinkedInUrl;
+            row.CodeUrl = post.CodeUrl;
+            row.IsPublished = true;
+            row.UpdatedAt = at;
+            await db.SaveChangesAsync(cancellation);
+            db.PostImages.RemoveRange(db.PostImages.Where(i => i.PostId == row.Id));
+            db.PostTags.RemoveRange(db.PostTags.Where(t => t.PostId == row.Id));
+            db.PostImages.AddRange(post.Images.Select(i => new PostImageRow { PostId = row.Id, Position = i.Position, Url = i.Url, AltText = i.AltText, Width = i.Width, Height = i.Height }));
+            db.PostTags.AddRange(post.Tags.Distinct(StringComparer.OrdinalIgnoreCase).Select(t => new PostTagRow { PostId = row.Id, Tag = t }));
+            await db.SaveChangesAsync(cancellation);
+            await EfBlogIndex.WriteAsync(db, row.Id, derived, null, cancellation);
+            await transaction.CommitAsync(cancellation);
+            return row.Id;
+        });
     }
 
     /// <summary>Every post whose derived parts are from another version of the rules, or from none, with its parts and whether it never was.</summary>
