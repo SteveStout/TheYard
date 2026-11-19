@@ -14,8 +14,11 @@ const noChange = () => () => {};
 const heldCode = () => holdCode('', sessionOrNull());
 const noCode = () => null;
 
-/** The page's footer, or nothing when the file has no links for it. */
-export function WhereNext({ page }: { page: NextPage }) {
+/**
+ * The page's footer, or nothing when the file has no links for it. In a row (the review route's whole-page picture) it
+ * takes its parent's width and spacing and draws its heading and two links on one line.
+ */
+export function WhereNext({ page, row = false }: { page: NextPage; row?: boolean }) {
   const links = nextFor(page);
   // The visit's code, put on the links once the page is live: the landing is drawn at the build with none, so the
   // hydrating render reads the server's answer (none) and the next one reads the session (ladder v7b).
@@ -23,7 +26,7 @@ export function WhereNext({ page }: { page: NextPage }) {
   if (links.length === 0) return null;
   return (
     <nav
-      className={`${styles.next} op-glass`}
+      className={`${styles.next} ${row ? styles.row : ''} op-glass`}
       aria-label="Where next"
       data-testid="where-next"
       data-next={page}

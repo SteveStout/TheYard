@@ -1,0 +1,131 @@
+/**
+ * Does:      Lays out the full tour as the whole-page picture draws it (its .stops and .stop, ported rule by rule): eight
+ *            compact cells, four across from 1024, two from 640, one on a phone, cells in a row one height; each cell
+ *            its ring, title and minutes on one line and its one line under; a reached ring filled with its tick.
+ * Does not:  Draw a cell's glass or cell 8's gold rule (panels.css does, through .op-glass and .op-tile).
+ * Used by:   ReviewTour.tsx.
+ */
+.stops {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stops > li {
+  display: flex;
+}
+
+.stop {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 104px;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.stop:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ring {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--color-teal-deep);
+  border-radius: var(--radius-full);
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+}
+
+.stop[data-reached='true'] .ring {
+  border-color: var(--color-teal-deep);
+  background: var(--color-teal-deep);
+}
+
+.title {
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  line-height: 1.25;
+}
+
+.minutes {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.line {
+  margin-top: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.startOver {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.startOver:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 1023.98px) {
+  .stops {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639.98px) {
+  .stops {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stop {
+    min-height: 0;
+  }
+
+  /* A thumb's height on a phone, like every control the phone's page carries. */
+  .startOver {
+    min-height: var(--touch-target);
+  }
+}

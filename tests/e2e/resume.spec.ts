@@ -44,7 +44,7 @@ test('on a phone the door says nothing is below it, and both of its links sit on
   await page.goto('/resume?src=email');
   const visible = await page.evaluate(() => document.body.innerText);
   expect(visible).not.toMatch(/below/i);
-  for (const name of ['Open the PDF on its own', 'Check my work in ten minutes']) {
+  for (const name of ['Open the PDF on its own', 'Check my work in two minutes']) {
     const box = await page.getByRole('link', { name }).boundingBox();
     expect(box, name).not.toBeNull();
     expect(box!.y + box!.height, name).toBeLessThanOrEqual(844);
@@ -57,7 +57,7 @@ test('a browser that opens /resume gets the door: the band leads to the review r
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/resume?src=email');
   const band = page.getByTestId('resume-band');
-  await expect(band).toContainText('you can check it in ten minutes');
+  await expect(band).toContainText('you can check it in two minutes');
   await expect(page.locator('iframe')).toHaveAttribute('src', '/resume?pdf=1&src=email');
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator('iframe')).toBeHidden();
@@ -67,7 +67,7 @@ test('a browser that opens /resume gets the door: the band leads to the review r
   );
   expect(sideways).toBeLessThanOrEqual(0);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await band.getByRole('link', { name: 'Check my work in ten minutes' }).click();
+  await band.getByRole('link', { name: 'Check my work in two minutes' }).click();
   await expect(page).toHaveURL(/\?view=review/);
   await expect(page.getByTestId('review-page')).toBeVisible();
 });

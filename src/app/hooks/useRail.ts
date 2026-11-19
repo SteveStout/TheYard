@@ -73,5 +73,7 @@ export function useRail(collapsedByDefault = false) {
     drawerOpen,
     openDrawer: () => setDrawerOpen(true),
     closeDrawer: () => setDrawerOpen(false),
+    /** The sidebar shown, whichever way it is: docked and expanded at a desk, the drawer under it. */
+    open: () => (docked ? setChosen(false) : setDrawerOpen(true)),
   };
 }
