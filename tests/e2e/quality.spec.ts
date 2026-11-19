@@ -61,3 +61,17 @@ for (const width of [1280, 390]) {
   });
 }
 // #endregion quality
+
+// The review route's "See the proof in 2 minutes" opens Quality at one section, so the address it carries has to
+// land there on a cold load, the way a link from outside the site arrives: the heading's id comes from its words
+// (markdown.ts) and the section is scrolled to once the document is drawn (useLiveBlocks.tsx). The first chart,
+// near the top of the page, is off the screen; the dialog's own title stays in view, so it says nothing here.
+test('a link to the slip and the turn opens the Quality page on that section', async ({ page }) => {
+  await page.setViewportSize({ width: 1568, height: 772 });
+  await openTheYard(page, '/?doc=quality#the-slip-and-the-turn');
+  const dialog = page.locator('dialog[open]');
+  const slip = dialog.locator('h2[id="the-slip-and-the-turn"]');
+  await expect(slip).toHaveText('The slip, and the turn', { timeout: 30_000 });
+  await expect(slip).toBeInViewport();
+  await expect(dialog.getByTestId('quality-trend').first()).not.toBeInViewport();
+});

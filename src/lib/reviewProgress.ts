@@ -84,6 +84,34 @@ export function reachBody(stop: number, code: string | null): { stop: number; r?
   return r === null ? { stop } : { stop, r };
 }
 
+/** The names a button on the route reports (ADR: Ten minutes, seven stops, the addendum on the second actions). */
+export const REVIEW_ACTIONS = [
+  'proof',
+  'book',
+  'resume',
+  'recommendations',
+  'stop-quality',
+  'stop-gate',
+  'stop-room',
+  'slip',
+  'tour',
+  'linkedin',
+  'github',
+  'about',
+] as const;
+
+/** One of the names a button reports. */
+export type ReviewAction = (typeof REVIEW_ACTIONS)[number];
+
+/** What the page sends to POST /api/review/reached for a button pressed: its name, and the code only when it is one. */
+export function actionBody(
+  action: ReviewAction,
+  code: string | null
+): { action: string; r?: string } {
+  const r = code === null ? null : linkCode(`?r=${encodeURIComponent(code)}`);
+  return r === null ? { action } : { action, r };
+}
+
 /** The stops a move reached for the first time, numbered as the route numbers them (1 to 7), each reported once. */
 export function newlyReached(before: ReviewProgress, after: ReviewProgress): number[] {
   return after.reached.filter((index) => !before.reached.includes(index)).map((index) => index + 1);

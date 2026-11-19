@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  actionBody,
   CURRENT_KEY,
   emptyProgress,
   markReached,
@@ -8,6 +9,7 @@ import {
   reachBody,
   readProgress,
   REACHED_KEY,
+  REVIEW_ACTIONS,
   writeProgress,
   type StorageLike,
 } from './reviewProgress';
@@ -77,6 +79,14 @@ describe('the review place, kept on the browser (ADR: Ten minutes, seven stops)'
     expect(reachBody(0, 'zzrev1')).toEqual({ stop: 0, r: 'zzrev1' });
     expect(reachBody(3, null)).toEqual({ stop: 3 });
     expect(reachBody(3, 'Steve')).toEqual({ stop: 3 });
+  });
+
+  it('builds the report of a button pressed: its name, one of the twelve the API takes, and the code only when it is one', () => {
+    expect(actionBody('proof', 'zzrev1')).toEqual({ action: 'proof', r: 'zzrev1' });
+    expect(actionBody('book', null)).toEqual({ action: 'book' });
+    expect(actionBody('book', 'Steve')).toEqual({ action: 'book' });
+    expect(REVIEW_ACTIONS).toHaveLength(12);
+    expect(new Set(REVIEW_ACTIONS).size).toBe(12);
   });
 
   it('names the stops a move reached for the first time, each once, numbered as the route numbers them', () => {

@@ -1,7 +1,7 @@
 // The one rule the review route's reach is kept by (ADR: Ten minutes, seven stops, the addendum on the
 // reach rows), pure, so the collector, the memory keeper and the document store cannot fold one report two
 // ways: a higher stop replaces a lower one and never the reverse, the first time and the first code stay,
-// and the last time moves.
+// the last time moves, and the set of actions only grows.
 namespace TheYard.Application.Features.Review;
 
 // #region review-folding
@@ -25,13 +25,15 @@ public static class ReviewFolding
             .OrderBy(row => row.Day, StringComparer.Ordinal)
             .ThenBy(row => row.Hash, StringComparer.Ordinal)];
 
-    /// <summary>One report as a row of its own.</summary>
+    /// <summary>One report as a row of its own; a report of an action carries the action in a set of one.</summary>
     /// <param name="reach">The report.</param>
-    public static ReviewRow Row(ReviewReach reach) => new(reach.Hash, reach.Day, reach.Stop, reach.Code, reach.At, reach.At);
+    public static ReviewRow Row(ReviewReach reach) =>
+        new(reach.Hash, reach.Day, reach.Stop, reach.Code, reach.At, reach.At, reach.Action is { } action ? [action] : []);
 
     /// <summary>
     /// A row folded into the one kept for the same visitor and day: the higher stop, the first code
-    /// (a code is kept once per visitor and day), the earlier first and the later last.
+    /// (a code is kept once per visitor and day), the earlier first and the later last, and the actions of
+    /// both, so an action once seen is never taken away.
     /// </summary>
     /// <param name="kept">The row as kept.</param>
     /// <param name="added">The row the batch adds.</param>
@@ -41,6 +43,7 @@ public static class ReviewFolding
         Code = kept.Code ?? added.Code,
         First = added.First < kept.First ? added.First : kept.First,
         Last = added.Last > kept.Last ? added.Last : kept.Last,
+        Actions = ReviewActions.Union(kept.Actions, added.Actions),
     };
 }
 // #endregion review-folding

@@ -77,6 +77,26 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
     }
 
     [Fact]
+    public async Task The_book_key_is_a_mailto_of_its_own_with_the_request_for_a_time_and_its_open_is_kept_apart_from_email()
+    {
+        // The review route's "Book 20 minutes": the visitor's own email app opens with the message ready, and the
+        // click is counted under its own path, apart from the contact line's "email".
+        var client = Browser();
+        string code = "b" + Guid.NewGuid().ToString("N")[..5];
+        var book = await client.GetAsync($"/api/go/book?r={code}");
+        Assert.Equal(HttpStatusCode.Found, book.StatusCode);
+        Assert.Equal(BookAddress, book.Headers.Location!.OriginalString);
+        using var json = await CardWithRow(client, code, 1);
+        var row = json.RootElement.GetProperty("codes").EnumerateArray().Single(entry => entry.GetProperty("code").GetString() == code);
+        Assert.Equal(1, row.GetProperty("paths").GetProperty("/api/go/book").GetInt32());
+        Assert.False(row.GetProperty("paths").TryGetProperty("/api/go/email", out _));
+    }
+
+    /// <summary>The booking address, exactly as the site's settings hold it: the subject and the body, encoded.</summary>
+    private const string BookAddress =
+        "mailto:stevenstout11@gmail.com?subject=20%20minutes%20with%20Steven%20Stout&body=Hi%20Steven%2C%0D%0A%0D%0AI%20looked%20at%20The%20Yard%20and%20would%20like%2020%20minutes%20to%20talk.%0D%0A%0D%0ATimes%20that%20work%20for%20me%2C%20with%20my%20time%20zone%3A%0D%0A1.%0D%0A2.%0D%0A%0D%0ARole%20and%20company%3A%0D%0A";
+
+    [Fact]
     [Covers("GET", "/api/links/open", 204)]
     [Covers("GET", "/api/links/open", 400)]
     public async Task The_page_s_own_report_is_204_for_a_code_on_a_view_it_has_and_400_otherwise()

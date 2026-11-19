@@ -15,12 +15,13 @@ public static class ReviewEndpoints
     public static IEndpointRouteBuilder MapReviewEndpoints(this IEndpointRouteBuilder app)
     {
         // #region review-endpoints
-        // The page reports each stop reached once a browser, and the route's opening as stop 0. 204 for
-        // a stop on the route, 400 with the problem otherwise; a code that is not one is dropped, not refused.
+        // The page reports each stop reached once a browser, the route's opening as stop 0, and each button
+        // pressed by its name. 204 for a stop on the route or a name on the list, 400 with the problem
+        // otherwise; a code that is not one is dropped, not refused.
         app.MapPost("/api/review/reached", Reached)
             .WithName("RecordReviewReach")
             .WithTags("Review")
-            .WithSummary("The page's report that a visitor reached a stop on the review route: how far, never who")
+            .WithSummary("The page's report that a visitor reached a stop on the review route or pressed one of its buttons: how far, never who")
             .Accepts<ReviewReachedBody>("application/json")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest);
@@ -35,9 +36,12 @@ public static class ReviewEndpoints
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> Reached(ReviewReachedBody body, HttpContext http, VisitorTokens tokens, RecordReviewReachHandler handler, CancellationToken cancellation) =>
-        await handler.HandleAsync(new RecordReviewReachCommand(PersonOf(http, tokens), body.Stop, body.R), cancellation)
+        await handler.HandleAsync(new RecordReviewReachCommand(PersonOf(http, tokens), body.Stop, body.R, body.Action), cancellation)
             ? TypedResults.NoContent()
-            : TypedResults.Problem(detail: $"A stop is 0 (opened) to {ReviewFolding.LastStop}.", statusCode: StatusCodes.Status400BadRequest, title: "Not a stop on the review route");
+            : TypedResults.Problem(
+                detail: $"A report carries a stop, 0 (opened) to {ReviewFolding.LastStop}, or an action, one of {string.Join(", ", ReviewActions.Names)}.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Not a stop or an action on the review route");
 
     private static async Task<Ok<ReviewFunnel>> Funnel(string? window, ReadReviewFunnelHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadReviewFunnelQuery(ReviewWindows.Parse(window)), cancellation));
@@ -56,7 +60,8 @@ public static class ReviewEndpoints
     }
 }
 
-/// <summary>The page's report: the stop reached, and the ?r= code it opened on.</summary>
-/// <param name="Stop">0 for opened, 1 to 7 for the stop reached.</param>
+/// <summary>The page's report: the stop reached or the button pressed, and the ?r= code it opened on.</summary>
+/// <param name="Stop">0 for opened, 1 to 7 for the stop reached, or null for an action alone.</param>
 /// <param name="R">The code, or null.</param>
-public sealed record ReviewReachedBody(int Stop, string? R);
+/// <param name="Action">The button pressed, one of <see cref="ReviewActions.Names"/>, or null.</param>
+public sealed record ReviewReachedBody(int? Stop, string? R, string? Action = null);

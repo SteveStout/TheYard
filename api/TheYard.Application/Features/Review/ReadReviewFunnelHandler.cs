@@ -1,6 +1,7 @@
-// The Admin card's question (ADR: Ten minutes, seven stops, the addendum on the reach rows): of the visitors
-// who opened the review route in a window, how many reached each stop, and how far each tagged code got.
-// The slice's one query, over the reading side only.
+// The Admin card's question (ADR: Ten minutes, seven stops, the addenda on the reach rows and the second
+// actions): of the visitors who opened the review route in a window, how many reached each stop, how many
+// reached a second action and how many the running system or the booking button, and how far each tagged
+// code got. The slice's one query, over the reading side only.
 using System.Globalization;
 using TheYard.Application.Shared;
 
@@ -23,13 +24,14 @@ public sealed class ReadReviewFunnelHandler(IReviewReader reader, TimeProvider c
         string name = ReviewWindows.NameOf(query.Window);
         if (!await reader.AvailableAsync(cancellation))
         {
-            return new ReviewFunnel(false, name, 0, [.. Enumerable.Repeat(0, Places)], [], null, reader.Source);
+            return new ReviewFunnel(false, name, 0, [.. Enumerable.Repeat(0, Places)], [], null, reader.Source, new ReviewSecond(0, 0, ReviewActions.CountedFrom));
         }
         var since = clock.GetUtcNow() - ReviewWindows.LengthOf(query.Window);
         var rows = (await reader.RowsSinceAsync(since.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), cancellation))
             .Where(row => row.Last >= since)
             .ToList();
-        // A visitor on two days is one visitor: the days fold to the highest stop, the earliest first and the latest last.
+        // A visitor on two days is one visitor: the days fold to the highest stop, the earliest first, the latest
+        // last and every action seen on any of them.
         var visitors = rows
             .GroupBy(row => row.Hash, StringComparer.Ordinal)
             .Select(days => days.OrderBy(row => row.First).Aggregate(ReviewFolding.Merge))
@@ -46,7 +48,11 @@ public sealed class ReadReviewFunnelHandler(IReviewReader reader, TimeProvider c
             .OrderByDescending(row => row.LastDay, StringComparer.Ordinal)
             .ThenBy(row => row.Code, StringComparer.Ordinal)
             .ToList();
-        return new ReviewFunnel(true, name, visitors.Count, reached, byCode, await reader.FirstDayAsync(cancellation), reader.Source);
+        var second = new ReviewSecond(
+            visitors.Count(ReviewActions.ReachedASecond),
+            visitors.Count(ReviewActions.ReachedRunningOrBook),
+            ReviewActions.CountedFrom);
+        return new ReviewFunnel(true, name, visitors.Count, reached, byCode, await reader.FirstDayAsync(cancellation), reader.Source, second);
     }
 }
 

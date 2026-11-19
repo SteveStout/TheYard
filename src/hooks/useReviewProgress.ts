@@ -3,6 +3,7 @@ import { useInTheBrowser } from './useFirstLoad';
 import { linkCode } from '../lib/links';
 import { request } from '../lib/request';
 import {
+  actionBody,
   emptyProgress,
   markReached,
   moveTo,
@@ -10,6 +11,7 @@ import {
   reachBody,
   readProgress,
   writeProgress,
+  type ReviewAction,
   type ReviewProgress,
   type StorageLike,
 } from '../lib/reviewProgress';
@@ -30,12 +32,17 @@ function browserStorage(): StorageLike | null {
  * link is followed finish after the page has gone.
  */
 function report(stop: number, code: string | null): void {
+  send(reachBody(stop, code));
+}
+
+/** One report to the API, in the background; keepalive lets one sent as a link is followed finish after the page has gone. */
+function send(body: object): void {
   void request(
     '/api/review/reached',
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reachBody(stop, code)),
+      body: JSON.stringify(body),
       keepalive: true,
     },
     { background: true }
@@ -89,5 +96,11 @@ export function useReviewProgress() {
     markDone: () => doneWithCurrent(progress.current === last),
     /** Back to the first stop, with what was reached kept. */
     restart: () => keep(moveTo(progress, 0)),
+    /**
+     * A button on the route was pressed (ADR: Ten minutes, seven stops, the addendum on the second actions):
+     * reported by its name with the code the page opened on. The API keeps each name once a visitor a day,
+     * so a second press costs a request and changes nothing.
+     */
+    action: (name: ReviewAction) => send(actionBody(name, code)),
   };
 }
