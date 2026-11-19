@@ -34,8 +34,17 @@ switch (args.FirstOrDefault())
     case "run":
         if (RunOptions.Parse(args) is not { } options)
         {
-            Console.Error.WriteLine("run takes --dry-run, --lane feed|commentline|invites|messages|network|apply, and --slot pounce-<key> with --role nightly/pounce/<file>.json together, and nothing else");
+            Console.Error.WriteLine("run takes --dry-run, --lane feed|commentline|invites|messages|network|apply, --canary with one --lane, and --slot pounce-<key> with --role nightly/pounce/<file>.json together, and nothing else");
             return 2;
+        }
+        if (options.Canary)
+        {
+            if (CanaryRun.NotStarted(time.GetUtcNow(), options.Only!.Value) is { } notRun)
+            {
+                Console.WriteLine(notRun);
+                return CanaryRun.NotRun;
+            }
+            CanaryRun.Fit(config, options.Only!.Value);
         }
         var siteUsage = new SiteUsage(config, http);
         var lanes = new RunLanes(
@@ -54,6 +63,6 @@ switch (args.FirstOrDefault())
         Console.WriteLine(await new LastCard(share, time).ExecuteAsync(stop.Token));
         return 0;
     default:
-        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane feed|commentline|invites|messages|network|apply] [--slot pounce-<key> --role nightly/pounce/<file>.json] | probe | status");
+        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane feed|commentline|invites|messages|network|apply] [--canary --lane <lane>] [--slot pounce-<key> --role nightly/pounce/<file>.json] | probe | status");
         return 2;
 }

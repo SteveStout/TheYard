@@ -3,13 +3,15 @@ namespace JobHunt.Server.Application.Features.Run;
 /// <summary>
 /// What the command line asked of a run. --slot and --role come together or not at all: a slot run works one caught
 /// role, its hand-off a JSON file the pounce wrote under nightly/pounce/, and its slot is pounce- and that posting's key.
-/// Without them the run is the morning's, slot 0600.
+/// Without them the run is the morning's, slot 0600. --canary with one --lane is a dry run by construction: one row, a
+/// four-minute limit, the canary's own slot, and the answer says whether the lane reached its target.
 /// </summary>
 /// <param name="Dry">True for --dry-run.</param>
 /// <param name="Only">The one lane --lane named, or null for all of them.</param>
 /// <param name="Slot">The slot its folders and card are named for.</param>
 /// <param name="Role">The hand-off's path relative to the share, or null for the morning.</param>
-public sealed record RunOptions(bool Dry, Lane? Only, string Slot = RunSlot.Hour, string? Role = null)
+/// <param name="Canary">True for --canary.</param>
+public sealed record RunOptions(bool Dry, Lane? Only, string Slot = RunSlot.Hour, string? Role = null, bool Canary = false)
 {
     private const string Handoffs = "nightly/pounce/";
 
@@ -17,7 +19,7 @@ public sealed record RunOptions(bool Dry, Lane? Only, string Slot = RunSlot.Hour
     /// <param name="arguments">The arguments, the verb first.</param>
     public static RunOptions? Parse(IReadOnlyList<string> arguments)
     {
-        bool dry = false;
+        bool dry = false, canary = false;
         Lane? only = null;
         string? slot = null, role = null;
         for (int i = 1; i < arguments.Count; i++)
@@ -26,6 +28,11 @@ public sealed record RunOptions(bool Dry, Lane? Only, string Slot = RunSlot.Hour
             if (arguments[i] == "--dry-run")
             {
                 dry = true;
+                continue;
+            }
+            if (arguments[i] == "--canary")
+            {
+                canary = true;
                 continue;
             }
             if (arguments[i] == "--lane" && next is not null && RunSlot.Parse(next) is { } lane)
@@ -45,6 +52,10 @@ public sealed record RunOptions(bool Dry, Lane? Only, string Slot = RunSlot.Hour
                 return null;
             }
             i++;
+        }
+        if (canary)
+        {
+            return only is not null && slot is null && role is null ? new RunOptions(true, only, RunSlot.Canary, null, true) : null;
         }
         if (slot is null && role is null)
         {

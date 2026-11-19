@@ -15,7 +15,9 @@ TICK, SNAPSHOT_EVERY, KEEP_SNAPSHOTS = 2.0, 30, 60
 BACKOFF = [2, 4, 8, 16, 32, 60]
 CONFIG = os.path.expanduser("~/.config/theyard")
 USER_UNITS = ["claude-remote-control.service", "jdrive.service", "theyard-box-agent.service",
-              "app-dev.lizardbyte.app.Sunshine.service", "jobhunt-6am.timer", "jobhunt-6am.service"]
+              "app-dev.lizardbyte.app.Sunshine.service", "jobhunt-6am.timer", "jobhunt-6am.service",
+              "jobhunt-dispatch.service", "jobhunt-leaders.timer", "jobhunt-crosspost.timer",
+              "jobhunt-canary.timer", "jobhunt-restart.timer"]
 SYSTEM_UNITS = ["tailscaled.service", "ssh.service", "xrdp.service", "unattended-upgrades.service", "docker.service"]
 REAL_FS = {"ext4", "ext3", "xfs", "btrfs", "vfat", "ntfs", "exfat", "f2fs", "zfs"}
 

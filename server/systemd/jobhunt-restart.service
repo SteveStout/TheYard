@@ -1,0 +1,15 @@
+# The box's 05:00 restart (J:\dispatch\box_restart.py): waits up to 05:15 for nothing to run, closes Chrome cleanly,
+# restarts the web apps on plan-theyard-ss compute only, and restarts the box with no sudo. Installed by
+# server/publish-to-wickedawsome.sh. The log is J:\server\logs\restart.log.
+[Unit]
+Description=JobHunt box restart: the box and the site's compute, daily at 05:00
+After=network-online.target jdrive.service
+Wants=jdrive.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/test -f /mnt/j/dispatch/box_restart.py
+ExecStart=/usr/bin/python3 -I /mnt/j/dispatch/box_restart.py
+Environment=TZ=America/Chicago
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+TimeoutStartSec=40min

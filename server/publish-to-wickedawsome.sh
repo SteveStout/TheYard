@@ -12,6 +12,11 @@ dotnet publish "$here/JobHunt.Server/JobHunt.Server.csproj" -c Release -r linux-
 cp "$here/systemd/jobhunt-6am.service" "$here/systemd/jobhunt-6am.timer" "$units/"
 # The cross-post lane's timer runs a program on the share (J:\crosspost\crosspost.py), not this build.
 cp "$here/systemd/jobhunt-crosspost.service" "$here/systemd/jobhunt-crosspost.timer" "$units/"
+# The 05:15 canaries, the 05:00 restart and the after-boot line run programs on the share (J:\dispatch\canary.py and
+# box_restart.py); the canaries run this build's `run --canary`.
+cp "$here/systemd/jobhunt-canary.service" "$here/systemd/jobhunt-canary.timer" "$here/systemd/jobhunt-restart.service" \
+  "$here/systemd/jobhunt-restart.timer" "$here/systemd/jobhunt-boot.service" "$units/"
 systemctl --user daemon-reload
-systemctl --user enable --now jobhunt-6am.timer jobhunt-crosspost.timer
-systemctl --user list-timers jobhunt-6am.timer jobhunt-crosspost.timer --no-pager
+systemctl --user enable --now jobhunt-6am.timer jobhunt-crosspost.timer jobhunt-canary.timer jobhunt-restart.timer
+systemctl --user enable jobhunt-boot.service
+systemctl --user list-timers jobhunt-6am.timer jobhunt-crosspost.timer jobhunt-canary.timer jobhunt-restart.timer --no-pager

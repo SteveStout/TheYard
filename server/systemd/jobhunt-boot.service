@@ -1,0 +1,17 @@
+# Three minutes after each boot, one line in J:\server\logs\boot.log: the uptime, each watched unit's state, whether
+# Chrome and the Claude app came back and whether J: reads; a theyard-gate.lock left by a dead pid is renamed. It is the
+# morning's proof that the 05:00 restart came back. Installed by server/publish-to-wickedawsome.sh.
+[Unit]
+Description=JobHunt after-boot line: what came back after a restart
+After=network-online.target jdrive.service
+Wants=jdrive.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 180
+ExecStart=/usr/bin/python3 -I /mnt/j/dispatch/box_restart.py --after-boot
+Environment=TZ=America/Chicago
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=default.target
