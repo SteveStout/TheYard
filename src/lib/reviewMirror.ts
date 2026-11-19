@@ -36,9 +36,6 @@ export const MIRROR = {
   slip: 'Two weeks in October, then the ratchet that turned it.',
   slipLink: 'Read the slip and the turn',
   stripLink: 'Read what they wrote',
-  foldAsk: 'Have ten minutes?',
-  foldLink: 'The full seven-stop tour is below',
-  foldTail: ', all optional.',
 } as const;
 
 /** Where the primary button goes: the Admin tab's tests card, which an address already brings into view. */

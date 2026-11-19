@@ -31,8 +31,10 @@ const sheets = import.meta.glob(['../components/**/*.module.css', '../library/**
 /**
  * A drawing is not an icon: the fallback car in VehicleImage is a picture at its
  * own size, and Ring.tsx is a gauge, scaled by its size prop from src/lib/ring.ts.
+ * The review route's lot tile draws the same kind of car at the picture's size, and
+ * its tick is a filled disc with a bold glyph, like the tests card's pass mark.
  */
-const DRAWINGS = ['VehicleImage.tsx', 'Ring.tsx'];
+const DRAWINGS = ['VehicleImage.tsx', 'Ring.tsx', 'LotTile.tsx', 'TickDisc.tsx'];
 
 /**
  * The strokes a sheet may write in a number of its own, by selector, each a
@@ -105,6 +107,9 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // Memory against traffic (ADR: Memory follows traffic): each scatter's frame and the straight
   // line through its dots. Drawings, not icons.
   'FollowsCard.module.css': ['.frame', '.trend'],
+  // The review route's quality spark (ADR: The review route gives a reason before it asks, the addendum on one unit):
+  // its floor, the line before and after the ratchet and the ratchet's dashed mark. A chart's line, not an icon.
+  'PathTile.module.css': ['.sparkBase', '.sparkBefore', '.sparkAfter', '.sparkMark'],
 };
 
 describe('the icons', () => {

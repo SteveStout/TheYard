@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { docKeyForSlug } from '../library/addresses';
 import { CARD_SLUGS } from './workbench';
-import { minutesLeft, REVIEW_ADDRESS, REVIEW_REPORT_PATH, REVIEW_STOPS } from './reviewStops';
+import { REVIEW_ADDRESS, REVIEW_REPORT_PATH, REVIEW_STOPS, tourLine } from './reviewStops';
 
 /** The views the app routes by ?view=, the ones a stop may name. */
 const VIEWS = ['inventory', 'admin', 'account', 'blog', 'review', 'recommendations'];
@@ -34,20 +34,31 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     ]);
   });
 
-  it('takes ten minutes, and counts down what is left from any stop', () => {
+  it('takes ten minutes', () => {
     expect(REVIEW_STOPS.reduce((sum, stop) => sum + stop.minutes, 0)).toBe(10);
-    expect(minutesLeft(0)).toBe(10);
-    expect(minutesLeft(2)).toBe(7);
-    expect(minutesLeft(6)).toBe(1);
-    expect(minutesLeft(7)).toBe(0);
-    expect(minutesLeft(-3)).toBe(10);
+  });
+
+  it('gives each tour cell its one line, word for word, with the live counts filled and none typed', () => {
+    const counts = { vehicles: '100,000', recommendations: '13' };
+    expect(REVIEW_STOPS.map((stop) => tourLine(stop, counts))).toEqual([
+      'Built with AI, measured on every version.',
+      'Live answer time, the Azure bill, time since the last roll, visitors.',
+      '100,000 vehicles and a room that bids back.',
+      'The bill by resource, shown in public.',
+      'Every suite, both stores, CodeRabbit on the pull request.',
+      'Azure SQL and Azure Cosmos DB, side by side.',
+      'Two pages and 13 named recommendations.',
+    ]);
+    const before = { vehicles: '', recommendations: '' };
+    expect(tourLine(REVIEW_STOPS[2], before)).toBe('Vehicles and a room that bids back.');
+    expect(tourLine(REVIEW_STOPS[6], before)).toBe('Two pages and the named recommendations.');
+    for (const stop of REVIEW_STOPS) expect(stop.line, stop.key).not.toMatch(/\d/);
   });
 
   it('opens only addresses this site serves, never a page elsewhere', () => {
     for (const stop of REVIEW_STOPS) {
       expect(stop.address.startsWith('/'), stop.address).toBe(true);
       expect(served(stop.address), stop.address).toBe(true);
-      for (const link of stop.links ?? []) expect(served(link.href), link.href).toBe(true);
     }
     expect(REVIEW_STOPS.map((stop) => stop.address)).toEqual([
       '/?doc=quality',
@@ -64,19 +75,9 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     expect(served('https://github.com/SteveStout/TheYard/actions')).toBe(false);
   });
 
-  it("names a decision record behind every stop: one the catalogue serves, seven distinct, none the stop's own address", () => {
-    const records = REVIEW_STOPS.map((stop) => stop.record);
-    expect(new Set(records).size).toBe(7);
-    for (const stop of REVIEW_STOPS) {
-      expect(served(`/?doc=${stop.record}`), stop.key).toBe(true);
-      expect(stop.address, stop.key).not.toBe(`/?doc=${stop.record}`);
-    }
-  });
-
   it('writes every line as a sentence that ends in a full stop', () => {
     for (const stop of REVIEW_STOPS) {
-      expect(stop.shows, stop.key).toMatch(/\.$/);
-      expect(stop.doThis, stop.key).toMatch(/\.$/);
+      expect(stop.line, stop.key).toMatch(/\.$/);
       expect(stop.title, stop.key).not.toMatch(/\.$/);
       expect(stop.minutes, stop.key).toBeGreaterThan(0);
     }
@@ -87,26 +88,15 @@ describe('the review route (ADR: Ten minutes, seven stops)', () => {
     expect(REVIEW_REPORT_PATH).toBe('/review');
   });
 
-  it('says only what its cards and a roll do: no link the card lacks, and a roll in place (ADR: Blue-green on a $13 plan, measured and held)', () => {
-    const stop = (key: string) => REVIEW_STOPS.find((each) => each.key === key);
-    expect(stop('spend')?.doThis).toBe('Open the cost card and read the bill by resource.');
-    expect(stop('gate')?.shows).toMatch(
-      /, with CodeRabbit reviewing the pull request, then a roll in place, where the gate's run ends; a run of its own reads the version back on both names and runs CI on main right after\.$/
-    );
-    expect(stop('gate')?.doThis).toBe(
-      'Read the suites and their times for the build you are looking at.'
-    );
+  it('says only what its cards and a roll do: no blue-green, no link the card lacks (ADR: Blue-green on a $13 plan, measured and held)', () => {
     for (const each of REVIEW_STOPS) {
-      expect(`${each.shows} ${each.doThis}`, each.key).not.toMatch(
-        /blue-green|no downtime|links to its place|opens the run on GitHub/
+      expect(each.line, each.key).not.toMatch(
+        /blue-green|no downtime|links to its place|on GitHub/
       );
     }
   });
 
-  it('ends at the resume and who vouches for it, with the recommendations page beside the PDF', () => {
-    const last = REVIEW_STOPS[REVIEW_STOPS.length - 1];
-    expect(last.title).toBe('The resume, and who vouches for it');
-    expect(last.links?.map((link) => link.href)).toEqual(['/?view=recommendations']);
-    expect(last.shows).not.toMatch(/\d/);
+  it('ends at the resume and who vouches for it', () => {
+    expect(REVIEW_STOPS[REVIEW_STOPS.length - 1].title).toBe('The resume, and who vouches for it');
   });
 });

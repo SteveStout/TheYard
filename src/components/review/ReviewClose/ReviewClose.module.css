@@ -1,0 +1,71 @@
+/**
+ * Does:      Lays out the close as the whole-page picture draws it (its .close, ported rule by rule): the words on the
+ *            left and the three buttons on the right in one row; under 1024 the buttons under the words; on a phone
+ *            each button the row's width.
+ * Does not:  Draw the panel's glass (panels.css does) or the pills' look (ReviewPage.module.css does).
+ * Used by:   ReviewClose.tsx.
+ */
+.close {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-5);
+}
+
+.readout {
+  margin: 0;
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.figure {
+  margin: 0;
+}
+
+.quote {
+  margin: var(--space-2) 0 0;
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  line-height: 1.45;
+}
+
+.who {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.who strong {
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.act {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-5);
+  font-size: var(--text-md);
+  white-space: nowrap;
+}
+
+@media (max-width: 1023.98px) {
+  .close {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 639.98px) {
+  .act {
+    flex: 1 1 100%;
+  }
+}

@@ -147,7 +147,12 @@ export default function App() {
           onAllPosts={go.closeBlogPost}
         />
       ) : address.reviewOpen ? (
-        <ReviewPage screen={screenOf(address.pageQuery)} onOpenDoc={go.openDocument} />
+        <ReviewPage
+          screen={screenOf(address.pageQuery)}
+          now={now}
+          onOpenDoc={go.openDocument}
+          onOpenSidebar={rail.open}
+        />
       ) : address.recommendationsOpen ? (
         <RecommendationsPage />
       ) : !address.inventoryOpen ? (

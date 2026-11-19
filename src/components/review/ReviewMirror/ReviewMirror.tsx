@@ -2,8 +2,8 @@
  * Does:      Draws the review route's second first screen, at /?view=review&for=ai (ADR: The review route gives a reason
  *            before it asks, the addendum on the mirror): written to the hiring manager's own problem with AI-written
  *            code, the answer in his own words, the one primary move to what this version had to pass with Book 20
- *            minutes beside it, the byline and resume, two record tiles, the live gate panel and the strip of names.
- *            Every button reports its action.
+ *            minutes beside it, the byline and resume, two record tiles and the live gate panel. Every button reports
+ *            its action; the strip of names under it is the page's own section (ReviewPage.tsx draws it).
  * Does not:  Read the API (useReviewReadings.ts does) or hold the words (reviewMirror.ts does).
  * Used by:   ReviewPage.tsx.
  */
@@ -11,7 +11,6 @@ import type { MouseEvent } from 'react';
 import type { DocKey } from '../../../library/documents';
 import { landOnSection } from '../../../library/pendingAnchor';
 import type { TestSummary } from '../../../lib/landingProof';
-import type { Recommendation } from '../../../lib/recommendations';
 import { GATE_ADDRESS, MIRROR, MIRROR_TILES } from '../../../lib/reviewMirror';
 import type { ReviewAction } from '../../../lib/reviewProgress';
 import {
@@ -22,7 +21,6 @@ import {
   type HeldQuality,
 } from '../../../lib/reviewVerdict';
 import { GatePanel } from '../GatePanel';
-import { NameStrip } from '../NameStrip';
 import pills from '../ReviewPage/ReviewPage.module.css';
 import verdict from '../ReviewVerdict/ReviewVerdict.module.css';
 import styles from './ReviewMirror.module.css';
@@ -33,13 +31,11 @@ const plainClick = (event: MouseEvent) =>
 
 export function ReviewMirror({
   summary,
-  recommendations,
   gate,
   onAction,
   onOpenDoc,
 }: {
   summary: TestSummary | null;
-  recommendations: Recommendation[] | null;
   /** What the build carries about this version: gated, its version, the quality held and CodeRabbit's read. */
   gate: {
     gated: boolean;
@@ -122,9 +118,6 @@ export function ReviewMirror({
         review={gate.review}
         onSlip={openSlip}
       />
-      <div className={styles.strip}>
-        <NameStrip recommendations={recommendations} onFollow={() => onAction('recommendations')} />
-      </div>
     </div>
   );
 }
