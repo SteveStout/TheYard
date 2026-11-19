@@ -10,7 +10,7 @@ namespace TheYard.Api.Features.Review;
 /// </summary>
 public static class ReviewEndpoints
 {
-    /// <summary>Maps POST /api/review/reached and GET /api/admin/review.</summary>
+    /// <summary>Maps POST /api/review/reached, GET /api/admin/review, GET /api/review/trend and GET /api/review/lot.</summary>
     /// <param name="app">The built host's routes.</param>
     public static IEndpointRouteBuilder MapReviewEndpoints(this IEndpointRouteBuilder app)
     {
@@ -31,6 +31,19 @@ public static class ReviewEndpoints
             .WithName("GetReviewFunnel")
             .WithTags("Admin")
             .WithSummary("How far visitors got along the review route: opened, each stop reached, and by tagged code, for 24h, 7d, 30d or 90d");
+        // The short path's two reads, on a page strangers open: the chart's readings, kept until the history file
+        // changes, and one live lot a store, kept fifteen seconds and shared by every visitor in that window.
+        app.MapGet("/api/review/trend", Trend)
+            .WithName("GetReviewTrend")
+            .WithTags("Review")
+            .WithSummary("The quality number the Quality page charts first, by version, for the review route's short path")
+            .Produces<ReviewTrend>(StatusCodes.Status200OK);
+
+        app.MapGet("/api/review/lot", Lot)
+            .WithName("GetReviewLot")
+            .WithTags("Review")
+            .WithSummary("One live lot for the review route's short path: the auction closing soonest with a bid, kept fifteen seconds")
+            .Produces<ReviewLot>(StatusCodes.Status200OK);
         // #endregion review-endpoints
         return app;
     }
@@ -42,6 +55,12 @@ public static class ReviewEndpoints
                 detail: $"A report carries a stop, 0 (opened) to {ReviewFolding.LastStop}, or an action, one of {string.Join(", ", ReviewActions.Names)}.",
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Not a stop or an action on the review route");
+
+    private static async Task<Ok<ReviewTrend>> Trend(ReadReviewTrendHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadReviewTrendQuery(), cancellation));
+
+    private static async Task<Ok<ReviewLot>> Lot(ReadReviewLotHandler handler, CancellationToken cancellation) =>
+        TypedResults.Ok(await handler.HandleAsync(new ReadReviewLotQuery(), cancellation));
 
     private static async Task<Ok<ReviewFunnel>> Funnel(string? window, ReadReviewFunnelHandler handler, CancellationToken cancellation) =>
         TypedResults.Ok(await handler.HandleAsync(new ReadReviewFunnelQuery(ReviewWindows.Parse(window)), cancellation));

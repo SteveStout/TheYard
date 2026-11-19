@@ -80,6 +80,33 @@ public sealed class ReviewEndpointTests(WebApplicationFactory<Program> factory) 
     }
 
     [Fact]
+    public async Task A_visitor_on_the_mirror_is_counted_under_it_and_a_screen_the_route_does_not_draw_is_dropped_not_refused()
+    {
+        string mark = string.Concat(Guid.NewGuid().ToString("N").Select(hex => "ghjkmnpqrsuvwxyz"[Convert.ToInt32(hex.ToString(), 16)]));
+        var person = As($"{Chrome} Mirror/{mark}");
+        var before = await MirrorRow(person);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await person.PostAsJsonAsync("/api/review/reached", new { stop = 0, screen = "mirror" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await person.PostAsJsonAsync("/api/review/reached", new { action = "slip", screen = "mirror" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await person.PostAsJsonAsync("/api/review/reached", new { stop = 0, screen = "sideways" })).StatusCode);
+        await Drain();
+
+        var after = await MirrorRow(person);
+        Assert.Equal(before.Opened + 1, after.Opened);
+        Assert.Equal(before.Second + 1, after.Second);
+        Assert.Equal(before.Running + 1, after.Running);
+    }
+
+    /// <summary>The card's row for the mirror over the week, as three counts.</summary>
+    private static async Task<(int Opened, int Second, int Running)> MirrorRow(HttpClient client)
+    {
+        using var funnel = JsonDocument.Parse(await client.GetStringAsync("/api/admin/review?window=7d"));
+        var row = funnel.RootElement.GetProperty("second").GetProperty("by_screen").EnumerateArray()
+            .Single(each => each.GetProperty("screen").GetString() == "mirror");
+        return (row.GetProperty("opened").GetInt32(), row.GetProperty("second_action").GetInt32(), row.GetProperty("running_or_book").GetInt32());
+    }
+
+    [Fact]
     public async Task An_unknown_window_reads_the_week_and_the_four_windows_answer()
     {
         var client = As(Chrome);

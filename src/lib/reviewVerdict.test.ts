@@ -101,4 +101,20 @@ describe('the review route first screen (ADR: The review route gives a reason be
     });
     expect(liveSentence(false)).toEqual({ lead: 'Live system.', rest: null });
   });
+
+  it('counts the tile from the suites the landing counts once, so a failure there still leaves the passed figure', () => {
+    const failing: TestSummary = {
+      ...summary,
+      failed: 3,
+      suites: summary.suites.map((suite) =>
+        suite.id === 'vitest' ? { ...suite, passed: 719, failed: 3 } : suite
+      ),
+    };
+    const landing = proofFigures(failing, 0)?.find((figure) => figure.key === 'tests')?.figure;
+    expect(testsTile(failing, { held: 14, of: 15 })).toMatchObject({
+      figure: landing,
+      source: 'TheYard, read from the build. 14 of 15 quality numbers held.',
+    });
+    expect(landing).toBe('3,542');
+  });
 });

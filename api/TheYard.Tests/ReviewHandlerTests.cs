@@ -120,6 +120,23 @@ public sealed class ReviewHandlerTests
     }
 
     [Fact]
+    public async Task A_visitor_whose_only_report_is_a_button_is_counted_as_opened_and_in_both_figures_for_the_booking_button()
+    {
+        var store = new MemoryReviewStore();
+        var collector = new ReviewReachCollector(store, NullLogger<ReviewReachCollector>.Instance);
+        var record = new RecordReviewReachHandler(collector, new FixedClock(Now));
+        // The opening report was lost (a closed tab, a blocked request); the button's report arrived.
+        Assert.True(await record.HandleAsync(new RecordReviewReachCommand("solo", null, null, "book", "verdict"), CancellationToken.None));
+        await collector.DrainAsync(CancellationToken.None);
+
+        var week = await new ReadReviewFunnelHandler(store, new FixedClock(Now)).HandleAsync(new ReadReviewFunnelQuery(ReviewWindow.Week), CancellationToken.None);
+        Assert.Equal(1, week.Opened);
+        Assert.Equal([1, 0, 0, 0, 0, 0, 0, 0], week.ReachedByStop);
+        Assert.Equal((1, 1), (week.Second.SecondAction, week.Second.RunningOrBook));
+        Assert.Equal(1, week.Second.ByScreen.Single(row => row.Screen == "verdict").Opened);
+    }
+
+    [Fact]
     public async Task The_funnel_counts_each_visitor_once_at_the_highest_stop_with_eight_places_and_the_codes_newest_first()
     {
         var store = new MemoryReviewStore();
