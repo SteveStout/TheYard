@@ -71,4 +71,6 @@ public sealed record RunGuards(IMount Mount, IRunLock Lock, IDesktop Desktop, Ti
 /// <param name="Recounter">The live invite count.</param>
 /// <param name="Feed">The hot-manager feed, the morning's first lane.</param>
 /// <param name="Network">The network log's LinkedIn half, after the messages lane.</param>
-public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRunner Runner, InviteRecount Recounter, FeedLane Feed, NetworkLane Network, JobLinks? Links = null);
+/// <param name="Links">The job links an invite note may carry.</param>
+/// <param name="Comments">The comment line, after the feed.</param>
+public sealed record LaneWork(DayReader Reader, WorklistBuilder Builder, LaneRunner Runner, InviteRecount Recounter, FeedLane Feed, NetworkLane Network, JobLinks? Links = null, CommentLine? Comments = null);

@@ -14,7 +14,10 @@ namespace JobHunt.Server.Application.Shared.Config;
 /// The feed reads the share's inputs it ranks from and LinkedIn, and live it gets `computer` for scrolling and
 /// screenshots only; no form tool, so it can fill nothing and send nothing. The network lane reads LinkedIn Messaging
 /// the same way, with nothing of the share's but its run folder and its lane doc. A slot run for one caught role tells
-/// the feed so in the prompt and lets it read that role's hand-off and nothing more; the lane doc is unchanged.
+/// the feed so in the prompt and lets it read that role's hand-off and nothing more; the lane doc is unchanged. The comment
+/// line runs twice: a read run with the feed's reading tools, and, live and only when the roll picked any, an edit run
+/// whose one acting tool is `computer`, for the real clicks and keys of LinkedIn's own Edit; no form tool, so nothing can
+/// replace a comment's text wholesale. Its scope, Steve's own comments and one line under each, is the lane doc's.
 /// </summary>
 public static class ClaudeArguments
 {
@@ -108,6 +111,17 @@ public static class ClaudeArguments
         return arguments;
     }
 
+    /// <summary>The argument list for the comment line's edit run, live only: the read run's list and prompt, the edit phase named.</summary>
+    /// <param name="config">The lane's settings.</param>
+    /// <param name="share">The share's real path.</param>
+    /// <param name="runFolder">The run folder's real path.</param>
+    public static IReadOnlyList<string> CommentEdit(LaneConfig config, string share, string runFolder)
+    {
+        var arguments = For(config, Lane.Commentline, share, runFolder, dry: false).ToList();
+        arguments[1] = $"Read {share}/nightly/{RunSlot.Doc(Lane.Commentline)} and do its section Edit and nothing else. JOBHUNT={share}. RUN_DIR={runFolder}. PHASE=edit. Worklist at {runFolder}/{CommentPicks.EditFile}. DRY_RUN=false.";
+        return arguments;
+    }
+
     /// <summary>The allowed tools: exactly the browser tools the lane needs, plus Read and Write under the run folder.</summary>
     /// <param name="lane">The lane.</param>
     /// <param name="share">The share's real path.</param>
@@ -142,7 +156,7 @@ public static class ClaudeArguments
             }
         }
         tools.AddRange(Reading.Select(tool => Chrome + tool));
-        if (!dry && lane is Lane.Feed or Lane.Network)
+        if (!dry && lane is Lane.Feed or Lane.Network or Lane.Commentline)
         {
             tools.Add(Chrome + "computer");
         }
@@ -170,6 +184,7 @@ public static class ClaudeArguments
             Lane.Feed when role is not null => $"Candidates go to {runFolder}/candidates.json. {RolePrompt(share, role)}",
             Lane.Feed => $"Candidates go to {runFolder}/candidates.json.",
             Lane.Network => $"High-water mark in {runFolder}/high-water.txt. Threads go to {runFolder}/network-threads.tsv and {runFolder}/threads/.",
+            Lane.Commentline => $"PHASE=read. WINDOW_HOURS={CommentPicks.Window(dry)}. Comments go to {runFolder}/comments.json.",
             Lane.Apply when role is not null => $"Worklist at {runFolder}/worklist.tsv. {ApplyRolePrompt(role)}",
             _ => $"Worklist at {runFolder}/worklist.tsv.",
         })
