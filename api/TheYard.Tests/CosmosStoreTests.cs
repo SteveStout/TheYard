@@ -11,8 +11,10 @@ namespace TheYard.Tests;
 /// them against the tests- containers on the emulator beside its cosmos job,
 /// which is thrown away with the runner, so nothing they write outlives the run
 /// (ADR: The gate runs where the memory is, the addendum of 1.0.5.94). On a laptop
-/// they run against whatever Cosmos__AccountEndpoint and Cosmos__Credential
-/// say. They are not skipped: run with no endpoint they fail and say why,
+/// they run against the emulator Cosmos__AccountEndpoint names, and any address
+/// that is not this machine is refused before a client is made (ADR: Automated
+/// tests never touch a real database or permanent storage). They are not
+/// skipped: run with no endpoint they fail and say why,
 /// because a store test that passes with no store is a check that cannot fail
 /// (ADR: A second store on Cosmos DB, and what it costs).
 /// </summary>
@@ -21,10 +23,17 @@ internal static class CosmosLive
     public const string Trait = "Store";
     public const string Value = "cosmos";
 
-    public static string Endpoint =>
+    public static string Endpoint => Checked(
         Environment.GetEnvironmentVariable("Cosmos__AccountEndpoint")
         ?? throw new InvalidOperationException(
-            "this test needs Cosmos__AccountEndpoint in the environment; it runs on the runner as the signed-in principal, and CI filters it out with --filter \"Store!=cosmos\"");
+            "this test needs Cosmos__AccountEndpoint in the environment, the emulator's address; CI filters it out with --filter \"Store!=cosmos\""));
+
+    /// <summary>The address, when it is this machine; any other is refused, so these tests, which write, never write a real account.</summary>
+    /// <param name="endpoint">The address Cosmos__AccountEndpoint names.</param>
+    public static string Checked(string endpoint) =>
+        new Uri(endpoint).IsLoopback
+            ? endpoint
+            : throw new InvalidOperationException($"{endpoint} is not this machine; the store tests write, so they run on the emulator only");
 
     /// <summary>A store over the test containers, with its own ring so a test can read what it ran.</summary>
     public static (CosmosStore Store, StoreRingBuffer Log) Open()
@@ -34,7 +43,7 @@ internal static class CosmosLive
             Endpoint,
             Environment.GetEnvironmentVariable("Cosmos__Database") ?? "theyard",
             "tests-",
-            Environment.GetEnvironmentVariable("Cosmos__Credential") ?? "azure-cli",
+            Environment.GetEnvironmentVariable("Cosmos__Credential") ?? "emulator",
             Environment.GetEnvironmentVariable("Azure__ClientId") ?? "2888a6ca-be1c-46a5-a1de-c666b1d193e5",
             log);
         return (store, log);
