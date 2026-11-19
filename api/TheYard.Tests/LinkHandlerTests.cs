@@ -253,8 +253,24 @@ public sealed class LinkHandlerTests
         var settings = new ConfigurationBuilder().AddJsonFile(Path.Combine(Repo.Root(), "api", "TheYard.Api", "appsettings.json")).Build();
         var targets = new TheYard.Api.Features.Links.ConfiguredLinkTargets(settings);
 
-        Assert.Equal(["email", "github", "linkedin", "linkedin-recs"], targets.Keys);
+        Assert.Equal(["book", "email", "github", "linkedin", "linkedin-recs"], targets.Keys);
+        Assert.Equal(Uri.UriSchemeMailto, targets.For("book")!.Scheme);
         Assert.Equal(new Uri("https://www.linkedin.com/in/stevenwstout/details/recommendations/"), targets.For("linkedin-recs"));
+    }
+
+    [Fact]
+    public void The_two_mailto_keys_hold_a_mailto_only_and_the_https_section_never_holds_one()
+    {
+        var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Links:Book"] = "https://example.com/book",
+            ["Links:Email"] = "mailto:someone@example.com?subject=Hi",
+            ["Links:Go:github"] = "mailto:someone@example.com",
+        }).Build();
+        var targets = new TheYard.Api.Features.Links.ConfiguredLinkTargets(settings);
+
+        Assert.Equal(["email"], targets.Keys);
+        Assert.Null(targets.For("book"));
     }
 
     [Fact]

@@ -172,6 +172,9 @@ public sealed class ReviewDocument
     /// <summary>The last report that day (<c>last_seen</c>).</summary>
     public DateTimeOffset LastSeen { get; set; }
 
+    /// <summary>The buttons pressed that day, each once; absent on a document written before actions were kept, which reads as none (<c>actions</c>).</summary>
+    public List<string>? Actions { get; set; }
+
     /// <summary>The id for a visitor on a day.</summary>
     /// <param name="day">The UTC day.</param>
     /// <param name="hash">The visitor's hash.</param>

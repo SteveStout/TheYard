@@ -1,8 +1,32 @@
 /**
- * Does:      Gives the review route card's bars their one series colour, the first series' teal, never a status colour.
+ * Does:      Gives the review route card's bars their one series colour, the first series' teal, never a status colour,
+ *            and sets the two figures under the bars as a pair of label and value rows.
  * Does not:  Draw the bars, the track or the counts (PathBars and ActivityCard.module.css do) or the card's frame.
  * Used by:   ReviewCard.tsx.
  */
 .reach {
   color: var(--color-series-1);
+}
+
+.figures {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+}
+
+.figure {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.figure dt {
+  color: var(--color-text-muted);
+}
+
+.figure dd {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
 }

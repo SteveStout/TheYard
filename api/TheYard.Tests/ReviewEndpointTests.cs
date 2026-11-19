@@ -44,6 +44,10 @@ public sealed class ReviewEndpointTests(WebApplicationFactory<Program> factory) 
         Assert.Equal(HttpStatusCode.NoContent, (await person.PostAsJsonAsync("/api/review/reached", new { stop = 0, r = code })).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await person.PostAsJsonAsync("/api/review/reached", new { stop = 3, r = code })).StatusCode);
         await Problem.Is(await person.PostAsJsonAsync("/api/review/reached", new { stop = 8, r = code }), HttpStatusCode.BadRequest);
+        // A button pressed is reported by its name; a name off the list, or a report with neither, is refused.
+        Assert.Equal(HttpStatusCode.NoContent, (await person.PostAsJsonAsync("/api/review/reached", new { action = "book", r = code })).StatusCode);
+        await Problem.Is(await person.PostAsJsonAsync("/api/review/reached", new { action = "elsewhere", r = code }), HttpStatusCode.BadRequest);
+        await Problem.Is(await person.PostAsJsonAsync("/api/review/reached", new { r = code }), HttpStatusCode.BadRequest);
         // A scanner is answered and never counted.
         Assert.Equal(HttpStatusCode.NoContent, (await As("curl/8.5.0").PostAsJsonAsync("/api/review/reached", new { stop = 7, r = scanned })).StatusCode);
         await Drain();
@@ -67,6 +71,11 @@ public sealed class ReviewEndpointTests(WebApplicationFactory<Program> factory) 
         Assert.Matches(@"^\d{4}-\d{2}-\d{2}$", root.GetProperty("counted_from").GetString()!);
         Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("source").GetString()));
         Assert.DoesNotContain(scanned, root.GetRawText(), StringComparison.Ordinal);
+        // The two figures: this visitor reached a stop and pressed the booking button, so both count them.
+        var second = root.GetProperty("second");
+        Assert.True(second.GetProperty("second_action").GetInt32() >= 1);
+        Assert.True(second.GetProperty("running_or_book").GetInt32() >= 1);
+        Assert.False(string.IsNullOrWhiteSpace(second.GetProperty("counted_from").GetString()));
     }
 
     [Fact]

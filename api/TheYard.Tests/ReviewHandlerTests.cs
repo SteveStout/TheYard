@@ -47,6 +47,46 @@ public sealed class ReviewHandlerTests
     }
 
     [Fact]
+    public async Task A_report_carries_a_stop_or_an_action_and_a_name_off_the_list_is_refused()
+    {
+        var offers = new Offers();
+        var handler = new RecordReviewReachHandler(offers, new FixedClock(Now));
+
+        Assert.True(await handler.HandleAsync(new RecordReviewReachCommand("hash", null, "zzrev1", "proof"), CancellationToken.None));
+        Assert.True(await handler.HandleAsync(new RecordReviewReachCommand("hash", 2, null, "stop-gate"), CancellationToken.None));
+        Assert.False(await handler.HandleAsync(new RecordReviewReachCommand("hash", null, null, "elsewhere"), CancellationToken.None));
+        Assert.False(await handler.HandleAsync(new RecordReviewReachCommand("hash", null, null, null), CancellationToken.None));
+        Assert.False(await handler.HandleAsync(new RecordReviewReachCommand("hash", 9, null, "proof"), CancellationToken.None));
+
+        Assert.Equal(
+            [new ReviewReach("hash", "2026-11-04", 0, "zzrev1", Now, "proof"), new ReviewReach("hash", "2026-11-04", 2, null, Now, "stop-gate")],
+            offers.Taken);
+    }
+
+    [Fact]
+    public async Task The_funnel_counts_a_second_action_and_the_running_system_or_the_booking_button_once_a_visitor()
+    {
+        var store = new MemoryReviewStore();
+        await store.KeepAsync([
+            // Opened and left, kept before actions were: in neither figure.
+            new("a", "2026-11-04", 0, null, Now.AddHours(-2), Now.AddHours(-2)),
+            // The resume alone: a second action, not the running system.
+            new("b", "2026-11-04", 0, null, Now.AddHours(-2), Now.AddHours(-2), ["resume"]),
+            // The booking button on one day and the resume on the next: one visitor, in both figures.
+            new("c", "2026-11-03", 0, null, Now.AddDays(-1), Now.AddDays(-1), ["book"]),
+            new("c", "2026-11-04", 0, null, Now.AddHours(-1), Now.AddHours(-1), ["resume"]),
+            // A stop past the opening counts in both, with no action at all.
+            new("d", "2026-11-04", 2, null, Now.AddHours(-1), Now.AddHours(-1), []),
+        ], CancellationToken.None);
+        var handler = new ReadReviewFunnelHandler(store, new FixedClock(Now));
+
+        var week = await handler.HandleAsync(new ReadReviewFunnelQuery(ReviewWindow.Week), CancellationToken.None);
+        Assert.Equal(4, week.Opened);
+        Assert.Equal((3, 2), (week.Second.SecondAction, week.Second.RunningOrBook));
+        Assert.Equal(ReviewActions.CountedFrom, week.Second.CountedFrom);
+    }
+
+    [Fact]
     public async Task The_funnel_counts_each_visitor_once_at_the_highest_stop_with_eight_places_and_the_codes_newest_first()
     {
         var store = new MemoryReviewStore();
@@ -88,6 +128,7 @@ public sealed class ReviewHandlerTests
         Assert.Equal(Enumerable.Repeat(0, 8), funnel.ReachedByStop);
         Assert.Empty(funnel.ByCode);
         Assert.Null(funnel.CountedFrom);
+        Assert.Equal((0, 0), (funnel.Second.SecondAction, funnel.Second.RunningOrBook));
     }
 
     [Theory]

@@ -14,6 +14,12 @@ export type ReviewWindow = (typeof REVIEW_WINDOWS)[number];
 /** One tagged code's row, as the API answers it. */
 export type ReviewCodeRow = { code: string; stop: number; minutes: number; last_day: string };
 
+/**
+ * The card's two figures (ADR: Ten minutes, seven stops, the addendum on the second actions), each a count of the
+ * visitors who opened: any second action or a stop past the opening, and the running system or the booking button.
+ */
+export type ReviewSecond = { second_action: number; running_or_book: number; counted_from: string };
+
 /** The card's report, as GET /api/admin/review answers it. */
 export type ReviewFunnel = {
   available: boolean;
@@ -24,7 +30,41 @@ export type ReviewFunnel = {
   by_code: ReviewCodeRow[];
   counted_from: string | null;
   source: string;
+  /** Absent from an answer made before the actions were counted, which reads as none. */
+  second?: ReviewSecond;
 };
+
+/** One of the card's two figures: what it counts, how many and their share of the visitors who opened. */
+export type SecondFigure = { key: string; label: string; count: number; percent: number };
+
+/** The two figures for a window, each as a count and a whole percent of the visitors who opened, never above 100. */
+export function secondFigures(funnel: Pick<ReviewFunnel, 'opened' | 'second'>): SecondFigure[] {
+  const opened = Math.max(0, funnel.opened);
+  const figure = (key: string, label: string, raw: number | undefined): SecondFigure => {
+    const count = Math.min(opened, Math.max(0, raw ?? 0));
+    return { key, label, count, percent: opened === 0 ? 0 : Math.round((count * 100) / opened) };
+  };
+  return [
+    figure('second', 'reached a second action', funnel.second?.second_action),
+    figure(
+      'running',
+      'reached the running system or the booking button',
+      funnel.second?.running_or_book
+    ),
+  ];
+}
+
+/** A figure in words: "3 of 10 who opened, 30%". */
+export function figureWords(figure: SecondFigure, opened: number): string {
+  return `${figure.count} of ${Math.max(0, opened)} who opened, ${figure.percent}%`;
+}
+
+/** The line under the two figures: the day they started counting. */
+export function secondCountedLine(second: ReviewSecond | undefined): string {
+  return second === undefined
+    ? 'The two figures are not counted on this version.'
+    : `These two figures count from ${second.counted_from}, the day the buttons started reporting.`;
+}
 
 /** A window as its pill says it: "24 h", "7 d". */
 export function windowLabel(window: ReviewWindow): string {

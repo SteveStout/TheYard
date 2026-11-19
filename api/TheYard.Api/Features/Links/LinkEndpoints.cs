@@ -43,8 +43,10 @@ public static class LinkEndpoints
         return app;
     }
 
+    // The address goes out exactly as configuration spells it: Uri.ToString() would unescape a mailto's subject
+    // and body into spaces and line breaks, which is not a Location a browser can follow.
     private static async Task<Results<RedirectHttpResult, NotFound>> Go(string key, GoHandler handler, CancellationToken cancellation) =>
-        await handler.HandleAsync(new GoQuery(key), cancellation) is { } target ? TypedResults.Redirect(target.ToString(), permanent: false) : TypedResults.NotFound();
+        await handler.HandleAsync(new GoQuery(key), cancellation) is { } target ? TypedResults.Redirect(target.OriginalString, permanent: false) : TypedResults.NotFound();
 
     private static async Task<Results<NoContent, BadRequest>> PageOpen(string? r, string? path, ReportPageOpenHandler handler, CancellationToken cancellation) =>
         await handler.HandleAsync(new ReportPageOpenCommand(r, path), cancellation) ? TypedResults.NoContent() : TypedResults.BadRequest();
