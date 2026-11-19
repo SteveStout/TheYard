@@ -154,12 +154,23 @@ jobs:
   cosmos:
     needs: number
     runs-on: ubuntu-24.04
-    # The federated credential for the Cosmos DB passes is issued to this environment, so a
+    # The federated credential for the one read of the account is issued to this environment, so a
     # branch name never has to be registered in Azure.
     environment: gate
     timeout-minutes: 30
+    # Every Cosmos DB pass runs on the Azure Cosmos DB emulator beside the job, never on the account
+    # the sites read, but for one read: a test writes into a database thrown away with the runner,
+    # so nothing a test does outlives it and no pass can throttle the live sites (ADR-098, the addendum of 1.0.5.94).
+    services:
+      cosmos:
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-latest@sha256:db53613dae19d0a3d5ad50688d14aa6e957af082dafea56b52e1bd3a6b3f1406
+        ports:
+          - 8081:8081
+        env:
+          ENABLE_TELEMETRY: "false"
     env:
-      COSMOS_ENDPOINT: https://cosmos-theyard-ss.documents.azure.com:443/
+      COSMOS_ENDPOINT: http://localhost:8081/
+      COSMOS_ACCOUNT: https://cosmos-theyard-ss.documents.azure.com:443/
     steps:
       - uses: actions/checkout@v7
         with:
@@ -180,14 +191,19 @@ jobs:
         run: |
           node docs/images/og.mjs
           python3 scripts/strip_c2pa.py docs/images
-      # A login that fails does not stop the run here: the live Cosmos DB tests that need it then
-      # fail on their own, by name, and the verdict turns the run red.
+      # The one read of the account itself: the keyset test asks the live catalogue what a deep page
+      # costs in request units, which the emulator does not report. It only reads. A login that fails
+      # does not stop the run here: that test then fails on its own, by name.
       - uses: azure/login@v3
         continue-on-error: true
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # The database and the eight tests- containers the suite was written against, each shaped as its
+      # infra/cosmos file says; no catalogue, which the experiment card's empty state reads.
+      - name: The emulator's containers
+        run: node scripts/cosmos_emulator.mjs "$COSMOS_ENDPOINT" tests- activity,bids,logs,machines,photos,resets,users,vehicles
       # The build's warnings are judged in the dotnet job; this build only has to be there for the passes.
       - name: dotnet build, for the passes
         run: dotnet build api/TheYard.slnx -c Debug > "$RAW/cosmos-build.txt" 2>&1 || { tail -n 20 "$RAW/cosmos-build.txt"; exit 1; }
@@ -200,16 +216,16 @@ jobs:
           npx vite build
 
       # #region both-stores
-      # The same xUnit suite again, booted on Cosmos DB: the process pointed at the account and the
-      # tests- containers, when the commit touched what it reads; between the live tests that need
-      # the account and the three store specs in the browser.
+      # The same xUnit suite again, booted on Cosmos DB: the process pointed at the emulator and the
+      # tests- containers, when the commit touched what it reads; between the store tests that drive
+      # the adapters directly and the three store specs in the browser.
       - name: The Cosmos DB passes
         if: always()
         run: |
           d="$RAW/dotnet.result"; n="$RAW/node.result"; : > "$d"; : > "$n"
           t() { local s=$SECONDS code=0; "$@" || code=$?; echo "$code $((SECONDS - s))"; }
-          export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT"
-          read code s < <(t bash -c 'dotnet test api --no-build --filter "Store=cosmos" --logger "trx;LogFileName=xunit-live.trx" --results-directory "$RAW/trx" > "$RAW/xunit-live.txt" 2>&1')
+          export Cosmos__AccountEndpoint="$COSMOS_ENDPOINT" Cosmos__Credential=emulator
+          read code s < <(t env Cosmos__CatalogueAccountEndpoint="$COSMOS_ACCOUNT" bash -c 'dotnet test api --no-build --filter "Store=cosmos" --logger "trx;LogFileName=xunit-live.trx" --results-directory "$RAW/trx" > "$RAW/xunit-live.txt" 2>&1')
           echo "live=$code" >> "$d"; echo "live_s=$s" >> "$d"
           export Cosmos__ContainerPrefix="tests-"
           if [ "$COSMOS_NEEDED" = 1 ]; then

@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.94** (2026-11-18): The gate's Cosmos DB tests no longer touch the live database: its cosmos job runs every Cosmos DB pass against Microsoft's emulator beside it, thrown away with the run, so no test leaves anything behind and no gate can throttle the live site.
 - **1.0.5.93** (2026-11-18): The header badge's popover, what a version had to pass, now opens on top of the blog's filter panel instead of under it: it is drawn into the page's body, out of the store bar whose frost held its layer, and a browser test at 1440 and at 390 checks that the topmost element across the open popover is its own.
 - **1.0.5.92** (2026-11-18): Two more of the blog's browser tests now hold on main's CI as they do in the gate: the keyword chip's test reads the list until its redraw settles instead of the moment the address moves, and the viewer's 200 ms budget, like the other timing budgets, is held on the built site only.
 - **1.0.5.91** (2026-11-18): CI on main runs the browser suite on the dev server, which sends every module unminified and React's development build, so the blog's first-screen bytes and its typing budget are now held only on the built site the gate serves, where 1.0.5.90 passed them.
