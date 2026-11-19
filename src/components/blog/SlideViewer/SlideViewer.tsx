@@ -2,8 +2,9 @@
  * Does:      Shows a post's slides full size in a native dialog (ADR: Every LinkedIn post is also a blog post, the addendum
  *            on the slide viewer): the slide with its alt text as the caption, Prev and Next, "3 of 11", a strip of every
  *            slide, a click to zoom, a swipe on a phone, Escape and a tap outside to close, focus kept inside while it is
- *            open and handed back to the slide that opened it, a link to the slide to copy, and the slides either side
- *            fetched ahead. The thumbnail the strip already holds is drawn at once under the full slide.
+ *            open and handed back to the slide that opened it, Prev and Next marked disabled at the ends but kept
+ *            focusable so the focus and the arrow keys stay in the viewer, each turn announced, a link to the slide to
+ *            copy, and the slides either side fetched ahead. The thumbnail the strip already holds is drawn at once under the full slide.
  * Does not:  Decide which slide the address names (BlogPage does) or keep any count (useBlogReport sends the events).
  * Used by:   BlogPostCard.tsx.
  */
@@ -90,7 +91,7 @@ export function SlideViewer({
       <div className={styles.top}>
         <p className={styles.where}>
           <b>{title}</b>
-          <span data-testid="slide-count">
+          <span data-testid="slide-count" aria-live="polite" aria-atomic="true">
             Slide {at + 1} of {images.length}
           </span>
         </p>
@@ -144,7 +145,7 @@ export function SlideViewer({
           type="button"
           className={`${styles.arrow} ${styles.prev}`}
           onClick={() => move(-1)}
-          disabled={at === 0}
+          aria-disabled={at === 0}
           aria-label="Previous slide"
         >
           <span aria-hidden="true">‹</span>
@@ -182,7 +183,7 @@ export function SlideViewer({
           type="button"
           className={`${styles.arrow} ${styles.next}`}
           onClick={() => move(1)}
-          disabled={at === images.length - 1}
+          aria-disabled={at === images.length - 1}
           aria-label="Next slide"
         >
           <span aria-hidden="true">›</span>

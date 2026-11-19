@@ -11,8 +11,15 @@ namespace TheYard.Tests;
 /// another site; and HSTS with its subdomains, never preloaded. Held on a page, an API route and a picture, and the two
 /// exceptions held too: the API reference's own inline scripts, and the resume's PDF, which the site frames itself.
 /// </summary>
-public sealed class SecurityHeadersTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public sealed class SecurityHeadersTests(SecurityHeadersTests.RelationalHost factory) : IClassFixture<SecurityHeadersTests.RelationalHost>
 {
+    /// <summary>The site's host on the relational path even when the suite is pointed at Cosmos DB: no header here depends on the store.</summary>
+    public sealed class RelationalHost : WebApplicationFactory<Program>
+    {
+        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder) =>
+            builder.UseSetting("Cosmos:AccountEndpoint", "");
+    }
+
     private static string Header(HttpResponseMessage answer, string name) =>
         answer.Headers.TryGetValues(name, out var values) ? string.Join(", ", values)
         : answer.Content.Headers.TryGetValues(name, out var content) ? string.Join(", ", content)
