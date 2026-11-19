@@ -32,7 +32,7 @@ public static class InsightsCard
     /// <summary>The sampling dial runs the other way: what was dropped by sampling is read against these.</summary>
     public static readonly (double Amber, double Red) Dropped = CloudThresholds.InsightsDropped;
 
-    public static readonly IReadOnlyList<string> Readings = ["ingest_today_gb", "ingest_month_gb", "sampling", "capped", "ingest_component_today_gb"];
+    public static readonly IReadOnlyList<string> Readings = ["ingest_today_gb", "ingest_month_gb", "sampling", "capped", "ingest_component_today_gb", "ingest_day_gb"];
 
     /// <summary>
     /// The reading a cap is read against: a workspace's quota against everything the workspace took, a component's cap
@@ -53,7 +53,8 @@ public static class InsightsCard
         double cappedHours = inputs.Buckets.Sum(b => b.Sums.GetValueOrDefault("capped") is > 0 ? 1 : 0);
         double? billable = month is { } m ? Math.Max(0, m - InsightsSource.FreeGbPerMonth) : null;
         string free = $"the free {InsightsSource.FreeGbPerMonth:0} GB";
-        double? monthPace = MonthPace.Projected(month, inputs.Now);
+        double? lastDay = ResourceView.Now(inputs, "ingest_day_gb");
+        double? monthPace = MonthPace.Projected(month, inputs.Now, lastDay), runRate = MonthPace.RunRate(lastDay, inputs.Now);
         var dials = new[]
         {
             ResourceView.Dial(inputs, capped, own ? "Ingested today, this component" : "Ingested today", cap, Ingestion, v => v is { } g ? $"{g.ToString("0.000", CultureInfo.InvariantCulture)} of {(cap is { } c ? c.ToString("0.###", CultureInfo.InvariantCulture) + " GB cap" : "no cap")}" : "not read", hourly: true),
@@ -72,10 +73,11 @@ public static class InsightsCard
                 // The identity holding no role that runs a query is information here, as on the nightly card.
                 refused ? "info" : cappedHours > 0 ? "alarm" : "good"),
             new("cost", "What is it costing?", month is null ? "not read yet" : billable is > 0 ? $"{billable.Value.ToString("0.00", CultureInfo.InvariantCulture)} GB past {free}" : $"nothing; {month.Value.ToString("0.00", CultureInfo.InvariantCulture)} of {free}",
-                [new($"{(inputs.CostMonth is { } bill ? $"${bill.ToString("0.00", CultureInfo.InvariantCulture)} this month on the bill" : "not on the bill yet")} · {MonthPace.Words(monthPace, "{0:0.00} GB")} against {free} · retention {ResourceView.Fact(inputs, "retention_days")} days", null)],
-                // The month heading past the free allowance at its pace is worth a look while it can still be helped; once
-                // past it, paying is information, and the cap row says whether it is too much.
-                billable is > 0 ? "info" : MonthPace.Tone("good", monthPace, InsightsSource.FreeGbPerMonth)),
+                [new($"{(inputs.CostMonth is { } bill ? $"${bill.ToString("0.00", CultureInfo.InvariantCulture)} this month on the bill" : "not on the bill yet")} · {MonthPace.Words(monthPace, "{0:0.00} GB", rated: lastDay is not null)} against {free}{(runRate is { } rate ? $" · the last day's {lastDay!.Value.ToString("0.000", CultureInfo.InvariantCulture)} GB makes {rate.ToString("0.00", CultureInfo.InvariantCulture)} GB a month" : "")} · retention {ResourceView.Fact(inputs, "retention_days")} days", null)],
+                // The month heading past the free allowance is worth a look while it can still be helped. Once past it, paying
+                // is information only when the last day's rate fits a month in the allowance; while that rate would overrun
+                // every month it stays amber (ADR-102, the addendum on the honesty rule), so passing the line greens nothing.
+                billable is > 0 ? (runRate >= InsightsSource.FreeGbPerMonth ? "warning" : "info") : MonthPace.Tone("good", monthPace, InsightsSource.FreeGbPerMonth)),
             CapRow(inputs, cap, today, capped, own, ingestTone),
         };
         var readout = new CloudReadout(

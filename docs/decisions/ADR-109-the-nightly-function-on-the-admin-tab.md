@@ -335,3 +335,13 @@ The funnel's chip has the morning card's caveat: the health route does not name 
 ## Addendum, 2026-11-15 (1.0.5.77): the card leads with the model lanes' empty runs
 
 The same rule for the model lanes, which write no run line: on the share, `J:\dispatch\check_empty_runs.py` reads each lane's close row, and a lane that had work due and did none two runs in a row ("0 sent verified of 12") gets one WALLS.md bullet and one line in `dispatch/EMPTY-RUNS.md`, "EMPTY RUN: <lane>, <n> runs, since <day>"; "0 of 0" is quiet. The dispatcher runs it once a Central day from 07:10, the file's own date marking the day. From this version the 07:30 card reads that file and prints each EMPTY RUN line in its head, under the hiring signal, every day: a wall the Walls section would show only on Mondays. `TodayEmptyRunsTests` holds it.
+
+## Addendum, 2026-11-19 (1.0.5.106): what the grant pays for
+
+In plain words: the Function's free grant is spent by run time, a second at least for every run, so the site's own polling of it was a fifth of the bill. It now asks less often. The single warm "dispatcher" timer proposed on 18 November was measured and is not built.
+
+On 19 November the grant dial read 84,959 of 100,000 GB-s, amber. Flex Consumption bills each execution the memory of its instance while it runs, at least 1,000 ms, and does not bill idle or start-up time. The Function's requests priced that way came to 6,407 GB-s for the day, against 6,417 from Azure's own meter. By function: FreshScan 30 %, the merger's health route 21 %, AtsSweep 15 %, the Merger 13 %. The health route ran 2,638 times a day, 19 ms each, billed a second each, and every call came from this site.
+
+The roughly 420 new instances a day cost nothing, so a dispatcher would have saved only the rounding of short runs, about 160 GB-s a day.
+
+From this version the site asks the health route every five minutes for the merger's numbers (`MergerReading.Every`) and every fifteen minutes for the switches (`NightlyProcesses.SwitchesKeep`), which saves about 1,150 GB-s a day. The merger row names the minute it was read. The dial's projection now uses the last day's rate (ADR-102, the addendum on the honesty rule). The month runs past the grant whatever ships, at about 158 % and roughly $1.50 at the on-demand rate. The dial reads red from about 21 November and green from 1 December. `MergerHoldTests` and `NightlyCardTests` hold it.

@@ -53,3 +53,19 @@ The records and the rules beside them in the Domain's Admin feature, the ports a
 ## Addendum, 2026-11-07 (1.0.4.157): the live panels
 
 The card draws four live panels above its chart, as System Monitor's Resources tab draws them: each core, the memory and swap, the network and the GPUs, sixty seconds wide with now at the right, the cores, memory and GPUs as shares and the network scaled to the window's peak with the loopback left out. They read `GET /api/admin/cloud/box/live` every two seconds while the card is open and the tab is in view, and never while the tab is hidden; past ten seconds without a sample they say "no live sample" in blue. The poll's cost: an answer of about 2 KB every two seconds, about 3.5 MB an hour while the card is open, a few hundredths of the edge's hourly credits, and nothing while it is closed. The layout is `src/lib/box/boxLive.ts`, held by its Vitest file; `box.spec.ts` holds the four panels, the blue state where no agent posts, two to four reads in six seconds, and none while hidden.
+
+## Addendum, 2026-11-19 (1.0.5.106): the swap is judged by paging, not by how full it is
+
+In plain words: the box's swap row now goes amber when memory is actually under strain, not just because old pages are parked in swap.
+
+On 19 November the row "Is the memory and swap fine?" read amber with 1.9 of 2.0 GiB in swap. The box had been up six days, with nothing swapping in or out, a memory pressure of 0 and 22 GiB available. No unit or container had a memory limit. The swap held idle pages: a 45-hour-old build node, the desktop apps and the browser. The row measured how full swap was, which says nothing about whether the box is short of memory. That was the wrong thing to measure (ADR-102, the addendum on the honesty rule).
+
+From agent version 2 each snapshot carries:
+
+- the bytes a second swapped in and out, averaged over five minutes;
+- the kernel's memory pressure, as the share of the last five minutes some task waited on memory;
+- the memory the kernel could hand out without swapping.
+
+The row is amber when 1 MiB a second moves through swap, when pressure reaches 10 %, or when swap is 90 % full and less memory is available than it holds. Otherwise parked pages read green.
+
+A snapshot from an older agent keeps the occupancy line and says it reads no paging yet. Swappiness and emptying swap need sudo, which the lanes do not have, so they are Steve's to run. `BoxRowsTests`, `BoxSnapshotRulesTests` and `CloudThresholdTests` hold it.

@@ -58,12 +58,16 @@ public sealed record BoxCore(int Index, double Load, double Mhz, double? Temp);
 /// <param name="UsedB">What programs hold.</param>
 /// <param name="CacheB">What the kernel holds as cache and buffers.</param>
 /// <param name="FreeB">What nothing holds.</param>
-public sealed record BoxMemory(long TotalB, long UsedB, long CacheB, long FreeB);
+/// <param name="AvailableB">What the kernel could hand a program without swapping, its MemAvailable; null from an agent before version 2.</param>
+/// <param name="PressurePercent">The share of the last five minutes some task waited on memory, the kernel's pressure figure; null when the agent did not read it.</param>
+public sealed record BoxMemory(long TotalB, long UsedB, long CacheB, long FreeB, long? AvailableB = null, double? PressurePercent = null);
 
 /// <summary>The swap, in bytes.</summary>
 /// <param name="TotalB">All of it.</param>
 /// <param name="UsedB">What is in use.</param>
-public sealed record BoxSwap(long TotalB, long UsedB);
+/// <param name="InBps">Bytes a second swapped back in, averaged over the last five minutes; null from an agent before version 2.</param>
+/// <param name="OutBps">Bytes a second swapped out, averaged over the same five minutes; null from an agent before version 2.</param>
+public sealed record BoxSwap(long TotalB, long UsedB, long? InBps = null, long? OutBps = null);
 
 /// <summary>One network interface.</summary>
 /// <param name="Name">The interface's name.</param>

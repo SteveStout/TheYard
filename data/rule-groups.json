@@ -109,6 +109,8 @@
       "example": "For example: the site runs on one SQL database, and no template can quietly add a second one to the bill.",
       "rules": [
         "A request on a store whose catalogue is cold waits for the load without blocking a thread, and a warm store is waited on for no time at all",
+        "Every Cloud card's thirty-day month is read whole once, then only from its newest bucket, trimmed at thirty days, with one read shared by every caller that arrives during it",
+        "The site asks the Function's health route every five minutes for the merger's numbers and every fifteen for the switches",
         "The shared Cosmos DB database never needs a twenty-sixth container: the definitions and the live tests' copies stay at its limit, and the nightly card keeps its minutes and runs in the plan container under kinds of its own",
         "The listing and the filter values leave compressed for a caller that asks, and no other address is compressed",
         "The listing and the filter values may be kept by the edge for seconds, and what only a deploy changes (the documents, the diagrams, the share picture) for a day; never for a request that carries a cookie, and never the resume, About Steven, the version, the admin reads or the sign-in; the browser is still told no-cache; and every address the edge card scores is one the edge may keep",
@@ -129,6 +131,7 @@
       "example": "For example: every decision record the site links to exists, and every link in the docs goes somewhere real.",
       "rules": [
         "Record numbers run from one with no gap, and every record the sidebar offers has a file",
+        "A card turns green only when its cause is fixed: a threshold, tone or formula changes only with a test and an addendum naming what it measured, why that was wrong and what it measures now; a monthly allowance is projected at the last day's rate; Insights past its allowance stays amber while that rate would overrun a month; a card with no reading stays unread",
         "Every repository link in every document points at something that exists",
         "Every record a comment cites, by name or by number, is a record that exists",
         "Every link from a document to this site opens a page: a document as `?doc=` with a slug the catalogue serves, a drawing the catalogue draws, and no bare local address in prose",
@@ -168,6 +171,7 @@
       "example": "For example: the quality history runs in version order, and a missing reading shows as a gap, never as a pass.",
       "rules": [
         "The container samples its own memory and processor share, and each store's reading is the one that store actually keeps",
+        "The box's swap row is amber on paging, memory pressure, or a swap nearly full that the available memory could not take back, never on parked pages alone; a snapshot from an agent that reads no paging keeps the occupancy line and says so",
         "The request ring folds into minutes, each with its own median and its own errors, and the hour and the month are drawn from the one shape",
         "A public ring hands on what it takes and not what it refuses, a kept entry is the entry the ring serves with the spine's private fields empty, it outlives the widest window that reads it, and the keyed log shows none of them",
         "A kept minute leaves out a figure nobody read, a window is folded into the buckets it is drawn in, and the store's grouped query answers what the folding does",

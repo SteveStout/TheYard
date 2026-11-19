@@ -59,10 +59,13 @@ public sealed partial class NightlyCardTests
 
     /// <summary>
     /// The grant dial counts the month's units in gigabyte-seconds against the free grant, amber at 80 and red at 95, and
-    /// amber under 80 when the month's pace passes the grant: 70 % on 20 October is about 110 % by the 31st.
+    /// amber under 80 when the month's projection passes the grant. Spread over the last ten days, the last day's rate is a
+    /// tenth of the figure: 60 % on 20 October at 6 % a day is about 128 % by the 31st, which the straight line from the
+    /// first read as 94 % and green (ADR-102, the addendum on the honesty rule); 40 % at 4 % a day is about 85 %.
     /// </summary>
     [Theory]
-    [InlineData(60_000d, "good")]
+    [InlineData(40_000d, "good")]
+    [InlineData(60_000d, "warning")]
     [InlineData(70_000d, "warning")]
     [InlineData(80_000d, "warning")]
     [InlineData(95_000d, "alarm")]

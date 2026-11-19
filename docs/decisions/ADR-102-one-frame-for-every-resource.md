@@ -425,3 +425,22 @@ In plain words: a review of the Admin tab on 18 November found numbers that read
 ## Addendum, 2026-11-18 (1.0.5.95): the share's sparks split the dial's own total
 
 In plain words: after 1.0.5.89 the share's dial read 40,795 and its three sparks, turned back into counts, 37,823. The dial counts every transaction; the sparks counted only the calls their filters named, and Azure answers calls no filter named, Close above all (291 of 6,616 in the hour to 15:20 UTC on 18 November, Azure Monitor by ApiName). A list of names drifts whenever Azure adds one, so the third spark no longer has a list: it is "Reads and the rest", each minute's total less its listings and its writes, and the reads filter and its minute reading are gone. The three sparks are now the dial's own total split three ways. `StorageCardTests` holds it with a call no filter names in every minute.
+
+## Addendum, 2026-11-19 (1.0.5.106): the honesty rule
+
+In plain words: a card turns green because what it watches got better, never because its rule got kinder. On 19 November Steve asked for every card under Cloud infrastructure to read green the same day, and for the rules behind that to be written down: "ADRs going to be created for the rules we set".
+
+The rule, from this version:
+
+1. **Green comes from fixing the cause.** A threshold, a tone or a formula changes only when the card measures the wrong thing. Such a change ships with a test and an addendum that says what the card measured, why that was wrong and what it measures now. A card that is telling the truth is never quieted.
+2. **No green by restart.** Restarting a web app or the box empties memory, swap and a card's kept hour for a while and fixes nothing. A card that turns green only because something restarted is not done. A fix to memory is proven by a plateau: at least two idle hours of readings that flatten or fall.
+3. **A card with no reading stays gray.** Information never turns good until a read succeeded and shows the healthy state.
+4. **A month that cannot be saved says its date.** An allowance already spent past its line is stated with the date it can honestly read green, not hidden.
+
+Under the rule, this version changed what three cards measure, each because it measured the wrong thing:
+
+- **The month's projection** (Insights' free 5 GB, the Function's free grant). It measured the month so far carried in a straight line from the first, which cannot see a cut or a spike made mid-month: on 19 November it read 7.69 GB for Insights while the last day's 0.312 GB made 8.33. It now measures what is used so far plus the last twenty-four hours' rate for every day left, when the last day is read (`MonthPace.Projected`).
+- **Insights past its allowance.** The cost row read information as soon as the month passed 5 GB, so the card would have turned green on 20 November with nothing fixed. Past the allowance it now stays amber while the last day's rate would overrun a month (`MonthPace.RunRate`), and is information once that rate fits.
+- **The registry's age.** It measured freshness by kept minutes, which the registry has not kept since its Azure registry was retired, so it read unread for good and turned both good dials to information while a fresh hour stood kept. It now measures the age of its newest kept hour (`ResourceView.HourAge`), and its readout says "Hourly read".
+
+The box's swap row changed under the same rule; ADR: The box reports itself says how. `CardToneRulesTests`, `CloudViewTests` (the registry with a kept hour and with none), `BoxRowsTests` and `NightlyCardTests` hold it.
