@@ -53,7 +53,39 @@ public sealed partial class PounceTickTests
         Assert.Contains("NO PAGE gen90:", item, StringComparison.Ordinal);
         Assert.Contains("NO PAGE no leader:", item, StringComparison.Ordinal);
         Assert.Contains("never attached", item, StringComparison.Ordinal);
-        Assert.Contains("Never run gen90.py a second time", item, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_board_s_level_tag_in_square_brackets_reaches_gen90_and_the_spec_in_round_ones()
+    {
+        string item = PouncePage.Item(new CaughtRole(14136, "Sourcegraph", "AI Transformation Architect [IC4]", "https://x/1", "NONE", Now, true, true, Now));
+
+        Assert.Contains("--role \"AI Transformation Architect (IC4), 90-day page, shadow, never attached\"", item, StringComparison.Ordinal);
+        Assert.Contains("`role` set to `AI Transformation Architect (IC4)`", item, StringComparison.Ordinal);
+        Assert.DoesNotContain("--role \"AI Transformation Architect [IC4]", item, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Only_a_page_over_one_page_is_cut_and_run_again_and_never_more_than_three_runs()
+    {
+        string item = PouncePage.Item(new CaughtRole(12786, "Zephyr Labs", "Staff Engineer", "https://x/1", "PASS", Now, true, false, Now));
+
+        Assert.DoesNotContain("Never run gen90.py a second time", item, StringComparison.Ordinal);
+        Assert.Contains("On `not one page` only, cut the longest point to its first sentence and run gen90.py again, at most 3 runs in all, doing step 1's check before each new run", item, StringComparison.Ordinal);
+        Assert.Contains("--code <that code>", item, StringComparison.Ordinal);
+        Assert.Contains(",pounce90-12786", item, StringComparison.Ordinal);
+        Assert.Contains("Every other failing check is a page not built", item, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_page_ruling_reads_answered_and_a_page_not_built_leaves_nothing_for_steve()
+    {
+        string item = PouncePage.Item(new CaughtRole(12786, "Zephyr Labs", "Staff Engineer", "https://x/1", "PASS", Now, true, false, Now));
+
+        Assert.DoesNotContain("DECISION.md", item, StringComparison.Ordinal);
+        Assert.DoesNotContain("until Steve answers", item, StringComparison.Ordinal);
+        Assert.Contains(@"J:\dispatch\ANSWERED.md, chat1111connect (90-day page)", item, StringComparison.Ordinal);
+        Assert.Contains("A page not built (no leader or a gen90 check) holds `- none` there", item, StringComparison.Ordinal);
     }
 
     [Fact]
