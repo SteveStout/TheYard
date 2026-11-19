@@ -45,6 +45,11 @@ public static class RunCard
         {
             return $"{word}: {report.Queued} queued{(report.Dry ? " in its run folder only" : string.Empty)}, {report.Dropped.Count} left out by the gates{(report.CutShort ? ", cut short, read its DONE note" : string.Empty)}";
         }
+        if (report.Lane == Lane.Commentline)
+        {
+            string done = report.Dry ? $"dry, {report.Queued} picked, nothing edited" : $"{report.Edited} of {report.Queued} edits verified";
+            return $"{word}: {done}, {report.Dropped.Count} left out{(report.CutShort ? ", cut short, read its DONE note" : string.Empty)}";
+        }
         if (report.Lane == Lane.Network)
         {
             return $"{word}: {report.Queued} two-way threads {(report.Dry ? "checked in its run folder only" : "spooled for the network log")}, {report.Dropped.Count} left out{(report.CutShort ? ", cut short, read its DONE note" : string.Empty)}";

@@ -14,7 +14,7 @@ public sealed class NetworkLaneTests
     [Fact]
     public void The_network_lane_runs_after_messages_and_sends_nothing()
     {
-        Assert.Equal([Lane.Feed, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply], RunSlot.Order);
+        Assert.Equal([Lane.Feed, Lane.Commentline, Lane.Invites, Lane.Messages, Lane.Network, Lane.Apply], RunSlot.Order);
         Assert.Equal("network", RunSlot.Word(Lane.Network));
         Assert.Equal("LINKEDIN-NETWORK-LANE.md", RunSlot.Doc(Lane.Network));
         Assert.False(RunSlot.OnLinkedIn(Lane.Network));

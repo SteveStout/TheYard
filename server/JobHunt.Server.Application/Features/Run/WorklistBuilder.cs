@@ -211,7 +211,7 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             if (code.Length == 0 && candidate.Action != WorkAction.Apply)
             {
                 string who = candidate.Person.Length > 0 ? candidate.Person : $"Leader at {candidate.Company}, name found at send";
-                string? minted = dry ? DryCode : await minter.MintAsync(who, candidate.Company, reads.Slot == RunSlot.Hour ? RegistryRows.Lane : reads.Slot, ct);
+                string? minted = dry ? DryCode : await minter.MintAsync(who, candidate.Company, string.Empty, reads.Slot == RunSlot.Hour ? RegistryRows.Lane : reads.Slot, ct);
                 if (minted is null)
                 {
                     dropped.Add(new Dropped(candidate.Company, "make_ref.py failed, no code, stays queued"));
