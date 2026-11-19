@@ -124,6 +124,26 @@ test('More posts reads the next page and adds it under the first', async ({ page
   await expect(page.getByTestId('blog-more')).toHaveCount(0);
 });
 
+test('Back from a post opened past More posts comes home to every page it had read', async ({
+  page,
+}) => {
+  await answerBlog(page, POSTS);
+  await openTheYard(page, '/?view=blog');
+  await expect(page.getByTestId('blog-mini')).toHaveCount(9);
+  await page.getByTestId('blog-more').click();
+  await expect(page.getByTestId('blog-mini')).toHaveCount(11);
+  await page
+    .getByTestId('blog-mini')
+    .last()
+    .getByRole('button', { name: /Read the post/ })
+    .click();
+  await expect(page.getByTestId('blog-post')).toBeVisible();
+  await page.goBack();
+  await expect(page.getByTestId('blog-count')).toBeVisible();
+  await expect(page.getByTestId('blog-mini')).toHaveCount(11);
+  await expect(page.getByTestId('blog-more')).toHaveCount(0);
+});
+
 test('the list on screen stays, dimmed, while the next one is read', async ({ page }) => {
   await answerBlog(page, POSTS, 1_200);
   await openTheYard(page, '/?view=blog');

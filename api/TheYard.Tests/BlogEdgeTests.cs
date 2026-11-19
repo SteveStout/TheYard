@@ -93,6 +93,23 @@ public sealed class BlogEdgeTests : IDisposable
         Assert.Equal(1, card.ReadingMinutes);
     }
 
+    [Fact]
+    public async Task A_save_that_fails_partway_keeps_none_of_the_post()
+    {
+        using (var db = new YardDbContext(new YardConnection(YardProvider.Sqlite, $"Data Source={_file};Pooling=False").Options()))
+        {
+            await db.Database.MigrateAsync();
+        }
+        var store = new EfBlogStore(() => new SqliteContexts(_file));
+        var twice = new BlogWord("azure", 0, 1);
+        var derived = new BlogDerived("<p>The text.</p>\n", 1, [twice, twice], [], 1);
+
+        await Assert.ThrowsAnyAsync<Exception>(() => store.SaveAsync(Post(), derived, Now, CancellationToken.None));
+
+        Assert.Null(await store.PostAsync("a-post", CancellationToken.None));
+        Assert.Empty(await store.PostsAsync(CancellationToken.None));
+    }
+
     [Theory]
     [InlineData("DROP TABLE \"PostEvent\"")]
     [InlineData("DROP TABLE \"PostImage\"")]

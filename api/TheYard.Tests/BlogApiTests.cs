@@ -38,6 +38,9 @@ public sealed class BlogApiTests(BlogApiTests.SeededHost host) : IClassFixture<B
         protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
         {
             builder.UseSetting("Admin:Key", BlogEndpointsTests.KeyedHost.Key);
+            // The blog never reads Cosmos DB, so this host stays on the relational path even when the suite is pointed at
+            // the document store, and the Cosmos pass spends none of its throughput booting it.
+            builder.UseSetting("Cosmos:AccountEndpoint", "");
             builder.ConfigureTestServices(services => services.AddSingleton<IBlogStore>(Store));
         }
     }
