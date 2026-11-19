@@ -72,6 +72,34 @@ describe('the list reader', () => {
     expect(seen).toEqual(['/api/blog/posts?topic=ai']);
   });
 
+  it('aborts a next page when a newer ask replaces the list, and never hands that page on', async () => {
+    const signals: AbortSignal[] = [];
+    let finish: (value: BlogList) => void = () => {};
+    const read = vi.fn((path: string, signal: AbortSignal) => {
+      signals.push(signal);
+      return path.includes('after=')
+        ? new Promise<BlogList>((resolve) => (finish = resolve))
+        : Promise.resolve(list(2));
+    });
+    const pages: (BlogList | null)[] = [];
+    const reader = listReader(read, () => {});
+    reader.more('/api/blog/posts?after=abc', (page) => pages.push(page));
+    reader.ask('/api/blog/posts?topic=ai', 'now');
+    expect(signals[0].aborted).toBe(true);
+    finish(list(9));
+    await vi.runAllTimersAsync();
+    expect(pages).toEqual([]);
+  });
+
+  it('hands on a next page nothing replaced', async () => {
+    const read = vi.fn(async (_path: string) => list(7));
+    const pages: (BlogList | null)[] = [];
+    const reader = listReader(read, () => {});
+    reader.more('/api/blog/posts?after=abc', (page) => pages.push(page));
+    await vi.runAllTimersAsync();
+    expect(pages).toEqual([list(7)]);
+  });
+
   it('never reports a replaced read that then fails as a failure', async () => {
     let fail: (reason: Error) => void = () => {};
     const read = vi.fn((path: string) =>

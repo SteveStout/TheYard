@@ -62,6 +62,27 @@ test('a deep link opens the viewer on its slide, and the strip on the film shows
   await expect(page.getByTestId('blog-count')).toBeVisible();
 });
 
+test('Next on the last slide keeps the focus, the arrow keys still turn it, and each turn is announced', async ({
+  page,
+}) => {
+  await answerBlog(page, [POST]);
+  await openTheYard(page, `/?view=blog&post=${POST.slug}&slide=3`);
+  const viewer = page.getByTestId('slide-viewer');
+  const count = viewer.getByTestId('slide-count');
+  await expect(count).toHaveText('Slide 3 of 4');
+  await expect(count).toHaveAttribute('aria-live', 'polite');
+  const next = viewer.getByRole('button', { name: 'Next slide' });
+  await next.focus();
+  await page.keyboard.press('Enter');
+  await expect(count).toHaveText('Slide 4 of 4');
+  await expect(next).toBeDisabled();
+  await expect(next).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(count).toHaveText('Slide 4 of 4');
+  await page.keyboard.press('ArrowLeft');
+  await expect(count).toHaveText('Slide 3 of 4');
+});
+
 test('the zoom is a button too, so a keyboard zooms the slide and zooms it back', async ({
   page,
 }) => {

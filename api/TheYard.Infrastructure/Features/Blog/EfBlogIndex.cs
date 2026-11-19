@@ -22,26 +22,35 @@ internal static class EfBlogIndex
         {
             db.ChangeTracker.Clear();
             await using var transaction = await db.Database.BeginTransactionAsync(cancellation);
-            var row = await db.Posts.FirstOrDefaultAsync(p => p.Id == postId, cancellation);
-            if (row is null)
-            {
-                return;
-            }
-            row.BodyHtml = derived.BodyHtml;
-            row.ReadingMinutes = derived.ReadingMinutes;
-            row.DerivedWith = derived.Version;
-            await db.Set<PostWordRow>().Where(w => w.PostId == postId).ExecuteDeleteAsync(cancellation);
-            await db.Set<PostKeywordRow>().Where(k => k.PostId == postId).ExecuteDeleteAsync(cancellation);
-            db.Set<PostWordRow>().AddRange(derived.Words.Select(w => new PostWordRow { Word = w.Word, PostId = postId, Field = w.Field, Mentions = w.Mentions }));
-            db.Set<PostKeywordRow>().AddRange(derived.Keywords.Select(k => new PostKeywordRow { PostId = postId, Keyword = k.Key, Mentions = k.Mentions }));
-            if (topics is not null)
-            {
-                await db.PostTags.Where(t => t.PostId == postId).ExecuteDeleteAsync(cancellation);
-                db.PostTags.AddRange(topics.Distinct(StringComparer.Ordinal).Select(t => new PostTagRow { PostId = postId, Tag = t }));
-            }
-            await db.SaveChangesAsync(cancellation);
+            await WriteAsync(db, postId, derived, topics, cancellation);
             await transaction.CommitAsync(cancellation);
         });
+    }
+
+    /// <summary>
+    /// The writes of <see cref="KeepAsync"/> without a transaction of their own, for a caller that already holds one, so a
+    /// save keeps its post and its derived parts in one commit.
+    /// </summary>
+    internal static async Task WriteAsync(YardDbContext db, int postId, BlogDerived derived, IReadOnlyList<string>? topics, CancellationToken cancellation)
+    {
+        var row = await db.Posts.FirstOrDefaultAsync(p => p.Id == postId, cancellation);
+        if (row is null)
+        {
+            return;
+        }
+        row.BodyHtml = derived.BodyHtml;
+        row.ReadingMinutes = derived.ReadingMinutes;
+        row.DerivedWith = derived.Version;
+        await db.Set<PostWordRow>().Where(w => w.PostId == postId).ExecuteDeleteAsync(cancellation);
+        await db.Set<PostKeywordRow>().Where(k => k.PostId == postId).ExecuteDeleteAsync(cancellation);
+        db.Set<PostWordRow>().AddRange(derived.Words.Select(w => new PostWordRow { Word = w.Word, PostId = postId, Field = w.Field, Mentions = w.Mentions }));
+        db.Set<PostKeywordRow>().AddRange(derived.Keywords.Select(k => new PostKeywordRow { PostId = postId, Keyword = k.Key, Mentions = k.Mentions }));
+        if (topics is not null)
+        {
+            await db.PostTags.Where(t => t.PostId == postId).ExecuteDeleteAsync(cancellation);
+            db.PostTags.AddRange(topics.Distinct(StringComparer.Ordinal).Select(t => new PostTagRow { PostId = postId, Tag = t }));
+        }
+        await db.SaveChangesAsync(cancellation);
     }
 
     /// <summary>Replaces blog.SearchSynonym whole, in one transaction, so a search never reads half the list.</summary>

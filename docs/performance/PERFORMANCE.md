@@ -533,7 +533,7 @@ The blog's list was every post with every body and every picture, and each read 
 | Total blocking time, phone, list | 1,882 ms | 84 to 94 ms | the same |
 | Layout shift, phone | 0 (list), 0.042 (post) | 0 and 0 | the same |
 | Accessibility, Best Practices, SEO | 100, 100, 100 | 100, 100, 100 | the same |
-| Security headers | D (securityheaders.com), C (Observatory) | read live after the roll | the graders' own pages |
+| Security headers | D (securityheaders.com), C (Observatory, 50) | A+ (securityheaders.com), A+ (Observatory, 120, 12 of 12) | the graders' own pages, read on the live site after the roll |
 
 What the numbers do not say: Performance on a phone stops short of 100. Lighthouse estimates a slow phone network, and it counts the React bundle's download before the page's largest paint even though the page arrives drawn; closing that last gap is a change of how the blog's first load is built, not a setting.
 
