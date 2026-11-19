@@ -1,8 +1,9 @@
 /**
  * Does:      Draws the review route's short path under either first screen (ADR: The review route gives a reason before
- *            it asks, the addendum on the short path): "N of 3 stops" kept on this browser, then three stops, each one
- *            payoff sentence, one live tile and one button that lands on the payoff and reports its action. Quality
- *            opens in place at "The slip, and the turn"; the gate opens the tests card; the room opens the lot.
+ *            it asks, the addendum on the short path) as the whole-page picture draws it: "Two minutes, three stops"
+ *            with "N of 3 opened." kept on this browser, then three cards, each one payoff sentence, one live tile of
+ *            one height and one button that lands on the payoff and reports its action. Quality opens in place at
+ *            "The slip, and the turn"; the gate opens the tests card; the room opens the lot.
  * Does not:  Read anything (useReviewPath.ts and the page do) or count toward the seven-stop tour's place.
  * Used by:   ReviewPage.tsx.
  */
@@ -23,12 +24,12 @@ import { PROOF, type HeldQuality } from '../../../lib/reviewVerdict';
 import { GateTile } from '../GateTile';
 import { LotTile } from '../LotTile';
 import { QualityTrendTile } from '../QualityTrendTile';
+import { ReviewHead } from '../ReviewHead';
 import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewPath.module.css';
 
-/** The room's sentence with the store's own count in front, or, before the count arrives, the sentence on its own. */
-const roomPayoff = (payoff: string, total: string) =>
-  total === '' ? payoff.charAt(0).toUpperCase() + payoff.slice(1) : `${total} ${payoff}`;
+/** The room's sentence before the store's count arrives: the sentence on its own, its first letter a capital. */
+const roomPayoff = (payoff: string) => payoff.charAt(0).toUpperCase() + payoff.slice(1);
 
 /** A plain click, which the page answers itself; any other keeps the browser's own meaning. */
 const plainClick = (event: MouseEvent) =>
@@ -40,6 +41,7 @@ export function ReviewPath({
   lot,
   gate,
   totals,
+  now,
   onReach,
   onAction,
   onOpenDoc,
@@ -49,6 +51,8 @@ export function ReviewPath({
   lot: PathLot | null;
   gate: { gated: boolean; quality: HeldQuality; review: { reviewed: string } | null };
   totals: { passed: string; failed: string; version: string };
+  /** The page's clock, for the lot's countdown. */
+  now: number;
   onReach: (key: string) => void;
   onAction: (action: ReviewAction) => void;
   onOpenDoc: (key: DocKey) => void;
@@ -68,30 +72,30 @@ export function ReviewPath({
     ) : stop.key === 'gate' ? (
       <GateTile label={stop.tile} gated={gate.gated} totals={totals} review={gate.review} />
     ) : (
-      <LotTile label={stop.tile} lot={lot} />
+      <LotTile label={stop.tile} lot={lot} now={now} />
     );
 
   return (
-    <section
-      className={styles.path}
-      aria-labelledby="review-path-progress"
-      data-testid="review-path"
-    >
-      <div className={`${styles.progress} op-glass`}>
-        <h2 id="review-path-progress" className={styles.count} data-testid="review-path-count">
-          {pathProgress(reached)}
-        </h2>
-        <p className={styles.place}>{PATH.place}</p>
-      </div>
-      <ol className={styles.stops}>
+    <section aria-labelledby="review-path-title" data-testid="review-path">
+      <ReviewHead
+        id="review-path-title"
+        title={PATH.title}
+        meta={
+          <>
+            <strong data-testid="review-path-count">{pathProgress(reached)}</strong> {PATH.place}
+          </>
+        }
+        hint={PATH.hint}
+      />
+      <ol className={styles.cards}>
         {PATH_STOPS.map((stop, index) => (
           <li
             key={stop.key}
-            className={`${styles.stop} op-glass`}
+            className={`${styles.card} op-glass`}
             data-testid={`review-path-${stop.key}-stop`}
             data-reached={reached.includes(stop.key)}
           >
-            <h3 className={styles.head}>
+            <h3 className={styles.top}>
               <span className={styles.number} aria-hidden="true">
                 {index + 1}
               </span>
@@ -99,7 +103,15 @@ export function ReviewPath({
               <span className={styles.time}>{stop.time}</span>
             </h3>
             <p className={styles.payoff}>
-              {stop.key === 'room' ? roomPayoff(stop.payoff, storeTotal(lot)) : stop.payoff}
+              {stop.key !== 'room' ? (
+                stop.payoff
+              ) : lot === null ? (
+                roomPayoff(stop.payoff)
+              ) : (
+                <>
+                  <span data-testid="review-path-total">{storeTotal(lot)}</span> {stop.payoff}
+                </>
+              )}
             </p>
             {tile(stop)}
             <a
