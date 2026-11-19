@@ -259,7 +259,9 @@
         "An invite stands on Pending and its note read back, shown in a screenshot copied into the run folder; the toast is recorded when seen and never required, and a send with no such proof stands unverified",
         "The blog's list filters, orders, pages and counts in the store, and the memory store and SQLite give every filter the same posts in the same order; a card carries no body, and a large read log costs the list two counts and no row",
         "A typed word is widened by the synonym list, matched at a word's start, ranked title 6, keyword 5, topic 4, summary 3 and the body by its mentions, and the mockup's six searches give its own posts in its own order; a keyword needs the title or its minimum of mentions in the words a reader reads",
-        "Every answer and every drawn page carries one security policy: no inline script but the page's own by hash or nonce, no framing by another site, nosniff, the referrer kept to the origin, unused powers off, the opener isolated, HSTS with its subdomains and no preload; nothing on the site breaks under it"
+        "Every answer and every drawn page carries one security policy: no inline script but the page's own by hash or nonce, no framing by another site, nosniff, the referrer kept to the origin, unused powers off, the opener isolated, HSTS with its subdomains and no preload; nothing on the site breaks under it",
+        "The campaign's finder stops at the lower of the month's cap, the setting HUNTER_MONTHLY_CAP (50 without it), and the searches Hunter's plan reports left; a Hunter address marked valid counts with no cited page, its source Hunter's verifier",
+        "A send to a shared box is no touch to the person a lead now names and starts no 30 days for an email to a person's own address; the finder asks never-emailed leads first, Track A first; Track A follows only a submitted application"
       ]
     }
   ]

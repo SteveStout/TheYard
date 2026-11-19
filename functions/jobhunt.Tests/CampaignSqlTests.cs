@@ -229,14 +229,29 @@ public sealed partial class CampaignSqlTests
     }
 
     [Fact]
-    public void The_finder_asks_only_for_leads_that_have_had_no_real_email()
+    public void The_finder_asks_never_emailed_leads_first_then_those_only_a_shared_box_heard_from()
     {
-        // 14:21 CST 11/16: the finder spent the month's last 22 calls on leads already emailed, which can have nothing
-        // more until a second-touch template is approved, leaving none for the lead run's new leads.
+        // 14:21 CST 11/16 the free plan's last 22 calls went to leads already emailed; v3 asked only the never-emailed.
+        // HUNTER1119: on the paid plan a lead whose only send went to a shared box is asked too (that send never reached
+        // the person, Steve 11/18), after every never-emailed lead and Track A first; a lead a person already heard from is never asked.
         string sql = Statements().Single(s => s.Name == "WaitingLeads").Sql;
-        Assert.Contains("AND NOT EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0)", sql, StringComparison.Ordinal);
-        Assert.Contains("ORDER BY l.[Strength] DESC", sql, StringComparison.Ordinal);
+        Assert.Contains(PersonSend, sql, StringComparison.Ordinal);
+        Assert.Contains("ORDER BY CASE WHEN EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0) THEN 1 ELSE 0 END, CASE WHEN l.[Track] = 'A' THEN 0 ELSE 1 END, l.[Strength] DESC", sql, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_touch_is_a_send_the_person_could_read()
+    {
+        // HUNTER1119 (Steve 11/18 and 11/19): a send to a shared box is not a touch to the person whose own address the lead
+        // now carries. It still counts while the lead's address is that same box, so a box is never sent the same note twice.
+        string sql = Statements().Single(s => s.Name == "OpenLeads").Sql;
+        Assert.Contains("AND (e.[To] = l.[ContactEmail] OR NOT (" + SharedTo + "))) AS [Touches]", sql, StringComparison.Ordinal);
+        Assert.Contains("e.[To]", Statements().Single(s => s.Name == "Since").Sql, StringComparison.Ordinal);
+    }
+
+    private const string SharedTo = "CHARINDEX('@', e.[To]) > 1 AND LEFT(e.[To], CHARINDEX('@', e.[To]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ','))";
+
+    private const string PersonSend = "AND NOT EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0 AND NOT (" + SharedTo + "))";
 
     [GeneratedRegex(@"\b([clev])\.\[(\w+)\]")]
     private static partial Regex Qualified();

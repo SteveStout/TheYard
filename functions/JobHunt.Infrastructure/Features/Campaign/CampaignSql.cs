@@ -23,7 +23,8 @@ internal static class CampaignSql
                l.[ResumeLink], l.[SiteLink], l.[GitHubLink], l.[LinkedInLink], l.[AboutLink], l.[CreatedAt], l.[CreatedBy],
                c.[Id] AS [CompanyId], c.[Key], c.[ParentKey], c.[Names], c.[RemoteStance], c.[LastDotNetPostingAt], c.[LastDotNetPostingTitle], c.[DoNotEmail],
                (SELECT COUNT(*) FROM [campaign].[CompanyEvidence] v WHERE v.[CompanyId] = c.[Id]) AS [Evidence],
-               (SELECT COUNT(*) FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0) AS [Touches]
+               (SELECT COUNT(*) FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0
+                  AND (e.[To] = l.[ContactEmail] OR NOT (CHARINDEX('@', e.[To]) > 1 AND LEFT(e.[To], CHARINDEX('@', e.[To]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ','))))) AS [Touches]
         FROM [campaign].[Leads] l JOIN [campaign].[Companies] c ON c.[Id] = l.[CompanyId]
         WHERE l.[Blocked] IS NULL
         ORDER BY l.[CreatedAt], l.[Id]
@@ -38,7 +39,7 @@ internal static class CampaignSql
         """;
 
     internal const string Since = """
-        SELECT e.[LeadId], e.[Key], e.[ParentKey], e.[Company], e.[CentralDay], e.[Shadow] FROM [campaign].[EmailsSent] e WHERE e.[CentralDay] >= @day
+        SELECT e.[LeadId], e.[Key], e.[ParentKey], e.[Company], e.[CentralDay], e.[Shadow], e.[To] FROM [campaign].[EmailsSent] e WHERE e.[CentralDay] >= @day
         """;
 
     internal const string OnDays = """
@@ -126,11 +127,11 @@ internal static class CampaignSql
         SELECT l.[Id], c.[Key], l.[ContactName]
         FROM [campaign].[Leads] l JOIN [campaign].[Companies] c ON c.[Id] = l.[CompanyId]
         WHERE l.[Blocked] IS NULL AND l.[FirstName] <> N'' AND c.[DoNotEmail] = 0
-          AND NOT EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0)
+          AND NOT EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0 AND NOT (CHARINDEX('@', e.[To]) > 1 AND LEFT(e.[To], CHARINDEX('@', e.[To]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ','))))
           AND (l.[ContactEmail] IS NULL
                OR (CHARINDEX('@', l.[ContactEmail]) > 1 AND l.[ContactTitle] <> N'Company mailbox'
                    AND LEFT(l.[ContactEmail], CHARINDEX('@', l.[ContactEmail]) - 1) IN (SELECT [value] FROM STRING_SPLIT(@boxes, ','))))
-        ORDER BY l.[Strength] DESC, l.[CreatedAt], l.[Id]
+        ORDER BY CASE WHEN EXISTS (SELECT 1 FROM [campaign].[EmailsSent] e WHERE e.[LeadId] = l.[Id] AND e.[Shadow] = 0) THEN 1 ELSE 0 END, CASE WHEN l.[Track] = 'A' THEN 0 ELSE 1 END, l.[Strength] DESC, l.[CreatedAt], l.[Id]
         """;
 
     // The finder's address replaces no address, or a shared box; never a person's address already on the row.

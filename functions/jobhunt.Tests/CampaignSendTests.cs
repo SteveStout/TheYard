@@ -337,6 +337,26 @@ public sealed class CampaignSendTests
         Shadow = shadow,
     };
 
+    // HUNTER1119 (Steve 11/19): the 10 leaders Hunter found had their first email at info@ or press@, which never reached
+    // them. That send starts no 30 days and is no touch (the SQL counts it out), so B v1 goes to the person's own address;
+    // a send a person could read still holds the company for 30 days.
+    [Fact]
+    public async Task A_shared_box_send_starts_no_thirty_days_and_the_person_gets_the_first_email()
+    {
+        var leader = Lead(company: "Seeq", key: "seeq.com", edit: b => { b.ContactEmail = "dustin.johnson@seeq.com"; b.FirstName = "Dustin"; });
+        var other = Lead(company: "Ylopo", key: "ylopo.com");
+        var (send, db, mail) = Pass([leader, other], now: Eight);
+        db.Emails.Add(Logged(20, shadow: false) with { LeadId = leader.Id, Key = "seeq.com", Company = "Seeq", To = "info@seeq.com" });
+        db.Emails.Add(Logged(20, shadow: false) with { LeadId = 9999, Key = "ylopo.com", Company = "Ylopo", To = "chris@ylopo.com" });
+
+        var result = await send.RunAsync(CampaignMode.On, CancellationToken.None);
+
+        var sent = Assert.Single(db.Emails, e => e.CentralDay == new DateOnly(2026, 10, 24));
+        Assert.Equal(("dustin.johnson@seeq.com", "B", "v1"), (sent.To, sent.TemplateId, sent.TemplateVersion));
+        Assert.Equal(1, result.Held["30-day rule"]);
+        Assert.Equal(1, mail.Calls);
+    }
+
     [Fact]
     public async Task The_rules_hold_leads_with_their_reasons_and_one_company_gets_one_email()
     {
@@ -447,7 +467,7 @@ public sealed class CampaignSendTests
             Reads++;
             // The log holds SQL's range, so a pass that asks for a day SQL cannot carry fails here as it would in Azure.
             ArgumentOutOfRangeException.ThrowIfLessThan(centralDay, SqlFloor);
-            return Task.FromResult<IReadOnlyList<LoggedEmail>>([.. Emails.Where(e => e.CentralDay >= centralDay).Select(e => new LoggedEmail(e.LeadId, e.Key, e.ParentKey, e.Company, e.CentralDay, e.Shadow))]);
+            return Task.FromResult<IReadOnlyList<LoggedEmail>>([.. Emails.Where(e => e.CentralDay >= centralDay).Select(e => new LoggedEmail(e.LeadId, e.Key, e.ParentKey, e.Company, e.CentralDay, e.Shadow) { To = e.To })]);
         }
 
         public Task<IReadOnlyList<DateOnly>> OnDaysAsync(CancellationToken ct)

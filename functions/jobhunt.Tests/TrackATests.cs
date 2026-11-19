@@ -36,6 +36,22 @@ public sealed partial class TrackATests
         Assert.Empty(Tells.Find(email.Subject + "\n" + email.Text));
     }
 
+    // HUNTER1119: 11/18's "16 applications in 7 days" were 4 submissions; the other 12 were invites, InMails and interview
+    // reminders whose notes say "applied" somewhere. Track A follows a row whose opening says it was submitted or applied.
+    [Theory]
+    [InlineData("SUBMITTED (unblock1116) 10:11 CST 11/16 from the Laptop's Chrome; Ashby page read 'Your application was successfully submitted'", true)]
+    [InlineData("Application SUBMITTED via Greenhouse ~11:39 AM CST 11/4 from Steve's Chrome", true)]
+    [InlineData("APPLICATION SUBMITTED BY CLAUDE (bg1017) ~09:55 CDT 10/17 on Steve's word", true)]
+    [InlineData("APPLIED by Claude (bg1021) on Steve's 07:26 'apply to as many as you can'", true)]
+    [InlineData("Applied (chat1105) 11/5 14:2x CST. Engineering Architect, remote", true)]
+    [InlineData("SCOPED CONNECTION REQUEST SENT BY CLAUDE (bg1015am) ~03:5x CDT; note: I applied for the Senior role", false)]
+    [InlineData("INBOUND InMail 1:06 AM CST 11/12 (Gmail notice 1a1c, 'Job Opening'): thanks for your interest, I see you applied", false)]
+    [InlineData("SECOND AVAILABILITY REMINDER, automated, 6:09 PM CST 11/14: you applied to Staff Application Engineer", false)]
+    [InlineData("INVITE WITH NOTE SENT by Claude (chat1112) ~8:37 AM CST 11/12 on Steve's 'Send that'; applied 11/11", false)]
+    [InlineData("SENT by Claude (chat1112) 7:55 AM CST 11/12 on Steve's 'Send that'; I applied yesterday", false)]
+    public void Track_A_follows_a_submitted_application_and_not_a_message_that_mentions_one(string note, bool followed) =>
+        Assert.Equal(followed, TrackAFeed.Submitted(["3600", "Pat Lee", "Acme", "LinkedIn", "11/16/2026", "", note]));
+
     [Fact]
     public async Task Two_passes_write_one_Track_A_lead_a_company_and_a_shared_mailbox_is_never_its_address()
     {

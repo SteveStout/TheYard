@@ -79,7 +79,7 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
     public async Task<IReadOnlyList<LeadRecord>> OpenAsync(CancellationToken ct)
     {
         await using var connection = await ConnectAsync(ct);
-        await using var command = Command(connection, CampaignSql.OpenLeads);
+        await using var command = Command(connection, CampaignSql.OpenLeads, ("@boxes", Boxes));
         await using var reader = await command.ExecuteReaderAsync(ct);
         var leads = new List<LeadRecord>();
         while (await reader.ReadAsync(ct))
@@ -106,7 +106,10 @@ public sealed class SqlCampaignStore(string connectionString) : ICompanyBook, IL
         {
             sends.Add(new LoggedEmail(
                 reader.GetInt64(0), reader.GetString(1), reader.IsDBNull(2) ? null : reader.GetString(2), reader.GetString(3),
-                DateOnly.FromDateTime(reader.GetDateTime(4)), reader.GetBoolean(5)));
+                DateOnly.FromDateTime(reader.GetDateTime(4)), reader.GetBoolean(5))
+            {
+                To = reader.GetString(6),
+            });
         }
         return sends;
     }
