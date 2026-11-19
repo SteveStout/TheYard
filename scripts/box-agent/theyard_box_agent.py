@@ -10,7 +10,7 @@ connection, behind the operator's key read from a file of mode 600. Standard lib
 """
 import datetime, http.client, json, os, signal, socket, subprocess, sys, time, urllib.parse
 
-VERSION = "1"
+VERSION = "2"
 TICK, SNAPSHOT_EVERY, KEEP_SNAPSHOTS = 2.0, 30, 60
 BACKOFF = [2, 4, 8, 16, 32, 60]
 CONFIG = os.path.expanduser("~/.config/theyard")
@@ -57,8 +57,20 @@ def meminfo():
     total, free = info.get("MemTotal", 0), info.get("MemFree", 0)
     cache = info.get("Buffers", 0) + info.get("Cached", 0) + info.get("SReclaimable", 0)
     used = max(0, total - free - cache)
-    return ({"total_b": total, "used_b": used, "cache_b": cache, "free_b": free},
+    return ({"total_b": total, "used_b": used, "cache_b": cache, "free_b": free, "available_b": info.get("MemAvailable", 0)},
             {"total_b": info.get("SwapTotal", 0), "used_b": max(0, info.get("SwapTotal", 0) - info.get("SwapFree", 0))})
+
+def swap_pages():
+    """Pages swapped in and out since boot, from /proc/vmstat."""
+    counts = dict(line.split()[:2] for line in read("/proc/vmstat").splitlines() if line.startswith(("pswpin ", "pswpout ")))
+    return int(counts.get("pswpin", 0)), int(counts.get("pswpout", 0))
+
+def memory_stall():
+    """The share of the last five minutes some task waited on memory, from /proc/pressure/memory; None with no PSI."""
+    for line in read("/proc/pressure/memory").splitlines():
+        if line.startswith("some "):
+            return float(dict(field.split("=") for field in line.split()[1:]).get("avg300", 0))
+    return None
 
 def net_totals():
     totals = {}
@@ -184,6 +196,7 @@ class Reader:
         run("nvidia-smi", "--query-gpu=index", "--format=csv,noheader")
         self.gpu_ms = round((time.monotonic() - started) * 1000)
         self.gpu_every, self.tick, self.gpus = (5 if self.gpu_ms > 100 else 1), 0, []
+        self.paging = [(time.monotonic(), *swap_pages())]
 
     @staticmethod
     def self_cpu():
@@ -203,8 +216,17 @@ class Reader:
                 "gpus": [{"index": g["index"], "load": g["load"]} for g in self.gpus]}
         return live, loads, rates, memory, swap
 
+    def paged(self):
+        """Bytes a second swapped in and out, averaged over the last five minutes (the snapshots' window), so one burst is not paging."""
+        self.paging = (self.paging + [(time.monotonic(), *swap_pages())])[-6:]
+        (then, in_then, out_then), (now, in_now, out_now) = self.paging[0], self.paging[-1]
+        seconds, page = max(1.0, now - then), os.sysconf("SC_PAGE_SIZE")
+        return round(max(0, in_now - in_then) * page / seconds), round(max(0, out_now - out_then) * page / seconds)
+
     def snapshot(self, loads, rates, memory, swap):
         uptime = float(read("/proc/uptime").split()[0])
+        swap_in, swap_out = self.paged()
+        memory, swap = {**memory, "pressure_percent": memory_stall()}, {**swap, "in_bps": swap_in, "out_bps": swap_out}
         mhz, (then, cpu_then) = core_mhz(), self.own
         now, cpu_now = time.monotonic(), self.self_cpu()
         self.own = (now, cpu_now)

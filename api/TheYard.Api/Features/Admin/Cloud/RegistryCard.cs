@@ -93,13 +93,13 @@ public static class RegistryCard
                 new("Tags", ResourceView.Fact(inputs, "tags"), "info"),
                 new("Live tags", apps == 0 ? "not read" : string.Join(" · ", images.SelectMany(image => image.Apps.Select(app => $"{app.Name} {app.Tag}"))), "info"),
                 new("GitHub's registry", ResourceView.Fact(inputs, GhcrPackages.Fact, "not read yet"), "info") { Source = Anonymous },
-                ResourceView.LiveRead(inputs),
+                ResourceView.HourRead(inputs),
             ],
             "every image is pushed here by the deploy workflows and pulled from here by every roll; the Azure registry it replaced is retired");
         return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.Hours.Count > 0,
-            ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "hour")),
-            inputs.Now.ToUnixTimeMilliseconds(), ResourceView.Age(inputs),
+            ResourceView.Note(inputs, ResourceView.FirstRead(inputs, "hour"), hoursOnly: true),
+            inputs.Now.ToUnixTimeMilliseconds(), ResourceView.HourAge(inputs),
             "Container registry",
             ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("spec"),
             new CloudLink($"{GhcrPackages.Host}/{Owner}", $"https://github.com/{Owner}?tab=packages"),

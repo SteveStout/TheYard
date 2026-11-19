@@ -22,9 +22,16 @@ public sealed class NightlyProcesses(IProcessRunsReader runs, Func<CancellationT
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private (DateTimeOffset At, ProcessFold Fold, IReadOnlyDictionary<string, string>? Switches)? _held;
+    private (DateTimeOffset At, IReadOnlyDictionary<string, string>? Switches)? _switches;
 
-    /// <summary>How long a fold and the switches are kept before they are read again.</summary>
+    /// <summary>How long a fold is kept before it is read again.</summary>
     public static readonly TimeSpan Keep = TimeSpan.FromMinutes(2);
+
+    /// <summary>
+    /// How long the switches are kept: they are the Function's app settings, which change by hand, and every answer of
+    /// its health route is billed a full second of the Function's grant (ADR-109, the addendum on what the grant pays for).
+    /// </summary>
+    public static readonly TimeSpan SwitchesKeep = TimeSpan.FromMinutes(15);
 
     /// <summary>The card with its description and its eight sections; the card as it was if anything throws.</summary>
     /// <param name="card">The nightly card as the frame built it.</param>
@@ -64,7 +71,11 @@ public sealed class NightlyProcesses(IProcessRunsReader runs, Func<CancellationT
             }
             // From the start of the strip's first Central day, so the fold holds the thirty days the strip draws and no part of a thirty-first.
             var fold = await runs.FoldAsync(now - NightlySlots.StartOfCentralDay(now.AddDays(1 - ProcessSections.StripDays)), cancellation);
-            var switches = await host(cancellation) is { Length: > 0 } name ? await SwitchesAsync(name, cancellation) : null;
+            if (_switches is not { } kept || now - kept.At >= SwitchesKeep)
+            {
+                _switches = (now, await host(cancellation) is { Length: > 0 } name ? await SwitchesAsync(name, cancellation) : null);
+            }
+            var switches = _switches.Value.Switches;
             _held = (now, fold, switches);
             return (fold, switches);
         }

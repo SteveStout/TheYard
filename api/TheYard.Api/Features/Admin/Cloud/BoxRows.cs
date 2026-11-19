@@ -50,9 +50,9 @@ public static class BoxRows
         double share = snapshot.Memory.TotalB > 0 ? 100.0 * snapshot.Memory.UsedB / snapshot.Memory.TotalB : 0;
         double swapShare = snapshot.Swap.TotalB > 0 ? 100.0 * snapshot.Swap.UsedB / snapshot.Swap.TotalB : 0;
         var (amber, red) = CloudThresholds.BoxMemory;
-        string tone = share >= red ? "alarm" : share >= amber || SwapWorthALook(snapshot.Swap) ? "warning" : "good";
+        string tone = share >= red ? "alarm" : share >= amber || SwapWorthALook(snapshot) ? "warning" : "good";
         return new CloudRow("memory", "Is the memory and swap fine?", $"{BoxWords.Bytes(snapshot.Memory.UsedB)} of {BoxWords.Bytes(snapshot.Memory.TotalB)}",
-            [new($"cache {BoxWords.Bytes(snapshot.Memory.CacheB)}, free {BoxWords.Bytes(snapshot.Memory.FreeB)} · swap {BoxWords.Bytes(snapshot.Swap.UsedB)} of {BoxWords.Bytes(snapshot.Swap.TotalB)} · amber {amber} %, red {red} %, swap amber past {CloudThresholds.BoxSwapShare} % of it or {BoxWords.Bytes(CloudThresholds.BoxSwapBytes)}, whichever is smaller", null)], tone)
+            [new($"cache {BoxWords.Bytes(snapshot.Memory.CacheB)}, free {BoxWords.Bytes(snapshot.Memory.FreeB)} · swap {BoxWords.Bytes(snapshot.Swap.UsedB)} of {BoxWords.Bytes(snapshot.Swap.TotalB)}{Paging(snapshot)} · amber {amber} %, red {red} %, {SwapLine(snapshot)}", null)], tone)
         {
             Table = Table(["Pool", "Used", "Of", "Share"],
             [
@@ -63,9 +63,33 @@ public static class BoxRows
         };
     }
 
-    /// <summary>Whether swap is past its line: the smaller of its share of the swap and a fixed size.</summary>
-    public static bool SwapWorthALook(BoxSwap swap) =>
-        swap.UsedB > Math.Min(CloudThresholds.BoxSwapBytes, (long)(swap.TotalB * CloudThresholds.BoxSwapShare / 100));
+    /// <summary>
+    /// Whether swap is worth a look. With the paging rate read (agent version 2): pages moving through it, five minutes of the
+    /// kernel's memory pressure, or a swap nearly full that the free memory could not take back. Parked pages alone are not
+    /// pressure. With no rate read, the older line: the smaller of its share of the swap and a fixed size.
+    /// </summary>
+    public static bool SwapWorthALook(BoxSnapshot snapshot)
+    {
+        var (memory, swap) = (snapshot.Memory, snapshot.Swap);
+        if (swap.InBps is not { } swapIn || swap.OutBps is not { } swapOut)
+        {
+            return swap.UsedB > Math.Min(CloudThresholds.BoxSwapBytes, (long)(swap.TotalB * CloudThresholds.BoxSwapShare / 100));
+        }
+        bool full = swap.TotalB > 0 && 100.0 * swap.UsedB / swap.TotalB >= CloudThresholds.BoxSwapNearlyFull && memory.AvailableB is { } available && available < swap.UsedB;
+        return swapIn + swapOut >= CloudThresholds.BoxPagingBps || memory.PressurePercent >= CloudThresholds.BoxMemoryPressure || full;
+    }
+
+    /// <summary>The paging and pressure the swap's tone reads, when the agent read them.</summary>
+    private static string Paging(BoxSnapshot snapshot) =>
+        snapshot.Swap is { InBps: { } swapIn, OutBps: { } swapOut }
+            ? $", moving {BoxWords.Rate(swapIn)} in and {BoxWords.Rate(swapOut)} out over five minutes" + (snapshot.Memory.PressurePercent is { } pressure ? $", memory pressure {BoxWords.Percent(pressure)}" : "")
+            : "";
+
+    /// <summary>The swap's line, as the tone uses it.</summary>
+    private static string SwapLine(BoxSnapshot snapshot) =>
+        snapshot.Swap.InBps is null || snapshot.Swap.OutBps is null
+            ? $"swap amber past {CloudThresholds.BoxSwapShare} % of it or {BoxWords.Bytes(CloudThresholds.BoxSwapBytes)}, whichever is smaller (the agent reads no paging yet)"
+            : $"swap amber when {BoxWords.Rate(CloudThresholds.BoxPagingBps)} moves through it, memory pressure reaches {CloudThresholds.BoxMemoryPressure} %, or it is {CloudThresholds.BoxSwapNearlyFull} % full with less memory available than it holds; parked pages alone are not pressure";
 
     /// <summary>The one command that brings a stopped unit back, in its own scope.</summary>
     public static string RestartCommand(string unit, string scope) =>
