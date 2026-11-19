@@ -78,10 +78,17 @@ export function markReached(progress: ReviewProgress, index: number): ReviewProg
   return { ...progress, reached: [...progress.reached, index].sort(byIndex) };
 }
 
-/** What the page sends to POST /api/review/reached: the stop (0 is opened, then 1 to 7), and the code only when it is one. */
-export function reachBody(stop: number, code: string | null): { stop: number; r?: string } {
+/**
+ * What the page sends to POST /api/review/reached: the stop (0 is opened, then 1 to 7), the code only when it is one,
+ * and the first screen the page drew, so the card can split its figures by screen.
+ */
+export function reachBody(
+  stop: number,
+  code: string | null,
+  screen?: string
+): { stop: number; r?: string; screen?: string } {
   const r = code === null ? null : linkCode(`?r=${encodeURIComponent(code)}`);
-  return r === null ? { stop } : { stop, r };
+  return { stop, ...(r === null ? {} : { r }), ...(screen ? { screen } : {}) };
 }
 
 /** The names a button on the route reports (ADR: Ten minutes, seven stops, the addendum on the second actions). */
@@ -106,10 +113,11 @@ export type ReviewAction = (typeof REVIEW_ACTIONS)[number];
 /** What the page sends to POST /api/review/reached for a button pressed: its name, and the code only when it is one. */
 export function actionBody(
   action: ReviewAction,
-  code: string | null
-): { action: string; r?: string } {
+  code: string | null,
+  screen?: string
+): { action: string; r?: string; screen?: string } {
   const r = code === null ? null : linkCode(`?r=${encodeURIComponent(code)}`);
-  return r === null ? { action } : { action, r };
+  return { action, ...(r === null ? {} : { r }), ...(screen ? { screen } : {}) };
 }
 
 /** The stops a move reached for the first time, numbered as the route numbers them (1 to 7), each reported once. */

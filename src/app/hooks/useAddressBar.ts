@@ -21,7 +21,7 @@ import type { DocKey } from '../../library/documents';
 import { useFirstLoad } from '../../hooks/useFirstLoad';
 import {
   blogPostFrom,
-  blogQueryFrom,
+  pageQueryFrom,
   browserSearch,
   inventoryPart,
   readFirstAddress,
@@ -87,8 +87,8 @@ export function useAddressBar() {
   /** The blog (ADR: Every LinkedIn post is also a blog post), ?view=blog, and the post open on it. */
   const [blogOpen, setBlogOpen] = useState(first.blog);
   const [blogPost, setBlogPost] = useState<string | null>(first.blogPost);
-  /** The blog's own parts of the address (the list's filter, a post's slide), never the inventory's q and sort. */
-  const [blogQuery, setBlogQuery] = useState(first.blogQuery);
+  /** The open page's own parts of the address (the blog's filter or slide, the review's screen), never q and sort. */
+  const [pageQuery, setPageQuery] = useState(first.pageQuery);
   /** The review route, ?view=review, and the recommendations page, ?view=recommendations; the page open; one close for all three. */
   const [reviewOpen, setReviewOpen] = useState(first.review);
   const [recommendationsOpen, setRecommendationsOpen] = useState(first.recommendations);
@@ -126,7 +126,8 @@ export function useAddressBar() {
     if (accountOpen) params.set('view', 'account');
     if (page) params.set('view', page);
     if (page === 'blog' && blogPost !== null) params.set('post', blogPost);
-    if (page === 'blog') new URLSearchParams(blogQuery).forEach((v, k) => params.set(k, v));
+    if (page === 'blog' || page === 'review')
+      new URLSearchParams(pageQuery).forEach((v, k) => params.set(k, v));
     if (openDocKey) params.set('doc', docSlug(openDocKey));
     const query = params.toString();
     window.history.replaceState(
@@ -146,7 +147,7 @@ export function useAddressBar() {
     inventoryOpen,
     page,
     blogPost,
-    blogQuery,
+    pageQuery,
   ]);
   // #endregion url-mirror
 
@@ -197,7 +198,7 @@ export function useAddressBar() {
       setAccountOpen(params.get('view') === 'account');
       setBlogOpen(params.get('view') === 'blog');
       setBlogPost(blogPostFrom(params));
-      setBlogQuery(blogQueryFrom(params));
+      setPageQuery(pageQueryFrom(params));
       setReviewOpen(params.get('view') === 'review');
       setRecommendationsOpen(params.get('view') === 'recommendations');
       setInventoryOpen(opensInventory(inventoryPart(params)));
@@ -273,8 +274,8 @@ export function useAddressBar() {
     setBlogOpen,
     blogPost,
     setBlogPost,
-    blogQuery,
-    setBlogQuery,
+    pageQuery,
+    setPageQuery,
     reviewOpen,
     setReviewOpen,
     recommendationsOpen,

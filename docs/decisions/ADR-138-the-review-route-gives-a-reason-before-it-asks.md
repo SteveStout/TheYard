@@ -70,4 +70,17 @@ The page's view layer, in the review route's own components, with one query of t
 - [`src/lib/railStorage.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/railStorage.ts) - the collapsed default, never written
 - [`src/library/pendingAnchor.ts`](https://github.com/SteveStout/TheYard/blob/main/src/library/pendingAnchor.ts) - the section the next document lands on
 - [`render/heads.ts`](https://github.com/SteveStout/TheYard/blob/main/render/heads.ts) and [`render/loaders.ts`](https://github.com/SteveStout/TheYard/blob/main/render/loaders.ts) - the link preview and the first load's two reads
+- [`src/lib/reviewMirror.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/reviewMirror.ts) and [`src/components/review/ReviewMirror/ReviewMirror.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/ReviewMirror/ReviewMirror.tsx) - the mirror at for=ai, its gate panel and its names
 - [`tests/e2e/review.spec.ts`](https://github.com/SteveStout/TheYard/blob/main/tests/e2e/review.spec.ts) - the first screen at both widths, the proof's click and the action reports
+
+## Addendum, 2026-11-19 (1.0.5.110): the mirror, at for=ai
+
+What stopped being true: that the route has one first screen. `/?view=review&for=ai` draws the second design, the manager mirror, in place of the verdict: "For the manager hiring a remote Lead or Staff engineer", "Shipping with AI without losing quality.", the problem and how I run it, "See what this version had to pass" to `/?view=admin&card=tests` with "Book 20 minutes" beside it, the byline and resume, the two record tiles, a live gate panel and a strip of names. Only `for=ai` draws it; any other value, or none, draws the verdict. The address keeps `for=ai` through the address bar's rewrite, so a reload stays on it; opening the route from the sidebar or the landing banner draws the verdict.
+
+**The gate panel** lists the gate's six fixed parts as the design words them, ticked only when the build carries the gate's own reading of this version, never the six suites of the results file; CodeRabbit's word is the build's (reviewed, not reviewed, pending); the totals are the landing page's tests figure and the failures among the suites it counts, and the quality numbers held when there is a reading. "It slipped once." opens Quality in place at "The slip, and the turn" and reports `slip`.
+
+**The strip** names Drew Dell, Sean Whitesell, Anthony Fortner, Khushbu Shah, Cliff True, Henry Crans and Meagan Colley in that order, each with the title `/api/recommendations` gives, a name the answer lacks skipped, then "and N more" from the answer's own count. No quote text.
+
+**Its own preview, and no listing.** The link preview reads "Shipping with AI without losing quality" and its own description. It is not in the sidebar, the site map or `sitemap.xml`; it is reached only by a link Steve sends.
+
+**The card splits by screen.** Every report now carries `screen`, "verdict" or "mirror"; the row keeps the first one seen that day, a row from before reads as "verdict", and a screen the route does not draw is dropped, not refused. "Review route, how far they got" gives the two figures for each screen beside the totals. `reviewMirror.test.ts`, `ReviewHandlerTests`, `heads.test.ts`, `render.test.ts` and `review.spec.ts` hold it.

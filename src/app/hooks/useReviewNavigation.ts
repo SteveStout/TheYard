@@ -11,6 +11,8 @@ export function useReviewNavigation(address: Address, closeOthers: () => void) {
   const openReview = () => {
     address.push({ viaReview: true }, new URLSearchParams({ view: 'review' }));
     closeOthers();
+    // Opened in place, the route draws its own first screen; only a link sent from outside names another (?for=ai).
+    address.setPageQuery('');
     address.setReviewOpen(true);
   };
 

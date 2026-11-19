@@ -23,7 +23,7 @@ export function useBlogNavigation(address: Address, closeOthers: () => void) {
     address.push({ viaBlog: true }, params);
     closeOthers();
     address.setBlogPost(slug);
-    address.setBlogQuery(query);
+    address.setPageQuery(query);
     address.setBlogOpen(true);
   };
 
@@ -37,7 +37,7 @@ export function useBlogNavigation(address: Address, closeOthers: () => void) {
     if (how === 'push') address.push({ viaBlog: true }, params);
     else if (kept) address.replace(kept, params);
     else address.replaceQuery(params);
-    address.setBlogQuery(query);
+    address.setPageQuery(query);
   };
 
   /** From a post to the list: back when the list pushed the post, else the list in place. */
@@ -48,7 +48,7 @@ export function useBlogNavigation(address: Address, closeOthers: () => void) {
     }
     address.replaceQuery(blogParams(null));
     address.setBlogPost(null);
-    address.setBlogQuery('');
+    address.setPageQuery('');
   };
 
   return { openBlog, closeBlogPost, moveBlog };

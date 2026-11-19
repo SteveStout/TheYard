@@ -85,6 +85,8 @@ describe('the review place, kept on the browser (ADR: Ten minutes, seven stops)'
     expect(actionBody('proof', 'zzrev1')).toEqual({ action: 'proof', r: 'zzrev1' });
     expect(actionBody('book', null)).toEqual({ action: 'book' });
     expect(actionBody('book', 'Steve')).toEqual({ action: 'book' });
+    expect(actionBody('book', null, 'mirror')).toEqual({ action: 'book', screen: 'mirror' });
+    expect(reachBody(0, 'zzrev1', 'verdict')).toEqual({ stop: 0, r: 'zzrev1', screen: 'verdict' });
     expect(REVIEW_ACTIONS).toHaveLength(12);
     expect(new Set(REVIEW_ACTIONS).size).toBe(12);
   });

@@ -37,8 +37,11 @@ export function readFirstAddress(search: string) {
     /** The blog, ?view=blog, and one post on it, ?view=blog&post=solid-in-five-real-files. */
     blog: params.get('view') === 'blog',
     blogPost: blogPostFrom(params),
-    /** The blog's own parts of the address: the list's filter (?topic=, ?q=, ...) or the slide a post opens on (?slide=3). */
-    blogQuery: blogQueryFrom(params),
+    /**
+     * The open page's own parts of the address: the blog's list filter (?topic=, ?q=, ...) or the slide a post opens on
+     * (?slide=3), or the review route's first screen (?for=ai).
+     */
+    pageQuery: pageQueryFrom(params),
     /** The review route, ?view=review (ADR: Ten minutes, seven stops). */
     review: params.get('view') === 'review',
     /** The recommendations page, ?view=recommendations (ADR: The recommendations have a page). */
@@ -49,11 +52,15 @@ export function readFirstAddress(search: string) {
   };
 }
 
-/** The post an address names on the blog: a slug, or null for the list and for anything that is not one. */
-export function blogQueryFrom(params: URLSearchParams): string {
+/**
+ * The open page's own parts of the address, as a query: on the blog its list filter and a post's slide, on the review
+ * route the first screen it was sent for (ADR: The review route gives a reason before it asks); "" anywhere else.
+ */
+export function pageQueryFrom(params: URLSearchParams): string {
   const own = new URLSearchParams();
-  if (params.get('view') !== 'blog') return '';
-  for (const part of [...FILTER_PARTS, 'slide']) {
+  const view = params.get('view');
+  const parts = view === 'blog' ? [...FILTER_PARTS, 'slide'] : view === 'review' ? ['for'] : [];
+  for (const part of parts) {
     const value = params.get(part);
     if (value !== null && value !== '') own.set(part, value);
   }

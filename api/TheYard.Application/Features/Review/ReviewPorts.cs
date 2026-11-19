@@ -11,7 +11,8 @@ namespace TheYard.Application.Features.Review;
 /// <param name="Code">The six-character code the page opened on, or null.</param>
 /// <param name="At">When the report arrived.</param>
 /// <param name="Action">The button pressed (<see cref="ReviewActions.Names"/>), or null for a report of a stop alone.</param>
-public sealed record ReviewReach(string Hash, string Day, int Stop, string? Code, DateTimeOffset At, string? Action = null);
+/// <param name="Screen">The first screen the page drew (<see cref="ReviewActions.Screens"/>), or null.</param>
+public sealed record ReviewReach(string Hash, string Day, int Stop, string? Code, DateTimeOffset At, string? Action = null, string? Screen = null);
 
 /// <summary>One visitor's day on the route, folded: the highest stop, the first code, the first and the last report, and the actions seen.</summary>
 /// <param name="Hash">The visitor's stable keyed hash.</param>
@@ -21,7 +22,8 @@ public sealed record ReviewReach(string Hash, string Day, int Stop, string? Code
 /// <param name="First">The first report that day.</param>
 /// <param name="Last">The last report that day.</param>
 /// <param name="Actions">The actions seen that day, each once, only ever added to; null on a row kept before actions were, which reads as none.</param>
-public sealed record ReviewRow(string Hash, string Day, int Stop, string? Code, DateTimeOffset First, DateTimeOffset Last, IReadOnlyList<string>? Actions = null);
+/// <param name="Screen">The first screen seen that day, kept once; null on a row kept before screens were, which reads as "verdict".</param>
+public sealed record ReviewRow(string Hash, string Day, int Stop, string? Code, DateTimeOffset First, DateTimeOffset Last, IReadOnlyList<string>? Actions = null, string? Screen = null);
 
 /// <summary>One tagged code's row on the card: how far its visitors got, how long it took, and the last day it was seen.</summary>
 /// <param name="Code">The code; never a name.</param>
@@ -48,7 +50,15 @@ public sealed record ReviewFunnel(bool Available, string Window, int Opened, IRe
 /// <param name="SecondAction">Visitors who reached any action, or a stop past the opening.</param>
 /// <param name="RunningOrBook">Visitors who reached the running system or the booking button (<see cref="ReviewActions.RunningOrBook"/>), or a stop past the opening.</param>
 /// <param name="CountedFrom">The UTC day the actions started counting, yyyy-MM-dd.</param>
-public sealed record ReviewSecond(int SecondAction, int RunningOrBook, string CountedFrom);
+/// <param name="ByScreen">The same two figures for each first screen, with the visitors who opened on it, in <see cref="ReviewActions.Screens"/>' order.</param>
+public sealed record ReviewSecond(int SecondAction, int RunningOrBook, string CountedFrom, IReadOnlyList<ReviewScreenRow> ByScreen);
+
+/// <summary>One first screen's share of the window: who opened on it, and how many of them reached each of the two figures.</summary>
+/// <param name="Screen">"verdict" or "mirror".</param>
+/// <param name="Opened">The visitors whose first screen it was.</param>
+/// <param name="SecondAction">Of them, those who reached a second action.</param>
+/// <param name="RunningOrBook">Of them, those who reached the running system or the booking button.</param>
+public sealed record ReviewScreenRow(string Screen, int Opened, int SecondAction, int RunningOrBook);
 
 /// <summary>The windows the card offers: a day, a week, a month and a quarter, spelled the way the links card spells its windows.</summary>
 public enum ReviewWindow

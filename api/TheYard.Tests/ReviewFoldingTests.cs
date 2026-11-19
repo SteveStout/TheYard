@@ -1,4 +1,5 @@
 using TheYard.Application.Features.Review;
+using TheYard.Infrastructure.Cosmos.Features.Review;
 
 namespace TheYard.Tests;
 
@@ -93,6 +94,25 @@ public sealed class ReviewFoldingTests
         Assert.All(ReviewActions.RunningOrBook, name => Assert.True(ReviewActions.IsOne(name)));
         Assert.False(ReviewActions.IsOne("Proof"));
         Assert.False(ReviewActions.IsOne(null));
+    }
+
+    [Fact]
+    public void The_document_keeps_the_actions_and_the_screen_and_one_written_before_them_reads_as_none()
+    {
+        // The mapping alone, both ways: no store is touched (RULE 79), the folding above is what a write runs.
+        var row = new ReviewRow("a", "2026-11-04", 2, "zzrev1", Noon, Noon.AddMinutes(3), ["proof", "book"], "mirror");
+        var document = CosmosReviewStore.DocumentFor(row);
+        Assert.Equal(["proof", "book"], document.Actions!);
+        Assert.Equal("mirror", document.Screen);
+        var back = CosmosReviewStore.RowOf(document);
+        Assert.Equal((row.Stop, row.Code, row.First, row.Last, row.Screen), (back.Stop, back.Code, back.First, back.Last, back.Screen));
+        Assert.Equal(row.Actions!, back.Actions!);
+
+        // A document kept before the second actions has neither field: no set, and the verdict's screen.
+        var old = CosmosReviewStore.RowOf(CosmosReviewStore.DocumentFor(new ReviewRow("b", "2026-11-04", 0, null, Noon, Noon)));
+        Assert.Null(old.Actions);
+        Assert.Equal("verdict", ReviewActions.ScreenOf(old));
+        Assert.False(ReviewActions.ReachedASecond(old));
     }
 
     [Theory]

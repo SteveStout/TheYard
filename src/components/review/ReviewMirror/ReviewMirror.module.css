@@ -1,0 +1,115 @@
+/**
+ * Does:      Lays out the mirror: at a desk the case, the moves, the byline and the two tiles in a wide column with the
+ *            gate panel beside them and the strip of names under both; under the desk one column, the panel after
+ *            the tiles and the strip last.
+ * Does not:  Draw a panel's glass (panels.css does), the gate panel (GatePanel.module.css does) or the claim and the
+ *            moves' own look (ReviewVerdict.module.css does).
+ * Used by:   ReviewMirror.tsx.
+ */
+.mirror {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 452px;
+  gap: var(--space-5) var(--space-7);
+  align-items: start;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.strip {
+  grid-column: 1 / -1;
+}
+
+/* The problem and the answer, each under its small label. */
+.case {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr);
+  gap: var(--space-3) var(--space-5);
+  margin: var(--space-4) 0 0;
+}
+
+.case dt {
+  padding-top: var(--space-1);
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+}
+
+.case dd {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-md);
+}
+
+.case .answer {
+  color: var(--color-heading);
+  font-weight: var(--weight-medium);
+}
+
+.byline {
+  margin: var(--space-3) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.byline strong {
+  color: var(--color-heading);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.tile strong {
+  color: var(--color-teal-deep);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+@media (max-width: 1023.98px) {
+  .mirror {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 639.98px) {
+  /* The moves come straight after the case (ReviewVerdict.module.css orders them 2), then the byline and tiles. */
+  .byline {
+    order: 3;
+  }
+
+  .tiles {
+    order: 4;
+  }
+
+  .case {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .case dd + dt {
+    margin-top: var(--space-2);
+  }
+
+  .tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

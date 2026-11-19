@@ -76,6 +76,7 @@ public sealed class ReviewEndpointTests(WebApplicationFactory<Program> factory) 
         Assert.True(second.GetProperty("second_action").GetInt32() >= 1);
         Assert.True(second.GetProperty("running_or_book").GetInt32() >= 1);
         Assert.False(string.IsNullOrWhiteSpace(second.GetProperty("counted_from").GetString()));
+        Assert.Equal(["verdict", "mirror"], second.GetProperty("by_screen").EnumerateArray().Select(row => row.GetProperty("screen").GetString()));
     }
 
     [Fact]

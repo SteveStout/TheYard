@@ -1,6 +1,7 @@
 /**
  * Does:      The head a link preview reads for the pages a reader is sent to (ADR: The public face): the review
- *            route, the blog, one post, About Steven and Quality each get their own title, description and address
+ *            route (and its mirror at for=ai), the blog, one post, About Steven and Quality each get their own title,
+ *            description and address
  *            in every tag an unfurler reads, in the pages' own words. Every other address keeps the head the
  *            build wrote.
  * Does not:  Read anything itself (the renderer hands it the posts it keeps), or touch the picture: the preview
@@ -23,6 +24,14 @@ const REVIEW: Head = {
   description:
     '200+ production releases with zero downtime. Now I build with AI and measure quality on every version. See the proof on the running system in two minutes.',
   path: '/?view=review',
+};
+
+/** The mirror, reached only by a link sent for outreach about AI (ADR: The review route gives a reason before it asks). */
+const REVIEW_AI: Head = {
+  title: 'Shipping with AI without losing quality',
+  description:
+    'Claude writes most of the code and I decide what ships. Every push goes through one gate. See what this version had to pass, on the running system.',
+  path: '/?view=review&for=ai',
 };
 
 const BLOG: Head = {
@@ -62,7 +71,7 @@ export function headFor(search: string, posts: readonly PostHead[]): Head | null
   const query = new URLSearchParams(search.replace(/^\?/, ''));
   const view = query.get('view');
   const doc = query.get('doc');
-  if (view === 'review') return REVIEW;
+  if (view === 'review') return query.get('for') === 'ai' ? REVIEW_AI : REVIEW;
   if (view === 'blog') {
     const post = posts.find((each) => each.slug === query.get('post'));
     return post

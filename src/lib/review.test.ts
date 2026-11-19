@@ -3,6 +3,7 @@ import {
   countedLine,
   figureWords,
   funnelBars,
+  screenLine,
   secondCountedLine,
   secondFigures,
   reachedWords,
@@ -77,5 +78,14 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
     expect(secondFigures({ opened: 0, second }).map((figure) => figure.percent)).toEqual([0, 0]);
     expect(secondFigures({ opened: 5 }).map((figure) => figure.count)).toEqual([0, 0]);
     expect(secondCountedLine(undefined)).toBe('The two figures are not counted on this version.');
+  });
+
+  it('splits the two figures by first screen, each a whole share of who opened on it', () => {
+    expect(screenLine({ screen: 'verdict', opened: 8, second_action: 3, running_or_book: 1 })).toBe(
+      'The verdict, /?view=review: 8 opened, 38% a second action, 13% the running system or the booking button'
+    );
+    expect(screenLine({ screen: 'mirror', opened: 0, second_action: 0, running_or_book: 0 })).toBe(
+      'The mirror, /?view=review&for=ai: 0 opened, 0% a second action, 0% the running system or the booking button'
+    );
   });
 });
