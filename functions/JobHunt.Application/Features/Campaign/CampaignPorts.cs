@@ -229,7 +229,11 @@ public sealed record LeadRecord
 }
 
 /// <summary>One logged email as the 30-day rule reads it.</summary>
-public sealed record LoggedEmail(long LeadId, string Key, string? ParentKey, string Company, DateOnly CentralDay, bool Shadow);
+public sealed record LoggedEmail(long LeadId, string Key, string? ParentKey, string Company, DateOnly CentralDay, bool Shadow)
+{
+    /// <summary>The address it went to: a send to a shared box starts no 30 days for an email to a person.</summary>
+    public string? To { get; init; }
+}
 
 /// <summary>One real send with its thread, as the inbox side reads it.</summary>
 public sealed record SentThread(long EmailId, long LeadId, string Key, string To, string ThreadId, DateOnly CentralDay, bool Bounced, DateTimeOffset? ReplyReceivedAt);

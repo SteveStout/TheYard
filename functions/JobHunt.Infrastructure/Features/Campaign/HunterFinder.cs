@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
+using JobHunt.Application.Features.Campaign;
 using JobHunt.Application.Shared.Walls;
 
 namespace JobHunt.Infrastructure.Features.Campaign;
@@ -6,17 +8,29 @@ namespace JobHunt.Infrastructure.Features.Campaign;
 /// <summary>
 /// Hunter's email finder behind the finder port (ADR-118), shipped dormant: it is built only when the app setting
 /// HUNTER_KEY holds a key, and with none the pass never builds it and logs nothing about it. It asks only for a
-/// lead whose public pages gave no address, keeps an answer only when Hunter scores it 70 or more, marks it valid,
-/// and cites at least one public page it was seen on (an answer with no page is a pattern, and a pattern is a
-/// guess), and gives that page as the address's source. The monthly cap is the free plan's 50 calls.
+/// lead whose public pages gave no address, keeps an answer only when Hunter scores it 70 or more and marks it valid,
+/// and gives the first public page it cites as the address's source. A valid answer with no page is kept too, since
+/// Hunter checked the mailbox itself, with Hunter's verifier as its source, as hunter_find.py writes it. The monthly
+/// cap is the setting HUNTER_MONTHLY_CAP (1,500 on the Starter plan), the free plan's 50 without it; and the pass reads
+/// the searches the plan has left before it asks (IFinderPlan; ADR-118, the addendum on the paid finder).
 /// </summary>
-public sealed class HunterFinder(IHttpClientFactory http, string key) : IAddressFinder
+public sealed class HunterFinder(IHttpClientFactory http, string key) : IAddressFinder, IFinderPlan
 {
     /// <summary>The app setting that turns the finder on.</summary>
     public const string Setting = "HUNTER_KEY";
 
-    /// <summary>Calls a month, the free plan's credits.</summary>
-    public const int MonthCap = 50;
+    /// <summary>The app setting that holds the month's cap of searches.</summary>
+    public const string CapSetting = "HUNTER_MONTHLY_CAP";
+
+    /// <summary>Searches a month with no setting: the free plan's credits.</summary>
+    public const int FreePlanCap = 50;
+
+    /// <summary>The source written for a valid address Hunter cited no page for.</summary>
+    public const string VerifierPage = "https://hunter.io/email-verifier";
+
+    /// <summary>The month's cap from its setting: a whole number of zero or more, else the free plan's 50.</summary>
+    public static int MonthCapFrom(string? value) =>
+        int.TryParse(value?.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out int cap) ? cap : FreePlanCap;
 
     /// <summary>What Steve does when Hunter refuses, as the WALLS.md bullet says it.</summary>
     public const string Control = "sign in at hunter.io and read the account notice";
@@ -113,6 +127,43 @@ public sealed class HunterFinder(IHttpClientFactory http, string key) : IAddress
                 .Select(x => x.TryGetProperty("uri", out var u) && u.ValueKind == JsonValueKind.String ? u.GetString()! : "")
                 .FirstOrDefault(u => u.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) ?? ""
             : "";
-        return email.Length > 0 && score >= MinScore && status == "valid" && page.Length > 0 ? new FoundAddress(email, page) : null;
+        return email.Length > 0 && score >= MinScore && status == "valid" ? new FoundAddress(email, page.Length > 0 ? page : VerifierPage) : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<int?> SearchesLeftAsync(CancellationToken ct)
+    {
+        using var cap = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cap.CancelAfter(Timeout);
+        try
+        {
+            using var answer = await http.CreateClient().GetAsync("https://api.hunter.io/v2/account?api_key=" + Uri.EscapeDataString(key), cap.Token);
+            return answer.IsSuccessStatusCode ? SearchesLeft(await answer.Content.ReadAsStringAsync(cap.Token)) : null;
+        }
+        catch (Exception ex) when (PublicBoardReader.DidNotAnswer(ex, ct))
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The searches left in Hunter's account answer (remaining, else available less used), or null.</summary>
+    public static int? SearchesLeft(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object
+                || !data.TryGetProperty("requests", out var requests) || requests.ValueKind != JsonValueKind.Object
+                || !requests.TryGetProperty("searches", out var searches) || searches.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+            int? Number(string name) => searches.TryGetProperty(name, out var n) && n.ValueKind == JsonValueKind.Number ? (int)n.GetDouble() : null;
+            return Number("remaining") ?? (Number("available") is int available && Number("used") is int used ? available - used : null);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 }
