@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   countedLine,
+  figureWords,
   funnelBars,
+  secondCountedLine,
+  secondFigures,
   reachedWords,
   REORDERED_LINE,
   REVIEW_REORDERED,
@@ -57,5 +60,22 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
     expect(REORDERED_LINE).toContain(`reordered on ${REVIEW_REORDERED}`);
     expect(REORDERED_LINE).toContain('Quality you can watch became stop 1');
     expect(REORDERED_LINE).toContain('counted against the earlier order');
+  });
+
+  it('gives the two figures as a count and a whole share of the visitors who opened', () => {
+    const second = { second_action: 3, running_or_book: 1, counted_from: '2026-11-19' };
+    const figures = secondFigures({ opened: 8, second });
+    expect(figures.map((figure) => [figure.label, figure.count, figure.percent])).toEqual([
+      ['reached a second action', 3, 38],
+      ['reached the running system or the booking button', 1, 13],
+    ]);
+    expect(figureWords(figures[0], 8)).toBe('3 of 8 who opened, 38%');
+    expect(secondCountedLine(second)).toBe(
+      'These two figures count from 2026-11-19, the day the buttons started reporting.'
+    );
+    // Nobody opened, or an answer made before the figures existed: none, never a division by nothing.
+    expect(secondFigures({ opened: 0, second }).map((figure) => figure.percent)).toEqual([0, 0]);
+    expect(secondFigures({ opened: 5 }).map((figure) => figure.count)).toEqual([0, 0]);
+    expect(secondCountedLine(undefined)).toBe('The two figures are not counted on this version.');
   });
 });

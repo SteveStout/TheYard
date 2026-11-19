@@ -1,16 +1,20 @@
 /**
  * Review route, how far they got (ADR: Ten minutes, seven stops, the addendum on the reach rows): of the
  * visitors who opened the review route in the window, how many reached each of the seven stops, drawn as
- * eight bars, and how far each tagged link's visitors got. A code says which link was sent, never who
- * received it, so this card is as public as the rest of the tab and names nobody.
+ * eight bars, how many reached a second action and how many the running system or the booking button (the
+ * addendum on the second actions), and how far each tagged link's visitors got. A code says which link was
+ * sent, never who received it, so this card is as public as the rest of the tab and names nobody.
  */
 import { useState } from 'react';
 import {
   countedLine,
+  figureWords,
   funnelBars,
   reachedWords,
   REORDERED_LINE,
   REVIEW_WINDOWS,
+  secondCountedLine,
+  secondFigures,
   tookWords,
   windowLabel,
   type ReviewCodeRow,
@@ -85,6 +89,21 @@ export default function ReviewCard({ tick }: { tick: number }) {
               .join(', ')}`}
             tone={own.reach}
           />
+          <dl className={own.figures} data-testid="review-second">
+            {secondFigures(funnel).map((figure) => (
+              <div
+                key={figure.key}
+                className={own.figure}
+                data-testid={`review-second-${figure.key}`}
+              >
+                <dt>{figure.label}</dt>
+                <dd>{figureWords(figure, funnel.opened)}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className={styles.muted} data-testid="review-second-counted">
+            {secondCountedLine(funnel.second)}
+          </p>
           {funnel.by_code.length === 0 ? (
             <CardState state="empty" what="tagged links">
               No visitor came to the route through a tagged link in the window.

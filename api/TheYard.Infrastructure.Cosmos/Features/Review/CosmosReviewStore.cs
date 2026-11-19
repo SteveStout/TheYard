@@ -154,10 +154,11 @@ public sealed class CosmosReviewStore(CosmosStore store) : IReviewStore
         Code = row.Code,
         FirstSeen = row.First,
         LastSeen = row.Last,
+        Actions = row.Actions is null ? null : [.. row.Actions],
     };
 
     /// <summary>A kept document as a row.</summary>
     /// <param name="document">The document as stored.</param>
     public static ReviewRow RowOf(ReviewDocument document) =>
-        new(document.Hash, document.Day, document.Stop, document.Code, document.FirstSeen, document.LastSeen);
+        new(document.Hash, document.Day, document.Stop, document.Code, document.FirstSeen, document.LastSeen, document.Actions);
 }

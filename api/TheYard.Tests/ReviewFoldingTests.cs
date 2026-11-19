@@ -54,6 +54,47 @@ public sealed class ReviewFoldingTests
             rows.Select(row => (row.Day, row.Hash, row.Stop)));
     }
 
+    [Fact]
+    public void The_actions_are_a_set_that_only_grows_and_a_row_kept_before_them_reads_as_none()
+    {
+        var folded = Assert.Single(ReviewFolding.Fold([
+            Reach("a", 0, null, 0),
+            Reach("a", 0, null, 1) with { Action = "proof" },
+            Reach("a", 0, null, 2) with { Action = "book" },
+            Reach("a", 0, null, 3) with { Action = "proof" },
+        ]));
+        Assert.Equal(["proof", "book"], folded.Actions!);
+
+        // A row the store kept before actions were has none; folding a new one in adds, and nothing takes away.
+        var old = new ReviewRow("a", "2026-11-04", 2, null, Noon, Noon);
+        Assert.Null(old.Actions);
+        var merged = ReviewFolding.Merge(old, ReviewFolding.Row(Reach("a", 0, null, 5) with { Action = "resume" }));
+        Assert.Equal(["resume"], merged.Actions!);
+        Assert.Equal(2, merged.Stop);
+        var later = ReviewFolding.Merge(merged, ReviewFolding.Row(Reach("a", 1, null, 6)));
+        Assert.Equal(["resume"], later.Actions!);
+        Assert.Null(ReviewFolding.Merge(old, old).Actions);
+    }
+
+    [Fact]
+    public void The_two_figures_read_a_stop_past_the_opening_or_an_action_and_a_resume_alone_is_not_the_running_system()
+    {
+        static ReviewRow Row(int stop, params string[]? actions) => new("a", "2026-11-04", stop, null, Noon, Noon, actions);
+
+        Assert.False(ReviewActions.ReachedASecond(Row(0, null)));
+        Assert.False(ReviewActions.ReachedASecond(Row(0)));
+        Assert.True(ReviewActions.ReachedASecond(Row(0, "resume")));
+        Assert.True(ReviewActions.ReachedASecond(Row(1)));
+        Assert.False(ReviewActions.ReachedRunningOrBook(Row(0, "resume", "linkedin", "tour")));
+        Assert.True(ReviewActions.ReachedRunningOrBook(Row(0, "book")));
+        Assert.True(ReviewActions.ReachedRunningOrBook(Row(0, "slip")));
+        Assert.True(ReviewActions.ReachedRunningOrBook(Row(3, null)));
+        Assert.Equal(12, ReviewActions.Names.Count);
+        Assert.All(ReviewActions.RunningOrBook, name => Assert.True(ReviewActions.IsOne(name)));
+        Assert.False(ReviewActions.IsOne("Proof"));
+        Assert.False(ReviewActions.IsOne(null));
+    }
+
     [Theory]
     [InlineData(0, true)]
     [InlineData(1, true)]

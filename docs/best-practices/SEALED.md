@@ -210,10 +210,10 @@ Measured on this build:
 | shape | count |
 | --- | --- |
 | sealed | 351 |
-| static | 218 |
+| static | 219 |
 | abstract | 0 |
 | open | 0 |
-| records | 384 |
+| records | 385 |
 | open records | 0 |
 
 Every class in those six projects is sealed or static, and a static class cannot be inherited either,
