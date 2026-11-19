@@ -122,7 +122,17 @@ public sealed class CampaignSend(ILeadStore leads, IEmailLog log, IMailSender ma
             {
                 await Task.Delay(Spacing, time, ct);
             }
-            SentMail? sent = shadow ? null : await mail.SendAsync(new OutgoingMail(lead.ContactEmail!, email.Subject!, email.Text!, email.Html!), ct);
+            SentMail? sent;
+            try
+            {
+                sent = shadow ? null : await mail.SendAsync(new OutgoingMail(lead.ContactEmail!, email.Subject!, email.Text!, email.Html!), ct);
+            }
+            catch (MailHeldException stopped)
+            {
+                // A no-email day (NoEmailDayGate): nothing went, nothing is written or counted, and the next open day sends.
+                held[stopped.Reason] = held.GetValueOrDefault(stopped.Reason) + 1;
+                break;
+            }
             var template = CampaignTemplate.For(lead);
             await log.WriteAsync(new EmailRecord
             {

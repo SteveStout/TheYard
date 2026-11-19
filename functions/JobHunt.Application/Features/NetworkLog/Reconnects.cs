@@ -89,7 +89,18 @@ public sealed class Reconnects(IConversationStore rows, IThreadReader gmail, IDr
                 {
                     await Task.Delay(Spacing, time, ct);
                 }
-                if (!await SendOneAsync(day, row, mail, code, question, newest, ct))
+                bool went;
+                try
+                {
+                    went = await SendOneAsync(day, row, mail, code, question, newest, ct);
+                }
+                catch (MailHeldException stopped)
+                {
+                    // A no-email day (NoEmailDayGate): the row is left as it was, so the next open day sends it.
+                    held[stopped.Reason] = held.GetValueOrDefault(stopped.Reason) + 1;
+                    break;
+                }
+                if (!went)
                 {
                     failed.Add($"{row.PersonKey}: not in Sent");
                     continue;

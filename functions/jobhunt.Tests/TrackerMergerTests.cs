@@ -64,7 +64,56 @@ public sealed class TrackerMergerTests
         await s.RunAsync();
 
         Assert.Equal(before, s.Bytes(MergePaths.Master));
-        Assert.True(s.Has("tracker-inbox/rejected/20261022-150200Z-lane-c.csv"));
+        Assert.True(s.Has("tracker-inbox/rejected-logged/20261022-150200Z-lane-c.csv"));
+        Assert.Contains("| 20261022-150200Z-lane-c.csv |", s.Text("tracker-inbox/rejected-logged/README.md"));
+    }
+
+    /// <summary>The two replies1119 spool files of 11/19 (inbox/tracker-inbox/merged/, read 14:2x CST): their header lines became Counts 3789 and 3795.</summary>
+    private const string Closes = "Stamp,Lane,Person,Company,Channel,Subject,RefCode,Verified\r\n"
+        + "20261119-142524Z,replies1119,Rahul Chauhan,Pyramid Consulting,Email,RTR- Senior/Manager .NET Cloud Lead-EYJP,17oax8,SENT verified in Gmail Sent 14:25:24Z\r\n";
+
+    private const string RealManage = "Stamp,Lane,Person,Company,Communication,Date,Notes\r\n"
+        + "20261119-145100Z,replies1119,Elizabeth Bailey,RealManage,Application,11/19/2026,PAYCOM APPLICATION 1312191\r\n";
+
+    [Fact]
+    public async Task A_header_line_is_never_merged_as_a_row_so_the_11_19_VOID_rows_cannot_happen_again()
+    {
+        using var s = new Scratch();
+        s.Master("3788,NA,LinkedIn post,LinkedIn,11/19/2026,,x\r\n");
+        s.Spool("20261119-142600Z-replies1119-closes.csv", Closes);
+        s.Spool("20261119-145100Z-replies1119-realmanage.csv", RealManage);
+
+        await s.RunAsync();
+
+        List<string[]> rows = TrackerCsvText.Parse(s.Text(MergePaths.Master));
+        Assert.Equal(new[] { "3788", "3789", "3790" }, rows.Skip(1).Select(r => r[0]));
+        Assert.DoesNotContain(rows.Skip(1), r => r.Any(c => c.Trim() is "Stamp" or "Lane" or "Person"));
+        Assert.Contains("1 header line(s) or empty row(s) dropped", s.Text(MergePaths.Log));
+    }
+
+    [Fact]
+    public async Task A_file_of_header_lines_and_empty_rows_goes_to_rejected_logged_with_its_readme_row()
+    {
+        using var s = new Scratch();
+        s.Master("5,Ann,Acme,Email,10/1/2026,,x\r\n");
+        s.Spool("20261119-150000Z-lane-h.csv", "Stamp,Lane,Person,Company,Channel,Subject,RefCode,Verified\r\n,,,,,,note only\r\n");
+        byte[] before = s.Bytes(MergePaths.Master);
+
+        await s.RunAsync();
+
+        Assert.Equal(before, s.Bytes(MergePaths.Master));
+        Assert.True(s.Has("tracker-inbox/rejected-logged/20261119-150000Z-lane-h.csv"));
+        Assert.False(s.Has("tracker-inbox/rejected/20261119-150000Z-lane-h.csv"));
+        Assert.Contains("no data rows (2 header line(s) or empty row(s), never a tracker row)", s.Text("tracker-inbox/rejected-logged/README.md"));
+    }
+
+    [Fact]
+    public void A_real_row_whose_channel_reads_Email_is_kept()
+    {
+        Assert.False(RowMerge.IsArtifact(["Ann", "Acme", "Email", "10/1/2026", "ann@acme.com", "Notes on the call"]));
+        Assert.False(RowMerge.IsArtifact(["999", "Dee", "Delta", "Email", "10/22/2026", "", ""]));
+        Assert.True(RowMerge.IsArtifact(["", "", "", "", "", "VOID"]));
+        Assert.True(RowMerge.IsArtifact(["Count", "Person", "Company", "Communication", "Date", "Phone/Email", "Notes"]));
     }
 
     [Fact]

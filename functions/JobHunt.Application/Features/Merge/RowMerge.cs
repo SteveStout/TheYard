@@ -8,6 +8,9 @@ namespace JobHunt.Application.Features.Merge;
 /// The merger gives them the next Counts after the highest in the master and the moved-out file,
 /// stamps [TID:file name] into Notes so a lane can prove its row landed, and appends them.
 /// A file whose tag is already in either file has merged before and is only filed away.
+/// A row that repeats a header ("Stamp,Lane,Person,Company,...") or carries no Person, Company,
+/// Communication or Date is never a tracker row: it is dropped, and a file left with none goes to
+/// rejected-logged/ with its README row. Two such rows became Counts 3789 and 3795, from two replies1119 spool files.
 /// </summary>
 public sealed class RowMerge(MergeContext context)
 {
@@ -64,10 +67,13 @@ public sealed class RowMerge(MergeContext context)
             .Where(r => string.Concat(r).Trim().Length > 0)
             .ToList();
         if (rows.Count > 0 && (IsHeader(rows[0][0], "Count") || IsHeader(rows[0][0], "Person"))) { rows.RemoveAt(0); }
+        int artifacts = rows.RemoveAll(IsArtifact);
         if (rows.Count == 0)
         {
-            await context.LogAsync($"REJECTED {name}: no data rows", ct);
-            await context.MoveSafeAsync(spool, name, MergePaths.Rejected(spool), ct);
+            string reason = artifacts == 0 ? "no data rows" : $"no data rows ({artifacts} header line(s) or empty row(s), never a tracker row)";
+            await context.LogAsync($"REJECTED {name}: {reason}", ct);
+            await context.MoveSafeAsync(spool, name, MergePaths.RejectedLogged(spool), ct);
+            await ReadmeRowAsync(spool, name, reason, ct);
             return;
         }
 
@@ -97,10 +103,40 @@ public sealed class RowMerge(MergeContext context)
             return;
         }
         string range = rows.Count > 1 ? $"..{next + rows.Count - 1}" : string.Empty;
-        await context.LogAsync($"MERGED {name} -> Count {next}{range} ({rows.Count} row(s)); master now {after.Length} B", ct);
+        string dropped = artifacts > 0 ? $"; {artifacts} header line(s) or empty row(s) dropped" : string.Empty;
+        await context.LogAsync($"MERGED {name} -> Count {next}{range} ({rows.Count} row(s)){dropped}; master now {after.Length} B", ct);
         await context.MoveSafeAsync(spool, name, MergePaths.Merged(spool), ct);
     }
 
     private static bool IsHeader(string cell, string word) =>
         string.Equals(TrackerCsvText.Letters(cell), word, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The words a spool file's header line is made of, as letters only.</summary>
+    private static readonly HashSet<string> HeaderWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Count", "Stamp", "Lane", "Person", "Company", "Communication", "Channel", "Date", "PhoneEmail", "Phone", "Email",
+        "Notes", "Subject", "RefCode", "Verified",
+    };
+
+    /// <summary>
+    /// A row that is not a tracker row: a header line (three or more of its cells are header words, so a real row whose
+    /// Communication reads "Email" is kept), or a row with Person, Company, Communication and Date all empty.
+    /// </summary>
+    public static bool IsArtifact(string[] row)
+    {
+        if (row.Count(cell => HeaderWords.Contains(TrackerCsvText.Letters(cell))) >= 3) { return true; }
+        string[] source = row.Length >= 7 ? row[1..7] : row;
+        return source.Take(4).All(cell => cell.Trim().Length == 0);
+    }
+
+    /// <summary>The file's row in rejected-logged/README.md, so a reader of the folder knows why it is there.</summary>
+    private async Task ReadmeRowAsync(string spool, string name, string reason, CancellationToken ct)
+    {
+        string readme = MergePaths.In(MergePaths.RejectedLogged(spool), "README.md");
+        string head = await context.Store.ExistsAsync(readme, ct)
+            ? string.Empty
+            : "# Rejected spool files, read and logged\n\n| File | Merger's reason | Why no fix |\n|---|---|---|\n";
+        string row = $"| {name} | {context.Now:yyyy-MM-dd HH:mm:ss} \"{reason}\" | the merger: a header line or an empty row is never a tracker row, so nothing is lost |\n";
+        await context.Store.AppendAsync(readme, TrackerCsvText.Encode(head + row), ct);
+    }
 }

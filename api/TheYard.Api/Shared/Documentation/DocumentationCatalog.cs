@@ -169,6 +169,7 @@ public static class DocumentationCatalog
         ["adr-a-pull-request-of-ai-written-code-is-sized-to-the-gate"] = "docs/decisions/ADR-136-a-pull-request-of-ai-written-code-is-sized-to-the-gate.md",
         ["adr-one-traffic-cop-for-main"] = "docs/decisions/ADR-137-one-traffic-cop-for-main.md",
         ["adr-the-review-route-gives-a-reason-before-it-asks"] = "docs/decisions/ADR-138-the-review-route-gives-a-reason-before-it-asks.md",
+        ["adr-the-system-watches-its-scheduled-tasks-and-heals-what-it-may"] = "docs/decisions/ADR-139-the-system-watches-its-scheduled-tasks-and-heals-what-it-may.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
