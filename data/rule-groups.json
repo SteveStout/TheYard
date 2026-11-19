@@ -108,7 +108,8 @@
         "A Cloud card's request answers from a view under two minutes old and builds the next behind it past one minute; a view at two minutes is not served; the keeper builds each window asked for in the last hour once a minute and drops the rest",
         "TheYard keeps one SQL database: no template declares one, and every Initial Catalog a template or a workflow builds, and every database name a template, workflow or settings file writes, is sqldb-theyard-ss-basic",
         "The blog's list and post answer with an ETag, a minute's public cache and a 304, the host's copy is dropped on a save, and the blog slice's coverage stays at its floor in .github/blog-coverage.json",
-        "The blog route at a phone's size holds its budgets: its JavaScript at most 150 KB in brotli with no Markdown or Admin chunk, the first screen at most 300 KB, the largest paint the title or the cover, shift under 0.01, no task over 50 ms while typing, the viewer's slide within 200 ms; the list's first page at most 6 KB in brotli"
+        "The blog route at a phone's size holds its budgets: its JavaScript at most 150 KB in brotli with no Markdown or Admin chunk, the first screen at most 300 KB, the largest paint the title or the cover, shift under 0.01, no task over 50 ms while typing, the viewer's slide within 200 ms; the list's first page at most 6 KB in brotli",
+        "The job-hunt Function sends the HTTP client's lines, the host's start-up lines and the health route's status lines only at Warning and above, and every process's run line at Information"
       ]
     },
     {

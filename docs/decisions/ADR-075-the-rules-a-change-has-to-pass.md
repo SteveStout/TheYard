@@ -234,6 +234,7 @@ is checked. A rule with no test in this table is a rule the next change will bre
 | The invites worklist is ranked hottest first before it is cut to the day's room, so a row left over is never hotter than a row kept | ADR-119, the addendum of 1.0.4.166 on the feed lane | FeedTests |
 | An invite stands on Pending and its note read back, shown in a screenshot copied into the run folder; the toast is recorded when seen and never required, and a send with no such proof stands unverified | ADR-119, the addendum of 1.0.4.166 on the feed lane | ResultTests, RunTests |
 | Before a claim, preflight counts the lines a version changes, added plus deleted, with the promote's and the fill's files left out, and refuses one under the floor or over the ceiling of `.github/pr-size.json` unless its commit names why (Ships-alone:, Fixes-main: or Large:) | ADR: A pull request of AI-written code is sized to the gate | PrSizeScriptTests |
+| The job-hunt Function sends the HTTP client's lines, the host's start-up lines and the health route's status lines only at Warning and above, and every process's run line at Information | ADR-109, the addendum on what the workspace pays for | LogLevelsTests |
 
 ## How the table is read
 

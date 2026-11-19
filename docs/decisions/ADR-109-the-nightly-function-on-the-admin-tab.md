@@ -335,3 +335,18 @@ The funnel's chip has the morning card's caveat: the health route does not name 
 ## Addendum, 2026-11-15 (1.0.5.77): the card leads with the model lanes' empty runs
 
 The same rule for the model lanes, which write no run line: on the share, `J:\dispatch\check_empty_runs.py` reads each lane's close row, and a lane that had work due and did none two runs in a row ("0 sent verified of 12") gets one WALLS.md bullet and one line in `dispatch/EMPTY-RUNS.md`, "EMPTY RUN: <lane>, <n> runs, since <day>"; "0 of 0" is quiet. The dispatcher runs it once a Central day from 07:10, the file's own date marking the day. From this version the 07:30 card reads that file and prints each EMPTY RUN line in its head, under the hiring signal, every day: a wall the Walls section would show only on Mondays. `TodayEmptyRunsTests` holds it.
+
+## Addendum, @DATE@ (@VER@): what the workspace pays for
+
+In plain words: the Function was filling most of the site's free 5 GB of telemetry a month with lines nobody reads, and it now sends fewer of them.
+
+On 19 November the one workspace both apps report to, log-theyard-ss, held 4.757 GB for the month. The Function's share was 2.835 GB, 1.77 GB of it traces, and its daily rate stepped up from about 0.10 to 0.22 GB on 11 November when FreshScan began. FreshScan's HTTP client logs two Information lines for every board it reads, about 54,000 rows and 46 MB a day. Beside them were the host's start-up lines, about 15 MB a day, and the health route's status lines, about 24 MB a day.
+
+From this version:
+
+- the worker sends the HTTP client's lines only at Warning and above (`LogLevels`);
+- the host sends Host.Startup and the status lines only at Warning and above;
+- every process's own "process:" run line, which the Admin tab's nightly card reads, keeps Information, as do every request row, warning and error.
+
+No daily cap was added. A cap drops whatever arrives after it fills, errors included, which is the data loss the Insights card exists to show. `LogLevelsTests` holds it.
+
