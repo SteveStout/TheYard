@@ -67,11 +67,6 @@ export function writeProgress(storage: StorageLike | null, progress: ReviewProgr
   }
 }
 
-/** The place moved to a stop, held within the seven. */
-export function moveTo(progress: ReviewProgress, index: number): ReviewProgress {
-  return { ...progress, current: Math.min(LAST, Math.max(0, index)) };
-}
-
 /** The place with one more stop reached; the same place when it already was, or the index is no stop. */
 export function markReached(progress: ReviewProgress, index: number): ReviewProgress {
   if (!isStop(index) || progress.reached.includes(index)) return progress;

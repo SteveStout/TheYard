@@ -1,0 +1,258 @@
+/**
+ * Does:      Lays out the short path's three tiles as the whole-page picture draws them (its .shot and the tiles' parts,
+ *            ported rule by rule): one fixed height at a desk, the label with its LIVE mark, the spark and its
+ *            captions, the gate's ticked rows, the lot's car and bid with the room bidding, and the foot under a rule;
+ *            on a phone each tile as tall as its content.
+ * Does not:  Lay out the card a tile sits in (ReviewPath.module.css does) or draw the tick (TickDisc.module.css does).
+ * Used by:   QualityTrendTile.tsx, GateTile.tsx, LotTile.tsx.
+ */
+/* The tile: one fixed height at a desk, so the three cards share one row and one height. */
+.shot {
+  position: relative;
+  height: 196px;
+  overflow: hidden;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+}
+
+.cap {
+  display: block;
+  margin: 0;
+  padding-right: 56px;
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.live {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.live::before {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  animation: pulse 1.6s ease-in-out infinite;
+  content: '';
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+
+.foot {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-3);
+  left: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--glass-border);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+/* The spark: a plain line, the soft area before the ratchet and its gold dashed mark, stretched to the tile. */
+.spark {
+  display: block;
+  width: 100%;
+  height: 84px;
+  margin-top: var(--space-2);
+}
+
+.sparkBase {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.sparkArea {
+  fill: color-mix(in srgb, var(--color-gold-light) 28%, transparent);
+}
+
+.sparkBefore,
+.sparkAfter {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sparkBefore {
+  stroke: var(--color-series-3);
+  stroke-width: 2.2;
+}
+
+.sparkAfter {
+  stroke: var(--color-accent);
+  stroke-width: 2.6;
+}
+
+.sparkMark {
+  stroke: var(--color-gold);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 3;
+}
+
+.axis {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  margin: 2px 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.axis span:nth-child(2) {
+  color: var(--color-gold-bar-dark);
+  font-weight: var(--weight-bold);
+}
+
+.axis span:last-child {
+  color: var(--color-accent);
+  text-align: right;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  list-style: none;
+}
+
+.rows li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.lot {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.car {
+  display: grid;
+  place-items: center;
+  height: 76px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--color-accent-soft), var(--color-surface));
+  color: var(--color-teal-deep);
+}
+
+.wheel {
+  color: var(--color-gold);
+}
+
+.name {
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bid {
+  min-height: 1.2em;
+  margin: var(--space-1) 0 0;
+  color: var(--color-teal-deep);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+}
+
+.bid small {
+  display: block;
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.bids {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+}
+
+.bids i {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-gold);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.bids i:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.bids i:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+/* A phone: the gate's rows one column, the tile as tall as its content. */
+@media (max-width: 639.98px) {
+  .rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .shot {
+    height: auto;
+    min-height: 196px;
+  }
+
+  .foot {
+    position: static;
+    margin-top: var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live::before,
+  .bids i {
+    animation: none;
+  }
+}

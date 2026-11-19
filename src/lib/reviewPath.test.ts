@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { StorageLike } from './reviewProgress';
 import {
   bidWords,
+  closesIn,
+  lotAmount,
   markPath,
   PATH,
   PATH_KEY,
@@ -10,6 +12,8 @@ import {
   pathTrend,
   readPath,
   roomAddress,
+  SPARK,
+  sparkGeometry,
   stopAddress,
   storeTotal,
   type PathLot,
@@ -50,9 +54,13 @@ describe('the review route short path (ADR: The review route gives a reason befo
       ['The gate every push passes', '30 sec', 'stop-gate'],
       ['A system that is really running', '30 sec', 'stop-room'],
     ]);
+    expect(PATH.title).toBe('Two minutes, three stops');
+    expect(PATH.hint).toBe(
+      'Each tile is the running system, read live. Open one and you are inside it.'
+    );
     expect(PATH.open).toBe('Open this stop');
-    expect(pathProgress([])).toBe('0 of 3 stops');
-    expect(pathProgress(['gate'])).toBe('1 of 3 stops');
+    expect(pathProgress([])).toBe('0 of 3 opened.');
+    expect(pathProgress(['gate'])).toBe('1 of 3 opened.');
   });
 
   it('keeps its place under its own key, apart from the tour’s, in the path’s order, and goes on when the store refuses', () => {
@@ -91,13 +99,57 @@ describe('the review route short path (ADR: The review route gives a reason befo
     expect(data?.points.map((point) => point.value)).toEqual([12, 30]);
   });
 
+  it('prints the lot’s bid with the room bidding, and nothing before the answer', () => {
+    expect(lotAmount(lot)).toEqual({ label: 'Current bid', amount: '$12,500', bidding: true });
+    expect(lotAmount(null)).toEqual({ label: 'Current bid', amount: '', bidding: false });
+  });
+
+  it('counts the lot down from its close on the page’s clock, never below none', () => {
+    expect(closesIn(252_000, 0)).toBe('4:12');
+    expect(closesIn(252_999, 0)).toBe('4:12');
+    expect(closesIn(3_605_000, 0)).toBe('60:05');
+    expect(closesIn(1_000, 5_000)).toBe('0:00');
+  });
+
+  it('draws the chart as the picture: one line scaled to the tile, the area up to the ratchet, the mark at its version', () => {
+    expect(sparkGeometry(null, '1.0.4.115')).toBeNull();
+    expect(sparkGeometry(['2026-10-15 | 1.0.4.100 | 12 | quality.py'], '1.0.4.115')).toBeNull();
+    // Day 0, day 4, day 12 (the ratchet) and day 35: each reading at its day across the 348 units between the insets.
+    const readings = [
+      '2026-10-15 | 1.0.3.139 | 50 | quality.py',
+      '2026-10-19 | 1.0.3.186 | 110 | quality.py',
+      '2026-10-27 | 1.0.4.115 | 100 | quality.py',
+      '2026-11-19 | 1.0.5.112 | 10 | quality.py',
+    ];
+    const spark = sparkGeometry(readings, '1.0.4.115');
+    // Higher is worse: the history's highest reading is at the top, its lowest at the bottom.
+    expect(spark?.before).toBe('M6 49.2 L45.8 6 L125.3 13.2');
+    expect(spark?.after).toBe('M125.3 13.2 L354 78');
+    expect(spark?.area).toBe(
+      `M6 49.2 L45.8 6 L125.3 13.2 L125.3 ${SPARK.floor} L6 ${SPARK.floor} Z`
+    );
+    expect(spark?.markX).toBe(125.3);
+    // Two versions on one day stand one above the other; a history all on one day is spread by order instead.
+    expect(
+      sparkGeometry(
+        ['2026-10-15 | a | 1 | q', '2026-10-15 | b | 2 | q', '2026-10-16 | c | 3 | q'],
+        'b'
+      )?.markX
+    ).toBe(6);
+    expect(sparkGeometry(['2026-10-15 | a | 1 | q', '2026-10-15 | b | 2 | q'], 'z')?.markX).toBe(
+      354
+    );
+    // A history without the ratchet's version marks its last reading.
+    expect(sparkGeometry(readings.slice(0, 2), '1.0.4.115')?.markX).toBe(354);
+  });
+
   it('keeps the place in the path’s own order whichever stop is opened first, and opening one twice changes nothing', () => {
     const storage = memory();
     let reached = markPath(storage, [], 'room');
     reached = markPath(storage, reached, 'gate');
     reached = markPath(storage, reached, 'room');
     expect(reached).toEqual(['gate', 'room']);
-    expect(pathProgress(reached)).toBe('2 of 3 stops');
+    expect(pathProgress(reached)).toBe('2 of 3 opened.');
     expect(stopAddress('room', lot)).toBe('/?vehicle=v%2042');
   });
 });

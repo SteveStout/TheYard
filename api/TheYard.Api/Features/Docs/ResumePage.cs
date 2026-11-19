@@ -21,10 +21,10 @@ public static class ResumePage
     public const string Below = "The resume is below.";
 
     /// <summary>The band's sentence, true on every screen.</summary>
-    public const string Band = "The system it describes is running, and you can check it in ten minutes.";
+    public const string Band = "The system it describes is running, and you can check it in two minutes.";
 
     /// <summary>The band's link to the review route.</summary>
-    public const string RouteLink = "Check my work in ten minutes";
+    public const string RouteLink = "Check my work in two minutes";
 
     /// <summary>The PDF's own link, beside the band.</summary>
     public const string PdfLink = "Open the PDF on its own";
