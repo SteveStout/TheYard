@@ -1,0 +1,12 @@
+# Every night at 21:15 America/Chicago, after the day's blog post is up and far from the 05:45 to 06:45 window the
+# morning's run owns. Persistent runs a night missed while the box was off at the next boot.
+[Unit]
+Description=JobHunt cross-post lane, nightly at 21:15 Central
+
+[Timer]
+OnCalendar=*-*-* 21:15:00 America/Chicago
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

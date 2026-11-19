@@ -1,0 +1,16 @@
+# The cross-post lane (crosspost1119, its doc nightly/CROSSPOST-LANE.md on the share): every blog post on TheYard is
+# republished to dev.to and Hashnode through their own APIs, its canonical link pointing back at the post, at most three
+# a night a platform. No browser and no model: one Python program on the share, J:\crosspost\crosspost.py, which runs
+# dry (payloads to J:\crosspost\pending\, nothing sent) until Steve's keys are in J:\crosspost\keys\.
+# Installed by server/publish-to-wickedawsome.sh.
+[Unit]
+Description=JobHunt cross-post lane: TheYard blog posts to dev.to and Hashnode
+After=network-online.target jdrive.service
+Wants=jdrive.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/test -f /mnt/j/crosspost/crosspost.py
+ExecStart=/usr/bin/python3 -I /mnt/j/crosspost/crosspost.py --root /mnt/j
+Environment=TZ=America/Chicago
+TimeoutStartSec=1h
