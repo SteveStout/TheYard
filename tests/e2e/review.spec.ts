@@ -7,12 +7,11 @@ import { fadedContent, quietWordsOnTheBareGround } from './glass';
 
 // #region review
 /**
- * The review route (ADR: Ten minutes, seven stops): its row in the rail directly under Home, the
- * first stop current on a first arrival, Next stop moving the ring and the place, the place kept
- * across a reload on this browser, Mark done on the last stop ending at the finish panel, the
- * page on the shared glass at a phone's width with nothing sideways, the two ways to reach Steven
- * on the finish panel and About, its tagged open reported under its own path, and its short door
- * keeping the code.
+ * The review route (ADR: Ten minutes, seven stops, and the addendum on one unit): its row in the rail
+ * directly under Home, the tour's eight compact cells, a cell opened counted and ticked and kept across
+ * a reload on this browser, Start over clearing it, the close with its three buttons, the page on the
+ * shared glass at a phone's width with nothing sideways, the ways to reach Steven on the close and
+ * About, its tagged open reported under its own path, and its short door keeping the code.
  */
 async function freshRoute(page: Page) {
   await page.addInitScript(
@@ -30,8 +29,8 @@ async function freshRoute(page: Page) {
 /** The first screen's claim (ADR: The review route gives a reason before it asks). */
 const CLAIM = 'Production .NET that stays up. Built with AI, measured on every version.';
 
-const stop = (page: Page, index: number) =>
-  page.getByTestId(`review-stop-${REVIEW_STOPS[index].key}`);
+const cell = (page: Page, index: number) =>
+  page.getByTestId(`review-tour-${REVIEW_STOPS[index].key}`);
 
 test('the rail row under Home opens the review route', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -50,79 +49,86 @@ test('the rail row under Home opens the review route', async ({ page }) => {
   await expect(page.getByTestId('landing')).toBeVisible();
 });
 
-test('a first arrival is at stop 1, Next stop moves the place, and a reload keeps it', async ({
+test('a tour cell opened counts once, ticks its ring and is kept across a reload; Start over clears the place', async ({
   page,
 }) => {
+  const stops: number[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { stop?: number };
+    if (typeof body.stop === 'number' && body.stop > 0) stops.push(body.stop);
+    await route.fulfill({ status: 204 });
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await freshRoute(page);
   await openTheYard(page, '/?view=review');
-  await expect(stop(page, 0)).toHaveAttribute('data-state', 'current');
-  await expect(stop(page, 0).getByTestId('review-do-this')).toBeVisible();
-  await expect(page.getByTestId('review-do-this')).toHaveCount(1);
-  await expect(page.getByTestId('review-progress')).toHaveAttribute('data-reached', '0');
+  await expect(page.getByTestId('review-tour').locator('li')).toHaveCount(8);
+  await expect(page.getByTestId('review-tour-seen')).toHaveText('0 of 7 seen.');
+  await expect(cell(page, 1)).toHaveAttribute('data-reached', 'false');
 
-  await page.getByRole('button', { name: 'Next stop' }).click();
-  await expect(page.getByTestId('review-progress')).toHaveAttribute('data-reached', '1');
-  await expect(page.getByTestId('review-ring')).toContainText('1/7');
-  await expect(stop(page, 0)).toHaveAttribute('data-state', 'done');
-  await expect(stop(page, 1)).toHaveAttribute('data-state', 'current');
-  await expect(page.getByTestId('review-progress')).toContainText('Stop 2 of 7');
+  await cell(page, 1).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.goBack();
+  await expect(cell(page, 1)).toHaveAttribute('data-reached', 'true');
+  await expect(page.getByTestId('review-tour-seen')).toHaveText('1 of 7 seen.');
+  await expect.poll(() => stops).toEqual([2]);
 
   await page.reload();
-  await expect(stop(page, 1)).toHaveAttribute('data-state', 'current');
-  await expect(stop(page, 0)).toHaveAttribute('data-state', 'done');
-  await expect(page.getByTestId('review-ring')).toContainText('1/7');
+  await expect(cell(page, 1)).toHaveAttribute('data-reached', 'true');
+  await page.getByRole('button', { name: 'Start over' }).click();
+  await expect(page.getByTestId('review-tour-seen')).toHaveText('0 of 7 seen.');
+  await expect(cell(page, 1)).toHaveAttribute('data-reached', 'false');
 });
 
-test('Mark done on the last stop ends at the finish panel', async ({ page }) => {
-  await freshRoute(page);
-  await openTheYard(page, '/?view=review');
-  const last = stop(page, REVIEW_STOPS.length - 1);
-  await last.getByRole('button', { name: /The resume/ }).click();
-  await expect(last).toHaveAttribute('data-state', 'current');
-  await last.getByRole('button', { name: 'Mark done' }).click();
-  const finish = page.getByTestId('review-finish');
-  await expect(finish).toHaveAttribute('data-state', 'finished');
-  await expect(finish).toBeInViewport();
-  await expect(finish).toBeFocused();
-  await expect(finish).toContainText('That is the work');
-  await expect(last).toHaveAttribute('data-state', 'done');
-});
-
-test('the finish panel and About both say how to reach Steven, as links', async ({ page }) => {
-  // profile1110-f2: a manager who finished the ten minutes had no link to write to him.
-  const ways = [
-    ['Email Steven', /\/api\/go\/email$/],
-    ['Message me on LinkedIn', /^https:\/\/www\.linkedin\.com\/in\/stevenwstout\/?$/],
-  ] as const;
-  await freshRoute(page);
-  await openTheYard(page, '/?view=review');
-  const reach = page.getByTestId('review-reach');
-  for (const [name, href] of ways)
-    await expect(reach.getByRole('link', { name })).toHaveAttribute('href', href);
-  await page.goto('/about');
-  const about = page.getByRole('article');
-  for (const [name, href] of ways)
-    await expect(about.getByRole('link', { name })).toHaveAttribute('href', href);
-});
-
-test('every stop opens the site’s own address, and the stop on screen is the only one with Do this', async ({
+test('the close quotes Sean Whitesell, and the close and About both say how to reach Steven, as links', async ({
   page,
 }) => {
   await freshRoute(page);
   await openTheYard(page, '/?view=review');
+  const close = page.getByTestId('review-close');
+  await expect(close).toContainText('That is the work');
+  await expect(close).toContainText('Sean Whitesell');
+  await expect(close.getByRole('link', { name: 'Book 20 minutes' })).toHaveAttribute(
+    'href',
+    '/api/go/book'
+  );
+  await expect(close.getByRole('link', { name: 'Resume (PDF)' })).toHaveAttribute(
+    'href',
+    '/resume?pdf=1'
+  );
+  await expect(close.getByRole('link', { name: 'Message me on LinkedIn' })).toHaveAttribute(
+    'href',
+    /^https:\/\/www\.linkedin\.com\/in\/stevenwstout\/?$/
+  );
+  await expect(close.getByRole('link', { name: 'Email Steven' })).toHaveCount(0);
+  // profile1110-f2: a manager who finished the ten minutes had no link to write to him; About keeps both.
+  await page.goto('/about');
+  const about = page.getByRole('article');
+  await expect(about.getByRole('link', { name: 'Email Steven' })).toHaveAttribute(
+    'href',
+    /\/api\/go\/email$/
+  );
+  await expect(about.getByRole('link', { name: 'Message me on LinkedIn' })).toHaveAttribute(
+    'href',
+    /^https:\/\/www\.linkedin\.com\/in\/stevenwstout\/?$/
+  );
+});
+
+test('every tour cell opens the site’s own address in place, and the last opens the sidebar', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await freshRoute(page);
+  await page.addInitScript(() => localStorage.removeItem('theyard.rail'));
+  await openTheYard(page, '/?view=review');
   for (const [index, entry] of REVIEW_STOPS.entries()) {
-    const link = stop(page, index).getByRole('link', { name: /^Open/ });
-    await expect(link).toHaveAttribute('href', entry.address);
-    await expect(link).not.toHaveAttribute('target', '_blank');
+    await expect(cell(page, index)).toHaveAttribute('href', entry.address);
+    await expect(cell(page, index)).not.toHaveAttribute('target', '_blank');
+    await expect(cell(page, index)).toContainText(entry.title);
   }
-  for (const [index, entry] of REVIEW_STOPS.entries()) {
-    const record = stop(page, index).getByTestId('review-record').getByRole('link');
-    await expect(record).toHaveAttribute('href', `/?doc=${entry.record}`);
-    await expect(record).not.toHaveAttribute('target', '_blank');
-  }
-  await stop(page, 3).getByRole('button', { name: REVIEW_STOPS[3].title }).click();
-  await expect(page.getByTestId('review-do-this')).toHaveCount(1);
-  await expect(stop(page, 3).getByTestId('review-do-this')).toBeVisible();
+  const frame = page.locator('[data-rail]').first();
+  await expect(frame).toHaveAttribute('data-rail', 'collapsed');
+  await page.getByTestId('review-tour-rest').click();
+  await expect(frame).toHaveAttribute('data-rail', 'open');
 });
 
 test('a stop that names an Admin card opens with that card in view, not under the tiles (MASTER-PLAN-2026-11-17 V1)', async ({
@@ -146,13 +152,14 @@ test('a stop that names an Admin card opens with that card in view, not under th
   });
 });
 
-test('a stop’s decision record opens its document, and Back returns to the route', async ({
+test('a tour cell that names a document opens it in place, and Back returns to the route', async ({
   page,
 }) => {
   await freshRoute(page);
   await openTheYard(page, '/?view=review');
-  await stop(page, 1).getByTestId('review-record').getByRole('link').click();
-  await expect(page).toHaveURL(new RegExp(`\\?doc=${REVIEW_STOPS[1].record}$`));
+  const stores = REVIEW_STOPS.findIndex((each) => each.key === 'stores');
+  await cell(page, stores).click();
+  await expect(page).toHaveURL(/\?doc=sql-vs-cosmos$/);
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.goBack();
   await expect(page.getByTestId('review-page')).toBeVisible();
@@ -179,10 +186,11 @@ test('at 390 nothing scrolls sideways, every control is a thumb tall, and every 
       .filter((control) => control.height < 44)
   );
   expect(short).toEqual([]);
+  // The three stops, the eight tour cells and the close.
   const panels = route.locator(
-    '[data-testid^="review-stop-"], [data-testid="review-progress"], [data-testid="review-finish"]'
+    '[data-testid$="-stop"][data-testid^="review-path-"], [data-testid^="review-tour-"]:not([data-testid="review-tour-seen"]), [data-testid="review-close"]'
   );
-  await expect(panels).toHaveCount(9);
+  await expect(panels).toHaveCount(12);
   for (const panel of await panels.all()) await expect(panel).toHaveClass(/op-glass/);
   expect(await fadedContent(page)).toEqual([]);
   expect(await quietWordsOnTheBareGround(page)).toEqual([]);
@@ -243,9 +251,12 @@ test('at 1568 by 772 the first screen gives the reason before the ask, with no s
     'review-book',
   ])
     expect(await bottomOf(page, shown), shown).toBeLessThanOrEqual(772);
-  // The ten-minute ask is the tour's, under the fold.
+  // The ten-minute ask is the tour's, under the fold; the two-minute path's heading is on the first screen.
   const tour = await page.getByTestId('review-tour').boundingBox();
   expect(tour!.y).toBeGreaterThan(772);
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Two minutes, three stops' })
+  ).toBeInViewport();
   await expect(page.getByTestId('review-book')).toHaveAttribute('href', '/api/go/book');
   // The band says one sentence to a stranger.
   await expect(page.getByTestId('store-bar-live')).toContainText('Live system.');
@@ -312,7 +323,7 @@ test('for=ai draws the mirror with its gate panel at 1568 by 772, keeps the addr
 });
 
 // The short path (ADR: The review route gives a reason before it asks, the addendum on the short path): under both
-// first screens, three stops with their live tiles and "0 of 3 stops", and no visit asks the catalogue or the bids for
+// first screens, three stops with their live tiles and "0 of 3 opened.", and no visit asks the catalogue or the bids for
 // the lot: it comes from the one kept answer. The shell's own read of this visitor's bid badges (useBids, one GET
 // /api/bids on every page) may land while the page loads; it is the only bids read, and never more than one.
 for (const address of ['/?view=review', '/?view=review&for=ai']) {
@@ -326,8 +337,8 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
     await page.addInitScript(() => localStorage.removeItem('theyard-review-short'));
     await openTheYard(page, address);
     const path = page.getByTestId('review-path');
-    await expect(path.getByTestId('review-path-count')).toHaveText('0 of 3 stops');
-    await expect(path.getByTestId('review-path-trend').getByTestId('quality-trend')).toBeVisible();
+    await expect(path.getByTestId('review-path-count')).toHaveText('0 of 3 opened.');
+    await expect(path.getByTestId('review-path-spark').locator('path')).toHaveCount(5);
     await expect(path.getByTestId('review-path-total')).toHaveText(/^\d{1,3}(,\d{3})*$/);
     await expect(path.getByTestId('review-path-gate-tile')).toContainText('passed');
     await expect(path.getByTestId('review-path-room')).toHaveAttribute(
@@ -378,9 +389,9 @@ test('at 390 the short path stacks, and its Quality stop lands on the slip and c
   await expect(slip).toBeInViewport({ timeout: 30_000 });
   await expect.poll(() => actions).toEqual(['stop-quality']);
   await page.keyboard.press('Escape');
-  await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 stops');
+  await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 opened.');
   await page.reload();
-  await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 stops');
+  await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 opened.');
 });
 
 // The mirror's honest line opens Quality in place on the slip and the turn and reports its own action; its Book 20
@@ -426,3 +437,179 @@ test('the primary button opens Quality on the slip and the turn, in place, and r
   expect(loads).toBe(0);
   await expect.poll(() => actions).toEqual(['proof']);
 });
+
+// #region the-look
+// The look is an exit criterion (RULE 82; ADR: The review route gives a reason before it asks, the addendum on one
+// unit): the rules read off the whole-page picture (J:\mentor\reviewscreen\FULLPAGE-METRICS.json holds the numbers
+// behind each), held at every width the picture was measured at, for both addresses. A rule, never a typed figure.
+const LOOK_WIDTHS = [
+  [1920, 1080],
+  [1568, 772],
+  [1440, 900],
+  [1280, 800],
+  [1024, 768],
+  [390, 844],
+] as const;
+
+type Box = { top: number; bottom: number; left: number; right: number; height: number };
+
+/** The page's direct sections, top to bottom, on the page, with what each holds. */
+async function sections(page: Page) {
+  return page.getByTestId('review-page').evaluate((route) =>
+    [...route.children].map((section) => {
+      const box = section.getBoundingClientRect();
+      return {
+        top: box.top + window.scrollY,
+        bottom: box.bottom + window.scrollY,
+        left: box.left,
+        right: box.right,
+        height: box.height,
+        next: section.querySelector('[data-testid="where-next"]') !== null,
+        names: section.querySelector('[data-testid="review-names"]') !== null,
+        content:
+          Math.max(...[...section.children].map((child) => child.getBoundingClientRect().bottom)) -
+          box.top,
+      };
+    })
+  );
+}
+
+/** Each matching element's box on the page. */
+async function boxes(page: Page, selector: string): Promise<Box[]> {
+  return page.locator(selector).evaluateAll((all) =>
+    all.map((each) => {
+      const box = each.getBoundingClientRect();
+      return {
+        top: box.top + window.scrollY,
+        bottom: box.bottom + window.scrollY,
+        left: box.left,
+        right: box.right,
+        height: box.height,
+      };
+    })
+  );
+}
+
+for (const address of ['/?view=review', '/?view=review&for=ai']) {
+  test(`${address} is one unit at every width: shared edges, no forced height, the picture's gaps and grids`, async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await freshRoute(page);
+    for (const [width, height] of LOOK_WIDTHS) {
+      await page.setViewportSize({ width, height });
+      await openTheYard(page, address);
+      await expect(page.getByTestId('review-close')).toBeVisible();
+      const at = `${address} at ${width}`;
+      const parts = await sections(page);
+      // 1. One unit: every section has the page's left and right edge.
+      for (const part of parts) {
+        expect(Math.abs(part.left - parts[0].left), `${at}: left edge`).toBeLessThanOrEqual(1);
+        expect(Math.abs(part.right - parts[0].right), `${at}: right edge`).toBeLessThanOrEqual(1);
+      }
+      // 2. No forced height: 48 between sections (32 on a phone), the names 24 under the mirror, Where next 16.
+      for (const [index, part] of parts.slice(1).entries()) {
+        const gap = part.top - parts[index].bottom;
+        const want = part.next ? 16 : part.names ? 24 : width < 640 ? 32 : 48;
+        expect(
+          Math.abs(gap - want),
+          `${at}: gap above section ${index + 2} is ${gap}`
+        ).toBeLessThanOrEqual(2);
+      }
+      // 4. Three stops: one row of one height from 1280, each tile 196 tall; stacked under it.
+      const cards = await boxes(page, '[data-testid^="review-path-"][data-testid$="-stop"]');
+      const tiles = await boxes(
+        page,
+        '[data-testid="review-path-trend"], [data-testid="review-path-gate-tile"], [data-testid="review-path-lot"]'
+      );
+      expect(cards).toHaveLength(3);
+      if (width >= 1280) {
+        for (const card of cards) {
+          expect(Math.abs(card.top - cards[0].top), `${at}: cards share a row`).toBeLessThanOrEqual(
+            1
+          );
+          expect(
+            Math.abs(card.height - cards[0].height),
+            `${at}: cards share a height`
+          ).toBeLessThanOrEqual(1);
+        }
+        for (const tile of tiles)
+          expect(Math.abs(tile.height - 196), `${at}: tile height`).toBeLessThanOrEqual(1);
+      } else {
+        for (const [index, card] of cards.slice(1).entries())
+          expect(card.top, `${at}: cards stack`).toBeGreaterThan(cards[index].bottom);
+      }
+      // 5. Tour: eight cells, four across from 1024, one on a phone; a row shares one height; none over 140 at a desk.
+      const cells = await boxes(page, '[data-testid="review-tour"] li');
+      expect(cells).toHaveLength(8);
+      const across = cells.filter((each) => Math.abs(each.top - cells[0].top) <= 1).length;
+      expect(across, `${at}: cells across`).toBe(width >= 1024 ? 4 : width >= 640 ? 2 : 1);
+      for (const each of cells) {
+        const row = cells.filter((other) => Math.abs(other.top - each.top) <= 1);
+        for (const other of row)
+          expect(
+            Math.abs(other.height - each.height),
+            `${at}: a row shares a height`
+          ).toBeLessThanOrEqual(1);
+        if (width >= 1024) expect(each.height, `${at}: a cell's height`).toBeLessThanOrEqual(140);
+      }
+      // 9. Gone: no tall stop card, no ring of seven; the first screen is no taller than its content.
+      for (const gone of ['Do this', 'Mark done', 'Stop 1 of 7'])
+        await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
+      if (width === 1920)
+        expect(
+          parts[0].height,
+          `${at}: the first screen holds no forced height`
+        ).toBeLessThanOrEqual(parts[0].content + 2);
+      // 7. Nothing scrolls sideways at any width.
+      const sideways = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(sideways, `${at}: sideways`).toBeLessThanOrEqual(0);
+      // 3. Height: under 2,300 at 1568 for the verdict, under 2,500 for the mirror.
+      if (width === 1568) {
+        const tall = await page.evaluate(() => document.documentElement.scrollHeight);
+        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 2500 : 2300);
+      }
+      // 6 and 7. The primary button is on the first screen at 1568 by 772 and at 390 by 844.
+      if (width === 1568 || width === 390)
+        expect(
+          await bottomOf(page, 'review-proof'),
+          `${at}: the primary button`
+        ).toBeLessThanOrEqual(height);
+    }
+    // 5. Two across between 640 and 1024.
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await openTheYard(page, address);
+    const cells = await boxes(page, '[data-testid="review-tour"] li');
+    expect(cells.filter((each) => Math.abs(each.top - cells[0].top) <= 1)).toHaveLength(2);
+  });
+}
+
+// 6. At 1568 by 772 the verdict's primary button and the path's heading are both on the first screen. (The mirror's
+// picture puts its name strip first, so its path heading is under the fold there; its button is held above.)
+test('at 1568 by 772 the primary button and "Two minutes, three stops" are on the first screen', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1568, height: 772 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  expect(await bottomOf(page, 'review-proof')).toBeLessThanOrEqual(772);
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Two minutes, three stops' })
+  ).toBeInViewport();
+});
+
+// 8. Alive: on the seeded catalogue the lot tile shows a vehicle and a dollar amount, and never "No auction is live".
+for (const address of ['/?view=review', '/?view=review&for=ai']) {
+  test(`${address} shows a live lot with a bid on the seeded catalogue`, async ({ page }) => {
+    await page.setViewportSize({ width: 1568, height: 772 });
+    await freshRoute(page);
+    await openTheYard(page, address);
+    await expect(page.getByTestId('review-path-lot-name')).toHaveText(/\S/);
+    await expect(page.getByTestId('review-path-bid')).toHaveText(/^\$\d{1,3}(,\d{3})*$/);
+    await expect(page.getByTestId('review-path-closes')).toHaveText(/^\d+:\d{2}$/);
+    await expect(page.getByText('No auction is live', { exact: false })).toHaveCount(0);
+  });
+}
+// #endregion the-look

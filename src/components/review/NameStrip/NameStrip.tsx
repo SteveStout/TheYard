@@ -3,7 +3,7 @@
  *            mirror): how many people put their name on it, the link to what they wrote, and the named ones in the
  *            strip's order, each with the title the API gives, then how many more.
  * Does not:  Pick or order the names (reviewMirror.ts's stripOf does), quote anyone, or read the API.
- * Used by:   ReviewMirror.tsx.
+ * Used by:   ReviewPage.tsx.
  */
 import type { Recommendation } from '../../../lib/recommendations';
 import { MIRROR, stripLabel, stripOf } from '../../../lib/reviewMirror';

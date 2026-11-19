@@ -8,7 +8,10 @@ import {
   PROOF_ADDRESS,
   RECORD_TILES,
   recommendationsLink,
-  sidebarRestLine,
+  restLine,
+  closeQuote,
+  tourSeen,
+  TOUR,
   testsTile,
   VERDICT,
 } from './reviewVerdict';
@@ -61,7 +64,6 @@ describe('the review route first screen (ADR: The review route gives a reason be
       ...RECORD_TILES.flatMap((tile) => [tile.figure, tile.label, tile.source]),
     ].join(' ');
     expect(above).not.toMatch(/ten minutes|seven stops/i);
-    expect(VERDICT.foldLink).toBe('Seven stops, ten minutes, all optional');
   });
 
   it('opens Quality at the slip and the turn', () => {
@@ -91,9 +93,24 @@ describe('the review route first screen (ADR: The review route gives a reason be
     expect(recommendationsLink(13)).toBe('Read all 13 named recommendations');
   });
 
+  it('words the tour and the close as the whole-page picture does, and quotes Sean Whitesell at the close', () => {
+    expect(TOUR.title).toBe('The full tour, if you want it');
+    expect(TOUR.line).toBe(
+      'Seven stops, ten minutes, all optional. Every stop is the running system, and your place is kept on this browser.'
+    );
+    expect(tourSeen(0, 7)).toBe('0 of 7 seen.');
+    expect(tourSeen(3, 7)).toBe('3 of 7 seen.');
+    const list = [entry('Drew Dell'), entry('Cliff True'), entry('Sean Whitesell')];
+    expect(closeQuote(list)?.name).toBe('Sean Whitesell');
+    expect(closeQuote(list.slice(0, 2))?.name).toBe('Cliff True');
+    expect(closeQuote([entry('Drew Dell')])?.name).toBe('Drew Dell');
+    expect(closeQuote([])).toBeNull();
+    expect(closeQuote(null)).toBeNull();
+  });
+
   it('says what the sidebar holds and the store bar’s one sentence, from the build’s own facts', () => {
-    expect(sidebarRestLine(138, 19)).toBe(
-      'The sidebar holds the rest: 138 decision records, 19 diagrams, the incidents and the changelog.'
+    expect(restLine(138, 19)).toBe(
+      '138 decision records, 19 diagrams, the incidents and the changelog.'
     );
     expect(liveSentence(true)).toEqual({
       lead: 'Live system.',

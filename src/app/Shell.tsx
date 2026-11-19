@@ -125,7 +125,12 @@ export function Shell({
         <StoreBar review={views.reviewOpen} />
         {/* #endregion store-bar */}
 
-        <main className={styles.main} id={MAIN_ID} tabIndex={-1}>
+        <main
+          className={styles.main}
+          id={MAIN_ID}
+          tabIndex={-1}
+          data-view={views.reviewOpen ? 'review' : undefined}
+        >
           <p className={styles.srOnly} role="status" data-testid="view-announcement">
             {go.announcement}
           </p>

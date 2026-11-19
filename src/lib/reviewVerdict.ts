@@ -22,12 +22,43 @@ export const VERDICT = {
     'One stop. AI-written code slipped for two weeks in October. See the rule that turned it, and every number since.',
   quoteLabel: 'Who worked with him says',
   roles: 'Open to remote Lead, Staff and Principal roles.',
-  foldAsk: 'Want the long version?',
-  foldLink: 'Seven stops, ten minutes, all optional',
-  tourTitle: 'The full tour, if you want it',
-  tourLine:
-    'Seven stops, ten minutes, all optional. Every stop is the running system and your place is kept on this browser.',
 } as const;
+
+/** The full tour's words, word for word from the whole-page picture: its heading, its line, its place and cell 8. */
+export const TOUR = {
+  title: 'The full tour, if you want it',
+  line: 'Seven stops, ten minutes, all optional. Every stop is the running system, and your place is kept on this browser.',
+  startOver: 'Start over',
+  restTitle: 'The rest is in the sidebar',
+} as const;
+
+/** "0 of 7 seen.", from the tour's stops reached on this browser. */
+export function tourSeen(reached: number, of: number): string {
+  return `${reached} of ${of} seen.`;
+}
+
+/** Cell 8's line: what the sidebar still holds, both counts read from the sidebar's own lists. */
+export function restLine(records: number, diagrams: number): string {
+  return `${records} decision records, ${diagrams} diagrams, the incidents and the changelog.`;
+}
+
+/** The close's words: its readout and its two outlined buttons; the filled one is the first screen's "Book 20 minutes". */
+export const CLOSE = {
+  readout: 'That is the work',
+  linkedin: 'Message me on LinkedIn',
+} as const;
+
+/** Whose words the close quotes. */
+export const CLOSE_NAME = 'Sean Whitesell';
+
+/** "Message me on LinkedIn": Steven's own page, the address the finish panel used. */
+export const LINKEDIN_ADDRESS = 'https://www.linkedin.com/in/stevenwstout/';
+
+/** The quote the close shows: Sean Whitesell's when the answer has him, else the answer's second; null for none. */
+export function closeQuote(entries: readonly Recommendation[] | null): Recommendation | null {
+  if (entries === null || entries.length === 0) return null;
+  return entries.find((entry) => entry.name === CLOSE_NAME) ?? entries[1] ?? entries[0];
+}
 
 /** The document and the section "See the proof in 2 minutes" opens: Quality, at "The slip, and the turn". */
 export const PROOF = { doc: 'quality', anchor: 'the-slip-and-the-turn' } as const;
@@ -44,7 +75,7 @@ export const RESUME_ADDRESS = '/resume?pdf=1';
 /** All the recommendations, the address the rail held. */
 export const RECOMMENDATIONS_ADDRESS = '/?view=recommendations';
 
-/** The tour's own anchor on the page, which the fold line opens. */
+/** The tour's own anchor on the page. */
 export const TOUR_ID = 'review-tour';
 
 /** The three pills under "Open to remote Lead, Staff and Principal roles.", each at the address the rail held. */
@@ -117,11 +148,6 @@ export function leadQuote(entries: readonly Recommendation[] | null): Recommenda
 /** The link under the quote, with the answer's own count. */
 export function recommendationsLink(count: number): string {
   return `Read all ${count} named recommendations`;
-}
-
-/** The line under the tour: what the sidebar still holds, both counts read from the sidebar's own lists. */
-export function sidebarRestLine(records: number, diagrams: number): string {
-  return `The sidebar holds the rest: ${records} decision records, ${diagrams} diagrams, the incidents and the changelog.`;
 }
 
 /**

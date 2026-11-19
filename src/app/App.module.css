@@ -245,7 +245,18 @@
   container: page / inline-size;
 }
 
+/* The review route is one unit 1234 px wide, as its whole-page picture's .page: the same gutters, its own measure. */
+.main[data-view='review'] {
+  max-width: 1234px;
+  padding-top: var(--space-7);
+  padding-bottom: var(--space-8);
+}
+
 @media (max-width: 639.98px) {
+  .main[data-view='review'] {
+    padding-top: var(--space-5);
+  }
+
   .main {
     padding: var(--space-4);
   }

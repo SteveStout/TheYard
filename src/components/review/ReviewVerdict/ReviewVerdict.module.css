@@ -1,7 +1,7 @@
 /**
- * Does:      Lays out the review route's first screen: at a desk the claim, the tiles and the moves in a wide column with
- *            the quote and the roles card beside it; under the desk one column; on a phone the moves come straight
- *            after the lede, before the tiles, so the primary button is inside the first screen.
+ * Does:      Lays out the review route's first screen: from 1280 the claim, the tiles and the moves in a wide column with
+ *            the quote and the roles card beside it; under 1280 one column with those two side by side under it; on a
+ *            phone the moves come straight after the lede, before the tiles, so the primary button is on the first screen.
  * Does not:  Draw a panel's glass (panels.css does), a tile (ProofTile.module.css does) or the pills' own look
  *            (ReviewPage.module.css does).
  * Used by:   ReviewMirror.tsx, ReviewVerdict.tsx.
@@ -42,7 +42,8 @@
   font-size: var(--text-4xl);
   font-weight: var(--weight-bold);
   line-height: 1.12;
-  letter-spacing: var(--title-tracking);
+  /* A hair tighter than the site's titles, as the picture draws the claim, so the mirror's fits its one line. */
+  letter-spacing: -0.015em;
 }
 
 /* At a desk each sentence of the claim is its own line. */
@@ -139,18 +140,17 @@
   list-style: none;
 }
 
-/* At a desk the first screen fills the window down to the fold line, so the tour and its ten minutes start under
-   it whatever the window's height (the store bar and the fold line take the rest). */
-@media (min-width: 1024px) {
-  .verdict {
-    min-height: calc(100svh - 150px);
-  }
-}
-
-@media (max-width: 1023.98px) {
+/* Under 1280 the first screen is one column, with the quote and the roles card side by side under it. The section is
+   as tall as its content at every width: the page under it starts 48 px below, never at a forced fold. */
+@media (max-width: 1279.98px) {
   .verdict {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-5);
+  }
+
+  .side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
   }
 }
 
@@ -187,7 +187,11 @@
   .tiles {
     order: 4;
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-3);
-    margin-top: var(--space-4);
+    gap: var(--space-2);
+    margin-top: var(--space-5);
+  }
+
+  .side {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

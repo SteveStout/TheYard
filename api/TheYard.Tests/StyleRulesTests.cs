@@ -397,6 +397,7 @@ public class StyleRulesTests
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
         ["src/components/blog/BlogPage/BlogPage.module.css"] = "the Blog title's underline, the same trim as the Admin title's",
         ["src/components/review/ReviewPage/ReviewPage.module.css"] = "the review route's title underline, the same trim as the Blog title's",
+        ["src/components/review/ReviewPath/ReviewPath.module.css"] = "the short path's tiles, as the whole-page picture draws them: the soft area and the dashed mark at the ratchet on the quality spark, its caption in the bar's dark tone, the lot's wheels and the three dots of the room bidding",
         ["src/components/review/ReviewVerdict/ReviewVerdict.module.css"] = "the first screen's claim underline, the ring round its one primary button and the slashes in its eyebrow, as the approved mockup draws them",
         ["src/components/recommendations/RecommendationsPage/RecommendationsPage.module.css"] = "the recommendations page's title underline and the rule beside each recommendation's words, as the approved mockup draws them",
         ["src/components/landing/LandingBanners/LandingBanners.module.css"] = "the ring round each banner's icon, the landing tiles' own trim",

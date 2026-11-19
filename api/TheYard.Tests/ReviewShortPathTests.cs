@@ -1,14 +1,16 @@
 using TheYard.Api.Features.Docs;
 using TheYard.Application.Features.Review;
+using TheYard.Infrastructure.Shared.Auction;
 
 namespace TheYard.Tests;
 
 /// <summary>
 /// The review route's short path (ADR: The review route gives a reason before it asks, the addendum on the short
-/// path): the lot is the live auction closing soonest among those bid on and never a sold one, one answer a store is
-/// kept fifteen seconds and built once however many ask, and the chart's readings are the Quality page's own fence,
-/// all without a host. No store is touched: the pick is pure, the keeper takes a hand-written read, the lot is read from
-/// one store's parts in memory and the history is a throwaway copy (RULE 79). The two routes are ReviewShortPathRouteTests'.
+/// path): the lot is the live auction closing soonest with five minutes to run and never a sold one, the room opens it
+/// with one turn through its own rules, one answer a store is kept fifteen seconds and built once however many ask, and
+/// the chart's readings are the Quality page's own fence, all without a host. No store is touched: the pick is pure, the
+/// keeper takes a hand-written read, the lot is read from one store's parts in memory, the seeded catalogue is the
+/// repository's own file in memory and the history is a throwaway copy (RULE 79). The two routes are ReviewShortPathRouteTests'.
 /// </summary>
 public sealed class ReviewShortPathTests
 {
@@ -23,13 +25,14 @@ public sealed class ReviewShortPathTests
     }
 
     [Fact]
-    public void The_lot_is_the_live_auction_closing_soonest_among_those_bid_on_and_never_a_sold_one()
+    public void The_lot_is_the_live_auction_closing_soonest_and_never_a_sold_one()
     {
         var clock = AuctionClock.Utc(Noon);
         // Probe ids until there are live ones and one that is not live, from the schedule's own rule.
         var probes = Enumerable.Range(0, 400).Select(i => $"probe-{i}").ToList();
-        var live = probes.Where(id => AuctionSchedule.Status(AuctionSchedule.Window(id, clock.AnchorMs), clock.NowMs) == AuctionStatus.Live).ToList();
-        var notLive = probes.First(id => !live.Contains(id));
+        var live = probes.Where(id => AuctionSchedule.Status(AuctionSchedule.Window(id, clock.AnchorMs), clock.NowMs) == AuctionStatus.Live
+            && AuctionSchedule.Window(id, clock.AnchorMs).EndsAtMs - clock.NowMs >= (long)ReviewLots.Left.TotalMilliseconds).ToList();
+        var notLive = probes.First(id => AuctionSchedule.Status(AuctionSchedule.Window(id, clock.AnchorMs), clock.NowMs) != AuctionStatus.Live);
         Assert.True(live.Count >= 2, "the probes hold at least two live auctions");
         var soonest = live.OrderBy(id => AuctionSchedule.Window(id, clock.AnchorMs).EndsAtMs).ThenBy(id => id, StringComparer.Ordinal).ToList();
 
@@ -65,7 +68,7 @@ public sealed class ReviewShortPathTests
         {
             Interlocked.Increment(ref reads);
             await Task.Delay(20, cancellation);
-            return new ReviewLot(true, "v1", "2019 Make Model Trim", 12_000, 1, 100_000);
+            return new ReviewLot(true, "v1", "2019 Make Model Trim", 12_000, 10_000, 1, 100_000);
         }
 
         var many = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => keeper.ReadAsync("sql", Read, CancellationToken.None)));
@@ -84,44 +87,125 @@ public sealed class ReviewShortPathTests
     }
 
     [Fact]
-    public async Task The_handler_reads_the_live_lot_with_a_bid_from_the_store_s_own_parts_and_none_before_anyone_bids()
+    public void A_lot_closing_in_under_five_minutes_is_passed_over_for_the_next()
     {
-        var clock = TestAuctions.AtNoon();
-        var bidOn = TestAuctions.Live("lot", currentBid: 20_000);
-        var quiet = TestAuctions.Live("quiet", currentBid: 30_000);
-        var auction = TestAuctions.Over(bidOn, quiet);
-        var reader = new ReviewLotReader(auction.Standings, auction.Bids, auction.Room, () => clock);
-        var handler = new ReadReviewLotHandler(new ReviewLotKeeper(new HandClock(Noon)), "sql", reader);
-
-        var before = await reader.ReadAsync(CancellationToken.None);
-        Assert.False(before.Live);
-        Assert.Equal(2, before.Total);
-
-        var placed = await auction.PlaceBidAsync((await auction.FindAsync(bidOn.Id))!, 21_000, clock, "buyer");
-        Assert.Equal(BidOutcomeKind.Accepted, placed.Kind);
-        var lot = await handler.HandleAsync(new ReadReviewLotQuery(), CancellationToken.None);
-        Assert.True(lot.Live);
-        Assert.Equal((bidOn.Id, 21_000, 2), (lot.VehicleId, lot.CurrentBid, lot.Total));
-        Assert.Equal(AuctionSchedule.Window(bidOn.Id, clock.AnchorMs).EndsAtMs, lot.EndsAtMs);
-        Assert.Contains(bidOn.Make, lot.Name, StringComparison.Ordinal);
+        var clock = AuctionClock.Utc(Noon);
+        var live = Enumerable.Range(0, 400).Select(i => $"probe-{i}")
+            .Where(id => AuctionSchedule.Status(AuctionSchedule.Window(id, clock.AnchorMs), clock.NowMs) == AuctionStatus.Live)
+            .OrderBy(id => AuctionSchedule.Window(id, clock.AnchorMs).EndsAtMs)
+            .ThenBy(id => id, StringComparer.Ordinal)
+            .ToList();
+        // The clock moved to four minutes before the soonest one closes: it has too little left, so the next is the lot.
+        long ends = AuctionSchedule.Window(live[0], clock.AnchorMs).EndsAtMs;
+        var late = clock with { NowMs = ends - (long)TimeSpan.FromMinutes(4).TotalMilliseconds };
+        Assert.Equal(live[1], ReviewLots.Soonest(live, _ => false, late));
+        var early = clock with { NowMs = ends - (long)TimeSpan.FromMinutes(6).TotalMilliseconds };
+        Assert.Equal(live[0], ReviewLots.Soonest(live, _ => false, early));
     }
 
     [Fact]
-    public async Task A_lot_bought_outright_is_never_the_one_shown_and_the_next_live_one_with_a_bid_is()
+    public async Task On_the_seeded_catalogue_there_is_always_a_live_lot_to_show()
+    {
+        // The site's own catalogue, the repository's file grown to 100,000 the way the host grows it, read in memory:
+        // at every hour of a week the pick finds a lot, so "No auction is live right now" cannot be drawn there.
+        var vehicles = await new SyntheticVehicleSource(new JsonFileVehicleSource(Path.Combine(Repo.Root(), "data", "vehicles.json")), 100_000).LoadAsync(CancellationToken.None);
+        var ids = vehicles.Select(vehicle => vehicle.Id).ToList();
+        var empty = Enumerable.Range(0, 7 * 24)
+            .Select(hour => AuctionClock.Utc(Noon.AddHours(hour)))
+            .Where(clock => ReviewLots.Soonest(ids, _ => false, clock) is null)
+            .ToList();
+        Assert.Empty(empty);
+    }
+
+    [Fact]
+    public async Task The_room_opens_the_lot_with_no_bid_on_it_and_the_lot_shows_the_room_s_bid_as_opening_it_does()
+    {
+        var clock = TestAuctions.AtNoon();
+        var first = TestAuctions.Live("lot") with { CurrentBid = null, StartingBid = 15_000 };
+        var second = TestAuctions.Live("other") with { CurrentBid = null, StartingBid = 18_000 };
+        var auction = TestAuctions.Over(first, second);
+        var open = new OpenReviewLotHandler(auction.Standings, auction.Inventory, auction.Bids, auction.Room, () => clock);
+        var reader = new ReviewLotReader(auction.Standings, () => clock);
+        var handler = new ReadReviewLotHandler(new ReviewLotKeeper(new HandClock(Noon)), "sql", ReviewLots.OpenedBy(open, reader));
+        string expected = ReviewLots.Soonest([first.Id, second.Id], _ => false, clock)!;
+        Assert.Null((await auction.FindAsync(expected))!.Vehicle.CurrentBid);
+
+        // Nobody has bid: the room's turn is what the tile shows, and opening the lot shows the same number.
+        var lot = await handler.HandleAsync(new ReadReviewLotQuery(), CancellationToken.None);
+        Assert.True(lot.Live);
+        Assert.Equal((expected, 2), (lot.VehicleId, lot.Total));
+        Assert.NotNull(lot.CurrentBid);
+        Assert.Equal((await auction.FindAsync(expected))!.Vehicle.CurrentBid, lot.CurrentBid);
+        Assert.Contains(expected, auction.Room.Snapshot().Keys);
+        Assert.Equal(AuctionSchedule.Window(expected, clock.AnchorMs).EndsAtMs, lot.EndsAtMs);
+    }
+
+    [Fact]
+    public async Task The_room_takes_at_most_one_turn_in_fifteen_seconds_however_many_ask()
+    {
+        var clock = TestAuctions.AtNoon();
+        var auction = TestAuctions.Over(TestAuctions.Live("lot") with { CurrentBid = null, StartingBid = 15_000 });
+        var hand = new HandClock(Noon);
+        int turns = 0;
+        var open = new OpenReviewLotHandler(auction.Standings, auction.Inventory, auction.Bids, auction.Room, () => clock);
+        var reader = new ReviewLotReader(auction.Standings, () => clock);
+        var refresh = ReviewLots.OpenedBy(open, reader);
+        var handler = new ReadReviewLotHandler(new ReviewLotKeeper(hand), "sql", cancellation =>
+        {
+            Interlocked.Increment(ref turns);
+            return refresh(cancellation);
+        });
+
+        var lots = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => handler.HandleAsync(new ReadReviewLotQuery(), CancellationToken.None)));
+        Assert.Equal(1, turns);
+        Assert.Single(lots.Select(lot => lot.CurrentBid).Distinct());
+        hand.Now = Noon.AddSeconds(15);
+        await handler.HandleAsync(new ReadReviewLotQuery(), CancellationToken.None);
+        Assert.Equal(2, turns);
+    }
+
+    [Fact]
+    public async Task When_the_room_s_rules_refuse_the_turn_and_nobody_has_bid_the_lot_carries_its_opening_ask()
+    {
+        var clock = TestAuctions.AtNoon();
+        // A buy-now at the ask: the room never buys a vehicle out, so its rules refuse the turn.
+        var quiet = TestAuctions.Live("quiet") with { CurrentBid = null, StartingBid = 10_000, BuyNowPrice = 10_000 };
+        var auction = TestAuctions.Over(quiet);
+        var open = new OpenReviewLotHandler(auction.Standings, auction.Inventory, auction.Bids, auction.Room, () => clock);
+        var lot = await ReviewLots.OpenedBy(open, new ReviewLotReader(auction.Standings, () => clock))(CancellationToken.None);
+        Assert.True(lot.Live);
+        Assert.Equal((quiet.Id, (int?)null, (int?)10_000), (lot.VehicleId, lot.CurrentBid, lot.OpeningBid));
+        Assert.Empty(auction.Room.Snapshot());
+    }
+
+    [Fact]
+    public async Task A_lot_bought_outright_is_never_the_one_shown_and_the_next_live_one_is()
     {
         var clock = TestAuctions.AtNoon();
         var bought = TestAuctions.Live("bought", currentBid: 20_000, buyNow: 40_000);
         var other = TestAuctions.Live("other", currentBid: 25_000);
         var auction = TestAuctions.Over(bought, other);
-        var reader = new ReviewLotReader(auction.Standings, auction.Bids, auction.Room, () => clock);
+        var open = new OpenReviewLotHandler(auction.Standings, auction.Inventory, auction.Bids, auction.Room, () => clock);
+        var read = ReviewLots.OpenedBy(open, new ReviewLotReader(auction.Standings, () => clock));
 
-        Assert.Equal(BidOutcomeKind.Accepted, (await auction.PlaceBidAsync((await auction.FindAsync(other.Id))!, 26_000, clock, "buyer")).Kind);
         var sale = await auction.BuyNowAsync((await auction.FindAsync(bought.Id))!, clock, "buyer");
         Assert.Equal(BidOutcomeKind.Won, sale.Kind);
 
-        var lot = await reader.ReadAsync(CancellationToken.None);
+        var lot = await read(CancellationToken.None);
         Assert.Equal(other.Id, lot.VehicleId);
-        Assert.Equal(26_000, lot.CurrentBid);
+        Assert.DoesNotContain(bought.Id, auction.Room.Snapshot().Keys);
+    }
+
+    [Fact]
+    public async Task With_no_live_auction_the_lot_is_none_and_the_room_takes_no_turn()
+    {
+        var clock = TestAuctions.AtNoon();
+        var ended = Enumerable.Range(0, 500).Select(i => $"ended-{i}").First(id => AuctionSchedule.StatusFor(id, clock) == AuctionStatus.Ended);
+        var auction = TestAuctions.Over(TestData.Vehicle(id: ended));
+        var open = new OpenReviewLotHandler(auction.Standings, auction.Inventory, auction.Bids, auction.Room, () => clock);
+        var lot = await ReviewLots.OpenedBy(open, new ReviewLotReader(auction.Standings, () => clock))(CancellationToken.None);
+        Assert.Equal((false, (string?)null, 1), (lot.Live, lot.VehicleId, lot.Total));
+        Assert.Empty(auction.Room.Snapshot());
     }
 
     [Fact]
@@ -134,7 +218,7 @@ public sealed class ReviewShortPathTests
         {
             Interlocked.Increment(ref reads);
             await release.Task;
-            return new ReviewLot(false, null, null, null, null, 7);
+            return new ReviewLot(false, null, null, null, null, null, 7);
         }
 
         var first = keeper.ReadAsync("sql", Slow, CancellationToken.None);
