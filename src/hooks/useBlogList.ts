@@ -2,7 +2,8 @@
  * Does:      Holds one filter's list for the blog page (ADR: Every LinkedIn post is also a blog post, the addendum on the
  *            read model): the first page as the rendering service drew it when it matches, then each change read
  *            through listReader (the search box waits 300 ms, everything else asks at once, a newer ask aborts the
- *            older), the old list kept on screen and marked as reading until the new one answers, and the pages after it.
+ *            older), the old list kept on screen and marked as reading until the new one answers, and the pages after it,
+ *            read through the same reader so a newer ask drops them, and kept when a post is opened and Back comes home.
  * Does not:  Decide the filter (the address does, through BlogPage) or draw anything.
  * Used by:   BlogPage.tsx.
  */
@@ -53,6 +54,7 @@ export function useBlogList(
         setList(answer);
         setUnavailable(answer === null && !wasFailure);
         setFailed(wasFailure);
+        setMoreReading(false);
       })
     );
     return () => reader.current?.stop();
@@ -66,21 +68,21 @@ export function useBlogList(
       return;
     }
     drawnFor.current = null;
+    // Back from a post comes home to the list it left, every page it had read included: nothing to ask again.
+    if (shownFor === path && list !== null) return;
     reader.current?.ask(path, list === null ? 'now' : when);
-    // when changes with path, and the list is read only to know whether anything is on screen yet.
+    // when changes with path, and the list and what it shows are read only to know whether anything is on screen yet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, active]);
 
   const more = () => {
     if (!list?.next || moreReading) return;
     setMoreReading(true);
-    const asked = shownFor;
-    fetchList(listPath(filter, list.next))
-      .then((page) => {
-        if (page && asked === shownFor) setList({ ...page, cards: [...list.cards, ...page.cards] });
-      })
-      .catch(() => {})
-      .finally(() => setMoreReading(false));
+    const shown = list;
+    reader.current?.more(listPath(filter, list.next), (page) => {
+      if (page) setList({ ...page, cards: [...shown.cards, ...page.cards] });
+      setMoreReading(false);
+    });
   };
 
   const typed = () => reader.current?.typed();
