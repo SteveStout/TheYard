@@ -119,7 +119,9 @@
         "A Cloud card's request answers from a view under two minutes old and builds the next behind it past one minute; a view at two minutes is not served; the keeper builds each window asked for in the last hour once a minute and drops the rest",
         "TheYard keeps one SQL database: no template declares one, and every Initial Catalog a template or a workflow builds, and every database name a template, workflow or settings file writes, is sqldb-theyard-ss-basic",
         "The blog's list and post answer with an ETag, a minute's public cache and a 304, the host's copy is dropped on a save, and the blog slice's coverage stays at its floor in .github/blog-coverage.json",
-        "The blog route at a phone's size holds its budgets: its JavaScript at most 150 KB in brotli with no Markdown or Admin chunk, the first screen at most 300 KB, the largest paint the title or the cover, shift under 0.01, no task over 50 ms while typing, the viewer's slide within 200 ms; the list's first page at most 6 KB in brotli"
+        "The blog route at a phone's size holds its budgets: its JavaScript at most 150 KB in brotli with no Markdown or Admin chunk, the first screen at most 300 KB, the largest paint the title or the cover, shift under 0.01, no task over 50 ms while typing, the viewer's slide within 200 ms; the list's first page at most 6 KB in brotli",
+        "Every Cloud card's thirty-day month is read whole once, then only from its newest bucket, trimmed at thirty days, with one read shared by every caller that arrives during it",
+        "The site asks the Function's health route every five minutes for the merger's numbers and every fifteen for the switches"
       ]
     },
     {
@@ -158,7 +160,8 @@
         "Every photograph the Author page serves is a file with no metadata, of the width its `srcset` claims, 1920 wide or with its reason written down, with an alt text, in the one frame; the headed blocks alternate by order; nothing else is in the folder",
         "The resume at /resume is the locked resume, byte for byte, inline under his name and the lock's date, and the door in its link is recorded as one allowed word, never the query",
         "Every review stop names a decision record the catalogue serves, seven distinct, none its own stop's address",
-        "The words a process section prints are the code's own: each timer's summary and the Function's paragraph are read from the repository at the version deployed, and the schedule table holds the Function's own cron strings"
+        "The words a process section prints are the code's own: each timer's summary and the Function's paragraph are read from the repository at the version deployed, and the schedule table holds the Function's own cron strings",
+        "A card turns green only when its cause is fixed: a threshold, tone or formula changes only with a test and an addendum naming what it measured, why that was wrong and what it measures now; a monthly allowance is projected at the last day's rate; Insights past its allowance stays amber while that rate would overrun a month; a card with no reading stays unread"
       ]
     },
     {
@@ -211,7 +214,8 @@
         "The funnel by channel folds the card schema's Channels view into the newest eight weeks, newest first, every week with pounce, hotmgr, email campaign, old contacts, applications and recruiters in that order and zeros where a channel had nothing; the views count a reply or a room for the newest touch at the same company and carry counts only; a refused read is unread, never a 500",
         "The Function's funnel line counts one Central day from its logs and each tracker row's opening phrase, a person once a day, never a NO or NOT send; its detail is the day; the share's log sums into the week's line on TODAY.md, each day its latest line and a missing day named",
         "The container's own sampler keeps an hour at fifteen seconds (240 samples) in the host, drops its oldest sample when full, keeps one when asked for none, and reads the runtime's own limit and processors",
-        "The quality history starts on 15 October, before the ratchet went in, with no limit before it, runs in version order with every number the ratchet names, and its newest row is what the scanner reads at HEAD (from 1.0.5.2; a newest row behind the changelog is a gap, never a red gate); every number on the Quality page is read live from data the build carries, and the page types none of its own"
+        "The quality history starts on 15 October, before the ratchet went in, with no limit before it, runs in version order with every number the ratchet names, and its newest row is what the scanner reads at HEAD (from 1.0.5.2; a newest row behind the changelog is a gap, never a red gate); every number on the Quality page is read live from data the build carries, and the page types none of its own",
+        "The box's swap row is amber on paging, memory pressure, or a swap nearly full that the available memory could not take back, never on parked pages alone; a snapshot from an agent that reads no paging keeps the occupancy line and says so"
       ]
     },
     {

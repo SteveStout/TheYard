@@ -1,6 +1,6 @@
 // The tracker merger's health for the nightly card (ADR: The tracker merger runs in Azure): five
-// numbers the job hunt's Function answers at /api/merger/health, read once a minute beside the
-// Function's metrics and kept on the same minute. The site holds no key to the share and gets none;
+// numbers the job hunt's Function answers at /api/merger/health, read every five minutes beside the
+// Function's metrics and kept on the minute it was read. The site holds no key to the share and gets none;
 // the Function lists its two spool folders and says how many files wait and how long, and this
 // reader keeps only those numbers, so no file name, row or log line can reach the site.
 using System.Globalization;
@@ -12,6 +12,13 @@ namespace TheYard.Api.Features.Admin.Cloud;
 public static class MergerReading
 {
     private static Outbound Http => OutboundHttp.Client(TimeSpan.FromSeconds(10));
+
+    /// <summary>
+    /// How often the health route is asked. Flex Consumption bills every execution at least a full second of 512 MB,
+    /// so a 19 ms answer a minute cost 720 GB-s a day of the Function's grant; every five minutes costs 144, and the
+    /// row names the minute it was read (ADR-109, the addendum on what the grant pays for).
+    /// </summary>
+    public static readonly TimeSpan Every = TimeSpan.FromMinutes(5);
 
     /// <summary>The readings a minute keeps, by the Function's own names with a prefix of their own.</summary>
     public const string LogAge = "merger_log_age_s", Waiting = "merger_waiting", Over5 = "merger_waiting_over_5", Over10 = "merger_waiting_over_10", Oldest = "merger_oldest_wait_s";

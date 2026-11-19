@@ -61,6 +61,9 @@ public class CloudThresholdTests
         Assert.Equal(250d, CloudThresholds.CosmosPointLatencyMs);
         Assert.Equal(10d, CloudThresholds.BoxSwapShare);
         Assert.Equal(256L * 1024 * 1024, CloudThresholds.BoxSwapBytes);
+        Assert.Equal(1024L * 1024, CloudThresholds.BoxPagingBps);
+        Assert.Equal(10d, CloudThresholds.BoxMemoryPressure);
+        Assert.Equal(90d, CloudThresholds.BoxSwapNearlyFull);
     }
 
     [Theory]
