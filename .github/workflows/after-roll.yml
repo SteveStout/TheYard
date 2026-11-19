@@ -196,16 +196,18 @@ jobs:
           echo "CI on main: success (run $run)"
       # The gate's pull request closes on main's commit before its branch goes: promote.sh amended the commit the
       # request carries, so GitHub never marks it merged (ADR-129). The branch is the Gate run's, or, on a start by
-      # hand, every gate branch that names the version main now holds.
+      # hand, every gate branch that names the version main now holds. A ready branch names no version, so the
+      # version is handed in (ADR-137).
       - name: The pull request closes
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCHES: ${{ needs.promoted.outputs.branches }}
           SHA: ${{ needs.promoted.outputs.sha }}
+          VERSION: ${{ needs.promoted.outputs.version }}
         run: |
           for branch in $BRANCHES; do
-            bash scripts/gate_pr.sh close "$branch" "$SHA" || echo "::warning::the pull request for $branch was not closed"
+            bash scripts/gate_pr.sh close "$branch" "$SHA" "$VERSION" || echo "::warning::the pull request for $branch was not closed"
           done
       - name: The gate branch goes
         if: always()
@@ -214,8 +216,17 @@ jobs:
           BRANCHES: ${{ needs.promoted.outputs.branches }}
         run: |
           for branch in $BRANCHES; do
-            case "$branch" in gate/*) ;; *) echo "::warning::$branch is not a gate branch; left"; continue ;; esac
-            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$branch" || echo "::warning::the gate branch $branch was not deleted"
+            case "$branch" in
+              gate/*) ;;
+              # A ready branch goes only once its lane can read "landed" on its commit, the cop's status (ADR-137):
+              # the lane watches the commit, and a branch deleted first would leave it nothing to read.
+              ready/*)
+                landed=$(gh api "repos/$GITHUB_REPOSITORY/commits/$branch/statuses" --jq '[.[] | select(.context == "cop" and .state == "success")] | length' || echo 0)
+                if [ "${landed:-0}" = 0 ]; then echo "::warning::$branch has no landed status yet; left"; continue; fi
+                ;;
+              *) echo "::warning::$branch is not a gate or ready branch; left"; continue ;;
+            esac
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$branch" || echo "::warning::the branch $branch was not deleted"
           done
   # #endregion after-roll
 

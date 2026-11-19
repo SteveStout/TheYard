@@ -12,7 +12,7 @@ What that is worth: a developer can merge knowing a failing test stops the chang
 ## What runs today
 
 **Continuous integration.** Every test runs once per version, in the ship's
-gate: the ship pushes the version to a `gate/<version>-<lane>-<sha8>` branch, `gate.yml` runs
+gate: the ship pushes one commit to a `ready/<lane>-<sha8>` branch, `gate.yml` runs
 the API suite on both stores, the frontend suite, and a browser suite that
 clicks through the running app the way a person would, on GitHub's runners, and
 `main` moves only when all of it is green (ADR-098). A change that fails any of
@@ -29,7 +29,15 @@ installs .NET through one step, `.github/actions/dotnet`, which tries the
 download twice and then builds with the runner's own .NET 10 SDK, so a failed
 download cannot turn a good version red (ADR-068, the addendum of 1.0.4.72).
 
-**A ship is a push of `gate/<version>-<lane>-<sha8>`.** From 1.0.4.101 no machine has to stay
+**A ship is a push of `ready/<lane>-<sha8>`, numbered at landing** (ADR-137, One traffic cop for
+main). The lane leaves the version, the date and the record number as placeholders; the Gate run's
+first job, the traffic cop, rebases the commit onto main inside the gate's group, fills them (main's
+top line plus one) and hands the filled commit to every later job, and the lane reads "landed",
+"skipped" or "red gate" on its own commit. The steps are in CLAUDE.md, Shipping; what follows still
+describes the gate and the promote, which the cop leads. Until 1.0.5.99 a ship was a push of
+`gate/<version>-<lane>-<sha8>`, numbered on the laptop under the gate lock; that path is closed.
+
+From 1.0.4.101 no machine has to stay
 on for a version to ship (ADR-098, the addendum of 1.0.4.101). When the gate
 and The Shed's suites are both green, the same run promotes itself: its
 promote job runs `scripts/promote.sh`, which checks the version and the locked
@@ -339,7 +347,7 @@ URL, and every deploy so far has been gated on it.
 - [`scripts/fill_version.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/fill_version.sh): fills the version, the date and the record number at the claim, under the lock, and amends the one commit.
 - [`scripts/gate_lock.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_lock.sh): the gate lock's claim, annotation and release, and the rule for when a peer may release it.
 - [`scripts/preflight.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/preflight.sh): the gate's four quick checks and the promote path, run before the push; a red preflight is never pushed.
-- [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `gate/<version>-<lane>-<sha8>` branch the ship pushes; `main` moves only on its green.
+- [`.github/workflows/gate.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/gate.yml): the gate, on a GitHub runner, for every `ready/<lane>-<sha8>` branch a lane pushes, led by the traffic cop (`scripts/cop.sh`); `main` moves only on its green.
 - [`.github/workflows/ci.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/ci.yml): a style job, then the suites as three jobs behind it, on every push to main and on a pull request.
 - [`.github/workflows/edge-branch.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/edge-branch.yml): moves the edge's branch to main after Deploy, only when what the edge serves (edge/ or netlify.toml) changed.
 - [`.github/workflows/nightly.yml`](https://github.com/SteveStout/TheYard/blob/main/.github/workflows/nightly.yml): the nightly job the Function dispatches (ADR: The Nightly Function on the Admin tab).

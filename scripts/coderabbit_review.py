@@ -1,4 +1,4 @@
-"""coderabbit_review.py <branch> <sha> <ceiling-seconds> <out.json>
+"""coderabbit_review.py <branch> <sha> <ceiling-seconds> <out.json> [<version>]
                      | fold <row.json> <log.json>
                      | count <comments.json> [<sha> [<reviews.json>]]
                      | missing <version> <sha> <out.json>
@@ -310,6 +310,8 @@ def main():
             f.write("\n")
         return
     branch, sha, ceiling, out = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4]
+    # A ready branch names no version (ADR-137, One traffic cop for main): the gate hands in the one the cop assigned.
+    version = sys.argv[5] if len(sys.argv) > 5 and sys.argv[5] else branch_version(branch)
     start = time.monotonic()
     pr, run = None, None
     while time.monotonic() - start < ceiling:
@@ -332,7 +334,7 @@ def main():
                     run = newest
                     break
         time.sleep(POLL_SECONDS)
-    row = empty_row(branch_version(branch), sha, None)
+    row = empty_row(version, sha, None)
     row["pr"] = pr
     row["waited_seconds"] = int(time.monotonic() - start)
     if pr is None:
