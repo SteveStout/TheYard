@@ -61,7 +61,16 @@ public sealed class CampaignTestSend(IMergeStore store, IHttpClientFactory http,
                 run.Came("unchanged", "no_lead");
                 return await AnswerAsync(request, HttpStatusCode.Conflict, "no open lead with an address renders: nothing sent", ct);
             }
-            var sent = await new GmailSender(http, google).SendAsync(mail.Mail, ct);
+            SentMail sent;
+            try
+            {
+                sent = await new NoEmailDayGate(new GmailSender(http, google), await NoEmailDayGate.ReadAsync(store, ct), time, TodayMail.To).SendAsync(mail.Mail, ct);
+            }
+            catch (MailHeldException held)
+            {
+                run.Count(held.Reason, 1).Came("unchanged", held.Reason);
+                return await AnswerAsync(request, HttpStatusCode.Conflict, "today is a no-email day (dispatch/NO-EMAIL-DAYS.txt) and the test address is not Steve's own: nothing sent", ct);
+            }
             string line = $"{CentralClock.Local(time.GetUtcNow()):yyyy-MM-dd HH:mm:ss} test of lead {mail.Lead.Id} ({mail.Lead.CompanyName}, track {mail.Lead.Track}) sent to the test address, gmail {sent.MessageId}";
             await store.EnsureFolderAsync("campaign", ct);
             await store.AppendAsync(Log, TrackerCsvText.Encode(line + "\r\n"), ct);
