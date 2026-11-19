@@ -1,0 +1,15 @@
+/**
+ * Does:      Draws the tick's disc, ported from the whole-page picture's .check: 18 px, deep teal, the tick in white.
+ * Does not:  Lay out the row it sits in.
+ * Used by:   TickDisc.tsx.
+ */
+.disc {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  background: var(--color-teal-deep);
+  color: var(--color-on-accent);
+}

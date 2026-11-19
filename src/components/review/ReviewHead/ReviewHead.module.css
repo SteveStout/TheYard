@@ -1,0 +1,38 @@
+/**
+ * Does:      Lays out a section's opening, ported from the whole-page picture's .head and .hint: the heading and where
+ *            the reader is on one line, wrapping on a phone, and the line under them.
+ * Does not:  Draw a panel (a section's heading sits on the bare page).
+ * Used by:   ReviewHead.tsx.
+ */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--title-tracking);
+}
+
+/* On the bare page, not in a panel: body text, since the quiet colours are kept for words with a panel behind them. */
+.meta {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.meta strong {
+  color: var(--color-teal-deep);
+}
+
+.hint {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-base);
+}

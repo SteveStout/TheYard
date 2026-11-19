@@ -1,84 +1,35 @@
 /**
- * Does:      Lays out the review route: the first screen at the page's full measure, the line at the fold, and the tour
- *            under it as one column at the reading measure; and holds the route's two pills: the filled one for the
- *            move to make and the outlined one beside it.
- * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a stop (ReviewStop.module.css does).
- * Used by:   ReviewFinish.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx, ReviewProgress.tsx, ReviewStop.tsx,
- *            ReviewVerdict.tsx.
+ * Does:      Lays out the review route as one unit, as the whole-page picture's .page: one column at most 1234 px wide,
+ *            every section exactly that wide, 48 px between sections (32 on a phone), the strip of names 24 px under
+ *            the mirror and Where next 16 px under the close, no section taller than its content; and holds the
+ *            route's two pills: the filled one for the move to make and the outlined one beside it.
+ * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a section's inside (its own sheet does).
+ * Used by:   ReviewClose.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx, ReviewVerdict.tsx.
  */
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
   width: 100%;
   max-width: 1234px;
   margin: 0 auto;
 }
 
-/* The tour keeps the stops at their reading measure, centred under the first screen. */
-.tour {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  scroll-margin-top: var(--space-6);
+.page > * + * {
+  margin-top: var(--space-8);
 }
 
-/* The line at the fold that points down to the tour, between two hairlines. */
-.fold {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin: var(--space-6) 0 0;
-  color: var(--color-text);
-  font-size: var(--text-sm);
-  text-align: center;
+.page > .names {
+  margin-top: var(--space-6);
 }
 
-.fold::before,
-.fold::after {
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-  content: '';
+.page > .next {
+  margin-top: var(--space-4);
 }
 
-.fold a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch-target);
-  color: var(--color-accent);
-  font-weight: var(--weight-semibold);
-}
-
-.tourTitle {
-  margin: 0;
-  color: var(--color-heading);
-  font-size: var(--text-xl);
-  font-weight: var(--title-weight);
-}
-
-.head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-/* On the bare page, not in a panel: the quiet colours are kept for words with a panel behind them. */
-.lede {
-  margin: 0;
-  color: var(--color-text);
-}
-
-.stops {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+@media (max-width: 639.98px) {
+  .page > * + * {
+    margin-top: var(--space-7);
+  }
 }
 
 .primary,

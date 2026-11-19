@@ -293,7 +293,7 @@ describe('the rendering service', () => {
     expect(doc.asked.some((read) => read.url.startsWith(`${API}/api/pulse`))).toBe(false);
   });
 
-  it('draws the review route whole on the server: the first screen from its two reads, then the seven stops from their list (ADR: The review route gives a reason before it asks)', async () => {
+  it('draws the review route whole on the server: the first screen from its two reads, the seven compact stops from their list and the close (ADR: The review route gives a reason before it asks)', async () => {
     const { response, html, asked } = await page('?view=review');
     expect(response.status).toBe(200);
     expect(response.headers.get(RENDERED_HEADER)).toBe('drawn');
@@ -307,10 +307,17 @@ describe('the rendering service', () => {
       `Read all ${recommendations.recommendations.length} named recommendations`
     );
     expect(html).toContain('href="/?doc=quality#the-slip-and-the-turn"');
-    // The tour, under it, as it was.
+    // The tour, under it: seven compact cells, each a link to its stop's address with its one line, and no tall card.
     for (const stop of REVIEW_STOPS) expect(html).toContain(escapeHtml(stop.title));
-    for (const stop of REVIEW_STOPS) expect(html).toContain(`href="/?doc=${stop.record}"`);
-    expect(html).toContain(escapeHtml(REVIEW_STOPS[0].doThis));
+    for (const stop of REVIEW_STOPS) expect(html).toContain(`href="${escapeHtml(stop.address)}"`);
+    expect(html).toContain(escapeHtml(REVIEW_STOPS[0].line));
+    expect(html).toContain('0 of 7 seen.');
+    expect(html).not.toContain('Do this:');
+    expect(html).not.toContain('Mark done');
+    // The close: Sean Whitesell's words, drawn from the same read as the first screen's quote.
+    const sean = recommendations.recommendations.find((entry) => entry.name === 'Sean Whitesell');
+    expect(sean).toBeDefined();
+    expect(html).toContain(escapeHtml(sean!.pull));
     // The ten-minute ask is below the first screen: the claim comes before it in the page.
     expect(html.indexOf('Production .NET that stays up.')).toBeLessThan(
       html.indexOf('Seven stops, ten minutes, all optional')
@@ -344,7 +351,7 @@ describe('the rendering service', () => {
 
   it('draws the short path under the first screen on the server, nothing reached, its live tiles waiting for the browser', async () => {
     const { html, asked } = await page('?view=review');
-    expect(html).toContain('0 of 3 stops');
+    expect(html).toContain('0 of 3 opened.');
     for (const title of [
       'Quality held with AI',
       'The gate every push passes',
@@ -358,7 +365,7 @@ describe('the rendering service', () => {
     expect(paths.some((path) => path.startsWith('/api/vehicles'))).toBe(false);
     // In the page's order: the claim, the path, then the tour.
     const claim = html.indexOf('Production .NET that stays up.');
-    const path = html.indexOf('0 of 3 stops');
+    const path = html.indexOf('0 of 3 opened.');
     const tour = html.indexOf('The full tour, if you want it');
     expect(claim).toBeLessThan(path);
     expect(path).toBeLessThan(tour);

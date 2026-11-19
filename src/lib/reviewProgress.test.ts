@@ -4,7 +4,6 @@ import {
   CURRENT_KEY,
   emptyProgress,
   markReached,
-  moveTo,
   newlyReached,
   reachBody,
   readProgress,
@@ -64,11 +63,8 @@ describe('the review place, kept on the browser (ADR: Ten minutes, seven stops)'
     expect(() => writeProgress(null, { current: 2, reached: [1] })).not.toThrow();
   });
 
-  it('moves the place within the seven stops, and marks a stop reached once', () => {
+  it('marks a stop reached once, and never one off the seven', () => {
     const start = emptyProgress();
-    expect(moveTo(start, 1)).toEqual({ current: 1, reached: [] });
-    expect(moveTo(start, 7).current).toBe(6);
-    expect(moveTo(start, -1).current).toBe(0);
     const once = markReached(start, 2);
     expect(once.reached).toEqual([2]);
     expect(markReached(once, 2)).toBe(once);
