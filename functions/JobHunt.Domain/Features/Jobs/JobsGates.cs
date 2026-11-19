@@ -39,7 +39,7 @@ public sealed record Candidate(string Source, string Company, string Title, stri
 /// <param name="Candidate">The role.</param>
 /// <param name="Failed">The gate it failed and the number, or null.</param>
 /// <param name="BandFlag">PASS, FLAG, SKIP or NONE (PayFloor).</param>
-/// <param name="Remote">What the remote gate read: remote, St. Louis hybrid 1 day, hybrid days unknown.</param>
+/// <param name="Remote">What the remote gate read: remote, St. Louis hybrid 1 day, hybrid days unknown, or a US hybrid or onsite read (RULE 76).</param>
 /// <param name="Stack">dotnet, azure, ai lead, or unread for an alert with no text.</param>
 /// <param name="TrackerNote">The company's applications in 60 days by Count, or "no applications in 60 days".</param>
 /// <param name="DaysOld">Days since posted or first seen.</param>
@@ -57,8 +57,9 @@ public sealed record Verdict(Candidate Candidate, string? Failed, string BandFla
 
 /// <summary>
 /// The night's deterministic gates (PROMPT-JOBHUNT-NIGHTLY-JOBS rung 3 and decisions D5 to D9), in code so the model
-/// only judges: not a staffing firm placing an unnamed client and not a former employer; remote, or St. Louis
-/// hybrid at one day a week at most (hybrid with no day count passes to Steve's table); posted or first seen 21
+/// only judges: not a staffing firm placing an unnamed client and not a former employer; a role in the US, remote or
+/// not (RULE 76: hybrid and onsite are in, remote is negotiated once a human is on the other side), and never one
+/// abroad or remote only in named states that leave Missouri out; posted or first seen 21
 /// days ago or less; Principal, Staff, Lead, Architect, an engineering Manager or Director (a plain Senior only
 /// with a band topping PayFloor.Pass); a band whose top is under PayFloor.Flag skipped with its number; a stack
 /// that touches C#, .NET or Azure, or an AI-native lead role; not applied to the same role; and under RULE 50's
@@ -91,8 +92,7 @@ public static partial class JobsGates
         string? failed = blacklist?.Hit(c.Company, url: c.Url) is { } row ? row.Reason
             : Staffing().IsMatch(c.Company) ? "staffing firm placing an unnamed client"
             : FormerEmployers.Of(c.Company, null) is not null ? "former employer"
-            : remote == CountryOnly ? $"not remote: {c.Location.Trim()}, and the title and text never say remote"
-            : remote.StartsWith("not remote", StringComparison.Ordinal) || remote.StartsWith("hybrid outside", StringComparison.Ordinal) || remote == "onsite" ? remote
+            : LocationFailure(remote, c.Location) is { } place ? place
             : days > MaxDays ? $"posted {days} days ago"
             : LevelFailure(c)
             ?? (flag == "SKIP" ? $"band tops at ${c.BandMax!.Value.ToString("N0", CultureInfo.InvariantCulture)}, under ${PayFloor.Flag.ToString("N0", CultureInfo.InvariantCulture)}" : null)

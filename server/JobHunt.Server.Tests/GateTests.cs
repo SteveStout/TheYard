@@ -234,6 +234,16 @@ public sealed class GateTests
     }
 
     [Fact]
+    public void An_invite_the_tracker_wrote_as_INVITE_WITH_NOTE_SENT_is_an_invite_and_its_person_is_not_served_again()
+    {
+        // The chat1112 rows of 11/12: eight of these people came back on the 11/17, 11/18 and 11/19 worklists and read Pending.
+        string[] row = ["3611", "Charley Frazier", "Homebound", "LinkedIn", "11/12/2026", "", "INVITE WITH NOTE SENT by Claude (chat1112) ~8:37 AM CST 11/12 on Steve's 'Send that', from the Laptop's Chrome"];
+        Assert.True(TrackerKinds.IsInvite(row));
+        Assert.False(TrackerKinds.IsMessage(row));
+        Assert.Equal("already invited", GateOver(row).Invite("Charley Frazier", "Homebound"));
+    }
+
+    [Fact]
     public void A_posting_applied_to_is_found_by_its_id_or_its_title()
     {
         string[] byId = ["1", "NA", "Acme", "LinkedIn Easy Apply", "10/14/2026", "", "SUBMITTED by Claude, job 4467083755."];

@@ -27,12 +27,12 @@ public sealed class ReadyRowTests
     }
 
     [Fact]
-    public void SingleStore_s_saved_posting_never_says_remote_and_fails_not_remote_with_its_location()
+    public void SingleStore_s_saved_posting_never_says_remote_so_the_night_passes_it_as_a_US_role_and_the_pounce_does_not()
     {
         var verdict = JobsGates.Judge(Posting("gh_singlestore_8318150.json", "SingleStore"), [], [], Today);
         Assert.Equal(JobsGates.CountryOnly, verdict.Remote);
-        Assert.Equal("not remote: United States, and the title and text never say remote", verdict.Failed);
-        Assert.Equal(verdict.Failed, PounceRules.Gate(verdict, [], new HashSet<string>()));
+        Assert.Null(verdict.Failed);
+        Assert.Equal(JobsGates.CountryOnly, PounceRules.Gate(verdict, [], new HashSet<string>()));
     }
 }
 

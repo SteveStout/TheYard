@@ -83,8 +83,8 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             FunnelWeek.Text(await new FunnelSource(store).LogAsync(ct), DateOnly.FromDateTime(local).AddDays(-1)))
         {
             Signal = (await TextAsync(TodayCard.SignalPath, ct)).Split('\n')[0].Trim(),
-            EmptyRuns = await TextAsync(TodayCard.EmptyRunsPath, ct),
             Reconnects = await TextAsync(TodayCard.ReconnectsPath(DateOnly.FromDateTime(local)), ct),
+            Unblock = await UnblockAsync(DateOnly.FromDateTime(local), ct),
         };
     }
 
@@ -128,6 +128,20 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             }
         }
         return [.. lines.Select(l => l.EndsWith("(Google Calendar)", StringComparison.Ordinal) ? $"{l}. {MustAnswers(l, notes)}" : l)];
+    }
+
+    /// <summary>The newest jobs file of the last two days against the tracker, for the card's first lines.</summary>
+    private async Task<IReadOnlyList<UnblockRow>> UnblockAsync(DateOnly day, CancellationToken ct)
+    {
+        foreach (DateOnly date in new[] { day, day.AddDays(-1) })
+        {
+            string jobs = await TextAsync($"JOBS-{date:yyyy-MM-dd}.md", ct);
+            if (jobs.Length > 0)
+            {
+                return TodayUnblock.Rows(jobs, TrackerCsvText.Parse(await TextAsync(MergePaths.Master, ct)));
+            }
+        }
+        return [];
     }
 
     private async Task<string> TextAsync(string path, CancellationToken ct) =>
