@@ -263,6 +263,7 @@
         "The machine lanes' feed writes only its run folder and one QUEUE-hotmgr file a day, and every candidate passes the person, text and closed-req gates and the feed's hold file before it is queued",
         "The invites worklist is ranked hottest first before it is cut to the day's room, so a row left over is never hotter than a row kept",
         "A US role passes the night's location gate whatever its arrangement and one abroad fails it, the picker ranks remote, then St. Louis hybrid, then other US roles, and the pounce still passes only remote",
+        "The 90-day page item writes a board's square-bracket level tag in round brackets in gen90.py's role and the spec's, runs gen90.py again only on \"not one page\" with the longest point cut and the first run's code, three runs at most, and names the page ruling as answered",
         "An empty run becomes a fix proposal and never a WALLS.md bullet or a card line, and the card's first lines are the high-value roles only Steve can unblock, counted in the mail's subject",
         "The apply worklist takes postings the tracker shows submitted off before the gates, and a tailored resume that stops falls back to the lock's send copy, checked by its hash",
         "The comment line drops every comment a skip rule names, the program rolls about one in three of the rest and at most 15 a day, mints one tagged code each, and an edit counts only when the reloaded comment holds his words, the line last and the code once",
