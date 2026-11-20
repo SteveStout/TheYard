@@ -8,6 +8,7 @@
  * Does not:  Read the API (useReviewReadings.ts and usePulse.ts do) or hold the words (reviewVerdict.ts does).
  * Used by:   ReviewPage.tsx.
  */
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import type { TestSummary } from '../../../lib/landingProof';
 import type { NowRow } from '../../../lib/nowPanel';
 import type { Recommendation } from '../../../lib/recommendations';
@@ -53,9 +54,11 @@ export function ReviewVerdict({
 }) {
   const tiles = [...RECORD_TILES, testsTile(summary, quality)];
   const quote = leadQuote(recommendations);
+  // The holder of the first move's arrow and the live panel's dot.
+  const [holder] = useFirstSeen<HTMLDivElement>();
 
   return (
-    <div className={styles.verdict} data-testid="review-verdict">
+    <div ref={holder} className={styles.verdict} data-testid="review-verdict">
       <div className={styles.main}>
         <p className={styles.eyebrow}>
           {VERDICT.eyebrow.map((part, index) => (

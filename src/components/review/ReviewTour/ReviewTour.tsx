@@ -8,6 +8,7 @@
  * Used by:   ReviewPage.tsx.
  */
 import { useState } from 'react';
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { DIAGRAMS, MENUS } from '../../../library/sections';
 import { REVIEW_STOPS, tourLine } from '../../../lib/reviewStops';
 import { restLine, TOUR, TOUR_ID, tourSeen } from '../../../lib/reviewVerdict';
@@ -32,8 +33,11 @@ export function ReviewTour({
 }) {
   // Read only under 640, where the cells are closed until asked for; from 640 up the control is not drawn.
   const [open, setOpen] = useState(false);
+  // The holder of its number badge's one pass of light.
+  const [holder] = useFirstSeen<HTMLElement>();
   return (
     <section
+      ref={holder}
       id={TOUR_ID}
       className={styles.tour}
       aria-labelledby="review-tour-title"

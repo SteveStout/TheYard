@@ -10,6 +10,7 @@
  * Used by:   ReviewPage.tsx.
  */
 import type { MouseEvent } from 'react';
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import type { DocKey } from '../../../library/documents';
 import { landOnSection } from '../../../library/pendingAnchor';
 import type { ReviewAction } from '../../../lib/reviewProgress';
@@ -69,6 +70,8 @@ export function ReviewPath({
   onAction: (action: ReviewAction) => void;
   onOpenDoc: (key: DocKey) => void;
 }) {
+  // The holder of the comet and the six checks: they play while a quarter of the section is in view.
+  const [holder, seen] = useFirstSeen<HTMLElement>();
   const open = (stop: PathStop) => (event: MouseEvent<HTMLAnchorElement>) => {
     onAction(stop.action);
     onReach(stop.key);
@@ -80,7 +83,7 @@ export function ReviewPath({
   };
   const tile = (stop: PathStop) =>
     stop.key === 'quality' ? (
-      <QualityTrendTile label={stop.tile} readings={readings} quality={gate.quality} />
+      <QualityTrendTile label={stop.tile} readings={readings} quality={gate.quality} seen={seen} />
     ) : stop.key === 'gate' ? (
       <GateTile
         label={stop.tile}
@@ -95,6 +98,7 @@ export function ReviewPath({
 
   return (
     <section
+      ref={holder}
       id={QUESTIONS_ID}
       aria-labelledby="review-path-title"
       data-mock="questions"
