@@ -10,21 +10,36 @@
 /** One reading: the day, the version (blank for a pre-scan reading), the value and who measured it. */
 export type TrendPoint = { date: string; version: string; value: number; preScan: boolean };
 
-/** A fence read whole: what the number is, which way it may move, the version to mark, and the readings. */
+/**
+ * How the Quality page draws a chart (ADR-130, the addendum on the page as its picture): `slip` is the page's first
+ * chart, with the slip and the three callouts; `small` is one of the small multiples or a coverage chart; empty is the
+ * plain line the home page draws.
+ */
+export type TrendForm = '' | 'slip' | 'small';
+
+/** A fence read whole: what the number is, which way it may move, the version to mark, the form, why it matters, and the readings. */
 export type QualityTrendData = {
   label: string;
   direction: string;
   marker: string;
+  /** How the Quality page draws it; absent on the home page's chart. */
+  form?: TrendForm;
+  /** Why the number matters, the line under a small chart. */
+  why?: string;
   points: TrendPoint[];
 };
 
 /**
- * Reads a `quality-trend` fence. Its first line is `label | direction | marker version`; every other line is
- * `date | version | value | source`, as the API writes it. A line it cannot read is left out, never guessed.
+ * Reads a `quality-trend` fence. Its first line is `label | direction | marker version | form | why it matters`, the
+ * last two optional; every other line is `date | version | value | source`, as the API writes it. A line it cannot
+ * read is left out, never guessed.
  */
 export function parseTrend(fence: string): QualityTrendData {
   const [head = '', ...lines] = fence.split('\n').filter((line) => line.trim() !== '');
-  const [label = '', direction = '', marker = ''] = head.split('|').map((cell) => cell.trim());
+  const [label = '', direction = '', marker = '', shape = '', why = ''] = head
+    .split('|')
+    .map((cell) => cell.trim());
+  const form: TrendForm = shape === 'slip' || shape === 'small' ? shape : '';
   const points = lines
     .map((line) => line.split('|').map((cell) => cell.trim()))
     .filter((cells) => cells.length >= 4 && cells[2] !== '' && Number.isFinite(Number(cells[2])))
@@ -34,7 +49,7 @@ export function parseTrend(fence: string): QualityTrendData {
       value: Number(value),
       preScan: source === 'pre-scan',
     }));
-  return { label, direction, marker, points };
+  return { label, direction, marker, form, why, points };
 }
 
 /** The drawing box, in viewBox units, before it is fitted to the width it is given. */
@@ -90,5 +105,10 @@ export function trendGeometry(data: QualityTrendData, box: TrendBox = TREND_BOX)
 /** A value as the page writes it: whole numbers with no decimals, ratios to two places. */
 export function format(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+/** A value as a card writes it: thousands with a comma, a ratio to two places, a share to one, with its sign. */
+export function figure(value: number, label: string): string {
+  if (/per cent/.test(label)) return `${value.toFixed(1)}%`;
+  return Number.isInteger(value) ? value.toLocaleString('en-US') : format(value);
 }
 // #endregion quality-trend

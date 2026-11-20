@@ -1,0 +1,151 @@
+/**
+ * Does:      Lays out the Quality page's held pill, its fifteen tiles three across with their bars, and the rulebook's
+ *            cards two across with their gauges, as the quality1120 picture draws them; two tiles a row and one card a
+ *            row on a phone.
+ * Does not:  Lay out the rest of the page (QualityBlocks.module.css does) or draw a chart (QualityChart.module.css).
+ * Used by:   DocDialog.tsx.
+ */
+/* Each tile and card is the site's tile (op-glass op-tile, the gold bar on its top and its brackets), as the review
+   route's voices are, so the page keeps one card language with the rest of the site. */
+.prose :global(.quality-tile),
+.prose :global(.quality-group) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+/* #region tiles */
+.prose :global(.quality-held) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-teal-deep);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.prose :global(.quality-held[data-all='true']) {
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  color: var(--color-success);
+}
+
+.prose :global(.quality-held) > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.prose :global(.quality-tiles) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.prose :global(.quality-tile-name) {
+  min-height: 2.6em;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.prose :global(.quality-tile-value) {
+  margin: var(--space-1) 0 var(--space-2);
+  color: var(--color-teal-deep);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+
+.prose :global(.quality-bar) {
+  display: block;
+  width: 100%;
+  height: 6px;
+  overflow: visible;
+}
+
+.prose :global(.quality-bar-track) {
+  fill: color-mix(in srgb, var(--color-teal-deep) 10%, transparent);
+}
+
+.prose :global(.quality-bar-now),
+.prose :global(.quality-bar-gain) {
+  fill: var(--color-teal-header);
+}
+
+.prose :global(.quality-bar-was) {
+  fill: color-mix(in srgb, var(--color-teal-header) 35%, transparent);
+}
+
+.prose :global(.quality-bar-held) {
+  stroke: color-mix(in srgb, var(--color-success) 40%, transparent);
+  stroke-width: 6;
+  stroke-dasharray: 6 4;
+}
+
+.prose :global(.quality-tile-note) {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+/* #endregion tiles */
+
+/* #region rulebook */
+.prose :global(.quality-groups) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.prose :global(.quality-group) h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--color-teal-deep);
+  font-size: var(--text-md);
+}
+
+.prose :global(.quality-group) p {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-base);
+  line-height: 1.55;
+}
+
+.prose :global(.quality-group) :global(.quality-example) {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.prose :global(.quality-group) :global(.quality-bar) {
+  margin-top: auto;
+}
+
+.prose :global(.quality-group) :global(.quality-group-count) {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.prose :global(.quality-group-count) strong {
+  color: var(--color-teal-deep);
+}
+/* #endregion rulebook */
+
+@media (max-width: 639.98px) {
+  .prose :global(.quality-tiles) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .prose :global(.quality-tile-name) {
+    min-height: 0;
+  }
+
+  .prose :global(.quality-groups) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

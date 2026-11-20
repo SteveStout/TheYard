@@ -19,6 +19,10 @@ public sealed partial class ReviewTourTests
     [GeneratedRegex(@"[^a-z0-9]+")]
     private static partial Regex NotSlug();
 
+    /// <summary>A heading that names its own id at its end, as withHeadingIds in src/lib/markdown.ts reads it.</summary>
+    [GeneratedRegex(@"\{#([a-z0-9-]+)\}\s*$")]
+    private static partial Regex NamedId();
+
     [Fact]
     public void Every_tour_stop_opens_an_address_this_site_serves_and_carries_its_one_line()
     {
@@ -57,7 +61,9 @@ public sealed partial class ReviewTourTests
         Assert.True(DocumentationCatalog.Files.TryGetValue(slug, out string? file), $"{slug} is not a document the catalogue serves");
         var anchors = File.ReadAllLines(Path.Combine(Repo.Root(), file!))
             .Where(line => line.StartsWith('#'))
-            .Select(line => NotSlug().Replace(line.TrimStart('#').Trim().ToLowerInvariant(), "-").Trim('-'));
+            .Select(line => NamedId().Match(line) is { Success: true } named
+                ? named.Groups[1].Value
+                : NotSlug().Replace(line.TrimStart('#').Trim().ToLowerInvariant(), "-").Trim('-'));
         Assert.Contains(proof.Groups[2].Value, anchors);
     }
 }
