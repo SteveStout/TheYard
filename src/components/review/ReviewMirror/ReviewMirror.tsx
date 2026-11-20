@@ -2,7 +2,7 @@
  * Does:      Draws the review route's second first screen, at /?view=review&for=ai (ADR: The review route gives a reason
  *            before it asks, the addendum on the mirror): written to the hiring manager's own problem with AI-written
  *            code, the answer in his own words, the one primary move to what this version had to pass with Book 20
- *            minutes beside it, the byline and resume, two record tiles and the live gate panel. Every button reports
+ *            minutes and the gold resume button beside it, the byline, two record tiles and the live gate panel. Every button reports
  *            its action; the strip of names under it is the page's own section (ReviewPage.tsx draws it).
  * Does not:  Read the API (useReviewReadings.ts does) or hold the words (reviewMirror.ts does).
  * Used by:   ReviewPage.tsx.
@@ -20,6 +20,7 @@ import {
   VERDICT,
   type HeldQuality,
 } from '../../../lib/reviewVerdict';
+import { PdfMark } from '../../shared/PdfMark';
 import { GatePanel } from '../GatePanel';
 import verdict from '../ReviewVerdict/ReviewVerdict.module.css';
 import styles from './ReviewMirror.module.css';
@@ -93,18 +94,20 @@ export function ReviewMirror({
           >
             {VERDICT.book}
           </a>
-        </div>
-        <p className={styles.byline}>
-          <strong>{MIRROR.byName}</strong>
-          {MIRROR.byline}{' '}
           <a
-            className={verdict.resume}
+            className="op-pill-resume"
             href={RESUME_ADDRESS}
             onClick={() => onAction('resume')}
             data-action="review.resume"
+            data-testid="review-resume"
           >
+            <PdfMark />
             {VERDICT.resume}
           </a>
+        </div>
+        <p className={styles.byline}>
+          <strong>{MIRROR.byName}</strong>
+          {MIRROR.byline}
         </p>
         <ul className={styles.tiles} aria-label="From the record">
           {MIRROR_TILES.map((tile) => (

@@ -1,0 +1,104 @@
+/**
+ * Does:      Holds the three pill buttons the review route and the home page share: the filled one for the move to make,
+ *            the outlined one beside it, and the gold resume button.
+ * Does not:  Declare a design token (colors.css, sizes.css and typography.css do) or lay out the row a pill sits in.
+ * Used by:   globalStyles.ts.
+ */
+/* #region op-pill */
+/* The two pill shapes the review route and the home page share: the filled one for the move to make and the outlined
+   one beside it. A move that goes nowhere is drawn quiet, never faded, so its word stays at full strength. */
+.op-pill-primary,
+.op-pill-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--pill-height);
+  padding: var(--pill-padding);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-full);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--pill-weight);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.op-pill-primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.op-pill-secondary {
+  background: var(--color-surface);
+  color: var(--color-accent);
+}
+
+.op-pill-primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.op-pill-secondary:hover {
+  background: var(--color-accent-soft);
+}
+
+.op-pill-primary:focus-visible,
+.op-pill-secondary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.op-pill-primary:disabled,
+.op-pill-secondary:disabled {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+/* The resume, the one gold button (the quality1120 picture's resume-button-mock, ported rule by rule): the gold bar on
+   end with dark ink, the bar's dark edge, the small PDF page before the words, 17 px semibold, as tall as the first
+   screen's primary move. Every place the resume is drawn takes this class and the PdfMark beside its words; on a phone
+   it is the row's width, as its siblings are. */
+.op-pill-resume {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-sizing: border-box;
+  min-height: var(--control-height-lg);
+  padding: 0 var(--space-6) 0 var(--space-4);
+  border: 1px solid var(--color-gold-bar-dark);
+  border-radius: var(--radius-full);
+  background: var(--color-gold) var(--gradient-gold-button);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--palette-white) 70%, transparent) inset,
+    0 6px 16px color-mix(in srgb, var(--color-gold-bar-dark) 28%, transparent);
+  color: var(--color-on-gold);
+  font: inherit;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.op-pill-resume:hover {
+  filter: brightness(1.04);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--palette-white) 70%, transparent) inset,
+    0 8px 20px color-mix(in srgb, var(--color-gold-bar-dark) 36%, transparent);
+}
+
+.op-pill-resume:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (max-width: 639.98px) {
+  .op-pill-resume {
+    width: 100%;
+    padding: 0 var(--space-5) 0 var(--space-4);
+  }
+}
+/* #endregion op-pill */

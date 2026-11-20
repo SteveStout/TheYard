@@ -30,6 +30,7 @@ import { REVIEW_ADDRESS } from '../../../lib/reviewStops';
 import { RECOMMENDATIONS_ADDRESS, VERDICT } from '../../../lib/reviewVerdict';
 import { VOICES } from '../../../lib/voices';
 import { BookSheet } from '../../review/BookSheet';
+import { PdfMark } from '../../shared/PdfMark';
 import { ReviewClose } from '../../review/ReviewClose';
 import { ReviewDock } from '../../review/ReviewDock';
 import styles from './Landing.module.css';
@@ -156,11 +157,13 @@ export function Landing({
                   <span aria-hidden="true">→</span>
                 </a>
                 <a
-                  className={`op-pill-secondary ${styles.move}`}
+                  className="op-pill-resume"
                   href={LINKS.resume.href}
                   target="_blank"
                   rel="noreferrer"
+                  data-testid="landing-resume"
                 >
+                  <PdfMark />
                   {MOVES.resume}
                 </a>
                 <a
@@ -247,12 +250,7 @@ export function Landing({
             </section>
           ))}
         </div>
-        <ReviewClose
-          recommendations={recommendations}
-          onAction={() => {}}
-          onBook={() => setBooking(true)}
-          lines={LANDING_CLOSE}
-        />
+        <ReviewClose onAction={() => {}} onBook={() => setBooking(true)} lines={LANDING_CLOSE} />
         <WhereNext page="landing" />
       </section>
       <ReviewDock
@@ -260,7 +258,7 @@ export function Landing({
         hidden={booking}
         moves={[
           { label: DOCK_REVIEW, href: REVIEW_ADDRESS, onClick: inPlace(onOpenReview) },
-          { label: MOVES.resume, href: LINKS.resume.href, onClick: () => {} },
+          { label: MOVES.resume, href: LINKS.resume.href, onClick: () => {}, resume: true },
         ]}
       />
       <BookSheet open={booking} onClose={() => setBooking(false)} onAction={() => {}} />

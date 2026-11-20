@@ -14,11 +14,14 @@ const entries = file.recommendations;
 describe('the named voices (ADR: The review route gives a reason before it asks, the addendum on named voices)', () => {
   it('names who speaks where, and each name is one the answer holds', () => {
     expect(VOICES).toEqual({
-      quality: ['Henry Crans'],
-      gate: ['Sarah Sebestyen'],
-      room: ['Meagan Colley'],
-      pair: ['Sean Whitesell', 'Khushbu Shah'],
-      close: ['Anthony Fortner'],
+      band: [
+        'Henry Crans',
+        'Sarah Sebestyen',
+        'Meagan Colley',
+        'Sean Whitesell',
+        'Khushbu Shah',
+        'Anthony Fortner',
+      ],
       home: ['Cliff True', 'Sanders Crosby', 'Micah Johnson'],
     });
     for (const name of Object.values(VOICES).flat())
