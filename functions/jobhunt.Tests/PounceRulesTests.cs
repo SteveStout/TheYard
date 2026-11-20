@@ -193,13 +193,27 @@ public sealed class PounceRulesTests
     }
 
     [Fact]
-    public void The_budget_flag_holds_for_21_days_and_not_past_the_year_s_end()
+    public void The_budget_flag_holds_only_for_a_role_live_in_the_year_s_last_21_days_while_that_year_lasts()
     {
-        var live = new DateTimeOffset(2026, 11, 11, 15, 0, 0, TimeSpan.Zero);
-        Assert.True(PounceClock.BudgetFlag(live, new DateOnly(2026, 11, 11)));
-        Assert.True(PounceClock.BudgetFlag(live, new DateOnly(2026, 12, 2)));
-        Assert.False(PounceClock.BudgetFlag(live, new DateOnly(2026, 12, 3)));
-        Assert.False(PounceClock.BudgetFlag(new DateTimeOffset(2026, 12, 28, 15, 0, 0, TimeSpan.Zero), new DateOnly(2027, 1, 2)));
+        static DateTimeOffset Live(int month, int day) => new(2026, month, day, 18, 0, 0, TimeSpan.Zero);
+        Assert.False(PounceClock.BudgetFlag(Live(11, 19), new DateOnly(2026, 11, 20)));
+        Assert.True(PounceClock.BudgetFlag(Live(12, 15), new DateOnly(2026, 12, 20)));
+        Assert.False(PounceClock.BudgetFlag(Live(12, 15), new DateOnly(2027, 1, 2)));
+        Assert.False(PounceClock.BudgetFlag(Live(12, 10), new DateOnly(2026, 12, 12)));
+        Assert.True(PounceClock.BudgetFlag(Live(12, 11), new DateOnly(2026, 12, 11)));
+        Assert.True(PounceClock.BudgetFlag(Live(12, 11), new DateOnly(2026, 12, 31)));
+        Assert.False(PounceClock.BudgetFlag(new DateTimeOffset(2026, 12, 11, 3, 0, 0, TimeSpan.Zero), new DateOnly(2026, 12, 12)));
+    }
+
+    [Fact]
+    public void The_11_13_Nortal_seat_in_Latin_America_fails_the_pounce_as_outside_the_US()
+    {
+        var nortal = Role("Nortal", "(1632) Principal Backend Engineer (Java and Golang)", "Fully remote in LATAM, CET overlap. Java, Golang and Azure.", "Remote", "Latin America - Remote");
+        var verdict = JobsGates.Judge(nortal, [], [], Today);
+        Assert.Equal("remote", verdict.Remote);
+        Assert.Equal("outside the US: Latin America", verdict.Failed);
+        Assert.Equal("outside the US: Latin America", PounceRules.Gate(verdict, [], new HashSet<string>()));
+        Assert.Null(PounceRules.Gate(JobsGates.Judge(nortal with { Location = "Remote, United States" }, [], [], Today), [], new HashSet<string>()));
     }
 
     [Fact]

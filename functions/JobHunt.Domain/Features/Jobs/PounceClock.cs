@@ -49,11 +49,18 @@ public static class PounceClock
     /// <summary>Whole minutes from one instant to a later one, rounded down.</summary>
     public static long WholeMinutes(DateTimeOffset from, DateTimeOffset to) => (long)Math.Floor((to - from).TotalMinutes);
 
-    /// <summary>Year-end budget: the role went live in the last 21 days and the calendar year it went live in has not ended.</summary>
+    /// <summary>The first Central day of a year's last 21, December 11; a role that went live on or after it carries the budget flag.</summary>
+    public const int BudgetFromDecember = 11;
+
+    /// <summary>
+    /// Year-end budget: the role went live in the last 21 days of its calendar year (December 11 on, Central) and today
+    /// is still in that year, so the year-end question is asked of a role that can still spend this year's budget and of
+    /// no other.
+    /// </summary>
     public static bool BudgetFlag(DateTimeOffset live, DateOnly today)
     {
         var day = DateOnly.FromDateTime(CentralClock.Local(live));
-        return today.DayNumber - day.DayNumber is >= 0 and <= 21 && today.Year == day.Year;
+        return day.Month == 12 && day.Day >= BudgetFromDecember && today >= day && today.Year == day.Year;
     }
 
     /// <summary>The first touch of a role at the company that went live at the instant given, with its channel word, or null.</summary>
