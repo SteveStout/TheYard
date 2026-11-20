@@ -393,6 +393,7 @@ public class StyleRulesTests
         ["src/app/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings",
         ["src/app/InventoryView.module.css"] = "the inventory title's underline, the ring round Load more",
         ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings, the Blog row's NEW POST trim",
+        ["src/components/landing/NewestPost/NewestPost.module.css"] = "the home page's NEW POST badge, the same trim as the Blog row's in the rail",
         ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",
         ["src/components/blog/BlogPage/BlogPage.module.css"] = "the Blog title's underline, the same trim as the Admin title's",

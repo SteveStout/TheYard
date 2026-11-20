@@ -46,6 +46,8 @@ export function readFirstAddress(search: string) {
     review: params.get('view') === 'review',
     /** The recommendations page, ?view=recommendations (ADR: The recommendations have a page). */
     recommendations: params.get('view') === 'recommendations',
+    /** The stack page, ?view=stack (ADR: The stack has a page of its own). */
+    stack: params.get('view') === 'stack',
     /** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
     card,
     pin: pinFromAddress(params.get('pin')),

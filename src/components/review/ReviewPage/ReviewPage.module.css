@@ -2,11 +2,9 @@
  * Does:      Lays out the review route as one unit, as the whole-page picture's .page: one column at most 1234 px wide,
  *            every section exactly that wide, 48 px between sections (32 on a phone), the strip of names 24 px under
  *            the mirror and Where next 16 px under the close, no section taller than its content, the pair of voices
- *            two across from 1024; and holds the
- *            route's two pills: the filled one for the move to make and the outlined one beside it.
+ *            two across from 1024.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a section's inside (its own sheet does).
- * Used by:   BookSheet.tsx, ReviewClose.tsx, ReviewDock.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx,
- *            ReviewTour.tsx, ReviewVerdict.tsx.
+ * Used by:   ReviewPage.tsx.
  */
 .page {
   display: flex;
@@ -46,58 +44,4 @@
   .page > * + * {
     margin-top: var(--space-7);
   }
-
-  /* Room for the dock at the foot of the window, so it never covers the last section. */
-  .page {
-    padding-bottom: calc(var(--touch-target) + var(--space-5));
-  }
-}
-
-.primary,
-.secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--pill-height);
-  padding: var(--pill-padding);
-  border: 1px solid var(--color-accent);
-  border-radius: var(--radius-full);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: var(--pill-weight);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.primary {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-}
-
-.secondary {
-  background: var(--color-surface);
-  color: var(--color-accent);
-}
-
-.primary:hover {
-  background: var(--color-accent-hover);
-}
-
-.secondary:hover {
-  background: var(--color-accent-soft);
-}
-
-.primary:focus-visible,
-.secondary:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
-}
-
-/* A move that goes nowhere: drawn quiet, never faded, so its word stays at full strength. */
-.primary:disabled,
-.secondary:disabled {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-muted);
-  color: var(--color-text-muted);
-  cursor: default;
 }

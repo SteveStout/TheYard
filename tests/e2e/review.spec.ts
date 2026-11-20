@@ -430,6 +430,9 @@ test('at 390 the short path stacks, and its Quality stop opens the top of Qualit
   await expect.poll(() => actions).toEqual(['stop-quality']);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 opened.');
+  // Closing the document puts the route's own address back; reload once it has.
+  await expect(page).toHaveURL(/\?view=review$/);
+  await page.waitForLoadState('load');
   await page.reload();
   await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 opened.');
 });
@@ -582,6 +585,9 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
           expect(card.top, `${at}: cards stack`).toBeGreaterThan(cards[index].bottom);
       }
       // 4. The three voices: from 1280 the next row, one height, each on its card's edges; under it each after its card.
+      await expect(page.locator('[data-testid="review-path"] [data-testid="voice"]')).toHaveCount(
+        3
+      );
       const voices = await boxes(page, '[data-testid="review-path"] [data-testid="voice"]');
       expect(voices, `${at}: a voice under each card`).toHaveLength(3);
       for (const [index, voice] of voices.entries()) {

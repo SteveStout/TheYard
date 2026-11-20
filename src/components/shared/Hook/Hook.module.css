@@ -1,6 +1,8 @@
 /**
  * Does:      Styles the hook (ADR-132), the first box on a page a reader is sent to: on the glass the landing's tiles
- *            wear, as wide as the rows under it, its words centred over one figure and one link.
+ *            wear, as wide as the rows under it, its words centred over one figure and one link; and the landing's
+ *            split layout, ported rule by rule from the home page's picture: the words on the left, the figure on the
+ *            right from 1280 up, one column under it.
  * Does not:  Style the landing's heading (Landing.module.css does, from the title tokens) or draw a chart's parts.
  * Used by:   Hook.tsx.
  */
@@ -67,9 +69,80 @@
   font-weight: var(--weight-semibold);
 }
 
+/* The landing's split layout: its words and moves on the left, the figure, its link and the newest post on the right. */
+.split {
+  align-items: stretch;
+  padding: var(--space-5) var(--space-6);
+  text-align: left;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-7);
+  width: 100%;
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.split .words > * {
+  max-width: none;
+  margin: 0;
+  text-align: left;
+}
+
+.split .words h1 {
+  font-size: var(--text-3xl);
+  line-height: 1.15;
+  letter-spacing: var(--title-tracking);
+  text-wrap: balance;
+}
+
+.lede,
+.split .words .sentence {
+  color: var(--color-text);
+  font-size: var(--text-md);
+  font-weight: var(--weight-regular);
+  line-height: 1.45;
+}
+
+.figcol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.split .figure {
+  max-width: none;
+}
+
+/* Under 1280 the open sidebar leaves the page about 700 px, so the two columns stack. */
+@media (max-width: 1279.98px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
 @media (max-width: 639.98px) {
   .hook {
     padding: var(--space-3) var(--space-4);
     gap: var(--space-2);
+  }
+
+  .split {
+    padding: var(--space-4);
+  }
+
+  .split .words h1 {
+    font-size: var(--text-2xl);
   }
 }

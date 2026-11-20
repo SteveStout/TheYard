@@ -2,7 +2,7 @@
  * Does:      Lays out the close as the whole-page picture draws it (its .close, ported rule by rule): the words on the
  *            left and the three buttons on the right in one row; under 1024 the buttons under the words; on a phone
  *            each button the row's width.
- * Does not:  Draw the panel's glass (panels.css does) or the pills' look (ReviewPage.module.css does).
+ * Does not:  Draw the panel's glass (panels.css does) or the pills' look (panels.css does).
  * Used by:   ReviewClose.tsx.
  */
 .close {
@@ -29,6 +29,34 @@
   justify-content: flex-end;
   gap: var(--space-3);
   max-width: 540px;
+}
+
+/* The home page's close (its picture's .eh-close): a tighter row, its one line under the readout, two columns from
+   1280 up because the open sidebar leaves the page narrow under it. */
+.close[data-form='home'] {
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+}
+
+.line {
+  margin: var(--space-1) 0 0;
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.close[data-form='home'] .acts {
+  max-width: none;
+}
+
+@media (max-width: 1279.98px) {
+  .close[data-form='home'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .close[data-form='home'] .acts {
+    justify-content: flex-start;
+  }
 }
 
 .forward {

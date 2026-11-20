@@ -1,10 +1,13 @@
 /**
- * Does:      Draws one landing tile from the site map, large or small: its badge (a photograph or the map's icon), its
- *            title and one line, the Admin tile's health dot, as a link out or as a button that opens a view.
+ * Does:      Draws one landing tile from the site map, large (a door under Start here, with the chip that says what it
+ *            costs) or small: its badge (a photograph or the map's icon), its title and one line, the Admin tile's
+ *            health dot, as a link out, a link that opens the review route in place, or a button that opens a view.
  * Does not:  Decide which tiles exist or their order (siteMapLanding.ts does) or read the health (Landing.tsx does).
  * Used by:   Landing.tsx.
  */
+import type { MouseEvent } from 'react';
 import { HEALTH_WORDS, type LandingHealth } from '../../../lib/landingHealth';
+import { REVIEW_ADDRESS } from '../../../lib/reviewStops';
 import type { LandingTile as Tile } from '../../../lib/siteMap';
 import type { DocKey } from '../../../library/documents';
 import { LINKS, MENUS } from '../../../library/sections';
@@ -17,6 +20,7 @@ export type TileOpeners = {
   onOpenAccount: () => void;
   onOpenAdmin: () => void;
   onOpenDoc: (key: DocKey) => void;
+  onOpenReview: () => void;
 };
 
 /**
@@ -36,7 +40,11 @@ export function LandingTile({
   health: LandingHealth;
   open: TileOpeners;
 }) {
-  const className = large ? `${styles.big} op-glass` : `${styles.tile} op-glass`;
+  // The two doors that were banners keep the banner's own title size, as the home page's picture draws them.
+  const banner = large && entry.kind === 'action' && entry.action.banner === true;
+  const className = large
+    ? `${styles.big} ${banner ? styles.banner : ''} op-glass`
+    : `${styles.tile} op-glass`;
   const badge = large ? `${styles.badge} ${styles.badgeBig}` : styles.badge;
   const name = entry.kind === 'section' ? entry.section.menu : entry.action.key;
   const icon = entry.kind === 'section' ? entry.section.icon : entry.action.icon;
@@ -48,6 +56,11 @@ export function LandingTile({
         : entry.action.label;
   const blurb = entry.kind === 'section' ? entry.section.blurb : entry.action.blurb;
   const photo = entry.kind === 'section' ? entry.section.badgePhoto : entry.action.badgePhoto;
+  const cost = large
+    ? entry.kind === 'section'
+      ? entry.section.cost
+      : entry.action.cost
+    : undefined;
   const isAdmin = entry.kind === 'action' && entry.action.key === 'admin';
   const body = (
     <>
@@ -78,9 +91,14 @@ export function LandingTile({
           </span>
         )}
       </span>
+      {cost && <span className={styles.chip}>{cost}</span>}
     </>
   );
-  const testId = `landing-tile-${name}`;
+  // The two doors that were banners keep their names, so a reader of the tests finds them where they were.
+  const testId =
+    large && entry.kind === 'action' && (name === 'review' || name === 'resume')
+      ? `landing-banner-${name}`
+      : `landing-tile-${name}`;
   const tone = isAdmin ? HEALTH_WORDS[health].tone : undefined;
 
   // A link out: the resume or the repository, or a section with only links.
@@ -92,6 +110,22 @@ export function LandingTile({
       : MENUS[entry.section.menu].items.length === 0
         ? (MENUS[entry.section.menu].links?.[0]?.href ?? null)
         : null;
+  // The review route: a real address, opened in place on a plain click.
+  if (entry.kind === 'action' && entry.action.key === 'review') {
+    const onReview = (event: MouseEvent<HTMLAnchorElement>) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0)
+        return;
+      event.preventDefault();
+      open.onOpenReview();
+    };
+    return (
+      <li>
+        <a className={className} href={REVIEW_ADDRESS} onClick={onReview} data-testid={testId}>
+          {body}
+        </a>
+      </li>
+    );
+  }
   if (href) {
     return (
       <li>

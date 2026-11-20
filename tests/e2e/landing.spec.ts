@@ -1,21 +1,26 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openTheYard } from './app';
 import { landingTiles, MENU_ORDER, SITE_GROUPS } from '../../src/lib/siteMap';
+import { cardAddress } from '../../src/lib/recommendationsPage';
+import { VOICES } from '../../src/lib/voices';
 import data from '../../data/recommendations.json' with { type: 'json' };
 
-/** The recommendations as the file holds them: the count and the first entry are read, never typed. */
+/** The recommendations as the file holds them: the count and each voice's words are read, never typed. */
 const WRITERS = data.recommendations;
-const FIRST = WRITERS[0];
 
 /**
  * The landing page (1.0.1.0): a bare address opens it, and it is drawn from the
  * site map the sidebar is drawn from, so this reads the expected tiles off the
  * map rather than keeping a list of its own that could drift from both.
  */
-const { featured, grid } = landingTiles();
+const { doors, explore, grid } = landingTiles();
 const tileName = (tile: (typeof grid)[number]) =>
   tile.kind === 'section' ? tile.section.menu : tile.action.key;
-const EXPECTED = [...featured, ...grid].map(tileName);
+/** The tiles named landing-tile-*, in the page's order: the two photograph doors, then the small tiles by group. */
+const EXPECTED = [
+  ...doors.filter((door) => door.kind === 'section' || !door.action.banner),
+  ...explore.flatMap((group) => group.tiles),
+].map(tileName);
 
 for (const viewport of [
   { width: 375, height: 812 },
@@ -50,9 +55,11 @@ for (const viewport of [
       // The sections under their three group headings, in the sidebar's groups (1.0.1.4), after the
       // Tech stack table under the proof strip (1.0.4.31).
       await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText([
+        'Start here',
         'What colleagues say',
         'Tech stack',
         ...SITE_GROUPS.map((group) => group.label),
+        'Next step',
       ]);
 
       // The two large tiles wear a photograph in the badge, and it has loaded.
@@ -64,8 +71,9 @@ for (const viewport of [
           .toBeGreaterThan(0);
       }
 
-      // The one live reading: the Admin tile's health dot, read from /api/health.
-      await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
+      // Sign in and Admin are the sidebar's alone (ADR-082, the addendum on the home page's order).
+      await expect(page.getByTestId('landing-tile-admin')).toHaveCount(0);
+      await expect(page.getByTestId('landing-tile-account')).toHaveCount(0);
 
       // The band over it reads the running site: four instruments, each with a figure or the
       // word for a figure the server could not read, and never a zero standing in for one
@@ -130,111 +138,42 @@ for (const viewport of [
         /^\d of \d stores up$/
       );
 
-      // What colleagues say: every one of his LinkedIn recommendations, each one whole and credited, read
-      // from /api/recommendations into a column of the page itself, with nothing to click through
-      // to. Wide, the column stands to the right of everything else and runs as far down as there
-      // are quotations; narrow, it follows the featured tiles.
-      const said = page.getByTestId('landing-recommendations');
-      await expect(said).toBeVisible();
-      // Its heading is the link to where they were written, centred over the column, and a
-      // quotation fills the panel: it starts where the panel's own edge ends, and the same gap
-      // stands on both sides of it.
+      // What colleagues say: three named voices, each the answer's own words and one link to that person's card, and
+      // the way to every one of them; the heading is the link to where they were written.
+      const voices = page.getByTestId('landing-voices');
       await expect(
-        said.getByRole('heading', { name: 'What colleagues say' }).getByRole('link')
+        voices.getByRole('heading', { name: 'What colleagues say' }).getByRole('link')
       ).toHaveAttribute('href', /linkedin\.com\/in\/stevenwstout/);
-      const area = await said.evaluate((column) => {
-        const box = column.getBoundingClientRect();
-        const edge = getComputedStyle(column);
-        const inset = {
-          left: parseFloat(edge.borderLeftWidth) + parseFloat(edge.paddingLeft),
-          right: parseFloat(edge.borderRightWidth) + parseFloat(edge.paddingRight),
-        };
-        const heading = column.querySelector('h2')!.getBoundingClientRect();
-        const card = column.querySelector('li')!.getBoundingClientRect();
-        return {
-          left: Math.round(heading.left - box.left),
-          right: Math.round(box.right - heading.right),
-          card: Math.round(card.left - box.left - inset.left),
-          cardRight: Math.round(box.right - card.right - inset.right),
-        };
-      });
-      expect(Math.abs(area.left - area.right)).toBeLessThanOrEqual(2);
-      expect(area.card).toBeLessThanOrEqual(1);
-      expect(Math.abs(area.card - area.cardRight)).toBeLessThanOrEqual(1);
-
-      await expect(said.locator('blockquote')).toHaveCount(WRITERS.length);
-      await expect(said.locator('li').first()).toContainText(FIRST.name);
-      const column = said.getByRole('region', {
-        name: /What colleagues say: \d+ recommendations, in full/,
-      });
-      await expect(column).toHaveAttribute('data-state', 'ready');
-      // One scroll bar on the screen, the page's own: every quotation stands in the page, so the
-      // column scrolls neither down nor sideways and holds no tab stop of its own.
-      expect(
-        await column.evaluate((box) => [
-          box.scrollHeight - box.clientHeight,
-          box.scrollWidth - box.clientWidth,
-          box.getAttribute('tabindex'),
-        ])
-      ).toEqual([0, 0, null]);
-      const saidBox = (await said.boundingBox())!;
-      const stripBox = (await page.getByTestId('landing-proof').boundingBox())!;
-      const authorBox = (await page.getByTestId('landing-tile-author').boundingBox())!;
-      if (viewport.width >= 1280) {
-        expect(saidBox.x).toBeGreaterThanOrEqual(stripBox.x + stripBox.width);
-        expect(saidBox.y).toBeLessThan(stripBox.y);
-      } else {
-        expect(saidBox.y).toBeGreaterThan(authorBox.y + authorBox.height - 1);
-        expect(stripBox.y).toBeGreaterThan(saidBox.y + saidBox.height - 1);
-      }
-      // Whole, not a sentence of each: the first one carries words from past its opening line, and
-      // the credit under it says how the two worked together and when.
-      await expect(said.locator('blockquote').first()).toContainText(
-        FIRST.paragraphs[FIRST.paragraphs.length - 1].slice(-40)
-      );
-      await expect(said.locator('li').first()).toContainText(`${FIRST.when}.`);
-      await expect(said.getByRole('button')).toHaveCount(0);
-      // Every name opens the page of the person who wrote it, in a tab of its own. Counted inside
-      // the quotations: the heading over them is a link too, to where every one was written.
-      const writers = said.locator('li').getByRole('link');
-      await expect(writers).toHaveCount(WRITERS.length);
-      await expect(writers.first()).toHaveText(FIRST.name);
-      await expect(writers.first()).toHaveAttribute('href', /linkedin\.com\/in\//);
-      await expect(writers.first()).toHaveAttribute('target', '_blank');
-
-      // Under Inventory and Author, two banners, the resume first (ADR: Ten minutes, seven stops):
-      // the resume opens the PDF this site serves in a tab of its own, and the review route opens
-      // its view in place.
-      const banners = await page
-        .locator('[data-testid^="landing-banner-"]')
-        .evaluateAll((items) =>
-          items.map((item) => item.getAttribute('data-testid')!.replace('landing-banner-', ''))
+      await expect(voices.getByTestId('voice')).toHaveCount(VOICES.home.length);
+      for (const [index, name] of VOICES.home.entries()) {
+        const entry = WRITERS.find((writer) => writer.name === name)!;
+        await expect(voices.getByTestId('voice').nth(index)).toHaveAttribute(
+          'href',
+          cardAddress(name)
         );
-      expect(banners).toEqual(['resume', 'review']);
+        await expect(voices.getByTestId('voice-pull').nth(index)).toHaveText(`"${entry.pull}"`);
+      }
+      const all = page.getByTestId('landing-recommendations-all');
+      await expect(all).toContainText(`Read all ${WRITERS.length} named recommendations`);
+      await expect(all).toHaveAttribute('href', '/?view=recommendations');
+      await expect(page.getByTestId('landing-recommendations')).toHaveCount(0);
+
+      // Start here: four doors in one row from 1280 (two by two under it), the review route first, each with what
+      // it costs; the resume opens the PDF this site serves in a tab of its own, the review route its view in place.
+      const doorLinks = page.getByTestId('landing-start').locator('li > *');
+      await expect(doorLinks).toHaveCount(4);
+      await expect(doorLinks).toHaveText([
+        /Check my work[\s\S]*2 min/,
+        /Author[\s\S]*3 min/,
+        /Inventory[\s\S]*Live/,
+        /resume \(PDF\)[\s\S]*PDF/,
+      ]);
       const resume = page.getByTestId('landing-banner-resume');
       await expect(resume).toHaveAttribute('href', /resume/);
       await expect(resume).toHaveAttribute('target', '_blank');
       const review = page.getByTestId('landing-banner-review');
       await expect(review).toHaveAttribute('href', '/?view=review');
       await expect(review).not.toHaveAttribute('target', '_blank');
-      const bannerBoxes = await page
-        .locator('[data-testid^="landing-banner-"]')
-        .evaluateAll((items) => items.map((item) => item.getBoundingClientRect().toJSON()));
-      const featuredBottom = await page
-        .locator('ul[aria-label="Start here"]')
-        .evaluate((list) => list.getBoundingClientRect().bottom);
-      for (const box of bannerBoxes) {
-        expect(box.top).toBeGreaterThanOrEqual(featuredBottom);
-        expect(box.height).toBeGreaterThanOrEqual(44);
-      }
-      if (viewport.width >= 1024) {
-        // One row of two on a desk.
-        expect(Math.abs(bannerBoxes[0].top - bannerBoxes[1].top)).toBeLessThanOrEqual(1);
-        expect(bannerBoxes[1].left).toBeGreaterThan(bannerBoxes[0].right);
-      } else {
-        // Stacked on a phone, the resume above.
-        expect(bannerBoxes[1].top).toBeGreaterThan(bannerBoxes[0].bottom);
-      }
 
       // Every tile a full touch target, and nothing wider than the screen.
       await expect(async () => {
@@ -248,51 +187,16 @@ for (const viewport of [
         expect(overflow).toBe(0);
       }).toPass();
 
-      // The left column runs on one width: on a desk the two featured tiles share what the strip's
-      // three share, read off the boxes rather than the stylesheet, so the second tile and the
-      // third figure end on the same x, and so does the second banner. The groups stand under both columns in a band the page's width (2026-10-23):
-      // three across, the third ending where the quotations column ends. On a phone the featured
-      // tiles stack one per row and the strip stays two across.
-      const rights = async (selector: string) =>
-        page
-          .locator(selector)
-          .evaluateAll((items) =>
-            items.map((item) => Math.round(item.getBoundingClientRect().right))
-          );
-      const featuredRights = await rights(
-        '[data-testid="landing"] ul[aria-label="Start here"] > li'
+      // One unit: every direct section of the landing shares the page's left and right edges.
+      const edges = await page.getByTestId('landing').evaluate((landing) =>
+        [...landing.children].map((child) => {
+          const box = child.getBoundingClientRect();
+          return [Math.round(box.left), Math.round(box.right)];
+        })
       );
-      const stripRights = await rights('[data-testid="landing-proof"] > li');
-      const groupRights = await rights('[data-testid="landing-group-built"] li');
-      const columnBox = (await page.getByTestId('landing-recommendations').boundingBox())!;
-      const pageRight = Math.round(columnBox.x + columnBox.width);
-      const wideBox = (await page.getByTestId('landing-wide').boundingBox())!;
-      const leadBox = (await page.locator('ul[aria-label="Start here"]').boundingBox())!;
-      if (viewport.width >= 1024) {
-        expect(featuredRights).toHaveLength(2);
-        expect(new Set(featuredRights).size).toBe(2);
-        expect(Math.abs(stripRights[2] - featuredRights[1])).toBeLessThanOrEqual(1);
-        expect(Math.abs(stripRights[2] - Math.round(bannerBoxes[1].right))).toBeLessThanOrEqual(1);
-        expect(new Set(groupRights.slice(0, 3)).size).toBe(3);
-        expect(Math.abs(groupRights[2] - pageRight)).toBeLessThanOrEqual(1);
-        // The band starts under both columns: below the last quotation, from the left column's
-        // left edge to the quotations column's right.
-        expect(wideBox.y).toBeGreaterThanOrEqual(columnBox.y + columnBox.height - 1);
-        expect(Math.abs(wideBox.x - leadBox.x)).toBeLessThanOrEqual(1);
-        expect(Math.abs(wideBox.x + wideBox.width - pageRight)).toBeLessThanOrEqual(1);
-        // No tile alone on a last row: How it is built's eight tiles end on a row of two.
-        const lefts = await page
-          .locator('[data-testid="landing-group-built"] li')
-          .evaluateAll((items) =>
-            items.map((item) => Math.round(item.getBoundingClientRect().left))
-          );
-        expect(groupRights).toHaveLength(8);
-        expect(Math.abs(lefts[6] - lefts[0])).toBeLessThanOrEqual(1);
-        expect(Math.abs(lefts[7] - lefts[1])).toBeLessThanOrEqual(1);
-      } else {
-        expect(new Set(featuredRights).size).toBe(1);
-        expect(new Set(stripRights.slice(0, 2)).size).toBe(2);
-        expect(stripRights[2]).toBe(stripRights[0]);
+      for (const [left, right] of edges) {
+        expect(Math.abs(left - edges[0][0])).toBeLessThanOrEqual(1);
+        expect(Math.abs(right - edges[0][1])).toBeLessThanOrEqual(1);
       }
     });
   });
@@ -371,7 +275,7 @@ test.describe('the docked rail', () => {
  */
 test('Admin opened from the landing page says it goes back home, and does', async ({ page }) => {
   await openTheYard(page, '/');
-  await page.getByTestId('landing-tile-admin').click();
+  await page.getByTestId('side-rail').getByRole('button', { name: 'Admin', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Admin' })).toBeVisible();
   const back = page.getByRole('button', { name: 'Back to home' });
   await expect(back).toBeVisible();
@@ -527,11 +431,24 @@ for (const viewport of [
   { width: 1440, height: 900 },
   { width: 390, height: 844 },
 ]) {
-  test(`the Tech stack table stands under the proof strip at ${viewport.width}`, async ({
+  test(`the Tech stack table stands on its own page, and home carries its header and the way to it, at ${viewport.width}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
     await openTheYard(page, '/');
+    // Home: the stack's header and chips, the link to the whole table, and no element of the table.
+    const build = page.getByTestId('landing-build');
+    await expect(build.getByRole('heading', { level: 2, name: 'Tech stack' })).toBeVisible();
+    await expect(build.getByTestId('landing-stack-summary')).toContainText('What TheYard runs on');
+    await expect(build.getByTestId('landing-stack-link')).toHaveAttribute('href', '/?view=stack');
+    await expect(page.getByTestId('landing-stack-table')).toHaveCount(0);
+    await expect(page.getByTestId('landing').locator('table')).toHaveCount(0);
+    const proof = await page.getByTestId('landing-proof').boundingBox();
+    const summary = await build.getByTestId('landing-stack-summary').boundingBox();
+    expect(summary!.y).toBeGreaterThan(proof!.y);
+    // The stack page: the whole table, every row with a version and a link to the file that proves it.
+    await build.getByTestId('landing-stack-link').click();
+    await expect(page).toHaveURL(/\?view=stack$/);
     const stack = page.getByTestId('landing-stack');
     await expect(stack.getByRole('heading', { level: 2, name: 'Tech stack' })).toBeVisible();
     const table = stack.getByTestId('landing-stack-table');
@@ -545,9 +462,9 @@ for (const viewport of [
       expect(href).toMatch(/^https:\/\/github\.com\/SteveStout\/TheYard\/(blob|tree)\/main\//);
     }
     await expect(stack.getByTestId('stack-backend')).toContainText('.NET and ASP.NET Core');
-    const proof = await page.getByTestId('landing-proof').boundingBox();
-    const box = await stack.boundingBox();
-    expect(box!.y).toBeGreaterThan(proof!.y);
+    await expect(page.getByTestId('stack-page').getByRole('heading', { level: 1 })).toHaveText(
+      'What it runs on, with the file that proves each line.'
+    );
     const sideways = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth
     );

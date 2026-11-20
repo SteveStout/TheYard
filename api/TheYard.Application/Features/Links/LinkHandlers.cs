@@ -68,7 +68,9 @@ public sealed class BookMessageHandler(ILinkTargets targets) : IQueryHandler<Boo
             .Select(pair => pair.Split('=', 2))
             .GroupBy(pair => pair[0].ToLowerInvariant(), StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => Uri.UnescapeDataString(group.First().ElementAtOrDefault(1) ?? ""), StringComparer.Ordinal);
-        return new BookMessage(to, fields.GetValueOrDefault("subject", ""), fields.GetValueOrDefault("body", ""));
+        // RFC 6068 lets the address ride as a field, mailto:?to=a@example.com, as well as before the question mark.
+        string recipient = to.Length > 0 ? to : fields.GetValueOrDefault("to", "");
+        return new BookMessage(recipient, fields.GetValueOrDefault("subject", ""), fields.GetValueOrDefault("body", ""));
     }
 }
 // #endregion link-targets

@@ -228,3 +228,55 @@
   }
 }
 /* #endregion op-seg */
+
+/* #region op-pill */
+/* The two pill shapes the review route and the home page share: the filled one for the move to make and the outlined
+   one beside it. A move that goes nowhere is drawn quiet, never faded, so its word stays at full strength. */
+.op-pill-primary,
+.op-pill-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--pill-height);
+  padding: var(--pill-padding);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-full);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--pill-weight);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.op-pill-primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.op-pill-secondary {
+  background: var(--color-surface);
+  color: var(--color-accent);
+}
+
+.op-pill-primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.op-pill-secondary:hover {
+  background: var(--color-accent-soft);
+}
+
+.op-pill-primary:focus-visible,
+.op-pill-secondary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.op-pill-primary:disabled,
+.op-pill-secondary:disabled {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+  cursor: default;
+}
+/* #endregion op-pill */

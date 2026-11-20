@@ -23,6 +23,7 @@ const EVERY_SECTION: Record<MenuVariant, true> = {
   changelog: true,
   author: true,
   recommendations: true,
+  stack: true,
 };
 
 describe('the site map', () => {
@@ -62,6 +63,7 @@ describe('the site map', () => {
       'diagrams',
       'look',
       'builtWithAi',
+      'stack',
       'quality',
       'shed',
       'performance',
@@ -84,15 +86,23 @@ describe('the site map', () => {
     expect(order.every((index) => index >= 0)).toBe(true);
   });
 
-  it('draws the landing page from the same map: Inventory and Author large, then the groups, then the actions', () => {
-    const { featured, banners, groups, rest, grid } = landingTiles();
+  it('draws the home page from the same map: four doors with their chips, then the small tiles by group', () => {
+    const { doors, explore, featured, grid } = landingTiles();
     const name = (tile: (typeof grid)[number]) =>
       tile.kind === 'section' ? tile.section.menu : tile.action.key;
-    // Inventory and Author, the two photographs; under them the two banners, the resume first
-    // (ADR: Ten minutes, seven stops).
-    expect(featured.map(name)).toEqual(['inventory', 'author']);
-    expect(banners.map(name)).toEqual(['resume', 'review']);
-    expect(groups.map((group) => [group.label, group.tiles.map(name)])).toEqual([
+    const cost = (tile: (typeof grid)[number]) =>
+      tile.kind === 'section' ? tile.section.cost : tile.action.cost;
+    // Start here: one row of four, the review route first, each with what it costs (ADR-082, the addendum on the
+    // home page's order).
+    expect(doors.map((door) => [name(door), cost(door)])).toEqual([
+      ['review', '2 min'],
+      ['author', '3 min'],
+      ['inventory', 'Live'],
+      ['resume', 'PDF'],
+    ]);
+    // The small tiles: the same groups, the stack page after Built with AI, GitHub in the first group, and no Sign
+    // in or Admin, which the sidebar keeps.
+    expect(explore.map((group) => [group.label, group.tiles.map(name)])).toEqual([
       [
         'How it is built',
         [
@@ -102,15 +112,18 @@ describe('the site map', () => {
           'diagrams',
           'look',
           'builtWithAi',
+          'stack',
           'quality',
           'shed',
+          'repo',
         ],
       ],
       ['How it is run', ['performance', 'traffic', 'hosting', 'cicd', 'practices']],
       ['Who and why', ['records', 'incidents', 'changelog', 'about', 'recommendations']],
     ]);
-    // Sign in, Admin and GitHub last.
-    expect(rest.map(name)).toEqual(['account', 'admin', 'repo']);
+    const drawn = explore.flatMap((group) => group.tiles.map(name));
+    expect(drawn).not.toContain('account');
+    expect(drawn).not.toContain('admin');
     // The resume is large on the landing page, not a sidebar row only, and drawn as a banner.
     const resume = SITE_MAP.actions.find((action) => action.key === 'resume')!;
     expect([resume.featured, resume.banner, resume.onLanding, resume.inRail]).toEqual([
@@ -130,13 +143,13 @@ describe('the site map', () => {
       'admin',
       'repo',
     ]);
-    expect(grid).toHaveLength(21);
+    expect(grid).toHaveLength(22);
     // The two large tiles carry a photograph in the badge, and nothing else does.
     expect(
       featured.map(
         (tile) => (tile.kind === 'section' ? tile.section.badgePhoto : tile.action.badgePhoto)?.src
       )
-    ).toEqual(['/api/images/badges/inventory-176.jpg', '/api/images/badges/steve-176.jpg']);
+    ).toEqual(['/api/images/badges/steve-176.jpg', '/api/images/badges/inventory-176.jpg']);
   });
 
   it('puts the review route directly under Home in the rail, so the Blog row is third', () => {

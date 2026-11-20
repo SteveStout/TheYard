@@ -4,7 +4,7 @@
  *            page's three, and the picker that finds a name's entry in the /api/recommendations answer.
  * Does not:  Hold anybody's words (the API answers them whole, and a test holds that no source file types them),
  *            read anything or draw anything.
- * Used by:   Voice.tsx, ReviewPath.tsx, ReviewPage.tsx, ReviewClose.tsx, voices.test.ts.
+ * Used by:   Voice.tsx, ReviewPath.tsx, ReviewPage.tsx, ReviewClose.tsx, Landing.tsx, voices.test.ts.
  */
 import type { Recommendation } from './recommendations';
 
