@@ -29,6 +29,12 @@ describe('a tagged visit, carried', () => {
     expect(withCode('/about', null)).toBe('/about');
   });
 
+  it('puts the code before a section’s name, so the section is still found (the Quality foot’s first link)', () => {
+    expect(withCode('/?view=review#questions', 'k7f2qa')).toBe('/?view=review&r=k7f2qa#questions');
+    expect(withCode('/#top', 'k7f2qa')).toBe('/?r=k7f2qa#top');
+    expect(withCode('/?view=review#questions', null)).toBe('/?view=review#questions');
+  });
+
   it('reports the blog and the Quality page under their own names', () => {
     expect(reportPath('?view=blog&post=a', '/')).toBe('/blog');
     expect(reportPath('?doc=quality', '/')).toBe('/quality');

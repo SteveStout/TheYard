@@ -3,7 +3,9 @@
  *            `quality-trend` into a figure with the chart's placeholder carrying the readings as data, in the form
  *            the fence names (the first chart, a small multiple with its value now, its rule, its first reading and
  *            why it matters, or the plain figure the home page's chart came from); `quality-readouts` into a row of
- *            readouts; `quality-tiles` into the held pill and one tile per number with its bar and note; and
+ *            readouts, or, when the fence names a head, the sales pages' dark live panel on its side, the head with
+ *            the LIVE tag over the readouts;
+ *            `quality-tiles` into the held pill and one tile per number with its bar and note; and
  *            `quality-groups` into the rulebook's cards, each with its gauge of rules the gate checks.
  * Does not:  Read the history (the API writes every value into the fence, QualityCounts.cs and QualityReadouts.cs),
  *            draw a chart (useLiveBlocks.tsx mounts it), or hold a colour of its own (QualityBlocks.module.css).
@@ -89,15 +91,23 @@ function trendFigure(data: QualityTrendData): string {
   );
 }
 
-/** A row of readouts: each its label, its value with what it is out of, and the line under it. */
-function readouts(fence: string): string {
+/**
+ * A row of readouts: each its label, its value with what it is out of, and the line under it. A fence with a head (the
+ * words after its name) is the sales pages' dark live panel laid on its side (ADR: The sales pages set the site's look):
+ * the head with the LIVE tag over the readouts, each value hooked as a live value; one without stays a row of tiles.
+ */
+function readouts(fence: string, head = ''): string {
   const cells = rows(fence).map(
     ([label = '', value = '', of = '', under = '']) =>
       `<div class="quality-readout"><span class="quality-readout-label">${escape(label)}</span>` +
-      `<span class="quality-readout-value">${escape(value)}${of ? ` <small>${escape(of)}</small>` : ''}</span>` +
+      `<span class="quality-readout-value"${head ? ' data-mock="live-value"' : ''}>${escape(value)}${of ? ` <small>${escape(of)}</small>` : ''}</span>` +
       `<span class="quality-readout-under">${escape(under)}</span></div>`
   );
-  return `<div class="quality-readouts">${cells.join('')}</div>\n`;
+  if (!head) return `<div class="quality-readouts">${cells.join('')}</div>\n`;
+  const top =
+    `<div class="op-live-head"><span>${escape(head)}</span>` +
+    `<span class="op-live-tag"><i class="op-live-dot" aria-hidden="true"></i>Live</span></div>`;
+  return `<div class="quality-readouts op-live-panel" role="group" aria-label="${escape(head)}" data-mock="live-panel">${top}${cells.join('')}</div>\n`;
 }
 
 /** The held pill, then one tile per number: its name, its value now, its bar and its note. */
@@ -151,8 +161,8 @@ function groups(fence: string): string {
 }
 
 /** The block for one fence of the Quality page. */
-export function qualityBlock(name: QualityFence, fence: string): string {
-  if (name === 'quality-readouts') return readouts(fence);
+export function qualityBlock(name: QualityFence, fence: string, head = ''): string {
+  if (name === 'quality-readouts') return readouts(fence, head);
   if (name === 'quality-tiles') return tiles(fence);
   if (name === 'quality-groups') return groups(fence);
   return trendFigure(parseTrend(fence));

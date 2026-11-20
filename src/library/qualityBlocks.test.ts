@@ -50,6 +50,23 @@ describe('the Quality page blocks (the quality1120 picture)', () => {
     expect(html.match(/class="quality-readout"/g)).toHaveLength(2);
     expect(html).toContain('<span class="quality-readout-value">15 <small>of 15</small></span>');
     expect(html).toContain('<span class="quality-readout-value">231</span>');
+    expect(html).not.toContain('op-live-panel');
+  });
+
+  it('draws a readouts fence with a head as the dark live panel, its head and LIVE tag over live values', () => {
+    const html = qualityBlock(
+      'quality-readouts',
+      'Numbers held | 15 | of 15 | at or under\nRules | 231 | | checked',
+      'The ratchet, right now'
+    );
+    expect(html).toContain('class="quality-readouts op-live-panel"');
+    expect(html).toContain('data-mock="live-panel"');
+    expect(html).toContain('<span>The ratchet, right now</span>');
+    expect(html).toContain('<i class="op-live-dot" aria-hidden="true"></i>Live');
+    expect(html.match(/data-mock="live-value"/g)).toHaveLength(2);
+    expect(html).toContain(
+      '<span class="quality-readout-value" data-mock="live-value">15 <small>of 15</small></span>'
+    );
   });
 
   it('draws the held pill and a tile per number, its bar by kind', () => {

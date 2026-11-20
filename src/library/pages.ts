@@ -200,7 +200,6 @@ export const PAGES = {
     url: '/api/docs/quality',
     kind: 'overview',
     wide: true,
-    note: 'Live · read when opened',
   },
   infrastructureOverview: {
     title: 'Infrastructure overview',

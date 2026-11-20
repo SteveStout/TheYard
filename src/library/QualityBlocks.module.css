@@ -1,8 +1,8 @@
 /**
  * Does:      Lays out the Quality page as its picture draws it (the quality1120 mock's rules, ported one by one): its
- *            cards' teal headings with the short gold bar, the lede, the readouts, the first chart's caption, the
- *            small multiples three across, the coverage pair and the folded tables; two readouts and one chart a row on
- *            a phone. The tiles and the rulebook's cards are QualityTiles.module.css's.
+ *            cards' teal headings with the short gold bar, the lede, the readouts (the first, with a head, as the
+ *            dark live panel on its side), the first chart's caption, the small multiples three across, the coverage
+ *            pair and the folded tables; two readouts and one chart a row on a phone. The tiles and the rulebook's cards are QualityTiles.module.css's.
  * Does not:  Draw a chart (QualityChart.module.css does), the panels' glass (DocPanels.module.css does) or the
  *            window (DocDialog.module.css does).
  * Used by:   DocDialog.tsx.
@@ -90,6 +90,53 @@
 .prose :global(.quality-readout-under) {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+/* A readouts fence with a head is the sales pages' dark live panel laid on its side (sales.css, op-live-panel, draws
+   its ground, its gold bar and its head): four across, two by two on a phone, each under a white hairline, the label
+   in the header's quiet ink, the value white and the line under it quiet again. */
+.prose :global(.quality-readouts.op-live-panel) {
+  align-items: start;
+  gap: var(--space-3) var(--space-6);
+}
+
+.prose :global(.quality-readouts.op-live-panel) :global(.op-live-head) {
+  grid-column: 1 / -1;
+}
+
+/* The panel's own lines, not the document's: set as the dark panel sets them, not at the prose's reading height. */
+.prose :global(.op-live-panel) :global(.quality-readout) {
+  line-height: 1.4;
+  padding: var(--space-2) 0 0;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--palette-white) 16%, transparent);
+  border-radius: 0;
+  background: none;
+}
+
+.prose :global(.op-live-panel) :global(.quality-readout-label) {
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+}
+
+.prose :global(.op-live-panel) :global(.quality-readout-value) {
+  margin-top: 0;
+  color: var(--palette-white);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+}
+
+.prose :global(.op-live-panel) :global(.quality-readout-value) small {
+  color: var(--color-header-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+
+.prose :global(.op-live-panel) :global(.quality-readout-under) {
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
 }
 /* #endregion readouts */
 
@@ -179,6 +226,10 @@
 
   .prose :global(.quality-readouts) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .prose :global(.quality-readouts.op-live-panel) {
+    gap: var(--space-3) var(--space-4);
   }
 
   .prose :global(.quality-readout-value) {

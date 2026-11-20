@@ -157,7 +157,14 @@ export async function loadFirst(
 async function renderedDoc(key: string, markdown: string): Promise<FirstLoad['doc']> {
   const rendered = await renderDocument(markdown);
   if (key !== 'author')
-    return { key, html: layoutDocument(rendered, DOCS[key as keyof typeof DOCS]?.title) };
+    return {
+      key,
+      html: layoutDocument(
+        rendered,
+        DOCS[key as keyof typeof DOCS]?.title,
+        DOCS[key as keyof typeof DOCS]?.wide
+      ),
+    };
   const { layoutAuthor } = await import('../src/lib/author');
   return { key, html: layoutAuthor(rendered) };
 }

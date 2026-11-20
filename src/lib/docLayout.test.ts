@@ -31,6 +31,30 @@ describe('every document on the Author page panels', () => {
   });
 });
 
+describe('the wide sheet numbers its cards (saleshome1120)', () => {
+  it('hooks each titled card and puts its number badge, 01 on, inside its heading; the lede card has none', () => {
+    const html = layoutDocument(
+      '<h1>Quality you can watch</h1><p>Lede.</p><h2 id="the-slip">The slip</h2><p>A.</p><h2 id="files">Files</h2><p>B.</p>',
+      'Quality you can watch',
+      true
+    );
+    expect(html.match(/data-mock="q-card"/g)).toHaveLength(2);
+    expect(html).toContain(
+      '<h2 id="the-slip"><span class="op-num" data-mock="section-num">01</span>The slip</h2>'
+    );
+    expect(html).toContain(
+      '<h2 id="files"><span class="op-num" data-mock="section-num">02</span>Files</h2>'
+    );
+    expect(html).toMatch(/<section class="doc-panel op-glass doc-lead">[^]*Lede\.<\/p><\/section>/);
+  });
+
+  it('leaves every other document’s cards as they were', () => {
+    const html = layoutDocument('<h1>A record</h1><h2>Context</h2><p>Why.</p>', 'A record');
+    expect(html).not.toContain('q-card');
+    expect(html).not.toContain('op-num');
+  });
+});
+
 describe("a record's status line, as a reading (the operator's look)", () => {
   it('draws status, date and the version it shipped as, and keeps the rest of the paragraph', () => {
     const lead =

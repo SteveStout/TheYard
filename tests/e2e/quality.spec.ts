@@ -92,6 +92,97 @@ for (const width of [1440, 390]) {
     expect(Math.abs(empty - drawn)).toBeLessThanOrEqual(1);
   });
 }
+// The Quality sheet takes the sales look (saleshome1120, ADR-130's addendum on the panel, the numbers and the foot): the
+// readouts are the dark live panel, every titled card carries its number, and the sheet ends on the review route's
+// closing question with its three moves and Where next, opened over the review route as the picture draws it.
+for (const width of [1440, 390]) {
+  test(`at ${width} the Quality sheet has the dark panel, its numbered cards and its foot`, async ({
+    page,
+  }) => {
+    const reported: string[] = [];
+    await page.route('**/api/review/reached', async (route) => {
+      reported.push(String((route.request().postDataJSON() as { action?: string }).action));
+      await route.fulfill({ status: 204 });
+    });
+    await page.route('**/api/go/book', (route) => route.fulfill({ status: 204 }));
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await openTheYard(page, '/?view=review&doc=quality');
+    const dialog = page.locator('dialog[open]');
+    const panel = dialog.locator('[data-mock="live-panel"]');
+    await expect(panel).toHaveCount(1, { timeout: 30_000 });
+    await expect(panel.locator('.op-live-head')).toHaveText(/The ratchet, right now\s*Live/);
+    await expect(panel.locator('[data-mock="live-value"]')).toHaveCount(4);
+    expect(await panel.evaluate((e) => getComputedStyle(e).backgroundImage)).toContain(
+      'linear-gradient'
+    );
+    await expect(dialog.getByTestId('doc-note')).toHaveCount(0);
+    // CodeRabbit's readouts stay a row of tiles.
+    await expect(
+      dialog.locator('.quality-readouts:not(.op-live-panel) .quality-readout')
+    ).toHaveCount(4);
+    await expect(dialog.locator('[data-mock="q-card"] [data-mock="section-num"]')).toHaveText([
+      '01',
+      '02',
+      '03',
+      '04',
+      '05',
+      '06',
+      '07',
+      '08',
+      '09',
+      '10',
+    ]);
+    const foot = dialog.locator('[data-mock="q-card"] ~ [data-mock="close"]');
+    await expect(foot).toHaveCount(1);
+    await expect(foot.locator('[data-mock="close-question"]')).toHaveText(
+      'What has to work, where is it today, and what does success look like?'
+    );
+    const moves = foot.locator('[data-mock="close-moves"] > a');
+    await expect(moves).toHaveText([
+      'Book 20 minutes',
+      /Resume \(PDF\)$/,
+      'Message me on LinkedIn',
+    ]);
+    await expect(moves.nth(1)).toHaveClass(/op-pill-resume/);
+    await expect(foot.locator('[data-mock="next-link"]')).toHaveText([
+      'Back to the three questions',
+      'Quality on both ends',
+    ]);
+    // The question beside its moves at a desk; the moves under it, each the row's width, on a phone.
+    const ask = foot.locator('[data-mock="close-ask"]');
+    const [question, row] = await ask.evaluate((e) =>
+      [...e.children].map((c) => {
+        const box = c.getBoundingClientRect();
+        return { left: box.left, top: box.top, bottom: box.bottom, width: box.width };
+      })
+    );
+    if (width === 390) expect(row.top).toBeGreaterThanOrEqual(question.bottom - 1);
+    else expect(row.left).toBeGreaterThan(question.left + question.width - 1);
+    for (const move of await moves.all()) {
+      const box = (await move.boundingBox())!;
+      expect(box.height, 'a move is a thumb tall').toBeGreaterThanOrEqual(44);
+    }
+    // Each move reports the action its twin on the review route reports.
+    await moves.nth(0).click();
+    await expect.poll(() => reported).toContain('book');
+  });
+}
+
+test('opened over the review route, Back to the three questions closes the sheet and lands on section 02', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openTheYard(page, '/?view=review&doc=quality');
+  const dialog = page.locator('dialog[open]');
+  const back = dialog.getByRole('link', { name: 'Back to the three questions' });
+  await expect(back).toHaveAttribute('href', /^\/\?view=review(&r=[a-z0-9]{6})?#questions$/, {
+    timeout: 30_000,
+  });
+  await back.click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await expect(page).not.toHaveURL(/doc=quality/);
+  await expect(page.locator('#questions')).toBeInViewport();
+});
 // #endregion quality
 
 // The review route's "See the proof in 2 minutes" opens Quality at one section, so the address it carries has to
@@ -104,7 +195,7 @@ test('a link to the slip and the turn opens the Quality page on that section', a
   await openTheYard(page, '/?doc=quality#the-slip-and-the-turn');
   const dialog = page.locator('dialog[open]');
   const slip = dialog.locator('h2[id="the-slip-and-the-turn"]');
-  await expect(slip).toHaveText('The slip, and the ratchet', { timeout: 30_000 });
+  await expect(slip).toHaveText(/^01\s*The slip, and the ratchet$/, { timeout: 30_000 });
   await expect(slip).toBeInViewport();
   await expect(dialog.locator('.quality-readout').first()).not.toBeInViewport();
 });
