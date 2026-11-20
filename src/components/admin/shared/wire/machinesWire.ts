@@ -4,6 +4,7 @@
  * resource view, the document store from what its operations charged (ADR: What
  * the machines are doing). Types only. Its own file because it is one endpoint.
  */
+import type { CloudLegendEntry } from '../../../../lib/cloud';
 import type { KeptBucket, TrafficMinute } from '../../../../lib/machineChart';
 
 /**
@@ -50,6 +51,8 @@ export type DocumentMinute = {
  * Sent by GET /api/admin/machines (with ?window= for a kept window).
  */
 export type Machines = {
+  /** What each colour means, the line every Cloud infrastructure card carries; absent from an older build. */
+  legend?: CloudLegendEntry[];
   /** The windows the endpoint offers, and the kept one it answered with; absent from an older build. */
   windows?: string[];
   history?: {

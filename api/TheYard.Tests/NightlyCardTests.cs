@@ -58,25 +58,47 @@ public sealed partial class NightlyCardTests
     }
 
     /// <summary>
-    /// The grant dial counts the month's units in gigabyte-seconds against the free grant, amber at 80 and red at 95, and
-    /// amber under 80 when the month's projection passes the grant. Spread over the last ten days, the last day's rate is a
-    /// tenth of the figure: 60 % on 20 October at 6 % a day is about 128 % by the 31st, which the straight line from the
-    /// first read as 94 % and green (ADR-102, the addendum on the honesty rule); 40 % at 4 % a day is about 85 %.
+    /// The grant dial is graded on what the month costs past the free grant (ADR-102, the addendum on what a colour means).
+    /// Spread over the last ten days, the last day's rate is a tenth of the figure: 95,000 GB-s on 20 October runs to about
+    /// 201,875 by the 31st, about $2.65 past the grant, green though the dial reads 95 %; 300,000 runs to about 637,500,
+    /// about $13.98 past it, amber, and red only with the subscription's month forecast past the $70 budget.
     /// </summary>
     [Theory]
-    [InlineData(40_000d, "good")]
-    [InlineData(60_000d, "warning")]
-    [InlineData(70_000d, "warning")]
-    [InlineData(80_000d, "warning")]
-    [InlineData(95_000d, "alarm")]
-    public void The_grant_dial_turns_at_eighty_and_ninety_five_per_cent(double gbSeconds, string tone)
+    [InlineData(40_000d, null, "good")]
+    [InlineData(95_000d, null, "good")]
+    [InlineData(95_000d, 77.10, "good")]
+    [InlineData(300_000d, null, "warning")]
+    [InlineData(300_000d, 70d, "warning")]
+    [InlineData(300_000d, 77.10, "alarm")]
+    public void The_grant_dial_is_graded_on_the_dollars_past_the_grant(double gbSeconds, double? forecast, string tone)
     {
         // Spread over the buckets since the first of the month, so the dial's sum is the figure asked.
         var monthStart = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
         int inMonth = (int)((Now - (Now.AddDays(-10) > monthStart ? Now.AddDays(-10) : monthStart)).TotalMinutes / 5);
-        var inputs = Month(0, gbSeconds * NightlyMetrics.MbMsPerGbSecond / inMonth);
+        var inputs = Month(0, gbSeconds * NightlyMetrics.MbMsPerGbSecond / inMonth) with { Forecast = forecast };
         Assert.Equal(gbSeconds, NightlyCard.GbSecondsThisMonth(inputs)!.Value, 0);
-        Assert.Equal(tone, NightlyCard.View(inputs, Names, FunctionPath, []).Dials[1].Tone);
+        var view = NightlyCard.View(inputs, Names, FunctionPath, []);
+        Assert.Equal(tone, view.Dials[1].Tone);
+        // The dial carries no percentage marks: its lines are dollars and a spike, on the card's chips and its cost row.
+        Assert.Equal(((double?)null, (double?)null), (view.Dials[1].Amber, view.Dials[1].Red));
+        Assert.Equal(CostGrade.Chips, view.Thresholds);
+        Assert.Contains(view.Rows.Single(r => r.Key == "cost").Detail, d => d.Text.StartsWith("the free grant dial: about $", StringComparison.Ordinal));
+    }
+
+    /// <summary>A last day of execution units at one and a half times the median of the seven days before it turns the grant dial amber.</summary>
+    [Fact]
+    public void A_day_at_one_and_a_half_times_its_week_turns_the_grant_dial_amber()
+    {
+        var steady = Month(0, NightlyMetrics.MbMsPerGbSecond);
+        double day = 288 * NightlyMetrics.MbMsPerGbSecond;
+        ResourceCardInputs Spiked(double factor) => steady with
+        {
+            Month = [.. steady.Month.Select(b => b.At >= Now.AddDays(-1) ? b with { Sums = new Dictionary<string, double?> { ["units_mbms"] = NightlyMetrics.MbMsPerGbSecond * factor, ["executions"] = 0 } } : b)],
+        };
+
+        Assert.Equal(Enumerable.Repeat(day, 7), CostGrade.DaysBefore(steady.Month, "units_mbms", Now));
+        Assert.Equal("good", NightlyCard.GrantGrade(Spiked(1.49)).Tone);
+        Assert.Equal("warning", NightlyCard.GrantGrade(Spiked(1.5)).Tone);
     }
 
     [Fact]
@@ -144,6 +166,7 @@ public sealed partial class NightlyCardTests
         Assert.Equal("$0.43 this month", row.Answer);
         Assert.Equal(["func-test: $0.01", "plan-test: not on the bill yet", "sttest: $0.42"], row.Detail.Take(3).Select(d => d.Text));
         Assert.StartsWith("share snapshots kept: not read", row.Detail[3].Text, StringComparison.Ordinal);
+        Assert.StartsWith("the free grant dial: about $0.00 past the free grant by the month's end", row.Detail[4].Text, StringComparison.Ordinal);
         Assert.Equal(["func-test", "plan-test", "sttest"], Names.CostNames);
         Assert.Equal("not on the bill yet", NightlyCard.View(Month(0), Names, FunctionPath, []).Rows.Single(r => r.Key == "cost").Answer);
     }

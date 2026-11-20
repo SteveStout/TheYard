@@ -3,6 +3,7 @@
  * it: the state, the restarts, the image and the recent platform events. Types
  * only. Its own file because it is one endpoint with its own shape.
  */
+import type { CloudLegendEntry } from '../../../../lib/cloud';
 
 /**
  * One kind of platform event Azure recorded, how often, when last, and its message.
@@ -16,6 +17,8 @@ export type AzureEvent = { name: string; count: number; last_at: string; message
  */
 export type AzureState = {
   available: boolean;
+  /** What each colour means, the line every Cloud infrastructure card carries; absent from an older build. */
+  legend?: CloudLegendEntry[];
   reason?: string;
   /** Which kind of machine answered: a container group, or a web app on a shared plan (ADR: One plan, two sites). */
   host?: 'container-instances' | 'app-service';

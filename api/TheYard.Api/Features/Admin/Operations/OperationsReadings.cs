@@ -66,11 +66,16 @@ public sealed class ActivityReadings(ActivityCollector collector, ActivityReport
 /// <summary>What Azure and the other container say.</summary>
 public sealed class AzureReadings(AzureSelf self, HourlyReadings hourly, PeerReader peer, TelemetryReader telemetry) : IAzureReadings
 {
+    /// <summary>The wire's own case for what this answer adds to Azure's state, which is serialized as Azure's own names.</summary>
+    private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+
     /// <inheritdoc/>
     public async Task<object> SelfAsync(CancellationToken cancellation)
     {
         var answer = JsonSerializer.SerializeToNode(await self.GetStateAsync(cancellation))!.AsObject();
         answer["hourly"] = hourly.View is { } view ? JsonSerializer.SerializeToNode(view) : null;
+        // What each colour means, the line every Cloud infrastructure card carries under its title, in the wire's own case.
+        answer["legend"] = JsonSerializer.SerializeToNode(CardLegend.Entries, Wire);
         return answer;
     }
 

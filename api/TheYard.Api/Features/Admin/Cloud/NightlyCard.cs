@@ -39,7 +39,19 @@ public static class NightlyCard
     /// <summary>The firing dial runs the other way, so its tone is read on the misses.</summary>
     public static readonly (double Amber, double Red) Misses = CloudThresholds.NightlyMisses;
 
-    public static readonly (double Amber, double Red) Grant = CloudThresholds.NightlyGrant;
+    /// <summary>
+    /// The grant dial's grade: the month's GB-s projected at the last day's rate, past the free grant, in dollars, and the
+    /// last day against the seven before it (CostGrade); null figures when the Function is not read.
+    /// </summary>
+    /// <param name="inputs">The card's inputs.</param>
+    public static (string Tone, string Words) GrantGrade(ResourceCardInputs inputs)
+    {
+        double? used = GbSecondsThisMonth(inputs), lastDay = GbSecondsLastDay(inputs);
+        double? pastFree = CostGrade.PastFree(MonthPace.Projected(used, inputs.Now, lastDay) ?? used, CloudThresholds.FreeGrantGbSeconds, CloudThresholds.DollarsPerGbSecond);
+        double? median = CostGrade.Median(CostGrade.DaysBefore(inputs.Month, "units_mbms", inputs.Now));
+        double? medianGbSeconds = median / NightlyMetrics.MbMsPerGbSecond;
+        return (CostGrade.Tone(pastFree, lastDay, medianGbSeconds, inputs.Forecast), CostGrade.Words(pastFree, "the free grant", lastDay, medianGbSeconds, inputs.Forecast));
+    }
 
     /// <summary>
     /// The thirty days' slots judged against the kept five-minute firing counts, from the first kept
@@ -119,15 +131,17 @@ public static class NightlyCard
         var missTone = ResourceView.Tone([onTime is { } share ? 100 - share : (double?)null], Misses, hourly: true);
         double? gbSeconds = roleMissing ? null : GbSecondsThisMonth(inputs);
         double? grantShare = ResourceView.Share(gbSeconds, CloudThresholds.FreeGrantGbSeconds);
-        var grantTone = ResourceView.Tone([grantShare], Grant, hourly: true);
+        // The grant dial is graded on what the month costs past the grant (ADR-102, the addendum on what a colour means), so
+        // it carries no percentage marks: its lines are dollars and a spike, on the card's thresholds and its cost row.
+        var grade = roleMissing ? ("info", "") : GrantGrade(inputs);
         double? grantPace = MonthPace.Projected(grantShare, inputs.Now, roleMissing ? null : ResourceView.Share(GbSecondsLastDay(inputs), CloudThresholds.FreeGrantGbSeconds));
         var dials = new[]
         {
             new CloudDial("Runs on time, 30 days", onTime, PlanView.Percent(onTime),
                 roleMissing ? noRole : tally.Due == 0 ? "no slot kept yet" : $"{tally.OnTime} of {tally.Due} slots", 100 - Misses.Amber, 100 - Misses.Red, null, null, CloudTones.Of(missTone)),
             new CloudDial("Free grant used, this month", grantShare, PlanView.Percent(grantShare),
-                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s · {MonthPace.Words(grantPace, "{0:0} %", rated: GbSecondsLastDay(inputs) is not null)}" : NightlyRows.NoMinutes(inputs), Grant.Amber, Grant.Red, null, null,
-                MonthPace.Tone(CloudTones.Of(grantTone), grantPace, 100)),
+                roleMissing ? noRole : gbSeconds is { } gb ? $"{gb.ToString("N0", CultureInfo.InvariantCulture)} of {CloudThresholds.FreeGrantGbSeconds:N0} GB-s · {MonthPace.Words(grantPace, "{0:0} %", rated: GbSecondsLastDay(inputs) is not null)}" : NightlyRows.NoMinutes(inputs), null, null, null, null,
+                gbSeconds is null ? "info" : grade.Item1),
         };
         var next = NightlySlots.Next(inputs.Now);
         string? lastFired = ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("last_fired");
@@ -156,7 +170,7 @@ public static class NightlyCard
                 ResourceView.LiveRead(inputs),
             ],
             roleMissing ? $"{noRole}: Monitoring Reader and Reader there let the site's identity read the Function" : $"{inputs.Availability.Reason}, one minute each; the runs and the record hourly");
-        var chart = ResourceView.Chart(inputs, "Firings and the free grant", ("executions", "Firings", 1, false), ("units_mbms", "Grant used", null, false), Grant.Red, $"teal firings, a bucket that counted one at full height · green the month's grant used · shaded Mondays and Fridays · dashed {Grant.Red} %");
+        var chart = ResourceView.Chart(inputs, "Firings and the free grant", ("executions", "Firings", 1, false), ("units_mbms", "Grant used", null, false), 100, "teal firings, a bucket that counted one at full height · green the month's grant used · shaded Mondays and Fridays · dashed 100 %, where the free grant ends");
         return CardFrame.Sourced(new CloudReport(
             inputs.Window, PlanView.Windows, inputs.Availability.Available && inputs.LastHour.Count > 0 && !roleMissing,
             Note(inputs, names, roleMissing),
@@ -167,8 +181,9 @@ public static class NightlyCard
             dials,
             [ResourceView.Spark(inputs, "executions", "Firings, 60 min", 1), ResourceView.Spark(inputs, "units_mbms", "Units, 60 min", Limit(inputs))],
             chart with { Series = [FiringSeries(inputs), GrantSeries(inputs)], Bands = Bands(inputs) },
-            NightlyRows.Rows(inputs, names, tally, missTone, runs, roleMissing),
-            readout), Sources);
+            NightlyRows.Rows(inputs, names, tally, missTone, runs, roleMissing, grade.Item2),
+            readout)
+        { Thresholds = CostGrade.Chips }, Sources);
     }
 
     /// <summary>The card's note: the missing role and the missing keep each in a sentence, so the reader sees what is read live and what is not kept.</summary>
@@ -201,6 +216,7 @@ public static class NightlyCard
             running = bucket.At < monthStart ? 0 : running + (bucket.Sums.GetValueOrDefault("units_mbms") ?? 0);
             points.Add(new CloudPoint(bucket.At.ToUnixTimeMilliseconds(), ResourceView.Share(running / NightlyMetrics.MbMsPerGbSecond, CloudThresholds.FreeGrantGbSeconds)));
         }
-        return new CloudSeries("Grant used", points) { Amber = Grant.Amber, Red = Grant.Red };
+        // One line, where the free grant ends: the dial is graded in dollars past it (CostGrade), not on a share of it.
+        return new CloudSeries("Grant used", points) { Red = 100 };
     }
 }

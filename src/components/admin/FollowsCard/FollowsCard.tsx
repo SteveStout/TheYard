@@ -14,6 +14,7 @@ import type { MachineWindow } from '../../../lib/machineChart';
 import { formatNumber } from '../../../lib/format';
 import { CardState } from '../shared/CardState';
 import { About, useRead } from '../shared/common';
+import { CardLegend } from '../CardLegend';
 import cardStyles from '../shared/card.module.css';
 import areas from '../shared/cardAreas.module.css';
 import styles from './FollowsCard.module.css';
@@ -102,7 +103,10 @@ export default function FollowsCard({
   return (
     <article className={`${areas.card} op-glass`} data-testid="follows-card">
       <div className={areas.lead} data-testid="cloud-lead">
-        <h2 className={cardStyles.cardTitle}>Memory against traffic</h2>
+        <h2 className={cardStyles.cardTitle} data-mock="cloud-card-title">
+          Memory against traffic
+        </h2>
+        {read && <CardLegend entries={report.legend} />}
         <About>
           The processor should rise and fall with the requests, and memory should stay roughly where
           it is whatever they do. Memory that keeps climbing while the traffic is flat is a leak or

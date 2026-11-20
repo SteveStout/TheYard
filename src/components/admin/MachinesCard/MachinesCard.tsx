@@ -12,6 +12,7 @@
  */
 import { CardState } from '../shared/CardState';
 import { Range } from '../shared/Range';
+import { CardLegend } from '../CardLegend';
 import type { ReactNode } from 'react';
 import { type MachineWindow, windowName } from '../../../lib/machineChart';
 import styles from '../shared/card.module.css';
@@ -73,7 +74,10 @@ function MachinesBody({
   return (
     <article className={`${areas.card} op-glass`} data-testid="machines-card">
       <div className={areas.lead} data-testid="cloud-lead">
-        <h2 className={styles.cardTitle}>What the machines are doing</h2>
+        <h2 className={styles.cardTitle} data-mock="cloud-card-title">
+          What the machines are doing
+        </h2>
+        <CardLegend entries={machines.legend} />
         <Range of="memory" />
         <About>
           The three machines under this site, each reporting the way it actually reports. The

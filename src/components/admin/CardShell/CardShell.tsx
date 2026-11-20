@@ -1,10 +1,11 @@
 /**
  * Does:      Draws every card under Cloud infrastructure from its report, in one frame (ADR: The onion cut into
- *            vertical slices, the CardShell; ADR: One frame for every resource): a lead block (the header, the sub
- *            line, the two dial panels as the approved canvas draws them, each with its name, its thresholds named
- *            on the dial, one quiet hold line and its sixty minutes, and the quiet line under them saying how often
+ *            vertical slices, the CardShell; ADR: One frame for every resource): a lead block (the header, the colour
+ *            legend, the sub line, the two dial panels as the approved canvas draws them, each with its name, its
+ *            thresholds named on the dial, one quiet hold line and its sixty minutes, and the quiet line under them saying how often
  *            the card is read and when it reads unread) with the readout beside it, then a card's own live block
  *            when it hands one, the chart, the processes and the rows across the card's full width. The parts are in the folders beside it:
+ *              CardLegend     what each colour means, under the title, as the API serves it
  *              CloudDial      a dial, now, each threshold named on it by a leader line
  *              CloudChart     the window, one panel a series against its own lines, the rolls on the time axis
  *              CloudRows      the four questions, each naming its source
@@ -30,6 +31,7 @@ import { CardState } from '../shared/CardState';
 import { REFRESH_MS } from '../shared/common';
 import cardStyles from '../shared/card.module.css';
 import { holdLine, sparksFor } from '../../../lib/cloudGauge';
+import { CardLegend } from '../CardLegend';
 import { CloudDial } from '../CloudDial';
 import { CloudChart } from '../CloudChart';
 import { CloudRows, PortalLink } from '../CloudRows';
@@ -155,7 +157,7 @@ export function CardShell({
       <article className={`${areas.card} op-glass`}>
         <div className={areas.lead} data-testid="cloud-lead">
           <header className={styles.header}>
-            <h2 className={`${cardStyles.cardTitle} ${styles.title}`}>
+            <h2 className={`${cardStyles.cardTitle} ${styles.title}`} data-mock="cloud-card-title">
               {report.title}
               <span className={styles.toneChip} data-tone={report.tone} data-testid="card-tone">
                 {cardToneWord(report.tone)}
@@ -172,6 +174,7 @@ export function CardShell({
               </span>
             )}
           </header>
+          <CardLegend entries={report.legend} />
           <p className={styles.resource} data-testid="cloud-resource">
             {report.resource !== null && (
               <>

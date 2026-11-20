@@ -55,6 +55,7 @@ public static class InsightsCard
         string free = $"the free {InsightsSource.FreeGbPerMonth:0} GB";
         double? lastDay = ResourceView.Now(inputs, "ingest_day_gb");
         double? monthPace = MonthPace.Projected(month, inputs.Now, lastDay), runRate = MonthPace.RunRate(lastDay, inputs.Now);
+        var (costTone, costWords) = CostRow(inputs, month, monthPace, lastDay);
         var dials = new[]
         {
             ResourceView.Dial(inputs, capped, own ? "Ingested today, this component" : "Ingested today", cap, Ingestion, v => v is { } g ? $"{g.ToString("0.000", CultureInfo.InvariantCulture)} of {(cap is { } c ? c.ToString("0.###", CultureInfo.InvariantCulture) + " GB cap" : "no cap")}" : "not read", hourly: true),
@@ -73,11 +74,10 @@ public static class InsightsCard
                 // The identity holding no role that runs a query is information here, as on the nightly card.
                 refused ? "info" : cappedHours > 0 ? "alarm" : "good"),
             new("cost", "What is it costing?", month is null ? "not read yet" : billable is > 0 ? $"{billable.Value.ToString("0.00", CultureInfo.InvariantCulture)} GB past {free}" : $"nothing; {month.Value.ToString("0.00", CultureInfo.InvariantCulture)} of {free}",
-                [new($"{(inputs.CostMonth is { } bill ? $"${bill.ToString("0.00", CultureInfo.InvariantCulture)} this month on the bill" : "not on the bill yet")} · {MonthPace.Words(monthPace, "{0:0.00} GB", rated: lastDay is not null)} against {free}{(runRate is { } rate ? $" · the last day's {lastDay!.Value.ToString("0.000", CultureInfo.InvariantCulture)} GB makes {rate.ToString("0.00", CultureInfo.InvariantCulture)} GB a month" : "")} · retention {ResourceView.Fact(inputs, "retention_days")} days", null)],
-                // The month heading past the free allowance is worth a look while it can still be helped. Once past it, paying
-                // is information only when the last day's rate fits a month in the allowance; while that rate would overrun
-                // every month it stays amber (ADR-102, the addendum on the honesty rule), so passing the line greens nothing.
-                billable is > 0 ? (runRate >= InsightsSource.FreeGbPerMonth ? "warning" : "info") : MonthPace.Tone("good", monthPace, InsightsSource.FreeGbPerMonth)),
+                [new($"{(inputs.CostMonth is { } bill ? $"${bill.ToString("0.00", CultureInfo.InvariantCulture)} this month on the bill" : "not on the bill yet")} · {MonthPace.Words(monthPace, "{0:0.00} GB", rated: lastDay is not null)} against {free}{(runRate is { } rate ? $" · the last day's {lastDay!.Value.ToString("0.000", CultureInfo.InvariantCulture)} GB makes {rate.ToString("0.00", CultureInfo.InvariantCulture)} GB a month" : "")} · retention {ResourceView.Fact(inputs, "retention_days")} days", null), new(costWords, null)],
+                // Graded on what the month costs past the free 5 GB and on the last day against its week (ADR-102, the
+                // addendum on what a colour means): a few dollars past the allowance is working as expected.
+                costTone),
             CapRow(inputs, cap, today, capped, own, ingestTone),
         };
         var readout = new CloudReadout(
@@ -111,7 +111,24 @@ public static class InsightsCard
             [ResourceView.Spark(inputs, capped, "Today, 60 h", cap), ResourceView.Spark(inputs, "sampling", "Sampling, 60 h", 100, percentReading: true)],
             ResourceView.Chart(inputs, "Ingestion and sampling", (capped, "Ingested", cap, false), ("sampling", "Sampling kept", 100, true), Ingestion.Red, "teal ingestion · green sampling · gold deploys · red capped hour", marks, (Ingestion.Amber, Ingestion.Red), (100 - Dropped.Amber, 100 - Dropped.Red)),
             rows,
-            readout), Sources);
+            readout)
+        { Thresholds = CostGrade.Chips }, Sources);
+    }
+
+    /// <summary>
+    /// The cost row's grade (CostGrade): the month's gigabytes projected at the last day's rate, past the free 5 GB, in
+    /// dollars, and the workspace's last day against the seven last-day readings before it.
+    /// </summary>
+    /// <param name="inputs">The card's inputs.</param>
+    /// <param name="month">The month's gigabytes so far.</param>
+    /// <param name="projected">The month projected to its last day; null before it is judged.</param>
+    /// <param name="lastDay">The last twenty-four hours' gigabytes.</param>
+    public static (string Tone, string Words) CostRow(ResourceCardInputs inputs, double? month, double? projected, double? lastDay)
+    {
+        double? pastFree = CostGrade.PastFree(projected ?? month, InsightsSource.FreeGbPerMonth, InsightsSource.DollarsPerGb);
+        double? median = CostGrade.Median(CostGrade.RollingDaysBefore(inputs.Month, "ingest_day_gb", inputs.Now));
+        string free = $"the free {InsightsSource.FreeGbPerMonth:0} GB";
+        return (CostGrade.Tone(pastFree, lastDay, median, inputs.Forecast), CostGrade.Words(pastFree, free, lastDay, median, inputs.Forecast));
     }
 
     /// <summary>

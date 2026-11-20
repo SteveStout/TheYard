@@ -23,10 +23,13 @@ public sealed partial class CardFrameTests
 
     // #region card-row-tones
     [Fact]
-    public void Paying_past_the_free_allowance_and_having_no_cap_are_information_on_the_insights_card()
+    public void Paying_a_few_dollars_past_the_free_allowance_is_green_and_having_no_cap_is_information_on_the_insights_card()
     {
-        var view = InsightsCard.View(Inputs(new Dictionary<string, double?> { ["ingest_today_gb"] = 1, ["ingest_month_gb"] = 9, ["sampling"] = 100, ["capped"] = 0 }, new Dictionary<string, string?> { ["workspace_name"] = "log-test" }));
-        Assert.Equal("info", view.Rows.Single(r => r.Key == "cost").Tone);
+        // 5.5 GB on 21 October at its pace is about 8.1 GB by the 31st, about $7 past the free 5 GB: working as expected
+        // (ADR-102, the addendum on what a colour means); 9 GB is about $22 past it, worth researching.
+        var view = InsightsCard.View(Inputs(new Dictionary<string, double?> { ["ingest_today_gb"] = 1, ["ingest_month_gb"] = 5.5, ["sampling"] = 100, ["capped"] = 0 }, new Dictionary<string, string?> { ["workspace_name"] = "log-test" }));
+        Assert.Equal("good", view.Rows.Single(r => r.Key == "cost").Tone);
+        Assert.Equal("warning", InsightsCard.View(Inputs(new Dictionary<string, double?> { ["ingest_today_gb"] = 1, ["ingest_month_gb"] = 9, ["sampling"] = 100, ["capped"] = 0 }, new Dictionary<string, string?> { ["workspace_name"] = "log-test" })).Rows.Single(r => r.Key == "cost").Tone);
         Assert.Equal("info", view.Rows.Single(r => r.Key == "cap").Tone);
         Assert.Equal("info", view.Readout.Lines.Single(l => l.Label == "Daily cap").Tone);
         // The empty value before the workspace's name is gone: one link, its words whole.

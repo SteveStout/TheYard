@@ -65,6 +65,9 @@ public sealed record CloudReport(
 
     /// <summary>The resource's processes, one section each; empty on every card but the nightly Function's.</summary>
     public IReadOnlyList<CloudProcess> Processes { get; init; } = [];
+
+    /// <summary>What each colour on the card means, the same four entries on every card (CardLegend), printed under the title.</summary>
+    public IReadOnlyList<CloudLegendEntry> Legend { get; init; } = CardLegend.Entries;
 }
 
 /// <summary>One threshold as a chip: "CPU amber 60 %".</summary>

@@ -11,6 +11,7 @@ import areas from '../shared/cardAreas.module.css';
 import type { AzureState } from '../shared/types';
 import { useRead, pill, failed, tonePill } from '../shared/common';
 import { Range } from '../shared/Range';
+import { CardLegend } from '../CardLegend';
 import { toneOf } from '../../../lib/ranges';
 
 /** The certificate's days left and the relational store's size, each judged against its range. */
@@ -76,7 +77,10 @@ export default function AzureCard({ tick }: { tick: number }) {
   return (
     <article className={`${areas.card} op-glass`} data-testid="azure-card">
       <div className={areas.lead} data-testid="cloud-lead">
-        <h2 className={styles.cardTitle}>Azure's view of the container</h2>
+        <h2 className={styles.cardTitle} data-mock="cloud-card-title">
+          Azure's view of the container
+        </h2>
+        {read && <CardLegend entries={azure.legend} />}
         {azure === null ? (
           <CardState state="loading" />
         ) : azure === 'failed' ? (

@@ -55,7 +55,8 @@ public static class CardFrame
             Tone = CardTones.Wire(tone),
             SpecSource = specSource,
             Headline = first is null || first.Percent is null ? null : first.Big,
-            Thresholds = Chips(report.Dials, held),
+            // A card graded by more than its dials' marks (the two cost lines) hands its own chips, which follow the dials'.
+            Thresholds = [.. Chips(report.Dials, held), .. report.Thresholds],
             CadenceSeconds = cadence,
             UnreadAfterSeconds = CardTones.ReadsBeforeUnread * cadence,
         };

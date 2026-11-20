@@ -62,11 +62,27 @@ public static class CloudThresholds
     public static readonly (double Amber, double Red) NightlyMisses = (5, 10);
 
     /// <summary>
-    /// The nightly Function: the month's execution units against the Flex Consumption free grant,
-    /// amber at 80 per cent and red at 95. Source: the levels the owner set for the card
-    /// (PROMPT-THEYARD-NIGHTLY-FUNCTION-CARD); the grant is per subscription and resets on the first of the month.
+    /// The two cost dials (the Function's free grant, Insights' cost row): amber once the card's own month, projected at
+    /// the last day's rate, costs this many dollars past its free amount. Source: the owner's ruling that green is working
+    /// as expected and amber is worth researching, so a month past its free amount by a few dollars is green (ADR-102,
+    /// the addendum on what a colour means). It replaces the grant dial's 80 and 95 per cent.
     /// </summary>
-    public static readonly (double Amber, double Red) NightlyGrant = (80, 95);
+    public const double CostPastFreeDollars = 10;
+
+    /// <summary>The two cost dials: amber when the last day's use is this many times the median of the seven days before it, a spike to research.</summary>
+    public const double CostDaySpike = 1.5;
+
+    /// <summary>
+    /// The two cost dials: red only when the card is past <see cref="CostPastFreeDollars"/> and the subscription's month
+    /// forecast is past this budget, in dollars, the line the subscription's Azure budget holds.
+    /// </summary>
+    public const double CostBudgetDollars = 70;
+
+    /// <summary>
+    /// Azure Functions pricing page, Flex Consumption on-demand execution time past the free grant, dollars a gigabyte-second
+    /// (Microsoft Learn's "Estimating consumption-based costs" uses the same rate). Typed, as the grant is.
+    /// </summary>
+    public const double DollarsPerGbSecond = 0.000026;
 
     /// <summary>
     /// The tracker merger: minutes a lane's row file may wait in a spool folder. Past 5 it is counted

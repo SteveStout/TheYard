@@ -4,6 +4,7 @@
  * climbed while traffic stayed flat, is the server's (MemoryTraffic.cs); this file only places
  * points. No React in here.
  */
+import type { CloudLegendEntry } from './cloud';
 
 /** One point: a minute, or a kept bucket of minutes. */
 export type FollowsPoint = {
@@ -35,6 +36,8 @@ export type FollowsReport = {
   skipped_warm_up: boolean;
   points: FollowsPoint[];
   verdict: FollowsVerdict;
+  /** What each colour means, the line every Cloud infrastructure card carries; absent from an older build. */
+  legend?: CloudLegendEntry[];
 };
 
 /** A placed dot, in the plot's own units from 0 to 1, with the reading it stands for. */
