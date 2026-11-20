@@ -132,4 +132,51 @@ public sealed class CampaignRulesTests
         var verdict = LiveThreadRule.Check([company], Master, Today);
         Assert.Equal((allowed, reason), (verdict.Allowed, verdict.Reason));
     }
+
+    private static string[] EmailRow(string count, string to, string notes) =>
+        [count, "Pat Doe", "Acme", "Email", "10/20/2026", to, notes];
+
+    // The campaign's own rows, names removed: Counts 3249 (its send to info@), 3268 (that send's bounce) and 3265 (a VP's
+    // reply from his own address) as read 2026-11-20, moved into this file's window.
+    private const string CampaignSentNote = "CAMPAIGN EMAIL SENT 8:00 AM CDT 10/20 from Steve's Gmail by the campaign Function's pass";
+
+    [Fact]
+    public void A_lead_whose_only_row_is_its_own_send_to_a_shared_box_is_not_a_live_thread()
+    {
+        string[][] master = [EmailRow("3249", "info@acme.com", CampaignSentNote)];
+
+        Assert.True(LiveThreadRule.Check(["Acme"], master, Today).Allowed);
+    }
+
+    [Fact]
+    public void The_same_lead_with_a_campaign_reply_is_a_live_thread()
+    {
+        string[][] master =
+        [
+            EmailRow("3249", "info@acme.com", CampaignSentNote),
+            EmailRow("3265", "pat@acme.com", "CAMPAIGN REPLY, generic, 3:21 PM CDT 10/20 (Gmail msg 1, thread 2, INBOX): Vice President wrote back"),
+        ];
+
+        Assert.Equal("live thread, Count 3265", LiveThreadRule.Check(["Acme"], master, Today).Reason);
+    }
+
+    [Fact]
+    public void A_lead_whose_send_went_to_a_person_s_own_address_is_still_a_live_thread()
+    {
+        string[][] master = [EmailRow("3250", "pat@acme.com", CampaignSentNote)];
+
+        Assert.Equal("live thread, Count 3250", LiveThreadRule.Check(["Acme"], master, Today).Reason);
+    }
+
+    [Fact]
+    public void The_bounce_of_a_send_to_a_shared_box_is_not_a_live_thread()
+    {
+        string[][] master =
+        [
+            EmailRow("3249", "info@acme.com", CampaignSentNote),
+            EmailRow("3268", " Info@Acme.com ", "BOUNCE 8:00 AM CDT 10/20 (Gmail msg 3): the campaign email of Count 3249 to info@acme.com"),
+        ];
+
+        Assert.True(LiveThreadRule.Check(["Acme"], master, Today).Allowed);
+    }
 }

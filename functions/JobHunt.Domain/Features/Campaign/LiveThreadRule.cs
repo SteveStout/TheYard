@@ -12,6 +12,9 @@ namespace JobHunt.Domain.Features.Campaign;
 /// row, which the Function writes with Communication "Email" for an automated confirmation. A connection request
 /// that nobody has answered does not hold either: it is the LinkedIn preference order's input (LinkedInOrder),
 /// which ranks a lead with an invite out above one without, and holding it here would make that order dead code.
+/// The campaign's own send to a shared box (TrackAContacts.IsGeneralMailbox) and that send's bounce do not hold: nobody
+/// the email named read it (ADR-118, the addendum on a shared box and the live thread), and the shared box's own 30 days and
+/// CampaignSend.SharedBoxNamed still stop a lead that has no person's address. A reply, from any address, still holds.
 /// A rejection does hold: a manager is not cold-emailed about a company that has just said no.
 /// </summary>
 public static partial class LiveThreadRule
@@ -44,7 +47,15 @@ public static partial class LiveThreadRule
         bool application = ApplicationChannels.Any(c => channel.Contains(c, StringComparison.OrdinalIgnoreCase)) || TrackerRows.IsApplication(row);
         bool receipt = row[6].TrimStart().StartsWith("RECEIPT", StringComparison.OrdinalIgnoreCase);
         bool invite = channel.Contains("invite", StringComparison.OrdinalIgnoreCase) || Invite().IsMatch(row[6]);
-        return !application && !receipt && !invite;
+        return !application && !receipt && !invite && !SharedBoxSend(row);
+    }
+
+    /// <summary>Whether a row is the campaign's own send to a shared box, or that send's bounce.</summary>
+    private static bool SharedBoxSend(string[] row)
+    {
+        string note = row[6].TrimStart();
+        bool campaign = note.StartsWith("CAMPAIGN EMAIL SENT", StringComparison.OrdinalIgnoreCase) || note.StartsWith("BOUNCE", StringComparison.OrdinalIgnoreCase);
+        return campaign && TrackAContacts.IsGeneralMailbox(row[5].Trim());
     }
 
     [GeneratedRegex(@"^\s*(scoped\s+)?(connection request|invite)\b", RegexOptions.IgnoreCase)]

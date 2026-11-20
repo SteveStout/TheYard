@@ -285,6 +285,7 @@
         "Every answer and every drawn page carries one security policy: no inline script but the page's own by hash or nonce, no framing by another site, nosniff, the referrer kept to the origin, unused powers off, the opener isolated, HSTS with its subdomains and no preload; nothing on the site breaks under it",
         "The campaign's finder stops at the lower of the month's cap, the setting HUNTER_MONTHLY_CAP (50 without it), and the searches Hunter's plan reports left; a Hunter address marked valid counts with no cited page, its source Hunter's verifier",
         "A send to a shared box is no touch to the person a lead now names and starts no 30 days for an email to a person's own address; the finder asks never-emailed leads first, Track A first; Track A follows only a submitted application",
+        "The campaign's own send to a shared box and that send's bounce are no live thread, so a lead whose only row in thirty days is one of them is not held; a reply from any address, a send to a person's own address and every other row still hold",
         "The review route's action work, a move inside the page, is kept on the visitor's row by name and counts in neither of the card's two figures, and the booking email asks the closing question's three parts after Role and company"
       ]
     }
