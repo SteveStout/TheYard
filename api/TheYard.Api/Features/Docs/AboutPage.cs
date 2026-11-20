@@ -32,6 +32,15 @@ public static class AboutPage
         "https://github.com/SteveStout/TheYard",
     ];
 
+    /// <summary>What he knows, as the structured data's knowsAbout states it: each on his resume and his profile, and the home page's Person says the same.</summary>
+    public static readonly string[] KnowsAbout =
+    [
+        ".NET", "C#", "Azure", "React", "TypeScript", "SQL Server", "Software architecture", "AI-assisted development", "Code quality",
+    ];
+
+    /// <summary>Where he studied, as the structured data's alumniOf names it: on his resume and his profile.</summary>
+    public const string AlumniOf = "University of Missouri";
+
     /// <summary>
     /// The picture beside How I lead, a path the site serves (public/about-lead.svg,
     /// an original drawing in the site's palette), or null for none. Null draws no
@@ -94,6 +103,8 @@ public static class AboutPage
                 ["addressRegion"] = "Missouri",
                 ["addressCountry"] = "US",
             },
+            ["knowsAbout"] = KnowsAbout,
+            ["alumniOf"] = new Dictionary<string, string> { ["@type"] = "CollegeOrUniversity", ["name"] = AlumniOf },
         });
         // #endregion person-json-ld
         return $$"""

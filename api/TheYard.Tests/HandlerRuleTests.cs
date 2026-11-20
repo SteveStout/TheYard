@@ -56,6 +56,8 @@ public sealed class HandlerRuleTests(WebApplicationFactory<Program> factory) : I
         ["TokenIssuer"] = "writes the session cookie, which is the host's and not a use case's",
         ["CurrentBackend"] = "names the request's store to the handler, the request's own fact",
         ["SiteHosts"] = "the names this process answers to, for a link's origin",
+        ["HostPaths"] = "where the host's own files are, for the words an answer serves beside what its handler reads",
+        ["CanonicalSite"] = "the public address the edge serves, from configuration, which a canonical link is written against",
         ["AdminKey"] = "the operator's key, checked before the handler runs",
         ["AdminSettings"] = "whether the visitor rows are served at all, read with the key before the handler runs",
         ["VisitorTokens"] = "the day's keyed hash a blog read and its events are kept under, the request's own fact",

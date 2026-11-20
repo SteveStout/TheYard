@@ -23,6 +23,12 @@ namespace TheYard.Api.Shared.Instance;
 /// </summary>
 public static class ServedAddresses
 {
+    /// <summary>
+    /// The IndexNow key (ADR: Search engines are told about every post): public by design, served as public/&lt;key&gt;.txt
+    /// holding the key, and sent by blog-post.yml with every ping, so a search engine knows the ping is the site's own.
+    /// </summary>
+    public const string IndexNowKey = "ff63011624c50b09195d0a5a11716b9b";
+
     /// <summary>The addresses the frontend build puts in this container's web root.</summary>
     public static readonly IReadOnlyList<ServedAddress> FromTheBuild =
     [
@@ -31,6 +37,7 @@ public static class ServedAddresses
         new("/recommendations", "The recommendations page, by its short door", "page"),
         new("/robots.txt", "robots.txt", "file"),
         new("/sitemap.xml", "sitemap.xml", "file"),
+        new($"/{IndexNowKey}.txt", "The IndexNow key, which says the site's own pings are its own", "file"),
         new("/og.png", "The preview card", "file"),
         new("/about-lead.svg", "The drawing beside How I lead", "file"),
         new("/about-birdhouse.svg", "The drawing beside The workshop", "file"),
@@ -48,6 +55,9 @@ public static class ServedAddresses
             new("/api/reference", "API reference", "page"),
             new("/about", "About Steven Stout", "page"),
             new("/resume", "The resume, at its own address", "file"),
+            // The two crawler files the blog writes from its store (ADR: Search engines are told about every post).
+            new("/sitemap-blog.xml", "The blog's sitemap, every post", "file"),
+            new("/llms.txt", "llms.txt, the documents and every post", "file"),
             new("/api/version", "The build this container was made from", "api"),
             new("/api/health", "Health, both stores", "api"),
             new("/api/vehicles?limit=1", "The listing", "api"),

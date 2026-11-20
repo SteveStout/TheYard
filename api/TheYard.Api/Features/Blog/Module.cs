@@ -33,6 +33,8 @@ public sealed class Module : IModule
         // The host's minute-long copy of the list and the posts, dropped on every save, and the pass that derives
         // the posts again after a roll that brought new rules.
         services.AddSingleton<BlogAnswers>();
+        // The origin the blog's sitemap and llms.txt write each post's canonical address against.
+        services.AddSingleton(CanonicalSite.From(configuration));
         services.AddHostedService(provider => new BlogDerivationPass(
             new DerivePostsHandler(provider.GetRequiredService<IBlogStore>()),
             provider.GetRequiredService<HostPaths>(),
@@ -64,5 +66,5 @@ public sealed class Module : IModule
 
     /// <summary>Maps the blog's routes.</summary>
     /// <param name="app">The built host's routes.</param>
-    public void Map(IEndpointRouteBuilder app) => app.MapBlogEndpoints().MapBlogFeed().MapBlogImages();
+    public void Map(IEndpointRouteBuilder app) => app.MapBlogEndpoints().MapBlogFeed().MapBlogSitemap().MapLlmsText().MapBlogImages();
 }

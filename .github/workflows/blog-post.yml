@@ -13,6 +13,11 @@ on:
         description: The post's slug; its body is data/blog/<slug>.md
         required: true
         type: string
+      indexnow_only:
+        description: Save nothing; only tell IndexNow about the post and the blog (a check that the ping is answered)
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -29,11 +34,15 @@ jobs:
       SITE: https://theyard.stevenstout.biz
       COSMOS_SITE: https://theyard-cosmos.stevenstout.biz
       SLUG: ${{ inputs.slug }}
+      # The IndexNow key is public by design: the site serves it as public/<key>.txt (ADR: Search engines are told about
+      # every post), and PublicFaceTests holds this line to that file.
+      INDEXNOW_KEY: ff63011624c50b09195d0a5a11716b9b
     steps:
       - uses: actions/checkout@v7
 
       # #region blog-save
       - name: Read the post and build the save
+        if: ${{ !inputs.indexnow_only }}
         run: |
           [[ "$SLUG" =~ ^[a-z0-9-]+$ ]] || { echo "::error::a slug is lower-case letters, digits and hyphens"; exit 1; }
           [ -f "data/blog/$SLUG.md" ] || { echo "::error::data/blog/$SLUG.md is not in the commit"; exit 1; }
@@ -55,6 +64,7 @@ jobs:
                 f"body {len(post['body'])} chars now, {len(body)} chars saved, sha {hashlib.sha256(body.encode()).hexdigest()[:12]}")
           PY
       - name: Save
+        if: ${{ !inputs.indexnow_only }}
         env:
           ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
         run: |
@@ -65,6 +75,7 @@ jobs:
           rm -f "$RUNNER_TEMP/key.header"
           python3 -c "import json,sys; r=json.load(open(sys.argv[1])); print('saved: id', r.get('id'), 'slug', r.get('slug'))" "$RUNNER_TEMP/saved.json"
       - name: Read back on both names
+        if: ${{ !inputs.indexnow_only }}
         run: |
           want=$(python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],encoding='utf-8').read().replace('\r\n','\n').rstrip('\n').encode()).hexdigest())" "data/blog/$SLUG.md")
           for site in "$SITE" "$COSMOS_SITE"; do
@@ -81,3 +92,22 @@ jobs:
             [ "$got" = "$want" ] || { echo "::error::$site does not serve the saved body"; exit 1; }
           done
       # #endregion blog-save
+
+      # #region blog-indexnow
+      # Search engines that read IndexNow (Bing, Yandex, Seznam, Naver) hear of the post and the blog at once, instead of
+      # at their next crawl of /sitemap-blog.xml. Only after a save that read back, or on its own when asked; a ping that
+      # fails is a warning and never fails the run, because the post is saved either way.
+      - name: Tell IndexNow
+        if: ${{ success() }}
+        run: |
+          [[ "$SLUG" =~ ^[a-z0-9-]+$ ]] || { echo "::warning::a slug is lower-case letters, digits and hyphens: no ping"; exit 0; }
+          body=$(printf '{"host":"theyard.stevenstout.biz","key":"%s","keyLocation":"%s/%s.txt","urlList":["%s/?view=blog&post=%s","%s/?view=blog"]}' \
+            "$INDEXNOW_KEY" "$SITE" "$INDEXNOW_KEY" "$SITE" "$SLUG" "$SITE")
+          code=$(curl -sS -o "$RUNNER_TEMP/indexnow.txt" -w '%{http_code}' --max-time 30 -X POST https://api.indexnow.org/indexnow \
+            -H 'Content-Type: application/json; charset=utf-8' --data "$body") || code=000
+          echo "IndexNow answered $code for $SITE/?view=blog&post=$SLUG and $SITE/?view=blog"
+          case "$code" in
+            200 | 202) ;;
+            *) echo "::warning::IndexNow answered $code: $(head -c 300 "$RUNNER_TEMP/indexnow.txt" 2> /dev/null)" ;;
+          esac
+      # #endregion blog-indexnow

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using TheYard.Api.Features.Blog;
 
 namespace TheYard.Tests;
 
@@ -236,6 +237,9 @@ public class PublicFaceTests
         string sitemap = File.ReadAllText(Path.Combine(root, "public", "sitemap.xml"));
 
         Assert.Contains("Sitemap: https://theyard.stevenstout.biz/sitemap.xml", robots, StringComparison.Ordinal);
+        // The blog's own sitemap, written from the store, so every post is listed (ADR: Search engines are told about every post).
+        Assert.Contains("\nSitemap: https://theyard.stevenstout.biz/sitemap-blog.xml\n", robots, StringComparison.Ordinal);
+        Assert.Equal(2, Regex.Matches(robots, @"^Sitemap: ", RegexOptions.Multiline).Count);
         // The endpoint that throws on purpose is not for crawlers: hitting it
         // makes real 500s and real Application Insights exceptions for nothing.
         Assert.Contains("Disallow: /api/admin/selftest/", robots, StringComparison.Ordinal);
@@ -256,6 +260,12 @@ public class PublicFaceTests
         string head = File.ReadAllText(Path.Combine(Repo.Root(), "index.html"));
         Assert.Contains("\"addressLocality\": \"Saint Charles\"", head, StringComparison.Ordinal);
         Assert.DoesNotContain("streetAddress", head, StringComparison.Ordinal);
+        // The home page's Person says what /about's says about what he knows and where he studied.
+        Match graph = Regex.Match(head, "<script type=\"application/ld\\+json\">(.*?)</script>", RegexOptions.Singleline);
+        using var data = System.Text.Json.JsonDocument.Parse(graph.Groups[1].Value);
+        var person = data.RootElement.GetProperty("@graph").EnumerateArray().Single(node => node.GetProperty("@type").GetString() == "Person");
+        Assert.Equal(TheYard.Api.Features.Docs.AboutPage.KnowsAbout, person.GetProperty("knowsAbout").EnumerateArray().Select(item => item.GetString()!).ToArray());
+        Assert.Equal(TheYard.Api.Features.Docs.AboutPage.AlumniOf, person.GetProperty("alumniOf").GetProperty("name").GetString());
         Assert.DoesNotContain("postalCode", head, StringComparison.Ordinal);
     }
     // #region sitemap-both-ways
@@ -279,7 +289,8 @@ public class PublicFaceTests
     [Fact]
     public void Llms_txt_names_the_author_and_links_only_to_what_the_site_serves()
     {
-        string llms = File.ReadAllText(Path.Combine(Repo.Root(), "public", "llms.txt"));
+        // The site's own words, which /llms.txt serves with every post under them (LlmsText, BlogSitemapTests).
+        string llms = File.ReadAllText(Path.Combine(Repo.Root(), "data", "llms.txt"));
 
         // The shape the format asks for: a title, then a one-paragraph summary as a quote.
         Assert.StartsWith("# TheYard, by Steven Stout", llms, StringComparison.Ordinal);
@@ -288,9 +299,22 @@ public class PublicFaceTests
         foreach (Match link in Regex.Matches(llms, @"https://theyard\.stevenstout\.biz/api/docs/([a-z0-9-]+)\)"))
         {
             string slug = link.Groups[1].Value;
-            Assert.True(slug == "resume" || DocumentationCatalog.Files.ContainsKey(slug), $"public/llms.txt links /api/docs/{slug}, which the site does not serve");
+            Assert.True(slug == "resume" || DocumentationCatalog.Files.ContainsKey(slug), $"data/llms.txt links /api/docs/{slug}, which the site does not serve");
         }
         Assert.DoesNotContain("\u2014", llms, StringComparison.Ordinal);
+        // The Blog section is the API's, read from the store; a hand-written one would go stale with the next post.
+        Assert.DoesNotContain(LlmsText.BlogHeading, llms, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_indexnow_key_file_holds_the_key_and_the_blog_workflow_pings_with_it()
+    {
+        string key = ServedAddresses.IndexNowKey;
+        Assert.Matches("^[0-9a-f]{32}$", key);
+        Assert.Equal(key, File.ReadAllText(Path.Combine(Repo.Root(), "public", $"{key}.txt")));
+        string workflow = File.ReadAllText(Path.Combine(Repo.Root(), ".github", "workflows", "blog-post.yml"));
+        Assert.Contains($"INDEXNOW_KEY: {key}", workflow, StringComparison.Ordinal);
+        Assert.Contains("https://api.indexnow.org/indexnow", workflow, StringComparison.Ordinal);
     }
     // #endregion head
 
