@@ -53,12 +53,14 @@ for (const viewport of [
       expect(names).toEqual(EXPECTED);
 
       // The sections under their three group headings, in the sidebar's groups (1.0.1.4), after the
-      // Tech stack table under the proof strip (1.0.4.31).
+      // Tech stack table under the proof strip (1.0.4.31), each the shared section head with its number (ADR: The
+      // sales pages set the site's look). Latest posts, 02, is not drawn while the local blog has no post; the close's
+      // heading a screen reader lands on still says "Next step".
       await expect(page.getByTestId('landing').getByRole('heading', { level: 2 })).toHaveText([
-        'Start here',
-        'What colleagues say',
-        'Tech stack',
-        ...SITE_GROUPS.map((group) => group.label),
+        /^01\s*Start here$/,
+        /^03\s*What colleagues say$/,
+        /^04\s*Tech stack$/,
+        ...SITE_GROUPS.map((group, index) => new RegExp(`^0${index + 5}\\s*${group.label}$`)),
         'Next step',
       ]);
 

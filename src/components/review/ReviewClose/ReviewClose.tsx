@@ -5,8 +5,8 @@
  *            the email, and it opens the booking sheet too), the gold Resume (PDF) and Message me on LinkedIn, each
  *            reporting its action, and under them the send line, which hands the page's own address to the phone's
  *            share sheet or, where there is none, copies it and says "Link copied" for two seconds.
- *            The home page draws the same close with its own two lines at the left, and no send line (ADR-082, the
- *            addendum on the home page's order).
+ *            The home page draws the same close, the same question under its own 08 and no send line, with "Next step"
+ *            as the heading a screen reader lands on (ADR-082, the addendum on the home page's order).
  * Does not:  Draw a voice (ReviewVoices.tsx does) or read the API.
  * Used by:   ReviewPage.tsx, Landing.tsx.
  */
@@ -28,20 +28,20 @@ export function ReviewClose({
   address,
   onAction,
   onBook,
-  lines,
   ask,
+  heading,
 }: {
   /** The address the send line shares: this route with its for value and the visitor's code; none, no send line. */
   address?: () => string;
   onAction: (action: ReviewAction) => void;
   onBook: () => void;
-  /** The home page's two lines at the left; the review route's close has none. */
-  lines?: { readout: string; line: string };
-  /** The review route's closing question and its line, drawn beside the moves with the 06 badge (op-ask). */
-  ask?: { number: string; question: string; line: string };
+  /** The closing question and its line, drawn beside the moves with its number badge (op-ask). */
+  ask: { number: string; question: string; line: string };
+  /** The home page's form: the heading a screen reader lands on, the question then drawn as words under it. */
+  heading?: string;
 }) {
   const [said, setSaid] = useState<string | null>(null);
-  // The holder of the 06 badge's one pass of light.
+  // The holder of the number badge's one pass of light.
   const [holder] = useFirstSeen<HTMLElement>();
   useEffect(() => {
     if (said === null) return;
@@ -115,48 +115,44 @@ export function ReviewClose({
       )}
     </div>
   );
-  if (ask) {
-    return (
-      <section
-        ref={holder}
-        id="talk"
-        className={`${styles.close} op-glass`}
-        aria-labelledby="review-close-title"
-        data-mock="close"
-        data-testid="review-close"
-      >
-        <div className="op-ask" data-mock="close-ask">
-          <div>
+  // The home page's form: its question is drawn as words under a heading a screen reader lands on ("Next step").
+  const home = heading !== undefined;
+  return (
+    <section
+      ref={holder}
+      id={home ? undefined : 'talk'}
+      className={`${styles.close} op-glass`}
+      aria-labelledby="review-close-title"
+      data-form={home ? 'home' : undefined}
+      data-mock="close"
+      data-testid="review-close"
+    >
+      {home && (
+        <h2 id="review-close-title" className={styles.srOnly}>
+          {heading}
+        </h2>
+      )}
+      <div className="op-ask" data-mock="close-ask">
+        <div>
+          {home ? (
+            <p className="op-ask-q" data-mock="close-question">
+              <span className="op-num" data-mock="section-num">
+                {ask.number}
+              </span>
+              {ask.question}
+            </p>
+          ) : (
             <h2 id="review-close-title" className="op-ask-q" data-mock="close-question">
               <span className="op-num" data-mock="section-num">
                 {ask.number}
               </span>
               {ask.question}
             </h2>
-            <p className="op-ask-sub">{ask.line}</p>
-          </div>
-          {acts}
+          )}
+          <p className="op-ask-sub">{ask.line}</p>
         </div>
-      </section>
-    );
-  }
-  return (
-    <section
-      className={`${styles.close} op-glass`}
-      aria-labelledby={lines ? 'review-close-title' : undefined}
-      aria-label={lines ? undefined : CLOSE.label}
-      data-form={lines ? 'home' : undefined}
-      data-testid="review-close"
-    >
-      {lines && (
-        <div>
-          <h2 id="review-close-title" className={styles.readout}>
-            {lines.readout}
-          </h2>
-          <p className={styles.line}>{lines.line}</p>
-        </div>
-      )}
-      {acts}
+        {acts}
+      </div>
     </section>
   );
 }

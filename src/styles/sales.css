@@ -2,7 +2,8 @@
  * Does:      Holds the shared parts of the three sales pages (ADR: The sales pages set the site's look), one region per
  *            part, ported rule by rule from the sales1120 picture's SALES_CSS: the number badge before a section's
  *            heading, the dark live panel with its rows, its two-by-two facts and its band form, the case card, a door,
- *            a tile's door, the roles row, and the closing question beside its moves. Every colour, size and radius is
+ *            a tile's door, the roles row, the closing question beside its moves, and the motions (the arrow's dip
+ *            on the review route and its nudge on the home page). Every colour, size and radius is
  *            a token from src/styles; a component draws these by class and never writes a colour of its own.
  * Does not:  Declare a token (colors.css, sizes.css and typography.css do), draw a pill (pills.css does) or a panel's
  *            glass (panels.css does), or lay out a page (each page's own sheet does).
@@ -379,8 +380,10 @@
 /* #endregion op-ask */
 
 /* #region op-nudge */
-/* The arrow after the first move's words; it dips when the motions play (ADR: The sales pages set the site's look). */
-.op-nudge {
+/* The arrow after the first move's words; it dips when the motions play (ADR: The sales pages set the site's look). On
+   the home page it points on, and nudges right instead (op-nudge-x). */
+.op-nudge,
+.op-nudge-x {
   display: inline-block;
   margin-left: var(--space-2);
 }
@@ -615,6 +618,21 @@
   }
 }
 
+.is-seen .op-nudge-x {
+  animation: op-nudge-x 1.1s ease-in-out 2s 3 both;
+}
+
+@keyframes op-nudge-x {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(5px);
+  }
+}
+
 /* The comet: a gold dot laid over the stretched chart and a short gold tail on the line itself (comet.ts runs them). */
 .op-comet-dot {
   position: absolute;
@@ -672,6 +690,7 @@
   .is-seen .op-num::after,
   .is-seen .op-live-dot::after,
   .is-seen .op-nudge,
+  .is-seen .op-nudge-x,
   .is-seen [data-mock='anim-check'] {
     animation: none;
   }

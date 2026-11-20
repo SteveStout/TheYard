@@ -18,7 +18,7 @@ export function StackPage() {
   return (
     <section className={landing.landing} aria-labelledby="stack-title" data-testid="stack-page">
       <Hook page="stack" lines={[LINE]} headingId="stack-title" headingClass={landing.heading} />
-      <TechStack headingClass={landing.groupHeading} />
+      <TechStack headingClass={landing.stackHeading} />
       <WhereNext page="landing" />
     </section>
   );

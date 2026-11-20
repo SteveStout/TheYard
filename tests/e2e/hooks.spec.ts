@@ -38,28 +38,41 @@ async function atPhoneSize(page: Page) {
   await page.setViewportSize(PHONE);
 }
 
+/** The landing's hook on a phone: who this is, the claim and the one move on the first screen, the chart after them. */
+async function theLandingHook(page: Page) {
+  await openTheYard(page, '/');
+  const hook = page.locator('[data-hook="landing"]');
+  await expect(hook.getByRole('heading', { level: 1 })).toHaveText(lines('landing')[0]);
+  await expect(hook.getByTestId('quality-trend')).toBeVisible();
+  await expect(
+    hook.getByRole('link', { name: 'Every number, on the Quality page' })
+  ).toHaveAttribute('href', '/?doc=quality');
+  // The split layout stacks on a phone (ADR-132, the addendum on the split hook): what must be on the first screen
+  // is who this is, the claim and the one move to make; the chart follows them.
+  await onTheFirstScreen(hook.getByTestId('landing-name'), 'the name line');
+  await onTheFirstScreen(hook.getByRole('heading', { level: 1 }), 'the landing heading');
+  await onTheFirstScreen(hook.getByTestId('landing-primary'), 'the primary move');
+  // The live readouts stay directly below it.
+  const band = (await page.getByTestId('pulse-band').boundingBox())!;
+  const box = (await hook.boundingBox())!;
+  expect(band.y).toBeGreaterThan(box.y + box.height - 1);
+  expect(band.y - (box.y + box.height)).toBeLessThan(48);
+}
+
 test.describe('at 390 by 844 each hook sits on the first screen', () => {
   test('the landing: the name, the quality sentence and the primary move on the first screen, then the chart and its link', async ({
     page,
   }) => {
     await atPhoneSize(page);
-    await openTheYard(page, '/');
-    const hook = page.locator('[data-hook="landing"]');
-    await expect(hook.getByRole('heading', { level: 1 })).toHaveText(lines('landing')[0]);
-    await expect(hook.getByTestId('quality-trend')).toBeVisible();
-    await expect(
-      hook.getByRole('link', { name: 'Every number, on the Quality page' })
-    ).toHaveAttribute('href', '/?doc=quality');
-    // The split layout stacks on a phone (ADR-132, the addendum on the split hook): what must be on the first screen
-    // is who this is, the claim and the one move to make; the chart follows them.
-    await onTheFirstScreen(hook.getByTestId('landing-name'), 'the name line');
-    await onTheFirstScreen(hook.getByRole('heading', { level: 1 }), 'the landing heading');
-    await onTheFirstScreen(hook.getByTestId('landing-primary'), 'the primary move');
-    // The live readouts stay directly below it.
-    const band = (await page.getByTestId('pulse-band').boundingBox())!;
-    const box = (await hook.boundingBox())!;
-    expect(band.y).toBeGreaterThan(box.y + box.height - 1);
-    expect(band.y - (box.y + box.height)).toBeLessThan(48);
+    await theLandingHook(page);
+  });
+
+  // The first row grew by one button, Book 20 minutes (saleshome1120): the hook still holds at the narrowest phone.
+  test('the landing at 360: the name, the quality sentence and the primary move still on the first screen', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: PHONE.height });
+    await theLandingHook(page);
   });
 
   test('/about: the resume two lines', async ({ page }) => {

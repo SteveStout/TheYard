@@ -1,49 +1,49 @@
 /**
- * Does:      Styles the first screen's band: four instruments across one glass panel, each with its label, its reading,
- *            its scale or gauge, and the line under it, and the hairlines between them.
- * Does not:  Decide what a figure means or what it says (PulseBand.tsx and src/lib/pulse.ts do), or draw the glass (panels.css does).
+ * Does:      Lays out the first screen's band as the dark live panel on its side (ADR: The sales pages set the site's
+ *            look): the head across the top, then four instruments, four across once the band has room and two by two
+ *            under that, each under a white hairline with its label, its reading, its scale or gauge and the line under
+ *            it. On the dark ground the labels and lines are the header's quiet ink, the figures white, the marks and
+ *            links the light gold, the tracks a white tint and the live dots the green made for the dark; the marks
+ *            take their colours through the chart tokens set on the band, never a colour of their own.
+ * Does not:  Decide what a figure means or what it says (PulseBand.tsx and src/lib/pulse.ts do), or draw the panel's
+ *            ground, its gold bar or its head (sales.css, op-live-panel, does).
  * Used by:   PulseBand.tsx, PeopleInstrument.tsx.
  */
 .band {
+  --color-mark-teal: var(--color-gold-light);
+  --color-mark-axis: var(--color-header-text-muted);
+  --color-mark-track: color-mix(in srgb, var(--palette-white) 22%, transparent);
+  --color-mark-bar-track: color-mix(in srgb, var(--palette-white) 22%, transparent);
+  --color-mark-marker: var(--palette-white);
+  --color-mark-rule: color-mix(in srgb, var(--palette-white) 16%, transparent);
+  --color-who-people: var(--color-gold-light);
+  --color-live: var(--color-live-on-dark);
+
   display: grid;
-  grid-template-columns: 1fr;
-  padding: var(--space-4) var(--space-5);
-  gap: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-3) var(--space-4);
 }
 
-/* One under the next on a phone, separated by a hairline; four across once there is room. */
+/* The head runs across every column. */
+.head {
+  grid-column: 1 / -1;
+}
+
+/* Each instrument under a white hairline, as each reading on the dark panel is. */
 .instrument {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   min-width: 0;
-  padding: var(--space-3) 0;
-}
-
-.instrument + .instrument {
+  padding-top: var(--space-2);
   border-top: 1px solid var(--color-mark-rule);
 }
 
 @container (min-width: 860px) {
   .band {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .instrument {
-    padding: 0 var(--space-5);
-  }
-
-  .instrument + .instrument {
-    border-top: 0;
-    border-left: 1px solid var(--color-mark-rule);
-  }
-
-  .instrument:first-child {
-    padding-left: 0;
-  }
-
-  .instrument:last-child {
-    padding-right: 0;
+    column-gap: var(--space-6);
   }
 }
 
@@ -54,12 +54,14 @@
   font-weight: var(--weight-semibold);
   letter-spacing: var(--readout-tracking);
   text-transform: uppercase;
-  color: var(--color-heading);
+  color: var(--color-header-text-muted);
 }
 
-/* The reading's row: one height on every instrument, so three figures sit on one baseline. */
+/* The reading's row: one height on every instrument, so three figures sit on one baseline; a unit too long to sit
+   beside its figure in a phone's half column goes under it. */
 .reading {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2);
   margin: 0;
@@ -70,23 +72,25 @@
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   line-height: 1.1;
-  color: var(--color-heading);
+  color: var(--palette-white);
 }
 
-/* The unit beside the number, smaller and quieter: the number is the reading. */
+/* The unit beside the number, smaller and quieter: the number is the reading. Its words wrap beside the figure and it
+   goes under the figure only when not even its longest word fits there. */
 .unit {
+  flex: 1 1 min-content;
   font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  color: var(--color-header-text-muted);
 }
 
 .unread {
   align-self: center;
   font-size: var(--text-md);
-  color: var(--color-text-muted);
+  color: var(--color-header-text-muted);
 }
 
-/* The tick scale, in the instrument grammar: a thin axis, graduations every five, a teal fill to
-   the reading and a gold marker on it. */
+/* The tick scale, in the instrument grammar: a thin axis, graduations every five, a fill to the reading and a marker
+   on it, in the colours the band sets on the chart tokens. */
 .scale {
   width: 100%;
   height: 34px;
@@ -109,7 +113,7 @@
 }
 
 .number {
-  fill: var(--color-text-muted);
+  fill: var(--color-header-text-muted);
   font-size: var(--chart-text-xs);
   letter-spacing: var(--readout-tracking);
 }
@@ -164,7 +168,7 @@
   flex: 0 0 auto;
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
-  color: var(--color-heading);
+  color: var(--color-header-text-muted);
 }
 
 /* The live dot, with the site's own pulse, beside how long it has been up. */
@@ -198,14 +202,14 @@
   margin: 0;
   min-height: var(--pulse-figure-height);
   font-size: var(--text-xs);
-  color: var(--color-text-muted);
+  color: var(--color-header-text-muted);
 }
 
 .detail {
   margin: 0;
   font-size: var(--text-xs);
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-header-text-muted);
   /* Three lines reserved: the line under the latency reading gains how many requests the figure
      rests on when the answer lands, and a box that grows then would move everything under the
      band. The band stands at its full height from the first paint or it is not a band. */
@@ -217,8 +221,9 @@
   border: 0;
   padding: 0;
   font: inherit;
-  color: var(--color-accent);
+  color: var(--color-gold-light);
   text-decoration: underline;
+  text-decoration-color: var(--color-gold);
   cursor: pointer;
 }
 
@@ -227,8 +232,8 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-/* People who have visited: the label wears the swatch the Admin tab's activity card uses for people, so the two
-   surfaces agree on who a person is (ADR: People who have visited, counted once). */
+/* People who have visited: the label wears a live dot, the green made for the dark ground, as the picture draws it
+   (ADR: People who have visited, counted once; ADR: The sales pages set the site's look). */
 .people {
   display: flex;
   align-items: center;
@@ -239,7 +244,7 @@
   width: 8px;
   height: 8px;
   border-radius: var(--radius-full);
-  background: var(--color-who-people);
+  background: var(--color-live);
 }
 
 /* The thirty-day bar run, in the same box the other instruments give their scale. */

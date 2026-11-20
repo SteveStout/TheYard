@@ -1,32 +1,28 @@
 /**
- * Does:      Lays out the close: on the review route the sales1120 picture's question beside its moves (sales.css,
- *            op-ask), the three buttons at the right of their column, Book and the resume on the first line and
- *            LinkedIn under them; on the home page its words on the left and the buttons on the right; under 1024 the
- *            buttons at the left; on a phone each button the row's width.
+ * Does:      Lays out the close, on the review route and the home page alike: the sales1120 picture's question beside
+ *            its moves (sales.css, op-ask), the three buttons at the right of their column, Book and the resume on the
+ *            first line and LinkedIn under them; the home page's row a little tighter, its heading for a screen reader
+ *            only; under 1024 the buttons at the left; on a phone each button the row's width.
  * Does not:  Draw the panel's glass (panels.css does), the pills' look (pills.css does) or the question's
  *            (sales.css does).
  * Used by:   ReviewClose.tsx.
  */
 .close {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: var(--space-6);
   padding: var(--space-5);
 }
 
-/* The review route's close is one row, the question and its moves (op-ask), the row's full width. */
-.close:not([data-form]) {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.readout {
-  margin: 0;
-  color: var(--color-teal-deep);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
+/* The home page's heading: "Next step" for a screen reader, the question drawn as words beside the moves. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .acts {
@@ -39,36 +35,14 @@
 }
 
 /* Beside the question the moves keep to the right of their column. */
-.close:not([data-form]) .acts {
+.acts {
   justify-self: end;
 }
 
-/* The home page's close (its picture's .eh-close): a tighter row, its one line under the readout, two columns from
-   1280 up because the open sidebar leaves the page narrow under it. */
+/* The home page's close (its picture's): the same row, a little tighter. */
 .close[data-form='home'] {
   gap: var(--space-5);
   padding: var(--space-4) var(--space-5);
-}
-
-.line {
-  margin: var(--space-1) 0 0;
-  color: var(--color-heading);
-  font-size: var(--text-md);
-  font-weight: var(--weight-medium);
-}
-
-.close[data-form='home'] .acts {
-  max-width: none;
-}
-
-@media (max-width: 1279.98px) {
-  .close[data-form='home'] {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .close[data-form='home'] .acts {
-    justify-content: flex-start;
-  }
 }
 
 .forward {
@@ -99,9 +73,7 @@
 }
 
 @media (max-width: 1023.98px) {
-  .close,
-  .close:not([data-form]) {
-    grid-template-columns: minmax(0, 1fr);
+  .close {
     justify-items: stretch;
   }
 
@@ -116,7 +88,7 @@
 }
 
 @media (max-width: 639.98px) {
-  .close:not([data-form]) .acts {
+  .acts {
     justify-self: stretch;
   }
 

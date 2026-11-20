@@ -396,6 +396,7 @@ public class StyleRulesTests
         ["src/app/App.module.css"] = "the rule under the phone's header, the site name on it, its focus rings",
         ["src/app/InventoryView.module.css"] = "the inventory title's underline, the ring round Load more",
         ["src/components/layout/SideNav/SideNav.module.css"] = "the rule under the rail's brand block, the site name on it, its focus rings, the Blog row's NEW POST trim",
+        ["src/components/landing/PulseBand/PulseBand.module.css"] = "the home page's band on the dark live panel, as the saleshome1120 picture draws it: the light gold marks set through the chart tokens, the gauges' fill and the bars, and the light gold links with their gold underline, never on a light ground",
         ["src/components/landing/NewestPost/NewestPost.module.css"] = "the home page's NEW POST badge, the same trim as the Blog row's in the rail",
         ["src/components/account/AccountPanel/AccountPanel.module.css"] = "the Account title's underline, the same trim as the Admin title's",
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin title's underline",

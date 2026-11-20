@@ -44,7 +44,11 @@ export function PeopleInstrument({
       <p className={styles.reading}>
         {visits !== null ? (
           <>
-            <span className={styles.figure} data-testid="pulse-people-figure">
+            <span
+              className={styles.figure}
+              data-mock="live-value"
+              data-testid="pulse-people-figure"
+            >
               {visits.total.toLocaleString('en-US')}
             </span>
             <span className={styles.unit}>
@@ -53,7 +57,11 @@ export function PeopleInstrument({
           </>
         ) : people !== null ? (
           <>
-            <span className={styles.figure} data-testid="pulse-people-figure">
+            <span
+              className={styles.figure}
+              data-mock="live-value"
+              data-testid="pulse-people-figure"
+            >
               {people.toLocaleString('en-US')}
             </span>
             <span className={styles.unit}>

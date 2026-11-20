@@ -4,7 +4,7 @@
  *            answers into the third tile, the one quote and the counts. Every number is read, never typed.
  * Does not:  Read anything or draw anything; no React in here.
  * Used by:   ReviewVerdict.tsx, ReviewLeadQuote.tsx, ReviewMirror.tsx, GatePanel.tsx, NameStrip.tsx, ReviewPage.tsx,
- *            StoreBar.tsx, reviewVerdict.test.ts.
+ *            StoreBar.tsx, Landing.tsx, LandingVoices.tsx, landingMoves.ts, reviewVerdict.test.ts.
  */
 import { proofFigures, type TestSummary } from './landingProof';
 import type { Recommendation } from './recommendations';
@@ -46,7 +46,7 @@ export function restLine(records: number, diagrams: number): string {
 
 /** The close's words: its readout and its two outlined buttons; the filled one is the first screen's "Book 20 minutes". */
 export const CLOSE = {
-  /** Read by a screen reader only, on a close with neither the question nor the home page's lines. */
+  /** The heading a screen reader lands on in the home page's close, over the question drawn as words. */
   label: 'Next step',
   linkedin: 'Message me on LinkedIn',
   /** "06 Talk": the review route's closing question, the three the booking email asks (sales1120). */

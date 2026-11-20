@@ -116,15 +116,23 @@ test('the home page is one unit at every width: shared edges, one gap, its heigh
 });
 
 // 14. At 1568 by 772: the name line, the heading, the primary move and the newest post are on the first screen, and
-// the live readings end above its foot.
+// the live readings' figures above its foot.
 test('at 1568 by 772 the first screen says who this is, what he claims, what to press and the newest post', async ({
   page,
 }) => {
   await answerBlog(page, POSTS);
   await page.setViewportSize({ width: 1568, height: 772 });
   await openTheYard(page, '/');
-  for (const shown of ['landing-name', 'landing-primary', 'landing-newest', 'pulse-band'])
+  for (const shown of ['landing-name', 'landing-primary', 'landing-newest'])
     expect(await bottomOf(page, shown), shown).toBeLessThanOrEqual(772);
+  // The band is the dark live panel since the first row gained Book 20 minutes (saleshome1120): its head and its four
+  // figures are on the first screen, its lines of detail run past its foot, as the picture draws them.
+  for (const figure of await page
+    .locator('[data-testid="pulse-band"] [data-mock="live-value"]')
+    .all()) {
+    const box = (await figure.boundingBox())!;
+    expect(box.y + box.height, 'a live figure').toBeLessThanOrEqual(772);
+  }
   await expect(page.getByRole('heading', { level: 1 })).toBeInViewport();
   await expect(page.getByTestId('landing-name')).toHaveText(
     /Steven Stout\s*\/\s*Lead \/ Staff \.NET engineer\s*\/\s*Remote/
@@ -174,4 +182,114 @@ test('on a phone the home page’s dock comes on after the moves, and Book 20 mi
   await expect(page.getByTestId('book-sheet')).toBeVisible();
   await expect(dock).toHaveCount(0);
 });
+
+// The sales look on the home page (ADR: The sales pages set the site's look), from the saleshome1120 picture: the first row's
+// four moves in order, each the row's width on a phone; the band is the dark live panel, its head and LIVE tag over
+// four readings, four across at a desk and two by two on a phone; every section numbered 01 to 08; the close asks the
+// review route's question, its heading for a screen reader still "Next step".
+for (const [width, height] of [
+  [1440, 900],
+  [390, 844],
+] as const) {
+  test(`at ${width} the first row has four moves and the band is the dark live panel`, async ({
+    page,
+  }) => {
+    await page.route('**/api/go/book', (route) => route.fulfill({ status: 204 }));
+    // A reading with every figure in it, answered here (RULE 79): the local API has no bill and no answer time to read.
+    const now = Date.now();
+    await page.route('**/api/pulse', (route) =>
+      route.fulfill({
+        json: {
+          usual_p95_ms_24h: 396,
+          requests_24h: 24_441,
+          month_to_date: 43.92,
+          forecast_month: 78.04,
+          currency: 'USD',
+          cost_read_at_ms: now,
+          uptime_seconds: 420,
+          version: '1.0.5.137',
+          commit: '1a239a2',
+          read_at_ms: now,
+          people_all_time: 1_312,
+          people_new_by_day: [3, 5, 8],
+          counted_from: '2026-10-24',
+          visits_all_time: 4_042,
+          visits_from: '2026-09-13',
+          visits_by_day: [10, 20, 30, 25],
+        },
+      })
+    );
+    await answerBlog(page, POSTS);
+    await page.setViewportSize({ width, height });
+    await openTheYard(page, '/');
+    const row = page.locator('[data-mock="home-moves"]');
+    const moves = row.locator(':scope > a');
+    await expect(moves).toHaveText([
+      /^Check my work in 2 minutes/,
+      /Resume \(PDF\)$/,
+      'Book 20 minutes',
+      'or browse the live auction',
+    ]);
+    await expect(moves.nth(2)).toHaveAttribute('href', '/api/go/book');
+    await expect(moves.nth(2)).toHaveClass(/op-pill-secondary/);
+    const rowBox = (await row.boundingBox())!;
+    // Each button a thumb tall; on a phone the text link too.
+    for (const [index, move] of (await moves.all()).entries()) {
+      const box = (await move.boundingBox())!;
+      if (index < 3 || width === 390)
+        expect(box.height, 'a move is a thumb tall').toBeGreaterThanOrEqual(44);
+      if (width === 390)
+        expect(Math.abs(box.width - rowBox.width), 'each move the row’s width').toBeLessThanOrEqual(
+          1
+        );
+    }
+    if (width === 1440) {
+      // Book and the text link share the second line, under the primary move and the resume.
+      const tops = await moves.evaluateAll((all) => all.map((a) => a.getBoundingClientRect().top));
+      expect(Math.abs(tops[0] - tops[1])).toBeLessThanOrEqual(4);
+      expect(tops[2]).toBeGreaterThan(tops[0] + 20);
+    }
+
+    const band = page.getByTestId('pulse-band');
+    await expect(band).toHaveAttribute('data-mock', 'live-panel');
+    await expect(band).toHaveClass(/op-live-panel/);
+    expect(await band.evaluate((e) => getComputedStyle(e).backgroundImage)).toContain(
+      'linear-gradient'
+    );
+    await expect(band.locator('.op-live-head')).toHaveText(/TheYard, right now\s*Live/);
+    const values = band.locator('[data-mock="live-value"]');
+    await expect(values).toHaveCount(4);
+    // On the dark ground the figures are white and the labels the header's quiet ink.
+    for (const value of await values.all())
+      expect(await value.evaluate((e) => getComputedStyle(e).color)).toBe('rgb(255, 255, 255)');
+    const columns = await band
+      .locator(':scope > article')
+      .evaluateAll(
+        (all) => new Set(all.map((a) => Math.round(a.getBoundingClientRect().left))).size
+      );
+    expect(columns, `${width}: instruments across`).toBe(width === 390 ? 2 : 4);
+
+    await expect(page.getByTestId('landing-latest')).toBeVisible();
+    await expect(page.locator('[data-mock="section-num"]')).toHaveText([
+      '01',
+      '02',
+      '03',
+      '04',
+      '05',
+      '06',
+      '07',
+      '08',
+    ]);
+    const close = page.getByTestId('review-close');
+    await expect(close).toHaveAttribute('data-form', 'home');
+    await expect(close.locator('[data-mock="close-question"]')).toHaveText(
+      /08\s*What has to work, where is it today, and what does success look like\?/
+    );
+    await expect(close.getByRole('heading', { level: 2 })).toHaveText('Next step');
+
+    // The first row's Book 20 minutes opens the booking sheet, as the close's does.
+    await moves.nth(2).click();
+    await expect(page.getByTestId('book-sheet')).toBeVisible();
+  });
+}
 // #endregion home-look
