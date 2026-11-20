@@ -73,8 +73,8 @@ test('the drawer lists every menu, opens a doc full-screen on a clear sheet with
       width: box?.width ?? 0,
     };
   });
-  expect(read.sheet).toBe('rgba(255, 255, 255, 0.78)');
-  expect(read.panel).toBe('rgba(255, 255, 255, 0.78)');
+  expect(read.sheet).toBe('rgba(255, 255, 255, 0.88)');
+  expect(read.panel).toBe('rgba(255, 255, 255, 0.88)');
   expect(read.width).toBeGreaterThanOrEqual(373);
 
   await page.keyboard.press('Escape');
@@ -380,7 +380,7 @@ test('About Steven opened from the home page covers the whole phone screen, its 
     // The title bar on the screen, at its top, inside the sheet's border (3 px measured).
     expect(read.title).toBeGreaterThanOrEqual(0);
     expect(read.title).toBeLessThanOrEqual(4);
-    expect(read.behind).toBe('rgba(255, 255, 255, 0.78)');
+    expect(read.behind).toBe('rgba(255, 255, 255, 0.88)');
   }).toPass({ timeout: 15_000 });
 });
 // #endregion about-from-home

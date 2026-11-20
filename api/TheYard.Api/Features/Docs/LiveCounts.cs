@@ -58,6 +58,7 @@ public static partial class LiveCounts
                 "live-documents" => Number(LiveBlocks(repoRoot).Count(blocks => blocks > 0)),
                 "gate-caught" => GateReds.Caught(repoRoot),
                 _ when QualityCounts.Measures.Contains(kind) => QualityCounts.Measure(kind, path, repoRoot),
+                _ when QualityReadouts.Measures.Contains(kind) => QualityReadouts.Measure(kind, path, repoRoot),
                 _ => $"(no live measure named '{measure}')",
             };
         }

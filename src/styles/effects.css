@@ -44,8 +44,11 @@
      panel inside it. */
   --dialog-sheet-bg: rgba(255, 255, 255, 0.1);
   --dialog-sheet-filter: blur(6px);
-  --dialog-page-bg: rgba(255, 255, 255, 0.78);
+  --dialog-page-bg: rgba(255, 255, 255, 0.88);
   --dialog-page-filter: blur(28px) saturate(1.5);
+  /* The page behind a document's window: a soft field. */
+  --dialog-backdrop-bg: color-mix(in srgb, var(--palette-brown-gray) 30%, transparent);
+  --dialog-backdrop-filter: blur(22px) saturate(1.3);
   --watermark-opacity: 0.1;
   --radius-glass: 10px;
   /* The frame on every Author page photo: a deep teal border, a gold hairline
@@ -135,6 +138,7 @@
     --glass-filter: none;
     --dialog-sheet-filter: none;
     --dialog-page-filter: none;
+    --dialog-backdrop-filter: none;
   }
 }
 
@@ -147,6 +151,7 @@
     --glass-filter: none;
     --dialog-sheet-filter: none;
     --dialog-page-filter: none;
+    --dialog-backdrop-filter: none;
   }
 }
 /* #endregion glass-fallbacks */

@@ -1,0 +1,105 @@
+/**
+ * Does:      Styles a document window's title bar as the quality1120 picture draws it: the site's header gradient with
+ *            the gold bar under it, the title in white, the note on what the page's numbers are, Copy link and Close,
+ *            sticky at the top of the window while the body scrolls; on a phone a tighter bar with no note.
+ * Does not:  Style the window, its body or the document (DocDialog.module.css and the document's sheets do).
+ * Used by:   DocDialog.tsx.
+ */
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  position: sticky;
+  top: 0;
+  /* The title bar is the site's header bar at every width (the quality1120 picture): the header gradient with the
+     gold bar under it and white words, so it never sits dark-on-dark over the page's own header. */
+  border-bottom: 2px solid var(--color-gold);
+  border-image: var(--gradient-gold) 1;
+  background-color: var(--color-header);
+  background-image: var(--gradient-header);
+}
+
+.dialogTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-on-accent);
+}
+
+/* What the page's numbers are, beside Copy link at a desk: the header's quiet words in small capitals. */
+.dialogNote {
+  margin-left: auto;
+  color: var(--color-header-text-muted);
+  font-size: var(--readout-size);
+  font-weight: var(--readout-weight);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.close {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: var(--space-2);
+  min-height: var(--pill-height);
+  min-width: var(--pill-height);
+  color: var(--color-on-accent);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-on-accent) 40%, transparent);
+}
+
+.close:hover {
+  color: var(--color-on-accent);
+  background: color-mix(in srgb, var(--color-on-accent) 14%, transparent);
+}
+
+.close:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Beside Close, and quieter than it. A record's address is worth offering and
+   not worth shouting about (ADR: A record with no address). */
+.copyLink {
+  margin-left: auto;
+  border: 1px solid color-mix(in srgb, var(--color-on-accent) 55%, transparent);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-on-accent) 8%, transparent);
+  color: var(--color-on-accent);
+  padding: 4px 12px;
+  min-height: var(--pill-height);
+  font-size: var(--text-sm);
+  font-weight: var(--pill-weight);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dialogNote + .copyLink {
+  margin-left: 0;
+}
+
+.copyLink:hover {
+  background: color-mix(in srgb, var(--color-on-accent) 18%, transparent);
+  color: var(--color-on-accent);
+}
+
+.copyLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (max-width: 639.98px) {
+  .dialogHeader {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .dialogNote {
+    display: none;
+  }
+}

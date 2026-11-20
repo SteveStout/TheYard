@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutDocument, statusReading } from './docLayout';
+import { layoutDocument, sayTitleOnce, statusReading } from './docLayout';
 
 describe('every document on the Author page panels', () => {
   it('opens with the title and gives each second-level heading a panel of its own', () => {
@@ -59,5 +59,33 @@ describe("a record's status line, as a reading (the operator's look)", () => {
   it('puts every panel on the shared glass', () => {
     const html = layoutDocument('<h1>T</h1><h2>A</h2><p>a</p><h2>B</h2><p>b</p>');
     expect(html.match(/class="doc-panel op-glass/g)).toHaveLength(3);
+  });
+});
+
+describe('one title (the quality1120 picture)', () => {
+  it('keeps a first heading that repeats the bar for a screen reader, and draws no panel for it alone', () => {
+    const html = layoutDocument(
+      '<h1>Quality you can watch</h1>\n<h2 id="a">A</h2><p>a</p>',
+      'Quality you can watch'
+    );
+    expect(html).toContain('<h1 class="doc-title-in-bar">Quality you can watch</h1><h2 id="a">');
+    expect(html.match(/<section/g)).toHaveLength(1);
+    const lede = layoutDocument(
+      '<h1>Quality you can watch</h1>\n<p>Lede.</p><h2>A</h2>',
+      'Quality you can watch'
+    );
+    expect(lede).toContain(
+      'doc-lead"><h1 class="doc-title-in-bar">Quality you can watch</h1><p>Lede.</p>'
+    );
+  });
+
+  it('draws a first heading with words of its own as it was', () => {
+    const html = layoutDocument('<h1>TheYard</h1>\n<p>Lede.</p>', 'README');
+    expect(html).toContain('<h1>TheYard</h1>');
+    expect(html).not.toContain('doc-title-in-bar');
+    expect(sayTitleOnce('<p>No title</p>', 'README')).toEqual({
+      hidden: '',
+      rest: '<p>No title</p>',
+    });
   });
 });
