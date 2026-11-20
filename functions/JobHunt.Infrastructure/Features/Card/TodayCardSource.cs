@@ -85,6 +85,7 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             Signal = (await TextAsync(TodayCard.SignalPath, ct)).Split('\n')[0].Trim(),
             Reconnects = await TextAsync(TodayCard.ReconnectsPath(DateOnly.FromDateTime(local)), ct),
             Unblock = await UnblockAsync(DateOnly.FromDateTime(local), ct),
+            NotWorking = [.. TodayParts.Lines(await TextAsync($"{Dispatch}/NOT-WORKING.md", ct)).Where(l => l.StartsWith("NOT WORKING: ", StringComparison.Ordinal))],
         };
     }
 

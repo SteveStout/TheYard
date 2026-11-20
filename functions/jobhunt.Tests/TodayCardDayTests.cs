@@ -1,3 +1,4 @@
+using JobHunt.Domain.Features.Watch;
 using Xunit;
 
 namespace JobHunt.Functions.Tests;
@@ -168,14 +169,15 @@ public sealed class TodayCardDayTests
     }
 
     [Fact]
-    public void The_proposed_list_prints_its_count_and_only_the_items_a_lane_asks_his_yes_on()
+    public void The_proposed_list_is_one_count_that_asks_nothing_even_when_a_lane_asks_his_yes()
     {
         string card = TodayCard.Render(Day());
         string lanes = card[card.IndexOf("## The lanes", StringComparison.Ordinal)..card.IndexOf("## Left for you", StringComparison.Ordinal)];
 
-        Assert.Contains("- Running: gmail403-1112: claude-opus-5-5, started 11:07 CST, attempt 1, last event 1 min ago\n- Proposed: 21 (the list is in dispatch/STATUS.md); 1 needs your yes:\n- Proposed: autohunt1109-L-f3-f1-v3-word-cap.md. Queue it? (autohunt1109-L-f3 asks)\n", lanes, StringComparison.Ordinal);
-        Assert.DoesNotContain("fitgate1110-f2-card-prints-fit-line.md", lanes, StringComparison.Ordinal);
-        Assert.Contains("- Proposed: 21 (the list is in dispatch/STATUS.md); none needs your yes today.\n", TodayCard.Render(Day() with { LeftForSteve = string.Empty }), StringComparison.Ordinal);
+        Assert.Contains("- Running: gmail403-1112: claude-opus-5-5, started 11:07 CST, attempt 1, last event 1 min ago\n- Waiting for a planning session: 21 proposals (dispatch/STATUS.md); none needs you.\n", lanes, StringComparison.Ordinal);
+        Assert.DoesNotContain("Queue it", lanes, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("autohunt1109-L-f3-f1-v3-word-cap.md", lanes, StringComparison.Ordinal);
+        Assert.True(WatchJudge.Reached(lanes).Pass);
     }
 
     private static TodayInputs Day() => new(

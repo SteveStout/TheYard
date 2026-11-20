@@ -47,6 +47,9 @@ public sealed record TodayInputs(
 
     /// <summary>The high-value roles only he can unblock (TodayUnblock), which lead the card.</summary>
     public IReadOnlyList<UnblockRow> Unblock { get; init; } = [];
+
+    /// <summary>The open lines of dispatch/NOT-WORKING.md, the first lines of the card (RULE 77 check 4).</summary>
+    public IReadOnlyList<string> NotWorking { get; init; } = [];
 }
 
 /// <summary>
@@ -57,7 +60,7 @@ public sealed record TodayInputs(
 /// carried forward. Anything he has answered (ANSWERED.md) and any draft with a DO-NOT-SEND note beside it is never
 /// shown. Capped at 15 minutes: over it, the held replies fold into one line. The replies hold only what needs his
 /// word (TodayHandled), oldest first (TodayHistory), each led by its red flag verdict and fit line (TodayReplies); a
-/// decision left for him prints once (TodayLeft), and the proposed lanes are a count and the ones a lane asks a yes on.
+/// decision left for him prints once (TodayLeft), and the proposed lanes are one count that asks nothing.
 /// </summary>
 public static class TodayCard
 {
@@ -150,7 +153,7 @@ public static class TodayCard
         Bullets(body, inputs.Calls, "No interview or call on the calendar in the next 72 hours.");
 
         body.Append(CultureInfo.InvariantCulture, $"\n## The lanes (dispatch/STATUS.md, {TodayParts.Written(inputs.Status) ?? "no time line"})\n\n");
-        Bullets(body, TodayParts.Lanes(inputs.Status, TodayLeft.Asks(everyLeft, decisions, answered, TodayParts.Proposed(inputs.Status))), "Nothing running, held or proposed.");
+        Bullets(body, TodayParts.Lanes(inputs.Status), "Nothing running, held or proposed.");
 
         body.Append("\n## Left for you by lanes that closed in the last 24 hours (dispatch/LEFT-FOR-STEVE.md)\n\n");
         var (sections, closed) = TodayLeft.Shown([.. left.Select(s => (s, (IReadOnlyList<string>)[.. s.Blocks.Where(b => !Critical(b) && !TodayParts.IsAnswered(b, answered))]))], decisions);
@@ -196,7 +199,12 @@ public static class TodayCard
         head.Append(RulesFirst).Append("\n\n");
         head.Append(CultureInfo.InvariantCulture, $"# TODAY, {inputs.At:dddd M/d}\n\n");
         head.Append(CultureInfo.InvariantCulture, $"Written {inputs.At:HH:mm} Central by the job hunt's Function, no model; each heading names the file it was read from. About {minutes} {(minutes == 1 ? "minute" : "minutes")} to read{(fold ? ", the held replies folded to stay near the 15-minute cap" : string.Empty)}{(minutes > CapMinutes ? $", over the {CapMinutes}-minute cap" : string.Empty)}.\n\n");
-        // RULE 76 check 8: the high-value roles only he can unblock are the first lines he reads.
+        // RULE 77 check 4: what the heal ladder could not fix is the first thing he reads, as information; then RULE 76
+        // check 8's roles only he can unblock.
+        if (inputs.NotWorking.Count > 0)
+        {
+            head.Append("## NOT WORKING (dispatch/NOT-WORKING.md)\n\n").Append(string.Concat(inputs.NotWorking.Select(l => $"- {l}\n"))).Append('\n');
+        }
         head.Append(TodayUnblock.Section(inputs.Unblock));
         if (inputs.Funnel.Length > 0)
         {
