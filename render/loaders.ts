@@ -155,7 +155,8 @@ export async function loadFirst(
 /** A document as its window shows it: rendered, then laid out, the Author page in its own shape (DocDialog.tsx). */
 async function renderedDoc(key: string, markdown: string): Promise<FirstLoad['doc']> {
   const rendered = await renderDocument(markdown);
-  if (key !== 'author') return { key, html: layoutDocument(rendered) };
+  if (key !== 'author')
+    return { key, html: layoutDocument(rendered, DOCS[key as keyof typeof DOCS]?.title) };
   const { layoutAuthor } = await import('../src/lib/author');
   return { key, html: layoutAuthor(rendered) };
 }

@@ -108,10 +108,16 @@ marked.use({
  * one, so a link can land on a section (`?doc=color-style#the-glass`): the
  * Style guide's glossary links to the section each term is used in. Two
  * headings with the same words are told apart by a number, as GitHub does.
+ * A heading may name its own id at its end, `## The slip, and the ratchet
+ * {#the-slip-and-the-turn}`, so a section renamed keeps the address links
+ * already carry; the braces are not drawn.
  */
 export function withHeadingIds(html: string): string {
   const used = new Map<string, number>();
-  return html.replace(/<h2>([\s\S]*?)<\/h2>/g, (_, inner: string) => {
+  return html.replace(/<h2>([\s\S]*?)<\/h2>/g, (_, words: string) => {
+    const named = /\s*\{#([a-z0-9-]+)\}\s*$/.exec(words);
+    const inner = named ? words.slice(0, named.index) : words;
+    if (named) return `<h2 id="${named[1]}">${inner}</h2>`;
     const base =
       inner
         .replace(/<[^>]+>/g, '')

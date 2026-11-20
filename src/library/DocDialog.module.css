@@ -1,7 +1,8 @@
 /**
  * Does:      Styles the window a document opens in: its fixed height, the clear glass sheet on a phone and a desk,
- *            the title bar with Copy link and Close, the one body that scrolls, the wider window for the Author page,
- *            and the Loading and error lines.
+ *            the page behind it softened to a field, the teal title bar with its note, Copy link and Close, the one
+ *            body that scrolls, the wider window for the Author page and the wide one for the Quality page, and the
+ *            Loading and error lines.
  * Does not:  Style the document inside it (DocProse, DocSwatches, DocPanels and AuthorPage do), or hold a colour of its own.
  * Used by:   DocDialog.tsx.
  */
@@ -26,6 +27,16 @@
 
 .dialog::backdrop {
   background: transparent;
+}
+
+/* From 640 the page behind a document is a soft field, not words to read (the quality1120 picture): blurred and
+   saturated under the scrim at 30 per cent, so the eye goes to the sheet. The sheet itself stays nearly clear. */
+@media (min-width: 640px) {
+  .dialog::backdrop {
+    background: var(--dialog-backdrop-bg);
+    -webkit-backdrop-filter: var(--dialog-backdrop-filter);
+    backdrop-filter: var(--dialog-backdrop-filter);
+  }
 }
 
 /* One scroll at a time, so a reader never meets a scroll inside a scroll. A document
@@ -95,6 +106,15 @@
   :global([data-rail='collapsed']) .dialogWide {
     width: min(1280px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
   }
+
+  /* The wide window stands in the middle of the screen, as its picture draws it: the page behind is a blurred field,
+     so there is no rail word for it to cut. */
+  :global([data-rail='open']) .dialogBroad,
+  :global([data-rail='collapsed']) .dialogBroad {
+    --dialog-left: 0px;
+    inset: var(--space-6) 0;
+    width: min(1080px, calc(100vw - 2 * var(--space-7)));
+  }
 }
 /* #endregion desk-dialog */
 
@@ -128,56 +148,14 @@
   :global([data-rail='auto']) .dialogWide[open] {
     width: min(1280px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
   }
+
+  :global([data-rail='auto']) .dialogBroad[open] {
+    --dialog-left: 0px;
+    inset: var(--space-6) 0;
+    width: min(1080px, calc(100vw - 2 * var(--space-7)));
+  }
 }
 /* #endregion drawn-open */
-
-.dialogHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
-  border-bottom: 1px solid var(--glass-border);
-  position: sticky;
-  top: 0;
-  /* The title bar is frosted at every width:
-     a desk's dialog opens 24 px down, and a clear bar put the dark title over
-     the page's dark header at 1.6:1. */
-  background: var(--dialog-page-bg);
-  -webkit-backdrop-filter: var(--dialog-page-filter);
-  backdrop-filter: var(--dialog-page-filter);
-}
-
-.dialogTitle {
-  font-size: var(--text-lg);
-  font-weight: var(--weight-semibold);
-  color: var(--color-heading);
-}
-
-.close {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: 0;
-  padding: var(--space-2);
-  min-height: var(--pill-height);
-  min-width: var(--pill-height);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  border-radius: var(--radius-full);
-}
-
-.close:hover {
-  color: var(--color-heading);
-  background: var(--color-neutral-soft);
-}
-
-.close:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
-}
 
 .dialogBody {
   padding: var(--space-5) var(--space-6) var(--space-7);
@@ -188,10 +166,6 @@
    to them on source order and a phone kept the desk's 24 px a side, extra
    padding on the left. */
 @media (max-width: 639.98px) {
-  .dialogHeader {
-    padding: var(--space-3) var(--space-4);
-  }
-
   /* On a phone the reading panels carry the frost edge to edge; the clear sheet
      shows at the title bar and between the panels. */
   .dialogBody {
@@ -208,36 +182,14 @@
   color: var(--color-text-muted);
 }
 
-/* Beside Close, and quieter than it. A record's address is worth offering and
-   not worth shouting about (ADR: A record with no address). */
-.copyLink {
-  margin-left: auto;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  color: var(--color-text);
-  padding: 4px 12px;
-  min-height: var(--pill-height);
-  font-size: var(--text-sm);
-  font-weight: var(--pill-weight);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.copyLink:hover {
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.copyLink:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
-}
-
 /* Wider only where there is room to be: on a phone every document is the whole screen already. */
 @media (min-width: 640px) {
   .dialogWide {
     width: min(1040px, calc(100vw - 2 * var(--space-4)));
+  }
+
+  .dialogBroad {
+    width: min(1080px, calc(100vw - 2 * var(--space-7)));
   }
 }
 
