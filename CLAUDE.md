@@ -117,7 +117,12 @@ coverage floor to make a run green (ADR-122).
 for main). A lane never picks a version or a record number. Build ONE commit on the origin/main you just fetched, with
 the three placeholders left as they are: &#64;VER@ for the version (the changelog's top line, the subject), &#64;DATE@ for
 the date and &#64;ADR@ for a new record's number (its file name and its text). Each is an at sign, the word, an at sign;
-they are written here with &#64; so the fill leaves this file alone. Then:
+they are written here with &#64; so the fill leaves this file alone. **Leave the counts alone, too:** the record count
+in words ("one hundred and ... decision records" in README.md, docs/about/AI-DEVELOPMENT.md and
+docs/built-with-ai/BUILT-WITH-AI.md) and the Playwright count (README.md and Built with AI) are written by the fill
+from the tree it numbers, and the xUnit and Vitest figures by the promote. A lane that adds a record or a browser test
+does not edit them; its unfilled commit reads them one short (PublicFaceTests, the card) until the cop fills it, and a
+lane that edits them anyway conflicts with the next landing and is skipped (ADR-137, the addendum on the counts). Then:
 
 ```
 git fetch origin && git rebase origin/main          # an older branch starts no run (its gate.yml has no ready/**)

@@ -165,6 +165,44 @@ public sealed class FillVersionScriptTests : IDisposable
         Assert.Contains("VERSION=1.0.4.106 ADR=none", output, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The counts the public face states are the fill's to write (ADR-137, the addendum on the counts): a lane that adds a
+    /// record and a browser test leaves README.md, How this was built and Built with AI as main has them, and the fill
+    /// writes the record count in words, capitalized where the sentence starts, across a wrapped line, and the
+    /// Playwright count, while prose that only names decision records is left alone. A second fill changes nothing.
+    /// </summary>
+    [Fact]
+    public void The_fill_writes_the_record_and_browser_test_counts_a_lane_leaves_alone()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        Main();
+        Write("README.md", "The suites hold 9 xUnit tests and 1 Playwright tests.\n\nTwo decision records carry it, and the\ndecision records say why; two\ndecision records in all.\n\n| End to end | Playwright | 1 declared | Chrome. |\n");
+        Write("docs/about/AI-DEVELOPMENT.md", "**\"Two decision records is documentation theatre.\"**\n");
+        Write("docs/built-with-ai/BUILT-WITH-AI.md", "The gate: 9 xUnit tests and 1 Playwright tests. Two decision records.\n");
+        Write("tests/e2e/a.spec.ts", "test('one', () => {});\n");
+        Git("add -A");
+        Git("commit -q --amend --no-edit");
+        Git("push -q -f origin main");
+        Unfilled();
+        Write("tests/e2e/a.spec.ts", "test('one', () => {});\n  test('two', () => {});\n");
+        Git("add -A");
+        Git("commit -q --amend --no-edit");
+
+        var (code, output) = Fill();
+
+        Assert.True(code == 0, output);
+        Assert.Equal("The suites hold 9 xUnit tests and 2 Playwright tests.\n\nThree decision records carry it, and the\ndecision records say why; three\ndecision records in all.\n\n| End to end | Playwright | 2 declared | Chrome. |\n", Read("README.md"));
+        Assert.Equal("**\"Three decision records is documentation theatre.\"**\n", Read("docs/about/AI-DEVELOPMENT.md"));
+        Assert.Equal("The gate: 9 xUnit tests and 2 Playwright tests. Three decision records.\n", Read("docs/built-with-ai/BUILT-WITH-AI.md"));
+        Assert.Equal("", Git("status --porcelain"));
+        string head = Git("rev-parse HEAD");
+        Assert.Contains("nothing to fill", Fill().Output, StringComparison.Ordinal);
+        Assert.Equal(head, Git("rev-parse HEAD"));
+    }
+
     /// <summary>What the fill must refuse is refused in one sentence, and the commit stays as it was.</summary>
     [Theory]
     [InlineData("two-commits", "HEAD is not exactly one commit on origin/main")]

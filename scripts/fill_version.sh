@@ -6,7 +6,9 @@
 #            line plus one in its fourth number (or the owner's move of the third, only when OWNER_YES names it, as
 #            versions.sh allows), the date is today in America/Chicago, and the record number is one above the highest
 #            docs/decisions/ADR-NNN-*.md on origin/main. Every placeholder for the three is replaced in tracked files
-#            and in the commit message, and a file whose name holds the record's placeholder is renamed; the version
+#            and in the commit message, and a file whose name holds the record's placeholder is renamed; the record
+#            count in words and the Playwright count are written into README.md, docs/about/AI-DEVELOPMENT.md and
+#            docs/built-with-ai/BUILT-WITH-AI.md from the tree (ADR-137, the addendum on the counts); the version
 #            card is redrawn; the quality ratchet is tightened to what .github/quality.py measures, a number only ever
 #            moving the good way; the commit is amended. Prints VERSION=<v> ADR=<n or none> HEAD=<sha8>. Run twice,
 #            the second run changes nothing.
@@ -71,6 +73,51 @@ filled=${message//"$ver_mark"/$version}
 filled=${filled//"$date_mark"/$day}
 filled=${filled//"$adr_mark"/$record}
 # #endregion the-fill
+
+# #region the-counts
+# The counts the public face states are written here, on the tree that is being numbered, so no lane edits them and two
+# versions never conflict on them at the cop's rebase (ADR-137, the addendum on the counts): the record count in words,
+# from the records this commit carries, and the Playwright count, from the specs' `test(` lines, read the way
+# PublicFaceTests reads both. A file or a claim the tree does not have is left alone; the tests say when one is missing.
+python3 - << 'PY' || refuse "the counts could not be written (python3, README.md and the two documents beside it)"
+import glob, os, re, subprocess
+
+units = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split()
+tens = "- - twenty thirty forty fifty sixty seventy eighty ninety".split()
+def words(n):
+    if n < 20:
+        return units[n]
+    if n < 100:
+        return tens[n // 10] + ("-" + units[n % 10] if n % 10 else "")
+    return units[n // 100] + " hundred" + (" and " + words(n % 100) if n % 100 else "")
+numbers = {words(n): n for n in range(1000)}
+numbers["hundred"] = 100
+
+listed = subprocess.run(["git", "ls-files", "docs/decisions/"], capture_output=True, text=True, check=True).stdout.split()
+records = sum(1 for path in listed if re.fullmatch(r"docs/decisions/ADR-\d+-.*\.md", path))
+specs = sorted(glob.glob("tests/e2e/*.spec.ts"))
+declared = sum(1 for path in specs for line in open(path, encoding="utf-8") if re.match(r"^\s*test\(", line))
+
+claim = re.compile(r"\b([A-Za-z][a-z]+\s+hundred(?:\s+and\s+[A-Za-z][a-z]+(?:-[a-z]+)?)?|[A-Za-z][a-z]+(?:-[a-z]+)?)(\s+decision\s+records?)\b")
+def recount(match):
+    said = re.sub(r"\s+", " ", match.group(1))
+    if said.lower() not in numbers or records == 0:
+        return match.group(0)
+    now = words(records)
+    return (now[0].upper() + now[1:] if said[0].isupper() else now) + match.group(2)
+
+for path in ("README.md", "docs/about/AI-DEVELOPMENT.md", "docs/built-with-ai/BUILT-WITH-AI.md"):
+    if not os.path.exists(path):
+        continue
+    text = open(path, encoding="utf-8").read()
+    after = claim.sub(recount, text)
+    if specs and path != "docs/about/AI-DEVELOPMENT.md":
+        after = re.sub(r"\d+( Playwright tests)", lambda m: f"{declared}{m.group(1)}", after)
+        after = re.sub(r"(\| End to end \| Playwright \| )\d+( declared \|)", lambda m: f"{m.group(1)}{declared}{m.group(2)}", after)
+    if after != text:
+        open(path, "w", encoding="utf-8", newline="\n").write(after)
+PY
+# #endregion the-counts
 
 # #region the-card-and-the-ratchet
 # The version card names the version, so it is drawn after the fill. The picture is drawn from the drawing: when the
