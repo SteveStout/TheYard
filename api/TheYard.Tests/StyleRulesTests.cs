@@ -255,6 +255,9 @@ public class StyleRulesTests
         ("--color-on-accent", "--color-teal-header", 4.5),
         ("--color-gold-light", "--color-teal-header", 4.5),
         ("--color-gold-light", "--color-green-dark", 4.5),
+        // The resume button's words on the two ends of its gold face (quality1120).
+        ("--color-on-gold", "--color-gold-pale", 4.5),
+        ("--color-on-gold", "--color-gold", 4.5),
         ("--color-text", "--color-surface", 4.5),
         ("--color-text", "--color-bg", 4.5),
         ("--color-heading", "--color-surface", 4.5),
@@ -411,6 +414,8 @@ public class StyleRulesTests
         ["src/components/landing/TechStack/TechStack.module.css"] = "the Tech stack panel: the rule under the table's head, the Delivery layer's edge, the chips' outline and the eyebrow on the dark band, as the approved preview draws them",
         ["src/components/admin/CloudChart/CloudChart.module.css"] = "a deploy's line on a Cloud card's chart, in the bar's dark tone, about 6 to 1 on white, as the approved mockups draw it",
         ["src/components/admin/CloudDial/CloudDial.module.css"] = "the dot at a dial's 30-day 95th, in the bar's dark tone, as the approved mockups draw it",
+        ["src/styles/pills.css"] = "the resume button's gold face and its dark gold edge, the one gold fill, as the quality1120 picture draws it",
+        ["src/components/shared/PdfMark/PdfMark.module.css"] = "the edge of the small PDF page on the resume button, in the bar's dark tone",
         ["src/components/shared/WorkingLock/WorkingLock.module.css"] = "the sweep round the working lock's ring and its glow, never its words, as look D of the approved mock draws it",
     };
 

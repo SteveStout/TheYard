@@ -97,16 +97,15 @@ test('a tour cell opened counts once, ticks its ring and is kept across a reload
   await expect(cell(page, 1)).toHaveAttribute('data-reached', 'false');
 });
 
-test('the close carries Anthony Fortner’s voice, and the close and About both say how to reach Steven, as links', async ({
+test('the close carries no voice, only its buttons, and the close and About both say how to reach Steven, as links', async ({
   page,
 }) => {
   await freshRoute(page);
   await openTheYard(page, '/?view=review');
   const close = page.getByTestId('review-close');
-  await expect(close).toContainText('That is the work');
-  await expect(close.getByTestId('voice')).toHaveAttribute('data-name', 'Anthony Fortner');
-  await expect(close.getByTestId('voice')).toHaveAttribute('href', cardAddress('Anthony Fortner'));
-  await expect(close).not.toContainText('Sean Whitesell');
+  await expect(close).toHaveAttribute('aria-label', 'Next step');
+  await expect(close).not.toContainText('That is the work');
+  await expect(close.getByTestId('voice')).toHaveCount(0);
   await expect(close.getByRole('link', { name: 'Book 20 minutes' })).toHaveAttribute(
     'href',
     '/api/go/book'
@@ -132,6 +131,68 @@ test('the close carries Anthony Fortner’s voice, and the close and About both 
     /^https:\/\/www\.linkedin\.com\/in\/stevenwstout\/?$/
   );
 });
+
+// The resume is the one gold button (the quality1120 picture): on the first screen as tall as the primary move, in the
+// close beside Book, in the phone's dock, each the row's width on a phone like its siblings, its address, action and
+// report kept.
+for (const [width, height] of [
+  [1440, 900],
+  [390, 844],
+] as const) {
+  test(`at ${width} the resume is the gold button on the first screen, in the close and in the dock`, async ({
+    page,
+  }) => {
+    const actions: string[] = [];
+    await page.route('**/api/review/reached', async (route) => {
+      const body = route.request().postDataJSON() as { action?: string };
+      if (body.action) actions.push(body.action);
+      await route.fulfill({ status: 204 });
+    });
+    await page.route('**/resume?pdf=1', (route) => route.fulfill({ status: 204 }));
+    await page.setViewportSize({ width, height });
+    await freshRoute(page);
+    await openTheYard(page, '/?view=review');
+    const first = page.getByTestId('review-resume');
+    const close = page.getByTestId('review-close-resume');
+    for (const resume of [first, close]) {
+      await expect(resume).toHaveClass(/\bop-pill-resume\b/);
+      await expect(resume).toHaveAttribute('href', '/resume?pdf=1');
+      await expect(resume).toHaveAttribute('data-action', 'review.resume');
+      await expect(resume).toHaveAccessibleName('Resume (PDF)');
+      await expect(resume.locator('svg')).toHaveCount(1);
+      expect(
+        await resume.evaluate((each) => getComputedStyle(each).backgroundImage),
+        'the gold face'
+      ).toContain('linear-gradient');
+    }
+    const proof = (await page.getByTestId('review-proof').boundingBox())!;
+    const face = (await first.boundingBox())!;
+    expect(Math.abs(face.height - proof.height), 'as tall as the primary move').toBeLessThanOrEqual(
+      1
+    );
+    if (width < 640) {
+      expect(
+        Math.abs(face.width - proof.width),
+        'the row’s width, as its siblings'
+      ).toBeLessThanOrEqual(1);
+      const book = (await page
+        .getByTestId('review-close')
+        .getByRole('link', { name: 'Book 20 minutes' })
+        .boundingBox())!;
+      const end = (await close.boundingBox())!;
+      expect(Math.abs(end.width - book.width), 'the close’s row width').toBeLessThanOrEqual(1);
+      await page.getByTestId('review-path').scrollIntoViewIfNeeded();
+      const dock = page.getByTestId('review-dock');
+      await expect(dock).toHaveAttribute('data-on', 'true');
+      await expect(page.getByTestId('dock-resume')).toHaveClass(/\bop-pill-resume\b/);
+      await expect(page.getByTestId('dock-resume')).toHaveAttribute('href', '/resume?pdf=1');
+    } else {
+      expect(Math.abs(face.y - proof.y), 'on the primary move’s row').toBeLessThanOrEqual(1);
+    }
+    await first.click({ modifiers: ['ControlOrMeta'] });
+    await expect.poll(() => actions).toContain('resume');
+  });
+}
 
 test('every tour cell opens the site’s own address in place, and the last opens the sidebar', async ({
   page,
@@ -584,42 +645,39 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         for (const [index, card] of cards.slice(1).entries())
           expect(card.top, `${at}: cards stack`).toBeGreaterThan(cards[index].bottom);
       }
-      // 4. The three voices: from 1280 the next row, one height, each on its card's edges; under it each after its card.
+      // 4. No voice touches a question: the six stand in their own band, three across and two rows of one height
+      // from 1024 on the page's edges, two across under it, one column on a phone (the quality1120 picture).
       await expect(page.locator('[data-testid="review-path"] [data-testid="voice"]')).toHaveCount(
-        3
+        0
       );
-      const voices = await boxes(page, '[data-testid="review-path"] [data-testid="voice"]');
-      expect(voices, `${at}: a voice under each card`).toHaveLength(3);
-      for (const [index, voice] of voices.entries()) {
-        const card = cards[index];
-        expect(voice.top, `${at}: voice after its card`).toBeGreaterThan(card.bottom);
-        if (width < 1280 && index < 2)
-          expect(voice.bottom, `${at}: voice before the next card`).toBeLessThan(
-            cards[index + 1].top
-          );
-        if (width >= 1280) {
+      const band = await boxes(page, '[data-testid="review-voices"] [data-testid="voice"]');
+      expect(band, `${at}: six voices in the band`).toHaveLength(VOICES.band.length);
+      const perRow = width >= 1024 ? 3 : width >= 640 ? 2 : 1;
+      for (const [index, voice] of band.entries()) {
+        const first = band[index - (index % perRow)];
+        expect(
+          Math.abs(voice.top - first.top),
+          `${at}: voice ${index + 1}'s row`
+        ).toBeLessThanOrEqual(1);
+        expect(
+          Math.abs(voice.height - first.height),
+          `${at}: voice ${index + 1} is its row's height`
+        ).toBeLessThanOrEqual(1);
+        if (index % perRow === 0)
           expect(
-            Math.abs(voice.top - voices[0].top),
-            `${at}: voices share a row`
+            Math.abs(voice.left - parts[0].left),
+            `${at}: the band's left edge`
           ).toBeLessThanOrEqual(1);
+        if (index % perRow === perRow - 1)
           expect(
-            Math.abs(voice.height - voices[0].height),
-            `${at}: voices share a height`
+            Math.abs(voice.right - parts[0].right),
+            `${at}: the band's right edge`
           ).toBeLessThanOrEqual(1);
-          expect(Math.abs(voice.left - card.left), `${at}: voice's left edge`).toBeLessThanOrEqual(
-            1
-          );
-          expect(
-            Math.abs(voice.right - card.right),
-            `${at}: voice's right edge`
-          ).toBeLessThanOrEqual(1);
-        }
+        if (index >= perRow)
+          expect(voice.top, `${at}: the next row`).toBeGreaterThan(band[index - perRow].bottom);
       }
-      // 5. The pair and the posts: one row of one height from 1024; stacked under it.
-      for (const [selector, count] of [
-        ['[data-testid="review-voices"] [data-testid="voice"]', 2],
-        ['[data-testid="review-blog-post"]', 3],
-      ] as const) {
+      // 5. The posts: one row of one height from 1024; stacked under it.
+      for (const [selector, count] of [['[data-testid="review-blog-post"]', 3]] as const) {
         const row = await boxes(page, selector);
         expect(row, `${at}: ${selector}`).toHaveLength(count);
         for (const [index, each] of row.entries()) {
@@ -673,11 +731,12 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         const tall = await page.evaluate(() => document.documentElement.scrollHeight);
         expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 2950 : 2750);
       }
-      // 3. At 390 with the tour closed: under 5,600 for the verdict, under 6,200 for the mirror (5,272 and 5,851).
+      // 3. At 390 with the tour closed: under 5,600 for the verdict, under 6,300 for the mirror (5,272 and 5,851; the
+      // mirror's resume took a row of its own among its moves and the voices band its heading, quality1120).
       if (width === 390) {
         await page.getByTestId('review-tour-toggle').click();
         const tall = await page.evaluate(() => document.documentElement.scrollHeight);
-        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 6200 : 5600);
+        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 6300 : 5600);
       }
       // 6 and 7. The primary button is on the first screen at 1568 by 772 and at 390 by 844.
       if (width === 1568 || width === 390)
@@ -738,13 +797,7 @@ test('every voice is the answer’s own words and opens its card, and the blog r
   await freshRoute(page);
   await answerBlog(page, POSTS);
   await openTheYard(page, '/?view=review');
-  const names = [
-    ...VOICES.quality,
-    ...VOICES.gate,
-    ...VOICES.room,
-    ...VOICES.pair,
-    ...VOICES.close,
-  ];
+  const names = [...VOICES.band];
   const voices = page.getByTestId('review-page').getByTestId('voice');
   await expect(voices).toHaveCount(names.length);
   for (const [index, name] of names.entries()) {

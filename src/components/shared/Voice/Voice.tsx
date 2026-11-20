@@ -5,7 +5,7 @@
  *            glass tile, or plain inside a panel that already has one.
  * Does not:  Read the API (the page already holds the answer and hands it over) or pick the name (voices.ts does).
  *            A name the answer does not hold draws nothing, so its place closes up.
- * Used by:   ReviewPath.tsx, ReviewPage.tsx, ReviewClose.tsx, Landing.tsx.
+ * Used by:   ReviewVoices.tsx, Landing.tsx.
  */
 import type { Recommendation } from '../../../lib/recommendations';
 import { cardAddress } from '../../../lib/recommendationsPage';
