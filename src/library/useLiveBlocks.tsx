@@ -1,6 +1,6 @@
 /**
  * Does:      Brings a rendered document's live blocks to life: draws the ribbons into a ribbon strip, the working
- *            lock's look into its sample, a quality trend into each of the Quality page's figures and a site-map
+ *            lock's look into its sample, a quality chart into each of the Quality page's figures and a site-map
  *            icon into each tile's badge, opens an in-library link ([data-doc]) in the same window, and scrolls to
  *            the section a link or the first address named.
  * Does not:  Render the markdown (markdown.ts and styleBlocks.ts do), fetch a document, or decide which one is open.
@@ -11,6 +11,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Ribbons } from '../components/layout/Background/Ribbons';
 import { NavGlyph } from '../components/shared/SheetIcons';
 import { WorkingLockLook } from '../components/shared/WorkingLock';
+import { QualityChart } from '../components/shared/QualityChart';
 import { QualityTrend } from '../components/shared/QualityTrend';
 import { parseTrend } from '../lib/qualityTrend';
 import type { NavIcon } from '../lib/siteMap';
@@ -43,15 +44,13 @@ function mountBlocks(root: HTMLElement) {
     sample.render(<WorkingLockLook />);
     mounted.set(box, sample);
   }
-  // Each number on the Quality page, drawn from the readings the fence carried (ADR-130).
+  // Each number on the Quality page, drawn from the readings the fence carried (ADR-130): a fence that names its
+  // form (the first chart, a small multiple, a coverage chart) is drawn as the page's picture draws it.
   for (const box of root.querySelectorAll<HTMLElement>('[data-quality-trend]')) {
     if (mounted.has(box)) continue;
     const chart = createRoot(box);
-    chart.render(
-      <QualityTrend
-        data={JSON.parse(box.dataset.qualityTrend ?? '{}') as ReturnType<typeof parseTrend>}
-      />
-    );
+    const data = JSON.parse(box.dataset.qualityTrend ?? '{}') as ReturnType<typeof parseTrend>;
+    chart.render(data.form ? <QualityChart data={data} /> : <QualityTrend data={data} />);
     mounted.set(box, chart);
   }
   for (const badge of root.querySelectorAll<HTMLElement>('[data-glyph]')) {

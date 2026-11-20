@@ -1,0 +1,124 @@
+/**
+ * Does:      Colours and sizes the Quality page's charts as its picture draws them: the line in teal only, the
+ *            gridlines faint, the words in the chart's own sizes, gold for the slip, the ratchet's mark and a floor and
+ *            never for a series; the first chart's phone shape shown under 640 and its wide shape from 640.
+ * Does not:  Place anything (src/lib/qualityChart.ts does).
+ * Used by:   QualityChart.tsx.
+ */
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-sans);
+}
+
+.phone {
+  display: none;
+}
+
+@media (max-width: 639.98px) {
+  .wide {
+    display: none;
+  }
+
+  .phone {
+    display: block;
+  }
+}
+
+.grid {
+  stroke: color-mix(in srgb, var(--color-teal-deep) 10%, transparent);
+  stroke-width: 1;
+}
+
+.axis {
+  stroke: color-mix(in srgb, var(--color-teal-deep) 45%, transparent);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--color-text-muted);
+  font-size: var(--chart-text);
+  font-weight: var(--weight-medium);
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-teal-header);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.small .line {
+  stroke-width: 2;
+}
+
+.pre {
+  stroke-dasharray: 4 4;
+}
+
+.areaTop {
+  stop-color: color-mix(in srgb, var(--color-teal-header) 22%, transparent);
+}
+
+.areaFoot {
+  stop-color: transparent;
+}
+
+.goldTop {
+  stop-color: var(--color-gold-light);
+}
+
+.goldMid {
+  stop-color: var(--color-gold);
+}
+
+.goldFoot {
+  stop-color: var(--color-gold-bar-dark);
+}
+
+.slip {
+  fill: color-mix(in srgb, var(--color-gold) 10%, transparent);
+}
+
+.band,
+.mark {
+  fill: var(--color-gold-bar-dark);
+  font-size: var(--chart-text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--readout-tracking);
+}
+
+.band {
+  font-weight: var(--weight-semibold);
+}
+
+.floor {
+  stroke: var(--color-gold-bar-dark);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.dot {
+  fill: var(--color-surface);
+  stroke: var(--color-teal-header);
+  stroke-width: 2.5;
+}
+
+.lead {
+  stroke: color-mix(in srgb, var(--color-teal-deep) 50%, transparent);
+  stroke-width: 1;
+}
+
+.value {
+  fill: var(--color-teal-deep);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.words {
+  fill: var(--color-text-muted);
+  font-size: var(--chart-text);
+  font-weight: var(--weight-medium);
+}

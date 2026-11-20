@@ -163,14 +163,15 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
           dim: getComputedStyle(dialog, '::backdrop').backgroundColor,
           panel: getComputedStyle(panel).backgroundColor,
           title: getComputedStyle(dialog.querySelector('[class*="dialogHeader"]') ?? dialog)
-            .backgroundColor,
+            .backgroundImage,
         };
       });
     expect(sheet.sheet).toBe('rgba(255, 255, 255, 0.1)');
-    // The title bar is frosted at every width, never clear over the page's dark header.
-    expect(sheet.title).toBe('rgba(255, 255, 255, 0.78)');
-    expect(sheet.dim).toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
-    expect(sheet.panel).toBe('rgba(255, 255, 255, 0.78)');
+    // The title bar is the site's header bar, never clear over the page's dark header, and the page behind is a soft
+    // field under the scrim at 30 per cent (the quality1120 picture).
+    expect(sheet.title).toContain('linear-gradient');
+    expect(sheet.dim).toMatch(/0\.3\)$/);
+    expect(sheet.panel).toBe('rgba(255, 255, 255, 0.88)');
   }).toPass({ timeout: 15_000 });
   // The Author page reads the same way: the sheet clear, the panels frosted.
   await openTheYard(page, '/?doc=author');
@@ -182,7 +183,7 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
         .locator('dialog[open] .author-panel')
         .first()
         .evaluate((panel) => getComputedStyle(panel).backgroundColor)
-    ).toBe('rgba(255, 255, 255, 0.78)');
+    ).toBe('rgba(255, 255, 255, 0.88)');
   }).toPass({ timeout: 15_000 });
 
   // A phone: the rail is the drawer, so the ribbons run from the screen's edge.

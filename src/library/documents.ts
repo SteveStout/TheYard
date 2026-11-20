@@ -1,7 +1,7 @@
 /**
  * Does:      Joins records.ts and pages.ts into DOCS, the one list every document is looked up in, and works out DocKey from them.
  * Does not:  Hold a document itself, or know where one sits in the sidebar.
- * Used by:   records.ts, pages.ts, sections.ts, addresses.ts, DocDialog.tsx, SideNav.tsx, Landing.tsx, LandingTile.tsx, SheetIcons.tsx, Shell.tsx, useAddressBar.ts, useNavigation.ts, useLiveBlocks.tsx, loaders.ts, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx, ReviewVerdict.tsx.
+ * Used by:   records.ts, pages.ts, sections.ts, addresses.ts, DocDialog.tsx, SideNav.tsx, Landing.tsx, LandingTile.tsx, SheetIcons.tsx, Shell.tsx, useAddressBar.ts, useNavigation.ts, useLiveBlocks.tsx, loaders.ts, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx, ReviewVerdict.tsx, documents.test.ts.
  */
 import { PAGES } from './pages';
 import { RECORDS } from './records';
@@ -16,6 +16,10 @@ export type DocEntry = {
   url: string;
   kind: DocKind;
   number?: string;
+  /** Opens in the wide window, 1080 px at most (the Quality page, as its picture draws it). */
+  wide?: boolean;
+  /** A short line the window's bar shows beside Copy link at a desk, such as when the page's numbers were read. */
+  note?: string;
 };
 
 // #region doc-key
