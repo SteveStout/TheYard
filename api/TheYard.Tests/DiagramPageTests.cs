@@ -95,7 +95,7 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
             Assert.Contains($"property=\"{property}\"", body);
         }
         Assert.InRange(AboutPage.Description.Length, 50, 160);
-        Assert.Contains("href=\"/api/docs/resume\"", body);
+        Assert.Contains($"href=\"{AskCloseHtml.ResumeAddress}\"", body);
         foreach (string profile in AboutPage.Profiles)
         {
             Assert.Contains($"href=\"{profile}\"", body);

@@ -10,7 +10,7 @@ namespace TheYard.Api.Features.Docs;
 /// palette inline, a viewport line and selectable text, and nothing fetched
 /// from another host, not even the font, which is the site's own file (SiteFace). Every sentence is drawn from the served
 /// resume, the README and his own words for How I lead; the page invents
-/// nothing about him.
+/// nothing about him. It ends on the site's one closing row (AskCloseHtml) and its Where next, in a card of its own.
 /// </summary>
 public static class AboutPage
 {
@@ -142,9 +142,6 @@ public static class AboutPage
               .title { margin: 8px 0 20px; font-size: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #10495a; }
               p { margin: 0 0 16px; }
               a { color: #12677f; }
-              ul.links { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 0; padding: 0; list-style: none; }
-              ul.links a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1.5px solid #12677f; border-radius: 999px; text-decoration: none; font-weight: 600; }
-              ul.links a:hover, ul.links a:focus-visible { background: #12677f; color: #ffffff; }
               .lead { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid rgba(16, 73, 90, 0.18); }
               h2 { margin: 0 0 12px; font-size: 20px; line-height: 1.3; color: #3f3a37; }
               .lede { font-weight: 600; color: #10495a; }
@@ -166,6 +163,13 @@ public static class AboutPage
               .vouch-list blockquote p, .vouch-list .who { margin: 0; }
               .vouch-list .who { font-size: 14px; }
               footer { max-width: 720px; margin: 0 auto; padding: 0 16px 32px; font-size: 13px; color: #4a4e57; }
+              nav.where-next { margin-top: 16px; padding: 16px 24px; background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(16, 73, 90, 0.18); border-top: 3px solid #10495a; border-radius: 10px; }
+              nav.where-next > p { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.1168em; text-transform: uppercase; color: #10495a; }
+              nav.where-next ul { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin: 0; padding: 0; list-style: none; }
+              nav.where-next a { color: #10495a; font-weight: 600; text-decoration: underline; text-decoration-color: #b8923f; text-underline-offset: 3px; }
+              nav.where-next span { display: block; font-size: 13px; color: #524b48; }
+              @media (max-width: 639.98px) { nav.where-next ul { grid-template-columns: 1fr; } nav.where-next a { display: inline-flex; align-items: center; min-height: 44px; } }
+            {{AskCloseHtml.Style}}
             </style>
             </head>
             <body>
@@ -195,14 +199,7 @@ public static class AboutPage
             </div>
             </section>
             {{vouches}}
-            <ul class="links">
-              <li><a href="/api/go/email">Email Steven</a></li>
-              <li><a href="{{e(Profiles[0])}}" rel="me">Message me on LinkedIn</a></li>
-              <li><a href="{{e(Profiles[1])}}" rel="me">TheYard on GitHub</a></li>
-              <li><a href="/api/docs/resume">Resume (PDF)</a></li>
-              <li><a href="/?view=recommendations">Recommendations</a></li>
-              <li><a href="/?view=review">Check my work</a></li>
-            </ul>
+            {{AskCloseHtml.Html(Profiles[0], Profiles[1])}}
             </article>
             {{next}}
             </main>

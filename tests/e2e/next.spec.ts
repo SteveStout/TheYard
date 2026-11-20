@@ -79,8 +79,98 @@ test('a tagged visit carries its code through the footers, and each page it land
   expect((await blogReport).status()).toBe(204);
   // The local blog has no posts, so About is opened with the code the way the post's footer link carries it.
   expect((await page.goto(`/about?r=${code}`))!.status()).toBe(200);
-  const email = page.locator('[data-next="about"]').getByRole('link', { name: 'Email Steven' });
-  await expect(email).toHaveAttribute('href', `/api/go/email?r=${code}`);
+  const back = page.locator('[data-next="about"]').getByRole('link', { name: 'Check my work' });
+  await expect(back).toHaveAttribute('href', `/?view=review&r=${code}`);
   expect((await request.get(`/api/go/email?r=${code}`, { maxRedirects: 0 })).status()).toBe(302);
 });
 // #endregion where-next
+
+// #region one-close
+/**
+ * One path (ADR: The sales pages set the site's look, the addendum on the one close): a blog post, About and the
+ * recommendations page each end on the site's one closing row, the calibrated question and its three moves, and their
+ * Where next leads back to the review page; a post and the recommendations page open the review page's booking sheet.
+ */
+const QUESTION = 'What has to work, where is it today, and what does success look like?';
+const MOVES = ['Book 20 minutes', 'Resume (PDF)', 'Message me on LinkedIn'];
+const SPOKES: { page: string; address: string; links: string[]; closeFirst: boolean }[] = [
+  {
+    page: 'post',
+    address: '/?view=blog&post=a-made-up-post',
+    links: ['/?view=review', '/about'],
+    closeFirst: true,
+  },
+  {
+    page: 'about',
+    address: '/about',
+    links: ['/?view=review', '/?view=recommendations'],
+    closeFirst: true,
+  },
+  {
+    page: 'recommendations',
+    address: '/?view=recommendations',
+    links: ['/?view=review', '/about'],
+    closeFirst: false,
+  },
+];
+
+for (const [width, height] of [
+  [1440, 900],
+  [390, 844],
+] as const) {
+  for (const spoke of SPOKES) {
+    test(`at ${width} ${spoke.page} ends on the closing question, its three moves and the way back to the review page`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      if (spoke.page === 'about') await page.goto(spoke.address);
+      else {
+        await answerBlog(page, [made('a-made-up-post', 'A made-up post', 0, { slides: 0 })]);
+        await openTheYard(page, spoke.address);
+      }
+      const close = page.locator('[data-mock="close"]');
+      await expect(close.locator('[data-mock="close-question"]')).toHaveText(QUESTION, {
+        timeout: 30_000,
+      });
+      const moves = close.locator('[data-mock="close-moves"] > a');
+      await expect(moves).toHaveCount(3);
+      expect(
+        (await moves.allInnerTexts()).map((text) => text.replace(/^PDF\s*/, '').trim())
+      ).toEqual(MOVES);
+      await expect(moves.nth(0)).toHaveAttribute('href', '/api/go/book');
+      await expect(moves.nth(1)).toHaveAttribute('href', '/resume?pdf=1');
+      await expect(moves.nth(1)).toHaveClass(/op-pill-resume/);
+      const next = page.locator('[data-mock="where-next"]');
+      const hrefs = await next
+        .locator('[data-mock="next-link"]')
+        .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+      expect(hrefs).toEqual(spoke.links);
+      const closeTop = (await close.boundingBox())!.y;
+      const nextTop = (await next.boundingBox())!.y;
+      expect(closeTop < nextTop).toBe(spoke.closeFirst);
+      // Every move is a thumb tall on a phone.
+      if (width === 390)
+        for (const move of await moves.all())
+          expect((await move.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    });
+  }
+}
+
+test('Book 20 minutes at a post’s foot and on the recommendations page opens the booking sheet', async ({
+  page,
+}) => {
+  await page.route('**/api/go/book', (route) => route.fulfill({ status: 204 }));
+  await answerBlog(page, [made('a-made-up-post', 'A made-up post', 0, { slides: 0 })]);
+  for (const address of ['/?view=blog&post=a-made-up-post', '/?view=recommendations']) {
+    await openTheYard(page, address);
+    await page
+      .locator('[data-mock="close-moves"]')
+      .getByRole('link', { name: 'Book 20 minutes' })
+      .click();
+    const sheet = page.getByTestId('book-sheet');
+    await expect(sheet).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+  }
+});
+// #endregion one-close

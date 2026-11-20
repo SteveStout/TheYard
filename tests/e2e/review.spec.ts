@@ -127,12 +127,13 @@ test('the close carries no voice, only its buttons, and the close and About both
     /^https:\/\/www\.linkedin\.com\/in\/stevenwstout\/?$/
   );
   await expect(close.getByRole('link', { name: 'Email Steven' })).toHaveCount(0);
-  // profile1110-f2: a manager who finished the ten minutes had no link to write to him; About keeps both.
+  // profile1110-f2: a manager who finished the ten minutes had no link to write to him; About keeps both, in the
+  // site's one closing row, where Book 20 minutes is the email.
   await page.goto('/about');
   const about = page.getByRole('article');
-  await expect(about.getByRole('link', { name: 'Email Steven' })).toHaveAttribute(
+  await expect(about.getByRole('link', { name: 'Book 20 minutes' })).toHaveAttribute(
     'href',
-    /\/api\/go\/email$/
+    '/api/go/book'
   );
   await expect(about.getByRole('link', { name: 'Message me on LinkedIn' })).toHaveAttribute(
     'href',

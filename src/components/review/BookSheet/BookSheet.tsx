@@ -6,7 +6,7 @@
  *            A modal dialog on the document window's model: focus inside, Escape, the backdrop and its X close it.
  * Does not:  Hold the address (the API reads it from the site's settings; no page or bundle carries it) or decide when
  *            it opens (the page does, on every "Book 20 minutes").
- * Used by:   ReviewPage.tsx, Landing.tsx.
+ * Used by:   ReviewPage.tsx, Landing.tsx, BlogPage.tsx, RecommendationsPage.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
 import { request } from '../../../lib/request';

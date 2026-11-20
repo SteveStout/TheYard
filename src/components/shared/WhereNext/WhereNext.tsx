@@ -1,6 +1,7 @@
 /**
  * Does:      Draws a page's "Where next" footer (ladder v7, page flow): at most two links from data/hooks.json, each
  *            with its one line of reason and its minutes, the same list the API draws on /about and the resume door.
+ *            Its hooks for the picture checks (data-mock where-next and next-link) are on every page that draws it.
  * Does not:  Choose the links (the file does), type a count, or link to Admin (pageHooks.test.ts holds the file to that).
  * Used by:   Landing.tsx, ReviewPage.tsx, BlogPage.tsx, DocDialog.tsx.
  */
@@ -29,13 +30,16 @@ export function WhereNext({ page, row = false }: { page: NextPage; row?: boolean
       className={`${styles.next} ${row ? styles.row : ''} op-glass`}
       aria-label="Where next"
       data-testid="where-next"
+      data-mock="where-next"
       data-next={page}
     >
       <p className={styles.title}>Where next</p>
       <ul className={styles.links}>
         {links.map((link) => (
           <li key={link.href}>
-            <a href={withCode(link.href, code)}>{link.label}</a>
+            <a href={withCode(link.href, code)} data-mock="next-link">
+              {link.label}
+            </a>
             <span className={styles.reason}>
               {link.reason} <span className={styles.minutes}>{link.minutes} min</span>
             </span>
