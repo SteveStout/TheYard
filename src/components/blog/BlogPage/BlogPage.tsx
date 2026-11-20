@@ -3,7 +3,8 @@
  *            model): the head, the filter bar, the list for the address's filter with its first post in full and the
  *            rest as short cards, a page more at a time, or the one post an address names with the posts around it;
  *            beside them the most read this week and where readers came from. A post's address opens with its hook
- *            (ADR-132) until the post is read. Every filter change goes through the address, so a view can be linked.
+ *            (ADR-132) until the post is read, and ends on the site's one closing row (AskClose, its Book 20 minutes
+ *            opening the booking sheet) over its Where next. Every filter change goes through the address, so a view can be linked.
  * Does not:  Read the list or the post itself (useBlogList.ts and useBlogPost.ts do), write the address (useBlogNavigation
  *            does, through onMove and onOpen), or report a read (BlogPostCard does).
  * Used by:   App.tsx.
@@ -25,6 +26,8 @@ import { useBlogList } from '../../../hooks/useBlogList';
 import { useBlogPost } from '../../../hooks/useBlogPost';
 import { useBlogPosts } from '../../../hooks/useBlogPosts';
 import { useFirstLoad, type HookPost } from '../../../hooks/useFirstLoad';
+import { BookSheet } from '../../review/BookSheet';
+import { AskClose } from '../../shared/AskClose';
 import { Hook } from '../../shared/Hook';
 import { WhereNext } from '../../shared/WhereNext';
 import { BlogFilters, type FilterChange } from '../BlogFilters';
@@ -60,6 +63,8 @@ export function BlogPage({
   const all = shared.state === 'ready' ? shared.list : null;
   const filter: BlogFilter = slug === null ? filterFromSearch(query) : NO_FILTER;
   const [when, setWhen] = useState<AskWhen>('now');
+  // Book 20 minutes at a post's foot opens the review page's booking sheet beside the email app.
+  const [booking, setBooking] = useState(false);
   // The server's list stands in only for the filter it was drawn for: a post's address can carry a list filter of its own.
   const drawn = isDrawnFor(first?.search, filter) ? first?.blog?.list : null;
   const listed = useBlogList(filter, when, drawn, slug === null);
@@ -256,6 +261,7 @@ export function BlogPage({
                 onTopic={byTopic}
                 onKeyword={byKeyword}
               />
+              <AskClose onBook={() => setBooking(true)} />
               <WhereNext page="post" />
             </>
           )}
@@ -263,6 +269,7 @@ export function BlogPage({
 
         <BlogSide cards={all?.cards ?? null} onOpen={(posted) => onOpen(posted)} />
       </div>
+      <BookSheet open={booking} onClose={() => setBooking(false)} onAction={() => {}} />
     </section>
   );
 }

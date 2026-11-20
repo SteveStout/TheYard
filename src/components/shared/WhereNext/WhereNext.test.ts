@@ -22,4 +22,12 @@ describe('the Where next footer', () => {
       for (const link of nextFor(page)) expect(html).toContain(`${link.minutes} min`);
     }
   });
+
+  it('carries the picture checks’ hooks on every page that draws it: the footer and each of its links', () => {
+    for (const page of NEXT_PAGES) {
+      const html = renderToStaticMarkup(createElement(WhereNext, { page }));
+      expect(html, page).toMatch(/^<nav[^>]+data-mock="where-next"/);
+      expect([...html.matchAll(/data-mock="next-link"/g)].length, page).toBe(nextFor(page).length);
+    }
+  });
 });

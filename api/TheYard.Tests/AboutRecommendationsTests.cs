@@ -27,8 +27,8 @@ public sealed class AboutRecommendationsTests(WebApplicationFactory<Program> fac
             Assert.Contains(WebUtility.HtmlEncode(entry.Name), html, StringComparison.Ordinal);
             Assert.Contains($"href=\"{AboutRecommendations.CardAddress(entry.Name)}\"", html, StringComparison.Ordinal);
         });
-        Assert.Contains("<a href=\"/?view=recommendations\">Recommendations</a>", html, StringComparison.Ordinal);
-        Assert.Contains("<a href=\"/?view=review\">Check my work</a>", html, StringComparison.Ordinal);
+        Assert.Contains("<a href=\"/?view=recommendations\" data-mock=\"next-link\">Recommendations</a>", html, StringComparison.Ordinal);
+        Assert.Contains("<a href=\"/?view=review\" data-mock=\"next-link\">Check my work</a>", html, StringComparison.Ordinal);
     }
 
     [Theory]

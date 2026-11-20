@@ -143,8 +143,9 @@ export function readPage(): PageFacts {
     });
   // The sales pages' own panels (ADR: The sales pages set the site's look, ADR: The glass look's addendum of that
   // version): the dark live panel and the case card wear the gold rule along an edge and no brackets, as their picture
-  // draws them, and a case card's panel is part of its card.
-  const salesPart = (e: Element) => e.matches('.op-case, .op-live-panel');
+  // draws them, and a case card's panel is part of its card. About's closing row (AskCloseHtml.cs) is a card inside the
+  // page's one glass panel, with the top rule and no brackets of its own, as the onepath1120 picture draws it.
+  const salesPart = (e: Element) => e.matches('.op-case, .op-live-panel, .op-ask-card');
   const unstyled = panels.filter(
     (e) =>
       !salesPart(e) &&

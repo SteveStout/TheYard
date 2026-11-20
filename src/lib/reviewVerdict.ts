@@ -4,7 +4,8 @@
  *            answers into the third tile, the one quote and the counts. Every number is read, never typed.
  * Does not:  Read anything or draw anything; no React in here.
  * Used by:   ReviewVerdict.tsx, ReviewLeadQuote.tsx, ReviewMirror.tsx, GatePanel.tsx, NameStrip.tsx, ReviewPage.tsx,
- *            StoreBar.tsx, Landing.tsx, LandingVoices.tsx, QualityFoot.tsx, landingMoves.ts, reviewVerdict.test.ts.
+ *            StoreBar.tsx, Landing.tsx, LandingVoices.tsx, QualityFoot.tsx, landingMoves.ts, AskClose.tsx,
+ *            reviewVerdict.test.ts.
  */
 import { proofFigures, type TestSummary } from './landingProof';
 import type { Recommendation } from './recommendations';
@@ -45,7 +46,11 @@ export function restLine(records: number, diagrams: number): string {
   return `${records} decision records, ${diagrams} diagrams, the incidents and the changelog.`;
 }
 
-/** The close's words: its readout and its two outlined buttons; the filled one is the first screen's "Book 20 minutes". */
+/**
+ * The close's words: its readout and its two outlined buttons; the filled one is the first screen's "Book 20 minutes".
+ * The question, its line and the three moves are the one closing row's (AskClose.tsx), and /about draws the same words
+ * from AskCloseHtml.cs, which AskCloseHtmlTests holds equal to these.
+ */
 export const CLOSE = {
   /** The heading a screen reader lands on in the home page's close, over the question drawn as words. */
   label: 'Next step',

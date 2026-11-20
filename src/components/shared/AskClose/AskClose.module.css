@@ -1,0 +1,60 @@
+/**
+ * Does:      Lays out the closing row's card and its three moves as the onepath1120 picture draws them: the card a step
+ *            below what comes before it unless its page spaces its sections itself, its screen reader's heading on the
+ *            home page, the moves at the right of their column, wrapping one under another where the column is
+ *            narrow, and on a phone each move the row's width under the question.
+ * Does not:  Draw the glass (panels.css does, through .op-glass), the question and its line (sales.css, op-ask) or the
+ *            pills' look (pills.css does).
+ * Used by:   AskClose.tsx.
+ */
+.card {
+  padding: var(--space-5) var(--space-6);
+}
+
+/* The step above the card, on a page that does not space its own sections (the review route and the home page do). */
+.spaced {
+  margin-top: var(--space-5);
+}
+
+/* The home page's heading: "Next step" for a screen reader, the question drawn as words beside the moves. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.moves {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  gap: var(--space-3);
+  max-width: 540px;
+}
+
+.move {
+  min-height: var(--control-height);
+  padding: 0 var(--space-5);
+  font-size: var(--text-md);
+  white-space: nowrap;
+}
+
+@media (max-width: 639.98px) {
+  .card {
+    padding: var(--space-4);
+  }
+
+  .moves {
+    justify-self: stretch;
+    max-width: none;
+  }
+
+  .move,
+  .resume {
+    flex: 1 1 100%;
+  }
+}
