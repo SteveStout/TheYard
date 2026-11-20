@@ -77,14 +77,16 @@ describe('the review place, kept on the browser (ADR: Ten minutes, seven stops)'
     expect(reachBody(3, 'Steve')).toEqual({ stop: 3 });
   });
 
-  it('builds the report of a button pressed: its name, one of the twelve the API takes, and the code only when it is one', () => {
+  it('builds the report of a button pressed: its name, one of the names the API takes, and the code only when it is one', () => {
     expect(actionBody('proof', 'zzrev1')).toEqual({ action: 'proof', r: 'zzrev1' });
     expect(actionBody('book', null)).toEqual({ action: 'book' });
     expect(actionBody('book', 'Steve')).toEqual({ action: 'book' });
     expect(actionBody('book', null, 'mirror')).toEqual({ action: 'book', screen: 'mirror' });
     expect(reachBody(0, 'zzrev1', 'verdict')).toEqual({ stop: 0, r: 'zzrev1', screen: 'verdict' });
-    expect(REVIEW_ACTIONS).toHaveLength(12);
-    expect(new Set(REVIEW_ACTIONS).size).toBe(12);
+    expect(actionBody('gate-run', null)).toEqual({ action: 'gate-run' });
+    expect(REVIEW_ACTIONS).toHaveLength(13);
+    expect(REVIEW_ACTIONS.at(-1)).toBe('gate-run');
+    expect(new Set(REVIEW_ACTIONS).size).toBe(13);
   });
 
   it('names the stops a move reached for the first time, each once, numbered as the route numbers them', () => {

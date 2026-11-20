@@ -120,3 +120,17 @@ What stopped being true: that the lot tile shows only an auction somebody has bi
 **The tile.** When a bid stands it prints "Current bid", the amount and three dots with "the room is bidding"; when the room's rules refused its turn and nobody has bid, "Opening bid" and the opening ask with no dots (`opening_bid` on the answer). "No auction is live right now" is drawn only when the catalogue holds no live auction, and `ReviewShortPathTests` proves that cannot happen on the seeded catalogue at any hour of a week. `review.spec.ts` holds the tile on the seeded catalogue at both addresses: a vehicle's name, a dollar amount, a countdown, and never "No auction is live".
 
 - [`api/TheYard.Application/Features/Review/ReviewLot.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Application/Features/Review/ReviewLot.cs) - the lot rule, the room's turn and the read after it
+
+## Addendum, 2026-11-19 (1.0.5.118): the short path asks the reader's questions and names each door
+
+What stopped being true: that the short path's cards name their own topic ("Quality held with AI", "The gate every push passes", "A system that is really running") with one "Open this stop" under each. A hiring manager arrives with questions, not topics, and a button that says only "open" does not say where it goes. Built from the engagement review's whole-page picture, ported rule by rule.
+
+**The questions.** The section is "Three questions, two minutes" with "N of 3 opened." beside it and "Each answer is the running system, read live. Open one and you are inside it." under it. The three cards ask "How do you keep quality when AI writes the code?", "What has to pass before anything ships?" and "Is this a real system, running right now?", each kept two lines tall at a desk so the three answers start level. The room's answer says "paged in the database".
+
+**The doors.** Each card's button says where it goes: "See the slip and the fix", "See the test results" and "Watch this lot live" (`door` on each stop in `src/lib/reviewPath.ts`). The gate's card adds a text link, "or the run on GitHub", to the public Gate run that shipped this version (`gateRunUrl(gateFacts().run)`), drawn only when the build names a run; it reports `gate-run`, which counts toward reaching the running system. The gate's tile prints "shipped N ago" from `/api/tests/summary`'s `ran_at`, not drawn when that is absent or older than a week.
+
+**The proof opens at the top of Quality.** "See the proof in 2 minutes" and the first card open `/?doc=quality`: at a phone's width its first screen shows the slip, the ratchet and the chart, where the heading it opened at before showed a paragraph of counts. The mirror's slip line still lands on "The slip, and the turn".
+
+**What else.** The lot's bid is printed by `formatCurrency`, so it reads CA$ as the lot's own page does, and the bidding line reads "simulated bidders, live". The tour's stop 3 is "A live auction that bids back". Under 640 the tour's eight cells are closed behind "Show the seven stops", a button with `aria-expanded`. On this route the sidebar and the phone's drawer leave out Admin, and Sign in while nobody is signed in (`src/lib/railRows.ts`); every other view draws every row.
+
+**Held by** `reviewPath.test.ts` (the words, the doors, "shipped"), `railRows.test.ts` (the rows), `reviewVerdict.test.ts` (the two addresses), `ReviewFoldingTests` (the action) and `review.spec.ts` (the questions and doors on the page, the tour closed on a phone, the rail on the route, the CA$ bid, the proof's landing).

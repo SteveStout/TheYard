@@ -1,9 +1,10 @@
 /**
  * Does:      Draws the review route's short path under either first screen (ADR: The review route gives a reason before
- *            it asks, the addendum on the short path) as the whole-page picture draws it: "Two minutes, three stops"
- *            with "N of 3 opened." kept on this browser, then three cards, each one payoff sentence, one live tile of
- *            one height and one button that lands on the payoff and reports its action. Quality opens in place at
- *            "The slip, and the turn"; the gate opens the tests card; the room opens the lot.
+ *            it asks, the addendum on the short path and the one on the reader's questions) as the whole-page picture
+ *            draws it: "Three questions, two minutes" with "N of 3 opened." kept on this browser, then three cards, each
+ *            the reader's question, one answer, one live tile of one height and one door named for where it goes,
+ *            reporting its action. Quality opens in place at its top; the gate opens the tests card, with the run on
+ *            GitHub beside it when the build names one; the room opens the lot.
  * Does not:  Read anything (useReviewPath.ts and the page do) or count toward the seven-stop tour's place.
  * Used by:   ReviewPage.tsx.
  */
@@ -20,6 +21,7 @@ import {
   type PathLot,
   type PathStop,
 } from '../../../lib/reviewPath';
+import { gateRunUrl } from '../../layout/StoreBar/gateFacts';
 import { PROOF, type HeldQuality } from '../../../lib/reviewVerdict';
 import { GateTile } from '../GateTile';
 import { LotTile } from '../LotTile';
@@ -41,6 +43,7 @@ export function ReviewPath({
   lot,
   gate,
   totals,
+  shipped,
   now,
   onReach,
   onAction,
@@ -49,8 +52,16 @@ export function ReviewPath({
   reached: string[];
   readings: string[] | null;
   lot: PathLot | null;
-  gate: { gated: boolean; quality: HeldQuality; review: { reviewed: string } | null };
+  gate: {
+    gated: boolean;
+    quality: HeldQuality;
+    review: { reviewed: string } | null;
+    /** The public gate run that shipped this version, or null when the build names none. */
+    run: number | null;
+  };
   totals: { passed: string; failed: string; version: string };
+  /** "shipped 2 h ago" under the gate's tile, or null when the run's time is absent or over a week old. */
+  shipped: string | null;
   /** The page's clock, for the lot's countdown. */
   now: number;
   onReach: (key: string) => void;
@@ -61,16 +72,22 @@ export function ReviewPath({
     onAction(stop.action);
     onReach(stop.key);
     if (stop.key !== 'quality' || !plainClick(event)) return;
-    // Quality opens in place, landing on the slip and the turn once the document is drawn.
+    // Quality opens in place, at its top.
     event.preventDefault();
-    landOnSection(PROOF.anchor);
+    landOnSection('');
     onOpenDoc(PROOF.doc);
   };
   const tile = (stop: PathStop) =>
     stop.key === 'quality' ? (
       <QualityTrendTile label={stop.tile} readings={readings} quality={gate.quality} />
     ) : stop.key === 'gate' ? (
-      <GateTile label={stop.tile} gated={gate.gated} totals={totals} review={gate.review} />
+      <GateTile
+        label={stop.tile}
+        gated={gate.gated}
+        totals={totals}
+        review={gate.review}
+        shipped={shipped}
+      />
     ) : (
       <LotTile label={stop.tile} lot={lot} now={now} />
     );
@@ -80,11 +97,7 @@ export function ReviewPath({
       <ReviewHead
         id="review-path-title"
         title={PATH.title}
-        meta={
-          <>
-            <strong data-testid="review-path-count">{pathProgress(reached)}</strong> {PATH.place}
-          </>
-        }
+        meta={<strong data-testid="review-path-count">{pathProgress(reached)}</strong>}
         hint={PATH.hint}
       />
       <ol className={styles.cards}>
@@ -114,16 +127,30 @@ export function ReviewPath({
               )}
             </p>
             {tile(stop)}
-            <a
-              className={`${index === 0 ? pills.primary : pills.secondary} ${styles.open}`}
-              href={stopAddress(stop.key, lot)}
-              onClick={open(stop)}
-              data-action={`review.stop.${stop.key}`}
-              data-testid={`review-path-${stop.key}`}
-            >
-              {PATH.open}
-              <span aria-hidden="true">→</span>
-            </a>
+            <div className={styles.acts}>
+              <a
+                className={`${index === 0 ? pills.primary : pills.secondary} ${styles.open}`}
+                href={stopAddress(stop.key, lot)}
+                onClick={open(stop)}
+                data-action={`review.stop.${stop.key}`}
+                data-testid={`review-path-${stop.key}`}
+              >
+                {stop.door}
+                <span aria-hidden="true">→</span>
+              </a>
+              {stop.key === 'gate' && gate.run !== null && (
+                <a
+                  className={styles.textLink}
+                  href={gateRunUrl(gate.run)}
+                  rel="noopener"
+                  onClick={() => onAction('gate-run')}
+                  data-action="review.gate-run"
+                  data-testid="review-path-gate-run"
+                >
+                  {PATH.gateRun}
+                </a>
+              )}
+            </div>
           </li>
         ))}
       </ol>

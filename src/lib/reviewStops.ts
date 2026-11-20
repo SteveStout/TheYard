@@ -44,7 +44,7 @@ export const REVIEW_STOPS: readonly ReviewStop[] = [
   },
   {
     key: 'room',
-    title: 'Bid in the room',
+    title: 'A live auction that bids back',
     address: '/?view=inventory',
     minutes: 2,
     line: '{vehicles} vehicles and a room that bids back.',

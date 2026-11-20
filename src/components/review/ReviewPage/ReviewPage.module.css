@@ -4,7 +4,8 @@
  *            the mirror and Where next 16 px under the close, no section taller than its content; and holds the
  *            route's two pills: the filled one for the move to make and the outlined one beside it.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a section's inside (its own sheet does).
- * Used by:   ReviewClose.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx, ReviewVerdict.tsx.
+ * Used by:   ReviewClose.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx, ReviewTour.tsx,
+ *            ReviewVerdict.tsx.
  */
 .page {
   display: flex;

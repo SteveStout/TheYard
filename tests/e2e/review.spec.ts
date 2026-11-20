@@ -41,12 +41,20 @@ test('the rail row under Home opens the review route', async ({ page }) => {
   expect(home).toBeGreaterThan(-1);
   expect(rows[home + 1]).toBe('Check my work');
   expect(rows[home + 2]).toContain('Blog');
+  expect(rows).toContain('Sign in');
+  expect(rows).toContain('Admin');
   await rail.getByRole('button', { name: 'Check my work' }).click();
   await expect(page).toHaveURL(/\?view=review$/);
   await expect(page.getByTestId('view-announcement')).toHaveText('Production .NET that stays up');
   await expect(page.getByRole('heading', { level: 1, name: CLAIM })).toBeVisible();
+  // A stranger reading the route is not shown Sign in or Admin; Home, the doors and the links out stay.
+  await expect(rail.getByRole('button', { name: 'Sign in', exact: true })).toHaveCount(0);
+  await expect(rail.getByRole('button', { name: 'Admin', exact: true })).toHaveCount(0);
+  for (const kept of ['Home', 'Check my work', 'Inventory'])
+    await expect(rail.getByRole('button', { name: kept, exact: true })).toHaveCount(1);
   await page.goBack();
   await expect(page.getByTestId('landing')).toBeVisible();
+  await expect(rail.getByRole('button', { name: 'Admin', exact: true })).toHaveCount(1);
 });
 
 test('a tour cell opened counts once, ticks its ring and is kept across a reload; Start over clears the place', async ({
@@ -173,6 +181,8 @@ test('at 390 nothing scrolls sideways, every control is a thumb tall, and every 
   await openTheYard(page, '/?view=review');
   const route = page.getByTestId('review-page');
   await expect(route).toBeVisible();
+  // The tour's cells are closed behind its control on a phone; opened, every one is a thumb tall too.
+  await page.getByTestId('review-tour-toggle').click();
   const sideways = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth
   );
@@ -188,7 +198,7 @@ test('at 390 nothing scrolls sideways, every control is a thumb tall, and every 
   expect(short).toEqual([]);
   // The three stops, the eight tour cells and the close.
   const panels = route.locator(
-    '[data-testid$="-stop"][data-testid^="review-path-"], [data-testid^="review-tour-"]:not([data-testid="review-tour-seen"]), [data-testid="review-close"]'
+    '[data-testid$="-stop"][data-testid^="review-path-"], [data-testid^="review-tour-"]:not([data-testid="review-tour-seen"]):not([data-testid="review-tour-toggle"]), [data-testid="review-close"]'
   );
   await expect(panels).toHaveCount(12);
   for (const panel of await panels.all()) await expect(panel).toHaveClass(/op-glass/);
@@ -255,7 +265,7 @@ test('at 1568 by 772 the first screen gives the reason before the ask, with no s
   const tour = await page.getByTestId('review-tour').boundingBox();
   expect(tour!.y).toBeGreaterThan(772);
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Two minutes, three stops' })
+    page.getByRole('heading', { level: 2, name: 'Three questions, two minutes' })
   ).toBeInViewport();
   await expect(page.getByTestId('review-book')).toHaveAttribute('href', '/api/go/book');
   // The band says one sentence to a stranger.
@@ -345,6 +355,23 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
       'href',
       /^\/\?(vehicle=|view=inventory)/
     );
+    // Each card asks the reader's question and names its own door; the gate's run on GitHub is drawn only with a run.
+    await expect(path.getByRole('heading', { level: 3 })).toHaveText([
+      /How do you keep quality when AI writes the code\?/,
+      /What has to pass before anything ships\?/,
+      /Is this a real system, running right now\?/,
+    ]);
+    await expect(path.getByTestId('review-path-quality')).toHaveText(/See the slip and the fix/);
+    await expect(path.getByTestId('review-path-quality')).toHaveAttribute('href', '/?doc=quality');
+    await expect(path.getByTestId('review-path-gate')).toHaveText(/See the test results/);
+    await expect(path.getByTestId('review-path-room')).toHaveText(/Watch this lot live/);
+    await expect(path.getByText('Open this stop')).toHaveCount(0);
+    const run = path.getByTestId('review-path-gate-run');
+    if ((await run.count()) > 0)
+      await expect(run).toHaveAttribute(
+        'href',
+        /^https:\/\/github\.com\/SteveStout\/TheYard\/actions\/runs\/\d+$/
+      );
     expect(asked).toContain('/api/review/lot');
     expect(asked.filter((each) => each.startsWith('/api/vehicles'))).toEqual([]);
     expect(asked.filter((each) => each.startsWith('/api/bids/'))).toEqual([]);
@@ -353,8 +380,8 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
 }
 
 // On a phone the three stops stack, nothing scrolls sideways and every button is a thumb tall; the Quality stop opens
-// the page in place on the slip and the turn, reports its action, and the path counts it on this browser.
-test('at 390 the short path stacks, and its Quality stop lands on the slip and counts once', async ({
+// the top of the Quality page in place, reports its action, and the path counts it on this browser.
+test('at 390 the short path stacks, and its Quality stop opens the top of Quality and counts once', async ({
   page,
 }) => {
   const actions: string[] = [];
@@ -385,8 +412,9 @@ test('at 390 the short path stacks, and its Quality stop lands on the slip and c
   expect(sideways).toBeLessThanOrEqual(0);
 
   await quality.click();
-  const slip = page.locator('dialog[open]').locator('h2[id="the-slip-and-the-turn"]');
-  await expect(slip).toBeInViewport({ timeout: 30_000 });
+  const top = page.locator('dialog[open]').locator('h2').first();
+  await expect(top).toHaveText('Quality you can watch', { timeout: 30_000 });
+  await expect(top).toBeInViewport();
   await expect.poll(() => actions).toEqual(['stop-quality']);
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('review-path-count')).toHaveText('1 of 3 opened.');
@@ -413,8 +441,8 @@ test('the mirror’s slip line lands on the slip and the turn and reports slip',
   await expect.poll(() => actions).toEqual(['slip']);
 });
 
-// "See the proof in 2 minutes" opens Quality in place on "The slip, and the turn", and reports its action once.
-test('the primary button opens Quality on the slip and the turn, in place, and reports the proof action', async ({
+// "See the proof in 2 minutes" opens the top of Quality in place, and reports its action once.
+test('the primary button opens the top of Quality, in place, and reports the proof action', async ({
   page,
 }) => {
   const actions: string[] = [];
@@ -428,11 +456,12 @@ test('the primary button opens Quality on the slip and the turn, in place, and r
   await openTheYard(page, '/?view=review');
   let loads = 0;
   page.on('load', () => (loads += 1));
+  await expect(page.getByTestId('review-proof')).toHaveAttribute('href', '/?doc=quality');
   await page.getByTestId('review-proof').click();
   const dialog = page.locator('dialog[open]');
-  const slip = dialog.locator('h2[id="the-slip-and-the-turn"]');
-  await expect(slip).toHaveText('The slip, and the turn', { timeout: 30_000 });
-  await expect(slip).toBeInViewport();
+  const top = dialog.locator('h2').first();
+  await expect(top).toHaveText('Quality you can watch', { timeout: 30_000 });
+  await expect(top).toBeInViewport();
   await expect(page).toHaveURL(/[?&]doc=quality/);
   expect(loads).toBe(0);
   await expect.poll(() => actions).toEqual(['proof']);
@@ -539,6 +568,15 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         for (const [index, card] of cards.slice(1).entries())
           expect(card.top, `${at}: cards stack`).toBeGreaterThan(cards[index].bottom);
       }
+      // 7. On a phone no tour cell is drawn until the control is pressed, then eight are; from 640 up there is no control.
+      const toggle = page.getByTestId('review-tour-toggle');
+      if (width < 640) {
+        await expect(page.locator('[data-testid="review-tour"] li:visible')).toHaveCount(0);
+        await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+        await toggle.click();
+        await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+        await expect(page.locator('[data-testid="review-tour"] li:visible')).toHaveCount(8);
+      } else await expect(toggle).toBeHidden();
       // 5. Tour: eight cells, four across from 1024, one on a phone; a row shares one height; none over 140 at a desk.
       const cells = await boxes(page, '[data-testid="review-tour"] li');
       expect(cells).toHaveLength(8);
@@ -588,7 +626,7 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
 
 // 6. At 1568 by 772 the verdict's primary button and the path's heading are both on the first screen. (The mirror's
 // picture puts its name strip first, so its path heading is under the fold there; its button is held above.)
-test('at 1568 by 772 the primary button and "Two minutes, three stops" are on the first screen', async ({
+test('at 1568 by 772 the primary button and "Three questions, two minutes" are on the first screen', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1568, height: 772 });
@@ -596,7 +634,7 @@ test('at 1568 by 772 the primary button and "Two minutes, three stops" are on th
   await openTheYard(page, '/?view=review');
   expect(await bottomOf(page, 'review-proof')).toBeLessThanOrEqual(772);
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Two minutes, three stops' })
+    page.getByRole('heading', { level: 2, name: 'Three questions, two minutes' })
   ).toBeInViewport();
 });
 
@@ -607,7 +645,7 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
     await freshRoute(page);
     await openTheYard(page, address);
     await expect(page.getByTestId('review-path-lot-name')).toHaveText(/\S/);
-    await expect(page.getByTestId('review-path-bid')).toHaveText(/^\$\d{1,3}(,\d{3})*$/);
+    await expect(page.getByTestId('review-path-bid')).toHaveText(/^CA\$\d{1,3}(,\d{3})*$/);
     await expect(page.getByTestId('review-path-closes')).toHaveText(/^\d+:\d{2}$/);
     await expect(page.getByText('No auction is live', { exact: false })).toHaveCount(0);
   });

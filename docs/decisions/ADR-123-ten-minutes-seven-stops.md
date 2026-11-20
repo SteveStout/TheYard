@@ -168,3 +168,7 @@ What stopped being true: that the reach row says only how far along the seven st
 ## Addendum, 2026-11-19 (1.0.5.109): amended by ADR-138
 
 What stopped being true: that the route's first screen is the title, the lede and stop 1. ADR-138, The review route gives a reason before it asks, puts a first screen of its own above the stops; the seven stops, the place kept on the browser, the finish panel and the reach rows stay as this record says, below the fold under "The full tour, if you want it".
+
+## Addendum, 2026-11-19 (1.0.5.118): the action gate-run
+
+The short path's "or the run on GitHub" reports a thirteenth name, `gate-run`, added to `REVIEW_ACTIONS` and `ReviewActions.Names`; it counts toward reaching the running system or the booking button (`RunningOrBook`). Stop 3's title is now "A live auction that bids back" (ADR-138, the addendum on the reader's questions).

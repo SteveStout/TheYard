@@ -12,6 +12,7 @@ import {
   pathTrend,
   readPath,
   roomAddress,
+  shippedWords,
   SPARK,
   sparkGeometry,
   stopAddress,
@@ -49,17 +50,26 @@ const lot: PathLot = {
 };
 
 describe('the review route short path (ADR: The review route gives a reason before it asks, the addendum on the short path)', () => {
-  it('says the design’s three stops, word for word, each with its time and the action its button reports', () => {
-    expect(PATH_STOPS.map((stop) => [stop.title, stop.time, stop.action])).toEqual([
-      ['Quality held with AI', '1 min', 'stop-quality'],
-      ['The gate every push passes', '30 sec', 'stop-gate'],
-      ['A system that is really running', '30 sec', 'stop-room'],
+  it('asks the reader’s three questions, word for word, each with its time, its door’s words and its action', () => {
+    expect(PATH_STOPS.map((stop) => [stop.title, stop.time, stop.door, stop.action])).toEqual([
+      [
+        'How do you keep quality when AI writes the code?',
+        '1 min',
+        'See the slip and the fix',
+        'stop-quality',
+      ],
+      ['What has to pass before anything ships?', '30 sec', 'See the test results', 'stop-gate'],
+      ['Is this a real system, running right now?', '30 sec', 'Watch this lot live', 'stop-room'],
     ]);
-    expect(PATH.title).toBe('Two minutes, three stops');
+    expect(PATH.title).toBe('Three questions, two minutes');
     expect(PATH.hint).toBe(
-      'Each tile is the running system, read live. Open one and you are inside it.'
+      'Each answer is the running system, read live. Open one and you are inside it.'
     );
-    expect(PATH.open).toBe('Open this stop');
+    expect(PATH.gateRun).toBe('or the run on GitHub');
+    expect(PATH.bidding).toBe('simulated bidders, live');
+    expect(PATH_STOPS[2].payoff).toBe(
+      'vehicles filtered, sorted and paged in the database, in an auction room that bids back.'
+    );
     expect(pathProgress([])).toBe('0 of 3 opened.');
     expect(pathProgress(['gate'])).toBe('1 of 3 opened.');
   });
@@ -77,8 +87,8 @@ describe('the review route short path (ADR: The review route gives a reason befo
     expect(readPath(null)).toEqual([]);
   });
 
-  it('lands each stop on its payoff: Quality at the slip and the turn, the tests card, the lot or the inventory', () => {
-    expect(stopAddress('quality', null)).toBe('/?doc=quality#the-slip-and-the-turn');
+  it('lands each stop on its payoff: the top of Quality, the tests card, the lot or the inventory', () => {
+    expect(stopAddress('quality', null)).toBe('/?doc=quality');
     expect(stopAddress('gate', null)).toBe('/?view=admin&card=tests');
     expect(roomAddress(lot)).toBe('/?vehicle=v%2042');
     expect(roomAddress({ ...lot, live: false, vehicle_id: null })).toBe('/?view=inventory');
@@ -88,7 +98,7 @@ describe('the review route short path (ADR: The review route gives a reason befo
   it('prints the lot and the chart only from their answers', () => {
     expect(storeTotal(lot)).toBe('100,000');
     expect(storeTotal(null)).toBe('');
-    expect(bidWords(lot)).toBe('$12,500');
+    expect(bidWords(lot)).toBe('CA$12,500');
     expect(bidWords({ ...lot, current_bid: null })).toBe('');
     expect(pathTrend(null, '1.0.4.115')).toBeNull();
     expect(pathTrend([], '1.0.4.115')).toBeNull();
@@ -101,13 +111,26 @@ describe('the review route short path (ADR: The review route gives a reason befo
   });
 
   it('prints the room’s bid with the room bidding, or the opening ask with no dots when nobody has bid', () => {
-    expect(lotAmount(lot)).toEqual({ label: 'Current bid', amount: '$12,500', bidding: true });
+    expect(lotAmount(lot)).toEqual({ label: 'Current bid', amount: 'CA$12,500', bidding: true });
     expect(lotAmount({ ...lot, current_bid: null })).toEqual({
       label: 'Opening bid',
-      amount: '$9,000',
+      amount: 'CA$9,000',
       bidding: false,
     });
     expect(lotAmount(null)).toEqual({ label: 'Current bid', amount: '', bidding: false });
+  });
+
+  it('says how long ago the gate shipped this version in its largest unit, and nothing when absent or over a week', () => {
+    const now = Date.parse('2026-11-19T23:26:08Z');
+    expect(shippedWords('2026-11-19T21:26:08.567Z', now)).toBe('shipped 1 h ago');
+    expect(shippedWords('2026-11-19T21:16:08Z', now)).toBe('shipped 2 h ago');
+    expect(shippedWords('2026-11-19T23:20:00Z', now)).toBe('shipped 6 m ago');
+    expect(shippedWords('2026-11-16T23:26:08Z', now)).toBe('shipped 3 d ago');
+    expect(shippedWords('2026-11-12T23:26:07Z', now)).toBeNull();
+    expect(shippedWords('2026-11-20T00:00:00Z', now)).toBeNull();
+    expect(shippedWords('not a time', now)).toBeNull();
+    expect(shippedWords(undefined, now)).toBeNull();
+    expect(shippedWords(null, now)).toBeNull();
   });
 
   it('counts the lot down from its close on the page’s clock, never below none', () => {

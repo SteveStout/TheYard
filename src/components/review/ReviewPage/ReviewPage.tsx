@@ -12,7 +12,7 @@ import { useReviewPath } from '../../../hooks/useReviewPath';
 import { useReviewReadings } from '../../../hooks/useReviewReadings';
 import type { DocKey } from '../../../library/documents';
 import { gateTotals, type ReviewScreen } from '../../../lib/reviewMirror';
-import { storeTotal } from '../../../lib/reviewPath';
+import { shippedWords, storeTotal } from '../../../lib/reviewPath';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
 import { WhereNext } from '../../shared/WhereNext';
 import { NameStrip } from '../NameStrip';
@@ -45,6 +45,8 @@ export function ReviewPage({
   const readings = useReviewReadings();
   const path = useReviewPath();
   const recommendations = readings.recommendations;
+  // The age and the run link are this build's run's: drawn only when the summary read is of this same version.
+  const sameRun = readings.summary?.version === GATE.version;
 
   return (
     <section className={styles.page} aria-labelledby="review-title" data-testid="review-page">
@@ -81,8 +83,14 @@ export function ReviewPage({
         reached={path.reached}
         readings={path.readings}
         lot={path.lot}
-        gate={{ gated: GATE.gated, quality: QUALITY, review: GATE.review }}
+        gate={{
+          gated: GATE.gated,
+          quality: QUALITY,
+          review: GATE.review,
+          run: sameRun ? GATE.run : null,
+        }}
         totals={gateTotals(readings.summary, GATE.version)}
+        shipped={sameRun ? shippedWords(readings.summary?.ran_at, now) : null}
         now={now}
         onReach={path.reach}
         onAction={review.action}

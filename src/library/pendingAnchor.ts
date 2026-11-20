@@ -1,7 +1,7 @@
 /**
  * Does:      Holds the section the next document drawn lands on: the first address's hash, read before the address bar
- *            is rewritten without it, or a section a link asked for, such as the review route's "See the proof in 2
- *            minutes" opening Quality in place at "The slip, and the turn".
+ *            is rewritten without it, or a section a link asked for, such as the review route's mirror opening Quality in
+ *            place at "The slip, and the turn"; cleared when a link opens a document at its top.
  * Does not:  Scroll or draw anything (useLiveBlocks.tsx lands on it once the document is drawn), or read a document.
  * Used by:   ReviewMirror.tsx, ReviewPath.tsx, ReviewVerdict.tsx, useLiveBlocks.tsx, pendingAnchor.test.ts.
  */
