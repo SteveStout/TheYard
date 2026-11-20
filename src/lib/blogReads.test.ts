@@ -100,6 +100,31 @@ describe('the list reader', () => {
     expect(pages).toEqual([list(7)]);
   });
 
+  it('hands on a failed next page as null', async () => {
+    const pages: (BlogList | null)[] = [];
+    const reader = listReader(
+      async () => Promise.reject(new Error('the network')),
+      () => {}
+    );
+    reader.more('/api/blog/posts?after=abc', (page) => pages.push(page));
+    await vi.runAllTimersAsync();
+    expect(pages).toEqual([null]);
+  });
+
+  it('never hands on a next page that fails after stop aborted it', async () => {
+    let fail: (reason: Error) => void = () => {};
+    const pages: (BlogList | null)[] = [];
+    const reader = listReader(
+      () => new Promise<BlogList>((_, reject) => (fail = reject)),
+      () => {}
+    );
+    reader.more('/api/blog/posts?after=abc', (page) => pages.push(page));
+    reader.stop();
+    fail(new Error('aborted'));
+    await vi.runAllTimersAsync();
+    expect(pages).toEqual([]);
+  });
+
   it('never reports a replaced read that then fails as a failure', async () => {
     let fail: (reason: Error) => void = () => {};
     const read = vi.fn((path: string) =>
