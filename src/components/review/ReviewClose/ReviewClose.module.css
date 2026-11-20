@@ -31,6 +31,26 @@
   max-width: 540px;
 }
 
+.forward {
+  flex: 1 1 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-align: right;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.forward:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .act {
   min-height: var(--touch-target);
   padding: 0 var(--space-5);
@@ -47,10 +67,19 @@
     justify-content: flex-start;
     max-width: none;
   }
+
+  .forward {
+    text-align: left;
+  }
 }
 
 @media (max-width: 639.98px) {
   .act {
     flex: 1 1 100%;
+  }
+
+  .forward {
+    min-height: var(--touch-target);
+    text-align: center;
   }
 }

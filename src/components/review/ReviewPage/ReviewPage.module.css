@@ -5,8 +5,8 @@
  *            two across from 1024; and holds the
  *            route's two pills: the filled one for the move to make and the outlined one beside it.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a section's inside (its own sheet does).
- * Used by:   ReviewClose.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx, ReviewTour.tsx,
- *            ReviewVerdict.tsx.
+ * Used by:   BookSheet.tsx, ReviewClose.tsx, ReviewDock.tsx, ReviewMirror.tsx, ReviewPage.tsx, ReviewPath.tsx,
+ *            ReviewTour.tsx, ReviewVerdict.tsx.
  */
 .page {
   display: flex;
@@ -45,6 +45,11 @@
 @media (max-width: 639.98px) {
   .page > * + * {
     margin-top: var(--space-7);
+  }
+
+  /* Room for the dock at the foot of the window, so it never covers the last section. */
+  .page {
+    padding-bottom: calc(var(--touch-target) + var(--space-5));
   }
 }
 

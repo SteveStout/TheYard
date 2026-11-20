@@ -84,9 +84,9 @@ describe('the review place, kept on the browser (ADR: Ten minutes, seven stops)'
     expect(actionBody('book', null, 'mirror')).toEqual({ action: 'book', screen: 'mirror' });
     expect(reachBody(0, 'zzrev1', 'verdict')).toEqual({ stop: 0, r: 'zzrev1', screen: 'verdict' });
     expect(actionBody('gate-run', null)).toEqual({ action: 'gate-run' });
-    expect(REVIEW_ACTIONS).toHaveLength(14);
-    expect(REVIEW_ACTIONS.slice(12)).toEqual(['gate-run', 'blog']);
-    expect(new Set(REVIEW_ACTIONS).size).toBe(14);
+    expect(REVIEW_ACTIONS).toHaveLength(15);
+    expect(REVIEW_ACTIONS.slice(12)).toEqual(['gate-run', 'blog', 'forward']);
+    expect(new Set(REVIEW_ACTIONS).size).toBe(15);
   });
 
   it('names the stops a move reached for the first time, each once, numbered as the route numbers them', () => {

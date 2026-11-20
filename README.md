@@ -16,13 +16,13 @@ What that is worth: a developer can read each choice beside the code and the tes
 
 ## Tests, and the gate every version passes
 
-The suites hold 2568 xUnit tests, 761 Vitest tests at 1.0.5.119 and 261 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.5.119 hold 6,260 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
+The suites hold 2568 xUnit tests, 761 Vitest tests at 1.0.5.119 and 264 Playwright tests. Every version reaches `main` through one gate, and the gate's results for 1.0.5.119 hold 6,260 test runs, with the xUnit suite booted on each store and the store-dependent browser specs run on Cosmos DB as well. I specify every test before the AI drafts the code against it.
 
 | Suite | Framework | Count | What it covers |
 | --- | --- | ---: | --- |
 | API | xUnit | 2568 | The bid rules, the auction schedule and every filter in Domain; the use cases in Application over hand-written fakes; the SQL and Cosmos DB adapters; and the real host booted in memory for every endpoint, the problem shape, accounts, persistence across a restart, the OpenAPI document and the served documents. |
 | Frontend | Vitest | 761 at 1.0.5.119 | Presentation logic only, because the API owns the rules: status from server windows, formatting, the address bar round trip, the request cache, the account seam and the palette's contrast. |
-| End to end | Playwright | 261 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe's eleven scans across nine views at WCAG 2.1 AA. |
+| End to end | Playwright | 264 declared | The real stack in Chrome: the landing page, filters and Back, the sidebar and every document, the Admin tab, bids and the simulated room, accounts, the phone drawer, the keyboard path, and axe's eleven scans across nine views at WCAG 2.1 AA. |
 
 **How 6,260 is counted**, from the gate's own results file for 1.0.5.119 ([`data/test-results.json`](https://github.com/SteveStout/TheYard/blob/main/data/test-results.json)): 761 Vitest tests, 2568 xUnit tests on SQLite and the same 2568 booted on Cosmos DB, the 12 that need the live Cosmos DB account, 291 browser runs on SQLite from the 261 declared tests (a loop runs one of them more than once) and 60 of those again on Cosmos DB, which is 6,260. The xUnit and browser counts above are read from the source; a test written after 1.0.5.119 first runs in the gate of the version that ships it. A browser test that passes only on Playwright's one retry is written 'r', never a pass, and a file holding one is refused, so every run counted here passed the first time.
 

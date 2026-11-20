@@ -33,6 +33,7 @@ export function ReviewMirror({
   summary,
   gate,
   onAction,
+  onBook,
   onOpenDoc,
 }: {
   summary: TestSummary | null;
@@ -44,6 +45,8 @@ export function ReviewMirror({
     review: { reviewed: string } | null;
   };
   onAction: (action: ReviewAction) => void;
+  /** Opens the booking sheet beside the email app. */
+  onBook: () => void;
   onOpenDoc: (key: DocKey) => void;
 }) {
   // The slip line opens Quality in place on "The slip, and the turn", as the verdict's primary button does.
@@ -82,7 +85,10 @@ export function ReviewMirror({
           <a
             className={`${pills.secondary} ${verdict.book}`}
             href={BOOK_ADDRESS}
-            onClick={() => onAction('book')}
+            onClick={() => {
+              onAction('book');
+              onBook();
+            }}
             data-action="review.book"
             data-testid="review-book"
           >

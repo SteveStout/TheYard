@@ -1,6 +1,6 @@
-// The Links slice's three handlers (ADR: Tagged links, who opened what; ADR: The onion cut into
-// vertical slices, rule 7): where a pass-through link goes, what the Admin tab's card reads, and
-// the open the page reports for itself. Each takes its port by constructor and is tested with a
+// The Links slice's four handlers (ADR: Tagged links, who opened what; ADR: The onion cut into
+// vertical slices, rule 7): where a pass-through link goes, the booking message the review route's
+// sheet shows, what the Admin tab's card reads, and the open the page reports for itself. Each takes its port by constructor and is tested with a
 // fake and no host.
 using TheYard.Application.Shared;
 using TheYard.Application.Shared.Links;
@@ -33,6 +33,44 @@ public sealed class GoHandler(ILinkTargets targets) : IQueryHandler<GoQuery, Uri
 /// <summary>Where a pass-through link leads. The open itself is recorded by the pipeline, so this only reads.</summary>
 /// <param name="Key">The key from the route.</param>
 public sealed record GoQuery(string Key);
+
+/// <summary>
+/// The booking message "Book 20 minutes" opens, in parts the review route's sheet can copy: read from the same
+/// Links:Book address /api/go/book redirects to, so it shows nothing that redirect does not already send.
+/// </summary>
+/// <param name="To">The address the message goes to.</param>
+/// <param name="Subject">Its subject.</param>
+/// <param name="Body">Its body, line breaks as written.</param>
+public sealed record BookMessage(string To, string Subject, string Body);
+
+/// <summary>The booking message, for the sheet that opens beside the email app.</summary>
+public sealed record BookMessageQuery;
+
+/// <summary>Reads the booking mailto into its address, subject and body; null when no booking address is configured.</summary>
+/// <param name="targets">The configured addresses.</param>
+public sealed class BookMessageHandler(ILinkTargets targets) : IQueryHandler<BookMessageQuery, BookMessage?>
+{
+    /// <summary>The message the booking address carries, or null when the configuration names none.</summary>
+    /// <param name="query">The request, which carries nothing.</param>
+    /// <param name="cancellation">The request's cancellation.</param>
+    public Task<BookMessage?> HandleAsync(BookMessageQuery query, CancellationToken cancellation) =>
+        Task.FromResult(targets.For("book") is { Scheme: "mailto" } book ? Parts(book.OriginalString) : null);
+
+    /// <summary>A mailto address cut into its recipient and its two fields; a field it does not carry is empty.</summary>
+    /// <param name="mailto">The address as configuration spells it.</param>
+    public static BookMessage Parts(string mailto)
+    {
+        string rest = mailto["mailto:".Length..];
+        int mark = rest.IndexOf('?', StringComparison.Ordinal);
+        string to = Uri.UnescapeDataString(mark < 0 ? rest : rest[..mark]);
+        var fields = (mark < 0 ? "" : rest[(mark + 1)..])
+            .Split('&', StringSplitOptions.RemoveEmptyEntries)
+            .Select(pair => pair.Split('=', 2))
+            .GroupBy(pair => pair[0].ToLowerInvariant(), StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => Uri.UnescapeDataString(group.First().ElementAtOrDefault(1) ?? ""), StringComparer.Ordinal);
+        return new BookMessage(to, fields.GetValueOrDefault("subject", ""), fields.GetValueOrDefault("body", ""));
+    }
+}
 // #endregion link-targets
 
 // #region read-link-opens
