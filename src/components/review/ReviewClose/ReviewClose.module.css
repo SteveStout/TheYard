@@ -1,7 +1,8 @@
 /**
- * Does:      Lays out the close as the whole-page picture draws it (its .close, ported rule by rule): the words on the
- *            left and the three buttons on the right in one row; under 1024 the buttons under the words; on a phone
- *            each button the row's width.
+ * Does:      Lays out the close as the quality1120 picture draws it: on the review route the three buttons at the
+ *            right of the row, Book and the resume on the first line and LinkedIn under them; on the home page its
+ *            words on the left and the buttons on the right; under 1024 the buttons at the left; on a phone each
+ *            button the row's width.
  * Does not:  Draw the panel's glass (panels.css does) or the pills' look (panels.css does).
  * Used by:   ReviewClose.tsx.
  */
@@ -11,6 +12,12 @@
   align-items: center;
   gap: var(--space-6);
   padding: var(--space-5);
+}
+
+/* The review route's close has no words of its own since its quote joined the voices band: the buttons hold the right. */
+.close:not([data-form]) {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: end;
 }
 
 .readout {
@@ -87,8 +94,10 @@
 }
 
 @media (max-width: 1023.98px) {
-  .close {
+  .close,
+  .close:not([data-form]) {
     grid-template-columns: minmax(0, 1fr);
+    justify-items: stretch;
   }
 
   .acts {
@@ -102,7 +111,8 @@
 }
 
 @media (max-width: 639.98px) {
-  .act {
+  .act,
+  .resume {
     flex: 1 1 100%;
   }
 

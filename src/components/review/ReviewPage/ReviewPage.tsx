@@ -1,8 +1,8 @@
 /**
  * Does:      Draws the review route at ?view=review as one unit, top to bottom as the whole-page picture draws it (ADR:
  *            The review route gives a reason before it asks, the addendum on one unit): the first screen the address
- *            names (the verdict, or the mirror with its strip of names for ?for=ai), the short path's three questions
- *            with a named voice under each, a pair of voices, the blog's three newest posts, the full tour of seven
+ *            names (the verdict, or the mirror with its strip of names for ?for=ai), the short path's three questions,
+ *            the band of six named voices, each its own card, the blog's three newest posts, the full tour of seven
  *            compact stops, the close, and Where next, every section the page's one width; the booking sheet every
  *            "Book 20 minutes" opens, and on a phone the dock with the next step once the first screen has gone.
  * Does not:  Hold the stops (reviewStops.ts does), the words (reviewVerdict.ts does) or the place (useReviewProgress.ts
@@ -19,9 +19,7 @@ import { BOOK_ADDRESS, RESUME_ADDRESS, VERDICT } from '../../../lib/reviewVerdic
 import { gateTotals, type ReviewScreen } from '../../../lib/reviewMirror';
 import { shippedWords, storeTotal } from '../../../lib/reviewPath';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
-import { VOICES } from '../../../lib/voices';
 import { LatestPosts } from '../../landing/LatestPosts';
-import { Voice } from '../../shared/Voice';
 import { WhereNext } from '../../shared/WhereNext';
 import { BookSheet } from '../BookSheet';
 import { NameStrip } from '../NameStrip';
@@ -32,6 +30,7 @@ import { ReviewMirror } from '../ReviewMirror';
 import { ReviewPath } from '../ReviewPath';
 import { ReviewTour } from '../ReviewTour';
 import { ReviewVerdict } from '../ReviewVerdict';
+import { ReviewVoices } from '../ReviewVoices';
 import styles from './ReviewPage.module.css';
 
 /** What the build carries about this version, read once: gated, the quality numbers held and CodeRabbit's read. */
@@ -63,7 +62,6 @@ export function ReviewPage({
   const sameRun = readings.summary?.version === GATE.version;
   const [booking, setBooking] = useState(false);
   const book = () => setBooking(true);
-  const pair = VOICES.pair.filter((name) => recommendations?.some((entry) => entry.name === name));
 
   return (
     <>
@@ -111,28 +109,15 @@ export function ReviewPage({
           }}
           totals={gateTotals(readings.summary, GATE.version)}
           shipped={sameRun ? shippedWords(readings.summary?.ran_at, now) : null}
-          recommendations={recommendations}
           now={now}
           onReach={path.reach}
           onAction={review.action}
           onOpenDoc={onOpenDoc}
         />
-        {pair.length > 0 && (
-          <section
-            className={styles.voices}
-            aria-label="What colleagues say"
-            data-testid="review-voices"
-          >
-            {pair.map((name) => (
-              <Voice
-                key={name}
-                name={name}
-                recommendations={recommendations}
-                onFollow={() => review.action('recommendations')}
-              />
-            ))}
-          </section>
-        )}
+        <ReviewVoices
+          recommendations={recommendations}
+          onFollow={() => review.action('recommendations')}
+        />
         <LatestPosts
           onOpenBlog={onOpenBlog}
           row={{
@@ -151,7 +136,6 @@ export function ReviewPage({
           onOpenSidebar={onOpenSidebar}
         />
         <ReviewClose
-          recommendations={recommendations}
           address={() =>
             shareAddress(window.location.origin, screen === 'mirror' ? 'ai' : null, review.code)
           }
@@ -175,7 +159,12 @@ export function ReviewPage({
               book();
             },
           },
-          { label: VERDICT.resume, href: RESUME_ADDRESS, onClick: () => review.action('resume') },
+          {
+            label: VERDICT.resume,
+            href: RESUME_ADDRESS,
+            onClick: () => review.action('resume'),
+            resume: true,
+          },
         ]}
       />
       <BookSheet open={booking} onClose={() => setBooking(false)} onAction={review.action} />

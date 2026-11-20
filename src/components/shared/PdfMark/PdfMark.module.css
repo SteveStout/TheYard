@@ -1,0 +1,33 @@
+/**
+ * Does:      Colours the resume button's small PDF page from the tokens: the page white, its edge and fold in the gold
+ *            bar's dark tone, the band the header teal with white letters.
+ * Does not:  Size or place the button (panels.css does).
+ * Used by:   PdfMark.tsx.
+ */
+.mark {
+  flex: none;
+  width: 20px;
+  height: 24px;
+}
+
+.page {
+  fill: var(--color-surface);
+  stroke: var(--color-gold-bar-dark);
+  stroke-width: 1.4;
+}
+
+.fold {
+  fill: none;
+  stroke: var(--color-gold-bar-dark);
+  stroke-width: 1.4;
+}
+
+.band {
+  fill: var(--color-teal-header);
+}
+
+.word {
+  fill: var(--color-on-accent);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
+}
