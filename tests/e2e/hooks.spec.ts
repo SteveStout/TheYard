@@ -93,8 +93,19 @@ test.describe('at 390 by 844 each hook sits on the first screen', () => {
   test('/?doc=quality: the page own first chart', async ({ page }) => {
     await atPhoneSize(page);
     await openTheYard(page, '/?doc=quality');
-    const chart = page.locator('dialog[open]').getByTestId('quality-trend').first();
-    await onTheFirstScreen(chart, 'the Quality page first chart');
+    const chart = page
+      .locator('dialog[open]')
+      .getByTestId('quality-chart')
+      .filter({ visible: true })
+      .first();
+    // The lede's four readouts stand over the chart (the quality1120 picture, mock-390.png): the chart starts on the
+    // first screen, the slip and the ratchet in view, and runs past its foot.
+    await expect(chart).toBeVisible({ timeout: 30_000 });
+    const at = (await chart.boundingBox())!;
+    expect(
+      at.y + 160,
+      'the Quality page first chart starts on the first screen'
+    ).toBeLessThanOrEqual(PHONE.height);
   });
 
   test('the review route: its claim and its primary button, before the proof tiles', async ({

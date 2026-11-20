@@ -16,6 +16,10 @@ export type DocEntry = {
   url: string;
   kind: DocKind;
   number?: string;
+  /** Opens in the wide window, 1080 px at most (the Quality page, as its picture draws it). */
+  wide?: boolean;
+  /** A short line the window's bar shows beside Copy link at a desk, such as when the page's numbers were read. */
+  note?: string;
 };
 
 // #region doc-key
