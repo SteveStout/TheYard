@@ -2,12 +2,13 @@
  * Does:      Drives every motion on a sales page (ADR: The sales pages set the site's look): it watches one holder with an
  *            IntersectionObserver at a quarter in view and sets the class is-seen on it while it is, and clears it when
  *            it leaves, so each motion plays, three times by its own rule in sales.css, when its holder is first seen
- *            and again on return. With prefers-reduced-motion the class is never set and nothing moves. Before the
+ *            and again on return; watchSeen does the same for holders drawn as markup (a document's cards). With
+ *            prefers-reduced-motion the class is never set and nothing moves. Before the
  *            holder is seen, and with JavaScript off, nothing has the class, so the finished state shows.
  * Does not:  Hold a motion itself (sales.css does, and comet.ts the one that runs the quality line) or decide what is a
  *            holder (each section passes its own).
  * Used by:   ReviewVerdict.tsx, ReviewWork.tsx, ReviewPath.tsx, ReviewVoices.tsx, ReviewTour.tsx, ReviewClose.tsx,
- *            LatestPosts.tsx, SectionHead.tsx, PulseBand.tsx, Landing.tsx, useFirstSeen.test.ts.
+ *            LatestPosts.tsx, SectionHead.tsx, PulseBand.tsx, Landing.tsx, QualityFoot.tsx, useFirstSeen.test.ts.
  */
 import { useEffect, useState } from 'react';
 
@@ -20,6 +21,28 @@ export const SEEN_CLASS = 'is-seen';
 /** Whether a holder plays: a quarter of it in view, and the reader has not asked for less motion. */
 export function seenNow(ratio: number, still: boolean): boolean {
   return !still && ratio >= SEEN_AT;
+}
+
+/**
+ * Watches holders drawn outside React (a document's cards, which arrive as markup) the same way the hook below watches
+ * one: each carries is-seen while a quarter of it is in view, never with reduced motion. Hand back the stop.
+ */
+export function watchSeen(holders: readonly Element[]): () => void {
+  if (holders.length === 0 || typeof IntersectionObserver === 'undefined') return () => {};
+  const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
+  if (still) return () => {};
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries)
+        entry.target.classList.toggle(SEEN_CLASS, seenNow(entry.intersectionRatio, still));
+    },
+    { threshold: [0, SEEN_AT] }
+  );
+  for (const holder of holders) observer.observe(holder);
+  return () => {
+    observer.disconnect();
+    for (const holder of holders) holder.classList.remove(SEEN_CLASS);
+  };
 }
 
 /**

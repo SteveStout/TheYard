@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { TestSummary } from './landingProof';
 import { proofFigures } from './landingProof';
 import type { Recommendation } from './recommendations';
+import { REVIEW_ACTIONS } from './reviewProgress';
 import {
+  CLOSE_MOVES,
   leadQuote,
   liveSentence,
   PROOF_ADDRESS,
@@ -140,5 +142,27 @@ describe('the review route first screen (ADR: The review route gives a reason be
       source: 'TheYard, read from the build. 14 of 15 quality numbers held.',
     });
     expect(landing).toBe('3,542');
+  });
+});
+
+describe('the close’s three moves, which the Quality sheet’s foot draws too (saleshome1120)', () => {
+  it('are Book 20 minutes, the gold resume and LinkedIn, in that order, each reporting its own action', () => {
+    expect(CLOSE_MOVES.map((move) => move.label)).toEqual([
+      'Book 20 minutes',
+      'Resume (PDF)',
+      'Message me on LinkedIn',
+    ]);
+    expect(CLOSE_MOVES.map((move) => move.href)).toEqual([
+      '/api/go/book',
+      '/resume?pdf=1',
+      'https://www.linkedin.com/in/stevenwstout/',
+    ]);
+    expect(CLOSE_MOVES.map((move) => move.look)).toEqual([
+      'op-pill-primary',
+      'op-pill-resume',
+      'op-pill-secondary',
+    ]);
+    expect(CLOSE_MOVES.map((move) => move.action)).toEqual(['book', 'resume', 'linkedin']);
+    for (const move of CLOSE_MOVES) expect(REVIEW_ACTIONS).toContain(move.action);
   });
 });

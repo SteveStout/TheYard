@@ -91,9 +91,14 @@ marked.use({
       // The Style section's tiles, readouts, glossary and ribbon strip (src/library/styleBlocks.ts).
       if ((STYLE_FENCES as readonly string[]).includes(name))
         return styleBlock(name as StyleFence, text);
-      // The Quality page's trends, a line a number (src/library/qualityBlocks.ts, ADR-130).
+      // The Quality page's trends, a line a number (src/library/qualityBlocks.ts, ADR-130); the words after a
+      // fence's name are its head, which draws the readouts as the dark live panel (saleshome1120).
       if ((QUALITY_FENCES as readonly string[]).includes(name))
-        return qualityBlock(name as QualityFence, text);
+        return qualityBlock(
+          name as QualityFence,
+          text,
+          (lang ?? '').trim().slice(name.length).trim()
+        );
       const grammar = grammarFor(name);
       const className = grammar ? `hljs language-${grammar}` : 'hljs';
       return `<pre tabindex="0"><code class="${className}">${highlight(text, name)}</code></pre>\n`;

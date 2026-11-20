@@ -1,12 +1,14 @@
 /**
  * Does:      Draws the window a document opens in: asks the API for it, renders it, lays it in panels under one title (the
- *            bar's), opens the documents the catalogue marks wide in the wide window, fills the Author page's place for
- *            what colleagues say, and offers its link.
+ *            bar's), opens the documents the catalogue marks wide in the wide window, their cards numbered and the
+ *            Quality page's foot as their last card, fills the Author page's place for what colleagues say, and offers
+ *            its link.
  * Does not:  Decide which document is open (the sidebar and useNavigation.ts do), or hold any document's words.
  * Used by:   SideNav.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { QualityFoot } from '../components/shared/QualityFoot';
 import { Recommendations } from '../components/shared/Recommendations';
 import { WhereNext } from '../components/shared/WhereNext';
 import type { NextPage } from '../lib/pageHooks';
@@ -49,9 +51,9 @@ export type DocRequest = { key: DocKey };
  * doc through the one instance the sidebar owns; onClose lets the sidebar
  * drop the row's current marker.
  */
-/** The "Where next" footer a document ends with: Quality, Architecture and every decision record carry one. */
+/** The "Where next" footer a document ends with: Architecture and every decision record (Quality's is in its foot). */
 function nextPage(key: DocKey): NextPage | null {
-  if (key === 'quality' || key === 'architecture') return key;
+  if (key === 'architecture') return key;
   return DOCS[key].url.startsWith('/api/docs/adr-') ? 'record' : null;
 }
 
@@ -149,7 +151,7 @@ export function DocDialog({
         const html =
           author !== null
             ? author.layoutAuthor(rendered)
-            : layoutDocument(rendered, DOCS[key].title);
+            : layoutDocument(rendered, DOCS[key].title, DOCS[key].wide);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })
@@ -161,11 +163,21 @@ export function DocDialog({
   // The Author page leaves a place for what colleagues say (src/lib/author.ts); once the page is
   // in the window the column is drawn into it, read from the one endpoint the landing page reads.
   const [said, setSaid] = useState<HTMLElement | null>(null);
+  // The wide sheet (the Quality page) ends on its foot, drawn as the last card of its page (saleshome1120).
+  const [foot, setFoot] = useState<HTMLElement | null>(null);
   useEffect(() => {
     setSaid(proseRef.current?.querySelector<HTMLElement>('[data-recommendations]') ?? null);
+    setFoot(
+      DOCS[activeDoc].wide
+        ? (proseRef.current?.querySelector<HTMLElement>('[data-testid="doc-page"]') ?? null)
+        : null
+    );
     // Let go of the place before the document that holds it is replaced, so the column is never
     // drawn into a node that has left the page.
-    return () => setSaid(null);
+    return () => {
+      setSaid(null);
+      setFoot(null);
+    };
   }, [activeDoc, docHtml]);
 
   return (
@@ -258,6 +270,8 @@ export function DocDialog({
           </>
         )}
         {said !== null && createPortal(<Recommendations />, said)}
+        {foot !== null &&
+          createPortal(<QualityFoot onBack={() => dialogRef.current?.close()} />, foot)}
       </div>
     </dialog>
   );

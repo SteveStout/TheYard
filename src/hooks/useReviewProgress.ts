@@ -48,6 +48,14 @@ function send(body: object): void {
 }
 
 /**
+ * A button on another sales page pressed, the twin of one on the route (the Quality sheet's foot, saleshome1120):
+ * reported by the same name with the code the address carries, and no stop, so opening that page reaches nothing.
+ */
+export function reportAction(name: ReviewAction): void {
+  send(actionBody(name, typeof window === 'undefined' ? null : linkCode(window.location.search)));
+}
+
+/**
  * The reviewer's place on the route (ADR: Ten minutes, seven stops), kept on this browser: the stops reached. The page
  * is drawn on the server with nothing reached, and hydrated so too, so the two agree; once the page is in the browser
  * the kept place is what shows, and every stop opened is kept.

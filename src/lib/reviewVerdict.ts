@@ -4,10 +4,11 @@
  *            answers into the third tile, the one quote and the counts. Every number is read, never typed.
  * Does not:  Read anything or draw anything; no React in here.
  * Used by:   ReviewVerdict.tsx, ReviewLeadQuote.tsx, ReviewMirror.tsx, GatePanel.tsx, NameStrip.tsx, ReviewPage.tsx,
- *            StoreBar.tsx, Landing.tsx, LandingVoices.tsx, landingMoves.ts, reviewVerdict.test.ts.
+ *            StoreBar.tsx, Landing.tsx, LandingVoices.tsx, QualityFoot.tsx, landingMoves.ts, reviewVerdict.test.ts.
  */
 import { proofFigures, type TestSummary } from './landingProof';
 import type { Recommendation } from './recommendations';
+import type { ReviewAction } from './reviewProgress';
 
 /** The first screen's words, word for word from the spec, in the order the screen draws them. */
 export const VERDICT = {
@@ -75,6 +76,16 @@ export const BOOK_ADDRESS = '/api/go/book';
 
 /** The resume, the address the rail held. */
 export const RESUME_ADDRESS = '/resume?pdf=1';
+
+/**
+ * The close's three moves in their order, each with the look of its button and the action its press reports on the
+ * review route; the Quality sheet's foot draws the same three and reports the same names (saleshome1120).
+ */
+export const CLOSE_MOVES = [
+  { label: VERDICT.book, href: BOOK_ADDRESS, look: 'op-pill-primary', action: 'book' },
+  { label: VERDICT.resume, href: RESUME_ADDRESS, look: 'op-pill-resume', action: 'resume' },
+  { label: CLOSE.linkedin, href: LINKEDIN_ADDRESS, look: 'op-pill-secondary', action: 'linkedin' },
+] as const satisfies readonly { label: string; href: string; look: string; action: ReviewAction }[];
 
 /** All the recommendations, the address the rail held. */
 export const RECOMMENDATIONS_ADDRESS = '/?view=recommendations';

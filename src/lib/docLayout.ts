@@ -25,8 +25,12 @@ const AT_H2 = /(?=<h2[ >])/;
 /**
  * The rendered document as panels. `lead` carries the title and any words
  * before the first heading; each heading after it opens a panel of its own.
+ * A numbered document (the catalogue's wide sheet, the Quality page) draws each
+ * titled card as the sales pages do (ADR: The sales pages set the site's look):
+ * the card hooked as a q-card and the gold number badge, 01 on, before its title;
+ * the lede card carries none.
  */
-export function layoutDocument(html: string, title?: string): string {
+export function layoutDocument(html: string, title?: string, numbered = false): string {
   const { hidden, rest } = sayTitleOnce(html, title);
   const parts = rest.split(AT_H2);
   const lead = /^<h2[ >]/.test(parts[0]) ? '' : parts[0];
@@ -39,12 +43,19 @@ export function layoutDocument(html: string, title?: string): string {
         ? [`<section class="${PANEL} op-glass doc-lead">${hidden}</section>`]
         : []
       : [`<section class="${PANEL} op-glass doc-lead">${hidden}${statusReading(lead)}</section>`]),
-    ...sections.map(
-      (section, i) =>
-        `<section class="${PANEL} op-glass">${i === 0 ? first : ''}${section}</section>`
+    ...sections.map((section, i) =>
+      numbered
+        ? `<section class="${PANEL} op-glass" data-mock="q-card">${i === 0 ? first : ''}${numberCard(section, i + 1)}</section>`
+        : `<section class="${PANEL} op-glass">${i === 0 ? first : ''}${section}</section>`
     ),
   ];
   return `<div class="doc-page" data-testid="doc-page">${panels.join('')}</div>`;
+}
+
+/** A card's title with its number badge, "01" on, inside the heading so the anchor and the words stay as they were. */
+function numberCard(section: string, number: number): string {
+  const badge = `<span class="op-num" data-mock="section-num">${String(number).padStart(2, '0')}</span>`;
+  return section.replace(/^(<h2[^>]*>)/, `$1${badge}`);
 }
 
 /**

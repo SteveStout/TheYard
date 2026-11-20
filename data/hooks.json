@@ -145,16 +145,16 @@
       "page": "quality",
       "links": [
         {
-          "label": "Email Steven",
-          "reason": "A reply comes from Steve himself.",
+          "label": "Back to the three questions",
+          "reason": "Two more answers, each the running system.",
           "minutes": 1,
-          "href": "/api/go/email"
+          "href": "/?view=review#questions"
         },
         {
-          "label": "The resume",
-          "reason": "The work this site sits beside.",
-          "minutes": 3,
-          "href": "/resume"
+          "label": "Quality on both ends",
+          "reason": "The story behind this page, in one post.",
+          "minutes": 6,
+          "href": "/?view=blog&post=quality-on-both-ends"
         }
       ]
     },

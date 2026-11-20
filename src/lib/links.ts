@@ -52,7 +52,10 @@ export function sessionOrNull(): Storage | null {
 /** A link of this site with the visit's code on it, or the link as it was: another site's link never carries one. */
 export function withCode(href: string, code: string | null): string {
   if (code === null || !href.startsWith('/')) return href;
-  return href + (href.includes('?') ? '&' : '?') + `r=${code}`;
+  // The code goes in the query, before a section's #name, or the browser reads it as part of the section's name.
+  const [path, section] = href.split('#', 2);
+  const coded = path + (path.includes('?') ? '&' : '?') + `r=${code}`;
+  return section === undefined ? coded : `${coded}#${section}`;
 }
 
 /** The view a page reports its open under: the blog and the Quality page by name, else what the caller says. */

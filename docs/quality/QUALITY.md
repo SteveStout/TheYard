@@ -2,7 +2,7 @@
 
 AI made me fast. For two weeks in October it also let the code slip where no test was looking, so I built a ratchet. It measures fifteen numbers about the code on every version, and the gate refuses any version that makes one of them worse. This page is the proof, slip included.
 
-```quality-readouts
+```quality-readouts The ratchet, right now
 Numbers held | {{live:quality-held}} | of {{live:quality-count}} | at or under their limit today
 Versions measured | {{live:quality-versions}} | | {{live:quality-span}}
 .NET tests | {{live:quality-now dotnet_tests_higher_is_better}} | | {{live:quality-join dotnet_tests_higher_is_better}} when the ratchet went in
