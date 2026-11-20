@@ -151,6 +151,7 @@ export default function App() {
           screen={screenOf(address.pageQuery)}
           now={now}
           onOpenDoc={go.openDocument}
+          onOpenBlog={go.openBlog}
           onOpenSidebar={rail.open}
         />
       ) : address.recommendationsOpen ? (

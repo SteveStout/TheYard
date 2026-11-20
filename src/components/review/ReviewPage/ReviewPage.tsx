@@ -1,8 +1,9 @@
 /**
  * Does:      Draws the review route at ?view=review as one unit, top to bottom as the whole-page picture draws it (ADR:
  *            The review route gives a reason before it asks, the addendum on one unit): the first screen the address
- *            names (the verdict, or the mirror with its strip of names for ?for=ai), the short path's three stops,
- *            the full tour of seven compact stops, the close, and Where next, every section the page's one width.
+ *            names (the verdict, or the mirror with its strip of names for ?for=ai), the short path's three questions
+ *            with a named voice under each, a pair of voices, the blog's three newest posts, the full tour of seven
+ *            compact stops, the close, and Where next, every section the page's one width.
  * Does not:  Hold the stops (reviewStops.ts does), the words (reviewVerdict.ts does) or the place (useReviewProgress.ts
  *            keeps it on the browser); the first screen's two answers are read by useReviewReadings.ts.
  * Used by:   App.tsx.
@@ -14,9 +15,13 @@ import type { DocKey } from '../../../library/documents';
 import { gateTotals, type ReviewScreen } from '../../../lib/reviewMirror';
 import { shippedWords, storeTotal } from '../../../lib/reviewPath';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
+import { VOICES } from '../../../lib/voices';
+import { LatestPosts } from '../../landing/LatestPosts';
+import { Voice } from '../../shared/Voice';
 import { WhereNext } from '../../shared/WhereNext';
 import { NameStrip } from '../NameStrip';
 import { ReviewClose } from '../ReviewClose';
+import { ReviewHead } from '../ReviewHead';
 import { ReviewMirror } from '../ReviewMirror';
 import { ReviewPath } from '../ReviewPath';
 import { ReviewTour } from '../ReviewTour';
@@ -31,6 +36,7 @@ export function ReviewPage({
   screen,
   now,
   onOpenDoc,
+  onOpenBlog,
   onOpenSidebar,
 }: {
   /** The first screen: the verdict, or the mirror for a link sent with for=ai. */
@@ -38,6 +44,8 @@ export function ReviewPage({
   /** The page's clock, the one every countdown on the site reads. */
   now: number;
   onOpenDoc: (key: DocKey) => void;
+  /** Opens the blog, at a post or at every post. */
+  onOpenBlog: (slug: string | null) => void;
   /** Shows the sidebar, which the tour's last cell opens. */
   onOpenSidebar: () => void;
 }) {
@@ -47,6 +55,7 @@ export function ReviewPage({
   const recommendations = readings.recommendations;
   // The age and the run link are this build's run's: drawn only when the summary read is of this same version.
   const sameRun = readings.summary?.version === GATE.version;
+  const pair = VOICES.pair.filter((name) => recommendations?.some((entry) => entry.name === name));
 
   return (
     <section className={styles.page} aria-labelledby="review-title" data-testid="review-page">
@@ -91,10 +100,34 @@ export function ReviewPage({
         }}
         totals={gateTotals(readings.summary, GATE.version)}
         shipped={sameRun ? shippedWords(readings.summary?.ran_at, now) : null}
+        recommendations={recommendations}
         now={now}
         onReach={path.reach}
         onAction={review.action}
         onOpenDoc={onOpenDoc}
+      />
+      {pair.length > 0 && (
+        <section
+          className={styles.voices}
+          aria-label="What colleagues say"
+          data-testid="review-voices"
+        >
+          {pair.map((name) => (
+            <Voice
+              key={name}
+              name={name}
+              recommendations={recommendations}
+              onFollow={() => review.action('recommendations')}
+            />
+          ))}
+        </section>
+      )}
+      <LatestPosts
+        onOpenBlog={onOpenBlog}
+        row={{
+          head: (all) => <ReviewHead id="review-blog-title" title="From the blog" meta={all} />,
+          onFollow: () => review.action('blog'),
+        }}
       />
       <ReviewTour
         reached={review.reached}

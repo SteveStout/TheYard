@@ -51,17 +51,8 @@ export const CLOSE = {
   linkedin: 'Message me on LinkedIn',
 } as const;
 
-/** Whose words the close quotes. */
-export const CLOSE_NAME = 'Sean Whitesell';
-
 /** "Message me on LinkedIn": Steven's own page, the address the finish panel used. */
 export const LINKEDIN_ADDRESS = 'https://www.linkedin.com/in/stevenwstout/';
-
-/** The quote the close shows: Sean Whitesell's when the answer has him, else the answer's second; null for none. */
-export function closeQuote(entries: readonly Recommendation[] | null): Recommendation | null {
-  if (entries === null || entries.length === 0) return null;
-  return entries.find((entry) => entry.name === CLOSE_NAME) ?? entries[1] ?? entries[0];
-}
 
 /**
  * The document "See the proof in 2 minutes" and the path's first stop open, and the section the mirror's slip line
