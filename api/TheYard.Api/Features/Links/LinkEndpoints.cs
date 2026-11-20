@@ -5,12 +5,12 @@ namespace TheYard.Api.Features.Links;
 
 /// <summary>
 /// The Links slice's routes (ADR: Tagged links, who opened what): the pass-through to GitHub and
-/// LinkedIn, the page's own report of its open, and the Admin tab's card. The open itself is
+/// LinkedIn, the booking sheet's message, the page's own report of its open, and the Admin tab's card. The open itself is
 /// recorded by the request recorder, which sees every tagged request; nothing here writes.
 /// </summary>
 public static class LinkEndpoints
 {
-    /// <summary>Maps GET /api/go/{key}, GET /api/links/open and GET /api/admin/links.</summary>
+    /// <summary>Maps GET /api/go/{key}, GET /api/links/book, GET /api/links/open and GET /api/admin/links.</summary>
     public static IEndpointRouteBuilder MapLinkEndpoints(this IEndpointRouteBuilder app)
     {
         // #region link-endpoints
@@ -22,6 +22,14 @@ public static class LinkEndpoints
             .WithTags("Links")
             .WithSummary("Counts the open of a tagged link and sends the visitor on to GitHub or LinkedIn")
             .Produces(StatusCodes.Status302Found)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        // The booking sheet's message: the same Links:Book address /api/go/book redirects to, in its three parts,
+        // read only when the sheet opens, so no page and no bundle carries the address. 404 when none is configured.
+        app.MapGet("/api/links/book", Book)
+            .WithName("GetBookMessage")
+            .WithTags("Links")
+            .WithSummary("The address, subject and body Book 20 minutes opens, for the sheet beside the email app")
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         // The page reports its own open: it is served by the rendering service, so a code on its
@@ -47,6 +55,9 @@ public static class LinkEndpoints
     // and body into spaces and line breaks, which is not a Location a browser can follow.
     private static async Task<Results<RedirectHttpResult, NotFound>> Go(string key, GoHandler handler, CancellationToken cancellation) =>
         await handler.HandleAsync(new GoQuery(key), cancellation) is { } target ? TypedResults.Redirect(target.OriginalString, permanent: false) : TypedResults.NotFound();
+
+    private static async Task<Results<Ok<BookMessage>, NotFound>> Book(BookMessageHandler handler, CancellationToken cancellation) =>
+        await handler.HandleAsync(new BookMessageQuery(), cancellation) is { } message ? TypedResults.Ok(message) : TypedResults.NotFound();
 
     private static async Task<Results<NoContent, BadRequest>> PageOpen(string? r, string? path, ReportPageOpenHandler handler, CancellationToken cancellation) =>
         await handler.HandleAsync(new ReportPageOpenCommand(r, path), cancellation) ? TypedResults.NoContent() : TypedResults.BadRequest();

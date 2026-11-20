@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using TheYard.Api.Features.Links;
+using TheYard.Application.Features.Links;
 
 namespace TheYard.Tests;
 
@@ -90,6 +91,27 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
         var row = json.RootElement.GetProperty("codes").EnumerateArray().Single(entry => entry.GetProperty("code").GetString() == code);
         Assert.Equal(1, row.GetProperty("paths").GetProperty("/api/go/book").GetInt32());
         Assert.False(row.GetProperty("paths").TryGetProperty("/api/go/email", out _));
+    }
+
+    [Fact]
+    [Covers("GET", "/api/links/book", 200)]
+    [Covers("GET", "/api/links/book", 404)]
+    public async Task The_booking_sheet_reads_the_same_address_book_redirects_to_in_three_parts_and_nothing_when_none_is_set()
+    {
+        // The review route's booking sheet, asked only when it opens: the address, subject and body of the very mailto
+        // /api/go/book sends in its Location header, so the read shows nothing that redirect does not.
+        var client = Browser();
+        var book = await client.GetAsync("/api/links/book");
+        Assert.Equal(HttpStatusCode.OK, book.StatusCode);
+        using var json = JsonDocument.Parse(await book.Content.ReadAsStringAsync());
+        Assert.Equal("stevenstout11@gmail.com", json.RootElement.GetProperty("to").GetString());
+        Assert.Equal("20 minutes with Steven Stout", json.RootElement.GetProperty("subject").GetString());
+        Assert.StartsWith("Hi Steven,\r\n\r\nI looked at The Yard", json.RootElement.GetProperty("body").GetString(), StringComparison.Ordinal);
+        var expected = BookMessageHandler.Parts(BookAddress);
+        Assert.Equal(expected.Body, json.RootElement.GetProperty("body").GetString());
+
+        using var none = factory.WithWebHostBuilder(host => host.UseSetting(ConfiguredLinkTargets.Book, ""));
+        await Problem.Is(await none.CreateClient().GetAsync("/api/links/book"), HttpStatusCode.NotFound);
     }
 
     /// <summary>The booking address, exactly as the site's settings hold it: the subject and the body, encoded.</summary>

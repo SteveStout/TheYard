@@ -39,6 +39,7 @@ export function ReviewVerdict({
   recommendations,
   quality,
   onAction,
+  onBook,
   onOpenDoc,
 }: {
   summary: TestSummary | null;
@@ -46,6 +47,8 @@ export function ReviewVerdict({
   /** The quality numbers this build held, or null when it has no reading of its own. */
   quality: HeldQuality;
   onAction: (action: ReviewAction) => void;
+  /** Opens the booking sheet beside the email app. */
+  onBook: () => void;
   onOpenDoc: (key: DocKey) => void;
 }) {
   const tiles = [...RECORD_TILES, testsTile(summary, quality)];
@@ -97,7 +100,10 @@ export function ReviewVerdict({
           <a
             className={`${pills.secondary} ${styles.book}`}
             href={BOOK_ADDRESS}
-            onClick={() => onAction('book')}
+            onClick={() => {
+              onAction('book');
+              onBook();
+            }}
             data-action="review.book"
             data-testid="review-book"
           >
