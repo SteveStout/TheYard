@@ -6,14 +6,15 @@ import {
   DOCK_REVIEW,
   LANDING_CLOSE,
   MOVES,
-  readAllLine,
+  SECTION_NUMBERS,
   START_HERE,
 } from '../../../lib/landingMoves';
 import { landingTiles, type LandingTile as LandingTileEntry } from '../../../lib/siteMap';
 import type { DocKey } from '../../../library/documents';
 import { LINKS, MENUS } from '../../../library/sections';
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { Hook } from '../../shared/Hook';
-import { Voice } from '../../shared/Voice';
+import { SectionHead } from '../../shared/SectionHead';
 import { WhereNext } from '../../shared/WhereNext';
 import { QualityTrend } from '../../shared/QualityTrend';
 import { hookFor, hookTrend, landingLines, stoppedLine } from '../../../lib/pageHooks';
@@ -23,12 +24,11 @@ import { ProofStrip } from '../ProofStrip';
 import { PulseBand } from '../PulseBand';
 import { TechStackSummary } from '../TechStack';
 import { LatestPosts } from '../LatestPosts';
+import { LandingVoices } from '../LandingVoices';
 import { LandingTile } from '../LandingTile';
 import { NewestPost } from '../NewestPost';
-import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
 import { REVIEW_ADDRESS } from '../../../lib/reviewStops';
-import { RECOMMENDATIONS_ADDRESS, VERDICT } from '../../../lib/reviewVerdict';
-import { VOICES } from '../../../lib/voices';
+import { BOOK_ADDRESS, VERDICT } from '../../../lib/reviewVerdict';
 import { BookSheet } from '../../review/BookSheet';
 import { PdfMark } from '../../shared/PdfMark';
 import { ReviewClose } from '../../review/ReviewClose';
@@ -39,14 +39,18 @@ import { request } from '../../../lib/request';
 /**
  * The landing page: what the address opens with no query (ADR-082, the addendum on the home page's order). It opens
  * with its hook in the split layout (ADR-132): on the left the name line, the quality sentence as the page's heading,
- * who built it in one sentence, the hook's sentences and three moves (Check my work, the resume, the live auction);
+ * who built it in one sentence, the hook's sentences and four moves (Check my work, the resume, Book 20 minutes, the
+ * live auction);
  * on the right the Quality page's first chart drawn from the history the build carries, its link and the newest
  * post. Then the live readings (ADR-100); Start here, four doors in one row with what each costs; the blog's Latest
  * posts beside three named voices and the way to all of them; the build, the gate's three figures and the stack's
  * summary with the way to the whole table on its own page; the small tiles under their groups, drawn from the same
  * site map the sidebar is drawn from (src/lib/siteMap.ts), Sign in and Admin left to the sidebar; the close; and
  * Where next. On a phone a dock keeps the next step in reach once the moves have scrolled away. Every section has
- * the page's one width and one gap.
+ * the page's one width and one gap. It takes the sales pages' look (ADR: The sales pages set the site's look): the
+ * live readings are the dark live panel on its side, every group opens with the shared section head and its number,
+ * 01 to 07, and the close asks the review route's question under 08; the primary move's arrow nudges right when the
+ * moves are first seen.
  */
 /** The day never changes under a mounted page in a way worth a redraw, so nothing is subscribed. */
 const noSubscription = () => () => {};
@@ -94,6 +98,8 @@ export function Landing({
   const today = useSyncExternalStore(noSubscription, visitorsDay, buildsDay);
   const releases = releasesInLastSevenDays(RELEASES.days, today);
   const lines = landingLines(HOOK, releases);
+  // The holder of the primary move's nudge.
+  const [moves] = useFirstSeen<HTMLDivElement>();
   useEffect(() => {
     let live = true;
     request('/api/health', undefined, { background: true })
@@ -146,7 +152,12 @@ export function Landing({
             ),
             lede: INTRO.sentence,
             moves: (
-              <div className={styles.moves} data-testid="landing-moves">
+              <div
+                ref={moves}
+                className={styles.moves}
+                data-mock="home-moves"
+                data-testid="landing-moves"
+              >
                 <a
                   className={`op-pill-primary ${styles.primaryMove}`}
                   href={REVIEW_ADDRESS}
@@ -154,7 +165,9 @@ export function Landing({
                   data-testid="landing-primary"
                 >
                   {MOVES.primary}
-                  <span aria-hidden="true">→</span>
+                  <span className="op-nudge-x" aria-hidden="true">
+                    →
+                  </span>
                 </a>
                 <a
                   className="op-pill-resume"
@@ -165,6 +178,15 @@ export function Landing({
                 >
                   <PdfMark />
                   {MOVES.resume}
+                </a>
+                <a
+                  className={`op-pill-secondary ${styles.move}`}
+                  href={BOOK_ADDRESS}
+                  onClick={() => setBooking(true)}
+                  data-action="landing.book"
+                  data-testid="landing-book"
+                >
+                  {MOVES.book}
                 </a>
                 <a
                   className={styles.textLink}
@@ -182,48 +204,28 @@ export function Landing({
         <section
           className={styles.section}
           aria-labelledby="landing-start"
+          data-mock="start"
           data-testid="landing-start"
         >
-          <h2 id="landing-start" className={styles.groupHeading}>
-            {START_HERE}
-          </h2>
+          <SectionHead id="landing-start" number={SECTION_NUMBERS.start} title={START_HERE} seen />
           <ul className={styles.doors}>{doors.map((entry) => tile(entry, true))}</ul>
         </section>
         <section className={styles.pv} aria-label="Posts and voices">
-          <LatestPosts headingClass={styles.groupHeading} onOpenBlog={onOpenBlog} />
-          <div className={styles.voices} data-testid="landing-voices">
-            <div className={styles.vhead}>
-              <h2 className={styles.groupHeading}>
-                <a
-                  className={styles.headingLink}
-                  href={RECOMMENDATIONS_SOURCE}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  What colleagues say
-                </a>
-              </h2>
-            </div>
-            {VOICES.home.map((name) => (
-              <Voice key={name} name={name} recommendations={recommendations} onFollow={() => {}} />
-            ))}
-            <a
-              className={styles.allRecs}
-              href={RECOMMENDATIONS_ADDRESS}
-              data-testid="landing-recommendations-all"
-            >
-              {readAllLine(recommendations?.length ?? null)} <span aria-hidden="true">→</span>
-            </a>
-          </div>
+          <LatestPosts onOpenBlog={onOpenBlog} />
+          <LandingVoices recommendations={recommendations} />
         </section>
         <section
           className={`${styles.section} ${styles.build}`}
           aria-labelledby="landing-stack"
+          data-mock="stack"
           data-testid="landing-build"
         >
-          <h2 id="landing-stack" className={styles.groupHeading}>
-            {MENUS.stack.label}
-          </h2>
+          <SectionHead
+            id="landing-stack"
+            number={SECTION_NUMBERS.stack}
+            title={MENUS.stack.label}
+            seen
+          />
           <div className={styles.buildRow}>
             <ProofStrip summary={summary} stores={stores} />
             <TechStackSummary />
@@ -241,16 +243,25 @@ export function Landing({
               key={group.key}
               className={styles.group}
               aria-labelledby={`landing-group-${group.key}`}
+              data-mock={group.key === 'who' ? 'who' : undefined}
               data-testid={`landing-group-${group.key}`}
             >
-              <h2 id={`landing-group-${group.key}`} className={styles.groupHeading}>
-                {group.label}
-              </h2>
+              <SectionHead
+                id={`landing-group-${group.key}`}
+                number={SECTION_NUMBERS[group.key]}
+                title={group.label}
+                seen
+              />
               <ul className={styles.small}>{group.tiles.map((entry) => tile(entry, false))}</ul>
             </section>
           ))}
         </div>
-        <ReviewClose onAction={() => {}} onBook={() => setBooking(true)} lines={LANDING_CLOSE} />
+        <ReviewClose
+          onAction={() => {}}
+          onBook={() => setBooking(true)}
+          ask={LANDING_CLOSE}
+          heading={LANDING_CLOSE.label}
+        />
         <WhereNext page="landing" />
       </section>
       <ReviewDock

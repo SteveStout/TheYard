@@ -7,7 +7,7 @@
  * Does not:  Hold a motion itself (sales.css does, and comet.ts the one that runs the quality line) or decide what is a
  *            holder (each section passes its own).
  * Used by:   ReviewVerdict.tsx, ReviewWork.tsx, ReviewPath.tsx, ReviewVoices.tsx, ReviewTour.tsx, ReviewClose.tsx,
- *            LatestPosts.tsx, useFirstSeen.test.ts.
+ *            LatestPosts.tsx, SectionHead.tsx, PulseBand.tsx, Landing.tsx, useFirstSeen.test.ts.
  */
 import { useEffect, useState } from 'react';
 

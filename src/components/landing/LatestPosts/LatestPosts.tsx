@@ -1,6 +1,6 @@
 /**
- * Does:      Draws the three newest posts from the blog in one of two forms. The home page's Latest posts band: short
- *            cards and a way to all of them. The review route's row (ADR: The review route gives a reason before it
+ * Does:      Draws the three newest posts from the blog in one of two forms. The home page's Latest posts band: the
+ *            shared section head with its 02 badge and "All posts" on its right, then short cards. The review route's row (ADR: The review route gives a reason before it
  *            asks, the addendum on named voices and the blog): the section heading the page hands in with "All posts",
  *            then three cards three across from 1024 up, each one link to its post with its cover, title, two lines of
  *            summary, date and reading time, every press reported. Draws nothing while the posts are read, when the
@@ -13,7 +13,9 @@ import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { useBlogPosts } from '../../../hooks/useBlogPosts';
 import { ALL_POSTS_ADDRESS, postDate, postLink } from '../../../lib/blog';
 import { minutesLine } from '../../../lib/blogFilter';
+import { SECTION_NUMBERS } from '../../../lib/landingMoves';
 import { BlogMini } from '../../blog/BlogMini';
+import { SectionHead } from '../../shared/SectionHead';
 import styles from './LatestPosts.module.css';
 
 /** How many of the newest posts the band shows. */
@@ -24,11 +26,9 @@ const plainClick = (event: MouseEvent) =>
   !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0);
 
 export function LatestPosts({
-  headingClass = '',
   onOpenBlog,
   row,
 }: {
-  headingClass?: string;
   onOpenBlog: (slug: string | null) => void;
   /** The review route's row: its heading, handed the "All posts" link to place, and the report of every press. */
   row?: { head: (all: ReactNode) => ReactNode; onFollow: () => void };
@@ -102,15 +102,23 @@ export function LatestPosts({
     );
   }
   return (
-    <section className={styles.band} aria-labelledby="landing-latest" data-testid="landing-latest">
-      <div className={styles.head}>
-        <h2 id="landing-latest" className={headingClass}>
-          Latest posts
-        </h2>
-        <button type="button" className={styles.all} onClick={() => onOpenBlog(null)}>
-          All posts <span aria-hidden="true">→</span>
-        </button>
-      </div>
+    <section
+      className={styles.band}
+      aria-labelledby="landing-latest"
+      data-mock="posts"
+      data-testid="landing-latest"
+    >
+      <SectionHead
+        id="landing-latest"
+        number={SECTION_NUMBERS.posts}
+        title="Latest posts"
+        meta={
+          <button type="button" className={styles.all} onClick={() => onOpenBlog(null)}>
+            All posts <span aria-hidden="true">→</span>
+          </button>
+        }
+        seen
+      />
       <div className={styles.cards}>
         {newest.map((post) => (
           <BlogMini key={post.slug} post={post} onOpen={onOpenBlog} />

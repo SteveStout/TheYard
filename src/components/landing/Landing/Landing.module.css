@@ -1,10 +1,10 @@
 /**
  * Does:      Styles the landing page as its picture draws it (ADR-082, the addendum on the home page's order): one
- *            column of sections with one gap, the name line and the moves on the first screen, Start here's four
- *            doors with their chips, the posts beside the voices, the build row, the small tiles under their group
- *            headings and each tile's badge.
+ *            column of sections with one gap, the name line and the four moves on the first screen (each the row's
+ *            width on a phone), Start here's four doors with their chips, the posts beside the voices, the build row,
+ *            the small tiles under their numbered heads and each tile's badge, and the stack page's one heading.
  * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
- * Used by:   Landing.tsx, LandingTile.tsx, ProofStrip.tsx, StackPage.tsx.
+ * Used by:   Landing.tsx, LandingTile.tsx, LandingVoices.tsx, ProofStrip.tsx, StackPage.tsx.
  */
 /* The landing page: glass tiles with a round teal icon on a gold ring, one column of sections with one gap, every
    section the page's width. Every value is a token. Tiles are glass without the blur (a blur is paid for by the
@@ -55,6 +55,11 @@
   padding: 0 var(--space-5);
   font-size: var(--text-md);
   white-space: nowrap;
+}
+
+/* Book 20 minutes, the outlined pill, stands as tall as the gold resume beside it. */
+.move {
+  min-height: var(--control-height-lg);
 }
 
 /* The one primary move carries the review route's gold ring and stands a step larger. */
@@ -150,12 +155,6 @@
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-}
-
-.vhead {
-  display: flex;
-  align-items: center;
-  min-height: var(--touch-target);
 }
 
 .allRecs {
@@ -402,19 +401,13 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.groupHeading {
-  align-self: flex-start;
+/* The stack page's one heading: plain bold words, the shared section head's look (SectionHead.module.css). */
+.stackHeading {
   margin: 0;
-  padding: var(--space-1) var(--space-4);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-glass);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-filter);
-  backdrop-filter: var(--glass-filter);
+  color: var(--color-heading);
   font-size: var(--text-xl);
   font-weight: var(--weight-bold);
-  line-height: 1.25;
-  color: var(--color-heading);
+  letter-spacing: var(--title-tracking);
 }
 
 .big {
@@ -610,8 +603,16 @@
     gap: var(--space-3);
   }
 
+  /* Each move the row's width, the text link's words at its left, as the picture draws them. */
+  .moves > a {
+    width: 100%;
+  }
+
+  /* A thumb tall, as every control on these pages is on a phone. */
   .moves .textLink {
-    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
   }
 
   .doors {

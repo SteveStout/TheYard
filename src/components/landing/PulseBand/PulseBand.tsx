@@ -15,6 +15,10 @@
  *
  * It reads again every fifteen seconds while the page is open and stops while the tab is hidden,
  * so a phone in a pocket costs nothing.
+ *
+ * It wears the sales pages' dark live panel laid on its side (ADR: The sales pages set the site's look): the head
+ * "TheYard, right now" with the LIVE tag, then the four instruments, four across at a desk and two by two on a phone.
+ * Its live dot breathes three times when the band is first seen (useFirstSeen); what it reads does not change.
  */
 import {
   buildWords,
@@ -28,6 +32,7 @@ import {
 } from '../../../lib/pulse';
 import { PeopleInstrument } from './PeopleInstrument';
 import styles from './PulseBand.module.css';
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { usePulse } from '../../../hooks/usePulse';
 
 /** The documents an instrument opens: how it performs, how it rolls, and how a visitor is counted. */
@@ -39,6 +44,8 @@ const MARKS = ticks(LATENCY_CEILING_MS);
 export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void }) {
   // The one read of /api/pulse (usePulse.ts): the drawn page's reading first, then every 15 seconds.
   const { pulse } = usePulse();
+  // The holder of the LIVE dot's three breaths.
+  const [holder] = useFirstSeen<HTMLElement>();
 
   const latency = pulse?.usual_p95_ms_24h ?? null;
   const spend = pulse?.month_to_date ?? null;
@@ -52,10 +59,19 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
 
   return (
     <section
-      className={`${styles.band} op-glass`}
+      ref={holder}
+      className={`${styles.band} op-live-panel`}
       aria-label="What this site is doing right now"
+      data-mock="live-panel"
       data-testid="pulse-band"
     >
+      <p className={`${styles.head} op-live-head`}>
+        <span>TheYard, right now</span>
+        <span className="op-live-tag">
+          <i className="op-live-dot" aria-hidden="true" />
+          Live
+        </span>
+      </p>
       <article
         className={styles.instrument}
         aria-labelledby="pulse-answering"
@@ -69,7 +85,11 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
             <span className={styles.unread}>{UNREAD}</span>
           ) : (
             <>
-              <span className={styles.figure} data-testid="pulse-latency-figure">
+              <span
+                className={styles.figure}
+                data-mock="live-value"
+                data-testid="pulse-latency-figure"
+              >
                 {latency.toLocaleString('en-US')}
               </span>
               <span className={styles.unit}>ms</span>
@@ -137,7 +157,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
           {spend === null ? (
             <span className={styles.unread}>{UNREAD}</span>
           ) : (
-            <span className={styles.figure} data-testid="pulse-cost-figure">
+            <span className={styles.figure} data-mock="live-value" data-testid="pulse-cost-figure">
               {moneyWords(spend, currency)}
             </span>
           )}
@@ -166,7 +186,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
         </p>
         <p className={styles.reading}>
           <span className={styles.live} aria-hidden="true" />
-          <span className={styles.figure} data-testid="pulse-roll-figure">
+          <span className={styles.figure} data-mock="live-value" data-testid="pulse-roll-figure">
             {pulse === null ? UNREAD : uptimeWords(pulse.uptime_seconds)}
           </span>
         </p>

@@ -736,4 +736,51 @@ test.describe('the review route on the narrowest phone', () => {
     );
     expect(sideways).toBeLessThanOrEqual(0);
   });
+
+  // The home page's band is the same dark panel, two by two at 360 (saleshome1120): each instrument holds its widest
+  // reading inside its own column, so no figure runs into its neighbour.
+  test('the home page band holds its longest readings two by two at 360', async ({ page }) => {
+    const now = Date.now();
+    await page.route('**/api/pulse', (route) =>
+      route.fulfill({
+        json: {
+          usual_p95_ms_24h: 99_999,
+          requests_24h: 99_999_999,
+          month_to_date: 99_999.99,
+          forecast_month: 199_999.99,
+          currency: 'USD',
+          cost_read_at_ms: now,
+          uptime_seconds: 29 * 86_400 + 23 * 3_600,
+          version: '1.0.55.1288',
+          commit: 'a4c45c4',
+          read_at_ms: now,
+          people_all_time: 9_999_999,
+          people_new_by_day: [],
+          counted_from: '2026-12-24',
+          visits_all_time: 9_999_999,
+          visits_from: '2026-12-24',
+          visits_by_day: [1, 2, 3],
+        },
+      })
+    );
+    await openTheYard(page, '/');
+    const band = page.getByTestId('pulse-band');
+    await expect(band.locator('[data-mock="live-value"]').first()).toHaveText('99,999');
+    const spilled = await band.locator(':scope > article').evaluateAll((all) =>
+      all.flatMap((article) => {
+        const edge = article.getBoundingClientRect();
+        return Array.from(article.querySelectorAll('p, span, svg'))
+          .filter((each) => {
+            const box = each.getBoundingClientRect();
+            return box.width > 0 && (box.left < edge.left - 1 || box.right > edge.right + 1);
+          })
+          .map((each) => `${article.getAttribute('data-testid')}: ${each.textContent ?? ''}`);
+      })
+    );
+    expect(spilled).toEqual([]);
+    const sideways = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(sideways).toBeLessThanOrEqual(0);
+  });
 });
