@@ -5,6 +5,7 @@
  *   RailBrandBar        the site's name, home, and the collapse or close button
  *   RailSectionShell    one section, a disclosure that starts closed
  *   RailDocRow          a row that opens a document
+ *   RailHeldKey         the key to the Decision Records marks
  *   RailLinkRow         a row that is a link out
  *   RailPinnedRows      the site map's actions at the foot, with Reset bids
  *   RailPinnedRow       one of those actions
@@ -13,11 +14,14 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { DocDialog, type DocRequest } from '../../../library/DocDialog';
 import { DOCS, type DocKey } from '../../../library/documents';
+import { recordMark } from '../../../lib/enforced';
+import { useRecordMarks } from '../../../hooks/useRecordMarks';
 import { LINKS, MENUS } from '../../../library/sections';
 import { SITE_GROUPS, sectionsIn } from '../../../lib/siteMap';
 import { RailBrandBar, type RailBuild } from '../RailBrandBar';
 import { RailSectionShell } from '../RailSectionShell';
 import { RailDocRow } from '../RailDocRow';
+import { RailHeldKey } from '../RailHeldKey';
 import { RailLinkRow } from '../RailLinkRow';
 import { RailPinnedRows } from '../RailPinnedRows';
 import styles from './SideNav.module.css';
@@ -207,6 +211,8 @@ function NavContent({
   onCloseDrawer,
 }: ContentProps) {
   const iconsOnly = docked && collapsed;
+  // The Decision Records marks, read when that section opens (ADR-029).
+  const marks = useRecordMarks();
 
   return (
     <>
@@ -229,7 +235,15 @@ function NavContent({
             <div key={group.key} className={styles.group} data-testid={`rail-group-${group.key}`}>
               <p className={iconsOnly ? styles.srOnly : styles.groupTitle}>{group.label}</p>
               {sectionsIn(group.key).map(({ menu: variant }) => (
-                <RailSectionShell key={variant} label={MENUS[variant].label} iconsOnly={iconsOnly}>
+                <RailSectionShell
+                  key={variant}
+                  label={MENUS[variant].label}
+                  iconsOnly={iconsOnly}
+                  onOpen={variant === 'records' ? marks.read : undefined}
+                >
+                  {variant === 'records' && marks.enforced && !iconsOnly ? (
+                    <RailHeldKey enforced={marks.enforced} />
+                  ) : null}
                   {MENUS[variant].lead?.map((link) => (
                     <RailLinkRow key={link.href} link={link} iconsOnly={iconsOnly} />
                   ))}
@@ -242,6 +256,9 @@ function NavContent({
                       sub={sub}
                       current={openKey === key}
                       iconsOnly={iconsOnly}
+                      held={
+                        variant === 'records' ? recordMark(marks.enforced, DOCS[key].number) : null
+                      }
                       onOpen={() => onOpenDoc(key)}
                     />
                   ))}
