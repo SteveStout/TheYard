@@ -392,6 +392,22 @@ jobs:
           cat "$RAW/emdash.txt" "$r"
       # #endregion em-dashes
 
+      # #region heal-outside
+      # The outside self-heal list (the year-end plan's 7b): on a ready/heal-* branch, a path in data/heal-outside.json
+      # or a deleted file is red, and this job's verdict names it; any other branch is not a heal and passes. The one
+      # script the catch list runs too.
+      - name: The heal-outside list
+        if: always()
+        env:
+          BASE: ${{ needs.cop.outputs.base }}
+        run: |
+          r="$RAW/rest.result"
+          code=0
+          python3 scripts/heal_outside.py --branch "$GITHUB_REF_NAME" --base "${BASE:-origin/main}" > "$RAW/heal-outside.txt" 2>&1 || code=$?
+          echo "healoutside=$code" >> "$r"
+          cat "$RAW/heal-outside.txt"
+      # #endregion heal-outside
+
       # #region quality-ratchet
       # The quality ratchet, the same command CI runs, so a version cannot reach main with
       # any of its numbers worse than the file says (ADR: The numbers that may only fall).
@@ -414,7 +430,7 @@ jobs:
           path: ${{ runner.temp }}/raw/
       - name: This job's verdict
         if: always()
-        run: bash scripts/gate_job.sh "$RAW" prettier lint tsc vitest emdash quality
+        run: bash scripts/gate_job.sh "$RAW" prettier lint tsc vitest emdash quality healoutside
   # #endregion node-job
 
   # #region browser-job
@@ -554,6 +570,7 @@ jobs:
           for k in format oncosmos; do v=$(val dotnet.result $k); [ "$v" = 0 ] || [ "$v" = skipped ] || red="$red $k"; done
           [ "$(val rest.result emdash)" = 0 ] || red="$red emdash"
           [ "$(val rest.result quality)" = 0 ] || red="$red quality"
+          [ "$(val rest.result healoutside)" = 0 ] || red="$red healoutside"
           [ "$(val rest.result fold)" = 0 ] || red="$red fold"
           [ "$(val build.result warnings)" = 0 ] || red="$red warnings"
           # A log's tail is printed only when that log's OWN check is red. Every red run used to print the
@@ -575,7 +592,7 @@ jobs:
           trap said EXIT
           if [ -n "$red" ]; then
             echo "::error::red:$red"
-            for pair in prettier:prettier.txt lint:lint.txt tsc:tsc.txt format:format.txt sqlproj:sqlproj.txt emdash:emdash.txt quality:quality.txt fold:fold.txt; do
+            for pair in prettier:prettier.txt lint:lint.txt tsc:tsc.txt format:format.txt sqlproj:sqlproj.txt emdash:emdash.txt quality:quality.txt healoutside:heal-outside.txt fold:fold.txt; do
               f=${pair#*:}; is_red "${pair%%:*}" || continue
               if [ -s "$RAW/$f" ]; then tail -n 12 "$RAW/$f" | lines "$f"; fi
             done

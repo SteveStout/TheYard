@@ -31,6 +31,8 @@ catch() {
 catch em-dashes bash scripts/emdash_scan.sh
 catch ratchet bash scripts/quality_ratchet.sh
 catch size bash scripts/pr_size.sh "$base"
+# A heal branch (GATE_LANE heal-*) may not touch the outside self-heal list; any other lane passes.
+catch heal-outside python3 scripts/heal_outside.py --base "$base"
 # The version card is drawn from the commit's own changelog line; one drawn from another line turned a gate red.
 catch og-card bash -c '[ -d node_modules/@playwright/test ] || { echo "og card: not judged, node_modules is not installed here"; exit 0; }; node docs/images/og.mjs > /dev/null && git diff --quiet -- docs/images/og.svg public/og.png || { echo "the og card is not drawn from this commit: run node docs/images/og.mjs and amend"; git checkout -q -- docs/images/og.svg public/og.png; exit 1; }'
 

@@ -11,7 +11,8 @@ namespace JobHunt.Application.Features.Watch;
 /// <summary>What one tick read and wrote.</summary>
 /// <param name="Results">Every test's reading, in the plan's order.</param>
 /// <param name="Written">Whether WATCH.md was written (shadow and on write it; off writes nothing).</param>
-public sealed record WatchPassResult(IReadOnlyList<WatchResult> Results, bool Written);
+/// <param name="Heals">The heal items the ladder opened (mode on only; shadow heals nothing).</param>
+public sealed record WatchPassResult(IReadOnlyList<WatchResult> Results, bool Written, int Heals = 0);
 
 /// <summary>
 /// One watch tick (the year-end plan's 7a): each test reads its real source and is judged by <see cref="WatchJudge"/>,
@@ -83,14 +84,16 @@ public sealed class WatchPass(IMergeStore store, Func<string, string?> setting, 
 
         await store.EnsureFolderAsync("dispatch/watch", ct);
         string log = WatchTick.ChangeLog(day);
-        string changes = WatchTick.Changes(local, await TextAsync(log, ct), results);
+        string before = await TextAsync(log, ct);
+        string changes = WatchTick.Changes(local, before, results);
         if (changes.Length > 0)
         {
             await store.AppendAsync(log, TrackerCsvText.Encode(changes), ct);
         }
+        int heals = mode == WatchMode.On ? (await new WatchHeal(store).RunAsync(results, before + changes, now, ct)).Items.Count : 0;
         await store.WriteAsync(MergePaths.Temp(WatchTick.File), TrackerCsvText.Encode(WatchTick.Render(local, mode, results)), ct);
         await store.ReplaceAsync(MergePaths.Temp(WatchTick.File), WatchTick.File, ct);
-        return new WatchPassResult(results, true);
+        return new WatchPassResult(results, true, heals);
     }
 
     /// <summary>W9: both names' commit, main's head and its CI run, two calls to GitHub.</summary>
