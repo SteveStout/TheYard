@@ -44,6 +44,8 @@ What that is worth: a developer changes a colour in one file and the build says 
 --color-gold-light | Gold light, the gold bar's highlight
 --color-gold-bar-dark | The gold bar, its dark ends
 --color-gold-bar-shade | The gold bar, its shade
+--color-gold-pale | The resume button, its pale top
+--color-on-gold | Words on the resume button
 --color-brand-mark | The lightning mark
 --color-on-accent | Words on a fill
 ```
@@ -71,10 +73,16 @@ What that is worth: a developer changes a colour in one file and the build says 
   (`#7d582e`), the highlight in the middle, the ribbon gold and a shade (`#ad8e57`) either side of
   it. It is drawn with `border-image`, so the rule is the bar; a browser without it draws the flat
   gold.
+- **The resume button** is the gold bar turned on end: the pale gold `#f3e2a6` at the top, the gold
+  light, the ribbon gold, and the flat gold at the foot, edged in the bar's dark tone. Its words are a
+  dark brown `#2f2410`, which reads 11.76 on the pale top and 5.23 on the flat gold at the foot, so
+  the words clear 4.5 on every stop. It is the one place gold is a fill, and it marks one thing: the
+  resume.
 
 ```swatches
 --gradient-header | The header, on a phone and on the side rail's brand block
 --gradient-gold | The gold bar, under a page title and on a stat tile's top
+--gradient-gold-button | The resume button's face
 ```
 
 The header gradient runs top to bottom, dark green to header teal, because left to right could not

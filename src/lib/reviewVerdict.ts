@@ -47,7 +47,8 @@ export function restLine(records: number, diagrams: number): string {
 
 /** The close's words: its readout and its two outlined buttons; the filled one is the first screen's "Book 20 minutes". */
 export const CLOSE = {
-  readout: 'That is the work',
+  /** Read by a screen reader only: the close draws no heading since its quote joined the voices band. */
+  label: 'Next step',
   linkedin: 'Message me on LinkedIn',
 } as const;
 

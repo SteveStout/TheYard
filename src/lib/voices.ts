@@ -1,20 +1,25 @@
 /**
  * Does:      Names whose words stand beside each claim (ADR: The review route gives a reason before it asks, the
- *            addendum on named voices): one list for the review route's three cards, its pair, its close and the home
- *            page's three, and the picker that finds a name's entry in the /api/recommendations answer.
+ *            addendum on named voices, and the one on the voices band): one list for the review route's band of six,
+ *            each its own card and none attached to a question, and the home page's three, and the picker that finds a
+ *            name's entry in the /api/recommendations answer.
  * Does not:  Hold anybody's words (the API answers them whole, and a test holds that no source file types them),
  *            read anything or draw anything.
- * Used by:   Voice.tsx, ReviewPath.tsx, ReviewPage.tsx, ReviewClose.tsx, Landing.tsx, voices.test.ts.
+ * Used by:   Voice.tsx, ReviewVoices.tsx, Landing.tsx, voices.test.ts.
  */
 import type { Recommendation } from './recommendations';
 
 /** Who speaks where, by name, in the order each place draws them. */
 export const VOICES = {
-  quality: ['Henry Crans'],
-  gate: ['Sarah Sebestyen'],
-  room: ['Meagan Colley'],
-  pair: ['Sean Whitesell', 'Khushbu Shah'],
-  close: ['Anthony Fortner'],
+  /** The review route's band: the three that stood under the questions, in their order, then the pair, then the close's. */
+  band: [
+    'Henry Crans',
+    'Sarah Sebestyen',
+    'Meagan Colley',
+    'Sean Whitesell',
+    'Khushbu Shah',
+    'Anthony Fortner',
+  ],
   home: ['Cliff True', 'Sanders Crosby', 'Micah Johnson'],
 } as const;
 
