@@ -10,6 +10,8 @@ import {
   isNew,
   mostRead,
   postDate,
+  postLink,
+  ALL_POSTS_ADDRESS,
   readReport,
   sendBlogReport,
   sourceShares,
@@ -41,6 +43,12 @@ describe('the blog on the page', () => {
     expect(isNew('2026-10-23T09:00:00Z', now)).toBe(false);
     expect(isNew(undefined, now)).toBe(false);
     expect(isNew('not a date', now)).toBe(false);
+  });
+
+  it('addresses the blog and each post as the blog opens them, the slug encoded', () => {
+    expect(ALL_POSTS_ADDRESS).toBe('/?view=blog');
+    expect(postLink('quality-on-both-ends')).toBe('/?view=blog&post=quality-on-both-ends');
+    expect(postLink('a b&c')).toBe('/?view=blog&post=a%20b%26c');
   });
 
   it('prints the date in Central time, so an evening post keeps its own day', () => {

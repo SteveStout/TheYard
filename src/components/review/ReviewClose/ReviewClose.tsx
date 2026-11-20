@@ -1,11 +1,15 @@
 /**
  * Does:      Draws the review route's close as the whole-page picture draws it, one glass row at the page's width: "That
  *            is the work", Anthony Fortner's named voice, and three buttons, Book 20 minutes (the filled one; the
- *            booking is the email), Resume (PDF) and Message me on LinkedIn, each reporting its action.
+ *            booking is the email, and it opens the booking sheet too), Resume (PDF) and Message me on LinkedIn, each
+ *            reporting its action, and under them the send line, which hands the page's own address to the phone's
+ *            share sheet or, where there is none, copies it and says "Link copied" for two seconds.
  * Does not:  Pick the name (voices.ts does) or read the API (useReviewReadings.ts does).
  * Used by:   ReviewPage.tsx.
  */
+import { useEffect, useState } from 'react';
 import type { Recommendation } from '../../../lib/recommendations';
+import { FORWARD, forwardText } from '../../../lib/reviewBook';
 import type { ReviewAction } from '../../../lib/reviewProgress';
 import {
   BOOK_ADDRESS,
@@ -21,11 +25,40 @@ import styles from './ReviewClose.module.css';
 
 export function ReviewClose({
   recommendations,
+  address,
   onAction,
+  onBook,
 }: {
   recommendations: Recommendation[] | null;
+  /** The address the send line shares: this route with its for value and the visitor's code. */
+  address: () => string;
   onAction: (action: ReviewAction) => void;
+  onBook: () => void;
 }) {
+  const [said, setSaid] = useState<string | null>(null);
+  useEffect(() => {
+    if (said === null) return;
+    const id = window.setTimeout(() => setSaid(null), 2000);
+    return () => window.clearTimeout(id);
+  }, [said]);
+  const forward = () => {
+    onAction('forward');
+    const url = address();
+    if (typeof navigator.share === 'function') {
+      void navigator.share({ title: FORWARD.title, text: forwardText(url) }).catch(() => {});
+      return;
+    }
+    // navigator.clipboard is undefined outside a secure context, as the document window's Copy link knows.
+    const clipboard = navigator.clipboard;
+    if (!clipboard) {
+      setSaid(FORWARD.refused);
+      return;
+    }
+    void clipboard
+      .writeText(url)
+      .then(() => setSaid(FORWARD.copied))
+      .catch(() => setSaid(FORWARD.refused));
+  };
   return (
     <section
       className={`${styles.close} op-glass`}
@@ -50,7 +83,10 @@ export function ReviewClose({
         <a
           className={`${pills.primary} ${styles.act}`}
           href={BOOK_ADDRESS}
-          onClick={() => onAction('book')}
+          onClick={() => {
+            onAction('book');
+            onBook();
+          }}
           data-action="review.book"
         >
           {VERDICT.book}
@@ -72,6 +108,16 @@ export function ReviewClose({
         >
           {CLOSE.linkedin}
         </a>
+        <button
+          type="button"
+          className={styles.forward}
+          onClick={forward}
+          aria-live="polite"
+          data-action="review.forward"
+          data-testid="review-forward"
+        >
+          {said ?? FORWARD.line}
+        </button>
       </div>
     </section>
   );

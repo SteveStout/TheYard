@@ -667,6 +667,12 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         const tall = await page.evaluate(() => document.documentElement.scrollHeight);
         expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 2950 : 2750);
       }
+      // 3. At 390 with the tour closed: under 5,600 for the verdict, under 6,200 for the mirror (5,272 and 5,851).
+      if (width === 390) {
+        await page.getByTestId('review-tour-toggle').click();
+        const tall = await page.evaluate(() => document.documentElement.scrollHeight);
+        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 6200 : 5600);
+      }
       // 6 and 7. The primary button is on the first screen at 1568 by 772 and at 390 by 844.
       if (width === 1568 || width === 390)
         expect(
@@ -748,6 +754,143 @@ test('every voice is the answer’s own words and opens its card, and the blog r
   await page.goBack();
   await page.getByTestId('review-blog-all').click();
   await expect(page).toHaveURL(/\?view=blog$/);
+});
+
+// 7. The dock: under 640 only, off at load, on once the first screen's buttons have left the window, off when they
+// return, and not drawn while the booking sheet is open; the page leaves room for it under the last section.
+for (const address of ['/?view=review', '/?view=review&for=ai']) {
+  test(`${address}: the phone's dock comes on after the first screen and never covers the page`, async ({
+    page,
+  }) => {
+    await page.route('**/api/go/book', (route) => route.fulfill({ status: 204 }));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await freshRoute(page);
+    await openTheYard(page, address);
+    const dock = page.getByTestId('review-dock');
+    await expect(dock).toHaveAttribute('data-on', 'false');
+    await page.getByTestId('review-path').scrollIntoViewIfNeeded();
+    await expect(dock).toHaveAttribute('data-on', 'true');
+    await expect(dock.getByRole('link', { name: 'Book 20 minutes' })).toBeInViewport();
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    const close = await page.getByTestId('where-next').boundingBox();
+    const bar = await dock.boundingBox();
+    expect(close!.y + close!.height, 'the last section clears the dock').toBeLessThanOrEqual(
+      bar!.y + 1
+    );
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(dock).toHaveAttribute('data-on', 'false');
+    await page.getByTestId('review-book').click();
+    await expect(page.getByTestId('book-sheet')).toBeVisible();
+    await expect(dock).toHaveCount(0);
+    // From 640 up there is no dock to see.
+    await page.keyboard.press('Escape');
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await expect(dock).toBeHidden();
+  });
+}
+
+// 9. No dead end: every "Book 20 minutes" reports book, follows the counted redirect and opens the sheet, which reads
+// the address and the message from the site's settings with a copy control for each and the LinkedIn link; Escape,
+// its close and its backdrop close it.
+test('Book 20 minutes opens the booking sheet with the address, the message, copy controls and LinkedIn', async ({
+  page,
+  context,
+}) => {
+  const actions: string[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { action?: string };
+    if (body.action) actions.push(body.action);
+    await route.fulfill({ status: 204 });
+  });
+  const book: string[] = [];
+  await page.route('**/api/go/book', (route) => {
+    book.push(route.request().url());
+    return route.fulfill({ status: 204 });
+  });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  const answer = (await (await page.request.get('/api/links/book')).json()) as {
+    to: string;
+    subject: string;
+  };
+  await page.setViewportSize({ width: 1568, height: 772 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  await page.getByTestId('review-book').click();
+  const sheet = page.getByTestId('book-sheet');
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole('heading', { name: 'Book 20 minutes' })).toBeInViewport();
+  await expect(sheet.getByTestId('book-sheet-to')).toHaveText(answer.to);
+  await expect(sheet.getByTestId('book-sheet-message')).toContainText(`Subject: ${answer.subject}`);
+  await expect(sheet.getByRole('link', { name: 'Open my email app' })).toHaveAttribute(
+    'href',
+    '/api/go/book'
+  );
+  const copy = sheet.getByRole('button', { name: 'Copy the address' });
+  await expect(copy).toBeInViewport();
+  await expect(sheet.getByTestId('book-sheet-linkedin')).toBeInViewport();
+  await copy.click();
+  await expect(sheet.getByRole('button', { name: 'Copied' })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(answer.to);
+  expect(book.length).toBeGreaterThanOrEqual(1);
+  await expect.poll(() => actions).toContain('book');
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+  // The close's Book opens it too, and its own X closes it.
+  await page.getByTestId('review-close').getByRole('link', { name: 'Book 20 minutes' }).click();
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole('button', { name: 'Close' }).click();
+  await expect(sheet).toBeHidden();
+});
+
+// 9. The send line hands the page's own address to the share sheet where there is one, and otherwise copies it and
+// says so for two seconds; either way it reports forward, and it never opens a mailto.
+test('the send line shares the route’s address, or copies it where there is no share sheet, and reports forward', async ({
+  page,
+  context,
+}) => {
+  const actions: string[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { action?: string };
+    if (body.action) actions.push(body.action);
+    await route.fulfill({ status: 204 });
+  });
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('share-spec-off') === null)
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: (data: ShareData) => {
+          (window as unknown as { shared: ShareData[] }).shared ??= [];
+          (window as unknown as { shared: ShareData[] }).shared.push(data);
+          return Promise.resolve();
+        },
+      });
+    else Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+  });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review&for=ai');
+  const line = page.getByTestId('review-forward');
+  await expect(line).toHaveText('Send this page to your recruiter or your team');
+  await line.click();
+  const shared = await page.evaluate(() => (window as unknown as { shared: ShareData[] }).shared);
+  expect(shared).toHaveLength(1);
+  expect(shared[0].title).toBe('Steven Stout, Lead / Staff .NET engineer');
+  expect(shared[0].text).toMatch(
+    /^His site is the running system\. Two minutes: https?:\/\/[^/]+\/\?view=review&for=ai$/
+  );
+  await expect.poll(() => actions).toContain('forward');
+  // Without a share sheet the address is copied and the line says so.
+  await page.evaluate(() => sessionStorage.setItem('share-spec-off', '1'));
+  await page.reload();
+  await page.getByTestId('review-forward').click();
+  await expect(page.getByTestId('review-forward')).toHaveText('Link copied');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(
+    /\/\?view=review&for=ai$/
+  );
+  await expect(page.getByTestId('review-forward')).toHaveText(
+    'Send this page to your recruiter or your team',
+    { timeout: 5_000 }
+  );
 });
 
 // No post, or a read that fails: the blog row is not drawn and the gap closes.

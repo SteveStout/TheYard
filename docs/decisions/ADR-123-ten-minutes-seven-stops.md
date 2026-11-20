@@ -176,3 +176,7 @@ The short path's "or the run on GitHub" reports a thirteenth name, `gate-run`, a
 ## Addendum, 2026-11-19 (1.0.5.119): the action blog
 
 The review route's "From the blog" row reports a fourteenth name, `blog`, for a press on a post or on All posts, added to `REVIEW_ACTIONS` and `ReviewActions.Names`. It does not count toward reaching the running system (`RunningOrBook`). The named voices report the existing `recommendations` (ADR-138, the addendum on named voices and the blog).
+
+## Addendum, 2026-11-19 (1.0.5.120): the action forward
+
+The close's send line reports a fifteenth name, `forward`, added to `REVIEW_ACTIONS` and `ReviewActions.Names`; it does not count toward reaching the running system (ADR-138, the addendum on no dead ends).

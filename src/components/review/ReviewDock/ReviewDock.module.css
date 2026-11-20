@@ -1,0 +1,51 @@
+/**
+ * Does:      Lays out the phone's dock as the whole-page picture draws it (its .dock, ported rule by rule): under 640, a
+ *            bar fixed to the foot of the window with its two buttons side by side, slid out of sight and hidden
+ *            until it is on;
+ *            from 640 up, not drawn.
+ * Does not:  Draw the pills' look (ReviewPage.module.css does) or make room for itself (ReviewPage.module.css does).
+ * Used by:   ReviewDock.tsx.
+ */
+.dock {
+  display: none;
+}
+
+@media (max-width: 639.98px) {
+  .dock {
+    position: fixed;
+    z-index: var(--layer-header);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--glass-border);
+    background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+    visibility: hidden;
+    transform: translateY(110%);
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
+  }
+
+  /* On: slid in at once, and seen from the first frame of the slide. */
+  .dock[data-on='true'] {
+    visibility: visible;
+    transform: none;
+    transition: transform 0.2s ease;
+  }
+
+  .pill {
+    flex: 1 1 0;
+    min-height: var(--touch-target);
+    padding: 0 var(--space-3);
+    font-size: var(--text-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock {
+    transition: none;
+  }
+}

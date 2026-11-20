@@ -91,9 +91,9 @@ public sealed class ReviewFoldingTests
         Assert.True(ReviewActions.ReachedRunningOrBook(Row(0, "slip")));
         Assert.True(ReviewActions.ReachedRunningOrBook(Row(3, null)));
         Assert.True(ReviewActions.ReachedRunningOrBook(Row(0, "gate-run")));
-        Assert.False(ReviewActions.ReachedRunningOrBook(Row(0, "blog")));
-        Assert.Equal(14, ReviewActions.Names.Count);
-        Assert.Equal(["gate-run", "blog"], ReviewActions.Names.Skip(12));
+        Assert.False(ReviewActions.ReachedRunningOrBook(Row(0, "blog", "forward")));
+        Assert.Equal(15, ReviewActions.Names.Count);
+        Assert.Equal(["gate-run", "blog", "forward"], ReviewActions.Names.Skip(12));
         Assert.All(ReviewActions.RunningOrBook, name => Assert.True(ReviewActions.IsOne(name)));
         Assert.False(ReviewActions.IsOne("Proof"));
         Assert.False(ReviewActions.IsOne(null));
