@@ -89,15 +89,13 @@ export function useAddressBar() {
   const [blogPost, setBlogPost] = useState<string | null>(first.blogPost);
   /** The open page's own parts of the address (the blog's filter or slide, the review's screen), never q and sort. */
   const [pageQuery, setPageQuery] = useState(first.pageQuery);
-  /** The review route, ?view=review, and the recommendations page, ?view=recommendations; the page open; one close for all three. */
+  /** The review route, the recommendations and the stack (?view=review, recommendations, stack); one close for all. */
   const [reviewOpen, setReviewOpen] = useState(first.review);
   const [recommendationsOpen, setRecommendationsOpen] = useState(first.recommendations);
-  const page = pageOf(blogOpen, reviewOpen, recommendationsOpen);
-  const closePages = () => {
-    setBlogOpen(false);
-    setReviewOpen(false);
-    setRecommendationsOpen(false);
-  };
+  const [stackOpen, setStackOpen] = useState(first.stack);
+  const page = pageOf(blogOpen, reviewOpen, recommendationsOpen, stackOpen);
+  const closePages = () =>
+    [setBlogOpen, setReviewOpen, setRecommendationsOpen, setStackOpen].forEach((set) => set(false));
 
   // #region url-mirror
   // Mirror the current view into the address bar: the filter GET parameters
@@ -201,6 +199,7 @@ export function useAddressBar() {
       setPageQuery(pageQueryFrom(params));
       setReviewOpen(params.get('view') === 'review');
       setRecommendationsOpen(params.get('view') === 'recommendations');
+      setStackOpen(params.get('view') === 'stack');
       setInventoryOpen(opensInventory(inventoryPart(params)));
       setOpenDocKey(docKeyForSlug(params.get('doc')));
       const vehicleId = params.get('vehicle');
@@ -279,6 +278,7 @@ export function useAddressBar() {
     reviewOpen,
     setReviewOpen,
     recommendationsOpen,
+    stackOpen,
     page,
     closePages,
     homeShowing,

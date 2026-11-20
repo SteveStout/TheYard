@@ -1,49 +1,52 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore, type MouseEvent } from 'react';
+import { useReviewReadings } from '../../../hooks/useReviewReadings';
 import { INTRO } from '../../../lib/intro';
 import { landingHealth, storesUp, type LandingHealth } from '../../../lib/landingHealth';
 import {
-  proofFigures,
-  ringReading,
-  type ProofFigure,
-  type TestSummary,
-} from '../../../lib/landingProof';
+  DOCK_REVIEW,
+  LANDING_CLOSE,
+  MOVES,
+  readAllLine,
+  START_HERE,
+} from '../../../lib/landingMoves';
 import { landingTiles, type LandingTile as LandingTileEntry } from '../../../lib/siteMap';
 import type { DocKey } from '../../../library/documents';
-import { MENUS } from '../../../library/sections';
-import { CountUp } from '../../shared/CountUp';
+import { LINKS, MENUS } from '../../../library/sections';
 import { Hook } from '../../shared/Hook';
+import { Voice } from '../../shared/Voice';
 import { WhereNext } from '../../shared/WhereNext';
 import { QualityTrend } from '../../shared/QualityTrend';
 import { hookFor, hookTrend, landingLines, stoppedLine } from '../../../lib/pageHooks';
 import { centralDay, releasesInLastSevenDays } from '../../../lib/releaseFacts';
 import RELEASES from 'virtual:release-facts';
-import { Ring } from '../../shared/Ring';
+import { ProofStrip } from '../ProofStrip';
 import { PulseBand } from '../PulseBand';
-import { TechStack } from '../TechStack';
+import { TechStackSummary } from '../TechStack';
 import { LatestPosts } from '../LatestPosts';
-import { LandingBanners } from '../LandingBanners';
 import { LandingTile } from '../LandingTile';
+import { NewestPost } from '../NewestPost';
 import { RECOMMENDATIONS_SOURCE } from '../../../lib/recommendations';
-import { Recommendations } from '../../shared/Recommendations';
+import { REVIEW_ADDRESS } from '../../../lib/reviewStops';
+import { RECOMMENDATIONS_ADDRESS, VERDICT } from '../../../lib/reviewVerdict';
+import { VOICES } from '../../../lib/voices';
+import { BookSheet } from '../../review/BookSheet';
+import { ReviewClose } from '../../review/ReviewClose';
+import { ReviewDock } from '../../review/ReviewDock';
 import styles from './Landing.module.css';
 import { request } from '../../../lib/request';
 
 /**
- * The landing page: what the address opens with no query. It opens with its hook (ADR-132): the quality sentence as
- * the page's heading, the Quality page's first chart drawn from the history the build carries, and a link to that
- * page, all drawn with no read, the live readouts directly under it (ADR-100), then who built it in one sentence.
- * Then a tile per
- * place the sidebar goes, drawn from the same site map the sidebar is drawn
- * from (src/lib/siteMap.ts), so the two cannot list different things. The
- * large tiles are the map's featured entries, Inventory and Author with the badge on top, and
- * under them two banners, the resume and the review route; then the evidence strip reads the gate's
- * counts from /api/tests/summary, then the blog's Latest posts, then the Tech stack table the
- * build generated from the repository; What colleagues say in a column of its own on the right, every recommendation in full from
- * /api/recommendations (too narrow for two, it follows). Under both columns, the page's full width, every other section under its group's
- * heading, as the sidebar groups them, then Sign in, Admin and GitHub. The Admin tile's health dot is read from /api/health, the band under the title from /api/pulse.
- * One tile is drawn by LandingTile, the banners by LandingBanners.
+ * The landing page: what the address opens with no query (ADR-082, the addendum on the home page's order). It opens
+ * with its hook in the split layout (ADR-132): on the left the name line, the quality sentence as the page's heading,
+ * who built it in one sentence, the hook's sentences and three moves (Check my work, the resume, the live auction);
+ * on the right the Quality page's first chart drawn from the history the build carries, its link and the newest
+ * post. Then the live readings (ADR-100); Start here, four doors in one row with what each costs; the blog's Latest
+ * posts beside three named voices and the way to all of them; the build, the gate's three figures and the stack's
+ * summary with the way to the whole table on its own page; the small tiles under their groups, drawn from the same
+ * site map the sidebar is drawn from (src/lib/siteMap.ts), Sign in and Admin left to the sidebar; the close; and
+ * Where next. On a phone a dock keeps the next step in reach once the moves have scrolled away. Every section has
+ * the page's one width and one gap.
  */
-/** The landing's hook and its chart, read once from the files the build carries. */
 /** The day never changes under a mounted page in a way worth a redraw, so nothing is subscribed. */
 const noSubscription = () => () => {};
 const visitorsDay = () => centralDay(new Date());
@@ -52,16 +55,16 @@ const buildsDay = () => RELEASES.builtOn;
 const HOOK = hookFor('landing');
 const HOOK_TREND = hookTrend(HOOK);
 
-/** The two figures that are a share of a whole, and so carry a ring (the operator's look). */
-const RINGED = ['tests', 'stores'];
+/** A plain click, which the page answers itself; any other keeps the browser's own meaning. */
+const plainClick = (event: MouseEvent) =>
+  !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0);
 
-/** The strip's three places before the gate's counts arrive: the same boxes, blank, so nothing moves when they fill. */
-const PROOF_PLACEHOLDER: ProofFigure[] = ['tests', 'records', 'stores'].map((key) => ({
-  key,
-  figure: '',
-  label: '',
-  detail: '',
-}));
+/** Opens a view in place on a plain click; the address stays a real one for a crawler and a new tab. */
+const inPlace = (open: () => void) => (event: MouseEvent<HTMLAnchorElement>) => {
+  if (!plainClick(event)) return;
+  event.preventDefault();
+  open();
+};
 
 export function Landing({
   accountLabel,
@@ -80,10 +83,11 @@ export function Landing({
   onOpenBlog: (slug: string | null) => void;
   onOpenReview: () => void;
 }) {
-  const { featured, banners, groups, rest } = landingTiles();
+  const { doors, explore } = landingTiles();
   const [health, setHealth] = useState<LandingHealth>('reading');
   const [stores, setStores] = useState<{ up: number; of: number } | null>(null);
-  const [summary, setSummary] = useState<TestSummary | null>(null);
+  const [booking, setBooking] = useState(false);
+  const { summary, recommendations } = useReviewReadings();
   // The week's releases, counted from the day the build ran while the page drawn ahead of a visit is taken over, so
   // the two draws agree, then from the visitor's own Central day (ADR-132).
   const today = useSyncExternalStore(noSubscription, visitorsDay, buildsDay);
@@ -99,20 +103,12 @@ export function Landing({
         setHealth(landingHealth(answer));
         setStores(storesUp(answer));
       });
-    request('/api/tests/summary', undefined, { background: true })
-      .then((r) => (r.ok ? (r.json() as Promise<TestSummary>) : null))
-      .catch(() => null)
-      .then((answer) => {
-        if (live && answer) setSummary(answer);
-      });
     return () => {
       live = false;
     };
   }, []);
-  // The record count is the sidebar's own list, so the strip cannot claim records the site does not open.
-  const proof = proofFigures(summary, MENUS.records.items.length);
 
-  const opens = { onOpenInventory, onOpenAccount, onOpenAdmin, onOpenDoc };
+  const opens = { onOpenInventory, onOpenAccount, onOpenAdmin, onOpenDoc, onOpenReview };
   const tile = (entry: LandingTileEntry, large: boolean) => (
     <LandingTile
       key={entry.kind === 'section' ? entry.section.menu : entry.action.key}
@@ -125,110 +121,119 @@ export function Landing({
   );
 
   return (
-    <section className={styles.landing} aria-labelledby="landing-title" data-testid="landing">
-      <Hook
-        page="landing"
-        lines={lines}
-        headingId="landing-title"
-        headingClass={styles.heading}
-        caption={HOOK.chart ? `${HOOK.chart.label}, ${HOOK.chart.direction}` : undefined}
-        figure={HOOK_TREND && <QualityTrend data={HOOK_TREND} />}
-        link={HOOK.link}
-        onLink={(event) => {
-          // A plain click opens the page in the app's window; a modified click keeps the browser's own meaning.
-          if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
-          event.preventDefault();
-          onOpenDoc('quality');
-        }}
-      />
-      <PulseBand onOpenDoc={onOpenDoc} />
-      {/* Who built it and what it is, the welcome card's sentence, kept under the readouts the hook sits above. */}
-      <p className={styles.who}>{INTRO.sentence}</p>
-      <div className={styles.body}>
-        <div className={styles.lead}>
-          <ul className={styles.featured} aria-label="Start here">
-            {featured.map((entry) => tile(entry, true))}
-          </ul>
-          <LandingBanners banners={banners} onOpenReview={onOpenReview} />
-        </div>
-        <aside
-          className={`${styles.side} op-glass`}
-          aria-labelledby="landing-said"
-          data-testid="landing-recommendations"
-        >
-          <h2 id="landing-said" className={styles.groupHeading}>
-            <a
-              className={styles.headingLink}
-              href={RECOMMENDATIONS_SOURCE}
-              target="_blank"
-              rel="noreferrer"
-            >
-              What colleagues say
-            </a>
-          </h2>
-          <Recommendations />
-        </aside>
-        <div className={styles.rest}>
-          {/* The strip stands at its full height from the first paint, three blank figures until the
-          gate's counts arrive: drawn only once they had, it pushed every group below it down 124 px. */}
-          <ul
-            className={styles.proof}
-            aria-label="What this build's gate measured"
-            aria-busy={proof === null}
-            data-testid="landing-proof"
-            data-state={proof === null ? 'loading' : 'ready'}
-          >
-            {(proof ?? PROOF_PLACEHOLDER).map((figure) => {
-              // The stores are read live from the health answer: how many answered, of how many run.
-              const ring =
-                figure.key === 'stores' && stores !== null
-                  ? {
-                      value: stores.up,
-                      max: stores.of,
-                      words: `${stores.up} of ${stores.of} stores up`,
-                    }
-                  : figure.ring;
-              return (
-                <li
-                  key={figure.key}
-                  className={`${styles.proofItem} op-glass op-tile`}
-                  data-testid={`landing-proof-${figure.key}`}
-                >
-                  <span className={styles.proofFigure}>
-                    <CountUp text={figure.figure || '\u00a0'} />
+    <>
+      <section className={styles.landing} aria-labelledby="landing-title" data-testid="landing">
+        <Hook
+          page="landing"
+          lines={lines}
+          headingId="landing-title"
+          headingClass={styles.heading}
+          caption={HOOK.chart ? `${HOOK.chart.label}, ${HOOK.chart.direction}` : undefined}
+          figure={HOOK_TREND && <QualityTrend data={HOOK_TREND} />}
+          link={HOOK.link}
+          onLink={inPlace(() => onOpenDoc('quality'))}
+          split={{
+            above: (
+              <p className={styles.eyebrow} data-testid="landing-name">
+                {VERDICT.eyebrow.map((part, index) => (
+                  <span key={part}>
+                    {index > 0 && <i aria-hidden="true">/</i>}
+                    {part}
                   </span>
-                  <span className={styles.proofLabel}>{figure.label || '\u00a0'}</span>
-                  <span className={styles.proofDetail}>{figure.detail || '\u00a0'}</span>
-                  {RINGED.includes(figure.key) && (
-                    // Drawn from the first paint, an empty track until its reading
-                    // arrives, so the figure's row is its full height from the start.
-                    <span className={styles.proofRing}>
-                      <Ring
-                        value={ring?.value ?? 0}
-                        max={ring?.max ?? 1}
-                        size="tile"
-                        inside={ringReading(figure.key, ring)}
-                        label={ring?.words ?? null}
-                        testId={`landing-proof-ring-${figure.key}`}
-                      />
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {/* The landing ends on the last release the gate turned back (G5), under what the gate measured: below the
-          first screen, because the hook above has to fit a phone's (hooks.spec.ts). Left out when none is kept. */}
+                ))}
+              </p>
+            ),
+            lede: INTRO.sentence,
+            moves: (
+              <div className={styles.moves} data-testid="landing-moves">
+                <a
+                  className={`op-pill-primary ${styles.primaryMove}`}
+                  href={REVIEW_ADDRESS}
+                  onClick={inPlace(onOpenReview)}
+                  data-testid="landing-primary"
+                >
+                  {MOVES.primary}
+                  <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  className={`op-pill-secondary ${styles.move}`}
+                  href={LINKS.resume.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {MOVES.resume}
+                </a>
+                <a
+                  className={styles.textLink}
+                  href="/?view=inventory"
+                  onClick={inPlace(onOpenInventory)}
+                >
+                  {MOVES.inventory}
+                </a>
+              </div>
+            ),
+            after: <NewestPost onOpenBlog={onOpenBlog} />,
+          }}
+        />
+        <PulseBand onOpenDoc={onOpenDoc} />
+        <section
+          className={styles.section}
+          aria-labelledby="landing-start"
+          data-testid="landing-start"
+        >
+          <h2 id="landing-start" className={styles.groupHeading}>
+            {START_HERE}
+          </h2>
+          <ul className={styles.doors}>{doors.map((entry) => tile(entry, true))}</ul>
+        </section>
+        <section className={styles.pv} aria-label="Posts and voices">
+          <LatestPosts headingClass={styles.groupHeading} onOpenBlog={onOpenBlog} />
+          <div className={styles.voices} data-testid="landing-voices">
+            <div className={styles.vhead}>
+              <h2 className={styles.groupHeading}>
+                <a
+                  className={styles.headingLink}
+                  href={RECOMMENDATIONS_SOURCE}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  What colleagues say
+                </a>
+              </h2>
+            </div>
+            {VOICES.home.map((name) => (
+              <Voice key={name} name={name} recommendations={recommendations} onFollow={() => {}} />
+            ))}
+            <a
+              className={styles.allRecs}
+              href={RECOMMENDATIONS_ADDRESS}
+              data-testid="landing-recommendations-all"
+            >
+              {readAllLine(recommendations?.length ?? null)} <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </section>
+        <section
+          className={`${styles.section} ${styles.build}`}
+          aria-labelledby="landing-stack"
+          data-testid="landing-build"
+        >
+          <h2 id="landing-stack" className={styles.groupHeading}>
+            {MENUS.stack.label}
+          </h2>
+          <div className={styles.buildRow}>
+            <ProofStrip summary={summary} stores={stores} />
+            <TechStackSummary />
+          </div>
+          {/* The last release the gate turned back (G5), under the stack's header. Left out when none is kept. */}
           {RELEASES.stopped && (
             <p className={styles.stopped} data-testid="landing-stopped">
               {stoppedLine(RELEASES.stopped)}
             </p>
           )}
-          <LatestPosts headingClass={styles.groupHeading} onOpenBlog={onOpenBlog} />
-          <TechStack headingClass={styles.groupHeading} />
-        </div>
-        <div className={styles.wide} data-testid="landing-wide">
-          {groups.map((group) => (
+        </section>
+        <div className={styles.explore} data-testid="landing-wide">
+          {explore.map((group) => (
             <section
               key={group.key}
               className={styles.group}
@@ -238,15 +243,27 @@ export function Landing({
               <h2 id={`landing-group-${group.key}`} className={styles.groupHeading}>
                 {group.label}
               </h2>
-              <ul className={styles.grid}>{group.tiles.map((entry) => tile(entry, false))}</ul>
+              <ul className={styles.small}>{group.tiles.map((entry) => tile(entry, false))}</ul>
             </section>
           ))}
-          <ul className={styles.grid} aria-label="Sign in, Admin and the source">
-            {rest.map((entry) => tile(entry, false))}
-          </ul>
         </div>
-      </div>
-      <WhereNext page="landing" />
-    </section>
+        <ReviewClose
+          recommendations={recommendations}
+          onAction={() => {}}
+          onBook={() => setBooking(true)}
+          lines={LANDING_CLOSE}
+        />
+        <WhereNext page="landing" />
+      </section>
+      <ReviewDock
+        watch='[data-testid="landing-primary"]'
+        hidden={booking}
+        moves={[
+          { label: DOCK_REVIEW, href: REVIEW_ADDRESS, onClick: inPlace(onOpenReview) },
+          { label: MOVES.resume, href: LINKS.resume.href, onClick: () => {} },
+        ]}
+      />
+      <BookSheet open={booking} onClose={() => setBooking(false)} onAction={() => {}} />
+    </>
   );
 }

@@ -33,7 +33,9 @@ export function sectionsIn(group: SiteGroupKey, map = SITE_MAP): SiteSection[] {
 export function landingTiles(map = SITE_MAP): {
   featured: LandingTile[];
   banners: LandingTile[];
+  doors: LandingTile[];
   groups: { key: SiteGroupKey; label: string; tiles: LandingTile[] }[];
+  explore: { key: SiteGroupKey; label: string; tiles: LandingTile[] }[];
   rest: LandingTile[];
   grid: LandingTile[];
 } {
@@ -48,6 +50,13 @@ export function landingTiles(map = SITE_MAP): {
   })).filter((group) => group.tiles.length > 0);
   const rest = actions.filter((a) => !a.featured).map(asAction);
   const byRank = (a: LandingTile, b: LandingTile) => rankOf(a) - rankOf(b);
+  // The small tiles as the home page draws them: Sign in and Admin are the sidebar's alone, and the repository joins
+  // the first group, where the code is.
+  const repo = actions.filter((a) => !a.featured && a.key === 'repo').map(asAction);
+  const explore = groups.map((group, index) => ({
+    ...group,
+    tiles: index === 0 ? [...group.tiles, ...repo] : group.tiles,
+  }));
   return {
     featured: [
       ...actions.filter((a) => a.featured && !a.banner).map(asAction),
@@ -57,7 +66,13 @@ export function landingTiles(map = SITE_MAP): {
       .filter((a) => a.featured && a.banner)
       .map(asAction)
       .sort(byRank),
+    // Start here: every large tile, banners and photographs alike, as one row in rank order.
+    doors: [
+      ...actions.filter((a) => a.featured).map(asAction),
+      ...map.sections.filter((s) => s.featured).map(asSection),
+    ].sort(byRank),
     groups,
+    explore,
     rest,
     grid: [...groups.flatMap((group) => group.tiles), ...rest],
   };

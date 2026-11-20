@@ -412,12 +412,26 @@ describe('the rendering service', () => {
     expect(html).not.toContain('data-testid="review-lead-quote"');
   });
 
-  it('draws both banners on the landing page, the resume first', async () => {
+  it('draws the home page’s first screen and its doors in the first load, the review route first, and no stack table', async () => {
     const { html } = await page('');
-    const resume = html.indexOf('data-testid="landing-banner-resume"');
-    const review = html.indexOf('data-testid="landing-banner-review"');
-    expect(resume).toBeGreaterThan(-1);
-    expect(review).toBeGreaterThan(resume);
+    // The first screen (ADR-132, the addendum on the split hook): the name line, the claim and the moves are in the
+    // first load, so nothing moves when the browser takes over.
+    expect(html).toContain('data-testid="landing-name"');
+    expect(html).toContain('Built with AI. Gated so quality never slides.');
+    expect(html).toContain('Check my work in 2 minutes');
+    expect(html).toContain('or browse the live auction');
+    // Start here: the review route, then the author, the inventory and the resume (ADR-082's addendum).
+    const at = [
+      'landing-banner-review',
+      'landing-tile-author',
+      'landing-tile-inventory',
+      'landing-banner-resume',
+    ].map((id) => html.indexOf(`data-testid="${id}"`));
+    expect(at.every((index) => index > -1)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+    // The stack's table is on its own page; home carries its header and the way to it.
+    expect(html).not.toContain('data-testid="landing-stack-table"');
+    expect(html).toContain('href="/?view=stack"');
   });
 
   it('answers 503 when the API does not answer, the one case with no page to send', async () => {

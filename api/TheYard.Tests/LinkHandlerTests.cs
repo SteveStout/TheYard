@@ -254,6 +254,7 @@ public sealed class LinkHandlerTests
         Assert.Equal(new BookMessage("someone@example.com", "20 minutes", "Hi,\r\nTimes: 1.+2."), parts);
         Assert.Equal(new BookMessage("a@example.com", "", ""), BookMessageHandler.Parts("mailto:a@example.com"));
         Assert.Equal(new BookMessage("a@example.com", "Hi", ""), BookMessageHandler.Parts("mailto:a@example.com?Subject=Hi&cc=b@example.com"));
+        Assert.Equal(new BookMessage("a@example.com", "Hi", ""), BookMessageHandler.Parts("mailto:?to=a%40example.com&subject=Hi"));
 
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {

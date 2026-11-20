@@ -61,6 +61,12 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       blurb: 'How the site was built with AI, and what that means.',
     },
     {
+      menu: 'stack',
+      icon: 'architecture',
+      group: 'built',
+      blurb: 'What it runs on, with the file that proves each line.',
+    },
+    {
       menu: 'quality',
       icon: 'quality',
       group: 'built',
@@ -134,6 +140,7 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       blurb: 'Lead / Staff .NET engineer, twelve years full stack, seven fully remote.',
       featured: true,
       featuredRank: 2,
+      cost: '3 min',
       // The vineyard photograph cropped to the author alone, so a reader knows which one is the author.
       badgePhoto: {
         src: '/api/images/badges/steve-176.jpg',
@@ -166,7 +173,8 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       icon: 'review',
       blurb: 'Two minutes on the running system: how I ship with AI and keep the quality measured.',
       featured: true,
-      featuredRank: 4,
+      featuredRank: 1,
+      cost: '2 min',
       banner: true,
       inRail: true,
       onLanding: true,
@@ -187,7 +195,8 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       icon: 'inventory',
       blurb: 'Browse and bid on 100,000 vehicles in live auctions.',
       featured: true,
-      featuredRank: 1,
+      featuredRank: 3,
+      cost: 'Live',
       // One of the inventory's own photographs, the yellow coupe.
       badgePhoto: {
         src: '/api/images/badges/inventory-176.jpg',
@@ -223,7 +232,8 @@ export const SITE_MAP: { sections: readonly SiteSection[]; actions: readonly Sit
       icon: 'resume',
       blurb: 'Twelve years of full stack .NET on one page, opens as a PDF.',
       featured: true,
-      featuredRank: 3,
+      featuredRank: 4,
+      cost: 'PDF',
       // Under Inventory and Author, beside the review route's banner, the resume first.
       banner: true,
       inRail: true,

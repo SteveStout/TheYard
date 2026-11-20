@@ -1,7 +1,8 @@
 /**
  * Does:      Says what each sidebar section holds: its documents in order (MENUS), and the rows that open in a new tab (LINKS, API_REFERENCE, DIAGRAMS).
  * Does not:  Order the sections or pick their icons (src/lib/siteMap.ts does), or hold a document itself (records.ts and pages.ts do).
- * Used by:   SideNav.tsx, Landing.tsx, LandingTile.tsx, LandingBanners.tsx, ReviewTour.tsx, Header.tsx, sections.test.ts.
+ * Used by:   SideNav.tsx, Landing.tsx, LandingTile.tsx, ProofStrip.tsx, TechStack.tsx, ReviewTour.tsx, Header.tsx,
+ *            sections.test.ts.
  */
 import type { MenuVariant } from '../lib/siteMap';
 import type { DocKey } from './documents';
@@ -97,6 +98,14 @@ export const MENUS: Record<
     label: 'Recommendations',
     items: [],
     links: [{ label: 'Every recommendation, in full', href: '/?view=recommendations' }],
+  },
+  // The stack page (ADR: The stack has a page of its own): a view, not a document, so the section is one link to it.
+  stack: {
+    label: 'Tech stack',
+    items: [],
+    links: [
+      { label: 'The whole stack, with the file that proves each line', href: '/?view=stack' },
+    ],
   },
   // #region architecture-menu
   architecture: {

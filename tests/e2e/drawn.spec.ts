@@ -58,8 +58,8 @@ test('the bare address arrives with the landing page already drawn in its HTML',
   expect(root).toContain('data-drawn="landing"');
   expect(root).toContain('Built with AI. Gated so quality never slides.');
   expect(root).toContain('data-testid="landing-tile-inventory"');
-  // Drawn with nothing fetched: the API is asked nothing while the site is built.
-  expect(root).toContain('data-state="reading"');
+  // Drawn with nothing fetched: the API is asked nothing while the site is built, so the gate's figures wait.
+  expect(root).toContain('data-testid="landing-proof" data-state="loading"');
 });
 
 for (const viewport of [
@@ -73,7 +73,10 @@ for (const viewport of [
     const errors = watchErrors(page);
     await keepTheDrawnNode(page);
     await openTheYard(page, '/');
-    await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
+    await expect(page.getByTestId('landing-proof-ring-stores')).toHaveAttribute(
+      'aria-label',
+      /^\d of \d stores up$/
+    );
 
     expect(errors.filter((error) => HYDRATION.test(error))).toEqual([]);
     if (await builtPage(page)) {

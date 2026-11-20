@@ -3,7 +3,7 @@
  *            the quote and the roles card beside it; under 1280 one column with those two side by side under it; on a
  *            phone the moves come straight after the lede, before the tiles, so the primary button is on the first screen.
  * Does not:  Draw a panel's glass (panels.css does), a tile (ProofTile.module.css does) or the pills' own look
- *            (ReviewPage.module.css does).
+ *            (panels.css does).
  * Used by:   ReviewMirror.tsx, ReviewVerdict.tsx.
  */
 .verdict {

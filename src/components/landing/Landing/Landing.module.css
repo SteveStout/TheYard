@@ -1,22 +1,14 @@
 /**
- * Does:      Styles the landing page: the two columns under its hook, the band the width of the
- *            page under both, the featured tiles, the section tiles under their group headings, each tile's badge,
- *            and the place of the quotations column.
+ * Does:      Styles the landing page as its picture draws it (ADR-082, the addendum on the home page's order): one
+ *            column of sections with one gap, the name line and the moves on the first screen, Start here's four
+ *            doors with their chips, the posts beside the voices, the build row, the small tiles under their group
+ *            headings and each tile's badge.
  * Does not:  Decide which sections exist (siteMap.ts does), or draw a tile's glass (panels.css does).
- * Used by:   Landing.tsx, LandingTile.tsx, LandingBanners.tsx.
+ * Used by:   Landing.tsx, LandingTile.tsx, ProofStrip.tsx, StackPage.tsx.
  */
-/* The landing page: glass tiles with a round teal icon on a gold ring, the
-   two featured tiles large at the top, the sections under their group
-   headings below them. Every value is a token. Tiles are glass without the blur
-   (a blur is paid for by the pixel, and there are eighteen); the two large
-   tiles take the blur, as the intro strip does.
-
-   The left column runs on one set of three columns, row after row: the featured
-   tiles and the evidence strip share the same column count, gap and edges. The
-   groups stand under both columns in a band the width of the page, still three
-   across, so they read as one grid of their own rather than a narrow one beside
-   the quotations. Phones keep one featured tile per row and the
-   strip two across. */
+/* The landing page: glass tiles with a round teal icon on a gold ring, one column of sections with one gap, every
+   section the page's width. Every value is a token. Tiles are glass without the blur (a blur is paid for by the
+   pixel), the four doors take it. */
 .landing {
   display: flex;
   flex-direction: column;
@@ -33,132 +25,195 @@
   line-height: var(--title-line);
 }
 
-/* The welcome card's sentence, who built this and what it is, under the readouts. */
-.who {
-  max-width: 720px;
-  margin: 0 auto;
-  color: var(--color-heading);
+/* ---- the first screen's own parts, inside the hook's split layout ---- */
+.eyebrow {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.eyebrow i {
+  margin: 0 var(--space-2);
+  color: var(--color-gold);
+  font-style: normal;
+}
+
+.moves {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.move,
+.primaryMove {
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: 0 var(--space-5);
   font-size: var(--text-md);
-  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+/* The one primary move carries the review route's gold ring and stands a step larger. */
+.primaryMove {
+  min-height: var(--control-height-lg);
+  padding: 0 var(--space-6);
+  font-size: var(--text-lg);
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-gold),
+    0 10px 24px color-mix(in srgb, var(--color-teal-deep) 28%, transparent);
+}
+
+.textLink {
+  color: var(--color-accent);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  text-underline-offset: 3px;
+}
+
+/* ---- the sections under the first screen: one heading shape (the site's own), one width, one gap ---- */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Start here: one row of four doors, one tile shape, a chip saying what each costs. */
+.doors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doors > li {
+  display: flex;
+  min-width: 0;
+}
+
+.doors > li > * {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 0;
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  text-decoration: none;
+}
+
+.doors .text {
+  align-items: center;
   text-align: center;
 }
 
-/* Under the hook, two columns: everything the page had on the left, what
-   colleagues say on the right, read before the rest is scrolled past. Until
-   the page is wide enough for both, one column in reading order: the featured
-   tiles, the column, the rest. */
-.body {
-  display: flex;
-  flex-direction: column;
+.doors .badge {
+  flex: none;
+  width: 72px;
+  height: 72px;
+}
+
+.chip {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 1.5;
+}
+
+/* The posts beside the voices. */
+.pv {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: start;
   gap: var(--space-5);
 }
 
-.lead,
-.rest,
-.wide {
+.voices {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
   min-width: 0;
-  /* The grids inside ask their own column how wide it is, not the page: three
-     figures across a column 480 px wide is three figures about 150 px wide. */
+}
+
+.vhead {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-target);
+}
+
+.allRecs {
+  display: inline-flex;
+  align-self: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  color: var(--color-accent);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.allRecs:focus-visible,
+.textLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* The build: the gate's three figures, then the stack's header with the way to the whole table. */
+.build {
   container-type: inline-size;
 }
 
-/* The column is a section of its own, on the glass, the way About Steven's panel is: its heading
-   centred over it, everything in it the full width of it, and nothing indenting any of it from the
-   left. */
-.side {
+.buildRow {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  padding: var(--space-4) var(--space-3);
-}
-
-.side > * {
-  width: 100%;
-}
-
-.side > .groupHeading {
-  width: auto;
-  align-self: center;
-  text-align: center;
-}
-
-@container page (min-width: 900px) {
-  .body {
-    display: grid;
-    /* A share rather than a fixed width, so neither column reads as the page with the other as a
-       margin: the left is a little over half and the right a little under, which at 1440 with the
-       rail open measures about 630 and 470. A fixed 320 left the quotations a ribbon beside a
-       column two of them wide. */
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-    /* The third row is the band of groups, under both columns. */
-    grid-template-rows: auto 1fr auto;
-    column-gap: var(--space-5);
-    row-gap: var(--space-5);
-  }
-
-  .lead {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .rest {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  /* The column stands beside the first two rows and runs as far down the page as there are
-     quotations, so a reader scrolling the left side passes every one of them; it ends above the
-     groups. */
-  .side {
-    grid-column: 2;
-    grid-row: 1 / 3;
-  }
-
-  /* The groups and the last row, the page's full width under both columns. */
-  .wide {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-}
-
-.featured,
-.grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
   gap: var(--space-5);
 }
 
-.featured > li,
-.grid > li {
+.buildRow > ul {
+  margin: 0;
+}
+
+/* The small tiles: the same list, three groups, drawn small. */
+.explore {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.small {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.small > li {
   display: flex;
 }
 
-.featured > li > *,
-.grid > li > * {
+.small > li > * {
   flex: 1;
-}
-
-.featured {
-  grid-template-columns: 1fr;
-}
-
-.grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-/* No tile sits alone on the last row. Two across, an odd last tile takes the
-   whole row; three across, a last tile alone on its row does the same, in the
-   three-column rules below. */
-.grid > li:last-child:nth-child(odd) {
-  grid-column: 1 / -1;
 }
 
 .tile,
@@ -232,10 +287,8 @@
   background: var(--color-danger);
 }
 
-/* The evidence strip under the featured tiles: three figures the build itself
-   produced, on the same glass as the title so the ribbons stay behind them. Two
-   across on a phone; from the widths below, three across on the featured row's
-   own columns. */
+/* The evidence strip in the build row: three figures the build itself produced, on the same glass as the title so
+   the ribbons stay behind them. Two across on a phone, three across from 640 px of row. */
 /* The last release the gate stopped, under the strip of what it measured (G5). */
 .stopped {
   margin: var(--space-3) 0 0;
@@ -252,68 +305,11 @@
   gap: var(--space-3);
 }
 
-/* Container queries, as the inventory grid: the box is the page minus
-   whichever rail is showing, which a media query cannot see. */
+/* Container queries, as the inventory grid: the box is the build row's own width, which a media query cannot see. */
 @container (min-width: 640px) {
-  .featured,
-  .proof,
-  .grid {
+  .proof {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-5);
-  }
-
-  .grid > li:last-child:nth-child(odd) {
-    grid-column: auto;
-  }
-
-  /* Three across, a last tile alone on its row takes the whole row (seven tiles read as
-     three, three and one wide one); four tiles are two rows of two, below, and keep it. */
-  .grid > li:last-child:nth-child(3n + 1):not(:nth-child(4)) {
-    grid-column: 1 / -1;
-  }
-
-  /* Four tiles read as two rows of two, not three and one. */
-  .grid:has(> li:nth-child(4):last-child) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  /* Inventory and Author, the two photographs, share the strip's width half and half; the
-     banners under them do the same (LandingBanners.module.css). */
-  .featured {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-/* Beside the quotations the left column is narrower than the page: about 550 px
-   on a 1280 desk and 630 px on a 1440 desk with the rail open, so the 640 px rule
-   above would never fire there. While the two columns stand side by side, the
-   same three columns start from 480 px of column. There is no four-column rule:
-   the band of groups under both columns keeps three across, the featured row's
-   count, at any width. */
-@container page (min-width: 900px) {
-  @container (min-width: 480px) {
-    .featured,
-    .proof,
-    .grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-5);
-    }
-
-    .grid > li:last-child:nth-child(odd) {
-      grid-column: auto;
-    }
-
-    .grid > li:last-child:nth-child(3n + 1):not(:nth-child(4)) {
-      grid-column: 1 / -1;
-    }
-
-    .grid:has(> li:nth-child(4):last-child) {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .featured {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
 }
 
@@ -507,6 +503,10 @@
   font-size: var(--text-xl);
 }
 
+.big.banner .title {
+  font-size: var(--text-lg);
+}
+
 .blurb {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
@@ -535,25 +535,120 @@
   }
 }
 
-/* The featured cards one per row: a phone, or a page between 640 and about 690 px
-   wide where the column is still under 640. Read from the column and the page rather
-   than the window, so a desk with the column beside the quotations, three across in a
-   column under 640, keeps the desk size. */
-@container page (max-width: 899.98px) {
-  @container (max-width: 639.98px) {
-    .big {
-      min-height: 0;
-      padding: var(--space-5) var(--space-3);
-    }
+/* ---- the small tiles' rows and the two-column pieces by width, as the picture measures them ---- */
+.explore li > * {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: var(--space-3);
+  text-align: left;
+}
 
-    .badgeBig {
-      width: 64px;
-      height: 64px;
-    }
+.explore .badge {
+  flex: none;
+  width: 40px;
+  height: 40px;
+}
 
-    .big .title {
-      font-size: var(--text-lg);
-    }
+.explore .badge svg {
+  width: 20px;
+  height: 20px;
+}
+
+.explore .text {
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 0;
+  text-align: left;
+}
+
+.explore .title {
+  font-size: var(--text-md);
+}
+
+.explore .blurb {
+  font-size: var(--text-sm);
+  line-height: 1.35;
+}
+
+@media (max-width: 1439.98px) {
+  .small {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Under 1280 the open sidebar leaves the page about 700 px, so every two-column piece stacks. */
+@media (max-width: 1279.98px) {
+  .small {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .doors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pv {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Three across, a last tile alone on its row takes the whole row, as the live grid does. */
+@media (min-width: 640px) and (max-width: 1279.98px) {
+  .small > li:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .moves {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .moves .textLink {
+    align-self: center;
+  }
+
+  .doors {
+    gap: var(--space-3);
+  }
+
+  .doors > li > * {
+    padding: var(--space-4) var(--space-2);
+  }
+
+  .doors .badge {
+    width: 56px;
+    height: 56px;
+  }
+
+  .small {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .small > li:last-child:nth-child(odd),
+  .buildRow > ul > li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .explore .blurb {
+    display: none;
+  }
+
+  .explore li > * {
+    min-height: var(--touch-target);
+    padding: var(--space-2);
+  }
+
+  .explore .badge {
+    width: 32px;
+    height: 32px;
   }
 }
 

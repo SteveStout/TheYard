@@ -3,29 +3,33 @@
  *            the addendum on no dead ends), as the whole-page picture draws it: Book 20 minutes and Resume (PDF) fixed
  *            to the foot of a window under 640, off at load, on once the first screen's buttons have scrolled up out
  *            of the window and off again when they return; never drawn while the booking sheet is open. Its buttons
- *            are the first screen's own: the same addresses and the same actions.
+ *            are the first screen's own: the same addresses and the same actions. The home page hands it its own two,
+ *            Check my work and Resume (PDF).
  * Does not:  Draw at all from 640 up (its sheet hides it) or open the sheet itself (the page does, on Book).
- * Used by:   ReviewPage.tsx.
+ * Used by:   ReviewPage.tsx, Landing.tsx.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { dockOn } from '../../../lib/reviewBook';
-import type { ReviewAction } from '../../../lib/reviewProgress';
-import { BOOK_ADDRESS, RESUME_ADDRESS, VERDICT } from '../../../lib/reviewVerdict';
-import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewDock.module.css';
+
+/** One of the dock's two buttons: its words, its address, and what a press does before the browser follows it. */
+export type DockMove = {
+  label: string;
+  href: string;
+  onClick: (event: MouseEvent<HTMLAnchorElement>) => void;
+};
 
 export function ReviewDock({
   watch,
   hidden,
-  onBook,
-  onAction,
+  moves,
 }: {
   /** The selector of the first screen's button the dock watches. */
   watch: string;
   /** The booking sheet is open: the dock is not drawn. */
   hidden: boolean;
-  onBook: () => void;
-  onAction: (action: ReviewAction) => void;
+  /** The filled button, then the outlined one. */
+  moves: [DockMove, DockMove];
 }) {
   const [on, setOn] = useState(false);
   useEffect(() => {
@@ -48,25 +52,16 @@ export function ReviewDock({
       role="region"
       data-testid="review-dock"
     >
-      <a
-        className={`${pills.primary} ${styles.pill}`}
-        href={BOOK_ADDRESS}
-        onClick={() => {
-          onAction('book');
-          onBook();
-        }}
-        data-action="review.book"
-      >
-        {VERDICT.book}
-      </a>
-      <a
-        className={`${pills.secondary} ${styles.pill}`}
-        href={RESUME_ADDRESS}
-        onClick={() => onAction('resume')}
-        data-action="review.resume"
-      >
-        {VERDICT.resume}
-      </a>
+      {moves.map((move, index) => (
+        <a
+          key={move.label}
+          className={`${index === 0 ? 'op-pill-primary' : 'op-pill-secondary'} ${styles.pill}`}
+          href={move.href}
+          onClick={move.onClick}
+        >
+          {move.label}
+        </a>
+      ))}
     </div>
   );
 }

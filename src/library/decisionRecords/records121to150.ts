@@ -143,4 +143,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '139',
   },
+  adrTheStackHasAPageOfItsOwn: {
+    title: 'ADR: The stack has a page of its own',
+    menuLabel: 'ADR: The stack has a page of its own',
+    url: '/api/docs/adr-the-stack-has-a-page-of-its-own',
+    kind: 'adr',
+    number: '@ADR@',
+  },
 } as const satisfies Record<string, RecordEntry>;

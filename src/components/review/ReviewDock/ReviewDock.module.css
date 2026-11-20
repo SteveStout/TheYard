@@ -3,7 +3,7 @@
  *            bar fixed to the foot of the window with its two buttons side by side, slid out of sight and hidden
  *            until it is on;
  *            from 640 up, not drawn.
- * Does not:  Draw the pills' look (ReviewPage.module.css does) or make room for itself (ReviewPage.module.css does).
+ * Does not:  Draw the pills' look (panels.css does). It makes the room for itself at the foot of the page.
  * Used by:   ReviewDock.tsx.
  */
 .dock {
@@ -36,6 +36,11 @@
     transition: transform 0.2s ease;
   }
 
+  /* Room for the dock at the foot of the page, footer included, so it never covers the last line. */
+  :global(body):has(.dock) {
+    padding-bottom: calc(var(--touch-target) + var(--space-5));
+  }
+
   .pill {
     flex: 1 1 0;
     min-height: var(--touch-target);
@@ -45,7 +50,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dock {
+  .dock,
+  .dock[data-on='true'] {
     transition: none;
   }
 }

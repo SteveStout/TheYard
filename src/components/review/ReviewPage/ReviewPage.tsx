@@ -15,6 +15,7 @@ import { useReviewPath } from '../../../hooks/useReviewPath';
 import { useReviewReadings } from '../../../hooks/useReviewReadings';
 import type { DocKey } from '../../../library/documents';
 import { shareAddress } from '../../../lib/reviewBook';
+import { BOOK_ADDRESS, RESUME_ADDRESS, VERDICT } from '../../../lib/reviewVerdict';
 import { gateTotals, type ReviewScreen } from '../../../lib/reviewMirror';
 import { shippedWords, storeTotal } from '../../../lib/reviewPath';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
@@ -162,10 +163,20 @@ export function ReviewPage({
         </div>
       </section>
       <ReviewDock
+        key={screen}
         watch='[data-testid="review-proof"]'
         hidden={booking}
-        onBook={book}
-        onAction={review.action}
+        moves={[
+          {
+            label: VERDICT.book,
+            href: BOOK_ADDRESS,
+            onClick: () => {
+              review.action('book');
+              book();
+            },
+          },
+          { label: VERDICT.resume, href: RESUME_ADDRESS, onClick: () => review.action('resume') },
+        ]}
       />
       <BookSheet open={booking} onClose={() => setBooking(false)} onAction={review.action} />
     </>
