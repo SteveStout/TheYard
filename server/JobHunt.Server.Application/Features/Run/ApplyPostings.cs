@@ -8,6 +8,8 @@ namespace JobHunt.Server.Application.Features.Run;
 /// </summary>
 public static class ApplyPostings
 {
+    private const string ReopenList = "nightly/apply-reopen.tsv";
+
     /// <summary>Every posting the morning's lists put forward, before any gate.</summary>
     /// <param name="share">The share.</param>
     /// <param name="day">The Central day.</param>
@@ -33,6 +35,38 @@ public static class ApplyPostings
         postings.AddRange(ApplyBoards.Scored(await share.ReadAsync("leads/scored.tsv", ct), await share.ReadAsync("nightly/LEADS.md", ct), day));
         return postings;
     }
+
+    /// <summary>
+    /// The postings less the ones the lane read and skipped on their forms in the last week (<see cref="ApplySkips"/>),
+    /// as one count line. A form the reopen list names is worked first, never held back by the memory, and a slot run's
+    /// caught role is its own posting.
+    /// </summary>
+    /// <param name="share">The share.</param>
+    /// <param name="reads">The morning's reads.</param>
+    /// <param name="postings">The postings the tracker has not closed.</param>
+    /// <param name="dropped">Where the count line goes.</param>
+    /// <param name="ct">Stops the reads.</param>
+    public static async Task<List<Posting>> Unskipped(IShare share, DayReads reads, List<Posting> postings, List<Dropped> dropped, CancellationToken ct)
+    {
+        if (reads.Role is not null || !await share.ExistsAsync(WritePolicy.SkipsTable, ct))
+        {
+            return postings;
+        }
+        var skipped = ApplySkips.Remembered(await share.ReadAsync(WritePolicy.SkipsTable, ct), reads.Day);
+        if (skipped.Count > 0 && await share.ExistsAsync(ReopenList, ct))
+        {
+            skipped.ExceptWith(ReopenKeys(await share.ReadAsync(ReopenList, ct)));
+        }
+        int held = postings.RemoveAll(posting => skipped.Contains(ApplySkips.Key(posting.Link)));
+        if (held > 0)
+        {
+            dropped.Add(new Dropped($"{held} postings", $"off the list before the gates: the lane read their forms and skipped them in the last {ApplySkips.Days} days ({WritePolicy.SkipsTable})"));
+        }
+        return postings;
+    }
+
+    private static IEnumerable<string> ReopenKeys(string list) =>
+        list.Split('\n').Select(line => line.Split('\t')[0]).Where(cell => cell.StartsWith("http", StringComparison.OrdinalIgnoreCase)).Select(ApplySkips.Key);
 
     /// <summary>
     /// The linked postings, once each, less every one the tracker shows submitted (RULE 76 f4): those leave before the

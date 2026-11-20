@@ -12,6 +12,9 @@ public static class WritePolicy
     /// <summary>The one table the program keeps outside a day's folder: clean runs per lane.</summary>
     public const string RunsTable = "nightly/server6am-runs.tsv";
 
+    /// <summary>The apply lane's memory of the forms it skipped, so the next mornings do not spend their room on them again.</summary>
+    public const string SkipsTable = "nightly/apply-skipped.tsv";
+
     private const string Tracker = "inbox/tracker-inbox/";
     private const string Registry = "inbox/append-inbox/state.md/";
     private const string FeedQueue = "linkedin-proof/QUEUE-hotmgr-";
@@ -38,7 +41,7 @@ public static class WritePolicy
         {
             return false;
         }
-        if (path == RunsTable || path == HighWater || path == Floor)
+        if (path == RunsTable || path == SkipsTable || path == HighWater || path == Floor)
         {
             return true;
         }
