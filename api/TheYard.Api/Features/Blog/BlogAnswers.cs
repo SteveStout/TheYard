@@ -1,9 +1,10 @@
 // The host's copy of the blog's public answers (ADR: Every LinkedIn post is also a blog post, the addendum on the
 // read model): each list page and each post, as the bytes that went out and their ETag, kept a minute in the
-// process's memory and dropped whole on every save, so a burst of readers costs the database one read a minute and a
-// saved post is on the page at once. A browser keeps the same answer a minute too and checks its ETag after, so a
-// repeat visit is a 304 with no body. Answers are the same bytes for every reader: none carries a cookie, a session or
-// anything about who asked, which is what lets one copy serve them all.
+// process's memory and dropped whole on every save, so a burst of readers costs the database one read a minute
+// (readers who miss together share it) and a saved post is on this host's page at once; another host keeps its copy
+// out its minute. A browser keeps the same answer a minute too and checks its ETag after, so a repeat visit is a 304
+// with no body. Answers are the same bytes for every reader: none carries a cookie, a session or anything about who
+// asked, which is what lets one copy serve them all.
 using System.Security.Cryptography;
 
 namespace TheYard.Api.Features.Blog;
@@ -24,28 +25,39 @@ public sealed class BlogAnswers
 
     private readonly BoundedCache<string, BlogAnswer> _kept = new(MaxAnswers, 8L * 1024 * 1024, TimeSpan.FromSeconds(60), answer => answer.Json.LongLength);
 
-    /// <summary>The answer kept under a key, or the one the factory reads, kept for next time.</summary>
+    private long _generation;
+
+    /// <summary>The answer kept under a key, or the one the factory reads, kept for next time. Readers who miss the same key together share
+    /// one read, and a read that was under way when a save cleared the copy is kept under the generation before the save, which nobody asks
+    /// for again.</summary>
     /// <param name="key">The answer's key: which route and the filter it was asked with.</param>
     /// <param name="read">Reads the answer's bytes, or null when there is nothing to keep (an error, a post not found).</param>
     /// <param name="cancellation">The request's cancellation.</param>
     public async Task<BlogAnswer?> GetAsync(string key, Func<CancellationToken, Task<byte[]?>> read, CancellationToken cancellation)
     {
-        if (_kept.TryGet(key, out var kept))
+        try
         {
-            return kept;
+            return await _kept.GetOrAddAsync($"{Volatile.Read(ref _generation)}|{key}", async token =>
+            {
+                byte[] json = await read(token) ?? throw new NothingToKeep();
+                return new BlogAnswer(json, $"\"b-{Convert.ToHexStringLower(SHA256.HashData(json))[..16]}\"");
+            }, cancellation);
         }
-        byte[]? json = await read(cancellation);
-        if (json is null)
+        catch (NothingToKeep)
         {
             return null;
         }
-        var answer = new BlogAnswer(json, $"\"b-{Convert.ToHexStringLower(SHA256.HashData(json))[..16]}\"");
-        _kept.Set(key, answer);
-        return answer;
     }
 
-    /// <summary>Drops every kept answer: a post was saved, a picture put, or the posts derived again.</summary>
-    public void Clear() => _kept.Clear();
+    /// <summary>Drops every kept answer and starts a new generation: a post was saved, a picture put, or the posts derived again.</summary>
+    public void Clear()
+    {
+        Interlocked.Increment(ref _generation);
+        _kept.Clear();
+    }
+
+    /// <summary>A read that found nothing to keep, so every reader sharing it is answered with nothing and the next one reads again.</summary>
+    private sealed class NothingToKeep : Exception;
 
     /// <summary>Writes an answer with its rule and its ETag, or a 304 with no body when the request already holds it.</summary>
     /// <param name="http">The request and its response.</param>

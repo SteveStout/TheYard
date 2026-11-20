@@ -152,7 +152,7 @@
   right: var(--space-3);
 }
 
-.arrow:disabled {
+.arrow[aria-disabled='true'] {
   opacity: var(--opacity-disabled);
   cursor: default;
 }

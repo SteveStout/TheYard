@@ -1,7 +1,8 @@
 /**
  * Does:      Reads the blog's list so the database sees only the reads that matter (ADR: Every LinkedIn post is also a
  *            blog post, the addendum on the read model): a search waits 300 ms after the last key, a chip or a choice
- *            asks at once, and each new ask aborts the read it replaces, whose answer is then never handed on.
+ *            asks at once, and each new ask aborts the read it replaces, whose answer is then never handed on; a next
+ *            page is read under the same rule, so a page asked for the old list never lands on a newer one.
  * Does not:  Know what a filter is (blogFilter.ts writes the address it asks for) or hold the answer (useBlogList does).
  * Used by:   useBlogList.ts.
  */
@@ -24,8 +25,15 @@ export function listReader(
   let timer: ReturnType<typeof setTimeout> | undefined;
   let waiting: string | null = null;
   let inFlight: AbortController | null = null;
+  let nextInFlight: AbortController | null = null;
+
+  const dropNext = () => {
+    nextInFlight?.abort();
+    nextInFlight = null;
+  };
 
   const start = (path: string) => {
+    dropNext();
     inFlight?.abort();
     const stop = new AbortController();
     inFlight = stop;
@@ -64,12 +72,30 @@ export function listReader(
     typed() {
       if (waiting !== null) wait(waiting);
     },
-    /** Drops a pending ask and aborts the read under way: the page is going. */
+    /**
+     * Reads the list's next page and hands it on, or null when it failed; a newer ask or stop aborts it first, and a
+     * page aborted that way is never handed on.
+     */
+    more(path: string, onPage: (page: BlogList | null) => void) {
+      dropNext();
+      const stop = new AbortController();
+      nextInFlight = stop;
+      read(path, stop.signal).then(
+        (page) => {
+          if (!stop.signal.aborted) onPage(page);
+        },
+        () => {
+          if (!stop.signal.aborted) onPage(null);
+        }
+      );
+    },
+    /** Drops a pending ask and aborts the reads under way: the page is going. */
     stop() {
       clearTimeout(timer);
       waiting = null;
       inFlight?.abort();
       inFlight = null;
+      dropNext();
     },
   };
 }
