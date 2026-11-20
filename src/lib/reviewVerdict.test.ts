@@ -10,7 +10,6 @@ import {
   RECORD_TILES,
   recommendationsLink,
   restLine,
-  closeQuote,
   tourSeen,
   TOUR,
   testsTile,
@@ -95,19 +94,15 @@ describe('the review route first screen (ADR: The review route gives a reason be
     expect(recommendationsLink(13)).toBe('Read all 13 named recommendations');
   });
 
-  it('words the tour and the close as the whole-page picture does, and quotes Sean Whitesell at the close', () => {
+  it('words the tour as the whole-page picture does, with its phone control', () => {
     expect(TOUR.title).toBe('The full tour, if you want it');
     expect(TOUR.line).toBe(
       'Seven stops, ten minutes, all optional. Every stop is the running system, and your place is kept on this browser.'
     );
     expect(tourSeen(0, 7)).toBe('0 of 7 seen.');
     expect(tourSeen(3, 7)).toBe('3 of 7 seen.');
-    const list = [entry('Drew Dell'), entry('Cliff True'), entry('Sean Whitesell')];
-    expect(closeQuote(list)?.name).toBe('Sean Whitesell');
-    expect(closeQuote(list.slice(0, 2))?.name).toBe('Cliff True');
-    expect(closeQuote([entry('Drew Dell')])?.name).toBe('Drew Dell');
-    expect(closeQuote([])).toBeNull();
-    expect(closeQuote(null)).toBeNull();
+    expect(TOUR.show).toBe('Show the seven stops');
+    expect(TOUR.hide).toBe('Hide the seven stops');
   });
 
   it('says what the sidebar holds and the store bar’s one sentence, from the build’s own facts', () => {

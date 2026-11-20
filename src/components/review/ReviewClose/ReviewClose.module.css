@@ -22,33 +22,13 @@
   text-transform: uppercase;
 }
 
-.figure {
-  margin: 0;
-}
-
-.quote {
-  margin: var(--space-2) 0 0;
-  color: var(--color-heading);
-  font-size: var(--text-md);
-  font-weight: var(--weight-medium);
-  line-height: 1.45;
-}
-
-.who {
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-}
-
-.who strong {
-  color: var(--color-heading);
-  font-weight: var(--weight-semibold);
-}
-
 .acts {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
+  max-width: 540px;
 }
 
 .act {
@@ -61,6 +41,11 @@
 @media (max-width: 1023.98px) {
   .close {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .acts {
+    justify-content: flex-start;
+    max-width: none;
   }
 }
 

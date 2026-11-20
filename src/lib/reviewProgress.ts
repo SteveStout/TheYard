@@ -101,6 +101,7 @@ export const REVIEW_ACTIONS = [
   'github',
   'about',
   'gate-run',
+  'blog',
 ] as const;
 
 /** One of the names a button reports. */

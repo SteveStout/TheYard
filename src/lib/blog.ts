@@ -124,6 +124,14 @@ export function isNew(publishedAt: string | undefined, nowMs: number): boolean {
   return Number.isFinite(at) && nowMs - at >= 0 && nowMs - at < NEW_FOR_DAYS * DAY_MS;
 }
 
+/** The blog's own address, every post. */
+export const ALL_POSTS_ADDRESS = '/?view=blog';
+
+/** A post's address on this site, the one the blog opens it at. */
+export function postLink(slug: string): string {
+  return `${ALL_POSTS_ADDRESS}&post=${encodeURIComponent(slug)}`;
+}
+
 /** The date a post was first on LinkedIn, as the card prints it: "Oct 19, 2026", read in Central time. */
 export function postDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {

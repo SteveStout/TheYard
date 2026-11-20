@@ -172,3 +172,7 @@ What stopped being true: that the route's first screen is the title, the lede an
 ## Addendum, 2026-11-19 (1.0.5.118): the action gate-run
 
 The short path's "or the run on GitHub" reports a thirteenth name, `gate-run`, added to `REVIEW_ACTIONS` and `ReviewActions.Names`; it counts toward reaching the running system or the booking button (`RunningOrBook`). Stop 3's title is now "A live auction that bids back" (ADR-138, the addendum on the reader's questions).
+
+## Addendum, 2026-11-19 (1.0.5.119): the action blog
+
+The review route's "From the blog" row reports a fourteenth name, `blog`, for a press on a post or on All posts, added to `REVIEW_ACTIONS` and `ReviewActions.Names`. It does not count toward reaching the running system (`RunningOrBook`). The named voices report the existing `recommendations` (ADR-138, the addendum on named voices and the blog).

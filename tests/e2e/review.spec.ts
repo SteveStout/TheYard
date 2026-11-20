@@ -2,7 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { REVIEW_STOPS } from '../../src/lib/reviewStops';
 import { CURRENT_KEY, REACHED_KEY } from '../../src/lib/reviewProgress';
 import { proofFigures, type TestSummary } from '../../src/lib/landingProof';
+import { cardAddress } from '../../src/lib/recommendationsPage';
+import { VOICES } from '../../src/lib/voices';
 import { openTheYard } from './app';
+import { answerBlog, made } from './blogFake';
 import { fadedContent, quietWordsOnTheBareGround } from './glass';
 
 // #region review
@@ -28,6 +31,13 @@ async function freshRoute(page: Page) {
 
 /** The first screen's claim (ADR: The review route gives a reason before it asks). */
 const CLAIM = 'Production .NET that stays up. Built with AI, measured on every version.';
+
+/** Three made-up posts, so the review route's blog row is drawn whatever the local store holds. */
+const POSTS = [
+  made('a-made-up-newest-post', 'A made-up newest post', 1),
+  made('a-made-up-second-post', 'A made-up second post', 3),
+  made('a-made-up-third-post', 'A made-up third post', 6),
+];
 
 const cell = (page: Page, index: number) =>
   page.getByTestId(`review-tour-${REVIEW_STOPS[index].key}`);
@@ -87,14 +97,16 @@ test('a tour cell opened counts once, ticks its ring and is kept across a reload
   await expect(cell(page, 1)).toHaveAttribute('data-reached', 'false');
 });
 
-test('the close quotes Sean Whitesell, and the close and About both say how to reach Steven, as links', async ({
+test('the close carries Anthony Fortner’s voice, and the close and About both say how to reach Steven, as links', async ({
   page,
 }) => {
   await freshRoute(page);
   await openTheYard(page, '/?view=review');
   const close = page.getByTestId('review-close');
   await expect(close).toContainText('That is the work');
-  await expect(close).toContainText('Sean Whitesell');
+  await expect(close.getByTestId('voice')).toHaveAttribute('data-name', 'Anthony Fortner');
+  await expect(close.getByTestId('voice')).toHaveAttribute('href', cardAddress('Anthony Fortner'));
+  await expect(close).not.toContainText('Sean Whitesell');
   await expect(close.getByRole('link', { name: 'Book 20 minutes' })).toHaveAttribute(
     'href',
     '/api/go/book'
@@ -523,8 +535,9 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
   test(`${address} is one unit at every width: shared edges, no forced height, the picture's gaps and grids`, async ({
     page,
   }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(150_000);
     await freshRoute(page);
+    await answerBlog(page, POSTS);
     for (const [width, height] of LOOK_WIDTHS) {
       await page.setViewportSize({ width, height });
       await openTheYard(page, address);
@@ -568,6 +581,51 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         for (const [index, card] of cards.slice(1).entries())
           expect(card.top, `${at}: cards stack`).toBeGreaterThan(cards[index].bottom);
       }
+      // 4. The three voices: from 1280 the next row, one height, each on its card's edges; under it each after its card.
+      const voices = await boxes(page, '[data-testid="review-path"] [data-testid="voice"]');
+      expect(voices, `${at}: a voice under each card`).toHaveLength(3);
+      for (const [index, voice] of voices.entries()) {
+        const card = cards[index];
+        expect(voice.top, `${at}: voice after its card`).toBeGreaterThan(card.bottom);
+        if (width < 1280 && index < 2)
+          expect(voice.bottom, `${at}: voice before the next card`).toBeLessThan(
+            cards[index + 1].top
+          );
+        if (width >= 1280) {
+          expect(
+            Math.abs(voice.top - voices[0].top),
+            `${at}: voices share a row`
+          ).toBeLessThanOrEqual(1);
+          expect(
+            Math.abs(voice.height - voices[0].height),
+            `${at}: voices share a height`
+          ).toBeLessThanOrEqual(1);
+          expect(Math.abs(voice.left - card.left), `${at}: voice's left edge`).toBeLessThanOrEqual(
+            1
+          );
+          expect(
+            Math.abs(voice.right - card.right),
+            `${at}: voice's right edge`
+          ).toBeLessThanOrEqual(1);
+        }
+      }
+      // 5. The pair and the posts: one row of one height from 1024; stacked under it.
+      for (const [selector, count] of [
+        ['[data-testid="review-voices"] [data-testid="voice"]', 2],
+        ['[data-testid="review-blog-post"]', 3],
+      ] as const) {
+        const row = await boxes(page, selector);
+        expect(row, `${at}: ${selector}`).toHaveLength(count);
+        for (const [index, each] of row.entries()) {
+          if (width >= 1024) {
+            expect(Math.abs(each.top - row[0].top), `${at}: one row`).toBeLessThanOrEqual(1);
+            expect(Math.abs(each.height - row[0].height), `${at}: one height`).toBeLessThanOrEqual(
+              1
+            );
+          } else if (index > 0)
+            expect(each.top, `${at}: stacked`).toBeGreaterThan(row[index - 1].bottom);
+        }
+      }
       // 7. On a phone no tour cell is drawn until the control is pressed, then eight are; from 640 up there is no control.
       const toggle = page.getByTestId('review-tour-toggle');
       if (width < 640) {
@@ -604,10 +662,10 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
       );
       expect(sideways, `${at}: sideways`).toBeLessThanOrEqual(0);
-      // 3. Height: under 2,300 at 1568 for the verdict, under 2,500 for the mirror.
+      // 3. Height: under 2,750 at 1568 for the verdict, under 2,950 for the mirror (the pictures: 2,478 and 2,658).
       if (width === 1568) {
         const tall = await page.evaluate(() => document.documentElement.scrollHeight);
-        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 2500 : 2300);
+        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 2950 : 2750);
       }
       // 6 and 7. The primary button is on the first screen at 1568 by 772 and at 390 by 844.
       if (width === 1568 || width === 390)
@@ -650,4 +708,53 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
     await expect(page.getByText('No auction is live', { exact: false })).toHaveCount(0);
   });
 }
+// 10. Voices and posts are the API's: each voice's words are its entry's pull and it opens that person's card; each
+// post card's title is the read's, opens its post in place and reports blog, as All posts does.
+test('every voice is the answer’s own words and opens its card, and the blog row opens its posts and reports blog', async ({
+  page,
+}) => {
+  const actions: string[] = [];
+  await page.route('**/api/review/reached', async (route) => {
+    const body = route.request().postDataJSON() as { action?: string };
+    if (body.action) actions.push(body.action);
+    await route.fulfill({ status: 204 });
+  });
+  const answer = (await (await page.request.get('/api/recommendations')).json()) as {
+    recommendations: { name: string; pull: string }[];
+  };
+  await page.setViewportSize({ width: 1568, height: 772 });
+  await freshRoute(page);
+  await answerBlog(page, POSTS);
+  await openTheYard(page, '/?view=review');
+  const names = [
+    ...VOICES.quality,
+    ...VOICES.gate,
+    ...VOICES.room,
+    ...VOICES.pair,
+    ...VOICES.close,
+  ];
+  const voices = page.getByTestId('review-page').getByTestId('voice');
+  await expect(voices).toHaveCount(names.length);
+  for (const [index, name] of names.entries()) {
+    const entry = answer.recommendations.find((each) => each.name === name)!;
+    await expect(voices.nth(index)).toHaveAttribute('data-name', name);
+    await expect(voices.nth(index)).toHaveAttribute('href', cardAddress(name));
+    await expect(voices.nth(index).getByTestId('voice-pull')).toHaveText(`"${entry.pull}"`);
+  }
+  await expect(page.getByTestId('review-blog-title')).toHaveText(POSTS.map((post) => post.title));
+  await page.getByTestId('review-blog-post').first().click();
+  await expect(page).toHaveURL(/[?&]view=blog&post=a-made-up-newest-post/);
+  await expect.poll(() => actions).toEqual(['blog']);
+  await page.goBack();
+  await page.getByTestId('review-blog-all').click();
+  await expect(page).toHaveURL(/\?view=blog$/);
+});
+
+// No post, or a read that fails: the blog row is not drawn and the gap closes.
+test('the blog row is not drawn when the blog has no post', async ({ page }) => {
+  await answerBlog(page, []);
+  await openTheYard(page, '/?view=review');
+  await expect(page.getByTestId('review-close')).toBeVisible();
+  await expect(page.getByTestId('review-blog')).toHaveCount(0);
+});
 // #endregion the-look
