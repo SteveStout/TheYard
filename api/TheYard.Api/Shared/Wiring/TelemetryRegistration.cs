@@ -1,7 +1,9 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using OpenTelemetry.Instrumentation.AspNetCore;
+using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace TheYard.Api.Shared.Wiring;
 
@@ -27,9 +29,20 @@ public static class TelemetryRegistration
             && !telemetryConnection.StartsWith("__", StringComparison.Ordinal);
         if (telemetryOn)
         {
+            // Two in three of the site's successful dependency calls stay out of the workspace, the one kept standing for
+            // three (TelemetrySampling); added before the distro, as its documentation says, so it runs before the exporter.
+            builder.Services.ConfigureOpenTelemetryTracerProvider(tracing => tracing.AddProcessor(new TelemetrySampling()));
             builder.Services.AddOpenTelemetry().UseAzureMonitor(options =>
             {
                 options.ConnectionString = telemetryConnection;
+            });
+            // A call a card's reader cancelled at its own time limit is that card's reading, not an exception row (it was
+            // 237 of them in a week on the Admin tab's failures list); every other exception on a call is recorded as before.
+            // Registered after the distro, so it is the last word on the option the distro sets.
+            builder.Services.Configure<HttpClientTraceInstrumentationOptions>(options =>
+            {
+                options.RecordException = false;
+                options.EnrichWithException = TelemetrySampling.OnException;
             });
             // The box's agent posts every two seconds, forty-three thousand requests a day, which would spend most of
             // the component's daily cap on itself (ADR: The box reports itself): its routes are left out of the

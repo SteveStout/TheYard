@@ -92,6 +92,46 @@ public sealed class TrackerMirror(IMergeStore store, ITrackerTable table, Tracke
         }
     }
 
+    /// <summary>
+    /// True when this pass can leave the copy alone without opening SQL: the master's size and last write are what the last
+    /// copy saw and the day's check already ran today. The last copy's view is this host's, or, on a new instance, the
+    /// line the last pass left on the share. One look at the file's properties, and at most one small read.
+    /// </summary>
+    /// <param name="now">Now.</param>
+    /// <param name="ct">Stops the look.</param>
+    public async Task<bool> QuietAsync(DateTimeOffset now, CancellationToken ct)
+    {
+        if (seen is null || await store.StatAsync(MergePaths.Master, ct) is not { } stat)
+        {
+            return false;
+        }
+        if (seen.Empty && await store.ExistsAsync(MergePaths.CopySeen, ct))
+        {
+            seen.Load(System.Text.Encoding.UTF8.GetString(await store.ReadAsync(MergePaths.CopySeen, ct)));
+        }
+        return seen.Quiet(stat, now);
+    }
+
+    /// <summary>Notes when the day's check last ran and leaves this host's view on the share, for the next instance; written only when it changed.</summary>
+    /// <param name="checkedAt">When the copy's day check last ran, or null before the first.</param>
+    /// <param name="ct">Stops the write.</param>
+    public async Task KeepSeenAsync(DateTimeOffset? checkedAt, CancellationToken ct)
+    {
+        if (seen is null)
+        {
+            return;
+        }
+        seen.Checked(checkedAt);
+        if (seen.Text() is not { } text || text == _kept)
+        {
+            return;
+        }
+        await store.WriteAsync(MergePaths.CopySeen, System.Text.Encoding.UTF8.GetBytes(text), ct);
+        _kept = text;
+    }
+
+    private string? _kept;
+
     /// <summary>True when no parity check has run yet on this Central day: the first pass of a day checks the whole file.</summary>
     /// <param name="last">When the last check ran, or null.</param>
     /// <param name="now">Now.</param>

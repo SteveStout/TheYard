@@ -17,38 +17,55 @@ public sealed class FreshScan(ICompanyBook companies, IBoardReader boards, TimeP
     /// <summary>How long the pass keeps starting boards: a third of the quarter hour, so a slow pass ends before the next.</summary>
     public TimeSpan Budget { get; init; } = TimeSpan.FromMinutes(5);
 
-    /// <summary>Reads every board once for postings the table does not hold and adds them; answers the pass's counts.</summary>
+    /// <summary>
+    /// How many boards are read at once. The boards are a hundred and more public hosts, read one after another in about
+    /// forty seconds, nearly all of it waiting on the network; six at a time cuts the pass's billed seconds without
+    /// pressing any one host, since no two of the six are the same board (ADR-118, the addendum on the fresh pass's run time).
+    /// </summary>
+    public int AtOnce { get; init; } = 6;
+
+    /// <summary>
+    /// Reads every board once for postings the table does not hold and adds them; answers the pass's counts. The boards
+    /// are read <see cref="AtOnce"/> at a time; the rows are added one board after another once the reads are in, so the
+    /// database sees the same one writer it always did.
+    /// </summary>
     public async Task<FreshPass> RunAsync(CancellationToken ct)
     {
         long started = time.GetTimestamp();
         var all = await companies.BoardsAsync(ct);
         var known = await postings.KnownAsync(ct);
         int answered = 0, read = 0, fresh = 0, failed = 0, left = 0;
-        foreach (var company in all)
+        var found = new System.Collections.Concurrent.ConcurrentBag<(int Order, BoardCompany Company, IReadOnlyList<BoardPosting> New)>();
+        await Parallel.ForEachAsync(all.Select((company, order) => (company, order)), new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, AtOnce), CancellationToken = ct }, async (entry, token) =>
         {
+            var company = entry.company;
             if (time.GetElapsedTime(started) >= Budget)
             {
-                left++;
-                continue;
+                Interlocked.Increment(ref left);
+                return;
             }
-            if (await boards.ListAsync(company.Kind, company.Token, ct) is not { } list)
+            if (await boards.ListAsync(company.Kind, company.Token, token) is not { } list)
             {
-                continue;
+                return;
             }
-            answered++;
-            read += list.Postings.Count;
+            Interlocked.Increment(ref answered);
+            Interlocked.Add(ref read, list.Postings.Count);
             var unknown = list.Postings.Select(p => p.Id).Where(id => id.Length > 0 && !known.Contains(Posting.Known(company.Kind, company.Token, id))).ToHashSet(StringComparer.Ordinal);
             if (unknown.Count == 0)
             {
-                continue;
+                return;
             }
-            var whole = list.Whole ? list.Postings : await boards.PostingsAsync(company.Kind, company.Token, ct);
+            var whole = list.Whole ? list.Postings : await boards.PostingsAsync(company.Kind, company.Token, token);
             if (whole is null)
             {
-                failed += unknown.Count;
-                continue;
+                Interlocked.Add(ref failed, unknown.Count);
+                return;
             }
-            var (added, missed) = await AddAsync(company, whole.Where(p => unknown.Contains(p.Id)).DistinctBy(p => p.Id), ct);
+            found.Add((entry.order, company, [.. whole.Where(p => unknown.Contains(p.Id)).DistinctBy(p => p.Id)]));
+        });
+        foreach (var (_, company, news) in found.OrderBy(entry => entry.Order))
+        {
+            var (added, missed) = await AddAsync(company, news, ct);
             fresh += added;
             failed += missed;
         }

@@ -170,3 +170,14 @@ What changes here:
 3. The Function's log levels are the job hunt's lane's file (`functions/jobhunt/host.json`), so the measurement and the ask went to that lane by a state.md row: Warning by default with the Function's own run lines kept, which the process table reads.
 
 Together that is about 1.1 GB a month off the site's side and, once the Function's change lands, about 4.5 GB more, which brings the month under the free 5 GB without raising the component's cap, as Steve chose. `TelemetryTrimTests` holds the two lists.
+
+## Addendum, @DATE@ (@VER@): the site's dependency rows, one in three, and a cancelled read is not an exception
+
+In plain words: the site's own dependency rows were the largest single source in the workspace, 62.8 MB in the 24 hours to midday on 20 November (66,606 rows), against a December line of 0.167 GB a day for the whole workspace. And the Admin tab's failures list carried 237 TaskCanceledException rows in seven days for this web app, every one a card reader's own call that it cancelled at its time limit (Azure Monitor and Resource Manager reads at about 20 s, Log Analytics queries, Cosmos DB writes of kept card documents, the Function's health route at 10 s), none of them a request a visitor made.
+
+What changes:
+
+1. **One in three successful dependency calls is kept** (`TelemetrySampling`, a processor added before the distro so it runs before the exporter). The choice is the call's own span id. A kept row carries the exporter's sample rate, 33.3 %, so its item count is 3 and a count by item count stays whole. Requests, exceptions and every failed call are kept whole. Every query the Admin tab runs against the dependency table is named in `TelemetrySamplingTests`: the reporters row now counts `sum(ItemCount)`, the component's size reads billed bytes (which sampling lowers, as it should), and a run's trace is the Function's, which is not sampled; the failures list and the telemetry card read requests and exceptions only.
+2. **A cancelled call is a read that timed out, not an exception.** The HttpClient instrumentation no longer records an exception on a call itself; it records any other exception as before and tags a cancellation `theyard.read = timed out`, which stays in the dependency row with its duration and its failure. The card that made the read already says in words that it is not read and why (the addendum of 1.0.4.87, "a read that times out is a gap, not a 500").
+
+No daily cap is the fix: a cap drops errors with everything else. `TelemetrySamplingTests` holds both.
