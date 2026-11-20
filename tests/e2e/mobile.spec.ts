@@ -669,3 +669,71 @@ test('on a phone every Cloud card fits the screen and every table scrolls inside
   }
 });
 // #endregion cloud-rail-phone
+
+// The sales1120 picture on the narrowest phone (ADR: The sales pages set the site's look): every new line holds its
+// longest words, the live panels' widest figures among them, with nothing cut and nothing sideways.
+test.describe('the review route on the narrowest phone', () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test('the live panels, the case cards and the close hold their longest words at 360', async ({
+    page,
+  }) => {
+    const now = Date.now();
+    await page.route('**/api/pulse', (route) =>
+      route.fulfill({
+        json: {
+          usual_p95_ms_24h: 99_999,
+          requests_24h: 99_999_999,
+          month_to_date: 99_999.99,
+          forecast_month: 199_999.99,
+          currency: 'USD',
+          cost_read_at_ms: now,
+          uptime_seconds: 29 * 86_400 + 23 * 3_600,
+          version: '1.0.55.1288',
+          commit: 'a4c45c4',
+          read_at_ms: now,
+          people_all_time: 9_999_999,
+          people_new_by_day: [],
+          counted_from: '2026-12-24',
+          visits_all_time: null,
+          visits_from: null,
+          visits_by_day: [],
+        },
+      })
+    );
+    await openTheYard(page, '/?view=review');
+    await expect(page.locator('[data-mock="case"]')).toHaveCount(3);
+    await expect(
+      page.locator('[data-mock="live-panel"] [data-mock="live-value"]').first()
+    ).toContainText('99,999 ms');
+    const cut = await page
+      .locator(
+        '[data-mock="live-panel"], [data-mock="case"], [data-mock="case"] *, [data-mock="close-ask"] *, [data-mock="roles"], [data-mock="tile-door"]'
+      )
+      .evaluateAll((all) =>
+        all
+          .filter(
+            (each) =>
+              each.scrollWidth > each.clientWidth + 1 &&
+              getComputedStyle(each).overflowX !== 'visible'
+          )
+          .map((each) => `${each.tagName} ${each.className}`)
+      );
+    expect(cut).toEqual([]);
+    const outside = await page
+      .locator('[data-mock="live-value"], [data-mock="case-door"], [data-mock="close-question"]')
+      .evaluateAll((all) =>
+        all
+          .filter((each) => {
+            const box = each.getBoundingClientRect();
+            return box.left < 0 || box.right > document.documentElement.clientWidth;
+          })
+          .map((each) => each.textContent ?? '')
+      );
+    expect(outside).toEqual([]);
+    const sideways = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(sideways).toBeLessThanOrEqual(0);
+  });
+});

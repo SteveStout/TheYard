@@ -1,23 +1,21 @@
 /**
- * Does:      Draws the review route's first screen (ADR: The review route gives a reason before it asks): the eyebrow,
- *            the claim, the lede, three proof tiles (two from the record, one live from this build), the one primary
- *            move with Book 20 minutes and the gold resume button beside it, the line under them, and at the side one named quote
- *            and the roles card. Every button reports its action; the primary opens the top of Quality in place, and a
- *            modified click follows its address.
- * Does not:  Read the API (useReviewReadings.ts does) or hold the words (reviewVerdict.ts does).
+ * Does:      Draws the review route's first screen (ADR: The review route gives a reason before it asks, and ADR: The
+ *            sales pages set the site's look) as the sales1120 picture draws it: the eyebrow, the claim, the lede, three
+ *            proof tiles (two from the record, one live from this build), each a door to its case card, the first moves
+ *            in order (See the work, the gold Resume (PDF), Book 20 minutes), the roles row under them, and at the side
+ *            the dark live panel, "TheYard, right now", over the one named quote. Every button reports its action; See
+ *            the work and the tiles' doors scroll down to the work and report work.
+ * Does not:  Read the API (useReviewReadings.ts and usePulse.ts do) or hold the words (reviewVerdict.ts does).
  * Used by:   ReviewPage.tsx.
  */
-import type { MouseEvent } from 'react';
-import type { DocKey } from '../../../library/documents';
-import { landOnSection } from '../../../library/pendingAnchor';
 import type { TestSummary } from '../../../lib/landingProof';
+import type { NowRow } from '../../../lib/nowPanel';
 import type { Recommendation } from '../../../lib/recommendations';
+import { WORK_ID } from '../../../lib/reviewCases';
 import type { ReviewAction } from '../../../lib/reviewProgress';
 import {
   BOOK_ADDRESS,
   leadQuote,
-  PROOF,
-  PROOF_ADDRESS,
   RECORD_TILES,
   RESUME_ADDRESS,
   ROLE_LINKS,
@@ -25,42 +23,36 @@ import {
   VERDICT,
   type HeldQuality,
 } from '../../../lib/reviewVerdict';
+import { scrollToSection } from '../../../lib/sectionScroll';
+import { NowPanel } from '../../shared/NowPanel';
 import { PdfMark } from '../../shared/PdfMark';
 import { ProofTile } from '../ProofTile';
 import { ReviewLeadQuote } from '../ReviewLeadQuote';
 import styles from './ReviewVerdict.module.css';
 
-/** A plain click, which the page answers itself; any other keeps the browser's own meaning. */
-const plainClick = (event: MouseEvent) =>
-  !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0);
-
 export function ReviewVerdict({
   summary,
   recommendations,
   quality,
+  rightNow,
+  asOf,
   onAction,
   onBook,
-  onOpenDoc,
 }: {
   summary: TestSummary | null;
   recommendations: Recommendation[] | null;
   /** The quality numbers this build held, or null when it has no reading of its own. */
   quality: HeldQuality;
+  /** "TheYard, right now": the live panel's rows, each only when read; none, no panel. */
+  rightNow: readonly NowRow[];
+  /** "as of HH:MM" when the newest read of the pulse failed. */
+  asOf: string | null;
   onAction: (action: ReviewAction) => void;
   /** Opens the booking sheet beside the email app. */
   onBook: () => void;
-  onOpenDoc: (key: DocKey) => void;
 }) {
   const tiles = [...RECORD_TILES, testsTile(summary, quality)];
   const quote = leadQuote(recommendations);
-  const openProof = (event: MouseEvent<HTMLAnchorElement>) => {
-    onAction('proof');
-    if (!plainClick(event)) return;
-    // Opened in place at the top of Quality, so the page is not loaded again.
-    event.preventDefault();
-    landOnSection('');
-    onOpenDoc(PROOF.doc);
-  };
 
   return (
     <div className={styles.verdict} data-testid="review-verdict">
@@ -83,19 +75,34 @@ export function ReviewVerdict({
         <p className={styles.lede}>{VERDICT.lede}</p>
         <ul className={styles.tiles} aria-label="The proof">
           {tiles.map((tile) => (
-            <ProofTile key={tile.key} tile={tile} />
+            <ProofTile key={tile.key} tile={tile} onDoor={() => onAction('work')} />
           ))}
         </ul>
-        <div className={styles.moves}>
+        <div className={styles.moves} data-mock="hero-moves">
           <a
             className={`op-pill-primary ${styles.proof}`}
-            href={PROOF_ADDRESS}
-            onClick={openProof}
-            data-action="review.proof"
+            href={`#${WORK_ID}`}
+            onClick={(event) => {
+              onAction('work');
+              scrollToSection(event, WORK_ID);
+            }}
+            data-action="review.work"
             data-testid="review-proof"
           >
             {VERDICT.primary}
-            <span aria-hidden="true">→</span>
+            <span className="op-nudge" aria-hidden="true">
+              ↓
+            </span>
+          </a>
+          <a
+            className="op-pill-resume"
+            href={RESUME_ADDRESS}
+            onClick={() => onAction('resume')}
+            data-action="review.resume"
+            data-testid="review-resume"
+          >
+            <PdfMark />
+            {VERDICT.resume}
           </a>
           <a
             className={`op-pill-secondary ${styles.book}`}
@@ -109,26 +116,12 @@ export function ReviewVerdict({
           >
             {VERDICT.book}
           </a>
-          <a
-            className="op-pill-resume"
-            href={RESUME_ADDRESS}
-            onClick={() => onAction('resume')}
-            data-action="review.resume"
-            data-testid="review-resume"
-          >
-            <PdfMark />
-            {VERDICT.resume}
-          </a>
         </div>
-        <p className={styles.under}>{VERDICT.under}</p>
-      </div>
-      <aside className={styles.side} aria-label="Who vouches for him">
-        <ReviewLeadQuote
-          quote={quote}
-          count={recommendations?.length ?? 0}
-          onFollow={() => onAction('recommendations')}
-        />
-        <section className={`${styles.roles} op-glass`} aria-label="Roles">
+        <section
+          className={`${styles.roles} op-glass op-roles-row`}
+          aria-label="Roles"
+          data-mock="roles"
+        >
           <p className={styles.rolesLine}>{VERDICT.roles}</p>
           <ul className={styles.roleLinks}>
             {ROLE_LINKS.map((link) => (
@@ -145,6 +138,21 @@ export function ReviewVerdict({
             ))}
           </ul>
         </section>
+      </div>
+      <aside className={styles.side} aria-label="Who vouches for him" data-mock="hero-side">
+        <NowPanel
+          id="live-now"
+          title="TheYard, right now"
+          live
+          rows={rightNow}
+          asOf={asOf}
+          hook="live-panel"
+        />
+        <ReviewLeadQuote
+          quote={quote}
+          count={recommendations?.length ?? 0}
+          onFollow={() => onAction('recommendations')}
+        />
       </aside>
     </div>
   );

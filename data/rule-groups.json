@@ -100,7 +100,8 @@
         "Outside a composition root (a slice's Module, the wiring, Program.cs or the Clocks seam) a time is read from a TimeProvider handed in by constructor, and the thing it was handed to uses that clock rather than the real one",
         "How many things a class is handed is counted in parameters and not in commas, so a comma inside a generic type argument is not a separator and a parameter list that wraps is read to its closing bracket; the classes still handed six or more are named one by one and their number is the ratchet's limit; and every part split off one of them resolves from the real host",
         "The projects whose declarations all carry a summary are named one by one, and in a named project every public, internal or protected declaration says what it does, asked through one rule body both suites share and the same question the ratchet's scanner asks",
-        "What the campaign and the network log both use is a shared concern of the Function's Domain and Infrastructure, never one slice reaching into another: the former employers, the company key and the personal domains under Shared/Companies, the tells and the stop phrases under Shared/Writing, the MIME parts under Shared/Google and the SQL command builder under Shared/Sql, each moved with the campaign's answers unchanged"
+        "What the campaign and the network log both use is a shared concern of the Function's Domain and Infrastructure, never one slice reaching into another: the former employers, the company key and the personal domains under Shared/Companies, the tells and the stop phrases under Shared/Writing, the MIME parts under Shared/Google and the SQL command builder under Shared/Sql, each moved with the campaign's answers unchanged",
+        "The sales pages' shared parts are one sheet, src/styles/sales.css, loaded once after pills.css, its every colour a token and its gold named as trim, and the live dot on the dark panel reads on every stop of it"
       ]
     },
     {
@@ -282,7 +283,8 @@
         "A typed word is widened by the synonym list, matched at a word's start, ranked title 6, keyword 5, topic 4, summary 3 and the body by its mentions, and the mockup's six searches give its own posts in its own order; a keyword needs the title or its minimum of mentions in the words a reader reads",
         "Every answer and every drawn page carries one security policy: no inline script but the page's own by hash or nonce, no framing by another site, nosniff, the referrer kept to the origin, unused powers off, the opener isolated, HSTS with its subdomains and no preload; nothing on the site breaks under it",
         "The campaign's finder stops at the lower of the month's cap, the setting HUNTER_MONTHLY_CAP (50 without it), and the searches Hunter's plan reports left; a Hunter address marked valid counts with no cited page, its source Hunter's verifier",
-        "A send to a shared box is no touch to the person a lead now names and starts no 30 days for an email to a person's own address; the finder asks never-emailed leads first, Track A first; Track A follows only a submitted application"
+        "A send to a shared box is no touch to the person a lead now names and starts no 30 days for an email to a person's own address; the finder asks never-emailed leads first, Track A first; Track A follows only a submitted application",
+        "The review route's action work, a move inside the page, is kept on the visitor's row by name and counts in neither of the card's two figures, and the booking email asks the closing question's three parts after Role and company"
       ]
     }
   ]

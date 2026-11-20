@@ -171,6 +171,7 @@ public static class DocumentationCatalog
         ["adr-the-review-route-gives-a-reason-before-it-asks"] = "docs/decisions/ADR-138-the-review-route-gives-a-reason-before-it-asks.md",
         ["adr-the-system-watches-its-scheduled-tasks-and-heals-what-it-may"] = "docs/decisions/ADR-139-the-system-watches-its-scheduled-tasks-and-heals-what-it-may.md",
         ["adr-the-stack-has-a-page-of-its-own"] = "docs/decisions/ADR-140-the-stack-has-a-page-of-its-own.md",
+        ["adr-the-sales-pages-set-the-sites-look"] = "docs/decisions/ADR-@ADR@-the-sales-pages-set-the-sites-look.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",

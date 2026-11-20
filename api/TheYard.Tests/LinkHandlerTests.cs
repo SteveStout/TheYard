@@ -277,6 +277,22 @@ public sealed class LinkHandlerTests
     }
 
     [Fact]
+    public void The_booking_email_asks_the_closing_question_s_three_parts_each_on_its_own_line_after_role_and_company()
+    {
+        // The review route's close asks "What has to work, where is it today, and what does success look like?" and
+        // says the email carries the three (sales1120); the address and the subject are as they were.
+        var settings = new ConfigurationBuilder().AddJsonFile(Path.Combine(Repo.Root(), "api", "TheYard.Api", "appsettings.json")).Build();
+        var message = BookMessageHandler.Parts(settings["Links:Book"]!);
+
+        Assert.Equal("stevenstout11@gmail.com", message.To);
+        Assert.Equal("20 minutes with Steven Stout", message.Subject);
+        Assert.EndsWith(
+            "Role and company:\r\nWhat has to work:\r\nWhere is it today:\r\nWhat does success look like:\r\n",
+            message.Body,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void The_two_mailto_keys_hold_a_mailto_only_and_the_https_section_never_holds_one()
     {
         var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>

@@ -92,11 +92,33 @@ public sealed class ReviewFoldingTests
         Assert.True(ReviewActions.ReachedRunningOrBook(Row(3, null)));
         Assert.True(ReviewActions.ReachedRunningOrBook(Row(0, "gate-run")));
         Assert.False(ReviewActions.ReachedRunningOrBook(Row(0, "blog", "forward")));
-        Assert.Equal(15, ReviewActions.Names.Count);
-        Assert.Equal(["gate-run", "blog", "forward"], ReviewActions.Names.Skip(12));
+        Assert.Equal(16, ReviewActions.Names.Count);
+        Assert.Equal(["gate-run", "blog", "forward", "work"], ReviewActions.Names.Skip(12));
         Assert.All(ReviewActions.RunningOrBook, name => Assert.True(ReviewActions.IsOne(name)));
         Assert.False(ReviewActions.IsOne("Proof"));
         Assert.False(ReviewActions.IsOne(null));
+    }
+
+    [Fact]
+    public void Work_the_move_inside_the_page_is_kept_and_counts_in_neither_figure()
+    {
+        static ReviewRow Row(int stop, params string[]? actions) => new("a", "2026-11-20", stop, null, Noon, Noon, actions);
+
+        Assert.True(ReviewActions.IsOne("work"));
+        Assert.Equal(["work"], ReviewActions.InPage);
+        Assert.False(ReviewActions.ReachedASecond(Row(0, "work")));
+        Assert.False(ReviewActions.ReachedRunningOrBook(Row(0, "work")));
+        Assert.True(ReviewActions.ReachedASecond(Row(0, "work", "resume")));
+        Assert.True(ReviewActions.ReachedRunningOrBook(Row(0, "work", "proof")));
+
+        // Folded with the rest, work is kept on the row by name, and the two figures stay as they were without it.
+        var folded = Assert.Single(ReviewFolding.Fold([
+            Reach("a", 0, null, 0),
+            Reach("a", 0, null, 1) with { Action = "work" },
+        ]));
+        Assert.Equal(["work"], folded.Actions!);
+        Assert.False(ReviewActions.ReachedASecond(folded));
+        Assert.False(ReviewActions.ReachedRunningOrBook(folded));
     }
 
     [Fact]

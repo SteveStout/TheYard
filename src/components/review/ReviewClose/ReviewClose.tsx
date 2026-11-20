@@ -1,9 +1,10 @@
 /**
- * Does:      Draws the review route's close as the quality1120 picture draws it, one glass row at the page's width with
- *            its three buttons at the right: Book 20 minutes (the filled one; the booking is the email, and it opens
- *            the booking sheet too), the gold Resume (PDF) and Message me on LinkedIn, each reporting its action, and
- *            under them the send line, which hands the page's own address to the phone's share sheet or, where there
- *            is none, copies it and says "Link copied" for two seconds. Its quote moved to the voices band.
+ * Does:      Draws the review route's close as the sales1120 picture draws it (ADR: The sales pages set the site's look),
+ *            one glass row at the page's width, "06 Talk": the closing question with its number badge and its line on
+ *            the left and its moves on the right (under it on a phone): Book 20 minutes (the filled one; the booking is
+ *            the email, and it opens the booking sheet too), the gold Resume (PDF) and Message me on LinkedIn, each
+ *            reporting its action, and under them the send line, which hands the page's own address to the phone's
+ *            share sheet or, where there is none, copies it and says "Link copied" for two seconds.
  *            The home page draws the same close with its own two lines at the left, and no send line (ADR-082, the
  *            addendum on the home page's order).
  * Does not:  Draw a voice (ReviewVoices.tsx does) or read the API.
@@ -27,6 +28,7 @@ export function ReviewClose({
   onAction,
   onBook,
   lines,
+  ask,
 }: {
   /** The address the send line shares: this route with its for value and the visitor's code; none, no send line. */
   address?: () => string;
@@ -34,6 +36,8 @@ export function ReviewClose({
   onBook: () => void;
   /** The home page's two lines at the left; the review route's close has none. */
   lines?: { readout: string; line: string };
+  /** The review route's closing question and its line, drawn beside the moves with the 06 badge (op-ask). */
+  ask?: { number: string; question: string; line: string };
 }) {
   const [said, setSaid] = useState<string | null>(null);
   useEffect(() => {
@@ -62,6 +66,76 @@ export function ReviewClose({
       if (!(error instanceof DOMException && error.name === 'AbortError')) copy();
     });
   };
+  const acts = (
+    <div className={styles.acts}>
+      <a
+        className={`op-pill-primary ${styles.act}`}
+        href={BOOK_ADDRESS}
+        onClick={() => {
+          onAction('book');
+          onBook();
+        }}
+        data-action="review.book"
+      >
+        {VERDICT.book}
+      </a>
+      <a
+        className={`op-pill-resume ${styles.resume}`}
+        href={RESUME_ADDRESS}
+        onClick={() => onAction('resume')}
+        data-action="review.resume"
+        data-testid="review-close-resume"
+      >
+        <PdfMark />
+        {VERDICT.resume}
+      </a>
+      <a
+        className={`op-pill-secondary ${styles.act}`}
+        href={LINKEDIN_ADDRESS}
+        rel="noopener"
+        onClick={() => onAction('linkedin')}
+        data-action="review.linkedin"
+      >
+        {CLOSE.linkedin}
+      </a>
+      {address && (
+        <button
+          type="button"
+          className={styles.forward}
+          onClick={forward}
+          aria-live="polite"
+          data-action="review.forward"
+          data-testid="review-forward"
+        >
+          {said ?? FORWARD.line}
+        </button>
+      )}
+    </div>
+  );
+  if (ask) {
+    return (
+      <section
+        id="talk"
+        className={`${styles.close} op-glass`}
+        aria-labelledby="review-close-title"
+        data-mock="close"
+        data-testid="review-close"
+      >
+        <div className="op-ask" data-mock="close-ask">
+          <div>
+            <h2 id="review-close-title" className="op-ask-q" data-mock="close-question">
+              <span className="op-num" data-mock="section-num">
+                {ask.number}
+              </span>
+              {ask.question}
+            </h2>
+            <p className="op-ask-sub">{ask.line}</p>
+          </div>
+          {acts}
+        </div>
+      </section>
+    );
+  }
   return (
     <section
       className={`${styles.close} op-glass`}
@@ -78,50 +152,7 @@ export function ReviewClose({
           <p className={styles.line}>{lines.line}</p>
         </div>
       )}
-      <div className={styles.acts}>
-        <a
-          className={`op-pill-primary ${styles.act}`}
-          href={BOOK_ADDRESS}
-          onClick={() => {
-            onAction('book');
-            onBook();
-          }}
-          data-action="review.book"
-        >
-          {VERDICT.book}
-        </a>
-        <a
-          className={`op-pill-resume ${styles.resume}`}
-          href={RESUME_ADDRESS}
-          onClick={() => onAction('resume')}
-          data-action="review.resume"
-          data-testid="review-close-resume"
-        >
-          <PdfMark />
-          {VERDICT.resume}
-        </a>
-        <a
-          className={`op-pill-secondary ${styles.act}`}
-          href={LINKEDIN_ADDRESS}
-          rel="noopener"
-          onClick={() => onAction('linkedin')}
-          data-action="review.linkedin"
-        >
-          {CLOSE.linkedin}
-        </a>
-        {address && (
-          <button
-            type="button"
-            className={styles.forward}
-            onClick={forward}
-            aria-live="polite"
-            data-action="review.forward"
-            data-testid="review-forward"
-          >
-            {said ?? FORWARD.line}
-          </button>
-        )}
-      </div>
+      {acts}
     </section>
   );
 }

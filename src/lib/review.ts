@@ -3,6 +3,7 @@
  * funnel the API answers, the four windows, and the words the card prints for a stop, a time and the
  * day it started counting. A code says which link was sent, never who received it. No React in here.
  */
+import { IN_PAGE_ACTIONS, REVIEW_ACTIONS } from './reviewProgress';
 import { REVIEW_STOPS } from './reviewStops';
 
 /** The windows the card offers, in the order its pills show them. */
@@ -91,6 +92,15 @@ export function secondCountedLine(second: ReviewSecond | undefined): string {
   return second === undefined
     ? 'The two figures are not counted on this version.'
     : `These two figures count from ${second.counted_from}, the day the buttons started reporting.`;
+}
+
+/**
+ * The line that names every action the route's buttons report, by name, and the moves inside the page that count in
+ * neither figure (sales1120, ADR-123's addendum on work).
+ */
+export function actionsLine(): string {
+  const inPage = IN_PAGE_ACTIONS.join(', ');
+  return `The buttons report ${REVIEW_ACTIONS.join(', ')}. ${inPage} is a move inside the page and counts in neither figure.`;
 }
 
 /** A window as its pill says it: "24 h", "7 d". */

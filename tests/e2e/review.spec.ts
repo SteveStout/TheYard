@@ -103,7 +103,15 @@ test('the close carries no voice, only its buttons, and the close and About both
   await freshRoute(page);
   await openTheYard(page, '/?view=review');
   const close = page.getByTestId('review-close');
-  await expect(close).toHaveAttribute('aria-label', 'Next step');
+  // 06 Talk: the closing question names the section, its badge before it (the sales1120 picture).
+  await expect(close).toHaveAttribute('id', 'talk');
+  await expect(close).toHaveAccessibleName(
+    /What has to work, where is it today, and what does success look like\?/
+  );
+  await expect(close.locator('[data-mock="section-num"]')).toHaveText('06');
+  await expect(close).toContainText(
+    'Book 20 minutes opens an email to me with those three questions in it, and I answer with a time.'
+  );
   await expect(close).not.toContainText('That is the work');
   await expect(close.getByTestId('voice')).toHaveCount(0);
   await expect(close.getByRole('link', { name: 'Book 20 minutes' })).toHaveAttribute(
@@ -334,12 +342,12 @@ test('at 1568 by 772 the first screen gives the reason before the ask, with no s
     'review-book',
   ])
     expect(await bottomOf(page, shown), shown).toBeLessThanOrEqual(772);
-  // The ten-minute ask is the tour's, under the fold; the two-minute path's heading is on the first screen.
+  // The ten-minute ask is the tour's, under the fold; the work is the first section under the first screen.
   const tour = await page.getByTestId('review-tour').boundingBox();
   expect(tour!.y).toBeGreaterThan(772);
-  await expect(
-    page.getByRole('heading', { level: 2, name: 'Three questions, two minutes' })
-  ).toBeInViewport();
+  const work = (await page.getByTestId('review-work').boundingBox())!;
+  expect(work.y).toBeGreaterThan(await bottomOf(page, 'review-proof'));
+  expect(work.y).toBeLessThan((await page.getByTestId('review-path').boundingBox())!.y);
   await expect(page.getByTestId('review-book')).toHaveAttribute('href', '/api/go/book');
   // The band says one sentence to a stranger.
   await expect(page.getByTestId('store-bar-live')).toContainText('Live system.');
@@ -517,8 +525,9 @@ test('the mirror’s slip line lands on the slip and the turn and reports slip',
   await expect.poll(() => actions).toEqual(['slip']);
 });
 
-// "See the proof in 2 minutes" opens the top of Quality in place, and reports its action once.
-test('the primary button opens the top of Quality, in place, and reports the proof action', async ({
+// "See the work" goes down the page to the work and reports work, keeping the address; the proof is TheYard card's
+// first door now, and still opens the top of Quality in place and reports proof once (ADR-138, the addendum of sales1120).
+test('the first move goes to the work and the proof opens the top of Quality, in place, each reporting its action', async ({
   page,
 }) => {
   const actions: string[] = [];
@@ -532,16 +541,164 @@ test('the primary button opens the top of Quality, in place, and reports the pro
   await openTheYard(page, '/?view=review');
   let loads = 0;
   page.on('load', () => (loads += 1));
-  await expect(page.getByTestId('review-proof')).toHaveAttribute('href', '/?doc=quality');
-  await page.getByTestId('review-proof').click();
+  const first = page.getByTestId('review-proof');
+  await expect(first).toHaveAttribute('href', '#the-work');
+  await expect(first).toHaveAttribute('data-action', 'review.work');
+  await first.click();
+  await expect(page.getByTestId('review-work')).toBeInViewport();
+  await expect(page).toHaveURL(/[?&]view=review(?!.*#)/);
+  await expect.poll(() => actions).toEqual(['work']);
+  const proof = page.locator('#case-theyard [data-mock="case-door"]').first();
+  await expect(proof).toHaveAttribute('href', '/?doc=quality');
+  await proof.click();
   const dialog = page.locator('dialog[open]');
   const top = dialog.locator('h2').first();
   await expect(top).toHaveText('Quality you can watch', { timeout: 30_000 });
   await expect(top).toBeInViewport();
   await expect(page).toHaveURL(/[?&]doc=quality/);
   expect(loads).toBe(0);
-  await expect.poll(() => actions).toEqual(['proof']);
+  await expect.poll(() => actions).toEqual(['work', 'proof']);
 });
+
+/** One reading of the pulse, so the live panels draw the same figures on any machine. */
+async function answerPulse(page: Page) {
+  const now = Date.now();
+  await page.route('**/api/pulse', (route) =>
+    route.fulfill({
+      json: {
+        usual_p95_ms_24h: 409,
+        requests_24h: 21_312,
+        month_to_date: 43.04,
+        forecast_month: 77.1,
+        currency: 'USD',
+        cost_read_at_ms: now,
+        uptime_seconds: 480,
+        version: '1.0.5.128',
+        commit: 'a4c45c4',
+        read_at_ms: now,
+        people_all_time: 1274,
+        people_new_by_day: [],
+        counted_from: '2026-10-24',
+        visits_all_time: null,
+        visits_from: null,
+        visits_by_day: [],
+      },
+    })
+  );
+}
+
+// The sales1120 picture (ADR: The sales pages set the site's look): the sections in one order, each numbered, the first
+// screen's moves and live panel, and the three case cards with their panels and doors, at a desk and on a phone.
+for (const [width, height] of [
+  [1440, 900],
+  [390, 844],
+] as const) {
+  test(`at ${width} the page runs in the picture's order, and the work is three case cards that each lead on`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await freshRoute(page);
+    await answerBlog(page, POSTS);
+    await answerPulse(page);
+    await openTheYard(page, '/?view=review');
+    await expect(page.getByTestId('review-close')).toBeVisible();
+    // The order is one list: the first moves, the roles row, then 01 to 06.
+    const order = [
+      '[data-mock="hero-moves"]',
+      '[data-mock="roles"]',
+      '[data-mock="work"]',
+      '[data-mock="questions"]',
+      '[data-mock="voices"]',
+      '[data-mock="blog"]',
+      '[data-mock="tour"]',
+      '[data-mock="close"]',
+    ];
+    const tops: number[] = [];
+    for (const selector of order) tops.push((await page.locator(selector).boundingBox())!.y);
+    for (const [index, top] of tops.slice(1).entries())
+      expect(top, order[index + 1]).toBeGreaterThan(tops[index]);
+    await expect(page.locator('[data-mock="section-num"]')).toHaveText([
+      '01',
+      '02',
+      '03',
+      '04',
+      '05',
+      '06',
+    ]);
+    // The first moves, in order, and the line under them gone.
+    await expect(page.locator('[data-mock="hero-moves"] > a')).toHaveText([
+      /^See the work/,
+      /Resume \(PDF\)$/,
+      'Book 20 minutes',
+    ]);
+    await expect(page.getByText('One stop. AI-written code slipped', { exact: false })).toHaveCount(
+      0
+    );
+    // The live panel over the lead quote, three readings, none dead.
+    const panel = page.locator('[data-mock="hero-side"] > [data-mock="live-panel"]');
+    await expect(panel).toContainText('TheYard, right now');
+    await expect(panel.locator('[data-mock="live-value"]')).toHaveText([
+      /^409 ms/,
+      /min ago/,
+      /^\$43\.04/,
+    ]);
+    // Each tile is a door to its case.
+    await expect(page.locator('[data-mock="tile-door"]')).toHaveText([
+      /See how/,
+      /See how/,
+      /See how/,
+    ]);
+    expect(
+      await page
+        .locator('[data-mock="tile-door"]')
+        .evaluateAll((all) => all.map((each) => each.getAttribute('href')))
+    ).toEqual(['#case-conway', '#case-storee', '#case-theyard']);
+    // Three cards, each with its dark panel beside it at a desk and under it on a phone, and its doors.
+    const cards = page.locator('[data-mock="work"] [data-mock="case"]');
+    await expect(cards).toHaveCount(3);
+    for (const id of ['case-conway', 'case-storee', 'case-theyard']) {
+      const card = page.locator(`#${id}`);
+      const body = (await card.locator('.op-case-body').boundingBox())!;
+      const aside = (await card.locator('[data-mock="case-panel"]').boundingBox())!;
+      if (width >= 640) {
+        expect(Math.abs(aside.y - body.y), `${id}: side by side`).toBeLessThanOrEqual(1);
+        expect(aside.x, `${id}: the panel at the right`).toBeGreaterThan(body.x + body.width - 2);
+        expect((await card.boundingBox())!.height, `${id}: compact`).toBeLessThanOrEqual(250);
+      } else
+        expect(aside.y, `${id}: the panel under the body`).toBeGreaterThanOrEqual(
+          body.y + body.height - 1
+        );
+    }
+    await expect(page.locator('#case-conway [data-mock="case-door"]')).toHaveAttribute(
+      'href',
+      cardAddress('Meagan Colley')
+    );
+    await expect(page.locator('#case-storee [data-mock="case-door"]')).toHaveAttribute(
+      'href',
+      cardAddress('Henry Crans')
+    );
+    await expect(page.locator('#case-theyard [data-mock="case-door"]')).toHaveText([
+      /See the proof in 2 minutes/,
+      /Or ask it three questions/,
+    ]);
+    await expect(page.locator('#case-theyard h3')).toHaveText(
+      /^[\d,]+ tests passed on the version you are reading$/
+    );
+    await expect(page.locator('#case-theyard [data-mock="live-value"]')).toHaveText([
+      /^21,312/,
+      /^\d+/,
+      /^1,274/,
+    ]);
+    // The tile's door goes down to its card and keeps the address.
+    await page.locator('[data-mock="tile-door"]').nth(1).click();
+    await expect(page.locator('#case-storee')).toBeInViewport();
+    await expect(page).toHaveURL(/[?&]view=review(?!.*#)/);
+    const sideways = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(sideways).toBeLessThanOrEqual(0);
+  });
+}
 
 // #region the-look
 // The look is an exit criterion (RULE 82; ADR: The review route gives a reason before it asks, the addendum on one
@@ -726,17 +883,19 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
       );
       expect(sideways, `${at}: sideways`).toBeLessThanOrEqual(0);
-      // 3. Height: under 2,750 at 1568 for the verdict, under 2,950 for the mirror (the pictures: 2,478 and 2,658).
+      // 3. Height: under 3,600 at 1568 for the verdict, under 3,750 for the mirror (the sales1120 picture: 3,485, with
+      // 01 The work's three case cards under the first screen).
       if (width === 1568) {
         const tall = await page.evaluate(() => document.documentElement.scrollHeight);
-        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 2950 : 2750);
+        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 3750 : 3600);
       }
-      // 3. At 390 with the tour closed: under 5,600 for the verdict, under 6,300 for the mirror (5,272 and 5,851; the
+      // 3. At 390 with the tour closed: under 7,700 for the verdict, under 8,300 for the mirror (the sales1120 picture:
+      // 7,415 with the work's three cards; before them 5,272 and 5,851; the
       // mirror's resume took a row of its own among its moves and the voices band its heading, quality1120).
       if (width === 390) {
         await page.getByTestId('review-tour-toggle').click();
         const tall = await page.evaluate(() => document.documentElement.scrollHeight);
-        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 6300 : 5600);
+        expect(tall, `${at}: page height`).toBeLessThan(address.includes('for=ai') ? 8300 : 7700);
       }
       // 6 and 7. The primary button is on the first screen at 1568 by 772 and at 390 by 844.
       if (width === 1568 || width === 390)
@@ -753,18 +912,17 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
   });
 }
 
-// 6. At 1568 by 772 the verdict's primary button and the path's heading are both on the first screen. (The mirror's
-// picture puts its name strip first, so its path heading is under the fold there; its button is held above.)
-test('at 1568 by 772 the primary button and "Three questions, two minutes" are on the first screen', async ({
+// 6. At 1568 by 772 the verdict's primary button is on the first screen, and "01 The work" is the section under it.
+test('at 1568 by 772 the primary button is on the first screen and the work comes next', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1568, height: 772 });
   await freshRoute(page);
   await openTheYard(page, '/?view=review');
   expect(await bottomOf(page, 'review-proof')).toBeLessThanOrEqual(772);
-  await expect(
-    page.getByRole('heading', { level: 2, name: 'Three questions, two minutes' })
-  ).toBeInViewport();
+  await expect(page.getByRole('heading', { level: 2, name: '01 The work' })).toBeVisible();
+  const work = (await page.getByTestId('review-work').boundingBox())!;
+  expect(work.y - (await bottomOf(page, 'review-proof'))).toBeLessThan(200);
 });
 
 // 8. Alive: on the seeded catalogue the lot tile shows a vehicle and a dollar amount, and never "No auction is live".

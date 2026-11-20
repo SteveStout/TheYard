@@ -1,6 +1,7 @@
 /**
  * Does:      Draws one post in full, in the feed layout readers know from LinkedIn and in the site's own colours: who wrote
- *            it, when and how long it takes, the title, where a search matched, its topics and keywords, the body drawn
+ *            it, when and how long it takes, the title, where a search matched, "From the work" when a review route case
+ *            card names the post, its topics and keywords, the body drawn
  *            on save and clamped with "see more", the slides as a strip of thumbnails that open the slide viewer, the
  *            reads, and three actions (comment on LinkedIn, read the code, copy the link). Reports the read and what the
  *            reader does, a link in the body as a click that names its host.
@@ -12,6 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { postDate, type BlogPost } from '../../../lib/blog';
 import { matchLine, minutesLine, type FilterLabels } from '../../../lib/blogFilter';
 import { useBlogReport } from '../../../hooks/useBlogReport';
+import { fromTheWork } from '../../../lib/reviewCases';
 import { BlogTags, Marked } from '../BlogTags';
 import { SlideViewer } from '../SlideViewer';
 import styles from './BlogPostCard.module.css';
@@ -61,6 +63,8 @@ export function BlogPostCard({
   const [copied, setCopied] = useState(false);
   const viewing = slide === null ? -1 : post.images.findIndex((image) => image.position === slide);
   const line = matchLine(matched);
+  // A post a case card names leads back to that card (reviewCases.ts); none does yet, so nothing is drawn today.
+  const work = fromTheWork(post.slug, '');
 
   // #region slides-seen
   // Each slide counts once, when most of it has been in the strip's view, or when the viewer shows it.
@@ -124,6 +128,11 @@ export function BlogPostCard({
       {line && (
         <p className={styles.why} data-testid="blog-matched">
           {line}
+        </p>
+      )}
+      {work && (
+        <p className={styles.why} data-testid="blog-from-work">
+          <a href={work.href}>{work.line}</a>
         </p>
       )}
       <BlogTags

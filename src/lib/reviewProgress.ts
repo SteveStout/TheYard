@@ -103,7 +103,14 @@ export const REVIEW_ACTIONS = [
   'gate-run',
   'blog',
   'forward',
+  'work',
 ] as const;
+
+/**
+ * The moves inside the page (sales1120): "See the work", the tiles' doors and "Or ask it three questions" each report
+ * work, and work counts in neither of the card's two figures, so the before and after stay comparable (ADR-123).
+ */
+export const IN_PAGE_ACTIONS: readonly ReviewAction[] = ['work'];
 
 /** One of the names a button reports. */
 export type ReviewAction = (typeof REVIEW_ACTIONS)[number];

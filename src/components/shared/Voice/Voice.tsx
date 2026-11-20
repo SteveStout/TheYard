@@ -19,6 +19,7 @@ export function Voice({
   plain = false,
   className = '',
   column,
+  hook,
 }: {
   name: string;
   /** The /api/recommendations answer the page holds, or null before it arrives. */
@@ -31,6 +32,8 @@ export function Voice({
   className?: string;
   /** The grid column it stands under, when the page places it by column. */
   column?: number;
+  /** The hook the sales picture's check reads on this voice (data-mock), when the page asks for one. */
+  hook?: string;
 }) {
   const entry = voiceOf(recommendations, name);
   if (entry === null) return null;
@@ -43,6 +46,7 @@ export function Voice({
       data-testid="voice"
       data-name={entry.name}
       data-column={column}
+      data-mock={hook}
     >
       <span className={styles.say} data-testid="voice-pull">
         {`"${entry.pull}"`}
