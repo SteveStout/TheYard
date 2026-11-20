@@ -47,6 +47,42 @@ for (const viewport of [
   });
 }
 
+test('every post title on the list is a link to its own address that looks like the title, and a plain click opens the post in place (ADR: Search engines are told about every post)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await answerPosts(page);
+  await openTheYard(page, '/?view=blog');
+  const blog = page.getByTestId('blog-page');
+  const titles = blog.locator('[data-mock="post-title-link"]');
+  await expect(titles).toHaveCount(POSTS.length);
+  for (const [index, post] of POSTS.entries()) {
+    await expect(titles.nth(index)).toHaveAttribute('href', `/?view=blog&post=${post.slug}`);
+  }
+  // The heading stays a heading, its link inside it, with the heading's own colour and weight and no underline.
+  const lead = blog.getByRole('heading', { level: 2, name: 'A made-up newest post' });
+  await expect(lead.getByRole('link', { name: 'A made-up newest post' })).toBeVisible();
+  const second = blog.getByRole('heading', { level: 3, name: 'A made-up second post' });
+  const link = second.getByRole('link', { name: 'A made-up second post' });
+  const looks = (element: Element) => {
+    const style = getComputedStyle(element);
+    return [style.color, style.fontWeight, style.fontSize].join(' ');
+  };
+  expect(await link.evaluate(looks)).toBe(await second.evaluate(looks));
+  await expect(link).toHaveCSS('text-decoration-line', 'none');
+  await link.hover();
+  await expect(link).toHaveCSS('text-decoration-line', 'underline');
+  // A plain click opens the post in this page, as Read the post does: no new document is loaded.
+  await page.evaluate(() => ((window as unknown as { stayed?: boolean }).stayed = true));
+  await link.click();
+  await expect(page).toHaveURL(/\?view=blog&post=a-made-up-second-post$/);
+  await expect(page.getByTestId('blog-post')).toContainText('A made-up second post');
+  expect(await page.evaluate(() => (window as unknown as { stayed?: boolean }).stayed)).toBe(true);
+  await page.goBack();
+  await expect(page).toHaveURL(/\?view=blog$/);
+  await expect(blog.getByTestId('blog-mini')).toHaveCount(POSTS.length - 1);
+});
+
 test('the Blog row sits third, under Home and the review route, and says NEW POST for a post under a week old', async ({
   page,
 }) => {

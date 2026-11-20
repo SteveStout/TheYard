@@ -4,7 +4,7 @@
  *            motion, with the room the sections' scroll-margin-top leaves clear, and the address does not change, so the
  *            page keeps its view and any r= code. A modified click keeps the browser's own meaning.
  * Does not:  Know which sections a page has (the door names one) or draw anything; no React in here.
- * Used by:   ReviewVerdict.tsx, ReviewWork.tsx, sectionScroll.test.ts.
+ * Used by:   ReviewVerdict.tsx, ReviewWork.tsx, PostTitleLink.tsx, sectionScroll.test.ts.
  */
 
 /** The parts of a click this file reads, so a test can hand it a plain object. */

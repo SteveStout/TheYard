@@ -1,6 +1,7 @@
 /**
  * Does:      Draws one post in full, in the feed layout readers know from LinkedIn and in the site's own colours: who wrote
- *            it, when and how long it takes, the title, where a search matched, "From the work" when a review route case
+ *            it, when and how long it takes, the title as a link to the post's own address (a plain click opens it in place
+ *            where the page says how, a modified click keeps the browser's meaning), where a search matched, "From the work" when a review route case
  *            card names the post, its topics and keywords, the body drawn
  *            on save and clamped with "see more", the slides as a strip of thumbnails that open the slide viewer, the
  *            reads, and three actions (comment on LinkedIn, read the code, copy the link). Reports the read and what the
@@ -15,6 +16,7 @@ import { matchLine, minutesLine, type FilterLabels } from '../../../lib/blogFilt
 import { useBlogReport } from '../../../hooks/useBlogReport';
 import { fromTheWork } from '../../../lib/reviewCases';
 import { BlogTags, Marked } from '../BlogTags';
+import { PostTitleLink } from '../PostTitleLink';
 import { SlideViewer } from '../SlideViewer';
 import styles from './BlogPostCard.module.css';
 
@@ -45,6 +47,7 @@ export function BlogPostCard({
   onSlide = () => {},
   onTopic = () => {},
   onKeyword = () => {},
+  onOpen,
 }: {
   post: BlogPost;
   open?: boolean;
@@ -55,6 +58,8 @@ export function BlogPostCard({
   onSlide?: (position: number | null) => void;
   onTopic?: (key: string) => void;
   onKeyword?: (key: string) => void;
+  /** Opens the post at its own address in place; without it, a plain click on the title on the list loads the address. */
+  onOpen?: (slug: string) => void;
 }) {
   const card = useRef<HTMLElement>(null);
   const strip = useRef<HTMLOListElement>(null);
@@ -123,7 +128,9 @@ export function BlogPostCard({
       </header>
 
       <h2 id={`post-${post.slug}`} className={styles.title}>
-        <Marked text={post.title} terms={terms} />
+        <PostTitleLink slug={post.slug} onOpen={onOpen} here={open}>
+          <Marked text={post.title} terms={terms} />
+        </PostTitleLink>
       </h2>
       {line && (
         <p className={styles.why} data-testid="blog-matched">
