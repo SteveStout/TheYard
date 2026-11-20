@@ -1,5 +1,7 @@
 /**
- * Does:      Draws the window a document opens in: asks the API for it, renders it, lays it in panels, fills the Author page's place for what colleagues say, and offers its link.
+ * Does:      Draws the window a document opens in: asks the API for it, renders it, lays it in panels under one title (the
+ *            bar's), opens the documents the catalogue marks wide in the wide window, fills the Author page's place for
+ *            what colleagues say, and offers its link.
  * Does not:  Decide which document is open (the sidebar and useNavigation.ts do), or hold any document's words.
  * Used by:   SideNav.tsx.
  */
@@ -11,12 +13,15 @@ import type { NextPage } from '../lib/pageHooks';
 import { useFirstLoad } from '../hooks/useFirstLoad';
 import { request as askTheSite } from '../lib/request';
 import styles from './DocDialog.module.css';
+import bar from './DocBar.module.css';
 import prose from './DocProse.module.css';
 import swatches from './DocSwatches.module.css';
 import panels from './DocPanels.module.css';
 import author from './AuthorPage.module.css';
 import side from './AuthorSide.module.css';
 import blocks from './StyleBlocks.module.css';
+import quality from './QualityBlocks.module.css';
+import tiles from './QualityTiles.module.css';
 import { useLiveBlocks } from './useLiveBlocks';
 import { layoutDocument } from '../lib/docLayout';
 import { ICON } from '../lib/icons';
@@ -24,10 +29,10 @@ import { DOCS, type DocKey } from './documents';
 
 /**
  * The document's sheets, one job each (ADR-019, the addendum on the stylesheets). Each scopes its
- * rules under its own .prose, so the element that holds the document carries all six; the
+ * rules under its own .prose, so the element that holds the document carries all eight; the
  * reading panel's frost is scoped under the window as well, so the window carries that sheet's .dialog.
  */
-const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${side.prose} ${blocks.prose}`;
+const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${side.prose} ${blocks.prose} ${quality.prose} ${tiles.prose}`;
 const WINDOW = `${styles.dialog} ${panels.dialog} ${styles.dialogGround}`;
 
 /**
@@ -141,7 +146,10 @@ export function DocDialog({
         // The Author page has a shape of its own: panels, blocks, buttons and
         // photographs. Every other document takes the same panels by its
         // headings, so one look covers the whole library.
-        const html = author !== null ? author.layoutAuthor(rendered) : layoutDocument(rendered);
+        const html =
+          author !== null
+            ? author.layoutAuthor(rendered)
+            : layoutDocument(rendered, DOCS[key].title);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })
@@ -166,7 +174,9 @@ export function DocDialog({
       className={
         activeDoc === 'author'
           ? `${WINDOW} ${styles.dialogWide} op-glass op-sheet op-inset`
-          : `${WINDOW} op-glass op-sheet op-inset`
+          : DOCS[activeDoc].wide
+            ? `${WINDOW} ${styles.dialogBroad} op-glass op-sheet op-inset`
+            : `${WINDOW} op-glass op-sheet op-inset`
       }
       aria-label={DOCS[activeDoc].title}
       open={drawnOpen || undefined}
@@ -181,11 +191,16 @@ export function DocDialog({
     >
       {/* Every document stands on the ribbon ground: the page's own, read through the clear
           sheet, so the dialog carries no copy of the drawing. */}
-      <div className={styles.dialogHeader}>
-        <h2 className={styles.dialogTitle}>{DOCS[activeDoc].title}</h2>
+      <div className={bar.dialogHeader}>
+        <h2 className={bar.dialogTitle}>{DOCS[activeDoc].title}</h2>
+        {DOCS[activeDoc].note && (
+          <span className={bar.dialogNote} data-testid="doc-note">
+            {DOCS[activeDoc].note}
+          </span>
+        )}
         <button
           type="button"
-          className={styles.copyLink}
+          className={bar.copyLink}
           onClick={() => {
             // navigator.clipboard is undefined outside a secure context, not a
             // promise that rejects, so optional chaining here silently did
@@ -210,7 +225,7 @@ export function DocDialog({
         </button>
         <button
           type="button"
-          className={styles.close}
+          className={bar.close}
           onClick={() => dialogRef.current?.close()}
           aria-label="Close"
         >
@@ -236,6 +251,7 @@ export function DocDialog({
             <div
               ref={proseRef}
               className={PROSE}
+              data-doc={activeDoc}
               dangerouslySetInnerHTML={{ __html: docHtml[activeDoc] }}
             />
             {nextPage(activeDoc) && <WhereNext page={nextPage(activeDoc)!} />}
