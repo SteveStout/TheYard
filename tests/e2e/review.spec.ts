@@ -429,7 +429,8 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
     await openTheYard(page, address);
     const path = page.getByTestId('review-path');
     await expect(path.getByTestId('review-path-count')).toHaveText('0 of 3 opened.');
-    await expect(path.getByTestId('review-path-spark').locator('path')).toHaveCount(5);
+    // Five drawn paths and the comet's tail on the line (sales1120), unseen until the comet runs.
+    await expect(path.getByTestId('review-path-spark').locator('path')).toHaveCount(6);
     await expect(path.getByTestId('review-path-total')).toHaveText(/^\d{1,3}(,\d{3})*$/);
     await expect(path.getByTestId('review-path-gate-tile')).toContainText('passed');
     await expect(path.getByTestId('review-path-room')).toHaveAttribute(
@@ -699,6 +700,124 @@ for (const [width, height] of [
     expect(sideways).toBeLessThanOrEqual(0);
   });
 }
+
+// The numbered path (sales1120, ADR: The sales pages set the site's look): at a desk a bar at the top once the first
+// move has left the window, the step in view current and the ones before it done, a step scrolling to its section and
+// keeping the address; on a phone no bar, a row over the dock instead.
+test('at 1440 the numbered path comes on after the first screen, marks where the reader is and goes where it says', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await freshRoute(page);
+  await answerBlog(page, POSTS);
+  await openTheYard(page, '/?view=review');
+  const bar = page.locator('[data-mock="pathbar"]');
+  await expect(bar).toHaveAttribute('aria-label', 'The path down this page');
+  await expect(bar.locator('[data-mock="path-step"]')).toHaveText([
+    '01The work',
+    '02Three questions',
+    '03Who worked with him',
+    '04From the blog',
+    '05The tour',
+    '06Talk',
+  ]);
+  await expect(bar).toBeHidden();
+  await page
+    .getByTestId('review-path')
+    .evaluate((section) =>
+      window.scrollTo(0, section.getBoundingClientRect().top + window.scrollY - 70)
+    );
+  await expect(bar).toBeInViewport();
+  await expect(bar.locator('[aria-current="true"]')).toHaveText('02Three questions');
+  await expect(bar.locator('a.is-done')).toHaveText(['01The work']);
+  await expect(bar.locator('[data-mock="path-resume"]')).toHaveClass(/\bop-pill-resume\b/);
+  await bar.locator('[data-mock="path-step"]').nth(5).click();
+  await expect(page.getByTestId('review-close')).toBeInViewport();
+  await expect(bar.locator('[aria-current="true"]')).toHaveText('06Talk');
+  await expect(page).toHaveURL(/[?&]view=review(?!.*#)/);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(bar).toBeHidden();
+});
+
+test('at 390 there is no bar: a row of six marks rides over the dock and says where the reader is', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await freshRoute(page);
+  await answerBlog(page, POSTS);
+  await openTheYard(page, '/?view=review');
+  await expect(page.locator('[data-mock="pathbar"]')).toBeHidden();
+  const row = page.locator('[data-mock="pathdock"]');
+  // Off, it is hidden and slid down behind the dock.
+  await expect(row).toBeHidden();
+  await page
+    .getByTestId('review-path')
+    .evaluate((section) =>
+      window.scrollTo(0, section.getBoundingClientRect().top + window.scrollY - 70)
+    );
+  await expect(row).toBeVisible();
+  await expect(row).toBeInViewport();
+  await expect(row.locator('i')).toHaveCount(6);
+  await expect(row).toContainText('02 of 06, Three questions');
+  await expect(page.getByTestId('review-dock')).toHaveAttribute('data-on', 'true');
+  const marks = (await row.boundingBox())!;
+  const dock = (await page.getByTestId('review-dock').boundingBox())!;
+  expect(marks.y + marks.height, 'over the dock').toBeLessThanOrEqual(dock.y + 1);
+});
+
+test('with reduced motion nothing moves: no section is marked seen and no motion runs, and the finished state shows', async ({
+  page,
+}) => {
+  // The suite opens every page as a reader who asked for less motion (playwright.config.ts).
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  await page.getByTestId('review-path').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(600);
+  await expect(page.locator('.is-seen')).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () =>
+        document
+          .getAnimations()
+          .filter((animation) =>
+            (animation.effect as KeyframeEffect | null)?.target?.closest?.(
+              '[data-testid="review-page"]'
+            )
+          ).length
+    )
+  ).toBe(0);
+  await expect(page.locator('[data-mock="anim-comet"]')).toBeHidden();
+  for (const check of await page.locator('[data-mock="anim-check"]').all())
+    expect(await check.evaluate((each) => getComputedStyle(each).opacity)).toBe('1');
+});
+
+// With motion the comet runs and the six checks fill, each once its card is seen.
+test('with motion the comet and the six checks play when their card is seen, and not before', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    reducedMotion: 'no-preference',
+    viewport: { width: 1440, height: 900 },
+  });
+  const page = await context.newPage();
+  await freshRoute(page);
+  await openTheYard(page, '/?view=review');
+  const checks = page.locator('[data-mock="anim-check"]');
+  await expect(checks).toHaveCount(6);
+  expect(await checks.first().evaluate((each) => each.getAnimations().length)).toBe(0);
+  await page.locator('[data-mock="anim-comet"]').scrollIntoViewIfNeeded();
+  await expect(page.getByTestId('review-path')).toHaveClass(/\bis-seen\b/);
+  await expect
+    .poll(() =>
+      page.locator('[data-mock="anim-comet"]').evaluate((each) => each.getAnimations().length)
+    )
+    .toBeGreaterThan(0);
+  expect(
+    await checks.evaluateAll((all) => all.map((each) => each.getAnimations().length > 0))
+  ).toEqual(Array(6).fill(true));
+  await context.close();
+});
 
 // #region the-look
 // The look is an exit criterion (RULE 82; ADR: The review route gives a reason before it asks, the addendum on one

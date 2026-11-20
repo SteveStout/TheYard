@@ -1,9 +1,9 @@
 /**
  * Does:      Draws the review route's numbered path (ADR: The sales pages set the site's look), as the sales1120 picture
- *            draws it. At a desk: a bar fixed to the top of the window, from the collapsed rail's edge to the right
- *            edge, on once the first move has left the window and off when it returns, with the six steps (the one the
- *            reader is in marked current, the ones before it done, only the current one's name under 1100 px), then the
- *            gold resume and Book 20 minutes. On a phone: no bar, a thin row over the dock with six marks and
+ *            draws it. At a desk (1024 up): a bar fixed to the top of the window, from the collapsed rail's edge to the
+ *            right edge, on once the first move has left the window and off when it returns, with the six steps (the one
+ *            the reader is in marked current, the ones before it done, only the current one's name under 1280 px), then
+ *            the gold resume and Book 20 minutes. On a phone: no bar, a thin row over the dock with six marks and
  *            "02 of 06, Three questions", on and off with the dock. A step scrolls to its section and leaves the
  *            address as the reader had it, its view and any r= code with it.
  * Does not:  Hold the steps or decide which is current (pathSteps.ts does), open the booking sheet (the page does, on
