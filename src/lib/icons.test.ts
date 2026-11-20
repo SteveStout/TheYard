@@ -32,9 +32,10 @@ const sheets = import.meta.glob(['../components/**/*.module.css', '../library/**
  * A drawing is not an icon: the fallback car in VehicleImage is a picture at its
  * own size, and Ring.tsx is a gauge, scaled by its size prop from src/lib/ring.ts.
  * The review route's lot tile draws the same kind of car at the picture's size, and
- * its tick is a filled disc with a bold glyph, like the tests card's pass mark.
+ * its tick is a filled disc with a bold glyph, like the tests card's pass mark. The resume button's PDF page is a
+ * small picture of a document in three colours, drawn at the picture's size.
  */
-const DRAWINGS = ['VehicleImage.tsx', 'Ring.tsx', 'LotTile.tsx', 'TickDisc.tsx'];
+const DRAWINGS = ['VehicleImage.tsx', 'Ring.tsx', 'LotTile.tsx', 'TickDisc.tsx', 'PdfMark.tsx'];
 
 /**
  * The strokes a sheet may write in a number of its own, by selector, each a
@@ -110,6 +111,9 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // The review route's quality spark (ADR: The review route gives a reason before it asks, the addendum on one unit):
   // its floor, the line before and after the ratchet and the ratchet's dashed mark. A chart's line, not an icon.
   'PathTile.module.css': ['.sparkBase', '.sparkBefore', '.sparkAfter', '.sparkMark'],
+  // The resume button's PDF page (ADR: The review route gives a reason before it asks, the addendum on the resume
+  // button): the page's edge and its folded corner. A picture of a document, not an icon.
+  'PdfMark.module.css': ['.page', '.fold'],
 };
 
 describe('the icons', () => {
