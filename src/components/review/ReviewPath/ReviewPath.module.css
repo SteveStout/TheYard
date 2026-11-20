@@ -1,8 +1,9 @@
 /**
  * Does:      Lays out the short path's cards as the whole-page picture draws them (its .cards and .card, ported rule by
- *            rule): three equal cards from 1280, one under the other below it, each with its numbered question kept two
- *            lines tall at a desk so the three answers start level, its time, its answer and its door, with the gate's
- *            text link beside its door.
+ *            rule): three equal cards from 1280, each card's voice under it in a second row of the same three columns
+ *            (one row, one height), and under 1280 one column with each voice straight after its card; each card its
+ *            numbered question kept two lines tall at a desk so the three answers start level, its time, its answer
+ *            and its door, with the gate's text link beside its door.
  * Does not:  Draw a panel's glass (panels.css does), the section's heading (ReviewHead.module.css does), a tile
  *            (PathTile.module.css does) or the pills' look.
  * Used by:   ReviewPath.tsx.
@@ -10,16 +11,34 @@
 .cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
+  grid-template-rows: auto auto;
+  gap: var(--space-3) var(--space-4);
   margin: var(--space-4) 0 0;
-  padding: 0;
-  list-style: none;
+}
+
+/* Placed by column, the card in the first row and its voice in the second, so a voice not yet read leaves its own
+   place empty rather than moving the next card. */
+.cards > [data-column='1'] {
+  grid-column: 1;
+}
+
+.cards > [data-column='2'] {
+  grid-column: 2;
+}
+
+.cards > [data-column='3'] {
+  grid-column: 3;
 }
 
 .card {
   display: flex;
+  grid-row: 1;
   flex-direction: column;
   padding: var(--space-4);
+}
+
+.voice {
+  grid-row: 2;
 }
 
 .top {
@@ -108,6 +127,21 @@
 @media (max-width: 1279.98px) {
   .cards {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    gap: var(--space-3);
+  }
+
+  .cards > [data-column] {
+    grid-row: auto;
+    grid-column: 1;
+  }
+
+  .voice {
+    margin-bottom: var(--space-3);
+  }
+
+  .voice:last-child {
+    margin-bottom: 0;
   }
 
   .payoff {

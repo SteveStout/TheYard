@@ -314,10 +314,20 @@ describe('the rendering service', () => {
     expect(html).toContain('0 of 7 seen.');
     expect(html).not.toContain('Do this:');
     expect(html).not.toContain('Mark done');
-    // The close: Sean Whitesell's words, drawn from the same read as the first screen's quote.
-    const sean = recommendations.recommendations.find((entry) => entry.name === 'Sean Whitesell');
-    expect(sean).toBeDefined();
-    expect(html).toContain(escapeHtml(sean!.pull));
+    // The named voices under the questions, the pair and the close, drawn from the same read as the first screen's
+    // quote, so nothing moves when the browser takes over.
+    for (const name of [
+      'Henry Crans',
+      'Sarah Sebestyen',
+      'Meagan Colley',
+      'Sean Whitesell',
+      'Khushbu Shah',
+      'Anthony Fortner',
+    ]) {
+      const voice = recommendations.recommendations.find((entry) => entry.name === name);
+      expect(voice, name).toBeDefined();
+      expect(html).toContain(escapeHtml(voice!.pull));
+    }
     // The ten-minute ask is below the first screen: the claim comes before it in the page.
     expect(html.indexOf('Production .NET that stays up.')).toBeLessThan(
       html.indexOf('Seven stops, ten minutes, all optional')

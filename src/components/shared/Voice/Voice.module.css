@@ -1,0 +1,59 @@
+/**
+ * Does:      Lays out one named voice as the whole-page pictures draw it (their .voice, ported rule by rule): the line in
+ *            quotes, then at the foot the name and title on the left and "Read it in full" on the right; plain, it
+ *            sits inside another panel with no padding of its own.
+ * Does not:  Draw the glass or the gold rule (panels.css does, through .op-glass and .op-tile).
+ * Used by:   Voice.tsx.
+ */
+.voice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.voice:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.say {
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  line-height: 1.45;
+}
+
+.sig {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.sig strong {
+  color: var(--color-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.go {
+  flex: none;
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.plain {
+  min-height: 0;
+  margin-top: var(--space-2);
+  padding: 0;
+}
