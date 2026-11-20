@@ -7,6 +7,7 @@
  *            not hold draws nothing; before the answer arrives the band is not drawn.
  * Used by:   ReviewPage.tsx.
  */
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { recommendationsLink, RECOMMENDATIONS_ADDRESS, VERDICT } from '../../../lib/reviewVerdict';
 import type { Recommendation } from '../../../lib/recommendations';
 import { VOICES, voiceOf } from '../../../lib/voices';
@@ -23,10 +24,13 @@ export function ReviewVoices({
   /** Reports a press on a voice or on the link to all of them. */
   onFollow: () => void;
 }) {
+  // The holder of its number badge's one pass of light.
+  const [holder] = useFirstSeen<HTMLElement>();
   const names = VOICES.band.filter((name) => voiceOf(recommendations, name) !== null);
   if (recommendations === null || names.length === 0) return null;
   return (
     <section
+      ref={holder}
       id="voices"
       aria-labelledby="review-voices-title"
       data-mock="voices"

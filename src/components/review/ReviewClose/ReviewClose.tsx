@@ -11,6 +11,7 @@
  * Used by:   ReviewPage.tsx, Landing.tsx.
  */
 import { useEffect, useState } from 'react';
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { FORWARD, forwardText } from '../../../lib/reviewBook';
 import type { ReviewAction } from '../../../lib/reviewProgress';
 import {
@@ -40,6 +41,8 @@ export function ReviewClose({
   ask?: { number: string; question: string; line: string };
 }) {
   const [said, setSaid] = useState<string | null>(null);
+  // The holder of the 06 badge's one pass of light.
+  const [holder] = useFirstSeen<HTMLElement>();
   useEffect(() => {
     if (said === null) return;
     const id = window.setTimeout(() => setSaid(null), 2000);
@@ -115,6 +118,7 @@ export function ReviewClose({
   if (ask) {
     return (
       <section
+        ref={holder}
         id="talk"
         className={`${styles.close} op-glass`}
         aria-labelledby="review-close-title"

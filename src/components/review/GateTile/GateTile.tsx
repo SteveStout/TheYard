@@ -3,6 +3,7 @@
  *            six parts in two columns as the path words them, each ticked only when the build carries the gate's own
  *            reading of this version, then under a rule the tests passed and failed from the landing figure, and at
  *            the right how long ago the gate shipped it, when that is under a week.
+ *            While its card is seen the six ticks fill in order, 0.38 seconds apart, each with a gold ring (sales.css).
  * Does not:  Read anything (the path hands it the totals and the build's facts) or print the results file's suites.
  * Used by:   ReviewPath.tsx.
  */
@@ -34,7 +35,7 @@ export function GateTile({
       <ul className={styles.rows} data-gated={gated}>
         {PATH_GATE_PARTS.map((part, index) => (
           <li key={part} data-ticked={gated}>
-            {gated && <TickDisc />}
+            {gated && <TickDisc check={index} />}
             {part}
             {index === PATH_GATE_PARTS.length - 1 ? ` ${reviewedWord(review)}` : ''}
           </li>

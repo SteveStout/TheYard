@@ -9,6 +9,7 @@
  * Used by:   Landing.tsx, ReviewPage.tsx.
  */
 import type { MouseEvent, ReactNode } from 'react';
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { useBlogPosts } from '../../../hooks/useBlogPosts';
 import { ALL_POSTS_ADDRESS, postDate, postLink } from '../../../lib/blog';
 import { minutesLine } from '../../../lib/blogFilter';
@@ -33,6 +34,8 @@ export function LatestPosts({
   row?: { head: (all: ReactNode) => ReactNode; onFollow: () => void };
 }) {
   const posts = useBlogPosts();
+  // The review row's holder of its number badge's one pass of light.
+  const [holder] = useFirstSeen<HTMLElement>();
   if (posts.state !== 'ready' || posts.posts.length === 0) return null;
   const newest = posts.posts.slice(0, LATEST_COUNT);
   if (row) {
@@ -44,6 +47,7 @@ export function LatestPosts({
     };
     return (
       <section
+        ref={holder}
         id="blog"
         aria-labelledby="review-blog-title"
         data-mock="blog"
