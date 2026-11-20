@@ -12,7 +12,7 @@ public static class ReviewActions
     public static readonly IReadOnlyList<string> Names =
     [
         "proof", "book", "resume", "recommendations", "stop-quality", "stop-gate", "stop-room", "slip", "tour", "linkedin", "github", "about",
-        "gate-run", "blog",
+        "gate-run", "blog", "forward",
     ];
 
     /// <summary>The names that reach the running system or the booking button; a resume click alone is not one.</summary>

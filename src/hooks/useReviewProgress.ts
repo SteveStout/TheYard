@@ -84,5 +84,7 @@ export function useReviewProgress(screen: string = 'verdict') {
      * so a second press costs a request and changes nothing.
      */
     action: (name: ReviewAction) => send(actionBody(name, code, screen)),
+    /** The code the page opened on, or null: the send line shares it, so a second device counts under it. */
+    code,
   };
 }

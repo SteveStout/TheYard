@@ -127,3 +127,7 @@ What stopped being true: that every kept open is a person. A mail or chat servic
 ## Addendum, 2026-11-12 (1.0.5.73): a third pass-through key, the LinkedIn recommendations page
 
 What stopped being true: Decision 4 names two keys, `github` and `linkedin`. A reader of the 90-day page who wants Steve's recommendations got his LinkedIn profile, or the site's own recommendations view, never LinkedIn's list. `Links:Go` now names a third key, `linkedin-recs`, for https://www.linkedin.com/in/stevenwstout/details/recommendations/, so `/api/go/linkedin-recs?r=<code>` counts the open and sends the reader there. Nothing else changed: a key configuration does not name is still 404. The opens report on the share words the path as "LinkedIn recommendations". `LinkHandlerTests` reads the three keys from the site's own appsettings.json.
+
+## Addendum, @DATE@ (@VER@): the booking message, read for the review route's sheet
+
+What stopped being true: that the booking address leaves the server only in `/api/go/book`'s Location header. `GET /api/links/book` answers the same `Links:Book` address in three parts, `{ "to", "subject", "body" }`, for the review route's booking sheet (ADR-138, the addendum on no dead ends), and 404 when no booking address is configured. It shows nothing new, since the redirect already sends the same address to anyone who follows it; it is anonymous, GET only, one query and its handler (`BookMessageQuery`, `BookMessageHandler`) in the Links slice, and it is read only when the sheet opens, so no drawn page carries the address.

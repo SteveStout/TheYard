@@ -248,6 +248,23 @@ public sealed class LinkHandlerTests
     }
 
     [Fact]
+    public async Task The_booking_message_is_the_book_address_cut_into_its_parts_and_nothing_without_one()
+    {
+        var parts = BookMessageHandler.Parts("mailto:someone%40example.com?subject=20%20minutes&body=Hi%2C%0D%0ATimes%3A%201.+2.");
+        Assert.Equal(new BookMessage("someone@example.com", "20 minutes", "Hi,\r\nTimes: 1.+2."), parts);
+        Assert.Equal(new BookMessage("a@example.com", "", ""), BookMessageHandler.Parts("mailto:a@example.com"));
+        Assert.Equal(new BookMessage("a@example.com", "Hi", ""), BookMessageHandler.Parts("mailto:a@example.com?Subject=Hi&cc=b@example.com"));
+
+        var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Links:Book"] = "mailto:someone@example.com?subject=Hi&body=There",
+        }).Build();
+        var handler = new BookMessageHandler(new TheYard.Api.Features.Links.ConfiguredLinkTargets(settings));
+        Assert.Equal(new BookMessage("someone@example.com", "Hi", "There"), await handler.HandleAsync(new BookMessageQuery(), CancellationToken.None));
+        Assert.Null(await new BookMessageHandler(new FakeTargets()).HandleAsync(new BookMessageQuery(), CancellationToken.None));
+    }
+
+    [Fact]
     public void The_site_s_settings_name_the_LinkedIn_recommendations_page_beside_the_profile_and_GitHub()
     {
         var settings = new ConfigurationBuilder().AddJsonFile(Path.Combine(Repo.Root(), "api", "TheYard.Api", "appsettings.json")).Build();

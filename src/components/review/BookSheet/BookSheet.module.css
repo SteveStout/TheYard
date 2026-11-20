@@ -1,0 +1,91 @@
+/**
+ * Does:      Lays out the booking sheet as the whole-page picture draws it (its .sheet, ported rule by rule): a panel at
+ *            most 520 px wide in the middle of the window over a backdrop of the deep teal, its close in the corner,
+ *            the heading, the sentence, the address, the message in its own box, the buttons in a row and the link.
+ * Does not:  Draw the panel (panels.css does, through .op-glass and .op-solid, the white of a panel on a dialog) or the
+ *            pills' look (ReviewPage.module.css does).
+ * Used by:   BookSheet.tsx.
+ */
+/* The dialog itself is only the place in the middle of the window; the glass panel inside it is the sheet. */
+.sheet {
+  width: calc(100% - 2 * var(--space-4));
+  max-width: 520px;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+}
+
+.panel {
+  padding: var(--space-5);
+}
+
+.sheet::backdrop {
+  background: color-mix(in srgb, var(--color-teal-deep) 35%, transparent);
+}
+
+.x {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-xl);
+  cursor: pointer;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+
+.line {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-base);
+}
+
+.msg {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pill {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-5);
+  font-size: var(--text-md);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+  text-underline-offset: 3px;
+}
+
+.x:focus-visible,
+.link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}

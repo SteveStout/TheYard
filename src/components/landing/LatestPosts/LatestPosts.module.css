@@ -129,11 +129,13 @@
   }
 }
 
-/* A thumb's height on a phone, like every control the review route's phone page carries. */
+/* A thumb's height on a phone, like every control the review route's phone page carries, reaching above and below
+   its line so the heading's row stays the height of its words. */
 @media (max-width: 639.98px) {
   .allLink {
     display: inline-flex;
     align-items: center;
     min-height: var(--touch-target);
+    margin: calc(-1 * var(--space-2)) 0;
   }
 }
