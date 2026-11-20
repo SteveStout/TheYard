@@ -135,7 +135,7 @@
       "example": "For example: every decision record the site links to exists, and every link in the docs goes somewhere real.",
       "rules": [
         "Record numbers run from one with no gap, and every record the sidebar offers has a file",
-        "A card turns green only when its cause is fixed: a threshold, tone or formula changes only with a test and an addendum naming what it measured, why that was wrong and what it measures now; a monthly allowance is projected at the last day's rate; Insights past its allowance stays amber while that rate would overrun a month; a card with no reading stays unread",
+        "A card turns green only when its cause is fixed: a threshold, tone or formula changes only with a test and an addendum naming what it measured, why that was wrong and what it measures now; a monthly allowance is projected at the last day's rate; the two cost dials are green under $10 past their free amount and a last day under 1.5 times its week, amber at either line, and red only past $10 with the subscription's month forecast past the $70 budget; every Cloud infrastructure card carries the colour legend the API serves; a card with no reading stays unread",
         "Every repository link in every document points at something that exists",
         "Every record a comment cites, by name or by number, is a record that exists",
         "Every link from a document to this site opens a page: a document as `?doc=` with a slug the catalogue serves, a drawing the catalogue draws, and no bare local address in prose",

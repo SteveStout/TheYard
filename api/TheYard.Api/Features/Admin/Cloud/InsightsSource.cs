@@ -17,6 +17,12 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
     /// </summary>
     public const double FreeGbPerMonth = 5;
 
+    /// <summary>
+    /// What a gigabyte past the free 5 costs on the pay-as-you-go Analytics Logs plan, in dollars: the Azure Monitor pricing
+    /// page's figure that Microsoft's own answers quote. The cost row turns the month's projected gigabytes into dollars with it.
+    /// </summary>
+    public const double DollarsPerGb = 2.30;
+
     /// <summary>The queries, kept here so a test can hold their shape.</summary>
     public const string IngestedToday = "Usage | where TimeGenerated >= startofday(now()) and IsBillable | summarize gb = sum(Quantity) / 1024.0";
     public const string IngestedMonth = "Usage | where TimeGenerated >= startofmonth(now()) and IsBillable | summarize gb = sum(Quantity) / 1024.0";

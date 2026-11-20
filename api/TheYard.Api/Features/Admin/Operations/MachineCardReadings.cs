@@ -28,6 +28,8 @@ public sealed class MachineCardReadings(MachineSampler sampler, MachineHistoryRe
         var document = DocumentLoad.From(rings.Store.Snapshot(), backends.Named(StoreKeys.Document)?.Name ?? "Azure Cosmos DB", now);
         return new
         {
+            // What each colour means, the line every Cloud infrastructure card carries under its title.
+            legend = CardLegend.Entries,
             // The hour below is this process's own memory and is always here. A
             // wider window is read from the store, in buckets sized to it.
             windows = MachineWindows.Names,

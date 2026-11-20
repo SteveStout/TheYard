@@ -18,6 +18,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// <param name="CostMonth">The resource's month to date from the bill; null when the bill does not name it yet.</param>
 /// <param name="RecordingSite">The configured name of the site whose process records, which the empty-keep sentence names.</param>
 /// <param name="CostLines">Each further name the card's bill lines are matched on, with its month to date; null for a card with one line, which <paramref name="CostMonth"/> carries.</param>
+/// <param name="Forecast">The subscription's month forecast from the bill, in dollars, which the two cost dials' red line reads; null when not read.</param>
 public sealed record ResourceCardInputs(
     string Window,
     TimeSpan Length,
@@ -29,7 +30,8 @@ public sealed record ResourceCardInputs(
     IReadOnlyList<ResourceHour> Hours,
     double? CostMonth,
     string RecordingSite = "the recording site",
-    IReadOnlyDictionary<string, double?>? CostLines = null);
+    IReadOnlyDictionary<string, double?>? CostLines = null,
+    double? Forecast = null);
 
 /// <summary>One card under Cloud infrastructure, as the recorder and the reader see it.</summary>
 /// <param name="Key">The card's route and container key: sqldb, cosmosdb, registry, insights, share, blob, mail, edge, nightly, claude, campaign, network, box or picker.</param>

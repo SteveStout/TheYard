@@ -99,6 +99,32 @@ public sealed partial class CardFrameTests(WebApplicationFactory<Program> factor
     }
 
     /// <summary>
+    /// Every card under Cloud infrastructure carries the colour legend under its title, the owner's four lines word for
+    /// word, served here so the page never types them (ADR-102, the addendum on what a colour means). Read from the
+    /// catalogue the host built and the plan beside it, so a new card cannot be added without it.
+    /// </summary>
+    [Fact]
+    public async Task Every_card_carries_the_colour_legend_word_for_word()
+    {
+        using var client = factory.CreateClient();
+        var cards = factory.Services.GetRequiredService<IReadOnlyList<(ResourceCard Card, IResourceHistory History)>>();
+        string[] expected =
+        [
+            "fine Green: working as expected.",
+            "amber Amber: worth researching.",
+            "red Red: needs action now.",
+            "unread Gray: no reading yet, such as the first minutes after a release.",
+        ];
+        // The plan, every resource card, and the three cards that draw their own body: eighteen in all.
+        foreach (string route in (string[])["/api/admin/plan", .. cards.Select(entry => $"/api/admin/cloud/{entry.Card.Key}"), "/api/admin/azure", "/api/admin/machines", "/api/admin/follows"])
+        {
+            using var card = JsonDocument.Parse(await client.GetStringAsync(route));
+            var legend = card.RootElement.GetProperty("legend").EnumerateArray().Select(entry => $"{entry.GetProperty("tone").GetString()} {entry.GetProperty("name").GetString()}: {entry.GetProperty("words").GetString()}");
+            Assert.Equal(expected, legend);
+        }
+    }
+
+    /// <summary>
     /// The cadence the tone rule judges with is the one the wire carries: a minute for a card read every
     /// minute and an hour for an hourly one, read from the catalogue's own flag, and the unread line three
     /// of those reads, so the page draws the rule the server applies and never a second copy of it.

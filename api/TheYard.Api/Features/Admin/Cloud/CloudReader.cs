@@ -13,7 +13,7 @@ namespace TheYard.Api.Features.Admin.Cloud;
 /// One card's window from its keep, kept built per card and window, with a live read first
 /// when the newest kept minute is more than a minute past its end and this is the recording site.
 /// </summary>
-public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHistory History)> cards, CloudRecorder? recorder, Func<string, CancellationToken, Task<double?>> cost, TimeProvider clock, string recordingSite = "the recording site", NightlyProcesses? processes = null, CancellationToken stopping = default) : ICloudCards
+public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHistory History)> cards, CloudRecorder? recorder, Func<string, CancellationToken, Task<double?>> cost, TimeProvider clock, string recordingSite = "the recording site", NightlyProcesses? processes = null, CancellationToken stopping = default, Func<CancellationToken, Task<double?>>? forecast = null) : ICloudCards
 {
     private readonly object _gate = new();
 
@@ -98,7 +98,8 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             hours,
             await cost(card.ResourceName, cancellation),
             recordingSite,
-            await CostLinesAsync(card, cancellation))), card.SpecSource, card.Hourly);
+            await CostLinesAsync(card, cancellation),
+            await ForecastAsync(cancellation))), card.SpecSource, card.Hourly);
         if (processes is not null && key == "nightly")
         {
             try
@@ -111,6 +112,24 @@ public sealed class CloudReader(IReadOnlyList<(ResourceCard Card, IResourceHisto
             }
         }
         return view;
+    }
+
+    /// <summary>The subscription's month forecast, which the cost dials' red line reads; null when none is wired or the bill cannot be read, never a failed card.</summary>
+    private async Task<double?> ForecastAsync(CancellationToken cancellation)
+    {
+        if (forecast is null)
+        {
+            return null;
+        }
+        try
+        {
+            return await forecast(cancellation);
+        }
+        catch (Exception) when (!cancellation.IsCancellationRequested)
+        {
+            // A bill that cannot be read costs the cost dials their red line, never the card.
+            return null;
+        }
     }
 
     /// <summary>Each of a card's bill names with its month to date, read through the same cost function; null for a card with one line.</summary>

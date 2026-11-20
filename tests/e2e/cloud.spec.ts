@@ -21,6 +21,7 @@ test('the plan card opens Cloud infrastructure and draws its dials and questions
   await expect(card.getByTestId('cloud-dial-right')).toBeVisible();
   await expect(card.getByTestId('cloud-rows').locator('[data-tone]')).toHaveCount(4);
   await expect(card.getByTestId('cloud-readout')).toBeVisible();
+  await expectLegend(card);
   // A local run has no identity to ask Azure with: the dials say "not read", never 0 %. The figure is read on its
   // own, because the dial now names its thresholds on itself ("red 80 %").
   await expect(card.getByTestId('cloud-dial-left').getByTestId('dial-big')).not.toContainText(
@@ -80,6 +81,24 @@ const scrollsSideways = (page: import('@playwright/test').Page) =>
  * left dial and above the rows, and the chart spans from the left dial's edge to the readout's far edge. A
  * desk's width; a phone is one column and is held below.
  */
+/**
+ * The owner's colour legend under the card's title, its four entries word for word as the API serves them, and above
+ * whatever the card draws first (ADR-102, the addendum on what a colour means).
+ */
+async function expectLegend(card: Locator): Promise<void> {
+  const legend = card.locator('[data-mock="legend"]');
+  await expect(legend.locator('li')).toHaveText([
+    'Green: working as expected.',
+    'Amber: worth researching.',
+    'Red: needs action now.',
+    'Gray: no reading yet, such as the first minutes after a release.',
+  ]);
+  const title = await card.locator('[data-mock="cloud-card-title"]').boundingBox();
+  const box = await legend.boundingBox();
+  expect(title).not.toBeNull();
+  expect(box!.y).toBeGreaterThanOrEqual(title!.y + title!.height - 1);
+}
+
 async function expectFullWidthBelowDials(card: Locator): Promise<void> {
   const box = async (id: string) => {
     const found = await card.getByTestId(id).boundingBox();
@@ -162,6 +181,7 @@ test("Azure's view of the container draws in the shell's shape: its hourly readi
   await openTheYard(page, '/?view=admin&card=azure');
   const card = page.getByTestId('azure-card');
   await expect(card.getByTestId('azure-hourly')).toBeVisible({ timeout: 30_000 });
+  await expectLegend(card);
   await expectOwnLayoutShape(card, 'azure-hourly');
   await page.setViewportSize({ width: 390, height: 844 });
   await openTheYard(page, '/?view=admin&card=azure');
@@ -180,6 +200,7 @@ test("What the machines are doing draws in the shell's shape: each machine's lin
   const card = page.getByTestId('machines-card');
   await expect(card.getByTestId('machines-container-line')).toBeVisible({ timeout: 60_000 });
   await expect(card.getByTestId('machine-chart-container')).toBeVisible();
+  await expectLegend(card);
   await expectOwnLayoutShape(card, 'machines-container-line');
   await page.setViewportSize({ width: 390, height: 844 });
   await openTheYard(page, '/?view=admin&card=machines');
@@ -200,6 +221,7 @@ test("Memory against traffic draws in the shell's shape: the verdict beside the 
   const card = page.getByTestId('follows-card');
   await expect(card.getByTestId('follows-verdict')).toBeVisible({ timeout: 60_000 });
   await expect(card.getByTestId('follows-cpu')).toBeVisible();
+  await expectLegend(card);
   await expectOwnLayoutShape(card, 'follows-verdict');
   await page.setViewportSize({ width: 390, height: 844 });
   await openTheYard(page, '/?view=admin&card=follows');
@@ -237,6 +259,8 @@ test('every resource under Cloud infrastructure draws in the one frame', async (
     );
     await expect(card.getByTestId('cloud-readout')).toBeVisible();
     await expect(card.getByTestId('cloud-note')).toBeVisible();
+    // The colour legend under every card's title, the same four lines (ADR-102, the addendum on what a colour means).
+    await expectLegend(card);
     // Under the dials, how often the card is read and when it reads unread, in the server's cadence.
     await expect(card.getByTestId('cloud-cadence')).toHaveText(
       /^read every (minute|hour), unread after 3 (min|h)$/

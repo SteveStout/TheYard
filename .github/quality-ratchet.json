@@ -1,5 +1,5 @@
 {
- "undocumented_declarations": 389,
+ "undocumented_declarations": 388,
  "onion_outward_refs": 0,
  "inner_ring_leaks": 0,
  "cross_slice_usings": 0,
@@ -13,5 +13,5 @@
  "behavior_types_never_named_in_a_test": 0,
  "react_files_without_header": 240,
  "test_to_prod_ratio_higher_is_better": 0.89,
- "dotnet_tests_higher_is_better": 4660
+ "dotnet_tests_higher_is_better": 4682
 }

@@ -27,7 +27,11 @@ public sealed record FollowsView(
     double MemoryLimitMb,
     bool SkippedWarmUp,
     IReadOnlyList<FollowsPoint> Points,
-    FollowsVerdictWire Verdict);
+    FollowsVerdictWire Verdict)
+{
+    /// <summary>What each colour on the card means, the same four entries every Cloud infrastructure card carries.</summary>
+    public IReadOnlyList<CloudLegendEntry> Legend { get; init; } = CardLegend.Entries;
+}
 
 /// <summary>The verdict as the wire writes it, the tone in the words every Cloud card uses.</summary>
 /// <param name="Tone">good, info or alarm.</param>

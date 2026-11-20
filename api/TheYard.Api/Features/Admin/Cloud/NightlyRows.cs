@@ -144,7 +144,8 @@ public static class NightlyRows
     /// <param name="missTone">The firing dial's tone, read on the misses.</param>
     /// <param name="runs">The run log, newest first.</param>
     /// <param name="roleMissing">True when the identity holds no role on the Function's group.</param>
-    public static IReadOnlyList<CloudRow> Rows(ResourceCardInputs inputs, NightlyResources names, SlotTally tally, PlanTone missTone, IReadOnlyList<NightlyRun> runs, bool roleMissing)
+    /// <param name="grade">The grant dial's grade in words (NightlyCard.GrantGrade), printed on the cost row; empty when not read.</param>
+    public static IReadOnlyList<CloudRow> Rows(ResourceCardInputs inputs, NightlyResources names, SlotTally tally, PlanTone missTone, IReadOnlyList<NightlyRun> runs, bool roleMissing, string grade = "")
     {
         string noRole = NoRole(names.Group);
         var lines = inputs.CostLines ?? new Dictionary<string, double?>();
@@ -165,7 +166,8 @@ public static class NightlyRows
             { Table = RunTable(runs), Source = $"GitHub Actions, {names.Workflow} runs" },
             new("cost", "Is it costing anything?", Dollars(CostTotal(inputs)) + (CostTotal(inputs) is null ? "" : " this month"),
                 [.. names.CostNames.Select(name => new CloudLink($"{name}: {Dollars(lines.GetValueOrDefault(name))}", null)),
-                    new("share snapshots kept: " + NightlyCard.SnapshotWords(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault(NightlySource.SnapshotFact), roleMissing ? noRole : NoHour(inputs)) + "; read from Resource Manager, the account key never goes in the site's settings", null)],
+                    new("share snapshots kept: " + NightlyCard.SnapshotWords(ResourceView.Latest(inputs)?.Facts.GetValueOrDefault(NightlySource.SnapshotFact), roleMissing ? noRole : NoHour(inputs)) + "; read from Resource Manager, the account key never goes in the site's settings", null),
+                    .. (grade.Length == 0 ? Array.Empty<CloudLink>() : [new CloudLink("the free grant dial: " + grade, null)])],
                 "info")
             { Source = CardFrame.TheBill },
             new("allowed", "What is it allowed to do?", "one role on one file share, and one kind of dispatch",

@@ -20,31 +20,32 @@ public sealed class CardToneRulesTests
         Assert.Equal(31 / 3.0 * 10, MonthPace.Projected(10, new DateTimeOffset(2026, 12, 4, 0, 0, 0, TimeSpan.Zero))!.Value, 6);
         Assert.Null(MonthPace.Projected(null, Wednesday));
 
-        Assert.Equal("warning", MonthPace.Tone("good", 134, 100));
-        Assert.Equal("warning", MonthPace.Tone("info", 100, 100));
-        Assert.Equal("good", MonthPace.Tone("good", 99.9, 100));
-        Assert.Equal("good", MonthPace.Tone("good", null, 100));
-        Assert.Equal("alarm", MonthPace.Tone("alarm", 10, 100));
         Assert.Equal("at this pace 7.55 GB by the month's end", MonthPace.Words(7.548, "{0:0.00} GB"));
         Assert.Equal("too early in the month to project", MonthPace.Words(null, "{0:0} %"));
     }
 
-    /// <summary>On 18 November Insights read "nothing; 4.41 of the free 5 GB" in green: at that pace it is 7.55 GB by the 30th.</summary>
+    /// <summary>
+    /// On 18 November Insights read 4.41 GB, about 7.55 GB by the 30th at its pace: 2.55 GB past the free 5 is about $5.85,
+    /// working as expected under the owner's ruling (ADR-102, the addendum on what a colour means). A month heading for
+    /// 16 GB is about $26 past it, worth researching.
+    /// </summary>
     [Fact]
-    public void Insights_cost_row_is_amber_when_the_month_s_pace_passes_the_free_five_gigabytes()
+    public void Insights_cost_row_is_graded_on_the_dollars_its_month_comes_to_past_the_free_five_gigabytes()
     {
         string Tone(double monthGb, out string detail)
         {
             var row = InsightsCard.View(Insights(monthGb)).Rows.Single(r => r.Key == "cost");
-            detail = row.Detail[0].Text;
+            detail = string.Join(" | ", row.Detail.Select(d => d.Text));
             return row.Tone;
         }
 
-        Assert.Equal("warning", Tone(4.41, out string paced));
+        Assert.Equal("good", Tone(4.41, out string paced));
         Assert.Contains("at this pace 7.55 GB by the month's end against the free 5 GB", paced, StringComparison.Ordinal);
+        Assert.Contains("about $5.85 past the free 5 GB by the month's end", paced, StringComparison.Ordinal);
+        Assert.Contains("the subscription's month forecast is not on the bill yet", paced, StringComparison.Ordinal);
         Assert.Equal("good", Tone(2.0, out _));
-        // Past the allowance already, paying is information (CardFrameTests holds that rule); the pace warns while it can be helped.
-        Assert.Equal("info", Tone(5.6, out _));
+        Assert.Equal("warning", Tone(9.6, out string costly));
+        Assert.Contains("about $26.28 past the free 5 GB", costly, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -66,23 +67,38 @@ public sealed class CardToneRulesTests
         Assert.Equal("at the last day's rate 8.33 GB by the month's end", MonthPace.Words(8.33, "{0:0.00} GB", rated: true));
     }
 
-    /// <summary>Past the free 5 GB the cost row stays amber while the last day's rate would overrun a month, and is information once it fits.</summary>
+    /// <summary>
+    /// Past the free 5 GB the cost row reads the last day's rate into dollars: 5.2 GB on 18 November at 0.33 GB a day is
+    /// about $9.92 past the allowance and green, at 0.34 about $10.21 and amber, and red only with the subscription's month
+    /// forecast past the $70 budget. Before 1.0.5.106's rule was replaced, both read amber.
+    /// </summary>
     [Fact]
-    public void Insights_past_the_free_five_gigabytes_stays_amber_while_the_last_day_s_rate_would_overrun_a_month()
+    public void Insights_past_the_free_five_gigabytes_turns_amber_at_ten_dollars_and_red_only_past_the_budget()
     {
-        string Tone(double monthGb, double? dayGb, out string detail)
-        {
-            var row = InsightsCard.View(Insights(monthGb, dayGb)).Rows.Single(r => r.Key == "cost");
-            detail = row.Detail[0].Text;
-            return row.Tone;
-        }
+        string Tone(double dayGb, double? forecast = null) =>
+            InsightsCard.View(Insights(5.2, dayGb) with { Forecast = forecast }).Rows.Single(r => r.Key == "cost").Tone;
 
-        Assert.Equal("warning", Tone(5.2, 0.312, out string over));
-        Assert.Contains("the last day's 0.312 GB makes 9.36 GB a month", over, StringComparison.Ordinal);
-        Assert.Equal("info", Tone(5.2, 0.15, out _));
-        Assert.Equal("warning", Tone(4.757, 0.312, out string paced));
-        Assert.Contains("at the last day's rate", paced, StringComparison.Ordinal);
-        Assert.Equal("good", Tone(1.0, 0.05, out _));
+        Assert.Equal("good", Tone(0.33));
+        Assert.Equal("warning", Tone(0.34));
+        Assert.Equal("warning", Tone(0.34, 70));
+        Assert.Equal("alarm", Tone(0.34, 77.10));
+        Assert.Equal("good", Tone(0.33, 77.10));
+    }
+
+    /// <summary>A last day at one and a half times the median of the seven before it is a spike to research, under the dollar line too.</summary>
+    [Fact]
+    public void Insights_last_day_at_one_and_a_half_times_its_week_is_amber()
+    {
+        var week = Enumerable.Range(1, 7).Select(back =>
+        {
+            var reading = new Dictionary<string, double?> { ["ingest_day_gb"] = 0.25 };
+            return new ResourceBucket(Wednesday.AddDays(-back).AddMinutes(-30), 5, reading, reading, reading, "test");
+        }).ToList();
+        string Tone(double dayGb) => InsightsCard.View(Insights(1.0, dayGb) with { Month = week }).Rows.Single(r => r.Key == "cost").Tone;
+
+        Assert.Equal("good", Tone(0.374));
+        Assert.Equal("warning", Tone(0.375));
+        Assert.Equal([0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25], CostGrade.RollingDaysBefore(week, "ingest_day_gb", Wednesday));
     }
 
     /// <summary>The Nightly dial's last day is the month's newest twenty-four hours of execution units.</summary>

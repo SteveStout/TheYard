@@ -31,6 +31,9 @@ export type CloudDial = {
   tone: CloudTone;
 };
 
+/** One colour of the legend every Cloud infrastructure card carries: its tone, its name and what it means, from the API. */
+export type CloudLegendEntry = { tone: CardTone; name: string; words: string };
+
 export type CloudReport = {
   window: string;
   windows: string[];
@@ -103,6 +106,8 @@ export type CloudReport = {
   description?: CloudDescription | null;
   /** The resource's processes, one section each; empty on every card but the nightly Function's. */
   processes?: CloudProcess[];
+  /** What each colour means, the same four entries on every card. Optional, so an older body still draws. */
+  legend?: CloudLegendEntry[];
 };
 
 /** The word a row prints beside its answer: green is fine, black is for information, amber is to watch, red is a warning. */
