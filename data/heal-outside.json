@@ -1,0 +1,27 @@
+{
+  "_note": "The paths a heal branch (ready/heal-*) may not touch: the year-end plan's 7b outside self-heal list, letters a (sends: the campaign's templates, words and rules), c and e (infra sizes and the switches the templates hold), g (the gate: floors, ceilings, the ratchet, byte budgets, this list and its check). scripts/heal_outside.py turns a heal branch red when it touches one, or deletes any file (f). Owner selfheal1120; a path leaves this list only through a planning session, never a heal.",
+  "paths": [
+    "functions/JobHunt.Application/Features/Campaign/Templates/*",
+    "functions/JobHunt.Application/Features/Campaign/EmailWords.cs",
+    "functions/JobHunt.Application/Features/Campaign/TemplateRender.cs",
+    "functions/JobHunt.Domain/Features/Campaign/CampaignRules.cs",
+    "functions/JobHunt.Domain/Features/Campaign/CompanyRules.cs",
+    "functions/JobHunt.Domain/Features/Campaign/*Rule.cs",
+    "functions/JobHunt.Domain/Features/Campaign/SendOrder.cs",
+    "functions/JobHunt.Domain/Features/Campaign/TemplateFill.cs",
+    "functions/JobHunt.Domain/Shared/Pay/PayFloor.cs",
+    "functions/JobHunt.Application/Shared/Runs/RunFloors.cs",
+    "server/JobHunt.Server.Domain/Shared/Gates/Ceilings.cs",
+    "server/JobHunt.Server.Domain/Shared/Worklists/TextCheck.cs",
+    "infra/*.bicep",
+    ".github/quality-ratchet.json",
+    ".github/byte-budgets.json",
+    ".github/quality.py",
+    ".github/coverage.py",
+    ".github/workflows/*",
+    "scripts/quality_ratchet.sh",
+    "scripts/catch_list.sh",
+    "scripts/heal_outside.py",
+    "data/heal-outside.json"
+  ]
+}

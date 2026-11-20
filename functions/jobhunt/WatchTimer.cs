@@ -49,7 +49,7 @@ public sealed class WatchTimer(IMergeStore store, IHttpClientFactory http, TimeP
             }
             var result = await new WatchPass(store, Environment.GetEnvironmentVariable, time, new JobHunt.Infrastructure.Features.Watch.WatchWeb(http)).RunAsync(mode, ct);
             run.Count("pass", result.Results.Count(r => r.Pass == true)).Count("fail", result.Results.Count(r => r.Pass == false))
-                .Count("not_read", result.Results.Count(r => r.Pass is null)).Came("success", mode == WatchMode.On ? "on" : "shadow");
+                .Count("not_read", result.Results.Count(r => r.Pass is null)).Count("heals", result.Heals).Came("success", mode == WatchMode.On ? "on" : "shadow");
             log.LogInformation("watch tick: {Pass} pass, {Fail} fail", run.Counts["pass"], run.Counts["fail"]);
             return result;
         }
