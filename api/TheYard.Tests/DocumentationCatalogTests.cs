@@ -246,6 +246,14 @@ public class DocumentationCatalogTests(WebApplicationFactory<Program> factory)
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (Match heading in Regex.Matches(File.ReadAllText(path), @"^## (.+)$", RegexOptions.Multiline))
         {
+            // A heading that names its own id at its end ({#the-id}) keeps that id, as withHeadingIds does.
+            Match named = Regex.Match(heading.Groups[1].Value.TrimEnd('\r'), @"\{#([a-z0-9-]+)\}$");
+            if (named.Success)
+            {
+                ids.Add(named.Groups[1].Value);
+                continue;
+            }
+
             string words = Regex.Replace(heading.Groups[1].Value.TrimEnd('\r'), @"<[^>]+>", string.Empty);
             string wordsOnly = Regex.Replace(words.ToLowerInvariant(), @"[^a-z0-9 -]", string.Empty).Trim();
             string id = Regex.Replace(wordsOnly, @" +", "-");

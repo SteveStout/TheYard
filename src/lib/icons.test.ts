@@ -114,6 +114,10 @@ const DRAWN_IN_CSS: Record<string, string[]> = {
   // The resume button's PDF page (ADR: The review route gives a reason before it asks, the addendum on the resume
   // button): the page's edge and its folded corner. A picture of a document, not an icon.
   'PdfMark.module.css': ['.page', '.fold'],
+  // The Quality page's charts (ADR-130, the addendum on the page as its picture): the gridlines, the axis, the line,
+  // the floor, the dots and the callouts' leaders; and a held tile's dotted bar. Drawings, not icons.
+  'QualityChart.module.css': ['.grid', '.axis', '.line', '.small .line', '.floor', '.dot', '.lead'],
+  'QualityTiles.module.css': ['.prose :global(.quality-bar-held)'],
 };
 
 describe('the icons', () => {

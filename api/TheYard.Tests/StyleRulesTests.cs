@@ -416,6 +416,9 @@ public class StyleRulesTests
         ["src/components/admin/CloudDial/CloudDial.module.css"] = "the dot at a dial's 30-day 95th, in the bar's dark tone, as the approved mockups draw it",
         ["src/styles/pills.css"] = "the resume button's gold face and its dark gold edge, the one gold fill, as the quality1120 picture draws it",
         ["src/components/shared/PdfMark/PdfMark.module.css"] = "the edge of the small PDF page on the resume button, in the bar's dark tone",
+        ["src/components/shared/QualityChart/QualityChart.module.css"] = "the Quality page's charts: the slip's band and its words, the ratchet's gold mark, THE RATCHET and a floor's dashed line, never a series, as the quality1120 picture draws them",
+        ["src/library/QualityBlocks.module.css"] = "the Quality page's readouts: the gold rule along each readout's top, as the quality1120 picture draws it",
+        ["src/library/DocBar.module.css"] = "a document window's title bar: the gold bar under the header gradient, the flat gold where a browser has no border-image",
         ["src/components/shared/WorkingLock/WorkingLock.module.css"] = "the sweep round the working lock's ring and its glow, never its words, as look D of the approved mock draws it",
     };
 
@@ -610,8 +613,8 @@ public class StyleRulesTests
             ("src/components/admin/shared/card.module.css", ".back", "--pill-height"),
             ("src/components/account/AccountPanel/AccountPanel.module.css", ".back", "--pill-height"),
             ("src/components/vehicle/VehicleDetail/VehicleDetail.module.css", ".back", "--pill-height"),
-            ("src/library/DocDialog.module.css", ".copyLink", "--pill-height"),
-            ("src/library/DocDialog.module.css", ".close", "--pill-height"),
+            ("src/library/DocBar.module.css", ".copyLink", "--pill-height"),
+            ("src/library/DocBar.module.css", ".close", "--pill-height"),
             ("src/components/account/AccountPanel/AccountPanel.module.css", ".input", "--control-height"),
             ("src/components/account/AccountPanel/AccountPanel.module.css", ".primary,\n.secondary", "--control-height"),
             ("src/components/vehicle/BidPanel/BidPanel.module.css", ".bidButton", "--control-height"),
