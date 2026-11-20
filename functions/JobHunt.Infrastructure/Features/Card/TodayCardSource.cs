@@ -86,6 +86,7 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             Reconnects = await TextAsync(TodayCard.ReconnectsPath(DateOnly.FromDateTime(local)), ct),
             Unblock = await UnblockAsync(DateOnly.FromDateTime(local), ct),
             Dark = TodayCard.DarkLines(await TextAsync(TodayCard.NotWorkingPath, ct)),
+            NotWorking = [.. TodayParts.Lines(await TextAsync(TodayCard.NotWorkingPath, ct)).Where(l => l.StartsWith("NOT WORKING: ", StringComparison.Ordinal))],
         };
     }
 

@@ -37,15 +37,16 @@ public sealed class TodayPartsTests
     }
 
     [Fact]
-    public void The_lanes_read_running_a_real_pause_held_and_a_count_of_proposed_with_those_asked_and_leave_the_ready_queue_out()
+    public void The_lanes_read_running_a_real_pause_held_and_one_count_of_proposed_that_asks_nothing_and_leave_the_ready_queue_out()
     {
-        const string status = "Written Tue 11/10 07:29:00 CST by dispatch.py.\n## Running\n- a: opus\n## Paused\n- until 09:05 CST (limit)\n## Ready (2)\n- r1.md\n## Proposed (queue it?)\n- p1.md\n## Held\n- h1: stalled\n## Closed in the last 24 hours\n- c1: 3 min\n";
-        var none = new Dictionary<string, string>(StringComparer.Ordinal);
-        Assert.Equal(["Running: a: opus", "Paused: until 09:05 CST (limit)", "Proposed: 1 (the list is in dispatch/STATUS.md); none needs your yes today.", "Held: h1: stalled"], TodayParts.Lanes(status, none));
-        Assert.Equal(["Running: a: opus", "Paused: until 09:05 CST (limit)", "Proposed: 1 (the list is in dispatch/STATUS.md); 1 needs your yes:", "Proposed: p1.md. Queue it? (lane-a asks)", "Held: h1: stalled"], TodayParts.Lanes(status, new Dictionary<string, string>(StringComparer.Ordinal) { ["p1.md"] = "lane-a" }));
+        const string status = "Written Tue 11/10 07:29:00 CST by dispatch.py.\n## Running\n- a: opus\n## Paused\n- until 09:05 CST (limit)\n## Ready (2)\n- r1.md\n## Proposed (waits for a planning session)\n- p1.md\n## Held\n- h1: stalled\n## Closed in the last 24 hours\n- c1: 3 min\n";
+        var lanes = TodayParts.Lanes(status);
+        Assert.Equal(["Running: a: opus", "Paused: until 09:05 CST (limit)", "Waiting for a planning session: 1 proposal (dispatch/STATUS.md); none needs you.", "Held: h1: stalled"], lanes);
+        Assert.DoesNotContain(lanes, l => l.Contains("Queue it", StringComparison.OrdinalIgnoreCase) || l.StartsWith("Proposed:", StringComparison.Ordinal));
+        Assert.Contains("2 proposals", TodayParts.Lanes("## Proposed (queue it?)\n- p1.md\n- p2.md\n")[0], StringComparison.Ordinal);
         Assert.Equal("Written Tue 11/10 07:29:00 CST by dispatch.py", TodayParts.Written(status));
         Assert.Null(TodayParts.Written("## Running\n"));
-        Assert.Empty(TodayParts.Lanes("## Paused\n- no\n## Proposed (queue it?)\n- none\n", none));
+        Assert.Empty(TodayParts.Lanes("## Paused\n- no\n## Proposed (queue it?)\n- none\n"));
     }
 
     [Fact]
