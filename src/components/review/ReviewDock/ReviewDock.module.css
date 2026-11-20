@@ -3,7 +3,7 @@
  *            bar fixed to the foot of the window with its two buttons side by side, slid out of sight and hidden
  *            until it is on;
  *            from 640 up, not drawn.
- * Does not:  Draw the pills' look (ReviewPage.module.css does) or make room for itself (ReviewPage.module.css does).
+ * Does not:  Draw the pills' look (panels.css does) or make room for itself (ReviewPage.module.css does).
  * Used by:   ReviewDock.tsx.
  */
 .dock {

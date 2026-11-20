@@ -13,6 +13,7 @@ export type ViewOnScreen = {
   blogPost: string | null;
   reviewOpen: boolean;
   recommendationsOpen: boolean;
+  stackOpen?: boolean;
   accountOpen: boolean;
   inventoryOpen: boolean;
   selectedVehicle: Vehicle | null;
@@ -25,6 +26,7 @@ export function viewKeyOf(view: ViewOnScreen): string {
   if (view.blogOpen) return `blog:${view.blogPost ?? ''}`;
   if (view.reviewOpen) return 'review';
   if (view.recommendationsOpen) return 'recommendations';
+  if (view.stackOpen) return 'stack';
   if (view.accountOpen) return 'account';
   if (view.selectedVehicle) return `vehicle:${view.selectedVehicle.id}`;
   return 'list';
@@ -39,6 +41,7 @@ export function announcementOf(view: ViewOnScreen): string {
   if (view.blogOpen) return 'Blog';
   if (view.reviewOpen) return 'Production .NET that stays up';
   if (view.recommendationsOpen) return 'The people who worked with Steven';
+  if (view.stackOpen) return 'What TheYard runs on';
   if (view.accountOpen) return 'Account';
   const vehicle = view.selectedVehicle;
   if (vehicle) return `${vehicle.year} ${vehicle.make} ${vehicle.model}, vehicle detail`;

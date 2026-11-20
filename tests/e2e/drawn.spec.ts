@@ -73,7 +73,10 @@ for (const viewport of [
     const errors = watchErrors(page);
     await keepTheDrawnNode(page);
     await openTheYard(page, '/');
-    await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
+    await expect(page.getByTestId('landing-proof-ring-stores')).toHaveAttribute(
+      'aria-label',
+      /^\d of \d stores up$/
+    );
 
     expect(errors.filter((error) => HYDRATION.test(error))).toEqual([]);
     if (await builtPage(page)) {

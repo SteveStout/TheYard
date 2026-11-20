@@ -3,7 +3,7 @@
  *            most 520 px wide in the middle of the window over a backdrop of the deep teal, its close in the corner,
  *            the heading, the sentence, the address, the message in its own box, the buttons in a row and the link.
  * Does not:  Draw the panel (panels.css does, through .op-glass and .op-solid, the white of a panel on a dialog) or the
- *            pills' look (ReviewPage.module.css does).
+ *            pills' look (panels.css does).
  * Used by:   BookSheet.tsx.
  */
 /* The dialog itself is only the place in the middle of the window; the glass panel inside it is the sheet. */

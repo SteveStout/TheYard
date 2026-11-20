@@ -25,7 +25,8 @@ export type MenuVariant =
   | 'incidents'
   | 'changelog'
   | 'author'
-  | 'recommendations';
+  | 'recommendations'
+  | 'stack';
 
 /** The tile and row icons, drawn in SheetIcons.tsx on the same 20 by 20 grid as the row icons. */
 export type NavIcon =
@@ -77,6 +78,8 @@ export type SiteSection = {
   featured?: boolean;
   /** Where it sits among the large tiles, low first; the map's own order breaks a tie. */
   featuredRank?: number;
+  /** What opening it costs a reader, the chip on its tile under Start here: "2 min", "3 min", "Live", "PDF". */
+  cost?: string;
   badgePhoto?: BadgePhoto;
 };
 
@@ -95,6 +98,8 @@ export type SiteAction = {
   featuredRank?: number;
   /** A large tile drawn as a banner under the photo tiles: the resume and the review route. */
   banner?: boolean;
+  /** What opening it costs a reader, the chip on its tile under Start here. */
+  cost?: string;
   /** A pinned row at the foot of the sidebar. */
   inRail: boolean;
   /** A tile on the landing page. */

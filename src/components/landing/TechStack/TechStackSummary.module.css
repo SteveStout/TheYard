@@ -1,0 +1,59 @@
+/**
+ * Does:      Lays out the home page's summary of the stack as its picture draws it (the build row's stack header,
+ *            ported rule by rule): the band's words on the left and its four chips on the right from 1280 up, the
+ *            chips under the words below it, and the link to the stack page under the words.
+ * Does not:  Draw the band, its words or its chips (TechStack.module.css does) or the glass (panels.css does).
+ * Used by:   TechStack.tsx.
+ */
+.summary {
+  overflow: hidden;
+}
+
+.summary > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--space-6);
+}
+
+.summary > div > * {
+  grid-column: 1;
+}
+
+.summary > div > ul {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  flex-wrap: nowrap;
+  margin: 0;
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  margin-top: var(--space-2);
+  color: var(--color-on-accent);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  text-underline-offset: 3px;
+}
+
+.more:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (max-width: 1279.98px) {
+  .summary > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .summary > div > ul {
+    grid-column: 1;
+    grid-row: auto;
+    flex-wrap: wrap;
+    margin: var(--space-3) 0 0;
+  }
+}

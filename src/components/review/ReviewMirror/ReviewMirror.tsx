@@ -21,7 +21,6 @@ import {
   type HeldQuality,
 } from '../../../lib/reviewVerdict';
 import { GatePanel } from '../GatePanel';
-import pills from '../ReviewPage/ReviewPage.module.css';
 import verdict from '../ReviewVerdict/ReviewVerdict.module.css';
 import styles from './ReviewMirror.module.css';
 
@@ -73,7 +72,7 @@ export function ReviewMirror({
         </dl>
         <div className={verdict.moves}>
           <a
-            className={`${pills.primary} ${verdict.proof}`}
+            className={`op-pill-primary ${verdict.proof}`}
             href={GATE_ADDRESS}
             onClick={() => onAction('proof')}
             data-action="review.proof"
@@ -83,7 +82,7 @@ export function ReviewMirror({
             <span aria-hidden="true">→</span>
           </a>
           <a
-            className={`${pills.secondary} ${verdict.book}`}
+            className={`op-pill-secondary ${verdict.book}`}
             href={BOOK_ADDRESS}
             onClick={() => {
               onAction('book');

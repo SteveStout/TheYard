@@ -27,7 +27,6 @@ import {
 } from '../../../lib/reviewVerdict';
 import { ProofTile } from '../ProofTile';
 import { ReviewLeadQuote } from '../ReviewLeadQuote';
-import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewVerdict.module.css';
 
 /** A plain click, which the page answers itself; any other keeps the browser's own meaning. */
@@ -88,7 +87,7 @@ export function ReviewVerdict({
         </ul>
         <div className={styles.moves}>
           <a
-            className={`${pills.primary} ${styles.proof}`}
+            className={`op-pill-primary ${styles.proof}`}
             href={PROOF_ADDRESS}
             onClick={openProof}
             data-action="review.proof"
@@ -98,7 +97,7 @@ export function ReviewVerdict({
             <span aria-hidden="true">→</span>
           </a>
           <a
-            className={`${pills.secondary} ${styles.book}`}
+            className={`op-pill-secondary ${styles.book}`}
             href={BOOK_ADDRESS}
             onClick={() => {
               onAction('book');
@@ -132,7 +131,7 @@ export function ReviewVerdict({
             {ROLE_LINKS.map((link) => (
               <li key={link.action}>
                 <a
-                  className={pills.secondary}
+                  className="op-pill-secondary"
                   href={link.href}
                   onClick={() => onAction(link.action)}
                   data-action={`review.${link.action}`}

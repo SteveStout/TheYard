@@ -63,8 +63,11 @@ test('the landing page hints its reads in the head, and asks for each one once',
   const asked = watchApiReads(page);
   const warnings = watchHintWarnings(page);
   await openTheYard(page, '/');
-  // Both of the landing page's own reads have drawn: the health dot and the gate's counts.
-  await expect(page.getByTestId('landing-admin-health')).toHaveText(/^(Healthy|Degraded)$/);
+  // Both of the landing page's own reads have drawn: the stores ring from the health answer and the gate's counts.
+  await expect(page.getByTestId('landing-proof-ring-stores')).toHaveAttribute(
+    'aria-label',
+    /^\d of \d stores up$/
+  );
   await expect(page.getByTestId('landing-proof-tests')).toContainText(/\d[\d,]* *tests/);
 
   const hints = await hintsInTheHead(page);

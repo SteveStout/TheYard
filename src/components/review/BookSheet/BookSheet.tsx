@@ -6,7 +6,7 @@
  *            A modal dialog on the document window's model: focus inside, Escape, the backdrop and its X close it.
  * Does not:  Hold the address (the API reads it from the site's settings; no page or bundle carries it) or decide when
  *            it opens (the page does, on every "Book 20 minutes").
- * Used by:   ReviewPage.tsx.
+ * Used by:   ReviewPage.tsx, Landing.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
 import { request } from '../../../lib/request';
@@ -19,7 +19,6 @@ import {
 } from '../../../lib/reviewBook';
 import type { ReviewAction } from '../../../lib/reviewProgress';
 import { BOOK_ADDRESS, LINKEDIN_ADDRESS } from '../../../lib/reviewVerdict';
-import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './BookSheet.module.css';
 
 /** The message read once a page, the first time the sheet opens; null until then or when the read fails. */
@@ -43,7 +42,7 @@ function CopyButton({ label, text }: { label: string; text: string }) {
   return (
     <button
       type="button"
-      className={`${pills.secondary} ${styles.pill}`}
+      className={`op-pill-secondary ${styles.pill}`}
       onClick={() => {
         // navigator.clipboard is undefined outside a secure context, as the document window's Copy link knows.
         void navigator.clipboard?.writeText(text).then(() => setCopied(true));
@@ -119,7 +118,7 @@ export function BookSheet({
         )}
         <div className={styles.row}>
           <a
-            className={`${pills.primary} ${styles.pill}`}
+            className={`op-pill-primary ${styles.pill}`}
             href={BOOK_ADDRESS}
             onClick={() => onAction('book')}
             data-action="review.book"

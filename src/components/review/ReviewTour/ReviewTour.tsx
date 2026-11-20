@@ -12,7 +12,6 @@ import { DIAGRAMS, MENUS } from '../../../library/sections';
 import { REVIEW_STOPS, tourLine } from '../../../lib/reviewStops';
 import { restLine, TOUR, TOUR_ID, tourSeen } from '../../../lib/reviewVerdict';
 import { ReviewHead } from '../ReviewHead';
-import pills from '../ReviewPage/ReviewPage.module.css';
 import { TickDisc } from '../TickDisc';
 import styles from './ReviewTour.module.css';
 
@@ -58,7 +57,7 @@ export function ReviewTour({
       />
       <button
         type="button"
-        className={`${pills.secondary} ${styles.toggle}`}
+        className={`op-pill-secondary ${styles.toggle}`}
         aria-expanded={open}
         aria-controls="review-tour-stops"
         onClick={() => setOpen((was) => !was)}

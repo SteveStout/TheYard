@@ -1,12 +1,51 @@
 /**
- * The home page's Tech stack panel: one table of what TheYard runs on, where it runs, the version as
+ * The Tech stack panel: one table of what TheYard runs on, where it runs, the version as
  * built and the file that proves it, drawn only from the generated table in src/lib/techStack.ts.
  * A dark band with the gold bar and four headline chips, then Layer, What we use, Where it runs,
  * Version and Proof where the panel has room; narrower, each layer is a bar over its rows; on a phone each
- * row stacks under its layer.
+ * row stacks under its layer. The stack page draws it whole; the home page draws its summary, the band and
+ * its chips with a link to the stack page, and no element of the table (ADR: The stack has a page of its own).
  */
+import { MENUS } from '../../../library/sections';
 import { STACK, rowSpan } from '../../../lib/techStack';
+import summary from './TechStackSummary.module.css';
 import styles from './TechStack.module.css';
+
+/** The band: what the panel says above its table, and the one line the summary closes on. */
+function Band({ more = false }: { more?: boolean }) {
+  const link = MENUS.stack.links?.[0];
+  return (
+    <div className={styles.band}>
+      <p className={styles.eyebrow}>Read from the build, never typed by hand</p>
+      <h3 className={styles.title}>What TheYard runs on</h3>
+      <p className={styles.lede}>
+        What we use, where it runs, the version as built, and the file that proves it.
+      </p>
+      <ul className={styles.chips} aria-label="The headline facts">
+        {STACK.chips.map((chip) => (
+          <li key={chip.figure} className={styles.chip}>
+            <strong>{chip.figure}</strong>
+            <span>{chip.words}</span>
+          </li>
+        ))}
+      </ul>
+      {more && link && (
+        <a className={summary.more} href={link.href} data-testid="landing-stack-link">
+          {link.label} <span aria-hidden="true">→</span>
+        </a>
+      )}
+    </div>
+  );
+}
+
+/** The home page's summary: the band and its chips, then the way to the whole table on its own page. */
+export function TechStackSummary() {
+  return (
+    <div className={`${summary.summary} op-glass op-tile`} data-testid="landing-stack-summary">
+      <Band more />
+    </div>
+  );
+}
 
 export function TechStack({ headingClass }: { headingClass: string }) {
   return (
@@ -15,21 +54,7 @@ export function TechStack({ headingClass }: { headingClass: string }) {
         Tech stack
       </h2>
       <div className="op-glass op-tile">
-        <div className={styles.band}>
-          <p className={styles.eyebrow}>Read from the build, never typed by hand</p>
-          <h3 className={styles.title}>What TheYard runs on</h3>
-          <p className={styles.lede}>
-            What we use, where it runs, the version as built, and the file that proves it.
-          </p>
-          <ul className={styles.chips} aria-label="The headline facts">
-            {STACK.chips.map((chip) => (
-              <li key={chip.figure} className={styles.chip}>
-                <strong>{chip.figure}</strong>
-                <span>{chip.words}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <Band />
         <table className={styles.table} data-testid="landing-stack-table">
           <thead>
             <tr>

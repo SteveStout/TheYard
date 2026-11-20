@@ -4,8 +4,10 @@
  *            booking is the email, and it opens the booking sheet too), Resume (PDF) and Message me on LinkedIn, each
  *            reporting its action, and under them the send line, which hands the page's own address to the phone's
  *            share sheet or, where there is none, copies it and says "Link copied" for two seconds.
+ *            The home page draws the same close with its own two lines in place of the readout and the voice, and no
+ *            send line (ADR-082, the addendum on the home page's order).
  * Does not:  Pick the name (voices.ts does) or read the API (useReviewReadings.ts does).
- * Used by:   ReviewPage.tsx.
+ * Used by:   ReviewPage.tsx, Landing.tsx.
  */
 import { useEffect, useState } from 'react';
 import type { Recommendation } from '../../../lib/recommendations';
@@ -20,7 +22,6 @@ import {
 } from '../../../lib/reviewVerdict';
 import { VOICES } from '../../../lib/voices';
 import { Voice } from '../../shared/Voice';
-import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewClose.module.css';
 
 export function ReviewClose({
@@ -28,12 +29,15 @@ export function ReviewClose({
   address,
   onAction,
   onBook,
+  lines,
 }: {
   recommendations: Recommendation[] | null;
-  /** The address the send line shares: this route with its for value and the visitor's code. */
-  address: () => string;
+  /** The address the send line shares: this route with its for value and the visitor's code; none, no send line. */
+  address?: () => string;
   onAction: (action: ReviewAction) => void;
   onBook: () => void;
+  /** The home page's two lines, in place of the readout and the voice. */
+  lines?: { readout: string; line: string };
 }) {
   const [said, setSaid] = useState<string | null>(null);
   useEffect(() => {
@@ -43,7 +47,7 @@ export function ReviewClose({
   }, [said]);
   const forward = () => {
     onAction('forward');
-    const url = address();
+    const url = address?.() ?? window.location.href;
     if (typeof navigator.share === 'function') {
       void navigator.share({ title: FORWARD.title, text: forwardText(url) }).catch(() => {});
       return;
@@ -63,25 +67,28 @@ export function ReviewClose({
     <section
       className={`${styles.close} op-glass`}
       aria-labelledby="review-close-title"
+      data-form={lines ? 'home' : undefined}
       data-testid="review-close"
     >
       <div>
         <h2 id="review-close-title" className={styles.readout}>
-          {CLOSE.readout}
+          {lines?.readout ?? CLOSE.readout}
         </h2>
-        {VOICES.close.map((name) => (
-          <Voice
-            key={name}
-            name={name}
-            recommendations={recommendations}
-            onFollow={() => onAction('recommendations')}
-            plain
-          />
-        ))}
+        {lines && <p className={styles.line}>{lines.line}</p>}
+        {!lines &&
+          VOICES.close.map((name) => (
+            <Voice
+              key={name}
+              name={name}
+              recommendations={recommendations}
+              onFollow={() => onAction('recommendations')}
+              plain
+            />
+          ))}
       </div>
       <div className={styles.acts}>
         <a
-          className={`${pills.primary} ${styles.act}`}
+          className={`op-pill-primary ${styles.act}`}
           href={BOOK_ADDRESS}
           onClick={() => {
             onAction('book');
@@ -92,7 +99,7 @@ export function ReviewClose({
           {VERDICT.book}
         </a>
         <a
-          className={`${pills.secondary} ${styles.act}`}
+          className={`op-pill-secondary ${styles.act}`}
           href={RESUME_ADDRESS}
           onClick={() => onAction('resume')}
           data-action="review.resume"
@@ -100,7 +107,7 @@ export function ReviewClose({
           {VERDICT.resume}
         </a>
         <a
-          className={`${pills.secondary} ${styles.act}`}
+          className={`op-pill-secondary ${styles.act}`}
           href={LINKEDIN_ADDRESS}
           rel="noopener"
           onClick={() => onAction('linkedin')}
@@ -108,16 +115,18 @@ export function ReviewClose({
         >
           {CLOSE.linkedin}
         </a>
-        <button
-          type="button"
-          className={styles.forward}
-          onClick={forward}
-          aria-live="polite"
-          data-action="review.forward"
-          data-testid="review-forward"
-        >
-          {said ?? FORWARD.line}
-        </button>
+        {address && (
+          <button
+            type="button"
+            className={styles.forward}
+            onClick={forward}
+            aria-live="polite"
+            data-action="review.forward"
+            data-testid="review-forward"
+          >
+            {said ?? FORWARD.line}
+          </button>
+        )}
       </div>
     </section>
   );

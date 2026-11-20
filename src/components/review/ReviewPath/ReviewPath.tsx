@@ -31,7 +31,6 @@ import { GateTile } from '../GateTile';
 import { LotTile } from '../LotTile';
 import { QualityTrendTile } from '../QualityTrendTile';
 import { ReviewHead } from '../ReviewHead';
-import pills from '../ReviewPage/ReviewPage.module.css';
 import styles from './ReviewPath.module.css';
 
 /** The room's sentence before the store's count arrives: the sentence on its own, its first letter a capital. */
@@ -137,7 +136,7 @@ export function ReviewPath({
             {tile(stop)}
             <div className={styles.acts}>
               <a
-                className={`${index === 0 ? pills.primary : pills.secondary} ${styles.open}`}
+                className={`${index === 0 ? 'op-pill-primary' : 'op-pill-secondary'} ${styles.open}`}
                 href={stopAddress(stop.key, lot)}
                 onClick={open(stop)}
                 data-action={`review.stop.${stop.key}`}
