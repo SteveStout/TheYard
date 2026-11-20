@@ -4,19 +4,20 @@ name: Gate
 #
 # The laptop that ships has 8 GB and the suites need more than it has free with an editor open: a
 # gate there waited hours for memory, and three takes timed out in specs the change did not touch.
-# So the laptop now only builds the commit and pushes it to a branch named gate/<version>-<lane>-<sha8>; this
-# workflow runs every check the laptop's gate ran, in the same order, on a runner with 16 GB. Red,
-# main is never touched.
+# So a lane's machine now only builds its one commit and pushes it to a branch named ready/<lane>-<sha8>,
+# with the version, date and record placeholders unfilled; this workflow runs every check the laptop's
+# gate ran, in the same order, on a runner with 16 GB, on the commit the cop job fills. Red, main is
+# never touched.
 #
 # Green, the run promotes itself (ADR: The gate runs where the memory is, the addendum of
 # 1.0.4.101): the promote job writes data/test-results.json and the README's figures from the
-# gate-raw artifact, folds them into the commit and fast-forwards main, and the run calls Deploy and
-# Deploy Render on that commit and ends there, freeing the gate at live. The reads after the roll, both
-# names and CI on main, are a run of their own, after-roll.yml, started by this run's end (ADR-098, the
-# addendum on the gate freeing at live); the next promote's line-stop waits for both to be green. A ship is
-# a push of gate/<version>-<lane>-<sha8>; no machine has to be on. The gate job itself only reads. Every reader of
-# the branch name takes the version as the text after gate/ up to the first hyphen (scripts/versions.sh,
-# branch_version), so the older gate/<version> still reads.
+# gate-raw artifact, folds them into the commit and fast-forwards main, and the push rolls the site,
+# freeing the gate at live. The reads after the roll, both names and CI on main, are a run of their
+# own, after-roll.yml, started by this run's end (ADR-098, the addendum on the gate freeing at live);
+# the next promote's line-stop waits for both to be green. No machine has to be on. The gate job
+# itself only reads. A ready branch names no version: the version is the one the cop's status gives
+# it, and the old gate/<version>-<lane>-<sha8> names still read as the text after gate/ up to the
+# first hyphen (scripts/versions.sh, branch_version) wherever an older run is read back.
 #
 # A version that changes a workflow is the one that needs more than the run's own token. With the
 # secret PROMOTE_TOKEN it pushes itself, and because a personal token's push starts the workflows
@@ -29,7 +30,7 @@ name: Gate
 # holds the gate's group, rebases it onto main, fills the numbers (main's top line plus one) and hands the
 # filled commit to every later job as a bundle; each job tests that commit. A branch that cannot be filled
 # is skipped green with its reason posted on the branch's commit, and a run that lands posts "landed as
-# <version>". gate/* is the old path, taken only until main's gate.yml carries the ready/** trigger.
+# <version>". gate/* is closed: main's gate.yml carries the ready/** trigger, so the cop refuses it red.
 on:
   push:
     branches: ["gate/**", "ready/**"]

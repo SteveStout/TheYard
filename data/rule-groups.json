@@ -38,7 +38,8 @@
         "Red means a check failed: a rebase conflict outside the changelog, two commits or a workflow change with no token ends the run green with a notice",
         "No lane takes the gate lock: the ready path claims nothing, and the lock is kept only for a hand promote",
         "With PROMOTE_TOKEN every promote is that token's push and the push is the roll, so each commit rolls once; without it a workflow change ends green needing a hand promote",
-        "gate/* takes the old path until main's gate.yml carries the ready trigger, and is refused red after"
+        "gate/* takes the old path until main's gate.yml carries the ready trigger, and is refused red after",
+        "The fill writes the record count in words and the Playwright count into README.md, How this was built and Built with AI from the tree it numbers, so a lane never edits them and two versions never conflict on them"
       ]
     },
     {

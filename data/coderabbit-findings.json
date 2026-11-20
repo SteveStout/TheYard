@@ -3102,6 +3102,31 @@
       "prs": [
         174
       ]
+    },
+    {
+      "version": "1.0.5.122",
+      "pr": 175,
+      "sha": "db836249",
+      "level": 0,
+      "at": "2026-11-20T11:57:39Z",
+      "waited_seconds": 328,
+      "review_seconds": 351,
+      "conclusion": "success",
+      "reviewed": "full",
+      "actionable": 0,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 0,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        175
+      ]
     }
   ]
 }
