@@ -86,17 +86,16 @@ public static partial class TodayParts
         .FirstOrDefault();
 
     /// <summary>
-    /// The lanes from STATUS.md: what runs, a pause, every held item with its reason, and the proposed items as a count
-    /// with a "queue it?" line for each one a lane asks his yes on; the rest stay in STATUS.md. The ready queue is the
+    /// The lanes from STATUS.md: what runs, a pause, every held item with its reason, and the proposed items as one
+    /// count that asks nothing: they wait for a planning session, and a heal goes straight to ready without him (RULE 77
+    /// check 3 and its note on heals; the year-end plan's 7c closes the "Queue it?" road). The ready queue is the
     /// dispatcher's own business and is left off.
     /// </summary>
     /// <param name="status">STATUS.md.</param>
-    /// <param name="asked">The proposed file names a LEFT FOR STEVE bullet asks his yes on, each with the lane that asks.</param>
-    public static IReadOnlyList<string> Lanes(string status, IReadOnlyDictionary<string, string> asked)
+    public static IReadOnlyList<string> Lanes(string status)
     {
         var lines = new List<string>();
         var proposed = Proposed(status);
-        var yes = proposed.Where(asked.ContainsKey).ToList();
         bool counted = false;
         string? section = null;
         foreach (string raw in Lines(status))
@@ -126,8 +125,7 @@ public static partial class TodayParts
             else if (section.StartsWith("Proposed", StringComparison.Ordinal) && proposed.Count > 0 && !counted)
             {
                 counted = true;
-                lines.Add($"Proposed: {proposed.Count} (the list is in dispatch/STATUS.md); {(yes.Count == 0 ? "none needs your yes today." : $"{yes.Count} {(yes.Count == 1 ? "needs" : "need")} your yes:")}");
-                lines.AddRange(yes.Select(y => $"Proposed: {y}. Queue it? ({asked[y]} asks)"));
+                lines.Add($"Waiting for a planning session: {proposed.Count} {(proposed.Count == 1 ? "proposal" : "proposals")} (dispatch/STATUS.md); none needs you.");
             }
         }
         return lines;
