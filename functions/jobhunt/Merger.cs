@@ -36,7 +36,7 @@ public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen 
             int waiting = await merger.RunPassAsync(ct, appends);
             run.Count("merged", waiting).Came(waiting == 0 ? "unchanged" : "success");
             log.LogInformation("tracker merger pass done, {Waiting} spool file(s) found waiting, appends {Appends}", waiting, appends ? "on" : "off");
-            await CopyAsync(run, ct);
+            await CopyAsync(run, waiting, ct);
         }
         catch (Exception ex)
         {
@@ -55,9 +55,9 @@ public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen 
     /// once, when the copy is empty, and checks it byte for byte; on copies the rows that changed after every pass and
     /// checks the whole file on the first pass of each Central day. The CSV stays the master: a copy that fails is
     /// logged and the next pass tries again, and nothing here writes the CSV. The database is the campaign's
-    /// connection, the site's database.
+    /// connection, the site's database. A pass that merged nothing over an unmoved master asks SQL nothing (the quiet pass).
     /// </summary>
-    private async Task CopyAsync(RunLine run, CancellationToken ct)
+    private async Task CopyAsync(RunLine run, int merged, CancellationToken ct)
     {
         string mode = (Environment.GetEnvironmentVariable("TRACKER_SQL") ?? "").Trim().ToLowerInvariant();
         string? sql = Environment.GetEnvironmentVariable("CAMPAIGN_SQL");
@@ -70,6 +70,13 @@ public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen 
             var table = new SqlTrackerTable(sql, time);
             var mirror = new TrackerMirror(store, table, seen);
             var now = time.GetUtcNow();
+            // A pass that merged nothing over a master that has not moved, with the day's check done, asks SQL nothing
+            // (ADR-111, the addendum on the quiet pass): every minute it did, a frame read or two for no change.
+            if (mode == "on" && merged == 0 && await mirror.QuietAsync(now, ct))
+            {
+                run.Count("tracker_sql_quiet", 1);
+                return;
+            }
             var frame = await table.FrameAsync(ct);
             if (mode == "import" && frame is not null)
             {
@@ -77,12 +84,15 @@ public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen 
             }
             var copied = await mirror.CopyAsync(ct);
             run.Count("tracker_sql_rows", copied.Rows).Count("tracker_sql_written", copied.Written);
+            DateTimeOffset? checkedAt = frame?.ParityAt;
             if (TrackerMirror.ParityDue(frame?.ParityAt, now))
             {
                 var parity = await mirror.ParityAsync(now, ct);
                 run.Count("tracker_sql_parity", parity.Same ? 1 : 0).Count("tracker_sql_csv_rows", parity.CsvRows).Count("tracker_sql_sql_rows", parity.SqlRows);
                 log.LogInformation("tracker SQL parity: {Same}, CSV {Csv} rows, SQL {Sql} rows", parity.Same ? "same" : "DIFFERENT", parity.CsvRows, parity.SqlRows);
+                checkedAt = now;
             }
+            await mirror.KeepSeenAsync(checkedAt, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -40,6 +40,23 @@ public sealed class LogLevelsTests
         Assert.False(levels.TryGetProperty("Function", out _));
     }
 
+    /// <summary>
+    /// The host's per-function aggregates (AppMetrics, about 8 MB a day) and its performance counters (about 27 MB a day)
+    /// stay out of the workspace: the Nightly card reads the Function's Azure Monitor metrics and its run lines, and no
+    /// query on the Admin tab reads either table for the Function (ADR-109, the addendum on what the workspace pays for).
+    /// The run lines stay at Information.
+    /// </summary>
+    [Fact]
+    public void The_host_sends_no_aggregates_and_no_performance_counters()
+    {
+        using var host = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "functions", "jobhunt", "host.json")));
+        var logging = host.RootElement.GetProperty("logging");
+
+        Assert.Equal("Warning", logging.GetProperty("logLevel").GetProperty("Host.Aggregator").GetString());
+        Assert.False(logging.GetProperty("applicationInsights").GetProperty("enablePerformanceCountersCollection").GetBoolean());
+        Assert.Equal("Information", logging.GetProperty("logLevel").GetProperty("default").GetString());
+    }
+
     private static string Root()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

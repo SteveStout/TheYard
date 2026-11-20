@@ -47,10 +47,13 @@ public static class NightlyCard
     public static (string Tone, string Words) GrantGrade(ResourceCardInputs inputs)
     {
         double? used = GbSecondsThisMonth(inputs), lastDay = GbSecondsLastDay(inputs);
+        // The spike is read on the day's units as kept, unrounded, as the week's median is: the rounded figure is for the dial's words.
+        var newest = inputs.Month.Where(b => b.At >= inputs.Now.AddDays(-1)).Select(b => b.Sums.GetValueOrDefault("units_mbms")).Where(v => v is not null).ToList();
+        double? lastDayExact = newest.Count == 0 ? null : newest.Sum(v => v!.Value) / NightlyMetrics.MbMsPerGbSecond;
         double? pastFree = CostGrade.PastFree(MonthPace.Projected(used, inputs.Now, lastDay) ?? used, CloudThresholds.FreeGrantGbSeconds, CloudThresholds.DollarsPerGbSecond);
         double? median = CostGrade.Median(CostGrade.DaysBefore(inputs.Month, "units_mbms", inputs.Now));
         double? medianGbSeconds = median / NightlyMetrics.MbMsPerGbSecond;
-        return (CostGrade.Tone(pastFree, lastDay, medianGbSeconds, inputs.Forecast), CostGrade.Words(pastFree, "the free grant", lastDay, medianGbSeconds, inputs.Forecast));
+        return (CostGrade.Tone(pastFree, lastDayExact, medianGbSeconds, inputs.Forecast), CostGrade.Words(pastFree, "the free grant", lastDayExact, medianGbSeconds, inputs.Forecast));
     }
 
     /// <summary>

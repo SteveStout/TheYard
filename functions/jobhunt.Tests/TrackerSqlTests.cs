@@ -121,13 +121,68 @@ public sealed class TrackerSqlTests
         Assert.Equal(5, scratch.Store.Reads);
     }
 
+    /// <summary>
+    /// The quiet pass (ADR-111, the addendum on the quiet pass): over a master whose size and last write have not moved, with
+    /// the day's check done, a pass asks SQL nothing, and a new instance knows it from the line the last pass left on the
+    /// share, without asking SQL either. A moved master, a new Central day or a line that does not read sends it to SQL.
+    /// </summary>
+    [Fact]
+    public async Task A_quiet_pass_asks_SQL_nothing_and_a_new_instance_knows_it_from_the_share()
+    {
+        using var scratch = new Scratch();
+        string path = Path.Combine(scratch.Root, MergePaths.Master);
+        await scratch.Store.WriteAsync(MergePaths.Master, Sample(), CancellationToken.None);
+        var noon = new DateTimeOffset(2026, 11, 20, 18, 0, 0, TimeSpan.Zero);
+        var table = new MemoryTrackerTable();
+        var first = new TrackerMirror(scratch.Store, table, new TrackerSeen());
+
+        // Nothing is known yet: the pass goes to SQL, copies the file and leaves its line on the share.
+        Assert.False(await first.QuietAsync(noon, CancellationToken.None));
+        await first.CopyAsync(CancellationToken.None);
+        await first.KeepSeenAsync(noon, CancellationToken.None);
+        Assert.True(await scratch.Store.ExistsAsync(MergePaths.CopySeen, CancellationToken.None));
+        int frames = table.Frames;
+
+        // The same host, and then a new instance with an empty memory: both quiet, and neither asks for the frame.
+        Assert.True(await first.QuietAsync(noon.AddMinutes(1), CancellationToken.None));
+        var fresh = new TrackerSeen();
+        Assert.True(await new TrackerMirror(scratch.Store, table, fresh).QuietAsync(noon.AddMinutes(2), CancellationToken.None));
+        Assert.False(fresh.Empty);
+        Assert.Equal(frames, table.Frames);
+
+        // The next Central day's first pass checks the whole file, so it is not quiet.
+        Assert.False(await first.QuietAsync(noon.AddDays(1), CancellationToken.None));
+
+        // A write to the master moves its last write, and the pass goes to SQL.
+        File.SetLastWriteTimeUtc(path, File.GetLastWriteTimeUtc(path).AddMinutes(1));
+        Assert.False(await first.QuietAsync(noon.AddMinutes(3), CancellationToken.None));
+
+        // A line that does not read is left alone: the instance stays empty and asks SQL.
+        var garbled = new TrackerSeen();
+        garbled.Load("not a line");
+        Assert.True(garbled.Empty);
+        garbled.Load("1\t-1\t1\thash\t");
+        Assert.True(garbled.Empty);
+        var noCheck = new TrackerSeen();
+        noCheck.Load("1\t0\t1\thash\t-1");
+        Assert.False(noCheck.Empty);
+        Assert.Null(garbled.Text());
+    }
+
     /// <summary>The copy in memory, the way SqlTrackerTable keeps it.</summary>
     private sealed class MemoryTrackerTable : ITrackerTable
     {
         private readonly SortedDictionary<int, string> _rows = [];
         private TrackerFrame? _frame;
 
-        public Task<TrackerFrame?> FrameAsync(CancellationToken ct) => Task.FromResult(_frame);
+        /// <summary>How many times the frame was asked for: the one SQL read every pass used to make.</summary>
+        public int Frames { get; private set; }
+
+        public Task<TrackerFrame?> FrameAsync(CancellationToken ct)
+        {
+            Frames++;
+            return Task.FromResult(_frame);
+        }
 
         public Task<IReadOnlyDictionary<int, string>> HashesAsync(CancellationToken ct) =>
             Task.FromResult<IReadOnlyDictionary<int, string>>(_rows.ToDictionary(row => row.Key, row => TrackerFile.Hash(row.Value)));
