@@ -7,7 +7,8 @@ namespace JobHunt.Server.Application.Features.Run;
 /// written in full to the day's APPLY-ESSAYS file, the text the owner reads on his card after the submit; an essay whose last
 /// attempt the desk did not pass is a defect line, which holds the lane until a person reads the form. A posting the
 /// lane found behind a sign-in, a signature, a covenant or an arbitration page joins the day's blockers list and never
-/// his inbox. Every instruction the lane found planted on a form, which it ignored, is a line in the DONE note.
+/// his inbox. Every form it read and skipped is kept off the lists for a week (ApplySkips), so the next mornings' rows go
+/// to postings it has not read. Every instruction the lane found planted on a form, which it ignored, is a line in the DONE note.
 /// </summary>
 public static partial class ApplyAfterword
 {
@@ -58,8 +59,26 @@ public static partial class ApplyAfterword
         }
         if (!start.Dry)
         {
+            await RememberSkipsAsync(share, start.Day, list, result, lines, ct);
             await EssaysAsync(share, start.Day, folder, sends, lines, ct);
         }
+    }
+
+    private static async Task RememberSkipsAsync(IShare share, DateOnly day, Worklist list, LaneResult? result, List<string> lines, CancellationToken ct)
+    {
+        var kept = (result?.Rows ?? []).Where(row => row.Outcome == "skipped" && row.Reason is not null)
+            .Select(row => (Row: list.Rows.FirstOrDefault(work => work.Row == row.Row), row.Reason))
+            .Where(found => found.Row is not null)
+            .Select(found => ApplySkips.Line(found.Row!.Url, found.Reason!, day))
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        if (kept.Count == 0)
+        {
+            return;
+        }
+        await share.AppendAsync(WritePolicy.SkipsTable, string.Concat(kept), ct);
+        lines.Add($"{kept.Count} skipped forms kept off the list for {ApplySkips.Days} days: {WritePolicy.SkipsTable} (take a line out to try that posting again)");
     }
 
     private static async Task EssaysAsync(IShare share, DateOnly day, string folder, IReadOnlyList<SendRecord> sends, List<string> lines, CancellationToken ct)
