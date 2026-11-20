@@ -1,9 +1,11 @@
 /**
  * The foot of the sidebar: the site map's actions in its order, each a pinned
- * row, with Reset bids under Admin while there are bids. Its own file because
+ * row, with Reset bids under Admin while there are bids. On the review route
+ * Admin is not drawn, nor Sign in while nobody is signed in (railRows.ts). Its own file because
  * the foot draws from the site map and the views, not from the document
  * sections above it. The two links out arrive as addresses from SideNav.
  */
+import { railActions } from '../../../lib/railRows';
 import { SITE_MAP, type SiteAction } from '../../../lib/siteMap';
 import { RailPinnedRow } from '../RailPinnedRow';
 import { RailResetBidsRow } from '../RailResetBidsRow';
@@ -54,38 +56,39 @@ export function RailPinnedRows({
           already truncates, so a long address does not widen the rail.
           Reset bids is not in the map, because it is not a place: it
           appears after Admin only while there are bids to reset. */}
-      {SITE_MAP.actions
-        .filter((action) => action.inRail)
-        .map((action) => {
-          const key = action.key;
-          return (
-            <RailPinnedRow
-              key={key}
-              action={action}
-              iconsOnly={iconsOnly}
-              current={isLinkOut(key) ? false : views[key].current}
-              label={key === 'account' ? (accountEmail ?? action.label) : action.label}
-              href={isLinkOut(key) ? links[key] : undefined}
-              badge={key === 'blog' ? blogBadge : null}
-              onOpen={() => {
-                onCloseDrawer();
-                if (!isLinkOut(key)) views[key].open();
-              }}
-              after={
-                key === 'admin' && bidCount > 0 ? (
-                  <RailResetBidsRow
-                    bidCount={bidCount}
-                    iconsOnly={iconsOnly}
-                    onReset={() => {
-                      onCloseDrawer();
-                      onResetBids();
-                    }}
-                  />
-                ) : null
-              }
-            />
-          );
-        })}
+      {railActions(SITE_MAP.actions, {
+        reviewOpen: views.review.current,
+        signedIn: accountEmail !== null,
+      }).map((action) => {
+        const key = action.key;
+        return (
+          <RailPinnedRow
+            key={key}
+            action={action}
+            iconsOnly={iconsOnly}
+            current={isLinkOut(key) ? false : views[key].current}
+            label={key === 'account' ? (accountEmail ?? action.label) : action.label}
+            href={isLinkOut(key) ? links[key] : undefined}
+            badge={key === 'blog' ? blogBadge : null}
+            onOpen={() => {
+              onCloseDrawer();
+              if (!isLinkOut(key)) views[key].open();
+            }}
+            after={
+              key === 'admin' && bidCount > 0 ? (
+                <RailResetBidsRow
+                  bidCount={bidCount}
+                  iconsOnly={iconsOnly}
+                  onReset={() => {
+                    onCloseDrawer();
+                    onResetBids();
+                  }}
+                />
+              ) : null
+            }
+          />
+        );
+      })}
       {/* #endregion pinned-rows */}
     </div>
   );

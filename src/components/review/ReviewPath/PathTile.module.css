@@ -78,6 +78,12 @@
   font-weight: var(--weight-semibold);
 }
 
+.ago {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+}
+
 /* The spark: a plain line, the soft area before the ratchet and its gold dashed mark, stretched to the tile. */
 .spark {
   display: block;

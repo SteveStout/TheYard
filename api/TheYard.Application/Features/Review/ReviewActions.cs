@@ -8,14 +8,15 @@ namespace TheYard.Application.Features.Review;
 /// <summary>The names a report may carry beside or instead of a stop, and the two figures' rules over them.</summary>
 public static class ReviewActions
 {
-    /// <summary>Every name the page reports: the twelve buttons, links and stops of the first screen and the short path.</summary>
+    /// <summary>Every name the page reports: the buttons, links and stops of the first screen and the short path.</summary>
     public static readonly IReadOnlyList<string> Names =
     [
         "proof", "book", "resume", "recommendations", "stop-quality", "stop-gate", "stop-room", "slip", "tour", "linkedin", "github", "about",
+        "gate-run",
     ];
 
     /// <summary>The names that reach the running system or the booking button; a resume click alone is not one.</summary>
-    public static readonly IReadOnlyList<string> RunningOrBook = ["proof", "stop-quality", "stop-gate", "stop-room", "slip", "book"];
+    public static readonly IReadOnlyList<string> RunningOrBook = ["proof", "stop-quality", "stop-gate", "stop-room", "slip", "book", "gate-run"];
 
     /// <summary>
     /// The UTC day the actions started counting: the day the version that records them went live. The ship fills

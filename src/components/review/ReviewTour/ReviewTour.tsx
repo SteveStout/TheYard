@@ -3,13 +3,16 @@
  *            the addendum on one unit): "The full tour, if you want it" with "N of 7 seen." and Start over, then eight
  *            compact cells at the page's width. Cells 1 to 7 are the stops, each whole cell a link to its address that
  *            reports the stop reached and turns its ring into a tick; cell 8 is what the sidebar still holds, and opens it.
+ *            On a phone the cells are closed behind "Show the seven stops" until it is pressed.
  * Does not:  Keep the place (useReviewProgress.ts does) or hold a stop's words (reviewStops.ts does).
  * Used by:   ReviewPage.tsx.
  */
+import { useState } from 'react';
 import { DIAGRAMS, MENUS } from '../../../library/sections';
 import { REVIEW_STOPS, tourLine } from '../../../lib/reviewStops';
 import { restLine, TOUR, TOUR_ID, tourSeen } from '../../../lib/reviewVerdict';
 import { ReviewHead } from '../ReviewHead';
+import pills from '../ReviewPage/ReviewPage.module.css';
 import { TickDisc } from '../TickDisc';
 import styles from './ReviewTour.module.css';
 
@@ -28,8 +31,16 @@ export function ReviewTour({
   onStartOver: () => void;
   onOpenSidebar: () => void;
 }) {
+  // Read only under 640, where the cells are closed until asked for; from 640 up the control is not drawn.
+  const [open, setOpen] = useState(false);
   return (
-    <section id={TOUR_ID} aria-labelledby="review-tour-title" data-testid="review-tour">
+    <section
+      id={TOUR_ID}
+      className={styles.tour}
+      aria-labelledby="review-tour-title"
+      data-open={open}
+      data-testid="review-tour"
+    >
       <ReviewHead
         id="review-tour-title"
         title={TOUR.title}
@@ -45,7 +56,17 @@ export function ReviewTour({
         }
         hint={TOUR.line}
       />
-      <ol className={styles.stops} aria-label="The seven stops">
+      <button
+        type="button"
+        className={`${pills.secondary} ${styles.toggle}`}
+        aria-expanded={open}
+        aria-controls="review-tour-stops"
+        onClick={() => setOpen((was) => !was)}
+        data-testid="review-tour-toggle"
+      >
+        {open ? TOUR.hide : TOUR.show}
+      </button>
+      <ol id="review-tour-stops" className={styles.stops} aria-label="The seven stops">
         {REVIEW_STOPS.map((stop, index) => {
           const seen = reached.includes(index);
           return (

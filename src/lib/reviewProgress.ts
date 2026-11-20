@@ -100,6 +100,7 @@ export const REVIEW_ACTIONS = [
   'linkedin',
   'github',
   'about',
+  'gate-run',
 ] as const;
 
 /** One of the names a button reports. */

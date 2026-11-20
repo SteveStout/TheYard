@@ -6,6 +6,7 @@ import {
   leadQuote,
   liveSentence,
   PROOF_ADDRESS,
+  SLIP_ADDRESS,
   RECORD_TILES,
   recommendationsLink,
   restLine,
@@ -66,8 +67,9 @@ describe('the review route first screen (ADR: The review route gives a reason be
     expect(above).not.toMatch(/ten minutes|seven stops/i);
   });
 
-  it('opens Quality at the slip and the turn', () => {
-    expect(PROOF_ADDRESS).toBe('/?doc=quality#the-slip-and-the-turn');
+  it('opens the top of Quality for the proof, and the mirror’s slip line at the slip and the turn', () => {
+    expect(PROOF_ADDRESS).toBe('/?doc=quality');
+    expect(SLIP_ADDRESS).toBe('/?doc=quality#the-slip-and-the-turn');
   });
 
   it('prints the same tests figure the landing page prints, and the quality held only when the build has it', () => {

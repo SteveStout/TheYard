@@ -2,14 +2,13 @@
  * Does:      Draws the review route's first screen (ADR: The review route gives a reason before it asks): the eyebrow,
  *            the claim, the lede, three proof tiles (two from the record, one live from this build), the one primary
  *            move with Book 20 minutes and the resume beside it, the line under them, and at the side one named quote
- *            and the roles card. Every button reports its action; the primary opens Quality at "The slip, and the
- *            turn" in place, and a modified click follows its address.
+ *            and the roles card. Every button reports its action; the primary opens the top of Quality in place, and a
+ *            modified click follows its address.
  * Does not:  Read the API (useReviewReadings.ts does) or hold the words (reviewVerdict.ts does).
  * Used by:   ReviewPage.tsx.
  */
 import type { MouseEvent } from 'react';
 import type { DocKey } from '../../../library/documents';
-import { landOnSection } from '../../../library/pendingAnchor';
 import type { TestSummary } from '../../../lib/landingProof';
 import type { Recommendation } from '../../../lib/recommendations';
 import type { ReviewAction } from '../../../lib/reviewProgress';
@@ -53,9 +52,8 @@ export function ReviewVerdict({
   const openProof = (event: MouseEvent<HTMLAnchorElement>) => {
     onAction('proof');
     if (!plainClick(event)) return;
-    // Opened in place, so the page is not loaded again; the section is landed on once the document is drawn.
+    // Opened in place at the top of Quality, so the page is not loaded again.
     event.preventDefault();
-    landOnSection(PROOF.anchor);
     onOpenDoc(PROOF.doc);
   };
 

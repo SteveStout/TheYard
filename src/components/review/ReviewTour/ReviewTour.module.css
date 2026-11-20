@@ -1,7 +1,8 @@
 /**
  * Does:      Lays out the full tour as the whole-page picture draws it (its .stops and .stop, ported rule by rule): eight
  *            compact cells, four across from 1024, two from 640, one on a phone, cells in a row one height; each cell
- *            its ring, title and minutes on one line and its one line under; a reached ring filled with its tick.
+ *            its ring, title and minutes on one line and its one line under; a reached ring filled with its tick; on a
+ *            phone the cells closed behind the control, the control the row's width.
  * Does not:  Draw a cell's glass or cell 8's gold rule (panels.css does, through .op-glass and .op-tile).
  * Used by:   ReviewTour.tsx.
  */
@@ -109,6 +110,10 @@
   white-space: nowrap;
 }
 
+.toggle {
+  display: none;
+}
+
 @media (max-width: 1023.98px) {
   .stops {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -127,5 +132,18 @@
   /* A thumb's height on a phone, like every control the phone's page carries. */
   .startOver {
     min-height: var(--touch-target);
+  }
+
+  .toggle {
+    display: inline-flex;
+    width: 100%;
+    min-height: var(--touch-target);
+    margin-top: var(--space-3);
+    padding: 0 var(--space-5);
+    font-size: var(--text-md);
+  }
+
+  .tour:not([data-open='true']) .stops {
+    display: none;
   }
 }

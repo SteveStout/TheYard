@@ -12,7 +12,7 @@ import { useReviewPath } from '../../../hooks/useReviewPath';
 import { useReviewReadings } from '../../../hooks/useReviewReadings';
 import type { DocKey } from '../../../library/documents';
 import { gateTotals, type ReviewScreen } from '../../../lib/reviewMirror';
-import { storeTotal } from '../../../lib/reviewPath';
+import { shippedWords, storeTotal } from '../../../lib/reviewPath';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
 import { WhereNext } from '../../shared/WhereNext';
 import { NameStrip } from '../NameStrip';
@@ -81,8 +81,9 @@ export function ReviewPage({
         reached={path.reached}
         readings={path.readings}
         lot={path.lot}
-        gate={{ gated: GATE.gated, quality: QUALITY, review: GATE.review }}
+        gate={{ gated: GATE.gated, quality: QUALITY, review: GATE.review, run: GATE.run }}
         totals={gateTotals(readings.summary, GATE.version)}
+        shipped={shippedWords(readings.summary?.ran_at, now)}
         now={now}
         onReach={path.reach}
         onAction={review.action}

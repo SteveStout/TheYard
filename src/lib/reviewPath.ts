@@ -6,16 +6,18 @@
  * Does not:  Read the API or draw anything; no React in here. Every number on a tile is read, never typed.
  * Used by:   useReviewPath.ts, ReviewPath.tsx, QualityTrendTile.tsx, GateTile.tsx, LotTile.tsx, reviewPath.test.ts.
  */
+import { formatCurrency } from './format';
 import { figures } from './landingProof';
 import { parseTrend, type QualityTrendData } from './qualityTrend';
 import type { ReviewAction, StorageLike } from './reviewProgress';
 import { PROOF_ADDRESS } from './reviewVerdict';
 
-/** One stop of the short path: its key, its words, its time and the action its button reports. */
+/** One stop of the short path: its key, the reader's question, its time, its door's words and the action it reports. */
 export type PathStop = {
   key: 'quality' | 'gate' | 'room';
   title: string;
   time: string;
+  door: string;
   payoff: string;
   tile: string;
   action: ReviewAction;
@@ -25,8 +27,9 @@ export type PathStop = {
 export const PATH_STOPS: readonly PathStop[] = [
   {
     key: 'quality',
-    title: 'Quality held with AI',
+    title: 'How do you keep quality when AI writes the code?',
     time: '1 min',
+    door: 'See the slip and the fix',
     payoff:
       'Claude writes most of this code. It slipped for two weeks in October, a ratchet turned it, and each number since is only allowed to improve.',
     tile: 'One quality number, by version',
@@ -34,8 +37,9 @@ export const PATH_STOPS: readonly PathStop[] = [
   },
   {
     key: 'gate',
-    title: 'The gate every push passes',
+    title: 'What has to pass before anything ships?',
     time: '30 sec',
+    door: 'See the test results',
     payoff:
       'Nothing ships until one gate passes: xUnit, Vitest, Playwright with axe and the architecture rules, on both stores.',
     tile: 'This version,',
@@ -43,23 +47,25 @@ export const PATH_STOPS: readonly PathStop[] = [
   },
   {
     key: 'room',
-    title: 'A system that is really running',
+    title: 'Is this a real system, running right now?',
     time: '30 sec',
-    payoff: 'vehicles filtered, sorted and paged by the store, in an auction room that bids back.',
+    door: 'Watch this lot live',
+    payoff:
+      'vehicles filtered, sorted and paged in the database, in an auction room that bids back.',
     tile: 'A live lot, right now',
     action: 'stop-room',
   },
 ];
 
-/** The words around the path: its heading, its place, its line, its button and the tiles' own words. */
+/** The words around the path: its heading, its line, the gate card's second door and the tiles' own words. */
 export const PATH = {
-  title: 'Two minutes, three stops',
-  place: 'Your place is kept on this browser.',
-  hint: 'Each tile is the running system, read live. Open one and you are inside it.',
-  open: 'Open this stop',
+  title: 'Three questions, two minutes',
+  hint: 'Each answer is the running system, read live. Open one and you are inside it.',
+  gateRun: 'or the run on GitHub',
+  shipped: 'shipped',
   captions: ['October: the slip', 'the ratchet', 'every version since'],
   noLot: 'No auction is live right now',
-  bidding: 'the room is bidding',
+  bidding: 'simulated bidders, live',
   currentBid: 'Current bid',
   openingBid: 'Opening bid',
   closes: 'Closes in',
@@ -155,9 +161,9 @@ export function storeTotal(lot: PathLot | null): string {
   return lot === null ? '' : figures(lot.total);
 }
 
-/** The lot's bid in words, "$12,500", or "" when it has none. */
+/** The lot's bid in words as the lot's own page prints it, "CA$12,500", or "" when it has none. */
 export function bidWords(lot: PathLot | null): string {
-  return lot?.current_bid == null ? '' : `$${figures(lot.current_bid)}`;
+  return lot?.current_bid == null ? '' : formatCurrency(lot.current_bid);
 }
 
 /**
@@ -172,8 +178,30 @@ export function lotAmount(lot: PathLot | null): {
   if (lot?.current_bid != null)
     return { label: PATH.currentBid, amount: bidWords(lot), bidding: true };
   if (lot?.opening_bid != null)
-    return { label: PATH.openingBid, amount: `$${figures(lot.opening_bid)}`, bidding: false };
+    return { label: PATH.openingBid, amount: formatCurrency(lot.opening_bid), bidding: false };
   return { label: PATH.currentBid, amount: '', bidding: false };
+}
+
+/** A week: a gate run older than this is not drawn as "shipped". */
+export const SHIPPED_WITHIN_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * "shipped 2 h ago": the time since the gate ran this version, in the largest unit that says it (the units the live
+ * readings' "since the last roll" uses), or null when the run's time is absent, unreadable, ahead of the clock or older
+ * than a week.
+ */
+export function shippedWords(ranAt: string | null | undefined, nowMs: number): string | null {
+  const at = ranAt ? Date.parse(ranAt) : NaN;
+  const since = nowMs - at;
+  if (!Number.isFinite(since) || since < 0 || since > SHIPPED_WITHIN_MS) return null;
+  const minutes = Math.floor(since / 60_000);
+  const words =
+    minutes >= 24 * 60
+      ? `${Math.floor(minutes / (24 * 60))} d`
+      : minutes >= 60
+        ? `${Math.floor(minutes / 60)} h`
+        : `${minutes} m`;
+  return `${PATH.shipped} ${words} ago`;
 }
 
 /** The time a lot has left as "m:ss", counted on the page's clock; "0:00" once it has closed. */
