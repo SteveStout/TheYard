@@ -1,0 +1,16 @@
+/**
+ * Does:      Keeps a post's title link looking like the title it sits in: the heading's colour, face and weight, no
+ *            underline until the pointer is on it, then the gold underline a door wears.
+ * Does not:  Size or space the title (the card's own sheet does).
+ * Used by:   PostTitleLink.tsx.
+ */
+.link {
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--color-gold);
+}

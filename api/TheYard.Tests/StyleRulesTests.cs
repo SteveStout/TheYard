@@ -407,6 +407,7 @@ public class StyleRulesTests
         ["src/components/recommendations/RecommendationsPage/RecommendationsPage.module.css"] = "the recommendations page's title underline and the rule beside each recommendation's words, as the approved mockup draws them",
         ["src/components/landing/LandingBanners/LandingBanners.module.css"] = "the ring round each banner's icon, the landing tiles' own trim",
         ["src/components/blog/BlogPostCard/BlogPostCard.module.css"] = "the ring round the author's initials, as the approved preview draws it",
+        ["src/components/blog/PostTitleLink/PostTitleLink.module.css"] = "the underline under a post's title on hover, the same trim as a door's, as the findable1120 picture's sheet draws it",
         ["src/components/admin/shared/card.module.css"] = "the ring round the chosen window button",
         ["src/library/DocProse.module.css"] = "a document title's underline, the tick on a heading's rule",
         ["src/library/StyleBlocks.module.css"] = "the gold ring round each Style tile's badge, the landing tile's trim",

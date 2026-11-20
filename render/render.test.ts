@@ -231,6 +231,21 @@ describe('the rendering service', () => {
     expect(bare).not.toContain('Production .NET that stays up. Built with AI');
   });
 
+  it('draws every post title on the blog list as a link to its own address, so a crawler reading the HTML finds each post (ADR: Search engines are told about every post)', async () => {
+    const api = fakeApi();
+    const older = { ...LIST.cards[0], slug: 'an-older-post', title: 'An older post' };
+    const read = (async (input: RequestInfo | URL, init?: RequestInit) =>
+      String(input).split('?')[0] === `${API}/api/blog/posts`
+        ? new Response(JSON.stringify({ ...LIST, cards: [...LIST.cards, older], total: 2 }))
+        : api.read(input, init)) as typeof fetch;
+    const { html } = await page('?view=blog', { read, asked: api.asked });
+    const drawn = html.slice(html.indexOf('<div id="root"'), html.indexOf('id="yard-first-load"'));
+    expect(drawn.match(/data-mock="post-title-link"/g)).toHaveLength(2);
+    for (const slug of [POST.slug, older.slug]) {
+      expect(drawn).toContain(`href="/?view=blog&amp;post=${slug}"`);
+    }
+  });
+
   it('reads a named post beside the list, so a slow list never leaves the post out of the page', async () => {
     const api = fakeApi();
     const postPath = `${API}/api/blog/posts/${POST.slug}`;
