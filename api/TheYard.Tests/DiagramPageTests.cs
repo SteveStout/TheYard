@@ -117,6 +117,10 @@ public class DiagramPageTests(WebApplicationFactory<Program> factory)
         Assert.Equal("Steven Stout", root.GetProperty("name").GetString());
         Assert.Equal(AboutPage.JobTitle, root.GetProperty("jobTitle").GetString());
         Assert.Equal(AboutPage.Profiles, root.GetProperty("sameAs").EnumerateArray().Select(item => item.GetString()!).ToArray());
+        // What he knows and where he studied, both on his resume (ADR: Search engines are told about every post).
+        Assert.Equal(AboutPage.KnowsAbout, root.GetProperty("knowsAbout").EnumerateArray().Select(item => item.GetString()!).ToArray());
+        Assert.Equal("CollegeOrUniversity", root.GetProperty("alumniOf").GetProperty("@type").GetString());
+        Assert.Equal(AboutPage.AlumniOf, root.GetProperty("alumniOf").GetProperty("name").GetString());
         JsonElement address = root.GetProperty("address");
         Assert.Equal("Saint Charles", address.GetProperty("addressLocality").GetString());
         Assert.Equal(new[] { "@type", "addressLocality", "addressRegion", "addressCountry" }, address.EnumerateObject().Select(field => field.Name).ToArray());

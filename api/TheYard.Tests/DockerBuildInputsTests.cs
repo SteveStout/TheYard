@@ -115,13 +115,19 @@ public class DockerBuildInputsTests
     public void The_files_a_crawler_fetches_from_the_root_come_from_the_public_folder()
     {
         // Stated as a test because the reason is not obvious from either file
-        // on its own: these three are served from the root of the domain, and
+        // on its own: these are served from the root of the domain, and
         // the only thing that puts a file at the root of the built site is
         // Vite's publicDir.
         string root = Path.Combine(Repo.Root(), "public");
-        foreach (string name in new[] { "robots.txt", "sitemap.xml", "og.png", "llms.txt" })
+        foreach (string name in new[] { "robots.txt", "sitemap.xml", "og.png", $"{ServedAddresses.IndexNowKey}.txt" })
         {
             Assert.True(File.Exists(Path.Combine(root, name)), $"public/{name} is what serves /{name}");
+        }
+        // The two the blog writes from its store are the API's routes, and a file in the web root would win the route
+        // and go stale with the first post saved after the build (ADR: Search engines are told about every post).
+        foreach (string name in new[] { "llms.txt", "sitemap-blog.xml" })
+        {
+            Assert.False(File.Exists(Path.Combine(root, name)), $"public/{name} would hide the API's /{name}, which lists every post");
         }
     }
 

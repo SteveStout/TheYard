@@ -164,4 +164,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '142',
   },
+  adrSearchEnginesAreToldAboutEveryPost: {
+    title: 'ADR: Search engines are told about every post',
+    menuLabel: 'ADR: Search engines are told about every post',
+    url: '/api/docs/adr-search-engines-are-told-about-every-post',
+    kind: 'adr',
+    number: '@ADR@',
+  },
 } as const satisfies Record<string, RecordEntry>;

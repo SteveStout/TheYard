@@ -42,8 +42,9 @@ Time to live | ttl | How long a document stays in Azure Cosmos DB before the dat
 Ring |  | A fixed-size list held in memory that drops its oldest entry when it is full, which is what the Admin tab read before anything was kept. | traffic-kept#the-kept-log | What is kept
 Operator's key | Admin__Key | The one secret that opens the per-visitor rows and the kept log. Without it both are a 404. | traffic-kept#public-and-keyed | What is kept
 Sitemap | sitemap.xml | The list of every address the site wants found, read by search engines from the root of the domain. | traffic-found#the-sitemap | Being found
+IndexNow | /<key>.txt | A ping that tells the search engines that read it about a new or changed page at once; the key file proves the ping is the site's own. | traffic-found#the-sitemap | Being found
 Structured data | application/ld+json | Facts about a page written for machines in schema.org's vocabulary: who the author is and where the code lives. | traffic-found#structured-data | Being found
-llms.txt | /llms.txt | A plain index of the site for AI tools, pointing at the documents as markdown they can read without running the app. | traffic-found#for-ai-tools | Being found
+llms.txt | /llms.txt | A plain index of the site for AI tools, pointing at the documents as markdown they can read without running the app, and at every blog post. | traffic-found#for-ai-tools | Being found
 Canonical | rel="canonical" | The one address a page wants to be listed under, so the two sites do not compete for it. | traffic-found#the-page-about-the-author | Being found
 Search Console |  | Google's report on what its crawler sees: what is indexed, under which address, and what people searched to find it. | traffic-search-console | Search Console
 Property |  | The unit Search Console reports on: a whole domain, proven by DNS, or one address and everything under it. | traffic-search-console#step-1-add-a-property | Search Console

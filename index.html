@@ -127,8 +127,9 @@
 
       Since 1.0.3.47 the author is a Person node of his own, the same one
       /about carries (api/TheYard.Api/AboutPage.cs): his name, the resume's
-      title line, the two profiles that are him, and his city. Nothing else
-      about him goes here, and never a street.
+      title line, the two profiles that are him, and his city; since the blog
+      was told to search engines, what he knows and where he studied, both on
+      his resume. Nothing else about him goes here, and never a street.
     -->
     <!-- #region structured-data -->
     <script type="application/ld+json">
@@ -150,7 +151,9 @@
               "addressLocality": "Saint Charles",
               "addressRegion": "Missouri",
               "addressCountry": "US"
-            }
+            },
+            "knowsAbout": [".NET", "C#", "Azure", "React", "TypeScript", "SQL Server", "Software architecture", "AI-assisted development", "Code quality"],
+            "alumniOf": { "@type": "CollegeOrUniversity", "name": "University of Missouri" }
           },
           {
             "@type": "SoftwareSourceCode",

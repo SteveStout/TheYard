@@ -9,3 +9,6 @@ Allow: /
 Disallow: /api/admin/selftest/
 
 Sitemap: https://theyard.stevenstout.biz/sitemap.xml
+# Every blog post, read from the blog's store when it is asked for, so a new post is listed with no
+# release (ADR: Search engines are told about every post).
+Sitemap: https://theyard.stevenstout.biz/sitemap-blog.xml

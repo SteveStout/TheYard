@@ -14,11 +14,13 @@ A search engine renders the app the way a browser does; most AI tools do not run
 
 ## robots.txt
 
-Every crawler is welcome everywhere but one address: the endpoint that throws on purpose so the error path can be exercised in production. A crawler hitting it would make real errors for no reason. The file names the sitemap.
+Every crawler is welcome everywhere but one address: the endpoint that throws on purpose so the error path can be exercised in production. A crawler hitting it would make real errors for no reason. The file names both sitemaps: the documents' and the blog's.
 
 ## The sitemap
 
 Every document the site serves is in the sitemap, {{live:documents}} of them, each at the address it is served from as markdown (`/api/docs/` and its name), which any crawler reads whether or not it runs JavaScript, beside the home page, the API reference, the diagrams and the page about the author. A test reads the sitemap against the catalogue the documents are served from, so a document cannot be added without being listed, or listed after it is gone. The page about the author carries a `lastmod` the image build writes on the day it is built, so the date is never one somebody typed.
+
+The blog has a sitemap of its own, [`/sitemap-blog.xml`](https://theyard.stevenstout.biz/sitemap-blog.xml), written from the blog's store when it is asked for: the blog's address and every post at the address its page names as canonical, each with the day it was published, so a post is listed the moment it is saved, with no release. When a post's body is saved by its workflow, the workflow also tells IndexNow, which Bing and the other engines that read it hear at once instead of at their next crawl ([ADR: Search engines are told about every post](https://theyard.stevenstout.biz/?doc=adr-search-engines-are-told-about-every-post)).
 
 ## The page about the author
 
@@ -26,11 +28,11 @@ Every document the site serves is in the sitemap, {{live:documents}} of them, ea
 
 ## Structured data
 
-Both `/about` and the home page describe the author in schema.org's vocabulary as a `Person`: his name, the resume's title line, the site, and the two profiles that are him, which is what lets a search engine connect this site to his LinkedIn. His city is there and nothing more personal: no street, no postcode, no email, no phone. A test holds that. The home page adds the code itself as `SoftwareSourceCode`, with the repository and its author.
+Both `/about` and the home page describe the author in schema.org's vocabulary as a `Person`: his name, the resume's title line, the site, the two profiles that are him, which is what lets a search engine connect this site to his LinkedIn, what he knows and where he studied. His city is there and nothing more personal: no street, no postcode, no email, no phone. A test holds that. The home page adds the code itself as `SoftwareSourceCode`, with the repository and its author.
 
 ## For AI tools
 
-[`/llms.txt`](https://theyard.stevenstout.biz/llms.txt) is a plain index of the site for language models: who the author is, what TheYard is, and links to the documents as markdown, served by `/api/docs/` and its name, which a tool can read without running the app. A test holds every link in it to a document the site serves.
+[`/llms.txt`](https://theyard.stevenstout.biz/llms.txt) is a plain index of the site for language models: who the author is, what TheYard is, and links to the documents as markdown, served by `/api/docs/` and its name, which a tool can read without running the app, and a Blog section with every post: its title linked to its own address and its summary. The section is read from the blog's store when the file is asked for, so a new post is in it at once. A test holds every link in it to a document the site serves.
 
 ## Search Console
 

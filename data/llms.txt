@@ -37,3 +37,4 @@
 
 - [The API reference](https://theyard.stevenstout.biz/api/reference)
 - [Every document, in the sitemap](https://theyard.stevenstout.biz/sitemap.xml)
+- [Every blog post, in the blog's sitemap](https://theyard.stevenstout.biz/sitemap-blog.xml)

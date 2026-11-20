@@ -173,6 +173,7 @@ public static class DocumentationCatalog
         ["adr-the-stack-has-a-page-of-its-own"] = "docs/decisions/ADR-140-the-stack-has-a-page-of-its-own.md",
         ["adr-automated-tests-never-touch-a-real-database-or-permanent-storage"] = "docs/decisions/ADR-141-automated-tests-never-touch-a-real-database-or-permanent-storage.md",
         ["adr-the-sales-pages-set-the-sites-look"] = "docs/decisions/ADR-142-the-sales-pages-set-the-sites-look.md",
+        ["adr-search-engines-are-told-about-every-post"] = "docs/decisions/ADR-@ADR@-search-engines-are-told-about-every-post.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
