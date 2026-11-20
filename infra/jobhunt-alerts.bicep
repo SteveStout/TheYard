@@ -1,11 +1,13 @@
 // A dead Function sends an email (1.0.4.42). Its own template so a
-// deploy of it touches these two resources and nothing else: a deploy of infra/jobhunt.bicep replaces the
-// Function's whole settings list, and these two need none of it. Deployed into RG-JOBHUNT-SS, Incremental.
+// deploy of it touches these resources and nothing else: a deploy of infra/jobhunt.bicep replaces the
+// Function's whole settings list, and these need none of it. Deployed into RG-JOBHUNT-SS, Incremental.
 //
-// One action group that emails Steve, and one log alert over appi-jobhunt-ss, evaluated every ten minutes:
-// any function's failed invocation in the last thirty minutes, or no Merger invocation in the last ten (the
-// merger runs every two minutes, so ten minutes without one is a stopped Function). The address is a parameter, so
-// it is never written in this public repository.
+// One action group that emails Steve, and one log alert over appi-jobhunt-ss, evaluated every ten minutes: no
+// Merger invocation in the last thirty (the merger runs every two minutes, so half an hour without one is a stopped
+// Function, which cannot write its own NOT WORKING line). A failed or blocked run, the silent campaign and the
+// silent network pass no longer mail him: the watch's W12 reads them every quarter hour and its heal ladder
+// fixes them or writes one NOT WORKING line (ADR-139; the year-end plan's 7c). The share's transactions alert
+// is money and stays. The address is a parameter, so it is never written in this public repository.
 
 @description('Where the Function app and its Application Insights component live.')
 param location string = 'centralus'
@@ -55,33 +57,24 @@ resource alertGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   }
 }
 
-// zeroresult1112 rung 2: the run line reads too. A run that wrote outcome=failed or outcome=blocked on its own
-// "process:" line emails, not only a host request that failed, because a pass whose parts failed returns normally
-// (11 inbox passes in a row on 403 from 04:20 CST 11/12 emailed nothing). One alert instance a process (the
-// dimension), so a break that is already firing, such as the Sheet mirror held behind a BANNED row, cannot hide a
-// new one; and the run lines are read over three hours, so a break that fails every other pass is one break, and
-// autoMitigate sends one email for it. Replayed over 11/5 to 11/12 before it was written: 17 emails, one to three
-// a day, every one a real break (the campaign's 403 since 10/27, BoardScan's empty 01:00 scans 11/6 to 11/9, the
-// Sheet's hold, the network pass's SQL and Gmail failures). So it is deployed only once a fresh seven-day replay
-// shows no day with more than one (J:\mentor\ZERORESULT1112-DONE-2026-11-12.md).
 resource deadFunction 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
   name: 'alert-jobhunt-dead-function'
   location: location
   tags: tags
   properties: {
-    displayName: 'A job hunt Function failed, a run came to failed or blocked, or the Merger stopped'
-    description: 'Any failed invocation in func-jobhunt-ss in the last 30 minutes, any run line that came to failed or blocked in the last three hours, or no Merger invocation in the last 10 (it runs every two minutes); one alert a process.'
+    displayName: 'The job hunt Function stopped: no Merger run in 30 minutes'
+    description: 'No Merger invocation in func-jobhunt-ss in the last 30 minutes (it runs every two minutes): a stopped Function, which cannot write its own NOT WORKING line.'
     severity: 2
     enabled: true
     evaluationFrequency: 'PT10M'
-    windowSize: 'PT3H'
+    windowSize: 'PT30M'
     scopes: [
       appInsights.id
     ]
     criteria: {
       allOf: [
         {
-          query: 'union (traces | where timestamp > ago(3h) and message startswith "process:" | extend outcome = extract(@"outcome=(\\w+)", 1, message) | where outcome in ("failed", "blocked") | project process = extract(@"process:(\\w+)", 1, message)), (requests | where timestamp > ago(30m) and success == false | project process = name), (requests | where timestamp > ago(10m) | summarize merged = countif(name == "Merger") | where merged == 0 | project process = "Merger") | summarize failures = count() by process'
+          query: 'requests | where timestamp > ago(30m) | summarize merged = countif(name == "Merger") | where merged == 0 | project process = "Merger" | summarize failures = count() by process'
           timeAggregation: 'Total'
           metricMeasureColumn: 'failures'
           dimensions: [
@@ -149,92 +142,8 @@ resource shareTransactions 'Microsoft.Insights/metricAlerts@2018-03-01' = {
     ]
   }
 }
-// The email campaign's timer (ADR-118; the review, F13): a timer that stops fails nothing and the Merger keeps
-// running, so its silence would show only as a day with no emails. Evaluated hourly, it can fire only in the
-// 15:00 UTC hour, when the 8 o'clock hour Central has passed under either clock (13:00 UTC in daylight time,
-// 14:00 in standard time): no CampaignSend invocation in the three hours before is a dead campaign. One signal
-// at the hourly rate, the lowest Azure prices log alerts at short of a day.
-resource campaignSilent 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
-  name: 'alert-jobhunt-campaign-silent'
-  location: location
-  tags: tags
-  properties: {
-    displayName: 'The email campaign did not run at 8 AM Central'
-    description: 'No CampaignSend invocation in func-jobhunt-ss between 12:00 and 15:00 UTC, checked in the 15:00 UTC hour.'
-    severity: 2
-    enabled: true
-    evaluationFrequency: 'PT1H'
-    windowSize: 'PT3H'
-    scopes: [
-      appInsights.id
-    ]
-    criteria: {
-      allOf: [
-        {
-          query: 'let runs = toscalar(requests | where timestamp > ago(3h) and name == "CampaignSend" | count); print runs = runs, hour = datetime_part("hour", now()) | where hour == 15 and runs == 0'
-          timeAggregation: 'Count'
-          operator: 'GreaterThan'
-          threshold: 0
-          failingPeriods: {
-            numberOfEvaluationPeriods: 1
-            minFailingPeriodsToAlert: 1
-          }
-        }
-      ]
-    }
-    autoMitigate: true
-    actions: {
-      actionGroups: [
-        alertGroup.id
-      ]
-    }
-  }
-}
-// The network log's daily pass (ADR: The network log drafts, Steve sends): checked hourly, it can fire only in the
-// 13:00 UTC hour, when the 6 o'clock hour Central has passed under either clock (11:00 UTC in daylight time, 12:00 in
-// standard time): no NetworkLogPass invocation in the three hours before is a dead pass, and an invocation that failed
-// is a broken one. The hourly timer is invoked every hour whatever its switch says, so a silence here is the
-// Function, not the switch; a failure is the pass itself, which throws only when the 6 AM hour's work threw.
-resource networkSilent 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
-  name: 'alert-jobhunt-network-silent'
-  location: location
-  tags: tags
-  properties: {
-    displayName: 'The network log did not run, or failed, at 6 AM Central'
-    description: 'No NetworkLogPass invocation in func-jobhunt-ss between 10:00 and 13:00 UTC, or one that failed, checked in the 13:00 UTC hour.'
-    severity: 2
-    enabled: true
-    evaluationFrequency: 'PT1H'
-    windowSize: 'PT3H'
-    scopes: [
-      appInsights.id
-    ]
-    criteria: {
-      allOf: [
-        {
-          query: 'let runs = toscalar(requests | where timestamp > ago(3h) and name == "NetworkLogPass" | count); let failed = toscalar(requests | where timestamp > ago(3h) and name == "NetworkLogPass" and success == false | count); print runs = runs, failed = failed, hour = datetime_part("hour", now()) | where hour == 13 and (runs == 0 or failed > 0)'
-          timeAggregation: 'Count'
-          operator: 'GreaterThan'
-          threshold: 0
-          failingPeriods: {
-            numberOfEvaluationPeriods: 1
-            minFailingPeriodsToAlert: 1
-          }
-        }
-      ]
-    }
-    autoMitigate: true
-    actions: {
-      actionGroups: [
-        alertGroup.id
-      ]
-    }
-  }
-}
 // #endregion jobhunt-alerts
 
 output actionGroupId string = alertGroup.id
 output alertRuleId string = deadFunction.id
 output transactionsAlertId string = shareTransactions.id
-output campaignAlertId string = campaignSilent.id
-output networkAlertId string = networkSilent.id

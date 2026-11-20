@@ -82,30 +82,6 @@ public static partial class TodayLeft
         return (sections, closed);
     }
 
-    /// <summary>
-    /// The proposed items a lane asks his yes on: each file name an unanswered LEFT FOR STEVE bullet names, in any
-    /// section up to the card, with the newest lane that names it. A bullet of a closed decision asks nothing.
-    /// </summary>
-    /// <param name="sections">Every closed lane's section up to the card's time.</param>
-    /// <param name="decisions">Every decision (<see cref="Decisions"/>).</param>
-    /// <param name="answered">The answered phrases.</param>
-    /// <param name="proposed">The proposed file names in STATUS.md.</param>
-    public static IReadOnlyDictionary<string, string> Asks(IReadOnlyList<LeftSection> sections, IReadOnlyList<TodayDecision> decisions, IReadOnlyList<string> answered, IReadOnlyList<string> proposed)
-    {
-        var asks = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var section in sections.OrderBy(s => s.Closed))
-        {
-            foreach (string block in section.Blocks.Where(b => !TodayParts.IsAnswered(b, answered) && !decisions.Any(d => d.Closed && Names(b, d.Title))))
-            {
-                foreach (string name in proposed.Where(p => block.Contains(p, StringComparison.OrdinalIgnoreCase)))
-                {
-                    asks[name] = section.Lane;
-                }
-            }
-        }
-        return asks;
-    }
-
     /// <summary>Whether a block names the decision's title, case aside.</summary>
     /// <param name="block">The block.</param>
     /// <param name="title">The title.</param>
