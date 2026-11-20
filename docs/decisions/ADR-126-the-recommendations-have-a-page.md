@@ -44,3 +44,7 @@ A page component under `src/components/recommendations/`, a pure lib beside the 
 - [`src/app/pageOpen.ts`](https://github.com/SteveStout/TheYard/blob/main/src/app/pageOpen.ts) - which page is open
 - [`render/loaders.ts`](https://github.com/SteveStout/TheYard/blob/main/render/loaders.ts) - the one read
 - [`api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/DocumentationEndpoints.cs) - the short door
+
+## Addendum, 2026-11-20 (1.0.5.142): the page's foot
+
+The last card, That is everyone, keeps its two links, Check my work and About Steven, and is the page's Where next (`data-mock` where-next, each link next-link); the site's one closing row (ADR: The sales pages set the site's look, the addendum on the one close) follows it in its own glass card, so the page ends on the question and its three moves, and Book 20 minutes opens the review page's booking sheet.

@@ -3,10 +3,13 @@
  * on Steven's LinkedIn profile, word for word, grouped by where the writer stood as LinkedIn words it, each card with
  * the writer's name linking to their own page, the relationship line and the month, the full text, and two pills: the
  * recommendation on LinkedIn and the writer's profile. Three tiles above the groups give the count, the years and
- * the vantage points, and an index of every name sits beside them. Every number and group comes off the wire; this
- * file draws what /api/recommendations answers and works nothing out.
+ * the vantage points, and an index of every name sits beside them. The last card, That is everyone, leads to the review
+ * route and About, and the site's one closing row (AskClose) follows it, its Book 20 minutes opening the booking sheet.
+ * Every number and group comes off the wire; this file draws what /api/recommendations answers and works nothing out.
  */
 import { useEffect, useState } from 'react';
+import { BookSheet } from '../../review/BookSheet';
+import { AskClose } from '../../shared/AskClose';
 import {
   RECOMMENDATIONS_SOURCE,
   RECOMMENDATIONS_URL,
@@ -30,6 +33,8 @@ export function RecommendationsPage() {
   const [reading, setReading] = useState<Reading>(
     drawn ? { state: 'ready', answer: drawn } : { state: 'reading' }
   );
+  // Book 20 minutes in the closing row opens the review page's booking sheet beside the email app.
+  const [booking, setBooking] = useState(false);
   useEffect(() => {
     let live = true;
     request(RECOMMENDATIONS_URL, undefined, { background: true })
@@ -139,6 +144,7 @@ export function RecommendationsPage() {
               <section
                 className={`${styles.finish} op-glass`}
                 aria-labelledby="recommendations-finish"
+                data-mock="where-next"
               >
                 <h2 id="recommendations-finish" className={styles.groupTitle}>
                   That is everyone
@@ -148,14 +154,15 @@ export function RecommendationsPage() {
                   the work they describe.
                 </p>
                 <p className={styles.pills}>
-                  <a className={styles.pill} href="/?view=review">
+                  <a className={styles.pill} href="/?view=review" data-mock="next-link">
                     Check my work
                   </a>
-                  <a className={styles.pill} href="/about">
+                  <a className={styles.pill} href="/about" data-mock="next-link">
                     About Steven
                   </a>
                 </p>
               </section>
+              <AskClose onBook={() => setBooking(true)} />
             </div>
             <nav className={`${styles.index} op-glass`} aria-label="On this page">
               <p className={styles.indexTitle}>On this page</p>
@@ -170,6 +177,7 @@ export function RecommendationsPage() {
           </div>
         </>
       )}
+      <BookSheet open={booking} onClose={() => setBooking(false)} onAction={() => {}} />
     </section>
   );
 }
