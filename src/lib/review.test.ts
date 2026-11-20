@@ -27,7 +27,7 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
       'Opened /review',
       '1 Quality you can watch',
       '2 The first screen',
-      '3 Bid in the room',
+      '3 A live auction that bids back',
       '4 What Azure charges',
       '5 The gate that shipped this version',
       '6 One codebase, two stores',

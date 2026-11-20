@@ -306,7 +306,7 @@ describe('the rendering service', () => {
     expect(html).toContain(
       `Read all ${recommendations.recommendations.length} named recommendations`
     );
-    expect(html).toContain('href="/?doc=quality#the-slip-and-the-turn"');
+    expect(html).toContain('href="/?doc=quality"');
     // The tour, under it: seven compact cells, each a link to its stop's address with its one line, and no tall card.
     for (const stop of REVIEW_STOPS) expect(html).toContain(escapeHtml(stop.title));
     for (const stop of REVIEW_STOPS) expect(html).toContain(`href="${escapeHtml(stop.address)}"`);
@@ -352,12 +352,15 @@ describe('the rendering service', () => {
   it('draws the short path under the first screen on the server, nothing reached, its live tiles waiting for the browser', async () => {
     const { html, asked } = await page('?view=review');
     expect(html).toContain('0 of 3 opened.');
-    for (const title of [
-      'Quality held with AI',
-      'The gate every push passes',
-      'A system that is really running',
+    for (const words of [
+      'How do you keep quality when AI writes the code?',
+      'What has to pass before anything ships?',
+      'Is this a real system, running right now?',
+      'See the slip and the fix',
+      'See the test results',
+      'Watch this lot live',
     ])
-      expect(html).toContain(title);
+      expect(html).toContain(words);
     expect(html).toContain('href="/?view=admin&amp;card=tests"');
     // The path's tiles read in the browser, from their own kept answers; the server reads neither for them.
     const paths = asked.map((read) => read.url.slice(API.length).split('?')[0]);

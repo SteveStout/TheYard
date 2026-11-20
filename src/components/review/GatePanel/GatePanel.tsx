@@ -10,7 +10,7 @@ import type { MouseEvent } from 'react';
 import { ICON } from '../../../lib/icons';
 import type { TestSummary } from '../../../lib/landingProof';
 import { GATE_PARTS, gateTotals, MIRROR, reviewedWord } from '../../../lib/reviewMirror';
-import { PROOF_ADDRESS, type HeldQuality } from '../../../lib/reviewVerdict';
+import { SLIP_ADDRESS, type HeldQuality } from '../../../lib/reviewVerdict';
 import styles from './GatePanel.module.css';
 
 export function GatePanel({
@@ -92,12 +92,7 @@ export function GatePanel({
       </dl>
       <p className={styles.slip}>
         <strong>{MIRROR.slipLead}</strong> {MIRROR.slip}{' '}
-        <a
-          href={PROOF_ADDRESS}
-          onClick={onSlip}
-          data-action="review.slip"
-          data-testid="review-slip"
-        >
+        <a href={SLIP_ADDRESS} onClick={onSlip} data-action="review.slip" data-testid="review-slip">
           {MIRROR.slipLink}
         </a>
       </p>

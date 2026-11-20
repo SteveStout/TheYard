@@ -1,7 +1,8 @@
 /**
  * Does:      Lays out the short path's cards as the whole-page picture draws them (its .cards and .card, ported rule by
- *            rule): three equal cards from 1280, one under the other below it, each with its numbered head, its time,
- *            its payoff and its button.
+ *            rule): three equal cards from 1280, one under the other below it, each with its numbered question kept two
+ *            lines tall at a desk so the three answers start level, its time, its answer and its door, with the gate's
+ *            text link beside its door.
  * Does not:  Draw a panel's glass (panels.css does), the section's heading (ReviewHead.module.css does), a tile
  *            (PathTile.module.css does) or the pills' look.
  * Used by:   ReviewPath.tsx.
@@ -23,7 +24,7 @@
 
 .top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   margin: 0;
 }
@@ -53,9 +54,11 @@
   font-weight: var(--weight-bold);
   line-height: 1.2;
   letter-spacing: var(--title-tracking);
+  min-height: calc(2 * 1.2em);
 }
 
 .time {
+  margin-top: 2px;
   margin-left: auto;
   padding: 3px var(--space-2);
   border-radius: var(--radius-full);
@@ -74,13 +77,31 @@
   line-height: 1.45;
 }
 
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-4);
+}
+
 .open {
   gap: var(--space-2);
-  align-self: flex-start;
   min-height: var(--touch-target);
   padding: 0 var(--space-5);
-  margin-top: var(--space-4);
   font-size: var(--text-md);
+}
+
+.textLink {
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-underline-offset: 3px;
+}
+
+.textLink:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Under 1280 the three stops stack. */
@@ -92,11 +113,22 @@
   .payoff {
     min-height: 0;
   }
+
+  .title {
+    min-height: 0;
+  }
 }
 
-/* A phone: the button the card's width. */
+/* A phone: the door the card's width, the text link a thumb tall and centred under it. */
 @media (max-width: 639.98px) {
   .open {
-    align-self: stretch;
+    flex: 1 1 100%;
+  }
+
+  .textLink {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+    margin: 0 auto;
   }
 }

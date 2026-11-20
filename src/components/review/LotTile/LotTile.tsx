@@ -1,6 +1,6 @@
 /**
  * Does:      Draws the short path's third tile as the whole-page picture draws it: a live lot right now, which the room
- *            has opened, its name, its bid with three dots and "the room is bidding" (or the opening ask when nobody
+ *            has opened, its name, its bid with three dots and "simulated bidders, live" (or the opening ask when nobody
  *            has bid), and at its foot the time it closes in, counted down on the page's clock. "No auction is live
  *            right now" is drawn only when the catalogue holds no live auction, which the seeded catalogue never does.
  * Does not:  Read the lot (useReviewPath.ts does, from one answer kept fifteen seconds) or pick it (the API does).

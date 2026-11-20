@@ -30,6 +30,9 @@ export const TOUR = {
   line: 'Seven stops, ten minutes, all optional. Every stop is the running system, and your place is kept on this browser.',
   startOver: 'Start over',
   restTitle: 'The rest is in the sidebar',
+  /** The phone's control: the eight cells are closed behind it until it is pressed. */
+  show: 'Show the seven stops',
+  hide: 'Hide the seven stops',
 } as const;
 
 /** "0 of 7 seen.", from the tour's stops reached on this browser. */
@@ -60,11 +63,17 @@ export function closeQuote(entries: readonly Recommendation[] | null): Recommend
   return entries.find((entry) => entry.name === CLOSE_NAME) ?? entries[1] ?? entries[0];
 }
 
-/** The document and the section "See the proof in 2 minutes" opens: Quality, at "The slip, and the turn". */
+/**
+ * The document "See the proof in 2 minutes" and the path's first stop open, and the section the mirror's slip line
+ * lands on: Quality, at "The slip, and the turn".
+ */
 export const PROOF = { doc: 'quality', anchor: 'the-slip-and-the-turn' } as const;
 
-/** The proof's address, the one a modified click or a new tab follows. */
-export const PROOF_ADDRESS = `/?doc=${PROOF.doc}#${PROOF.anchor}`;
+/** The proof's address: the top of Quality, where a phone's first screen shows the slip, the ratchet and the chart. */
+export const PROOF_ADDRESS = `/?doc=${PROOF.doc}`;
+
+/** The mirror's slip line's address: Quality at the slip and the turn. */
+export const SLIP_ADDRESS = `/?doc=${PROOF.doc}#${PROOF.anchor}`;
 
 /** "Book 20 minutes": the counted redirect to an email asking for a time; no page carries the address. */
 export const BOOK_ADDRESS = '/api/go/book';
