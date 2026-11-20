@@ -30,6 +30,20 @@
   letter-spacing: var(--readout-tracking);
   vertical-align: 3px;
 }
+
+/* The badge's one pass of light when its section is seen (the motions region starts it). */
+.op-num::after {
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    color-mix(in srgb, var(--palette-white) 85%, transparent) 50%,
+    transparent 70%
+  );
+  content: '';
+}
 /* #endregion op-num */
 
 /* #region op-live-panel */
@@ -206,6 +220,8 @@
   border-top: var(--rule-panel);
   border-radius: var(--radius-glass);
   box-shadow: var(--glass-shadow);
+  /* A tile's door lands on the card with the numbered path's room left clear. */
+  scroll-margin-top: calc(var(--space-8) + var(--space-6));
 }
 
 .op-case + .op-case {
@@ -369,6 +385,308 @@
   margin-left: var(--space-2);
 }
 /* #endregion op-nudge */
+
+/* #region op-pathbar */
+/* The numbered path at a desk: fixed to the top of the window from the collapsed rail's edge, on once the first screen
+   has gone, the current step on the accent's soft ground, the steps before it done in the deep teal. */
+.op-pathbar {
+  display: flex;
+  visibility: hidden;
+  position: fixed;
+  z-index: var(--layer-header);
+  top: 0;
+  right: 0;
+  left: var(--rail-width-collapsed);
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-6);
+  transform: translateY(-110%);
+  border-bottom: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--palette-white) 88%, transparent);
+  box-shadow: var(--shadow-sm);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  transition:
+    transform 0.25s ease,
+    visibility 0.25s;
+}
+
+.op-pathbar.is-on {
+  visibility: visible;
+  transform: none;
+}
+
+.op-pathbar ol {
+  display: flex;
+  flex: 1;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.op-pathbar li a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.op-pathbar li a:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.op-pathbar li a b {
+  padding: 1px 5px;
+  border: 1px solid var(--color-ribbon-gold);
+  border-radius: var(--radius-sm);
+  background: var(--palette-white);
+  color: var(--color-gold-bar-dark);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--readout-tracking);
+}
+
+.op-pathbar li a[aria-current='true'] {
+  background: var(--color-accent-soft);
+  color: var(--color-teal-deep);
+  font-weight: var(--weight-semibold);
+}
+
+.op-pathbar li a[aria-current='true'] b {
+  background: linear-gradient(180deg, var(--color-ribbon-shine-white), var(--color-ribbon-shine));
+}
+
+.op-pathbar li a.is-done b {
+  border-color: var(--color-teal-deep);
+  background: var(--color-teal-deep);
+  color: var(--palette-white);
+}
+
+.op-pathbar-moves {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.op-pathbar .op-pill-resume {
+  min-height: var(--pill-height);
+  padding: 0 var(--space-4) 0 var(--space-3);
+  box-shadow: none;
+  font-size: var(--text-sm);
+}
+
+.op-pathbar .op-pill-resume svg {
+  width: 14px;
+  height: auto;
+}
+
+.op-pathbar .op-pill-primary {
+  padding: 0 var(--space-4);
+}
+
+/* Under the wide desk step only the current step says its name. */
+@media (max-width: 1279.98px) {
+  .op-pathbar li a span {
+    display: none;
+  }
+
+  .op-pathbar li a[aria-current='true'] span {
+    display: inline;
+  }
+}
+/* #endregion op-pathbar */
+
+/* #region op-pathdock */
+/* On a phone the path rides over the dock that holds Book and the resume: six marks and the section's name. */
+.op-pathdock {
+  display: none;
+}
+
+/* Under the desk step the rail is a drawer behind the sticky header, so the bar would cover the header: the path is
+   the phone's row under 640 and not drawn between. */
+@media (max-width: 1023.98px) {
+  .op-pathbar {
+    display: none;
+  }
+}
+
+@media (max-width: 639.98px) {
+  .op-pathdock {
+    display: flex;
+    visibility: hidden;
+    position: fixed;
+    z-index: var(--layer-header);
+    right: 0;
+    bottom: 64px;
+    left: 0;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px var(--space-4);
+    transform: translateY(200%);
+    border-top: 1px solid var(--glass-border);
+    background: color-mix(in srgb, var(--palette-white) 92%, transparent);
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    transition:
+      transform 0.25s ease,
+      visibility 0.25s;
+  }
+
+  .op-pathdock.is-on {
+    visibility: visible;
+    transform: none;
+  }
+
+  .op-pathdock i {
+    width: 18px;
+    height: 5px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+  }
+
+  .op-pathdock i.is-done {
+    background: var(--color-teal-deep);
+  }
+
+  .op-pathdock i.is-now {
+    background: var(--color-gold);
+  }
+
+  .op-pathdock b {
+    margin-left: auto;
+    color: var(--color-teal-deep);
+    font-weight: var(--weight-semibold);
+  }
+}
+/* #endregion op-pathdock */
+
+/* #region motions */
+/* What moves (ADR: The sales pages set the site's look): decorative, three times when its holder is first seen and
+   again on return (useFirstSeen sets is-seen), the finished state before it is seen, with JavaScript off and for a
+   reader who asked for reduced motion. */
+.is-seen .op-num::after {
+  animation: op-shine 0.9s ease-out 1 both;
+}
+
+@keyframes op-shine {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+.is-seen .op-live-dot::after {
+  animation: op-ping 1.6s ease-out 3 both;
+}
+
+@keyframes op-ping {
+  0% {
+    transform: scale(0.6);
+    opacity: calc(var(--opacity-disabled) * 1.5);
+  }
+
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.is-seen .op-nudge {
+  animation: op-nudge 1.1s ease-in-out 2s 3 both;
+}
+
+@keyframes op-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+/* The comet: a gold dot laid over the stretched chart and a short gold tail on the line itself (comet.ts runs them). */
+.op-comet-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  box-shadow:
+    0 0 0 1px var(--color-ribbon-shine-white),
+    0 0 10px 4px color-mix(in srgb, var(--color-gold-light) 80%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.op-comet-tail {
+  fill: none;
+  stroke: var(--color-gold-light);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0;
+}
+
+/* The checks: the six discs fill in order, each with a gold ring as it lands, three rounds, then rest filled. */
+.is-seen [data-mock='anim-check'] {
+  animation: op-check 3.4s ease-out var(--d, 0s) 3 both;
+}
+
+@keyframes op-check {
+  0% {
+    transform: scale(0.3);
+    box-shadow: 0 0 0 0 transparent;
+    opacity: calc(var(--watermark-opacity) * 1.5);
+  }
+
+  9% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-gold-light) 85%, transparent);
+    opacity: 1;
+  }
+
+  22% {
+    transform: scale(1);
+    box-shadow: 0 0 0 9px transparent;
+  }
+
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-seen .op-num::after,
+  .is-seen .op-live-dot::after,
+  .is-seen .op-nudge,
+  .is-seen [data-mock='anim-check'] {
+    animation: none;
+  }
+
+  .op-comet-dot,
+  .op-comet-tail {
+    display: none;
+  }
+
+  .op-pathbar,
+  .op-pathdock {
+    transition: none;
+  }
+}
+/* #endregion motions */
 
 /* #region phone */
 @media (max-width: 639.98px) {

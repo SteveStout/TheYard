@@ -17,6 +17,11 @@
   margin-top: var(--space-8);
 }
 
+/* A step of the numbered path lands on its section with the bar's room left clear. */
+.page > * {
+  scroll-margin-top: calc(var(--space-8) + var(--space-6));
+}
+
 .page > .names {
   margin-top: var(--space-6);
 }

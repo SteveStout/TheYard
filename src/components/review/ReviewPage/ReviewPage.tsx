@@ -4,13 +4,14 @@
  *            mirror with its strip of names for ?for=ai), 01 the work's three case cards, 02 the short path's three
  *            questions, 03 the band of six named voices, 04 the blog's three newest posts, 05 the full tour of seven
  *            compact stops, 06 the close, and Where next, every section the page's one width; the booking sheet every
- *            "Book 20 minutes" opens, and on a phone the dock with the next step once the first screen has gone.
+ *            "Book 20 minutes" opens, on a phone the dock with the next step once the first screen has gone, and the
+ *            numbered path once the first move has left the window (PathBar, loaded after the first screen).
  * Does not:  Hold the stops (reviewStops.ts does), the words (reviewVerdict.ts and reviewCases.ts do) or the place
  *            (useReviewProgress.ts keeps it on the browser); the first screen's two answers are read by
  *            useReviewReadings.ts and the live panels' by usePulse.ts.
  * Used by:   App.tsx.
  */
-import { useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useState, useSyncExternalStore } from 'react';
 import RELEASES from 'virtual:release-facts';
 import { usePulse } from '../../../hooks/usePulse';
 import { useReviewProgress } from '../../../hooks/useReviewProgress';
@@ -48,6 +49,11 @@ import styles from './ReviewPage.module.css';
 /** What the build carries about this version, read once: gated, the quality numbers held and CodeRabbit's read. */
 const GATE = gateFacts();
 const QUALITY = GATE.quality === null ? null : { held: GATE.quality.held, of: GATE.quality.of };
+
+/** The numbered path, loaded after the first screen: nothing on the first screen needs it. */
+const PathBar = lazy(() =>
+  import('../../shared/PathBar').then((module) => ({ default: module.PathBar }))
+);
 
 /** The day never changes under a mounted page in a way worth a redraw, so nothing is subscribed (Landing.tsx's way). */
 const noSubscription = () => () => {};
@@ -201,6 +207,14 @@ export function ReviewPage({
           },
         ]}
       />
+      <Suspense fallback={null}>
+        <PathBar
+          watch='[data-testid="review-proof"]'
+          hidden={booking}
+          onAction={review.action}
+          onBook={book}
+        />
+      </Suspense>
       <BookSheet open={booking} onClose={() => setBooking(false)} onAction={review.action} />
     </>
   );

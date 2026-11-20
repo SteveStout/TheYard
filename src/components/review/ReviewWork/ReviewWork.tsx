@@ -9,6 +9,7 @@
  * Used by:   ReviewPage.tsx.
  */
 import type { MouseEvent } from 'react';
+import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import type { DocKey } from '../../../library/documents';
 import { landOnSection } from '../../../library/pendingAnchor';
 import type { NowRow } from '../../../lib/nowPanel';
@@ -38,6 +39,8 @@ export function ReviewWork({
   onOpenDoc: (key: DocKey) => void;
   onOpenBlog: (slug: string | null) => void;
 }) {
+  // The holder of its number badge's light and TheYard panel's live dot.
+  const [holder] = useFirstSeen<HTMLElement>();
   const door = (entry: CaseDoor, event: MouseEvent<HTMLAnchorElement>) => {
     if (entry.kind === 'questions') {
       scrollToSection(event, QUESTIONS_ID);
@@ -56,6 +59,7 @@ export function ReviewWork({
   };
   return (
     <section
+      ref={holder}
       id={WORK_ID}
       className={styles.work}
       aria-labelledby="review-work-title"
