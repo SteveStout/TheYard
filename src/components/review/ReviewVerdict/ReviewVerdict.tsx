@@ -1,7 +1,7 @@
 /**
  * Does:      Draws the review route's first screen (ADR: The review route gives a reason before it asks): the eyebrow,
  *            the claim, the lede, three proof tiles (two from the record, one live from this build), the one primary
- *            move with Book 20 minutes and the resume beside it, the line under them, and at the side one named quote
+ *            move with Book 20 minutes and the gold resume button beside it, the line under them, and at the side one named quote
  *            and the roles card. Every button reports its action; the primary opens the top of Quality in place, and a
  *            modified click follows its address.
  * Does not:  Read the API (useReviewReadings.ts does) or hold the words (reviewVerdict.ts does).
@@ -25,6 +25,7 @@ import {
   VERDICT,
   type HeldQuality,
 } from '../../../lib/reviewVerdict';
+import { PdfMark } from '../../shared/PdfMark';
 import { ProofTile } from '../ProofTile';
 import { ReviewLeadQuote } from '../ReviewLeadQuote';
 import styles from './ReviewVerdict.module.css';
@@ -109,11 +110,13 @@ export function ReviewVerdict({
             {VERDICT.book}
           </a>
           <a
-            className={styles.resume}
+            className="op-pill-resume"
             href={RESUME_ADDRESS}
             onClick={() => onAction('resume')}
             data-action="review.resume"
+            data-testid="review-resume"
           >
+            <PdfMark />
             {VERDICT.resume}
           </a>
         </div>

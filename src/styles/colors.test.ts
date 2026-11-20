@@ -150,6 +150,12 @@ describe('the site palette (ADR-016)', () => {
     }
   });
 
+  it('the resume button: its dark ink reads 4.5 or more on every stop of its gold face', () => {
+    for (const stop of ['color-gold-pale', 'color-gold-light', 'color-ribbon-gold', 'color-gold']) {
+      expect(contrast(token('color-on-gold'), token(stop))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it('a plain tile is not the status green: the deep teal is told apart from it, and the accent is not', () => {
     // The accent teal sits 1.09 from the status green, so a plain tile wears the deep teal.
     expect(contrast(token('color-accent'), token('color-success'))).toBeLessThan(1.2);
