@@ -118,6 +118,18 @@
     var(--color-gold-bar-shade) 80%,
     var(--color-gold-bar-dark) 100%
   );
+  /* The resume button (the quality1120 picture): the gold bar turned on end,
+     pale at the top and the flat gold at the foot, with dark ink on it. The
+     ink reads 4.5 or more on every stop, which colors.test.ts measures. */
+  --color-gold-pale: #f3e2a6;
+  --color-on-gold: #2f2410;
+  --gradient-gold-button: linear-gradient(
+    180deg,
+    var(--color-gold-pale) 0%,
+    var(--color-gold-light) 38%,
+    var(--color-ribbon-gold) 70%,
+    var(--color-gold) 100%
+  );
   /* The lightning mark. It only ever sits on the header gradient. */
   --color-brand-mark: var(--color-gold-light);
   /* One gradient, top to bottom, for every header bar: the phone's header and

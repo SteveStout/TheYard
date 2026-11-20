@@ -1,8 +1,7 @@
 /**
  * Does:      Lays out the review route as one unit, as the whole-page picture's .page: one column at most 1234 px wide,
  *            every section exactly that wide, 48 px between sections (32 on a phone), the strip of names 24 px under
- *            the mirror and Where next 16 px under the close, no section taller than its content, the pair of voices
- *            two across from 1024.
+ *            the mirror and Where next 16 px under the close, no section taller than its content.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or lay out a section's inside (its own sheet does).
  * Used by:   ReviewPage.tsx.
  */
@@ -24,20 +23,6 @@
 
 .page > .next {
   margin-top: var(--space-4);
-}
-
-/* Two named voices side by side, between the questions and the blog; stacked under 1024. */
-.voices {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-@media (max-width: 1023.98px) {
-  .voices {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-3);
-  }
 }
 
 @media (max-width: 639.98px) {
