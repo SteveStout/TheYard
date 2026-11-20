@@ -33,11 +33,14 @@ export const FILTER_PARTS = ['topic', 'keyword', 'q', 'month', 'year', 'sort'] a
 const KEY = /^[a-z-]{1,40}$/;
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-/** The filter an address carries; a part in a shape it cannot have is left out, never refused. */
+/**
+ * The filter an address carries; a part in a shape it cannot have is left out, never refused. A topic or keyword is read
+ * without regard to case, as the API reads it, so ?topic=AI typed by hand opens the list the AI chip does.
+ */
 export function filterFromSearch(search: string | URLSearchParams): BlogFilter {
   const params = typeof search === 'string' ? new URLSearchParams(search) : search;
   const key = (name: string) => {
-    const value = params.get(name);
+    const value = params.get(name)?.toLowerCase() ?? null;
     return value !== null && KEY.test(value) ? value : null;
   };
   const month = params.get('month');

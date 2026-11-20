@@ -67,14 +67,15 @@ public static class BlogEndpoints
 
     /// <summary>
     /// The filter as the address carries it: each part kept only in the shape it can have, and anything else left out
-    /// rather than refused, so a shared link with a stray part still opens the blog.
+    /// rather than refused, so a shared link with a stray part still opens the blog; a topic or keyword in any case.
     /// </summary>
     /// <param name="query">The request's query string.</param>
     public static BlogFilter FilterOf(IQueryCollection query)
     {
         static string? Part(IQueryCollection query, string name, int longest) =>
             query[name].ToString().Trim() is { Length: > 0 } value && value.Length <= longest ? value : null;
-        static string? Key(string? value) => value is not null && value.All(c => c is (>= 'a' and <= 'z') or '-') ? value : null;
+        // A topic or keyword is read without regard to case, so ?topic=AI typed by hand asks for the AI chip's list.
+        static string? Key(string? value) => value?.ToLowerInvariant() is { } key && key.All(c => c is (>= 'a' and <= 'z') or '-') ? key : null;
         string? month = Part(query, "month", 7);
         return new BlogFilter(
             Part(query, "q", 100),

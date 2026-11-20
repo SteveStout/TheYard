@@ -175,4 +175,87 @@ test('at phone width the bar fits, nothing scrolls sideways, and the first post 
   const top = (await page.getByTestId('blog-post').boundingBox())!.y;
   expect(top).toBeLessThan(844);
 });
+// #region the-exploratory-pass
+// Found by the exploratory pass of findable1120 (every chip by click and by a typed address in three cases, with Back,
+// Forward and Reload, at 1440 and 390): an address typed with a topic or keyword in capitals dropped the filter and
+// showed every post with no chip pressed. A topic or keyword is matched without regard to case, in the page and in the
+// API, so a link someone types or a tool rewrites still opens the list it names.
+for (const width of [1440, 390]) {
+  for (const [part, typed, chip, found] of [
+    ['topic', 'AI', /^AI/, ['Microsoft Ignite: all in on AI', 'I plan with Claude']],
+    ['topic', 'Job-Search', /^Job search/, ['Scammers read the job market too']],
+    ['keyword', 'CQRS', /^CQRS/, ['Onion architecture for beginners']],
+    ['keyword', 'cLaUdE', /^Claude/, ['I plan with Claude']],
+  ] as const) {
+    test(`a typed ${part}=${typed} narrows the list as its chip does, and still does after Reload, at ${width}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+      await answerBlog(page, POSTS);
+      await openTheYard(page, `/?view=blog&${part}=${typed}`);
+      await expect(page.getByTestId('blog-count')).toHaveText(
+        `Showing ${found.length} of 12 posts`
+      );
+      await expect(
+        page.getByTestId('blog-filters').getByRole('button', { name: chip })
+      ).toHaveAttribute('aria-pressed', 'true');
+      await expect.poll(() => slugs(page)).toEqual([...found]);
+      await page.reload();
+      await expect(page.getByTestId('blog-count')).toHaveText(
+        `Showing ${found.length} of 12 posts`
+      );
+      await expect.poll(() => slugs(page)).toEqual([...found]);
+    });
+  }
+
+  test(`every chip by click survives Back, Forward and Reload at ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await answerBlog(page, POSTS);
+    await openTheYard(page, '/?view=blog');
+    for (const [chip, address, shown] of [
+      [/^Architecture/, /\?view=blog&topic=architecture$/, 1],
+      [/^Career/, /\?view=blog&topic=career$/, 8],
+      [/^Microsoft Copilot/, /\?view=blog&keyword=copilot$/, 1],
+    ] as const) {
+      const bar = page.getByTestId('blog-filters');
+      await bar.getByRole('button', { name: chip }).click();
+      await expect(page).toHaveURL(address);
+      await expect(page.getByTestId('blog-count')).toHaveText(`Showing ${shown} of 12 posts`);
+      await page.goBack();
+      await expect(page).toHaveURL(/\?view=blog$/);
+      await expect(page.getByTestId('blog-count')).toHaveText('Showing 12 of 12 posts');
+      await page.goForward();
+      await expect(page).toHaveURL(address);
+      await expect(page.getByTestId('blog-count')).toHaveText(`Showing ${shown} of 12 posts`);
+      await page.reload();
+      await expect(page.getByTestId('blog-count')).toHaveText(`Showing ${shown} of 12 posts`);
+      await expect(bar.getByRole('button', { name: chip })).toHaveAttribute('aria-pressed', 'true');
+      await bar.getByRole('button', { name: chip }).click();
+      await expect(page).toHaveURL(/\?view=blog$/);
+      await expect(page.getByTestId('blog-count')).toHaveText('Showing 12 of 12 posts');
+    }
+  });
+
+  test(`a post opened from a filtered list comes Back to that filter at ${width}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+    await answerBlog(page, POSTS);
+    await openTheYard(page, '/?view=blog&topic=CAREER');
+    await expect(page.getByTestId('blog-count')).toHaveText('Showing 8 of 12 posts');
+    await page
+      .getByTestId('blog-mini')
+      .first()
+      .getByRole('button', { name: /Read the post/ })
+      .click();
+    await expect(page).toHaveURL(/\?view=blog&post=a-career-note-2$/);
+    await expect(page.getByTestId('blog-post')).toContainText('A career note 2');
+    await page.goBack();
+    await expect(page.getByTestId('blog-count')).toHaveText('Showing 8 of 12 posts');
+    await expect(
+      page.getByTestId('blog-filters').getByRole('button', { name: /^Career/ })
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+}
+// #endregion the-exploratory-pass
 // #endregion blog-filters

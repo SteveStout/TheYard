@@ -29,6 +29,13 @@ describe('the blog filter in the address', () => {
     expect(filterFromSearch('?view=blog&topic=Not%20A%20Key&month=nov&sort=sideways')).toEqual(
       NO_FILTER
     );
+    // A topic or keyword typed in capitals is the same chip (the exploratory pass of findable1120).
+    expect(filterFromSearch('?view=blog&topic=AI&keyword=cLaUdE')).toEqual({
+      ...NO_FILTER,
+      topic: 'ai',
+      keyword: 'claude',
+    });
+    expect(filterFromSearch('?view=blog&topic=Job-Search').topic).toBe('job-search');
     expect(filterFromSearch('?view=blog&year=2026')).toEqual({
       ...NO_FILTER,
       month: null,
