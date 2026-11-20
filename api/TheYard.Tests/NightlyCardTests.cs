@@ -99,6 +99,15 @@ public sealed partial class NightlyCardTests
         Assert.Equal(Enumerable.Repeat(day, 7), CostGrade.DaysBefore(steady.Month, "units_mbms", Now));
         Assert.Equal("good", NightlyCard.GrantGrade(Spiked(1.49)).Tone);
         Assert.Equal("warning", NightlyCard.GrantGrade(Spiked(1.5)).Tone);
+
+        // A day too small to show in the dial's two decimals is still read against its week (CodeRabbit on the version that brought the grade).
+        var tiny = Month(0, 20);
+        ResourceCardInputs TinySpiked(double factor) => tiny with
+        {
+            Month = [.. tiny.Month.Select(b => b.At >= Now.AddDays(-1) ? b with { Sums = new Dictionary<string, double?> { ["units_mbms"] = 20 * factor, ["executions"] = 0 } } : b)],
+        };
+        Assert.Equal("good", NightlyCard.GrantGrade(TinySpiked(1.49)).Tone);
+        Assert.Equal("warning", NightlyCard.GrantGrade(TinySpiked(1.5)).Tone);
     }
 
     [Fact]

@@ -29,7 +29,7 @@ public sealed class InsightsSource(AzureMetrics azure, string componentId, strin
     public const string IngestedDay = "Usage | where TimeGenerated > ago(1d) and IsBillable | summarize gb = sum(Quantity) / 1024.0";
     public const string Sampling = "AppRequests | where TimeGenerated > ago(1h) | summarize kept = count(), seen = sum(ItemCount)";
     public const string Capped = "_LogOperation | where TimeGenerated > ago(1h) and Operation has 'Data collection stopped' | summarize capped = count()";
-    public const string Reporters = "union AppRequests, AppTraces, AppDependencies | where TimeGenerated > ago(1d) | summarize items = count() by AppRoleName | order by items desc";
+    public const string Reporters = "union AppRequests, AppTraces, AppDependencies | where TimeGenerated > ago(1d) | summarize items = sum(ItemCount) by AppRoleName | order by items desc";
 
     /// <summary>
     /// What this component alone sent today, by the billed size of its own rows. A component's cap governs its own data,

@@ -11,6 +11,12 @@ public static class MergePaths
     public const string Master = "Job_Hunt_Tracker.csv";
     public const string MovedOut = "Job_Hunt_Tracker_MOVED_OUT.csv";
     public const string Log = "tracker-inbox/merge.log";
+
+    /// <summary>
+    /// What the tracker's SQL copy last saw of the master, one line the merger keeps so a new instance can leave the copy
+    /// alone without asking SQL (ADR-111, the addendum on the quiet pass). Not a spool file: neither .csv nor a moveout list.
+    /// </summary>
+    public const string CopySeen = "tracker-inbox/tracker-sql.seen";
     public const string MovedOutHeader = "Count,Person,Company,Communication,Date,Phone/Email,Notes";
 
     public static readonly IReadOnlyList<string> Spools = ["tracker-inbox", "inbox/tracker-inbox"];

@@ -368,3 +368,7 @@ From this version:
 
 No daily cap was added. A cap drops whatever arrives after it fills, errors included, which is the data loss the Insights card exists to show. `LogLevelsTests` holds it.
 
+
+## Addendum, @DATE@ (@VER@): the host's aggregates and performance counters
+
+In plain words: two of the Function's largest sources in the workspace are read by nothing. On 20 November, in 24 hours, the host's performance counters were 27.3 MB (processor time twice and private bytes, every few seconds) and its per-function aggregates about 8 MB (seven metrics a function a minute: Count, Successes, Failures, SuccessRate and three durations). The Nightly card reads the Function's Azure Monitor metrics and its run lines, and no query on the Admin tab reads either table for the Function. From this version `host.json` sets `Host.Aggregator` to Warning and `enablePerformanceCountersCollection` to false; the run lines stay at Information. The largest Function source left in AppMetrics is the host's own `azure.functions.health_check.reports`, about 27.8 MB a day, which no host.json switch named in Microsoft's reference turns off; it is the next lever. `LogLevelsTests` holds the two settings.

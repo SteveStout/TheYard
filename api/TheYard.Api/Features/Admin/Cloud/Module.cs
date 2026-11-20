@@ -143,7 +143,7 @@ public sealed class Module : IModule
             sqlName ?? "the SQL site",
             provider.GetRequiredService<NightlyProcesses>(),
             provider.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping,
-            async cancellation => (await provider.GetRequiredService<CostHistoryReader>().ReadAsync("30d", cancellation)) is { Available: true } bill ? bill.ForecastMonth : null));
+            async cancellation => (await provider.GetRequiredService<CostHistoryReader>().ReadAsync("30d", cancellation)) is { Available: true, Currency: "USD" } bill ? bill.ForecastMonth : null));
         services.AddSingleton<ICloudCards>(provider => provider.GetRequiredService<CloudReader>());
         // The windows somebody asked for, built again each minute behind the route by the one keeper, so no request waits on Azure.
         services.AddSingleton<IKeptViews>(provider => provider.GetRequiredService<CloudReader>().Views);

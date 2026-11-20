@@ -79,10 +79,20 @@ public sealed class FreshScanTests
         var boards = new Boards { ["a"] = [Job("1", "Lead Engineer")], ["b"] = [Job("2", "Lead Engineer")], ["c"] = [Job("3", "Lead Engineer")] };
         boards.Asked = () => clock.Pass(TimeSpan.FromMinutes(3));
 
-        var pass = await new FreshScan(watchlist, boards, clock, book).RunAsync(CancellationToken.None);
+        // One board at a time, so the clock this test moves on each read is read in order (six at a time is held below).
+        var pass = await new FreshScan(watchlist, boards, clock, book) { AtOnce = 1 }.RunAsync(CancellationToken.None);
 
         Assert.Equal("3 boards, 2 answered, 2 postings, 2 new, 0 failed, 360 s, 1 left at the 5-minute budget", pass.Line);
         Assert.Equal((1, 360), (pass.Left, pass.Seconds));
+
+        // Past the write line, a board whose rows the reads found is left for the next pass, unwritten.
+        var late = new PostingsTests.Postings();
+        var lateClock = new Clock(Evening);
+        var lateBoards = new Boards { ["a"] = [Job("1", "Lead Engineer")], ["b"] = [Job("2", "Lead Engineer")] };
+        lateBoards.Asked = () => lateClock.Pass(TimeSpan.FromMinutes(4));
+        var cut = await new FreshScan(new Watchlist(new BoardCompany(1, "lever", "a"), new BoardCompany(2, "lever", "b")), lateBoards, lateClock, late) { AtOnce = 1, Budget = TimeSpan.FromMinutes(5), WriteBudget = TimeSpan.FromMinutes(6) }.RunAsync(CancellationToken.None);
+        Assert.Equal((0, 2), (cut.Fresh, cut.Left));
+        Assert.Empty(late.Rows);
     }
 
     [Fact]
@@ -170,6 +180,47 @@ public sealed class FreshScanTests
 
         Assert.Equal("process:FreshScan outcome=success took_ms=61000 started=2026-11-11T03:00:00Z answered=144 boards=145 failed=0 fresh=3 left=0 read=12470 took_s=61", text);
         Assert.Equal("145 boards, 144 answered, 12470 postings, 3 new, 0 failed, 61 s", pass.Line);
+    }
+
+    /// <summary>
+    /// Boards are read six at a time (ADR-118, the addendum on the fresh pass's run time): never more than six in flight,
+    /// more than one when there is more than one board, and the counts are the same as read one after another.
+    /// </summary>
+    [Fact]
+    public async Task Boards_are_read_six_at_a_time_and_the_counts_are_the_same()
+    {
+        var book = new PostingsTests.Postings();
+        var companies = Enumerable.Range(1, 20).Select(i => new BoardCompany(i, "lever", "b" + i)).ToArray();
+        var boards = new SlowBoards(companies.ToDictionary(c => c.Token, c => (IReadOnlyList<BoardPosting>)[Job(c.Token + "-1", "Lead Engineer")]));
+
+        var pass = await new FreshScan(new Watchlist(companies), boards, new Clock(Evening), book).RunAsync(CancellationToken.None);
+
+        Assert.Equal("20 boards, 20 answered, 20 postings, 20 new, 0 failed, 0 s", pass.Line);
+        Assert.InRange(boards.MostAtOnce, 2, 6);
+        Assert.Equal(20, book.Rows.Count);
+    }
+
+    /// <summary>Boards that take a moment to answer and count how many were asked at once.</summary>
+    private sealed class SlowBoards(Dictionary<string, IReadOnlyList<BoardPosting>> postings) : IBoardReader
+    {
+        private int _now;
+
+        public int MostAtOnce { get; private set; }
+
+        public Task<IReadOnlyList<BoardPosting>?> PostingsAsync(string kind, string token, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<BoardPosting>?>(postings.GetValueOrDefault(token));
+
+        public async Task<BoardList?> ListAsync(string kind, string token, CancellationToken ct)
+        {
+            int at = Interlocked.Increment(ref _now);
+            lock (postings)
+            {
+                MostAtOnce = Math.Max(MostAtOnce, at);
+            }
+            await Task.Delay(20, ct);
+            Interlocked.Decrement(ref _now);
+            return postings.TryGetValue(token, out var found) ? new BoardList(found, Whole: true) : null;
+        }
     }
 
     private static BoardPosting Job(string id, string title) =>
