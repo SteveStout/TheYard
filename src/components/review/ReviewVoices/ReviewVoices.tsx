@@ -11,7 +11,7 @@ import { recommendationsLink, RECOMMENDATIONS_ADDRESS, VERDICT } from '../../../
 import type { Recommendation } from '../../../lib/recommendations';
 import { VOICES, voiceOf } from '../../../lib/voices';
 import { Voice } from '../../shared/Voice';
-import { ReviewHead } from '../ReviewHead';
+import { SectionHead } from '../../shared/SectionHead';
 import styles from './ReviewVoices.module.css';
 
 export function ReviewVoices({
@@ -26,9 +26,15 @@ export function ReviewVoices({
   const names = VOICES.band.filter((name) => voiceOf(recommendations, name) !== null);
   if (recommendations === null || names.length === 0) return null;
   return (
-    <section aria-labelledby="review-voices-title" data-testid="review-voices">
-      <ReviewHead
+    <section
+      id="voices"
+      aria-labelledby="review-voices-title"
+      data-mock="voices"
+      data-testid="review-voices"
+    >
+      <SectionHead
         id="review-voices-title"
+        number="03"
         title={VERDICT.quoteLabel}
         meta={
           <a
@@ -50,6 +56,7 @@ export function ReviewVoices({
             recommendations={recommendations}
             onFollow={onFollow}
             className={styles.card}
+            hook="voice"
           />
         ))}
       </div>

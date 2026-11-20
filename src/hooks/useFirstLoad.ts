@@ -27,7 +27,7 @@ export type FirstLoad = {
   vehicle: Vehicle | null;
   /** A document a ?doc= address names, already rendered to HTML, or null. */
   doc: { key: string; html: string } | null;
-  /** The first screen's reading (/api/pulse) on the bare address, as it answered, or null; absent on a page drawn before it was read. */
+  /** The first screen's reading (/api/pulse) on the bare address and ?view=review, as it answered, or null; absent on a page drawn before it was read. */
   pulse?: unknown;
   /** /api/recommendations as it answered, on ?view=recommendations and ?view=review, or null; absent on a page drawn before it was read. */
   recommendations?: unknown;

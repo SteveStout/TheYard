@@ -1,0 +1,75 @@
+# ADR: The sales pages set the site's look
+
+Status: accepted, @DATE@, at @VER@. The three pages a stranger is sent to, the review page (`/?view=review`), the home page (`/`) and the Quality page opened over the review page (`/?view=review&doc=quality`), are one unit with one look, built from named shared parts. The review page takes them first; the home page and the Quality page take them in the next lane, and the rest of the site after them, in the order below.
+
+## Reading list
+
+1. [ADR: The review route gives a reason before it asks](https://theyard.stevenstout.biz/?doc=adr-the-review-route-gives-a-reason-before-it-asks): the first screen these parts are drawn on, and its addendum of the same day on the case cards and the numbered path.
+2. [ADR: Ten minutes, seven stops](https://theyard.stevenstout.biz/?doc=adr-ten-minutes-seven-stops): the reports the route's buttons send, and the action `work` this record adds.
+3. [ADR: The landing page and the site map](https://theyard.stevenstout.biz/?doc=adr-landing-page): the home page, which takes these parts next.
+4. [ADR: One reading for the first screen](https://theyard.stevenstout.biz/?doc=adr-one-reading-for-the-first-screen): the one read of `/api/pulse` the live panels share with the home page's band.
+
+## In plain words
+
+The review page is the link on my resume. A hiring manager opens it, and the home page and the Quality page are where it leads. Steve, 20 November: "this page ... and https://theyard.stevenstout.biz/ and ...&doc=quality should all have the same look and feel as they're our sales materials what you're doing here will be cascaded through the website ... make sure our ADR reflect these new design choices". So the look is decided once, here, as a set of parts with names and files, and every page that takes the look takes those parts rather than drawing its own.
+
+What that is worth: a reader moving between the three pages sees one product, and a change to a part (the number badge, the dark live panel, a door) is made in one place and lands on every page that uses it.
+
+## Context
+
+On 19 November the review page shipped with every exit criterion true and looked bad under Steve's name, because three mockups were joined in words and never drawn whole (systemRules RULE 82). From 20 November every design is one whole-page picture at 1920, 1568, 1440 and 390, a check spec beside it, and the build is not done until the check prints PASS against the live page. The picture for this record is J:\mentor\fablereview1120\pictures\ (the review page beside the home page and the Quality page, and every motion in place), drawn with the site's own tokens; its sheet is `sales_css.py`, ported here rule by rule.
+
+## Decision
+
+1. **The parts, by name, each in one file.**
+
+| Part | What it is | Where it lives |
+|---|---|---|
+| `op-num` | The gold number badge before a section's heading, "01" to "06" | `src/styles/sales.css`; drawn by `SectionHead` |
+| `SectionHead` | A section's opening: the badge, the heading, where the reader is or a door on the right, one line under | `src/components/shared/SectionHead` (it was `review/ReviewHead`) |
+| `op-live-panel` (`op-live-head`, `op-live-row`, `op-live-facts`, `op-live-band`, `op-live-cell`) | The dark live panel: the header's gradient, gold labels, white values, a LIVE tag with its dot; rows, a two-by-two block of facts, or laid on its side as a band | `src/styles/sales.css`; `src/components/shared/NowPanel` (LivePanel is the Admin tab's name) |
+| `--color-live-on-dark` | The one new colour: the live green lightened for the dark panel, 5.33 on the deep teal | `src/styles/colors.css`, measured in `colors.test.ts` |
+| `usePulse` | The one read of `/api/pulse`, in the background, for the home page's band and the review page's panels | `src/hooks/usePulse.ts`; the rows in `src/lib/nowPanel.ts` |
+| `op-case` | A case card: the body on glass, the dark panel beside it 1.65 to 1, under it on a phone | `src/styles/sales.css`; `src/components/review/CaseCard`, words in `src/lib/reviewCases.ts` |
+| `op-door`, `op-tile-door` | A door, a link that leads on, teal on a gold underline; a number tile's "See how" | `src/styles/sales.css` |
+| `op-roles-row` | The roles line and its three links as one quiet row under the first moves | `src/styles/sales.css` |
+| `op-ask` | The closing question and its line on the left, the moves on the right, under it on a phone | `src/styles/sales.css`; `src/components/review/ReviewClose` |
+| `op-pathbar`, `op-pathdock` | The numbered path: a bar at the top of a desk window once the first screen has gone, a row over the phone's dock | `src/styles/sales.css`; `src/components/shared/PathBar` (the version after this one) |
+| The motions | `op-shine`, `op-ping`, `op-nudge`, `op-check` and the comet, all started by one hook | `src/styles/sales.css`; `src/hooks/useFirstSeen.ts` (the version after this one) |
+| The pills | The filled move, the outlined one and the gold resume | `src/styles/pills.css`, as it was |
+
+Every colour, size and radius in `sales.css` is a token from `src/styles`; a component draws a part by its class and never writes a colour of its own (`StyleRulesTests`). The sheet is registered once in `src/styles/globalStyles.ts`, after `pills.css`.
+
+2. **Never dead.** A live value never read hides its row; a read that fails keeps the last value and says "as of HH:MM"; a panel with no row is not drawn. Never a dash, an empty cell, NaN or 0 ms on a page a stranger opens. The rendering service reads `/api/pulse` for the review page as it does for the home page, so the panels are drawn with figures and nothing moves when the browser takes over.
+
+3. **Numbers.** Every number on a sales page is on the locked resume and LinkedIn, or read live from this site. No budget, no other person's work, no year added.
+
+4. **What moves, on every sales page.** A motion is decorative and never tied to a real run. It plays three times when its holder first comes into view, and again when the reader comes back to it. With `prefers-reduced-motion` nothing moves and the finished state shows; before it is seen, and with JavaScript off, the finished state shows, never an empty one. Never a video, never a recording of Steve. One hook, `useFirstSeen` (an IntersectionObserver at 0.25 that sets and clears one class on the holder), drives every motion. The five on the review page: a gold comet runs the quality line on the first question's chart, 4.5 seconds a run; the six checks on the second fill in order 0.38 seconds apart, each with a gold ring as it lands; the dot on a dark live panel breathes out a ring; the first move's arrow dips, two seconds after the page opens; a number badge takes one pass of light.
+
+5. **The cascade.** After the three sales pages the look goes, one lane at a time, to: the stack page, the blog list and a post's body, About's body, the recommendations page's body, the document sheets (the decision records, Architecture), and the Admin tab last.
+
+## Why
+
+- **One unit is what Steve asked for, twice.** On 19 November ("this whole page should feel like one unit") and on 20 November ("same look and feel ... cascaded through the website"). Parts with names are how a look is kept across pages and lanes: the next lane takes `op-case` rather than drawing a card of its own.
+- **A part per file keeps the look checkable.** `StyleRulesTests` already holds every sheet to the tokens; a shared sheet under it means one place to look.
+- **Motion that shows the work without pretending.** A manager's eye goes to what moves. The rules keep it honest: it is decoration, it stops, it respects reduced motion, and the page is whole without it.
+
+## Consequences
+
+- The review page is the first to take every part; the home page and the Quality page follow (saleshome1120) and extend this record.
+- What stops being true: that a section of the review page opens with `ReviewHead`, and that a page draws its own live readout.
+- What holds it: `StyleRulesTests` and `colors.test.ts` (tokens only, the new colour's contrast, gold named as trim), `nowPanel.test.ts` (fresh, stale with "as of", never read), `reviewCases.test.ts` (the cards' words, doors and named voices, the post link both ways), `ReviewFoldingTests` and `review.test.ts` (the action `work` in neither figure), `LinkHandlerTests` (the booking email's three questions), `render.test.ts` (the panels drawn on the server), and `review.spec.ts` (the order, the cards, the close, at 390 and 1440); the whole page against its picture at four widths with `check_mockup.py`.
+
+## Where it sits
+
+The look is the React app's: one sheet under `src/styles`, loaded once beside the pills, and components under `src/components/shared` that any page draws, with the review route's own parts beside the route. The only server change is the booking email's three question lines in `appsettings.json`, read by `GET /api/links/book` and `/api/go/book` as before; the rendering service reads `/api/pulse` for the review route as it does for the home page.
+
+## Files
+
+- [`src/styles/sales.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/sales.css) - the shared parts, one region each
+- [`src/components/shared/SectionHead/SectionHead.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/SectionHead/SectionHead.tsx) - a section's opening with its number
+- [`src/components/shared/NowPanel/NowPanel.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/NowPanel/NowPanel.tsx) - the dark live panel
+- [`src/hooks/usePulse.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/usePulse.ts) and [`src/lib/nowPanel.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/nowPanel.ts) - the one read and its rows
+- [`src/components/review/CaseCard/CaseCard.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/CaseCard/CaseCard.tsx), [`src/components/review/ReviewWork/ReviewWork.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/ReviewWork/ReviewWork.tsx) and [`src/lib/reviewCases.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/reviewCases.ts) - the case cards
+- [`src/components/review/ReviewClose/ReviewClose.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/ReviewClose/ReviewClose.tsx) - the closing question beside its moves
+- [`src/styles/colors.css`](https://github.com/SteveStout/TheYard/blob/main/src/styles/colors.css) - `--color-live-on-dark`

@@ -13,6 +13,7 @@ import {
   tourSeen,
   TOUR,
   testsTile,
+  TILE_DOOR,
   VERDICT,
 } from './reviewVerdict';
 
@@ -48,7 +49,7 @@ describe('the review route first screen (ADR: The review route gives a reason be
       'Production .NET that stays up. Built with AI, measured on every version.'
     );
     expect(VERDICT.eyebrow.join(' / ')).toBe('Steven Stout / Lead / Staff .NET engineer / Remote');
-    expect(VERDICT.primary).toBe('See the proof in 2 minutes');
+    expect(VERDICT.primary).toBe('See the work');
     expect(VERDICT.book).toBe('Book 20 minutes');
     expect(VERDICT.roles).toBe('Open to remote Lead, Staff and Principal roles.');
     // The ten-minute ask is only below the fold: the words above it never name it.
@@ -58,7 +59,6 @@ describe('the review route first screen (ADR: The review route gives a reason be
       VERDICT.lede,
       VERDICT.primary,
       VERDICT.book,
-      VERDICT.under,
       VERDICT.quoteLabel,
       VERDICT.roles,
       ...RECORD_TILES.flatMap((tile) => [tile.figure, tile.label, tile.source]),
@@ -83,6 +83,16 @@ describe('the review route first screen (ADR: The review route gives a reason be
     expect(testsTile(summary, null).source).toBe('TheYard, read from the build.');
     // Before the summary arrives the tile keeps its place with no figure.
     expect(testsTile(null, null).figure).toBe('');
+  });
+
+  it('makes each number tile a door to its case card, in tile order, and says no line under the buttons (sales1120)', () => {
+    expect([...RECORD_TILES, testsTile(null, null)].map((tile) => tile.door)).toEqual([
+      'case-conway',
+      'case-storee',
+      'case-theyard',
+    ]);
+    expect(TILE_DOOR).toBe('See how');
+    expect(Object.keys(VERDICT)).not.toContain('under');
   });
 
   it('quotes Drew Dell when the answer has him, the first entry when not, and nobody for an empty answer', () => {

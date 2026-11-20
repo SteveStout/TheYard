@@ -16,25 +16,19 @@
  * It reads again every fifteen seconds while the page is open and stops while the tab is hidden,
  * so a phone in a pocket costs nothing.
  */
-import { useEffect, useState } from 'react';
 import {
   buildWords,
   LATENCY_CEILING_MS,
   forecastWords,
   moneyWords,
-  PULSE_EVERY_MS,
-  PULSE_URL,
-  pulseFrom,
   share,
   ticks,
   UNREAD,
   uptimeWords,
-  type Pulse,
 } from '../../../lib/pulse';
 import { PeopleInstrument } from './PeopleInstrument';
 import styles from './PulseBand.module.css';
-import { request } from '../../../lib/request';
-import { useFirstLoad } from '../../../hooks/useFirstLoad';
+import { usePulse } from '../../../hooks/usePulse';
 
 /** The documents an instrument opens: how it performs, how it rolls, and how a visitor is counted. */
 export type PulseDoc = 'performance' | 'adrBlueGreenMeasuredAndHeld' | 'adrPeopleWhoHaveVisited';
@@ -43,30 +37,8 @@ export type PulseDoc = 'performance' | 'adrBlueGreenMeasuredAndHeld' | 'adrPeopl
 const MARKS = ticks(LATENCY_CEILING_MS);
 
 export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void }) {
-  // A page the rendering service drew carries the reading it drew from, so the browser's first draw matches it
-  // and a crawler reads figures, not the placeholder; the browser reads it again at once and every 15 seconds.
-  const first = useFirstLoad();
-  const [pulse, setPulse] = useState<Pulse | null>(() => pulseFrom(first?.pulse ?? null));
-  useEffect(() => {
-    let live = true;
-    const read = () => {
-      if (document.hidden) return;
-      request(PULSE_URL, undefined, { background: true })
-        .then((response) => (response.ok ? (response.json() as Promise<unknown>) : null))
-        .catch(() => null)
-        .then((answer) => {
-          if (!live) return;
-          const read = pulseFrom(answer);
-          setPulse((last) => read ?? (answer === null ? last : null));
-        });
-    };
-    read();
-    const timer = window.setInterval(read, PULSE_EVERY_MS);
-    return () => {
-      live = false;
-      window.clearInterval(timer);
-    };
-  }, []);
+  // The one read of /api/pulse (usePulse.ts): the drawn page's reading first, then every 15 seconds.
+  const { pulse } = usePulse();
 
   const latency = pulse?.usual_p95_ms_24h ?? null;
   const spend = pulse?.month_to_date ?? null;
