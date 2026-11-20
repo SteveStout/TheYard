@@ -65,8 +65,8 @@ function inTime<T>(work: Promise<T | null>): Promise<T | null> {
  * because the vehicle draws over the list; the vehicle on ?vehicle=; the
  * document, rendered here with the same code the browser uses, on ?doc=.
  * Admin and the account page draw in the browser behind the frame drawn here; the recommendations page is
- * drawn from its one read, and the review route's first screen from two: the recommendations for its quote and
- * the tests summary for its live tile, so neither moves when the browser takes the page over.
+ * drawn from its one read, and the review route's first screen from three: the recommendations for its quote, the
+ * tests summary for its live tile and the pulse for its live panels, so none moves when the browser takes the page over.
  * @param search the address's query, without its "?"
  * @param cookie the visitor's Cookie header, or null
  * @param apiOrigin the API this page is read from
@@ -126,7 +126,8 @@ export async function loadFirst(
         ? inTime(get<Vehicle>(`/api/vehicles/${encodeURIComponent(first.vehicleId)}`, signal))
         : Promise.resolve(null),
       doc ? inTime(get<string>(doc.url, signal)) : Promise.resolve(null),
-      landing ? inTime(get<unknown>(PULSE_URL, signal)) : Promise.resolve(null),
+      // The review route's two live panels read the same answer, so they are drawn with figures, never hidden at first.
+      landing || first.review ? inTime(get<unknown>(PULSE_URL, signal)) : Promise.resolve(null),
       // The recommendations page is drawn whole from the answer, so a crawler reads every name and the count;
       // the review route's first screen quotes one of them and prints the count.
       first.recommendations || first.review

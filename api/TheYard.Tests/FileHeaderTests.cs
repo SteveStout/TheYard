@@ -41,6 +41,7 @@ public class FileHeaderTests
         ["src/components/layout/SideNav/SideNav.module.css"] = "the side rail's two shapes, one set of rows: one sheet shared by SideNav.tsx and the rows split out of it",
         ["src/components/admin/AdminPanel/AdminPanel.module.css"] = "the Admin workbench's frame: one sheet shared by AdminPanel.tsx and the parts split out of it",
         ["src/components/vehicle/VehicleDetail/VehicleDetail.module.css"] = "a vehicle's own page; split with VehicleDetail.tsx in the component split lane",
+        ["src/styles/sales.css"] = "the sales pages' shared parts as one sheet, one region per part, as ADR: The sales pages set the site's look names it, so a page that takes the look reads one file",
     };
     // #endregion the-header-rule
 

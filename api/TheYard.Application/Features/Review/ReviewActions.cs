@@ -12,8 +12,14 @@ public static class ReviewActions
     public static readonly IReadOnlyList<string> Names =
     [
         "proof", "book", "resume", "recommendations", "stop-quality", "stop-gate", "stop-room", "slip", "tour", "linkedin", "github", "about",
-        "gate-run", "blog", "forward",
+        "gate-run", "blog", "forward", "work",
     ];
+
+    /// <summary>
+    /// The moves inside the page: "See the work", the tiles' doors and "Or ask it three questions" report work. Each is
+    /// kept on the visitor's row and counts in neither figure, so the before and after stay comparable (ADR-123).
+    /// </summary>
+    public static readonly IReadOnlyList<string> InPage = ["work"];
 
     /// <summary>The names that reach the running system or the booking button; a resume click alone is not one.</summary>
     public static readonly IReadOnlyList<string> RunningOrBook = ["proof", "stop-quality", "stop-gate", "stop-room", "slip", "book", "gate-run"];
@@ -39,9 +45,10 @@ public static class ReviewActions
     /// <param name="name">The name reported.</param>
     public static bool IsOne(string? name) => name is not null && Names.Contains(name, StringComparer.Ordinal);
 
-    /// <summary>Whether a visitor reached a second action: any action, or a stop past the opening.</summary>
+    /// <summary>Whether a visitor reached a second action: any action but a move inside the page, or a stop past the opening.</summary>
     /// <param name="row">The visitor's row, folded across the window's days.</param>
-    public static bool ReachedASecond(ReviewRow row) => row.Stop > 0 || row.Actions is { Count: > 0 };
+    public static bool ReachedASecond(ReviewRow row) =>
+        row.Stop > 0 || (row.Actions ?? []).Any(action => !InPage.Contains(action, StringComparer.Ordinal));
 
     /// <summary>Whether a visitor reached the running system or the booking button: a stop past the opening, or one of those names.</summary>
     /// <param name="row">The visitor's row, folded across the window's days.</param>

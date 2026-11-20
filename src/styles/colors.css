@@ -208,6 +208,7 @@
   --color-neutral-soft: #e4e0e1;
 
   --color-live: #16a34a;
+  --color-live-on-dark: #5fd3a1; /* the live dot on the dark live panel: 5.33 on the deep teal */
   /* The header's text is measured against the lighter, bottom end of the
      gradient, which is the harder one for white. */
   --color-header: var(--color-teal-header);

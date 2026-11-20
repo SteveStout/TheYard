@@ -1,0 +1,423 @@
+/**
+ * Does:      Holds the shared parts of the three sales pages (ADR: The sales pages set the site's look), one region per
+ *            part, ported rule by rule from the sales1120 picture's SALES_CSS: the number badge before a section's
+ *            heading, the dark live panel with its rows, its two-by-two facts and its band form, the case card, a door,
+ *            a tile's door, the roles row, and the closing question beside its moves. Every colour, size and radius is
+ *            a token from src/styles; a component draws these by class and never writes a colour of its own.
+ * Does not:  Declare a token (colors.css, sizes.css and typography.css do), draw a pill (pills.css does) or a panel's
+ *            glass (panels.css does), or lay out a page (each page's own sheet does).
+ * Used by:   globalStyles.ts.
+ */
+
+/* #region op-num */
+/* The number badge before a section heading: the gold bar's pale end, its gold edge and dark gold ink. */
+.op-num {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 26px;
+  margin-right: var(--space-3);
+  padding: 0 7px;
+  overflow: hidden;
+  border: 1px solid var(--color-ribbon-gold);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, var(--color-ribbon-shine-white), var(--color-ribbon-shine));
+  color: var(--color-gold-bar-dark);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--readout-tracking);
+  vertical-align: 3px;
+}
+/* #endregion op-num */
+
+/* #region op-live-panel */
+/* The dark live panel: the header's gradient, gold labels, white values, the gold bar along its top. */
+.op-live-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: var(--rule-width) solid var(--color-gold);
+  border-image: var(--gradient-gold) 1 / var(--rule-width) 0 0 0;
+  border-radius: var(--radius-glass);
+  background: linear-gradient(
+    180deg,
+    var(--color-teal-header),
+    var(--color-teal-deep) 60%,
+    var(--color-green-dark)
+  );
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--color-teal-deep) 22%, transparent);
+  color: var(--palette-white);
+}
+
+.op-live-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  color: var(--color-gold-light);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: calc(var(--readout-tracking) * 1.46);
+  text-transform: uppercase;
+}
+
+.op-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--palette-white);
+}
+
+.op-live-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-live-on-dark);
+}
+
+.op-live-dot::after {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid var(--color-live-on-dark);
+  border-radius: 50%;
+  opacity: 0;
+  content: '';
+}
+
+.op-live-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--palette-white) 16%, transparent);
+}
+
+.op-live-row span {
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.op-live-row b {
+  color: var(--palette-white);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+  text-align: right;
+}
+
+.op-live-row b small {
+  display: block;
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-regular);
+  letter-spacing: 0;
+}
+
+.op-live-foot {
+  margin: 0;
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
+}
+/* #endregion op-live-panel */
+
+/* #region op-live-facts */
+/* The panel's two-by-two block of facts: a case card's stack. */
+.op-live-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid color-mix(in srgb, var(--palette-white) 16%, transparent);
+}
+
+.op-live-facts dt {
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.op-live-facts dd {
+  margin: 0;
+  color: var(--palette-white);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+}
+/* #endregion op-live-facts */
+
+/* #region op-live-band */
+/* The band form: the same panel laid on its side, one reading a column (the home page takes it next). */
+.op-live-band {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--space-3) var(--space-6);
+}
+
+.op-live-band .op-live-head {
+  grid-column: 1 / -1;
+}
+
+.op-live-cell {
+  padding-top: var(--space-2);
+  border-top: 1px solid color-mix(in srgb, var(--palette-white) 16%, transparent);
+}
+
+.op-live-cell span {
+  display: block;
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.op-live-cell b {
+  display: block;
+  color: var(--palette-white);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+}
+
+.op-live-cell small {
+  display: block;
+  color: var(--color-header-text-muted);
+  font-size: var(--text-xs);
+}
+/* #endregion op-live-band */
+
+/* #region op-case */
+/* A case card: the body on glass and the dark panel beside it, 1.65 to 1, a gold rule between. */
+.op-case {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  border-top: var(--rule-panel);
+  border-radius: var(--radius-glass);
+  box-shadow: var(--glass-shadow);
+}
+
+.op-case + .op-case {
+  margin-top: var(--space-3);
+}
+
+.op-case-body {
+  padding: var(--space-4) var(--space-6);
+  background: color-mix(in srgb, var(--palette-white) 86%, transparent);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+}
+
+.op-case-eyebrow {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: calc(var(--readout-tracking) * 1.25);
+  text-transform: uppercase;
+}
+
+.op-case-body h3 {
+  margin: var(--space-1) 0 var(--space-2);
+  color: var(--color-teal-deep);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  letter-spacing: var(--title-tracking);
+}
+
+.op-case-body ul {
+  margin: 0 0 var(--space-3);
+  padding-left: 18px;
+}
+
+.op-case-body li {
+  margin: 0 0 2px;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.op-case > .op-live-panel {
+  justify-content: center;
+  border-top: 0;
+  border-left: 2px solid var(--color-gold);
+  border-image: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* #endregion op-case */
+
+/* #region op-door */
+/* A door: a link that leads on, teal on a gold underline, its arrow stepping on at a hover. */
+.op-doors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+}
+
+.op-door {
+  color: var(--color-teal-deep);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-decoration-color: var(--color-gold);
+  text-underline-offset: 3px;
+}
+
+.op-door i {
+  display: inline-block;
+  margin-left: 4px;
+  font-style: normal;
+  transition: transform var(--transition-fast);
+}
+
+.op-door:hover i {
+  transform: translateX(3px);
+}
+
+.op-door:focus-visible,
+.op-tile-door:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+/* #endregion op-door */
+
+/* #region op-tile-door */
+/* The line that makes a first-screen number tile a door to its case. */
+.op-tile-door {
+  display: inline-block;
+  align-self: flex-start;
+  justify-self: start;
+  margin-top: var(--space-2);
+  color: var(--color-teal-deep);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-decoration-color: var(--color-gold);
+  text-underline-offset: 3px;
+}
+/* #endregion op-tile-door */
+
+/* #region op-roles-row */
+/* The roles line and its three links: one quiet row under the first moves, the sentence left and the pills right. */
+.op-roles-row {
+  display: flex;
+  order: 9;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-5);
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+}
+
+.op-roles-row > p {
+  margin: 0;
+  text-align: left;
+}
+
+.op-roles-row > ul {
+  justify-content: flex-end;
+  margin: 0;
+}
+/* #endregion op-roles-row */
+
+/* #region op-ask */
+/* The closing question beside its moves; on a phone the moves sit under it. */
+.op-ask {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.op-ask-q {
+  margin: 0 0 var(--space-2);
+  color: var(--color-teal-deep);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.3;
+  letter-spacing: var(--title-tracking);
+}
+
+.op-ask-sub {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+/* #endregion op-ask */
+
+/* #region op-nudge */
+/* The arrow after the first move's words; it dips when the motions play (ADR: The sales pages set the site's look). */
+.op-nudge {
+  display: inline-block;
+  margin-left: var(--space-2);
+}
+/* #endregion op-nudge */
+
+/* #region phone */
+@media (max-width: 639.98px) {
+  .op-case {
+    grid-template-columns: 1fr;
+  }
+
+  .op-case > .op-live-panel {
+    border-top: 2px solid var(--color-gold);
+    border-left: 0;
+  }
+
+  .op-case-body {
+    padding: var(--space-4);
+  }
+
+  .op-case-body h3 {
+    font-size: var(--text-xl);
+  }
+
+  .op-ask {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .op-ask-q {
+    font-size: var(--text-xl);
+  }
+
+  /* A door is a thumb tall on a phone, as every control on these pages is; the gaps round it close up to keep the
+     picture's rhythm. */
+  .op-door,
+  .op-tile-door {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+  }
+
+  .op-tile-door {
+    margin-top: 0;
+  }
+
+  .op-doors {
+    row-gap: 0;
+  }
+
+  .op-live-band {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3) var(--space-4);
+  }
+}
+/* #endregion phone */

@@ -8,6 +8,7 @@ import {
   reachBody,
   readProgress,
   REACHED_KEY,
+  IN_PAGE_ACTIONS,
   REVIEW_ACTIONS,
   writeProgress,
   type StorageLike,
@@ -84,9 +85,15 @@ describe('the review place, kept on the browser (ADR: Ten minutes, seven stops)'
     expect(actionBody('book', null, 'mirror')).toEqual({ action: 'book', screen: 'mirror' });
     expect(reachBody(0, 'zzrev1', 'verdict')).toEqual({ stop: 0, r: 'zzrev1', screen: 'verdict' });
     expect(actionBody('gate-run', null)).toEqual({ action: 'gate-run' });
-    expect(REVIEW_ACTIONS).toHaveLength(15);
-    expect(REVIEW_ACTIONS.slice(12)).toEqual(['gate-run', 'blog', 'forward']);
-    expect(new Set(REVIEW_ACTIONS).size).toBe(15);
+    expect(REVIEW_ACTIONS).toHaveLength(16);
+    expect(REVIEW_ACTIONS.slice(12)).toEqual(['gate-run', 'blog', 'forward', 'work']);
+    expect(new Set(REVIEW_ACTIONS).size).toBe(16);
+  });
+
+  it('names work, the move inside the page, as the one action kept out of the two figures (sales1120)', () => {
+    expect(actionBody('work', 'zzrev1')).toEqual({ action: 'work', r: 'zzrev1' });
+    expect(IN_PAGE_ACTIONS).toEqual(['work']);
+    expect(IN_PAGE_ACTIONS.every((name) => REVIEW_ACTIONS.includes(name))).toBe(true);
   });
 
   it('names the stops a move reached for the first time, each once, numbered as the route numbers them', () => {

@@ -1,9 +1,10 @@
 /**
- * Does:      Lays out the review route's first screen: from 1280 the claim, the tiles and the moves in a wide column with
- *            the quote and the roles card beside it; under 1280 one column with those two side by side under it; on a
- *            phone the moves come straight after the lede, before the tiles, so the primary button is on the first screen.
- * Does not:  Draw a panel's glass (panels.css does), a tile (ProofTile.module.css does) or the pills' own look
- *            (panels.css does).
+ * Does:      Lays out the review route's first screen as the sales1120 picture: from 1280 the claim, the tiles, the
+ *            moves and the roles row in a wide column with the live panel and the quote beside it; under 1280 one column
+ *            with those two side by side under it; on a phone the moves come straight after the lede, before the tiles,
+ *            so the primary button is on the first screen, and the roles row comes last in the column.
+ * Does not:  Draw a panel's glass (panels.css does), a tile (ProofTile.module.css does), the pills' own look
+ *            (pills.css does), or the roles row and the live panel (sales.css, op-roles-row and op-live-panel, do).
  * Used by:   ReviewMirror.tsx, ReviewVerdict.tsx.
  */
 .verdict {
@@ -94,24 +95,15 @@
     0 10px 24px color-mix(in srgb, var(--color-teal-deep) 28%, transparent);
 }
 
-/* On the bare page, not in a panel: body text, since the quiet colours are kept for words with a panel behind them. */
-.under {
-  margin: var(--space-3) 0 0;
-  color: var(--color-text);
-  font-size: var(--text-sm);
-}
-
 .side {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
+/* The roles row's shape is sales.css's op-roles-row; this sheet only names it. */
 .roles {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
+  min-width: 0;
 }
 
 .rolesLine {
@@ -164,10 +156,6 @@
     align-items: stretch;
     gap: var(--space-3);
     margin-top: var(--space-4);
-  }
-
-  .under {
-    order: 3;
   }
 
   .tiles {

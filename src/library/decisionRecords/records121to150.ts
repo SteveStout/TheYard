@@ -157,4 +157,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '141',
   },
+  adrTheSalesPagesSetTheSitesLook: {
+    title: "ADR: The sales pages set the site's look",
+    menuLabel: "ADR: The sales pages set the site's look",
+    url: '/api/docs/adr-the-sales-pages-set-the-sites-look',
+    kind: 'adr',
+    number: '142',
+  },
 } as const satisfies Record<string, RecordEntry>;

@@ -156,6 +156,16 @@ describe('the site palette (ADR-016)', () => {
     }
   });
 
+  it('the live dot on the dark live panel reads on every stop of the panel (sales1120)', () => {
+    for (const ground of ['color-teal-deep', 'color-green-dark']) {
+      expect(contrast(token('color-live-on-dark'), token(ground))).toBeGreaterThanOrEqual(4.5);
+    }
+    // The panel's top stop, where the dot is a mark beside a word, holds the 3:1 a mark needs.
+    expect(
+      contrast(token('color-live-on-dark'), token('color-teal-header'))
+    ).toBeGreaterThanOrEqual(3);
+  });
+
   it('a plain tile is not the status green: the deep teal is told apart from it, and the accent is not', () => {
     // The accent teal sits 1.09 from the status green, so a plain tile wears the deep teal.
     expect(contrast(token('color-accent'), token('color-success'))).toBeLessThan(1.2);

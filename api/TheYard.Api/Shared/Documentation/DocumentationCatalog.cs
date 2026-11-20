@@ -172,6 +172,7 @@ public static class DocumentationCatalog
         ["adr-the-system-watches-its-scheduled-tasks-and-heals-what-it-may"] = "docs/decisions/ADR-139-the-system-watches-its-scheduled-tasks-and-heals-what-it-may.md",
         ["adr-the-stack-has-a-page-of-its-own"] = "docs/decisions/ADR-140-the-stack-has-a-page-of-its-own.md",
         ["adr-automated-tests-never-touch-a-real-database-or-permanent-storage"] = "docs/decisions/ADR-141-automated-tests-never-touch-a-real-database-or-permanent-storage.md",
+        ["adr-the-sales-pages-set-the-sites-look"] = "docs/decisions/ADR-142-the-sales-pages-set-the-sites-look.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",

@@ -15,11 +15,10 @@ export const VERDICT = {
   /** The H1 in its two sentences; at a desk each sentence is a line of its own. */
   title: ['Production .NET that stays up.', 'Built with AI, measured on every version.'],
   lede: '12+ years shipping C#, .NET, SQL Server, React and Azure. This site is the running system, so you can check that claim in two minutes.',
-  primary: 'See the proof in 2 minutes',
+  /** The first move: down the page to the work (sales1120); the proof is TheYard card's first door. */
+  primary: 'See the work',
   book: 'Book 20 minutes',
   resume: 'Resume (PDF)',
-  under:
-    'One stop. AI-written code slipped for two weeks in October. See the rule that turned it, and every number since.',
   quoteLabel: 'Who worked with him says',
   roles: 'Open to remote Lead, Staff and Principal roles.',
 } as const;
@@ -47,9 +46,13 @@ export function restLine(records: number, diagrams: number): string {
 
 /** The close's words: its readout and its two outlined buttons; the filled one is the first screen's "Book 20 minutes". */
 export const CLOSE = {
-  /** Read by a screen reader only: the close draws no heading since its quote joined the voices band. */
+  /** Read by a screen reader only, on a close with neither the question nor the home page's lines. */
   label: 'Next step',
   linkedin: 'Message me on LinkedIn',
+  /** "06 Talk": the review route's closing question, the three the booking email asks (sales1120). */
+  number: '06',
+  question: 'What has to work, where is it today, and what does success look like?',
+  line: 'Book 20 minutes opens an email to me with those three questions in it, and I answer with a time.',
 } as const;
 
 /** "Message me on LinkedIn": Steven's own page, the address the finish panel used. */
@@ -86,14 +89,22 @@ export const ROLE_LINKS = [
   { label: 'About Steven', href: '/about', action: 'about' },
 ] as const;
 
-/** One proof tile: the figure, what it counts, where it comes from, and whether it is read live from this build. */
+/**
+ * One proof tile: the figure, what it counts, where it comes from, whether it is read live from this build, and the
+ * case card its "See how" door goes to.
+ */
 export type VerdictTile = {
   key: string;
   figure: string;
   label: string;
   source: string;
   live: boolean;
+  /** The anchor of the case card under "01 The work" that tells this number's story. */
+  door: 'case-conway' | 'case-storee' | 'case-theyard';
 };
+
+/** The words of a tile's door. */
+export const TILE_DOOR = 'See how';
 
 /** The two tiles from the record: facts from the resume, in the words the design gives them. */
 export const RECORD_TILES: readonly VerdictTile[] = [
@@ -104,6 +115,7 @@ export const RECORD_TILES: readonly VerdictTile[] = [
     source:
       'Conway Investment Research, 2019 to 2024. Sole engineer for the last three years on a live financial advisory platform.',
     live: false,
+    door: 'case-conway',
   },
   {
     key: 'cycle',
@@ -112,6 +124,7 @@ export const RECORD_TILES: readonly VerdictTile[] = [
     source:
       'Storee Construction, 2024 to 2026. Four ASP.NET applications onto one .NET 10 platform on Azure, with a four-person team I hired and mentored.',
     live: false,
+    door: 'case-storee',
   },
 ];
 
@@ -134,6 +147,7 @@ export function testsTile(summary: TestSummary | null, quality: HeldQuality): Ve
         ? 'TheYard, read from the build.'
         : `TheYard, read from the build. ${quality.held} of ${quality.of} quality numbers held.`,
     live: true,
+    door: 'case-theyard',
   };
 }
 

@@ -3,7 +3,7 @@
  *            rule): three equal cards from 1280 in one row of one height, and under 1280 one column; each card its
  *            numbered question kept two lines tall at a desk so the three answers start level, its time, its answer
  *            and its door, with the gate's text link beside its door.
- * Does not:  Draw a panel's glass (panels.css does), the section's heading (ReviewHead.module.css does), a tile
+ * Does not:  Draw a panel's glass (panels.css does), the section's heading (SectionHead.module.css does), a tile
  *            (PathTile.module.css does) or the pills' look.
  * Used by:   ReviewPath.tsx.
  */

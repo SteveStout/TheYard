@@ -141,10 +141,15 @@ export function readPage(): PageFacts {
       const r = e.getBoundingClientRect();
       return r.width >= 120 && r.height >= 40;
     });
+  // The sales pages' own panels (ADR: The sales pages set the site's look, ADR: The glass look's addendum of that
+  // version): the dark live panel and the case card wear the gold rule along an edge and no brackets, as their picture
+  // draws them, and a case card's panel is part of its card.
+  const salesPart = (e: Element) => e.matches('.op-case, .op-live-panel');
   const unstyled = panels.filter(
     (e) =>
-      getComputedStyle(e, '::before').content === 'none' ||
-      !getComputedStyle(e).borderTopWidth.startsWith('3px')
+      !salesPart(e) &&
+      (getComputedStyle(e, '::before').content === 'none' ||
+        !getComputedStyle(e).borderTopWidth.startsWith('3px'))
   );
   // A tile that is a button is a panel (it wears the glass), and a button that draws no box is a link in words.
   const square = Array.from(

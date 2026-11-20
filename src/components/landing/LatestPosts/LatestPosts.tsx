@@ -43,7 +43,12 @@ export function LatestPosts({
       onOpenBlog(slug);
     };
     return (
-      <section aria-labelledby="review-blog-title" data-testid="review-blog">
+      <section
+        id="blog"
+        aria-labelledby="review-blog-title"
+        data-mock="blog"
+        data-testid="review-blog"
+      >
         {row.head(
           <a
             className={styles.allLink}
