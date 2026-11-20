@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using TheYard.Api.Features.Blog;
 using TheYard.Application.Features.Blog;
 
 namespace TheYard.Tests;
@@ -49,6 +50,24 @@ public sealed class BlogEndpointsTests(BlogEndpointsTests.KeyedHost host) : ICla
             request.Headers.Add(AdminKey.HeaderName, key);
         }
         return await host.CreateClient().SendAsync(request);
+    }
+
+    [Theory]
+    [InlineData("AI", "ai")]
+    [InlineData("Job-Search", "job-search")]
+    [InlineData("cLaUdE", "claude")]
+    [InlineData("not a key", null)]
+    [InlineData("dotnet10", null)]
+    public void A_topic_or_keyword_is_read_whatever_its_case(string typed, string? read)
+    {
+        // Found by the exploratory pass of findable1120: ?topic=AI typed by hand was dropped and the whole blog shown.
+        var filter = BlogEndpoints.FilterOf(new Microsoft.AspNetCore.Http.QueryCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+        {
+            ["topic"] = typed,
+            ["keyword"] = typed,
+        }));
+        Assert.Equal(read, filter.Topic);
+        Assert.Equal(read, filter.Keyword);
     }
 
     [Fact]
