@@ -71,7 +71,7 @@
       "link": null
     }
   ],
-  "next_about": "Where next (ladder v7, page flow): at the foot of each public page, at most two links, each with one line of reason and the minutes it takes. The React build reads it for the landing, the review route, a blog post, the Quality page, a decision record and Architecture; the API reads it for /about and the resume door. No address here opens Admin. The contact line is /api/go/email, a recorded redirect to Steve's email, so no page carries the address. The landing and the review route lead to the post named by slug.",
+  "next_about": "Where next (ladder v7, page flow): at the foot of each public page, at most two links, each with one line of reason and the minutes it takes. The React build reads it for the landing, the review route, a blog post, the Quality page, a decision record and Architecture; the API reads it for /about and the resume door. No address here opens Admin. The contact line is /api/go/email, a recorded redirect to Steve's email, so no page carries the address. The landing and the review route lead to the post named by slug. A spoke's first link is the review page: a blog post and About lead first to /?view=review. A count a reason names is written in braces, {recommendations}, and filled from data/recommendations.json when the page is drawn.",
   "next": [
     {
       "page": "landing",
@@ -111,10 +111,10 @@
       "page": "post",
       "links": [
         {
-          "label": "The Quality page",
-          "reason": "Every number a post cites, measured on every version.",
-          "minutes": 5,
-          "href": "/?doc=quality"
+          "label": "Check my work",
+          "reason": "Three questions on the running system, each answered live.",
+          "minutes": 2,
+          "href": "/?view=review"
         },
         {
           "label": "About Steven",
@@ -128,16 +128,16 @@
       "page": "about",
       "links": [
         {
-          "label": "The Quality page",
-          "reason": "Fifteen numbers, measured on every version.",
-          "minutes": 5,
-          "href": "/?doc=quality"
+          "label": "Check my work",
+          "reason": "Three questions on the running system, each answered live.",
+          "minutes": 2,
+          "href": "/?view=review"
         },
         {
-          "label": "Email Steven",
-          "reason": "A reply comes from Steve himself.",
-          "minutes": 1,
-          "href": "/api/go/email"
+          "label": "Recommendations",
+          "reason": "{recommendations} people who worked with him, in their words.",
+          "minutes": 4,
+          "href": "/?view=recommendations"
         }
       ]
     },

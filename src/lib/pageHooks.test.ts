@@ -119,6 +119,42 @@ describe('the hook data, one entry a page', () => {
     );
   });
 
+  it('leads a blog post and About back to the review page first: a spoke’s first link is the review page', () => {
+    const check = {
+      label: 'Check my work',
+      reason: 'Three questions on the running system, each answered live.',
+      minutes: 2,
+      href: '/?view=review',
+    };
+    expect(nextFor('post')).toEqual([
+      check,
+      {
+        label: 'About Steven',
+        reason: 'Who wrote this and how he leads.',
+        minutes: 3,
+        href: '/about',
+      },
+    ]);
+    expect(nextFor('about')).toEqual([
+      check,
+      {
+        label: 'Recommendations',
+        reason: '{recommendations} people who worked with him, in their words.',
+        minutes: 4,
+        href: '/?view=recommendations',
+      },
+    ]);
+  });
+
+  it('types no count in a Where next reason: About names its recommendations by the placeholder the API fills', () => {
+    const reasons = file.next.flatMap((entry) => entry.links.map((link) => link.reason));
+    expect(reasons.filter((reason) => /\b\d+ people\b/.test(reason))).toEqual([]);
+    expect(withCounts(nextFor('about')[1].reason, { recommendations: 13 })).toBe(
+      '13 people who worked with him, in their words.'
+    );
+    expect(JSON.stringify(file.next)).not.toMatch(/\u2014/);
+  });
+
   it('draws the Quality page first chart with every reading from the history the build carries', () => {
     const landing = hookFor('landing');
     const trend = hookTrend(landing);
@@ -166,7 +202,10 @@ describe('no hook opens Admin', () => {
   });
 
   it('holds every address in the hook data away from Admin', () => {
-    const addresses = file.hooks.flatMap((hook) => [hook.path, hook.link?.href ?? '']);
+    const addresses = [
+      ...file.hooks.flatMap((hook) => [hook.path, hook.link?.href ?? '']),
+      ...file.next.flatMap((entry) => entry.links.map((link) => link.href)),
+    ];
     expect(addresses.filter((href) => href !== '' && opensAdmin(href))).toEqual([]);
     expect(JSON.stringify(file)).not.toMatch(/view=admin|\/api\/admin/);
   });

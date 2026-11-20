@@ -294,3 +294,7 @@ A fixed layer is placed in the window only while no ancestor has a transform, fi
 ## Addendum, 2026-11-20 (1.0.5.133): the sales pages' two dark panels
 
 What stopped being true: that every panel on the site is the shared glass with its brackets. The sales pages' dark live panel (`op-live-panel`) and the case card (`op-case`) are drawn as their picture draws them (ADR: The sales pages set the site's look): the live panel on the header's gradient with the gold bar along its top, the case card's body on glass beside a dark panel with a gold rule between, neither with the brackets. Everything else keeps the glass. `tests/e2e/coverage.ts` reads those two classes as dressed, by name, so a new panel that forgets the look is still caught.
+
+## Addendum, @DATE@ (@VER@): About's closing row
+
+About's closing row (`AskCloseHtml.cs`, `op-ask-card`) is a card inside the page's one glass panel: it wears the 3 px top rule and no brackets of its own, as its picture draws it. `tests/e2e/coverage.ts` reads it as dressed by name, beside the sales pages' two dark panels.

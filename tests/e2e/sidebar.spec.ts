@@ -169,7 +169,8 @@ test.describe('the docked rail', () => {
       count: number;
     };
     expect(html).toContain(`${said.count} people who worked with me`);
-    expect(html).toContain('<a href="/?view=recommendations">Recommendations</a>');
+    // The link now stands in the page's Where next, which marks its links for the picture check.
+    expect(html).toMatch(/<a href="\/\?view=recommendations"[^>]*>Recommendations<\/a>/);
   });
 
   test('the rail collapses to icons, keeps its names, and remembers the choice', async ({

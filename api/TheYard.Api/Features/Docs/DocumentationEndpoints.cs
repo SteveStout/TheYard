@@ -185,7 +185,7 @@ public static class DocumentationEndpoints
         var reply = RecommendationsFile.OrNull(paths.RecommendationsPath);
         var hooks = PageHooks.Of(paths.HooksPath);
         string hook = PageHooks.Html(hooks, "about", HookCounts(reply));
-        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply), hook, PageHooks.NextHtml(hooks, "about", http.Request.Query["r"].ToString())), "text/html; charset=utf-8");
+        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply), hook, PageHooks.NextHtml(hooks, "about", http.Request.Query["r"].ToString(), HookCounts(reply))), "text/html; charset=utf-8");
     }
 
     /// <summary>The counts a hook's link may name, each read from its own file: none when the file is missing or out of shape.</summary>

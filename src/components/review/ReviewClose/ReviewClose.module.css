@@ -1,8 +1,8 @@
 /**
- * Does:      Lays out the close, on the review route and the home page alike: the sales1120 picture's question beside
- *            its moves (sales.css, op-ask), the three buttons at the right of their column, Book and the resume on the
- *            first line and LinkedIn under them; the home page's row a little tighter, its heading for a screen reader
- *            only; under 1024 the buttons at the left; on a phone each button the row's width.
+ * Does:      Lays out the close, on the review route and the home page alike: the one closing row (AskClose lays out
+ *            its moves at the right of their column, Book and the resume on the first line and LinkedIn under them,
+ *            each the row's width on a phone), spaced as the sections round it, every move a thumb tall; the home
+ *            page's row a little tighter; under 1024 the buttons at the left.
  * Does not:  Draw the panel's glass (panels.css does), the pills' look (pills.css does) or the question's
  *            (sales.css does).
  * Used by:   ReviewClose.tsx.
@@ -12,37 +12,23 @@
   grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: var(--space-6);
+}
+
+/* The review route's row; the one closing row's own padding is for the pages it closes alone. */
+.close:not([data-form]) {
   padding: var(--space-5);
-}
-
-/* The home page's heading: "Next step" for a screen reader, the question drawn as words beside the moves. */
-.srOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.acts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  max-width: 540px;
-}
-
-/* Beside the question the moves keep to the right of their column. */
-.acts {
-  justify-self: end;
 }
 
 /* The home page's close (its picture's): the same row, a little tighter. */
 .close[data-form='home'] {
   gap: var(--space-5);
   padding: var(--space-4) var(--space-5);
+}
+
+/* On both, every move is a thumb tall, as every control on the route. */
+.close :global(.op-pill-primary),
+.close :global(.op-pill-secondary) {
+  min-height: var(--touch-target);
 }
 
 .forward {
@@ -65,19 +51,12 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.act {
-  min-height: var(--touch-target);
-  padding: 0 var(--space-5);
-  font-size: var(--text-md);
-  white-space: nowrap;
-}
-
 @media (max-width: 1023.98px) {
   .close {
     justify-items: stretch;
   }
 
-  .acts {
+  .close [data-mock='close-moves'] {
     justify-content: flex-start;
     max-width: none;
   }
@@ -88,15 +67,6 @@
 }
 
 @media (max-width: 639.98px) {
-  .acts {
-    justify-self: stretch;
-  }
-
-  .act,
-  .resume {
-    flex: 1 1 100%;
-  }
-
   .forward {
     min-height: var(--touch-target);
     text-align: center;

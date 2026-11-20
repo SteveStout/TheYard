@@ -86,12 +86,14 @@ public static partial class PageHooks
 
     /// <summary>
     /// The "Where next" footer for <paramref name="page"/> (ladder v7, page flow): the same links, reasons and minutes the
-    /// React pages draw from the file's next list. Empty when the file has none for the page.
+    /// React pages draw from the file's next list, each count a reason names filled from <paramref name="counts"/>; a
+    /// link whose count cannot be read is left out rather than drawn with a gap. Empty when the file has none for the page.
     /// </summary>
     /// <param name="file">The hook file, or null when it could not be read.</param>
     /// <param name="page">The page's name in the next list.</param>
     /// <param name="code">The visit's link code, carried on each link of this site so the click is counted (ladder v7b), or null.</param>
-    public static string NextHtml(PageHooksFile? file, string page, string? code = null)
+    /// <param name="counts">The counts a reason may name, each read from its own data; none when the caller has none.</param>
+    public static string NextHtml(PageHooksFile? file, string page, string? code = null, IReadOnlyDictionary<string, int>? counts = null)
     {
         var links = file?.Next?.FirstOrDefault(entry => entry.Page == page)?.Links;
         if (links is not { Count: > 0 })
@@ -100,9 +102,19 @@ public static partial class PageHooks
         }
 
         string e(string value) => WebUtility.HtmlEncode(value);
-        string items = string.Concat(links.Select(link =>
-            $"<li><a href=\"{e(Carried(link.Href, code))}\">{e(link.Label)}</a> <span>{e(link.Reason)} {link.Minutes.ToString(CultureInfo.InvariantCulture)} min</span></li>"));
-        return $"<nav class=\"where-next\" aria-label=\"Where next\" data-testid=\"where-next\" data-next=\"{e(page)}\"><p>Where next</p><ul>{items}</ul></nav>";
+        var known = counts ?? new Dictionary<string, int>();
+        var drawn = links
+            .Select(link => (link, reason: Filled(link.Reason, known)))
+            .Where(each => each.reason is not null)
+            .ToList();
+        if (drawn.Count == 0)
+        {
+            return "";
+        }
+
+        string items = string.Concat(drawn.Select(each =>
+            $"<li><a href=\"{e(Carried(each.link.Href, code))}\" data-mock=\"next-link\">{e(each.link.Label)}</a> <span>{e(each.reason!)} {each.link.Minutes.ToString(CultureInfo.InvariantCulture)} min</span></li>"));
+        return $"<nav class=\"where-next\" aria-label=\"Where next\" data-testid=\"where-next\" data-mock=\"where-next\" data-next=\"{e(page)}\"><p>Where next</p><ul>{items}</ul></nav>";
     }
 
     /// <summary>A link of this site with the visit's code on it, or the link as it was.</summary>
