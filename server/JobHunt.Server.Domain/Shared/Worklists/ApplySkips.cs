@@ -45,13 +45,18 @@ public static partial class ApplySkips
         return kept;
     }
 
-    /// <summary>A posting's address reduced to what names it: lower case, no trailing slash, no query or fragment.</summary>
+    /// <summary>
+    /// A posting's address reduced to what names it: lower case, no trailing slash, no query or fragment, and no closing
+    /// /application, because an Ashby posting is the same page with or without it (the JOBS tables carry the form's
+    /// address, the picker the posting's).
+    /// </summary>
     /// <param name="link">The address.</param>
     public static string Key(string link)
     {
         string trimmed = link.Trim();
         int end = trimmed.IndexOfAny(['?', '#']);
-        return (end < 0 ? trimmed : trimmed[..end]).TrimEnd('/').ToLowerInvariant();
+        string path = (end < 0 ? trimmed : trimmed[..end]).TrimEnd('/').ToLowerInvariant();
+        return path.EndsWith("/application", StringComparison.Ordinal) ? path[..^"/application".Length] : path;
     }
 
     [GeneratedRegex(@"\s+")]

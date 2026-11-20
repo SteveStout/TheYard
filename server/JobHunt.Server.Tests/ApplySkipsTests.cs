@@ -67,6 +67,13 @@ public sealed class ApplySkipsTests
     }
 
     [Fact]
+    public void An_ashby_form_and_its_posting_page_are_one_key()
+    {
+        Assert.Equal(ApplySkips.Key("https://jobs.ashbyhq.com/homebound/b0761174"), ApplySkips.Key("https://jobs.ashbyhq.com/Homebound/b0761174/application"));
+        Assert.NotEqual(ApplySkips.Key("https://jobs.ashbyhq.com/homebound/b0761174"), ApplySkips.Key("https://jobs.ashbyhq.com/homebound/b0761175/application"));
+    }
+
+    [Fact]
     public async Task A_form_the_lane_skipped_is_written_to_the_table_and_named_in_the_note()
     {
         Morning morning = await RunAsync(_ => Skipped("onsite question: relocate to Dallas, yes or no"));
