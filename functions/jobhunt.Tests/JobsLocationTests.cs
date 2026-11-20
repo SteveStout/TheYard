@@ -6,7 +6,8 @@ namespace JobHunt.Functions.Tests;
 /// RULE 76 check 1 read at the location gate itself (JobsGates.LocationFailure), one case for each way a place is
 /// shown to be in the US: a state's code with the arrangement in brackets, a code in lower case, a state's name, the
 /// country's own words and the city names the boards write; and one for each way a role stays out: a place abroad, a
-/// remote role limited to named states, and an onsite place that names no state or country.
+/// remote seat based abroad, a remote role limited to named states, and an onsite place that names
+/// no state or country.
 /// </summary>
 public sealed class JobsLocationTests
 {
@@ -24,8 +25,16 @@ public sealed class JobsLocationTests
     [InlineData("hybrid outside St. Louis: Seattle, WA", "Seattle, Washington")]
     [InlineData("St. Louis hybrid, 1 day", "St. Louis, MO")]
     [InlineData("hybrid, days unknown", "Clayton, MO")]
-    [InlineData("remote", "Warsaw, Poland")]
     [InlineData("remote", "")]
+    [InlineData("remote", "Remote")]
+    [InlineData("remote", "US Remote")]
+    [InlineData("remote", "Remote, US")]
+    [InlineData("remote", "Remote, United States")]
+    [InlineData("remote", "San Francisco, CA (Remote)")]
+    [InlineData("remote", "Anywhere (Remote)")]
+    [InlineData("remote", "Remote - US or Canada")]
+    [InlineData("remote", "New Mexico (Remote)")]
+    [InlineData("remote", "North America")]
     public void A_US_place_or_a_remote_role_passes_the_location_gate(string remote, string location) =>
         Assert.Null(JobsGates.LocationFailure(remote, location));
 
@@ -35,6 +44,14 @@ public sealed class JobsLocationTests
     [InlineData("hybrid outside St. Louis: Berlin, Germany", "Berlin, Germany", "outside the US: Berlin, Germany")]
     [InlineData("onsite", "  Bangalore, Karnataka, India  ", "outside the US: Bangalore, Karnataka, India")]
     [InlineData("onsite", "Paris", "onsite")]
+    [InlineData("remote", "Latin America - Remote", "outside the US: Latin America")]
+    [InlineData("remote", "Remote - Poland", "outside the US: Poland")]
+    [InlineData("remote", "Canada (Remote)", "outside the US: Canada")]
+    [InlineData("remote", "Warsaw, Poland", "outside the US: Warsaw, Poland")]
+    [InlineData("remote", "Remote | EMEA", "outside the US: EMEA")]
+    [InlineData("remote", "LATAM", "outside the US: LATAM")]
+    [InlineData("remote", "Remote (UK)", "outside the US: UK")]
+    [InlineData("remote", "India - Remote", "outside the US: India")]
     public void A_place_abroad_or_one_that_names_no_US_place_fails(string remote, string location, string failed) =>
         Assert.Equal(failed, JobsGates.LocationFailure(remote, location));
 

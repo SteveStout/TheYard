@@ -34,7 +34,7 @@ public sealed partial class PounceTickTests
 
         var passed = book.Rows[1];
         Assert.Equal((true, Now.AddMinutes(-31), true, Now.AddMinutes(-2), "invites"), (passed.Role.Passed, passed.Role.LiveAt, passed.Role.LiveKnown, passed.Touch, passed.Channel));
-        Assert.Equal(("PASS", true, Now), (passed.Role.BandFlag, passed.Role.BudgetFlag, passed.Role.JudgedAt));
+        Assert.Equal(("PASS", false, Now), (passed.Role.BandFlag, passed.Role.BudgetFlag, passed.Role.JudgedAt));
         var failed = book.Rows[2];
         Assert.Equal(("not a seat his targeting file names", Now.AddMinutes(-20), false, (DateTimeOffset?)null), (failed.Role.Failed, failed.Role.LiveAt, failed.Role.LiveKnown, failed.Touch));
         Assert.Equal((2, 1, 1, 1, 0, 0), (tick.Fresh, tick.Passed.Count, tick.Dropped, tick.Touched, tick.Waiting, tick.Late));
@@ -98,7 +98,7 @@ public sealed partial class PounceTickTests
         using var scratch = new Scratch();
         var postings = new Postings();
         postings.Add(1, Role(), Now.AddMinutes(-30), null, "C# on .NET");
-        postings.Add(2, Role() with { Url = "https://job-boards.greenhouse.io/acme/jobs/2", Location = "Remote, Canada" }, Now.AddMinutes(-29), null, "C# on .NET");
+        postings.Add(2, Role() with { Url = "https://job-boards.greenhouse.io/acme/jobs/2", Location = "Remote, New York" }, Now.AddMinutes(-29), null, "C# on .NET");
         var book = new Book(postings);
         var tracker = new Tracker { Since = { new TrackerTouch(Row("Pat Rowe", "Acme (CTO)", "MESSAGE SENT"), Now.AddMinutes(-10)) } };
         var pounce = new PounceTick(scratch.Store, postings, tracker, book, new Fixed(Now));

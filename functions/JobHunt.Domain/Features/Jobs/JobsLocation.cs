@@ -10,9 +10,11 @@ namespace JobHunt.Domain.Features.Jobs;
 public static partial class JobsGates
 {
     /// <summary>
-    /// RULE 76 check 1: the location gate's failure, or null. Remote and St. Louis hybrid pass as before; a hybrid,
-    /// onsite or unsaid arrangement passes when its place is in the US (a state, a state's code or the country) and
-    /// fails "outside the US" when its place ends in anything else; a place that names no state or country keeps the
+    /// RULE 76 check 1: the location gate's failure, or null. St. Louis hybrid passes as before; a remote read passes
+    /// unless its place (the location with the remote words, the brackets and the separators taken out) is not in the US
+    /// and names a region or country abroad, which fails "outside the US" with that place, because a remote seat based
+    /// abroad hires in that country; a hybrid, onsite or unsaid arrangement passes when its place is in the US (a state, a state's code or the country)
+    /// and fails "outside the US" when its place ends in anything else; a place that names no state or country keeps the
     /// read as its failure, because a role that cannot be shown to be in the US is not applied to.
     /// </summary>
     /// <param name="remote">What RemoteRead gave.</param>
@@ -23,6 +25,11 @@ public static partial class JobsGates
         if (remote.StartsWith(NamedStates, StringComparison.Ordinal))
         {
             return remote;
+        }
+        if (remote == "remote")
+        {
+            string place = RemotePlace(where);
+            return place.Length > 0 && !InUs(where) && Abroad().IsMatch(place) ? "outside the US: " + place : null;
         }
         if (Arrangement(remote) < 2 || InUs(where))
         {
@@ -43,6 +50,10 @@ public static partial class JobsGates
         _ => 2,
     };
 
+    /// <summary>A remote location's place: the remote words and the brackets out, the separators folded to commas.</summary>
+    private static string RemotePlace(string where) =>
+        string.Join(", ", Separator().Split(RemoteWord().Replace(where, " ").Replace('(', ' ').Replace(')', ' ')).Select(p => p.Trim()).Where(p => p.Length > 0));
+
     private static bool InUs(string where) =>
         Country().IsMatch(where) || UsWords().IsMatch(where) || UsStateName().IsMatch(where)
         || (where.Split(',') is { Length: > 1 } parts && States.Contains(Parenthesis().Replace(parts[^1], string.Empty).Trim().ToUpperInvariant()));
@@ -52,6 +63,12 @@ public static partial class JobsGates
 
     [GeneratedRegex(@"\b(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming)\b")]
     private static partial Regex UsStateName();
+
+    [GeneratedRegex(@"\b(Latin America|LATAM|South America|Central America|EMEA|APAC|APJ|Asia( Pacific)?|Southeast Asia|Europe|EU|Africa|Middle East|Canada|Mexico|Brazil|Brasil|Argentina|Chile|Colombia|Peru|Uruguay|Costa Rica|Panama|Guatemala|India|UK|United Kingdom|England|Scotland|Wales|Ireland|Germany|France|Spain|Portugal|Italy|Netherlands|Belgium|Switzerland|Austria|Poland|Romania|Bulgaria|Ukraine|Serbia|Croatia|Czechia|Czech Republic|Hungary|Greece|Cyprus|Estonia|Latvia|Lithuania|Sweden|Norway|Denmark|Finland|Israel|Turkey|United Arab Emirates|UAE|Egypt|South Africa|Nigeria|Kenya|Pakistan|Philippines|Vietnam|Indonesia|Malaysia|Thailand|Singapore|Japan|China|Hong Kong|Taiwan|South Korea|Korea|Australia|New Zealand)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Abroad();
+
+    [GeneratedRegex(@"\s*(?:[,;:/|]|\s[-\u2013\u2014]\s|^[-\u2013\u2014]|[-\u2013\u2014]$)\s*")]
+    private static partial Regex Separator();
 
     [GeneratedRegex(@"\([^)]*\)")]
     private static partial Regex Parenthesis();

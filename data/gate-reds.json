@@ -1,6 +1,7 @@
 {
   "about": "Every gate run that stopped a version from shipping, newest first: its run, the version and lane its branch named, the commit, when it was pushed and the jobs that failed. A red gate never promotes, so nothing else on main records it. Seeded on 2026-11-18 from the repository's Actions history (every gate.yml run that concluded failure and whose promote job did not succeed; runs that promoted and then failed a deploy or the after-roll are not here), and grown at every promote by scripts/gate_reds.mjs from the gate feed's reds.",
   "rows": [
+    {"run":44733755217,"version":"1.0.5.123","lane":"code1118f","sha":"253400ea","at":"2026-11-20T12:11:50Z","failed":["node","cosmos","dotnet"]},
     {"run":44671172352,"version":"1.0.5.121","lane":"engagebuild1119","sha":"022b6c5b","at":"2026-11-20T03:57:35Z","failed":["browser 1 of 2","browser 2 of 2"]},
     {"run":44615318847,"version":"1.0.5.114","lane":"selfheal1120","sha":"f6325e79","at":"2026-11-19T21:05:57Z","failed":["cosmos","node","dotnet"]},
     {"run":44609587264,"version":"1.0.5.113","lane":"golive1119","sha":"7b90152d","at":"2026-11-19T20:31:45Z","failed":["dotnet"]},
