@@ -1,0 +1,49 @@
+/**
+ * Does:      Lays out the voices band as the quality1120 picture draws it (its .mock-voices-grid, ported rule by rule):
+ *            the six cards three across from 1024, two across from 640, one column on a phone, every card in a row the
+ *            row's height with its name and "Read it in full" at its foot; the link to all of them in the accent.
+ * Does not:  Draw a card's glass or gold rule (panels.css does) or a voice's inside (Voice.module.css does).
+ * Used by:   ReviewVoices.tsx.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.card {
+  height: 100%;
+}
+
+.all {
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+  text-underline-offset: 3px;
+}
+
+.all:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (max-width: 1023.98px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639.98px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: var(--touch-target);
+  }
+}

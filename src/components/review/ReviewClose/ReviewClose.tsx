@@ -1,16 +1,15 @@
 /**
- * Does:      Draws the review route's close as the whole-page picture draws it, one glass row at the page's width: "That
- *            is the work", Anthony Fortner's named voice, and three buttons, Book 20 minutes (the filled one; the
- *            booking is the email, and it opens the booking sheet too), Resume (PDF) and Message me on LinkedIn, each
- *            reporting its action, and under them the send line, which hands the page's own address to the phone's
- *            share sheet or, where there is none, copies it and says "Link copied" for two seconds.
- *            The home page draws the same close with its own two lines in place of the readout and the voice, and no
- *            send line (ADR-082, the addendum on the home page's order).
- * Does not:  Pick the name (voices.ts does) or read the API (useReviewReadings.ts does).
+ * Does:      Draws the review route's close as the quality1120 picture draws it, one glass row at the page's width with
+ *            its three buttons at the right: Book 20 minutes (the filled one; the booking is the email, and it opens
+ *            the booking sheet too), the gold Resume (PDF) and Message me on LinkedIn, each reporting its action, and
+ *            under them the send line, which hands the page's own address to the phone's share sheet or, where there
+ *            is none, copies it and says "Link copied" for two seconds. Its quote moved to the voices band.
+ *            The home page draws the same close with its own two lines at the left, and no send line (ADR-082, the
+ *            addendum on the home page's order).
+ * Does not:  Draw a voice (ReviewVoices.tsx does) or read the API.
  * Used by:   ReviewPage.tsx, Landing.tsx.
  */
 import { useEffect, useState } from 'react';
-import type { Recommendation } from '../../../lib/recommendations';
 import { FORWARD, forwardText } from '../../../lib/reviewBook';
 import type { ReviewAction } from '../../../lib/reviewProgress';
 import {
@@ -20,23 +19,20 @@ import {
   RESUME_ADDRESS,
   VERDICT,
 } from '../../../lib/reviewVerdict';
-import { VOICES } from '../../../lib/voices';
-import { Voice } from '../../shared/Voice';
+import { PdfMark } from '../../shared/PdfMark';
 import styles from './ReviewClose.module.css';
 
 export function ReviewClose({
-  recommendations,
   address,
   onAction,
   onBook,
   lines,
 }: {
-  recommendations: Recommendation[] | null;
   /** The address the send line shares: this route with its for value and the visitor's code; none, no send line. */
   address?: () => string;
   onAction: (action: ReviewAction) => void;
   onBook: () => void;
-  /** The home page's two lines, in place of the readout and the voice. */
+  /** The home page's two lines at the left; the review route's close has none. */
   lines?: { readout: string; line: string };
 }) {
   const [said, setSaid] = useState<string | null>(null);
@@ -69,26 +65,19 @@ export function ReviewClose({
   return (
     <section
       className={`${styles.close} op-glass`}
-      aria-labelledby="review-close-title"
+      aria-labelledby={lines ? 'review-close-title' : undefined}
+      aria-label={lines ? undefined : CLOSE.label}
       data-form={lines ? 'home' : undefined}
       data-testid="review-close"
     >
-      <div>
-        <h2 id="review-close-title" className={styles.readout}>
-          {lines?.readout ?? CLOSE.readout}
-        </h2>
-        {lines && <p className={styles.line}>{lines.line}</p>}
-        {!lines &&
-          VOICES.close.map((name) => (
-            <Voice
-              key={name}
-              name={name}
-              recommendations={recommendations}
-              onFollow={() => onAction('recommendations')}
-              plain
-            />
-          ))}
-      </div>
+      {lines && (
+        <div>
+          <h2 id="review-close-title" className={styles.readout}>
+            {lines.readout}
+          </h2>
+          <p className={styles.line}>{lines.line}</p>
+        </div>
+      )}
       <div className={styles.acts}>
         <a
           className={`op-pill-primary ${styles.act}`}
@@ -102,11 +91,13 @@ export function ReviewClose({
           {VERDICT.book}
         </a>
         <a
-          className={`op-pill-secondary ${styles.act}`}
+          className={`op-pill-resume ${styles.resume}`}
           href={RESUME_ADDRESS}
           onClick={() => onAction('resume')}
           data-action="review.resume"
+          data-testid="review-close-resume"
         >
+          <PdfMark />
           {VERDICT.resume}
         </a>
         <a

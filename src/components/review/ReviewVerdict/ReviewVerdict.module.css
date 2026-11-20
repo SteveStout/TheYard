@@ -94,21 +94,6 @@
     0 10px 24px color-mix(in srgb, var(--color-teal-deep) 28%, transparent);
 }
 
-/* A text link, a thumb tall on every width. */
-.resume {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch-target);
-  color: var(--color-accent);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-}
-
-.resume:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
-}
-
 /* On the bare page, not in a panel: body text, since the quiet colours are kept for words with a panel behind them. */
 .under {
   margin: var(--space-3) 0 0;
@@ -179,10 +164,6 @@
     align-items: stretch;
     gap: var(--space-3);
     margin-top: var(--space-4);
-  }
-
-  .resume {
-    align-self: center;
   }
 
   .under {
