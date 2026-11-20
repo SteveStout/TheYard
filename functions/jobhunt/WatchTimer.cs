@@ -47,7 +47,12 @@ public sealed class WatchTimer(IMergeStore store, IHttpClientFactory http, TimeP
                 run.Came("unchanged", "switch_off");
                 return new WatchPassResult([], false);
             }
-            var result = await new WatchPass(store, Environment.GetEnvironmentVariable, time, new JobHunt.Infrastructure.Features.Watch.WatchWeb(http)).RunAsync(mode, ct);
+            // In mode on, a new NOT WORKING line goes in one mail to his own address through the card's sender, behind the
+            // no-email-day gate (his own address passes it); without the Google settings nothing is mailed.
+            IMailSender? mail = mode == WatchMode.On && GoogleCredentials.FromEnvironment() is { } google
+                ? new NoEmailDayGate(new GmailSender(http, google), await NoEmailDayGate.ReadAsync(store, ct), time, WatchHeal.Own)
+                : null;
+            var result = await new WatchPass(store, Environment.GetEnvironmentVariable, time, new JobHunt.Infrastructure.Features.Watch.WatchWeb(http), mail).RunAsync(mode, ct);
             run.Count("pass", result.Results.Count(r => r.Pass == true)).Count("fail", result.Results.Count(r => r.Pass == false))
                 .Count("not_read", result.Results.Count(r => r.Pass is null)).Count("heals", result.Heals).Came("success", mode == WatchMode.On ? "on" : "shadow");
             log.LogInformation("watch tick: {Pass} pass, {Fail} fail", run.Counts["pass"], run.Counts["fail"]);

@@ -64,7 +64,7 @@ public sealed class TodayCardTests
         Assert.DoesNotContain("RULES FIRST: essays", card, StringComparison.Ordinal);
         Assert.DoesNotContain("Di Ng", card, StringComparison.Ordinal);
         Assert.Contains("- Tue 11/10 2:00 PM Central, Interview with Acme: Google Meet x (Google Calendar). Must-answers: range NOT IN WRITING", card, StringComparison.Ordinal);
-        Assert.Contains("- Running: lane-a: opus, started 07:00 CST\n- Proposed: 1 (the list is in dispatch/STATUS.md); none needs your yes today.\n- Held: lane-c: stalled twice\n", card, StringComparison.Ordinal);
+        Assert.Contains("- Running: lane-a: opus, started 07:00 CST\n- Waiting for a planning session: 1 proposal (dispatch/STATUS.md); none needs you.\n- Held: lane-c: stalled twice\n", card, StringComparison.Ordinal);
         Assert.DoesNotContain("90-x.md", card, StringComparison.Ordinal);
         Assert.Contains("- Pick the Tuesday slot?\n", card, StringComparison.Ordinal);
         Assert.DoesNotContain("Second decision", card, StringComparison.Ordinal);

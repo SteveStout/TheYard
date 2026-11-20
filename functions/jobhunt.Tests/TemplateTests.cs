@@ -132,63 +132,31 @@ public sealed partial class TemplateTests
         Assert.Contains(Settings().GetValueOrDefault("REPLY_ON_HUMAN") ?? "", new[] { "shadow", "on" });
 
     [Fact]
-    public void A_dead_Function_emails_Steve_from_its_own_template_with_the_address_passed_at_deploy_time()
+    public void A_stopped_Function_emails_Steve_from_its_own_template_with_the_address_passed_at_deploy_time()
     {
         // Rung 8: its own template, so its deploy touches no app setting; the address is a parameter with no default,
-        // so it is never written in the public repository; every ten minutes over thirty, failures or a silent Merger.
+        // so it is never written in the public repository; every ten minutes, no Merger run in the last thirty.
         string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
         Assert.Contains("param alertEmail string\n", bicep.Replace("\r\n", "\n", StringComparison.Ordinal), StringComparison.Ordinal);
         Assert.DoesNotContain("@gmail.com", bicep, StringComparison.Ordinal);
         Assert.Contains("evaluationFrequency: 'PT10M'", bicep, StringComparison.Ordinal);
-        Assert.Contains("ago(30m) and success == false", bicep, StringComparison.Ordinal);
-        Assert.Contains("name == \"Merger\"", bicep, StringComparison.Ordinal);
+        Assert.Contains("requests | where timestamp > ago(30m) | summarize merged = countif(name == \"Merger\") | where merged == 0", bicep, StringComparison.Ordinal);
         Assert.DoesNotContain("appsettings", bicep, StringComparison.OrdinalIgnoreCase);
     }
 
-    // zeroresult1112 rung 2: a run that wrote failed or blocked on its own line emails, one alert a process, and a
-    // break that fails every other pass is one break over three hours. "unchanged" and "planned" never email.
+    // selfheal1120 version 6 (the year-end plan's 7c): a failed or blocked run, the silent campaign and the silent
+    // network pass are the watch's W12 readings, which heal or write one NOT WORKING line; none of them mails him.
+    // The share's transactions alert is money and stays.
     [Fact]
-    public void A_run_line_that_came_to_failed_or_blocked_emails_once_a_process()
+    public void Only_a_stopped_Function_and_the_share_s_bill_mail_him_and_the_watch_reads_the_rest()
     {
         string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
-        string rule = bicep[bicep.IndexOf("name: 'alert-jobhunt-dead-function'", StringComparison.Ordinal)..];
-        rule = rule[..rule.IndexOf("autoMitigate: true", StringComparison.Ordinal)];
-
-        Assert.Contains("message startswith \"process:\"", rule, StringComparison.Ordinal);
-        Assert.Contains("where outcome in (\"failed\", \"blocked\")", rule, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"unchanged\"", rule, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"planned\"", rule, StringComparison.Ordinal);
-        Assert.Contains("name: 'process'", rule, StringComparison.Ordinal);
-        Assert.Contains("windowSize: 'PT3H'", rule, StringComparison.Ordinal);
-        Assert.Contains("ago(3h)", rule, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void A_silent_campaign_timer_emails_Steve_once_a_day_after_the_eight_o_clock_hour()
-    {
-        // ADR-118, Decision 6 (the review, F13): checked hourly, it can fire only in the 15:00 UTC hour, after 8 AM Central under either clock.
-        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
-        Assert.Contains("name: 'alert-jobhunt-campaign-silent'", bicep, StringComparison.Ordinal);
-        Assert.Contains("name == \"CampaignSend\"", bicep, StringComparison.Ordinal);
-        Assert.Contains("where hour == 15 and runs == 0", bicep, StringComparison.Ordinal);
-        Assert.Contains("[Function(\"CampaignSend\")]", File.ReadAllText(Path.Combine(Root(), "functions", "jobhunt", "CampaignSendTimer.cs")), StringComparison.Ordinal);
-        Assert.Contains(Settings().GetValueOrDefault("EMAIL_CAMPAIGN") ?? "", new[] { "shadow", "on" });
-    }
-
-    [Fact]
-    public void A_silent_or_failed_network_pass_emails_Steve_once_a_day_after_the_six_o_clock_hour()
-    {
-        // Checked hourly, it can fire only in the 13:00 UTC hour, after 6 AM Central under either clock; a pass that
-        // ran and threw trips it as surely as one that never ran.
-        string bicep = File.ReadAllText(Path.Combine(Root(), "infra", "jobhunt-alerts.bicep"));
-        Assert.Contains("name: 'alert-jobhunt-network-silent'", bicep, StringComparison.Ordinal);
-        Assert.Contains("name == \"NetworkLogPass\"", bicep, StringComparison.Ordinal);
-        Assert.Contains("name == \"NetworkLogPass\" and success == false | count", bicep, StringComparison.Ordinal);
-        Assert.Contains("where hour == 13 and (runs == 0 or failed > 0)", bicep, StringComparison.Ordinal);
-        Assert.Contains("did not run, or failed, at 6 AM Central", bicep, StringComparison.Ordinal);
-        Assert.Contains("[Function(\"NetworkLogPass\")]", File.ReadAllText(Path.Combine(Root(), "functions", "jobhunt", "NetworkLogTimer.cs")), StringComparison.Ordinal);
-        Assert.Contains(Settings().GetValueOrDefault("NETWORK_LOG") ?? "", new[] { "shadow", "on" });
-        Assert.Equal("off", Settings().GetValueOrDefault("NETWORK_LOG_ANY_HOUR"));
+        Assert.Equal(["alertGroup", "deadFunction", "shareTransactions"], ResourceNames().Matches(bicep).Select(m => m.Groups[1].Value));
+        Assert.DoesNotContain("alert-jobhunt-campaign-silent", bicep, StringComparison.Ordinal);
+        Assert.DoesNotContain("alert-jobhunt-network-silent", bicep, StringComparison.Ordinal);
+        Assert.DoesNotContain("outcome in (\"failed\", \"blocked\")", bicep, StringComparison.Ordinal);
+        Assert.DoesNotContain("success == false", bicep, StringComparison.Ordinal);
+        Assert.Contains("[Function(\"Watch\")]", File.ReadAllText(Path.Combine(Root(), "functions", "jobhunt", "WatchTimer.cs")), StringComparison.Ordinal);
     }
 
     /// <summary>The app settings the template lists, by name: each a one-line { name: 'X', value: ... } entry.</summary>
@@ -251,6 +219,9 @@ public sealed partial class TemplateTests
         }
         throw new InvalidOperationException("infra/jobhunt.bicep not found above " + AppContext.BaseDirectory);
     }
+
+    [GeneratedRegex(@"^resource (\w+) '[^']+' = \{", RegexOptions.Multiline)]
+    private static partial Regex ResourceNames();
 
     [GeneratedRegex(@"\{\s*name:\s*'([A-Za-z0-9_]+)'\s*,\s*value:\s*'?([^'}]*?)'?\s*\}")]
     private static partial Regex Setting();

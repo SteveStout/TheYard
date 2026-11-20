@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using JobHunt.Application.Shared.Mail;
 using JobHunt.Application.Shared.Runs;
 using JobHunt.Domain.Features.Watch;
 using JobHunt.Domain.Shared.Clock;
@@ -24,7 +25,8 @@ public sealed record WatchPassResult(IReadOnlyList<WatchResult> Results, bool Wr
 /// <param name="setting">A setting's value by name, as the running Function reads it.</param>
 /// <param name="time">The clock.</param>
 /// <param name="web">The public reads (the site's cards, GitHub); null leaves W9, W12 and the box's snapshot not read.</param>
-public sealed class WatchPass(IMergeStore store, Func<string, string?> setting, TimeProvider time, IWatchWeb? web = null)
+/// <param name="mail">The card's sender, for the one NOT WORKING mail a failure a day to his own address (mode on); null sends nothing.</param>
+public sealed class WatchPass(IMergeStore store, Func<string, string?> setting, TimeProvider time, IWatchWeb? web = null, IMailSender? mail = null)
 {
     /// <summary>The site's two names.</summary>
     public const string Site = "https://theyard.stevenstout.biz";
@@ -90,7 +92,7 @@ public sealed class WatchPass(IMergeStore store, Func<string, string?> setting, 
         {
             await store.AppendAsync(log, TrackerCsvText.Encode(changes), ct);
         }
-        int heals = mode == WatchMode.On ? (await new WatchHeal(store).RunAsync(results, before + changes, now, ct)).Items.Count : 0;
+        int heals = mode == WatchMode.On ? (await new WatchHeal(store, mail).RunAsync(results, before + changes, now, ct)).Items.Count : 0;
         await store.WriteAsync(MergePaths.Temp(WatchTick.File), TrackerCsvText.Encode(WatchTick.Render(local, mode, results)), ct);
         await store.ReplaceAsync(MergePaths.Temp(WatchTick.File), WatchTick.File, ct);
         return new WatchPassResult(results, true, heals);
