@@ -24,10 +24,11 @@ import {
 } from '../../../lib/reviewPath';
 import { gateRunUrl } from '../../layout/StoreBar/gateFacts';
 import { PROOF, type HeldQuality } from '../../../lib/reviewVerdict';
+import { QUESTIONS_ID } from '../../../lib/reviewCases';
 import { GateTile } from '../GateTile';
 import { LotTile } from '../LotTile';
 import { QualityTrendTile } from '../QualityTrendTile';
-import { ReviewHead } from '../ReviewHead';
+import { SectionHead } from '../../shared/SectionHead';
 import styles from './ReviewPath.module.css';
 
 /** The room's sentence before the store's count arrives: the sentence on its own, its first letter a capital. */
@@ -93,9 +94,15 @@ export function ReviewPath({
     );
 
   return (
-    <section aria-labelledby="review-path-title" data-testid="review-path">
-      <ReviewHead
+    <section
+      id={QUESTIONS_ID}
+      aria-labelledby="review-path-title"
+      data-mock="questions"
+      data-testid="review-path"
+    >
+      <SectionHead
         id="review-path-title"
+        number="02"
         title={PATH.title}
         meta={<strong data-testid="review-path-count">{pathProgress(reached)}</strong>}
         hint={PATH.hint}

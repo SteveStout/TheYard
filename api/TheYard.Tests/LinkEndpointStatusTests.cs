@@ -116,7 +116,7 @@ public sealed class LinkEndpointStatusTests(WebApplicationFactory<Program> facto
 
     /// <summary>The booking address, exactly as the site's settings hold it: the subject and the body, encoded.</summary>
     private const string BookAddress =
-        "mailto:stevenstout11@gmail.com?subject=20%20minutes%20with%20Steven%20Stout&body=Hi%20Steven%2C%0D%0A%0D%0AI%20looked%20at%20The%20Yard%20and%20would%20like%2020%20minutes%20to%20talk.%0D%0A%0D%0ATimes%20that%20work%20for%20me%2C%20with%20my%20time%20zone%3A%0D%0A1.%0D%0A2.%0D%0A%0D%0ARole%20and%20company%3A%0D%0A";
+        "mailto:stevenstout11@gmail.com?subject=20%20minutes%20with%20Steven%20Stout&body=Hi%20Steven%2C%0D%0A%0D%0AI%20looked%20at%20The%20Yard%20and%20would%20like%2020%20minutes%20to%20talk.%0D%0A%0D%0ATimes%20that%20work%20for%20me%2C%20with%20my%20time%20zone%3A%0D%0A1.%0D%0A2.%0D%0A%0D%0ARole%20and%20company%3A%0D%0AWhat%20has%20to%20work%3A%0D%0AWhere%20is%20it%20today%3A%0D%0AWhat%20does%20success%20look%20like%3A%0D%0A";
 
     [Fact]
     [Covers("GET", "/api/links/open", 204)]

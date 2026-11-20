@@ -180,3 +180,7 @@ The review route's "From the blog" row reports a fourteenth name, `blog`, for a 
 ## Addendum, 2026-11-19 (1.0.5.120): the action forward
 
 The close's send line reports a fifteenth name, `forward`, added to `REVIEW_ACTIONS` and `ReviewActions.Names`; it does not count toward reaching the running system (ADR-138, the addendum on no dead ends).
+
+## Addendum, @DATE@ (@VER@): the action work, in neither figure
+
+The review route's moves inside the page report a sixteenth name, `work`, added to `REVIEW_ACTIONS` and `ReviewActions.Names`: "See the work" on the first screen, the three number tiles' "See how" doors and TheYard card's "Or ask it three questions" (ADR: The sales pages set the site's look). A move inside the page is not a second action, so `work` counts in **neither** of the card's two figures: `ReviewActions.InPage` names it, `ReachedASecond` passes over it and it is not in `RunningOrBook`, so the figures before and after this version stay comparable. It is kept on the visitor's row by name, as every action is, and the card "Review route, how far they got" lists every action by name under its two figures, `work` with them, saying it counts in neither. "See the proof in 2 minutes" moved from the first screen to TheYard's case card and still reports `proof`. Held by `ReviewFoldingTests` and `review.test.ts`.

@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { DIAGRAMS, MENUS } from '../../../library/sections';
 import { REVIEW_STOPS, tourLine } from '../../../lib/reviewStops';
 import { restLine, TOUR, TOUR_ID, tourSeen } from '../../../lib/reviewVerdict';
-import { ReviewHead } from '../ReviewHead';
+import { SectionHead } from '../../shared/SectionHead';
 import { TickDisc } from '../TickDisc';
 import styles from './ReviewTour.module.css';
 
@@ -38,10 +38,12 @@ export function ReviewTour({
       className={styles.tour}
       aria-labelledby="review-tour-title"
       data-open={open}
+      data-mock="tour"
       data-testid="review-tour"
     >
-      <ReviewHead
+      <SectionHead
         id="review-tour-title"
+        number="05"
         title={TOUR.title}
         meta={
           <>

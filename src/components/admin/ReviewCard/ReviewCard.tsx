@@ -7,6 +7,7 @@
  */
 import { useState } from 'react';
 import {
+  actionsLine,
   countedLine,
   figureWords,
   funnelBars,
@@ -117,6 +118,9 @@ export default function ReviewCard({ tick }: { tick: number }) {
           )}
           <p className={styles.muted} data-testid="review-second-counted">
             {secondCountedLine(funnel.second)}
+          </p>
+          <p className={styles.muted} data-testid="review-actions">
+            {actionsLine()}
           </p>
           {funnel.by_code.length === 0 ? (
             <CardState state="empty" what="tagged links">

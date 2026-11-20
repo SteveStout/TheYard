@@ -7,8 +7,8 @@
 // #region load-order
 // The order matters. fonts.css declares the face before anything asks for it. colors, sizes,
 // typography and effects define every design value as a variable, each file named for what it
-// controls. base.css sets the page's defaults from those variables. panels.css, pills.css and
-// code-highlight.css draw shared looks in the same variables, so they come after them.
+// controls. base.css sets the page's defaults from those variables. panels.css, pills.css, sales.css (the sales
+// pages' shared parts) and code-highlight.css draw shared looks in the same variables, so they come after them.
 // drawn-page.css shows the right frame while a page drawn at build time is taken over.
 import './fonts.css';
 import './colors.css';
@@ -18,6 +18,7 @@ import './effects.css';
 import './base.css';
 import './panels.css';
 import './pills.css';
+import './sales.css';
 import './code-highlight.css';
 import './drawn-page.css';
 // #endregion load-order

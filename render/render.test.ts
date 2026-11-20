@@ -339,13 +339,23 @@ describe('the rendering service', () => {
     expect(home).toBeGreaterThan(-1);
     expect(review).toBeGreaterThan(home);
     expect(blog).toBeGreaterThan(review);
-    // The version, the recommendations and the tests summary are read for it: no pulse, no list, no document.
+    // The version, the recommendations, the tests summary and the pulse are read for it: no list, no document.
     const paths = asked.map((read) => read.url.slice(API.length).split('?')[0]);
     expect([...new Set(paths.filter((path) => path !== '/'))].sort()).toEqual([
+      '/api/pulse',
       '/api/recommendations',
       '/api/tests/summary',
       '/api/version',
     ]);
+    // 01 The work and the two live panels are drawn here with the pulse's figures, so nothing moves at the takeover
+    // (sales1120): the first screen's panel and TheYard card's, its heading the tests tile's own figure.
+    expect(html).toContain('data-mock="live-panel"');
+    expect(html).toContain('31 ms');
+    expect(html).toContain('$72.46');
+    expect(html).toContain('3,010 tests passed on the version you are reading');
+    expect(html).toContain('1,840');
+    expect(html).toContain('id="case-conway"');
+    expect(html).toContain('What has to work, where is it today, and what does success look like?');
   });
 
   it('draws the mirror whole on the server for ?for=ai, with its own preview, and the verdict for any other value', async () => {

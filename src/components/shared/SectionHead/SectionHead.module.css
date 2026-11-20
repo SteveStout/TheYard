@@ -1,8 +1,8 @@
 /**
  * Does:      Lays out a section's opening, ported from the whole-page picture's .head and .hint: the heading and where
  *            the reader is on one line, wrapping on a phone, and the line under them.
- * Does not:  Draw a panel (a section's heading sits on the bare page).
- * Used by:   ReviewHead.tsx.
+ * Does not:  Draw a panel (a section's heading sits on the bare page) or the number badge (sales.css, op-num, does).
+ * Used by:   SectionHead.tsx.
  */
 .head {
   display: flex;

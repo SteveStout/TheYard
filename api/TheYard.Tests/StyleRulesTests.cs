@@ -415,6 +415,7 @@ public class StyleRulesTests
         ["src/components/admin/CloudChart/CloudChart.module.css"] = "a deploy's line on a Cloud card's chart, in the bar's dark tone, about 6 to 1 on white, as the approved mockups draw it",
         ["src/components/admin/CloudDial/CloudDial.module.css"] = "the dot at a dial's 30-day 95th, in the bar's dark tone, as the approved mockups draw it",
         ["src/styles/pills.css"] = "the resume button's gold face and its dark gold edge, the one gold fill, as the quality1120 picture draws it",
+        ["src/styles/sales.css"] = "the sales pages' trim, as the sales1120 picture draws it: the gold bar along the dark live panel's top, the gold rule between a case card's body and its panel, the gold underline under a door, the gold labels on the dark panel",
         ["src/components/shared/PdfMark/PdfMark.module.css"] = "the edge of the small PDF page on the resume button, in the bar's dark tone",
         ["src/components/shared/QualityChart/QualityChart.module.css"] = "the Quality page's charts: the slip's band and its words, the ratchet's gold mark, THE RATCHET and a floor's dashed line, never a series, as the quality1120 picture draws them",
         ["src/library/QualityBlocks.module.css"] = "the Quality page's readouts: the gold rule along each readout's top, as the quality1120 picture draws it",

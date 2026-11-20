@@ -4,6 +4,7 @@ import {
   figureWords,
   funnelBars,
   screenLine,
+  actionsLine,
   secondCountedLine,
   secondFigures,
   reachedWords,
@@ -78,6 +79,10 @@ describe('the review route card (ADR: Ten minutes, seven stops)', () => {
     expect(secondFigures({ opened: 0, second }).map((figure) => figure.percent)).toEqual([0, 0]);
     expect(secondFigures({ opened: 5 }).map((figure) => figure.count)).toEqual([0, 0]);
     expect(secondCountedLine(undefined)).toBe('The two figures are not counted on this version.');
+    // Every action by name, work among them, and work said to count in neither figure.
+    expect(actionsLine()).toContain('proof, book, resume');
+    expect(actionsLine()).toContain('forward, work.');
+    expect(actionsLine()).toMatch(/work is a move inside the page and counts in neither figure\.$/);
   });
 
   it('splits the two figures by first screen, each a whole share of who opened on it', () => {

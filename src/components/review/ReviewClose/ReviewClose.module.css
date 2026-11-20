@@ -1,9 +1,10 @@
 /**
- * Does:      Lays out the close as the quality1120 picture draws it: on the review route the three buttons at the
- *            right of the row, Book and the resume on the first line and LinkedIn under them; on the home page its
- *            words on the left and the buttons on the right; under 1024 the buttons at the left; on a phone each
- *            button the row's width.
- * Does not:  Draw the panel's glass (panels.css does) or the pills' look (panels.css does).
+ * Does:      Lays out the close: on the review route the sales1120 picture's question beside its moves (sales.css,
+ *            op-ask), the three buttons at the right of their column, Book and the resume on the first line and
+ *            LinkedIn under them; on the home page its words on the left and the buttons on the right; under 1024 the
+ *            buttons at the left; on a phone each button the row's width.
+ * Does not:  Draw the panel's glass (panels.css does), the pills' look (pills.css does) or the question's
+ *            (sales.css does).
  * Used by:   ReviewClose.tsx.
  */
 .close {
@@ -14,10 +15,9 @@
   padding: var(--space-5);
 }
 
-/* The review route's close has no words of its own since its quote joined the voices band: the buttons hold the right. */
+/* The review route's close is one row, the question and its moves (op-ask), the row's full width. */
 .close:not([data-form]) {
   grid-template-columns: minmax(0, 1fr);
-  justify-items: end;
 }
 
 .readout {
@@ -36,6 +36,11 @@
   justify-content: flex-end;
   gap: var(--space-3);
   max-width: 540px;
+}
+
+/* Beside the question the moves keep to the right of their column. */
+.close:not([data-form]) .acts {
+  justify-self: end;
 }
 
 /* The home page's close (its picture's .eh-close): a tighter row, its one line under the readout, two columns from
@@ -111,6 +116,10 @@
 }
 
 @media (max-width: 639.98px) {
+  .close:not([data-form]) .acts {
+    justify-self: stretch;
+  }
+
   .act,
   .resume {
     flex: 1 1 100%;

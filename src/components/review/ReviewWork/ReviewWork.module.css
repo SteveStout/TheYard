@@ -1,0 +1,14 @@
+/**
+ * Does:      Lays out "01 The work" as the sales1120 picture's: the three cards 16 px under the head, each 12 px under the
+ *            one before (sales.css, op-case + op-case), so the section costs about one screen.
+ * Does not:  Draw a card (sales.css, op-case, does) or the head (SectionHead.module.css does).
+ * Used by:   ReviewWork.tsx.
+ */
+.work {
+  display: flex;
+  flex-direction: column;
+}
+
+.cases {
+  margin-top: var(--space-4);
+}

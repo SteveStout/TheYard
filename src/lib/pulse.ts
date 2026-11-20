@@ -1,7 +1,7 @@
 /**
  * Does:      Names the shape /api/pulse answers, reads an answer into it, and turns each figure into the words and the share the band draws.
- * Does not:  Fetch (the band does, with the page's own fetch), draw anything, or decide what a figure means (the server does).
- * Used by:   PulseBand.tsx, PeopleInstrument.tsx, pulse.test.ts.
+ * Does not:  Fetch (usePulse.ts does, for the band and the review route), draw anything, or decide what a figure means (the server does).
+ * Used by:   PulseBand.tsx, PeopleInstrument.tsx, usePulse.ts, nowPanel.ts, pulse.test.ts.
  */
 
 /** One reading of the running site, as /api/pulse answers it. A null is unread, never zero. */

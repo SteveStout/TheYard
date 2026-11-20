@@ -124,6 +124,7 @@ These mean a state and nothing else, always with a word beside the colour ("fine
 --color-danger | Needs attention
 --color-danger-soft | Needs attention, soft ground
 --color-live | A live auction's dot
+--color-live-on-dark | The live dot on the dark live panel of a sales page
 ```
 
 - Fine `#146c34` reads 6.51 on white, worth a look `#b45309` 5.02, needs attention `#b91c1c` 6.47.

@@ -1,7 +1,9 @@
 /**
  * Does:      Lays out a proof tile: the figure large in the deep teal with the LIVE mark beside it, the label in the
- *            heading colour, the source quiet under it; on a phone the figure sits left of its words.
- * Does not:  Draw the tile's glass, gold rule or brackets (panels.css, op-glass op-tile, does).
+ *            heading colour, the source quiet under it, the door last; on a phone the figure sits left of its label and
+ *            its door, and the source is left to the case card the door opens (the sales1120 picture).
+ * Does not:  Draw the tile's glass, gold rule or brackets (panels.css, op-glass op-tile, does) or the door's look
+ *            (sales.css, op-tile-door, does).
  * Used by:   ProofTile.tsx.
  */
 .tile {
@@ -75,5 +77,13 @@
   .label {
     margin: 0;
     font-size: var(--text-base);
+  }
+
+  .source {
+    display: none;
+  }
+
+  .door {
+    grid-column: 2;
   }
 }
