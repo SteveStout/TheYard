@@ -114,8 +114,8 @@ on_main=$(git show origin/main:docs/CHANGELOG.md | versions | sed -n 1p)
 echo "version $below to $version, $moved"
 # #endregion the-version
 
-# The resume the site serves is the one locked on 10 November (RESUME-LOCK-2026-11-10.md).
-echo "a1bf893cdfa93c8bf1aa7a678d3d852058f827ff475bf45d3ee630a9d399c05a  api/TheYard.Api/wwwroot/docs/resume.pdf" | sha256sum -c --quiet ||
+# The resume the site serves is the one locked on 22 November (RESUME-LOCK-2026-11-22.md).
+echo "587b64b63da07188d989c21136b7fd70a72d09cae097a1a61e132f5dd6b7e4c6  api/TheYard.Api/wwwroot/docs/resume.pdf" | sha256sum -c --quiet ||
   refuse "the served resume is not the locked one"
 
 # #region cloud-roles

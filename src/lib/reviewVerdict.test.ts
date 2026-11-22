@@ -53,7 +53,7 @@ describe('the review route first screen (ADR: The review route gives a reason be
     expect(VERDICT.eyebrow.join(' / ')).toBe('Steven Stout / Lead / Staff .NET engineer / Remote');
     expect(VERDICT.primary).toBe('See the work');
     expect(VERDICT.book).toBe('Book 20 minutes');
-    expect(VERDICT.roles).toBe('Open to remote Lead, Staff and Principal roles.');
+    expect(VERDICT.roles).toBe('Open to remote Senior, Lead, Staff and Principal roles.');
     // The ten-minute ask is only below the fold: the words above it never name it.
     const above = [
       ...VERDICT.eyebrow,
