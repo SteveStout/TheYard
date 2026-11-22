@@ -22,7 +22,7 @@ export const VERDICT = {
   book: 'Book 20 minutes',
   resume: 'Resume (PDF)',
   quoteLabel: 'Who worked with him says',
-  roles: 'Open to remote Lead, Staff and Principal roles.',
+  roles: 'Open to remote Senior, Lead, Staff and Principal roles.',
 } as const;
 
 /** The full tour's words, word for word from the whole-page picture: its heading, its line, its place and cell 8. */
@@ -98,7 +98,7 @@ export const RECOMMENDATIONS_ADDRESS = '/?view=recommendations';
 /** The tour's own anchor on the page. */
 export const TOUR_ID = 'review-tour';
 
-/** The three pills under "Open to remote Lead, Staff and Principal roles.", each at the address the rail held. */
+/** The three pills under "Open to remote Senior, Lead, Staff and Principal roles.", each at the address the rail held. */
 export const ROLE_LINKS = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/stevenwstout/', action: 'linkedin' },
   { label: 'GitHub', href: 'https://github.com/SteveStout/TheYard', action: 'github' },
