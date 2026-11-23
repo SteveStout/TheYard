@@ -1,0 +1,12 @@
+# Every night at 03:40 America/Chicago, between the 21:15 cross-post and the 04:55 restart, far from the 05:45 to
+# 06:45 window the morning's run owns. Persistent runs a night missed while the box was off at the next boot.
+[Unit]
+Description=JobHunt archive job, nightly at 03:40 Central
+
+[Timer]
+OnCalendar=*-*-* 03:40:00 America/Chicago
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

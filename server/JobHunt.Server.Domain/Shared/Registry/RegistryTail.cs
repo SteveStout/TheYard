@@ -52,6 +52,34 @@ public static partial class RegistryTail
             .Select(lane => lane.Key)];
     }
 
+    /// <summary>
+    /// True when a lane whose id starts with <paramref name="lane"/> is open on the tail, LIVE or IN PROGRESS with no
+    /// CLOSED row after it, and its newest row is younger than <paramref name="ceiling"/>: a lane that died without
+    /// closing stops counting as open once its last row is that old.
+    /// </summary>
+    /// <param name="tail">The end of state.md.</param>
+    /// <param name="lane">The lane id, or the start of it.</param>
+    /// <param name="now">The instant.</param>
+    /// <param name="ceiling">How old a lane's newest row may be and still keep it open.</param>
+    public static bool IsOpen(string tail, string lane, DateTimeOffset now, TimeSpan ceiling)
+    {
+        (bool Open, DateTimeOffset At)? newest = null;
+        int from = 0;
+        foreach (Match stamp in Aid().Matches(tail))
+        {
+            string fragment = tail[from..stamp.Index];
+            from = stamp.Index + stamp.Length;
+            Match id = Lane().Match(fragment);
+            if (!id.Success || !id.Groups["id"].Value.StartsWith(lane, StringComparison.Ordinal) || !TryStamp(stamp.Groups["at"].Value, out var at))
+            {
+                continue;
+            }
+            bool open = !Closed().IsMatch(fragment) && (Open().IsMatch(fragment) || newest is not { } known || known.Open);
+            newest = (open, at);
+        }
+        return newest is { Open: true } last && now - last.At < ceiling;
+    }
+
     // What the lane holds after this row. A clause naming LinkedIn or a Chrome sets the hold, a clause saying none or
     // released lifts it, and a clause naming neither leaves a standing hold alone, because a lane that restates part
     // of its list has not let the browser go. Clauses are read in order, so a later one in the same row has the last
