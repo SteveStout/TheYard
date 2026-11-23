@@ -19,22 +19,22 @@ export type ChartBox = {
   left: number;
 };
 
-/** The first chart at a desk, the picture's 880 by 300. */
+/** The first chart at a desk, the picture's 960 by 280. */
 export const SLIP_WIDE: ChartBox = {
-  width: 880,
-  height: 300,
-  top: 28,
+  width: 960,
+  height: 280,
+  top: 26,
   right: 24,
-  bottom: 44,
-  left: 56,
+  bottom: 40,
+  left: 52,
 };
-/** The first chart on a phone, drawn at the picture's taller 350 by 330, never the wide one shrunk. */
+/** The first chart on a phone, drawn at the picture's taller 350 by 300, never the wide one shrunk. */
 export const SLIP_PHONE: ChartBox = {
   width: 350,
-  height: 330,
-  top: 40,
+  height: 300,
+  top: 34,
   right: 14,
-  bottom: 40,
+  bottom: 38,
   left: 34,
 };
 /** One of the small multiples, and a coverage chart. */
@@ -50,6 +50,19 @@ export const SMALL: ChartBox = {
 
 const DAY_MS = 86_400_000;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WORDS = [
+  'ZERO',
+  'ONE',
+  'TWO',
+  'THREE',
+  'FOUR',
+  'FIVE',
+  'SIX',
+  'SEVEN',
+  'EIGHT',
+  'NINE',
+  'TEN',
+];
 
 /** A reading's day as a count of days, so two readings on one day share an x. */
 const dayOf = (date: string) => Math.round(Date.parse(`${date}T00:00:00Z`) / DAY_MS);
@@ -91,7 +104,8 @@ function worstIndex(data: QualityTrendData): number {
 /**
  * The vertical scale. A share with a floor stands between a little under its lowest reading or floor and a little
  * over its highest, three lines; every other number starts at zero and tops out at a round number over its highest,
- * three lines on a small chart and one every round step on the first chart.
+ * three lines on a small chart and, on the first chart, a line every 1, 2 or 5 of a power of ten, the finest step
+ * that draws no more than three (0, 50 and 100 under a top of 120).
  */
 export function scaleOf(data: QualityTrendData): { low: number; high: number; ticks: number[] } {
   const values = data.points.map((p) => p.value);
@@ -104,7 +118,9 @@ export function scaleOf(data: QualityTrendData): { low: number; high: number; ti
   }
   const high = roundUp(top * 1.08);
   if (data.form !== 'slip') return { low: 0, high, ticks: [0, high / 2, high] };
-  const step = roundUp(high / 5);
+  const step = [1, 2, 5, 10, 20, 50]
+    .map((unit) => unit * 10 ** Math.floor(Math.log10(high / 10)))
+    .find((unit) => Math.floor(high / unit) + 1 <= 3)!;
   const ticks = Array.from({ length: Math.floor(high / step) + 1 }, (_, i) =>
     Number((i * step).toPrecision(6))
   );
@@ -155,20 +171,20 @@ export function chartGeometry(data: QualityTrendData, box: ChartBox, phone = fal
       {
         x: start.x,
         y: start.y,
-        tx: start.x + (phone ? 22 : 28),
-        ty: start.y + 46,
+        tx: start.x + 24,
+        ty: start.y + 40,
         anchor: 'start',
         value: figure(start.value, data.label),
-        words: phone ? shortDay(start.date) : `${shortDay(start.date)}, first reading`,
+        words: shortDay(start.date),
       },
       {
         x: worst.x,
         y: worst.y,
-        tx: worst.x + (phone ? 26 : 34),
-        ty: worst.y + (phone ? 30 : 26),
+        tx: worst.x + (phone ? 22 : 30),
+        ty: worst.y - 14,
         anchor: 'start',
         value: figure(worst.value, data.label),
-        words: `the worst, ${worst.version || shortDay(worst.date)}`,
+        words: phone ? 'worst' : `the worst, ${shortDay(worst.date)}`,
       },
       {
         x: end.x,
@@ -177,12 +193,16 @@ export function chartGeometry(data: QualityTrendData, box: ChartBox, phone = fal
         ty: end.y - 40,
         anchor: 'end',
         value: figure(end.value, data.label),
-        words: `today, ${end.version || shortDay(end.date)}`,
+        words: 'today',
       }
     );
   }
   const slipWords =
-    joined && at[0] ? (phone ? 'THE SLIP' : `THE SLIP, ${slipSpan(at[0].date, joined.date)}`) : '';
+    joined && at[0]
+      ? phone
+        ? 'THE SLIP'
+        : `THE SLIP, ${slipSpan(dayOf(joined.date) - dayOf(at[0].date))}`
+      : '';
   return {
     box,
     plot: { left: box.left, right: box.width - box.right, top: box.top, bottom: base },
@@ -194,7 +214,14 @@ export function chartGeometry(data: QualityTrendData, box: ChartBox, phone = fal
         : '',
     grid: ticks.map((value) => ({ y: yOf(value), text: tickText(value, high) })),
     xLabels: xLabels(at, joined, data.form ?? ''),
-    join: joined ? { x: joined.x, words: `${joined.version}, ${shortDay(joined.date)}` } : null,
+    // The ratchet's words: its day at a desk, set at the top; on a phone the name alone, set lower to clear the worst.
+    join: joined
+      ? {
+          x: joined.x,
+          y: phone ? round(box.top + tall * 0.45) : box.top + 6,
+          words: phone ? 'THE RATCHET' : `THE RATCHET, ${shortDay(joined.date).toUpperCase()}`,
+        }
+      : null,
     slip: data.form === 'slip' && joined ? { right: joined.x, words: slipWords } : null,
     end: end ? { x: end.x, y: end.y } : null,
     floor: floor !== null ? { y: yOf(floor), words: `FLOOR ${format(floor)}` } : null,
@@ -205,10 +232,11 @@ export function chartGeometry(data: QualityTrendData, box: ChartBox, phone = fal
   };
 }
 
-/** "OCT 15 TO 29", or "OCT 15 TO NOV 2" across a month. */
-function slipSpan(from: string, to: string): string {
-  const [a, b] = [shortDay(from).toUpperCase(), shortDay(to).toUpperCase()];
-  return a.slice(0, 3) === b.slice(0, 3) ? `${a} TO ${b.slice(4)}` : `${a} TO ${b}`;
+/** The slip's length in words: "TWO WEEKS" for whole weeks, else "NINE DAYS"; past ten, the figure. */
+export function slipSpan(days: number): string {
+  const say = (count: number) => WORDS[count] ?? String(count);
+  if (days > 0 && days % 7 === 0) return `${say(days / 7)} WEEK${days === 7 ? '' : 'S'}`;
+  return `${say(days)} DAY${days === 1 ? '' : 'S'}`;
 }
 
 /** A gridline's number: whole when the scale is whole, two places when it is a ratio. */

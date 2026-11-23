@@ -100,3 +100,48 @@ describe('the Quality page blocks (the quality1120 picture)', () => {
     expect(html).toContain('width="50"');
   });
 });
+
+describe('the Quality page in two layers (the quality1123 picture)', () => {
+  it('draws the lede as four dark readouts, value first, each hooked by its key, with no head and no tag', () => {
+    const html = qualityBlock(
+      'quality-lede',
+      'quality numbers held | 15 | of 15 | none may get worse | held\ntests passed | 3,842 | | on the version you are reading | tests'
+    );
+    expect(html).toContain('<div class="quality-lede-readouts" data-mock="readouts">');
+    expect(html.match(/data-mock="readout" /g)).toHaveLength(2);
+    expect(html).toContain(
+      '<div class="quality-lede-readout" data-mock="readout" data-key="tests"><span class="quality-lede-value" data-mock="readout-value">3,842</span>' +
+        '<span class="quality-lede-label" data-mock="readout-label">tests passed</span>'
+    );
+    expect(html).toContain('15 <small>of 15</small>');
+    expect(html).not.toContain('op-live');
+  });
+
+  it("keeps a headless readouts fence the light row of tiles, never the lede's dark cells", () => {
+    const html = qualityBlock('quality-readouts', 'Findings | 12 | | across those reviews');
+    expect(html).toContain('<div class="quality-readouts">');
+    expect(html).not.toContain('data-mock="readout"');
+  });
+
+  it('draws each rule group as a promise, its title and promise only: no example, gauge or count', () => {
+    const html = qualityBlock(
+      'quality-promises',
+      'Shape | Layers point inward. | An example. | 48 | 53 | 538 | 538\nWorks | It works. | E. | 1 | 2 | 9 | 10'
+    );
+    expect(html.match(/data-mock="promise"/g)).toHaveLength(2);
+    expect(html).toContain(
+      '<article class="quality-promise" data-mock="promise"><h3>Shape</h3><p>Layers point inward.</p></article>'
+    );
+    expect(html).not.toMatch(/An example|quality-bar|rules checked|runs passed|<svg/);
+  });
+
+  it("hooks the slip chart's title so the check finds it by its words", () => {
+    const html = qualityBlock(
+      'quality-trend',
+      'Async methods with no CancellationToken | may only fall | 1.0.4.115 | slip\n2026-10-15 | 1.0.3.139 | 51 | quality.py'
+    );
+    expect(html).toContain(
+      '<figcaption data-mock="slip-title"><strong>Async methods with no CancellationToken</strong>'
+    );
+  });
+});

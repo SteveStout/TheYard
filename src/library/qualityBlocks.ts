@@ -4,9 +4,10 @@
  *            the fence names (the first chart, a small multiple with its value now, its rule, its first reading and
  *            why it matters, or the plain figure the home page's chart came from); `quality-readouts` into a row of
  *            readouts, or, when the fence names a head, the sales pages' dark live panel on its side, the head with
- *            the LIVE tag over the readouts;
- *            `quality-tiles` into the held pill and one tile per number with its bar and note; and
- *            `quality-groups` into the rulebook's cards, each with its gauge of rules the gate checks.
+ *            the LIVE tag over the readouts; `quality-lede` into the lede's four dark readouts, no head and no tag;
+ *            `quality-tiles` into the held pill and one tile per number with its bar and note;
+ *            `quality-groups` into the rulebook's cards, each with its gauge of rules the gate checks; and
+ *            `quality-promises` into the six promises over them, the title and the promise only.
  * Does not:  Read the history (the API writes every value into the fence, QualityCounts.cs and QualityReadouts.cs),
  *            draw a chart (useLiveBlocks.tsx mounts it), or hold a colour of its own (QualityBlocks.module.css).
  * Used by:   markdown.ts, qualityBlocks.test.ts.
@@ -20,6 +21,8 @@ export const QUALITY_FENCES = [
   'quality-readouts',
   'quality-tiles',
   'quality-groups',
+  'quality-promises',
+  'quality-lede',
 ] as const;
 export type QualityFence = (typeof QUALITY_FENCES)[number];
 
@@ -62,7 +65,7 @@ function trendFigure(data: QualityTrendData): string {
   if (data.form === 'slip') {
     return (
       `<figure class="quality-trend" data-form="slip">` +
-      `<figcaption><strong>${escape(data.label)}</strong> <span>(${escape(data.direction)})</span></figcaption>` +
+      `<figcaption data-mock="slip-title"><strong>${escape(data.label)}</strong> <span>(${escape(data.direction)})</span></figcaption>` +
       `${place}</figure>\n`
     );
   }
@@ -108,6 +111,22 @@ function readouts(fence: string, head = ''): string {
     `<div class="op-live-head"><span>${escape(head)}</span>` +
     `<span class="op-live-tag"><i class="op-live-dot" aria-hidden="true"></i>Live</span></div>`;
   return `<div class="quality-readouts op-live-panel" role="group" aria-label="${escape(head)}" data-mock="live-panel">${top}${cells.join('')}</div>\n`;
+}
+
+/**
+ * The lede's four readouts (ADR-130, the addendum on the page in two layers): dark cells with no head row and no LIVE
+ * tag, each the value first with what it is out of, then the label and the line under it, hooked by the key its row
+ * ends in. Each fence line is `label | value | of | under | key`.
+ */
+function lede(fence: string): string {
+  const cells = rows(fence).map(
+    ([label = '', value = '', of = '', under = '', key = '']) =>
+      `<div class="quality-lede-readout" data-mock="readout" data-key="${escape(key)}">` +
+      `<span class="quality-lede-value" data-mock="readout-value">${escape(value)}${of ? ` <small>${escape(of)}</small>` : ''}</span>` +
+      `<span class="quality-lede-label" data-mock="readout-label">${escape(label)}</span>` +
+      `<span class="quality-lede-under">${escape(under)}</span></div>`
+  );
+  return `<div class="quality-lede-readouts" data-mock="readouts">${cells.join('')}</div>\n`;
 }
 
 /** The held pill, then one tile per number: its name, its value now, its bar and its note. */
@@ -160,11 +179,25 @@ function groups(fence: string): string {
   return `<div class="quality-groups">${cards.join('')}</div>\n`;
 }
 
+/**
+ * The six promises over the rulebook (ADR-130, the addendum on the page in two layers): each group's title and its
+ * promise, read from the same fence lines as the rulebook's cards, and nothing else: no example, gauge or count.
+ */
+function promises(fence: string): string {
+  const tiles = rows(fence).map(
+    ([title = '', promise = '']) =>
+      `<article class="quality-promise" data-mock="promise"><h3>${escape(title)}</h3><p>${escape(promise)}</p></article>`
+  );
+  return `<div class="quality-promises" data-mock="promises">${tiles.join('')}</div>\n`;
+}
+
 /** The block for one fence of the Quality page. */
 export function qualityBlock(name: QualityFence, fence: string, head = ''): string {
   if (name === 'quality-readouts') return readouts(fence, head);
   if (name === 'quality-tiles') return tiles(fence);
   if (name === 'quality-groups') return groups(fence);
+  if (name === 'quality-promises') return promises(fence);
+  if (name === 'quality-lede') return lede(fence);
   return trendFigure(parseTrend(fence));
 }
 // #endregion quality-blocks

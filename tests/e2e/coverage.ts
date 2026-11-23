@@ -144,8 +144,11 @@ export function readPage(): PageFacts {
   // The sales pages' own panels (ADR: The sales pages set the site's look, ADR: The glass look's addendum of that
   // version): the dark live panel and the case card wear the gold rule along an edge and no brackets, as their picture
   // draws them, and a case card's panel is part of its card. About's closing row (AskCloseHtml.cs) is a card inside the
-  // page's one glass panel, with the top rule and no brackets of its own, as the onepath1120 picture draws it.
-  const salesPart = (e: Element) => e.matches('.op-case, .op-live-panel, .op-ask-card');
+  // page's one glass panel, with the top rule and no brackets of its own, as the onepath1120 picture draws it. The
+  // Quality page's six promise tiles are white tiles inside their card under the gold rule, no brackets, as the
+  // quality1123 picture draws them (ADR-130, the addendum on the page in two layers).
+  const salesPart = (e: Element) =>
+    e.matches('.op-case, .op-live-panel, .op-ask-card, .quality-promise');
   const unstyled = panels.filter(
     (e) =>
       !salesPart(e) &&

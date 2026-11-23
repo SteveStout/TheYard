@@ -1,0 +1,214 @@
+/**
+ * Does:      Lays out the Quality page's two layers as their picture draws them (the quality1123 mock's rules, ported
+ *            one by one): the lede's sentence and its four dark readouts, the slip's caption, the six promise tiles
+ *            and their foot, and the engineer card's closed folds, one row each with its summary and gold-ringed
+ *            mark; on a phone two readouts a row, one promise a row, and each fold its title and mark alone.
+ * Does not:  Draw a chart, a tile or a rulebook card (QualityChart, QualityTiles and QualityBlocks do), the panels'
+ *            glass (DocPanels.module.css) or the close (QualityFoot.module.css).
+ * Used by:   DocDialog.tsx.
+ */
+/* #region lede */
+.prose[data-doc='quality'] :global(.doc-lead) > p[data-mock='lede'] {
+  max-width: 860px;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-medium);
+  line-height: 1.55;
+}
+
+.prose :global(.quality-lede-readouts) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: var(--space-5) 0 0;
+}
+
+/* One readout: the header's ground under the gold bar, the value first and white, then the label in gold and the
+   line under it in the header's quiet ink. */
+.prose :global(.quality-lede-readout) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--space-4) 18px;
+  border-top: 3px solid transparent;
+  border-image: var(--gradient-gold) 1 0 0 0;
+  border-radius: var(--radius-glass);
+  background: var(--gradient-header);
+  line-height: 1.4;
+}
+
+.prose :global(.quality-lede-value) {
+  color: var(--palette-white);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.05;
+}
+
+.prose :global(.quality-lede-value) small {
+  color: var(--color-header-text-muted);
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+}
+
+.prose :global(.quality-lede-label) {
+  margin-top: 6px;
+  color: var(--color-gold-light);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.prose :global(.quality-lede-under) {
+  margin-top: 2px;
+  color: var(--color-header-text-muted);
+  font-size: var(--text-sm);
+}
+/* #endregion lede */
+
+/* #region slip */
+.prose [data-mock='slip-caption'] {
+  margin: 10px 0 0;
+  color: var(--color-heading);
+  font-size: var(--text-md);
+}
+/* #endregion slip */
+
+/* #region promises */
+.prose :global(.quality-promises) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+/* A promise: white, under the gold bar, its title and its sentence and nothing else. */
+.prose :global(.quality-promise) {
+  min-width: 0;
+  padding: 14px var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-top: 3px solid transparent;
+  border-image: var(--gradient-gold) 1 0 0 0;
+  border-radius: var(--radius-md);
+  background: var(--palette-white);
+}
+
+.prose :global(.quality-promise) h3 {
+  margin: 0 0 6px;
+  color: var(--color-teal-deep);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.prose :global(.quality-promise) p {
+  margin: 0;
+  font-size: var(--text-base);
+  line-height: 1.55;
+}
+
+.prose [data-mock='promise-foot'],
+.prose :global(.quality-fold-foot) {
+  margin: 14px 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+}
+/* #endregion promises */
+
+/* #region folds */
+.prose :global(.quality-folds) {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--glass-border);
+}
+
+.prose[data-doc='quality'] details[data-mock='fold'] {
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.prose[data-doc='quality'] details[data-mock='fold'] > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 28px;
+  align-items: center;
+  gap: 14px;
+  padding: 13px var(--space-1);
+  list-style: none;
+}
+
+.prose[data-doc='quality'] details[data-mock='fold'] > summary::-webkit-details-marker {
+  display: none;
+}
+
+.prose [data-mock='fold-title'] {
+  color: var(--color-teal-deep);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+
+.prose :global(.quality-fold-sum) {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  text-align: right;
+}
+
+.prose :global(.quality-fold-mark) {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-full);
+  color: var(--color-gold-bar-dark);
+  font-weight: var(--weight-bold);
+  line-height: 1;
+}
+
+.prose details[data-mock='fold'][open] > summary :global(.quality-fold-mark) {
+  transform: rotate(45deg);
+}
+
+/* An open fold's block sits under its row, clear of the next one. */
+.prose details[data-mock='fold'][open] {
+  padding-bottom: var(--space-4);
+}
+/* #endregion folds */
+
+@media (max-width: 1023.98px) {
+  .prose :global(.quality-promises) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 639.98px) {
+  .prose[data-doc='quality'] :global(.doc-lead) > p[data-mock='lede'] {
+    font-size: var(--text-md);
+  }
+
+  .prose :global(.quality-lede-readouts) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .prose :global(.quality-lede-readout) {
+    padding: var(--space-3);
+  }
+
+  .prose :global(.quality-lede-value) {
+    font-size: var(--text-3xl);
+  }
+
+  .prose :global(.quality-lede-label) {
+    font-size: var(--text-base);
+  }
+
+  .prose :global(.quality-promises) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .prose[data-doc='quality'] details[data-mock='fold'] > summary {
+    grid-template-columns: minmax(0, 1fr) 28px;
+  }
+
+  .prose :global(.quality-fold-sum) {
+    display: none;
+  }
+}
