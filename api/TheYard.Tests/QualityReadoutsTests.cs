@@ -29,16 +29,23 @@ public sealed class QualityReadoutsTests : IDisposable
               {"version": "1.0.5.1", "date": "2026-11-05", "source": "quality.py",
                "numbers": {"async_without_cancellation": 20, "blocking_waits": 0, "files_over_300": 0, "react_files_without_header": 241, "dotnet_tests_higher_is_better": 3000, "history_or_name_comments": 3},
                "limits": {"async_without_cancellation": 20, "blocking_waits": 0, "files_over_300": 0, "react_files_without_header": 241, "dotnet_tests_higher_is_better": 3000, "history_or_name_comments": 3}},
-              {"version": "1.0.5.121", "date": "2026-11-20", "source": "quality.py",
+              {"version": "1.0.5.121", "date": "2026-11-20", "source": "quality.py", "coverage": {"lines": 94.5, "branches": 84.4},
                "numbers": {"async_without_cancellation": 1, "blocking_waits": 0, "files_over_300": 0, "react_files_without_header": 240, "dotnet_tests_higher_is_better": 4554, "history_or_name_comments": 0},
                "limits": {"async_without_cancellation": 1, "blocking_waits": 0, "files_over_300": 0, "react_files_without_header": 239, "dotnet_tests_higher_is_better": 4554, "history_or_name_comments": 0}}
             ]}
             """);
         File.WriteAllText(Path.Combine(root, "data", "coderabbit-findings.json"), """
             {"rows": [
-              {"version": "1.0.4.176", "reviewed": "full", "findings": {"critical": 0, "major": 1, "minor": 2}, "fixed": 2, "answered_as_wrong": 1},
+              {"version": "1.0.4.176", "at": "2026-11-10T15:03:53Z", "reviewed": "full", "findings": {"critical": 0, "major": 1, "minor": 2}, "fixed": 2, "answered_as_wrong": 1},
               {"version": "1.0.4.177", "reviewed": "none", "findings": {"critical": 0, "major": 0, "minor": 0}, "fixed": 0, "answered_as_wrong": 0},
               {"version": "1.0.5.121", "reviewed": "full", "findings": {"critical": 0, "major": 0, "minor": 4}, "fixed": null, "answered_as_wrong": null}
+            ]}
+            """);
+        // The store passes rerun the same tests, so the landing counts each suite once: these two are left out.
+        File.WriteAllText(Path.Combine(root, "data", "test-results.json"), """
+            {"suites": [
+              {"id": "vitest", "passed": 800}, {"id": "xunit-sqlite", "passed": 2600}, {"id": "xunit-live", "passed": 12},
+              {"id": "xunit-cosmos", "passed": 2600}, {"id": "browser-sqlite", "passed": 340}, {"id": "browser-cosmos", "passed": 60}
             ]}
             """);
     }
@@ -105,5 +112,36 @@ public sealed class QualityReadoutsTests : IDisposable
     {
         Assert.Equal("(the data for 'quality-tile nobody_measures_this' is not in this build)", Measure("quality-tile", "nobody_measures_this"));
         Assert.Equal("(no live measure named 'quality-nothing')", Measure("quality-nothing"));
+    }
+
+    [Fact]
+    public void The_lede_s_readouts_are_the_landing_s_tests_a_whole_per_cent_and_the_day_the_reviews_began()
+    {
+        Assert.Equal("3,752", Measure("tests-passed"));
+        Assert.Equal("95", Measure("coverage-whole", "lines"));
+        Assert.Equal("84", Measure("coverage-whole", "branches"));
+        Assert.Equal("Nov 10", Measure("coderabbit-since"));
+    }
+
+    [Fact]
+    public void The_slip_s_caption_reads_its_worst_its_days_and_the_ratchet_s_day_from_the_history()
+    {
+        // The pre-scan's 40 on Oct 10 is the first reading; the worst is 107 at the ratchet, nineteen days on.
+        Assert.Equal("107", Measure("quality-worst", "async_without_cancellation"));
+        Assert.Equal("19", Measure("quality-worst-days", "async_without_cancellation"));
+        Assert.Equal("107", Measure("quality-at-ratchet", "async_without_cancellation"));
+        Assert.Equal("19 days", Measure("quality-slip-span", "async_without_cancellation"));
+        Assert.Equal("29 October", Measure("quality-ratchet-day"));
+        // A number that may only rise is worst at its lowest: 950, its own first reading, two weeks before the ratchet.
+        Assert.Equal("950", Measure("quality-worst", "dotnet_tests_higher_is_better"));
+        Assert.Equal("zero", Measure("quality-worst-days", "dotnet_tests_higher_is_better"));
+        Assert.Equal("two weeks", Measure("quality-slip-span", "dotnet_tests_higher_is_better"));
+    }
+
+    [Fact]
+    public void The_charts_over_time_are_every_number_but_the_slip_s_and_those_held_at_zero()
+    {
+        // Six numbers: the slip's own, files over the cap and blocking waits held at zero, three charted.
+        Assert.Equal("3", Measure("quality-charted"));
     }
 }

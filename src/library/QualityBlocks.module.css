@@ -159,7 +159,7 @@
 .prose :global(.quality-trend[data-form]) :global([data-quality-trend]) {
   min-height: 0;
   max-height: none;
-  aspect-ratio: 880 / 300;
+  aspect-ratio: 960 / 280;
 }
 
 .prose :global(.quality-trend[data-form='small']) :global([data-quality-trend]) {
@@ -242,6 +242,6 @@
   }
 
   .prose :global(.quality-trend[data-form='slip']) :global([data-quality-trend]) {
-    aspect-ratio: 350 / 330;
+    aspect-ratio: 350 / 300;
   }
 }

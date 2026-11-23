@@ -29,7 +29,7 @@ public sealed partial class QualityPageTilesTests
     /// <summary>A fence of the expanded page by its name, its lines after the opening one.</summary>
     private static string[] FenceLines(string name)
     {
-        // A fence may carry a head after its name (the first readouts, "The ratchet, right now"): its lines start on the next line.
+        // A fence may carry a head after its name: its lines start on the next line.
         int start = Page.IndexOf($"```{name}", StringComparison.Ordinal);
         Assert.True(start >= 0, $"the page has a {name} fence");
         int body = Page.IndexOf('\n', start) + 1;
@@ -89,13 +89,13 @@ public sealed partial class QualityPageTilesTests
                 : n.Value.GetDouble() <= limits.GetProperty(n.Name).GetDouble());
         string count = newest.GetProperty("numbers").EnumerateObject().Count().ToString(CultureInfo.InvariantCulture);
         Assert.Equal($"{held} of {count} at or under their limit on {newest.GetProperty("version").GetString()}", FenceLines("quality-tiles")[0]);
-        Assert.StartsWith($"Numbers held | {held} | of {count} |", FenceLines("quality-readouts")[0], StringComparison.Ordinal);
+        Assert.StartsWith($"quality numbers held | {held} | of {count} |", FenceLines("quality-lede")[0], StringComparison.Ordinal);
     }
 
     [Fact]
     public void CodeRabbit_s_readouts_add_up_to_the_table_folded_under_them()
     {
-        string[] readouts = Page.Split("```quality-readouts")[2].Split('\n', 2)[1].Split("\n```", 2)[0].Split('\n');
+        string[] readouts = FenceLines("quality-readouts");
         string[] rows = [.. Regex.Matches(Page, @"^\| (\d+\.\d+\.\d+\.\d+) \|.*$", RegexOptions.Multiline).Select(m => m.Value)];
         int findings = rows.Sum(row => Regex.Matches(row.Split(" | ")[3], @"(\d+) \w+").Sum(m => int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)));
         Assert.StartsWith($"Versions reviewed | {rows.Count(row => row.Split(" | ")[2] == "full")} | of {rows.Length} |", readouts[0], StringComparison.Ordinal);

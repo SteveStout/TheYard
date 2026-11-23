@@ -19,6 +19,9 @@
 // #region layout-document
 const PANEL = 'doc-panel';
 
+/** A document's cards by name: the lead card's hook, and each numbered card's, in order. */
+export type DocCards = { lead: string; numbered: readonly string[] };
+
 /** Splits at every second-level heading that starts a line of markup, never inside a code block. */
 const AT_H2 = /(?=<h2[ >])/;
 
@@ -28,24 +31,33 @@ const AT_H2 = /(?=<h2[ >])/;
  * A numbered document (the catalogue's wide sheet, the Quality page) draws each
  * titled card as the sales pages do (ADR: The sales pages set the site's look):
  * the card hooked as a q-card and the gold number badge, 01 on, before its title;
- * the lede card carries none.
+ * the lede card carries none. `cards` names the lead card and each numbered one in
+ * order (the catalogue's list beside the page, DOCS.quality.cards), so a check finds
+ * a card by its name and never by its words.
  */
-export function layoutDocument(html: string, title?: string, numbered = false): string {
+export function layoutDocument(
+  html: string,
+  title?: string,
+  numbered = false,
+  cards?: DocCards
+): string {
   const { hidden, rest } = sayTitleOnce(html, title);
   const parts = rest.split(AT_H2);
   const lead = /^<h2[ >]/.test(parts[0]) ? '' : parts[0];
   const sections = lead === '' ? parts : parts.slice(1);
   // A lead that held only the title leaves no panel of its own: the title, unseen, opens the first panel instead.
   const first = lead.trim() === '' && sections.length > 0 ? hidden : '';
+  const leadCard = `<section class="${PANEL} op-glass doc-lead"${cards ? ` data-mock="${cards.lead}"` : ''}>`;
+  const card = (i: number) => (cards?.numbered[i] ? ` data-card="${cards.numbered[i]}"` : '');
   const panels = [
     ...(lead.trim() === ''
       ? hidden !== '' && sections.length === 0
-        ? [`<section class="${PANEL} op-glass doc-lead">${hidden}</section>`]
+        ? [`${leadCard}${hidden}</section>`]
         : []
-      : [`<section class="${PANEL} op-glass doc-lead">${hidden}${statusReading(lead)}</section>`]),
+      : [`${leadCard}${hidden}${statusReading(lead)}</section>`]),
     ...sections.map((section, i) =>
       numbered
-        ? `<section class="${PANEL} op-glass" data-mock="q-card">${i === 0 ? first : ''}${numberCard(section, i + 1)}</section>`
+        ? `<section class="${PANEL} op-glass" data-mock="q-card"${card(i)}>${i === 0 ? first : ''}${numberCard(section, i + 1)}</section>`
         : `<section class="${PANEL} op-glass">${i === 0 ? first : ''}${section}</section>`
     ),
   ];

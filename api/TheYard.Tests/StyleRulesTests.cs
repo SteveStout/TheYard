@@ -422,6 +422,7 @@ public class StyleRulesTests
         ["src/components/shared/PdfMark/PdfMark.module.css"] = "the edge of the small PDF page on the resume button, in the bar's dark tone",
         ["src/components/shared/QualityChart/QualityChart.module.css"] = "the Quality page's charts: the slip's band and its words, the ratchet's gold mark, THE RATCHET and a floor's dashed line, never a series, as the quality1120 picture draws them",
         ["src/library/QualityBlocks.module.css"] = "the Quality page's readouts: the gold rule along each readout's top, as the quality1120 picture draws it",
+        ["src/library/QualityLayers.module.css"] = "the Quality page's two layers as the quality1123 picture draws them: the gold rule along each lede readout and promise tile, the readout's label in light gold on the header's dark ground, and the gold ring of each fold's mark, never data on white",
         ["src/library/DocBar.module.css"] = "a document window's title bar: the gold bar under the header gradient, the flat gold where a browser has no border-image",
         ["src/components/shared/WorkingLock/WorkingLock.module.css"] = "the sweep round the working lock's ring and its glow, never its words, as look D of the approved mock draws it",
     };

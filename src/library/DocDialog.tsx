@@ -24,6 +24,7 @@ import side from './AuthorSide.module.css';
 import blocks from './StyleBlocks.module.css';
 import quality from './QualityBlocks.module.css';
 import tiles from './QualityTiles.module.css';
+import layers from './QualityLayers.module.css';
 import { useLiveBlocks } from './useLiveBlocks';
 import { layoutDocument } from '../lib/docLayout';
 import { ICON } from '../lib/icons';
@@ -34,7 +35,7 @@ import { DOCS, type DocKey } from './documents';
  * rules under its own .prose, so the element that holds the document carries all eight; the
  * reading panel's frost is scoped under the window as well, so the window carries that sheet's .dialog.
  */
-const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${side.prose} ${blocks.prose} ${quality.prose} ${tiles.prose}`;
+const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${side.prose} ${blocks.prose} ${quality.prose} ${tiles.prose} ${layers.prose}`;
 const WINDOW = `${styles.dialog} ${panels.dialog} ${styles.dialogGround}`;
 
 /**
@@ -151,7 +152,7 @@ export function DocDialog({
         const html =
           author !== null
             ? author.layoutAuthor(rendered)
-            : layoutDocument(rendered, DOCS[key].title, DOCS[key].wide);
+            : layoutDocument(rendered, DOCS[key].title, DOCS[key].wide, DOCS[key].cards);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })

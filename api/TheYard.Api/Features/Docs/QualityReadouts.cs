@@ -10,10 +10,10 @@ namespace TheYard.Api.Features.Docs;
 /// rest of the page. A number joins the ratchet at the first row whose limits name it, so each number's join is its
 /// own, read from the history and never written here.
 /// </summary>
-public static class QualityReadouts
+public static partial class QualityReadouts
 {
-    /// <summary>The measures this class answers, by the first word of the placeholder.</summary>
-    public static readonly string[] Measures = ["quality-held", "quality-count", "quality-version", "quality-span", "quality-join", "quality-tile", "coderabbit-reviewed", "coderabbit-logged", "coderabbit-first", "coderabbit-findings", "coderabbit-fixed", "coderabbit-wrong", "coderabbit-unread"];
+    /// <summary>The measures this class answers, by the first word of the placeholder; the lede's and the slip's are in QualityReadouts.Lede.cs.</summary>
+    public static readonly string[] Measures = ["quality-held", "quality-count", "quality-version", "quality-span", "quality-join", "quality-tile", "coderabbit-reviewed", "coderabbit-logged", "coderabbit-first", "coderabbit-findings", "coderabbit-fixed", "coderabbit-wrong", "coderabbit-unread", "tests-passed", "coverage-whole", "coderabbit-since", "quality-worst", "quality-worst-days", "quality-at-ratchet", "quality-slip-span", "quality-ratchet-day", "quality-charted"];
 
     /// <summary>One measure, as text; <paramref name="argument"/> is the number's key where the measure needs one.</summary>
     public static string Measure(string kind, string? argument, string repoRoot)
@@ -28,6 +28,12 @@ public static class QualityReadouts
                 "quality-span" => Span(History.Read(repoRoot)),
                 "quality-join" when argument is not null => Format(History.Read(repoRoot).Join(argument).Value),
                 "quality-tile" when argument is not null => Tile(History.Read(repoRoot), argument).Line,
+                "tests-passed" => TestsPassed(repoRoot),
+                "coverage-whole" when argument is "lines" or "branches" => CoverageWhole(History.Read(repoRoot), argument),
+                "coderabbit-since" => ReviewSince(repoRoot),
+                "quality-worst" or "quality-worst-days" or "quality-at-ratchet" or "quality-slip-span" when argument is not null => Slip(History.Read(repoRoot), kind, argument),
+                "quality-ratchet-day" => Slip(History.Read(repoRoot), kind, null),
+                "quality-charted" => Charted(History.Read(repoRoot)),
                 _ when kind.StartsWith("coderabbit-", StringComparison.Ordinal) => Review(repoRoot, kind),
                 _ => $"(no live measure named '{kind}{(argument is null ? "" : " " + argument)}')",
             };
