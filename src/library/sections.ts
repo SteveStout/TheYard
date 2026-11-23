@@ -64,6 +64,7 @@ export const DIAGRAMS: readonly MenuLink[] = [
   { label: 'The plan’s minute', href: '/api/docs/diagrams/plan-minute' },
   { label: 'Cloud infrastructure', href: '/api/docs/diagrams/cloud-infrastructure' },
   { label: 'One traffic cop for main', href: '/api/docs/diagrams/traffic-cop' },
+  { label: 'Old folders are zipped, not kept', href: '/api/docs/diagrams/archive-job' },
 ];
 // #endregion diagrams
 

@@ -357,6 +357,26 @@ public sealed class SlotTests
         Assert.True(function <= box && box - function < TimeSpan.FromMinutes(15), $"the Function holds items from {function:hh\\:mm}, the box refuses role runs from {box:hh\\:mm}");
     }
 
+    [Theory]
+    [InlineData("_archive/datamove1123/nightly/2026-10-20.zip", true)]
+    [InlineData("_archive/datamove1123/ARCHIVE-LOG.tsv", true)]
+    [InlineData("_archive/datamove1123/", false)]
+    [InlineData("_archive/jdrive-2026-10-24/MANIFEST.md", false)]
+    [InlineData("_archive/datamove1123/../jdrive-2026-10-24/x.zip", false)]
+    public void The_archive_job_writes_its_zips_and_log_under_its_own_archive_folder_only(string path, bool allowed) =>
+        Assert.Equal(allowed, WritePolicy.Allowed(path));
+
+    [Theory]
+    [InlineData("_to_delete/datamove1123/nightly/2026-10-20", true)]
+    [InlineData("_to_delete/datamove1123/dispatch-locks/chrome.dead-1792000000", true)]
+    [InlineData("_to_delete/2026-10-24/x", false)]
+    [InlineData("_to_delete/datamove1123x/nightly", false)]
+    [InlineData("mentor/logs/MOVED.md", true)]
+    [InlineData("mentor/logs/other.md", false)]
+    [InlineData("mentor/PLAN.md", false)]
+    public void The_archive_job_moves_originals_under_its_own_to_delete_folder_and_leaves_one_note_in_mentor_logs(string path, bool allowed) =>
+        Assert.Equal(allowed, WritePolicy.Allowed(path));
+
     private static string Repo()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

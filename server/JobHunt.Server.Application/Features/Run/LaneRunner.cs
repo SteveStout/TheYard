@@ -68,7 +68,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
                 {
                     continue;
                 }
-                if (await share.ExistsAsync($"{folder}/DONE.md", ct) && Unsettled().IsMatch(await share.ReadAsync($"{folder}/DONE.md", ct)))
+                if (await share.ExistsAsync($"{folder}/DONE.md", ct) && RunSettlement.Unsettled(await share.ReadAsync($"{folder}/DONE.md", ct)))
                 {
                     return $"{folder}/DONE.md carries a defect line or an unwritten tracker row, which may be a send with no record. Settle it, then take that line out of the note, before this lane runs again";
                 }
@@ -82,7 +82,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
     }
 
     private async Task<bool> FinishedAsync(string folder, CancellationToken ct) =>
-        await share.ExistsAsync($"{folder}/DONE.md", ct) && !(await share.ReadAsync($"{folder}/DONE.md", ct)).Contains("\nHELD: ", StringComparison.Ordinal);
+        await share.ExistsAsync($"{folder}/DONE.md", ct) && !RunSettlement.Held(await share.ReadAsync($"{folder}/DONE.md", ct));
 
     /// <summary>Runs the lane to its end and writes its records.</summary>
     /// <param name="start">The lane.</param>
@@ -266,9 +266,6 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             return from;
         }
     }
-
-    [GeneratedRegex(@"DEFECT:|TRACKER ROW NOT WRITTEN")]
-    private static partial Regex Unsettled();
 
     [GeneratedRegex(@"^/tmp/claude-chrome-screenshots-[\w-]+/[\w.-]+\.(jpg|jpeg|png)$")]
     private static partial Regex Shot();
