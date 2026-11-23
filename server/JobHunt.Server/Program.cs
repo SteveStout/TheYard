@@ -59,10 +59,19 @@ switch (args.FirstOrDefault())
         (int probeExit, string probed) = await new BrowserProbe(claude, desktop, Path.Combine(Path.GetTempPath(), "jobhunt-server-probe")).ExecuteAsync(stop.Token);
         Console.WriteLine(probed);
         return probeExit;
+    case "archive":
+        if (ArchiveOptions.Parse(args) is not { } archive)
+        {
+            Console.Error.WriteLine("archive takes --dry-run and --unit mentor/logs|nightly/<day>|dispatch/done/<day>, and nothing else");
+            return 2;
+        }
+        (int archiveExit, string archived) = await new ArchiveRun(share, new MountArchiver(share), time).ExecuteAsync(archive, stop.Token);
+        Console.WriteLine(archived);
+        return archiveExit;
     case "status":
         Console.WriteLine(await new LastCard(share, time).ExecuteAsync(stop.Token));
         return 0;
     default:
-        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane feed|commentline|invites|messages|network|apply] [--canary --lane <lane>] [--slot pounce-<key> --role nightly/pounce/<file>.json] | probe | status");
+        Console.Error.WriteLine("usage: JobHunt.Server run [--dry-run] [--lane feed|commentline|invites|messages|network|apply] [--canary --lane <lane>] [--slot pounce-<key> --role nightly/pounce/<file>.json] | probe | status | archive [--dry-run] [--unit <path>]");
         return 2;
 }

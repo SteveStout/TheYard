@@ -21,6 +21,7 @@
     <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
+    <Using Include="JobHunt.Server.Application.Features.Archive" />
     <Using Include="JobHunt.Server.Application.Features.Probe" />
     <Using Include="JobHunt.Server.Application.Features.Run" />
     <Using Include="JobHunt.Server.Application.Features.Status" />
