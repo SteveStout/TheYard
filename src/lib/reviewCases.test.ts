@@ -25,7 +25,6 @@ describe("the review route's work, three case cards (ADR: The sales pages set th
     expect(WORK.hint).toBe(
       'Each number is on my resume and my LinkedIn. The last one is read from this site as you look at it.'
     );
-    expect(WORK.resume).toBe('The two-page resume (PDF)');
     expect(byId('case-conway').eyebrow).toBe('Conway Investment Research · Financial services');
     expect(byId('case-conway').heading).toBe('200+ production releases, zero downtime');
     expect(byId('case-storee').heading).toBe('50% shorter release cycle');

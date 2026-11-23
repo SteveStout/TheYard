@@ -145,8 +145,8 @@ for (const width of [1440, 390]) {
 }
 // The Quality sheet takes the sales look (saleshome1120, ADR-130's addendum on the panel, the numbers and the foot; the
 // quality1123 picture for the lede): the lede's readouts are four dark cells with no head and no LIVE tag, every titled
-// card carries its number, and the sheet ends on the review route's closing question with its three moves and Where
-// next, opened over the review route as the picture draws it.
+// card carries its number, and the sheet ends on the review route's closing question with its three moves and
+// nothing under them, opened over the review route as the picture draws it.
 for (const width of [1440, 390]) {
   test(`at ${width} the Quality sheet has the dark readouts, its numbered cards and its foot`, async ({
     page,
@@ -194,10 +194,8 @@ for (const width of [1440, 390]) {
       'Message me on LinkedIn',
     ]);
     await expect(moves.nth(1)).toHaveClass(/op-pill-resume/);
-    await expect(foot.locator('[data-mock="next-link"]')).toHaveText([
-      'Back to the three questions',
-      'Quality on both ends',
-    ]);
+    // The close is the sheet's last card: no Where next under it (Steve, 2026-11-20).
+    await expect(foot.locator('[data-mock="next-link"]')).toHaveCount(0);
     // The question beside its moves at a desk; the moves under it, each the row's width, on a phone.
     const ask = foot.locator('[data-mock="close-ask"]');
     const [question, row] = await ask.evaluate((e) =>
@@ -218,21 +216,6 @@ for (const width of [1440, 390]) {
   });
 }
 
-test('opened over the review route, Back to the three questions closes the sheet and lands on section 02', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await openTheYard(page, '/?view=review&doc=quality');
-  const dialog = page.locator('dialog[open]');
-  const back = dialog.getByRole('link', { name: 'Back to the three questions' });
-  await expect(back).toHaveAttribute('href', /^\/\?view=review(&r=[a-z0-9]{6})?#questions$/, {
-    timeout: 30_000,
-  });
-  await back.click();
-  await expect(page.locator('dialog[open]')).toHaveCount(0);
-  await expect(page).not.toHaveURL(/doc=quality/);
-  await expect(page.locator('#questions')).toBeInViewport();
-});
 // One test number on the site: the lede's tests readout is the landing's own figure on the same build, summed over
 // the same suites (QualityLedeTests holds the list), so a reader who follows the landing's tile here meets its number.
 test('the Quality lede counts the tests the landing counts', async ({ page }) => {

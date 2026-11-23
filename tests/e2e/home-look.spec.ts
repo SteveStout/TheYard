@@ -25,7 +25,7 @@ const POSTS = [
 
 type Box = { top: number; bottom: number; left: number; right: number; height: number };
 
-/** The landing's direct sections, top to bottom, with whether each is Where next. */
+/** The landing's direct sections, top to bottom. */
 async function sections(page: Page) {
   return page.getByTestId('landing').evaluate((landing) =>
     [...landing.children].map((section) => {
@@ -35,7 +35,6 @@ async function sections(page: Page) {
         bottom: box.bottom + window.scrollY,
         left: box.left,
         right: box.right,
-        next: section.getAttribute('data-testid') === 'where-next',
       };
     })
   );
@@ -79,13 +78,10 @@ test('the home page is one unit at every width: shared edges, one gap, its heigh
       expect(Math.abs(part.left - parts[0].left), `${at}: left edge`).toBeLessThanOrEqual(1);
       expect(Math.abs(part.right - parts[0].right), `${at}: right edge`).toBeLessThanOrEqual(1);
     }
-    // 12. One gap: 20 between sections; Where next keeps its own 40.
+    // 12. One gap: 20 between sections, the close the last of them.
     for (const [index, part] of parts.slice(1).entries()) {
       const gap = part.top - parts[index].bottom;
-      expect(
-        Math.abs(gap - (part.next ? 40 : 20)),
-        `${at}: gap above ${index + 2} is ${gap}`
-      ).toBeLessThanOrEqual(2);
+      expect(Math.abs(gap - 20), `${at}: gap above ${index + 2} is ${gap}`).toBeLessThanOrEqual(2);
     }
     // 13. Height: under 3,400 at 1568 and under 7,000 on a phone (the picture: 3,072 and 6,438).
     const tall = await page.evaluate(() => document.documentElement.scrollHeight);
@@ -173,9 +169,9 @@ test('on a phone the home page’s dock comes on after the moves, and Book 20 mi
     '/?view=review'
   );
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  const next = await page.getByTestId('where-next').boundingBox();
+  const last = await page.getByTestId('review-close').boundingBox();
   const bar = await dock.boundingBox();
-  expect(next!.y + next!.height, 'the last section clears the dock').toBeLessThanOrEqual(
+  expect(last!.y + last!.height, 'the last section clears the dock').toBeLessThanOrEqual(
     bar!.y + 1
   );
   await page.getByTestId('review-close').getByRole('link', { name: 'Book 20 minutes' }).click();

@@ -3,7 +3,7 @@
  *            it (ADR: The sales pages set the site's look): the first screen the address names (the verdict, or the
  *            mirror with its strip of names for ?for=ai), 01 the work's three case cards, 02 the short path's three
  *            questions, 03 the band of six named voices, 04 the blog's three newest posts, 05 the full tour of seven
- *            compact stops, 06 the close, and Where next, every section the page's one width; the booking sheet every
+ *            compact stops, 06 the close as the last section, every section the page's one width; the booking sheet every
  *            "Book 20 minutes" opens, on a phone the dock with the next step once the first screen has gone, and the
  *            numbered path once the first move has left the window (PathBar, loaded after the first screen).
  * Does not:  Hold the stops (reviewStops.ts does), the words (reviewVerdict.ts and reviewCases.ts do) or the place
@@ -32,7 +32,6 @@ import { gateTotals, type ReviewScreen } from '../../../lib/reviewMirror';
 import { shippedWords, storeTotal } from '../../../lib/reviewPath';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
 import { LatestPosts } from '../../landing/LatestPosts';
-import { WhereNext } from '../../shared/WhereNext';
 import { BookSheet } from '../BookSheet';
 import { NameStrip } from '../NameStrip';
 import { ReviewClose } from '../ReviewClose';
@@ -182,9 +181,6 @@ export function ReviewPage({
           onBook={book}
           ask={CLOSE}
         />
-        <div className={styles.next}>
-          <WhereNext page="review" row />
-        </div>
       </section>
       <ReviewDock
         key={screen}

@@ -1,6 +1,5 @@
 /**
- * Does:      Lays out the "Where next" footer: its small heading and its two links, each over its reason and minutes; in a
- *            row, as the review route's whole-page picture draws it, the heading and the two links on one line.
+ * Does:      Lays out the "Where next" footer: its small heading and its two links, each over its reason and minutes.
  * Does not:  Draw its glass (panels.css does, through .op-glass) or hold a colour of its own.
  * Used by:   WhereNext.tsx.
  */
@@ -49,51 +48,4 @@
 
 .minutes {
   white-space: nowrap;
-}
-
-/* In a row (the review route's .next, ported): no margin of its own, the page sets the gap; heading, link, link. */
-.row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-6);
-  margin-top: 0;
-}
-
-.row .title {
-  padding-top: var(--space-1);
-  color: var(--color-teal-deep);
-  font-size: var(--text-xs);
-  letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
-}
-
-.row .links {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-6);
-}
-
-/* At a desk the row's links are plain links, as the picture draws them; a phone keeps the thumb's height below. */
-.row .links a {
-  min-height: 0;
-  font-weight: var(--weight-semibold);
-}
-
-@media (max-width: 1023.98px) {
-  .row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2);
-  }
-}
-
-@media (max-width: 639.98px) {
-  .row .links {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-3);
-  }
-
-  .row .links a {
-    min-height: var(--touch-target);
-  }
 }
