@@ -5,6 +5,7 @@ import {
   roundUp,
   scaleOf,
   shortDay,
+  slipSpan,
   SLIP_WIDE,
   SMALL,
 } from './qualityChart';
@@ -21,29 +22,39 @@ const slip = parseTrend(
   ].join('\n')
 );
 
-describe('the Quality page charts (the quality1120 picture)', () => {
+describe('the Quality page charts (the quality1123 picture)', () => {
   it('spaces readings by their day, so one day is one x', () => {
     const shape = chartGeometry(slip, SLIP_WIDE);
     const plot = SLIP_WIDE.width - SLIP_WIDE.left - SLIP_WIDE.right;
     expect(shape.xLabels.map((label) => label.text)).toEqual(['Oct 15', 'Oct 29', 'Nov 20']);
     expect(shape.join?.x).toBeCloseTo(SLIP_WIDE.left + (plot * 14) / 36, 0);
-    expect(shape.join?.words).toBe('1.0.4.115, Oct 29');
+    expect(shape.join?.words).toBe('THE RATCHET, OCT 29');
+    expect(chartGeometry(slip, SLIP_WIDE, true).join?.words).toBe('THE RATCHET');
   });
 
-  it('draws the slip to the ratchet and three callouts: the first reading, the worst and today', () => {
+  it('draws the slip to the ratchet and three callouts, the first reading, the worst and today, with no version on it', () => {
     const shape = chartGeometry(slip, SLIP_WIDE);
-    expect(shape.slip?.words).toBe('THE SLIP, OCT 15 TO 29');
+    expect(shape.slip?.words).toBe('THE SLIP, TWO WEEKS');
     expect(shape.slip?.right).toBe(shape.join?.x);
     expect(shape.callouts.map((c) => `${c.value} ${c.words}`)).toEqual([
-      '51 Oct 15, first reading',
-      '109 the worst, 1.0.3.186',
-      '1 today, 1.0.5.122',
+      '51 Oct 15',
+      '109 the worst, Oct 17',
+      '1 today',
     ]);
-    expect(chartGeometry(slip, SLIP_WIDE, true).slip?.words).toBe('THE SLIP');
+    const phone = chartGeometry(slip, SLIP_WIDE, true);
+    expect(phone.slip?.words).toBe('THE SLIP');
+    expect(phone.callouts[1].words).toBe('worst');
+    const words = [shape, phone].flatMap((s) => [
+      s.slip?.words,
+      s.join?.words,
+      ...s.callouts.map((c) => c.words),
+      ...s.xLabels.map((l) => l.text),
+    ]);
+    expect(words.join(' ')).not.toMatch(/\d+\.\d+\.\d+/);
   });
 
   it('labels round gridlines, and a small chart has a dot at today and no callouts', () => {
-    expect(scaleOf(slip).ticks).toEqual([0, 25, 50, 75, 100]);
+    expect(scaleOf(slip).ticks).toEqual([0, 50, 100]);
     const small = chartGeometry({ ...slip, form: 'small' }, SMALL);
     expect(small.grid.map((tick) => tick.text)).toEqual(['0', '60', '120']);
     expect(small.callouts).toEqual([]);
@@ -69,7 +80,7 @@ describe('the Quality page charts (the quality1120 picture)', () => {
     expect(shortDay('2026-11-20')).toBe('Nov 20');
   });
 
-  it("calls a rising number's lowest reading its worst, and names a slip across a month by both months", () => {
+  it("calls a rising number's lowest reading its worst, and names a slip that is not whole weeks in days", () => {
     const rising = parseTrend(
       [
         'xUnit facts and data rows | may only rise | 1.0.4.115 | slip',
@@ -80,10 +91,12 @@ describe('the Quality page charts (the quality1120 picture)', () => {
       ].join('\n')
     );
     const shape = chartGeometry(rising, SLIP_WIDE);
-    expect(shape.callouts[1].words).toBe('the worst, 1.0.4.100');
+    expect(shape.callouts[1].words).toBe('the worst, Oct 28');
     expect(shape.callouts[1].value).toBe('900');
     expect(shape.callouts[2].value).toBe('4,555');
-    expect(shape.slip?.words).toBe('THE SLIP, OCT 25 TO NOV 2');
+    expect(shape.slip?.words).toBe('THE SLIP, EIGHT DAYS');
+    expect(slipSpan(7)).toBe('ONE WEEK');
+    expect(slipSpan(12)).toBe('12 DAYS');
   });
 
   it('dashes the pre-scan, and the solid line starts at the scanner', () => {

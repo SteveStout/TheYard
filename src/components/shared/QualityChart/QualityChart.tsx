@@ -3,7 +3,7 @@
  *            picture): labelled gridlines, the line in teal through readings spaced by their day, the version the
  *            number joined the ratchet as a gold mark, a dot at today and a dashed floor where the fence names one;
  *            the page's first chart adds the slip, from the first reading to the ratchet, "THE RATCHET" with its
- *            version and day, and three callouts, and on a phone it is drawn at its own taller shape.
+ *            day, and three callouts, no version anywhere, and on a phone it is drawn at its own taller shape.
  * Does not:  Place anything (src/lib/qualityChart.ts does) or read the history (the fence carries the readings).
  * Used by:   useLiveBlocks.tsx.
  */
@@ -40,6 +40,7 @@ function Drawing({
       role="img"
       aria-label={shape.summary}
       data-testid="quality-chart"
+      data-mock={data.form === 'slip' ? 'slip-chart' : undefined}
     >
       <defs>
         <linearGradient id={`${id}-area`} x1="0" y1="0" x2="0" y2="1">
@@ -74,7 +75,7 @@ function Drawing({
       {shape.grid.map((tick) => (
         <g key={tick.y}>
           <line className={styles.grid} x1={plot.left} x2={plot.right} y1={tick.y} y2={tick.y} />
-          <text className={styles.tick} x={plot.left - 8} y={tick.y + 4} textAnchor="end">
+          <text className={styles.tick} x={plot.left - 10} y={tick.y + 4} textAnchor="end">
             {tick.text}
           </text>
         </g>
@@ -94,6 +95,9 @@ function Drawing({
           </text>
         </g>
       )}
+      {shape.preScan && <path className={`${styles.line} ${styles.pre}`} d={shape.preScan} />}
+      <path className={styles.line} d={shape.line} data-testid="quality-chart-line" />
+      {/* The ratchet's gold mark over the line, as the picture lays it: the line drops through it, never across it. */}
       {shape.join && (
         <g data-testid="quality-chart-join">
           <rect
@@ -104,19 +108,12 @@ function Drawing({
             fill={`url(#${id}-gold)`}
           />
           {shape.slip && (
-            <>
-              <text className={styles.mark} x={shape.join.x + 8} y={plot.top + 4}>
-                THE RATCHET
-              </text>
-              <text className={styles.words} x={shape.join.x + 8} y={plot.top + 19}>
-                {shape.join.words}
-              </text>
-            </>
+            <text className={styles.mark} x={shape.join.x + 8} y={shape.join.y}>
+              {shape.join.words}
+            </text>
           )}
         </g>
       )}
-      {shape.preScan && <path className={`${styles.line} ${styles.pre}`} d={shape.preScan} />}
-      <path className={styles.line} d={shape.line} data-testid="quality-chart-line" />
       <line
         className={styles.axis}
         x1={plot.left}
@@ -169,7 +166,7 @@ function Drawing({
           key={`${label.x}-${label.text}`}
           className={styles.tick}
           x={label.x}
-          y={box.height - (phone || data.form === 'slip' ? 14 : 8)}
+          y={box.height - (data.form === 'slip' ? 12 : 8)}
           textAnchor={label.anchor}
         >
           {label.text}

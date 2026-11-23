@@ -200,6 +200,7 @@ export const PAGES = {
     url: '/api/docs/quality',
     kind: 'overview',
     wide: true,
+    cards: { lead: 'lede-card', numbered: ['slip', 'promise', 'engineer'] },
   },
   infrastructureOverview: {
     title: 'Infrastructure overview',

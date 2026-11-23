@@ -1,12 +1,12 @@
 # Quality you can watch
 
-AI made me fast. For two weeks in October it also let the code slip where no test was looking, so I built a ratchet. It measures fifteen numbers about the code on every version, and the gate refuses any version that makes one of them worse. This page is the proof, slip included.
+<p data-mock="lede">AI made me fast. For two weeks in October it also let the code slip where no test was looking, so I built a ratchet: the gate measures fifteen numbers on every version and refuses any version that makes one of them worse.</p>
 
-```quality-readouts The ratchet, right now
-Numbers held | {{live:quality-held}} | of {{live:quality-count}} | at or under their limit today
-Versions measured | {{live:quality-versions}} | | {{live:quality-span}}
-.NET tests | {{live:quality-now dotnet_tests_higher_is_better}} | | {{live:quality-join dotnet_tests_higher_is_better}} when the ratchet went in
-Rules with a test | {{live:rule-count}} | | checked on every release
+```quality-lede
+quality numbers held | {{live:quality-held}} | of {{live:quality-count}} | none may get worse | held
+tests passed | {{live:tests-passed}} | | on the version you are reading | tests
+of lines covered | {{live:coverage-whole lines}}% | | floor 90, no change may lower it | coverage
+versions AI-reviewed | {{live:coderabbit-reviewed}} | of {{live:coderabbit-logged}} | by CodeRabbit, since {{live:coderabbit-since}} | review
 ```
 
 ## The slip, and the ratchet {#the-slip-and-the-turn}
@@ -16,13 +16,22 @@ Async methods with no CancellationToken | may only fall | 1.0.4.115 | slip
 {{live:quality-trend async_without_cancellation}}
 ```
 
-From {{live:quality-first async_without_cancellation}} on 15 October to a worst of {{live:quality-peak async_without_cancellation}}, and {{live:quality-now async_without_cancellation}} today. The gold mark is the version the ratchet went in.
+<p data-mock="slip-caption">One of the fifteen numbers: calls that cannot be cancelled once they start. It went from {{live:quality-first async_without_cancellation}} to {{live:quality-worst async_without_cancellation}} in {{live:quality-worst-days async_without_cancellation}} days and was still at {{live:quality-at-ratchet async_without_cancellation}} {{live:quality-slip-span async_without_cancellation}} later. The ratchet went in on {{live:quality-ratchet-day}}, the count fell to {{live:quality-now async_without_cancellation}} that same day, and it has stayed there.</p>
 
-In the two weeks to 29 October the code grew faster than it ever had, every yes-or-no rule held, and everything nobody was counting got worse. Async methods with no way to cancel them went from {{live:quality-first async_without_cancellation}} on 15 October to {{live:quality-peak async_without_cancellation}}. Declarations with no summary peaked at {{live:quality-peak undocumented_declarations}}. On 29 October, at 1.0.4.115, the ratchet went in ([ADR-122](https://theyard.stevenstout.biz/?doc=adr-the-numbers-that-may-only-fall)): fourteen numbers in one file, fifteen since 1.0.5.1, read by the gate on every version, each allowed to move only the good way.
+## What the gate guarantees
 
-Today the async count is {{live:quality-now async_without_cancellation}} and the undocumented count is {{live:quality-now undocumented_declarations}}. The gold mark on each chart is the version that number joined the ratchet. Every point is the same scanner, today's, read over that version's own tree: before the ratchet, the last version of each day from 15 October; from it on, every version.
+```quality-promises
+{{live:rule-groups}}
+```
 
-## All fifteen numbers, today
+<p data-mock="promise-foot">{{live:rule-count}} rules in all, each written down with its reason and held by a test on every release.</p>
+
+## For engineers: every number, and how it is held
+
+<div class="quality-folds">
+
+<details data-mock="fold" data-key="numbers">
+<summary><span data-mock="fold-title">All fifteen numbers, today</span><span class="quality-fold-sum">{{live:quality-count}} tiles, each with its limit</span><span class="quality-fold-mark" aria-hidden="true">+</span></summary>
 
 ```quality-tiles
 {{live:quality-held}} of {{live:quality-count}} at or under their limit on {{live:quality-version}}
@@ -45,9 +54,12 @@ Files over the cap | {{live:quality-tile files_over_300}}
 
 Each limit moves only one way. When a version improves a number, the limit follows it, so the gain can't be given back.
 
-## The numbers over time
+</details>
 
-One line for each of the other numbers, the whole history. The async line is at the top of this page.
+<details data-mock="fold" data-key="history">
+<summary><span data-mock="fold-title">Each number over time</span><span class="quality-fold-sum">{{live:quality-charted}} charts, {{live:quality-span}}</span><span class="quality-fold-mark" aria-hidden="true">+</span></summary>
+
+One line for each of the other numbers, the whole history. The async line is the slip's, in the first card.
 
 <div class="quality-grid">
 
@@ -100,7 +112,10 @@ xUnit facts and data rows | may only rise | 1.0.4.115 | small | A test that disa
 
 Held at zero on every version since the ratchet went in, so there is no line to draw: project references pointing outward ({{live:quality-now onion_outward_refs}}), inner rings reaching the disk or the network ({{live:quality-now inner_ring_leaks}}), one slice naming another ({{live:quality-now cross_slice_usings}}), blocking waits ({{live:quality-now blocking_waits}}) and files over the cap ({{live:quality-now files_over_300}}).
 
-## Coverage
+</details>
+
+<details data-mock="fold" data-key="coverage">
+<summary><span data-mock="fold-title">Coverage, version by version</span><span class="quality-fold-sum">lines {{live:coverage-now lines}}%, branches {{live:coverage-now branches}}%</span><span class="quality-fold-mark" aria-hidden="true">+</span></summary>
 
 Line and branch coverage from CI on main for each version, against a floor of 90 per cent of lines and 75 per cent of branches that no change may lower ([ADR: Counting what the tests cover](https://theyard.stevenstout.biz/?doc=adr-coverage)). Today: {{live:coverage-now lines}} per cent of lines, {{live:coverage-now branches}} per cent of branches.
 
@@ -118,7 +133,10 @@ Branch coverage, per cent | floor 75 | | small
 
 </div>
 
-## Every rule in the rulebook has a test that enforces it
+</details>
+
+<details data-mock="fold" data-key="rulebook">
+<summary><span data-mock="fold-title">The rulebook</span><span class="quality-fold-sum">{{live:rule-count}} rules, the reason and the test for each</span><span class="quality-fold-mark" aria-hidden="true">+</span></summary>
 
 {{live:rule-count}} rules, each written down with the reason behind it and checked by a test on every release. If a change breaks one, it doesn't ship.
 
@@ -137,7 +155,10 @@ Every rule a machine can check, from [ADR-075](https://theyard.stevenstout.biz/?
 
 </details>
 
-## CodeRabbit, the last reviewer
+</details>
+
+<details data-mock="fold" data-key="coderabbit">
+<summary><span data-mock="fold-title">CodeRabbit's log</span><span class="quality-fold-sum">every version's review, findings and fixes</span><span class="quality-fold-mark" aria-hidden="true">+</span></summary>
 
 An AI review bot is asked to read every version's pull request inside the gate, and a version it did not get to is logged as not reviewed. It is at level {{live:coderabbit-level}} of four, where it comments and only a Critical finding holds a release; each step up is my decision, on this log ([ADR-129](https://theyard.stevenstout.biz/?doc=adr-coderabbit-one-rung-at-a-time)). Fixed and Wrong (answered as wrong) are read from each request's threads and the versions after it, a finding in neither is still open, an empty cell is one not read yet, and Minutes are the review's own.
 
@@ -155,7 +176,10 @@ Answered as wrong | {{live:coderabbit-wrong}} | | with the reason on the thread
 
 </details>
 
-## What is still thin
+</details>
+
+<details data-mock="fold" data-key="thin">
+<summary><span data-mock="fold-title">What is still thin</span><span class="quality-fold-sum">named plainly, with the numbers</span><span class="quality-fold-mark" aria-hidden="true">+</span></summary>
 
 Named plainly, with the numbers:
 
@@ -165,15 +189,15 @@ Named plainly, with the numbers:
 
 The headers and the wide classes are ratchet numbers: each is paid down one version at a time, the payment lowers its limit in the same commit, and it cannot come back. The XML documentation figure is not on the ratchet yet; it is shown so it is not hidden.
 
-## In plain words
+</details>
 
-I built this site with AI while most of my attention was elsewhere, and the risk in that is quality slipping while nobody is looking. So the decisions are written down as records, the records that a machine can check are tests, and a scanner counts fifteen things about the code on every version. A version that breaks a rule or makes any of them worse does not ship.
+<details data-mock="fold" data-key="source">
+<summary><span data-mock="fold-title">The ratchet file, the scanner and the files behind this page</span><span class="quality-fold-sum">{{live:quality-versions}} versions measured</span><span class="quality-fold-mark" aria-hidden="true">+</span></summary>
 
 Every count and measurement on this page is read, when you open it, from files the build writes: the quality history ({{live:quality-versions}} versions measured so far), the gate's own test results, the rules table and CodeRabbit's log. A test fails if any of them cannot be read from the data, or if the prose types a count of its own.
 
 **What that is worth to a team:** quality that is measured on every change and can only ratchet one way, with the evidence public and the slip left in.
 
-## The ratchet, read from this build
 
 <details>
 <summary>.github/quality-ratchet.json and the scanner block</summary>
@@ -190,10 +214,18 @@ And the block of the scanner that measures them:
 
 </details>
 
-## Files
+
+The files:
+
 
 - [`data/quality-history.json`](https://github.com/SteveStout/TheYard/blob/main/data/quality-history.json): the history, one row per shipped version
 - [`scripts/quality_history.py`](https://github.com/SteveStout/TheYard/blob/main/scripts/quality_history.py): rebuilds it from git and adds a row on every ship
 - [`api/TheYard.Api/Features/Docs/QualityCounts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/QualityCounts.cs): every live number on this page
 - [`api/TheYard.Api/Features/Docs/QualityReadouts.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Api/Features/Docs/QualityReadouts.cs): the readouts and the fifteen tiles, each number from its own join
 - [`api/TheYard.Tests/QualityHistoryTests.cs`](https://github.com/SteveStout/TheYard/blob/main/api/TheYard.Tests/QualityHistoryTests.cs): holds the history to the scanner and this page to the data
+
+</details>
+
+</div>
+
+<p class="quality-fold-foot">Every count on this page is read from the files the build writes, when you open it.</p>

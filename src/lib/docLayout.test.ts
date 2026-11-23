@@ -48,6 +48,24 @@ describe('the wide sheet numbers its cards (saleshome1120)', () => {
     expect(html).toMatch(/<section class="doc-panel op-glass doc-lead">[^]*Lede\.<\/p><\/section>/);
   });
 
+  it('names the lede card and each numbered card from the list it is given, the q-card kept beside each name', () => {
+    const html = layoutDocument(
+      '<h1>Quality you can watch</h1><p>Lede.</p><h2 id="a">A</h2><p>A.</p><h2 id="b">B</h2><p>B.</p><h2 id="c">C</h2>',
+      'Quality you can watch',
+      true,
+      { lead: 'lede-card', numbered: ['slip', 'promise'] }
+    );
+    expect(html).toContain('<section class="doc-panel op-glass doc-lead" data-mock="lede-card">');
+    expect(html).toContain(
+      '<section class="doc-panel op-glass" data-mock="q-card" data-card="slip">'
+    );
+    expect(html).toContain(
+      '<section class="doc-panel op-glass" data-mock="q-card" data-card="promise">'
+    );
+    // A card past the list is a q-card with no name.
+    expect(html).toContain('<section class="doc-panel op-glass" data-mock="q-card"><h2 id="c">');
+  });
+
   it('leaves every other document’s cards as they were', () => {
     const html = layoutDocument('<h1>A record</h1><h2>Context</h2><p>Why.</p>', 'A record');
     expect(html).not.toContain('q-card');
