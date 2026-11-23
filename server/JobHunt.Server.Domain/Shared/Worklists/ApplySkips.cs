@@ -9,8 +9,9 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 /// morning, and left on the list it takes one of the day's few rows again, so a run could spend its whole room on the same
 /// ten forms and never reach the postings behind them. A skip is kept for a week, by the posting's address, in one table
 /// of three cells (address, day, reason); a skip that is the run's own trouble (a browser that froze, a run that ended
-/// before the row) is not kept, because the form was never read. Taking a line out of the table, or naming the address in
-/// apply-reopen.tsv, puts the posting back on the list.
+/// before the row) is not kept, because the form was never read. A skip whose reason is the company's and not the posting's
+/// (see <see cref="Boards"/>) holds the company's whole board for the week. Taking a line out of the table, or naming the
+/// address in apply-reopen.tsv, puts the posting back on the list.
 /// </summary>
 public static partial class ApplySkips
 {
@@ -32,18 +33,42 @@ public static partial class ApplySkips
     /// <summary>The addresses skipped within the last <see cref="Days"/> days, as <see cref="Key"/> reads them.</summary>
     /// <param name="table">The table's text.</param>
     /// <param name="day">The Central day.</param>
-    public static HashSet<string> Remembered(string table, DateOnly day)
+    public static HashSet<string> Remembered(string table, DateOnly day) => [.. Recent(table, day).Select(cells => Key(cells[0]))];
+
+    /// <summary>
+    /// The company boards skipped within the last <see cref="Days"/> days for a reason that is the company's, as
+    /// <see cref="Board"/> reads them: a signature page, a question no bank answers, an account wall, or a board that
+    /// sends the applicant to the company's own site. A company serves one form, one set of questions and one board to
+    /// all its postings, so its next posting stops on the same thing (heal-server6am-apply-20261123: 1Password four
+    /// mornings on one question, Esri three on one redirect, Anduril two on its export-control questions, each under an
+    /// address the table had not seen). A skip about the posting itself (gone, closed, its age, its band, its title, where
+    /// it sits, an essay) holds that posting alone, and a LinkedIn posting names no board.
+    /// </summary>
+    /// <param name="table">The table's text.</param>
+    /// <param name="day">The Central day.</param>
+    public static HashSet<string> Boards(string table, DateOnly day) =>
+        [.. Recent(table, day).Where(cells => cells.Length >= 3 && CompanyWide().IsMatch(cells[2])).Select(cells => Board(cells[0])).OfType<string>()];
+
+    /// <summary>
+    /// The company's board an address sits on, "greenhouse/esri", "lever/acme" or "ashby/1password", lower case and the
+    /// same for both Greenhouse hosts; null for any other address and for Greenhouse's embed pages, which name no company.
+    /// </summary>
+    /// <param name="link">The address.</param>
+    public static string? Board(string link)
     {
-        var kept = new HashSet<string>(StringComparer.Ordinal);
-        foreach (string[] cells in table.Split('\n').Select(line => line.TrimEnd('\r').Split('\t')).Where(cells => cells.Length >= 2))
+        Match match = BoardToken().Match(link.Trim());
+        if (!match.Success || match.Groups["token"].Value.Equals("embed", StringComparison.OrdinalIgnoreCase))
         {
-            if (DateOnly.TryParseExact(cells[1], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly written) && day.DayNumber - written.DayNumber is >= 0 and < Days)
-            {
-                kept.Add(Key(cells[0]));
-            }
+            return null;
         }
-        return kept;
+        string host = match.Groups["host"].Value.ToLowerInvariant();
+        string board = host.Contains("greenhouse", StringComparison.Ordinal) ? "greenhouse" : host.Contains("lever", StringComparison.Ordinal) ? "lever" : "ashby";
+        return $"{board}/{match.Groups["token"].Value.ToLowerInvariant()}";
     }
+
+    private static IEnumerable<string[]> Recent(string table, DateOnly day) =>
+        table.Split('\n').Select(line => line.TrimEnd('\r').Split('\t'))
+            .Where(cells => cells.Length >= 2 && DateOnly.TryParseExact(cells[1], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly written) && day.DayNumber - written.DayNumber is >= 0 and < Days);
 
     /// <summary>
     /// A posting's address reduced to what names it: lower case, no trailing slash, no query or fragment, and no closing
@@ -61,6 +86,12 @@ public static partial class ApplySkips
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();
+
+    [GeneratedRegex(@"^(?:skipped:\s*)?(?:signature page|no banked answer|account wall|company site)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex CompanyWide();
+
+    [GeneratedRegex(@"^https?://(?<host>job-boards\.greenhouse\.io|boards\.greenhouse\.io|jobs\.lever\.co|jobs\.ashbyhq\.com)/(?<token>[^/?#\s]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex BoardToken();
 
     [GeneratedRegex(@"browser|renderer|froze|frozen|timed? ?out|run ended|not opened|not reached|tab group|could not be (?:read|opened)", RegexOptions.IgnoreCase)]
     private static partial Regex Trouble();

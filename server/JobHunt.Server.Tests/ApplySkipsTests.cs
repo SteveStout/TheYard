@@ -141,6 +141,107 @@ public sealed class ApplySkipsTests
         Assert.Contains("Acme Dental", morning.Share.Files[$"{Folder}/worklist.tsv"], StringComparison.Ordinal);
     }
 
+    // heal-server6am-apply-20261123: the 6 AM apply lane closed 11/20 and 11/23 with no form sent. 1Password was skipped
+    // four mornings for the same unbanked "cybersecurity SaaS" question, Esri three for the same redirect to esri.com and
+    // Anduril twice for its export-control questions, each time under an address the table had not seen, because the
+    // memory held one address and the company's next posting took the row. The fixture is J:\dispatch\heal-fixtures\
+    // 30-heal-server6am-apply-20261123.txt; the addresses and reasons are the 11/20 table's lines and the 11/23 worklist's.
+    private const string HealSweep = "APPLY-SWEEP-2026-11-02-heal.md";
+
+    private const string HealSkips =
+        "https://jobs.ashbyhq.com/1password/8ff17ade-462e-4afe-9255-b4193d0b8424/application\t2026-11-01\tno banked answer: cybersecurity SaaS experience, salary range as numbers, three required essays\n"
+        + "https://job-boards.greenhouse.io/esri/jobs/5291879007\t2026-11-01\tcompany site esri.com, not a no-account board: the Greenhouse URL redirected to an esri.com careers page\n"
+        + "https://job-boards.greenhouse.io/andurilindustries/jobs/5277698007\t2026-11-01\tno banked answer: export-controls and government-oversight questions\n"
+        + "https://job-boards.greenhouse.io/axon/jobs/7997878003\t2026-11-01\tsignature page: Prohibited Possessor Questionnaire acknowledgement\n"
+        + "https://job-boards.greenhouse.io/rocketlab/jobs/8202565003\t2026-11-01\tonsite question: willing to work onsite in Littleton, CO\n"
+        + "https://job-boards.greenhouse.io/conga/jobs/5292530007\t2026-11-01\tgone or closed: the URL redirects to the Conga board index\n"
+        + "https://www.linkedin.com/jobs/view/4491233145/\t2026-11-01\tclosed: LinkedIn shows no longer accepting applications\n";
+
+    private static string HealSweepFile(params (string Company, string Role, string Link)[] rows) =>
+        "# APPLY SWEEP 2026-11-02, heal-server6am-apply-20261123\n\n### CONFIRMED LIVE on the employer's own board\n| # | Company | Role | Board | Link |\n|---|---|---|---|---|\n"
+        + string.Concat(rows.Select((row, i) => $"| {i + 1} | {row.Company} | {row.Role} | NO account | {row.Link} |\n"));
+
+    private static readonly (string Company, string Role, string Link)[] TheMorningOf1123 =
+    [
+        ("Anduril Industries", "Senior Mission Planning Engineer", "https://job-boards.greenhouse.io/andurilindustries/jobs/5303810007"),
+        ("1Password", "Engineering Manager, Infrastructure (Device Trust)", "https://jobs.ashbyhq.com/1password/f0100f8b-ca22-4cf3-abd8-fda500de8d9e"),
+        ("Esri", "Principal Software Development Engineer - National Imagery", "https://job-boards.greenhouse.io/esri/jobs/5218015007"),
+        ("Rocket Lab Corporation", "Staff Software Engineer, Flight Software", "https://job-boards.greenhouse.io/rocketlab/jobs/8202565999"),
+        ("Conga", "Principal Software Engineer", "https://job-boards.greenhouse.io/conga/jobs/5292530999"),
+    ];
+
+    [Fact]
+    public void Only_a_skip_for_the_company_s_own_reason_holds_its_board()
+    {
+        Assert.Equal(["ashby/1password", "greenhouse/andurilindustries", "greenhouse/axon", "greenhouse/esri"], ApplySkips.Boards(HealSkips, new DateOnly(2026, 11, 3)).Order(StringComparer.Ordinal));
+        Assert.Empty(ApplySkips.Boards(HealSkips, new DateOnly(2026, 11, 8)));
+        Assert.Empty(ApplySkips.Boards("https://job-boards.greenhouse.io/esri/jobs/1\t2026-11-02\n", new DateOnly(2026, 11, 3)));
+    }
+
+    [Theory]
+    [InlineData("https://job-boards.greenhouse.io/andurilindustries/jobs/5277698007", "greenhouse/andurilindustries")]
+    [InlineData("https://boards.greenhouse.io/andurilindustries/jobs/5303391007?gh_jid=5303391007", "greenhouse/andurilindustries")]
+    [InlineData("https://jobs.ashbyhq.com/M-KOPA/ebab596b-350b-45bc-8c53-7d1943fefaae", "ashby/m-kopa")]
+    [InlineData("  https://jobs.lever.co/acme/1234/apply", "lever/acme")]
+    [InlineData("https://www.linkedin.com/jobs/view/4491233145/", null)]
+    [InlineData("https://boards.greenhouse.io/embed/job_app?for=esri&token=1", null)]
+    [InlineData("https://www.esri.com/careers/5291772007", null)]
+    public void A_posting_s_board_is_its_host_and_company_token(string link, string? board) => Assert.Equal(board, ApplySkips.Board(link));
+
+    [Fact]
+    public async Task The_fixture_a_company_whose_form_stopped_the_lane_does_not_take_a_row_again_under_another_posting()
+    {
+        Morning morning = await RunAsync(Quiet, seed: m =>
+        {
+            m.Share.Files[HealSweep] = HealSweepFile(TheMorningOf1123);
+            m.Share.Files[WritePolicy.SkipsTable] = HealSkips;
+        });
+        string list = morning.Share.Files[$"{Folder}/worklist.tsv"];
+        Assert.DoesNotContain("1Password", list, StringComparison.Ordinal);
+        Assert.DoesNotContain("Esri", list, StringComparison.Ordinal);
+        Assert.DoesNotContain("Anduril Industries", list, StringComparison.Ordinal);
+        Assert.Contains("3 postings: off the list before the gates: another of the company's forms stopped the lane in the last 7 days", morning.Share.Files[$"{Folder}/DONE.md"], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_skip_about_one_posting_holds_only_that_posting_and_the_company_s_others_still_take_rows()
+    {
+        Morning morning = await RunAsync(Quiet, seed: m =>
+        {
+            m.Share.Files[HealSweep] = HealSweepFile(TheMorningOf1123);
+            m.Share.Files[WritePolicy.SkipsTable] = HealSkips;
+        });
+        string list = morning.Share.Files[$"{Folder}/worklist.tsv"];
+        Assert.Contains("rocketlab/jobs/8202565999", list, StringComparison.Ordinal);
+        Assert.Contains("conga/jobs/5292530999", list, StringComparison.Ordinal);
+        Assert.Contains("Acme Dental", list, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_company_s_posting_on_the_reopen_list_is_tried_again_whatever_its_other_forms_said()
+    {
+        Morning morning = await RunAsync(Quiet, seed: m =>
+        {
+            m.Share.Files[HealSweep] = HealSweepFile(TheMorningOf1123);
+            m.Share.Files[WritePolicy.SkipsTable] = HealSkips;
+            m.Share.Files["nightly/apply-reopen.tsv"] = "url\twhy\tadded_by\tadded_on\nhttps://jobs.ashbyhq.com/1password/f0100f8b-ca22-4cf3-abd8-fda500de8d9e\tSteve banked the answer\tsteve\t2026-11-03\n";
+        });
+        string list = morning.Share.Files[$"{Folder}/worklist.tsv"];
+        Assert.Contains("1Password", list, StringComparison.Ordinal);
+        Assert.DoesNotContain("Esri", list, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_company_hold_ends_with_its_week()
+    {
+        Morning morning = await RunAsync(Quiet, seed: m =>
+        {
+            m.Share.Files[HealSweep] = HealSweepFile(TheMorningOf1123);
+            m.Share.Files[WritePolicy.SkipsTable] = HealSkips.Replace("2026-11-01", "2026-10-27", StringComparison.Ordinal);
+        });
+        Assert.Contains("Esri", morning.Share.Files[$"{Folder}/worklist.tsv"], StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_table_is_a_file_the_program_may_write_and_no_other_one_beside_it_is()
     {
