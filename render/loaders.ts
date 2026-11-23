@@ -162,7 +162,8 @@ async function renderedDoc(key: string, markdown: string): Promise<FirstLoad['do
       html: layoutDocument(
         rendered,
         DOCS[key as keyof typeof DOCS]?.title,
-        DOCS[key as keyof typeof DOCS]?.wide
+        DOCS[key as keyof typeof DOCS]?.wide,
+        DOCS[key as keyof typeof DOCS]?.cards
       ),
     };
   const { layoutAuthor } = await import('../src/lib/author');

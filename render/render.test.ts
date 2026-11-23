@@ -308,6 +308,12 @@ describe('the rendering service', () => {
     expect(doc.asked.some((read) => read.url.startsWith(`${API}/api/pulse`))).toBe(false);
   });
 
+  it('names a document’s cards as the window does, so the Quality page drawn here carries its lede and numbered cards (ADR-130, the addendum on the page in two layers)', async () => {
+    const { html } = await page('?doc=quality');
+    expect(html).toMatch(/data-mock=\\?"lede-card\\?"/);
+    expect(html).toMatch(/data-mock=\\?"q-card\\?" data-card=\\?"slip\\?"/);
+  });
+
   it('draws the review route whole on the server: the first screen from its two reads, the seven compact stops from their list and the close (ADR: The review route gives a reason before it asks)', async () => {
     const { response, html, asked } = await page('?view=review');
     expect(response.status).toBe(200);
