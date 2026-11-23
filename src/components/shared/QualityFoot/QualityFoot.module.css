@@ -1,9 +1,8 @@
 /**
- * Does:      Lays out the Quality sheet's foot as its picture draws it: the question beside its moves (sales.css, op-ask),
- *            the three moves at the right of their column, and under them Where next, its small spaced heading and its
- *            two links side by side, each over its reason and minutes; on a phone the moves the row's width and the
- *            links one under the other. Inside the document's words, so it keeps the pills' own ink and its own spacing
- *            over the document's rules for a paragraph, a list and a link.
+ * Does:      Lays out the Quality sheet's foot as its picture draws it: the question beside its moves (sales.css, op-ask)
+ *            and the three moves at the right of their column, with nothing under them; on a phone each move takes the
+ *            row's width. Inside the document's words, so it keeps the pills' own ink and its own spacing over the
+ *            document's rules for a paragraph and a link.
  * Does not:  Draw the card's glass (panels.css and DocPanels.module.css do), the pills (pills.css does) or the question
  *            (sales.css does).
  * Used by:   QualityFoot.tsx.
@@ -47,58 +46,6 @@
   color: var(--color-on-gold);
 }
 
-.next {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--space-3) var(--space-6);
-}
-
-.foot .title {
-  margin: 0;
-  color: var(--color-teal-deep);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--readout-tracking);
-  text-transform: uppercase;
-}
-
-.foot .links {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3) var(--space-6);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.foot .links li {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-}
-
-.foot .links a {
-  color: var(--color-teal-deep);
-  font-weight: var(--weight-semibold);
-  text-decoration-color: var(--color-gold);
-  text-underline-offset: 3px;
-}
-
-.links a:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.reason {
-  color: var(--color-text);
-  font-size: var(--text-sm);
-}
-
-.minutes {
-  white-space: nowrap;
-}
-
 @media (max-width: 639.98px) {
   .acts {
     justify-content: stretch;
@@ -106,17 +53,5 @@
 
   .acts > a {
     width: 100%;
-  }
-
-  .next,
-  .foot .links {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  /* A thumb's height, like every control on a page a phone opens. */
-  .foot .links a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch-target);
   }
 }

@@ -15,7 +15,6 @@ import { LINKS, MENUS } from '../../../library/sections';
 import { useFirstSeen } from '../../../hooks/useFirstSeen';
 import { Hook } from '../../shared/Hook';
 import { SectionHead } from '../../shared/SectionHead';
-import { WhereNext } from '../../shared/WhereNext';
 import { QualityTrend } from '../../shared/QualityTrend';
 import { hookFor, hookTrend, landingLines, stoppedLine } from '../../../lib/pageHooks';
 import { centralDay, releasesInLastSevenDays } from '../../../lib/releaseFacts';
@@ -45,8 +44,8 @@ import { request } from '../../../lib/request';
  * post. Then the live readings (ADR-100); Start here, four doors in one row with what each costs; the blog's Latest
  * posts beside three named voices and the way to all of them; the build, the gate's three figures and the stack's
  * summary with the way to the whole table on its own page; the small tiles under their groups, drawn from the same
- * site map the sidebar is drawn from (src/lib/siteMap.ts), Sign in and Admin left to the sidebar; the close; and
- * Where next. On a phone a dock keeps the next step in reach once the moves have scrolled away. Every section has
+ * site map the sidebar is drawn from (src/lib/siteMap.ts), Sign in and Admin left to the sidebar; and the close,
+ * the page's last section. On a phone a dock keeps the next step in reach once the moves have scrolled away. Every section has
  * the page's one width and one gap. It takes the sales pages' look (ADR: The sales pages set the site's look): the
  * live readings are the dark live panel on its side, every group opens with the shared section head and its number,
  * 01 to 07, and the close asks the review route's question under 08; the primary move's arrow nudges right when the
@@ -262,7 +261,6 @@ export function Landing({
           ask={LANDING_CLOSE}
           heading={LANDING_CLOSE.label}
         />
-        <WhereNext page="landing" />
       </section>
       <ReviewDock
         watch='[data-testid="landing-primary"]'

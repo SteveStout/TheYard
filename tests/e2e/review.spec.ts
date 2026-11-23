@@ -851,7 +851,6 @@ async function sections(page: Page) {
         left: box.left,
         right: box.right,
         height: box.height,
-        next: section.querySelector('[data-testid="where-next"]') !== null,
         names: section.querySelector('[data-testid="review-names"]') !== null,
         content:
           Math.max(...[...section.children].map((child) => child.getBoundingClientRect().bottom)) -
@@ -895,10 +894,10 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
         expect(Math.abs(part.left - parts[0].left), `${at}: left edge`).toBeLessThanOrEqual(1);
         expect(Math.abs(part.right - parts[0].right), `${at}: right edge`).toBeLessThanOrEqual(1);
       }
-      // 2. No forced height: 48 between sections (32 on a phone), the names 24 under the mirror, Where next 16.
+      // 2. No forced height: 48 between sections (32 on a phone), the names 24 under the mirror.
       for (const [index, part] of parts.slice(1).entries()) {
         const gap = part.top - parts[index].bottom;
-        const want = part.next ? 16 : part.names ? 24 : width < 640 ? 32 : 48;
+        const want = part.names ? 24 : width < 640 ? 32 : 48;
         expect(
           Math.abs(gap - want),
           `${at}: gap above section ${index + 2} is ${gap}`
@@ -1114,7 +1113,7 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
     await expect(dock).toHaveAttribute('data-on', 'true');
     await expect(dock.getByRole('link', { name: 'Book 20 minutes' })).toBeInViewport();
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    const close = await page.getByTestId('where-next').boundingBox();
+    const close = await page.getByTestId('review-close').boundingBox();
     const bar = await dock.boundingBox();
     expect(close!.y + close!.height, 'the last section clears the dock').toBeLessThanOrEqual(
       bar!.y + 1

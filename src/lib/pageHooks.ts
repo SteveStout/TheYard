@@ -6,7 +6,7 @@
  *            says whether an address opens Admin, which no hook may; and reads each page's "Where next" links (ladder v7).
  * Does not:  Draw anything (components/shared/Hook does), fetch anything, or type a count: every number comes from data.
  *            Builds the landing's lines too: its headline, the held-since line under it and the week's releases.
- * Used by:   Landing.tsx, WhereNext.tsx, pageHooks.test.ts.
+ * Used by:   Landing.tsx, WhereNext.tsx, DocDialog.tsx, pageHooks.test.ts, WhereNext.test.ts.
  */
 import file from '../../data/hooks.json';
 import RELEASES from 'virtual:release-facts';
@@ -107,16 +107,7 @@ export function withCounts(label: string, counts: Record<string, number>): strin
 }
 
 /** The pages that carry a "Where next" footer, one entry each in the file's next list. */
-export const NEXT_PAGES = [
-  'landing',
-  'review',
-  'post',
-  'about',
-  'quality',
-  'record',
-  'architecture',
-  'resume',
-] as const;
+export const NEXT_PAGES = ['landing', 'post', 'about', 'record', 'architecture', 'resume'] as const;
 
 /** A page's name in the next list. */
 export type NextPage = (typeof NEXT_PAGES)[number];

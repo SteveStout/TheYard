@@ -49,7 +49,7 @@ export type DocRequest = { key: DocKey };
  * doc through the one instance the sidebar owns; onClose lets the sidebar
  * drop the row's current marker.
  */
-/** The "Where next" footer a document ends with: Architecture and every decision record (Quality's is in its foot). */
+/** The "Where next" footer a document ends with: Architecture and every decision record (Quality ends on its close). */
 function nextPage(key: DocKey): NextPage | null {
   if (key === 'architecture') return key;
   return DOCS[key].url.startsWith('/api/docs/adr-') ? 'record' : null;
@@ -252,8 +252,7 @@ export function DocDialog({
             {nextPage(activeDoc) && <WhereNext page={nextPage(activeDoc)!} />}
           </>
         )}
-        {foot !== null &&
-          createPortal(<QualityFoot onBack={() => dialogRef.current?.close()} />, foot)}
+        {foot !== null && createPortal(<QualityFoot />, foot)}
       </div>
     </dialog>
   );

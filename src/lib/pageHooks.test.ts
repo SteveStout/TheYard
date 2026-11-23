@@ -170,23 +170,13 @@ describe('the hook data, one entry a page', () => {
 // #endregion one-file
 
 // #region quality-next
-describe('Where next for the Quality page (saleshome1120)', () => {
-  it('leads back to the review route’s questions, then to the post behind the page', () => {
-    expect(nextFor('quality')).toEqual([
-      {
-        label: 'Back to the three questions',
-        reason: 'Two more answers, each the running system.',
-        minutes: 1,
-        href: '/?view=review#questions',
-      },
-      {
-        label: 'Quality on both ends',
-        reason: 'The story behind this page, in one post.',
-        minutes: 6,
-        href: '/?view=blog&post=quality-on-both-ends',
-      },
-    ]);
-    expect(nextFor('quality').filter((link) => opensAdmin(link.href))).toEqual([]);
+describe('Where next on the pages that end on their close', () => {
+  it('lists none for the review route or the Quality page (Steve, 2026-11-20)', () => {
+    for (const page of ['review', 'quality'])
+      expect(
+        file.next.some((entry) => entry.page === page),
+        page
+      ).toBe(false);
   });
 });
 // #endregion quality-next

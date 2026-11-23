@@ -19,11 +19,10 @@ export const WORK_ID = 'the-work';
 /** The short path's anchor, which TheYard card's last door goes to. */
 export const QUESTIONS_ID = 'questions';
 
-/** The work section's head: its title, its line, and the door at its right. */
+/** The work section's head: its title and its line. The gold Resume (PDF) button sits above it, so no door is here. */
 export const WORK = {
   title: 'The work',
   hint: 'Each number is on my resume and my LinkedIn. The last one is read from this site as you look at it.',
-  resume: 'The two-page resume (PDF)',
 } as const;
 
 /** One door on a card's last line: its words, its address, the action it reports and the arrow it ends with. */

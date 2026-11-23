@@ -15,7 +15,7 @@ import { landOnSection } from '../../../library/pendingAnchor';
 import type { NowRow } from '../../../lib/nowPanel';
 import { QUESTIONS_ID, REVIEW_CASES, WORK, WORK_ID, type CaseDoor } from '../../../lib/reviewCases';
 import type { ReviewAction } from '../../../lib/reviewProgress';
-import { PROOF, RESUME_ADDRESS } from '../../../lib/reviewVerdict';
+import { PROOF } from '../../../lib/reviewVerdict';
 import { plainClick, scrollToSection } from '../../../lib/sectionScroll';
 import { SectionHead } from '../../shared/SectionHead';
 import { CaseCard } from '../CaseCard';
@@ -66,23 +66,7 @@ export function ReviewWork({
       data-mock="work"
       data-testid="review-work"
     >
-      <SectionHead
-        id="review-work-title"
-        number="01"
-        title={WORK.title}
-        hint={WORK.hint}
-        meta={
-          <a
-            className="op-door"
-            href={RESUME_ADDRESS}
-            onClick={() => onAction('resume')}
-            data-action="review.resume"
-          >
-            {WORK.resume}
-            <i aria-hidden="true">→</i>
-          </a>
-        }
-      />
+      <SectionHead id="review-work-title" number="01" title={WORK.title} hint={WORK.hint} />
       <div className={styles.cases}>
         {REVIEW_CASES.map((entry) => (
           <CaseCard

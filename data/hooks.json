@@ -71,7 +71,7 @@
       "link": null
     }
   ],
-  "next_about": "Where next (ladder v7, page flow): at the foot of each public page, at most two links, each with one line of reason and the minutes it takes. The React build reads it for the landing, the review route, a blog post, the Quality page, a decision record and Architecture; the API reads it for /about and the resume door. No address here opens Admin. The contact line is /api/go/email, a recorded redirect to Steve's email, so no page carries the address. The landing and the review route lead to the post named by slug. A spoke's first link is the review page: a blog post and About lead first to /?view=review. A count a reason names is written in braces, {recommendations}, and filled from data/recommendations.json when the page is drawn.",
+  "next_about": "Where next (ladder v7, page flow): at the foot of each public page, at most two links, each with one line of reason and the minutes it takes. The React build reads it for the stack page, a blog post, a decision record and Architecture (the home page, the review route and the Quality page end on their close, with no Where next under it, Steve's call 2026-11-20); the API reads it for /about and the resume door. No address here opens Admin. The contact line is /api/go/email, a recorded redirect to Steve's email, so no page carries the address. A spoke's first link is the review page: a blog post and About lead first to /?view=review. A count a reason names is written in braces, {recommendations}, and filled from data/recommendations.json when the page is drawn.",
   "next": [
     {
       "page": "landing",
@@ -79,23 +79,6 @@
         {
           "label": "Quality on both ends",
           "reason": "What the tests and CodeRabbit each caught, version by version.",
-          "minutes": 6,
-          "href": "/?view=blog&post=quality-on-both-ends"
-        },
-        {
-          "label": "About Steven",
-          "reason": "Who built this and how he leads.",
-          "minutes": 3,
-          "href": "/?view=about"
-        }
-      ]
-    },
-    {
-      "page": "review",
-      "links": [
-        {
-          "label": "Quality on both ends",
-          "reason": "The story behind the Quality stop, in one post.",
           "minutes": 6,
           "href": "/?view=blog&post=quality-on-both-ends"
         },
@@ -138,23 +121,6 @@
           "reason": "{recommendations} people who worked with him, in their words.",
           "minutes": 4,
           "href": "/?view=recommendations"
-        }
-      ]
-    },
-    {
-      "page": "quality",
-      "links": [
-        {
-          "label": "Back to the three questions",
-          "reason": "Two more answers, each the running system.",
-          "minutes": 1,
-          "href": "/?view=review#questions"
-        },
-        {
-          "label": "Quality on both ends",
-          "reason": "The story behind this page, in one post.",
-          "minutes": 6,
-          "href": "/?view=blog&post=quality-on-both-ends"
         }
       ]
     },

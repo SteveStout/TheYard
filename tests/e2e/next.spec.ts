@@ -18,9 +18,6 @@ const NEXT = (
 const nextFor = (page: string) => NEXT.find((entry) => entry.page === page)?.links ?? [];
 
 const PAGES: [string, string][] = [
-  ['landing', '/'],
-  ['review', '/?view=review'],
-  ['quality', '/?doc=quality'],
   ['about', '/about'],
   ['resume', '/resume?src=email'],
 ];
@@ -35,6 +32,15 @@ for (const [page, address] of PAGES) {
       .getByRole('link')
       .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
     expect(hrefs).toEqual(nextFor(page).map((link) => link.href));
+  });
+}
+
+// The home page, the review route and the Quality page end on their close, with no Where next under it.
+for (const address of ['/', '/?view=review', '/?doc=quality']) {
+  test(`${address} ends on its close, with no Where next`, async ({ page }) => {
+    await openTheYard(page, address);
+    await expect(page.locator('[data-mock="close"]').first()).toBeAttached({ timeout: 30_000 });
+    await expect(page.locator('[data-testid="where-next"]')).toHaveCount(0);
   });
 }
 
@@ -62,14 +68,14 @@ test('a tagged visit carries its code through the footers, and each page it land
   page,
   request,
 }) => {
-  // Ladder v7b, the proof walk (R7): the review route with a code, its footer to the post, then a sent About link,
+  // Ladder v7b, the proof walk (R7): the stack page with a code, its footer to the post, then a sent About link,
   // then the email line. That the API keeps each open under its path is LinkEndpointStatusTests' and
   // LinkHandlerTests'; this holds that every step sends the code and is answered.
   const code = `zz${Date.now().toString(36).slice(-4)}`;
   await answerBlog(page, []);
-  await openTheYard(page, `/?view=review&r=${code}`);
+  await openTheYard(page, `/?view=stack&r=${code}`);
   const toPost = page
-    .locator('[data-next="review"]')
+    .locator('[data-next="landing"]')
     .getByRole('link', { name: 'Quality on both ends' });
   await expect(toPost).toHaveAttribute('href', new RegExp(`r=${code}`));
   const blogReport = page.waitForResponse((response) =>

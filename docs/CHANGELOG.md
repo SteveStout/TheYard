@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): The home page, the review route and the Quality page now end on their close with no Where next list under it, and the review route's 01 The work drops its "The two-page resume (PDF)" link because the gold Resume (PDF) button sits right above it.
 - **1.0.5.164** (2026-11-26): The after-roll starts the edge, the job hunt's Function and CI on main through a script that calls again when GitHub answers a 5xx, so one 504 on a dispatch no longer fails the whole after-roll and holds the next version's promote.
 - **1.0.5.163** (2026-11-26): A sent About link opens the author page; /about stays the page for search engines.
 - **1.0.5.162** (2026-11-25): The job hunt's tracker merger runs every two minutes instead of every minute, which halves the share's folder listings, about $5.70 a month, and still merges a lane's row inside the three minutes every lane allows.
