@@ -4,7 +4,9 @@ namespace JobHunt.Server.Domain.Shared.Slots;
 /// Where the program may write on the share: a run folder or the day's folder under nightly/, the runs table, the
 /// two merger inboxes it spools to, the feed's one queue file a day in linkedin-proof/ and one for each caught role it
 /// ran for, and the network log's LinkedIn
-/// spool: its TSV files and thread texts under networklog/linkedin-inbox/, its high-water mark and its backlog floor. Everything else is refused before the disk is touched, so a tracker, a
+/// spool: its TSV files and thread texts under networklog/linkedin-inbox/, its high-water mark and its backlog floor; and
+/// the archive job's two folders, its zips and log under _archive/datamove1123/ and the originals it moves under
+/// _to_delete/datamove1123/, with the one note it leaves where mentor/logs was. Everything else is refused before the disk is touched, so a tracker, a
 /// state.md or a failure-log.md can never be written whole by this process, whatever a later change asks of it.
 /// </summary>
 public static class WritePolicy
@@ -32,6 +34,15 @@ public static class WritePolicy
     /// <summary>The oldest LinkedIn exchange the backlog has reached, or "done" once it reached its window's end.</summary>
     public const string Floor = "networklog/linkedin-floor.txt";
 
+    /// <summary>Where the archive job writes its zips and ARCHIVE-LOG.tsv.</summary>
+    public const string Archive = "_archive/datamove1123/";
+
+    /// <summary>Where the archive job moves a unit's originals once its zip is verified, until Steve empties it.</summary>
+    public const string ToDelete = "_to_delete/datamove1123/";
+
+    /// <summary>The note left where mentor/logs was, because public decision records cite its files by path.</summary>
+    public const string LogsMoved = "mentor/logs/MOVED.md";
+
     /// <summary>True when the program may write this path.</summary>
     /// <param name="relative">The path relative to the share's root, with forward slashes.</param>
     public static bool Allowed(string relative)
@@ -41,9 +52,13 @@ public static class WritePolicy
         {
             return false;
         }
-        if (path == RunsTable || path == SkipsTable || path == HighWater || path == Floor)
+        if (path == RunsTable || path == SkipsTable || path == HighWater || path == Floor || path == LogsMoved)
         {
             return true;
+        }
+        if (path.StartsWith(Archive, StringComparison.Ordinal) || path.StartsWith(ToDelete, StringComparison.Ordinal))
+        {
+            return !path.EndsWith('/');
         }
         if (path.StartsWith(LinkedInText, StringComparison.Ordinal))
         {

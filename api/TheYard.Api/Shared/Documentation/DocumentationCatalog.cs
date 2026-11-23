@@ -174,6 +174,7 @@ public static class DocumentationCatalog
         ["adr-automated-tests-never-touch-a-real-database-or-permanent-storage"] = "docs/decisions/ADR-141-automated-tests-never-touch-a-real-database-or-permanent-storage.md",
         ["adr-the-sales-pages-set-the-sites-look"] = "docs/decisions/ADR-142-the-sales-pages-set-the-sites-look.md",
         ["adr-search-engines-are-told-about-every-post"] = "docs/decisions/ADR-143-search-engines-are-told-about-every-post.md",
+        ["adr-old-folders-are-zipped-not-kept"] = "docs/decisions/ADR-144-old-folders-are-zipped-not-kept.md",
         ["incidents"] = "docs/incidents/INCIDENTS.md",
         ["inc-001-the-share-that-billed-for-looking"] = "docs/incidents/INC-001-the-share-that-billed-for-looking.md",
         ["style-guide"] = "docs/style/STYLE-GUIDE.md",
@@ -224,6 +225,7 @@ public static class DocumentationCatalog
         ["request-path"] = ("docs/images/request-path.svg", "How a request gets answered"),
         ["vertical-slices"] = ("docs/images/vertical-slices.svg", "The onion cut into vertical slices"),
         ["traffic-cop"] = ("docs/images/traffic-cop.svg", "One traffic cop for main"),
+        ["archive-job"] = ("docs/images/archive-job.svg", "Old folders are zipped, not kept"),
     };
     // #endregion diagrams
 }

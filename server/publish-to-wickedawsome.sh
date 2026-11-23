@@ -16,7 +16,9 @@ cp "$here/systemd/jobhunt-crosspost.service" "$here/systemd/jobhunt-crosspost.ti
 # box_restart.py); the canaries run this build's `run --canary`.
 cp "$here/systemd/jobhunt-canary.service" "$here/systemd/jobhunt-canary.timer" "$here/systemd/jobhunt-restart.service" \
   "$here/systemd/jobhunt-restart.timer" "$here/systemd/jobhunt-boot.service" "$units/"
+# The 03:40 archive job runs this build's `archive` (ADR: Old folders are zipped, not kept).
+cp "$here/systemd/jobhunt-archive.service" "$here/systemd/jobhunt-archive.timer" "$units/"
 systemctl --user daemon-reload
-systemctl --user enable --now jobhunt-6am.timer jobhunt-crosspost.timer jobhunt-canary.timer jobhunt-restart.timer
+systemctl --user enable --now jobhunt-6am.timer jobhunt-crosspost.timer jobhunt-canary.timer jobhunt-restart.timer jobhunt-archive.timer
 systemctl --user enable jobhunt-boot.service
-systemctl --user list-timers jobhunt-6am.timer jobhunt-crosspost.timer jobhunt-canary.timer jobhunt-restart.timer --no-pager
+systemctl --user list-timers jobhunt-6am.timer jobhunt-crosspost.timer jobhunt-canary.timer jobhunt-restart.timer jobhunt-archive.timer --no-pager

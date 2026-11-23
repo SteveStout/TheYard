@@ -171,4 +171,11 @@ export const RECORDS_121_TO_150 = {
     kind: 'adr',
     number: '143',
   },
+  adrOldFoldersAreZippedNotKept: {
+    title: 'ADR: Old folders are zipped, not kept',
+    menuLabel: 'ADR: Old folders are zipped, not kept',
+    url: '/api/docs/adr-old-folders-are-zipped-not-kept',
+    kind: 'adr',
+    number: '144',
+  },
 } as const satisfies Record<string, RecordEntry>;

@@ -1,0 +1,17 @@
+# The archive job (ADR: Old folders are zipped, not kept): nightly day folders and dispatcher done days older than 14
+# Central days, released and dead lock files, and folded link-token rows are zipped under J:\_archive\datamove1123\,
+# each zip reopened and checked against a second read of its source, and only then the originals moved by one rename
+# under J:\_to_delete\datamove1123\. Nothing is deleted. Installed by server/publish-to-wickedawsome.sh.
+[Unit]
+Description=JobHunt archive job: old nightly and dispatch folders zipped, verified and moved aside
+After=network-online.target jdrive.service
+Wants=jdrive.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/jobhunt-server/JobHunt.Server archive
+WorkingDirectory=%h/.local/share/jobhunt-server
+Environment=TZ=America/Chicago
+Environment=DOTNET_ROOT=/usr/lib/dotnet
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+TimeoutStartSec=1h
