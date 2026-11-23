@@ -19,7 +19,10 @@ public interface IReplyDraftWriter
 /// <param name="Already">Messages an earlier pass queued.</param>
 /// <param name="Placed">Drafts the items wrote that this pass put into Gmail.</param>
 /// <param name="Skipped">Messages this pass found on a thread the tracker does not know, which get no item and no draft.</param>
-public sealed record ReplyDraftPass(int Read, int Waiting, int Queued, int Already, int Placed, int Skipped = 0);
+/// <param name="Rows">With the rows on, the window's ids that have a row in jobhunt.ReplyDrafts.</param>
+/// <param name="Mismatch">Of those rows, the ones whose status is not what the files say.</param>
+/// <param name="SqlError">SQL calls that failed; the pass went on on its files.</param>
+public sealed record ReplyDraftPass(int Read, int Waiting, int Queued, int Already, int Placed, int Skipped = 0, int Rows = 0, int Mismatch = 0, int SqlError = 0);
 
 /// <summary>
 /// A reply reaches Steve with a draft (ReplyDraft): every firing reads the inbox of the last two hours for a message a
@@ -30,7 +33,8 @@ public sealed record ReplyDraftPass(int Read, int Waiting, int Queued, int Alrea
 /// and one log line, once. Then each draft an item has written is put into its thread's Gmail drafts, with the reply
 /// headers that keep it there, by a writer that cannot send, once, and only when live, after the thread is read again:
 /// a thread Steve has answered or that holds another draft since gets no draft, and the written one is marked stale. A
-/// dry pass leaves the draft on the share.
+/// dry pass leaves the draft on the share. With <see cref="Rows"/> set, every decision is also written as a row, and
+/// the files still decide (ReplyDraftLedger).
 /// </summary>
 /// <param name="store">The job-hunt share.</param>
 /// <param name="inbox">The inbox, read only.</param>
@@ -43,6 +47,9 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
 
     /// <summary>GitHub's mail, every address at the domain: the coding lanes' notifications, never a person on a job thread.</summary>
     public static IReadOnlyList<string> NotFrom { get; } = ["notifications@github.com", "github.com"];
+
+    /// <summary>The rows beside the files, or null while jobhunt.ReplyDrafts is not there.</summary>
+    public ReplyDraftLedger? Rows { get; init; }
 
     /// <summary>
     /// The mail this reads: the inbox, the window and no older, nothing Steve sent, nothing from GitHub. The search asks for
@@ -61,7 +68,8 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
         int read = 0, waiting = 0, queued = 0, already = 0, skipped = 0;
         KnownContacts? known = null;
         var threads = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var (id, thread) in await inbox.FindInThreadsAsync(SearchAt(now), Most, ct))
+        var window = await inbox.FindInThreadsAsync(SearchAt(now), Most, ct);
+        foreach (var (id, thread) in window)
         {
             // A message an earlier pass skipped or marked is settled by its file, so it is not read again: rereading the
             // same fifty in full every five minutes is what ran the user's Gmail quota out. It still holds its thread, as
@@ -77,6 +85,7 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
                 if (await store.ExistsAsync(ReplyDraft.TempPath(id), ct))
                 {
                     await store.ReplaceAsync(ReplyDraft.TempPath(id), ReplyDraft.ReadyPath(id), ct);
+                    await NoteAsync(new ReplyDraftRow(id, thread, ReplyDraftRow.Queued), now, ct);
                     queued++;
                     log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} queued {ReplyDraft.ReadyPath(id)}, finishing a pass that stopped before it\n");
                     continue;
@@ -99,6 +108,7 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
             if (!ReplyDraft.IsJobThread(message.Address, known))
             {
                 await store.WriteAsync(ReplyDraft.SkippedPath(message.Id), TrackerCsvText.Encode($"{now:O}\n"), ct);
+                await NoteAsync(new ReplyDraftRow(message.Id, message.ThreadId, ReplyDraftRow.Skipped, "not a job thread"), now, ct);
                 log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} skipped {message.Id}: not a job thread, no tracker row holds the writer's address or work domain\n");
                 skipped++;
                 continue;
@@ -113,6 +123,7 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
             await store.WriteAsync(ReplyDraft.MarkerTempPath(reply.Id), TrackerCsvText.Encode(ReplyDraft.MarkerText(reply, now)), ct);
             await store.ReplaceAsync(ReplyDraft.MarkerTempPath(reply.Id), ReplyDraft.Marker(reply.Id), ct);
             await store.ReplaceAsync(ReplyDraft.TempPath(reply.Id), ReplyDraft.ReadyPath(reply.Id), ct);
+            await NoteAsync(new ReplyDraftRow(reply.Id, reply.ThreadId, ReplyDraftRow.Queued), now, ct);
             queued++;
             log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} queued {ReplyDraft.ReadyPath(reply.Id)} ({(drafts is null ? "dry" : "live")})\n");
         }
@@ -121,8 +132,17 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
         {
             await store.AppendAsync(ReplyDraft.Log, TrackerCsvText.Encode(log.ToString()), ct);
         }
-        return new ReplyDraftPass(read, waiting, queued, already, placed, skipped);
+        if (Rows is null)
+        {
+            return new ReplyDraftPass(read, waiting, queued, already, placed, skipped);
+        }
+        var names = (await store.ListFilesAsync(ReplyDraft.Folder, ct)).Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
+        await Rows.CompareAsync(window, names, now, ct);
+        return new ReplyDraftPass(read, waiting, queued, already, placed, skipped, Rows.Rows, Rows.Mismatch, Rows.SqlErrors);
     }
+
+    /// <summary>Writes a decision's row when the rows are on; the file it sits beside is already written.</summary>
+    private Task NoteAsync(ReplyDraftRow row, DateTimeOffset now, CancellationToken ct) => Rows?.NoteAsync(row, now, ct) ?? Task.CompletedTask;
 
     /// <summary>Why a written draft is no longer wanted, read from the thread right before it would be placed, or null.</summary>
     private async Task<string?> StaleAsync(string thread, CancellationToken ct) =>
@@ -150,11 +170,13 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
             if (await StaleAsync(to.Thread, ct) is { } why)
             {
                 await store.WriteAsync(ReplyDraft.StalePath(id), TrackerCsvText.Encode($"{why} {now:O}\n"), ct);
+                await NoteAsync(new ReplyDraftRow(id, to.Thread, ReplyDraftRow.Stale, why), now, ct);
                 log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} not placed the draft for {id}: {why}\n");
                 continue;
             }
             string draftId = await writer.CreateDraftAsync(to, body, ct);
             await store.WriteAsync(ReplyDraft.PlacedPath(id), TrackerCsvText.Encode($"{draftId} {now:O}\n"), ct);
+            await NoteAsync(new ReplyDraftRow(id, to.Thread, ReplyDraftRow.Placed, DraftId: draftId), now, ct);
             log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} placed the draft for {id} in its thread, not sent\n");
             placed++;
         }
