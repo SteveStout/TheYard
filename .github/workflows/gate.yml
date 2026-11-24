@@ -395,15 +395,20 @@ jobs:
       # #region heal-outside
       # The outside self-heal list (the year-end plan's 7b): on a ready/heal-* branch, a path in data/heal-outside.json
       # or a deleted file is red, and this job's verdict names it; any other branch is not a heal and passes. The one
-      # script the catch list runs too.
+      # script the catch list runs too. It reads the lane's own commit, the cop's ready output, before the fill: the
+      # changelog, the counts and the ratchet the fill writes for every version are the cop's, never the heal's, and a
+      # heal's required test raises the xUnit floor the fill moves. Preflight already runs on the unfilled commit.
       - name: The heal-outside list
         if: always()
         env:
           BASE: ${{ needs.cop.outputs.base }}
+          READY: ${{ needs.cop.outputs.ready }}
         run: |
           r="$RAW/rest.result"
           code=0
-          python3 scripts/heal_outside.py --branch "$GITHUB_REF_NAME" --base "${BASE:-origin/main}" > "$RAW/heal-outside.txt" 2>&1 || code=$?
+          # The checkout holds the pushed commit; a missing one is fetched, and one that cannot be read is red.
+          [ -z "$READY" ] || git cat-file -e "$READY^{commit}" 2> /dev/null || git fetch -q origin "$READY" || true
+          python3 scripts/heal_outside.py --branch "$GITHUB_REF_NAME" --base "${BASE:-origin/main}" --head "${READY:-HEAD}" > "$RAW/heal-outside.txt" 2>&1 || code=$?
           echo "healoutside=$code" >> "$r"
           cat "$RAW/heal-outside.txt"
       # #endregion heal-outside
