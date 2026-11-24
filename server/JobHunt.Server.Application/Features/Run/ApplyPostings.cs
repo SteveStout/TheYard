@@ -38,8 +38,9 @@ public static class ApplyPostings
 
     /// <summary>
     /// The postings less the ones the lane read and skipped on their forms in the last week (<see cref="ApplySkips"/>),
-    /// as one count line. A form the reopen list names is worked first, never held back by the memory, and a slot run's
-    /// caught role is its own posting.
+    /// and less every other posting on the board of a company whose form stopped the lane for the company's own reason
+    /// (<see cref="ApplySkips.Boards"/>), as one count line each. A form the reopen list names is worked first, never
+    /// held back by the memory, and a slot run's caught role is its own posting.
     /// </summary>
     /// <param name="share">The share.</param>
     /// <param name="reads">The morning's reads.</param>
@@ -52,15 +53,20 @@ public static class ApplyPostings
         {
             return postings;
         }
-        var skipped = ApplySkips.Remembered(await share.ReadAsync(WritePolicy.SkipsTable, ct), reads.Day);
-        if (skipped.Count > 0 && await share.ExistsAsync(ReopenList, ct))
-        {
-            skipped.ExceptWith(ReopenKeys(await share.ReadAsync(ReopenList, ct)));
-        }
+        string table = await share.ReadAsync(WritePolicy.SkipsTable, ct);
+        var skipped = ApplySkips.Remembered(table, reads.Day);
+        var boards = ApplySkips.Boards(table, reads.Day);
+        var reopened = skipped.Count > 0 && await share.ExistsAsync(ReopenList, ct) ? ReopenKeys(await share.ReadAsync(ReopenList, ct)).ToHashSet(StringComparer.Ordinal) : [];
+        skipped.ExceptWith(reopened);
         int held = postings.RemoveAll(posting => skipped.Contains(ApplySkips.Key(posting.Link)));
         if (held > 0)
         {
             dropped.Add(new Dropped($"{held} postings", $"off the list before the gates: the lane read their forms and skipped them in the last {ApplySkips.Days} days ({WritePolicy.SkipsTable})"));
+        }
+        int company = postings.RemoveAll(posting => ApplySkips.Board(posting.Link) is { } board && boards.Contains(board) && !reopened.Contains(ApplySkips.Key(posting.Link)));
+        if (company > 0)
+        {
+            dropped.Add(new Dropped($"{company} postings", $"off the list before the gates: another of the company's forms stopped the lane in the last {ApplySkips.Days} days on a signature page, an unbanked question, an account wall or its own site ({WritePolicy.SkipsTable})"));
         }
         return postings;
     }
