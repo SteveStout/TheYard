@@ -331,4 +331,38 @@ public sealed class WorklistTests
         Assert.StartsWith("skipped: age 33 days (posted 2026-10-01", Assert.Single(list.Dropped, d => d.What == "Northwind, Staff Engineer").Reason, StringComparison.Ordinal);
         Assert.EndsWith(", posted 2026-11-01", Assert.Single(list.Rows, row => row.Company == "Fabrikam").Source, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Miadad_Rashid_of_the_11_20_queue_is_on_the_messages_worklist_until_a_tracker_row_shows_his_message()
+    {
+        // Steve's named case (audit1124b F5c): the 11/20 4 AM queue drafted Miadad Rashid's follow-up and held Ben Olsen.
+        // With no hold file the builder takes Miadad to the gates; once Count 3882 (his 11/24 message) is on the tracker,
+        // RULE 25 holds him. Trimmed copies of the queue, the draft and the tracker rows (Fixtures, RULE 79).
+        var day = new DateOnly(2026, 11, 20);
+        const string Draft = "nightly/2026-11-20/0400-reply-opus-5-5/drafts/li-followup-worktruck.txt";
+        const string Short = "Miadad,\n\nThanks for connecting. I consolidated four apps onto one .NET 10 platform on Azure and cut release cycle time 50%.\n\ntheyard.stevenstout.biz/?r=[code]\n\nWould it be a bad idea to compare notes?\n\nThanks,\nSteve";
+        async Task<Worklist> ListAsync(string extra, string draft)
+        {
+            var morning = new Morning(_ => throw new InvalidOperationException("no lane runs in this test"), Fixture.Read("tracker.csv") + Fixture.Read("tracker-miadad-1120.csv") + extra);
+            morning.Share.Files["nightly/2026-11-20/0400-reply-opus-5-5/linkedin-queue.md"] = Fixture.Read("reply-queue-1120-b.md");
+            morning.Share.Files[Draft] = draft;
+            Assert.False(morning.Share.Files.ContainsKey("dispatch/held/server6am-messages.hold"));
+            var builder = new WorklistBuilder(morning.Share, morning.Minter, new FakeProse(), morning.Resumes, morning.Config);
+            return await builder.MessagesAsync(await new DayReader(morning.Share).ReadAsync(day, default), 10, dry: true, default);
+        }
+        static string Why(Worklist list) => Assert.Single(list.Dropped, d => d.What.StartsWith("Miadad Rashid", StringComparison.Ordinal)).Reason;
+
+        // In the short shape the lane sends, he is on the worklist, and Ben Olsen stays out on the reply lane's own hold.
+        Worklist sendable = await ListAsync(string.Empty, Short);
+        Assert.Contains(sendable.Rows, row => row.Person == "Miadad Rashid" && row.Company.StartsWith("Work Truck Solutions", StringComparison.Ordinal));
+        Assert.StartsWith("held by the reply lane: F3 DECLINED Count 3559", Assert.Single(sendable.Dropped, d => d.What == "Ben Olsen").Reason, StringComparison.Ordinal);
+        Assert.Equal("Rule 25: already messaged", Why(await ListAsync(Fixture.Read("tracker-3882.csv"), Short)));
+
+        // His real 11/20 draft reaches the gates too and is stopped only by the text check: the reply lane's six-link
+        // follow-up is longer than the 60 words and the one tagged link a LinkedIn message may carry. RULE 25 still
+        // comes first once he has been messaged.
+        string real = Why(await ListAsync(string.Empty, Fixture.Read("li-followup-worktruck-1120.txt")));
+        Assert.StartsWith("text failed: 70 words, 0 tagged links, 3 other links", real, StringComparison.Ordinal);
+        Assert.Equal("Rule 25: already messaged", Why(await ListAsync(Fixture.Read("tracker-3882.csv"), Fixture.Read("li-followup-worktruck-1120.txt"))));
+    }
 }

@@ -149,7 +149,22 @@ public static partial class ReplyDraft
         return text.Length == 0 ? null : text;
     }
 
-    /// <summary>The item: a header the dispatcher reads, then the steps a Sonnet lane follows. It opens no mailbox and sends nothing.</summary>
+    /// <summary>Where the network lane saves a LinkedIn thread's text, by thread id; a LinkedIn item saves its read there too.</summary>
+    public const string ThreadTexts = "networklog/linkedin-inbox/text";
+
+    /// <summary>The CONVENTIONS.md fragments every draft is written to: the six links, remote first with the portfolio pitch, and the next door.</summary>
+    public static readonly IReadOnlyList<string> Fragments = ["20261119-133302Z", "20261124-134700Z", "20261124-142100Z"];
+
+    /// <summary>A message LinkedIn relayed: its thread is on LinkedIn, so the item reads it there before it drafts.</summary>
+    /// <param name="address">The address the message came from.</param>
+    public static bool IsLinkedIn(string address) => address.Trim().EndsWith("@linkedin.com", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The item: a header the dispatcher reads, then the steps a Sonnet lane follows. It sends nothing. A LinkedIn item holds
+    /// chrome and linkedin and reads the live thread first, read only, because a notice in Gmail says nothing of Steve's own
+    /// sends; one that cannot read the thread writes no draft. Every item reads the person's newest tracker rows and the
+    /// thread first and closes as answered when Steve's own send is newer, and runs check_draft.py before the card names it.
+    /// </summary>
     /// <param name="reply">The message.</param>
     /// <param name="live">True when the Function will put the draft into Gmail; false writes it to the DONE note only.</param>
     /// <param name="at">When the pass found it.</param>
@@ -161,22 +176,41 @@ public static partial class ReplyDraft
         string draft = $"/mnt/j/{DraftPath(reply.Id)}";
         string who = reply.Name.Length > 0 ? $"{reply.Name} <{reply.To}>" : reply.To;
         string received = CentralClock.Local(reply.At).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+        bool linkedIn = IsLinkedIn(reply.To);
+        string thread = $"/mnt/j/{ThreadTexts}/{reply.ThreadId}.txt";
         var item = new StringBuilder();
-        item.Append($"Lane: {lane}\nModel: claude-sonnet-5-5\nEffort: medium\nHolds:\nNeeds: jdrive\nStall_minutes: 20\nMax_hours: 1\nScope: jobhunt\n");
+        item.Append($"Lane: {lane}\nModel: claude-sonnet-5-5\nEffort: medium\nHolds:{(linkedIn ? " chrome, linkedin" : string.Empty)}\nNeeds: jdrive\nStall_minutes: 20\nMax_hours: 1\nScope: jobhunt\n");
         item.Append($"Entered_by: the Function's reply pass, which read message {reply.Id} at {CentralClock.Local(at):yyyy-MM-dd HH:mm} Central\n");
         item.Append($"Approved_by: the pounce plan, a reply reaches Steve with a draft ({(live ? "live: the Function puts the draft in Gmail, nothing sends" : "dry run: the draft stays in the DONE note")})\n");
         item.Append($"Done_note: {done}\n\n");
         item.Append($"# {lane}: a draft for one reply from a person\n\n");
         item.Append("> RULES FIRST: read systemRules.md before acting on this file (MASTER RULE: if stuck or a tech glitch happens, retry, then reread the .md rules).\n\n");
         item.Append("## The message\n\n");
-        item.Append($"From {who}, received {received} Central, subject \"{reply.Subject}\", Gmail thread {reply.ThreadId}. Its text is in /mnt/j/{Marker(reply.Id)}, under the line of three dashes, as the Function read it.\n\n");
+        item.Append($"From {who}, received {received} Central, subject \"{reply.Subject}\", {(linkedIn ? "a LinkedIn message relayed by mail" : "Gmail")} thread {reply.ThreadId}. Its text is in /mnt/j/{Marker(reply.Id)}, under the line of three dashes, as the Function read it.\n\n");
         item.Append("## What you are\n\n");
-        item.Append($"A drafter. You open no browser and no mailbox, send nothing and draft nothing in Gmail. You write only {draft}, one line on /mnt/j/TODAY.md, your DONE note and your CLOSED row. Nothing here is ever sent: the draft waits for Steve to say send.\n\n");
+        item.Append(linkedIn
+            ? $"A drafter. You open the WickedAwsome Chrome once, read only, for this one thread, and no mailbox; you send nothing, type nothing on LinkedIn and draft nothing in Gmail. You write only {thread}, {draft}, one line on /mnt/j/TODAY.md, your DONE note and your CLOSED row. Nothing here is ever sent: the draft waits for Steve to say send.\n\n"
+            : $"A drafter. You open no browser and no mailbox, send nothing and draft nothing in Gmail. You write only {draft}, one line on /mnt/j/TODAY.md, your DONE note and your CLOSED row. Nothing here is ever sent: the draft waits for Steve to say send.\n\n");
         item.Append("## Steps (on this box J:\\ is /mnt/j)\n\n");
-        item.Append("1. Read /mnt/j/writing-samples.md and /mnt/j/standard-answers.md for his voice and his settled answers, and the tracker's rows for this person and company for the history.\n");
-        item.Append($"2. Write the reply's body, and nothing else, to {draft}.tmp, then rename it to {draft} with one `mv`, so the Function never reads half a draft: plain text, his voice, at most 120 words, no em dash, no link to the Admin tab, every claim from the banks, and any question the banks do not answer left as a bracketed note to Steve.\n");
-        item.Append($"3. Append one line to /mnt/j/TODAY.md: `- REPLY DRAFT {received}: {who}, \"{reply.Subject}\": {(live ? "a draft waits in that Gmail thread for your send" : "dry run, the draft is in the DONE note")}`.\n");
-        item.Append($"4. Write the DONE note at {done}, the RULES FIRST line on top: the draft word for word, its word count, and `## LEFT FOR STEVE` with `- read the draft and say send, or change it`.\n");
+        var steps = new List<string>();
+        if (linkedIn)
+        {
+            steps.Add($"Read the live LinkedIn thread first, read only, in the WickedAwsome Chrome: list_connected_browsers, select the one Linux browser, open the conversation with {who}, read every message in it, click nothing that sends and type nothing. Save the thread's text to {thread}, the path the network lane saves thread text to. If the browser cannot be reached or the thread does not read, write no draft and no TODAY.md line, and close with the DONE note saying `thread not read`: never a guess from the notice.");
+        }
+        steps.Add("Read /mnt/j/writing-samples.md and /mnt/j/standard-answers.md for his voice and his settled answers.");
+        steps.Add($"Read the CONVENTIONS.md fragments {string.Join(", ", Fragments.Take(2))} and {Fragments[2]} before drafting (`grep -n` each one in /mnt/j/CONVENTIONS.md and read it whole).");
+        steps.Add("No contractions anywhere in the draft.");
+        steps.Add($"Read the person's newest tracker rows and the thread ({(linkedIn ? thread : "the marker's text")}) before drafting. When Steve's own send in the thread is newer than this message, write no draft and no TODAY.md line, and close the item as answered: the DONE note says `answered`, with the time of his send.");
+        steps.Add("Never ask a question the thread already answered.");
+        steps.Add("When the other person offered an intro, a referral or a named person, draft \"Could you put me in touch with ...\" now, and never hold the reply behind an application.");
+        steps.Add($"Write the reply's body, and nothing else, to {draft}.tmp, then rename it to {draft} with one `mv`, so the Function never reads half a draft: plain text, his voice, at most 120 words, no em dash, no link to the Admin tab, every claim from the banks, and any question the banks do not answer left as a bracketed note to Steve.");
+        steps.Add($"Run `python3 /mnt/j/check_draft.py {draft}` and fix every finding before the draft is named on the card; run it again until it exits 0.");
+        steps.Add($"Append one line to /mnt/j/TODAY.md: `- REPLY DRAFT {received}: {who}, \"{reply.Subject}\": {(live ? "a draft waits in that Gmail thread for your send" : "dry run, the draft is in the DONE note")}`.");
+        steps.Add($"Write the DONE note at {done}, the RULES FIRST line on top: the draft word for word, its word count, check_draft.py's last result, and `## LEFT FOR STEVE` with `- read the draft and say send, or change it`.");
+        for (int n = 0; n < steps.Count; n++)
+        {
+            item.Append(CultureInfo.InvariantCulture, $"{n + 1}. {steps[n]}\n");
+        }
         item.Append($"Last, write your CLOSED row through the state.md spool: a new file /mnt/j/inbox/append-inbox/state.md/<UTC yyyyMMdd-HHmmss>Z-{lane}-close.md holding one line that begins `## LANE: {lane} CLOSED <HH:MM> CST`, says `Holds: none` and the DONE note's path, and ends ` | CLOSED |`. Then stop.\n");
         return item.ToString();
     }
