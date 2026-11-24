@@ -42,20 +42,6 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
     private const string Placeholder = "[First name]";
     private const int NewestQueueDays = 4;
 
-    /// <summary>The invite worklist.</summary>
-    /// <param name="reads">The morning's reads.</param>
-    /// <param name="room">Invites left today.</param>
-    /// <param name="dry">True for a dry run.</param>
-    /// <param name="ct">Stops the build.</param>
-    public async Task<Worklist> InvitesAsync(DayReads reads, int room, bool dry, CancellationToken ct)
-    {
-        var blocks = HotRank.Order(reads.Queues.Where(block => block.Action == WorkAction.Invite), reads.Rows, reads.Day);
-        var heading = blocks.ToDictionary(block => block.Source, block => block.Person, StringComparer.Ordinal);
-        var candidates = blocks
-            .Select(block => new Candidate(block.Text.Contains(Placeholder, StringComparison.OrdinalIgnoreCase) ? string.Empty : block.Person, block.Company, WorkAction.Invite, block.Text, block.Url, block.Source, Budget: block.Budget));
-        return await FinishAsync(candidates, reads, candidate => Held(reads, candidate) ?? reads.Gate.Invite(candidate.Person, candidate.Company) ?? HeadingGate(reads, candidate, heading), room, dry, ct);
-    }
-
     /// <summary>The message worklist.</summary>
     /// <param name="reads">The morning's reads.</param>
     /// <param name="room">Messages left today.</param>
@@ -273,11 +259,6 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
 
     private static string? Held(DayReads reads, Candidate candidate) =>
         reads.Holds.Holds(candidate.Person, candidate.Company) ? "held for Steve's yes (linkedin-proof/FEED-HOLD.md)" : null;
-
-    private static string? HeadingGate(DayReads reads, Candidate candidate, IReadOnlyDictionary<string, string> heading) =>
-        candidate.Person.Length == 0 && heading.TryGetValue(candidate.Source, out string? named) && named.Length > 0 && reads.Gate.Invite(named, candidate.Company) is { } why
-            ? $"the heading names {named}: {why}"
-            : null;
 
     private static string Profile(DayReads reads, string person, string company) =>
         reads.Rows.Where(row => row.Length >= 7 && string.Equals(row[1].Trim(), person, StringComparison.OrdinalIgnoreCase) && ApplicationCap.Same(row[2], company))

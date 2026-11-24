@@ -63,6 +63,25 @@ public sealed class HiringSignalTests
     }
 
     [Fact]
+    public async Task The_pass_writes_the_whole_list_beside_the_line_one_company_a_line_for_the_feed()
+    {
+        using var scratch = new Scratch();
+        var many = Enumerable.Range(1, 12).SelectMany(n => new[] { ($"Co{n:00}", "Senior Software Engineer"), ($"Co{n:00}", "Staff Software Engineer"), ($"Co{n:00}", "Engineering Manager") }).ToArray();
+        int companies = await new HiringSignals(scratch.Store, new Openings([.. Seen, .. many]), new Fixed(Now)).RunAsync(CancellationToken.None);
+
+        Assert.Equal(14, companies);
+        Assert.Contains("and 6 more", scratch.Text(HiringSignal.Path), StringComparison.Ordinal);
+        string[] tsv = scratch.Text(HiringSignal.TsvPath).Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(14, tsv.Length);
+        Assert.Equal("Arbor Health\t4", tsv[0]);
+        Assert.Contains("Zephyr Labs\t3", tsv);
+        Assert.Contains("Co12\t3", tsv);
+        Assert.False(File.Exists(Path.Combine(scratch.Root, "nightly", "hiring-signal.tsv.merger-tmp")));
+        Assert.Equal(string.Empty, HiringSignal.Tsv([]));
+        Assert.Equal("Tab Co\t3\n", HiringSignal.Tsv([("Tab\tCo", 3)]));
+    }
+
+    [Fact]
     public void The_postings_table_has_an_index_on_when_a_posting_was_first_seen()
     {
         string root = AppContext.BaseDirectory;

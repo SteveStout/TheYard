@@ -13,6 +13,9 @@ public static class HiringSignal
     /// <summary>The line on the share, rewritten whole each time.</summary>
     public const string Path = "nightly/hiring-signal.md";
 
+    /// <summary>The whole list beside the line, one company a line with its seat count, which the 6 AM feed reads.</summary>
+    public const string TsvPath = "nightly/hiring-signal.tsv";
+
     /// <summary>The fewest seats in the window that make a signal.</summary>
     public const int Seats = 3;
 
@@ -45,4 +48,9 @@ public static class HiringSignal
         string more = surges.Count > MostNamed ? $" and {surges.Count - MostNamed} more" : string.Empty;
         return $"Hiring signal ({at} Central): {surges.Count} {(surges.Count == 1 ? "company" : "companies")} opened {Seats} or more engineering seats in the last {Window.Days} days, by when the scan first saw each: {named}{more}. From jobhunt.Postings.";
     }
+
+    /// <summary>The whole list: "company TAB seats", one company a line, most seats first; empty when none made it.</summary>
+    /// <param name="surges">The companies that made the signal.</param>
+    public static string Tsv(IReadOnlyList<(string Company, int Seats)> surges) =>
+        string.Concat(surges.Select(s => $"{s.Company.Replace('\t', ' ')}\t{s.Seats.ToString(CultureInfo.InvariantCulture)}\n"));
 }
