@@ -47,6 +47,9 @@ public sealed record TodayInputs(
 
     /// <summary>The high-value roles only he can unblock (TodayUnblock), which lead the card.</summary>
     public IReadOnlyList<UnblockRow> Unblock { get; init; } = [];
+
+    /// <summary>The DARK lines of dispatch/NOT-WORKING.md (the watch's dark-lane alarm), which are the card's first lines.</summary>
+    public IReadOnlyList<string> Dark { get; init; } = [];
 }
 
 /// <summary>
@@ -54,7 +57,7 @@ public sealed record TodayInputs(
 /// no model and mailed to him. In order: the CRITICAL sends with their full text, the essays the 6 AM run submitted,
 /// the replies with each draft in full, the calls in the next 72 hours with their must-answers, the lanes, what closed
 /// lanes left for him, the walls (Mondays, or when a human there has replied), one decision, and the rejection reads
-/// carried forward. Anything he has answered (ANSWERED.md) and any draft with a DO-NOT-SEND note beside it is never
+/// carried forward. The DARK lines of NOT-WORKING.md lead it, under the title. Anything he has answered (ANSWERED.md) and any draft with a DO-NOT-SEND note beside it is never
 /// shown. Capped at 15 minutes: over it, the held replies fold into one line. The replies hold only what needs his
 /// word (TodayHandled), oldest first (TodayHistory), each led by its red flag verdict and fit line (TodayReplies); a
 /// decision left for him prints once (TodayLeft), and the proposed lanes are a count and the ones a lane asks a yes on.
@@ -69,6 +72,17 @@ public static class TodayCard
 
     /// <summary>The day's sent email reconnects, the network log's NetworkFiles.SentPath, held equal by ReconnectSendTests.</summary>
     public static string ReconnectsPath(DateOnly day) => $"networklog/sent/{day:yyyy-MM-dd}.tsv";
+
+    /// <summary>Where the dark-lane alarm writes its lines, which the card reads first (the watch's WatchDark.Path).</summary>
+    public const string NotWorkingPath = "dispatch/NOT-WORKING.md";
+
+    /// <summary>The word a dark-lane line opens with (the watch's DarkLanes.Prefix), held equal by DarkLaneTests.</summary>
+    public const string DarkPrefix = "DARK: ";
+
+    /// <summary>The DARK lines of NOT-WORKING.md, in the file's order.</summary>
+    /// <param name="notWorking">The file's text.</param>
+    public static IReadOnlyList<string> DarkLines(string notWorking) =>
+        [.. (notWorking ?? string.Empty).Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.StartsWith(DarkPrefix, StringComparison.Ordinal))];
 
     /// <summary>The minutes of his time the card may take.</summary>
     public const int CapMinutes = 15;
@@ -195,6 +209,15 @@ public static class TodayCard
         var head = new StringBuilder();
         head.Append(RulesFirst).Append("\n\n");
         head.Append(CultureInfo.InvariantCulture, $"# TODAY, {inputs.At:dddd M/d}\n\n");
+        // audit1124b F2: a lane that sent nothing for three days with work due or a hold on it is the first thing he reads.
+        foreach (string dark in inputs.Dark)
+        {
+            head.Append(dark).Append('\n');
+        }
+        if (inputs.Dark.Count > 0)
+        {
+            head.Append('\n');
+        }
         head.Append(CultureInfo.InvariantCulture, $"Written {inputs.At:HH:mm} Central by the job hunt's Function, no model; each heading names the file it was read from. About {minutes} {(minutes == 1 ? "minute" : "minutes")} to read{(fold ? ", the held replies folded to stay near the 15-minute cap" : string.Empty)}{(minutes > CapMinutes ? $", over the {CapMinutes}-minute cap" : string.Empty)}.\n\n");
         // RULE 76 check 8: the high-value roles only he can unblock are the first lines he reads.
         head.Append(TodayUnblock.Section(inputs.Unblock));

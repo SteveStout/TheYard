@@ -91,6 +91,8 @@ public sealed class WatchPass(IMergeStore store, Func<string, string?> setting, 
             await store.AppendAsync(log, TrackerCsvText.Encode(changes), ct);
         }
         int heals = mode == WatchMode.On ? (await new WatchHeal(store).RunAsync(results, before + changes, now, ct)).Items.Count : 0;
+        // The dark-lane alarm tells in shadow too: a lane that sent nothing for three days is the card's first line (audit1124b F2).
+        await new WatchDark(store).RunAsync(now, ct);
         await store.WriteAsync(MergePaths.Temp(WatchTick.File), TrackerCsvText.Encode(WatchTick.Render(local, mode, results)), ct);
         await store.ReplaceAsync(MergePaths.Temp(WatchTick.File), WatchTick.File, ct);
         return new WatchPassResult(results, true, heals);
