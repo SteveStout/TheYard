@@ -365,6 +365,27 @@ public class GateWorkflowTests
     }
 
     /// <summary>
+    /// The heal-outside list judges the heal's own commit, the one the lane pushed, never the cop's fill of it (ADR-139,
+    /// the addendum on the ready commit): the cop publishes that commit as its ready output, and the node job's step,
+    /// which tests the filled commit everywhere else, passes it as --head and fetches it when its checkout lacks it.
+    /// </summary>
+    [Fact]
+    public void The_heal_outside_list_reads_the_ready_commit_the_cop_published_not_the_filled_one()
+    {
+        Assert.Contains("ready: ${{ steps.cop.outputs.ready }}", Job("cop"), StringComparison.Ordinal);
+        Assert.Contains("said ready \"$ready\"", File.ReadAllText(Path.Combine(Repo.Root(), "scripts", "cop.sh")), StringComparison.Ordinal);
+        string node = Job("node");
+        int step = node.IndexOf("- name: The heal-outside list", StringComparison.Ordinal);
+        int end = node.IndexOf("# #endregion heal-outside", StringComparison.Ordinal);
+        Assert.True(step > 0 && end > step, "the node job should hold the heal-outside step");
+        string heal = node[step..end];
+        Assert.Contains("READY: ${{ needs.cop.outputs.ready }}", heal, StringComparison.Ordinal);
+        Assert.Contains("git cat-file -e \"$READY^{commit}\" 2> /dev/null || git fetch -q origin \"$READY\"", heal, StringComparison.Ordinal);
+        Assert.Contains("--head \"${READY:-HEAD}\"", heal, StringComparison.Ordinal);
+        Assert.Contains("uses: ./.github/actions/filled", node[..step], StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// A lane reads what became of its ready branch on its own commit, the status named cop (ADR: One traffic cop for
     /// main): a skip from the cop job, then landed, a hand promote owed, or the red checks with the first failing line
     /// from the said job; the after-roll deletes a ready branch only once landed is there to read.
