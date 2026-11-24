@@ -8,7 +8,7 @@ namespace JobHunt.Infrastructure.Features.Card;
 /// carried rejection reads name, and the drafts held items keep (with the DO-NOT-SEND note and the .gate.md beside each), the dispatcher's STATUS.md,
 /// LEFT-FOR-STEVE.md, ANSWERED.md, WALLS.md and DECISION.md, the day's APPLY-ESSAYS file, TODAY.md as it stands, and
 /// the next 72 hours of the calendar with each call's must-answers line from its company's NOTES file, and the week's
-/// funnel line from nightly/funnel.log through yesterday. A file that is
+/// funnel line from nightly/funnel.log through yesterday, and the DARK lines of dispatch/NOT-WORKING.md. A file that is
 /// not there reads as empty; the card says so where it matters.
 /// </summary>
 public sealed partial class TodayCardSource(IShareReader store, IHttpClientFactory http, TimeProvider time)
@@ -85,6 +85,7 @@ public sealed partial class TodayCardSource(IShareReader store, IHttpClientFacto
             Signal = (await TextAsync(TodayCard.SignalPath, ct)).Split('\n')[0].Trim(),
             Reconnects = await TextAsync(TodayCard.ReconnectsPath(DateOnly.FromDateTime(local)), ct),
             Unblock = await UnblockAsync(DateOnly.FromDateTime(local), ct),
+            Dark = TodayCard.DarkLines(await TextAsync(TodayCard.NotWorkingPath, ct)),
         };
     }
 
