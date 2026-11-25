@@ -36,7 +36,7 @@ public sealed partial class PounceTickTests
         Assert.Equal((true, Now.AddMinutes(-31), true, Now.AddMinutes(-2), "invites"), (passed.Role.Passed, passed.Role.LiveAt, passed.Role.LiveKnown, passed.Touch, passed.Channel));
         Assert.Equal(("PASS", false, Now), (passed.Role.BandFlag, passed.Role.BudgetFlag, passed.Role.JudgedAt));
         var failed = book.Rows[2];
-        Assert.Equal(("not a seat his targeting file names", Now.AddMinutes(-20), false, (DateTimeOffset?)null), (failed.Role.Failed, failed.Role.LiveAt, failed.Role.LiveKnown, failed.Touch));
+        Assert.Equal(("not an engineering role: Product Manager", Now.AddMinutes(-20), false, (DateTimeOffset?)null), (failed.Role.Failed, failed.Role.LiveAt, failed.Role.LiveKnown, failed.Touch));
         Assert.Equal((2, 1, 1, 1, 0, 0), (tick.Fresh, tick.Passed.Count, tick.Dropped, tick.Touched, tick.Waiting, tick.Late));
         Assert.Equal(PounceTick.Days, tick.Days.Count);
         Assert.Equal(new PounceDay(new DateOnly(2026, 11, 11), 1, 1, 29, 29, 0, 0), tick.Days[0]);

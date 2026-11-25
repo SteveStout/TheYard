@@ -13,6 +13,7 @@
     <Using Include="JobHunt.Domain.Shared.Applications" />
     <Using Include="JobHunt.Domain.Shared.Companies" />
     <Using Include="JobHunt.Domain.Shared.Tracker" />
+    <Using Include="JobHunt.Domain.Shared.Postings" />
     <Using Include="JobHunt.Server.Application.Shared.Config" />
     <Using Include="JobHunt.Server.Application.Shared.Ports" />
     <Using Include="JobHunt.Server.Domain.Shared.Gates" />

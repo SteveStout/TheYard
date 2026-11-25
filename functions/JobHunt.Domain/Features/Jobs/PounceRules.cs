@@ -8,7 +8,8 @@ namespace JobHunt.Domain.Features.Jobs;
 /// his targeting file names, its company is not on BLACKLIST.md, and no role that passed in the last 30 days has the
 /// same company, base title and level. The seat lists are his targeting file's: software engineering, architecture
 /// and engineering management in; customer-facing implementation, product, sales, marketing, design, data science,
-/// security and the rest out. They hold for the pounce only; the 2 o'clock pick does not read them.
+/// security and the rest out. They hold for the pounce only; the 2 o'clock pick does not read them, but both read
+/// RoleTitle first, through the pick's verdict and here.
 /// </summary>
 public static partial class PounceRules
 {
@@ -33,10 +34,12 @@ public static partial class PounceRules
     /// A software engineering, architecture or engineering management seat, and none of the functions ruled out. An
     /// engineer, engineering or architect title counts only when it is bare (every other word a level word, "Staff
     /// Engineer") or carries a software word ("Platform Engineer"), because a bare "engineer" also passed civil,
-    /// manufacturing and systems engineers and filled the hiring signal with them (jhcode1112 1a, 11/12 card).
+    /// manufacturing and systems engineers and filled the hiring signal with them (jhcode1112 1a, 11/12 card). RoleTitle
+    /// is read first, and a bare "AI" is no seat word: it passed Delinea's people partner on 11/19.
     /// </summary>
     public static bool IsSeat(string title) =>
-        (Seat().IsMatch(title) || Management().IsMatch(title) || (Engineer().IsMatch(title) && (SoftwareWord().IsMatch(title) || IsBare(title))))
+        RoleTitle.IsEngineering(title)
+        && (Seat().IsMatch(title) || Management().IsMatch(title) || (Engineer().IsMatch(title) && (SoftwareWord().IsMatch(title) || IsBare(title))))
         && !NotSeat().IsMatch(title);
 
     /// <summary>True when every word of the title besides engineer, engineering and architect is a level word or a numeral.</summary>
@@ -74,7 +77,7 @@ public static partial class PounceRules
 
     private static string Letters(string text) => new([.. text.ToLowerInvariant().Where(ch => ch is >= 'a' and <= 'z')]);
 
-    [GeneratedRegex(@"\b(software|developer|technical lead|tech lead|application development|software development)\b|\.net\b|c#|\bAI\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(software|developer|technical lead|tech lead|application development|software development)\b|\.net\b|c#", RegexOptions.IgnoreCase)]
     private static partial Regex Seat();
 
     [GeneratedRegex(@"\b(engineer|engineering|architect)\b", RegexOptions.IgnoreCase)]

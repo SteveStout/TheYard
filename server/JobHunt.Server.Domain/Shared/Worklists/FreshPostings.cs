@@ -4,8 +4,8 @@ namespace JobHunt.Server.Domain.Shared.Worklists;
 /// The apply list's fresh supply: the roles the night's picker passed (nightly/jobs-candidates-&lt;day&gt;.tsv, above its
 /// FAILED line) that were posted or first seen in the last three days, read from the employer's own board, with no hold
 /// the jobs lane must clear first. They follow the jobs lane's READY rows, and every gate the 6 AM list holds a READY
-/// row to (applied, RULE 50, an account wall, one a company a morning) holds them too. A product, sales or marketing
-/// title the picker's engineering words let through stays out.
+/// row to (applied, RULE 50, an account wall, one a company a morning) holds them too. A title the one title test
+/// (RoleTitle) fails stays out, so a picker file written before the pick read it brings no people, product or sales seat.
 /// </summary>
 public static class FreshPostings
 {
@@ -44,15 +44,11 @@ public static class FreshPostings
             }
             string posted = cells[column["Posted"]];
             bool fresh = posted.Length >= 10 && DateOnly.TryParseExact(posted[..10], "yyyy-MM-dd", out DateOnly day) && today.DayNumber - day.DayNumber <= FreshDays;
-            if (fresh && cells[column["Confirmed"]] == "feed" && cells[column["Hold"]].Trim().Length == 0 && !NotASeat(cells[column["Title"]]))
+            if (fresh && cells[column["Confirmed"]] == "feed" && cells[column["Hold"]].Trim().Length == 0 && RoleTitle.IsEngineering(cells[column["Title"]]))
             {
                 postings.Add(new Posting(cells[column["Company"]], cells[column["Title"]], cells[column["Url"]], cells[column["BoardKind"]], $"{name}:{i + 1}", posted));
             }
         }
         return postings;
     }
-
-    private static bool NotASeat(string title) =>
-        title.Contains("product manager", StringComparison.OrdinalIgnoreCase) || title.Contains("sales", StringComparison.OrdinalIgnoreCase)
-        || title.Contains("marketing", StringComparison.OrdinalIgnoreCase);
 }
