@@ -90,7 +90,7 @@ public sealed class WatchDark(IMergeStore store)
             .Concat((await store.ListFoldersAsync("dispatch/running", ct)).SelectMany(f => new[] { f + ".md", $"30-{f}.md" })), StringComparer.Ordinal);
         var proposed = new HashSet<string>((await store.ListFilesAsync("dispatch/proposed", ct)).Select(f => f.Name), StringComparer.Ordinal);
         return new DarkReads(state, notes, holds, await TextAsync("dispatch/EMPTY-RUNS.md", ct), await TextAsync(MergePaths.Master, ct),
-            await TextAsync("campaign/pass.log", ct), queued, proposed);
+            await TextAsync("campaign/pass.log", ct), queued, proposed, await TextAsync(DarkLanes.SignInPath, ct));
     }
 
     private async Task<string> TextAsync(string path, CancellationToken ct) =>

@@ -86,7 +86,7 @@ public sealed class FeedLane(IShare share, FeedTools tools, ServerConfig config,
         }
         await WriteQueueAsync(start, folder, kept, lines, finish);
         await tools.Usage.WriteAsync(run, start, folder, began, lines, finish);
-        var report = new LaneReport(Lane.Feed, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, [], dropped, result, [], lines, null, run.TimedOut || result is null) { Queued = kept.Count };
+        var report = new LaneReport(Lane.Feed, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, [], dropped, result, [], lines, null, run.TimedOut || result is null) { Queued = kept.Count, SignedOut = run.SignedOut };
         await share.WriteAsync($"{folder}/DONE.md", DoneNote.Render(report), finish);
         return report;
     }

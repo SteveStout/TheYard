@@ -56,7 +56,7 @@ public static partial class DarkLanes
         return found;
     }
 
-    /// <summary>check_empty_runs.verdict, word for word: a send, a dry run, work due and none done, nothing due, a hold.</summary>
+    /// <summary>check_empty_runs.verdict, word for word: a send, a dry run or an expired sign-in (not run), work due and none done, nothing due, a hold.</summary>
     /// <param name="text">A run's words.</param>
     /// <param name="outbound">Whether the lane sends, so its own hold is work that was due.</param>
     public static string? Verdict(string text, bool outbound)
@@ -65,7 +65,7 @@ public static partial class DarkLanes
         {
             return "done";
         }
-        if (Dry().IsMatch(text))
+        if (Dry().IsMatch(text) || SignInExpired().IsMatch(text))
         {
             return null;
         }
@@ -139,6 +139,10 @@ public static partial class DarkLanes
 
     [GeneratedRegex(@"\bdry\b")]
     private static partial Regex Dry();
+
+    // The claude CLI's sign-in, not the lane: "not run, sign-in expired", or the CLI's own words on an older build.
+    [GeneratedRegex(@"\bsign-in expired\b|Failed to authenticate")]
+    private static partial Regex SignInExpired();
 
     [GeneratedRegex(@"\b0 sent verified of ([1-9]\d*)")]
     private static partial Regex EmptySent();

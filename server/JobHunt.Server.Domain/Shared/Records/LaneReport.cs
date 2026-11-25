@@ -35,6 +35,9 @@ public sealed record LaneReport(
     /// <summary>The blocks the feed lane queued, or the edits the comment line handed its edit run; zero for every other lane.</summary>
     public int Queued { get; init; }
 
+    /// <summary>True when the model step answered "Failed to authenticate": the lane was not run (<see cref="SignIn"/>).</summary>
+    public bool SignedOut { get; init; }
+
     /// <summary>The comment line's edits that read back whole after the reload; zero for every other lane.</summary>
     public int Edited { get; init; }
 

@@ -105,7 +105,11 @@ public sealed record ClaudeRequest(IReadOnlyList<string> Arguments, string Worki
 /// <param name="ExitCode">The process's exit code.</param>
 /// <param name="TimedOut">True when the program killed it at the limit.</param>
 /// <param name="ResultLine">The stream's result line, or null.</param>
-public sealed record ClaudeRun(int ExitCode, bool TimedOut, string? ResultLine);
+public sealed record ClaudeRun(int ExitCode, bool TimedOut, string? ResultLine)
+{
+    /// <summary>True when the CLI's sign-in refused the run, so the model never ran.</summary>
+    public bool SignedOut => SignIn.Expired(ResultLine);
+}
 
 /// <summary>The Claude CLI.</summary>
 public interface IClaudeCli

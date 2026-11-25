@@ -77,7 +77,7 @@ public static partial class ReplyQueue
         return first.Length > 0 && matches.Count == 1 ? matches[0] : null;
     }
 
-    /// <summary>A draft's body: the file with its OBJECTIVE and FILES READ lines cut.</summary>
+    /// <summary>A draft's body: the file with its OBJECTIVE, FILES READ, NO-RESUME, NO-LINKS, Channel, To and Subject lines cut.</summary>
     /// <param name="draft">The draft file's text.</param>
     public static string Body(string draft) =>
         string.Join('\n', draft.Replace("\r", string.Empty).Split('\n').Where(line => !Label().IsMatch(line))).Trim();
@@ -115,7 +115,7 @@ public static partial class ReplyQueue
     [GeneratedRegex("[^a-z0-9]")]
     private static partial Regex NotLetter();
 
-    [GeneratedRegex(@"^(OBJECTIVE|FILES READ|NO-RESUME|To|Subject):")]
+    [GeneratedRegex(@"^(OBJECTIVE|FILES READ|NO-RESUME|NO-LINKS|Channel|To|Subject):")]
     private static partial Regex Label();
 
     [GeneratedRegex(@"^([A-Z][\w'-]+),\s*$", RegexOptions.Multiline)]

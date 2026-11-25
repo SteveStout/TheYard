@@ -46,12 +46,13 @@ public static class CanaryRun
 
     /// <summary>
     /// The canary's exit: passed when its lane reached its target; not run when the lane had nothing to reach (an empty
-    /// worklist, so no model ran, or another lane holding LinkedIn or Chrome), which is never the lane failing; else failed.
+    /// worklist, so no model ran, another lane holding LinkedIn or Chrome, or the claude CLI's sign-in expired), which is
+    /// never the lane failing; else failed.
     /// </summary>
     /// <param name="reports">The run's lane reports.</param>
     public static int Exit(IReadOnlyList<LaneReport> reports) =>
         Reached(reports) ? Passed
-        : reports.Count == 1 && (reports[0] is { Held: null, Rows.Count: 0 } || reports[0].Held?.StartsWith("a hold on LinkedIn or Chrome by", StringComparison.Ordinal) == true) ? NotRun
+        : reports.Count == 1 && (reports[0] is { Held: null, Rows.Count: 0 } || SignIn.Out(reports[0]) || reports[0].Held?.StartsWith("a hold on LinkedIn or Chrome by", StringComparison.Ordinal) == true) ? NotRun
         : Failed;
 
     /// <summary>Whether the canary's one lane ran and answered: not held, an answer, not cut short, and no defect line.</summary>

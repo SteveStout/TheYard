@@ -37,6 +37,10 @@ public static class RunCard
     private static string Line(LaneReport report)
     {
         string word = RunSlot.Word(report.Lane);
+        if (SignIn.Out(report))
+        {
+            return $"{word}: {SignIn.NotRun}";
+        }
         if (report.Held is not null)
         {
             return $"{word}: held, {report.Held}";

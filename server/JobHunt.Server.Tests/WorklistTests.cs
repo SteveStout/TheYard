@@ -59,6 +59,17 @@ public sealed class WorklistTests
     }
 
     [Fact]
+    public void A_drafts_no_links_and_channel_lines_never_reach_the_body()
+    {
+        string draft = "NO-LINKS: 10/29 logistics thread, Steve sends this one himself\nChannel: LinkedIn\n" + Fixture.Read("li-followup.txt");
+        string body = ReplyQueue.Body(draft);
+        Assert.StartsWith("Pat,", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("NO-LINKS:", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Channel:", body, StringComparison.Ordinal);
+        Assert.Equal(ReplyQueue.Body(Fixture.Read("li-followup.txt")), body);
+    }
+
+    [Fact]
     public void A_code_is_read_from_its_link_and_a_placeholder_has_none()
     {
         Assert.Equal("abc123", TextCheck.Code(Good));

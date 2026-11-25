@@ -62,6 +62,25 @@ public sealed class CanaryTests
         Assert.Equal(2, list.TrimEnd().Split('\n').Length);
     }
 
+    // The CLI's own result line on 11/25 when its sign-in had expired (nightly/2026-11-25/0600-feed-opus-5-5/stream.jsonl, trimmed).
+    private static ClaudeRun SignedOut(ClaudeRequest request) =>
+        new(1, false, """{"type":"result","subtype":"success","is_error":true,"duration_ms":100,"num_turns":1,"result":"Failed to authenticate: OAuth session expired and could not be refreshed","total_cost_usd":0}""");
+
+    [Theory]
+    [InlineData("invites")]
+    [InlineData("apply")]
+    public async Task A_canary_that_meets_an_expired_sign_in_is_not_run_never_failed(string lane)
+    {
+        var morning = new Morning(SignedOut);
+        morning.Time.Now = Morning.At.AddHours(4);
+        CanaryRun.Fit(morning.Config, lane == "apply" ? Lane.Apply : Lane.Invites);
+
+        (int exit, string output) = await morning.Lanes().ExecuteAsync(RunOptions.Parse(["run", "--canary", "--lane", lane])!, default);
+
+        Assert.Equal(CanaryRun.NotRun, exit);
+        Assert.Contains($"{lane}: not run, sign-in expired", output, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_canary_whose_lane_gives_no_answer_fails()
     {

@@ -41,7 +41,7 @@ public sealed class CommentLine(IShare share, CommentTools tools, ServerConfig c
         CancellationToken finish = CancellationToken.None;
         await tools.Usage.WriteAsync(read, start, folder, began, lines, finish);
         LaneResult? answer = LaneResult.FromLine(read.ResultLine);
-        bool cutShort = read.TimedOut || answer is null;
+        bool cutShort = read.TimedOut || answer is null, signedOut = read.SignedOut;
         bool live = !start.Dry && !cutShort && answer!.StopCondition == "none";
 
         string readPath = $"{folder}/{CommentPicks.ReadFile}";
@@ -74,6 +74,7 @@ public sealed class CommentLine(IShare share, CommentTools tools, ServerConfig c
             lines.Add($"Edit run: claude -p exit {edit.ExitCode}{(edit.TimedOut ? ", killed at the wall-clock limit or by a stop" : string.Empty)}.");
             answer = LaneResult.FromLine(edit.ResultLine);
             cutShort = edit.TimedOut || answer is null;
+            signedOut = edit.SignedOut;
             edited = Verify(edits, answer, lines);
             await tools.Usage.WriteAsync(edit, start, folder, editBegan, lines, finish);
         }
@@ -81,6 +82,7 @@ public sealed class CommentLine(IShare share, CommentTools tools, ServerConfig c
         {
             Queued = start.Dry || live ? edits.Count : 0,
             Edited = edited,
+            SignedOut = signedOut,
         };
         await share.WriteAsync($"{folder}/DONE.md", DoneNote.Render(report), finish);
         return report;
