@@ -97,6 +97,22 @@ public sealed class BoxRowsTests
     }
 
     [Fact]
+    public void The_morning_run_waiting_for_its_timer_counts_as_up_and_a_failed_one_reads_amber()
+    {
+        var snapshot = BoxSamples.Snapshot();
+        var allUp = snapshot with { Services = [.. snapshot.Services.Select(service => service.Unit == "app-dev.lizardbyte.app.Sunshine.service" ? service with { ActiveState = "active", SubState = "running" } : service)] };
+        var failed = allUp with { Services = [.. allUp.Services.Select(service => service.Unit == BoxRows.MorningRun ? service with { Note = "last result exit-code" } : service)] };
+
+        var waiting = BoxRows.Services(allUp, Nine);
+        var broken = BoxRows.Services(failed, Nine);
+
+        Assert.Equal(("good", "8 of 8 up"), (waiting.Tone, waiting.Answer));
+        Assert.Equal("waiting for its timer", Cells(waiting, 5)[1]);
+        Assert.Equal(("warning", "7 of 8 up"), (broken.Tone, broken.Answer));
+        Assert.Equal("inactive, dead", Cells(broken, 5)[1]);
+    }
+
+    [Fact]
     public void The_network_table_names_interfaces_only_and_leaves_the_loopback_out()
     {
         var row = BoxRows.Network(BoxSamples.Snapshot());

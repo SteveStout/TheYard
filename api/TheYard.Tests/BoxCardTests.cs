@@ -69,7 +69,7 @@ public sealed class BoxCardTests
         var report = BoxCard.View(Inputs(kept: true), Source(TimeSpan.FromHours(2), BoxSamples.Snapshot()).Source);
 
         Assert.All(report.Rows, row => Assert.Equal("good", row.Tone));
-        Assert.Equal("6 of 8 active", Row(report, "services").Answer);
+        Assert.Equal("7 of 8 up", Row(report, "services").Answer);
         Assert.Contains("next Sun 06:00", JsonSerializer.Serialize(Row(report, "services").Table), StringComparison.Ordinal);
         Assert.Equal("4 cores", Row(report, "cores").Answer);
         Assert.Equal("active raid0, 6 of 6 active", Row(report, "disks").Answer);
