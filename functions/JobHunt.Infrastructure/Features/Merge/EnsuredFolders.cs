@@ -4,7 +4,7 @@ namespace JobHunt.Infrastructure.Features.Merge;
 
 /// <summary>
 /// The folders this process has made sure of on the share, each remembered for an hour. The merger runs
-/// every minute and makes sure of every folder it writes to, one create per path part, and the share bills
+/// every two minutes and makes sure of every folder it writes to, one create per path part, and the share bills
 /// each of those creates: unremembered, that is a couple of thousand billed calls an hour whose whole answer
 /// is "already exists". A folder made sure of is taken as there until the hour is up, which is the trade this
 /// class exists to make: a folder moved away by hand is made again within the hour, and a write into it

@@ -4,7 +4,7 @@
 //
 // One action group that emails Steve, and one log alert over appi-jobhunt-ss, evaluated every ten minutes:
 // any function's failed invocation in the last thirty minutes, or no Merger invocation in the last ten (the
-// merger runs every minute, so ten minutes without one is a stopped Function). The address is a parameter, so
+// merger runs every two minutes, so ten minutes without one is a stopped Function). The address is a parameter, so
 // it is never written in this public repository.
 
 @description('Where the Function app and its Application Insights component live.')

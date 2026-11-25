@@ -12,14 +12,14 @@ namespace JobHunt.Functions;
 /// </summary>
 // #endregion summary
 /// <remarks>
-/// The tracker merger, every minute (UTC clock, second 0). It runs only when the MERGER setting is
+/// The tracker merger, every two minutes (UTC clock, the even minute, second 0). It runs only when the MERGER setting is
 /// "on", so the laptop's merger can hand over at a chosen minute and take back the same way.
 /// Each pass merges whatever lanes left in the spool folders and logs to tracker-inbox/merge.log.
 /// </remarks>
 public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen seen, TimeProvider time, ILogger<Merger> log)
 {
     [Function("Merger")]
-    public async Task RunAsync([TimerTrigger("0 * * * * *")] TimerInfo timer, CancellationToken ct)
+    public async Task RunAsync([TimerTrigger("0 */2 * * * *")] TimerInfo timer, CancellationToken ct)
     {
         var run = new RunLine("Merger", time.GetUtcNow());
         try
@@ -71,7 +71,7 @@ public sealed class Merger(TrackerMerger merger, IMergeStore store, TrackerSeen 
             var mirror = new TrackerMirror(store, table, seen);
             var now = time.GetUtcNow();
             // A pass that merged nothing over a master that has not moved, with the day's check done, asks SQL nothing
-            // (ADR-111, the addendum on the quiet pass): every minute it did, a frame read or two for no change.
+            // (ADR-111, the addendum on the quiet pass): every pass it did, a frame read or two for no change.
             if (mode == "on" && merged == 0 && await mirror.QuietAsync(now, ct))
             {
                 run.Count("tracker_sql_quiet", 1);

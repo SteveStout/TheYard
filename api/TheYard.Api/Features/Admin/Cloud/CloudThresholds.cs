@@ -86,8 +86,8 @@ public static class CloudThresholds
 
     /// <summary>
     /// The tracker merger: minutes a lane's row file may wait in a spool folder. Past 5 it is counted
-    /// and the row says so; past 10 the row is a warning, because the merger runs every minute and a
-    /// file that has sat through ten passes is stuck, not queued. Source: the levels the owner set for
+    /// and the row says so; past 10 the row is a warning, because the merger runs every two minutes and a
+    /// file that has sat through five passes is stuck, not queued. Source: the levels the owner set for
     /// the row (PROMPT-JOBHUNT-MERGER-CODE, step 4).
     /// </summary>
     public static readonly (double Amber, double Red) MergerWait = (5, 10);
