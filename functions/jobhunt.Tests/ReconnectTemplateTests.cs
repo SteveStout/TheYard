@@ -39,6 +39,14 @@ public sealed class ReconnectTemplateTests
     }
 
     [Fact]
+    public void The_About_link_opens_the_author_page_never_the_page_for_crawlers()
+    {
+        var mail = ReconnectTemplate.Render("Pat", "the role", "Role", ReconnectQuestion.Remote, "abc123");
+        Assert.Equal("https://theyard.stevenstout.biz/?doc=author&r=abc123", ReconnectTemplate.Links("abc123").Single(link => link.Label == "About").Url);
+        Assert.DoesNotContain("/about", mail.Text + mail.Html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void No_greeting_word_no_blog_line_no_call_ask_and_no_address_printed_in_the_HTML()
     {
         var mail = ReconnectTemplate.Render("Pat", "the role", "Role", ReconnectQuestion.Remote, "abc123");

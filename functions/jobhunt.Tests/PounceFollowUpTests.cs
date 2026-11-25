@@ -84,7 +84,7 @@ public sealed partial class PounceFollowUpTests
     [Theory]
     [InlineData("p4k2qa", "Dana, thank you", "theyard.stevenstout.biz/?view=blog&r=p4k2qa")]
     [InlineData("h7m3zt", "Thank you", "theyard.stevenstout.biz/?doc=adr-coderabbit-one-rung-at-a-time&r=h7m3zt")]
-    [InlineData("w9d1rc", "Omar, thank you", "theyard.stevenstout.biz/about?r=w9d1rc")]
+    [InlineData("w9d1rc", "Omar, thank you", "theyard.stevenstout.biz/?doc=author&r=w9d1rc")]
     public void Each_follow_up_is_60_words_at_most_with_one_tagged_link_to_the_next_rung_and_one_no_oriented_question(string code, string opens, string link)
     {
         string text = Due(code).Text;
