@@ -172,16 +172,18 @@ public static class BoxRows
     public static CloudRow Services(BoxSnapshot snapshot, DateTimeOffset now)
     {
         bool Active(BoxService service) => service.ActiveState == "active";
+        // The morning run is a oneshot its timer fires at 06:00: between runs it is inactive by design, up while its last result was success.
+        bool Waiting(BoxService service) => service.Unit == MorningRun && service.ActiveState == "inactive" && service.Note is { } note && note.Contains("last result success", StringComparison.Ordinal);
         var stopped = MustRun.Where(unit => snapshot.Services.FirstOrDefault(service => service.Unit == unit) is not { } found || !Active(found)).ToList();
         bool morningFailed = snapshot.Services.FirstOrDefault(service => service.Unit == MorningRun)?.Note is { } note && note.Contains("last result", StringComparison.Ordinal) && !note.Contains("success", StringComparison.Ordinal);
         string tone = stopped.Count > 0 ? "alarm" : morningFailed ? "warning" : "good";
-        int running = snapshot.Services.Count(Active);
-        return new CloudRow("services", "Are the job-hunt services up?", $"{running} of {snapshot.Services.Count} active",
+        int up = snapshot.Services.Count(service => Active(service) || Waiting(service));
+        return new CloudRow("services", "Are the job-hunt services up?", $"{up} of {snapshot.Services.Count} up",
             [new(stopped.Count > 0 ? $"not running: {string.Join("; ", stopped.Select(unit => snapshot.Services.FirstOrDefault(service => service.Unit == unit) is { } found ? $"{unit}, restart with {RestartCommand(unit, found.Scope)}" : $"{unit}, not in the box's report"))}" : $"red when {string.Join(", ", MustRun)} is not running; amber when the morning run's last result failed", null)], tone)
         {
             Table = Table(["Service", "State", "Up for", "Note"], snapshot.Services.Select(service => new[]
             {
-                $"{service.Unit} ({service.Scope})", $"{service.ActiveState}, {service.SubState}",
+                $"{service.Unit} ({service.Scope})", Waiting(service) ? "waiting for its timer" : $"{service.ActiveState}, {service.SubState}",
                 service.Since is { } since && Active(service) ? BoxWords.Span(now - since) : "", BoxWords.Scrub(service.Note),
             })),
         };
