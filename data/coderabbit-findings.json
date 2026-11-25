@@ -4102,6 +4102,31 @@
       "prs": [
         237
       ]
+    },
+    {
+      "version": "1.0.5.162",
+      "pr": 238,
+      "sha": "6093f14a",
+      "level": 0,
+      "at": "2026-11-25T15:27:58Z",
+      "waited_seconds": 3,
+      "review_seconds": 0,
+      "conclusion": "neutral",
+      "reviewed": "rate limited",
+      "actionable": 0,
+      "findings": {
+        "critical": 0,
+        "major": 0,
+        "minor": 0,
+        "trivial": 0,
+        "nitpick": 0
+      },
+      "critical_at": [],
+      "fixed": null,
+      "answered_as_wrong": null,
+      "prs": [
+        238
+      ]
     }
   ]
 }

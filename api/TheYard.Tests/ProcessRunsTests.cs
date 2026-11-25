@@ -195,6 +195,8 @@ public sealed class ProcessRunsTests
         Assert.Equal("0 30 * * * *", crons["TodayCard"]);
         Assert.Equal("0 10/15 * * * *", crons["PounceFollowUp"]);
         Assert.Equal("0 2-59/5 * * * *", crons["ReplyDraft"]);
+        // The merger every two minutes, on the even minute (ADR-111, the addendum on the two-minute pass).
+        Assert.Equal("0 */2 * * * *", crons["Merger"]);
         Assert.All(FunctionProcesses.All.Where(p => p.Cron is not null), process => Assert.Equal(crons[process.Key], process.Cron));
         Assert.Equal(19, FunctionProcesses.All.Select(p => p.Key).Distinct().Count());
         Assert.All(crons.Keys, timer => Assert.NotNull(FunctionProcesses.Find(timer)));
@@ -223,6 +225,7 @@ public sealed class ProcessRunsTests
         var at = new DateTimeOffset(2026, 10, 24, 16, 43, 10, TimeSpan.Zero);
         Assert.Equal(at.Date.AddHours(16).AddMinutes(50), FunctionProcesses.Next(FunctionProcesses.Find("AtsSweep")!, at).UtcDateTime);
         Assert.Equal(at.Date.AddHours(16).AddMinutes(44), FunctionProcesses.Next(FunctionProcesses.Find("Merger")!, at).UtcDateTime);
+        Assert.Equal(at.Date.AddHours(16).AddMinutes(46), FunctionProcesses.Next(FunctionProcesses.Find("Merger")!, at.AddMinutes(1)).UtcDateTime);
         Assert.Equal(at.Date.AddHours(16).AddMinutes(52), FunctionProcesses.Next(FunctionProcesses.Find("SheetMirror")!, at).UtcDateTime);
         Assert.Equal(at.Date.AddHours(17).AddMinutes(5), FunctionProcesses.Next(FunctionProcesses.Find("DailyCard")!, at).UtcDateTime);
         // 17:00 UTC is noon Central in October: the records run's slot.
