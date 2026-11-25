@@ -78,7 +78,7 @@ public sealed class NetworkLane(IShare share, NetworkTools tools, ServerConfig c
         bool backlogDone = await share.ExistsAsync($"{folder}/{BacklogDone}", finish);
         await SpoolAsync(start, kept, bounds, backlogDone, lines, finish);
         await tools.Usage.WriteAsync(run, start, folder, began, lines, finish);
-        var report = new LaneReport(Lane.Network, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, [], dropped, result, [], lines, null, run.TimedOut || result is null) { Queued = kept.Count };
+        var report = new LaneReport(Lane.Network, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, [], dropped, result, [], lines, null, run.TimedOut || result is null) { Queued = kept.Count, SignedOut = run.SignedOut };
         await share.WriteAsync($"{folder}/DONE.md", DoneNote.Render(report), finish);
         return report;
     }

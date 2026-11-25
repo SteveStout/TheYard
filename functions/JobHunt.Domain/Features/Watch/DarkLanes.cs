@@ -17,6 +17,7 @@ public sealed record SendingLane(string Key, string Label);
 /// <param name="PassLog">campaign/pass.log, whose 8 o'clock lines say whether the campaign had a lead to send.</param>
 /// <param name="Queued">The item names in dispatch/ready and dispatch/running.</param>
 /// <param name="Proposed">The item names in dispatch/proposed.</param>
+/// <param name="SignIn">dispatch/SIGN-IN.md, the claude CLI's sign-in on WickedAwsome as canary.py and dispatch.py last read it, or empty.</param>
 public sealed record DarkReads(
     string State,
     IReadOnlyDictionary<string, string> Notes,
@@ -25,7 +26,8 @@ public sealed record DarkReads(
     string Tracker,
     string PassLog,
     IReadOnlySet<string> Queued,
-    IReadOnlySet<string> Proposed);
+    IReadOnlySet<string> Proposed,
+    string SignIn = "");
 
 /// <summary>
 /// The dark-lane alarm: a lane that sends nothing must reach Steve as a failure, not as a routine count. For each
@@ -59,11 +61,31 @@ public static partial class DarkLanes
 
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    /// <summary>The DARK lines for today, one a dark lane, in <see cref="Lanes"/> order.</summary>
+    /// <summary>The file canary.py and dispatch.py write the claude CLI's sign-in to.</summary>
+    public const string SignInPath = "dispatch/SIGN-IN.md";
+
+    /// <summary>
+    /// The DARK lines for today: an expired claude sign-in first, as its own cause (every model lane stops on it, and no
+    /// lane's own failure explains it, audit1124 follow-ups 1), then one a dark lane, in <see cref="Lanes"/> order.
+    /// </summary>
     /// <param name="reads">What the share holds.</param>
     /// <param name="today">The Central day.</param>
     public static IReadOnlyList<string> Lines(DarkReads reads, DateOnly today) =>
-        [.. Lanes.Select(l => Line(l, reads, today)).OfType<string>()];
+        [.. new[] { SignInLine(reads.SignIn) }.Concat(Lanes.Select(l => Line(l, reads, today))).OfType<string>()];
+
+    /// <summary>The sign-in's line when SIGN-IN.md reads "State: expired", else null.</summary>
+    /// <param name="signIn">SIGN-IN.md's text, or empty.</param>
+    public static string? SignInLine(string signIn)
+    {
+        if (Field(signIn ?? string.Empty, "State") != "expired")
+        {
+            return null;
+        }
+        string since = Field(signIn!, "Since") is { Length: > 0 } at ? $" since {at}" : string.Empty;
+        string seen = Field(signIn!, "Seen") is { Length: > 0 } words ? $" (\"{words}\")" : string.Empty;
+        return $"{Prefix}the claude sign-in on WickedAwsome: expired{since}{seen}, so every model lane stops: the 6 AM run, leaders, reply drafts, pounce and the canaries. "
+            + "Why: the CLI's sign-in expired, not a lane failing. Fix: double-click \"Sign in to Claude\" on the WickedAwsome desktop and type /login.";
+    }
 
     /// <summary>One lane's line, or null when it is not dark.</summary>
     /// <param name="lane">The lane.</param>

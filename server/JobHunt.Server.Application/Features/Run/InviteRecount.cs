@@ -39,7 +39,8 @@ public sealed class InviteRecount(IShare share, IClaudeCli claude, ServerConfig 
         var lines = new List<string> { $"Recount: {(result?.LiveInviteCount is { } read ? read.ToString(System.Globalization.CultureInfo.InvariantCulture) : "not read")}. {result?.StopDetail}" };
         if (result is null)
         {
-            return new Recount(null, 0, "the recount gave no result", "the recount gave no result", lines);
+            string why = run.SignedOut ? SignIn.NotRun : "the recount gave no result";
+            return new Recount(null, 0, why, why, lines);
         }
         if (result.StopCondition != "none")
         {

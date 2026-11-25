@@ -107,7 +107,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
 
         LaneResult? result = null;
         IReadOnlyList<SendRecord> sends = [];
-        bool cutShort = false;
+        bool cutShort = false, signedOut = false;
         if (list.Rows.Count == 0)
         {
             lines.Add("Nothing on the worklist; no model run.");
@@ -125,6 +125,11 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             lines.Add($"claude -p exit {run.ExitCode}{(run.TimedOut ? ", killed at the wall-clock limit or by a stop" : string.Empty)}.");
             CancellationToken finish = CancellationToken.None;
             cutShort = run.TimedOut || LaneResult.FromLine(run.ResultLine) is null;
+            signedOut = run.SignedOut;
+            if (signedOut)
+            {
+                lines.Add(SignIn.NotRun + ".");
+            }
             result = await ReadResultAsync(run, start, folder, list, lines, finish);
             sends = await RecordAsync(start, folder, lane.Model, list, result, lines, finish);
             if (start.Lane == Lane.Apply)
@@ -133,7 +138,7 @@ public sealed partial class LaneRunner(IShare share, IClaudeCli claude, IUsageSi
             }
             await new UsageReport(share, usage, config, time).WriteAsync(run, start, folder, began, lines, finish);
         }
-        var report = new LaneReport(start.Lane, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, list.Rows, list.Dropped, result, sends, lines, null, cutShort);
+        var report = new LaneReport(start.Lane, lane.Model, start.Dry, began, time.GetUtcNow(), start.Before, list.Rows, list.Dropped, result, sends, lines, null, cutShort) { SignedOut = signedOut };
         return await FinishAsync(report, folder, CancellationToken.None);
     }
 

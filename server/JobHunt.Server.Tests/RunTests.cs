@@ -17,6 +17,10 @@ public sealed class RunTests
     private static string Result(string rows, string stop = "none") =>
         $$"""{"rows":[{{rows}}],"live_invite_count":17,"stop_condition":"{{stop}}","stop_detail":null,"stop_screenshot":null}""";
 
+    // The CLI's own result line on 11/25 when its sign-in had expired (nightly/2026-11-25/0600-feed-opus-5-5/stream.jsonl, trimmed).
+    private static ClaudeRun SignedOut(ClaudeRequest request) =>
+        new(1, false, """{"type":"result","subtype":"success","is_error":true,"duration_ms":100,"num_turns":1,"result":"Failed to authenticate: OAuth session expired and could not be refreshed","total_cost_usd":0}""");
+
     private static bool IsLane(ClaudeRequest request, Lane lane) => request.Arguments[1].Contains(RunSlot.Doc(lane), StringComparison.Ordinal);
 
     [Fact]
@@ -35,6 +39,23 @@ public sealed class RunTests
         Assert.Contains("nightly/2026-11-03/0600-apply-sonnet-5-5-dry/DONE.md", morning.Share.Files.Keys);
         Assert.Contains("nightly/2026-11-03/0600-card.md", morning.Share.Files.Keys);
         Assert.Contains("nightly/2026-11-03/0600-invites-sonnet-5-5-dry/usage.json", morning.Share.Files.Keys);
+    }
+
+    [Fact]
+    public async Task An_expired_sign_in_is_its_own_cause_on_the_card_never_cut_short_or_no_result()
+    {
+        var morning = new Morning(SignedOut);
+        morning.Config.Lanes["feed"].Enabled = true;
+        (_, string output) = await morning.Lanes().ExecuteAsync(new RunOptions(false, null), default);
+
+        string card = morning.Share.Files["nightly/2026-11-03/0600-card.md"];
+        Assert.Contains("invites: not run, sign-in expired: the claude CLI on WickedAwsome answered \"Failed to authenticate", card, StringComparison.Ordinal);
+        Assert.Contains("feed: not run, sign-in expired", card, StringComparison.Ordinal);
+        Assert.DoesNotContain("cut short", card, StringComparison.Ordinal);
+        Assert.DoesNotContain("no result from the model", card, StringComparison.Ordinal);
+        Assert.DoesNotContain("the recount gave no result", card, StringComparison.Ordinal);
+        Assert.Contains("not run, sign-in expired", output, StringComparison.Ordinal);
+        Assert.Empty(morning.TrackerRows());
     }
 
     [Fact]

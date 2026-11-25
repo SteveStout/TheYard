@@ -42,6 +42,28 @@ public sealed class DarkLaneTests
         Assert.EndsWith("Fix: 30-heal-server6am-messages-20261119.md is queued.", line, StringComparison.Ordinal);
     }
 
+    private const string Expired = "> RULES FIRST\n\n# SIGN-IN\n\nState: expired\nSince: 2026-11-24 08:58 CST\nLast read: 2026-11-25 05:15 CST by canary.py\n"
+        + "Seen: Failed to authenticate: OAuth session expired and could not be refreshed\n";
+
+    [Fact]
+    public void An_expired_claude_sign_in_is_its_own_first_line_and_names_the_double_click()
+    {
+        string state = Row(Tuesday.AddDays(-3), "messages: held, held by the breaker (J:\\dispatch\\held\\server6am-messages.hold)")
+            + Row(Tuesday.AddDays(-1), "messages: held, held by the breaker (J:\\dispatch\\held\\server6am-messages.hold)");
+        var reads = Reads(state, [MessagesHold]) with { SignIn = Expired };
+        var lines = DarkLanes.Lines(reads, Tuesday);
+
+        Assert.Equal(2, lines.Count);
+        Assert.StartsWith("DARK: the claude sign-in on WickedAwsome: expired since 2026-11-24 08:58 CST (\"Failed to authenticate: OAuth session expired", lines[0], StringComparison.Ordinal);
+        Assert.Contains("Why: the CLI's sign-in expired, not a lane failing.", lines[0], StringComparison.Ordinal);
+        Assert.EndsWith("Fix: double-click \"Sign in to Claude\" on the WickedAwsome desktop and type /login.", lines[0], StringComparison.Ordinal);
+        Assert.StartsWith("DARK: LinkedIn messages (6 AM):", lines[1], StringComparison.Ordinal);
+
+        // Signed in, or never read, is no line at all.
+        Assert.Null(DarkLanes.SignInLine(Expired.Replace("State: expired", "State: signed in", StringComparison.Ordinal)));
+        Assert.Null(DarkLanes.SignInLine(string.Empty));
+    }
+
     [Fact]
     public void A_lane_that_sent_yesterday_is_not_dark()
     {
@@ -151,6 +173,8 @@ public sealed class DarkLaneTests
     [InlineData("dry, 0 of 0 rows read, 66 left out by the gates", null)]
     [InlineData("held, held by the breaker (J:\\dispatch\\held\\server6am-invites.hold): 3 empty runs in a row", null)]
     [InlineData("held, reply1110-0400 LIVE on LinkedIn", null)]
+    [InlineData("not run, sign-in expired: the claude CLI on WickedAwsome answered \"Failed to authenticate: OAuth session expired\"", null)]
+    [InlineData("held, the recount gave no result: Failed to authenticate: OAuth session expired and could not be refreshed", null)]
     [InlineData("Holds: none. DONE note J:\\nightly\\pounce\\x-DONE.md", null)]
     public void A_run_is_judged_as_check_empty_runs_judges_it(string words, string? verdict) =>
         Assert.Equal(verdict, DarkLanes.Verdict(words, outbound: true));
@@ -243,6 +267,14 @@ public sealed class DarkLaneTests
         Assert.Equal(TodayCard.DarkLines(file), inputs.Dark);
         string[] card = TodayCard.Render(inputs).Split('\n');
         Assert.StartsWith("DARK: LinkedIn messages (6 AM): 0 sent in 12 days.", card[4], StringComparison.Ordinal);
+
+        // canary.py writes an expired sign-in: the next shadow tick puts it first, and the card leads with it.
+        s.Write(DarkLanes.SignInPath, Expired);
+        await new WatchPass(s.Store, _ => null, new At(now.AddMinutes(30))).RunAsync(WatchMode.Shadow, default);
+        file = s.Text(WatchDark.Path);
+        card = TodayCard.Render(await source.ReadAsync(default)).Split('\n');
+        Assert.StartsWith("DARK: the claude sign-in on WickedAwsome: expired since 2026-11-24 08:58 CST", card[4], StringComparison.Ordinal);
+        Assert.StartsWith("DARK: LinkedIn messages (6 AM):", card[5], StringComparison.Ordinal);
     }
 
     [Theory]
