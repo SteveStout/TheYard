@@ -29,6 +29,8 @@ On 7 November Steve asked whether there should be a recommendations page, saw it
 
 What was considered: a third list on the landing page (a longer page, and still nothing a link can point to), and an eighth stop on the review route (the route stays seven stops; its last stop links here in the next version).
 
+The pattern has carried two more pages since: the stack (ADR-140) and, third, About Steven at `/?view=about` (ADR-013, the addendum on About Steven as a page).
+
 ## What holds it
 
 `recommendationsPage.test.ts` holds the anchors, the sections and the tiles; `render/recommendations.test.ts` the page drawn whole from its one read with the count from the file; `recommendations.spec.ts` the page at 1280 and 390 against the API's own answer, its tagged open and its short door; `RecommendationsOpenTests` the open counted once; `siteMap.test.ts` the row and the tile.

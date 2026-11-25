@@ -173,14 +173,14 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
     expect(sheet.dim).toMatch(/0\.3\)$/);
     expect(sheet.panel).toBe('rgba(255, 255, 255, 0.88)');
   }).toPass({ timeout: 15_000 });
-  // The Author page reads the same way: the sheet clear, the panels frosted.
-  await openTheYard(page, '/?doc=author');
-  await expect(page.locator('dialog[open] [data-testid="ribbons"]')).toHaveCount(0);
-  await expect(page.locator('dialog[open] .author-panel').first()).toBeVisible();
+  // About Steven, a page of its own, stands its panels on the same frost as the window's.
+  await openTheYard(page, '/?view=about');
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="about-page"] .author-panel').first()).toBeVisible();
   await expect(async () => {
     expect(
       await page
-        .locator('dialog[open] .author-panel')
+        .locator('[data-testid="about-page"] .author-panel')
         .first()
         .evaluate((panel) => getComputedStyle(panel).backgroundColor)
     ).toBe('rgba(255, 255, 255, 0.88)');

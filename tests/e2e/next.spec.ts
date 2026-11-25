@@ -97,7 +97,7 @@ const SPOKES: { page: string; address: string; links: string[]; closeFirst: bool
   {
     page: 'post',
     address: '/?view=blog&post=a-made-up-post',
-    links: ['/?view=review', '/about'],
+    links: ['/?view=review', '/?view=about'],
     closeFirst: true,
   },
   {
@@ -109,7 +109,7 @@ const SPOKES: { page: string; address: string; links: string[]; closeFirst: bool
   {
     page: 'recommendations',
     address: '/?view=recommendations',
-    links: ['/?view=review', '/about'],
+    links: ['/?view=review', '/?view=about'],
     closeFirst: false,
   },
 ];

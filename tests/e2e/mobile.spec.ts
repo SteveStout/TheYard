@@ -348,11 +348,10 @@ test.describe('a document on a phone', () => {
 
 // #region about-from-home
 // Steve's iPhone, 25 September, on 1.0.3.25: About Steven opened from the home page sat
-// about 100 px high, its title above the screen and the home page's resume tile under
-// its foot. The phone's dialog is pinned to all four edges and the page behind it is
-// frosted. No emulator has a phone's toolbars; this holds what one can: the sheet
-// covers the screen edge to edge, top to bottom, its title is on the screen, and what
-// is behind it is frost, after the home page was scrolled before the tile was pressed.
+// about 100 px high, its title above the screen. Since About Steven became a page of its
+// own (ADR: The sidebar, the addendum on About Steven as a page) there is no window to
+// pin: the home page's tile opens the page, which has the phone's whole width, its
+// eyebrow at the top of the column, and nothing over it.
 test('About Steven opened from the home page covers the whole phone screen, its title on it, frost behind', async ({
   page,
 }) => {
@@ -360,27 +359,30 @@ test('About Steven opened from the home page covers the whole phone screen, its 
   const tile = page.getByTestId('landing-tile-author');
   await tile.scrollIntoViewIfNeeded();
   await page.mouse.wheel(0, 400);
-  await tile.click();
-  const sheet = page.locator('dialog[open]').last();
-  await expect(sheet.locator('.author-panel').first()).toBeVisible();
+  const [about] = await Promise.all([page.context().waitForEvent('page'), tile.click()]);
+  await about.setViewportSize({ width: 390, height: 844 });
+  await expect(about).toHaveURL(/\?view=about$/);
+  await expect(about.locator('dialog[open]')).toHaveCount(0);
+  const panel = about.locator('[data-testid="about-page"] .author-panel').first();
+  await expect(panel).toBeVisible();
   await expect(async () => {
-    const read = await sheet.evaluate((dialog) => {
-      const box = dialog.getBoundingClientRect();
-      const title = dialog.querySelector('[class*="dialogHeader"]')?.getBoundingClientRect();
+    const read = await about.evaluate(() => {
+      const page = document.querySelector('[data-testid="about-page"]')!.getBoundingClientRect();
+      const eyebrow = document.querySelector('[data-mock="eyebrow"]')!.getBoundingClientRect();
+      const panel = document.querySelector('[data-testid="about-page"] .author-panel')!;
       return {
-        top: box.top,
-        left: box.left,
-        right: window.innerWidth - box.right,
-        bottom: window.innerHeight - box.bottom,
-        title: title === undefined ? -1 : title.top,
-        behind: getComputedStyle(dialog, '::backdrop').backgroundColor,
+        left: page.left,
+        right: window.innerWidth - page.right,
+        eyebrow: eyebrow.top + window.scrollY,
+        frost: getComputedStyle(panel).backgroundColor,
       };
     });
-    expect([read.top, read.left, read.right, read.bottom]).toEqual([0, 0, 0, 0]);
-    // The title bar on the screen, at its top, inside the sheet's border (3 px measured).
-    expect(read.title).toBeGreaterThanOrEqual(0);
-    expect(read.title).toBeLessThanOrEqual(4);
-    expect(read.behind).toBe('rgba(255, 255, 255, 0.88)');
+    // The column has the screen less the frame's gutter, the same on both sides.
+    expect(read.left).toBeLessThanOrEqual(24);
+    expect(Math.abs(read.left - read.right)).toBeLessThanOrEqual(1);
+    // The page's title line is on the first screen, and the words stand on the reading frost.
+    expect(read.eyebrow).toBeLessThan(400);
+    expect(read.frost).toBe('rgba(255, 255, 255, 0.88)');
   }).toPass({ timeout: 15_000 });
 });
 // #endregion about-from-home

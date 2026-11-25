@@ -1,5 +1,6 @@
 import { createContext, useContext, useSyncExternalStore } from 'react';
 import type { Account } from '../lib/auth';
+import type { AuthorParts } from '../lib/author';
 import type { BlogImage, BlogList, BlogPost } from '../lib/blog';
 import type { InventoryFacets, VehiclePage } from '../lib/data';
 import type { Vehicle } from '../lib/types';
@@ -27,11 +28,13 @@ export type FirstLoad = {
   vehicle: Vehicle | null;
   /** A document a ?doc= address names, already rendered to HTML, or null. */
   doc: { key: string; html: string } | null;
+  /** On ?view=about: the author document rendered and laid out into its parts, or null; absent elsewhere. */
+  author?: AuthorParts | null;
   /** The first screen's reading (/api/pulse) on the bare address and ?view=review, as it answered, or null; absent on a page drawn before it was read. */
   pulse?: unknown;
-  /** /api/recommendations as it answered, on ?view=recommendations and ?view=review, or null; absent on a page drawn before it was read. */
+  /** /api/recommendations as it answered, on ?view=recommendations, ?view=review and ?view=about, or null; absent on a page drawn before it was read. */
   recommendations?: unknown;
-  /** /api/tests/summary as it answered, on ?view=review, or null; absent elsewhere. */
+  /** /api/tests/summary as it answered, on ?view=review and ?view=about, or null; absent elsewhere. */
   tests?: unknown;
   /** The post a ?view=blog&post= address names, as much as its hook draws (ADR-132), or null; absent elsewhere. */
   post?: HookPost | null;

@@ -126,13 +126,21 @@ describe('the views the rendering service draws, with no browser', () => {
     expect(html).not.toContain('Loading...');
   });
 
-  it('draws the Author page in its own wide window', async () => {
-    const doc = { key: 'author', html: '<section><h2>About Steven</h2></section>' };
-    const html = await draw(load('doc=author', { doc }));
-    expect(html).toMatch(
-      /<dialog[^>]* open=""[^>]*aria-label="About Steven"|<dialog[^>]*aria-label="About Steven"[^>]* open=""/
-    );
-    expect(html).toContain('<section><h2>About Steven</h2></section>');
+  it('draws About Steven as a page of its own, whole, with no window', async () => {
+    const author = {
+      top: '<h1>About Steven</h1>',
+      intro: '<h2 id="hi">Hi</h2><p>Who he is.</p>',
+      said: [],
+      panels: ['<h2>How I lead</h2><p>Boring delivery.</p>', '<h2>Away</h2><p>No boat.</p>'],
+      close: null,
+      credit: null,
+    };
+    for (const search of ['view=about', 'doc=author']) {
+      const html = await draw(load(search, { author }));
+      expect(html).toContain('data-mock="about-page"');
+      expect(html).toContain('<p>Boring delivery.</p>');
+      expect(html).not.toMatch(/<dialog[^>]* open=""/);
+    }
   });
 
   it('leaves Admin and the account page to the browser, behind the frame', async () => {

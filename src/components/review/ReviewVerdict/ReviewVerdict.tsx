@@ -27,7 +27,7 @@ import {
 import { scrollToSection } from '../../../lib/sectionScroll';
 import { NowPanel } from '../../shared/NowPanel';
 import { PdfMark } from '../../shared/PdfMark';
-import { ProofTile } from '../ProofTile';
+import { ProofTile } from '../../shared/ProofTile';
 import { ReviewLeadQuote } from '../ReviewLeadQuote';
 import styles from './ReviewVerdict.module.css';
 

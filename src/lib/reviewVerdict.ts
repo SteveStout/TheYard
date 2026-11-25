@@ -102,7 +102,7 @@ export const TOUR_ID = 'review-tour';
 export const ROLE_LINKS = [
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/stevenwstout/', action: 'linkedin' },
   { label: 'GitHub', href: 'https://github.com/SteveStout/TheYard', action: 'github' },
-  { label: 'About Steven', href: '/about', action: 'about' },
+  { label: 'About Steven', href: '/?view=about', action: 'about' },
 ] as const;
 
 /**

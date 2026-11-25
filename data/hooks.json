@@ -86,7 +86,7 @@
           "label": "About Steven",
           "reason": "Who built this and how he leads.",
           "minutes": 3,
-          "href": "/about"
+          "href": "/?view=about"
         }
       ]
     },
@@ -103,7 +103,7 @@
           "label": "About Steven",
           "reason": "Who built this and how he leads.",
           "minutes": 3,
-          "href": "/about"
+          "href": "/?view=about"
         }
       ]
     },
@@ -120,7 +120,7 @@
           "label": "About Steven",
           "reason": "Who wrote this and how he leads.",
           "minutes": 3,
-          "href": "/about"
+          "href": "/?view=about"
         }
       ]
     },

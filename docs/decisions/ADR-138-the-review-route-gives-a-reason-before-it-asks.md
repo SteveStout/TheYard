@@ -62,7 +62,7 @@ The page's view layer, in the review route's own components, with one query of t
 
 - [`src/lib/reviewVerdict.ts`](https://github.com/SteveStout/TheYard/blob/main/src/lib/reviewVerdict.ts) - the first screen's words, the tiles from the record, and the pickers for the live tile, the quote and the counts
 - [`src/components/review/ReviewVerdict/ReviewVerdict.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/ReviewVerdict/ReviewVerdict.tsx) - the first screen
-- [`src/components/review/ProofTile/ProofTile.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/ProofTile/ProofTile.tsx) - one proof tile
+- [`src/components/shared/ProofTile/ProofTile.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/shared/ProofTile/ProofTile.tsx) - one proof tile
 - [`src/components/review/ReviewLeadQuote/ReviewLeadQuote.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/ReviewLeadQuote/ReviewLeadQuote.tsx) - the one named quote
 - [`src/components/review/ReviewPage/ReviewPage.tsx`](https://github.com/SteveStout/TheYard/blob/main/src/components/review/ReviewPage/ReviewPage.tsx) - the first screen, the fold and the tour under it
 - [`src/hooks/useReviewReadings.ts`](https://github.com/SteveStout/TheYard/blob/main/src/hooks/useReviewReadings.ts) - the tests summary and the recommendations, from the first load or the browser

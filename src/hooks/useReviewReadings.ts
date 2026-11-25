@@ -2,7 +2,7 @@
  * Does:      Reads the two answers the review route's first screen draws from, the tests summary and the
  *            recommendations, from the first load when the rendering service drew the page, else in the browser once.
  * Does not:  Pick a figure or a quote (reviewVerdict.ts does) or draw anything.
- * Used by:   ReviewPage.tsx, Landing.tsx.
+ * Used by:   ReviewPage.tsx, Landing.tsx, AboutPage.tsx.
  */
 import { useEffect, useState } from 'react';
 import { useFirstLoad } from './useFirstLoad';

@@ -1,9 +1,8 @@
 /**
  * Does:      Styles the window a document opens in: its fixed height, the clear glass sheet on a phone and a desk,
  *            the page behind it softened to a field, the teal title bar with its note, Copy link and Close, the one
- *            body that scrolls, the wider window for the Author page and the wide one for the Quality page, and the
- *            Loading and error lines.
- * Does not:  Style the document inside it (DocProse, DocSwatches, DocPanels and AuthorPage do), or hold a colour of its own.
+ *            body that scrolls, the wide one for the Quality page, and the Loading and error lines.
+ * Does not:  Style the document inside it (DocProse, DocSwatches and DocPanels do), or hold a colour of its own.
  * Used by:   DocDialog.tsx.
  */
 /* The doc viewer (DocDialog): the dialog every sidebar row opens. */
@@ -102,11 +101,6 @@
     --dialog-left: var(--rail-width-collapsed);
   }
 
-  :global([data-rail='open']) .dialogWide,
-  :global([data-rail='collapsed']) .dialogWide {
-    width: min(1280px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
-  }
-
   /* The wide window stands in the middle of the screen, as its picture draws it: the page behind is a blurred field,
      so there is no rail word for it to cut. */
   :global([data-rail='open']) .dialogBroad,
@@ -145,10 +139,6 @@
     margin: 0 auto;
   }
 
-  :global([data-rail='auto']) .dialogWide[open] {
-    width: min(1280px, calc(100vw - var(--dialog-left) - 2 * var(--space-4)));
-  }
-
   :global([data-rail='auto']) .dialogBroad[open] {
     --dialog-left: 0px;
     inset: var(--space-6) 0;
@@ -184,17 +174,13 @@
 
 /* Wider only where there is room to be: on a phone every document is the whole screen already. */
 @media (min-width: 640px) {
-  .dialogWide {
-    width: min(1040px, calc(100vw - 2 * var(--space-4)));
-  }
-
   .dialogBroad {
     width: min(1080px, calc(100vw - 2 * var(--space-7)));
   }
 }
 
-/* Every document stands on the ribbon ground like every page, so the Author page and
-   the rest of the library show the same background and read as the same section. The
+/* Every document stands on the ribbon ground like every page, so the whole
+   library show the same background and read as the same section. The
    page's own ground reads through the clear sheet. contain: paint still keeps
    everything the dialog paints inside its box, and the body is the one scroller, so
    the sheet stands still while it scrolls.

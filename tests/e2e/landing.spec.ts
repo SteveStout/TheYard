@@ -222,9 +222,11 @@ test('the Inventory tile opens the inventory at its own address, and Back return
 
 test('a section tile opens the first document its sidebar section opens', async ({ page }) => {
   await openTheYard(page, '/');
-  await page.getByTestId('landing-tile-author').click();
+  await page.getByTestId('landing-tile-about').click();
   await expect(page).toHaveURL(/doc=/);
   await expect(page.getByRole('dialog')).toBeVisible();
+  // A section that is one link, About Steven, is that link: the page of its own, never a window.
+  await expect(page.getByTestId('landing-tile-author')).toHaveAttribute('href', '/?view=about');
 });
 
 test('an address shared before the landing page existed still opens the inventory', async ({

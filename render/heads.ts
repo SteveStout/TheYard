@@ -45,7 +45,7 @@ const AUTHOR: Head = {
   title: 'About Steven',
   description:
     'Lead / Staff .NET engineer. St. Louis area, Central time, fully remote for seven years.',
-  path: '/?doc=author',
+  path: '/?view=about',
 };
 
 const QUALITY: Head = {
@@ -82,7 +82,7 @@ export function headFor(search: string, posts: readonly PostHead[]): Head | null
         }
       : BLOG;
   }
-  if (doc === 'author') return AUTHOR;
+  if (view === 'about' || doc === 'author') return AUTHOR;
   if (doc === 'quality') return QUALITY;
   return null;
 }

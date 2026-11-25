@@ -157,7 +157,7 @@ export function RecommendationsPage() {
                   <a className={styles.pill} href="/?view=review" data-mock="next-link">
                     Check my work
                   </a>
-                  <a className={styles.pill} href="/about" data-mock="next-link">
+                  <a className={styles.pill} href="/?view=about" data-mock="next-link">
                     About Steven
                   </a>
                 </p>

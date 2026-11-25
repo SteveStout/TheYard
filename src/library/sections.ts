@@ -84,14 +84,15 @@ export const MENUS: Record<
   },
   /**
    * The person behind the site, as the last section, right under About (ADR:
-   * The sidebar, the addendum on the author's section). One page, and it is
-   * a served document like every other, so the page sweep checks it and the
-   * house tests read it; what makes it a page rather than a letter is
-   * src/lib/author.ts, which gives the rendered words their shape.
+   * The sidebar, the addendum on About Steven as a page). A view, not a
+   * document, like the recommendations and the stack, so the section is one link
+   * to it; the words are still the served document, which src/lib/author.ts
+   * gives its shape, and /about stays the served page for tools.
    */
   author: {
     label: 'Author',
-    items: [{ key: 'author' }],
+    items: [],
+    links: [{ label: 'About Steven', href: '/?view=about' }],
   },
   // The recommendations page (ADR: The recommendations have a page): a view, not a document, so the
   // section is one link to it.

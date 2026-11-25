@@ -1,15 +1,14 @@
 /**
  * Does:      Draws the window a document opens in: asks the API for it, renders it, lays it in panels under one title (the
  *            bar's), opens the documents the catalogue marks wide in the wide window, their cards numbered and the
- *            Quality page's foot as their last card, fills the Author page's place for what colleagues say, and offers
- *            its link.
+ *            Quality page's foot as their last card, and offers its link. About Steven is a page of its own
+ *            (AboutPage.tsx), not a window.
  * Does not:  Decide which document is open (the sidebar and useNavigation.ts do), or hold any document's words.
  * Used by:   SideNav.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { QualityFoot } from '../components/shared/QualityFoot';
-import { Recommendations } from '../components/shared/Recommendations';
 import { WhereNext } from '../components/shared/WhereNext';
 import type { NextPage } from '../lib/pageHooks';
 import { useFirstLoad } from '../hooks/useFirstLoad';
@@ -19,8 +18,6 @@ import bar from './DocBar.module.css';
 import prose from './DocProse.module.css';
 import swatches from './DocSwatches.module.css';
 import panels from './DocPanels.module.css';
-import author from './AuthorPage.module.css';
-import side from './AuthorSide.module.css';
 import blocks from './StyleBlocks.module.css';
 import quality from './QualityBlocks.module.css';
 import tiles from './QualityTiles.module.css';
@@ -32,10 +29,10 @@ import { DOCS, type DocKey } from './documents';
 
 /**
  * The document's sheets, one job each (ADR-019, the addendum on the stylesheets). Each scopes its
- * rules under its own .prose, so the element that holds the document carries all eight; the
+ * rules under its own .prose, so the element that holds the document carries all seven; the
  * reading panel's frost is scoped under the window as well, so the window carries that sheet's .dialog.
  */
-const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${author.prose} ${side.prose} ${blocks.prose} ${quality.prose} ${tiles.prose} ${layers.prose}`;
+const PROSE = `${prose.prose} ${swatches.prose} ${panels.prose} ${blocks.prose} ${quality.prose} ${tiles.prose} ${layers.prose}`;
 const WINDOW = `${styles.dialog} ${panels.dialog} ${styles.dialogGround}`;
 
 /**
@@ -132,7 +129,7 @@ export function DocDialog({
     // heaviest things the frontend carries) is a chunk of its own that the
     // inventory never needs (ADR: Code that reads like code, addendum), and
     // fetched one after the other its request started only once the document's
-    // had finished, 775 ms in. Both now start at once, and the Author page's layout with them.
+    // had finished, 775 ms in. Both now start at once.
     // The browser keeps each chunk for a year like every other hashed file, and
     // the page fetches the renderer ahead when it is idle (src/lib/prefetch.ts).
     Promise.all([
@@ -141,18 +138,12 @@ export function DocDialog({
         return response.text();
       }),
       import('../lib/markdown'),
-      key === 'author' ? import('../lib/author') : Promise.resolve(null),
     ])
-      .then(async ([markdown, { renderDocument }, author]) => {
+      .then(async ([markdown, { renderDocument }]) => {
         const rendered = await renderDocument(markdown);
         // #endregion renderer-on-demand
-        // The Author page has a shape of its own: panels, blocks, buttons and
-        // photographs. Every other document takes the same panels by its
-        // headings, so one look covers the whole library.
-        const html =
-          author !== null
-            ? author.layoutAuthor(rendered)
-            : layoutDocument(rendered, DOCS[key].title, DOCS[key].wide, DOCS[key].cards);
+        // Every document takes the same panels by its headings, so one look covers the whole library.
+        const html = layoutDocument(rendered, DOCS[key].title, DOCS[key].wide, DOCS[key].cards);
         cache.current[key] = html;
         setDocHtml((prev) => ({ ...prev, [key]: html }));
       })
@@ -161,35 +152,26 @@ export function DocDialog({
 
   useLiveBlocks(proseRef, request ? docHtml[activeDoc] : undefined, onOpenDoc);
 
-  // The Author page leaves a place for what colleagues say (src/lib/author.ts); once the page is
-  // in the window the column is drawn into it, read from the one endpoint the landing page reads.
-  const [said, setSaid] = useState<HTMLElement | null>(null);
   // The wide sheet (the Quality page) ends on its foot, drawn as the last card of its page (saleshome1120).
   const [foot, setFoot] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    setSaid(proseRef.current?.querySelector<HTMLElement>('[data-recommendations]') ?? null);
     setFoot(
       DOCS[activeDoc].wide
         ? (proseRef.current?.querySelector<HTMLElement>('[data-testid="doc-page"]') ?? null)
         : null
     );
-    // Let go of the place before the document that holds it is replaced, so the column is never
+    // Let go of the place before the document that holds it is replaced, so the foot is never
     // drawn into a node that has left the page.
-    return () => {
-      setSaid(null);
-      setFoot(null);
-    };
+    return () => setFoot(null);
   }, [activeDoc, docHtml]);
 
   return (
     <dialog
       ref={dialogRef}
       className={
-        activeDoc === 'author'
-          ? `${WINDOW} ${styles.dialogWide} op-glass op-sheet op-inset`
-          : DOCS[activeDoc].wide
-            ? `${WINDOW} ${styles.dialogBroad} op-glass op-sheet op-inset`
-            : `${WINDOW} op-glass op-sheet op-inset`
+        DOCS[activeDoc].wide
+          ? `${WINDOW} ${styles.dialogBroad} op-glass op-sheet op-inset`
+          : `${WINDOW} op-glass op-sheet op-inset`
       }
       aria-label={DOCS[activeDoc].title}
       open={drawnOpen || undefined}
@@ -270,7 +252,6 @@ export function DocDialog({
             {nextPage(activeDoc) && <WhereNext page={nextPage(activeDoc)!} />}
           </>
         )}
-        {said !== null && createPortal(<Recommendations />, said)}
         {foot !== null &&
           createPortal(<QualityFoot onBack={() => dialogRef.current?.close()} />, foot)}
       </div>

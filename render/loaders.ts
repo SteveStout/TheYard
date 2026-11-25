@@ -1,6 +1,6 @@
 /**
  * Does:      Reads from the API what an address needs drawn before it is drawn: who is signed in, the build, the first page
- *            of the list, the vehicle, the document, the blog's list and the post it shows in full. One loader per view, all at once, each under one deadline.
+ *            of the list, the vehicle, the document, the author document for About Steven, the blog's list and the post it shows in full. One loader per view, all at once, each under one deadline.
  * Does not:  Draw anything, read a store, or reach anything but the API's public reads; a read that fails or runs past the
  *            deadline is left to the browser, which asks for it as it always did.
  * Used by:   render.ts, render.test.ts.
@@ -65,7 +65,8 @@ function inTime<T>(work: Promise<T | null>): Promise<T | null> {
  * because the vehicle draws over the list; the vehicle on ?vehicle=; the
  * document, rendered here with the same code the browser uses, on ?doc=.
  * Admin and the account page draw in the browser behind the frame drawn here; the recommendations page is
- * drawn from its one read, and the review route's first screen from three: the recommendations for its quote, the
+ * drawn from its one read, About Steven from three (the author document laid out, the recommendations for its voices
+ * and the tests summary for its live tile), and the review route's first screen from three: the recommendations for its quote, the
  * tests summary for its live tile and the pulse for its live panels, so none moves when the browser takes the page over.
  * @param search the address's query, without its "?"
  * @param cookie the visitor's Cookie header, or null
@@ -96,7 +97,8 @@ export async function loadFirst(
     !first.account &&
     !first.blog &&
     !first.review &&
-    !first.recommendations;
+    !first.recommendations &&
+    !first.about;
 
   // The blog is drawn whole here, its list and the post it shows in full, so its first screen is in the page itself.
   // A post the address names is read beside the list; only the list's lead post has to wait for the list.
@@ -113,29 +115,43 @@ export async function loadFirst(
     return { list, post };
   };
 
-  const [account, build, page, facets, vehicle, markdown, pulse, recommendations, tests, blog] =
-    await Promise.all([
-      // Nobody signed in sends no cookie, and needs no read to say so.
-      cookie ? inTime(get<AccountWire>('/api/auth/me', signal)) : Promise.resolve(null),
-      inTime(get<{ version: string; commit: string }>('/api/version', signal)),
-      needsListing
-        ? inTime(get<VehiclePage>(`/api/vehicles${listingQuery ? `?${listingQuery}` : ''}`, signal))
-        : Promise.resolve(null),
-      needsListing ? inTime(get<InventoryFacets>('/api/facets', signal)) : Promise.resolve(null),
-      first.vehicleId
-        ? inTime(get<Vehicle>(`/api/vehicles/${encodeURIComponent(first.vehicleId)}`, signal))
-        : Promise.resolve(null),
-      doc ? inTime(get<string>(doc.url, signal)) : Promise.resolve(null),
-      // The review route's two live panels read the same answer, so they are drawn with figures, never hidden at first.
-      landing || first.review ? inTime(get<unknown>(PULSE_URL, signal)) : Promise.resolve(null),
-      // The recommendations page is drawn whole from the answer, so a crawler reads every name and the count;
-      // the review route's first screen quotes one of them and prints the count.
-      first.recommendations || first.review
-        ? inTime(get<unknown>(RECOMMENDATIONS_URL, signal))
-        : Promise.resolve(null),
-      first.review ? inTime(get<unknown>(TESTS_SUMMARY_URL, signal)) : Promise.resolve(null),
-      first.blog ? blogFirst() : Promise.resolve(undefined),
-    ]);
+  const [
+    account,
+    build,
+    page,
+    facets,
+    vehicle,
+    markdown,
+    pulse,
+    recommendations,
+    tests,
+    blog,
+    author,
+  ] = await Promise.all([
+    // Nobody signed in sends no cookie, and needs no read to say so.
+    cookie ? inTime(get<AccountWire>('/api/auth/me', signal)) : Promise.resolve(null),
+    inTime(get<{ version: string; commit: string }>('/api/version', signal)),
+    needsListing
+      ? inTime(get<VehiclePage>(`/api/vehicles${listingQuery ? `?${listingQuery}` : ''}`, signal))
+      : Promise.resolve(null),
+    needsListing ? inTime(get<InventoryFacets>('/api/facets', signal)) : Promise.resolve(null),
+    first.vehicleId
+      ? inTime(get<Vehicle>(`/api/vehicles/${encodeURIComponent(first.vehicleId)}`, signal))
+      : Promise.resolve(null),
+    doc ? inTime(get<string>(doc.url, signal)) : Promise.resolve(null),
+    // The review route's two live panels read the same answer, so they are drawn with figures, never hidden at first.
+    landing || first.review ? inTime(get<unknown>(PULSE_URL, signal)) : Promise.resolve(null),
+    // The recommendations page is drawn whole from the answer, so a crawler reads every name and the count;
+    // the review route's first screen quotes one of them and prints the count.
+    first.recommendations || first.review || first.about
+      ? inTime(get<unknown>(RECOMMENDATIONS_URL, signal))
+      : Promise.resolve(null),
+    first.review || first.about
+      ? inTime(get<unknown>(TESTS_SUMMARY_URL, signal))
+      : Promise.resolve(null),
+    first.blog ? blogFirst() : Promise.resolve(undefined),
+    first.about ? inTime(get<string>(DOCS.author.url, signal)) : Promise.resolve(null),
+  ]);
 
   const signedIn: Account = account ? toAccount(account) : SIGNED_OUT;
   return {
@@ -148,25 +164,29 @@ export async function loadFirst(
     doc: first.docKey && markdown ? await renderedDoc(first.docKey, markdown) : null,
     pulse,
     recommendations,
-    ...(first.review ? { tests } : {}),
+    ...(first.review || first.about ? { tests } : {}),
     ...(blog ? { blog } : {}),
+    ...(first.about ? { author: author ? await authorLaidOut(author) : null } : {}),
   };
 }
 
-/** A document as its window shows it: rendered, then laid out, the Author page in its own shape (DocDialog.tsx). */
+/** The author document as the About page places it: rendered, then cut into its laid-out parts (AboutPage.tsx). */
+async function authorLaidOut(markdown: string): Promise<FirstLoad['author']> {
+  const { authorParts } = await import('../src/lib/author');
+  return authorParts(await renderDocument(markdown));
+}
+
+/** A document as its window shows it: rendered, then laid out (DocDialog.tsx). */
 async function renderedDoc(key: string, markdown: string): Promise<FirstLoad['doc']> {
   const rendered = await renderDocument(markdown);
-  if (key !== 'author')
-    return {
-      key,
-      html: layoutDocument(
-        rendered,
-        DOCS[key as keyof typeof DOCS]?.title,
-        DOCS[key as keyof typeof DOCS]?.wide,
-        DOCS[key as keyof typeof DOCS]?.cards
-      ),
-    };
-  const { layoutAuthor } = await import('../src/lib/author');
-  return { key, html: layoutAuthor(rendered) };
+  return {
+    key,
+    html: layoutDocument(
+      rendered,
+      DOCS[key as keyof typeof DOCS]?.title,
+      DOCS[key as keyof typeof DOCS]?.wide,
+      DOCS[key as keyof typeof DOCS]?.cards
+    ),
+  };
 }
 // #endregion loaders
