@@ -44,7 +44,7 @@ public static class ReconnectTemplate
         ("Site", $"{BlogLine.Site}/?r={code}"),
         ("GitHub", $"{BlogLine.Site}/api/go/github?r={code}"),
         ("LinkedIn", $"{BlogLine.Site}/api/go/linkedin?r={code}"),
-        ("About", $"{BlogLine.Site}/about?r={code}"),
+        ("About", $"{BlogLine.Site}/?doc=author&r={code}"),
         ("Recommendations", $"{BlogLine.Site}/api/go/linkedin-recs?r={code}"),
     ];
 

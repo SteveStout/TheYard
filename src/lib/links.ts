@@ -58,11 +58,15 @@ export function withCode(href: string, code: string | null): string {
   return section === undefined ? coded : `${coded}#${section}`;
 }
 
-/** The view a page reports its open under: the blog and the Quality page by name, else what the caller says. */
+/**
+ * The view a page reports its open under: the blog, the Quality page and About Steven by name, else what the caller
+ * says. A sent About link is /?doc=author, and /about with a code redirects there, so it counts under /about.
+ */
 export function reportPath(search: string, fallback: string): string {
   const params = new URLSearchParams(search);
   if (params.get('view') === 'blog') return '/blog';
   if (params.get('doc') === 'quality') return '/quality';
+  if (params.get('doc') === 'author' || params.get('view') === 'about') return '/about';
   return fallback;
 }
 

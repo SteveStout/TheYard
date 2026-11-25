@@ -46,8 +46,8 @@ public sealed class WhereNextTests(WebApplicationFactory<Program> factory)
         // Ladder v7b: a footer click is a page load with the code on it, so the page it lands on counts the open.
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Accept.ParseAdd("text/html");
-        string html = await client.GetStringAsync("/about?r=k7f2qa");
-        int nav = html.IndexOf("data-next=\"about\"", StringComparison.Ordinal);
+        string html = await client.GetStringAsync("/resume?r=k7f2qa");
+        int nav = html.IndexOf("data-next=\"resume\"", StringComparison.Ordinal);
         string footer = html[nav..html.IndexOf("</nav>", nav, StringComparison.Ordinal)];
         string[] drawn = [.. Regex.Matches(footer, "href=\"([^\"]+)\"").Select(match => System.Net.WebUtility.HtmlDecode(match.Groups[1].Value))];
         Assert.All(drawn, href => Assert.Contains("r=k7f2qa", href, StringComparison.Ordinal));
