@@ -104,6 +104,14 @@ public sealed class ReplyDrafts(IMergeStore store, IInboxReader inbox, IReplyDra
             {
                 continue;
             }
+            if (ReplyDraft.Noise(message.Subject, message.Text) is { } noise)
+            {
+                await store.WriteAsync(ReplyDraft.SkippedPath(message.Id), TrackerCsvText.Encode($"{now:O}\n"), ct);
+                await NoteAsync(new ReplyDraftRow(message.Id, message.ThreadId, ReplyDraftRow.Skipped, noise), now, ct);
+                log.Append($"{CentralClock.Local(now):yyyy-MM-dd HH:mm} skipped {message.Id}: {noise}, no reply is drafted\n");
+                skipped++;
+                continue;
+            }
             known ??= await KnownAsync(ct);
             if (!ReplyDraft.IsJobThread(message.Address, known))
             {
