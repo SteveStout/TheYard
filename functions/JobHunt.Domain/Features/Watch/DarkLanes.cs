@@ -71,7 +71,7 @@ public static partial class DarkLanes
     /// <param name="reads">What the share holds.</param>
     /// <param name="today">The Central day.</param>
     public static IReadOnlyList<string> Lines(DarkReads reads, DateOnly today) =>
-        [.. new[] { SignInLine(reads.SignIn) }.Concat(Lanes.Select(l => Line(l, reads, today))).OfType<string>()];
+        [.. new[] { SignInLine(reads.SignIn), RemoteControlLine(reads.SignIn) }.Concat(Lanes.Select(l => Line(l, reads, today))).OfType<string>()];
 
     /// <summary>The sign-in's line when SIGN-IN.md reads "State: expired", else null.</summary>
     /// <param name="signIn">SIGN-IN.md's text, or empty.</param>
@@ -85,6 +85,23 @@ public static partial class DarkLanes
         string seen = Field(signIn!, "Seen") is { Length: > 0 } words ? $" (\"{words}\")" : string.Empty;
         return $"{Prefix}the claude sign-in on WickedAwsome: expired{since}{seen}, so every model lane stops: the 6 AM run, leaders, reply drafts, pounce and the canaries. "
             + "Why: the CLI's sign-in expired, not a lane failing. Fix: double-click \"Sign in to Claude\" on the WickedAwsome desktop and type /login.";
+    }
+
+    /// <summary>
+    /// Remote Control's own claude.ai sign-in (dispatch.py reads it hourly into SIGN-IN.md's "Remote Control:" line), when it
+    /// reads "expired since ...", else null (signed in, unknown or never read). The lanes run on the token, so this never
+    /// holds or stops a lane: it is one line, dispatchauth1125.
+    /// </summary>
+    /// <param name="signIn">SIGN-IN.md's text, or empty.</param>
+    public static string? RemoteControlLine(string signIn)
+    {
+        const string Expired = "expired since ";
+        if (Field(signIn ?? string.Empty, "Remote Control") is not { } state || !state.StartsWith(Expired, StringComparison.Ordinal))
+        {
+            return null;
+        }
+        return $"{Prefix}Remote Control on WickedAwsome: its claude.ai sign-in expired since {state[Expired.Length..].Trim()}. "
+            + "The lanes still run (they use the token). Fix: double-click Sign in to Claude on the WickedAwsome desktop.";
     }
 
     /// <summary>One lane's line, or null when it is not dark.</summary>

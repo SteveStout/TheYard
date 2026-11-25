@@ -64,6 +64,30 @@ public sealed class DarkLaneTests
         Assert.Null(DarkLanes.SignInLine(string.Empty));
     }
 
+    private const string TokenSignedIn = "> RULES FIRST\n\n# SIGN-IN\n\nState: signed in\nSince: 2026-11-25 07:15 CST\nLast read: 2026-11-25 07:15 CST by dispatch.py\n"
+        + "Seen: claude auth status: logged in\n";
+
+    [Fact]
+    public void Remote_Controls_expired_claude_ai_sign_in_is_one_dark_line_while_the_token_reads_signed_in()
+    {
+        string signIn = TokenSignedIn + "Remote Control: expired since 2026-11-25 09:10 CST\nRemote Control Seen: claude auth status (token variables removed): not logged in\n";
+        var lines = DarkLanes.Lines(Reads(string.Empty, []) with { SignIn = signIn }, Tuesday);
+
+        Assert.Equal(
+            "DARK: Remote Control on WickedAwsome: its claude.ai sign-in expired since 2026-11-25 09:10 CST. The lanes still run (they use the token). Fix: double-click Sign in to Claude on the WickedAwsome desktop.",
+            Assert.Single(lines));
+    }
+
+    [Theory]
+    [InlineData("Remote Control: signed in\nRemote Control Seen: claude auth status (token variables removed): logged in\n")]
+    [InlineData("Remote Control: unknown\nRemote Control Seen: claude auth status (token variables removed) could not be read\n")]
+    [InlineData("")]
+    public void Remote_Control_signed_in_unknown_or_never_read_is_no_dark_line(string rc)
+    {
+        Assert.Empty(DarkLanes.Lines(Reads(string.Empty, []) with { SignIn = TokenSignedIn + rc }, Tuesday));
+        Assert.Null(DarkLanes.RemoteControlLine(TokenSignedIn + rc));
+    }
+
     [Fact]
     public void A_lane_that_sent_yesterday_is_not_dark()
     {
