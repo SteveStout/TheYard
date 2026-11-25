@@ -114,6 +114,18 @@ public static partial class ReplyDraft
         return known.Addresses.Contains(to) || (CompanyKey.Of(to) is { Length: > 0 } key && !PersonalDomains.All.Contains(key) && known.Domains.Contains(key));
     }
 
+    /// <summary>
+    /// Why a message from a person on a job thread still needs no reply, or null: an automatic reply (an out-of-office
+    /// to Steve's own send), or a paid-interview or survey blast ("Earn $85 | ... Interview", "$85 one-time"), the ATS
+    /// noise Terac sent through crossinghurdles.com on 11/24 (AUDIT1124 follow-ups 3).
+    /// </summary>
+    /// <param name="subject">The message's subject.</param>
+    /// <param name="text">The message's text.</param>
+    public static string? Noise(string subject, string text) =>
+        AutoReply().IsMatch(subject ?? string.Empty) ? "an automatic reply"
+        : PaidBlast().IsMatch(subject ?? string.Empty) || PaidBlast().IsMatch(text ?? string.Empty) ? "a paid interview or survey blast"
+        : null;
+
     /// <summary>Written for a message that was not on a job thread, so the log says so once and the pass never asks again.</summary>
     public static string SkippedPath(string id) => $"{Folder}/{id}.skipped";
 
@@ -217,4 +229,10 @@ public static partial class ReplyDraft
 
     [GeneratedRegex(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")]
     private static partial Regex Address();
+
+    [GeneratedRegex(@"^\s*(?:automatic reply|auto[- ]?reply|out of (?:the )?office|autoreply)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex AutoReply();
+
+    [GeneratedRegex(@"\bearn \$\d+|\$\d+ one-time\b", RegexOptions.IgnoreCase)]
+    private static partial Regex PaidBlast();
 }
