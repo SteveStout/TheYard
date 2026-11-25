@@ -60,7 +60,8 @@ public sealed record Verdict(Candidate Candidate, string? Failed, string BandFla
 /// only judges: not a staffing firm placing an unnamed client and not a former employer; a role in the US, remote or
 /// not (RULE 76: hybrid and onsite are in, remote is negotiated once a human is on the other side), and never one
 /// abroad or remote only in named states that leave Missouri out; posted or first seen 21
-/// days ago or less; Principal, Staff, Lead, Architect, an engineering Manager or Director (a plain Senior only
+/// days ago or less; an engineering title and no other function's (RoleTitle, the one title test the pounce and
+/// the 6 AM apply builder read too); Principal, Staff, Lead, Architect, an engineering Manager or Director (a plain Senior only
 /// with a band topping PayFloor.Pass); a band whose top is under PayFloor.Flag skipped with its number; a stack
 /// that touches C#, .NET or Azure, or an AI-native lead role; not applied to the same role; and under RULE 50's
 /// three applications a company in 60 days. Ahead of them all, a company, a name it includes or a posting BLACKLIST.md
@@ -94,7 +95,8 @@ public static partial class JobsGates
             : FormerEmployers.Of(c.Company, null) is not null ? "former employer"
             : LocationFailure(remote, c.Location) is { } place ? place
             : days > MaxDays ? $"posted {days} days ago"
-            : LevelFailure(c)
+            : RoleTitle.Failure(c.Title)
+            ?? LevelFailure(c)
             ?? (flag == "SKIP" ? $"band tops at ${c.BandMax!.Value.ToString("N0", CultureInfo.InvariantCulture)}, under ${PayFloor.Flag.ToString("N0", CultureInfo.InvariantCulture)}" : null)
             ?? (stack == "none" ? "stack names no C#, .NET or Azure and is not an AI-native lead role" : null)
             ?? Applied(c, applications)

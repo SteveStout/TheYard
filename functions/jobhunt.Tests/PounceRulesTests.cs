@@ -235,9 +235,9 @@ public sealed class PounceRulesTests
     [Fact]
     public void A_seat_outside_his_list_and_a_role_passed_already_are_refused_in_order()
     {
-        var product = JobsGates.Judge(Role("Acme", "Principal Product Manager, AI Platform", "AI agents. Fully remote."), [], [], Today);
-        Assert.Null(product.Failed);
-        Assert.Equal("not a seat his targeting file names", PounceRules.Gate(product, [], new HashSet<string>()));
+        var systems = JobsGates.Judge(Role("Acme", "Principal Systems Engineer", "AI agents. Fully remote."), [], [], Today);
+        Assert.Null(systems.Failed);
+        Assert.Equal("not a seat his targeting file names", PounceRules.Gate(systems, [], new HashSet<string>()));
         var role = JobsGates.Judge(Role("Acme", "Principal Software Engineer", "C# on Azure. Fully remote."), [], [], Today);
         Assert.Null(PounceRules.Gate(role, [], new HashSet<string>()));
         Assert.Equal("the same role passed in the last 30 days", PounceRules.Gate(role, [], new HashSet<string> { JobsGates.Same(role.Candidate) }));

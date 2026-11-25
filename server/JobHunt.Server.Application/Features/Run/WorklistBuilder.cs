@@ -117,6 +117,10 @@ public sealed partial class WorklistBuilder(IShare share, ICodeMinter minter, IP
             {
                 dropped.Add(new Dropped(what, reason));
             }
+            else if (RoleTitle.Failure(posting.Role) is { } title)
+            {
+                dropped.Add(new Dropped(what, title));
+            }
             else if (linkedInClosed is not null && ApplyBoards.OnLinkedIn(posting))
             {
                 dropped.Add(new Dropped(what, $"on LinkedIn, and LinkedIn is closed today: {linkedInClosed}"));

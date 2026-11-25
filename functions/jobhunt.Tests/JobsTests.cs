@@ -63,7 +63,7 @@ public sealed partial class JobsTests
     [InlineData("Senior Software Engineer", null, "senior, no band")]
     [InlineData("Senior Software Engineer", 175_000, "senior, band tops at $175,000")]
     [InlineData("Software Engineer II", 200_000, "level Mid")]
-    [InlineData("Product Manager", 200_000, "level Manager, not an engineering title")]
+    [InlineData("Product Manager", 200_000, "not an engineering role: Product Manager")]
     public void The_level_gate_passes_the_lead_titles_and_a_senior_only_with_a_band_over_the_pass_line(string title, int? band, string? failed) =>
         Assert.Equal(failed, Fail(Role(title: title, band: band)));
 
