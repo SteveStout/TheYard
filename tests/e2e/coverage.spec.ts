@@ -145,10 +145,15 @@ async function everyPage(
           if (next.address.includes('?vehicle=')) {
             await expect(tab.getByTestId('vehicle-layout')).toBeVisible({ timeout: 60_000 });
           }
+          // About Steven, which the window's old address ?doc=author lands on, reads its document
+          // after it is announced and says so on its page until the document is in.
+          await expect(tab.locator('[data-testid="about-page"][aria-busy="true"]')).toHaveCount(0, {
+            timeout: 60_000,
+          });
           // A document is fetched after the view is announced, and its window shows its loading
           // line until the document is in; the read waits for that line to be gone.
           if (next.address.includes('?doc=')) {
-            await expect(tab.locator('dialog [class*="docLoading"]')).toHaveCount(0, {
+            await expect(tab.locator('dialog[open] [class*="docLoading"]')).toHaveCount(0, {
               timeout: 60_000,
             });
           }

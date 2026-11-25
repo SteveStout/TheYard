@@ -37,7 +37,8 @@ describe('a link preview says what the page is (ADR-053, the addendum of 1.0.5.4
     ['?view=review&for=nobody', 'Production .NET that stays up.', '/?view=review'],
     ['?view=blog', 'Blog', '/?view=blog'],
     ['?view=blog&post=a-post', 'A post with a title', '/?view=blog&post=a-post'],
-    ['?doc=author', 'About Steven', '/?doc=author'],
+    ['?view=about', 'About Steven', '/?view=about'],
+    ['?doc=author', 'About Steven', '/?view=about'],
     ['?doc=quality', 'Quality you can watch', '/?doc=quality'],
   ])(
     '%s gets its own title, description and address in every tag an unfurler reads',
@@ -76,7 +77,7 @@ describe('a link preview says what the page is (ADR-053, the addendum of 1.0.5.4
   });
 
   it('never names the people the site is written for', () => {
-    for (const search of ['?view=review', '?view=blog', '?doc=author', '?doc=quality']) {
+    for (const search of ['?view=review', '?view=blog', '?view=about', '?doc=quality']) {
       const head = JSON.stringify(headFor(search, POSTS));
       expect(head).not.toMatch(/hiring manager|recruiter/i);
     }

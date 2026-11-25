@@ -156,7 +156,10 @@ test.describe('the docked rail', () => {
     );
     await expect(rail.locator('a[href="/about"]')).toHaveCount(0);
     await openSection(rail, 'Author');
-    await expect(rail.getByRole('button', { name: 'About Steven', exact: true })).toBeVisible();
+    await expect(rail.getByRole('link', { name: 'About Steven', exact: true })).toHaveAttribute(
+      'href',
+      '/?view=about'
+    );
 
     // The served page stays, for a search engine or a tool that does not run the app.
     const served = await page.request.get('/about');

@@ -10,6 +10,7 @@ import { holdCode, pageOpenReport, reportPath, sessionOrNull } from '../lib/link
 import { screenOf } from '../lib/reviewMirror';
 import { REVIEW_REPORT_PATH } from '../lib/reviewStops';
 import { RECOMMENDATIONS_REPORT_PATH } from '../lib/recommendationsPage';
+import { ABOUT_REPORT_PATH } from '../lib/aboutPage';
 import { prefetchWhenIdle } from '../lib/prefetch';
 import { AccountPanel } from '../components/account/AccountPanel';
 import { Landing } from '../components/landing/Landing';
@@ -17,6 +18,7 @@ import { BlogPage } from '../components/blog/BlogPage';
 import { ReviewPage } from '../components/review/ReviewPage';
 import { RecommendationsPage } from '../components/recommendations/RecommendationsPage';
 import { StackPage } from '../components/landing/StackPage';
+import { AboutPage } from '../components/about/AboutPage';
 import { VehicleDetail } from '../components/vehicle/VehicleDetail';
 import { useAccount } from './hooks/useAccount';
 import { useAddressBar } from './hooks/useAddressBar';
@@ -74,7 +76,7 @@ export default function App() {
   // (ADR: Tagged links, who opened what). The code is all it carries.
   // The address is read during the first render, because the address-bar mirror above rewrites
   // it in its own effect, before this one would run, and the code goes with the rewrite. The review
-  // route is its own page view, kept under its own path (ADR: Ten minutes, seven stops).
+  // route is its own page view, kept under its own path (ADR: Ten minutes, seven stops); About Steven keeps /about's.
   const [openReport] = useState(() =>
     typeof window === 'undefined'
       ? null
@@ -86,7 +88,9 @@ export default function App() {
               ? REVIEW_REPORT_PATH
               : address.recommendationsOpen
                 ? RECOMMENDATIONS_REPORT_PATH
-                : '/'
+                : address.aboutOpen
+                  ? ABOUT_REPORT_PATH
+                  : '/'
           )
         )
   );
@@ -101,7 +105,7 @@ export default function App() {
   // #endregion tagged-open
 
   // One view at a time, in this order: Admin, Account, the blog, the review route, the recommendations, the stack,
-  // the landing page, then the inventory (loading, unreachable, a vehicle, or the list).
+  // About Steven, the landing page, then the inventory (loading, unreachable, a vehicle, or the list).
   return (
     <Shell
       rail={rail}
@@ -159,6 +163,8 @@ export default function App() {
         <RecommendationsPage />
       ) : address.stackOpen ? (
         <StackPage />
+      ) : address.aboutOpen ? (
+        <AboutPage />
       ) : !address.inventoryOpen ? (
         <Landing
           accountLabel={account.email ?? 'Sign in'}

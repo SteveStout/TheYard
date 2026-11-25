@@ -20,6 +20,7 @@ import { docKeyForSlug, docSlug } from '../../library/addresses';
 import type { DocKey } from '../../library/documents';
 import { useFirstLoad } from '../../hooks/useFirstLoad';
 import {
+  aboutAsked,
   blogPostFrom,
   pageQueryFrom,
   browserSearch,
@@ -33,26 +34,8 @@ import { pageOf } from '../pageOpen';
 // hands back (push, replace, replaceQuery, stepBack), so a reader looking for
 // "what put that in the URL" has one file to read.
 
-/** Where a view's back button goes. Its label says which: "Back to home" or inventory. */
-export type BackTo = 'home' | 'inventory';
-
-/**
- * What a history entry this site pushed remembers: which kind of view opened
- * it (so that view's close button can go back rather than forward), where its
- * back button leads, and how many Admin cards deep it is.
- */
-export type HistoryEntry = {
-  viaTile?: boolean;
-  viaInventory?: boolean;
-  viaAdmin?: boolean;
-  viaAccount?: boolean;
-  viaDoc?: boolean;
-  viaBlog?: boolean;
-  viaReview?: boolean;
-  viaHome?: boolean;
-  from?: BackTo;
-  benchDepth?: number;
-};
+export type { BackTo, HistoryEntry } from '../historyEntry';
+import type { HistoryEntry } from '../historyEntry';
 
 export type Address = ReturnType<typeof useAddressBar>;
 
@@ -89,13 +72,14 @@ export function useAddressBar() {
   const [blogPost, setBlogPost] = useState<string | null>(first.blogPost);
   /** The open page's own parts of the address (the blog's filter or slide, the review's screen), never q and sort. */
   const [pageQuery, setPageQuery] = useState(first.pageQuery);
-  /** The review route, the recommendations and the stack (?view=review, recommendations, stack); one close for all. */
+  /** The review route, the recommendations, the stack and About Steven (?view=review, ...); one close for all. */
   const [reviewOpen, setReviewOpen] = useState(first.review);
   const [recommendationsOpen, setRecommendationsOpen] = useState(first.recommendations);
   const [stackOpen, setStackOpen] = useState(first.stack);
-  const page = pageOf(blogOpen, reviewOpen, recommendationsOpen, stackOpen);
-  const closePages = () =>
-    [setBlogOpen, setReviewOpen, setRecommendationsOpen, setStackOpen].forEach((set) => set(false));
+  const [aboutOpen, setAboutOpen] = useState(first.about);
+  const page = pageOf(blogOpen, reviewOpen, recommendationsOpen, stackOpen, aboutOpen);
+  const pageSetters = [setBlogOpen, setReviewOpen, setRecommendationsOpen, setStackOpen];
+  const closePages = () => [...pageSetters, setAboutOpen].forEach((set) => set(false));
 
   // #region url-mirror
   // Mirror the current view into the address bar: the filter GET parameters
@@ -200,8 +184,9 @@ export function useAddressBar() {
       setReviewOpen(params.get('view') === 'review');
       setRecommendationsOpen(params.get('view') === 'recommendations');
       setStackOpen(params.get('view') === 'stack');
+      setAboutOpen(aboutAsked(params));
       setInventoryOpen(opensInventory(inventoryPart(params)));
-      setOpenDocKey(docKeyForSlug(params.get('doc')));
+      setOpenDocKey(aboutAsked(params) ? null : docKeyForSlug(params.get('doc')));
       const vehicleId = params.get('vehicle');
       if (!vehicleId) {
         setSelectedVehicle(null);
@@ -279,6 +264,8 @@ export function useAddressBar() {
     setReviewOpen,
     recommendationsOpen,
     stackOpen,
+    aboutOpen,
+    setAboutOpen,
     page,
     closePages,
     homeShowing,

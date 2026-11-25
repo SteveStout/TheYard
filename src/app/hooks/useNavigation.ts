@@ -174,6 +174,13 @@ export function useNavigation(address: Address, loadState: LoadState) {
   // A decision record is a view with its own address (?doc=...), the same shape
   // as Admin and Account, so a record can be sent to someone as a link (ADR-057).
   const openDocument = (key: DocKey | null) => {
+    // About Steven is a page of its own, not a window (ADR: The sidebar, the addendum on About Steven as a page).
+    if (key === 'author') {
+      address.push({ viaHome: true }, new URLSearchParams({ view: 'about' }));
+      closePages();
+      address.setAboutOpen(true);
+      return;
+    }
     if (key !== null) {
       const params = filtersToSearchParams(filters, sort);
       params.set('doc', docSlug(key));

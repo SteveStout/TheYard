@@ -7,9 +7,9 @@
  *            page's own address to the phone's share sheet or, where there is none, copies it and says "Link copied"
  *            for two seconds. The home page draws the same close, the same question under its own 08 and no send
  *            line, with "Next step" as the heading a screen reader lands on (ADR-082, the addendum on the home page's
- *            order).
+ *            order). The About page draws it with no badge, its presses reported under its own name.
  * Does not:  Draw a voice (ReviewVoices.tsx does) or read the API.
- * Used by:   ReviewPage.tsx, Landing.tsx.
+ * Used by:   ReviewPage.tsx, Landing.tsx, AboutPage.tsx.
  */
 import { useEffect, useState } from 'react';
 import { useFirstSeen } from '../../../hooks/useFirstSeen';
@@ -24,15 +24,18 @@ export function ReviewClose({
   onBook,
   ask,
   heading,
+  action = 'review',
 }: {
   /** The address the send line shares: this route with its for value and the visitor's code; none, no send line. */
   address?: () => string;
   onAction: (action: ReviewAction) => void;
   onBook: () => void;
   /** The closing question and its line, drawn beside the moves with its number badge (op-ask). */
-  ask: { number: string; question: string; line: string };
+  ask: { number?: string; question: string; line: string };
   /** The home page's form: the heading a screen reader lands on, the question then drawn as words under it. */
   heading?: string;
+  /** The prefix of each press's data-action: the review route's own unless a page names its own. */
+  action?: string;
 }) {
   const [said, setSaid] = useState<string | null>(null);
   // The holder of the number badge's one pass of light.
@@ -72,7 +75,7 @@ export function ReviewClose({
       headingId="review-close-title"
       className={styles.close}
       testId="review-close"
-      action="review"
+      action={action}
       spaced={false}
       form={home ? 'home' : undefined}
       heading={heading}
@@ -88,7 +91,7 @@ export function ReviewClose({
             className={styles.forward}
             onClick={forward}
             aria-live="polite"
-            data-action="review.forward"
+            data-action={`${action}.forward`}
             data-testid="review-forward"
           >
             {said ?? FORWARD.line}

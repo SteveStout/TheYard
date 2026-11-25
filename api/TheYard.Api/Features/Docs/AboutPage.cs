@@ -214,7 +214,7 @@ public static class AboutPage
             </article>
             {{next}}
             </main>
-            <footer><a href="/">TheYard</a> &middot; <a href="/?doc=author">About Steven, the longer version</a></footer>
+            <footer><a href="/">TheYard</a> &middot; <a href="/?view=about">About Steven, the longer version</a></footer>
             </body>
             </html>
             """;

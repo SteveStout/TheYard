@@ -4,7 +4,7 @@
  *            line drawn as a reading.
  * Does not:  Style the window around them, the prose inside them, or the Author page's own blocks and photographs
  *            (AuthorPage.module.css), or hold a colour of its own.
- * Used by:   DocDialog.tsx.
+ * Used by:   DocDialog.tsx, AboutPage.tsx.
  */
 /* Every document on the Author page's panels: the same glass, the
    same green edge, the same trim on the headings, so the library reads as one
@@ -51,9 +51,11 @@
 /* #region reading-panel */
 /* The reading panel: inside the clear sheet, the frost
    is here, heavy enough that body text holds 4.5 over the brightest ribbon
-   (colors.test.ts holds the pair). */
+   (colors.test.ts holds the pair). The About page stands its panels on the same
+   frost, so the window and the page each carry a scope of this sheet. */
 .dialog .prose :global(.doc-panel),
-.dialog .prose :global(.author-panel) {
+.dialog .prose :global(.author-panel),
+.page .prose :global(.author-panel) {
   background-color: var(--dialog-page-bg);
   -webkit-backdrop-filter: var(--dialog-page-filter);
   backdrop-filter: var(--dialog-page-filter);

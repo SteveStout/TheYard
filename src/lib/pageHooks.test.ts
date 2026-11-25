@@ -132,7 +132,7 @@ describe('the hook data, one entry a page', () => {
         label: 'About Steven',
         reason: 'Who wrote this and how he leads.',
         minutes: 3,
-        href: '/about',
+        href: '/?view=about',
       },
     ]);
     expect(nextFor('about')).toEqual([

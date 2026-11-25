@@ -41,7 +41,7 @@ import { ReviewMirror } from '../ReviewMirror';
 import { ReviewPath } from '../ReviewPath';
 import { ReviewTour } from '../ReviewTour';
 import { ReviewVerdict } from '../ReviewVerdict';
-import { ReviewVoices } from '../ReviewVoices';
+import { ReviewVoices } from '../../shared/ReviewVoices';
 import { ReviewWork } from '../ReviewWork';
 import { SectionHead } from '../../shared/SectionHead';
 import styles from './ReviewPage.module.css';

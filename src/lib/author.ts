@@ -211,42 +211,62 @@ function intro(section: string): string {
   );
 }
 
+/** The page's parts, laid out but not yet joined: the About page places them between parts of its own. */
+export type AuthorParts = {
+  /** What comes before the first panel's heading: the page's own title. */
+  top: string;
+  /** The first panel's words and photograph, as the document wrote them, not yet in the hero's shape. */
+  intro: string;
+  /** The panels headed What colleagues say. */
+  said: string[];
+  /** Every later panel's inside, split into its blocks. */
+  panels: string[];
+  /** The closing panel's inside, or null. */
+  close: string | null;
+  /** The small print under the panels, or null. */
+  credit: string | null;
+};
+
 /**
- * The page in its shape: the first panel is who he is, the one headed What
- * colleagues say follows it as its own column, every later one is split into
- * its blocks, and what follows a rule is the closing panel. The
- * blocks carry no colour of their own: the stylesheet alternates them by
- * their order, so an edit to the document cannot leave two the same.
+ * The page cut into its parts: the first panel is who he is, the one headed What colleagues say is a column of its
+ * own, every later one is split into its blocks, what follows a rule is the closing panel, and a second rule opens the
+ * small print. The blocks carry no colour of their own: the stylesheet alternates them by their order, so an edit to
+ * the document cannot leave two the same.
  */
-export function layoutAuthor(html: string): string {
+export function authorParts(html: string): AuthorParts {
   const shaped = photographs(buttons(html));
   const [body, ...closing] = shaped.split(/<hr\s*\/?>/);
   const parts = body.split(/(?=<h2[ >])/);
   // Whatever comes before the first panel's heading, the page's own title as a rule, stays above the panels.
   const top = /^<h2[ >]/.test(parts[0]) ? '' : parts[0];
   const sections = top === '' ? parts : parts.slice(1);
-  const said = sections.filter((section) => SAID.test(section));
-  const panels = sections
-    .filter((section) => !SAID.test(section))
-    .map((section, index) =>
-      index === 0
-        ? `<section class="author-panel author-intro op-glass">${intro(section)}</section>`
-        : `<section class="author-panel op-glass">${blocks(section)}</section>`
-    );
-  const close =
-    closing.length === 0
+  const [first, ...rest] = sections.filter((section) => !SAID.test(section));
+  return {
+    top,
+    intro: first ?? '',
+    said: sections.filter((section) => SAID.test(section)),
+    panels: rest.map(blocks),
+    close: closing.length === 0 ? null : closing[0],
+    credit: closing.length < 2 ? null : closing.slice(1).join(''),
+  };
+}
+
+/** Who he is, what colleagues say, then the rest: the parts joined in the order a reader meets them. */
+export function layoutAuthor(html: string): string {
+  const { top, intro: first, said, panels, close, credit } = authorParts(html);
+  const hero =
+    first === ''
       ? ''
-      : `<section class="author-panel author-close op-glass">${closing[0]}</section>`;
-  // A second rule opens the small print under the panels: the photographer's credit.
-  const credit =
-    closing.length < 2 ? '' : `<footer class="author-credit">${closing.slice(1).join('')}</footer>`;
-  // Who he is, what colleagues say, then the rest: the order a reader meets them in, and the order
-  // the document carries. The stylesheet moves the middle one to the right of the rest on a wide
-  // window by placing all three in the page's grid, which leaves this order where it is.
-  const [first, ...rest] = panels;
+      : `<section class="author-panel author-intro op-glass">${intro(first)}</section>`;
+  const rest = panels.map((panel) => `<section class="author-panel op-glass">${panel}</section>`);
+  const closing =
+    close === null ? '' : `<section class="author-panel author-close op-glass">${close}</section>`;
+  const small = credit === null ? '' : `<footer class="author-credit">${credit}</footer>`;
+  // The stylesheet moves the middle one to the right of the rest on a wide window by placing all three in the
+  // page's grid, which leaves this order where it is.
   return (
-    `<div class="author-page" data-testid="author-page">${top}${first ?? ''}${said.map(aside).join('')}` +
-    `<div class="author-rest">${rest.join('')}${close}${credit}</div></div>`
+    `<div class="author-page" data-testid="author-page">${top}${hero}${said.map(aside).join('')}` +
+    `<div class="author-rest">${rest.join('')}${closing}${small}</div></div>`
   );
 }
 // #endregion panels

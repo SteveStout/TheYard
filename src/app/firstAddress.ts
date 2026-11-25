@@ -1,8 +1,8 @@
 /**
  * Does:      Reads the address the page opened on into the views it names: the filters, the sort, the vehicle, the Admin
- *            card, the document, the blog, the review route and the reset token.
+ *            card, the document, the blog, the review route, About Steven and the reset token.
  * Does not:  Keep any of them or write the address bar (useAddressBar.ts does both).
- * Used by:   useAddressBar.ts, loaders.ts, render.ts.
+ * Used by:   useAddressBar.ts, loaders.ts, render.ts, firstAddress.test.ts.
  */
 import { filtersFromSearchParams, opensInventory } from '../lib/inventory';
 import { cardFromAddress, pinFromAddress } from '../lib/workbench';
@@ -28,8 +28,8 @@ export function readFirstAddress(search: string) {
     vehicleId: params.get('vehicle'),
     /** A password reset link's token: the address bar loses it on the first render. */
     resetToken: params.get('reset'),
-    /** ?doc=adr-lockout opens that record. A name that matches no record opens nothing. */
-    docKey: docKeyForSlug(params.get('doc')),
+    /** ?doc=adr-lockout opens that record. A name that matches no record opens nothing; ?doc=author is the About page. */
+    docKey: aboutAsked(params) ? null : docKeyForSlug(params.get('doc')),
     /** Home is the landing page; an address naming the inventory, a filter, a sort or a vehicle opens the list. */
     inventory: opensInventory(inventory),
     admin: params.get('view') === 'admin',
@@ -48,10 +48,20 @@ export function readFirstAddress(search: string) {
     recommendations: params.get('view') === 'recommendations',
     /** The stack page, ?view=stack (ADR: The stack has a page of its own). */
     stack: params.get('view') === 'stack',
+    /** About Steven, ?view=about, and the window's old address, ?doc=author, which lands on it. */
+    about: aboutAsked(params),
     /** The Admin card an address names (?view=admin&card=timing&pin=errors), resolved once. */
     card,
     pin: pinFromAddress(params.get('pin')),
   };
+}
+
+/**
+ * Whether the address asks for About Steven: ?view=about, or ?doc=author, the address the window had, so a link already
+ * sent opens the page (ADR: The sidebar, the addendum on About Steven as a page).
+ */
+export function aboutAsked(params: URLSearchParams): boolean {
+  return params.get('view') === 'about' || params.get('doc') === 'author';
 }
 
 /**

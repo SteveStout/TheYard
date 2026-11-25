@@ -20,3 +20,10 @@ describe('the Decision Records menu', () => {
     expect(numbers[0]).toBe('001');
   });
 });
+
+describe('the Author section (ADR: The sidebar, the addendum on About Steven as a page)', () => {
+  it('is one link to the About page, no document in a window', () => {
+    expect(MENUS.author.items).toEqual([]);
+    expect(MENUS.author.links).toEqual([{ label: 'About Steven', href: '/?view=about' }]);
+  });
+});

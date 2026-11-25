@@ -1,20 +1,20 @@
 /**
- * Does:      Styles the Author page inside the document window: its panel headings, the hero and its buttons, the
+ * Does:      Styles the author document on the About page: its panel headings, the hero and its buttons, the
  *            alternating blocks, photographs in their gold frames, the pair, the close and the credit, and the phone layout.
  * Does not:  Style the window (DocDialog.module.css) or the reading panels every document shares (DocPanels.module.css),
  *            or hold a colour of its own. The markup it styles is written by src/lib/author.ts.
- * Used by:   DocDialog.tsx.
+ * Used by:   AboutPage.tsx.
  */
 /* #region author */
 /* The Author page (ADR: The sidebar, the addendum on the author's section). src/lib/author.ts writes the markup, so the
-   names are global; the dialog is wider for this one page, its words on the frosted reading panels inside the clear sheet. */
+   names are global; its words stand on the frosted reading panels, as every document's do. */
 .prose :global(.author-page) {
   display: grid;
   gap: var(--space-4);
   margin: calc(-1 * var(--space-2)) 0 0;
 }
 
-/* The dialog's own title already says whose page this is. */
+/* The eyebrow already says whose page this is; the title is kept for a screen reader. */
 .prose :global(.author-page) > h1 {
   position: absolute;
   width: 1px;

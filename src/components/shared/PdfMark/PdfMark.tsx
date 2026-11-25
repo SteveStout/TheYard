@@ -4,7 +4,7 @@
  *            reading PDF.
  * Does not:  Draw the button (panels.css's .op-pill-resume does) or say anything to a screen reader: the button's
  *            words do.
- * Used by:   ReviewVerdict.tsx, ReviewMirror.tsx, ReviewClose.tsx, ReviewDock.tsx, Landing.tsx, AskClose.tsx.
+ * Used by:   ReviewVerdict.tsx, ReviewMirror.tsx, ReviewClose.tsx, ReviewDock.tsx, Landing.tsx, AskClose.tsx, AboutPage.tsx.
  */
 import styles from './PdfMark.module.css';
 
