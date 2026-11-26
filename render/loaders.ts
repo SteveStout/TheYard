@@ -1,6 +1,7 @@
 /**
  * Does:      Reads from the API what an address needs drawn before it is drawn: who is signed in, the build, the first page
- *            of the list, the vehicle, the document, the author document for About Steven, the blog's list and the post it shows in full. One loader per view, all at once, each under one deadline.
+ *            of the list, the vehicle, the document, the author document for About Steven, the review route's live lot, the
+ *            blog's list and the post it shows in full. One loader per view, all at once, each under one deadline.
  * Does not:  Draw anything, read a store, or reach anything but the API's public reads; a read that fails or runs past the
  *            deadline is left to the browser, which asks for it as it always did.
  * Used by:   render.ts, render.test.ts.
@@ -16,6 +17,7 @@ import { DOCS } from '../src/library/documents';
 import { PULSE_URL } from '../src/lib/pulse';
 import { RECOMMENDATIONS_URL } from '../src/lib/recommendations';
 import { TESTS_SUMMARY_URL } from '../src/lib/landingProof';
+import { LOT_URL } from '../src/lib/reviewPath';
 import { SELF_READ } from './page';
 import { fetchedFor, type BlogList, type BlogPost } from '../src/lib/blog';
 import { filterFromSearch, listPath } from '../src/lib/blogFilter';
@@ -127,6 +129,7 @@ export async function loadFirst(
     tests,
     blog,
     author,
+    lot,
   ] = await Promise.all([
     // Nobody signed in sends no cookie, and needs no read to say so.
     cookie ? inTime(get<AccountWire>('/api/auth/me', signal)) : Promise.resolve(null),
@@ -146,11 +149,13 @@ export async function loadFirst(
     first.recommendations || first.review || first.about
       ? inTime(get<unknown>(RECOMMENDATIONS_URL, signal))
       : Promise.resolve(null),
-    first.review || first.about
+    landing || first.review || first.about
       ? inTime(get<unknown>(TESTS_SUMMARY_URL, signal))
       : Promise.resolve(null),
     first.blog ? blogFirst() : Promise.resolve(undefined),
     first.about ? inTime(get<string>(DOCS.author.url, signal)) : Promise.resolve(null),
+    // The review route's third question shows a live lot from its first paint, never an empty tile (ADR-142).
+    first.review ? inTime(get<unknown>(LOT_URL, signal)) : Promise.resolve(null),
   ]);
 
   const signedIn: Account = account ? toAccount(account) : SIGNED_OUT;
@@ -164,7 +169,8 @@ export async function loadFirst(
     doc: first.docKey && markdown ? await renderedDoc(first.docKey, markdown) : null,
     pulse,
     recommendations,
-    ...(first.review || first.about ? { tests } : {}),
+    ...(landing || first.review || first.about ? { tests } : {}),
+    ...(first.review ? { lot } : {}),
     ...(blog ? { blog } : {}),
     ...(first.about ? { author: author ? await authorLaidOut(author) : null } : {}),
   };

@@ -7,6 +7,7 @@ import {
   gateTotals,
   MIRROR,
   reviewedWord,
+  reviewWord,
   screenOf,
   stripLabel,
   stripOf,
@@ -61,8 +62,18 @@ describe('the review route mirror (ADR: The review route gives a reason before i
     });
     expect(gateTotals(null, '1.0.5.107')).toEqual({ passed: '', failed: '', version: '1.0.5.107' });
     expect(reviewedWord({ reviewed: 'full' })).toBe('reviewed');
+    expect(reviewedWord({ reviewed: 'rate limited' })).toBe('rate limited');
+    expect(reviewedWord({ reviewed: 'rate limited (1.0.5.153)' })).toBe('rate limited');
     expect(reviewedWord({ reviewed: 'partial' })).toBe('not reviewed');
     expect(reviewedWord(null)).toBe('pending');
+  });
+
+  it('gives each version one of four words for the page to carry: full, rate limited, not reviewed or pending', () => {
+    expect(reviewWord({ reviewed: 'full' })).toBe('full');
+    expect(reviewWord({ reviewed: 'rate limited' })).toBe('rate limited');
+    expect(reviewWord({ reviewed: 'skipped' })).toBe('not reviewed');
+    expect(reviewWord({ reviewed: '' })).toBe('not reviewed');
+    expect(reviewWord(null)).toBe('pending');
   });
 
   it('names the strip in its order with the API’s titles, skips a name the API lacks, and counts the rest', () => {

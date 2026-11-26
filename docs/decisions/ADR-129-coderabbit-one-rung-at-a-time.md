@@ -201,3 +201,7 @@ Corrections, 1.0.5.22, from CodeRabbit's review of 1.0.5.21 (#32), all three agr
 - A Critical another request found for the same commit is kept. The count still comes from the one request that read the most, so a summary mirrored onto a second request is not counted twice, but a Critical on any request that carried the commit holds the promote.
 
 Correction, 1.0.5.23: a Critical kept from a request other than the one counted was named under the counted request, so the hold pointed at a request that did not hold it. Each Critical's place now carries the request it was found on, and the hold names it (CodeRabbit on #33).
+
+## Addendum, 2026-11-26 (1.0.5.166): a version CodeRabbit could not read says so
+
+What stopped being true: that every version CodeRabbit did not read in full is "not reviewed". Eight of the 168 ships in data/coderabbit-findings.json were held off by its rate limit (1.0.5.153 to 1.0.5.164), and the bar called them not reviewed. CodeRabbit's word for a version now comes from its row: "reviewed" when it read it in full, "rate limited" when the row's word starts with that, "not reviewed" for any other reason, and "pending" while the gate has not written the row (`reviewWord` and `reviewedWord`, src/lib/reviewMirror.ts). The bar's badge says it and carries it in `data-review` (full, rate limited, not reviewed or pending). The review route's gate tile and the mirror's panel tick CodeRabbit's row only when the read was full; otherwise the row draws a dash in an outlined disc and is never green (ADR-138's addendum of the same version).

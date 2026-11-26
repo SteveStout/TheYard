@@ -3,7 +3,8 @@
  * on Steven's LinkedIn profile, word for word, grouped by where the writer stood as LinkedIn words it, each card with
  * the writer's name linking to their own page, the relationship line and the month, the full text, and two pills: the
  * recommendation on LinkedIn and the writer's profile. Three tiles above the groups give the count, the years and
- * the vantage points, and an index of every name sits beside them. The last card, That is everyone, leads to the review
+ * the vantage points, each group's head carries its count in a badge, and an index of every name sits beside them,
+ * folded under its own title on a phone. The last card, That is everyone, leads to the review
  * route and About, and the site's one closing row (AskClose) follows it, its Book 20 minutes opening the booking sheet.
  * Every number and group comes off the wire; this file draws what /api/recommendations answers and works nothing out.
  */
@@ -35,6 +36,8 @@ export function RecommendationsPage() {
   );
   // Book 20 minutes in the closing row opens the review page's booking sheet beside the email app.
   const [booking, setBooking] = useState(false);
+  // The names' list on a phone, folded under its title until it is pressed.
+  const [namesOpen, setNamesOpen] = useState(false);
   useEffect(() => {
     let live = true;
     request(RECOMMENDATIONS_URL, undefined, { background: true })
@@ -94,8 +97,11 @@ export function RecommendationsPage() {
                   aria-labelledby={`group-${section.key}`}
                 >
                   <h2 id={`group-${section.key}`} className={styles.groupTitle}>
+                    {/* The space keeps the name a screen reader hears whole: "People on his team 3". */}
                     {section.title}{' '}
-                    <span className={styles.groupCount}>{section.entries.length}</span>
+                    <span className={styles.groupCount} data-mock="group-count">
+                      {section.entries.length}
+                    </span>
                   </h2>
                   <p className={styles.groupLead}>{section.lead}</p>
                   {section.entries.map((entry) => (
@@ -165,8 +171,19 @@ export function RecommendationsPage() {
               <AskClose onBook={() => setBooking(true)} />
             </div>
             <nav className={`${styles.index} op-glass`} aria-label="On this page">
-              <p className={styles.indexTitle}>On this page</p>
-              <ul>
+              {/* A button over a list, not <details>: one drawn page serves a phone, where the list folds under its
+                  title until it is pressed, and a desk, where it stands open whatever the button says. */}
+              <button
+                type="button"
+                className={styles.indexTitle}
+                aria-expanded={namesOpen}
+                aria-controls="recommendations-names"
+                data-mock="names-toggle"
+                onClick={() => setNamesOpen((open) => !open)}
+              >
+                On this page
+              </button>
+              <ul id="recommendations-names" data-mock="names-list">
                 {indexOf(sections).map((item) => (
                   <li key={item.anchor}>
                     <a href={`#${item.anchor}`}>{item.name}</a>

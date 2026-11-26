@@ -153,3 +153,7 @@ What stopped being true: "The views are the numbers" for the list. From this ver
 **The kept answers.** `BlogAnswers` now reads through the bounded cache's one-load-a-key path, so readers who miss together share one read, and every save starts a new generation of keys, so a read that was under way when the save cleared the copy is kept where nobody asks for it again. The copy is per process: another host keeps its own answer out its minute, as the cache rule already tells the browser.
 
 **The save.** `EfBlogStore.SaveAsync` writes the post's row, its slides and topics, and its words and keywords in one transaction through the context's retry strategy, so a save that fails partway keeps none of it (`BlogEdgeTests`).
+
+## Addendum, 2026-11-26 (1.0.5.166): a slide's thumbnail is cut at three widths
+
+What stopped being true: that a thumbnail is 320 px only. A slide in a post's strip is drawn 148 px wide, which a phone at three device pixels to one needs 444 pixels for, so the strip's picture now carries `srcset` with the 320, 480 and 640 px cuts and `sizes="148px"`, its `src` still the 320 file. scripts/blog_thumbs.mjs cuts all three; `BlogImageNames` names `-480.webp` and `-640.webp` as thumbnails too, so a cut not put in the container yet is answered with its full picture under the five-minute stand-in rule, never a broken picture. The upload route still takes the 320 cut with the picture.

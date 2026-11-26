@@ -66,10 +66,23 @@ export const GATE_PARTS = [
   'CodeRabbit on the pull request',
 ] as const;
 
-/** CodeRabbit's word for this version: reviewed, not reviewed, or pending while its row is not written. */
-export function reviewedWord(review: { reviewed: string } | null): string {
+/** CodeRabbit's word for a version, as a page carries it in data-review and data-state. */
+export type ReviewWord = 'full' | 'rate limited' | 'not reviewed' | 'pending';
+
+/**
+ * CodeRabbit's word for a version from its row (ADR-129): full when it read the version whole, rate limited when its row
+ * says its rate limit held it off, not reviewed for any other reason, and pending while the gate has not written the row.
+ */
+export function reviewWord(review: { reviewed: string } | null): ReviewWord {
   if (review === null) return 'pending';
-  return review.reviewed === 'full' ? 'reviewed' : 'not reviewed';
+  if (review.reviewed === 'full') return 'full';
+  return review.reviewed.startsWith('rate limited') ? 'rate limited' : 'not reviewed';
+}
+
+/** CodeRabbit's word for this version in a sentence: reviewed, rate limited, not reviewed or pending. */
+export function reviewedWord(review: { reviewed: string } | null): string {
+  const word = reviewWord(review);
+  return word === 'full' ? 'reviewed' : word;
 }
 
 /** The panel's live totals: the tests passed (the landing page's figure), the failures among them, and the version. */

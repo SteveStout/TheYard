@@ -91,7 +91,7 @@ test('tile clicks are GET navigation: URL updates, Back works, deep links restor
 test('the About section shows the README in-app and links the résumé PDF', async ({ page }) => {
   await openTheYard(page);
   const nav = page.getByRole('navigation', { name: 'Project documents' });
-  await openSection(nav, 'About');
+  await openSection(nav, 'About TheYard');
   await nav.getByRole('button', { name: 'Project README' }).click();
   await expect(page.getByRole('dialog').getByRole('heading', { name: /TheYard/ })).toBeVisible();
   await page.getByRole('dialog').getByLabel('Close').click();

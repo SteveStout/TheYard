@@ -13,3 +13,10 @@
   background: var(--color-teal-deep);
   color: var(--color-on-accent);
 }
+
+/* A part that did not pass in full: the dash in an outlined disc, in the muted text colour, never the teal of a pass. */
+.dash {
+  border: 1.5px solid currentColor;
+  background: transparent;
+  color: var(--color-text-muted);
+}

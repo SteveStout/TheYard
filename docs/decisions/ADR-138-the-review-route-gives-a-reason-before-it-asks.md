@@ -180,3 +180,7 @@ The review page is built from the sales1120 picture (ADR: The sales pages set th
 **The numbered path** (ADR-142, the addendum on the path and the motions). At a desk a bar at the top of the window, once the first move has left it, with the six steps, the one the reader is in marked current and the ones before it done, then the gold resume and "Book 20 minutes"; on a phone a thin row over the dock with six marks and the section's name. A step scrolls to its section and the address keeps `view=review` and any `r=` code.
 
 **Held by** `reviewCases.test.ts`, `nowPanel.test.ts`, `reviewVerdict.test.ts`, `render.test.ts` and `review.spec.ts` (the order, the three cards and their doors at 390 and 1440, the close), and by the picture's check at four widths.
+
+## Addendum, 2026-11-26 (1.0.5.166): CodeRabbit's row is ticked only for a full read
+
+What stopped being true: that the gate tile ticks all six rows whenever the gate measured the version. The CodeRabbit row is ticked only when CodeRabbit read the version in full; otherwise it draws a dash in an outlined disc, muted, and says rate limited or not reviewed (ADR-129's addendum). It carries `data-mock="gate-review"`, `data-state` (its word) and `data-ticked`, and GatePanel.tsx follows the same rule. TheYard's case card now says "Every version passes one gate: unit, browser and architecture tests. CodeRabbit is asked to read every ship.", which is true of every ship, as docs/ci-cd/CICD.md already words it; it said the gate ended in a CodeRabbit review, which a rate limited version did not have.

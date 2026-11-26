@@ -10,7 +10,7 @@ const ORDER = ['intro', 'proof', 'lead', 'voices', 'close', 'away'];
  * the stack do. It is read on a phone first, so the phone is where its width is held.
  */
 async function theAuthorPage(page: Page, menu: Locator): Promise<Page> {
-  await openSection(menu, 'Author');
+  await openSection(menu, 'About Steven');
   const link = menu.getByRole('link', { name: 'About Steven', exact: true });
   await expect(link).toHaveAttribute('href', '/?view=about');
   const [opened] = await Promise.all([page.context().waitForEvent('page'), link.click()]);

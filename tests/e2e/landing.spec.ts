@@ -166,7 +166,7 @@ for (const viewport of [
       await expect(doorLinks).toHaveCount(4);
       await expect(doorLinks).toHaveText([
         /Check my work[\s\S]*2 min/,
-        /Author[\s\S]*3 min/,
+        /About Steven[\s\S]*3 min/,
         /Inventory[\s\S]*Live/,
         /resume \(PDF\)[\s\S]*PDF/,
       ]);

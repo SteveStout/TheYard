@@ -144,6 +144,8 @@ a.segment:focus-visible {
 @media (min-width: 1440px) {
   .wide {
     display: inline;
+    /* The gap after "Gate green" is the margin's, never a text space a formatter can drop. */
+    margin-inline-start: 0.3em;
   }
 }
 

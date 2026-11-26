@@ -289,3 +289,100 @@ for (const [width, height] of [
   });
 }
 // #endregion home-look
+
+// #region the-dial-the-tiles-the-targets
+test('the latency dial runs to 1,000 ms and its needle sits inside the scale, whatever the reading', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const p95 of [188, 426, 2400]) {
+    await page.route('**/api/pulse', async (route) => {
+      const answer = await (await route.fetch()).json();
+      await route.fulfill({ json: { ...answer, usual_p95_ms_24h: p95 } });
+    });
+    await openTheYard(page, '/');
+    const scale = page.locator('[data-testid="pulse-latency"] svg');
+    await expect(scale).toHaveAttribute('aria-label', `${p95} milliseconds on a scale to 1,000`);
+    await expect(scale.locator('text')).toHaveText(['0', '250', '500', '750', '1,000']);
+    const needle = Number(await scale.locator('circle').getAttribute('cx'));
+    expect(needle).toBeGreaterThanOrEqual(2);
+    expect(needle).toBeLessThanOrEqual(318);
+    expect(needle).toBeCloseTo(2 + 316 * Math.min(p95 / 1000, 1), 1);
+    await page.unroute('**/api/pulse');
+  }
+});
+
+test('the stack tiles never read a figure on its way: the text is the final number while the count plays', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    reducedMotion: 'no-preference',
+    viewport: { width: 1440, height: 900 },
+  });
+  const page = await context.newPage();
+  // Every value each tile's text ever held, frame by frame, from the first paint.
+  await page.addInitScript(() => {
+    const seen: Record<string, string[]> = {};
+    (window as unknown as { __seen: typeof seen }).__seen = seen;
+    const look = () => {
+      for (const key of ['tests', 'records', 'stores']) {
+        const text = document
+          .querySelector(`[data-testid="landing-proof-${key}"] span span`)
+          ?.textContent?.trim();
+        if (text) (seen[key] ??= []).push(text);
+      }
+      requestAnimationFrame(look);
+    };
+    requestAnimationFrame(look);
+  });
+  await openTheYard(page, '/');
+  await expect(page.getByTestId('landing-proof')).toHaveAttribute('data-state', 'ready');
+  await page.waitForTimeout(800);
+  const seen = await page.evaluate(
+    () => (window as unknown as { __seen: Record<string, string[]> }).__seen
+  );
+  for (const key of ['tests', 'records', 'stores']) {
+    expect(seen[key]?.length, key).toBeGreaterThan(0);
+    expect(new Set(seen[key]), `${key} read only its final figure`).toEqual(
+      new Set([seen[key].at(-1)])
+    );
+  }
+  // "store" agrees with its number.
+  await expect(page.getByTestId('landing-proof-stores')).not.toContainText(/\b1 stores\b/);
+  await context.close();
+});
+
+test('the stack tiles carry their final numbers in the HTML the rendering service sends', async ({
+  page,
+}) => {
+  // The service runs in the gate, beside the built site; elsewhere nothing answers on 5220 (drawn.spec).
+  if (!process.env.YARD_RENDER) return;
+  const html = await (await page.request.get('http://localhost:5220/')).text();
+  expect(html).toContain('data-testid="landing-proof" data-state="ready"');
+  const figures = [
+    ...html.matchAll(/data-testid="landing-proof-(\w+)"[\s\S]*?<span>([^<]*)<\/span>/g),
+  ].map((match) => [match[1], match[2].trim()]);
+  expect(figures.map(([key]) => key)).toEqual(['tests', 'records', 'stores']);
+  for (const [key, figure] of figures) expect(figure, key).toMatch(/^\d[\d,]*$/);
+});
+
+test('on a phone the chart link, Read the post and All posts are a thumb tall', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await answerBlog(page, POSTS);
+  await openTheYard(page, '/');
+  const targets = [
+    page.locator('main a[href="/?doc=quality"]').first(),
+    page.getByTestId('landing-latest').getByRole('button', { name: /^All posts/ }),
+    page
+      .getByTestId('landing-latest')
+      .getByRole('button', { name: /^Read the post/ })
+      .first(),
+  ];
+  for (const target of targets) {
+    await target.scrollIntoViewIfNeeded();
+    expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  }
+});
+// #endregion the-dial-the-tiles-the-targets

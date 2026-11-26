@@ -11,7 +11,7 @@
  * Used by:   BlogPage.tsx.
  */
 import { useEffect, useRef, useState } from 'react';
-import { postDate, type BlogPost } from '../../../lib/blog';
+import { markLinkRows, postDate, thumbSrcSet, type BlogPost } from '../../../lib/blog';
 import { matchLine, minutesLine, type FilterLabels } from '../../../lib/blogFilter';
 import { useBlogReport } from '../../../hooks/useBlogReport';
 import { fromTheWork } from '../../../lib/reviewCases';
@@ -30,6 +30,9 @@ const AUTHOR = {
 
 /** The strip's thumbnail width in CSS pixels; the 320 px thumbnail covers it twice over. */
 const THUMB_WIDTH = 150;
+
+/** The width a strip slide's picture is drawn at inside its 1 px border, which the browser picks a cut for. */
+const THUMB_SIZES = '148px';
 
 /** The address a copied link carries: the post on the blog, with no tagged code, and a slide when one is named. */
 export function postAddress(slug: string, slide?: number): string {
@@ -164,7 +167,7 @@ export function BlogPostCard({
             // Not an address the browser can read: the link still opens, and nothing is kept about it.
           }
         }}
-        dangerouslySetInnerHTML={{ __html: post.body_html }}
+        dangerouslySetInnerHTML={{ __html: markLinkRows(post.body_html) }}
       />
       {!unclamped && (
         <button
@@ -211,6 +214,8 @@ export function BlogPostCard({
                 >
                   <img
                     src={image.thumb_url}
+                    srcSet={thumbSrcSet(image.thumb_url) || undefined}
+                    sizes={THUMB_SIZES}
                     alt=""
                     width={THUMB_WIDTH}
                     height={Math.round((THUMB_WIDTH * image.height) / Math.max(image.width, 1))}

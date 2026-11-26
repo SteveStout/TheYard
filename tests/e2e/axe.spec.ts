@@ -119,7 +119,7 @@ test.describe('WCAG 2.1 AA, on every view', () => {
   test('a document, open', async ({ page }) => {
     await openTheYard(page);
     const nav = page.getByRole('navigation', { name: 'Project documents' });
-    await openSection(nav, 'About');
+    await openSection(nav, 'About TheYard');
     await nav.getByRole('button', { name: 'Project README' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     expect(await violations(page)).toEqual([]);

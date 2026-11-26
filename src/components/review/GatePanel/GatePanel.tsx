@@ -9,7 +9,13 @@
 import type { MouseEvent } from 'react';
 import { ICON } from '../../../lib/icons';
 import type { TestSummary } from '../../../lib/landingProof';
-import { GATE_PARTS, gateTotals, MIRROR, reviewedWord } from '../../../lib/reviewMirror';
+import {
+  GATE_PARTS,
+  gateTotals,
+  MIRROR,
+  reviewedWord,
+  reviewWord,
+} from '../../../lib/reviewMirror';
 import { SLIP_ADDRESS, type HeldQuality } from '../../../lib/reviewVerdict';
 import styles from './GatePanel.module.css';
 
@@ -51,28 +57,31 @@ export function GatePanel({
         Version {totals.version}. {MIRROR.panelLine}
       </p>
       <ul className={styles.parts} data-gated={gated}>
-        {GATE_PARTS.map((part, index) => (
-          <li key={part} className={styles.part}>
-            <span className={styles.check} data-ticked={gated} aria-hidden="true">
-              {gated && (
-                <svg viewBox="0 0 20 20" width={ICON.sm} height={ICON.sm} focusable="false">
-                  <path
-                    d="M5 10.5l3.2 3.2L15 7"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={ICON.stroke}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </span>
-            <span className={styles.partName}>{part}</span>
-            {index === GATE_PARTS.length - 1 && (
-              <em className={styles.word}>{reviewedWord(review)}</em>
-            )}
-          </li>
-        ))}
+        {GATE_PARTS.map((part, index) => {
+          // CodeRabbit's part is ticked only when it read this version in full; otherwise a dash, never green.
+          const last = index === GATE_PARTS.length - 1;
+          const ticked = gated && (!last || reviewWord(review) === 'full');
+          return (
+            <li key={part} className={styles.part}>
+              <span className={styles.check} data-ticked={ticked} aria-hidden="true">
+                {gated && (
+                  <svg viewBox="0 0 20 20" width={ICON.sm} height={ICON.sm} focusable="false">
+                    <path
+                      d={ticked ? 'M5 10.5l3.2 3.2L15 7' : 'M6 10h8'}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={ICON.stroke}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+              <span className={styles.partName}>{part}</span>
+              {last && <em className={styles.word}>{reviewedWord(review)}</em>}
+            </li>
+          );
+        })}
       </ul>
       <dl className={styles.sums}>
         <div className={styles.sum}>

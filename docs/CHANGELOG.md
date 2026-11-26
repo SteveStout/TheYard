@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **1.0.5.166** (2026-11-26): Home and the recommendations page have their own titles and one link card that leads with Steven, the latency dial reads to 1,000 ms, and a version CodeRabbit could not read says so.
 - **1.0.5.165** (2026-11-26): The home page, the review route and the Quality page now end on their close with no Where next list under it, and the review route's 01 The work drops its "The two-page resume (PDF)" link because the gold Resume (PDF) button sits right above it.
 - **1.0.5.164** (2026-11-26): The after-roll starts the edge, the job hunt's Function and CI on main through a script that calls again when GitHub answers a 5xx, so one 504 on a dispatch no longer fails the whole after-roll and holds the next version's promote.
 - **1.0.5.163** (2026-11-26): A sent About link opens the author page; /about stays the page for search engines.

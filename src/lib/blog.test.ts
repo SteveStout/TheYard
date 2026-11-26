@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  markLinkRows,
+  thumbSrcSet,
   fetchBlogStats,
   fetchList,
   fetchPost,
@@ -175,5 +177,34 @@ describe('the blog read from the API', () => {
       type: 'click',
       value: 'slides',
     });
+  });
+});
+
+describe('a slide thumbnail offers its sharper cuts', () => {
+  it('names the 320, 480 and 640 px cuts beside the one the API names', () => {
+    expect(thumbSrcSet('/blog/images/0123456789abcdef-320.webp')).toBe(
+      '/blog/images/0123456789abcdef-320.webp 320w, /blog/images/0123456789abcdef-480.webp 480w, /blog/images/0123456789abcdef-640.webp 640w'
+    );
+  });
+
+  it('offers nothing for an address that is not a 320 px thumbnail', () => {
+    expect(thumbSrcSet('/blog/images/0123456789abcdef.webp')).toBe('');
+  });
+});
+
+describe("a post's link-only list items are marked for a thumb's height", () => {
+  it('marks an item that is only a link and leaves a link inside a sentence alone', () => {
+    const html =
+      '<ul><li><a href="https://a.example" target="_blank" rel="noreferrer">A page</a></li>' +
+      '<li>Read <a href="https://b.example">the post</a> first</li><li>No link</li></ul>';
+    expect(markLinkRows(html)).toBe(
+      '<ul><li data-link-row=""><a href="https://a.example" target="_blank" rel="noreferrer">A page</a></li>' +
+        '<li>Read <a href="https://b.example">the post</a> first</li><li>No link</li></ul>'
+    );
+  });
+
+  it('leaves an item holding two links unmarked', () => {
+    const html = '<li><a href="https://a.example">A</a> and <a href="https://b.example">B</a></li>';
+    expect(markLinkRows(html)).toBe(html);
   });
 });

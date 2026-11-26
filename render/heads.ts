@@ -1,11 +1,10 @@
 /**
- * Does:      The head a link preview reads for the pages a reader is sent to (ADR: The public face): the review
- *            route (and its mirror at for=ai), the blog, one post, About Steven and Quality each get their own title,
- *            description and address
- *            in every tag an unfurler reads, in the pages' own words. Every other address keeps the head the
- *            build wrote.
- * Does not:  Read anything itself (the renderer hands it the posts it keeps), or touch the picture: the preview
- *            card stays the one the build draws.
+ * Does:      The head a link preview reads for the pages a reader is sent to (ADR: The public face): home (any address
+ *            with no view and no doc, a tagged one too), the review route (and its mirror at for=ai), the blog, one post,
+ *            About Steven, the recommendations and Quality each get their own title, description and address in every
+ *            tag an unfurler reads, in the pages' own words. Every other address keeps the head the build wrote.
+ * Does not:  Read anything itself (the renderer hands it the posts it keeps and the recommendations' count), or touch
+ *            the picture: the preview card stays the one the build draws.
  */
 
 /** The address every canonical link is written against. */
@@ -19,6 +18,15 @@ export type PostHead = { slug: string; title: string; summary: string; image?: B
 /** One page's head: its title, a description of 160 characters or fewer, and its own address. */
 export type Head = { title: string; description: string; path: string };
 
+/** Home, in the hero's own words; a tagged link (/?r=abc123) is home too. */
+const HOME: Head = {
+  title: 'Built with AI. Gated so quality never slides.',
+  description:
+    'Lead / Staff .NET engineer, remote. One engineer, an AI agent and a gate that checks quality on every release. Every result public, the worst days included.',
+  path: '/',
+};
+
+/** The review route's head; its title is the preview card's headline too (docs/images/og.mjs reads it here). */
 const REVIEW: Head = {
   title: 'Production .NET that stays up. Built with AI, measured on every version.',
   description:
@@ -55,6 +63,14 @@ const QUALITY: Head = {
   path: '/?doc=quality',
 };
 
+/** The recommendations page, titled as its H1 is, with the count the renderer hands in. */
+const recommendationsHead = (count: number): Head => ({
+  title: `${count} people who worked with Steven`,
+  description:
+    "In their own words, from LinkedIn. Each one is on the writer's own LinkedIn page and on Steven's, so nothing on this page has to be taken on trust.",
+  path: '/?view=recommendations',
+});
+
 /** Cut at a word so the description stays inside what unfurlers show. */
 function clip(text: string, limit = 160): string {
   if (text.length <= limit) return text;
@@ -66,8 +82,13 @@ function clip(text: string, limit = 160): string {
  * The head for an address, or null when the build's own head is right for it.
  * @param search the address's query, with or without its "?"
  * @param posts the published posts the renderer keeps
+ * @param recommendations how many recommendations the page draws: the renderer's own read, else the build's count
  */
-export function headFor(search: string, posts: readonly PostHead[]): Head | null {
+export function headFor(
+  search: string,
+  posts: readonly PostHead[],
+  recommendations: number
+): Head | null {
   const query = new URLSearchParams(search.replace(/^\?/, ''));
   const view = query.get('view');
   const doc = query.get('doc');
@@ -84,7 +105,8 @@ export function headFor(search: string, posts: readonly PostHead[]): Head | null
   }
   if (view === 'about' || doc === 'author') return AUTHOR;
   if (doc === 'quality') return QUALITY;
-  return null;
+  if (view === 'recommendations') return recommendationsHead(recommendations);
+  return view === null && doc === null ? HOME : null;
 }
 
 const attribute = (text: string) =>

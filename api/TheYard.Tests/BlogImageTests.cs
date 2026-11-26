@@ -51,6 +51,20 @@ public sealed class BlogImageTests
     }
 
     [Fact]
+    public void A_thumbnail_is_also_cut_at_480_and_640_for_a_sharper_screen_and_at_no_other_width()
+    {
+        Assert.Equal([320, 480, 640], BlogImageNames.ThumbWidths);
+        foreach (int width in BlogImageNames.ThumbWidths)
+        {
+            Assert.True(BlogImageNames.IsName($"0123456789abcdef-{width}.webp"), $"{width}");
+            Assert.Equal("image/webp", BlogImageNames.ContentType($"0123456789abcdef-{width}.webp"));
+            Assert.Equal("0123456789abcdef", BlogImageNames.PictureOf($"0123456789abcdef-{width}.webp"));
+        }
+        Assert.False(BlogImageNames.IsName("0123456789abcdef-800.webp"));
+        Assert.False(BlogImageNames.IsName("0123456789abcdef-480.png"));
+    }
+
+    [Fact]
     public async Task A_thumbnail_not_kept_yet_is_answered_by_its_full_picture_marked_as_a_stand_in()
     {
         var store = new MemoryBlogImageStore();

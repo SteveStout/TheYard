@@ -81,6 +81,12 @@
   color: var(--color-on-accent);
 }
 
+/* A part that did not pass in full: its dash in an outlined disc, muted, never the teal of a pass. */
+.check[data-ticked='false'] {
+  border-color: currentColor;
+  color: var(--color-text-muted);
+}
+
 .partName {
   flex: 1;
 }

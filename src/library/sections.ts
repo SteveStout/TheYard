@@ -7,6 +7,7 @@
 import type { MenuVariant } from '../lib/siteMap';
 import type { DocKey } from './documents';
 import { RECORDS } from './records';
+import { RESUME_ADDRESS } from '../lib/reviewVerdict';
 
 // The section names (MenuVariant), and their order, live in the site map
 // (src/lib/siteMap.ts), which the sidebar and the landing page are both drawn from.
@@ -18,7 +19,8 @@ export type MenuLink = { label: string; href: string };
 /** Links that sit beside the docs in the sidebar. */
 export const LINKS = {
   ciRuns: { label: 'CI runs on GitHub', href: 'https://github.com/SteveStout/TheYard/actions' },
-  resume: { label: "Steven's resume (PDF)", href: '/api/docs/resume' },
+  // The one address every resume link in the app uses (ADR-099's addendum); /api/docs/resume still answers.
+  resume: { label: "Steven's resume (PDF)", href: RESUME_ADDRESS },
   repo: { label: 'GitHub repository', href: 'https://github.com/SteveStout/TheYard' },
 } as const;
 
@@ -79,7 +81,7 @@ export const MENUS: Record<
    * here (ADR: The sidebar, the addendum on one page about him).
    */
   about: {
-    label: 'About',
+    label: 'About TheYard',
     items: [{ key: 'readme' }, { key: 'aiDevelopment' }],
   },
   /**
@@ -90,7 +92,7 @@ export const MENUS: Record<
    * gives its shape, and /about stays the served page for tools.
    */
   author: {
-    label: 'Author',
+    label: 'About Steven',
     items: [],
     links: [{ label: 'About Steven', href: '/?view=about' }],
   },

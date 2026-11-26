@@ -230,6 +230,28 @@ test('the sources box, read from an Admin route, has its size before the read an
   await expect(box.locator('dl > div')).toHaveCount(4);
   expect((await box.boundingBox())!.height).toBe(before);
 });
+test('the sources box says nothing while its read is out, and "No reads" only when it answered none', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  let answer: () => void = () => {};
+  const answered = new Promise<void>((resolve) => (answer = resolve));
+  await answerBlog(page, POSTS);
+  await page.route('**/api/admin/blog', async (route) => {
+    await answered;
+    await route.fulfill({ json: { kept: null, available: true, posts: [], sources: [] } });
+  });
+  await openTheYard(page, '/?view=blog');
+  const box = page.getByTestId('blog-sources');
+  await expect(box).toBeVisible();
+  // Held for two seconds: not read yet is not "no reads" (ADR-142).
+  for (let second = 0; second < 4; second += 1) {
+    await expect(box).not.toContainText('No reads');
+    await page.waitForTimeout(500);
+  }
+  answer();
+  await expect(box).toContainText('No reads in the last 30 days yet.');
+});
 // #endregion blog-holds-still
 
 test('the blog route answers from the store behind it', async ({ request }) => {

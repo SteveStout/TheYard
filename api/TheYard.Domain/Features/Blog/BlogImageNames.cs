@@ -29,6 +29,12 @@ public static partial class BlogImageNames
     /// <summary>The width a slide's thumbnail is drawn at for the strip and the mini cards, in pixels.</summary>
     public const int ThumbWidth = 320;
 
+    /// <summary>
+    /// The widths a thumbnail is cut at: the 320 the page names, and 480 and 640 for a phone's sharper screen
+    /// (scripts/blog_thumbs.mjs). A cut not kept yet is answered with its full picture under the stand-in rule.
+    /// </summary>
+    public static readonly IReadOnlyList<int> ThumbWidths = [ThumbWidth, 480, 640];
+
     /// <summary>The most bytes a thumbnail may be: a 320 px WebP of a slide is a tenth of this.</summary>
     public const int ThumbMaxBytes = 64 * 1024;
 
@@ -64,7 +70,7 @@ public static partial class BlogImageNames
     [GeneratedRegex("^[0-9a-f]{16}\\.(webp|png|jpg)$")]
     private static partial Regex Shape();
 
-    [GeneratedRegex("^[0-9a-f]{16}-320\\.webp$")]
+    [GeneratedRegex("^[0-9a-f]{16}-(320|480|640)\\.webp$")]
     private static partial Regex Thumb();
 }
 // #endregion blog-image-names

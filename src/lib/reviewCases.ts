@@ -125,7 +125,7 @@ export const REVIEW_CASES: readonly ReviewCase[] = [
     heading: null,
     bullets: [
       'A .NET 10 API and a React front end over Azure SQL and Cosmos DB, side by side.',
-      'Every version passes one gate: unit, browser and architecture tests, then a CodeRabbit review.',
+      'Every version passes one gate: unit, browser and architecture tests. CodeRabbit is asked to read every ship.',
       'Fifteen code-quality numbers that may only improve, measured on every version.',
     ],
     panel: { title: 'TheYard, this week', live: true },

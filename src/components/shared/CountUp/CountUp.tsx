@@ -8,13 +8,12 @@ const DURATION_MS = 400;
 /**
  * A figure that eases up from nothing to its value the first time it arrives
  * (the operator's look), and not at all for a reader who asked for less
- * motion. The finished figure holds the box from the start, drawn unseen
- * behind the moving one, so nothing beside it moves while it counts.
- *
- * Each frame writes the moving figure's text straight into its node rather
- * than through React's state: a render per frame for every
- * figure is work the count does not need. React still owns the text, and sets
- * the finished figure whenever the reading changes.
+ * motion. The element's text is the finished figure from the first paint, in
+ * the server's HTML and after the page is taken over, so a screen reader, a
+ * crawler or a quick screenshot never reads a figure on its way (ADR-142).
+ * The count is visual only: each frame writes the moving figure into
+ * data-moving, which a pseudo-element draws over the finished one while the
+ * finished one is drawn unseen and holds the box, so nothing beside it moves.
  */
 export function CountUp({ text }: { text: string }) {
   const node = useRef<HTMLSpanElement>(null);
@@ -25,8 +24,8 @@ export function CountUp({ text }: { text: string }) {
     const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (target === null) return;
     if (figure === null || counted.current || still) {
-      // The finished figure, in case a count was cut short by a new reading.
-      target.textContent = text;
+      // The finished figure only, in case a count was cut short by a new reading.
+      target.removeAttribute('data-moving');
       return;
     }
     counted.current = true;
@@ -34,15 +33,20 @@ export function CountUp({ text }: { text: string }) {
     const start = performance.now();
     const step = (now: number) => {
       const t = (now - start) / DURATION_MS;
-      target.textContent = figureAt(figure, t);
-      if (t < 1) frame = window.requestAnimationFrame(step);
+      if (t < 1) {
+        target.setAttribute('data-moving', figureAt(figure, t));
+        frame = window.requestAnimationFrame(step);
+      } else target.removeAttribute('data-moving');
     };
     frame = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(frame);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      target.removeAttribute('data-moving');
+    };
   }, [text]);
   return (
-    <span className={styles.count} data-value={text}>
-      <span ref={node}>{text}</span>
+    <span ref={node} className={styles.count}>
+      <span>{text}</span>
     </span>
   );
 }

@@ -103,3 +103,10 @@
   margin: 0;
   color: var(--color-text-muted);
 }
+
+/* The most-read links are targets of their own: a thumb's height on a phone (WCAG 2.2 target size). */
+@media (max-width: 639.98px) {
+  .ranked button {
+    min-height: 28px;
+  }
+}

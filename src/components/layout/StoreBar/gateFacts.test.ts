@@ -52,6 +52,13 @@ describe('the gate badge', () => {
     expect(
       gateChips({ ...answer, review: { version: '1.0.0.2', reviewed: 'none', critical: 0 } })[2]
     ).toBe('CodeRabbit not reviewed');
+    // A version CodeRabbit's rate limit held off says so, in its row's own words.
+    expect(
+      gateChips({
+        ...answer,
+        review: { version: '1.0.0.2', reviewed: 'rate limited', critical: 0 },
+      })[2]
+    ).toBe('CodeRabbit rate limited');
   });
 
   it('says none worse only when every number held (CodeRabbit on 1.0.5.82)', () => {

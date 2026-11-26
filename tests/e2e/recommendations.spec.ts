@@ -42,8 +42,11 @@ for (const width of [1280, 390]) {
     for (const group of api.groups) {
       await expect(view.locator(`section[aria-labelledby="group-${group.key}"]`)).toBeVisible();
     }
+    // Every name stays in the page, folded under its title on a phone (I10).
     await expect(
-      view.getByRole('navigation', { name: 'On this page' }).getByRole('link')
+      view
+        .getByRole('navigation', { name: 'On this page' })
+        .getByRole('link', { includeHidden: true })
     ).toHaveCount(api.recommendations.length);
     const sideways = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -78,5 +81,37 @@ test('the short door /recommendations is a permanent redirect that keeps the cod
   const response = await request.get('/recommendations?r=zzrec1', { maxRedirects: 0 });
   expect(response.status()).toBe(301);
   expect(response.headers()['location']).toBe('/?view=recommendations&r=zzrec1');
+});
+test('the names fold under their title on a phone and stand open on a desk; each group head carries its count as a badge', async ({
+  page,
+}) => {
+  const api = await answer(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openTheYard(page, '/?view=recommendations');
+  const view = page.getByTestId('recommendations-page');
+  await expect(view).toHaveAttribute('data-state', 'ready');
+  const toggle = view.locator('[data-mock="names-toggle"]');
+  const names = view.locator('[data-mock="names-list"]');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(names).toBeHidden();
+  await expect(names.locator('a')).toHaveCount(api.recommendations.length);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(names).toBeVisible();
+  // A writer's name is a thumb's height on a phone.
+  const name = view.getByTestId('recommendation-card').first().locator('h3 a');
+  expect((await name.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  // Each group's head: its words, then its count in a badge of its own.
+  const badges = view.locator('h2 [data-mock="group-count"]');
+  await expect(badges).toHaveCount(api.groups.length);
+  for (const [index, group] of api.groups.entries())
+    await expect(badges.nth(index)).toHaveText(String(group.names.length));
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openTheYard(page, '/?view=recommendations');
+  await expect(view).toHaveAttribute('data-state', 'ready');
+  await expect(names).toBeVisible();
+  await expect(names.getByRole('link')).toHaveCount(api.recommendations.length);
+  expect((await toggle.boundingBox())!.height).toBeLessThanOrEqual(60);
 });
 // #endregion recommendations
