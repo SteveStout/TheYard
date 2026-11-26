@@ -51,7 +51,7 @@ public class MachineFreeWorkflowsTests
         Assert.DoesNotContain("workflow_call", deploy, StringComparison.Ordinal);
 
         // Started by the after-roll, a run of its own since the gate frees at live, and never called by the Gate run.
-        Assert.Contains("gh workflow run deploy-function.yml --ref main", Workflow("after-roll.yml"), StringComparison.Ordinal);
+        Assert.Contains("bash scripts/dispatch.sh deploy-function.yml --ref main", Workflow("after-roll.yml"), StringComparison.Ordinal);
         Assert.DoesNotContain("uses: ./.github/workflows/deploy-function.yml", Workflow("gate.yml"), StringComparison.Ordinal);
     }
 

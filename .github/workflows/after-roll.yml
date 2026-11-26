@@ -154,10 +154,12 @@ jobs:
         if: needs.promoted.outputs.by_push != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run edge-branch.yml --ref main
+        run: bash scripts/dispatch.sh edge-branch.yml --ref main
       # The job hunt's Function, when the version touched it: a run of its own, so a Function that will not
       # deploy is read on its own run and never turns this one red (ADR-098, the addendum of 1.0.4.105).
       # Only while the promoted commit is still main's head: a re-run of an older run never sends the Function back.
+      # Every start here goes through scripts/dispatch.sh, which calls again on a GitHub 5xx, so one 504 on a
+      # dispatch no longer fails the whole after-roll.
       - name: The Function, by a run of its own
         if: needs.promoted.outputs.functions == 'true'
         env:
@@ -165,7 +167,7 @@ jobs:
           SHA: ${{ needs.promoted.outputs.sha }}
         run: |
           if [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$SHA" ]; then echo "::warning::$SHA is no longer main's head; the Function is not deployed from it"; exit 0; fi
-          gh workflow run deploy-function.yml --ref main -f sha="$SHA"
+          bash scripts/dispatch.sh deploy-function.yml --ref main -f sha="$SHA"
       - name: The reads after the roll
         run: python3 scripts/admin_after_roll.py "${{ needs.promoted.outputs.version }}" "${{ needs.promoted.outputs.sha }}" "$RUNNER_TEMP/after-roll.log"
       # CI on main for the promoted commit, found by its run's name, "CI <commit>", never by its headSha: a run
@@ -184,7 +186,7 @@ jobs:
           done
           if [ -z "$run" ]; then
             echo "no CI run names $SHA: starting one"
-            gh workflow run ci.yml --ref main -f sha="$SHA"
+            bash scripts/dispatch.sh ci.yml --ref main -f sha="$SHA"
             for i in $(seq 1 30); do
               sleep 10
               run=$(named) && [ -n "$run" ] && break

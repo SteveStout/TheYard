@@ -70,7 +70,7 @@ resource deadFunction 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview
   tags: tags
   properties: {
     displayName: 'A job hunt Function failed, a run came to failed or blocked, or the Merger stopped'
-    description: 'Any failed invocation in func-jobhunt-ss in the last 30 minutes, any run line that came to failed or blocked in the last three hours, or no Merger invocation in the last 10 (it runs every minute); one alert a process.'
+    description: 'Any failed invocation in func-jobhunt-ss in the last 30 minutes, any run line that came to failed or blocked in the last three hours, or no Merger invocation in the last 10 (it runs every two minutes); one alert a process.'
     severity: 2
     enabled: true
     evaluationFrequency: 'PT10M'
