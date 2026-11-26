@@ -335,6 +335,7 @@ URL, and every deploy so far has been gated on it.
 - [`scripts/versions.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/versions.sh): the version reading (a gate branch's name included) every script shares, and the old path's claim check, which the cop takes for a gate/* branch only until main carries it
 - [`scripts/cop.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/cop.sh): the traffic cop, the Gate run's first job: the lift, the rebase, the fill, the skips and the bundle of the filled commit.
 - [`scripts/cop_status.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/cop_status.sh): what became of a ready branch, posted on its own commit.
+- [`scripts/dispatch.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/dispatch.sh): starts a workflow for the after-roll, and calls again when GitHub answers a 5xx.
 - [`scripts/fill_version.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/fill_version.sh): fills the version, the date and the record number, run by the cop at landing, and amends the one commit.
 - [`scripts/gate_lock.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/gate_lock.sh): the gate lock, kept since the cop only for a hand promote, and the rule for when a peer may release it.
 - [`scripts/preflight.sh`](https://github.com/SteveStout/TheYard/blob/main/scripts/preflight.sh): the gate's four quick checks and the promote path, run before the push; a red preflight is never pushed.

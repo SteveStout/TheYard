@@ -119,7 +119,7 @@ public class PromoteWorkflowTests
         { "the results touch six files only", "promote.sh", "the results touched more than their six files" },
         { "the results folded into the gate's commit", "promote.sh", "git commit -q --amend --no-edit" },
         { "four tries at main", "promote.sh", "for try in 1 2 3 4" },
-        { "the edge moved after the deploy", "after-roll.yml", "gh workflow run edge-branch.yml --ref main" },
+        { "the edge moved after the deploy", "after-roll.yml", "bash scripts/dispatch.sh edge-branch.yml --ref main" },
         { "the roll read on both names", "after-roll.yml", "python3 scripts/admin_after_roll.py" },
         { "CI on main read to its end", "after-roll.yml", "gh run watch \"$run\" --exit-status" },
         { "the gate branch deleted", "after-roll.yml", "git/refs/heads/$branch" },
@@ -351,7 +351,7 @@ public class PromoteWorkflowTests
         Assert.Contains("select(.displayTitle == \\\"CI $SHA\\\")", step, StringComparison.Ordinal);
         Assert.DoesNotContain("headSha", step, StringComparison.Ordinal);
         int named = step.IndexOf("run=$(named)", StringComparison.Ordinal);
-        int start = step.IndexOf("gh workflow run ci.yml --ref main -f sha=\"$SHA\"", StringComparison.Ordinal);
+        int start = step.IndexOf("bash scripts/dispatch.sh ci.yml --ref main -f sha=\"$SHA\"", StringComparison.Ordinal);
         Assert.True(named > 0 && start > named && step.Contains("if [ -z \"$run\" ]; then", StringComparison.Ordinal), "the after-roll should start CI only when no run names the commit");
 
         string script = Promote();

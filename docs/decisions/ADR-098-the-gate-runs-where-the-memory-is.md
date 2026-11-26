@@ -274,3 +274,15 @@ Why: the gate's concurrency group holds the next gate until every job of the run
 - The line-stop passes only on proof, never on absence: a run that is missing or still running is waited on, and in the gate a wait that runs out ends green with nothing promoted and a notice, as a workflow change does, so a slow main costs no second gate. A red run refuses, unless the version's commit message carries `Fixes-main: <main's sha>`, because a red main must not refuse its own fix. A main commit from before `after-roll.yml` existed has no after-roll run, and its CI runs carry no name with the commit in it, so for such a commit CI on main alone is the proof, found by its head commit; this holds only for the commits before this version.
 
 `PromoteScriptTests` runs the line-stop for real (a red main refused and passed with `Fixes-main`, a missing or running run waited on to a green end with nothing promoted, the refusal by hand that names the command, the transition), and `PromoteWorkflowTests` and `GateWorkflowTests` hold the two workflows, the artifact, the names, the cap and the dispatch that never fails.
+
+## Addendum, 2026-11-26 (1.0.5.164): the after-roll's starts call again on a GitHub 5xx
+
+In plain words: the after-roll starts three workflows of its own, the edge, the job hunt's Function and, when no run names the commit, CI on main. Each start is now made through `scripts/dispatch.sh`, which calls `gh workflow run` again when GitHub answers 5xx or the call never reaches it, with a pause that grows thirty seconds each time, eight calls in all (about fourteen minutes). A 4xx is still red at once, because a wrong input stays wrong.
+
+What stopped being true: that one refused dispatch fails the after-roll. On 25 November, during a GitHub Actions partial outage, the after-roll for 1.0.5.162 failed at "The Function, by a run of its own" on one HTTP 504, so the reads after the roll never ran and no Function deploy started; the hand starts after it met 502, then 500, and the run went green only on a re-run twenty minutes later. A red after-roll for main stops the next version's promote (the line-stop above), so one 5xx held every lane behind it.
+
+Why a second start is safe: a 5xx does not say whether GitHub made the run, and the script does not look. Every workflow it starts reads the commit it is handed, so a second run repeats the first: the Function's deploy sends the same zip, the edge moves to the same main, and CI on main is found by its name, "CI <commit>".
+
+- `scripts/dispatch.sh`: the start, its calls and its pauses (`DISPATCH_TRIES`, `DISPATCH_PAUSE`).
+- `.github/workflows/after-roll.yml`: the edge, the Function and CI on main start through it.
+- `DispatchScriptTests` runs the script against a stand-in gh (504, no answer and 502, then a start; a 422 at once; a 5xx on every call), and holds that after-roll.yml makes no bare `gh workflow run`.
