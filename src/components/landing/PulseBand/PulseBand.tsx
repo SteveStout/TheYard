@@ -103,7 +103,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
           aria-label={
             latency === null
               ? 'The latency scale, nothing read'
-              : `${latency} milliseconds on a scale to ${LATENCY_CEILING_MS}`
+              : `${latency} milliseconds on a scale to ${LATENCY_CEILING_MS.toLocaleString('en-US')}`
           }
         >
           <line className={styles.axis} x1="2" y1="12" x2="318" y2="12" />
@@ -127,7 +127,7 @@ export function PulseBand({ onOpenDoc }: { onOpenDoc: (key: PulseDoc) => void })
                 mark.at === 0 ? 'start' : mark.at === LATENCY_CEILING_MS ? 'end' : 'middle'
               }
             >
-              {mark.at}
+              {mark.at.toLocaleString('en-US')}
             </text>
           ))}
           {latency !== null && (

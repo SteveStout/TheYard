@@ -44,7 +44,7 @@ test.describe('the docked rail', () => {
     await expect(rail).toBeVisible();
     await expect(page.getByRole('button', { name: 'Menu' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Hosting', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'About', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'About TheYard', exact: true })).toHaveCount(0);
     for (const section of [
       'App Architecture',
       'API Reference',
@@ -58,8 +58,8 @@ test.describe('the docked rail', () => {
       'CI/CD',
       'Best Practices',
       'Changelog',
-      'About',
-      'Author',
+      'About TheYard',
+      'About Steven',
     ]) {
       await expect(rail.getByRole('heading', { name: section, exact: true })).toBeVisible();
     }
@@ -149,13 +149,13 @@ test.describe('the docked rail', () => {
   }) => {
     await openTheYard(page);
     const rail = page.getByTestId('side-rail');
-    await openSection(rail, 'About');
+    await openSection(rail, 'About TheYard');
     // The About section is the project; the person is About Steven in the Author section, one page.
     await expect(rail.getByRole('link', { name: 'About Steven Stout', exact: true })).toHaveCount(
       0
     );
     await expect(rail.locator('a[href="/about"]')).toHaveCount(0);
-    await openSection(rail, 'Author');
+    await openSection(rail, 'About Steven');
     await expect(rail.getByRole('link', { name: 'About Steven', exact: true })).toHaveAttribute(
       'href',
       '/?view=about'

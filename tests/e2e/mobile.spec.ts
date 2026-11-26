@@ -19,7 +19,7 @@ test('a phone gets one hamburger and no rail', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'CI/CD' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Best Practices' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Changelog' })).toBeHidden();
-  await expect(page.getByRole('button', { name: 'About' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'About TheYard' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Admin', exact: true })).toBeHidden();
 });
 
@@ -39,14 +39,14 @@ test('the drawer lists every menu, opens a doc full-screen on a clear sheet with
     'CI/CD',
     'Best Practices',
     'Changelog',
-    'About',
-    'Author',
+    'About TheYard',
+    'About Steven',
   ]) {
     await expect(drawer.getByRole('heading', { name: section, exact: true })).toBeVisible();
   }
   await expect(drawer.getByRole('link', { name: "Steven's resume (PDF)" })).toHaveAttribute(
     'href',
-    '/api/docs/resume'
+    '/resume?pdf=1'
   );
   await expect(drawer.getByRole('link', { name: 'GitHub repository' })).toHaveAttribute(
     'href',

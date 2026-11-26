@@ -158,6 +158,17 @@ const SUMMARY = {
   ],
 };
 
+/** The review route's live lot, as /api/review/lot answers it. */
+const LOT = {
+  live: true,
+  vehicle_id: 'lot-1',
+  name: '2026 Toyota Tacoma SR',
+  current_bid: 51000,
+  opening_bid: 40000,
+  ends_at_ms: NOW + 300_000,
+  total: 100000,
+};
+
 function fakeApi(build = OWN, broken: string[] = []) {
   const asked: Asked[] = [];
   const read = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -177,6 +188,7 @@ function fakeApi(build = OWN, broken: string[] = []) {
     if (path === '/api/pulse') return json(PULSE);
     if (path === '/api/recommendations') return json(recommendations);
     if (path === '/api/tests/summary') return json(SUMMARY);
+    if (path === '/api/review/lot') return json(LOT);
     if (path === `/api/blog/posts/${POST.slug}`) return json(POST);
     if (path === '/api/blog/posts') return json(LIST);
     if (path === '/api/auth/me')
@@ -303,9 +315,28 @@ describe('the rendering service', () => {
     expect(html).toContain('"pulse":{');
     expect(html).toContain('$72.46');
     expect(html).not.toMatch(/>unread</);
+    // The build row's figures are read here too, so the tiles carry their final numbers in the HTML (ADR-142).
+    expect(asked.some((read) => read.url.startsWith(`${API}/api/tests/summary`))).toBe(true);
+    expect(html).toContain('data-testid="landing-proof" data-state="ready"');
+    expect(html).toContain('>3,010<');
     // A document's address draws no band, so it asks nothing of the pulse.
     const doc = await page('?doc=readme');
     expect(doc.asked.some((read) => read.url.startsWith(`${API}/api/pulse`))).toBe(false);
+  });
+
+  // Their addresses in every tag an unfurler reads are held by heads.test.ts, against index.html itself.
+  it('writes home and the recommendations their own heads, the count read from the answer the page is drawn from', async () => {
+    const title = (html: string) => /<title>([^<]*)<\/title>/.exec(html)?.[1];
+    for (const search of ['', '?r=abc123']) {
+      const { html } = await page(search);
+      expect(title(html)).toBe('Built with AI. Gated so quality never slides. | Steven Stout');
+    }
+    const count = recommendations.recommendations.length;
+    const { html } = await page('?view=recommendations&r=abc123');
+    expect(title(html)).toBe(`${count} people who worked with Steven | Steven Stout`);
+    // A read that fails leaves the build's own count of data/recommendations.json.
+    const unread = await page('?view=recommendations', fakeApi(OWN, ['/api/recommendations']));
+    expect(title(unread.html)).toBe(`${count} people who worked with Steven | Steven Stout`);
   });
 
   it('names a document’s cards as the window does, so the Quality page drawn here carries its lede and numbered cards (ADR-130, the addendum on the page in two layers)', async () => {
@@ -360,11 +391,13 @@ describe('the rendering service', () => {
     expect(home).toBeGreaterThan(-1);
     expect(review).toBeGreaterThan(home);
     expect(blog).toBeGreaterThan(review);
-    // The version, the recommendations, the tests summary and the pulse are read for it: no list, no document.
+    // The version, the recommendations, the tests summary, the pulse and the live lot are read for it: no list, no
+    // document.
     const paths = asked.map((read) => read.url.slice(API.length).split('?')[0]);
     expect([...new Set(paths.filter((path) => path !== '/'))].sort()).toEqual([
       '/api/pulse',
       '/api/recommendations',
+      '/api/review/lot',
       '/api/tests/summary',
       '/api/version',
     ]);
@@ -390,7 +423,7 @@ describe('the rendering service', () => {
     expect(other).toContain('Production .NET that stays up.');
   });
 
-  it('draws the short path under the first screen on the server, nothing reached, its live tiles waiting for the browser', async () => {
+  it('draws the short path under the first screen on the server, nothing reached, its live lot already in it', async () => {
     const { html, asked } = await page('?view=review');
     expect(html).toContain('0 of 3 opened.');
     for (const words of [
@@ -403,10 +436,13 @@ describe('the rendering service', () => {
     ])
       expect(html).toContain(words);
     expect(html).toContain('href="/?view=admin&amp;card=tests"');
-    // The path's tiles read in the browser, from their own kept answers; the server reads neither for them.
+    // The live lot is drawn here, so its tile is never empty and its button opens that lot from the first paint
+    // (ADR-142); the chart's readings are still the browser's to read.
     const paths = asked.map((read) => read.url.slice(API.length).split('?')[0]);
-    expect(paths.some((path) => path.startsWith('/api/review/'))).toBe(false);
+    expect(paths.filter((path) => path.startsWith('/api/review/'))).toEqual(['/api/review/lot']);
     expect(paths.some((path) => path.startsWith('/api/vehicles'))).toBe(false);
+    expect(html).toContain('2026 Toyota Tacoma SR');
+    expect(html).toContain('href="/?vehicle=lot-1"');
     // In the page's order: the claim, the path, then the tour.
     const claim = html.indexOf('Production .NET that stays up.');
     const path = html.indexOf('0 of 3 opened.');

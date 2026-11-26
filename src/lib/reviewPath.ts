@@ -131,6 +131,18 @@ export function pathTrend(
   );
 }
 
+/** Where the review route reads its live lot: the server's first load and the browser's read after it. */
+export const LOT_URL = '/api/review/lot';
+
+/** A live lot from an answer, or null when the answer is not one. */
+export function lotFrom(answer: unknown): PathLot | null {
+  return typeof answer === 'object' &&
+    answer !== null &&
+    typeof (answer as { total?: unknown }).total === 'number'
+    ? (answer as PathLot)
+    : null;
+}
+
 /** The short path's lot, as GET /api/review/lot answers it: the room has taken its turn on it before the answer. */
 export type PathLot = {
   live: boolean;

@@ -112,6 +112,32 @@ export function picturesLine(pictures: NonNullable<BlogStats['pictures']>): stri
   return `${pictures.count === 1 ? '1 picture' : `${pictures.count} pictures`} kept, ${size}.`;
 }
 
+/**
+ * A post's body with each list item that is only a link marked data-link-row, so a phone can give that link a
+ * thumb's height (WCAG 2.2 target size) without touching a link that sits inside a sentence.
+ */
+export function markLinkRows(html: string): string {
+  return html.replace(
+    /<li>(\s*<a\s[^>]*>(?:(?!<\/?a[\s>]).)*<\/a>\s*)<\/li>/gs,
+    '<li data-link-row="">$1</li>'
+  );
+}
+
+/** The widths every slide's thumbnail is cut at (scripts/blog_thumbs.mjs; BlogImageNames.ThumbWidths). */
+export const THUMB_WIDTHS = [320, 480, 640] as const;
+
+/**
+ * A slide thumbnail's srcset, so a phone's sharper screen takes a wider cut: the 320 px file the API names and its
+ * 480 and 640 px siblings beside it. A width not cut yet is answered with the full slide for five minutes, so the set
+ * is never a broken picture. Empty for an address that is not a 320 px thumbnail.
+ */
+export function thumbSrcSet(thumbUrl: string): string {
+  if (!/-320\.webp$/.test(thumbUrl)) return '';
+  return THUMB_WIDTHS.map(
+    (width) => `${thumbUrl.replace(/-320\.webp$/, `-${width}.webp`)} ${width}w`
+  ).join(', ');
+}
+
 /** A post is NEW in the side nav and on its card for this many days after LinkedIn first had it. */
 export const NEW_FOR_DAYS = 7;
 

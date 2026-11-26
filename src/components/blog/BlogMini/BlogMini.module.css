@@ -97,3 +97,12 @@
   color: var(--color-accent);
   cursor: pointer;
 }
+
+/* "Read the post" is a target of its own: a thumb's height on a phone (WCAG 2.2 target size). */
+@media (max-width: 639.98px) {
+  .read {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+  }
+}

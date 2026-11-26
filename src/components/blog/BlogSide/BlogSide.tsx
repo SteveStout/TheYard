@@ -1,7 +1,7 @@
 /**
  * Does:      Draws the blog's side column: the posts read most this week, from the list's first page, and where readers
  *            came from over the last 30 days, read from the Admin route into a box whose size is set before the read
- *            answers (ADR-113, the addendum on the blog holding still on a phone).
+ *            answers (ADR-113, the addendum on the blog holding still on a phone), empty until it does.
  * Does not:  Read the list (BlogPage hands its cards over) or keep any count.
  * Used by:   BlogPage.tsx.
  */
@@ -56,8 +56,9 @@ export function BlogSide({
       </section>
       <section className={`${styles.box} op-glass`} data-testid="blog-sources">
         <h2 className={styles.boxTitle}>Where readers came from</h2>
-        <div className={styles.sourcesBody}>
-          {shares.length === 0 ? (
+        <div className={styles.sourcesBody} data-state={stats === null ? 'reading' : 'ready'}>
+          {/* Not read yet is not "no reads": the body stays empty in its kept box until the read answers (ADR-142). */}
+          {stats === null ? null : shares.length === 0 ? (
             <p className={styles.note}>No reads in the last 30 days yet.</p>
           ) : (
             <dl className={styles.sources}>

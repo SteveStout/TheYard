@@ -31,7 +31,8 @@
     <script>
       (function () {
         var reads = ['/api/stores', '/api/auth/me', '/api/bids', '/api/version'];
-        if (location.search === '') reads.push('/api/health', '/api/tests/summary', '/api/recommendations');
+        if (location.search === '')
+          reads.push('/api/health', '/api/tests/summary', '/api/recommendations');
         // The build draws the landing page into #root (the note beside it,
         // below). Any other address opens on another view, so that drawing is
         // kept off the screen there until the app replaces it (src/app/mount.tsx).
@@ -63,7 +64,7 @@
       palette, addendum). The Google Fonts link that stood here was the one
       render-blocking resource on the page, 852 ms of it on a throttled phone.
     -->
-    <title>TheYard, a used-vehicle auction platform</title>
+    <title>Steven Stout, Lead / Staff .NET engineer</title>
 
     <!--
       What an automated reader gets.
@@ -107,7 +108,7 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="TheYard: a used-vehicle auction platform in .NET 10 and React, by Steven Stout"
+      content="Steven Stout, Lead / Staff .NET engineer, remote. Production .NET that stays up. Built with AI, measured on every version."
     />
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -152,7 +153,17 @@
               "addressRegion": "Missouri",
               "addressCountry": "US"
             },
-            "knowsAbout": [".NET", "C#", "Azure", "React", "TypeScript", "SQL Server", "Software architecture", "AI-assisted development", "Code quality"],
+            "knowsAbout": [
+              ".NET",
+              "C#",
+              "Azure",
+              "React",
+              "TypeScript",
+              "SQL Server",
+              "Software architecture",
+              "AI-assisted development",
+              "Code quality"
+            ],
             "alumniOf": { "@type": "CollegeOrUniversity", "name": "University of Missouri" }
           },
           {
@@ -162,7 +173,13 @@
             "url": "https://theyard.stevenstout.biz/",
             "codeRepository": "https://github.com/SteveStout/TheYard",
             "programmingLanguage": ["C#", "TypeScript"],
-            "runtimePlatform": [".NET 10", "React 19", "Azure App Service", "Azure SQL Database", "Azure Cosmos DB"],
+            "runtimePlatform": [
+              ".NET 10",
+              "React 19",
+              "Azure App Service",
+              "Azure SQL Database",
+              "Azure Cosmos DB"
+            ],
             "license": "https://github.com/SteveStout/TheYard/blob/main/LICENSE",
             "author": { "@id": "https://theyard.stevenstout.biz/about#steven-stout" }
           }
@@ -201,8 +218,8 @@
         <h1>TheYard, by Steven Stout</h1>
         <p>
           A used-vehicle auction platform that Steven Stout, a Lead / Staff .NET engineer, built and
-          runs on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database and
-          on Azure Cosmos DB, in .NET 10 and React.
+          runs on Azure: 100,000 vehicles, live bidding, and the same build on Azure SQL Database
+          and on Azure Cosmos DB, in .NET 10 and React.
         </p>
         <ul>
           <li><a href="/about">About Steven Stout</a></li>

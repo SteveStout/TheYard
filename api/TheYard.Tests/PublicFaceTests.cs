@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using TheYard.Api.Features.Blog;
+using TheYard.Api.Features.Docs;
 
 namespace TheYard.Tests;
 
@@ -148,45 +149,49 @@ public class PublicFaceTests
     }
 
     /// <summary>
-    /// The card carries the version it was drawn for, and that version is the
-    /// changelog's top line, which is where the deploy reads it from too.
-    ///
-    /// <para>This exists because it went wrong in the obvious way. The card is
-    /// regenerated at the start of a ship, from the changelog, and on one ship
-    /// the changelog was momentarily empty when the generator read it. It
-    /// exited zero, wrote a card with no version on it, and every check passed:
-    /// the record count was right, the file was large enough to have rendered,
-    /// and nothing looked at the one field that had gone missing. A generated
-    /// number is worth nothing without a test, which is the argument this
-    /// project's public-face record already makes about the record count
-    /// (ADR: The public face).</para>
+    /// The card leads with the person and makes three claims, and each is the number the site already shows
+    /// in that place: the two record tiles of the review route (src/lib/reviewVerdict.ts) and the count of
+    /// data/recommendations.json. It used to carry the version it was drawn for and the record count, and two
+    /// tests held those; the card dropped both when it became the person's (ADR: The public face, the addendum
+    /// on the person-first card), and the reason those tests existed is still true: a generated number is
+    /// worth nothing without a test. The card is drawn at every landing (scripts/fill_version.sh), so a figure
+    /// that moves in its source and not on the card fails here first.
     /// </summary>
-    [Fact]
-    public void The_preview_card_shows_the_version_it_was_drawn_for()
+    [Theory]
+    [InlineData("releases")]
+    [InlineData("cycle")]
+    public void The_preview_card_shows_the_review_route_s_figures(string key)
     {
         string card = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "images", "og.svg"));
-        string changelog = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "CHANGELOG.md"));
+        string verdict = File.ReadAllText(Path.Combine(Repo.Root(), "src", "lib", "reviewVerdict.ts"));
 
-        var top = Regex.Match(changelog, @"^- \*\*(\d+\.\d+\.\d+\.\d+)\*\*", RegexOptions.Multiline);
+        var source = Regex.Match(verdict, $@"key: '{key}',\s*figure: '([^']+)'");
+        var shown = Regex.Match(card, $@"<text id=""figure-{key}""[^>]*>([^<]+)</text>");
 
-        Assert.True(top.Success, "the changelog should carry a version on its top line");
-        Assert.Contains(top.Groups[1].Value, card, StringComparison.Ordinal);
+        Assert.True(source.Success, $"src/lib/reviewVerdict.ts should carry the {key} tile's figure");
+        Assert.True(shown.Success, $"the preview card should show the {key} figure");
+        Assert.Equal(source.Groups[1].Value, shown.Groups[1].Value.Replace("&amp;", "&", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void The_preview_card_counts_the_same_records_the_readme_does()
+    public void The_preview_card_counts_the_recommendations_the_page_shows()
     {
-        // The card is generated, and its numbers are read from the repository at
-        // generation time, which is the point of generating it. That only helps
-        // if somebody regenerates it: adding this record is exactly the change
-        // that makes an unregenerated card wrong, so the count is asserted here
-        // rather than trusted.
         string card = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "images", "og.svg"));
-        int records = Records();
+        var file = System.Text.Json.JsonSerializer.Deserialize<RecommendationsReply>(
+            File.ReadAllText(Repo.DataFile("recommendations.json")), RecommendationsFile.Format)!;
 
-        var claim = Regex.Match(card, @">(\d+)</text>\s*<text[^>]*>decision records<");
-        Assert.True(claim.Success, "the preview card should state a record count next to the words 'decision records'");
-        Assert.Equal(records, int.Parse(claim.Groups[1].Value));
+        var shown = Regex.Match(card, @"<text id=""figure-recommendations""[^>]*>(\d+)</text>");
+        Assert.True(shown.Success, "the preview card should count the named recommendations");
+        Assert.Equal(file.Recommendations.Count, int.Parse(shown.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    [Fact]
+    public void The_preview_card_names_the_person_and_its_picture_is_beside_it()
+    {
+        string card = File.ReadAllText(Path.Combine(Repo.Root(), "docs", "images", "og.svg"));
+        Assert.Contains(">Steven Stout</text>", card, StringComparison.Ordinal);
+        Assert.Contains("Lead / Staff .NET engineer", card, StringComparison.Ordinal);
+        Assert.Contains("data:image/webp;base64,", card, StringComparison.Ordinal);
 
         // And the picture an unfurler actually fetches exists beside it. One
         // command writes both, for the reason in docs/images/og.mjs: when they

@@ -50,3 +50,7 @@ A page component under `src/components/recommendations/`, a pure lib beside the 
 ## Addendum, 2026-11-20 (1.0.5.142): the page's foot
 
 The last card, That is everyone, keeps its two links, Check my work and About Steven, and is the page's Where next (`data-mock` where-next, each link next-link); the site's one closing row (ADR: The sales pages set the site's look, the addendum on the one close) follows it in its own glass card, so the page ends on the question and its three moves, and Book 20 minutes opens the review page's booking sheet.
+
+## Addendum, @DATE@ (@VER@): the count is a badge, and the names fold on a phone
+
+What stopped being true: that a group's count ran into its words, and that the index stood open on a phone. Each group head is its words, then its count in a badge of its own (`data-mock="group-count"` inside the h2). Under 640 px the "On this page" index folds under its title: the title is a button (`data-mock="names-toggle"`, `aria-expanded`, closed at first) over the list (`data-mock="names-list"`), hidden until it is pressed, so the first recommendation is on the second screen rather than the third; all thirteen names stay in the page. It is a button and a list rather than `<details>` because one drawn page serves a phone and a desk, and from 640 px up the list stands open whatever the button says. A writer's name is 28 px tall on a phone. No words were added and nothing was removed; recommendations.spec.ts holds the fold at 390, the open list at 1280 and the badges.

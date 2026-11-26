@@ -11,6 +11,7 @@ import { liveSentence } from '../../../lib/reviewVerdict';
 import { Ring } from '../../shared/Ring';
 import styles from './StoreBar.module.css';
 import { gateChips, gateFacts } from './gateFacts';
+import { reviewWord } from '../../../lib/reviewMirror';
 
 // The badge's popover is fetched the first time it opens, so its words and styles stay out of the first load
 // (ADR-134, .github/byte-budgets.json).
@@ -174,6 +175,7 @@ export function StoreBar({ review = false }: { review?: boolean }) {
               aria-expanded={gateTop !== null}
               data-testid="gate-badge"
               data-gated={GATE.gated}
+              data-review={reviewWord(GATE.review)}
               onClick={() =>
                 setGateTop((open) =>
                   open !== null ? null : (badge.current?.getBoundingClientRect().bottom ?? 0) + 8
@@ -182,7 +184,6 @@ export function StoreBar({ review = false }: { review?: boolean }) {
             >
               {CHIPS[0]}
               <span className={styles.wide}>
-                {' '}
                 · {CHIPS[1]} · {CHIPS[2]}
               </span>
             </button>

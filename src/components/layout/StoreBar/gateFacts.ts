@@ -8,6 +8,7 @@
  */
 import RELEASES from 'virtual:release-facts';
 import { heldAt, type HistoryRow } from '../../../lib/qualityHeld';
+import { reviewedWord } from '../../../lib/reviewMirror';
 import type { ReleaseFacts } from '../../../lib/releaseFacts';
 
 /** The badge's answer: the version, whether the gate's own reading of it is on file, the quality held, the review. */
@@ -47,17 +48,13 @@ export function gateRunUrl(run: number): string {
 /**
  * The three facts, in words: the gate, the quality numbers held, and CodeRabbit's read. A version the gate has not
  * finished (its own build, on a gate branch) says "pending" for what is not written yet, short so the band keeps its
- * room on either site; a version whose review row says it was not read in full says so.
+ * room on either site; a version CodeRabbit could not read in full says why, rate limited or not reviewed.
  */
 export function gateChips(facts: GateFacts): [string, string, string] {
   return [
     facts.gated ? 'Gate green' : 'Gate pending',
     facts.quality ? `Quality ${facts.quality.held} of ${facts.quality.of} held` : 'Quality pending',
-    facts.review === null
-      ? 'CodeRabbit pending'
-      : facts.review.reviewed === 'full'
-        ? 'CodeRabbit reviewed'
-        : 'CodeRabbit not reviewed',
+    `CodeRabbit ${reviewedWord(facts.review)}`,
   ];
 }
 

@@ -69,6 +69,15 @@
   font-weight: var(--weight-semibold);
 }
 
+/* The chart's link is a target of its own: a thumb's height on a phone (WCAG 2.2 target size). */
+@media (max-width: 639.98px) {
+  .link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+  }
+}
+
 /* The landing's split layout: its words and moves on the left, the figure, its link and the newest post on the right. */
 .split {
   align-items: stretch;

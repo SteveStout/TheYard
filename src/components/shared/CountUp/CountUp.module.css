@@ -3,8 +3,10 @@
  * Does not:  Count (CountUp.tsx does) or style the figure's type.
  * Used by:   CountUp.tsx.
  */
-/* The finished figure holds the box, unseen, in the same cell as the moving
-   one, so the width never changes while it counts. */
+/* The finished figure is the element's text and holds the box. While it
+   counts, the moving figure (data-moving) is drawn over it in the same cell
+   and the finished one is drawn unseen, so the width never changes and the
+   text never says a figure on its way. */
 .count {
   display: inline-grid;
 }
@@ -14,7 +16,10 @@
   grid-area: 1 / 1;
 }
 
-.count::after {
-  content: attr(data-value);
-  visibility: hidden;
+.count[data-moving] > span {
+  color: transparent;
+}
+
+.count[data-moving]::after {
+  content: attr(data-moving);
 }

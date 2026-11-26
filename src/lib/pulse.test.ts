@@ -139,15 +139,20 @@ describe('the bill instrument (the cost lane, 24 Oct addendum)', () => {
 
 describe('the scale', () => {
   it('puts the marker where the reading is, and pins it at the end past the ceiling', () => {
-    expect(share(31, LATENCY_CEILING_MS)).toBeCloseTo(0.31);
-    expect(share(250, LATENCY_CEILING_MS)).toBe(1);
+    expect(LATENCY_CEILING_MS).toBe(1000);
+    expect(share(188, LATENCY_CEILING_MS)).toBeCloseTo(0.188);
+    expect(share(426, LATENCY_CEILING_MS)).toBeCloseTo(0.426);
+    expect(share(2500, LATENCY_CEILING_MS)).toBe(1);
     expect(share(null, LATENCY_CEILING_MS)).toBe(0);
     expect(share(-4, LATENCY_CEILING_MS)).toBe(0);
   });
 
-  it('graduates every five with a number every twenty-five', () => {
+  it('graduates every fifty with a number every two hundred and fifty', () => {
     const marks = ticks(LATENCY_CEILING_MS);
     expect(marks).toHaveLength(21);
-    expect(marks.filter((mark) => mark.major).map((mark) => mark.at)).toEqual([0, 25, 50, 75, 100]);
+    expect(marks[1].at).toBe(50);
+    expect(marks.filter((mark) => mark.major).map((mark) => mark.at)).toEqual([
+      0, 250, 500, 750, 1000,
+    ]);
   });
 });

@@ -35,7 +35,7 @@ export const PULSE_URL = '/api/pulse';
 export const PULSE_EVERY_MS = 15_000;
 
 /** The top of the latency scale, in milliseconds: a reading past it pins the marker and still says its number. */
-export const LATENCY_CEILING_MS = 100;
+export const LATENCY_CEILING_MS = 1000;
 
 const number = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
@@ -198,11 +198,11 @@ export function barHeights(days: number[]): number[] {
   return days.map((day) => (tallest > 0 ? Math.max(0, day) / tallest : 0));
 }
 
-/** The graduations of the latency scale: every five, with a number under every twenty-five. */
+/** The graduations of the latency scale: a mark every twentieth of it, with a number under every quarter. */
 export function ticks(ceiling: number): { at: number; major: boolean }[] {
   const marks: { at: number; major: boolean }[] = [];
-  for (let at = 0; at <= ceiling; at += 5) {
-    marks.push({ at, major: at % 25 === 0 });
+  for (let step = 0; step <= 20; step += 1) {
+    marks.push({ at: (ceiling * step) / 20, major: step % 5 === 0 });
   }
   return marks;
 }

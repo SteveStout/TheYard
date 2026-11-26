@@ -1061,6 +1061,57 @@ for (const address of ['/?view=review', '/?view=review&for=ai']) {
     await expect(page.getByText('No auction is live', { exact: false })).toHaveCount(0);
   });
 }
+// 8b. Never empty: the rendering service draws the lot in, so while the browser's own read is held the tile still shows
+// its vehicle and bid and the button opens that lot; and the route opened again in the same visit starts from the lot
+// already read, never from nothing (ADR-142).
+test('the live lot is never empty while its read is held, and its button opens that lot', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await freshRoute(page);
+  const lot = page.getByTestId('review-path-lot');
+  const room = page.getByTestId('review-path-room');
+  const alive = async () => {
+    await expect(page.getByTestId('review-path-lot-name')).toHaveText(/\S/, { timeout: 1_000 });
+    await expect(page.getByTestId('review-path-bid')).toHaveText(/^CA\$\d{1,3}(,\d{3})*$/, {
+      timeout: 1_000,
+    });
+    await expect(room).toHaveAttribute('href', /^\/\?vehicle=/, { timeout: 1_000 });
+  };
+  let release: () => void = () => {};
+  const held = () =>
+    page.route('**/api/review/lot', async (route) => {
+      await new Promise<void>((resolve) => {
+        release = resolve;
+        setTimeout(resolve, 2_000);
+      });
+      // A request the page let go of while it was held (the route opened again) is already answered.
+      await route.continue().catch(() => {});
+    });
+  if (process.env.YARD_RENDER) {
+    // Drawn by the service: the lot is in the page before the browser has asked for it.
+    await held();
+    await openTheYard(page, 'http://localhost:5220/?view=review');
+    await lot.scrollIntoViewIfNeeded();
+    await alive();
+    release();
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+  }
+  // Drawn by the browser: once one lot is read, the route opened again starts from it while the next read is held.
+  await openTheYard(page, '/?view=review');
+  await lot.scrollIntoViewIfNeeded();
+  await alive();
+  await held();
+  const rail = page.getByTestId('side-rail');
+  await rail.getByRole('button', { name: 'Home', exact: true }).click();
+  await expect(page.getByTestId('landing')).toBeVisible();
+  await rail.getByRole('button', { name: 'Check my work' }).click();
+  await expect(page).toHaveURL(/\?view=review$/);
+  await lot.scrollIntoViewIfNeeded();
+  await alive();
+  release();
+});
+
 // 10. Voices and posts are the API's: each voice's words are its entry's pull and it opens that person's card; each
 // post card's title is the read's, opens its post in place and reports blog, as All posts does.
 test('every voice is the answer’s own words and opens its card, and the blog row opens its posts and reports blog', async ({

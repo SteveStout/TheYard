@@ -28,7 +28,7 @@ export function Header({
         <button type="button" className={styles.brand} onClick={onHome}>
           <BrandMark size={18} className={styles.brandMark} />
           The Yard
-          <span className={styles.brandSub}>Vehicle Auctions</span>
+          <span className={styles.brandSub}>by Steven Stout</span>
         </button>
         <div className={styles.headerActions}>
           {bidCount > 0 && (

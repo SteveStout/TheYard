@@ -9,6 +9,7 @@ import { drawForTheService, firstLoadElement } from '../src/app/entry-server';
 import { loadFirst } from './loaders';
 import { headFor, withHead, type PostHead } from './heads';
 import { blogPostFrom } from '../src/app/firstAddress';
+import { RECOMMENDATION_PLACES, recommendationsAnswerFrom } from '../src/lib/recommendations';
 import type { HookPost } from '../src/hooks/useFirstLoad';
 import { keptPost, servedPages, type ServedPage } from './page';
 import { inlineScriptHashes, pageNonce, securityHeaders } from './security';
@@ -87,7 +88,7 @@ export function createRenderer(
     const loading = loadFirst(search, cookie, apiOrigin, deadlineMs, read, store);
     const named = blogPostFrom(new URLSearchParams(search));
     const posts = named ? [await postAt(apiOrigin, named)].filter((post) => post !== null) : [];
-    const head = headFor(search, posts);
+    const head = headFor(search, posts, await recommendationsCount(search, loading));
     const shell = head ? { ...page, before: withHead(page.before, head) } : page;
     // The post an address names goes into the first load from the posts already read for its head, so its hook is
     // drawn here and the browser asks for nothing to show it (ADR-132).
@@ -104,6 +105,21 @@ export function createRenderer(
       },
     });
   };
+}
+
+/**
+ * How many recommendations the page's head names: on ?view=recommendations, the count of the answer the page is drawn
+ * from; when that read has not answered, and on every other address, the build's own count of data/recommendations.json.
+ */
+export async function recommendationsCount(
+  search: string,
+  loading: Promise<{ recommendations?: unknown }>
+): Promise<number> {
+  if (new URLSearchParams(search).get('view') !== 'recommendations') return RECOMMENDATION_PLACES;
+  return (
+    recommendationsAnswerFrom((await loading).recommendations ?? null)?.count ??
+    RECOMMENDATION_PLACES
+  );
 }
 
 /** The post a ?view=blog&post= address names, as its hook draws it, or null when the address names none the blog has. */

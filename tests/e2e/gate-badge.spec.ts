@@ -12,7 +12,7 @@ import { answerBlog, made } from './blogFake';
  * branch, this run) says pending instead of claiming green.
  */
 const NAME =
-  /^(Gate green|Gate pending), (Quality \d+ of \d+ held|Quality pending), CodeRabbit (reviewed|not reviewed|pending): what v\d+\.\d+\.\d+\.\d+ had to pass$/;
+  /^(Gate green|Gate pending), (Quality \d+ of \d+ held|Quality pending), CodeRabbit (reviewed|rate limited|not reviewed|pending): what v\d+\.\d+\.\d+\.\d+ had to pass$/;
 
 test('every page carries the badge, which names all three and opens its popover on a click', async ({
   page,
@@ -27,10 +27,21 @@ test('every page carries the badge, which names all three and opens its popover 
     const gated = (await badge.getAttribute('data-gated')) === 'true';
     await expect(badge).toHaveText(
       new RegExp(
-        `^${gated ? 'Gate green' : 'Gate pending'} · (Quality \\d+ of \\d+ held|Quality pending) · CodeRabbit (reviewed|not reviewed|pending)$`
+        `^${gated ? 'Gate green' : 'Gate pending'} ?· (Quality \\d+ of \\d+ held|Quality pending) · CodeRabbit (reviewed|rate limited|not reviewed|pending)$`
       )
     );
     expect((await badge.boundingBox())!.width).toBeLessThan(560);
+    // CodeRabbit's own word for this version rides on the badge, and the gap after the gate's word is a margin.
+    await expect(badge).toHaveAttribute(
+      'data-review',
+      /^(full|rate limited|not reviewed|pending)$/
+    );
+    expect(
+      await badge
+        .locator('span')
+        .first()
+        .evaluate((span) => getComputedStyle(span).marginLeft)
+    ).not.toBe('0px');
   }
 
   // From the landing: a document opens as a dialog over the page, and the badge waits under it like the rest.
