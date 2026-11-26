@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { holdCode, reportPath, withCode } from './links';
+import { holdCode, pageOpenReport, reportPath, withCode } from './links';
 
 /** A session store that keeps what it is given, as sessionStorage does. */
 const store = () => {
@@ -39,5 +39,13 @@ describe('a tagged visit, carried', () => {
     expect(reportPath('?view=blog&post=a', '/')).toBe('/blog');
     expect(reportPath('?doc=quality', '/')).toBe('/quality');
     expect(reportPath('', '/review')).toBe('/review');
+  });
+
+  it('reports a sent About link under /about, the path the Links card and the follow-up rung read', () => {
+    expect(reportPath('?doc=author&r=k7f2qa', '/')).toBe('/about');
+    expect(reportPath('?view=about&r=k7f2qa', '/')).toBe('/about');
+    expect(pageOpenReport('?doc=author&r=k7f2qa', reportPath('?doc=author&r=k7f2qa', '/'))).toBe(
+      '/api/links/open?r=k7f2qa&path=/about'
+    );
   });
 });

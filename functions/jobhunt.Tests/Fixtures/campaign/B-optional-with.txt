@@ -13,4 +13,4 @@ Resume: https://theyard.stevenstout.biz/resume?src=email&r=abc123
 Site: https://theyard.stevenstout.biz/?r=abc123
 GitHub: https://theyard.stevenstout.biz/api/go/github?r=abc123
 LinkedIn: https://theyard.stevenstout.biz/api/go/linkedin?r=abc123
-About: https://theyard.stevenstout.biz/about?r=abc123
+About: https://theyard.stevenstout.biz/?doc=author&r=abc123
