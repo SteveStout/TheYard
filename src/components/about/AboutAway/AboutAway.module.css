@@ -1,0 +1,115 @@
+/**
+ * Does:      Lays out Away from the keyboard as the qa1126 picture draws it (about_mock_qa1126.py's CSS, ported rule by
+ *            rule on the site's tokens): even cards three across from 1280, two from 640, one on a phone, every row one
+ *            height; each card's photographs first in one 4:3 shape on their subject, two side by side, three across in
+ *            the rabbits' card; the strip's three at 3:2; on a phone a group is two across at most and the strip stacks.
+ * Does not:  Draw a card's glass or the alternating rule (panels.css and AuthorPage.module.css do), a photograph's frame
+ *            or its caption's words (AuthorPage.module.css and the document do), or work out a photograph's cap
+ *            (aboutWeave.ts does).
+ * Used by:   AboutAway.tsx.
+ */
+
+/* The words keep the document's own order inside their holder, with no box of their own. */
+.contents {
+  display: contents;
+}
+
+/* Three across, one gap, every row one height. */
+.away .grid:global(.author-blocks) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.away .grid .card {
+  display: flex;
+  flex-direction: column;
+  grid-column: auto;
+  min-width: 0;
+}
+
+.away .grid .wide {
+  grid-column: 1 / -1;
+}
+
+/* Photographs first, one shape, one gap. */
+.away .photos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+
+.away .photos.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.away .photos.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* A photograph with a cap is centred in a card wider than its file can fill. */
+.away .photo {
+  width: 100%;
+  margin-inline: auto;
+}
+
+.away .photos .photo :global(figure) {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.away .photos .photo :global(picture) {
+  display: block;
+}
+
+.away .photos .photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center 55%;
+}
+
+.away .photos .photo figcaption {
+  margin-top: var(--space-1);
+}
+
+.away .strip .photos .photo img {
+  aspect-ratio: 3 / 2;
+}
+
+.away .strip :global(.author-credit) {
+  margin: 0;
+}
+
+@media (max-width: 1279.98px) {
+  .away .grid:global(.author-blocks) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* One column on a phone; a group of photographs two across at most, the first of three the full width; the strip stacks. */
+@media (max-width: 639.98px) {
+  .away .grid:global(.author-blocks) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .away .photos.three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .away .photos.three > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .away .strip .photos.three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

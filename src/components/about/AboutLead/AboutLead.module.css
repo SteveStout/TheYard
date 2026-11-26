@@ -1,0 +1,162 @@
+/**
+ * Does:      Lays out How I lead as the qa1126 picture draws it (about_mock_qa1126.py's CSS, ported rule by rule on the
+ *            site's tokens): the four cards three across from 1280, two from 640, one on a phone; the three story cards
+ *            one height, each story under a hairline with its small accent label and its picture on the card's floor in
+ *            one 4:3 shape; the coaching card the full width, words on the left and the team drawing on the right at
+ *            its own 16:9, never stretched.
+ * Does not:  Draw a card's glass or the alternating rule (panels.css and AuthorPage.module.css do) or a photograph's
+ *            frame (AuthorPage.module.css does).
+ * Used by:   AboutLead.tsx.
+ */
+
+/* The words keep the document's own order inside their holder, with no box of their own. */
+.contents {
+  display: contents;
+}
+
+/* Three across, one gap, the three story cards one height. */
+.lead .grid:global(.author-blocks) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.lead .card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lead .words {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* The story beside the practice: under a hairline, a small label in the accent, its words a step smaller. */
+.lead .aside {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.lead .card .aside .label {
+  margin: 0 0 var(--space-1);
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--readout-tracking);
+  text-transform: uppercase;
+}
+
+.lead .aside h4 {
+  margin: 0 0 var(--space-1);
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+}
+
+.lead .card .aside p {
+  margin: 0 0 10px;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+/* The picture sits on the card's floor, so the three pictures share one line. */
+.lead .card .aside :global(figure) {
+  float: none;
+  width: 100%;
+  max-width: none;
+  margin: auto 0 0;
+  padding: 0;
+}
+
+.lead .card .aside :global(picture) {
+  display: block;
+}
+
+.lead .card .aside img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  object-position: center 50%;
+}
+
+.lead .card .aside figcaption {
+  margin-top: var(--space-1);
+}
+
+/* The coaching card runs the full width: words on the left, the team drawing on the right at its own shape. */
+.lead .grid .wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.lead .wide .words {
+  flex: 1 1 0;
+}
+
+.lead .card .picture {
+  flex: 0 0 auto;
+  width: min(36%, 380px);
+  margin: 0;
+  padding: 0;
+}
+
+.lead .card .picture :global(figure) {
+  margin: 0;
+}
+
+.lead .card .picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+/* Two across; the coaching card takes the fourth place as a column, its drawing centred in the room left. */
+@media (max-width: 1279.98px) {
+  .lead .grid:global(.author-blocks) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lead .grid .wide {
+    grid-column: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .lead .wide .words {
+    flex: 0 0 auto;
+  }
+
+  .lead .card .picture {
+    width: 100%;
+    margin: auto 0;
+  }
+}
+
+/* One column on a phone: the words, then the drawing. */
+@media (max-width: 639.98px) {
+  .lead .grid:global(.author-blocks) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lead .card .picture {
+    margin: var(--space-3) 0 0;
+  }
+}

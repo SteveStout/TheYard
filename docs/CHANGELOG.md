@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): About Steven sets three personal stories beside How I lead and draws its photographs as even cards, with every picture and word kept.
 - **1.0.5.167** (2026-11-26): What the heal ladder cannot fix reaches Steve as one line, never a question: J:dispatchNOT-WORKING.md's open lines are the first lines of the 07:30 card and go under TODAY.md's title the tick they are written, with one mail to his own address a failure a day, and a line leaves when its test passes twice; the card counts the proposals with no "Queue it?" line, and Azure mails him only for a stopped Function and the share's bill.
 - **1.0.5.166** (2026-11-26): Home and the recommendations page have their own titles and one link card that leads with Steven, the latency dial reads to 1,000 ms, and a version CodeRabbit could not read says so.
 - **1.0.5.165** (2026-11-26): The home page, the review route and the Quality page now end on their close with no Where next list under it, and the review route's 01 The work drops its "The two-page resume (PDF)" link because the gold Resume (PDF) button sits right above it.

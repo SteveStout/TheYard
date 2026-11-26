@@ -29,6 +29,19 @@ describe("the About page's hero, cut from the author document", () => {
     expect(heroOf('<h2>Hi</h2>').photo).toBeNull();
   });
 
+  it('hooks the last of three paragraphs as the person beside the work, word for word, and no paragraph of fewer', () => {
+    const personal =
+      'Outside work, I build in my garage woodshop and read a lot of Roman history. Katie and I have two rabbits and too many house plants.';
+    const words = heroOf(
+      `<h2>Hi</h2><p><strong>Lead.</strong></p><p>The work.</p><p>${personal}</p>` +
+        '<p class="author-buttons"><a class="author-button" href="/x">LinkedIn</a></p>'
+    ).words;
+    expect(words).toBe(
+      `<h2>Hi</h2><p><strong>Lead.</strong></p><p>The work.</p><p data-mock="intro-personal">${personal}</p>`
+    );
+    expect(hero.words).not.toContain('intro-personal');
+  });
+
   it("names the page by the document's own title", () => {
     expect(titleOf('<h1>About Steven</h1>\n')).toBe('About Steven');
     expect(titleOf('')).toBe('About Steven');

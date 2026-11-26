@@ -6,6 +6,8 @@
 
 I have spent twelve years building full stack software in C#, SQL Server, React and Azure. I have been the only engineer on a live financial platform, where I shipped more than 200 releases with no downtime, and I have been the lead who built a team of four. I am happy in either seat.
 
+Outside work, I build in my garage woodshop and read a lot of Roman history. Katie and I have two rabbits and too many house plants.
+
 ![Steve and Katie smiling in sunglasses at a table on a vineyard terrace, autumn trees and a hillside behind them](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/steve-and-katie-vineyard-960.jpg)
 
 - [Read my resume](https://theyard.stevenstout.biz/api/docs/resume)
