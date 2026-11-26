@@ -98,7 +98,7 @@ public sealed class LeadImportTests
                 "https://theyard.stevenstout.biz/?r=abc123",
                 "https://theyard.stevenstout.biz/api/go/github?r=abc123",
                 "https://theyard.stevenstout.biz/api/go/linkedin?r=abc123",
-                "https://theyard.stevenstout.biz/about?r=abc123"),
+                "https://theyard.stevenstout.biz/?doc=author&r=abc123"),
         };
 
         Assert.Null(LeadSpool.Refuse(mailbox, keys));

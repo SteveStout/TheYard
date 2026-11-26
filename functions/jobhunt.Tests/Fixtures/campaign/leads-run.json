@@ -36,7 +36,7 @@
         "site": "https://theyard.stevenstout.biz/?r=abc123",
         "gitHub": "https://theyard.stevenstout.biz/api/go/github?r=abc123",
         "linkedIn": "https://theyard.stevenstout.biz/api/go/linkedin?r=abc123",
-        "about": "https://theyard.stevenstout.biz/about?r=abc123"
+        "about": "https://theyard.stevenstout.biz/?doc=author&r=abc123"
       }
     },
     {
@@ -49,7 +49,7 @@
         "site": "https://theyard.stevenstout.biz/?r=abc124",
         "gitHub": "https://theyard.stevenstout.biz/api/go/github?r=abc124",
         "linkedIn": "https://theyard.stevenstout.biz/api/go/linkedin?r=abc124",
-        "about": "https://theyard.stevenstout.biz/about?r=abc124"
+        "about": "https://theyard.stevenstout.biz/?doc=author&r=abc124"
       }
     },
     {

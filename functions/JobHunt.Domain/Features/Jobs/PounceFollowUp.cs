@@ -110,7 +110,7 @@ public static partial class PounceFollowUp
     {
         1 => $"{Site}/?view=blog&r={code}",
         2 => $"{Site}/?doc=adr-coderabbit-one-rung-at-a-time&r={code}",
-        _ => $"{Site}/about?r={code}",
+        _ => $"{Site}/?doc=author&r={code}",
     };
 
     /// <summary>The follow-up's text: a thank-you for the rung reached, the next rung's link and one no-oriented question.</summary>

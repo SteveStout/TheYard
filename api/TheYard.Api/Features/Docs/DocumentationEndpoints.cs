@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using TheYard.Application.Features.Docs;
 using TheYard.Application.Shared;
+using TheYard.Application.Shared.Links;
 
 namespace TheYard.Api.Features.Docs;
 
@@ -65,6 +66,9 @@ public static class DocumentationEndpoints
         // ADR-020's pattern). Outside /api because it is a page a search engine lists, not a
         // resource; a literal route wins over the app's fallback. Each container names itself
         // from Site:Url, and without one (a developer's machine, the test host) from the request.
+        // A link already sent as /about?r=<code> is a door, the same shape as /review: it answers 302 to the
+        // author page with the code kept, and the page reports the open (ADR: Tagged links, the addendum on the
+        // About link). Without a code, or with a value that is not one, it is the page for crawlers.
         app.MapGet("/about", About).ExcludeFromDescription();
         #endregion about-page
 
@@ -178,14 +182,18 @@ public static class DocumentationEndpoints
                 "text/html; charset=utf-8")
             : TypedResults.Problem(detail: "No diagram has that name.", statusCode: 404, title: "No such diagram");
 
-    private static ContentHttpResult About(HttpContext http, SiteHosts hosts, HostPaths paths)
+    private static Results<RedirectHttpResult, ContentHttpResult> About(HttpContext http, SiteHosts hosts, HostPaths paths, string? r)
     {
+        if (LinkCodes.IsOne(r))
+        {
+            return TypedResults.Redirect($"/?doc=author&r={r}");
+        }
         // The Yard name the request arrived on, then Site:Url, then the request's own address.
         string site = hosts.LinkOrigin(http);
         var reply = RecommendationsFile.OrNull(paths.RecommendationsPath);
         var hooks = PageHooks.Of(paths.HooksPath);
         string hook = PageHooks.Html(hooks, "about", HookCounts(reply));
-        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply), hook, PageHooks.NextHtml(hooks, "about", http.Request.Query["r"].ToString(), HookCounts(reply))), "text/html; charset=utf-8");
+        return TypedResults.Content(AboutPage.Render(site, AboutPage.LeadImage, SiteFace.StyleFor(paths.AssetsRoot), AboutRecommendations.Html(reply), hook, PageHooks.NextHtml(hooks, "about", r, HookCounts(reply))), "text/html; charset=utf-8");
     }
 
     /// <summary>The counts a hook's link may name, each read from its own file: none when the file is missing or out of shape.</summary>

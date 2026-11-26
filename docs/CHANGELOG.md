@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): A sent About link opens the author page; /about stays the page for search engines.
 - **1.0.5.162** (2026-11-25): The job hunt's tracker merger runs every two minutes instead of every minute, which halves the share's folder listings, about $5.70 a month, and still merges a lane's row inside the three minutes every lane allows.
 - **1.0.5.161** (2026-11-25): The dark-lane alarm and the morning card now name an expired Remote Control sign-in on its own: dispatch.py reads the claude.ai login Remote Control runs on once an hour (`claude auth status` with the token variables removed) into SIGN-IN.md's "Remote Control:" line, and when it reads expired the card carries one DARK line with the fix (double-click Sign in to Claude on the WickedAwsome desktop); the lanes run on the token, so the line never holds or stops one, and a signed-in or unread probe adds nothing.
 - **1.0.5.160** (2026-11-25): About Steven opens as a page of its own instead of a window.

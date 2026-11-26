@@ -78,7 +78,13 @@ public static class TaggedRequests
     /// The views the page may report: the home page, About Steven, the review route, the recommendations page, and
     /// since ladder v7b the blog and the Quality page, so a footer click that carries the code lands under its page.
     /// </summary>
-    public static readonly IReadOnlyList<string> PageViews = ["/", "/about", ReviewView, RecommendationsView, BlogView, QualityView];
+    public static readonly IReadOnlyList<string> PageViews = ["/", AboutView, ReviewView, RecommendationsView, BlogView, QualityView];
+
+    /// <summary>
+    /// About Steven's view, and the door a sent About link used to name: /about with a code answers a redirect to the
+    /// author page with the code kept, and the page reports the open under this view, so the door is not one.
+    /// </summary>
+    public const string AboutView = "/about";
 
     /// <summary>The blog's page view: the list and every post, reported by the page, never a path the site serves.</summary>
     public const string BlogView = "/blog";
@@ -101,7 +107,7 @@ public static class TaggedRequests
     /// <summary>Whether a path is one a sent link names, so a code on any other request (a cache-buster, a guess) is not an open.</summary>
     /// <param name="path">The request's path, with no query.</param>
     public static bool IsSent(string path) =>
-        (PageViews.Contains(path, StringComparer.Ordinal) && path is not (ReviewView or RecommendationsView or BlogView or QualityView))
+        (PageViews.Contains(path, StringComparer.Ordinal) && path is not (AboutView or ReviewView or RecommendationsView or BlogView or QualityView))
         || SentPrefixes.Any(prefix => path.StartsWith(prefix, StringComparison.Ordinal));
 
     /// <summary>The open this request is, or null when it is not one.</summary>

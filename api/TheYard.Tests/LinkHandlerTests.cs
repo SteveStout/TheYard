@@ -90,7 +90,9 @@ public sealed class LinkHandlerTests
         Assert.Null(TaggedRequests.OpenOf("GET", "/api/version", "123456", null, chrome, Noon, "sql"));
         Assert.Null(TaggedRequests.OpenOf("GET", "/api/admin/plan", "k7f2qa", null, chrome, Noon, "sql"));
         Assert.NotNull(TaggedRequests.OpenOf("GET", "/api/go/github", "k7f2qa", null, chrome, Noon, "sql"));
-        Assert.NotNull(TaggedRequests.OpenOf("GET", "/about", "k7f2qa", null, chrome, Noon, "sql"));
+        // Not /about with a code since the About link moved: that door redirects to the author page, which reports the open.
+        Assert.Null(TaggedRequests.OpenOf("GET", "/about", "k7f2qa", null, chrome, Noon, "sql", 302));
+        Assert.False(TaggedRequests.IsSent(TaggedRequests.AboutView));
         // A pass-through the site refused is a guess, not a link anyone sent: a 404 never counts, a 302 does.
         Assert.Null(TaggedRequests.OpenOf("GET", "/api/go/nope", "k7f2qa", null, chrome, Noon, "sql", 404));
         Assert.NotNull(TaggedRequests.OpenOf("GET", "/api/go/github", "k7f2qa", null, chrome, Noon, "sql", 302));

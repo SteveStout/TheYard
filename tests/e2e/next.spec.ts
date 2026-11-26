@@ -62,8 +62,8 @@ test('a tagged visit carries its code through the footers, and each page it land
   page,
   request,
 }) => {
-  // Ladder v7b, the proof walk (R7): the review route with a code, its footer to the post, then About, then
-  // About's email line. That the API keeps each open under its path is LinkEndpointStatusTests' and
+  // Ladder v7b, the proof walk (R7): the review route with a code, its footer to the post, then a sent About link,
+  // then the email line. That the API keeps each open under its path is LinkEndpointStatusTests' and
   // LinkHandlerTests'; this holds that every step sends the code and is answered.
   const code = `zz${Date.now().toString(36).slice(-4)}`;
   await answerBlog(page, []);
@@ -77,10 +77,16 @@ test('a tagged visit carries its code through the footers, and each page it land
   );
   await toPost.click();
   expect((await blogReport).status()).toBe(204);
-  // The local blog has no posts, so About is opened with the code the way the post's footer link carries it.
-  expect((await page.goto(`/about?r=${code}`))!.status()).toBe(200);
-  const back = page.locator('[data-next="about"]').getByRole('link', { name: 'Check my work' });
-  await expect(back).toHaveAttribute('href', `/?view=review&r=${code}`);
+  // A sent About link already in an inbox, /about?r=<code>, is a door: it answers 302 to the author page with the
+  // code kept, and the page it lands on reports the open once, under /about (ADR: Tagged links, the About link).
+  const door = await request.get(`/about?r=${code}`, { maxRedirects: 0 });
+  expect(door.status()).toBe(302);
+  expect(door.headers()['location']).toBe(`/?doc=author&r=${code}`);
+  const aboutReport = page.waitForResponse((response) =>
+    response.url().includes(`/api/links/open?r=${code}&path=/about`)
+  );
+  await page.goto(`/about?r=${code}`);
+  expect((await aboutReport).status()).toBe(204);
   expect((await request.get(`/api/go/email?r=${code}`, { maxRedirects: 0 })).status()).toBe(302);
 });
 // #endregion where-next

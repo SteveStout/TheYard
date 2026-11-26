@@ -53,7 +53,7 @@ public sealed class CampaignSendTests
             SiteLink = "https://theyard.stevenstout.biz/?r=abc123",
             GitHubLink = "https://theyard.stevenstout.biz/api/go/github?r=abc123",
             LinkedInLink = "https://theyard.stevenstout.biz/api/go/linkedin?r=abc123",
-            AboutLink = "https://theyard.stevenstout.biz/about?r=abc123",
+            AboutLink = "https://theyard.stevenstout.biz/?doc=author&r=abc123",
             CreatedAt = Eight.AddDays(-2),
         };
         edit?.Invoke(b);

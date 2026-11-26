@@ -149,7 +149,7 @@ public sealed partial class TrackATests
     private static string Contact(string company, string key, string first, string full, string email) => string.Join('\t',
         company, key, "Principal Engineer", $"https://jobs.lever.co/{key}/1", first, full, "VP of Engineering", $"https://{key}/team", email, email.Length == 0 ? "" : $"https://{key}/team",
         "abc123", "https://theyard.stevenstout.biz/resume?src=email&r=abc123", "https://theyard.stevenstout.biz/?r=abc123", "https://theyard.stevenstout.biz/api/go/github?r=abc123",
-        "https://theyard.stevenstout.biz/api/go/linkedin?r=abc123", "https://theyard.stevenstout.biz/about?r=abc123", "platform");
+        "https://theyard.stevenstout.biz/api/go/linkedin?r=abc123", "https://theyard.stevenstout.biz/?doc=author&r=abc123", "platform");
 
     private sealed class Fixed(DateTimeOffset now) : TimeProvider
     {
