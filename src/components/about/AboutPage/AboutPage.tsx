@@ -1,19 +1,23 @@
 /**
- * Does:      Draws About Steven as a page of its own at ?view=about (ADR: The sidebar, the addendum on About Steven as a
- *            page), in the recommendations page's column and in the order a hiring manager reads: the eyebrow; the hero
- *            from the author document, its buttons the gold Resume (PDF), Book 20 minutes and the document's LinkedIn
- *            and GitHub; the review route's three proof tiles, each door leaving for its case card; How I lead; the six
- *            voices and the link to all of them; the site's one close; Away from the keyboard, every block; the credit.
- *            Book 20 minutes opens the booking sheet beside the email app, as the recommendations page's does.
+ * Does:      Draws About Steven as a page of its own at ?view=about (ADR: The sidebar, the addendums on About Steven as a
+ *            page and on the person beside the work), in the order a hiring manager reads: the eyebrow; the hero from the
+ *            author document, its buttons the gold Resume (PDF), Book 20 minutes and the document's LinkedIn and GitHub;
+ *            the review route's three proof tiles, each door leaving for its case card; How I lead, three cards each with
+ *            a personal story beside it and the coaching card with the team drawing; the six voices and the link to all
+ *            of them; Away from the keyboard as even cards and the strip of the couple's photographs with its credit; the site's
+ *            one close, last. Book 20 minutes opens the booking sheet beside the email app, as the recommendations
+ *            page's does.
  * Does not:  Hold a word of its own beyond its eyebrow (the document, reviewVerdict.ts and the review parts do), read the
- *            API (useAuthorParts.ts and useReviewReadings.ts do), or draw the document's colleagues column or its own
- *            closing panel: a page has one ask, and the voices lead to all the recommendations.
+ *            API (useAuthorParts.ts and useReviewReadings.ts do), choose which story sits where (aboutWeave.ts does), or
+ *            draw the document's colleagues column or its own closing panel: a page has one ask, and the voices lead to
+ *            all the recommendations.
  * Used by:   App.tsx.
  */
 import { useState } from 'react';
 import { useAuthorParts } from '../../../hooks/useAuthorParts';
 import { useReviewReadings } from '../../../hooks/useReviewReadings';
 import { ABOUT_ADDRESS, ABOUT_EYEBROW, heroOf, titleOf } from '../../../lib/aboutPage';
+import { weave } from '../../../lib/aboutWeave';
 import {
   BOOK_ADDRESS,
   CLOSE,
@@ -23,6 +27,8 @@ import {
   VERDICT,
 } from '../../../lib/reviewVerdict';
 import { gateFacts } from '../../layout/StoreBar/gateFacts';
+import { AboutAway } from '../AboutAway';
+import { AboutLead } from '../AboutLead';
 import { BookSheet } from '../../review/BookSheet';
 import { ReviewClose } from '../../review/ReviewClose';
 import { PdfMark } from '../../shared/PdfMark';
@@ -53,7 +59,7 @@ export function AboutPage() {
   const book = () => setBooking(true);
   const ready = parts !== null && parts !== 'failed' ? parts : null;
   const hero = ready ? heroOf(ready.intro) : null;
-  const [lead, ...away] = ready?.panels ?? [];
+  const woven = ready ? weave(ready.panels, ready.credit) : null;
   const tiles = [...RECORD_TILES, testsTile(readings.summary, QUALITY)];
 
   // The booking sheet stands beside the page, as the review route's does, so the page holds no window's close.
@@ -144,19 +150,27 @@ export function AboutPage() {
                 ))}
               </ul>
             )}
-            {lead !== undefined && (
-              <section
-                className={`author-panel op-glass ${styles.lead}`}
-                data-mock="lead"
-                dangerouslySetInnerHTML={{ __html: lead }}
-              />
-            )}
+            {woven?.lead && <AboutLead lead={woven.lead} label={woven.away?.label ?? ''} />}
             {ready && (
               <ReviewVoices
                 recommendations={readings.recommendations}
                 onFollow={counted}
                 number={null}
                 action="about.recommendations"
+              />
+            )}
+            {woven?.away && <AboutAway away={woven.away} />}
+            {woven?.more.map((panel, index) => (
+              <section
+                key={index}
+                className="author-panel op-glass"
+                dangerouslySetInnerHTML={{ __html: panel }}
+              />
+            ))}
+            {woven?.credit && (
+              <footer
+                className="author-credit"
+                dangerouslySetInnerHTML={{ __html: woven.credit }}
               />
             )}
             {ready && (
@@ -166,20 +180,6 @@ export function AboutPage() {
                 onBook={book}
                 ask={{ question: CLOSE.question, line: CLOSE.line }}
                 action="about"
-              />
-            )}
-            {away.map((panel, index) => (
-              <section
-                key={index}
-                className={`author-panel op-glass ${styles.away}`}
-                data-mock={index === 0 ? 'away' : undefined}
-                dangerouslySetInnerHTML={{ __html: panel }}
-              />
-            ))}
-            {ready?.credit && (
-              <footer
-                className="author-credit"
-                dangerouslySetInnerHTML={{ __html: ready.credit }}
               />
             )}
           </div>

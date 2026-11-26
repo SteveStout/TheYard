@@ -1,8 +1,46 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openSection, openTheYard } from './app';
 
-/** The parts of the page in the order a hiring manager reads them (ADR: The sidebar, the addendum on About Steven as a page). */
-const ORDER = ['intro', 'proof', 'lead', 'voices', 'close', 'away'];
+/**
+ * The parts of the page in the order a hiring manager reads them, the one ask last (ADR: The sidebar, the addendums on
+ * About Steven as a page and on the person beside the work).
+ */
+const ORDER = ['intro', 'proof', 'lead', 'voices', 'away', 'close'];
+
+/**
+ * The woven page at any width: three stories each inside its own lead card, the team drawing inside the coaching card,
+ * seven away cards and then the strip as the away grid's only children, and all nineteen pictures.
+ */
+async function expectWoven(about: Page) {
+  const lead = about.locator('[data-mock="lead-grid"] > [data-mock="lead-card"]');
+  await expect(lead).toHaveCount(4);
+  await expect(about.locator('[data-mock="lead-grid"] > *')).toHaveCount(4);
+  for (const index of [0, 1, 2])
+    await expect(lead.nth(index).locator('[data-mock="aside"]')).toHaveCount(1);
+  await expect(about.locator('[data-mock="aside"]')).toHaveCount(3);
+  await expect(about.locator('[data-mock="aside-title"]')).toHaveText([
+    'The workshop',
+    'The doors',
+    'The lake, and no boat',
+  ]);
+  await expect(
+    lead.nth(3).locator('[data-mock="lead-picture"] img[src*="how-i-lead"]')
+  ).toHaveCount(1);
+  const away = about.locator('[data-mock="away-grid"] > *');
+  await expect(away).toHaveCount(8);
+  await expect(about.locator('[data-mock="away-grid"] > [data-mock="away-card"] h3')).toHaveText([
+    'History',
+    'St. Charles',
+    'Food',
+    'Games',
+    'Modding',
+    'Too many house plants',
+    'Freya and Vincent',
+  ]);
+  await expect(away.nth(7)).toHaveAttribute('data-mock', 'away-strip');
+  await expect(about.locator('[data-mock="author-page"] img')).toHaveCount(19);
+  await expect(about.locator('[data-mock="author-page"] figcaption')).toHaveCount(8);
+}
 
 /**
  * The Author section (ADR: The sidebar, the addendum on About Steven as a page): one link, About Steven, the last
@@ -75,7 +113,7 @@ test('About Steven opens from the sidebar and from the phone drawer, offers four
   ).toBeVisible();
   await expect(wide.locator('[data-mock="close"]')).toHaveCount(1);
   await expect(wide.locator('.author-side, .author-close')).toHaveCount(0);
-  await expect(wide.locator('[data-mock="away"] .author-block')).toHaveCount(10);
+  await expectWoven(wide);
   await wide.close();
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -84,8 +122,9 @@ test('About Steven opens from the sidebar and from the phone drawer, offers four
   const phone = await theAuthorPage(page, page.getByRole('dialog', { name: 'Menu' }));
   await phone.setViewportSize({ width: 390, height: 844 });
   await expect(phone.locator('dialog[open]')).toHaveCount(0);
-  // The same order on a phone: the tiles keep their place under the hero.
+  // The same order on a phone: the tiles keep their place under the hero, and the close is last.
   await expect.poll(() => partsInOrder(phone)).toEqual(ORDER);
+  await expectWoven(phone);
   // Every way to reach him is a finger-sized target.
   await expect(async () => {
     const heights = await phone
@@ -114,40 +153,50 @@ test('About Steven opens from the sidebar and from the phone drawer, offers four
   await expect(page.locator('dialog[open]')).toHaveCount(0);
 });
 
-test('the two half cards in each row end on one line, each photograph filling its card to the foot', async ({
+test('the three story cards end on one line with their pictures on its floor, and the away cards sit in even rows, photographs first', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await openTheYard(page, '/?view=about');
-  const away = page.locator('[data-mock="away"]');
-  await expect(away.locator('.author-block-half img').first()).toBeVisible();
-  // Every half card, with the row it sits in, how far its photograph's foot is from its padding, and how tall it is.
-  const cards = await away.locator('.author-block-half').evaluateAll((blocks) =>
-    blocks.map((block) => {
-      const box = block.getBoundingClientRect();
-      const photo = block.querySelector(':scope > .author-photo')?.getBoundingClientRect();
-      const padding = parseFloat(getComputedStyle(block).paddingBottom);
-      return {
-        top: Math.round(box.top),
-        height: box.height,
-        gap: photo ? box.bottom - padding - photo.bottom : null,
-        image: block.querySelector('img')?.getBoundingClientRect().height ?? 0,
-      };
-    })
+  await expect(page.locator('[data-mock="aside"] img').first()).toBeVisible();
+  // The three story cards: one height, and each picture's foot, its credit under it where it has one, on one line.
+  const stories = await page.locator('[data-mock="lead-card"]').evaluateAll((cards) =>
+    cards.slice(0, 3).map((card) => ({
+      top: card.getBoundingClientRect().top,
+      height: card.getBoundingClientRect().height,
+      foot: card.querySelector('[data-mock="aside"] figure')?.getBoundingClientRect().bottom ?? NaN,
+    }))
   );
-  const rows = new Map<number, typeof cards>();
-  for (const card of cards) rows.set(card.top, [...(rows.get(card.top) ?? []), card]);
-  const pairs = [...rows.values()].filter((row) => row.length === 2);
-  // The lake beside History; a block of two photographs takes one cell on this page, so Food sits beside Modding.
-  expect(pairs.length).toBeGreaterThanOrEqual(1);
-  for (const [left, right] of pairs) {
-    expect(Math.abs(left.height - right.height)).toBeLessThanOrEqual(1);
-    for (const card of [left, right]) {
-      expect(card.gap).not.toBeNull();
-      // The page caps every photograph so the section reads as a strip: a photograph fills its card to the
-      // foot up to that cap, and the words beside it decide the rest.
-      expect(card.gap!).toBeLessThanOrEqual(48);
-      expect(card.image).toBeLessThanOrEqual(240.5);
-    }
+  expect(stories).toHaveLength(3);
+  for (const card of stories) {
+    expect(Math.abs(card.top - stories[0].top)).toBeLessThanOrEqual(1);
+    expect(Math.abs(card.height - stories[0].height)).toBeLessThanOrEqual(2);
+    expect(Math.abs(card.foot - stories[0].foot)).toBeLessThanOrEqual(2);
   }
+  // The coaching card runs the full width under them, its drawing beside its words and never stretched.
+  const coach = page.locator('[data-mock="lead-card"]').nth(3);
+  const grid = await page.locator('[data-mock="lead-grid"]').boundingBox();
+  const wide = await coach.boundingBox();
+  expect(Math.abs(wide!.width - grid!.width)).toBeLessThanOrEqual(2);
+  await expect(coach.locator('[data-mock="lead-picture"] img')).toHaveCSS('object-fit', 'contain');
+  // Away: the first two rows of three are each one height, and every card's photograph sits above its title.
+  const cards = await page.locator('[data-mock="away-card"]').evaluateAll((all) =>
+    all.map((card) => ({
+      top: Math.round(card.getBoundingClientRect().top),
+      height: card.getBoundingClientRect().height,
+      photoFirst:
+        (card.querySelector('img')?.getBoundingClientRect().top ?? Infinity) <
+        (card.querySelector('h3')?.getBoundingClientRect().top ?? -Infinity),
+    }))
+  );
+  expect(cards).toHaveLength(7);
+  for (const row of [cards.slice(0, 3), cards.slice(3, 6)])
+    for (const card of row) {
+      expect(card.top).toBe(row[0].top);
+      expect(Math.abs(card.height - row[0].height)).toBeLessThanOrEqual(2);
+    }
+  expect(cards.every((card) => card.photoFirst)).toBe(true);
+  // No photograph is drawn past what its file fills at 2x: the Pantheon stops at 316 px.
+  const pantheon = await page.locator('img[src*="pantheon"]').boundingBox();
+  expect(pantheon!.width).toBeLessThanOrEqual(316.5);
 });

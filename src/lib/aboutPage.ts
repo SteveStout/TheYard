@@ -1,7 +1,8 @@
 /**
  * Does:      Holds the About page's address, its eyebrow and the label its opens are reported under, and cuts the author
  *            document's first panel into what the page's hero draws: the words, the document's own profile links, and
- *            the photograph (ADR: The sidebar, the addendum on About Steven as a page).
+ *            the photograph, its last paragraph hooked as the person beside the work (ADR: The sidebar, the addendum
+ *            on About Steven as a page).
  * Does not:  Read or render the document (useAuthorParts.ts and author.ts do) or draw anything; no React in here.
  * Used by:   AboutPage.tsx, App.tsx, aboutPage.test.ts.
  */
@@ -18,11 +19,22 @@ export const ABOUT_EYEBROW = 'Who and why · About Steven';
 /** One of the document's own links under the hero's words. */
 export type HeroLink = { href: string; label: string };
 
-/** The hero's three parts. */
+/** The hero's three parts: its words carry the person beside the work as their last paragraph's hook. */
 export type Hero = { words: string; links: HeroLink[]; photo: string | null };
 
 const FIGURE = /<figure class="author-photo"[\s\S]*?<\/figure>/;
 const BUTTONS = /<p class="author-buttons">([\s\S]*?)<\/p>/;
+const PARAGRAPH = /<p>(?![\s\S]*<p>)/;
+
+/**
+ * The words with their last plain paragraph hooked as the person beside the work, when there are three: the bold line,
+ * the work, then the life outside it (the data-mock name the About picture's check reads).
+ */
+function personal(words: string): string {
+  return (words.match(/<p>/g) ?? []).length < 3
+    ? words
+    : words.replace(PARAGRAPH, '<p data-mock="intro-personal">');
+}
 
 /**
  * The first panel cut into the hero's parts: its words without the row of buttons, the row's links but the resume
@@ -36,7 +48,7 @@ export function heroOf(intro: string): Hero {
     label: link[2],
   })).filter((link) => !/resume/i.test(link.label));
   return {
-    words: intro.replace(FIGURE, '').replace(BUTTONS, ''),
+    words: personal(intro.replace(FIGURE, '').replace(BUTTONS, '')),
     links,
     photo: FIGURE.exec(intro)?.[0] ?? null,
   };

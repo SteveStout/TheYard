@@ -73,7 +73,7 @@ async function drawAbout(search: string) {
   return { response, html: await response.text(), asked };
 }
 
-describe('About Steven, drawn whole by the rendering service (ADR: The sidebar, the addendum on About Steven as a page)', () => {
+describe('About Steven, drawn whole by the rendering service (ADR: The sidebar, the addendums on About Steven as a page and on the person beside the work)', () => {
   it('draws the page from its three reads, with no window anywhere', async () => {
     const { response, html, asked } = await drawAbout('?view=about');
     expect(response.headers.get(RENDERED_HEADER)).toBe('drawn');
@@ -96,16 +96,19 @@ describe('About Steven, drawn whole by the rendering service (ADR: The sidebar, 
     const words = wordsOf(html);
     for (const heading of ["Hi, I'm Steve.", 'How I lead', 'Away from the keyboard'])
       for (const line of linesUnder(heading)) expect(words).toContain(line);
-    expect(html.match(/class="author-block[ "]/g)).toHaveLength(14);
+    // Four lead cards, seven away cards and the strip: three stories sit inside their lead cards (aboutWeave.ts).
+    expect(html.match(/class="author-block[ "]/g)).toHaveLength(12);
+    expect(html.match(/data-mock="aside"/g)).toHaveLength(3);
+    expect(html).toContain('data-mock="intro-personal"');
     expect(html).not.toContain('author-side');
     expect(html).not.toContain('author-close');
     expect(html).not.toContain('Read my resume');
   });
 
-  it('places the parts in the order a hiring manager reads them', async () => {
+  it('places the parts in the order a hiring manager reads them, the one ask last', async () => {
     const { html } = await drawAbout('?view=about');
     const at = (hook: string) => html.indexOf(`data-mock="${hook}"`);
-    const order = ['eyebrow', 'intro', 'proof', 'lead', 'voices', 'close', 'away'].map(at);
+    const order = ['eyebrow', 'intro', 'proof', 'lead', 'voices', 'away', 'close'].map(at);
     expect(order.every((place) => place > -1)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });

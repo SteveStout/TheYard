@@ -1,10 +1,10 @@
 /**
  * Does:      Lays out the About page as the about1125 picture draws it: the recommendations page's column, the eyebrow over
  *            one flow of parts that share the column's two edges with one gap between them, the hero's buttons, the
- *            three proof tiles across (one under the other on a phone), How I lead's drawing and the Away photographs
- *            capped so each reads as a strip.
+ *            three proof tiles across (one under the other on a phone), the hero photo the card's width on a phone.
  * Does not:  Draw a panel's glass or frost (panels.css and DocPanels.module.css do), the document's own blocks and
- *            frames (AuthorPage.module.css does) or a tile, voice or close (their own sheets do).
+ *            frames (AuthorPage.module.css does), How I lead or Away from the keyboard (AboutLead.module.css and
+ *            AboutAway.module.css do) or a tile, voice or close (their own sheets do).
  * Used by:   AboutPage.tsx.
  */
 .page {
@@ -97,23 +97,6 @@
   margin: 0;
 }
 
-/* How I lead: the drawing is a picture, not a page; capped so the four rules arrive on the first scroll. */
-.page .lead img,
-.page .lead svg {
-  max-height: 300px;
-}
-
-/* Away from the keyboard: every block kept, pictures capped so the section reads as a strip, not a scroll. */
-.page .away img {
-  max-height: 240px;
-  width: 100%;
-  object-fit: cover;
-}
-
-.page .away :global(.author-block-wide) {
-  grid-column: auto;
-}
-
 @media (max-width: 1023.98px) {
   .page .moves > :global(.author-button) {
     flex: 1 1 auto;
@@ -132,7 +115,10 @@
     grid-template-columns: 1fr;
   }
 
-  .page .away img {
-    max-height: 200px;
+  /* The hero photo takes the card's width on a phone. */
+  .page .photo,
+  .page .photo img {
+    width: 100%;
+    max-width: 100%;
   }
 }
