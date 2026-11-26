@@ -144,18 +144,57 @@ public static partial class HealLadder
     /// <param name="local">The Central time now.</param>
     public static int Ticks(string log, WatchResult r, DateTime local) => (int)((local - Since(log, r, local)).TotalMinutes / 15) + 1;
 
-    private static DateTime Since(string log, WatchResult r, DateTime local)
+    /// <summary>
+    /// The NOT-WORKING.md lines a tick clears (the plan's 7c, a line leaves when its test passes twice): a watch line
+    /// whose test passes this tick and has read pass since a tick before this one.
+    /// </summary>
+    /// <param name="notWorking">NOT-WORKING.md.</param>
+    /// <param name="results">The tick's readings.</param>
+    /// <param name="changeLog">The day's change log with this tick's lines.</param>
+    /// <param name="local">The Central time now.</param>
+    public static IReadOnlyList<string> Cleared(string notWorking, IReadOnlyList<WatchResult> results, string changeLog, DateTime local)
     {
-        string? at = null;
+        var cleared = new List<string>();
+        foreach (string line in (notWorking ?? string.Empty).Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.StartsWith("NOT WORKING: W", StringComparison.Ordinal)))
+        {
+            int since = line.IndexOf(" since ", StringComparison.Ordinal);
+            string task = since > 0 ? line["NOT WORKING: ".Length..since] : string.Empty;
+            if (results.FirstOrDefault(r => $"{r.Test} {r.Name}" == task) is { Pass: true } passing
+                && Last(changeLog, passing, local) is ("pass", { } at) && local - at >= TimeSpan.FromMinutes(15))
+            {
+                cleared.Add(line);
+            }
+        }
+        return cleared;
+    }
+
+    /// <summary>TODAY.md with NOT WORKING lines it does not hold yet put under its title, the first lines he reads.</summary>
+    /// <param name="today">TODAY.md.</param>
+    /// <param name="lines">The new NOT WORKING lines.</param>
+    public static string OnTheCard(string today, IReadOnlyList<string> lines)
+    {
+        var fresh = lines.Where(l => !(today ?? string.Empty).Contains(l, StringComparison.Ordinal)).ToList();
+        int title = (today ?? string.Empty).IndexOf("\n# ", StringComparison.Ordinal);
+        int end = title < 0 ? -1 : today!.IndexOf('\n', title + 1);
+        return fresh.Count == 0 || end < 0 ? today ?? string.Empty : today![..end] + "\n\n" + string.Join("\n", fresh) + today[end..];
+    }
+
+    private static DateTime Since(string log, WatchResult r, DateTime local) => Last(log, r, local) is ("FAIL", { } at) ? at : local;
+
+    /// <summary>The change log's newest word for a test and the time it was written today, or (null, null).</summary>
+    private static (string? Word, DateTime? At) Last(string log, WatchResult r, DateTime local)
+    {
+        (string? Word, DateTime? At) last = (null, null);
         foreach (string line in (log ?? string.Empty).Split('\n'))
         {
             string[] cells = line.TrimEnd('\r').Split('\t');
             if (cells.Length >= 4 && cells[1] == r.Test && cells[2] == r.Name.Replace('\t', ' ').Replace('\n', ' '))
             {
-                at = cells[3] == "FAIL" ? cells[0] : null;
+                last = TimeOnly.TryParseExact(cells[0], "HH:mm", Inv, DateTimeStyles.None, out var t) && local.Date.Add(t.ToTimeSpan()) <= local
+                    ? (cells[3], local.Date.Add(t.ToTimeSpan())) : (cells[3], null);
             }
         }
-        return at is not null && TimeOnly.TryParseExact(at, "HH:mm", Inv, DateTimeStyles.None, out var t) && local.Date.Add(t.ToTimeSpan()) <= local ? local.Date.Add(t.ToTimeSpan()) : local;
+        return last;
     }
 
     private static string? Playbook(string playbook, WatchResult r)
