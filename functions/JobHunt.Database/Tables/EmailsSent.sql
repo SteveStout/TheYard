@@ -33,7 +33,10 @@ CREATE INDEX [IX_EmailsSent_CentralDay] ON [campaign].[EmailsSent] ([CentralDay]
 GO
 CREATE INDEX [IX_EmailsSent_Key] ON [campaign].[EmailsSent] ([Key], [SentAt]);
 GO
-CREATE UNIQUE INDEX [IX_EmailsSent_Lead_Touch_Sent] ON [campaign].[EmailsSent] ([LeadId], [Touch]) WHERE [Shadow] = 0;
+-- A touch is a send the person could read (ADR-118, the addendum of 1.0.5.105), so the key is the address too: a lead
+-- whose first email went to a shared box takes its first email at the person's own address beside it, and no address
+-- is ever sent the same touch twice.
+CREATE UNIQUE INDEX [IX_EmailsSent_Lead_Touch_Sent] ON [campaign].[EmailsSent] ([LeadId], [Touch], [To]) WHERE [Shadow] = 0;
 GO
 CREATE INDEX [IX_EmailsSent_GmailThreadId] ON [campaign].[EmailsSent] ([GmailThreadId]) WHERE [GmailThreadId] IS NOT NULL;
 GO

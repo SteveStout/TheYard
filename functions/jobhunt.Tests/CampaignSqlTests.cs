@@ -13,7 +13,7 @@ namespace JobHunt.Functions.Tests;
 /// </summary>
 public sealed partial class CampaignSqlTests
 {
-    private static string Root()
+    internal static string Root()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {
