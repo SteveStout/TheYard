@@ -7,11 +7,18 @@ namespace JobHunt.Domain.Features.Ats;
 /// The records run's ATS rules as code (BOOKKEEPING-LANE.md step 3): what a known sender's message is,
 /// which company it is about, and what the sweep does with it. A receipt or a generic rejection gets a
 /// tracker row unless one it can rest on exists, and is archived; a rejection that gives a reason gets
-/// its row and stays for Steve; mail from before this search is archived with no row; anything the
+/// its row and stays for Steve; mail from before this search is marked archive-only with no row, which the sweep leaves in
+/// the inbox (log first, no row, no archive); anything the
 /// rules cannot read for certain stays in the inbox and is listed, never guessed.
 /// </summary>
 public static partial class AtsRules
 {
+    /// <summary>
+    /// The rules' version, written beside each message the sweep leaves. Raised whenever Decide reads mail differently, so
+    /// every message left under the old rules is read again once (the first such pass is dry) rather than skipped for good.
+    /// </summary>
+    public const int Version = 2;
+
     /// <summary>The day this search began: mail before it belongs to an earlier search.</summary>
     public static readonly DateOnly SearchBegan = new(2026, 1, 1);
 
