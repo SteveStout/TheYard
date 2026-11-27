@@ -1,6 +1,7 @@
 /**
  * Does:      Holds the shared parts of the three sales pages (ADR: The sales pages set the site's look), one region per
- *            part, ported rule by rule from the sales1120 picture's SALES_CSS: the number badge before a section's
+ *            part, ported rule by rule from the sales1120 picture's SALES_CSS: a landing view's eyebrow and title (the
+ *            review route's own), the number badge before a section's
  *            heading, the dark live panel with its rows, its two-by-two facts and its band form, the case card, a door,
  *            a tile's door, the roles row, the closing question beside its moves, and the motions (the arrow's dip
  *            on the review route and its nudge on the home page). Every colour, size and radius is
@@ -9,6 +10,41 @@
  *            glass (panels.css does), or lay out a page (each page's own sheet does).
  * Used by:   globalStyles.ts.
  */
+
+/* #region op-page-head */
+/* A landing view's eyebrow and title, the review route's own (ADR-142, the addendum on the landing views): the line in
+   small capitals with gold slashes, then the one h1 at 40 px (30 on a phone) over the 3 px gold rule. */
+.op-eyebrow {
+  margin: 0;
+  color: var(--color-teal-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+}
+
+.op-eyebrow-slash {
+  padding: 0 var(--space-2);
+  color: var(--color-gold-bar-dark);
+}
+
+.op-title {
+  margin: var(--space-3) 0 0;
+  padding-bottom: var(--space-3);
+  border-bottom: var(--rule-gold);
+  border-image: var(--gradient-gold) 1;
+  color: var(--color-heading);
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-bold);
+  line-height: 1.12;
+  letter-spacing: var(--title-tracking);
+}
+
+@media (max-width: 639.98px) {
+  .op-title {
+    font-size: var(--text-3xl);
+  }
+}
+/* #endregion op-page-head */
 
 /* #region op-num */
 /* The number badge before a section heading: the gold bar's pale end, its gold edge and dark gold ink. */

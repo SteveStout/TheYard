@@ -13,6 +13,9 @@ import { openTheYard } from './app';
 
 /** The reads every view makes on its first load. */
 const EVERY_VIEW = ['/api/stores', '/api/auth/me', '/api/bids', '/api/version'];
+
+/** The store list is read only where the toggle is drawn, never on a landing view (ADR-142). */
+const LANDING_VIEW = EVERY_VIEW.filter((read) => read !== '/api/stores');
 /** The two only the landing page makes, hinted only when the address carries no query. */
 const LANDING_ONLY = ['/api/health', '/api/tests/summary', '/api/recommendations'];
 
@@ -71,7 +74,9 @@ test('the landing page hints its reads in the head, and asks for each one once',
   await expect(page.getByTestId('landing-proof-tests')).toContainText(/\d[\d,]* *tests/);
 
   const hints = await hintsInTheHead(page);
-  expect(hints.map((hint) => hint.address).sort()).toEqual([...EVERY_VIEW, ...LANDING_ONLY].sort());
+  expect(hints.map((hint) => hint.address).sort()).toEqual(
+    [...LANDING_VIEW, ...LANDING_ONLY].sort()
+  );
   for (const hint of hints) expect(hint.crossOrigin, hint.address).toBe('anonymous');
   await expect
     .poll(() => hints.every((hint) => asked.includes(hint.address)), { timeout: 15_000 })

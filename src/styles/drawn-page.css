@@ -21,6 +21,11 @@
     align-items: start;
   }
 
+  /* A landing view starts with the rail closed (ADR-142), so its drawn frame keeps the closed rail's column. */
+  div[data-rail='auto'][data-rail-start='collapsed'] {
+    grid-template-columns: var(--rail-width-collapsed) minmax(0, 1fr);
+  }
+
   [data-rail='auto'] [data-frame='header'] {
     display: none;
   }
@@ -30,6 +35,11 @@
   [data-rail='auto'] [data-testid='ribbons'] > svg {
     left: var(--rail-width);
     width: calc(100% - var(--rail-width));
+  }
+
+  [data-rail='auto'][data-rail-start='collapsed'] [data-testid='ribbons'] > svg {
+    left: var(--rail-width-collapsed);
+    width: calc(100% - var(--rail-width-collapsed));
   }
 }
 

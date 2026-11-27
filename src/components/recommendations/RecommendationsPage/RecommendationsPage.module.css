@@ -1,6 +1,7 @@
 /**
- * Does:      Lays out the recommendations page: its title on the gold bar, the three tiles on the shared glass, the groups
- *            beside an index from a desk's width and above it under that, each card's name, words and two pills.
+ * Does:      Lays out the recommendations page in the landing views' one box: its title on the gold bar, the three tiles
+ *            on the shared glass, the groups beside an index from a desk's width and above it under that, each card's
+ *            name, words and two pills, and the one close the page's full width at its end.
  * Does not:  Draw a panel's glass, rule or brackets (panels.css does) or decide what a card says (the API does).
  * Used by:   RecommendationsPage.tsx.
  */
@@ -9,7 +10,7 @@
   flex-direction: column;
   gap: var(--space-4);
   width: 100%;
-  max-width: 1120px;
+  max-width: var(--landing-width);
   margin: 0 auto;
 }
 
@@ -20,24 +21,9 @@
   max-width: 720px;
 }
 
-.eyebrow {
-  margin: 0;
-  color: var(--color-text);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--title-tracking);
-  text-transform: uppercase;
-}
-
+/* The review route's title (sales.css, op-title), its gold rule under its own words. */
 .title {
   align-self: flex-start;
-  margin: 0;
-  padding-bottom: var(--space-1);
-  border-bottom: var(--rule-gold);
-  border-image: var(--gradient-gold) 1;
-  color: var(--color-heading);
-  font-size: var(--text-2xl);
-  font-weight: var(--title-weight);
 }
 
 .lede,

@@ -4,8 +4,8 @@
  *            date line, where readers came from as shares, the most read, and the reports a page sends.
  * Does not:  Draw anything (components/blog does), read the text's marks (blogBody.ts does) or decide where a read
  *            came from (the API does, from what is sent).
- * Used by:   BlogPage, BlogPostCard, BlogMini, BlogFilters, SlideViewer, BlogCard, useBlogPosts, useBlogList, useBlogPost,
- *            useBlogReport, blogReads.ts.
+ * Used by:   BlogPostCard, BlogMini, BlogFilters, SlideViewer, BlogCard, useBlogPosts, useBlogList, useBlogPost,
+ *            useBlogReport, blogReads.ts, blogFilter.ts, blogHead.ts, AboutWrite.
  */
 import { linkCode } from './links';
 import { request } from './request';

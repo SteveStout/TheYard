@@ -90,6 +90,8 @@ test('the Blog row sits third, under Home and the review route, and says NEW POS
   await answerPosts(page);
   await openTheYard(page, '/');
   const rail = page.getByTestId('side-rail');
+  // Home is a landing view, so the rail opens closed (ADR-142); the rows and their words are the open rail's.
+  await rail.getByRole('button', { name: 'Expand the sidebar' }).click();
   const rows = await rail.locator('button, a').allInnerTexts();
   const home = rows.findIndex((text) => text.trim() === 'Home');
   // Third since the review route took the row under Home (ADR: Ten minutes, seven stops).
@@ -105,6 +107,8 @@ test('no NEW POST when the newest post is over a week old', async ({ page }) => 
   await answerPosts(page, [made('an-older-post', 'An older post', 8)]);
   await openTheYard(page, '/');
   await expect(page.getByTestId('landing-latest')).toBeVisible();
+  await page.getByTestId('side-rail').getByRole('button', { name: 'Expand the sidebar' }).click();
+  await expect(page.getByTestId('side-rail')).toHaveAttribute('data-collapsed', 'false');
   await expect(page.getByTestId('rail-new-post')).toHaveCount(0);
 });
 

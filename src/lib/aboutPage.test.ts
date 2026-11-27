@@ -11,8 +11,10 @@ const intro =
 describe("the About page's hero, cut from the author document", () => {
   const hero = heroOf(intro);
 
-  it('keeps the words without the row of buttons or the photograph', () => {
-    expect(hero.words).toBe('<h2 id="hi">Hi</h2><p>Who he is.</p>');
+  it('keeps the words without the heading, the row of buttons or the photograph, and the heading as the title', () => {
+    expect(hero.words).toBe('<p>Who he is.</p>');
+    expect(hero.title).toBe('Hi');
+    expect(heroOf('<h2>Hi, I&#39;m Steve.</h2><p>x</p>').title).toBe("Hi, I'm Steve.");
   });
 
   it("keeps the document's profile links in order and drops its resume link, which the gold button carries", () => {
@@ -29,7 +31,7 @@ describe("the About page's hero, cut from the author document", () => {
     expect(heroOf('<h2>Hi</h2>').photo).toBeNull();
   });
 
-  it('hooks the last of three paragraphs as the person beside the work, word for word, and no paragraph of fewer', () => {
+  it('hooks the first of three paragraphs as the role line and the last as the person beside the work, word for word, and no paragraph of fewer', () => {
     const personal =
       'Outside work, I build in my garage woodshop and read a lot of Roman history. Katie and I have two rabbits and too many house plants.';
     const words = heroOf(
@@ -37,9 +39,10 @@ describe("the About page's hero, cut from the author document", () => {
         '<p class="author-buttons"><a class="author-button" href="/x">LinkedIn</a></p>'
     ).words;
     expect(words).toBe(
-      `<h2>Hi</h2><p><strong>Lead.</strong></p><p>The work.</p><p data-mock="intro-personal">${personal}</p>`
+      `<p data-mock="role-line"><strong>Lead.</strong></p><p>The work.</p><p data-mock="intro-personal">${personal}</p>`
     );
     expect(hero.words).not.toContain('intro-personal');
+    expect(hero.words).not.toContain('role-line');
   });
 
   it("names the page by the document's own title", () => {

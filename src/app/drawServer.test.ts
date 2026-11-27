@@ -138,7 +138,7 @@ describe('the views the rendering service draws, with no browser', () => {
     for (const search of ['view=about', 'doc=author']) {
       const html = await draw(load(search, { author }));
       expect(html).toContain('data-mock="about-page"');
-      expect(html).toContain('<p>Boring delivery.</p>');
+      expect(html).toContain('Boring delivery.');
       expect(html).not.toMatch(/<dialog[^>]* open=""/);
     }
   });

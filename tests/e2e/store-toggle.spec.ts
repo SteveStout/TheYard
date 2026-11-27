@@ -23,6 +23,8 @@ async function stores(request: import('@playwright/test').APIRequestContext): Pr
   return (await response.json()) as Stores;
 }
 
+// The six landing views draw the review route's live sentence in the bar's place (ADR-142, the addendum on the landing
+// views), so these open the inventory, a view that keeps the toggle.
 test('the bar sits at the top of every view, marks this site and names the store serving it', async ({
   page,
   request,
@@ -31,7 +33,7 @@ test('the bar sits at the top of every view, marks this site and names the store
   const site = answer.stores.find((store) => store.default)!;
   const serving = answer.stores.find((store) => store.key === answer.current)!;
 
-  await openTheYard(page, '/');
+  await openTheYard(page, '/?view=inventory');
   const bar = page.getByTestId('store-bar');
   await expect(bar).toBeVisible();
   const nav = bar.getByRole('navigation', { name: 'Store' });
@@ -128,7 +130,7 @@ test('the bar is as tall before the stores answer as after, at a desk, whatever 
       await route.fulfill({ response, json: body });
     });
     await page.setViewportSize({ width, height: 900 });
-    await openTheYard(page, '/');
+    await openTheYard(page, '/?view=inventory');
     const bar = page.getByTestId('store-bar');
     await expect(bar).toHaveAttribute('data-state', 'loading');
     const before = await bar.boundingBox();
@@ -152,7 +154,7 @@ test('the store bar ends no word in an ellipsis at 768, 1024, 1280 or 1440, and 
 }) => {
   for (const width of [768, 1024, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await openTheYard(page, '/');
+    await openTheYard(page, '/?view=inventory');
     const bar = page.getByTestId('store-bar');
     await expect(bar).toHaveAttribute('data-state', 'ready');
     const read = await bar.getByTestId('store-bar-note').evaluate((note) => {

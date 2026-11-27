@@ -1,15 +1,16 @@
 /**
- * Does:      Sets How I lead and Away from the keyboard out as the About page draws them (ADR: The sidebar, the addendum on
- *            the person beside the work): three of the document's own stories inside the lead cards they sit with, under
- *            the away panel's own heading as their label; the team drawing in the coaching card; every other away block
- *            an even card in the page's order with its photographs first; the couple's photographs in one strip
- *            with their credit. Plain string work over the panels author.ts returns, keyed by the document's own
- *            third-level headings, and nothing is ever dropped: a key that matches nothing leaves its block where it was.
+ * Does:      Sets How I lead, Away from the keyboard and Why I write out as the About page draws them (ADR: The sidebar,
+ *            the addendum on the person beside the work; ADR-142, the addendum on the landing views): three of the
+ *            document's own stories inside the lead cards they sit with, under the away panel's own heading as their
+ *            label; the team drawing in the coaching card; every other away block a personal row in the page's order
+ *            with its photographs; the couple's photographs in one strip with their credit; the Why I write panel's
+ *            heading and words. Plain string work over the panels author.ts returns, keyed by the document's own
+ *            headings, and nothing is ever dropped: a key that matches nothing leaves its block where it was.
  * Does not:  Change the document or its order (/about and every other reader keep it), read it (useAuthorParts.ts does),
- *            or size a picture (AboutPage.module.css does); no React in here.
- * Used by:   AboutPage.tsx, aboutWeave.test.ts.
+ *            hold the page's order (aboutOrder.ts does) or size a picture (AboutRow.module.css does); no React in here.
+ * Used by:   AboutPage.tsx, AboutLead.tsx, AboutRow.tsx, AboutWrite.tsx, aboutPage.ts, aboutWeave.test.ts.
  */
-import { AUTHOR_PHOTOS } from './authorPhotos';
+import { ROW_ORDER } from './aboutOrder';
 
 // #region keys
 /** Each lead card, by its title, with the away story that sits inside it, by its title. */
@@ -22,23 +23,18 @@ export const PAIRS: readonly (readonly [card: string, story: string])[] = [
 /** The lead card that takes the team drawing, the picture between How I lead's heading and its lede. */
 export const COACH = 'Coaching inside the system';
 
-/** The away cards in the page's order; a block this does not name is drawn after the named ones. */
-export const AWAY_ORDER: readonly string[] = [
-  'History',
-  'St. Charles',
-  'Food',
-  'Games',
-  'Modding',
-  'Too many house plants',
-  'Freya and Vincent',
-];
+/** The away cards in the page's order (aboutOrder.ts); a block it does not name is drawn after the named ones. */
+export const AWAY_ORDER: readonly string[] = ROW_ORDER;
+
+/** The panel that says why he writes, by its heading. */
+export const WRITE = 'Why I write';
 
 /** The photograph standing between blocks that joins the rabbits' card as its last photo. */
 export const RABBITS = { card: 'Freya and Vincent', photo: 'rabbits-under-hay-rack' } as const;
 // #endregion keys
 
-/** One photograph or drawing as the document's figure, and the widest box its largest file fills at 2x, when that binds. */
-export type Photo = { figure: string; cap: number | null };
+/** One photograph or drawing as the document's figure. */
+export type Photo = string;
 
 /** A personal story inside a lead card: its title as words, its words, its pictures. */
 export type Aside = { title: string; body: string; figures: string[] };
@@ -55,7 +51,7 @@ export type LeadCard = {
 /** How I lead: its heading, its lede, the four cards, and the team drawing when no card took it. */
 export type Lead = { heading: string; lede: string; cards: LeadCard[]; picture: string | null };
 
-/** An away card: its heading and words, its photographs first, and whether it runs the full width. */
+/** An away card: its heading and words, its photographs, and whether they run three across the whole row. */
 export type AwayCard = {
   title: string;
   heading: string;
@@ -72,8 +68,17 @@ export type Away = {
   strip: { photos: Photo[]; credit: string | null } | null;
 };
 
-/** The page's two woven panels, the panels after them as the document has them, and the credit when no strip holds it. */
-export type Woven = { lead: Lead | null; away: Away | null; more: string[]; credit: string | null };
+/** Why I write: its heading as words and its words, the document's own. */
+export type Write = { title: string; body: string };
+
+/** The page's woven panels, the panels after them as the document has them, and the credit when no strip holds it. */
+export type Woven = {
+  lead: Lead | null;
+  away: Away | null;
+  write: Write | null;
+  more: string[];
+  credit: string | null;
+};
 
 // #region reading
 const FIGURE = /<figure class="author-(?:photo|drawing)"[\s\S]*?<\/figure>/g;
@@ -132,22 +137,6 @@ function panelOf(html: string): { head: Block; blocks: Block[]; between: string[
 }
 // #endregion reading
 
-/**
- * The widest box, in CSS pixels, a photograph's largest file fills at 2x in a 4:3 cut, with the image gate's 5 per cent
- * allowance; null when it is 420 or more, which no card on the page reaches. The Pantheon's 678 x 452 gives 316.
- */
-export function capOf(name: string): number | null {
-  const photo = AUTHOR_PHOTOS.find((one) => one.name === name);
-  if (photo === undefined) return null;
-  const width = photo.widths[photo.widths.length - 1];
-  const height = width * photo.ratio;
-  const cap = Math.floor(Math.min(width / 2, ((height / 2) * 4) / 3) * 1.05);
-  return cap < 420 ? cap : null;
-}
-
-const photosOf = (figures: string[]): Photo[] =>
-  figures.map((figure) => ({ figure, cap: capOf(nameOf(figure)) }));
-
 /** The lead panel's cards, each with the story the pairs give it, taken out of the away blocks it came from. */
 function leadOf(html: string, stories: Block[]): Lead {
   const { head, blocks } = panelOf(html);
@@ -203,7 +192,7 @@ function awayOf(head: Block, blocks: Block[], between: string[], credit: string 
       title: block.title,
       heading: block.heading,
       body: block.body,
-      photos: photosOf(figures),
+      photos: figures,
       wide: figures.length >= 3,
     };
   });
@@ -211,21 +200,21 @@ function awayOf(head: Block, blocks: Block[], between: string[], credit: string 
     heading: head.heading,
     label: head.title,
     cards,
-    strip:
-      strip.length === 0
-        ? null
-        : { photos: strip.map((figure) => ({ figure, cap: null })), credit },
+    strip: strip.length === 0 ? null : { photos: strip, credit },
   };
 }
 
 /**
- * The About page's How I lead and Away from the keyboard, woven from the document's panels: the first is How I lead,
- * the second Away from the keyboard, any later one is drawn as the document has it.
+ * The About page's How I lead, Away from the keyboard and Why I write, woven from the document's panels: the one headed
+ * Why I write wherever it stands, then of the rest the first is How I lead, the second Away from the keyboard, and any
+ * later one is drawn as the document has it.
  * @param panels the later panels as authorParts gives them
  * @param credit the document's small print, drawn in the strip when there is one
  */
 export function weave(panels: readonly string[], credit: string | null): Woven {
-  const [leadHtml, awayHtml, ...more] = panels;
+  const at = panels.findIndex((panel) => panelOf(panel).head.title === WRITE);
+  const write = at < 0 ? null : { title: WRITE, body: panelOf(panels[at]).head.body };
+  const [leadHtml, awayHtml, ...more] = panels.filter((_, index) => index !== at);
   const away = awayHtml === undefined ? null : panelOf(awayHtml);
   const stories = away === null ? [] : [...away.blocks];
   const lead = leadHtml === undefined ? null : leadOf(leadHtml, stories);
@@ -233,6 +222,7 @@ export function weave(panels: readonly string[], credit: string | null): Woven {
   return {
     lead,
     away: woven,
+    write,
     more,
     credit: woven?.strip ? null : credit,
   };

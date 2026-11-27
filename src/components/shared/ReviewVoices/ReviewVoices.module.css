@@ -17,6 +17,11 @@
   height: 100%;
 }
 
+/* A later run stands under the run before it, so it carries no step of its own above its cards. */
+.bare .grid {
+  margin-top: 0;
+}
+
 .all {
   color: var(--color-accent);
   font-weight: var(--weight-semibold);

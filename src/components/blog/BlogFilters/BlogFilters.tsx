@@ -1,7 +1,8 @@
 /**
  * Does:      Draws the blog's filter bar (ADR: Every LinkedIn post is also a blog post, the addendum on the read model):
  *            the search box, the month and the order, Clear, the topic chips and the keyword chips each with the count
- *            the list answered, and the line that says how many posts show. Every control says what it changes; a chip
+ *            the list answered, the keywords folded behind one "More keywords (n)" pill (ADR-142, the addendum on the
+ *            landing views), and the line that says how many posts show. Every control says what it changes; a chip
  *            that would leave no post is disabled unless it is the one pressed.
  * Does not:  Keep the filter (the address does), read the list (useBlogList.ts does) or wait on the keys (the reader does).
  * Used by:   BlogPage.tsx.
@@ -76,6 +77,8 @@ export function BlogFilters({
     setShownQ(filter.q);
     if (filter.q !== text) setText(filter.q);
   }
+  // The keywords stand open from the first draw when the address already presses one of them.
+  const [keywordsOpen, setKeywordsOpen] = useState(filter.keyword !== null);
   return (
     <section
       className={`${styles.bar} op-glass`}
@@ -151,13 +154,30 @@ export function BlogFilters({
         pressed={filter.topic}
         onPress={(topic) => onChange({ ...filter, topic }, 'choose')}
       />
-      <Chips
-        label="Keywords"
-        facets={keywords}
-        pressed={filter.keyword}
-        dashed
-        onPress={(keyword) => onChange({ ...filter, keyword }, 'choose')}
-      />
+      {/* The keywords fold behind one pill so the first post is on the first screen; the row stays in the page,
+          hidden, so a crawler still reads every link, and it stands open while one of its chips is pressed. */}
+      <div className={styles.fold}>
+        <button
+          type="button"
+          className={`op-pill-secondary ${styles.foldPill}`}
+          aria-expanded={keywordsOpen}
+          aria-controls="blog-keywords"
+          onClick={() => setKeywordsOpen((open) => !open)}
+          data-mock="keywords-toggle"
+          data-testid="blog-keywords-toggle"
+        >
+          More keywords ({keywords.length})
+        </button>
+      </div>
+      <div id="blog-keywords" hidden={!keywordsOpen} data-mock="keywords-row">
+        <Chips
+          label="Keywords"
+          facets={keywords}
+          pressed={filter.keyword}
+          dashed
+          onPress={(keyword) => onChange({ ...filter, keyword }, 'choose')}
+        />
+      </div>
       <p className={styles.count} aria-live="polite" data-testid="blog-count">
         {showing === null ? ' ' : `Showing ${showing} of ${of ?? showing} posts`}
       </p>

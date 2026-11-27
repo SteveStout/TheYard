@@ -1,9 +1,8 @@
 /**
- * Does:      Lays out How I lead as the qa1126 picture draws it (about_mock_qa1126.py's CSS, ported rule by rule on the
- *            site's tokens): the four cards three across from 1280, two from 640, one on a phone; the three story cards
- *            one height, each story under a hairline with its small accent label and its picture on the card's floor in
- *            one 4:3 shape; the coaching card the full width, words on the left and the team drawing on the right at
- *            its own 16:9, never stretched.
+ * Does:      Lays out How I lead as the about design draws it (look_mock_1127.py, on the qa1126 card rules): the three
+ *            story cards three across from 1280, two from 640, one on a phone, one height, each story under a hairline
+ *            with its small accent label and its picture on the card's floor in one 4:3 shape; the coaching card on its
+ *            own row the full width, words on the left and the team drawing on the right at its own 16:9, never stretched.
  * Does not:  Draw a card's glass or the alternating rule (panels.css and AuthorPage.module.css do) or a photograph's
  *            frame (AuthorPage.module.css does).
  * Used by:   AboutLead.tsx.
@@ -14,11 +13,18 @@
   display: contents;
 }
 
-/* Three across, one gap, the three story cards one height. */
+/* Three across, one gap, the three story cards one height, on the ground under the section's head. */
 .lead .grid:global(.author-blocks) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
   align-items: stretch;
+  margin-top: var(--space-3);
+}
+
+/* The team drawing, when no card holds it, stands under the head at its own shape. */
+.drawing {
+  max-width: 380px;
+  margin-top: var(--space-3);
 }
 
 .lead .card {
@@ -94,9 +100,8 @@
   margin-top: var(--space-1);
 }
 
-/* The coaching card runs the full width: words on the left, the team drawing on the right at its own shape. */
-.lead .grid .wide {
-  grid-column: 1 / -1;
+/* The coaching card runs the full width on its own: words on the left, the team drawing on the right at its own shape. */
+.lead .wide {
   flex-direction: row;
   align-items: center;
   gap: var(--space-6);
@@ -133,8 +138,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .lead .grid .wide {
-    grid-column: auto;
+  .lead .wide {
     flex-direction: column;
     align-items: stretch;
     gap: 0;

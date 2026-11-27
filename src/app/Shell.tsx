@@ -47,6 +47,8 @@ export function Shell({
     accountOpen: boolean;
     blogOpen: boolean;
     reviewOpen: boolean;
+    /** One of the six views a recruiter link opens: the review route's band and box (ADR-142). */
+    landingOpen: boolean;
     openDocKey: DocKey | null;
   };
   accountEmail: string | null;
@@ -58,7 +60,11 @@ export function Shell({
   // The Blog row's NEW POST while the newest post is under a week old (ADR: Every LinkedIn post is also a blog post).
   const blogNew = newPost(useBlogPosts());
   return (
-    <div className={styles.app} data-rail={railShape(rail)}>
+    <div
+      className={styles.app}
+      data-rail={railShape(rail)}
+      data-rail-start={rail.docked === null && rail.collapsed ? 'collapsed' : undefined}
+    >
       {/* #region skip-link */}
       {/* First in the tab order on purpose. The docked rail is around thirty
           buttons, and without this a keyboard user tabs every one of them to
@@ -118,11 +124,12 @@ export function Shell({
 
         {/* #region store-bar */}
         {/* The store toggle (SQL or Cosmos DB), at the top of every view on
-            every width (ADR-066), and on the review route one sentence in its
-            place (ADR: The review route gives a reason before it asks). Above
+            every width (ADR-066), and on the six landing views the review
+            route's one sentence in its place (ADR: The review route gives a
+            reason before it asks, and ADR-142's addendum on the landing views). Above
             main so it is not part of the view that announces itself, and below
             the phone header so the hamburger keeps its corner. */}
-        <StoreBar review={views.reviewOpen} />
+        <StoreBar review={views.landingOpen} />
         {/* #endregion store-bar */}
 
         <main
@@ -130,6 +137,7 @@ export function Shell({
           id={MAIN_ID}
           tabIndex={-1}
           data-view={views.reviewOpen ? 'review' : undefined}
+          data-landing={views.landingOpen ? '' : undefined}
         >
           <p className={styles.srOnly} role="status" data-testid="view-announcement">
             {go.announcement}

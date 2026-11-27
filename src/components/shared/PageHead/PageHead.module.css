@@ -1,0 +1,82 @@
+/**
+ * Does:      Lays out a landing view's head as the review route's hero grid (ADR-142, the addendum on the landing views):
+ *            the main column and the 344 px side 32 px apart, the head and the body in the main column, the side beside
+ *            both; under 1280 one column, the side after the body or, when the page asks, straight after the title.
+ * Does not:  Draw the eyebrow or the title (sales.css, op-eyebrow and op-title, does), a card's glass (panels.css does)
+ *            or the body's own parts (each page's sheet does).
+ * Used by:   PageHead.tsx.
+ */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 344px;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'head side'
+    'body side';
+  column-gap: var(--space-7);
+  align-items: start;
+}
+
+.head {
+  grid-area: head;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.body {
+  grid-area: body;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* The review route's lede: the 17 px line at a 700 px measure. */
+.lede {
+  max-width: 700px;
+  margin: var(--space-4) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+}
+
+/* Under 1280 one column, as the review route's first screen: the side 32 px after the body, or 24 px after the title.
+   The body's own first part keeps its own step from what stands above it. */
+@media (max-width: 1279.98px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      'head'
+      'body'
+      'side';
+  }
+
+  .side {
+    margin-top: var(--space-7);
+  }
+
+  .grid[data-side='early'] {
+    grid-template-areas:
+      'head'
+      'side'
+      'body';
+  }
+
+  .grid[data-side='early'] .side {
+    margin-top: var(--space-6);
+  }
+}
+
+@media (max-width: 639.98px) {
+  .lede {
+    font-size: var(--text-md);
+  }
+}

@@ -96,11 +96,18 @@ test.describe('at 390 by 844 each hook sits on the first screen', () => {
     await atPhoneSize(page);
     await answerBlog(page, [POST]);
     await openTheYard(page, `/?view=blog&post=${POST.slug}`);
-    const hook = page.locator('[data-hook="post"]');
-    await expect(hook).toContainText(POST.title);
-    await expect(hook).toContainText(POST.summary);
-    await expect(hook.locator('img')).toHaveAttribute('alt', 'Slide 1');
-    await onTheFirstScreen(hook, 'the post hook');
+    // The post's hook is its page head now (ADR-142, the addendum on the landing views): the title as the page's h1,
+    // the summary as its line, the first slide as the cover under it, which starts on the first screen.
+    const head = page.locator('[data-mock="page-head"]');
+    await expect(head.locator('h1')).toHaveText(POST.title);
+    await expect(head.locator('[data-mock="lede"]')).toHaveText(POST.summary);
+    const cover = head.locator('[data-mock="cover"] img');
+    await expect(cover).toHaveAttribute('alt', 'Slide 1');
+    await onTheFirstScreen(head.locator('h1'), 'the post title');
+    await onTheFirstScreen(head.locator('[data-mock="lede"]'), 'the post summary');
+    expect((await cover.boundingBox())!.y, 'the cover starts on the first screen').toBeLessThan(
+      PHONE.height
+    );
   });
 
   test('/?doc=quality: the page own first chart', async ({ page }) => {

@@ -4,15 +4,16 @@ import { authorParts, type AuthorParts } from '../src/lib/author';
 import { AUTHOR_PHOTOS } from '../src/lib/authorPhotos';
 import {
   AWAY_ORDER,
-  capOf,
   COACH,
   nameOf,
   PAIRS,
   RABBITS,
   weave,
+  words,
   type Woven,
 } from '../src/lib/aboutWeave';
 import { renderDocument } from '../src/lib/markdown';
+import { ABOUT_ORDER } from '../src/lib/aboutOrder';
 
 /**
  * The weave against the real docs/author/AUTHOR.md. It lives beside about.test.ts, which reads the document the same
@@ -44,8 +45,8 @@ function drawn(woven: Woven) {
         ...names(card.picture ?? ''),
         ...(card.aside?.figures.map(nameOf) ?? []),
       ]),
-      ...away.flatMap((card) => card.photos.map((photo) => nameOf(photo.figure))),
-      ...(woven.away?.strip?.photos.map((photo) => nameOf(photo.figure)) ?? []),
+      ...away.flatMap((card) => card.photos.map(nameOf)),
+      ...(woven.away?.strip?.photos.map(nameOf) ?? []),
     ],
   };
 }
@@ -100,11 +101,11 @@ describe('the About page woven from the real author document', () => {
     const away = woven.away!;
     expect(away.cards.map((card) => card.title)).toEqual(AWAY_ORDER);
     expect(away.cards.map((card) => card.photos.length)).toEqual([1, 1, 1, 1, 2, 2, 3]);
-    expect(nameOf(away.cards[6].photos[2].figure)).toBe(RABBITS.photo);
+    expect(nameOf(away.cards[6].photos[2])).toBe(RABBITS.photo);
     expect(away.cards.filter((card) => card.wide).map((card) => card.title)).toEqual([
       'Freya and Vincent',
     ]);
-    expect(away.strip!.photos.map((photo) => nameOf(photo.figure))).toEqual([
+    expect(away.strip!.photos.map(nameOf)).toEqual([
       'couple-crossing-stream',
       'couple-on-wooden-bridge-wide',
       'couple-under-willow',
@@ -126,12 +127,27 @@ describe('the About page woven from the real author document', () => {
     expect(figures).toHaveLength(18);
   });
 
-  it('caps the Pantheon at 316 px, the box its 678 x 452 file fills at 2x, and no other photograph', () => {
-    expect(capOf('pantheon-at-dusk')).toBe(316);
-    const capped = AUTHOR_PHOTOS.filter((photo) => capOf(photo.name) !== null);
-    expect(capped.map((photo) => photo.name)).toEqual(['pantheon-at-dusk']);
-    expect(capOf('no-such-photo')).toBeNull();
-    const history = woven.away!.cards[0];
-    expect(history.photos[0].cap).toBe(316);
+  it("draws Why I write as Steve's line, character for character", () => {
+    expect(woven.write!.title).toBe('Why I write');
+    expect(words(woven.write!.body)).toBe(
+      "I started blogging after my friend Lee Markum, a SQL Server blogger, pushed me to write. Every post here is also on LinkedIn, with the code and the live pages it talks about. I find it a good way to share information that isn't being talked about, and a good place for others to learn."
+    );
+  });
+
+  it('asks each row photograph at the width its seat draws: 649 px on the left, 463 px on the right, never the old small card', () => {
+    const seat = { left: 649, right: 463 } as const;
+    for (const entry of ABOUT_ORDER) {
+      if (!('row' in entry) || entry.side === 'wide') continue;
+      const card = woven.away!.cards.find((one) => one.title === entry.row)!;
+      for (const figure of card.photos) {
+        const photo = AUTHOR_PHOTOS.find((one) => one.name === nameOf(figure))!;
+        const last = Number(/(\d+)px$/.exec(photo.sizes)![1]);
+        // Two photographs share a seat, each half of it less the gap between them.
+        const want = card.photos.length === 1 ? seat[entry.side] : (seat[entry.side] - 8) / 2;
+        expect(Math.abs(last - want), `${photo.name} ${photo.sizes}`).toBeLessThanOrEqual(1);
+      }
+    }
+    // The Pantheon's widest cut is 678, so it sits in the 463 px seat, sharp at 1x and 1.25x.
+    expect(ABOUT_ORDER).toContainEqual({ row: 'History', side: 'right' });
   });
 });

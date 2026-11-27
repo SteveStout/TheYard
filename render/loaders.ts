@@ -152,7 +152,14 @@ export async function loadFirst(
     landing || first.review || first.about
       ? inTime(get<unknown>(TESTS_SUMMARY_URL, signal))
       : Promise.resolve(null),
-    first.blog ? blogFirst() : Promise.resolve(undefined),
+    // About's Why I write shows the newest post from its first paint, so the list's first page rides along (ADR-142).
+    first.blog
+      ? blogFirst()
+      : first.about
+        ? inTime(get<BlogList>(listPath(filterFromSearch('')), signal)).then((list) =>
+            list ? { list, post: null } : undefined
+          )
+        : Promise.resolve(undefined),
     first.about ? inTime(get<string>(DOCS.author.url, signal)) : Promise.resolve(null),
     // The review route's third question shows a live lot from its first paint, never an empty tile (ADR-142).
     first.review ? inTime(get<unknown>(LOT_URL, signal)) : Promise.resolve(null),

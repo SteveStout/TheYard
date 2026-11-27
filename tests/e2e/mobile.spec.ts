@@ -363,26 +363,28 @@ test('About Steven opened from the home page covers the whole phone screen, its 
   await about.setViewportSize({ width: 390, height: 844 });
   await expect(about).toHaveURL(/\?view=about$/);
   await expect(about.locator('dialog[open]')).toHaveCount(0);
-  const panel = about.locator('[data-testid="about-page"] .author-panel').first();
-  await expect(panel).toBeVisible();
+  // One frame per card (ADR-142, the addendum on the landing views): no panel around the cards, each card on the glass.
+  await expect(about.locator('[data-testid="about-page"] .author-panel')).toHaveCount(0);
+  const card = about.locator('[data-mock="away-card"]').first();
+  await expect(card).toBeVisible();
   await expect(async () => {
     const read = await about.evaluate(() => {
       const page = document.querySelector('[data-testid="about-page"]')!.getBoundingClientRect();
       const eyebrow = document.querySelector('[data-mock="eyebrow"]')!.getBoundingClientRect();
-      const panel = document.querySelector('[data-testid="about-page"] .author-panel')!;
+      const card = document.querySelector('[data-mock="away-card"]')!;
       return {
         left: page.left,
         right: window.innerWidth - page.right,
         eyebrow: eyebrow.top + window.scrollY,
-        frost: getComputedStyle(panel).backgroundColor,
+        frost: getComputedStyle(card).backgroundColor,
       };
     });
     // The column has the screen less the frame's gutter, the same on both sides.
     expect(read.left).toBeLessThanOrEqual(24);
     expect(Math.abs(read.left - read.right)).toBeLessThanOrEqual(1);
-    // The page's title line is on the first screen, and the words stand on the reading frost.
+    // The page's title line is on the first screen, and the words stand on the glass.
     expect(read.eyebrow).toBeLessThan(400);
-    expect(read.frost).toBe('rgba(255, 255, 255, 0.88)');
+    expect(read.frost).not.toBe('rgba(0, 0, 0, 0)');
   }).toPass({ timeout: 15_000 });
 });
 // #endregion about-from-home

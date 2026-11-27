@@ -173,17 +173,19 @@ test('the ribbon ground is one drawing behind every view, from the rail edge, wi
     expect(sheet.dim).toMatch(/0\.3\)$/);
     expect(sheet.panel).toBe('rgba(255, 255, 255, 0.88)');
   }).toPass({ timeout: 15_000 });
-  // About Steven, a page of its own, stands its panels on the same frost as the window's.
+  // About Steven, a page of its own, draws one frame per card: no panel around its cards (ADR-142, the addendum on the
+  // landing views), and each card on the shared glass.
   await openTheYard(page, '/?view=about');
   await expect(page.locator('dialog[open]')).toHaveCount(0);
-  await expect(page.locator('[data-testid="about-page"] .author-panel').first()).toBeVisible();
+  await expect(page.locator('[data-mock="away-card"]').first()).toBeVisible();
+  await expect(page.locator('[data-testid="about-page"] .author-panel')).toHaveCount(0);
   await expect(async () => {
     expect(
       await page
-        .locator('[data-testid="about-page"] .author-panel')
+        .locator('[data-mock="away-card"]')
         .first()
-        .evaluate((panel) => getComputedStyle(panel).backgroundColor)
-    ).toBe('rgba(255, 255, 255, 0.88)');
+        .evaluate((card) => getComputedStyle(card).backgroundColor)
+    ).not.toBe('rgba(0, 0, 0, 0)');
   }).toPass({ timeout: 15_000 });
 
   // A phone: the rail is the drawer, so the ribbons run from the screen's edge.

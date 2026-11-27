@@ -11,6 +11,7 @@
 import { useEffect, useState } from 'react';
 import { BookSheet } from '../../review/BookSheet';
 import { AskClose } from '../../shared/AskClose';
+import { Eyebrow } from '../../shared/Eyebrow';
 import {
   RECOMMENDATIONS_SOURCE,
   RECOMMENDATIONS_URL,
@@ -27,6 +28,9 @@ type Reading =
 
 /** The writer's first name, for their profile pill. */
 const firstName = (name: string) => name.split(' ')[0];
+
+/** The line over the title, the review route's eyebrow with this page's place on the site. */
+const EYEBROW = ['Steven Stout', 'Who and why', 'Recommendations'];
 
 export function RecommendationsPage() {
   // A page the rendering service drew carries the answer it drew from, so the first draw is whole and matches it.
@@ -64,8 +68,8 @@ export function RecommendationsPage() {
       data-state={reading.state}
     >
       <header className={styles.head}>
-        <p className={styles.eyebrow}>Who and why · Recommendations</p>
-        <h1 id="recommendations-title" className={styles.title}>
+        <Eyebrow parts={EYEBROW} />
+        <h1 id="recommendations-title" className={`op-title ${styles.title}`}>
           {answer ? titleOf(answer) : 'The people who worked with Steven'}
         </h1>
         <p className={styles.lede}>
@@ -168,7 +172,6 @@ export function RecommendationsPage() {
                   </a>
                 </p>
               </section>
-              <AskClose onBook={() => setBooking(true)} />
             </div>
             <nav className={`${styles.index} op-glass`} aria-label="On this page">
               {/* A button over a list, not <details>: one drawn page serves a phone, where the list folds under its
@@ -192,6 +195,7 @@ export function RecommendationsPage() {
               </ul>
             </nav>
           </div>
+          <AskClose onBook={() => setBooking(true)} />
         </>
       )}
       <BookSheet open={booking} onClose={() => setBooking(false)} onAction={() => {}} />

@@ -60,6 +60,10 @@ public static class AboutPage
 
     /// <summary>What the drawing beside Workshop shows, for a reader who cannot see it.</summary>
     public const string WorkshopImageAlt = "Wooden birdhouse with a teal roof";
+
+    /// <summary>Why he writes the blog, in his own words, word for word as he gave them; the About page reads the same line from docs/author/AUTHOR.md.</summary>
+    public const string WhyIWrite =
+        "I started blogging after my friend Lee Markum, a SQL Server blogger, pushed me to write. Every post here is also on LinkedIn, with the code and the live pages it talks about. I find it a good way to share information that isn't being talked about, and a good place for others to learn.";
     // #endregion words
 
     // #region page
@@ -208,6 +212,10 @@ public static class AboutPage
             <p>{{e(Workshop)}}</p>
             <figure class="workshop-image"><img src="{{e(WorkshopImage)}}" alt="{{e(WorkshopImageAlt)}}" width="600" height="600" loading="lazy"></figure>
             </div>
+            </section>
+            <section class="workshop" aria-labelledby="why-i-write">
+            <h2 id="why-i-write">Why I write</h2>
+            <p>{{e(WhyIWrite)}}</p>
             </section>
             {{vouches}}
             {{AskCloseHtml.Html(Profiles[0], Profiles[1])}}

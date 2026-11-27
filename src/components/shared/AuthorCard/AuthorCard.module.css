@@ -1,0 +1,58 @@
+/**
+ * Does:      Lays out the author card: the 64 px photo in the gold ring beside his name and role, the sentence under
+ *            both, then the two doors, each a compact outlined pill.
+ * Does not:  Draw the card's glass (panels.css does) or a pill's look (pills.css does).
+ * Used by:   AuthorCard.tsx.
+ */
+.card {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.photo {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  box-shadow:
+    0 0 0 2px var(--palette-white),
+    0 0 0 4px var(--color-gold);
+}
+
+.name {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.role {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.line {
+  grid-column: 1 / -1;
+  margin: var(--space-2) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.doors {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+}
+
+.doors > a {
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-base);
+}
