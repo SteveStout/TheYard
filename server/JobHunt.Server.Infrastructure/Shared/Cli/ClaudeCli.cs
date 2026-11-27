@@ -8,12 +8,17 @@ namespace JobHunt.Server.Infrastructure.Shared.Cli;
 /// file first and to the share at the end, because a line at a time over the mount is slow, and a line holding a
 /// screenshot is cut so a run folder stays readable. The result line is taken from the stream as it passes. A stop
 /// from the service, like the limit, kills the tree and hands back what was seen, so the run can still write its records.
+/// A browser run (--chrome) starts without the environment's tokens: the user units carry the one-year setup-token, and a
+/// CLI on that token loads no claude-in-chrome server at all, so the run would end browser_down. It runs on the claude.ai
+/// sign-in, as Remote Control's unit does; a signed-out sign-in reads "Failed to authenticate", which is SignIn's to name.
 /// </summary>
 /// <param name="path">The CLI's path.</param>
 public sealed class ClaudeCli(string path) : IClaudeCli
 {
     private const int LongestLine = 64 * 1024;
     private const string ResultMark = "\"type\":\"result\"";
+
+    private static readonly string[] Tokens = ["CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"];
 
     private static void Keep(string local, string target)
     {
@@ -40,6 +45,13 @@ public sealed class ClaudeCli(string path) : IClaudeCli
             RedirectStandardInput = true,
             UseShellExecute = false,
         };
+        if (request.Arguments.Contains("--chrome"))
+        {
+            foreach (string token in Tokens)
+            {
+                start.Environment.Remove(token);
+            }
+        }
         using var process = Process.Start(start) ?? throw new IOException($"{path} did not start");
         process.StandardInput.Close();
         _ = process.StandardError.ReadToEndAsync(ct);
