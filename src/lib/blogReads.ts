@@ -1,8 +1,9 @@
 /**
  * Does:      Reads the blog's list so the database sees only the reads that matter (ADR: Every LinkedIn post is also a
  *            blog post, the addendum on the read model): a search waits 300 ms after the last key, a chip or a choice
- *            asks at once, and each new ask aborts the read it replaces, whose answer is then never handed on; a next
- *            page is read under the same rule, so a page asked for the old list never lands on a newer one.
+ *            asks at once, and each new ask aborts the read it replaces, whose answer is then never handed on; a wait the
+ *            box has typed past while its newer address is still being drawn asks nothing; a next page is read under the
+ *            same rule, so a page asked for the old list never lands on a newer one.
  * Does not:  Know what a filter is (blogFilter.ts writes the address it asks for) or hold the answer (useBlogList does).
  * Used by:   useBlogList.ts.
  */
@@ -24,6 +25,8 @@ export function listReader(
 ) {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let waiting: string | null = null;
+  // The address the newest key leads to, until it arrives as an ask or a wait ends.
+  let latest: string | null = null;
   let inFlight: AbortController | null = null;
   let nextInFlight: AbortController | null = null;
 
@@ -52,7 +55,11 @@ export function listReader(
     waiting = path;
     timer = setTimeout(() => {
       waiting = null;
-      start(path);
+      // The box was typed past this address and the newer one is still being drawn: it asks when it arrives, so a
+      // slow page never reads "copilo" on its way to "copilot".
+      const passed = latest !== null && latest !== path;
+      latest = null;
+      if (!passed) start(path);
     }, SEARCH_WAIT_MS);
   };
 
@@ -61,15 +68,18 @@ export function listReader(
     ask(path: string, when: AskWhen) {
       clearTimeout(timer);
       waiting = null;
+      if (when === 'now' || path === latest) latest = null;
       if (when === 'now') start(path);
       else wait(path);
     },
     /**
-     * A key was pressed: a search still waiting waits its whole time again from this key. Its address arrives only
-     * when the page's transition commits, and a later key can hold that commit back, so without this the wait ran
-     * from the last page drawn and a slow machine asked for "c" while "copilot" was still being typed.
+     * A key was pressed, leading to the address `path`: a search still waiting waits its whole time again from this
+     * key. Its address arrives only when the page's transition commits, and a later key can hold that commit back, so
+     * without this the wait ran from the last page drawn and a slow machine asked for "c" while "copilot" was still
+     * being typed; a wait that ends before the key's own address arrives asks nothing.
      */
-    typed() {
+    typed(path: string) {
+      latest = path;
       if (waiting !== null) wait(waiting);
     },
     /**

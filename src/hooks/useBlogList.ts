@@ -21,8 +21,11 @@ export type BlogListState = {
   failed: boolean;
   /** Reads the next page and adds its cards; nothing when there is none or one is being read. */
   more: () => void;
-  /** Called on each key in the search box, before its transition, so a waiting search waits from the last key. */
-  typed: () => void;
+  /**
+   * Called on each key in the search box with the filter it leads to, before its transition, so a waiting search
+   * waits from the last key and never asks for a word the box has already typed past.
+   */
+  typed: (next: BlogFilter) => void;
   moreReading: boolean;
 };
 
@@ -85,7 +88,7 @@ export function useBlogList(
     });
   };
 
-  const typed = () => reader.current?.typed();
+  const typed = (next: BlogFilter) => reader.current?.typed(listPath(next));
 
   return { list, reading: shownFor !== path, unavailable, failed, more, moreReading, typed };
 }
