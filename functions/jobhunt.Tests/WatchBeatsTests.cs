@@ -87,6 +87,36 @@ public sealed class WatchBeatsTests
         Assert.Equal(2, web.Asked.Count(url => url.StartsWith(WatchPass.Repo, StringComparison.Ordinal)));
     }
 
+    [Fact]
+    public async Task W9_reads_CI_by_the_run_name_ci_yml_gives_it_and_not_a_run_named_for_another_commit()
+    {
+        // The fixture, heal-w9-theyard-up-20261126: both names and main on b9c4a0b and CI green, and W9 read "CI running"
+        // because ci.yml names its run "CI <sha>" (its run-name, 1.0.5.97) where the watch looked for "CI" alone.
+        const string Sha = "b9c4a0baedff71c50b069b5146021beb0f26de84";
+        async Task<WatchResult> Site(string runs)
+        {
+            using var s = new Scratch();
+            var web = new FakeWeb
+            {
+                ["theyard.stevenstout.biz/api/version"] = """{"version": "1.0.5.168", "commit": "b9c4a0b"}""",
+                ["theyard-cosmos.stevenstout.biz/api/version"] = """{"version": "1.0.5.168", "commit": "b9c4a0b"}""",
+                ["/commits/main"] = """{"sha": """ + $"\"{Sha}\"" + """, "commit": {"committer": {"date": "2026-11-20T14:00:00Z"}}}""",
+                ["/actions/runs"] = runs,
+            };
+            var result = await new WatchPass(s.Store, _ => null, new At(Now), web).RunAsync(WatchMode.Shadow, default);
+            return result.Results.Single(r => r.Name == "TheYard up");
+        }
+
+        var green = await Site($$"""{"workflow_runs": [{"name": "Deploy", "status": "completed", "conclusion": "success"}, {"name": "CI {{Sha}}", "status": "completed", "conclusion": "success"}]}""");
+        Assert.True(green.Pass);
+        Assert.Equal("theyard b9c4a0b, theyard-cosmos b9c4a0b, main b9c4a0b, CI success", green.Number);
+        Assert.False((await Site($$"""{"workflow_runs": [{"name": "CI {{Sha}}", "status": "completed", "conclusion": "failure"}]}""")).Pass);
+        var other = await Site("""{"workflow_runs": [{"name": "CI 959e02e1a2b3c4d5e6f708192a3b4c5d6e7f8091", "status": "completed", "conclusion": "success"}]}""");
+        Assert.False(other.Pass);
+        Assert.EndsWith("CI running", other.Number, StringComparison.Ordinal);
+        Assert.True((await Site("""{"workflow_runs": [{"name": "CI", "status": "completed", "conclusion": "success"}]}""")).Pass);
+    }
+
     private sealed class At(DateTimeOffset now) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => now;
