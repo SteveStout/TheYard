@@ -114,7 +114,8 @@ public sealed class WatchPass(IMergeStore store, Func<string, string?> setting, 
             using var runs = await web.GetAsync($"{Repo}/actions/runs?head_sha={sha}&per_page=30", ct);
             if (runs is not null && runs.RootElement.TryGetProperty("workflow_runs", out var list))
             {
-                ci = list.EnumerateArray().Where(r => r.GetProperty("name").GetString() == "CI" && r.GetProperty("status").GetString() == "completed")
+                // ci.yml names its run "CI <the commit it tested>" (its run-name); a run named for another commit is not this one's.
+                ci = list.EnumerateArray().Where(r => r.GetProperty("name").GetString() is { } n && (n == "CI" || n == $"CI {sha}") && r.GetProperty("status").GetString() == "completed")
                     .Select(r => r.GetProperty("conclusion").GetString()).FirstOrDefault();
             }
         }
