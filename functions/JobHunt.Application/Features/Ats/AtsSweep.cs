@@ -25,9 +25,14 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
 
     /// <summary>
     /// The messages the last pass left in the inbox, one line each: the Gmail id, its thread, the thread's senders and
-    /// the tracker's hash when it was judged. Replaced every pass with the messages still left.
+    /// the tracker's hash when it was judged, the rules' version (AtsRules.Version) and why it was left. Replaced every pass
+    /// with the messages still left.
     /// </summary>
     public const string Judged = Folder + "/judged.tsv";
+
+    /// <summary>The dry pass's plan on the day the rules changed: every message read again, with its reason, nothing done.</summary>
+    /// <param name="day">The Central day.</param>
+    public static string Rejudge(DateOnly day) => $"{Folder}/rejudge-{day:yyyy-MM-dd}.tsv";
 
     /// <summary>The spool a cloud writer drops rows in (SHARED-WRITES.md).</summary>
     public const string Spool = "inbox/tracker-inbox";
@@ -47,12 +52,16 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
             .ToList();
         string tracker = Convert.ToHexStringLower(SHA256.HashData(masterBytes));
         var before = await JudgedAsync(ct);
+        string rules = AtsRules.Version.ToString(CultureInfo.InvariantCulture);
+        // A message left under other rules is read again; the first pass that does so acts on nothing and writes the reasons.
+        bool rejudge = before.Values.Any(was => was.Rules != rules);
+        bool acting = on && !rejudge;
         var left = new List<JudgedLine>();
         var decisions = new List<AtsDecision>();
         int unchanged = 0;
         foreach (string id in await inbox.FindAsync(Search, Cap, ct))
         {
-            if (before.TryGetValue(id, out var was) && was.Tracker == tracker)
+            if (before.TryGetValue(id, out var was) && was.Tracker == tracker && was.Rules == rules)
             {
                 string senders = Senders(await inbox.ThreadSendersAsync(was.Thread, ct));
                 if (senders == was.Senders)
@@ -69,11 +78,11 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
             decisions.Add(decision);
             if (decision.Action == AtsAction.Leave)
             {
-                left.Add(new JudgedLine(id, message.ThreadId, Senders(threadSenders), tracker));
+                left.Add(new JudgedLine(id, message.ThreadId, Senders(threadSenders), tracker, rules, Flat(decision.Why)));
             }
         }
         var outcomes = new Dictionary<string, string>(StringComparer.Ordinal);
-        if (on)
+        if (acting)
         {
             foreach (var decision in decisions)
             {
@@ -81,12 +90,16 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
             }
         }
         await store.EnsureFolderAsync(Folder, ct);
-        await store.WriteAsync(LastPlan, TrackerCsvText.Encode(Tsv(decisions, outcomes, on, Now()) + (unchanged == 0 ? "" : $"# and {unchanged} left before and not read again: their threads and the tracker are unchanged ({Judged})\r\n")), ct);
-        await store.WriteAsync(Judged, TrackerCsvText.Encode(string.Concat(left.Select(j => $"{j.Id}\t{j.Thread}\t{j.Senders}\t{j.Tracker}\r\n"))), ct);
-        string line = $"{(on ? "ON" : "SHADOW")} found {decisions.Count + unchanged}: "
+        if (rejudge)
+        {
+            await store.WriteAsync(Rejudge(DateOnly.FromDateTime(Now())), TrackerCsvText.Encode(Tsv(decisions, outcomes, false, Now())), ct);
+        }
+        await store.WriteAsync(LastPlan, TrackerCsvText.Encode(Tsv(decisions, outcomes, acting, Now()) + (unchanged == 0 ? "" : $"# and {unchanged} left before and not read again: their threads and the tracker are unchanged ({Judged})\r\n")), ct);
+        await store.WriteAsync(Judged, TrackerCsvText.Encode(string.Concat(left.Select(j => $"{j.Id}\t{j.Thread}\t{j.Senders}\t{j.Tracker}\t{j.Rules}\t{j.Reason}\r\n"))), ct);
+        string line = $"{(acting ? "ON" : "SHADOW")}{(rejudge ? $" (rules {rules}: every message read again, a dry pass, reasons in {Rejudge(DateOnly.FromDateTime(Now()))})" : "")} found {decisions.Count + unchanged}: "
             + string.Join(", ", Enum.GetValues<AtsAction>().Select(action => $"{Words(action)} {decisions.Count(d => d.Action == action) + (action == AtsAction.Leave ? unchanged : 0)}"))
             + (unchanged == 0 ? "" : $" ({unchanged} left before, not read again)")
-            + (on ? $" | {outcomes.Values.Count(v => v.EndsWith("archived", StringComparison.Ordinal))} archived and read back, {outcomes.Values.Count(v => v.Contains("FAILED", StringComparison.Ordinal))} failed" : "");
+            + (acting ? $" | {outcomes.Values.Count(v => v.EndsWith("archived", StringComparison.Ordinal))} archived and read back, {outcomes.Values.Count(v => v.Contains("FAILED", StringComparison.Ordinal))} failed" : "");
         await store.AppendAsync(Log, TrackerCsvText.Encode($"{Now():yyyy-MM-dd HH:mm:ss} {line}\r\n"), ct);
         return line;
     }
@@ -101,6 +114,11 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
             await store.EnsureFolderAsync(Spool, ct);
             await store.WriteAsync($"{Spool}/{name}", TrackerCsvText.Encode(TrackerCsvText.Line(row) + "\r\n"), ct);
             done = $"row {name}; ";
+        }
+        // Log first (RULE 38's order): a message is archived only on a row that exists or was written above.
+        if (decision.Action == AtsAction.ArchiveOnly && decision.RestsOn is null)
+        {
+            return "left in the inbox: no row, no archive";
         }
         if (decision.Action is AtsAction.ArchiveOnly or AtsAction.RowAndArchive)
         {
@@ -147,9 +165,9 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
         foreach (string text in TrackerCsvText.Decode(await store.ReadAsync(Judged, ct)).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             string[] cells = text.Split('\t');
-            if (cells.Length == 4)
+            if (cells.Length >= 4)
             {
-                lines[cells[0]] = new JudgedLine(cells[0], cells[1], cells[2], cells[3]);
+                lines[cells[0]] = new JudgedLine(cells[0], cells[1], cells[2], cells[3], cells.Length >= 5 ? cells[4] : string.Empty, cells.Length >= 6 ? cells[5] : string.Empty);
             }
         }
         return lines;
@@ -159,7 +177,7 @@ public sealed class AtsSweep(IMergeStore store, IInbox inbox, TimeProvider time)
     private static string Senders(IReadOnlyList<string> senders) =>
         Flat(string.Join(",", senders.Select(s => s.Trim().ToLowerInvariant()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)));
 
-    private sealed record JudgedLine(string Id, string Thread, string Senders, string Tracker);
+    private sealed record JudgedLine(string Id, string Thread, string Senders, string Tracker, string Rules, string Reason);
 
     private static string Flat(string text) => text.Replace('\t', ' ').Replace("\r", " ", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
 }
