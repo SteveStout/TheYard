@@ -245,6 +245,9 @@ test.describe('the docked rail', () => {
   }) => {
     await openTheYard(page, '/');
     const rail = page.getByTestId('side-rail');
+    // Home is a landing view, so the rail opens closed (ADR-142); the map is the open rail's.
+    await rail.getByRole('button', { name: 'Expand the sidebar' }).click();
+    await expect(rail).toHaveAttribute('data-collapsed', 'false');
     const headings = await rail.locator('summary h2').allTextContents();
     expect(headings.length).toBe(MENU_ORDER.length);
     // The same three groups as the landing page, each heading above its sections.

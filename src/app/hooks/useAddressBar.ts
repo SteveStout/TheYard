@@ -27,7 +27,7 @@ import {
   inventoryPart,
   readFirstAddress,
 } from '../firstAddress';
-import { pageOf } from '../pageOpen';
+import { landingOf, pageOf } from '../pageOpen';
 
 // This file is the only code that writes the address bar. Everything else
 // that needs to push or replace an entry asks through the four functions it
@@ -209,6 +209,8 @@ export function useAddressBar() {
   const homeShowing = !inventoryOpen && nothingCovers;
   /** The inventory list is what shows. */
   const listShowing = inventoryOpen && nothingCovers;
+  /** A landing view shows: the rail starts closed and the band is the review route's (ADR-142). */
+  const landingOpen = landingOf({ page, homeShowing, adminOpen, accountOpen });
 
   // The four ways the rest of the app changes history, each one line of the
   // browser's own API, kept here so this file stays the only writer.
@@ -270,6 +272,7 @@ export function useAddressBar() {
     closePages,
     homeShowing,
     listShowing,
+    landingOpen,
     /** True while a ?vehicle= link from the first load is still being looked up. */
     deepLinkPending,
     /** The open vehicle's id, readable from a listener registered once. */

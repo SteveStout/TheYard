@@ -3,7 +3,7 @@
  *            alternating blocks, photographs in their gold frames, the pair, the close and the credit, and the phone layout.
  * Does not:  Style the window (DocDialog.module.css) or the reading panels every document shares (DocPanels.module.css),
  *            or hold a colour of its own. The markup it styles is written by src/lib/author.ts.
- * Used by:   AboutPage.tsx.
+ * Used by:   AboutLead.tsx, AboutPage.tsx, AboutRow.tsx.
  */
 /* #region author */
 /* The Author page (ADR: The sidebar, the addendum on the author's section). src/lib/author.ts writes the markup, so the

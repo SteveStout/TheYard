@@ -74,10 +74,11 @@
   --radius-md: 8px;
   --radius-full: 999px;
 
-  /* Measures: a pill's padding, the page's widest measure and a drawer's
-     width. */
+  /* Measures: a pill's padding, the page's widest measure, the landing
+     views' box (ADR-142) and a drawer's width. */
   --pill-padding: 6px 14px;
   --page-width: 1200px;
+  --landing-width: 1234px;
   --drawer-width: min(84vw, 360px);
 
   /* Layers, bottom to top: the page's ground, the docked rail, the sticky

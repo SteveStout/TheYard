@@ -109,7 +109,7 @@ test('the blog route asks for at most 150 KB of JavaScript in brotli, and no Mar
   ).toBeLessThanOrEqual(150 * KB);
 });
 
-test('the first screen costs at most 300 KB, its largest paint is the title or the cover, and nothing moves', async ({
+test('the first screen costs at most 300 KB, its largest paint is the head, the title or the cover, and nothing moves', async ({
   page,
   request,
 }) => {
@@ -150,7 +150,12 @@ test('the first screen costs at most 300 KB, its largest paint is the title or t
     return element
       ? {
           tag: element.tagName,
-          title: element.closest('[data-testid="blog-post"] h2') !== null,
+          // The page head's own words, its title or its line, drawn with the first paint (ADR-142's page head), or
+          // the first post's title.
+          title:
+            element.closest(
+              '[data-testid="blog-post"] h2, [data-mock="title"], [data-mock="lede"]'
+            ) !== null,
           priority: element.getAttribute('fetchpriority'),
         }
       : null;

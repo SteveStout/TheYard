@@ -18,7 +18,8 @@
       every one of these fetch calls sends. tests/e2e/preload.spec.ts holds
       that: each address asked for once, and no hint the browser could not use.
 
-      Four reads every view makes on its first load. Two more only the landing
+      Three reads every view makes on its first load, and the store list every
+      view but the six landing views (ADR-142). Two more only the landing
       page makes, so they are hinted only when the address carries no query,
       which is the landing page and nothing else; a hint nobody uses is a
       wasted request and a warning in the reader's console.
@@ -30,7 +31,13 @@
     <!-- #region api-preload -->
     <script>
       (function () {
-        var reads = ['/api/stores', '/api/auth/me', '/api/bids', '/api/version'];
+        var reads = ['/api/auth/me', '/api/bids', '/api/version'];
+        // The store list only where the toggle is drawn: the six landing views draw the live sentence in its place.
+        var landing =
+          location.search === '' ||
+          /^\?r=[^&]*$/.test(location.search) ||
+          /[?&]view=(review|about|blog|recommendations)(&|$)/.test(location.search);
+        if (!landing) reads.push('/api/stores');
         if (location.search === '')
           reads.push('/api/health', '/api/tests/summary', '/api/recommendations');
         // The build draws the landing page into #root (the note beside it,

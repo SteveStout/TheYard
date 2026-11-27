@@ -9,7 +9,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1234px;
+  max-width: var(--landing-width);
   margin: 0 auto;
 }
 

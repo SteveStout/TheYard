@@ -4,7 +4,8 @@ import { answerBlog, made } from './blogFake';
 
 // #region gate-badge
 /**
- * The gate badge (MASTER-PLAN-2026-11-17 R13e, R13g, R14): on every page, at the end of the store bar, what the
+ * The gate badge (MASTER-PLAN-2026-11-17 R13e, R13g, R14): on every page that carries the store bar (the six landing
+ * views draw the review route's live sentence in its place, ADR-142), at the end of the bar, what the
  * running version had to pass, read from what the build carries: the gate's word at every width and all three facts
  * from 1440, beside the store note's short form (store-toggle.spec holds that the note still fits); its name says all
  * three at any width, and the popover, fetched on its first open, says them in full and goes to the Quality page.
@@ -14,11 +15,11 @@ import { answerBlog, made } from './blogFake';
 const NAME =
   /^(Gate green|Gate pending), (Quality \d+ of \d+ held|Quality pending), CodeRabbit (reviewed|rate limited|not reviewed|pending): what v\d+\.\d+\.\d+\.\d+ had to pass$/;
 
-test('every page carries the badge, which names all three and opens its popover on a click', async ({
+test('every page with the store bar carries the badge, which names all three and opens its popover on a click', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  for (const path of ['/', '/?view=inventory', '/?doc=quality']) {
+  for (const path of ['/?view=stack', '/?view=inventory', '/?doc=quality']) {
     await openTheYard(page, path);
     const badge = page.getByTestId('gate-badge');
     await expect(badge).toBeVisible();
@@ -44,8 +45,9 @@ test('every page carries the badge, which names all three and opens its popover 
     ).not.toBe('0px');
   }
 
-  // From the landing: a document opens as a dialog over the page, and the badge waits under it like the rest.
-  await openTheYard(page, '/');
+  // From the inventory, a view that keeps the toggle: a document opens as a dialog over the page, and the badge waits
+  // under it like the rest.
+  await openTheYard(page, '/?view=inventory');
   await page.getByTestId('gate-badge').click();
   const popover = page.getByTestId('gate-popover');
   await expect(popover).toBeVisible();
@@ -65,7 +67,7 @@ test("at 390 the badge is a thumb-tall chip in the note's row, and nothing scrol
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await openTheYard(page, '/');
+  await openTheYard(page, '/?view=inventory');
   const badge = page.getByTestId('gate-badge');
   await expect(badge).toBeVisible();
   // The gate's word alone on a phone: the other two facts are in its name and the popover.
@@ -82,7 +84,8 @@ test("at 390 the badge is a thumb-tall chip in the note's row, and nothing scrol
 // The popover draws over the glass panels after the header. Drawn inside the store bar, whose frost makes a
 // stacking context, its layer counted only inside the bar, and the blog's filter panel, glass too and later in the
 // page, painted over its lower half. So the topmost element at the panel's centre, and at a grid of points across
-// it, has to be the popover's own, on the blog at the desk's width and at a phone's.
+// it, has to be the popover's own, at the desk's width and at a phone's. The blog is a landing view now and draws no
+// store bar (ADR-142), so the check runs on the inventory, whose filter panel is glass after the header in the same way.
 const POSTS = Array.from({ length: 12 }, (_, n) =>
   made(`a-post-${n + 1}`, `A post ${n + 1}`, n + 1, {
     topics: [['ai', 'dotnet', 'azure', 'career', 'security', 'linux'][n % 6]!],
@@ -91,13 +94,12 @@ const POSTS = Array.from({ length: 12 }, (_, n) =>
 );
 
 for (const width of [1440, 390]) {
-  test(`on the blog at ${width} the open popover is on top of the filter panel`, async ({
+  test(`on the inventory at ${width} the open popover is on top of the filter panel`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
     await answerBlog(page, POSTS);
-    await openTheYard(page, '/?view=blog');
-    await expect(page.getByTestId('blog-count')).toHaveText('Showing 12 of 12 posts');
+    await openTheYard(page, '/?view=inventory');
     await page.getByTestId('gate-badge').click();
     const popover = page.getByTestId('gate-popover');
     await expect(popover).toBeVisible();

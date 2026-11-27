@@ -199,3 +199,20 @@
     flex: none;
   }
 }
+
+/* The one pill the keywords fold behind, in line with the chips, under the topics. */
+.fold {
+  margin-left: calc(76px + var(--space-3));
+}
+
+.foldPill {
+  min-height: 32px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 639.98px) {
+  .fold {
+    margin-left: 0;
+  }
+}

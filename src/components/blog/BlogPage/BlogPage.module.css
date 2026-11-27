@@ -1,70 +1,65 @@
 /**
- * Does:      Lays out the blog page: the head, the posts column and the side column beside it, the list dimmed while a
- *            newer one is read, the empty result, the "More posts" button, the most-read list and the sources bars; one
- *            column under 900px, nothing wider than a phone.
- * Does not:  Style the full post, the short cards or the filter bar (their own sheets do).
+ * Does:      Lays out the blog page in the landing views' one box: the head's body (the filters or a post's cover and All
+ *            posts, then the numbered sections), the list dimmed while a newer one is read, the empty result, the "More
+ *            posts" button, and the posts around a post, its close and its Where next 48 px apart under the head.
+ * Does not:  Lay out the head and its side (PageHead does) or style the full post, the short cards, the filter bar or the
+ *            side's cards (their own sheets do).
  * Used by:   BlogPage.tsx.
  */
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-8);
+  width: 100%;
+  max-width: var(--landing-width);
+  margin: 0 auto;
   container-type: inline-size;
 }
 
-.head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
+/* The head's body: the filters or the cover, then the numbered sections, 24 px apart, a section 32 px under what is above. */
+.body > * + * {
+  margin-top: var(--space-6);
 }
 
-.title {
+.body > * + .list {
+  margin-top: var(--space-7);
+}
+
+/* A post's cover slide, framed on the ground under its line, at most 360 px wide. */
+.cover {
+  max-width: 360px;
+  margin: var(--space-6) 0 0;
+  padding: var(--space-2);
+}
+
+.cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.ctas {
   margin: 0;
-  padding-bottom: var(--space-1);
-  border-bottom: var(--rule-gold);
-  border-image: var(--gradient-gold) 1;
-  color: var(--color-heading);
-  font-size: var(--text-2xl);
-  font-weight: var(--title-weight);
 }
 
 .back {
-  margin-left: auto;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-full);
-  background: var(--glass-bg);
-  color: var(--color-text);
-  padding: var(--pill-padding);
   min-height: var(--pill-height);
+  padding: var(--pill-padding);
   font-size: var(--text-sm);
-  font-weight: var(--pill-weight);
-  cursor: pointer;
 }
 
-.intro {
-  max-width: 640px;
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-5);
-  align-items: start;
-}
-
-@container (min-width: 900px) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
-  }
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
 }
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-7);
   min-width: 0;
 }
 
@@ -101,7 +96,11 @@
 }
 
 .empty .back {
-  margin-left: 0;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  color: var(--color-text);
+  cursor: pointer;
 }
 
 .more {
@@ -115,4 +114,16 @@
   font-size: var(--text-sm);
   font-weight: var(--pill-weight);
   cursor: pointer;
+}
+
+.body > :first-child {
+  margin-top: var(--space-6);
+}
+
+/* On a phone All posts is the row's width, as every first move is. */
+@media (max-width: 639.98px) {
+  .ctas .back {
+    width: 100%;
+    justify-content: center;
+  }
 }

@@ -286,16 +286,17 @@ describe('the rendering service', () => {
     expect(html).toContain('<p>The text.</p>');
   });
 
-  it('draws a post address with its hook, the title, summary and first image, from the posts it read for the head (ADR-132)', async () => {
+  it('draws a post address with its page head, the title as the h1, summary and first image, from the posts it read (ADR-132, ADR-142)', async () => {
     const { html } = await page(`?view=blog&post=${POST.slug}`);
-    // The hook's own box: the post itself is drawn whole below it now, its strip with every slide.
-    const start = html.indexOf('data-hook="post"');
-    const hook = html.slice(start, html.indexOf('</section>', start));
+    // The page head: the post itself is drawn whole under it, in "01 The full post", its strip with every slide.
+    const start = html.indexOf('data-mock="page-head"');
+    const head = html.slice(start, html.indexOf('data-testid="blog-post"', start));
+    expect(start).toBeGreaterThan(-1);
     expect(html.slice(start)).toContain('data-testid="blog-post"');
-    expect(hook).toContain(POST.title);
-    expect(hook).toContain(POST.summary);
-    expect(hook).toContain('src="/api/blog/images/slide-1.png"');
-    expect(hook).not.toContain('slide-2.png"');
+    expect(head).toMatch(new RegExp(`<h1[^>]*>${POST.title}</h1>`));
+    expect(head).toContain(POST.summary);
+    expect(head).toContain('src="/api/blog/images/slide-1.png"');
+    expect(head).not.toContain('slide-2.png"');
     expect(postFor('view=blog&post=no-such-post', [POST])).toBeNull();
     expect(postFor('view=blog', [POST])).toBeNull();
   });

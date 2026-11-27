@@ -1,77 +1,60 @@
 /**
- * Does:      Lays out the About page as the about1125 picture draws it: the recommendations page's column, the eyebrow over
- *            one flow of parts that share the column's two edges with one gap between them, the hero's buttons, the
- *            three proof tiles across (one under the other on a phone), the hero photo the card's width on a phone.
- * Does not:  Draw a panel's glass or frost (panels.css and DocPanels.module.css do), the document's own blocks and
- *            frames (AuthorPage.module.css does), How I lead or Away from the keyboard (AboutLead.module.css and
- *            AboutAway.module.css do) or a tile, voice or close (their own sheets do).
+ * Does:      Lays out the About page as the about design draws it (look_mock_1127.py, rule by rule on the site's tokens):
+ *            the landing views' one box, its parts 48 px apart (32 on a phone) and personal rows that follow each other
+ *            24 px apart; in the head the role line in the accent, his two paragraphs at the review lede's size and
+ *            measure, the three moves, the roles row, and the photo in a glass frame at its own shape; the three proof
+ *            tiles across (one under the other on a phone).
+ * Does not:  Lay out the head's grid (PageHead does), a lead card, a row or Why I write (their own sheets do), or draw a
+ *            panel's glass (panels.css does) or a tile, voice or close (their own sheets do).
  * Used by:   AboutPage.tsx.
  */
 .page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
   width: 100%;
-  max-width: 1120px;
+  max-width: var(--landing-width);
   margin: 0 auto;
 }
 
-.eyebrow {
-  margin: 0;
-  color: var(--color-text);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--title-tracking);
-  text-transform: uppercase;
+/* One rhythm: 48 px between parts, as the review route, personal rows included. */
+.page > * + * {
+  margin-top: var(--space-8);
 }
 
 .failed {
-  margin: 0;
+  margin: var(--space-4) 0 0;
   color: var(--color-text);
   font-size: var(--text-md);
 }
 
-/* One column, one rhythm: every part shares the page's two edges and a 24px gap. The window's grid is not drawn. */
-.page .flow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  margin: 0;
+/* His words under the title: the role line in the accent, then the two paragraphs, each at the review lede's size. */
+.words > p {
+  max-width: 700px;
+  margin: var(--space-4) 0 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  line-height: 1.5;
 }
 
-.page .flow > * {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  box-sizing: border-box;
+.words > p[data-mock='role-line'] {
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
 }
 
-/* The words keep the document's own order inside the hero, with no box of their own. */
-.contents {
-  display: contents;
+.words > p[data-mock='role-line'] strong {
+  font-weight: inherit;
 }
 
-/* The hero photo keeps the window's size: the words lead, the photo sits beside them. */
-.photo :global(.author-photo) {
-  margin: 0;
-}
-
-.page .photo img {
-  max-height: 380px;
-  width: auto;
-  max-width: 100%;
-  object-fit: cover;
-}
-
-/* Gold Resume first, then Book 20 minutes, then the two profiles. */
-.page .moves {
+/* The three moves in the review route's order and sizes: teal primary with the gold ring, gold Resume, outlined Book. */
+.moves {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
   align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
 }
 
-/* Book 20 minutes at the review route's size beside the gold Resume (ReviewVerdict.module.css, .book). */
+.primary,
 .book {
   gap: var(--space-2);
   min-height: var(--touch-target);
@@ -79,46 +62,92 @@
   font-size: var(--text-md);
 }
 
-/* The document's link colour stops at the review parts: the close's filled Book 20 minutes keeps its own words' colour. */
-.page .flow :global(.op-pill-primary) {
-  color: var(--color-on-accent);
+.primary {
+  min-height: var(--control-height-lg);
+  padding: 0 var(--space-6);
+  font-size: var(--text-lg);
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-gold),
+    0 10px 24px color-mix(in srgb, var(--color-teal-deep) 28%, transparent);
 }
 
-/* The three proof tiles under the hero, across the column, with none of the document's list indent. */
-.page .flow .proof {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
+/* The roles row: the review route's (sales.css, op-roles-row), its words and its three doors. */
+.roles {
+  min-width: 0;
+}
+
+.rolesLine {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.roleLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.page .flow .proof > li {
+/* The photo is the side: framed in glass, at its own shape, never stretched. */
+.photo {
+  padding: var(--space-2);
+}
+
+.photo :global(figure) {
   margin: 0;
 }
 
+.photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The three proof tiles across, with none of a list's indent. */
+.proof {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.proof > li {
+  margin: 0;
+}
+
+/* Once the columns stack, the photo keeps a portrait's width. */
+@media (max-width: 1279.98px) {
+  .photo {
+    max-width: 420px;
+  }
+}
+
 @media (max-width: 1023.98px) {
-  .page .moves > :global(.author-button) {
-    flex: 1 1 auto;
+  .page > * + * {
+    margin-top: var(--space-7);
   }
 }
 
-/* On a phone the gold Resume has the row to itself; Book keeps its size and the profiles share what is left. */
-@media (max-width: 767.98px) {
-  .page .moves > :first-child {
-    flex-basis: 100%;
-  }
-}
-
+/* A phone: each move the row's width, the tiles one under another. */
 @media (max-width: 639.98px) {
-  .page .flow .proof {
-    grid-template-columns: 1fr;
+  .moves {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
   }
 
-  /* The hero photo takes the card's width on a phone. */
-  .page .photo,
-  .page .photo img {
-    width: 100%;
-    max-width: 100%;
+  .moves > a {
+    justify-content: center;
+  }
+
+  .proof {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

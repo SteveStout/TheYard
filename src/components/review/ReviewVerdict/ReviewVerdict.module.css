@@ -3,59 +3,19 @@
  *            moves and the roles row in a wide column with the live panel and the quote beside it; under 1280 one column
  *            with those two side by side under it; on a phone the moves come straight after the lede, before the tiles,
  *            so the primary button is on the first screen, and the roles row comes last in the column.
- * Does not:  Draw a panel's glass (panels.css does), a tile (ProofTile.module.css does), the pills' own look
+ * Does not:  Lay out the head's grid, its eyebrow, title and lede (PageHead and sales.css do), draw a panel's glass
+ *            (panels.css does), a tile (ProofTile.module.css does), the pills' own look
  *            (pills.css does), or the roles row and the live panel (sales.css, op-roles-row and op-live-panel, do).
  * Used by:   ReviewMirror.tsx, ReviewVerdict.tsx.
  */
-.verdict {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 344px;
-  gap: var(--space-7);
-  align-items: start;
-}
-
-.main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.eyebrow {
-  margin: 0;
-  color: var(--color-teal-deep);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-}
-
-.slash {
-  padding: 0 var(--space-2);
-  color: var(--color-gold-bar-dark);
-}
-
+/* The title fits its words, so the gold rule runs under the claim and no further. */
 .title {
   align-self: flex-start;
-  margin: var(--space-3) 0 0;
-  padding-bottom: var(--space-3);
-  border-bottom: var(--rule-gold);
-  border-image: var(--gradient-gold) 1;
-  color: var(--color-heading);
-  font-size: var(--text-4xl);
-  font-weight: var(--weight-bold);
-  line-height: 1.12;
-  letter-spacing: var(--title-tracking);
 }
 
 /* At a desk each sentence of the claim is its own line. */
 .line {
   display: block;
-}
-
-.lede {
-  max-width: 700px;
-  margin: var(--space-4) 0 0;
-  color: var(--color-text);
-  font-size: var(--text-lg);
 }
 
 .tiles {
@@ -95,12 +55,6 @@
     0 10px 24px color-mix(in srgb, var(--color-teal-deep) 28%, transparent);
 }
 
-.side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
 /* The roles row's shape is sales.css's op-roles-row; this sheet only names it. */
 .roles {
   min-width: 0;
@@ -125,11 +79,7 @@
 /* Under 1280 the first screen is one column, with the quote and the roles card side by side under it. The section is
    as tall as its content at every width: the page under it starts 48 px below, never at a forced fold. */
 @media (max-width: 1279.98px) {
-  .verdict {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .side {
+  aside.side {
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: start;
@@ -138,16 +88,8 @@
 
 /* A phone: the claim, then the moves, then the proof, so the primary button is on the first screen. */
 @media (max-width: 639.98px) {
-  .title {
-    font-size: var(--text-3xl);
-  }
-
   .line {
     display: inline;
-  }
-
-  .lede {
-    font-size: var(--text-md);
   }
 
   .moves {
@@ -165,7 +107,7 @@
     margin-top: var(--space-5);
   }
 
-  .side {
+  aside.side {
     grid-template-columns: minmax(0, 1fr);
   }
 }

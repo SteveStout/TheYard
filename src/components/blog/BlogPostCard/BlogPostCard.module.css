@@ -20,19 +20,14 @@
 }
 
 .avatar {
-  display: grid;
   flex: none;
-  place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-full);
-  background: linear-gradient(160deg, var(--color-accent), var(--color-green-dark));
+  object-fit: cover;
   box-shadow:
-    0 0 0 3px var(--palette-white),
-    0 0 0 4px var(--color-gold-light);
-  color: var(--palette-white);
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
+    0 0 0 2px var(--palette-white),
+    0 0 0 4px var(--color-gold);
 }
 
 .name,
@@ -97,6 +92,12 @@
 .body :global(.tag) {
   font-weight: var(--weight-semibold);
   color: var(--color-accent);
+}
+
+/* A code block scrolls inside its own box, so one long line never widens the page. */
+.body pre {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .body code {

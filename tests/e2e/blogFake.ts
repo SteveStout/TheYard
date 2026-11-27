@@ -124,7 +124,8 @@ function matchedIn(post: MadePost, q: string): string[] | null {
   return [...places];
 }
 
-function listAnswer(posts: MadePost[], url: URL) {
+/** The list's first page as the API answers it for this address. */
+export function listAnswer(posts: MadePost[], url: URL) {
   const params = url.searchParams;
   const q = params.get('q') ?? '';
   const searched = new Map(posts.map((post) => [post.slug, q ? matchedIn(post, q) : []]));
@@ -176,7 +177,8 @@ function listAnswer(posts: MadePost[], url: URL) {
   };
 }
 
-function postAnswer(posts: MadePost[], slug: string) {
+/** One post's answer as the API gives it, with its older, newer and related posts. */
+export function postAnswer(posts: MadePost[], slug: string) {
   const newest = [...posts].sort((a, b) => b.published_at.localeCompare(a.published_at));
   const at = newest.findIndex((post) => post.slug === slug);
   if (at < 0) return null;

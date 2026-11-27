@@ -133,6 +133,16 @@
   max-width: none;
 }
 
+/* On the ground (the home page): no frame and no padding, and the title the review route's 40 px (30 on a phone). */
+.split.ground {
+  padding: 0;
+}
+
+.split.ground .words h1 {
+  font-size: var(--text-4xl);
+  line-height: 1.12;
+}
+
 /* Under 1280 the open sidebar leaves the page about 700 px, so the two columns stack. */
 @media (max-width: 1279.98px) {
   .hero {
@@ -153,5 +163,9 @@
 
   .split .words h1 {
     font-size: var(--text-2xl);
+  }
+
+  .split.ground .words h1 {
+    font-size: var(--text-3xl);
   }
 }

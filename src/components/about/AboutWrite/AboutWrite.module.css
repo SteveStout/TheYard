@@ -1,0 +1,94 @@
+/**
+ * Does:      Lays out Why I write as the about design draws it: the heading and the line in the 5 column, the newest
+ *            post's card in the 7, 32 px apart and vertically centred; the card its cover thumbnail beside the title,
+ *            the line under it and "Read it"; on a phone one column with a smaller thumbnail.
+ * Does not:  Draw a card's glass (panels.css does).
+ * Used by:   AboutWrite.tsx.
+ */
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: center;
+  gap: var(--space-7);
+  padding: var(--space-5) var(--space-6);
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  color: var(--color-heading);
+  font-size: var(--text-xl);
+  line-height: 1.3;
+}
+
+.line {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+/* The card's room is kept while the posts are read, so nothing under it moves when the card arrives. */
+.slot {
+  min-height: 148px;
+}
+
+.latest {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.latest img {
+  display: block;
+  width: 150px;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.latest strong {
+  display: block;
+  color: var(--color-heading);
+  font-size: var(--text-lg);
+  line-height: 1.35;
+}
+
+.meta {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.read {
+  display: inline-block;
+  margin-top: var(--space-2);
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.latest:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+@media (max-width: 767.98px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .latest {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .latest img {
+    width: 96px;
+  }
+}

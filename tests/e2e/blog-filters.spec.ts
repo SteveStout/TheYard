@@ -41,6 +41,13 @@ const slugs = (page: Page) =>
     .locator('[data-testid="blog-post"] h2, [data-testid="blog-mini"] h3')
     .allInnerTexts();
 
+/** The keywords fold behind one pill (ADR-142): a reader opens it before pressing a keyword chip. */
+async function showKeywords(page: Page) {
+  const toggle = page.getByTestId('blog-keywords-toggle');
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+}
+
 test('a topic chip narrows the list, writes the address, and Back and Forward walk it', async ({
   page,
 }) => {
@@ -66,6 +73,7 @@ test('a topic chip narrows the list, writes the address, and Back and Forward wa
 test('a keyword chip narrows the list to the posts that really talk about it', async ({ page }) => {
   await answerBlog(page, POSTS);
   await openTheYard(page, '/?view=blog');
+  await showKeywords(page);
   await page
     .getByTestId('blog-filters')
     .getByRole('button', { name: /^Microsoft Copilot/ })
@@ -218,6 +226,7 @@ for (const width of [1440, 390]) {
       [/^Microsoft Copilot/, /\?view=blog&keyword=copilot$/, 1],
     ] as const) {
       const bar = page.getByTestId('blog-filters');
+      if (String(address).includes('keyword')) await showKeywords(page);
       await bar.getByRole('button', { name: chip }).click();
       await expect(page).toHaveURL(address);
       await expect(page.getByTestId('blog-count')).toHaveText(`Showing ${shown} of 12 posts`);

@@ -509,6 +509,24 @@ public class AuthorPageTests
         Assert.DoesNotMatch(@"(?i)\b(age \d|aged \d|\d+ years? old|since \d{4}|\d+ years of woodworking|\b(19|20)\d{2}\b)", section);
     }
 
+    /// <summary>
+    /// Why I write is his line, word for word, in one place each side: the author document the About page reads, and
+    /// the constant /about draws, held equal here, the one sentence of each under its own heading (ADR-142).
+    /// </summary>
+    [Fact]
+    public void Why_I_write_is_his_line_word_for_word_on_the_About_page_and_on_about()
+    {
+        const string line = "I started blogging after my friend Lee Markum, a SQL Server blogger, pushed me to write. Every post here is also on LinkedIn, with the code and the live pages it talks about. I find it a good way to share information that isn't being talked about, and a good place for others to learn.";
+        Assert.Equal(line, AboutPage.WhyIWrite);
+        string words = Words();
+        int heading = words.IndexOf("\n## Why I write\n", StringComparison.Ordinal);
+        Assert.True(heading > 0, "docs/author/AUTHOR.md should hold a Why I write section");
+        Assert.Contains($"\n{line}\n", words[heading..], StringComparison.Ordinal);
+        string page = AboutPage.Render("https://theyard.stevenstout.biz/");
+        Assert.Contains("<h2 id=\"why-i-write\">Why I write</h2>", page, StringComparison.Ordinal);
+        Assert.Contains(System.Net.WebUtility.HtmlEncode(line), page, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void What_colleagues_say_is_one_heading_after_the_introduction_and_quotes_nobody()
     {

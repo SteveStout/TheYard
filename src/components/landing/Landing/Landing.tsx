@@ -13,6 +13,7 @@ import { landingTiles, type LandingTile as LandingTileEntry } from '../../../lib
 import type { DocKey } from '../../../library/documents';
 import { LINKS, MENUS } from '../../../library/sections';
 import { useFirstSeen } from '../../../hooks/useFirstSeen';
+import { Eyebrow } from '../../shared/Eyebrow';
 import { Hook } from '../../shared/Hook';
 import { SectionHead } from '../../shared/SectionHead';
 import { QualityTrend } from '../../shared/QualityTrend';
@@ -133,22 +134,14 @@ export function Landing({
           page="landing"
           lines={lines}
           headingId="landing-title"
-          headingClass={styles.heading}
+          headingClass={`op-title ${styles.heading}`}
+          ground
           caption={HOOK.chart ? `${HOOK.chart.label}, ${HOOK.chart.direction}` : undefined}
           figure={HOOK_TREND && <QualityTrend data={HOOK_TREND} />}
           link={HOOK.link}
           onLink={inPlace(() => onOpenDoc('quality'))}
           split={{
-            above: (
-              <p className={styles.eyebrow} data-testid="landing-name">
-                {VERDICT.eyebrow.map((part, index) => (
-                  <span key={part}>
-                    {index > 0 && <i aria-hidden="true">/</i>}
-                    {part}
-                  </span>
-                ))}
-              </p>
-            ),
+            above: <Eyebrow parts={VERDICT.eyebrow} testId="landing-name" />,
             lede: INTRO.sentence,
             moves: (
               <div
