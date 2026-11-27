@@ -21,6 +21,9 @@ internal sealed class MemoryShare : IShare
 {
     public Dictionary<string, string> Files { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>A file's last change, where a test sets one; every other file reads 2 November.</summary>
+    public Dictionary<string, DateTimeOffset> Changed { get; } = new(StringComparer.Ordinal);
+
     public string? Refused { get; set; }
 
     public int RefuseSpool { get; set; }
@@ -42,7 +45,7 @@ internal sealed class MemoryShare : IShare
         var match = new Regex("^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$");
         IReadOnlyList<ShareFile> files = [.. Files.Keys
             .Where(path => path.StartsWith(prefix, StringComparison.Ordinal) && !path[prefix.Length..].Contains('/') && match.IsMatch(path[prefix.Length..]))
-            .Select(path => new ShareFile(path, DateTimeOffset.Parse("2026-11-02T00:00:00Z")))];
+            .Select(path => new ShareFile(path, Changed.TryGetValue(path, out DateTimeOffset at) ? at : DateTimeOffset.Parse("2026-11-02T00:00:00Z")))];
         return Task.FromResult(files);
     }
 

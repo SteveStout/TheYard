@@ -9,6 +9,7 @@ namespace JobHunt.Server.Application.Features.Run;
 public static class ApplyPostings
 {
     private const string ReopenList = "nightly/apply-reopen.tsv";
+    private const string StandardAnswers = "standard-answers.md";
 
     /// <summary>Every posting the morning's lists put forward, before any gate.</summary>
     /// <param name="share">The share.</param>
@@ -57,6 +58,10 @@ public static class ApplyPostings
         var skipped = ApplySkips.Remembered(table, reads.Day);
         var boards = ApplySkips.Boards(table, reads.Day);
         var reopened = skipped.Count > 0 && await share.ExistsAsync(ReopenList, ct) ? ReopenKeys(await share.ReadAsync(ReopenList, ct)).ToHashSet(StringComparer.Ordinal) : [];
+        if (skipped.Count > 0 && (await share.ListAsync(string.Empty, StandardAnswers, ct)).FirstOrDefault() is { } answers)
+        {
+            reopened.UnionWith(ApplySkips.Answered(table, reads.Day, RunSlot.Day(answers.Changed)));
+        }
         skipped.ExceptWith(reopened);
         int held = postings.RemoveAll(posting => skipped.Contains(ApplySkips.Key(posting.Link)));
         if (held > 0)

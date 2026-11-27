@@ -66,6 +66,17 @@ public static partial class ApplySkips
         return $"{board}/{match.Groups["token"].Value.ToLowerInvariant()}";
     }
 
+    /// <summary>
+    /// The postings skipped for a question with no banked answer on or before the day standard-answers.md last changed:
+    /// the answer may be banked now, so they come off the skip list that day rather than a week on.
+    /// </summary>
+    /// <param name="table">apply-skipped.tsv.</param>
+    /// <param name="day">The Central day.</param>
+    /// <param name="answersChanged">The Central day standard-answers.md last changed.</param>
+    public static HashSet<string> Answered(string table, DateOnly day, DateOnly answersChanged) =>
+        [.. Recent(table, day).Where(cells => cells.Length >= 3 && Unbanked().IsMatch(cells[2])
+            && DateOnly.ParseExact(cells[1], "yyyy-MM-dd", CultureInfo.InvariantCulture) <= answersChanged).Select(cells => Key(cells[0]))];
+
     private static IEnumerable<string[]> Recent(string table, DateOnly day) =>
         table.Split('\n').Select(line => line.TrimEnd('\r').Split('\t'))
             .Where(cells => cells.Length >= 2 && DateOnly.TryParseExact(cells[1], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly written) && day.DayNumber - written.DayNumber is >= 0 and < Days);
@@ -83,6 +94,9 @@ public static partial class ApplySkips
         string path = (end < 0 ? trimmed : trimmed[..end]).TrimEnd('/').ToLowerInvariant();
         return path.EndsWith("/application", StringComparison.Ordinal) ? path[..^"/application".Length] : path;
     }
+
+    [GeneratedRegex(@"^(?:skipped:\s*)?no banked answer\b", RegexOptions.IgnoreCase)]
+    private static partial Regex Unbanked();
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();
