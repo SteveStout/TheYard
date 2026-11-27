@@ -137,6 +137,23 @@ public sealed class DarkLaneTests
     }
 
     [Fact]
+    public void A_lane_whose_fix_landed_and_waits_on_its_proof_run_is_not_dark_until_that_run_reads_empty()
+    {
+        // holdfix1127: NOT-WORKING.md read 11:30 CST 11/27 carried "DARK: LinkedIn invites (6 AM): ... Fix: not yet found." an
+        // hour after heal-w8 landed as 1.0.5.173; check_empty_runs.py moves a landed fix's line to NOT-WORKING-waiting.md.
+        var reads = Reads(Fixture(), [MessagesHold], "EMPTY RUN: server6am invites, 7 runs, since 11/19. Top reasons: already invited (35), over the day's room, stays queued (19)\n");
+        Assert.NotNull(DarkLanes.Line(DarkLanes.Lanes[1], reads, Tuesday));
+        string waiting = "> RULES FIRST\n\nWAITING: server6am invites. Fix: heal-w8 (1.0.5.173) landed 2026-11-27. Proof: Sat 11/28 06:00 CST invites.\n"
+            + "WAITING: server6am messages. Fix: nightfix1127-build R6 (1.0.5.177) landed 2026-11-27. Proof: Sat 11/28 06:00 CST messages.\n";
+        var waits = reads with { Waiting = waiting };
+        Assert.Null(DarkLanes.Line(DarkLanes.Lanes[1], waits, Tuesday));
+        Assert.Null(DarkLanes.Line(DarkLanes.Lanes[0], waits, Tuesday));
+        Assert.DoesNotContain(DarkLanes.Lines(waits, Tuesday), l => l.StartsWith("DARK: LinkedIn", StringComparison.Ordinal));
+        // Another lane's waiting line, or a lane name that only starts the same, waits nothing.
+        Assert.NotNull(DarkLanes.Line(DarkLanes.Lanes[1], reads with { Waiting = "WAITING: server6am invitesx. Fix: x.\nWAITING: leaders. Fix: R7.\n" }, Tuesday));
+    }
+
+    [Fact]
     public void The_campaign_counts_its_tracker_sends_and_a_pounce_row_is_judged_by_its_note()
     {
         const string tracker = "Count,Person,Company,Communication,Date,Phone/Email,Notes\n3855,Ann Lee,Acme,Email,11/23/2026,ann@acme.test,\"CAMPAIGN EMAIL SENT 8:00 AM CST 11/23\"\n";
