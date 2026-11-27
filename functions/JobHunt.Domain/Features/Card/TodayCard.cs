@@ -170,7 +170,7 @@ public static class TodayCard
         Bullets(body, TodayParts.Lanes(inputs.Status), "Nothing running, held or proposed.");
 
         body.Append("\n## Left for you by lanes that closed in the last 24 hours (dispatch/LEFT-FOR-STEVE.md)\n\n");
-        var (sections, closed) = TodayLeft.Shown([.. left.Select(s => (s, (IReadOnlyList<string>)[.. s.Blocks.Where(b => !Critical(b) && !TodayParts.IsAnswered(b, answered))]))], decisions);
+        var (sections, closed) = TodayLeft.Shown([.. left.Select(s => (s, (IReadOnlyList<string>)[.. s.Blocks.Where(b => !Critical(b) && !TodayParts.IsAnswered(b, answered) && !TodayLeft.ClosedRoad(b))]))], decisions);
         if (sections.Count == 0 && closed.Count == 0)
         {
             body.Append("- None.\n");

@@ -87,6 +87,15 @@ public static partial class TodayLeft
     /// <param name="title">The title.</param>
     public static bool Names(string block, string title) => block.Contains(title, StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Whether a block is a road the year-end plan's 7c closed, which the card never prints: a line with a "queue it" in
+    /// any case, an EMPTY RUN or a "Proposed:" opening, the lines W14 counts. A lane decides those itself (RULE 77 check
+    /// 1) and the bullet stays in LEFT-FOR-STEVE.md for the bookkeeping run to move.
+    /// </summary>
+    /// <param name="block">The block.</param>
+    public static bool ClosedRoad(string block) => block.Split('\n').Any(line => line.Contains("Queue it", StringComparison.OrdinalIgnoreCase)
+        || line.Contains("EMPTY RUN", StringComparison.Ordinal) || line.TrimStart('-', ' ', '*').StartsWith("Proposed:", StringComparison.Ordinal));
+
     // A line of prose that ends in a colon and leads into the bullets after it.
     private static bool LeadIn(string block) => !block.StartsWith("- ", StringComparison.Ordinal) && !block.Contains('\n', StringComparison.Ordinal) && block.TrimEnd().EndsWith(':');
 
