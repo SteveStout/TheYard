@@ -9,6 +9,9 @@ public static class Blockers
     /// <summary>How the apply lane opens a reason when a form needs Steve; the control's name follows it.</summary>
     public const string NeedsSteve = "needs Steve:";
 
+    /// <summary>How a question with no banked answer opens, put to him once to answer in his own words.</summary>
+    public const string AnswerOnce = "answer once:";
+
     /// <summary>The whole file.</summary>
     /// <param name="day">The Central day.</param>
     /// <param name="postings">The postings behind a wall.</param>
@@ -20,7 +23,7 @@ public static class Blockers
             string.Empty,
             $"# APPLY-BLOCKERS {day:yyyy-MM-dd} ({RegistryRows.Lane})",
             string.Empty,
-            "Each one: open the link, click Apply, sign in or create the account, stop on the first form page, say \"fill <company>\".",
+            "Each one: open the link, click Apply, sign in or create the account, stop on the first form page, say \"fill <company>\". An \"answer once\" item is a question the form asks with no banked answer: answer it once in your own words, and once standard-answers.md holds it the posting comes back on the next morning's list.",
             string.Empty,
         };
         int number = 0;

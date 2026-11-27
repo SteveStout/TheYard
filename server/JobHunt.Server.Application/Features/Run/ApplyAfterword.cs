@@ -52,10 +52,17 @@ public static partial class ApplyAfterword
             .Where(found => found.Row is not null)
             .Select(found => new Posting(found.Row!.Company, found.Row.Role, found.Row.Url, found.Reason!, found.Row.Source))
             .ToList();
-        if (walled.Count > 0 && !start.Dry)
+        // A question with no banked answer is put to him once, in its own words, never guessed (RULE 57, his history stays his).
+        var unbanked = (result?.Rows ?? []).Where(row => row.Outcome is "skipped" or "blocked" && row.Reason is { } reason && Unbanked().IsMatch(reason))
+            .Select(row => (Row: list.Rows.FirstOrDefault(work => work.Row == row.Row), Question: Unbanked().Replace(row.Reason!, string.Empty).Trim()))
+            .Where(found => found.Row is not null)
+            .Select(found => new Posting(found.Row!.Company, found.Row.Role, found.Row.Url, $"{Blockers.AnswerOnce} {found.Question}", found.Row.Source))
+            .ToList();
+        if (walled.Count + unbanked.Count > 0 && !start.Dry)
         {
-            await share.WriteAsync($"{folder}/APPLY-BLOCKERS-{start.Day:yyyy-MM-dd}.md", Blockers.Render(start.Day, [.. list.Blockers, .. walled]), ct);
+            await share.WriteAsync($"{folder}/APPLY-BLOCKERS-{start.Day:yyyy-MM-dd}.md", Blockers.Render(start.Day, [.. list.Blockers, .. walled, .. unbanked]), ct);
             lines.Add($"{walled.Count} postings the lane found behind a wall, a signature or a covenant added to the day's blockers list");
+            lines.Add($"{unbanked.Count} questions with no banked answer added to the day's blockers list as \"{Blockers.AnswerOnce}\" items");
         }
         if (!start.Dry)
         {
@@ -127,6 +134,9 @@ public static partial class ApplyAfterword
 
     private static int Attempt(string path) =>
         int.TryParse(Path.GetFileNameWithoutExtension(path).Split('-').LastOrDefault(), out int attempt) ? attempt : 0;
+
+    [GeneratedRegex(@"^(?:skipped:\s*)?no banked answer:?\s*", RegexOptions.IgnoreCase)]
+    private static partial Regex Unbanked();
 
     [GeneratedRegex(@"account wall|\bsign[- _]?in\b|password|signature|covenant|arbitration|non-?compete|\bNDA\b|^needs Steve:", RegexOptions.IgnoreCase)]
     private static partial Regex Wall();
