@@ -62,6 +62,12 @@ const timed = results('checks.result');
 const checksSeconds =
   timed.checks_s === undefined || timed.checks_s === '' ? null : Number(timed.checks_s);
 const seconds = (side, key) => Number(side[`${key}_s`] ?? 0);
+// A re-run of the promote job measures from its own attempt's start, which the re-run resets, while checks.result
+// still holds the first attempt's check jobs. Seconds below those are such a re-run: the gate then took the checks'
+// wall clock plus this attempt's own seconds, so gateSeconds is never written below checksSeconds (TestResultsTests).
+const handed = Number(gateSeconds ?? 0);
+const gateTotal =
+  checksSeconds !== null && handed < checksSeconds ? checksSeconds + handed : handed;
 
 // What scripts/gate_feed.sh read with gh for this promote, which promote.sh writes into the raw folder before this
 // runs (the gate's own jobs do not write it): the run's id and push time, the lines the version changes, the gate's
@@ -303,7 +309,7 @@ const lines = [
   '{',
   `  "version": ${JSON.stringify(version)},`,
   `  "ranAt": ${JSON.stringify(new Date().toISOString())},`,
-  `  "gateSeconds": ${Number(gateSeconds ?? 0)},`,
+  `  "gateSeconds": ${gateTotal},`,
   `  "checksSeconds": ${JSON.stringify(checksSeconds)},`,
   `  "runId": ${JSON.stringify(feed.runId ?? null)},`,
   `  "pushedAt": ${JSON.stringify(feed.pushedAt ?? null)},`,
