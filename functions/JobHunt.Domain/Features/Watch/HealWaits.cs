@@ -17,14 +17,19 @@ public static partial class HealWaits
 
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    /// <summary>The index in HEALED.md of the newest landed line for a signature, or -1.</summary>
+    /// <summary>
+    /// The index in HEALED.md of the newest landed line for a signature that names its run, or -1. A line that names none
+    /// ("the next run, none named") holds nothing back and never starts the attempts again: a heal that built nothing
+    /// lands nothing.
+    /// </summary>
     /// <param name="healed">HEALED.md's lines.</param>
     /// <param name="sig">The failure's signature.</param>
     public static int LandedAt(IReadOnlyList<string> healed, string sig)
     {
         for (int i = healed.Count - 1; i >= 0; i--)
         {
-            if (healed[i].Contains(Landed, StringComparison.Ordinal) && healed[i].EndsWith($"sig={sig}", StringComparison.Ordinal))
+            if (healed[i].Contains(Landed, StringComparison.Ordinal) && healed[i].EndsWith($"sig={sig}", StringComparison.Ordinal)
+                && When().IsMatch(healed[i][(healed[i].IndexOf(Landed, StringComparison.Ordinal) + Landed.Length)..]))
             {
                 return i;
             }
@@ -59,6 +64,17 @@ public static partial class HealWaits
     /// <param name="sig">The failure's signature.</param>
     /// <param name="local">The Central time now.</param>
     public static bool Waiting(IReadOnlyList<string> healed, string sig, DateTime local) => Run(healed, sig) is { } run && local < run;
+
+    /// <summary>Why a product reading never opens a heal: it is a number the product has to earn, not a fault to fix.</summary>
+    public const string ProductReading = "a product reading, not a fault: product item, January";
+
+    /// <summary>
+    /// Whether a reading is a product number rather than a fault: W11, the review route's second action (WatchBeats.Review,
+    /// "below it is a January item, never a heal"; ADR-139). It keeps reading FAIL with its real number, and its line goes to
+    /// NOT-WORKING.md, but no heal lane is opened and no budget is spent on it.
+    /// </summary>
+    /// <param name="r">The reading.</param>
+    public static bool Product(WatchResult r) => r.Test == "W11";
 
     /// <summary>Whether a reading is a red main: W9 on a CI failure, whose heal is outside the day's code-heal budget.</summary>
     /// <param name="r">The reading.</param>

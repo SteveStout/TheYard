@@ -95,7 +95,7 @@ public static partial class HealLadder
             }
             int tries = before.Skip(HealWaits.LandedAt(before, sig) + 1).Concat(lines).Count(l => l.EndsWith($"sig={sig}", StringComparison.Ordinal) && (l.Contains("| 4 heal item", StringComparison.Ordinal) || l.Contains("| 4 refused", StringComparison.Ordinal)));
             string kind = r.Test is "W5" or "W6" or "W11" or "W15" ? "data" : "code";
-            string? refused = Key(r.Name).StartsWith("heal-", StringComparison.Ordinal) ? "a heal lane's own failure is never healed"
+            string? refused = Key(r.Name).StartsWith("heal-", StringComparison.Ordinal) ? "a heal lane's own failure is never healed" : HealWaits.Product(r) ? HealWaits.ProductReading
                 : kind == "code" && code >= CodeHealsADay && !HealWaits.RedMain(r) ? $"past the budget of {code} code heals today" : null;
             if (tries >= Attempts && refused is null)
             {
