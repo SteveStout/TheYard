@@ -70,7 +70,7 @@ describe('the weave when the document changes under its keys', () => {
       [lead([]), away('Away', ['Food'], ['couple-one', RABBITS.photo, 'stranger'])],
       '<p>Credit.</p>'
     );
-    expect(woven.away!.strip!.photos.map((photo) => nameOf(photo.figure))).toEqual([
+    expect(woven.away!.strip!.photos.map(nameOf)).toEqual([
       'couple-one',
       RABBITS.photo,
       'stranger',
@@ -84,7 +84,21 @@ describe('the weave when the document changes under its keys', () => {
     expect(woven.away!.strip).toBeNull();
     expect(woven.credit).toBe('<p>Credit.</p>');
     expect(woven.more).toEqual(['<h2>More</h2>']);
-    expect(weave([], null)).toEqual({ lead: null, away: null, more: [], credit: null });
+    expect(weave([], null)).toEqual({
+      lead: null,
+      away: null,
+      write: null,
+      more: [],
+      credit: null,
+    });
+  });
+
+  it('takes Why I write out wherever it stands, its words whole, and weaves the rest as before', () => {
+    const write = '<h2 id="why">Why I write</h2><p>His line.</p>';
+    const woven = weave([lead(['Decisions written down']), write, away('Away', ['Food'])], null);
+    expect(woven.write).toEqual({ title: 'Why I write', body: '<p>His line.</p>' });
+    expect(woven.away!.cards.map((card) => card.title)).toEqual(['Food']);
+    expect(woven.more).toEqual([]);
   });
 
   it('reads a panel with no blocks as its heading and words alone', () => {

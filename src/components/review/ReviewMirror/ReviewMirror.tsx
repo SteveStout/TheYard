@@ -61,8 +61,8 @@ export function ReviewMirror({
   return (
     <div className={styles.mirror} data-testid="review-mirror">
       <div className={styles.main}>
-        <p className={verdict.eyebrow}>{MIRROR.eyebrow}</p>
-        <h1 id="review-title" className={verdict.title}>
+        <p className="op-eyebrow">{MIRROR.eyebrow}</p>
+        <h1 id="review-title" className={`op-title ${verdict.title}`}>
           {MIRROR.title}
         </h1>
         <dl className={styles.case}>

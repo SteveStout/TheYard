@@ -105,12 +105,20 @@ test('a tagged visit carries its code through the footers, and each page it land
  */
 const QUESTION = 'What has to work, where is it today, and what does success look like?';
 const MOVES = ['Book 20 minutes', 'Resume (PDF)', 'Message me on LinkedIn'];
-const SPOKES: { page: string; address: string; links: string[]; closeFirst: boolean }[] = [
+/** A landing view numbers its close as its next section (ADR-142): a post's is 02, after "01 The full post". */
+const SPOKES: {
+  page: string;
+  address: string;
+  links: string[];
+  closeFirst: boolean;
+  number?: string;
+}[] = [
   {
     page: 'post',
     address: '/?view=blog&post=a-made-up-post',
     links: ['/?view=review', '/?view=about'],
     closeFirst: true,
+    number: '02',
   },
   {
     page: 'about',
@@ -141,9 +149,12 @@ for (const [width, height] of [
         await openTheYard(page, spoke.address);
       }
       const close = page.locator('[data-mock="close"]');
-      await expect(close.locator('[data-mock="close-question"]')).toHaveText(QUESTION, {
-        timeout: 30_000,
-      });
+      await expect(close.locator('[data-mock="close-question"]')).toHaveText(
+        `${spoke.number ?? ''}${QUESTION}`,
+        {
+          timeout: 30_000,
+        }
+      );
       const moves = close.locator('[data-mock="close-moves"] > a');
       await expect(moves).toHaveCount(3);
       expect(

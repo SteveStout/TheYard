@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   NO_FILTER,
   emptyLine,
+  labelsOf,
   filterFromSearch,
   filterToParams,
   isFiltered,
@@ -141,5 +142,26 @@ describe('what a search shows', () => {
   it('gives a post its reading time in whole minutes', () => {
     expect(minutesLine(1)).toBe('1 min read');
     expect(minutesLine(16)).toBe('16 min read');
+  });
+});
+
+describe("the chips' labels", () => {
+  it("are read by key from a list's own answer, and are none before there is one", () => {
+    const facet = (key: string, label: string) => ({ key, label, count: 1 });
+    const list = {
+      cards: [],
+      total: 0,
+      topics: [facet('ai', 'AI')],
+      keywords: [facet('cqrs', 'CQRS')],
+      months: [facet('2026-11', 'November 2026')],
+      next: null,
+      terms: [],
+    };
+    expect(labelsOf(list)).toEqual({
+      topics: { ai: 'AI' },
+      keywords: { cqrs: 'CQRS' },
+      months: { '2026-11': 'November 2026' },
+    });
+    expect(labelsOf(null)).toBeNull();
   });
 });

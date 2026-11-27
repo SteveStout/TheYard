@@ -116,6 +116,10 @@ I live in St. Charles, Missouri. It was the first state capital of Missouri and 
 
 ![Two white rabbits, one lop-eared and one with upright ears, on a wooden board under a hay rack, on a green and white rug](https://raw.githubusercontent.com/SteveStout/TheYard/main/api/TheYard.Api/wwwroot/images/author/rabbits-under-hay-rack-960.jpg)
 
+## Why I write
+
+I started blogging after my friend Lee Markum, a SQL Server blogger, pushed me to write. Every post here is also on LinkedIn, with the code and the live pages it talks about. I find it a good way to share information that isn't being talked about, and a good place for others to learn.
+
 ---
 
 If any of this sounds like someone you would want on your team, I would enjoy the conversation.

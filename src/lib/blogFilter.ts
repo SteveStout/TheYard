@@ -2,11 +2,14 @@
  * Does:      The blog's filter as the address carries it (ADR: Every LinkedIn post is also a blog post, the addendum on
  *            the read model): read from a query, written back in one order, turned into the list's API address; and
  *            the words a search shows, the match line, the marks on the widened terms, the sentence for an empty
- *            result, and the reading time. The terms to mark come from the API, which owns the synonyms.
+ *            result, the chips' labels, and the reading time. The terms to mark come from the API, which owns the synonyms.
  * Does not:  Read or write the address bar (useAddressBar.ts does), fetch (useBlogList.ts does), or decide what a
  *            word matches (the API's KeywordRules do).
- * Used by:   useBlogList.ts, useBlogFilter.ts, BlogFilters, BlogMini, BlogPostCard, BlogPage.
+ * Used by:   useBlogList.ts, useBlogFilter.ts, BlogFilters, BlogMini, BlogPostCard, BlogPage, blogHead.ts,
+ *            AboutWrite.
  */
+
+import type { BlogList } from './blog';
 
 /** What the list is filtered by. A part left null, or an empty search, is no filter on it. */
 export type BlogFilter = {
@@ -140,6 +143,14 @@ export type FilterLabels = {
   keywords: Record<string, string>;
   months: Record<string, string>;
 };
+
+/** The chips' labels by key, read from a list's own answer, or null before there is one. */
+export function labelsOf(list: BlogList | null): FilterLabels | null {
+  if (!list) return null;
+  const by = (facets: BlogList['topics']) =>
+    Object.fromEntries(facets.map((facet) => [facet.key, facet.label]));
+  return { topics: by(list.topics), keywords: by(list.keywords), months: by(list.months) };
+}
 
 /** What an empty result says: what was asked, in the reader's words. */
 export function emptyLine(filter: BlogFilter, labels: FilterLabels): string {

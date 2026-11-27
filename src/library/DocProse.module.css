@@ -3,7 +3,7 @@
  *            links, the no-sideways-scroll rules, tables in their own scroll box, child records and pictures.
  * Does not:  Style the window, the swatches, the reading panels or the Author page (each has its own sheet beside
  *            this one), or hold a colour of its own.
- * Used by:   DocDialog.tsx, AboutPage.tsx.
+ * Used by:   DocDialog.tsx, AboutLead.tsx, AboutPage.tsx, AboutRow.tsx.
  */
 /* Markdown prose, kept consistent with the app's tokens. */
 .prose {

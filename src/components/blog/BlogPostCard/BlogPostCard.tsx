@@ -1,6 +1,7 @@
 /**
  * Does:      Draws one post in full, in the feed layout readers know from LinkedIn and in the site's own colours: who wrote
- *            it, when and how long it takes, the title as a link to the post's own address (a plain click opens it in place
+ *            it (his photo in the gold ring), when and how long it takes, the title as a link (left to the page's own
+ *            h1 when the post is open on its own address) to the post's own address (a plain click opens it in place
  *            where the page says how, a modified click keeps the browser's meaning), where a search matched, "From the work" when a review route case
  *            card names the post, its topics and keywords, the body drawn
  *            on save and clamped with "see more", the slides as a strip of thumbnails that open the slide viewer, the
@@ -15,6 +16,7 @@ import { markLinkRows, postDate, thumbSrcSet, type BlogPost } from '../../../lib
 import { matchLine, minutesLine, type FilterLabels } from '../../../lib/blogFilter';
 import { useBlogReport } from '../../../hooks/useBlogReport';
 import { fromTheWork } from '../../../lib/reviewCases';
+import { AUTHOR_PHOTO } from '../../../lib/authorCard';
 import { BlogTags, Marked } from '../BlogTags';
 import { PostTitleLink } from '../PostTitleLink';
 import { SlideViewer } from '../SlideViewer';
@@ -22,7 +24,6 @@ import styles from './BlogPostCard.module.css';
 
 /** The author's line, the resume's own words. */
 const AUTHOR = {
-  initials: 'SS',
   name: 'Steven Stout',
   headline:
     'Lead / Staff .NET Engineer | 12 Years Full Stack .NET, 7 Fully Remote | Cloud Platform Architecture',
@@ -113,13 +114,18 @@ export function BlogPostCard({
     <article
       ref={card}
       className={`${styles.card} op-glass op-tile`}
-      aria-labelledby={`post-${post.slug}`}
+      aria-labelledby={open ? 'blog-title' : `post-${post.slug}`}
       data-testid="blog-post"
     >
       <header className={styles.who}>
-        <span className={styles.avatar} aria-hidden="true">
-          {AUTHOR.initials}
-        </span>
+        <img
+          className={styles.avatar}
+          src={AUTHOR_PHOTO}
+          width={56}
+          height={56}
+          alt=""
+          data-mock="byline-photo"
+        />
         <div>
           <p className={styles.name}>{AUTHOR.name}</p>
           <p className={styles.headline}>{AUTHOR.headline}</p>
@@ -130,11 +136,14 @@ export function BlogPostCard({
         </div>
       </header>
 
-      <h2 id={`post-${post.slug}`} className={styles.title}>
-        <PostTitleLink slug={post.slug} onOpen={onOpen} here={open}>
-          <Marked text={post.title} terms={terms} />
-        </PostTitleLink>
-      </h2>
+      {/* On its own page the post's title is the page's h1, so the card does not print it again. */}
+      {!open && (
+        <h2 id={`post-${post.slug}`} className={styles.title}>
+          <PostTitleLink slug={post.slug} onOpen={onOpen} here={open}>
+            <Marked text={post.title} terms={terms} />
+          </PostTitleLink>
+        </h2>
+      )}
       {line && (
         <p className={styles.why} data-testid="blog-matched">
           {line}

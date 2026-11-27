@@ -245,9 +245,13 @@
   container: page / inline-size;
 }
 
-/* The review route is one unit 1234 px wide, as its whole-page picture's .page: the same gutters, its own measure. */
+/* Every landing view sits in the review route's box, both edges shared (ADR-142's addendum on the landing views). */
+.main[data-landing] {
+  max-width: var(--landing-width);
+}
+
+/* The review route, a landing view, keeps its own room above and below, as its whole-page picture's .page. */
 .main[data-view='review'] {
-  max-width: 1234px;
   padding-top: var(--space-7);
   padding-bottom: var(--space-8);
 }

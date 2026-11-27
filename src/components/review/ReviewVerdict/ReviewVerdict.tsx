@@ -5,7 +5,9 @@
  *            in order (See the work, the gold Resume (PDF), Book 20 minutes), the roles row under them, and at the side
  *            the dark live panel, "TheYard, right now", over the one named quote. Every button reports its action; See
  *            the work and the tiles' doors scroll down to the work and report work.
- * Does not:  Read the API (useReviewReadings.ts and usePulse.ts do) or hold the words (reviewVerdict.ts does).
+ *            The grid, the eyebrow, the title and the lede are the shared page head every landing view opens with.
+ * Does not:  Read the API (useReviewReadings.ts and usePulse.ts do), hold the words (reviewVerdict.ts does) or lay out
+ *            the head's grid (PageHead does).
  * Used by:   ReviewPage.tsx.
  */
 import { useFirstSeen } from '../../../hooks/useFirstSeen';
@@ -26,6 +28,7 @@ import {
 } from '../../../lib/reviewVerdict';
 import { scrollToSection } from '../../../lib/sectionScroll';
 import { NowPanel } from '../../shared/NowPanel';
+import { PageHead } from '../../shared/PageHead';
 import { PdfMark } from '../../shared/PdfMark';
 import { ProofTile } from '../../shared/ProofTile';
 import { ReviewLeadQuote } from '../ReviewLeadQuote';
@@ -58,105 +61,105 @@ export function ReviewVerdict({
   const [holder] = useFirstSeen<HTMLDivElement>();
 
   return (
-    <div ref={holder} className={styles.verdict} data-testid="review-verdict">
-      <div className={styles.main}>
-        <p className={styles.eyebrow}>
-          {VERDICT.eyebrow.map((part, index) => (
-            <span key={part}>
-              {index > 0 && (
-                <span className={styles.slash} aria-hidden="true">
-                  /
-                </span>
-              )}
-              {part}
-            </span>
-          ))}
-        </p>
-        <h1 id="review-title" className={styles.title}>
+    <PageHead
+      holder={holder}
+      testId="review-verdict"
+      eyebrow={VERDICT.eyebrow}
+      title={
+        <>
           {VERDICT.title[0]} <span className={styles.line}>{VERDICT.title[1]}</span>
-        </h1>
-        <p className={styles.lede}>{VERDICT.lede}</p>
-        <ul className={styles.tiles} aria-label="The proof">
-          {tiles.map((tile) => (
-            <ProofTile key={tile.key} tile={tile} onDoor={() => onAction('work')} />
+        </>
+      }
+      titleId="review-title"
+      titleClass={styles.title}
+      lede={VERDICT.lede}
+      bodyClass={styles.main}
+      sideLabel="Who vouches for him"
+      sideMock="hero-side"
+      sideClass={styles.side}
+      side={
+        <>
+          <NowPanel
+            id="live-now"
+            title="TheYard, right now"
+            live
+            rows={rightNow}
+            asOf={asOf}
+            hook="live-panel"
+          />
+          <ReviewLeadQuote
+            quote={quote}
+            count={recommendations?.length ?? 0}
+            onFollow={() => onAction('recommendations')}
+          />
+        </>
+      }
+    >
+      <ul className={styles.tiles} aria-label="The proof">
+        {tiles.map((tile) => (
+          <ProofTile key={tile.key} tile={tile} onDoor={() => onAction('work')} />
+        ))}
+      </ul>
+      <div className={styles.moves} data-mock="hero-moves">
+        <a
+          className={`op-pill-primary ${styles.proof}`}
+          href={`#${WORK_ID}`}
+          onClick={(event) => {
+            onAction('work');
+            scrollToSection(event, WORK_ID);
+          }}
+          data-action="review.work"
+          data-testid="review-proof"
+        >
+          {VERDICT.primary}
+          <span className="op-nudge" aria-hidden="true">
+            ↓
+          </span>
+        </a>
+        <a
+          className="op-pill-resume"
+          href={RESUME_ADDRESS}
+          onClick={() => onAction('resume')}
+          data-action="review.resume"
+          data-testid="review-resume"
+        >
+          <PdfMark />
+          {VERDICT.resume}
+        </a>
+        <a
+          className={`op-pill-secondary ${styles.book}`}
+          href={BOOK_ADDRESS}
+          onClick={() => {
+            onAction('book');
+            onBook();
+          }}
+          data-action="review.book"
+          data-testid="review-book"
+        >
+          {VERDICT.book}
+        </a>
+      </div>
+      <section
+        className={`${styles.roles} op-glass op-roles-row`}
+        aria-label="Roles"
+        data-mock="roles"
+      >
+        <p className={styles.rolesLine}>{VERDICT.roles}</p>
+        <ul className={styles.roleLinks}>
+          {ROLE_LINKS.map((link) => (
+            <li key={link.action}>
+              <a
+                className="op-pill-secondary"
+                href={link.href}
+                onClick={() => onAction(link.action)}
+                data-action={`review.${link.action}`}
+              >
+                {link.label}
+              </a>
+            </li>
           ))}
         </ul>
-        <div className={styles.moves} data-mock="hero-moves">
-          <a
-            className={`op-pill-primary ${styles.proof}`}
-            href={`#${WORK_ID}`}
-            onClick={(event) => {
-              onAction('work');
-              scrollToSection(event, WORK_ID);
-            }}
-            data-action="review.work"
-            data-testid="review-proof"
-          >
-            {VERDICT.primary}
-            <span className="op-nudge" aria-hidden="true">
-              ↓
-            </span>
-          </a>
-          <a
-            className="op-pill-resume"
-            href={RESUME_ADDRESS}
-            onClick={() => onAction('resume')}
-            data-action="review.resume"
-            data-testid="review-resume"
-          >
-            <PdfMark />
-            {VERDICT.resume}
-          </a>
-          <a
-            className={`op-pill-secondary ${styles.book}`}
-            href={BOOK_ADDRESS}
-            onClick={() => {
-              onAction('book');
-              onBook();
-            }}
-            data-action="review.book"
-            data-testid="review-book"
-          >
-            {VERDICT.book}
-          </a>
-        </div>
-        <section
-          className={`${styles.roles} op-glass op-roles-row`}
-          aria-label="Roles"
-          data-mock="roles"
-        >
-          <p className={styles.rolesLine}>{VERDICT.roles}</p>
-          <ul className={styles.roleLinks}>
-            {ROLE_LINKS.map((link) => (
-              <li key={link.action}>
-                <a
-                  className="op-pill-secondary"
-                  href={link.href}
-                  onClick={() => onAction(link.action)}
-                  data-action={`review.${link.action}`}
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-      <aside className={styles.side} aria-label="Who vouches for him" data-mock="hero-side">
-        <NowPanel
-          id="live-now"
-          title="TheYard, right now"
-          live
-          rows={rightNow}
-          asOf={asOf}
-          hook="live-panel"
-        />
-        <ReviewLeadQuote
-          quote={quote}
-          count={recommendations?.length ?? 0}
-          onFollow={() => onAction('recommendations')}
-        />
-      </aside>
-    </div>
+      </section>
+    </PageHead>
   );
 }

@@ -4,10 +4,10 @@
  *            link. The landing draws its sentence as the page's heading, in the split layout only it asks for (ADR-132,
  *            the addendum on the split hook): the words on the left with a name line above the heading, one sentence
  *            under it and the page's moves under the hook's sentences; the figure, its link and one more piece on the
- *            right; one column under 1280.
+ *            right; one column under 1280; on the home page it stands on the ground with no frame (ADR-142).
  * Does not:  Read anything: every word and figure is handed in, so the box draws on the server with no read and the
  *            browser's first draw matches it.
- * Used by:   Landing.tsx, BlogPage.tsx.
+ * Used by:   Landing.tsx, StackPage.tsx.
  */
 import type { MouseEvent, ReactNode } from 'react';
 import styles from './Hook.module.css';
@@ -23,6 +23,7 @@ export function Hook({
   link,
   onLink,
   split,
+  ground = false,
 }: {
   /** The page's name in data/hooks.json, which the box carries as data-hook. */
   page: string;
@@ -40,12 +41,14 @@ export function Hook({
   onLink?: (event: MouseEvent<HTMLAnchorElement>) => void;
   /** The landing's two columns: what stands above the heading, the sentence under it, the moves and the piece under the link. */
   split?: { above: ReactNode; lede: string; moves: ReactNode; after: ReactNode };
+  /** On the ground like the review route's head, with no glass frame of its own (the home page, ADR-142). */
+  ground?: boolean;
 }) {
   const [first = '', ...rest] = lines;
   if (split) {
     return (
       <section
-        className={`${styles.hook} ${styles.split} op-glass`}
+        className={`${styles.hook} ${styles.split} ${ground ? styles.ground : 'op-glass'}`}
         data-testid="hook"
         data-hook={page}
       >

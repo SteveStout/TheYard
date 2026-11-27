@@ -1,34 +1,37 @@
 /**
- * Does:      Draws the blog at ?view=blog (ADR: Every LinkedIn post is also a blog post, and its addendum on the read
- *            model): the head, the filter bar, the list for the address's filter with its first post in full and the
- *            rest as short cards, a page more at a time, or the one post an address names with the posts around it;
- *            beside them the most read this week and where readers came from. A post's address opens with its hook
- *            (ADR-132) until the post is read, and ends on the site's one closing row (AskClose, its Book 20 minutes
- *            opening the booking sheet) over its Where next. Every filter change goes through the address, so a view can be linked.
+ * Does:      Draws the blog at ?view=blog in the review route's look (ADR: Every LinkedIn post is also a blog post, and
+ *            its addendum on the read model; ADR-142, the addendum on the landing views): the shared page head, its side
+ *            the author card over the most read this week and where readers came from; on the list the filter bar, "01
+ *            Latest post" in full and "02 Every post" as short cards, a page more at a time, then the close as 03; on a
+ *            post its own title as the h1, its summary and cover, All posts, "01 The full post", the posts around it,
+ *            the close as 02 (its Book 20 minutes opening the booking sheet) and its Where next. Every filter change
+ *            goes through the address, so a view can be linked.
  * Does not:  Read the list or the post itself (useBlogList.ts and useBlogPost.ts do), write the address (useBlogNavigation
  *            does, through onMove and onOpen), or report a read (BlogPostCard does).
  * Used by:   App.tsx.
  */
 import { startTransition, useState } from 'react';
-import type { BlogList } from '../../../lib/blog';
 import {
   emptyLine,
   filterFromSearch,
   filterToParams,
   isDrawnFor,
+  labelsOf,
   NO_FILTER,
   slideFrom,
   type BlogFilter,
-  type FilterLabels,
 } from '../../../lib/blogFilter';
 import type { AskWhen } from '../../../lib/blogReads';
+import { listHead, postHead } from '../../../lib/blogHead';
 import { useBlogList } from '../../../hooks/useBlogList';
 import { useBlogPost } from '../../../hooks/useBlogPost';
 import { useBlogPosts } from '../../../hooks/useBlogPosts';
 import { useFirstLoad, type HookPost } from '../../../hooks/useFirstLoad';
 import { BookSheet } from '../../review/BookSheet';
 import { AskClose } from '../../shared/AskClose';
-import { Hook } from '../../shared/Hook';
+import { AuthorCard } from '../../shared/AuthorCard';
+import { PageHead } from '../../shared/PageHead';
+import { SectionHead } from '../../shared/SectionHead';
 import { WhereNext } from '../../shared/WhereNext';
 import { BlogFilters, type FilterChange } from '../BlogFilters';
 import { BlogMini } from '../BlogMini';
@@ -36,14 +39,6 @@ import { BlogPostCard } from '../BlogPostCard';
 import { BlogPostNav } from '../BlogPostNav';
 import { BlogSide } from '../BlogSide';
 import styles from './BlogPage.module.css';
-
-/** The chips' labels by key, from a list's own answer. */
-function labelsOf(list: BlogList | null): FilterLabels | null {
-  if (!list) return null;
-  const by = (facets: BlogList['topics']) =>
-    Object.fromEntries(facets.map((facet) => [facet.key, facet.label]));
-  return { topics: by(list.topics), keywords: by(list.keywords), months: by(list.months) };
-}
 
 export function BlogPage({
   slug,
@@ -109,45 +104,52 @@ export function BlogPage({
       ? onMove(position === null ? '' : `slide=${position}`, 'replace')
       : setListSlide(position === null || lead === null ? null : { slug: lead.slug, position });
 
-  // The post's hook: from the post once read, and before then from what the server drew it with.
-  const hook: HookPost | null =
+  // The post's head: from the post once read, and before then from the hook the server drew it with.
+  const drawnHook: HookPost | null = first?.post && first.post.slug === slug ? first.post : null;
+  // A post with no head to draw yet: the title and one reading line only, so nothing on screen moves after (ADR-113).
+  const bare = slug !== null && full.post === null && drawnHook === null;
+  const head =
     slug === null
-      ? null
-      : full.post
-        ? {
-            slug: full.post.slug,
-            title: full.post.title,
-            summary: full.post.summary,
-            image: full.post.images[0] ?? null,
-          }
-        : first?.post && first.post.slug === slug
-          ? first.post
-          : null;
+      ? listHead((all ?? list)?.total ?? null)
+      : postHead(full.post ? { ...full.post, image: full.post.images[0] ?? null } : drawnHook);
   const cardProps = { labels, terms, onTopic: byTopic, onKeyword: byKeyword };
   // While what the page shows is read, the list keeps a screen of room, so nothing after it moves when it arrives (ADR-113).
   const reading =
     slug === null
       ? list === null && !listed.unavailable && !listed.failed
       : full.post === null && !full.missing;
+  const [leadCard, ...rest] = list?.cards ?? [];
+  // One line at most says why there is nothing yet: still reading, the blog unreadable, or no such post.
+  const note = reading
+    ? slug === null
+      ? 'Reading the posts...'
+      : 'Reading the post...'
+    : slug === null
+      ? listed.unavailable
+        ? 'The blog cannot be read now. The rest of the site can.'
+        : listed.failed && list === null
+          ? 'The posts could not be read. Try again in a moment.'
+          : null
+      : full.missing
+        ? 'No post has that address. Every post is listed on the blog.'
+        : null;
 
   return (
     <section className={styles.page} aria-labelledby="blog-title" data-testid="blog-page">
-      <div className={styles.head}>
-        <h1 id="blog-title" className={styles.title}>
-          Blog
-        </h1>
-        {slug !== null && (
-          <button type="button" className={styles.back} onClick={onAllPosts}>
-            All posts
-          </button>
-        )}
-      </div>
-      {slug === null && (
-        <>
-          <p className={styles.intro}>
-            Everything I post on LinkedIn, kept here in full with the code and the live pages it
-            talks about. Newest first.
-          </p>
+      <PageHead
+        eyebrow={head.eyebrow}
+        title={head.title}
+        titleId="blog-title"
+        lede={head.lede ?? undefined}
+        bodyClass={styles.body}
+        side={
+          <>
+            <AuthorCard />
+            <BlogSide cards={all?.cards ?? null} onOpen={(posted) => onOpen(posted)} />
+          </>
+        }
+      >
+        {slug === null && (
           <BlogFilters
             filter={filter}
             topics={(list ?? all)?.topics ?? []}
@@ -157,119 +159,141 @@ export function BlogPage({
             of={all?.total ?? null}
             onChange={change}
           />
-        </>
-      )}
-
-      <div className={styles.layout}>
-        <div
-          className={`${styles.list} ${reading ? styles.reading : ''} ${slug === null && listed.reading && list ? styles.dim : ''}`}
-          aria-busy={slug === null && listed.reading}
-          data-testid="blog-list"
-        >
-          {slug !== null && hook && (
-            <Hook
-              page="post"
-              title={hook.title}
-              lines={[hook.summary]}
-              figure={
-                hook.image && (
-                  <img
-                    src={hook.image.thumb_url ?? hook.image.url}
-                    alt={hook.image.alt_text}
-                    width={hook.image.width}
-                    height={hook.image.height}
-                    fetchPriority="high"
-                  />
-                )
-              }
+        )}
+        {slug !== null && head.cover && (
+          <figure className={`${styles.cover} op-glass`} data-mock="cover">
+            <img
+              src={head.cover.thumb_url ?? head.cover.url}
+              alt={head.cover.alt_text}
+              width={head.cover.width}
+              height={head.cover.height}
+              fetchPriority="high"
             />
-          )}
-          {reading && (
-            <p className={styles.note}>
-              {slug === null ? 'Reading the posts...' : 'Reading the post...'}
-            </p>
-          )}
-          {slug === null && listed.unavailable && (
-            <p className={styles.note}>The blog cannot be read now. The rest of the site can.</p>
-          )}
-          {slug === null && listed.failed && list === null && (
-            <p className={styles.note}>The posts could not be read. Try again in a moment.</p>
-          )}
-          {list !== null && list.cards.length === 0 && (
-            <div className={styles.empty} data-testid="blog-empty">
-              <p>{labels ? emptyLine(filter, labels) : 'No post matches.'}</p>
-              <button
-                type="button"
-                className={styles.back}
-                onClick={() => change(NO_FILTER, 'choose')}
-              >
-                Clear the filters
-              </button>
-            </div>
-          )}
-          {slug === null &&
-            list?.cards.map((card, index) =>
-              index === 0 && full.post?.slug === card.slug ? (
-                <BlogPostCard
-                  key={card.slug}
-                  post={full.post}
-                  matched={card.matched}
-                  slide={slide}
-                  onSlide={turnSlide}
-                  {...cardProps}
-                />
-              ) : (
-                <BlogMini
-                  key={card.slug}
-                  post={card}
-                  onOpen={(posted) => onOpen(posted)}
-                  onOpenSlides={openSlides}
-                  {...cardProps}
-                />
-              )
-            )}
-          {slug === null && list?.next && (
+          </figure>
+        )}
+        {slug !== null && !bare && (
+          <p className={styles.ctas}>
             <button
               type="button"
-              className={styles.more}
-              onClick={listed.more}
-              disabled={listed.moreReading}
-              data-testid="blog-more"
+              className={`op-pill-secondary ${styles.back}`}
+              onClick={onAllPosts}
+              data-mock="all-posts"
             >
-              {listed.moreReading ? 'Reading more posts...' : 'More posts'}
+              All posts
             </button>
-          )}
-          {slug !== null && full.missing && (
-            <p className={styles.note}>
-              No post has that address. Every post is listed on the blog.
-            </p>
-          )}
-          {slug !== null && full.post && (
-            <>
-              <BlogPostCard
-                key={full.post.slug}
-                post={full.post}
-                open
-                slide={slide}
-                onSlide={turnSlide}
-                {...cardProps}
-              />
-              <BlogPostNav
-                post={full.post}
-                labels={labels}
-                onOpen={(posted) => onOpen(posted)}
-                onOpenSlides={openSlides}
-                onTopic={byTopic}
-                onKeyword={byKeyword}
-              />
-              <AskClose onBook={() => setBooking(true)} />
-              <WhereNext page="post" />
-            </>
-          )}
-        </div>
-
-        <BlogSide cards={all?.cards ?? null} onOpen={(posted) => onOpen(posted)} />
-      </div>
+          </p>
+        )}
+        {bare ? (
+          <p className={`${styles.note} ${styles.reading}`}>{note}</p>
+        ) : (
+          <div
+            className={`${styles.list} ${reading ? styles.reading : ''} ${slug === null && listed.reading && list ? styles.dim : ''}`}
+            aria-busy={slug === null && listed.reading}
+            data-testid="blog-list"
+          >
+            {note && <p className={styles.note}>{note}</p>}
+            {list !== null && list.cards.length === 0 && (
+              <div className={styles.empty} data-testid="blog-empty">
+                <p>{labels ? emptyLine(filter, labels) : 'No post matches.'}</p>
+                <button
+                  type="button"
+                  className={styles.back}
+                  onClick={() => change(NO_FILTER, 'choose')}
+                >
+                  Clear the filters
+                </button>
+              </div>
+            )}
+            {slug === null && leadCard && (
+              <section aria-labelledby="blog-latest-title" data-mock="section">
+                <SectionHead id="blog-latest-title" number="01" title="Latest post" />
+                <div className={styles.cards}>
+                  {full.post?.slug === leadCard.slug ? (
+                    <BlogPostCard
+                      key={leadCard.slug}
+                      post={full.post}
+                      matched={leadCard.matched}
+                      slide={slide}
+                      onSlide={turnSlide}
+                      {...cardProps}
+                    />
+                  ) : (
+                    <BlogMini
+                      key={leadCard.slug}
+                      post={leadCard}
+                      onOpen={(posted) => onOpen(posted)}
+                      onOpenSlides={openSlides}
+                      {...cardProps}
+                    />
+                  )}
+                </div>
+              </section>
+            )}
+            {(slug === null ? rest.length > 0 : full.post !== null) && (
+              <section
+                aria-labelledby={slug === null ? 'blog-every-title' : 'blog-full-title'}
+                data-mock="section"
+              >
+                {slug === null ? (
+                  <SectionHead id="blog-every-title" number="02" title="Every post" />
+                ) : (
+                  <SectionHead id="blog-full-title" number="01" title="The full post" />
+                )}
+                <div className={styles.cards}>
+                  {rest.map((card) => (
+                    <BlogMini
+                      key={card.slug}
+                      post={card}
+                      onOpen={(posted) => onOpen(posted)}
+                      onOpenSlides={openSlides}
+                      {...cardProps}
+                    />
+                  ))}
+                  {slug !== null && full.post && (
+                    <BlogPostCard
+                      key={full.post.slug}
+                      post={full.post}
+                      open
+                      slide={slide}
+                      onSlide={turnSlide}
+                      {...cardProps}
+                    />
+                  )}
+                </div>
+              </section>
+            )}
+            {slug === null && list?.next && (
+              <button
+                type="button"
+                className={styles.more}
+                onClick={listed.more}
+                disabled={listed.moreReading}
+                data-testid="blog-more"
+              >
+                {listed.moreReading ? 'Reading more posts...' : 'More posts'}
+              </button>
+            )}
+          </div>
+        )}
+      </PageHead>
+      {slug !== null && full.post && (
+        <BlogPostNav
+          post={full.post}
+          labels={labels}
+          onOpen={(posted) => onOpen(posted)}
+          onOpenSlides={openSlides}
+          onTopic={byTopic}
+          onKeyword={byKeyword}
+        />
+      )}
+      {(slug === null ? list !== null : full.post !== null) && (
+        <AskClose
+          number={slug === null ? '03' : '02'}
+          spaced={false}
+          onBook={() => setBooking(true)}
+        />
+      )}
+      {slug !== null && full.post && <WhereNext page="post" />}
       <BookSheet open={booking} onClose={() => setBooking(false)} onAction={() => {}} />
     </section>
   );

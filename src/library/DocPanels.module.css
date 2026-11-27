@@ -4,7 +4,7 @@
  *            line drawn as a reading.
  * Does not:  Style the window around them, the prose inside them, or the Author page's own blocks and photographs
  *            (AuthorPage.module.css), or hold a colour of its own.
- * Used by:   DocDialog.tsx, AboutPage.tsx.
+ * Used by:   DocDialog.tsx.
  */
 /* Every document on the Author page's panels: the same glass, the
    same green edge, the same trim on the headings, so the library reads as one

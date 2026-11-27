@@ -36,7 +36,12 @@ export function useBlogPosts(): BlogPosts {
   const first = useFirstLoad();
   const drawn =
     first?.blog?.list && !isFiltered(filterFromSearch(first.search)) ? first.blog.list : null;
-  const [posts, setPosts] = useState<BlogPosts>({ state: 'loading' });
+  // A page the server drew with the list starts from it, so the server's draw and the browser's first draw both show it.
+  const [posts, setPosts] = useState<BlogPosts>(() =>
+    drawn
+      ? { state: 'ready', posts: drawn.cards, list: drawn, readAt: first?.nowMs ?? Date.now() }
+      : { state: 'loading' }
+  );
   useEffect(() => {
     let live = true;
     void postsOnce(drawn).then((read) => {
