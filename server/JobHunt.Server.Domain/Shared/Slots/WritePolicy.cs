@@ -17,6 +17,9 @@ public static class WritePolicy
     /// <summary>The apply lane's memory of the forms it skipped, so the next mornings do not spend their room on them again.</summary>
     public const string SkipsTable = "nightly/apply-skipped.tsv";
 
+    /// <summary>The messages lane's settled left-out lines, each listed once and then retired (LeftOut).</summary>
+    public const string RetiredTable = "nightly/messages-retired.tsv";
+
     private const string Tracker = "inbox/tracker-inbox/";
     private const string Registry = "inbox/append-inbox/state.md/";
     private const string FeedQueue = "linkedin-proof/QUEUE-hotmgr-";
@@ -52,7 +55,7 @@ public static class WritePolicy
         {
             return false;
         }
-        if (path == RunsTable || path == SkipsTable || path == HighWater || path == Floor || path == LogsMoved)
+        if (path == RunsTable || path == SkipsTable || path == RetiredTable || path == HighWater || path == Floor || path == LogsMoved)
         {
             return true;
         }
