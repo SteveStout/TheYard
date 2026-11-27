@@ -69,6 +69,10 @@ public static partial class HealLadder
             string task = $"{r.Test} {r.Name}", sig = $"watch:{Key(task)}", reason = $"{r.Number} ({r.Source})";
             string since = Since(changeLog, r, local).ToString("M/d HH:mm", Inv);
             bool Today(string step) => before.Concat(lines).Any(l => l.StartsWith(day, StringComparison.Ordinal) && l.Contains($"| {step}", StringComparison.Ordinal) && l.EndsWith($"sig={sig}", StringComparison.Ordinal));
+            if (HealWaits.Waiting(before, sig, local))
+            {
+                continue;
+            }
             if (Outside(r) is { } letter)
             {
                 if (!Today("4 refused"))
@@ -89,10 +93,10 @@ public static partial class HealLadder
             {
                 continue;
             }
-            int tries = before.Concat(lines).Count(l => l.EndsWith($"sig={sig}", StringComparison.Ordinal) && (l.Contains("| 4 heal item", StringComparison.Ordinal) || l.Contains("| 4 refused", StringComparison.Ordinal)));
+            int tries = before.Skip(HealWaits.LandedAt(before, sig) + 1).Concat(lines).Count(l => l.EndsWith($"sig={sig}", StringComparison.Ordinal) && (l.Contains("| 4 heal item", StringComparison.Ordinal) || l.Contains("| 4 refused", StringComparison.Ordinal)));
             string kind = r.Test is "W5" or "W6" or "W11" or "W15" ? "data" : "code";
             string? refused = Key(r.Name).StartsWith("heal-", StringComparison.Ordinal) ? "a heal lane's own failure is never healed"
-                : kind == "code" && code >= CodeHealsADay ? $"past the budget of {code} code heals today" : null;
+                : kind == "code" && code >= CodeHealsADay && !HealWaits.RedMain(r) ? $"past the budget of {code} code heals today" : null;
             if (tries >= Attempts && refused is null)
             {
                 notWorking.Add(NotWorking(task, since, $"{tries} heals ({sig})", "nothing"));
@@ -107,12 +111,13 @@ public static partial class HealLadder
                 }
                 continue;
             }
-            code += kind == "code" ? 1 : 0;
+            code += kind == "code" && !HealWaits.RedMain(r) ? 1 : 0;
             var item = new HealItem(live ? "dispatch/ready" : "dispatch/heal-shadow", name, string.Empty,
                 string.Create(Inv, $"Watch reading {local:yyyy-MM-dd HH:mm} Central, failing {Ticks(changeLog, r, local)} ticks in a row since {since}:\n| {r.Test} | {r.Name} | {r.Word} | {r.Number} | {r.Source} |\n"));
             items.Add(item with { Text = Text(task, now, sig, kind, reason, $"J:\\{item.Fixture.Replace('/', '\\')}", r.Test is "W9" or "W11" ? "theyard" : "jobhunt") });
-            lines.Add(Line(local, task, reason, $"4 heal item ({kind})", $"{(live ? "ready" : "heal-shadow (heal_mode shadow)")}\\{name}; sig={sig}"));
+            lines.Add(Line(local, task, reason, $"4 heal item ({kind}{(HealWaits.RedMain(r) ? ", red main" : string.Empty)})", $"{(live ? "ready" : "heal-shadow (heal_mode shadow)")}\\{name}; sig={sig}"));
         }
+        lines.InsertRange(0, HealWaits.Steps(results, before, local));
         return new HealPlan(lines, notWorking, items);
     }
 
@@ -251,8 +256,8 @@ public static partial class HealLadder
             1. Read the fixture and the DONE notes it names; take the failure to its cause.
             2. Write a test that reproduces the fixture and fails before the fix.
             3. Fix the cause. {ship}
-            4. The DONE note says what was fixed, the test, and the PLAYBOOK.md row; or, when the fix is outside self-heal, which
-               letter below it falls under, and nothing is built.
+            4. The DONE note says what was fixed, the test, the PLAYBOOK.md row and one line `Waiting on: <Ddd MM/DD HH:MM> CST`, the
+               task's next real run; or, when the fix is outside self-heal, which letter below it falls under, and nothing is built.
 
             ## Outside self-heal (plan 7b; never built, logged in HEALED.md as outside self-heal, counted as one attempt):
             (a) a new or wider send: a new channel, recipient class or template, changed words under Steve's name, a raised ceiling or
