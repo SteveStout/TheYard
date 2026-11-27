@@ -357,6 +357,28 @@ public sealed class CampaignSendTests
         Assert.Equal(1, mail.Calls);
     }
 
+    // heal-w12-campaignsend-20261126: from 21 to 25 November each 8 AM pass sent one leader B v1 at their own address and
+    // then failed writing it, "duplicate key value is (43, 1)", because the 29 October send to the shared box was already
+    // that lead's Touch 1. The email went, the row did not, and the pass stopped after the first send of the morning.
+    [Fact]
+    public async Task The_person_s_first_email_after_a_shared_box_send_is_written_beside_it_and_the_pass_goes_on()
+    {
+        var leader = Lead(company: "Ellevation Education", key: "ellevation.example", edit: b => { b.ContactEmail = "lisa@ellevation.example"; b.FirstName = "Lisa"; });
+        var next = Lead(company: "Origami Risk", key: "origami.example", edit: b => { b.ContactEmail = "curtis@origami.example"; b.FirstName = "Curtis"; });
+        var (send, db, mail) = Pass([leader, next], now: Eight);
+        db.Emails.Add(Logged(25, shadow: false) with { LeadId = leader.Id, Key = "ellevation.example", Company = "Ellevation Education", To = "info@ellevation.example" });
+        db.Emails.Add(Logged(25, shadow: false) with { LeadId = next.Id, Key = "origami.example", Company = "Origami Risk", To = "info@origami.example" });
+
+        var result = await send.RunAsync(CampaignMode.On, CancellationToken.None);
+
+        Assert.Equal(2, mail.Calls);
+        Assert.Equal(2, result.Written);
+        var sent = db.Emails.Where(e => e.CentralDay == new DateOnly(2026, 10, 24)).OrderBy(e => e.To, StringComparer.Ordinal).ToList();
+        Assert.Equal([("curtis@origami.example", 1), ("lisa@ellevation.example", 1)], sent.Select(e => (e.To, e.Touch)));
+        // The key still refuses the same touch to the same address a second time.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => db.WriteAsync(sent[1] with { SentAt = Eight.AddDays(1) }, CancellationToken.None));
+    }
+
     [Fact]
     public async Task The_rules_hold_leads_with_their_reasons_and_one_company_gets_one_email()
     {
@@ -478,8 +500,18 @@ public sealed class CampaignSendTests
 
         public Task<int> CountAsync(DateOnly centralDay, bool shadow, CancellationToken ct) => Task.FromResult(Emails.Count(e => e.CentralDay == centralDay && e.Shadow == shadow));
 
+        /// <summary>
+        /// The columns of EmailsSent's unique index on real sends, read from the SQL project, so a write the table refuses
+        /// fails here as it does in Azure (heal-w12-campaignsend-20261126: five mornings sent and then failed on this key).
+        /// </summary>
+        public static readonly IReadOnlyList<string> SentKey = SentKeyColumns();
+
         public Task<long> WriteAsync(EmailRecord email, CancellationToken ct)
         {
+            if (!email.Shadow && Emails.Any(e => !e.Shadow && SentKey.All(column => SameValue(column, e, email))))
+            {
+                throw new InvalidOperationException($"Cannot insert duplicate key row in object 'campaign.EmailsSent' with unique index 'IX_EmailsSent_Lead_Touch_Sent' ({string.Join(", ", SentKey)}).");
+            }
             Emails.Add(email.GmailMessageId is null ? email : email with { GmailMessageId = "m-" + email.LeadId });
             return Task.FromResult((long)Emails.Count);
         }
@@ -489,6 +521,22 @@ public sealed class CampaignSendTests
         public Task MarkBouncedAsync(long emailId, string reason, CancellationToken ct) => Task.CompletedTask;
 
         public Task MarkReplyAsync(string gmailThreadId, DateTimeOffset at, CancellationToken ct) => Task.CompletedTask;
+
+        private static IReadOnlyList<string> SentKeyColumns()
+        {
+            string sql = File.ReadAllText(Path.Combine(CampaignSqlTests.Root(), "functions", "JobHunt.Database", "Tables", "EmailsSent.sql"));
+            var index = System.Text.RegularExpressions.Regex.Match(sql, @"CREATE UNIQUE INDEX \[IX_EmailsSent_Lead_Touch_Sent\] ON \[campaign\]\.\[EmailsSent\] \(([^)]+)\) WHERE \[Shadow\] = 0;");
+            Assert.True(index.Success, "EmailsSent.sql has no unique index on real sends");
+            return [.. index.Groups[1].Value.Split(',').Select(c => c.Trim().Trim('[', ']'))];
+        }
+
+        // The database's collation reads text without case, so pat@ and Pat@ are one address to the index.
+        private static bool SameValue(string column, EmailRecord a, EmailRecord b)
+        {
+            var property = typeof(EmailRecord).GetProperty(column) ?? throw new InvalidOperationException("EmailRecord has no " + column);
+            object? x = property.GetValue(a), y = property.GetValue(b);
+            return x is string s && y is string t ? string.Equals(s, t, StringComparison.OrdinalIgnoreCase) : Equals(x, y);
+        }
     }
 }
 
