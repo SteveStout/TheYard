@@ -55,6 +55,35 @@ public sealed class HealWaitsTests
     }
 
     [Fact]
+    public void A_product_reading_opens_no_heal_and_spends_no_budget()
+    {
+        // W11 "8 of 49 reached a second action" opened two heal lanes that built nothing (HEALED.md).
+        var review = new WatchResult("W11", "review route conversion", false, "8 of 49 reached a second action", "/api/admin/review");
+        var tick = HealLadder.Plan([review], FailedAt("00:13", review), string.Empty, string.Empty, None, true, Central(27, 0, 43));
+        Assert.Empty(tick.Items);
+        Assert.Contains(tick.Healed, l => l.EndsWith("| 4 refused | a product reading, not a fault: product item, January; sig=watch:w11-review-route-conversion", StringComparison.Ordinal));
+        Assert.Equal("NOT WORKING: W11 review route conversion since 11/27 00:13. Tried: a product reading, not a fault: product item, January. Needs you: nothing.", Assert.Single(tick.NotWorking));
+        Assert.Empty(HealLadder.Plan([review], FailedAt("00:13", review), string.Join("\n", tick.Healed), string.Empty, None, true, Central(27, 0, 58)).Healed);
+
+        var supply = new WatchResult("W15", "supply", false, "candidates not written", "J:\\nightly");
+        Assert.Single(HealLadder.Plan([supply], FailedAt("00:13", supply), string.Empty, string.Empty, None, true, Central(27, 0, 43)).Items);
+    }
+
+    [Fact]
+    public void A_landed_line_that_names_no_run_holds_nothing_and_starts_no_count_again()
+    {
+        // A "none named" landed line must not reopen two spent attempts (HEALED.md, the W11 heal it let open).
+        var merger = Campaign with { Name = "Merger", Number = "no run in 31 min" };
+        const string Spent = "- 2026-11-26 09:00 CST | W12 Merger | x | 4 heal item (code) | ready\\c; sig=watch:w12-merger\n- 2026-11-26 12:00 CST | W12 Merger | x | 4 heal item (code) | ready\\d; sig=watch:w12-merger\n"
+            + "- 2026-11-27 08:59 CST | w12-merger | watch:w12-merger | 4 heal lane | landed, waiting on the next run, none named; sig=watch:w12-merger\n";
+        var tick = HealLadder.Plan([merger], FailedAt("09:13", merger), Spent, string.Empty, None, true, Central(27, 9, 43));
+        Assert.Empty(tick.Items);
+        Assert.Contains("Tried: 2 heals (watch:w12-merger)", Assert.Single(tick.NotWorking), StringComparison.Ordinal);
+        Assert.False(HealWaits.Waiting(Spent.Split('\n'), "watch:w12-merger", new DateTime(2026, 11, 27, 9, 43, 0)));
+        Assert.Equal(-1, HealWaits.LandedAt(Spent.Split('\n'), "watch:w12-merger"));
+    }
+
+    [Fact]
     public void A_red_mains_heal_is_outside_the_days_two_code_heals()
     {
         const string Two = "- 2026-11-27 00:43 CST | W14 what reached him | x | 4 heal item (code) | ready\\a; sig=watch:w14-what-reached-him\n- 2026-11-27 06:13 CST | W8 canary invites | x | 4 heal item (code) | ready\\b; sig=watch:w8-canary-invites\n";
