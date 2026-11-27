@@ -17,6 +17,9 @@ public sealed class WatchDark(IMergeStore store)
     /// <summary>The file the card's first lines are read from.</summary>
     public const string Path = "dispatch/NOT-WORKING.md";
 
+    /// <summary>A landed fix's line while it waits on its proof run; its lane is not dark until the run reads empty.</summary>
+    public const string WaitingPath = "dispatch/NOT-WORKING-waiting.md";
+
     private const string RulesLine = "> RULES FIRST: read systemRules.md before acting on this file (MASTER RULE: if stuck or a tech glitch happens, retry, then reread the .md rules).";
     private const string Title = "# NOT WORKING: one line a failure the heal ladder could not fix (the source of the card's first lines)";
 
@@ -90,7 +93,7 @@ public sealed class WatchDark(IMergeStore store)
             .Concat((await store.ListFoldersAsync("dispatch/running", ct)).SelectMany(f => new[] { f + ".md", $"30-{f}.md" })), StringComparer.Ordinal);
         var proposed = new HashSet<string>((await store.ListFilesAsync("dispatch/proposed", ct)).Select(f => f.Name), StringComparer.Ordinal);
         return new DarkReads(state, notes, holds, await TextAsync("dispatch/EMPTY-RUNS.md", ct), await TextAsync(MergePaths.Master, ct),
-            await TextAsync("campaign/pass.log", ct), queued, proposed, await TextAsync(DarkLanes.SignInPath, ct));
+            await TextAsync("campaign/pass.log", ct), queued, proposed, await TextAsync(DarkLanes.SignInPath, ct), await TextAsync(WaitingPath, ct));
     }
 
     private async Task<string> TextAsync(string path, CancellationToken ct) =>

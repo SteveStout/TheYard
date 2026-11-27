@@ -62,7 +62,8 @@ public sealed class HealWaitsTests
         var tick = HealLadder.Plan([review], FailedAt("00:13", review), string.Empty, string.Empty, None, true, Central(27, 0, 43));
         Assert.Empty(tick.Items);
         Assert.Contains(tick.Healed, l => l.EndsWith("| 4 refused | a product reading, not a fault: product item, January; sig=watch:w11-review-route-conversion", StringComparison.Ordinal));
-        Assert.Equal("NOT WORKING: W11 review route conversion since 11/27 00:13. Tried: a product reading, not a fault: product item, January. Needs you: nothing.", Assert.Single(tick.NotWorking));
+        // holdfix1127: a product reading is not a failure, so it is never listed on NOT-WORKING.md; HEALED.md keeps the refusal.
+        Assert.Empty(tick.NotWorking);
         Assert.Empty(HealLadder.Plan([review], FailedAt("00:13", review), string.Join("\n", tick.Healed), string.Empty, None, true, Central(27, 0, 58)).Healed);
 
         var supply = new WatchResult("W15", "supply", false, "candidates not written", "J:\\nightly");

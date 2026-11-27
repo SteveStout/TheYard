@@ -18,6 +18,7 @@ public sealed record SendingLane(string Key, string Label);
 /// <param name="Queued">The item names in dispatch/ready and dispatch/running.</param>
 /// <param name="Proposed">The item names in dispatch/proposed.</param>
 /// <param name="SignIn">dispatch/SIGN-IN.md, the claude CLI's sign-in on WickedAwsome as canary.py and dispatch.py last read it, or empty.</param>
+/// <param name="Waiting">dispatch/NOT-WORKING-waiting.md, a landed fix's line while it waits on its proof run (check_empty_runs.py), or empty.</param>
 public sealed record DarkReads(
     string State,
     IReadOnlyDictionary<string, string> Notes,
@@ -27,7 +28,8 @@ public sealed record DarkReads(
     string PassLog,
     IReadOnlySet<string> Queued,
     IReadOnlySet<string> Proposed,
-    string SignIn = "");
+    string SignIn = "",
+    string Waiting = "");
 
 /// <summary>
 /// The dark-lane alarm: a lane that sends nothing must reach Steve as a failure, not as a routine count. For each
@@ -35,7 +37,8 @@ public sealed record DarkReads(
 /// check_empty_runs.py reads (and the DONE note a pounce row names); a held day counts as zero. At three days or more a
 /// lane with a hold on it, or with work due over those days ("0 sent verified of 12", "43 left out", its own hold), is
 /// DARK: one line, first on NOT-WORKING.md and first on the 07:30 card. A lane whose runs were all quiet (nothing due) is
-/// not dark on the days alone. The line says why and what is fixing it, never "Needs you: nothing".
+/// not dark on the days alone, and a lane whose fix landed and waits on its proof run (NOT-WORKING-waiting.md) is not dark
+/// until that run reads empty. The line says why and what is fixing it, never "Needs you: nothing".
 /// </summary>
 public static partial class DarkLanes
 {
@@ -47,6 +50,9 @@ public static partial class DarkLanes
 
     /// <summary>The word every alarm line opens with, which the writer replaces each tick and the card reads.</summary>
     public const string Prefix = "DARK: ";
+
+    /// <summary>The word a landed fix's line opens with in NOT-WORKING-waiting.md: "WAITING: server6am apply. Fix: ...".</summary>
+    public const string WaitingPrefix = "WAITING: ";
 
     /// <summary>The sending lanes, in the order the lines are written.</summary>
     public static readonly IReadOnlyList<SendingLane> Lanes =
@@ -110,6 +116,10 @@ public static partial class DarkLanes
     /// <param name="today">The Central day.</param>
     public static string? Line(SendingLane lane, DarkReads reads, DateOnly today)
     {
+        if (Waits(lane, reads.Waiting))
+        {
+            return null;  // holdfix1127: its fix landed and waits on its proof run; check_empty_runs.py brings it back if that run is empty
+        }
         var runs = lane.Key == "campaign" ? Campaign(reads, today) : Runs(reads.State, reads.Notes, today).Where(r => r.Lane == lane.Key).ToList();
         string? hold = reads.Holds.FirstOrDefault(h => Field(h, "Lane") == lane.Key);
         if (runs.Count == 0 && hold is null)
@@ -183,6 +193,12 @@ public static partial class DarkLanes
         string proposal = $"emptyrun-{HealLadder.Key(lane.Key)}.md";
         return reads.Proposed.Contains(proposal) ? $"{proposal} is proposed, waiting on the triage pass" : "not yet found";
     }
+
+    /// <summary>True when NOT-WORKING-waiting.md holds a line for the lane: its fix landed and its proof run has not settled it.</summary>
+    /// <param name="lane">The lane.</param>
+    /// <param name="waiting">NOT-WORKING-waiting.md, or empty.</param>
+    public static bool Waits(SendingLane lane, string waiting) =>
+        (waiting ?? string.Empty).Split('\n').Any(l => l.TrimEnd('\r').StartsWith($"{WaitingPrefix}{lane.Key}.", StringComparison.Ordinal));
 
     private static string? Field(string text, string name) =>
         text.Split('\n').Select(l => l.TrimEnd('\r')).FirstOrDefault(l => l.StartsWith(name + ": ", StringComparison.Ordinal))?[(name.Length + 2)..].Trim();

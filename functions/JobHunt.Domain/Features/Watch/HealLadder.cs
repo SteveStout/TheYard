@@ -107,7 +107,10 @@ public static partial class HealLadder
                 if (!Today("4 refused"))
                 {
                     lines.Add(Line(local, task, reason, "4 refused", $"{refused}; sig={sig}"));
-                    notWorking.Add(NotWorking(task, since, refused, "nothing"));
+                    if (refused != HealWaits.ProductReading)
+                    {
+                        notWorking.Add(NotWorking(task, since, refused, "nothing"));  // a product reading is not a failure: HEALED.md only (holdfix1127)
+                    }
                 }
                 continue;
             }
