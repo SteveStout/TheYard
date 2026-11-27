@@ -90,7 +90,8 @@ export function BlogPage({
       onMove(filterToParams(next).toString(), how === 'type' ? 'replace' : 'push');
     };
     if (how === 'type') {
-      listed.typed();
+      // The filter the address will read back, so the reader knows the list this key leads to.
+      listed.typed(filterFromSearch(filterToParams(next)));
       startTransition(move);
     } else move();
   };

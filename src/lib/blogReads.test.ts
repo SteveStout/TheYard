@@ -35,21 +35,58 @@ describe('the list reader', () => {
   it('waits from the last key when a later key holds back the address it asks for', async () => {
     const read = vi.fn(async (path: string) => list(path.length));
     const reader = listReader(read, () => {});
-    reader.typed();
+    reader.typed('/api/blog/posts?q=c');
     reader.ask('/api/blog/posts?q=c', 'wait');
     // "o" to "t": six keys 40 ms apart while the page draws, and no address arrives until it commits.
-    for (let key = 0; key < 6; key++) {
+    for (const typed of ['co', 'cop', 'copi', 'copil', 'copilo', 'copilot']) {
       await vi.advanceTimersByTimeAsync(40);
-      reader.typed();
+      reader.typed(`/api/blog/posts?q=${typed}`);
     }
     await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS - 1);
     expect(read).not.toHaveBeenCalled();
     reader.ask('/api/blog/posts?q=copilot', 'wait');
     await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
     expect(read.mock.calls.map((call) => call[0])).toEqual(['/api/blog/posts?q=copilot']);
-    reader.typed();
+    reader.typed('/api/blog/posts?q=copilot');
     await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
     expect(read).toHaveBeenCalledTimes(1);
+  });
+
+  it('never asks for a word the box has typed past while the newer address is still being drawn', async () => {
+    const read = vi.fn(async (path: string) => list(path.length));
+    const reader = listReader(read, () => {});
+    reader.typed('/api/blog/posts?q=copilo');
+    reader.ask('/api/blog/posts?q=copilo', 'wait');
+    // "t" is pressed and its page takes longer than the whole wait to commit, as on a loaded runner.
+    await vi.advanceTimersByTimeAsync(40);
+    reader.typed('/api/blog/posts?q=copilot');
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS * 2);
+    expect(read).not.toHaveBeenCalled();
+    reader.ask('/api/blog/posts?q=copilot', 'wait');
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
+    expect(read.mock.calls.map((call) => call[0])).toEqual(['/api/blog/posts?q=copilot']);
+  });
+
+  it('still asks when a key leaves the address as it was, and a key whose address never arrives holds nothing after it', async () => {
+    const read = vi.fn(async (path: string) => list(path.length));
+    const reader = listReader(read, () => {});
+    reader.typed('/api/blog/posts?q=copilot');
+    reader.ask('/api/blog/posts?q=copilot', 'wait');
+    // A trailing space: the key reads back to the same address, so no new one arrives.
+    reader.typed('/api/blog/posts?q=copilot');
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
+    // "x" then Backspace: "copilotx" arrives, "copilot" is on screen already and never asks again.
+    reader.typed('/api/blog/posts?q=copilotx');
+    reader.ask('/api/blog/posts?q=copilotx', 'wait');
+    reader.typed('/api/blog/posts?q=copilot');
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
+    // Back walks to the address before, as a wait, and it is read.
+    reader.ask('/api/blog/posts?q=llm', 'wait');
+    await vi.advanceTimersByTimeAsync(SEARCH_WAIT_MS);
+    expect(read.mock.calls.map((call) => call[0])).toEqual([
+      '/api/blog/posts?q=copilot',
+      '/api/blog/posts?q=llm',
+    ]);
   });
 
   it('aborts the read a newer ask replaces, and never hands on its answer', async () => {
