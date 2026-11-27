@@ -152,7 +152,9 @@ public sealed class TodayCardDayTests
         Assert.Equal(1, Count(left.ToUpperInvariant(), "ONE EMAIL AFTER AN UNANSWERED LINKEDIN INVITE"));
         Assert.DoesNotContain("### autohunt1109-L-f1", left, StringComparison.Ordinal);
         Assert.DoesNotContain("so that line again", left, StringComparison.Ordinal);
-        Assert.Contains("### autohunt1109-L-f3, closed Wed 11/11 18:20\n\n- **Optional, \"queue it\" or leave it: a 60-word check in the send**", left, StringComparison.Ordinal);
+        // autohunt1109-L-f3's one bullet is an optional "queue it", a road the plan's 7c closed, so its lane prints nothing.
+        Assert.DoesNotContain("### autohunt1109-L-f3", left, StringComparison.Ordinal);
+        Assert.DoesNotContain("a 60-word check in the send", left, StringComparison.Ordinal);
         Assert.Contains("### newapp1111, closed Wed 11/11 17:11", left, StringComparison.Ordinal);
     }
 
@@ -178,6 +180,25 @@ public sealed class TodayCardDayTests
         Assert.DoesNotContain("Queue it", lanes, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("autohunt1109-L-f3-f1-v3-word-cap.md", lanes, StringComparison.Ordinal);
         Assert.True(WatchJudge.Reached(lanes).Pass);
+    }
+
+    [Fact]
+    public void The_whole_card_passes_W14_when_a_closed_lane_left_him_a_queue_it_beside_a_send()
+    {
+        // The shapes of Thu 11/26 to Fri 11/27 (heal-w14-what-reached-him-20261127): three proposals a lane asked his yes
+        // on, and two closed lanes whose LEFT FOR STEVE bullets say "queue it" beside one reply that is his to send.
+        const string status = "Written Thu 11/12 07:25:11 CST by dispatch.py.\n\n## Running\n- none\n\n## Proposed (waits for a planning session)\n"
+            + "- crosspost1119-lane.md\n- fresh-postings-seat-rule.md\n- heal-outside-reads-the-ready-commit.md\n\n## Held\n- none\n";
+        const string left = "## heal-server6am-apply-20261123, closed Thu 11/12 06:10 CST\n\n## LEFT FOR STEVE\n"
+            + "- Queue it: J:\\dispatch\\proposed\\heal-outside-reads-the-ready-commit.md. Also ready for a yes: J:\\dispatch\\proposed\\fresh-postings-seat-rule.md.\n\n"
+            + "## replydraft-1a21320bfff31f2f, closed Thu 11/12 06:40 CST\n\n## LEFT FOR STEVE\n- read the draft and say send, or change it\n\n"
+            + "## heal-w11-review-route-conversion-20261126, closed Thu 11/12 07:00 CST\n\n## LEFT FOR STEVE\n"
+            + "- none (moved out 00:15 CST by bookkeeping under RULE 77)\n- queue it: J:\\dispatch\\proposed\\heal-ladder-product-readings-2026-11-26.md (code proposal; default: it stays proposed)\n";
+        string card = TodayCard.Render(Day() with { Status = status, LeftForSteve = left });
+
+        Assert.Equal("0 lines outside his two jobs", WatchJudge.Reached(card).Number);
+        Assert.Contains("### replydraft-1a21320bfff31f2f, closed Thu 11/12 06:40\n\n- read the draft and say send, or change it\n", card, StringComparison.Ordinal);
+        Assert.DoesNotContain("heal-ladder-product-readings", card, StringComparison.Ordinal);
     }
 
     private static TodayInputs Day() => new(

@@ -16,6 +16,7 @@ This page has one entry for every version that shipped, newest first. Each entry
 
 What that is worth: a developer can find when any behaviour changed and which record explains it, and the organization gets a release history that matches what is running, version for version.
 
+- **@VER@** (@DATE@): The morning card no longer prints a bullet a closed lane left asking for a "queue it", so what reaches Steve is only his two jobs and the watch's "what reached him" passes, where a heal's queue-it bullet would have failed it again on the 27 November card.
 - **1.0.5.171** (2026-11-26): The campaign writes the first email a leader gets at their own address beside the one their shared box got, so the 8 AM pass that sent it and then failed on "duplicate key (43, 1)" every morning from 21 to 25 November records each send and goes on to the next.
 - **1.0.5.170** (2026-11-26): The watch reads CI on main by the name ci.yml gives its run, "CI" and the commit it tested, so TheYard up passes when both names and CI are green on main, where it read "CI running" and failed every tick since it began.
 - **1.0.5.169** (2026-11-26): The blog's search never reads a word the box has already typed past: on a slow machine, where the newest key's page is still being drawn when the 300 ms wait ends, it waits for that page's address instead of asking for "copilo" on its way to "copilot", which turned main red on 1.0.5.166.
