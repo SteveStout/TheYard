@@ -12,7 +12,7 @@ public static partial class DarkLanes
     /// <summary>One run of one lane, as its row or note words it.</summary>
     /// <param name="Day">The Central day of its AID stamp.</param>
     /// <param name="Lane">Its key.</param>
-    /// <param name="Verdict">"done", "empty", "quiet", or null (another lane's turn, a dry run, no count).</param>
+    /// <param name="Verdict">"done", "empty", "quiet", "held" (a campaign pass the no-email-day gate held), or null (another lane's turn, a dry run, no count).</param>
     /// <param name="Words">Its words, cut to 200.</param>
     public sealed record Run(DateOnly Day, string Lane, string? Verdict, string Words);
 

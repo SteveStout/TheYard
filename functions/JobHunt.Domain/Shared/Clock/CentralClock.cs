@@ -25,7 +25,10 @@ public static class CentralClock
     /// into the timer as a UTC one, so the hourly UTC timer finds it on both sides of the November clock change
     /// instead of the send sliding an hour twice a year.
     /// </summary>
-    public static bool IsCampaignHour(DateTimeOffset utcNow) => Local(utcNow).Hour == 8;
+    public static bool IsCampaignHour(DateTimeOffset utcNow) => Local(utcNow).Hour == CampaignHour;
+
+    /// <summary>The campaign's hour, Central: 8, the hour <see cref="IsCampaignHour"/> asks for and the health route's next send is counted from.</summary>
+    public const int CampaignHour = 8;
 
     /// <summary>
     /// The board scan's hour: the 1 o'clock hour in Central, asked as a local hour for the campaign's reason, so the

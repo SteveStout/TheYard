@@ -1,6 +1,7 @@
 // What the campaign card reads (ADR-118, Decision 6): the campaign database's card schema, counts only, once a
 // minute for today's figures and once an hour for the days, the leads and the Sunday table; the campaign's
-// switch from the Function's health route, the same read the nightly card makes. Nothing here opens a file on
+// switch from the Function's health route, the same read the nightly card makes, and from the same answer whether
+// today is a no-email day and the next send's day (the mail gate's own reading of its file). Nothing here opens a file on
 // the share, and nothing here can read a name: the site's database user may select from the card schema alone.
 using System.Globalization;
 using TheYard.Application.Features.Admin.Cloud;
@@ -9,10 +10,10 @@ namespace TheYard.Api.Features.Admin.Cloud;
 
 /// <summary>The campaign card's reads.</summary>
 /// <param name="counts">The card schema's reader.</param>
-/// <param name="host">The Function's host name, for its health route's switches; null when it cannot be read.</param>
+/// <param name="health">The Function's health route, read once an hour for the switch and the no-email day; null when it did not answer.</param>
 /// <param name="resource">The campaign database's resource id and tenant, for the header's portal link; null when the directory does not hold it.</param>
 /// <param name="database">The campaign's database, by its name in configuration (Azure:Resources:CampaignDatabase).</param>
-public sealed class CampaignSource(ICampaignCounts counts, Func<CancellationToken, Task<string?>> host, Func<CancellationToken, Task<(string Id, string? Tenant)?>> resource, string database)
+public sealed class CampaignSource(ICampaignCounts counts, Func<CancellationToken, Task<FunctionHealth?>> health, Func<CancellationToken, Task<(string Id, string? Tenant)?>> resource, string database)
 {
     /// <summary>The campaign's database, its name on the bill.</summary>
     public string Database => database;
@@ -42,7 +43,7 @@ public sealed class CampaignSource(ICampaignCounts counts, Func<CancellationToke
         }, version)];
     }
 
-    /// <summary>The hour: the days, the leads, the Sunday table and the switch, each a fact; a read that fails is the card's note.</summary>
+    /// <summary>The hour: the days, the leads, the Sunday table, the switch and the no-email day, each a fact; a read that fails is the card's note.</summary>
     /// <param name="hour">The hour.</param>
     /// <param name="since">Unused: the campaign has no Activity Log events of its own.</param>
     /// <param name="cancellation">Stops the read.</param>
@@ -75,9 +76,13 @@ public sealed class CampaignSource(ICampaignCounts counts, Func<CancellationToke
         facts["weeks"] = CloudTable.ToFact(read.Weeks
             .OrderBy(w => w.Template, StringComparer.Ordinal).ThenBy(w => w.Track, StringComparer.Ordinal).ThenBy(w => w.ProofKey, StringComparer.Ordinal).ThenBy(w => w.Weekday, StringComparer.Ordinal)
             .Select(w => new[] { $"{w.Template}, track {w.Track}", w.Weekday, w.ProofKey, $"{w.Replies} of {w.Sent} ({CampaignCard.Rate(w.Replies, w.Sent)})" }));
-        var switches = await host(cancellation) is { Length: > 0 } name ? await NightlyProcesses.SwitchesAsync(name, cancellation) : null;
+        var answer = await health(cancellation);
+        var switches = answer?.Switches;
         facts["database"] = database;
         facts["switch"] = switches?.GetValueOrDefault("EMAIL_CAMPAIGN") ?? (switches is null ? null : "off");
+        // A health route that did not answer leaves both null, and the card reads a silent morning as it always has.
+        facts["no_email_today"] = answer?.NoEmailToday;
+        facts["next_email_day"] = answer?.NextEmailDay;
         return new ResourceHour(hour, id, tenant, facts, []);
     }
 

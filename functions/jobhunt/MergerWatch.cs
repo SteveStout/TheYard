@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
@@ -10,15 +12,17 @@ namespace JobHunt.Functions;
 // #region summary
 /// <summary>
 /// Answers whether the tracker merger is keeping up, in counts and ages only (how many lane files wait, how many
-/// past five and ten minutes, how old merge.log is) and the switches by name, for the Admin tab's card; it reads no
-/// file's contents.
+/// past five and ten minutes, how old merge.log is), the switches by name, and whether today is a no-email day with
+/// the day of the next campaign send the gate lets through, for the Admin tab's cards; the one file it reads is
+/// dispatch/NO-EMAIL-DAYS.txt, with the mail gate's own reader.
 /// </summary>
 // #endregion summary
 /// <remarks>
 /// GET /api/merger/health: whether the tracker merger is keeping up, as five numbers (MergerHealth).
 /// The Admin tab's nightly card reads it once a minute. It is anonymous because the site holds no
 /// key to this app and gets none: the answer is counts and ages only, the same figures the card
-/// shows the public, and it lists two folders and reads nothing inside any file. It also names the
+/// shows the public, and it lists two folders and reads no file but dispatch/NO-EMAIL-DAYS.txt, whose dates it answers
+/// as two fields only (no_email_today, next_email_day) so the campaign card holds on a listed day. It also names the
 /// commit the running build was published from, so a deploy can prove the new code is the code answering
 /// rather than only that the publish step exited zero, which a warm instance of the old build would also
 /// let it believe (ADR-098).
@@ -32,9 +36,11 @@ public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<Me
     {
         var run = new RunLine("MergerHealth", time.GetUtcNow());
         MergerHealth health;
+        (bool? Today, string? Next) mail;
         try
         {
             health = await MergerHealth.ReadAsync(store, time.GetUtcNow(), ct);
+            mail = await MailDaysAsync(store, time.GetUtcNow(), ct);
             run.Count("waiting", health.Waiting).Count("past_5", health.WaitingOver5).Count("past_10", health.WaitingOver10);
             if (health.LogAgeSeconds is { } age)
             {
@@ -61,11 +67,48 @@ public sealed class MergerWatch(IMergeStore store, TimeProvider time, ILogger<Me
         var response = request.CreateResponse(HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "application/json; charset=utf-8");
         response.Headers.Add("Cache-Control", "no-store");
+        await response.WriteStringAsync(Answer(health, mail).ToJsonString(), ct);
+        return response;
+    }
+
+    /// <summary>The route's answer: the merger's counts, the switches, the commit, and the two no-email-day fields, null when the file did not read.</summary>
+    /// <param name="health">The merger's counts and ages.</param>
+    /// <param name="mail">Whether today is listed and the next send's day, from <see cref="MailDaysAsync"/>.</param>
+    public static JsonObject Answer(MergerHealth health, (bool? Today, string? Next) mail)
+    {
         var answer = JsonSerializer.SerializeToNode(health)!.AsObject();
         answer["switches"] = JsonSerializer.SerializeToNode(Switches());
         answer["commit"] = Commit;
-        await response.WriteStringAsync(answer.ToJsonString(), ct);
-        return response;
+        answer["no_email_today"] = mail.Today;
+        answer["next_email_day"] = mail.Next;
+        return answer;
+    }
+
+    /// <summary>
+    /// The no-email days as the campaign card reads them, from the mail gate's own reader and file
+    /// (<see cref="NoEmailDayGate.ReadAsync"/>, dispatch/NO-EMAIL-DAYS.txt): whether today, in Central, is listed, and the
+    /// day of the next 8 o'clock send the gate lets through, yyyy-MM-dd: today while its send is still ahead, else the first
+    /// day after it the file does not list. Both are null when the file is missing or would not read, so an unread file
+    /// never quiets the card's alarm.
+    /// </summary>
+    /// <param name="share">The job-hunt folder.</param>
+    /// <param name="now">The moment, UTC.</param>
+    /// <param name="ct">Stops the read.</param>
+    public static async Task<(bool? Today, string? Next)> MailDaysAsync(IShareReader share, DateTimeOffset now, CancellationToken ct)
+    {
+        var days = await NoEmailDayGate.ReadAsync(share, ct);
+        if (!days.Read)
+        {
+            return (null, null);
+        }
+        var local = CentralClock.Local(now);
+        var today = DateOnly.FromDateTime(local);
+        var day = local.Hour < CentralClock.CampaignHour ? today : today.AddDays(1);
+        for (int i = 0; i < 732 && days.Listed(day); i++)
+        {
+            day = day.AddDays(1);
+        }
+        return (days.Listed(today), days.Listed(day) ? null : day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
     }
 
     /// <summary>The commit this build was published from, stamped by <c>dotnet publish -p:SourceRevisionId</c>; null when none was.</summary>

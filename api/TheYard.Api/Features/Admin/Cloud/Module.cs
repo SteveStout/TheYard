@@ -62,7 +62,9 @@ public sealed class Module : IModule
             // as an identity that may read the card schema and nothing else (ADR-118, Decision 6).
             var campaign = new CampaignSource(
                 new SqlCampaignCounts(SqlCampaignCounts.For(configuration.GetConnectionString("YardSql"), campaignDatabase)),
-                cancellation => NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation),
+                async cancellation => await NightlyProcesses.HostAsync(azure, nightlyNames.FunctionPath(subscription), cancellation) is { Length: > 0 } name
+                    ? await NightlyProcesses.HealthAsync(name, cancellation)
+                    : null,
                 async cancellation => azure.Configured && ResourceDirectory.Find(await directory.AllAsync(cancellation), ResourceCatalog.SqlType, "/" + campaignDatabase) is { } found
                     ? (found.Id, await azure.TenantAsync(cancellation))
                     : null,
