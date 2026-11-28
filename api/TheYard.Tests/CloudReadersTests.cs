@@ -479,7 +479,7 @@ public sealed class CloudReadersTests
             runLog, RecordedCloud.FunctionApp);
         var claude = new ClaudeSource(UsageLog(), TimeProvider.System);
         var storage = new StorageSource(azure, jobHunt, Nightly, new CostsInMemory(), new BlobListing("client-1", configured: true));
-        var campaign = new CampaignSource(new Counts(CampaignRead()), _ => Task.FromResult<string?>(RecordedCloud.FunctionHost), _ => Task.FromResult<(string, string?)?>((RecordedCloud.Sql, "tenant-1")), "campaign-db");
+        var campaign = new CampaignSource(new Counts(CampaignRead()), cancellation => NightlyProcesses.HealthAsync(RecordedCloud.FunctionHost, cancellation), _ => Task.FromResult<(string, string?)?>((RecordedCloud.Sql, "tenant-1")), "campaign-db");
         var network = new NetworkSource(new NetworkCounts(new NetworkCountsRead(true, null, [(new DateOnly(2026, 10, 26), 2)], new Dictionary<string, int>(StringComparer.Ordinal) { ["Open"] = 3, ["Drafted"] = 1 })),
             _ => Task.FromResult<string?>(RecordedCloud.FunctionHost), _ => Task.FromResult<(string, string?)?>((RecordedCloud.Sql, "tenant-1")), "campaign-db");
         var cards = ResourceCatalog.Cards(azure, directory, edge ?? new NetlifyEdge("netlify-token", "theyard-edge", new Uri("https://stevenstout.biz")), (7, "StandingPerVehicle"), Names,

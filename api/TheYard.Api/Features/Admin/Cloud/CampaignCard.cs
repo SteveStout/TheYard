@@ -2,7 +2,8 @@
 // reply rate on the dials; sends, bounces and replies for sixty minutes; sends a day for thirty days with the
 // replies marked; whether it is sending, whether the leads are flowing, whether anyone is answering and what it
 // costs; and the Sunday table, the last four weeks by template, weekday, track and proof key. Counts and ages
-// only: never a name, a company, an address, a subject or a code. Every count names the day it counts from.
+// only: never a name, a company, an address, a subject or a code. Every count names the day it counts from. A day
+// J:\dispatch\NO-EMAIL-DAYS.txt lists is a hold, not a silent morning, and only when the Function's health route says so.
 using System.Globalization;
 
 namespace TheYard.Api.Features.Admin.Cloud;
@@ -31,6 +32,7 @@ public static class CampaignCard
         ["The switch"] = "the Function's health route",
         ["The cap"] = "the Function's CampaignRules",
         ["Next send"] = "the Function's CentralClock",
+        ["No-email day"] = "J:\\dispatch\\NO-EMAIL-DAYS.txt, read by the Function's mail gate",
         ["The database"] = "functions/JobHunt.Database/JobHunt.Database.sqlproj",
         ["The finder"] = "ADR-118, Steve's ruling of 10/24",
         ["Last bounce"] = "the campaign database's card schema",
@@ -77,7 +79,8 @@ public static class CampaignCard
             [
                 new("The switch", mode, mode == "on" ? "good" : "info"),
                 new("The cap", $"{DailyCap} a day; 3, 5 and 10 on the first three days of on", "info"),
-                new("Next send", Next(inputs.Now), "info"),
+                new("Next send", Next(inputs.Now, ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("next_email_day")), "info"),
+                new("No-email day", NoEmailToday(inputs, today) switch { true => "today, listed", false => "not today", null => "not read" }, "info"),
                 new("The database", $"{ResourceView.Fact(inputs, "database")}, Basic", "info"),
                 new("The finder", "none: public pages only, each address with the page it came from", "info"),
                 new("Last bounce", When(ResourceView.Fact(inputs, "last_bounce", "")) ?? "none", "info"),
@@ -112,6 +115,13 @@ public static class CampaignCard
         int bounces = day.Bounced;
         int ready = Int(ResourceView.Fact(inputs, "with_address", "0"));
         string atPass = AtPass(inputs, today) ?? mode;
+        // A listed day (ADR-118, the addendum of noemailcard1127): the gate holds every send, so no send is the plan, not a
+        // silence. Only the health route's "true", kept this Central day, says so; false, unread or stale reads as before.
+        if (mode == "on" && day.Sent == 0 && bounces < Trip && NoEmailToday(inputs, today) == true)
+        {
+            return new CloudRow("sending", "Is it sending?", "Held: no-email day",
+                [new($"the switch is {mode} · today is listed in J:\\dispatch\\NO-EMAIL-DAYS.txt, so the gate holds every send · next send {Next(inputs.Now, ResourceView.Latest(inputs)?.Facts.GetValueOrDefault("next_email_day"))}", null)], "info");
+        }
         bool past9 = mode == "on" && day.Sent == 0 && ready > 0 && NightlySlots.Local(inputs.Now).Hour >= 9;
         // A morning the switch read shadow before eight is quiet only if its shadow pass wrote something: a pass that
         // wrote nothing is a silent morning whatever the switch read, since the hour is read before eight, not at it.
@@ -137,6 +147,17 @@ public static class CampaignCard
             .OrderBy(h => h.Local)
             .Select(h => h.Facts.GetValueOrDefault("switch"))
             .LastOrDefault(s => s is not null);
+
+    /// <summary>
+    /// Whether the gate's file lists today, as the newest hour kept it from the Function's health route: true or false
+    /// only when that hour was read this Central day, null when it was not or the route did not say.
+    /// </summary>
+    /// <param name="inputs">The kept hours.</param>
+    /// <param name="today">The Central day.</param>
+    public static bool? NoEmailToday(ResourceCardInputs inputs, DateOnly today) =>
+        ResourceView.Latest(inputs) is { } hour && DateOnly.FromDateTime(NightlySlots.Local(hour.At)) == today
+            ? hour.Facts.GetValueOrDefault("no_email_today") switch { "true" => true, "false" => false, _ => null }
+            : null;
 
     /// <summary>Are the leads flowing: open, with an address, waiting on one, blocked, and the board scan.</summary>
     public static CloudRow Leads(ResourceCardInputs inputs, DateOnly today)
@@ -192,15 +213,31 @@ public static class CampaignCard
 
     /// <summary>The next 8 o'clock hour Central, in words.</summary>
     /// <param name="now">The moment, UTC.</param>
-    public static string Next(DateTimeOffset now)
+    public static string Next(DateTimeOffset now) => Words(DateOnly.FromDateTime(NightlySlots.Local(NextHour(now))));
+
+    /// <summary>
+    /// The next 8 o'clock send, in words: the 8 o'clock hour on the health route's next send day when that day is later
+    /// than the next 8 o'clock hour (the mornings between are listed no-email days), else the next 8 o'clock hour.
+    /// </summary>
+    /// <param name="now">The moment, UTC.</param>
+    /// <param name="nextEmailDay">The route's next_email_day, yyyy-MM-dd, or null when it did not say.</param>
+    public static string Next(DateTimeOffset now, string? nextEmailDay)
+    {
+        var next = DateOnly.FromDateTime(NightlySlots.Local(NextHour(now)));
+        return Words(DateOnly.TryParseExact(nextEmailDay, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day) && day > next ? day : next);
+    }
+
+    private static DateTimeOffset NextHour(DateTimeOffset now)
     {
         var hour = new DateTimeOffset(now.UtcDateTime.Year, now.UtcDateTime.Month, now.UtcDateTime.Day, now.UtcDateTime.Hour, 0, 0, TimeSpan.Zero).AddHours(1);
         while (NightlySlots.Local(hour).Hour != 8)
         {
             hour = hour.AddHours(1);
         }
-        return NightlySlots.Local(hour).ToString("ddd d MMM", CultureInfo.InvariantCulture) + ", 8:00 AM Central";
+        return hour;
     }
+
+    private static string Words(DateOnly day) => day.ToString("ddd d MMM", CultureInfo.InvariantCulture) + ", 8:00 AM Central";
 
     private static string? When(string fact) =>
         DateTimeOffset.TryParse(fact, CultureInfo.InvariantCulture, DateTimeStyles.None, out var at) ? NightlySlots.Local(at).ToString("ddd d MMM, HH:mm", CultureInfo.InvariantCulture) + " Central" : null;

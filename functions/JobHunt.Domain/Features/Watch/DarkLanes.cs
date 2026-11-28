@@ -38,7 +38,8 @@ public sealed record DarkReads(
 /// lane with a hold on it, or with work due over those days ("0 sent verified of 12", "43 left out", its own hold), is
 /// DARK: one line, first on NOT-WORKING.md and first on the 07:30 card. A lane whose runs were all quiet (nothing due) is
 /// not dark on the days alone, and a lane whose fix landed and waits on its proof run (NOT-WORKING-waiting.md) is not dark
-/// until that run reads empty. The line says why and what is fixing it, never "Needs you: nothing".
+/// until that run reads empty. A campaign pass the no-email-day gate held (no_email_day, nothing sent) is a held run: the
+/// day is skipped, so it neither breaks a streak nor lengthens one. The line says why and what is fixing it, never "Needs you: nothing".
 /// </summary>
 public static partial class DarkLanes
 {
@@ -53,6 +54,9 @@ public static partial class DarkLanes
 
     /// <summary>The word a landed fix's line opens with in NOT-WORKING-waiting.md: "WAITING: server6am apply. Fix: ...".</summary>
     public const string WaitingPrefix = "WAITING: ";
+
+    /// <summary>The verdict of a pass the no-email-day gate held: skipped by the count, neither a send nor an empty run.</summary>
+    public const string HeldVerdict = "held";
 
     /// <summary>The sending lanes, in the order the lines are written.</summary>
     public static readonly IReadOnlyList<SendingLane> Lanes =
@@ -126,9 +130,12 @@ public static partial class DarkLanes
         {
             return null;
         }
+        // A held day (a listed no-email day, noemailcard1127) is skipped: it is not a run, and not a day without a send.
+        var held = runs.Where(r => r.Verdict == HeldVerdict).Select(r => r.Day).ToHashSet();
+        runs = [.. runs.Where(r => r.Verdict != HeldVerdict)];
         DateOnly? sent = runs.Where(r => r.Verdict == "done").Select(r => (DateOnly?)r.Day).Max();
         DateOnly from = sent ?? runs.Select(r => r.Day).DefaultIfEmpty(today.AddDays(-Window)).Min();
-        int days = today.DayNumber - from.DayNumber;
+        int days = today.DayNumber - from.DayNumber - held.Count(d => d > from && d <= today);
         var due = runs.Where(r => r.Verdict == "empty" && (sent is null || r.Day > sent)).ToList();
         if (days < Days || (hold is null && due.Count == 0))
         {
@@ -155,7 +162,8 @@ public static partial class DarkLanes
             if (m.Success && DateOnly.TryParseExact(m.Groups[1].Value, "yyyy-MM-dd", Inv, DateTimeStyles.None, out var day) && day >= start && day <= today)
             {
                 int eligible = int.Parse(m.Groups[2].Value, Inv), sent = int.Parse(m.Groups[3].Value, Inv);
-                runs.Add(new Run(day, "campaign", sent > 0 ? "done" : eligible > 0 ? "empty" : "quiet", $"{eligible} eligible, {sent} sent"));
+                bool gated = sent == 0 && line.IndexOf("| held:", StringComparison.Ordinal) is int at and >= 0 && NoEmailDay().IsMatch(line[at..]);
+                runs.Add(new Run(day, "campaign", sent > 0 ? "done" : gated ? HeldVerdict : eligible > 0 ? "empty" : "quiet", $"{eligible} eligible, {sent} sent"));
             }
         }
         return runs;
@@ -208,4 +216,7 @@ public static partial class DarkLanes
 
     [GeneratedRegex(@"^(\d{4}-\d{2}-\d{2}) 08:\d{2}:\d{2} .*?\b(\d+) eligible, (\d+) sent of\b")]
     private static partial Regex PassLine();
+
+    [GeneratedRegex(@"\b\d+ no_email_day\b")]
+    private static partial Regex NoEmailDay();
 }

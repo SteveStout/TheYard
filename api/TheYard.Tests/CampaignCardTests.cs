@@ -193,11 +193,11 @@ public sealed class CampaignCardTests
             [new CampaignDay(new DateOnly(2026, 10, 24), 0, 9, 0, 0), new CampaignDay(new DateOnly(2026, 10, 25), 0, 6, 0, 0)],
             new CampaignLeadCounts(12, 4, 8, 1, 0, 0, 15, 1, 9, null, Ten.AddHours(-2), null, null),
             [new CampaignWeekRow("B v1", "Sunday", "B", "ai", 3, 1)]);
-        var source = new CampaignSource(new FakeCounts(read), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>(("/db", null)), "campaign-db");
+        var source = new CampaignSource(new FakeCounts(read), _ => Task.FromResult<FunctionHealth?>(null), _ => Task.FromResult<(string, string?)?>(("/db", null)), "campaign-db");
 
         var minute = (await source.MinutesAsync(Ten.AddMinutes(-1), Ten, "v", CancellationToken.None)).Single();
         var hour = await source.HourAsync(Ten, Ten.AddHours(-1), CancellationToken.None);
-        var unread = await new CampaignSource(new FakeCounts(CampaignCountsRead.Unread("not configured here")), _ => Task.FromResult<string?>(null), _ => Task.FromResult<(string, string?)?>(null), "campaign-db")
+        var unread = await new CampaignSource(new FakeCounts(CampaignCountsRead.Unread("not configured here")), _ => Task.FromResult<FunctionHealth?>(null), _ => Task.FromResult<(string, string?)?>(null), "campaign-db")
             .HourAsync(Ten, Ten.AddHours(-1), CancellationToken.None);
 
         Assert.Equal((6d, 0d), (minute.Values["written_today"]!.Value, minute.Values["sent_today"]!.Value));

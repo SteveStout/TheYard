@@ -88,7 +88,13 @@ public sealed class NightlyProcesses(IProcessRunsReader runs, Func<CancellationT
     /// <summary>The switches the health route names, the processes' own names only, each a plain word; null when it did not answer.</summary>
     /// <param name="name">The Function's host name.</param>
     /// <param name="cancellation">Stops the read.</param>
-    public static async Task<IReadOnlyDictionary<string, string>?> SwitchesAsync(string name, CancellationToken cancellation)
+    public static async Task<IReadOnlyDictionary<string, string>?> SwitchesAsync(string name, CancellationToken cancellation) =>
+        (await HealthAsync(name, cancellation))?.Switches;
+
+    /// <summary>The health route's answer, its switches and its two no-email-day fields from one read; null when it did not answer.</summary>
+    /// <param name="name">The Function's host name.</param>
+    /// <param name="cancellation">Stops the read.</param>
+    public static async Task<FunctionHealth?> HealthAsync(string name, CancellationToken cancellation)
     {
         try
         {
@@ -100,7 +106,7 @@ public sealed class NightlyProcesses(IProcessRunsReader runs, Func<CancellationT
                 return null;
             }
             using var answer = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
-            return Switches(answer.RootElement);
+            return FunctionHealth.From(answer.RootElement);
         }
         catch (Exception ex) when (!cancellation.IsCancellationRequested && ex is HttpRequestException or JsonException or TaskCanceledException)
         {
